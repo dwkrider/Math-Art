@@ -1,5 +1,7 @@
 # Canonical Polyhedron
 
+![Canonical Polyhedron](../images/canonical_polyhedron.png)
+
 ## Overview
 
 Add a canonical polyhedron (geometry fixed by its combinatorics):

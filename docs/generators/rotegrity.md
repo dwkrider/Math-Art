@@ -65,7 +65,7 @@ and likewise for $B'$. Rotating *both* ends about the midpoint, rather than slid
 
 **Extending and sweeping the centreline.** The strap's centreline is the great-circle arc through $A'$ and $B'$, sampled by spherical linear interpolation (slerp) and deliberately run *past* both endpoints so the ends reach their neighbours:
 
-$$t = -\text{extension} + (1 + 2\,\text{extension})\,\frac{i}{n},\qquad P_i = \operatorname{slerp}(A',B',t),\quad i=0,\dots,n.$$
+$$t = -\text{extension} + (1 + 2\,\text{extension})\,\frac{i}{n},\qquad P_i = \mathrm{slerp}(A',B',t),\quad i=0,\dots,n.$$
 
 At $t=0$ and $t=1$ the samples sit at the rotated endpoints; the negative start and greater-than-one end are the overhang set by **Extension**. At each sample the point is pushed sideways by $\pm\tfrac{\text{width}}{2}$ along $\hat p$ and scaled to the inner and outer radii $1\mp\tfrac{\text{thickness}}{2}$, giving a four-cornered ring; consecutive rings are bridged into a closed solid strap with flat end caps. Because **Twist** and **Extension** act independently — one tips the strap, the other stretches it — they are tuned together until the overlapping ends interlock, with no solver in the loop.
 

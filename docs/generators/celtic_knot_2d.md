@@ -1,5 +1,7 @@
 # Celtic Knot 2D
 
+![Celtic Knot 2D](../images/celtic_knot_2d.png)
+
 ## Overview
 
 Add a 2D Celtic knot (grid-and-barriers plait).

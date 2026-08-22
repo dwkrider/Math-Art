@@ -1,5 +1,7 @@
 # Snowflake
 
+![Snowflake](../images/snowflake.png)
+
 ## Overview
 
 Snow crystals grown by **Reiter's cellular automaton** (2005) — not drawn, but simulated. From a single frozen cell, a handful of growth constants produce the full range of real snow-crystal habits: hexagonal plates, sectored plates, stellar dendrites and the fern-like forms.

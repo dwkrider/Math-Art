@@ -1,5 +1,7 @@
 # Polystix
 
+![Polystix](../images/polystix.png)
+
 ## Overview
 
 Non-intersecting cubic rod packings — symmetric bundles of straight rods running in three or four directions that interlock through space **without ever touching**, after O'Keeffe, Conway and Widmark.

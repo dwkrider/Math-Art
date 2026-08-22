@@ -1,5 +1,7 @@
 # Woven Double Shell
 
+![Woven Double Shell](../images/woven_double_shell.png)
+
 ## Overview
 
 Two concentric spheres of rope rosettes tied into one woven fabric: a medallion over every face of a scaffold solid on the outer sphere, one at every vertex on the inner sphere, joined by rope bridges that weave over and under through the gap between them.

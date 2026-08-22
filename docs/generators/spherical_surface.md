@@ -1,5 +1,7 @@
 # Spherical Surface
 
+![Spherical Surface](../images/spherical_surface.png)
+
 ## Overview
 
 Add a surface of revolution of constant positive Gaussian

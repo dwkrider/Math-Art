@@ -1,5 +1,7 @@
 # Icosahedron Stellation
 
+![Icosahedron Stellation](../images/icosahedron_stellation.png)
+
 ## Overview
 
 Add a stellation of the icosahedron -- any of the 59 (Coxeter/

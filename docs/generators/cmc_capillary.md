@@ -1,5 +1,7 @@
 # CMC Capillary Surface
 
+![CMC Capillary Surface](../images/cmc_capillary.png)
+
 ## Overview
 
 The shapes liquid actually takes, produced by constrained **area minimisation**: **liquid bridges** spanning two rings, **sessile drops** resting on a floor at a prescribed contact angle, and **free-boundary soap films** slung on a fixed frame and sliding on a curved support.

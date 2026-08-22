@@ -1,5 +1,7 @@
 # Fractal Knotwork
 
+![Fractal Knotwork](../images/fractal_knotwork.png)
+
 ## Overview
 
 Add a fractal knotwork (self-similar interlaced link on a Fathauer fractal tiling).

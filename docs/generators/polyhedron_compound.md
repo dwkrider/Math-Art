@@ -1,5 +1,7 @@
 # Polyhedron Compound
 
+![Polyhedron Compound](../images/polyhedron_compound.png)
+
 ## Overview
 
 Add a compound of regular polyhedra (each component coloured

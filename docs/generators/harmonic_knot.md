@@ -1,5 +1,7 @@
 # Harmonic Knot
 
+![Harmonic Knot](../images/harmonic_knot.png)
+
 ## Overview
 
 Add a harmonic knot -- a Lissajous, Fourier, Chebyshev

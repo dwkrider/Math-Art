@@ -1,5 +1,7 @@
 # Rep-Tile Tiling
 
+![Rep-Tile Tiling](../images/reptile.png)
+
 ## Overview
 
 Add a rep-tile substitution tiling: one shape filled with ever-finer congruent copies of itself.

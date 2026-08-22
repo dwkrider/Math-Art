@@ -1,5 +1,7 @@
 # Faceted Gemstone
 
+![Faceted Gemstone](../images/gem.png)
+
 ## Overview
 
 Add a faceted gemstone cut the way a lapidary specifies one — as facet *planes*, each placed by a mast angle and a gear index, intersected into a solid.

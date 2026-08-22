@@ -1,5 +1,7 @@
 # Slide-Together
 
+![Slide-Together](../images/slide_together.png)
+
 ## Overview
 
 Add one of Hart's slide-together models: identical slotted

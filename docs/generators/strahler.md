@@ -1,5 +1,7 @@
 # Strahler
 
+![Strahler](../images/strahler.png)
+
 ## Overview
 
 Strahler is a *style* — it restyles the branching object you already have rather than adding new geometry. It scores every limb by its **Horton–Strahler order** — a measure of "which of these limbs are structural, and which are decoration?" — and uses that score to drive thickness, colour, or pruning. It suits any branching object the add-on makes: L-system plants, fractal trees, knotwork strands, DLA clusters, space-colonisation skeletons.

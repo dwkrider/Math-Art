@@ -1,5 +1,7 @@
 # Relief Panel
 
+![Relief Panel](../images/relief_panel.png)
+
 ## Overview
 
 Add a relief panel whose height is a pattern field.

@@ -1,5 +1,7 @@
 # Noble Faceting
 
+![Noble Faceting](../images/noble_faceting.png)
+
 ## Overview
 
 Add a noble faceting: a new polyhedron through the vertices of

@@ -1,5 +1,7 @@
 # Rational / Pretzel Knot
 
+![Rational / Pretzel Knot](../images/rational_knot.png)
+
 ## Overview
 
 Add a rational (2-bridge), pretzel or twist knot as a

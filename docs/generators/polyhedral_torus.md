@@ -1,5 +1,7 @@
 # Polyhedral Torus
 
+![Polyhedral Torus](../images/polyhedral_torus.png)
+
 ## Overview
 
 Add a regular polyhedral torus: a ring of congruent polygon

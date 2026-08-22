@@ -1,5 +1,7 @@
 # Fractal Rep-Tile (Experimental)
 
+![Fractal Rep-Tile (Experimental)](../images/fractal_reptile.png)
+
 ## Overview
 
 Add a Fathauer fractal tiling built from a rep-tile

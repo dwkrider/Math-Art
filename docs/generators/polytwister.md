@@ -1,5 +1,7 @@
 # Polytwister (Experimental)
 
+![Polytwister (Experimental)](../images/polytwister.png)
+
 ## Overview
 
 Add the 3D cross-section of a polytwister -- a Boolean tree over

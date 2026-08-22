@@ -1,5 +1,7 @@
 # Escape-time Fractal
 
+![Escape-time Fractal](../images/mandelbulb.png)
+
 ## Overview
 
 Solid three-dimensional **escape-time fractals** — the Mandelbulb, quaternion Julia sets and the Mandelbox — meshed as watertight objects rather than rendered as clouds.

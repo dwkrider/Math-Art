@@ -1,5 +1,7 @@
 # Solid Relief
 
+![Solid Relief](../images/relief_solid.png)
+
 ## Overview
 
 Add relief carved onto a closed surface.

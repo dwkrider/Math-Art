@@ -1,5 +1,7 @@
 # Steinmetz Solid
 
+![Steinmetz Solid](../images/steinmetz.png)
+
 ## Overview
 
 A **Steinmetz solid** is the intersection of two or three equal-radius circular cylinders whose axes meet at right angles.

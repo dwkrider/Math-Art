@@ -203,8 +203,10 @@ def skeleton(op, slug):
     except Exception:
         desc = ""
     parts = [f"# {title}", ""]
-    if os.path.exists(os.path.join(IMG, slug + ".png")):
-        parts += [f"![{title}](../images/{slug}.png)", ""]
+    # Always emit the hero line -- the figure is rendered by a LATER
+    # render_docs.py pass, so gating on the PNG existing here left every
+    # freshly-scaffolded page permanently without a hero.
+    parts += [f"![{title}](../images/{slug}.png)", ""]
     parts += ["## Overview", ""]
     if desc:
         parts += [desc.strip().rstrip('.') + ".", ""]

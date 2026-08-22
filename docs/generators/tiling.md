@@ -1,5 +1,7 @@
 # Tiling
 
+![Tiling](../images/tiling.png)
+
 ## Overview
 
 Add a uniform Euclidean tiling.
@@ -92,7 +94,7 @@ where $T(v)$ is translation by $v$. Tiles that a shared cell boundary would dupl
 
 **The Laves duals.** Dualising a tiling swaps the roles of vertices and faces: drop a new vertex at the centroid of every polygon, and join the centroids of all polygons that meet at a common old vertex. The ring of face-centres around one vertex closes up into a single new tile. Concretely, for each interior vertex $v$ of the Archimedean patch, gather the incident faces, take their centroids, and order them by angle about $v$ so the new tile's boundary does not self-cross:
 
-$$\text{dual tile}(v)=\Big[\,\operatorname{centroid}(f)\ :\ v\in f\,\Big]\ \text{sorted by}\ \operatorname{atan2}(c_y-v_y,\;c_x-v_x).$$
+$$\text{dual tile}(v)=\Big[\,\mathrm{centroid}(f)\ :\ v\in f\,\Big]\ \text{sorted by}\ \mathrm{atan2}(c_y-v_y,\;c_x-v_x).$$
 
 Only *interior* vertices qualify. A vertex on the patch boundary is missing some of its faces, so its centroid ring is incomplete and would yield a truncated, wrong tile — which is precisely why the generator builds a patch larger than requested and trims the fringe afterwards. Geometrically the swap explains the counts: because a uniform tiling is *vertex*-transitive, its dual is *tile*-transitive (one tile repeated), and because the dual tile need not be regular, the Laves tilings escape the "regular polygons only" straitjacket. The duals of the 3 regular tilings are regular again — the square tiling is self-dual, triangles and hexagons trade places — so the Laves family adds only 8 genuinely new members rather than 11.
 

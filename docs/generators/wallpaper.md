@@ -1,5 +1,7 @@
 # Wallpaper Group
 
+![Wallpaper Group](../images/wallpaper.png)
+
 ## Overview
 
 Add a wallpaper pattern: one asymmetric motif replicated across a two-dimensional lattice by every symmetry of a chosen plane-symmetry group, coloured so the symmetry reads.

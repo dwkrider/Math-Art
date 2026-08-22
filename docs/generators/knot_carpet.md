@@ -1,5 +1,7 @@
 # Knot Carpet
 
+![Knot Carpet](../images/knot_carpet.png)
+
 ## Overview
 
 Add a knot carpet (tileable alternating link of unknots).

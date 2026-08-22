@@ -1,5 +1,7 @@
 # Turtle Curve
 
+![Turtle Curve](../images/turtle_curve.png)
+
 ## Overview
 
 One operator for the whole family of classical 2-D line-art fractals — Koch curves, dragon curves, space-filling curves and spirolaterals — each traced by a "turtle" walking and turning, then lifted from a flat drawing into printable geometry.

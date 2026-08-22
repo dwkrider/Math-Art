@@ -1,5 +1,7 @@
 # Islamic Star Pattern
 
+![Islamic Star Pattern](../images/islamic_pattern.png)
+
 ## Overview
 
 Add an Islamic star pattern (polygons in contact).

@@ -79,6 +79,16 @@ def check(path):
                          "use a symbol in math, name the identifier in prose"
                          % m.group(0)[:36]))
 
+    # 6. macros GitHub's MathJax allowlist rejects outright ("The following
+    #    macros are not allowed: ...").  \operatorname is the common trap --
+    #    use \mathrm{...} instead; definition macros are blocked for safety.
+    for m in re.finditer(r"\\(operatorname|def|newcommand|renewcommand|gdef"
+                         r"|let|input|include|require|catcode"
+                         r"|DeclareMathOperator)\b", text):
+        line = text.count("\n", 0, m.start()) + 1
+        problems.append((line, "GitHub-disallowed macro `\\%s` "
+                         "(use \\mathrm{} for operator names)" % m.group(1)))
+
     return name, problems
 
 

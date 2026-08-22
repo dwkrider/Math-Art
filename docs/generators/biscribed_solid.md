@@ -1,5 +1,7 @@
 # Biscribed Solid
 
+![Biscribed Solid](../images/biscribed_solid.png)
+
 ## Overview
 
 Add a biscribed solid: vertices on a circumsphere AND faces

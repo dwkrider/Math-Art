@@ -1,5 +1,7 @@
 # Spiral Tiling
 
+![Spiral Tiling](../images/spiral_tiling.png)
+
 ## Overview
 
 Add a Fathauer logarithmic spiral tiling of triangles: one triangle shape at every size, winding to a centre.

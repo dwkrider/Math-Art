@@ -1,5 +1,7 @@
 # D-Form
 
+![D-Form](../images/dform.png)
+
 ## Overview
 
 Add a D-form: a solid glued from two flat equal-perimeter sheets.

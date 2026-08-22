@@ -1,5 +1,7 @@
 # Aperiodic Tiling
 
+![Aperiodic Tiling](../images/aperiodic.png)
+
 ## Overview
 
 Add an aperiodic tiling patch: a finite disc of a plane tiling that repeats locally everywhere yet never as a whole.

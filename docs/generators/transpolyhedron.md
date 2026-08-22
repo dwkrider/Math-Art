@@ -1,5 +1,7 @@
 # Transpolyhedron
 
+![Transpolyhedron](../images/transpolyhedron.png)
+
 ## Overview
 
 Add a transpolyhedron: the transitional form between a

@@ -1,5 +1,7 @@
 # k-Uniform Tiling
 
+![k-Uniform Tiling](../images/kuniform.png)
+
 ## Overview
 
 Add a 2-uniform Euclidean tiling.
@@ -55,7 +57,7 @@ Renders of each selectable option:
 
 **In plain terms.** Picture the regular tilings as ribbons: a ribbon of squares, a ribbon of triangles, a ribbon of hexagons. Each ribbon on its own is perfectly regular — every corner along it looks the same. Now stack two *different* ribbons in a repeating pattern, say a row of squares on top of a double band of triangles. Deep inside a band, corners still look uniform; but right along the seam where square meets triangle, the corners are a *different* kind of place, and no symmetry of the whole pattern can slide a seam-corner onto an interior-corner. So the finished floor has exactly **two** kinds of corner instead of one — that is what "2-uniform" means, and stacking regular ribbons is exactly how this generator makes them.
 
-**What "$k$-uniform" counts.** Every vertex of an edge-to-edge tiling by regular polygons still has to fill a full turn, so it obeys the same angle condition as the uniform case,
+**What "k-uniform" counts.** Every vertex of an edge-to-edge tiling by regular polygons still has to fill a full turn, so it obeys the same angle condition as the uniform case,
 
 $$\sum_i \frac{n_i-2}{n_i}=2,$$
 

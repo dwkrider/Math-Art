@@ -1,5 +1,7 @@
 # Crochet/Coral
 
+![Crochet/Coral](../images/crochet.png)
+
 ## Overview
 
 Add a crocheted hyperbolic plane -- a ruffled, negatively

@@ -1,5 +1,7 @@
 # Frieze Group
 
+![Frieze Group](../images/frieze.png)
+
 ## Overview
 
 Add a frieze pattern: one asymmetric motif repeated along a strip by every symmetry of a chosen frieze group, coloured so the symmetry reads.

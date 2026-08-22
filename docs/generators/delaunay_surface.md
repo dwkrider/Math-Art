@@ -1,5 +1,7 @@
 # Delaunay Surface
 
+![Delaunay Surface](../images/delaunay_surface.png)
+
 ## Overview
 
 Add a Delaunay surface: a surface of revolution of constant

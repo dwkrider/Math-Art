@@ -1,5 +1,7 @@
 # Topological Interlocking
 
+![Topological Interlocking](../images/interlocking.png)
+
 ## Overview
 
 Assemblies of rigid blocks that **kinematically lock**: once a

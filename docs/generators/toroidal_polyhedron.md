@@ -1,5 +1,7 @@
 # Toroidal Polyhedron
 
+![Toroidal Polyhedron](../images/toroidal_polyhedron.png)
+
 ## Overview
 
 Add a toroidal (genus-1) polyhedron: the Csaszar polyhedron

@@ -1,5 +1,7 @@
 # Zonohedrification
 
+![Zonohedrification](../images/zonish.png)
+
 ## Overview
 
 Add a zonohedrification, a zonish polyhedron or a rhombohedral

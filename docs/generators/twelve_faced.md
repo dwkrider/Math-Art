@@ -1,5 +1,7 @@
 # Twelve-Faced Solid
 
+![Twelve-Faced Solid](../images/twelve_faced.png)
+
 ## Overview
 
 Add a twelve-faced solid: pyritohedron, tetartoid,

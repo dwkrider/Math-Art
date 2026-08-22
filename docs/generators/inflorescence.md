@@ -1,5 +1,7 @@
 # Inflorescence
 
+![Inflorescence](../images/inflorescence.png)
+
 ## Overview
 
 An inflorescence is a cluster of flowers, and the fifteen classical kinds — raceme, spike, spadix, corymb, umbel, capitulum, verticillaster, panicle, dibotryoid, tribotryoid, monochasium, dichasium, cyme, thyrsus, pleiochasium — are all built here from **two production templates** with different constants (ABOP Table 3.1). The difference between a raceme and a cyme is *where growth continues*, not a different kind of plant.

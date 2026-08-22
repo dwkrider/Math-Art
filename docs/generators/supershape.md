@@ -1,5 +1,7 @@
 # Supershape
 
+![Supershape](../images/supershape.png)
+
 ## Overview
 
 Gielis superformula: 3D supershapes, supertoroids, seashells
@@ -120,7 +122,7 @@ This is the classic 3-D supershape. Think of it as a globe whose lines of longit
 
 **Shell** — a superformula cross-section swept along a **logarithmic spiral**, the growth curve molluscs actually follow. A snail cannot rebuild its shell as it grows, so it can only *add* to the open rim; the only way to grow while keeping the same shape is to scale up by a fixed factor each turn, which is exactly an exponential spiral. Here the cross-section keeps its outline but multiplies in size by *Growth / Whorl* every revolution and climbs by *Spire Rise*, so a fixed superformula section on that spiral produces conch and snail forms with genuine self-similar whorls.
 
-**Superellipsoid** — Barr's superquadric. Instead of the full superformula it uses signed powers of cosine and sine, $\operatorname{sign}(\cos\theta)\,|\cos\theta|^{e}$, with two exponents that run the solid continuously from cube (exponents near 0) through sphere (exponents 1) to octahedron and on to pinched stars (exponents above 2). The signed power is the trick that keeps the correct octant while allowing a fractional exponent — a plain fractional power of a negative number is undefined. This is the one member with a life outside art: superquadrics are a standard primitive in solid modelling and shape fitting.
+**Superellipsoid** — Barr's superquadric. Instead of the full superformula it uses signed powers of cosine and sine, $\mathrm{sign}(\cos\theta)\,|\cos\theta|^{e}$, with two exponents that run the solid continuously from cube (exponents near 0) through sphere (exponents 1) to octahedron and on to pinched stars (exponents above 2). The signed power is the trick that keeps the correct octant while allowing a fractional exponent — a plain fractional power of a negative number is undefined. This is the one member with a life outside art: superquadrics are a standard primitive in solid modelling and shape fitting.
 
 **A numerical note.** The absolute values in the formula make $r$ continuous but not smooth: at each lobe boundary its derivative jumps, so a mesh sampled at uniform $\varphi$ facets exactly where the outline turns most sharply. Denser **Segments**/**Rings** is the only remedy, because the corner is genuinely a kink in the function and not an artefact of the mesh. One more subtlety: a lobed supershape is not star-shaped about its centre, so the builder checks the mesh's actual signed volume and flips every face if it came out inside-out, rather than trusting a fixed winding to put the normals outward.
 

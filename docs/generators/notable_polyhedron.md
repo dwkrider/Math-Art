@@ -1,5 +1,7 @@
 # Notable Polyhedron
 
+![Notable Polyhedron](../images/notable_polyhedron.png)
+
 ## Overview
 
 Add a notable individual polyhedron (the echidnahedron / final

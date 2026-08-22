@@ -1,5 +1,7 @@
 # Hyperbolic Surface
 
+![Hyperbolic Surface](../images/hyperbolic_surface.png)
+
 ## Overview
 
 Add a smooth constant-negative-curvature surface: the pseudosphere, Dini,

@@ -1,5 +1,7 @@
 # Leaf
 
+![Leaf](../images/leaf.png)
+
 ## Overview
 
 A leaf as solid, solidifiable geometry — a simple blade or a compound leaf — where the blade is **grown, not drawn**: instead of fitting a curve to a leaf outline, the margin is advanced by a growth model and the silhouette is whatever that produces (cordate, elliptic, lanceolate, obovate, ovate, reniform, rose). A traced outline reproduces one leaf; a marginal-growth model explains why leaves fall into these families at all, and why nudging one growth rate carries a shape continuously into its neighbour.

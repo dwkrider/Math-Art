@@ -1,5 +1,7 @@
 # Phyllotaxis
 
+![Phyllotaxis](../images/phyllotaxis.png)
+
 ## Overview
 
 Add a golden-angle phyllotaxis form: N florets placed by the

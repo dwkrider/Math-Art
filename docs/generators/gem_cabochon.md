@@ -1,5 +1,7 @@
 # Cabochon Gemstone
 
+![Cabochon Gemstone](../images/gem_cabochon.png)
+
 ## Overview
 
 Add a cabochon: a domed stone, cut on a curve rather than in facets.

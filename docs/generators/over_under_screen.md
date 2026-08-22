@@ -1,5 +1,7 @@
 # Over-Under Screen
 
+![Over-Under Screen](../images/over_under_screen.png)
+
 ## Overview
 
 Add a woven over-under screen (Hauer woven web).

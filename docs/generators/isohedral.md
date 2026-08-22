@@ -1,5 +1,7 @@
 # Isohedral Tiling
 
+![Isohedral Tiling](../images/isohedral.png)
+
 ## Overview
 
 Add an isohedral (Escher-style) tiling.

@@ -1,5 +1,7 @@
 # General Stellation
 
+![General Stellation](../images/general_stellation.png)
+
 ## Overview
 
 Add a stellation of a seed polyhedron (icosahedron, dodecahedron,

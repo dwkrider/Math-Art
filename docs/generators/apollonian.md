@@ -1,5 +1,7 @@
 # Apollonian Gasket
 
+![Apollonian Gasket](../images/apollonian.png)
+
 ## Overview
 
 Begin with mutually tangent circles, inscribe a new circle in every curvilinear gap, and recurse forever. The **Apollonian gasket** is the result — an exactly self-similar fractal in which gaps are filled at every scale, going back to Apollonius of Perga in the third century BC. The 3-D analogue packs mutually tangent **Soddy spheres**.

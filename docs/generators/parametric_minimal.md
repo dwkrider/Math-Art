@@ -155,7 +155,7 @@ Renders of each selectable option:
 
 Concretely, each surface is realized by evaluating its standard parametrization on an $(n_u, n_v)$ grid, then centering and scaling the result so its largest extent is 2 units. The unifying formula behind the whole catalog is the **Weierstrass–Enneper representation**: from a *Gauss map* $g$ (essentially where each point's normal aims, seen on the sphere via stereographic projection) and a *height differential* $dh = h(z)\,dz$, the surface is
 
-$$X = \operatorname{Re}\!\left[e^{i\theta}\!\int (\phi_1, \phi_2, \phi_3)\,dz\right],\qquad
+$$X = \mathrm{Re}\!\left[e^{i\theta}\!\int (\phi_1, \phi_2, \phi_3)\,dz\right],\qquad
 \phi_1 = \tfrac12\!\left(\tfrac1g - g\right)h,\quad
 \phi_2 = \tfrac{i}{2}\!\left(\tfrac1g + g\right)h,\quad
 \phi_3 = h.$$
@@ -164,9 +164,9 @@ The point of writing it this way is that *any* holomorphic pair $(g, dh)$ yields
 
 **Elementary surfaces** are sampled from their explicit maps (the closed-form result of doing that integral). For example the **Enneper surface** of order $n$ uses the complex chart $z = u\,e^{iv}$ with
 
-$$x = \operatorname{Re}\!\Big(z - \tfrac{z^{2n+1}}{2n+1}\Big),\quad
-y = -\operatorname{Im}\!\Big(z + \tfrac{z^{2n+1}}{2n+1}\Big),\quad
-w = \tfrac{2}{n+1}\operatorname{Re}\!\big(z^{n+1}\big),$$
+$$x = \mathrm{Re}\!\Big(z - \tfrac{z^{2n+1}}{2n+1}\Big),\quad
+y = -\mathrm{Im}\!\Big(z + \tfrac{z^{2n+1}}{2n+1}\Big),\quad
+w = \tfrac{2}{n+1}\mathrm{Re}\!\big(z^{n+1}\big),$$
 
 so raising the order $n$ adds more petals to the same self-intersecting flower. The **catenoid** is $x = \cosh v \cos u,\; y = \cosh v \sin u,\; z = v$ — the profile of a hanging chain (a catenary) spun around an axis, the only minimal surface of revolution — and the **helicoid** is $x = v\cos u,\; y = v\sin u,\; z \propto u$, the ramp swept by a line screwing up an axis. Scherk's doubly-periodic surface is the graph $w = \ln(\cos u / \cos v)$, defined only where $\cos u$ and $\cos v$ share a sign, which is what carves it into its checkerboard of tunnels. The **Catenoid–Helicoid associate** makes the family link visible: the angle $\theta$ gives the catenoid at $\theta = 0$, the helicoid at $\theta = \pi/2$, and at every angle between a complete minimal surface isometric to both — you can literally watch one bend into the other without tearing.
 

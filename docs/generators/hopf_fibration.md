@@ -1,5 +1,7 @@
 # Hopf Fibration
 
+![Hopf Fibration](../images/hopf_fibration.png)
+
 ## Overview
 
 Add fibres of the Hopf fibration of S^3, stereographically

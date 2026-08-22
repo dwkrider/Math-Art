@@ -1,5 +1,7 @@
 # Petal Knot
 
+![Petal Knot](../images/petal_knot.png)
+
 ## Overview
 
 Add a petal (petaluma) knot: 2k+1 petals around a single

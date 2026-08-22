@@ -1,5 +1,7 @@
 # Constant Width Solid
 
+![Constant Width Solid](../images/constant_width.png)
+
 ## Overview
 
 Add a surface of constant width -- a Reuleaux solid of revolution, the Reuleaux tetrahedron, or a Meissner tetrahedron.

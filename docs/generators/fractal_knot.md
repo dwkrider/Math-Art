@@ -1,5 +1,7 @@
 # Fractal Knot
 
+![Fractal Knot](../images/fractal_knot.png)
+
 ## Overview
 
 Add an iterated cable knot -- a base knot recursively wound

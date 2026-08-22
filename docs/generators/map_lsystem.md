@@ -1,5 +1,7 @@
 # Cellular Layer
 
+![Cellular Layer](../images/map_lsystem.png)
+
 ## Overview
 
 Add cellular tissue grown by developmental division, relaxed

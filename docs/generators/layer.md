@@ -1,5 +1,7 @@
 # Layer Group
 
+![Layer Group](../images/layer.png)
+
 ## Overview
 
 Add a layer-group pattern: a wallpaper group given an extra third-axis symmetry, so the repeated unit can flip up and down as well as move within the plane. It only reads in 3D — give it relief height or an active mesh.

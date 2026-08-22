@@ -1,5 +1,7 @@
 # Fractal Tiling
 
+![Fractal Tiling](../images/fractal_tiling.png)
+
 ## Overview
 
 Add a Fathauer fractal tiling patch.

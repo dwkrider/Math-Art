@@ -1,5 +1,7 @@
 # Tight Link
 
+![Tight Link](../images/tight_link.png)
+
 ## Overview
 
 Add a tight link: several closed components relaxed under

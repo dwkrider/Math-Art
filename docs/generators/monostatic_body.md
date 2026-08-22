@@ -1,5 +1,7 @@
 # Monostatic Body
 
+![Monostatic Body](../images/monostatic_body.png)
+
 ## Overview
 
 Add a monostatic body -- the gomboc, a convex homogeneous self-righting solid with one stable and one unstable balance point.

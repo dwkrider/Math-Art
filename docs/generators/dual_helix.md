@@ -51,11 +51,11 @@ The sculpture is one closed curve made of two arcs. Along the **outer** arc, par
 $$w(t) = \tfrac{1 + \cos 2\pi t}{2},\qquad
 r(t) = w\,r_{\text{join}} + (1-w)\,r_{\text{outer}},$$
 $$\theta(t) = 2\pi\,N_{\text{outer}}\,t,\qquad
-z(t) = h\;\operatorname{sgn}(c)\,|c|^{\,\kappa},\;\; c=\cos\pi t,$$
+z(t) = h\;\mathrm{sgn}(c)\,|c|^{\,\kappa},\;\; c=\cos\pi t,$$
 
 giving points $\big(r\cos\theta,\; r\sin\theta,\; z\big)$. Here $h$ is the half-height and $\kappa$ the height-profile exponent ($\kappa=1$ recovers the plain cosine; larger flattens the middle, smaller sharpens it). The **inner** arc, parameter $s\in(0,1]$, does the mirror image: radius blends join → inner → join, azimuth continues from where the outer arc ended ($\theta_0 = 2\pi N_{\text{outer}}$) through the inner turn count, and the height is negated so the inner helix climbs back up:
 
-$$z(s) = -h\;\operatorname{sgn}(\cos\pi s)\,|\cos\pi s|^{\,\kappa}.$$
+$$z(s) = -h\;\mathrm{sgn}(\cos\pi s)\,|\cos\pi s|^{\,\kappa}.$$
 
 At the join points ($t=0$ and $t=1$) both arcs are at radius $r_{\text{join}}$ and height $z=\pm h$ (the extremes of the profile), so the outer arc's bottom join meets the inner arc's start and the two form one continuous curve.
 

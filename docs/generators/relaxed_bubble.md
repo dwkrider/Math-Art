@@ -1,5 +1,7 @@
 # Optimized Bubble
 
+![Optimized Bubble](../images/relaxed_bubble.png)
+
 ## Overview
 
 A single, double or triple soap bubble found by **relaxation** rather than construction: the films are evolved to minimise area at fixed enclosed volumes, so the equilibrium shape is *discovered* and Plateau's laws come out as consequences instead of being drawn in.

@@ -1,5 +1,7 @@
 # Monohedral Tiling
 
+![Monohedral Tiling](../images/monohedral.png)
+
 ## Overview
 
 Add a monohedral tiling (single irregular prototile).

@@ -1,5 +1,7 @@
 # Span Minimal Surface
 
+![Span Minimal Surface](../images/minimal_span.png)
+
 This operator works on **1 or 2 selected closed curves** (Curve objects or closed mesh edge loops) rather than adding a new primitive: with one curve selected it spans a disk-type minimal surface across it, and with two it spans an annulus-type minimal surface between them.
 
 ## Overview

@@ -1,5 +1,7 @@
 # L-system
 
+![L-system](../images/lsystem.png)
+
 ## Overview
 
 Add an L-system: fractal curves, plants and published tree

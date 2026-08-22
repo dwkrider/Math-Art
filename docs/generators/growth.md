@@ -1,5 +1,7 @@
 # Growth
 
+![Growth](../images/growth.png)
+
 ## Overview
 
 Add a structure grown into a space: space colonization,
@@ -95,7 +97,7 @@ The same excurrent-to-decurrent range, reached from the opposite direction: not 
 
 $$s \mathrel{+}= a\,b^{-q},$$
 
-with $q$ the depth below the caster — shade weakens with distance but spreads — and a bud's light exposure is whatever survives, $Q = \operatorname{clip}(1-s,\,0,\,1)$. At each fork the bud's vigour $v$ is split between the continuing main axis and one departing lateral by the extended **Borchert–Honda** rule, weighted by the light each direction heads into:
+with $q$ the depth below the caster — shade weakens with distance but spreads — and a bud's light exposure is whatever survives, $Q = \mathrm{clip}(1-s,\,0,\,1)$. At each fork the bud's vigour $v$ is split between the continuing main axis and one departing lateral by the extended **Borchert–Honda** rule, weighted by the light each direction heads into:
 
 $$v_{\text{main}} = v\,\frac{\lambda\,q_m}{\lambda\,q_m+(1-\lambda)\,q_l},\qquad v_{\text{lat}} = v\,\frac{(1-\lambda)\,q_l}{\lambda\,q_m+(1-\lambda)\,q_l}.$$
 

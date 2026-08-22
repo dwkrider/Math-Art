@@ -1,5 +1,7 @@
 # Bryant Surface
 
+![Bryant Surface](../images/bryant_surface.png)
+
 ## Overview
 
 Add a Bryant surface: constant mean curvature ONE in

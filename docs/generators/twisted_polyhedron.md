@@ -106,7 +106,7 @@ Renders of each selectable option:
 
 **Ribbon pairing.** Each outer face fans out one ribbon per edge, and the trick is deciding *which* inner edge each outer edge should reach for. Doing that by nearest distance would flip pairings unpredictably as the polygons spin; instead the pairing is **topological, and therefore rotation-proof**. Outer face $f$'s edge $(v_i \to v_{i+1})$ binds to the inner polygon sitting at the **forward vertex** $v_{i+1}$, at edge index
 
-$$(j + \text{step}) \bmod m,\qquad \text{step} = \operatorname{round}\!\left(\frac{\text{Inner Spin}}{360/m}\right),$$
+$$(j + \text{step}) \bmod m,\qquad \text{step} = \mathrm{round}\!\left(\frac{\text{Inner Spin}}{360/m}\right),$$
 
 where $j$ is $f$'s position in the ring of faces around that vertex and $m$ is the vertex degree (which, recall, equals the number of sides of that inner polygon). The geometric meaning is that an inner polygon carrying $m$-fold rotational symmetry looks identical after a turn of $360/m$, so a spin of the polygon can be absorbed by relabelling its edges: `step` counts how many whole such turns the **Inner Spin** amounts to. At `step = 0` each outer edge binds to the dual edge lying directly below it; every additional $360/m$ of spin advances the target by one edge. Because the same integer shift is applied everywhere and $m$-fold symmetry guarantees it stays within the polygon, the map is a clean **bijection** — every inner edge receives exactly one ribbon — for every solid and at every spin angle, with no ribbon left doubled up or unclaimed.
 

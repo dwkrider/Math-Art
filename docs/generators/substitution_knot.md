@@ -1,5 +1,7 @@
 # Substitution Fractal Knot
 
+![Substitution Fractal Knot](../images/substitution_knot.png)
+
 ## Overview
 
 Add a Fathauer iterative-substitution fractal knot.

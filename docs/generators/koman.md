@@ -1,5 +1,7 @@
 # Koman Developable
 
+![Koman Developable](../images/koman.png)
+
 ## Overview
 
 Add one of İlhan Koman's developable sculptures: a single slit sheet coiled into a ring, or wound out as a logarithmic spiral.

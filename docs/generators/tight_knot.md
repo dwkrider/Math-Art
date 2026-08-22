@@ -1,5 +1,7 @@
 # Tight Knot
 
+![Tight Knot](../images/tight_knot.png)
+
 ## Overview
 
 Add a tight knot: the braid-table seed relaxed under the

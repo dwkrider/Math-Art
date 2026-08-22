@@ -1,5 +1,7 @@
 # Uniform Polyhedron
 
+![Uniform Polyhedron](../images/uniform_polyhedron.png)
+
 ## Overview
 
 Add a uniform polyhedron by Wythoff construction: convex,

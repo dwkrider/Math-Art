@@ -1,5 +1,7 @@
 # Voderberg Tiling
 
+![Voderberg Tiling](../images/voderberg.png)
+
 ## Overview
 
 Add a Voderberg spiral tiling patch: a spiral built from congruent copies of one bent nine-sided tile.

@@ -1,5 +1,7 @@
 # Antoine's Necklace
 
+![Antoine's Necklace](../images/antoine.png)
+
 ## Overview
 
 Add Antoine's necklace: nested chains of interlocked tori.

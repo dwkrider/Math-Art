@@ -1,5 +1,7 @@
 # Star Prism / Antiprism
 
+![Star Prism / Antiprism](../images/star_prism.png)
+
 ## Overview
 
 Add a uniform {p/q} star prism, antiprism, dipyramid or

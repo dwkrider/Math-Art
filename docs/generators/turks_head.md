@@ -1,5 +1,7 @@
 # Turk's-Head Knot
 
+![Turk's-Head Knot](../images/turks_head.png)
+
 ## Overview
 
 A Turk's-head knot: one cord wound around a surface in $L$ **leads** (passes the long way) and $B$ **bights** (scallops the other way), woven strictly over-and-under and swept as a round rope tube.

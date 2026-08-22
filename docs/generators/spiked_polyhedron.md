@@ -76,7 +76,7 @@ is exactly what makes each pyramid's slant edges equal its base edges, so every 
 
 **Hyperbolic (concave faces, spiked vertices).** Each face is subdivided into a barycentric grid over its (centroid, $A$, $B$) sub-triangles — a fan of small triangles from the face-centre out to each edge — and every point is pushed radially by a factor that stays near 1 across the face interiors and rises to the spike length at the vertices. With inradius $r_{\min}$ (the centre-to-face distance, the smallest radius on the solid), radius $r$, spike $\sigma$ and sharpness $s$,
 
-$$w=\left(\operatorname{clip}\frac{r-r_{\min}}{1-r_{\min}},\,0,\,1\right)^{s},\qquad g=1+(\sigma-1)\,w,\qquad \mathbf{p}\mapsto g\,\mathbf{p}.$$
+$$w=\left(\mathrm{clip}\frac{r-r_{\min}}{1-r_{\min}},\,0,\,1\right)^{s},\qquad g=1+(\sigma-1)\,w,\qquad \mathbf{p}\mapsto g\,\mathbf{p}.$$
 
 The blend $w$ is 0 at the face centres (where $r=r_{\min}$) and 1 at the vertices (where $r=1$), so face-centre points are left where they are and only the corners are pushed out to radius $\sigma$. The exponent $s$ controls how abruptly that transition happens ($s=1$ is nearly the flat solid; large $s$ keeps the faces flat until the spikes shoot up right at the corners). Because the flat face now dips *below* the sphere between its raised corners, each face reads as a concave, saddle-like well — the "hyperbolic" appearance.
 

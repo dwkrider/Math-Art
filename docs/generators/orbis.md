@@ -1,5 +1,7 @@
 # Orbis / Holey Roller
 
+![Orbis / Holey Roller](../images/orbis.png)
+
 ## Overview
 
 Add an Orbis / Holey Roller -- two torus rings hinged at 45 degrees and fused into one rolling solid.

@@ -1,5 +1,7 @@
 # Hopf Torus
 
+![Hopf Torus](../images/hopf_torus.png)
+
 ## Overview
 
 Add a Pinkall Hopf torus: the preimage h^{-1}(gamma) of a

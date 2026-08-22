@@ -1,5 +1,7 @@
 # Willmore Surface
 
+![Willmore Surface](../images/willmore.png)
+
 ## Overview
 
 Minimize the bending energy of a closed surface: Willmore
