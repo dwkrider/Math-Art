@@ -3,7 +3,8 @@ __pycache__/
 *.blend
 *.blend1
 *.stl
-dist/
+# Local/test extension builds. Committed release zips live in dist/ (tracked).
+dev/
 TODO.md
 BACKLOG.md
 renders/**
