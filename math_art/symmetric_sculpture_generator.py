@@ -1884,6 +1884,24 @@ if _IN_BLENDER:
         drv.expression = "lift"
         return fc
 
+    def _crossing_material():
+        name = "SymSculpt Crossings"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        # A cool colour, against the motif's warm orange: the markers
+        # sit in the same plane as the motif and are read together
+        # with it, so they have to be told apart at a glance.
+        rgb = (0.15, 0.55, 0.95)
+        mat.diffuse_color = (*rgb, 1.0)
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+            bsdf.inputs["Roughness"].default_value = 0.35
+        return mat
+
     def _motif_material():
         name = "SymSculpt Motif"
         mat = bpy.data.materials.get(name)
@@ -2428,12 +2446,13 @@ if _IN_BLENDER:
                 nparts = crossing_parts(kind, family, cross, d)
                 cverts = []
                 cedges = []
+                cfaces = []
                 for (cx, cy, _k), planes in zip(cross, nparts):
                     if planes < max(3, self.crossing_min_planes):
                         continue
                     # Size climbs steeply with order so a hub
                     # reads from across the viewport.
-                    rad = 0.016 * d * (planes - 2) ** 0.85
+                    rad = 0.030 * d * (planes - 2) ** 0.85
                     base = len(cverts)
                     cverts.append((cx, cy, 0.0))       # snap target
                     for t in range(planes):
@@ -2443,14 +2462,22 @@ if _IN_BLENDER:
                     for t in range(planes):
                         cedges.append((base + 1 + t,
                                        base + 1 + (t + 1) % planes))
+                    cfaces.append([base + 1 + t for t in range(planes)])
                 cme = bpy.data.meshes.new("SymSculpt Crossings")
-                cme.from_pydata(cverts, cedges, [])
+                cme.from_pydata(cverts, cedges, cfaces)
+                cme.materials.append(_crossing_material())
                 cme.update()
                 marks = bpy.data.objects.new("SymSculpt Crossings",
                                              cme)
                 context.collection.objects.link(marks)
                 marks.matrix_world = Matrix.Identity(4)
-                marks.display_type = 'WIRE'
+                # Filled, and drawn in front rather than nudged up in
+                # Z: the markers share the plane with the motif, so
+                # they would z-fight it, but lifting them would put
+                # the snap vertex off the plane and a corner snapped
+                # to it would land out of the plane too.
+                marks.display_type = 'SOLID'
+                marks.show_in_front = True
                 marks.hide_render = True
                 n3 = sum(1 for q in nparts if q == 3)
                 n5 = sum(1 for q in nparts if q == 5)
