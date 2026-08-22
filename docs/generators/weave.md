@@ -27,7 +27,7 @@ The seed's flag (barycentric) subdivision is walked by a small pattern program; 
 | Seed | Cube | Cube, Icosahedron, Octahedron, Tetrahedron, Dodecahedron. |
 | Geodesic Frequency | 1 | Subdivision of triangular seeds Range 1-6. |
 | Pattern Preset | Classic Weave (vfe) | Custom, Classic Weave (vfe), Corner Weave (FEV), Vertex Rings (1,1,1V), Face Rings (1,1,1F), Face Pairs (1,1,1FFE), Curved (1,1,1::::::FEV), Raised Weave (0,1,0:0.12FEV), and 2 more. |
-| Pattern | `vfe` | [C\|L][bV,bE,bF][:up,side,along...]steps[tl\|tr\|tb] -- steps from V E F v e f R - |
+| Pattern | `vfe` | [C\Vert L][bV,bE,bF][:up,side,along...]steps[tl\Vert tr\Vert tb] -- steps from V E F v e f R - |
 | Output | Ribbon | Ribbon, Tube (Rope). |
 | Strand Width | 0.1 | Range 0.005-0.5. |
 | Strand Thickness | 0.03 | Range 0.002-0.2. |

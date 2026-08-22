@@ -59,7 +59,7 @@ Renders of each selectable option:
 
 Formally, a space-filling curve is a single path through every cell of a discrete grid, adjacent cells differing by one unit step. On a grid of side $2^k$ in $d$ dimensions the path has $2^{kd}$ points — that exponential count is why a modest order already fills the space densely.
 
-**Hilbert curve.** The points come from Skilling's transpose algorithm, which maps a linear index $i \in \{0,\dots,2^{kd}-1\}$ directly to grid coordinates $X \in \mathbb{Z}^d$ without recursion — a closed-form address lookup rather than a subdivide-and-rotate walk. The index bits are first scattered into the transposed coordinate words, then a Gray-code decode is applied,
+**Hilbert curve.** The points come from Skilling's transpose algorithm, which maps a linear index $i \in \lbrace0,\dots,2^{kd}-1\rbrace$ directly to grid coordinates $X \in \mathbb{Z}^d$ without recursion — a closed-form address lookup rather than a subdivide-and-rotate walk. The index bits are first scattered into the transposed coordinate words, then a Gray-code decode is applied,
 
 $$X_i \mathrel{{\oplus}{=}} X_{i-1}, \qquad X_0 \mathrel{{\oplus}{=}} \lfloor X_{d-1}/2 \rfloor,$$
 

@@ -60,8 +60,10 @@ Renders of each selectable option:
 
 **Isometries as matrices.** Every rigid motion of the plane is stored as a $3\times3$ homogeneous matrix acting on $(x,y,1)^{\mathsf T}$, so that *composing* two motions becomes matrix multiplication — the whole algebra of symmetry turns into linear algebra:
 
-$$T(t_x,t_y)=\begin{pmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{pmatrix},\qquad
-R(\theta)=\begin{pmatrix}\cos\theta&-\sin\theta&0\\ \sin\theta&\cos\theta&0\\0&0&1\end{pmatrix}$$
+$$
+T(t_x,t_y)=\begin{pmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{pmatrix},\qquad
+R(\theta)=\begin{pmatrix}\cos\theta&-\sin\theta&0\\ \sin\theta&\cos\theta&0\\0&0&1\end{pmatrix}
+$$
 
 The padding is the trick: writing a point as $(x,y,1)$ lets a *translation* — which is not linear on its own — ride inside a single matrix beside the rotations, so a slide and a spin multiply together seamlessly. A reflection in the line through the origin at angle $\alpha$ is
 

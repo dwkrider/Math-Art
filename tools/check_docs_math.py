@@ -89,6 +89,16 @@ def check(path):
         problems.append((line, "GitHub-disallowed macro `\\%s` "
                          "(use \\mathrm{} for operator names)" % m.group(1)))
 
+    # 7. backslash-escaped braces/pipe in math.  GitHub's Markdown unescapes
+    #    \{ \} \| to { } | before MathJax, so \left\{ becomes the invalid
+    #    \left{ ("Missing delimiter for \left") and bare \{...\} lose their
+    #    braces.  Use the command forms \lbrace \rbrace \Vert, which survive.
+    for m in re.finditer(r"\\[{}|]", text):
+        line = text.count("\n", 0, m.start()) + 1
+        sym = {"{": "\\lbrace", "}": "\\rbrace", "|": "\\Vert"}[m.group(0)[1]]
+        problems.append((line, "escaped `%s` in math -- GitHub eats the "
+                         "backslash; use `%s`" % (m.group(0), sym)))
+
     return name, problems
 
 

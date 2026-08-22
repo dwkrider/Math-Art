@@ -13,7 +13,7 @@ A perforated spherical shell that, lit from its north pole, casts a shadow repro
 3. **Set the pattern's own controls**, which appear only for the matching pattern: **Grid Spacing** for Square Grid and Flower Lattice, **Petals** for Flower Lattice, **Rings** and **Rays** for Polar Grid, **p** and **q** for {p,q} Tiling, **Gores** for Beach Ball.
 4. **Shape the shell.** **Sphere Radius** and **Shell Thickness** size the wall; **Strip Width** sets how thick the material bars are as a fraction of each pattern cell; **Pattern Extent** is how far the flat pattern reaches (in sphere radii), which fixes the latitude below which the shell is perforated — everything above stays solid as the cap around the projection point.
 5. **Choose the output.** **Bowl** stops the shell just above the pattern with a solid rim and an open top instead of a full sphere. **Add Point Light** drops a point light at the north pole and **Add Floor Plane** (with **Floor Size**) lays a plane underneath, so you can render the projected shadow directly.
-6. **Read the report.** The operator prints the final vertex and face counts; choosing **{p,q} Tiling** with a non-spherical pair also warns and substitutes the nearest valid $\{p,q\}$.
+6. **Read the report.** The operator prints the final vertex and face counts; choosing **{p,q} Tiling** with a non-spherical pair also warns and substitutes the nearest valid $\lbrace p,q\rbrace$.
 
 ## Options
 
@@ -71,7 +71,7 @@ Read the formula geometrically: a point right next to the bulb ($\theta\to0$) ha
 **Pattern classification.**
 - *Square grid* is meshed on a Cartesian grid whose division lines fall exactly on the strip edges, so every cell is wholly material or wholly hole -- exact boundaries, no staircase.
 - *Polar grid* and *beach ball* use latitude/longitude divisions aligned to the ring/ray/lune edges; a small solid cap at the south pole keeps converging rays and gore tips joined.
-- *$\{p,q\}$ tiling* keeps material along the great-circle edges of a spherical Platonic edge graph. Only spherical Schlaefli symbols are valid ($1/p+1/q>1/2$); the code clamps otherwise. The signed field is the angular distance from each sphere point to the nearest tiling arc, minus half the strip width.
+- *$\lbrace p,q\rbrace$ tiling* keeps material along the great-circle edges of a spherical Platonic edge graph. Only spherical Schlaefli symbols are valid ($1/p+1/q>1/2$); the code clamps otherwise. The signed field is the angular distance from each sphere point to the nearest tiling arc, minus half the strip width.
 - *Flower lattice* is a hexagonal lattice of petal-shaped elliptical holes; its signed field (material between petals) is marched on a Cartesian grid at a feature-sized step.
 
 The tiling and flower patterns are extracted by **marching squares** on their signed fields, clipping cells at the zero crossings so the hole boundaries come out as smooth level sets. For bowls, the solid rim band $r\in[R_{\max},1.15\,R_{\max}]$ and the open trim are folded into the field as additional level sets.

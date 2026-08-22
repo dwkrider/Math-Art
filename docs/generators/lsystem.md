@@ -59,7 +59,7 @@ This operator lives under *Add ▸ Mesh ▸ Math Art ▸ Fractals* and, because 
 | Scale | 1 | Range 0.01-100. |
 | Development | Auto | Auto, Series, Final Only. |
 | Show Grammar | Off | Display the selected preset's grammar -- its axiom, productions and directives -- in the redo panel |
-| Tropism | Off | Bend each segment toward a fixed direction, by alpha = e \|H x T\| -- gravity or light |
+| Tropism | Off | Bend each segment toward a fixed direction, by alpha = e \Vert H x T\Vert -- gravity or light |
 | Direction | 0, 0, -1 | -- |
 | Elasticity | 0.22 | Susceptibility to bending; published values run 0.14 to 0.40 Range 0-1. |
 

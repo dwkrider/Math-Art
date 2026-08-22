@@ -46,7 +46,7 @@ That parity rule throws away half of the ordinary integer grid, and what remains
 
 **The ball, and the root.** A Waterman polyhedron of **root** $n$ keeps every FCC point lying within the ball of squared radius $2n$ and hulls them:
 
-$$W_n = \mathrm{conv}\{\,\mathbf p \in \text{FCC} : x^2 + y^2 + z^2 \le 2n\,\}.$$
+$$W_n = \mathrm{conv}\lbrace\,\mathbf p \in \text{FCC} : x^2 + y^2 + z^2 \le 2n\,\rbrace.$$
 
 The factor of two is not cosmetic. Squared distances between FCC points are always even integers, so choosing the cutoff at $r^2 = 2n$ makes the boundary land exactly on a natural shell of the lattice rather than slicing through one, and each whole-number root corresponds to completing one more spherical shell of packing spheres. Root 1 keeps the origin and its twelve nearest neighbours — the permutations of $(\pm1, \pm1, 0)$, all at squared distance $2$ — whose hull is the **cuboctahedron**; larger roots enclose more shells and yield hulls with progressively more, and smaller, faces that converge toward a sphere.
 

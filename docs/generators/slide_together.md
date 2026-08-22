@@ -41,7 +41,7 @@ Hart described seven — 20 triangles, 30 squares, 12 pentagons, 12 decagons, 20
 
 **In plain terms.** Think of joining two stiff cards without glue: cut a slot halfway into each from opposite edges, then slide one card's slot into the other's — they wedge together at the crossing, the way the cardboard dividers in a wine box or an egg carton grip each other. A slide-together does this many times over. One regular polygon is copied into every "face plane" of a symmetric solid — the twenty faces of an icosahedron, say — with every copy tilted the same way, and wherever two copies cross they are slotted into one another. Because each panel is trapped by all its neighbours at once, the whole assembly holds itself together with nothing but the slots. Everything below works out *where* two panels cross and *how deep* to cut each slit so the pieces come to rest halfway.
 
-**Placement.** Each model puts one regular $\{n/d\}$ polygon in every plane of a symmetric family — the 20 face planes of the icosahedron, the 12 of the dodecahedron, the 30 two-fold planes an icosidodecahedron's edges pick out, or (for the newer models) the face and edge-cycle planes of a uniform star polyhedron. A panel sits *in* its plane, offset from the centre by $\hat n\,h$ along the plane's unit normal $\hat n$ at signed distance $h$ — **not** through the origin. That offset is the whole point: panels passing through the centre would all cross at that single point, and the number of crossings would not depend on how big the panels are.
+**Placement.** Each model puts one regular $\lbrace n/d\rbrace$ polygon in every plane of a symmetric family — the 20 face planes of the icosahedron, the 12 of the dodecahedron, the 30 two-fold planes an icosidodecahedron's edges pick out, or (for the newer models) the face and edge-cycle planes of a uniform star polyhedron. A panel sits *in* its plane, offset from the centre by $\hat n\,h$ along the plane's unit normal $\hat n$ at signed distance $h$ — **not** through the origin. That offset is the whole point: panels passing through the centre would all cross at that single point, and the number of crossings would not depend on how big the panels are.
 
 **Where two panels cross.** Two panels with unit normals $n_i, n_j$ lie in planes that meet along a line whose direction is
 
@@ -55,7 +55,7 @@ The raw $d$ matters — the numerator is linear and the denominator quadratic in
 
 **The complementary slits.** Along that chord the joint is a pair of slits: each panel is cut from its own rim inward to the *midpoint* of the chord. Cutting the two panels from **opposite** ends is exactly what lets them pass through each other and stop halfway; cut both from the same end and the slits would overlap and the joint would fall apart. Each slit is spliced into the boundary walk as a thin rectangle whose width is **Slit Width**.
 
-**Star panels.** A star polygon $\{n/d\}$ walked corner to corner is a self-crossing path, which is not a valid face, so the physical panel is its *outline*: a simple $2n$-gon alternating the outer radius $R$ with an inner radius where consecutive chords meet,
+**Star panels.** A star polygon $\lbrace n/d\rbrace$ walked corner to corner is a self-crossing path, which is not a valid face, so the physical panel is its *outline*: a simple $2n$-gon alternating the outer radius $R$ with an inner radius where consecutive chords meet,
 
 $$ \frac{r}{R} = \frac{\cos(\pi d/n)}{\cos\!\big(\pi (d-1)/n\big)}, $$
 

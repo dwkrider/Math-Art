@@ -29,14 +29,14 @@ Hydrogenic atomic orbitals and LCAO molecular orbitals, drawn as isosurfaces of 
 | Mode | Atomic | Atomic, Molecular. |
 | n | 2 | Principal quantum number: the orbital has n-l-1 radial nodes Range 1-6. |
 | l | 1 | Azimuthal quantum number (0 = s, 1 = p, 2 = d, 3 = f); must be < n Range 0-5. |
-| m | 0 | Magnetic quantum number of the real orbital; clamped to \|m\| <= l Range -5-5. |
+| m | 0 | Magnetic quantum number of the real orbital; clamped to \Vert m\Vert <= l Range -5-5. |
 | Zeta | 1 | Effective nuclear charge: 1 is hydrogen, larger values contract the orbital (a Slater-type basis function) Range 0.1-10. |
 | Molecule | sigma 1s | sigma 1s, sigma* 1s, sigma 2s, sigma* 2s, sigma 2pz, sigma* 2pz, pi 2px, pi* 2px, and 9 more. |
 | Bond Length | 1.4 | Diatomic nuclear separation in bohr (1.4 a0 is H2) Range 0.2-12. |
 | Hueckel MO | 0 | Which of the six benzene pi orbitals to draw, lowest energy first Range 0-5. |
 | LCAO | `1s@0,0,-1.4 1; 1s@0,0,1.4 -1` | Custom combination: orbital@x,y,z[:zeta] coefficient, semicolon separated (positions in bohr) |
 | Enclosed Probability | 0.9 | Fraction of the electron density the isosurface encloses Range 0.05-0.99. |
-| Level Override | 0 | Raw \|psi\| contour value; 0 uses the enclosed probability instead Range 0-10. |
+| Level Override | 0 | Raw \Vert psi\Vert contour value; 0 uses the enclosed probability instead Range 0-10. |
 | Resolution | 96 | Sample grid resolution per axis (cost grows as the cube) Range 24-192. |
 | Box Override | 0 | Sample box half-width in bohr; 0 fits it to the orbital Range 0-200. |
 | Nuclei & Bonds | On | Add a ball-and-stick skeleton for the nuclei (molecular mode) |

@@ -59,7 +59,7 @@ These are worth having because a single dial slides continuously between named s
 
 **Two ways to build twelve faces.** The solids here are produced by two different methods, chosen to match how each one is naturally defined.
 
-**Method 1 — plane orbits (pyritohedron, tetartoid).** Take a single plane, make copies of it under the **twelve rotations of the tetrahedral group** — the identity, three half-turns about the coordinate axes, and eight third-turns about the cube diagonals that cyclically permute $(x, y, z)$ — and then intersect all the resulting half-spaces $\{\,n\cdot x \le |n|\,\}$. The result is a convex solid whose every face is planar *by construction* and of which there are exactly twelve.
+**Method 1 — plane orbits (pyritohedron, tetartoid).** Take a single plane, make copies of it under the **twelve rotations of the tetrahedral group** — the identity, three half-turns about the coordinate axes, and eight third-turns about the cube diagonals that cyclically permute $(x, y, z)$ — and then intersect all the resulting half-spaces $\lbrace\,n\cdot x \le |n|\,\rbrace$. The result is a convex solid whose every face is planar *by construction* and of which there are exactly twelve.
 
 - The **pyritohedron** is the orbit of the plane through $(0, 1, h)$. The single dial $h$ runs the whole family:
 

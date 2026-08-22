@@ -86,7 +86,7 @@ the "reverse spherical image": for each outward normal $u$, $\nabla H$ returns t
 
 $$R(\theta,\phi) = 1 + d\,\delta R(\theta,\phi),$$
 
-where $\delta R$ is built from a latitude-warp map that lays down a **tennis-ball-seam separatrix** — the single curve dividing the basin of the stable point from that of the unstable one. **Separatrix c** controls the warp that shapes that seam; **Deviation d** scales how far the body strays from the sphere. The genuine class-$\{1,1\}$ body needs $d < 5\times 10^{-5}$ and then looks indistinguishable from a ball, so — exactly as in the paper's own figures — the default $d$ is exaggerated to make the shape visible; at $d = 0$ the surface is precisely the sphere.
+where $\delta R$ is built from a latitude-warp map that lays down a **tennis-ball-seam separatrix** — the single curve dividing the basin of the stable point from that of the unstable one. **Separatrix c** controls the warp that shapes that seam; **Deviation d** scales how far the body strays from the sphere. The genuine class-$\lbrace1,1\rbrace$ body needs $d < 5\times 10^{-5}$ and then looks indistinguishable from a ball, so — exactly as in the paper's own figures — the default $d$ is exaggerated to make the shape visible; at $d = 0$ the surface is precisely the sphere.
 
 **The Sloan forms — closed-form near-spheres.** Sloan's two analytic gömböcs trade recognisability for a clean formula and provable behaviour. Their radius satisfies
 

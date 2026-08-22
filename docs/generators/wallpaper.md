@@ -79,8 +79,10 @@ Renders of each selectable option:
 
 **The magic theorem.** Conway attaches a *cost* — an amount of curvature the feature soaks up — to each symbol:
 
-$$\texttt{o}\to 2,\qquad \texttt{*},\ \texttt{x}\to 1,\qquad
-n \to \frac{n-1}{n},\qquad n \text{ after a } \texttt{*} \to \frac{n-1}{2n}$$
+$$
+\texttt{o}\to 2,\qquad \texttt{*},\ \texttt{x}\to 1,\qquad
+n \to \frac{n-1}{n},\qquad n \text{ after a } \texttt{*} \to \frac{n-1}{2n}
+$$
 
 and the running total decides the geometry:
 

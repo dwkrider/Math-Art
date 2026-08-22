@@ -26,7 +26,7 @@ For the radial part that turns an angular lobe picture into an actual wavefuncti
 | --- | --- | --- |
 | Form | Offset Sphere | Offset Sphere, Absolute (lobes), Signed lobes, Bourke Family. |
 | Degree l | 3 | Degree l of the harmonic: the surface has l nodal circles in total Range 0-12. |
-| Order m | 2 | Order m of the harmonic; clamped to \|m\| <= l Range -12-12. |
+| Order m | 2 | Order m of the harmonic; clamped to \Vert m\Vert <= l Range -12-12. |
 | Base Radius | 1 | Offset form: the undeformed sphere radius Range 0.05-10. |
 | Amplitude | 0.6 | Offset form: how strongly Y_l^m deforms the sphere Range -5-5. |
 | Nodal Gap | 0.02 | Absolute/signed forms: radius added at the nodal circles so they do not pinch to a point Range 0-0.5. |
@@ -40,7 +40,7 @@ For the radial part that turns an angular lobe picture into an actual wavefuncti
 | m5 | 1 | Range 0-8. |
 | m6 | 4 | Range 0-8. |
 | m7 | 1 | Range 0-8. |
-| Absolute Radius | Off | Bourke form: use \|r\|, so the surface cannot fold through the origin |
+| Absolute Radius | Off | Bourke form: use \Vert r\Vert, so the surface cannot fold through the origin |
 | Resolution (polar) | 128 | Range 8-1024. |
 | Resolution (azimuth) | 256 | Range 8-1024. |
 | Scale | 1 | Range 0.01-100. |

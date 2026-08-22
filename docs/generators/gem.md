@@ -94,7 +94,7 @@ $$\mathbf{n}=\big(\sin\theta\cos\tfrac{2\pi i}{n},\ \sin\theta\sin\tfrac{2\pi i}
 
 the mast angle tilts the normal down from the vertical axis by $\theta$, and the index sweeps it around that axis in steps of $2\pi/n$, one step per notch on the gear. The facet itself is the plane $\mathbf{n}\cdot\mathbf{x}=d$ — every point whose projection onto that direction is exactly $d$ — and grinding keeps only the side that projects *less*, the half-space $\mathbf{n}\cdot\mathbf{x}\le d$. The stone is what survives all the cuts at once, the intersection
 
-$$K=\bigcap_j \{\mathbf{x} : \mathbf{n}_j\cdot\mathbf{x}\le d_j\},$$
+$$K=\bigcap_j \lbrace\mathbf{x} : \mathbf{n}_j\cdot\mathbf{x}\le d_j\rbrace,$$
 
 which, being a finite intersection of half-spaces, is a **convex polytope** — and the operator builds it exactly that way, computing the vertices where triples of facet planes meet. The geometric payoff of this description is a guarantee: intersecting half-spaces can only ever *remove* material, never invent an overhang or a re-entrant pocket, so the construction cannot produce an uncuttable stone. Every design is cuttable by definition, which is precisely why lapidaries specify facets as planes rather than as surfaces to be modelled.
 

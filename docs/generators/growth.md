@@ -85,7 +85,7 @@ Renders of each selectable option:
 
 Scatter a cloud of **attractor** points through the chosen envelope. Growth then proceeds in fixed-length steps of $0.07$: at each step every attractor looks for the nearest branch tip within a radius called the **influence distance** and casts a vote for it; every tip that received votes sprouts a new segment in the *average* of the directions to its voters,
 
-$$\mathbf{p}_{\text{new}} = \mathbf{p}_{\text{tip}} + \text{step}\cdot\frac{\sum_i \widehat{(\mathbf{a}_i-\mathbf{p}_{\text{tip}})} + g\,\hat{\mathbf{u}}\,|\{i\}|}{\big\|\,\cdots\,\big\|},$$
+$$\mathbf{p}_{\text{new}} = \mathbf{p}_{\text{tip}} + \text{step}\cdot\frac{\sum_i \widehat{(\mathbf{a}_i-\mathbf{p}_{\text{tip}})} + g\,\hat{\mathbf{u}}\,|\lbrace i\rbrace|}{\big\Vert\,\cdots\,\big\Vert},$$
 
 where the $\mathbf{a}_i$ are that tip's voters, $\hat{\mathbf{u}}$ is the up-axis and $g$ the **Gravity** bias. Any attractor that comes within the **kill radius** of a tip has been "used up" and is deleted, so growth keeps moving into fresh territory rather than piling onto one spot. **Branching is emergent**: a tip whose voters pull in two clearly separated directions produces segments that fan apart at the next step, so forks appear exactly where the unclaimed space splits.
 
