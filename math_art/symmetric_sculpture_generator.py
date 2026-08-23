@@ -1095,6 +1095,10 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
 
     def offset_loop(loop, per, s, is_hole):
         n = len(loop)
+        # The part's own size, for the sanity clamp below.
+        _xs = [q[0] for q in loop]
+        _ys = [q[1] for q in loop]
+        span = max(max(_xs) - min(_xs), max(_ys) - min(_ys)) or 1.0
         # per-edge sideways shift, then meet the shifted edge lines
         shift = []
         for i in range(n):
@@ -1154,6 +1158,21 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
             if (per[j] is not None and per[i] is not None
                     and abs(e0[0] * e1[1] - e0[1] * e1[0])
                     / (l0 * l1) > 1e-3):
+                # A real corner between two mating edges may land far
+                # out -- Krull's 36 degree point sits 3.24 shifts away
+                # -- but it cannot land off the part. When the mating
+                # edges are only APPROXIMATELY on their planes, which
+                # is what the slack below allows, two nearly parallel
+                # ones cross almost at infinity and drag a face out
+                # with them; that is the flat sheet that appeared
+                # beside the machined Solar Flair part. Anything
+                # beyond the part's own span is that, not a mitre.
+                if ((p[0] - loop[i][0]) ** 2
+                        + (p[1] - loop[i][1]) ** 2) <= (0.75 * span) ** 2:
+                    out.append(p)
+                    continue
+                p = slide(j if abs(shift[j]) >= abs(shift[i])
+                          else i, i)
                 out.append(p)
                 continue
             # A mating edge usually runs into the curved free boundary
@@ -3033,7 +3052,7 @@ if _IN_BLENDER:
                                if e is not None)
                 mated = _mated(p_tol)
                 if mated == 0:
-                    p_tol = 0.01 * d
+                    p_tol = 0.0025 * d
                     mated = _mated(p_tol)
                     self.report(
                         {'WARNING'},
