@@ -484,6 +484,34 @@ def meeting_planes(kind, family, point, d=1.0):
         w[0] * f1[0] + w[1] * f1[1] + w[2] * f1[2]))
 
 
+def stellation_planes(kind, family, point, d=1.0, tol=1e-6):
+    """Every plane of the family that passes through `point`, in
+    cyclic order around it.
+
+    meeting_planes answers a different question -- which planes carry
+    parts that CONVERGE there -- and at a stellation point the answer
+    is usually none.  A stellation point is where guide lines cross,
+    so planes pass through it whether or not any part reaches that
+    far, and it is those planes that bound the wedge a motif corner
+    sitting there has to fill.
+
+    Sorted by azimuth about the point, so consecutive planes are
+    neighbours round the wedge and their intersection lines are its
+    edges.
+    """
+    a, normals = plane_normals(kind, family)
+    thru = [w for w in normals
+            if abs(sum(w[c] * point[c] for c in range(3)) - d) < tol]
+    axis = _normalize(point)
+    f1 = _normalize(_frame(axis)[0])
+    f2 = (axis[1] * f1[2] - axis[2] * f1[1],
+          axis[2] * f1[0] - axis[0] * f1[2],
+          axis[0] * f1[1] - axis[1] * f1[0])
+    return sorted(thru, key=lambda w: math.atan2(
+        w[0] * f2[0] + w[1] * f2[1] + w[2] * f2[2],
+        w[0] * f1[0] + w[1] * f1[1] + w[2] * f1[2]))
+
+
 def stellation_shells(kind, family, d=1.0, extent=3.0):
     """Every guide-line crossing, tagged with which stellation it is a
     corner of.  Returns [(x, y, shell), ...].
@@ -3046,6 +3074,18 @@ if _IN_BLENDER:
                         "get the same part with square walls, which "
                         "is the thing to hold the mitred one up "
                         "against when a cut looks wrong")
+        show_stell_wedges: BoolProperty(
+            name="Show Stellation Wedges", default=False,
+            description="One selectable cone at every stellation "
+                        "point, the way Show Spikes gives one at every "
+                        "meeting point. A stellation point is where "
+                        "guide lines cross, so planes pass through it "
+                        "even when no part converges there, and the "
+                        "cone is the wedge those planes leave -- the "
+                        "shape a motif corner placed on that point has "
+                        "to fill, and the fixture to machine it "
+                        "against. Follows Stellation Level, so one "
+                        "shell can be looked at on its own")
         mark_stellation: BoolProperty(
             name="Mark Stellation Points", default=False,
             description="Ring every vertex of the stellation diagram "
@@ -3777,12 +3817,46 @@ if _IN_BLENDER:
                         pls = [outer] + holes
                         pmt = mating_planes(kind, family, pls, d, p_tol)
                         pa, _pn = plane_normals(kind, family)
+                        # One label per mating EDGE, not per polyline
+                        # segment.  A traced outline arrives as
+                        # hundreds of short segments, and a mating
+                        # edge that a CAD drawing would hold as one
+                        # line is dozens of them here -- each bedding
+                        # against the same neighbour, each formerly
+                        # getting its own label, so the same angle was
+                        # printed over itself again and again.  Walk
+                        # each loop and group the consecutive segments
+                        # that share a neighbour plane into one run.
                         for li, lp in enumerate(pls):
                             nlp = len(lp)
-                            for ei in range(nlp):
-                                nb = pmt[li][ei] if pmt[li] else None
+                            per = pmt[li] or [None] * nlp
+                            start = 0
+                            while start < nlp and per[start] is not None:
+                                start += 1        # begin off a run
+                            if start == nlp:
+                                start = 0         # the whole loop mates
+                            runs = []
+                            cur = None
+                            for k in range(nlp):
+                                ei = (start + k) % nlp
+                                nb = per[ei]
                                 if nb is None:
+                                    cur = None
                                     continue
+                                if cur is not None and all(
+                                        abs(nb[c] - cur[0][c]) < 1e-9
+                                        for c in range(3)):
+                                    cur[1].append(ei)
+                                else:
+                                    cur = (nb, [ei])
+                                    runs.append(cur)
+                            for nb, eis in runs:
+                                tl = 0.0
+                                for ei in eis:
+                                    q0, q1 = lp[ei], lp[(ei + 1) % nlp]
+                                    tl += math.hypot(q1[0] - q0[0],
+                                                     q1[1] - q0[1])
+                                ei = eis[len(eis) // 2]
                                 q0, q1 = lp[ei], lp[(ei + 1) % nlp]
                                 ex = q1[0] - q0[0]
                                 ey = q1[1] - q0[1]
@@ -3801,7 +3875,7 @@ if _IN_BLENDER:
                                 bevels.append(
                                     (dihedral_angle(pa, nb),
                                      mx - nx * 0.15 * d,
-                                     my - ny * 0.15 * d, el))
+                                     my - ny * 0.15 * d, tl))
                 if pv2:
                     # centre on the Z axis and drop the whole thing
                     # below the XY plane, clear of the guide diagram,
@@ -3891,8 +3965,16 @@ if _IN_BLENDER:
                                            zl)
                             bev_coll.objects.link(bo)
                             bo.hide_render = True
-                            bo.parent = part
-                            bo.matrix_parent_inverse =                                 Matrix.Identity(4)
+                            # Not parented to the part.  Blender draws
+                            # a dashed relationship line from every
+                            # child to its parent's origin, so the
+                            # labels hung a fan of black dashed lines
+                            # across the diagram to a point in the
+                            # middle of nowhere.  The part sits at the
+                            # identity anyway, and every other aid
+                            # here -- crossings, collisions, the
+                            # stellation marks -- is unparented for
+                            # exactly this reason.
                     self.report(
                         {'INFO'},
                         "Part: %d piece(s), %.4g thick (Shell x "
@@ -4021,6 +4103,80 @@ if _IN_BLENDER:
                     out_coll.objects.link(rings)
                     rings.matrix_world = Matrix.Identity(4)
                     rings.hide_render = True
+
+            if self.show_stell_wedges:
+                # Show Spikes, but for stellation points.  A spike is
+                # the wedge the CONVERGING parts leave, so there is
+                # one only where parts actually meet.  A motif built
+                # as a subset of a stellation face has its corners on
+                # points where nothing converges -- Dragonflies' six
+                # tips sit on level-3 stellation points -- and those
+                # corners still have a wedge to fill, bounded by the
+                # planes that pass through the point whether or not
+                # any part reaches it.  This draws that wedge, one
+                # selectable object apiece, so it can be copied out
+                # and used as the fixture to machine the corner
+                # against exactly as a spike is.
+                wsel = [p for p in stellation_shells(kind, family, d,
+                                                     extent)
+                        if self.stellation_level < 0
+                        or p[2] == self.stellation_level]
+                wsel.sort(key=lambda r: (r[2], r[0] ** 2 + r[1] ** 2))
+                if wsel:
+                    wcoll = bpy.data.collections.new(
+                        "SymSculpt Stellation Wedges")
+                    out_coll.children.link(wcoll)
+                    WL = 0.30 * d
+                    nw = 0
+                    for si, (cx, cy, sh) in enumerate(wsel):
+                        P = (a[0] * d + cx * u[0] + cy * v[0],
+                             a[1] * d + cx * u[1] + cy * v[1],
+                             a[2] * d + cx * u[2] + cy * v[2])
+                        axis = _normalize(P)
+                        thru = stellation_planes(kind, family, P, d,
+                                                 1e-6)
+                        if len(thru) < 3:
+                            continue
+                        dirs = []
+                        for i in range(len(thru)):
+                            n1 = thru[i]
+                            n2 = thru[(i + 1) % len(thru)]
+                            e = (n1[1] * n2[2] - n1[2] * n2[1],
+                                 n1[2] * n2[0] - n1[0] * n2[2],
+                                 n1[0] * n2[1] - n1[1] * n2[0])
+                            if sqrt(sum(c * c for c in e)) < 1e-9:
+                                continue
+                            e = _normalize(e)
+                            if (e[0] * axis[0] + e[1] * axis[1]
+                                    + e[2] * axis[2]) > 0:
+                                e = (-e[0], -e[1], -e[2])
+                            dirs.append(e)
+                        if len(dirs) < 3:
+                            continue
+                        wv2 = [P] + [(P[0] + WL * e[0], P[1] + WL * e[1],
+                                      P[2] + WL * e[2]) for e in dirs]
+                        mm = len(dirs)
+                        wf2 = [[0, 1 + i, 1 + (i + 1) % mm]
+                               for i in range(mm)]
+                        nm2 = ("SymSculpt Wedge s%d %s"
+                               % (sh, crossing_tag(si)))
+                        wme = bpy.data.meshes.new(nm2)
+                        wme.from_pydata(wv2, [], wf2)
+                        wme.validate()
+                        wme.update()
+                        wme.materials.append(_stellation_material())
+                        w_ob = bpy.data.objects.new(nm2, wme)
+                        wcoll.objects.link(w_ob)
+                        w_ob.matrix_world = Matrix.Identity(4)
+                        w_ob.hide_render = True
+                        w_ob.parent = obj
+                        w_ob.matrix_parent_inverse = Matrix.Identity(4)
+                        if lift_socket is not None:
+                            _drive_z_from_lift(w_ob, obj, mod.name,
+                                               lift_socket)
+                        nw += 1
+                    self.report({'INFO'},
+                                "%d stellation wedge(s) built" % nw)
 
             if self.show_spikes:
                 # A hollow cone at every point where parts really
@@ -4223,7 +4379,7 @@ if _IN_BLENDER:
                       'guide_rings', 'show_crossings',
                       'crossing_min_planes', 'label_crossings',
                       'show_sections', 'show_rings',
-                      'show_spikes', 'mark_stellation',
+                      'show_spikes', 'show_stell_wedges', 'mark_stellation',
                       'stellation_level',
                       'show_polyhedron', 'lift',
                       'translucent', 'show_part',
