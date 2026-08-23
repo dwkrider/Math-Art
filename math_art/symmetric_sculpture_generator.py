@@ -1071,7 +1071,8 @@ def dihedral_angle(a, b):
     return 180.0 - math.degrees(math.acos(max(-1.0, min(1.0, c))))
 
 
-def mitred_part(kind, family, loops, d=1.0, thickness=0.04):
+def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
+                tol=1e-4):
     """One part as a solid slab, its mating edges cut to the dihedral
     so neighbours butt instead of overlapping.
 
@@ -1089,7 +1090,7 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04):
     runs proud, and the cut face lands in the bisector -- exactly
     where the neighbouring part's does."""
     a, _ = plane_normals(kind, family)
-    mates = mating_planes(kind, family, loops, d)
+    mates = mating_planes(kind, family, loops, d, tol)
     half = thickness / 2.0
 
     def offset_loop(loop, per, s, is_hole):
@@ -2978,18 +2979,73 @@ if _IN_BLENDER:
                 # motif is only one sector of it -- Krull is cut as
                 # twelve stars, not sixty arms.  Folding first is a
                 # no-op on a motif that is already whole.
-                wv, wf = fold_motif(
-                    [tuple(v.co) for v in motif.data.vertices],
-                    [list(p.vertices) for p in motif.data.polygons],
-                    fold)
+                raw_v = [tuple(v.co) for v in motif.data.vertices]
+                raw_f = [list(p.vertices) for p in motif.data.polygons]
+                wv, wf = fold_motif(raw_v, raw_f, fold)
                 mloops = boundary_loops(wv, wf)
                 pieces = group_loops(mloops)
+                # Folding is right when the motif is a SECTOR of a
+                # k-fold part -- Krull is cut as twelve stars, not
+                # sixty arms, and its five arms fold into one piece.
+                # It is wrong when the motif is already a whole part
+                # and the plane's k copies are k SEPARATE parts, which
+                # is what P2 does: two coplanar pieces related by the
+                # half turn. There the fold produced a second part and
+                # the machinable output came out as two copies.
+                #
+                # Tell them apart by the result: if the folded copies
+                # stayed disjoint they are separate parts, so keep
+                # only the one the motif itself is in.
+                if len(pieces) > 1:
+                    ref = boundary_loops(raw_v, raw_f)[0][0]
+                    def _has(pc):
+                        return min(
+                            (rx - ref[0]) ** 2 + (ry - ref[1]) ** 2
+                            for rx, ry in pc[0]) < 1e-12
+                    own = [pc for pc in pieces if _has(pc)]
+                    if own:
+                        if len(pieces) > len(own):
+                            self.report(
+                                {'INFO'},
+                                f"the plane holds {len(pieces)} "
+                                f"separate parts; machining the one "
+                                f"the motif is in")
+                        pieces = own
                 pv2 = []
                 pf2 = []
                 angles = set()
+                # A mitre only exists for an edge that lies ON the
+                # line where this plane meets a neighbour. A traced
+                # motif rarely does to 1e-4, so fall back to a slack
+                # and say what it took: no mitre at all is worse than
+                # one cut a fraction of a degree out, but silently
+                # mitring a badly misplaced edge would be worse still.
+                p_tol = 1e-4
+                def _mated(tol):
+                    # mating_planes returns one list PER LOOP, each
+                    # holding an entry per edge. Counting the outer
+                    # lists gives the number of loops and never zero,
+                    # which is how the fallback below sat dead.
+                    return sum(1 for pc in pieces
+                               for per in mating_planes(
+                                   kind, family, [pc[0]] + pc[1], d, tol)
+                               for e in (per or ())
+                               if e is not None)
+                mated = _mated(p_tol)
+                if mated == 0:
+                    p_tol = 0.01 * d
+                    mated = _mated(p_tol)
+                    self.report(
+                        {'WARNING'},
+                        "no edge sat on a neighbouring plane to "
+                        f"1e-4, so the mitre used a slack of "
+                        f"{p_tol:.3g} and caught {mated} edges -- the "
+                        "motif is not yet placed accurately enough "
+                        "for its cuts to be exact")
                 for outer, holes in pieces:
                     lv, lf, dh = mitred_part(
-                        kind, family, [outer] + holes, d, p_thick)
+                        kind, family, [outer] + holes, d, p_thick,
+                        p_tol)
                     base = len(pv2)
                     pv2.extend(lv)
                     pf2.extend([[base + i for i in f] for f in lf])
