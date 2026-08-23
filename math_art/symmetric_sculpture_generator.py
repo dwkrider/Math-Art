@@ -470,6 +470,65 @@ def meeting_planes(kind, family, point, d=1.0):
         w[0] * f1[0] + w[1] * f1[1] + w[2] * f1[2]))
 
 
+def stellation_shells(kind, family, d=1.0, extent=3.0):
+    """Every guide-line crossing, tagged with which stellation it is a
+    corner of.  Returns [(x, y, shell), ...].
+
+    The guide lines cut the plane into cells, and a cell's depth --
+    how many lines separate it from the plane's centre -- is exactly
+    the stellation number.  Depth 0 is the core polygon, the
+    polyhedron's own face; depth 1 the first stellation, and so on.
+    A crossing takes the depth of the shallowest cell around it, so it
+    is a corner of that stellation's face.
+
+    This is the number to fit a motif against when its tips do NOT
+    land on meeting points.  Hart's Dragonflies is "a subset of the
+    complete face of the third stellation of the rhombic
+    dodecahedron", and for OCTA/P2 the shells come out 0 at radius
+    0.7071 and 1.0 (the RD face's own two kinds of vertex), 1 at
+    1.7321, 2 at 2.1213 and 3 at 3.0 -- so "third stellation" reads
+    straight off as a tip radius of 3d.  Bearings cannot supply that:
+    the lines run in the same directions at every radius, so they fix
+    a motif's rotation and leave its scale free.
+    """
+    lines = []
+    # The line set must not depend on how far out the caller is
+    # looking: stellation_lines drops any line that stays outside
+    # `extent`, and a missing line changes every depth behind it, so
+    # a motif's shell number would shift with Guide Extent.  Take the
+    # lines at full reach and only the CROSSINGS at the caller's.
+    for p0, p1 in stellation_lines(kind, family, d, 64.0 * d, 0):
+        A = p1[1] - p0[1]
+        B = p0[0] - p1[0]
+        n = sqrt(A * A + B * B)
+        if n <= 1e-12:
+            continue
+        a, b, c = A / n, B / n, (A * p0[0] + B * p0[1]) / n
+        if c < 0 or (abs(c) < 1e-12
+                     and (a < 0 or (abs(a) < 1e-12 and b < 0))):
+            a, b, c = -a, -b, -c
+        if not any(abs(a - x) < 1e-9 and abs(b - y) < 1e-9
+                   and abs(c - z) < 1e-9 for x, y, z in lines):
+            lines.append((a, b, c))
+    out = []
+    for cx, cy, _k in crossing_points(kind, family, d, extent):
+        r = sqrt(cx * cx + cy * cy)
+        if r < 1e-9:
+            continue
+        # The shallowest cell touching the crossing. Probing all round
+        # rather than straight inwards keeps it right where a corner
+        # is not radially convex.
+        eps = 1e-4 * max(1.0, r)
+        best = None
+        for j in range(16):
+            t = 2.0 * pi * j / 16.0
+            qx, qy = cx + eps * cos(t), cy + eps * sin(t)
+            dep = sum(1 for a, b, c in lines if a * qx + b * qy - c > 1e-9)
+            best = dep if best is None else min(best, dep)
+        out.append((cx, cy, best))
+    return out
+
+
 def crossing_parts(kind, family, crossings, d=1.0):
     """How many parts actually meet at each crossing.
 
@@ -2813,6 +2872,20 @@ if _IN_BLENDER:
                         "neighbours tip to tip, because then the "
                         "corners it sits on are the only scale the "
                         "drawing gives you")
+        facet_stellation: IntProperty(
+            name="Stellation", default=-1, min=-1, max=24,
+            description="Which stellation's corners to label. The "
+                        "guide lines cut the plane into cells, and a "
+                        "cell's depth -- how many lines separate it "
+                        "from the centre -- is the stellation number: "
+                        "0 is the polyhedron's own face, 1 the first "
+                        "stellation, and so on. -1 labels every "
+                        "shell. Set it to the stellation a design is "
+                        "quoted as being drawn on and the corners it "
+                        "may sit on are the only ones shown -- Hart's "
+                        "Dragonflies is a subset of the RD's third "
+                        "stellation, so 3 leaves exactly the six "
+                        "corners at radius 3")
         label_bevels: BoolProperty(
             name="Label the Bevels", default=True,
             description="Write the cut angle beside every edge of the "
@@ -3249,19 +3322,33 @@ if _IN_BLENDER:
                         "SymSculpt Facets")
                     out_coll.children.link(fac_coll)
                     byr = {}
-                    for cx, cy, _k in crossing_points(
+                    for cx, cy, sh in stellation_shells(
                             kind, family, d, self.guide_extent):
-                        byr.setdefault(round(math.hypot(cx, cy), 6),
-                                       []).append((cx, cy))
+                        byr.setdefault(
+                            (sh, round(math.hypot(cx, cy), 6)),
+                            []).append((cx, cy))
+                    shells = sorted({k[0] for k in byr})
+                    want = self.facet_stellation
+                    keys = [k for k in sorted(byr)
+                            if want < 0 or k[0] == want]
+                    if not keys:
+                        self.report(
+                            {'WARNING'},
+                            "no corners on stellation %d; this family "
+                            "has %s (raise Guide Extent to reach the "
+                            "outer ones)"
+                            % (want, ", ".join(str(x) for x in shells)))
                     fmat = _facet_material()
-                    for ri, rad in enumerate(sorted(byr)):
+                    for ri, (sh, rad) in enumerate(keys):
                         if rad < 1e-9:
                             continue
                         ring = crossing_tag(ri).lower()
-                        for ci, (cx, cy) in enumerate(byr[rad]):
-                            nm3 = ("SymSculpt Facet %s%d" % (ring, ci))
+                        for ci, (cx, cy) in enumerate(byr[(sh, rad)]):
+                            nm3 = ("SymSculpt Facet s%d%s%d"
+                                   % (sh, ring, ci))
                             tc = bpy.data.curves.new(nm3, type='FONT')
-                            tc.body = "%s r=%.4f" % (ring, rad / d)
+                            tc.body = ("s%d  %s" % (sh, ring) + chr(10)
+                                       + "r=%.4f" % (rad / d))
                             tc.size = 0.032 * d
                             tc.align_x = 'CENTER'
                             tc.align_y = 'CENTER'
@@ -3896,6 +3983,7 @@ if _IN_BLENDER:
                       'crossing_min_planes', 'label_crossings',
                       'show_sections', 'show_rings',
                       'show_spikes', 'label_facets',
+                      'facet_stellation',
                       'show_polyhedron', 'lift',
                       'translucent', 'show_part',
                       'mitre_part', 'label_bevels'):
@@ -4044,6 +4132,35 @@ def _selftest():
     lps5 = [star_loops[0][0]] + star_loops[0][1]
     mates5 = mating_planes('ICOSA', 'P5', lps5, 1.0)
     nmate5 = sum(1 for per in mates5 for m in per if m is not None)
+    # Cell depth numbers the stellations. The rhombic dodecahedron
+    # has three, which is what Hart's page says, and its own face's
+    # two kinds of vertex both sit at depth 0.  Every shipped preset's
+    # tip lands on a corner ring, Krull's on shell 1 -- the small
+    # stellated dodecahedron it is described as an arm of.
+    _sh = {}
+    for _x, _y, _k in stellation_shells('OCTA', 'P2', 1.0, 6.0):
+        _sh.setdefault(_k, set()).add(round(sqrt(_x * _x + _y * _y), 4))
+    _got = {k: sorted(v) for k, v in sorted(_sh.items())}
+    _want = {0: [0.7071, 1.0], 1: [1.7321], 2: [2.1213], 3: [3.0]}
+    print("RD stellation shells %s %s"
+          % (_got, "OK" if _got == _want else "BAD"))
+    assert _got == _want, _got
+    for _nm, _shell in (('KRULL', 1), ('SOLAR_FLAIR', 5)):
+        _kd, _fm, _bd = PRESETS[_nm]
+        _v, _f = _bd(1.0)
+        _rmax = max(sqrt(p[0] ** 2 + p[1] ** 2)
+                    for p in boundary_loops(_v, _f)[0])
+        _near = min(stellation_shells(_kd, _fm, 1.0, _rmax * 1.3),
+                    key=lambda t: abs(sqrt(t[0] ** 2 + t[1] ** 2) - _rmax))
+        _off = abs(sqrt(_near[0] ** 2 + _near[1] ** 2) - _rmax)
+        print("%s tip r=%.4f on shell %d, off %.2e %s"
+              % (_nm.lower(), _rmax, _near[2], _off,
+                 "OK" if _off < 1e-6 and _near[2] == _shell else "BAD"))
+        # 1e-6, not 1e-9: Solar Flair's outline came back from a
+        # hand-cleaned DXF and CAD rounds, so its tip sits 1.1e-08
+        # off the ring it is unmistakably on.
+        assert _off < 1e-6 and _near[2] == _shell, (_nm, _off, _near[2])
+
     dihs = sorted({round(dihedral_angle(a5, b5), 4)
                    for a5, b5 in ((plane_normals('ICOSA', 'P5')[0], m)
                                   for per in mates5 for m in per
