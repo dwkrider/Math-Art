@@ -1090,7 +1090,7 @@ def dihedral_angle(a, b):
 
 
 def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
-                tol=1e-4):
+                tol=1e-4, mitre=True):
     """One part as a solid slab, its mating edges cut to the dihedral
     so neighbours butt instead of overlapping.
 
@@ -1118,7 +1118,12 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
     runs proud, and the cut face lands in the bisector -- exactly
     where the neighbouring part's does."""
     a, _ = plane_normals(kind, family)
-    mates = mating_planes(kind, family, loops, d, tol)
+    if mitre:
+        mates = mating_planes(kind, family, loops, d, tol)
+    else:
+        # Square walls: the same slab with every edge left alone, for
+        # holding up against the mitred one to see what the cut did.
+        mates = [[None] * len(l) for l in loops]
     half = thickness / 2.0
 
     def offset_loop(loop, per, s, is_hole):
@@ -2516,6 +2521,13 @@ if _IN_BLENDER:
                         "clears by the same relative margin whatever "
                         "the size; tune it afterwards with the "
                         "modifier's Lift input")
+        mitre_part: BoolProperty(
+            name="Mitre the Part", default=True,
+            description="Cut each mating edge back to half the "
+                        "dihedral so neighbours butt. Turn it off to "
+                        "get the same part with square walls, which "
+                        "is the thing to hold the mitred one up "
+                        "against when a cut looks wrong")
         show_part: BoolProperty(
             name="Build Machinable Part", default=False,
             description="Add one part as a solid of the given "
@@ -3084,7 +3096,7 @@ if _IN_BLENDER:
                 for outer, holes in pieces:
                     lv, lf, dh = mitred_part(
                         kind, family, [outer] + holes, d, p_thick,
-                        p_tol)
+                        p_tol, self.mitre_part)
                     base = len(pv2)
                     pv2.extend(lv)
                     pf2.extend([[base + i for i in f] for f in lf])
@@ -3430,7 +3442,8 @@ if _IN_BLENDER:
                       'crossing_min_planes', 'label_crossings',
                       'show_sections', 'show_rings',
                       'show_spikes', 'show_polyhedron', 'lift',
-                      'translucent', 'show_part'):
+                      'translucent', 'show_part',
+                      'mitre_part'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
