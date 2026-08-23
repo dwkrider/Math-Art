@@ -352,6 +352,73 @@ def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
     return out
 
 
+def cross_sections(kind, family, loops, d=1.0):
+    """Where the copies of the motif in the OTHER planes cut this one.
+
+    Returns [(x0, y0, x1, y1)] in this plane's own 2-D coordinates.
+
+    A copy sits in plane g(P0) for some rotation g, and one of its
+    points is g(X) for X in the motif. That copy touches our plane
+    where a . g(X) = d, i.e. where (g^-1 a) . X = d -- a straight line
+    in the motif's OWN coordinates, independent of what shape the
+    motif is. Clipping that line against the motif's outline gives the
+    stretches of real material, and pushing those through g puts them
+    where they actually land on our plane.
+
+    This is the collision map. Two parts in different planes fight
+    over exactly these segments, so a motif that avoids them assembles
+    and one that crosses them does not.
+    """
+    a, _n = plane_normals(kind, family)
+    u, v = _frame(a)
+    segs = []
+    for R in group_rotations(kind):
+        # g^-1 applied to a: rotations are orthogonal, so that is R^T a
+        b = (R[0][0] * a[0] + R[1][0] * a[1] + R[2][0] * a[2],
+             R[0][1] * a[0] + R[1][1] * a[1] + R[2][1] * a[2],
+             R[0][2] * a[0] + R[1][2] * a[1] + R[2][2] * a[2])
+        if all(abs(b[c] - a[c]) < 1e-9 for c in range(3)):
+            continue                      # same plane, not a crossing
+        A = sum(u[c] * b[c] for c in range(3))
+        B = sum(v[c] * b[c] for c in range(3))
+        if sqrt(A * A + B * B) < 1e-9:
+            continue                      # parallel: no line at all
+        C = d - d * sum(a[c] * b[c] for c in range(3))
+        # a point on the line, and its direction
+        nn = A * A + B * B
+        px, py = A * C / nn, B * C / nn
+        dx, dy = -B / sqrt(nn), A / sqrt(nn)
+        ts = []
+        for loop in loops:
+            k = len(loop)
+            for i in range(k):
+                x0, y0 = loop[i]
+                x1, y1 = loop[(i + 1) % k]
+                f0 = A * x0 + B * y0 - C
+                f1 = A * x1 + B * y1 - C
+                if (f0 > 0) == (f1 > 0):
+                    continue              # edge does not cross
+                w = f0 / (f0 - f1)
+                ix, iy = x0 + w * (x1 - x0), y0 + w * (y1 - y0)
+                ts.append((ix - px) * dx + (iy - py) * dy)
+        ts.sort()
+        # even-odd: inside between alternate crossings
+        for i in range(0, len(ts) - 1, 2):
+            t0, t1 = ts[i], ts[i + 1]
+            if t1 - t0 < 1e-6:
+                continue
+            out = []
+            for t in (t0, t1):
+                X = (d * a[0] + (px + t * dx) * u[0] + (py + t * dy) * v[0],
+                     d * a[1] + (px + t * dx) * u[1] + (py + t * dy) * v[1],
+                     d * a[2] + (px + t * dx) * u[2] + (py + t * dy) * v[2])
+                Y = _apply(R, X)
+                out.append((sum(Y[c] * u[c] for c in range(3)),
+                            sum(Y[c] * v[c] for c in range(3))))
+            segs.append((out[0][0], out[0][1], out[1][0], out[1][1]))
+    return segs
+
+
 def meeting_planes(kind, family, point, d=1.0):
     """The planes whose parts actually converge at `point`, in cyclic
     order about it.
@@ -1581,54 +1648,59 @@ def whimsy_motif(d=1.0):
 # research/projects/symm_sculpt/.
 
 _SOLAR_FLAIR_OUTER = (
-    (-0.483936, -0.362622), (-0.326441, -0.381154), (-0.239846, -0.302816),
-    (-0.207921, -0.271786), (-0.162688, -0.223841), (-0.126262, -0.179013),
-    (-0.097306, -0.135455), (-0.082959, -0.109160), (-0.070530, -0.082258),
-    (-0.051069, -0.028245), (-0.039779, +0.019510), (-0.034589, +0.056330),
-    (-0.032770, +0.081814), (-0.032689, +0.106585), (-0.034336, +0.130617),
-    (-0.037701, +0.153887), (-0.042776, +0.176372), (-0.049552, +0.198042),
-    (-0.058018, +0.218877), (-0.068165, +0.238852), (-0.079985, +0.257938),
-    (-0.093465, +0.276114), (-0.108599, +0.293359), (-0.125376, +0.309640),
-    (-0.143788, +0.324939), (-0.178950, +0.349182), (-0.218319, +0.369851),
-    (-0.259795, +0.386761), (-0.338283, +0.412900), (-0.402051, +0.430596),
-    (-0.477070, +0.445045), (-0.592390, +0.459766), (-0.786775, +0.413240),
-    (-0.825210, +0.402359), (-0.828164, +0.399931), (-0.826930, +0.395981),
-    (-0.616521, +0.280053), (-0.496958, +0.298526), (-0.439254, +0.304194),
-    (-0.413360, +0.304837), (-0.382312, +0.303650), (-0.351396, +0.300311),
-    (-0.317458, +0.294808), (-0.288098, +0.288269), (-0.262266, +0.280266),
-    (-0.244572, +0.273045), (-0.222373, +0.261445), (-0.200805, +0.247197),
-    (-0.175304, +0.226805), (-0.158810, +0.209540), (-0.147167, +0.192498),
-    (-0.145901, +0.188419), (-0.214014, +0.152916), (-0.197353, +0.115101),
-    (-0.126992, +0.142113), (-0.121414, +0.088524), (-0.123533, +0.066628),
-    (-0.127576, +0.047869), (-0.135165, +0.023961), (-0.145137, +0.000763),
-    (-0.154513, -0.016409), (-0.169438, -0.037274), (-0.192590, -0.060154),
-    (-0.223144, -0.083297), (-0.260593, -0.106420), (-0.304428, -0.129242),
-    (-0.354141, -0.151481), (-0.409220, -0.172858), (-0.472244, -0.194488),
-    (-0.492478, -0.358949),
+    (+1.003482, -0.987307), (+0.998714, -0.762870), (+0.871973, -0.656752),
+    (+0.808637, -0.607882), (+0.739159, -0.559388), (+0.674663, -0.520829),
+    (+0.643576, -0.504900), (+0.602695, -0.486795), (+0.572094, -0.475374),
+    (+0.530835, -0.462736), (+0.488437, -0.452730), (+0.450436, -0.445730),
+    (+0.416466, -0.441375), (+0.381885, -0.439207), (+0.332556, -0.438960),
+    (+0.304486, -0.440424), (+0.277206, -0.443259), (+0.237801, -0.450063),
+    (+0.212562, -0.456289), (+0.176289, -0.468140), (+0.141964, -0.482983),
+    (+0.109636, -0.500788), (+0.079358, -0.521529), (+0.060335, -0.536973),
+    (+0.033584, -0.562543), (+0.016960, -0.581181), (-0.006123, -0.611504),
+    (-0.020255, -0.633283), (-0.036714, -0.662461), (-0.051209, -0.692176),
+    (-0.063838, -0.723158), (-0.072894, -0.749828), (-0.091108, -0.820014),
+    (-0.111446, -0.929289), (-0.124461, -1.025440), (-0.128459, -1.077265),
+    (-0.130213, -1.131183), (-0.128386, -1.299934), (-0.025416, -1.562853),
+    (-0.003446, -1.613558), (+0.001394, -1.618790), (+0.006837, -1.616326),
+    (+0.128294, -1.298681), (+0.077842, -1.130333), (+0.067553, -1.090624),
+    (+0.059633, -1.053794), (+0.053019, -1.012110), (+0.049280, -0.971675),
+    (+0.048126, -0.930913), (+0.049138, -0.883875), (+0.052318, -0.842673),
+    (+0.058021, -0.805905), (+0.066604, -0.772172), (+0.078423, -0.740074),
+    (+0.093833, -0.708210), (+0.117398, -0.668800), (+0.138539, -0.642355),
+    (+0.149907, -0.631002), (+0.159638, -0.623377), (+0.164885, -0.620947),
+    (+0.227961, -0.709515), (+0.277726, -0.678771), (+0.226115, -0.585395),
+    (+0.300161, -0.567112), (+0.333916, -0.565889), (+0.365516, -0.568736),
+    (+0.397971, -0.574839), (+0.429756, -0.583874), (+0.454634, -0.593411),
+    (+0.472847, -0.602220), (+0.490759, -0.613051), (+0.504744, -0.623149),
+    (+0.526285, -0.641253), (+0.563450, -0.678998), (+0.601812, -0.725695),
+    (+0.640928, -0.780754), (+0.680355, -0.843585), (+0.719649, -0.913597),
+    (+0.765462, -1.003741), (+1.000000, -1.000000),
 )
 
 _SOLAR_FLAIR_HOLE_A = (
-    (-0.410983, -0.274091), (-0.407262, -0.253387), (-0.312159, -0.206867),
-    (-0.285878, -0.193631), (-0.262766, -0.181574), (-0.242138, -0.170314),
-    (-0.223312, -0.159484), (-0.205603, -0.148707), (-0.188331, -0.137605),
-    (-0.175420, -0.130040), (-0.231859, -0.197155), (-0.247904, -0.214073),
-    (-0.260428, -0.226489), (-0.269820, -0.235316), (-0.279346, -0.243844),
-    (-0.289125, -0.252180), (-0.299273, -0.260429), (-0.313589, -0.271481),
-    (-0.328410, -0.282408), (-0.342260, -0.292399), (-0.351330, -0.298425),
-    (-0.353992, -0.299929), (-0.357283, -0.301390), (-0.360045, -0.302074),
-    (-0.362642, -0.302178), (-0.414559, -0.295310),
+    (+0.865113, -0.902304), (+0.835357, -0.901131), (+0.751028, -0.776087),
+    (+0.728197, -0.743068), (+0.707483, -0.713976), (+0.688296, -0.688019),
+    (+0.670045, -0.664402), (+0.652140, -0.642335), (+0.641316, -0.629508),
+    (+0.630276, -0.616781), (+0.617150, -0.600155), (+0.722269, -0.666184),
+    (+0.735022, -0.675144), (+0.747211, -0.683970), (+0.758915, -0.692728),
+    (+0.770212, -0.701486), (+0.784780, -0.713278), (+0.798953, -0.725347),
+    (+0.812920, -0.737852), (+0.826867, -0.750951), (+0.844559, -0.768402),
+    (+0.864911, -0.789315), (+0.879183, -0.804338), (+0.886922, -0.813107),
+    (+0.890079, -0.817174), (+0.892882, -0.821645), (+0.893786, -0.823615),
+    (+0.894421, -0.825493), (+0.895068, -0.829223), (+0.895559, -0.903177),
 )
 
 _SOLAR_FLAIR_HOLE_B = (
-    (-0.674558, +0.381233), (-0.627862, +0.392401), (-0.613379, +0.395208),
-    (-0.605571, +0.396004), (-0.600124, +0.396192), (-0.590864, +0.395999),
-    (-0.579423, +0.395271), (-0.540013, +0.391870), (-0.510972, +0.388820),
-    (-0.483304, +0.385117), (-0.461660, +0.381601), (-0.429113, +0.375259),
-    (-0.395325, +0.367445), (-0.365129, +0.357729), (-0.398578, +0.360821),
-    (-0.419303, +0.362064), (-0.448306, +0.362589), (-0.478333, +0.361852),
-    (-0.508782, +0.359891), (-0.539062, +0.356740), (-0.568577, +0.352435),
-    (-0.598949, +0.346632), (-0.605871, +0.346182), (-0.611646, +0.347324),
-    (-0.619123, +0.350221), (-0.649282, +0.365156),
+    (-0.002235, -1.399807), (-0.026364, -1.338213), (-0.031102, -1.325239),
+    (-0.033804, -1.316656), (-0.036498, -1.305546), (-0.037991, -1.296648),
+    (-0.039162, -1.286566), (-0.040428, -1.270195), (-0.043327, -1.215193),
+    (-0.044707, -1.176772), (-0.045076, -1.140003), (-0.044411, -1.104038),
+    (-0.043383, -1.080089), (-0.041880, -1.055870), (-0.037422, -1.005612),
+    (-0.029695, -0.961378), (-0.027177, -1.014082), (-0.024560, -1.044475),
+    (-0.019534, -1.083996), (-0.012698, -1.124526), (-0.004200, -1.165322),
+    (+0.005809, -1.205641), (+0.017183, -1.244742), (+0.031767, -1.287864),
+    (+0.032919, -1.292360), (+0.033502, -1.296715), (+0.033066, -1.304714),
+    (+0.030658, -1.315197), (+0.026034, -1.329958), (+0.015371, -1.361231),
 )
 
 
@@ -1649,7 +1721,7 @@ PRESETS = {
     'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
     'KRULL': ('ICOSA', 'P5', krull_motif),
     'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
-    'SOLAR_FLAIR': ('ICOSA', 'P1', solar_flair_motif),
+    'SOLAR_FLAIR': ('ICOSA', 'P2', solar_flair_motif),
 }
 
 
@@ -1990,6 +2062,21 @@ if _IN_BLENDER:
             bsdf.inputs["Roughness"].default_value = 0.4
             if "Alpha" in bsdf.inputs:
                 bsdf.inputs["Alpha"].default_value = 0.22
+        return mat
+
+    def _collision_material():
+        name = "SymSculpt Collision"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        rgb = (0.90, 0.10, 0.12)
+        mat.diffuse_color = (*rgb, 1.0)
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+            bsdf.inputs["Roughness"].default_value = 0.35
         return mat
 
     def _crossing_material():
@@ -2437,6 +2524,18 @@ if _IN_BLENDER:
                         "meeting point nearest the centre and the "
                         "naming does not shift when the guide disc "
                         "is resized")
+        show_sections: BoolProperty(
+            name="Mark Collisions", default=False,
+            description="In red, where the parts in the OTHER planes "
+                        "cut through this one. Each copy meets this "
+                        "plane along a line, and these are the "
+                        "stretches of that line where the copy has "
+                        "material -- so they are exactly the places "
+                        "the motif must not go. Shape and place the "
+                        "motif to miss them and the sculpture "
+                        "assembles; cross one and two parts want the "
+                        "same space. Recomputed from whatever the "
+                        "motif currently is, so it follows an edit")
         show_rings: BoolProperty(
             name="Mark Radii", default=False,
             description="Draw a circle in the guide plane, centred on "
@@ -2946,6 +3045,45 @@ if _IN_BLENDER:
                             "them bed against the neighbour"
                             % (len(near), worst, 100.0 * worst / d))
 
+            if self.show_sections:
+                # Read the outline off the motif as it stands, so an
+                # edit in the viewport moves the red with it rather
+                # than leaving a stale map of where the parts used to
+                # clash.
+                mloops = boundary_loops(
+                    [tuple(vv.co) for vv in motif.data.vertices],
+                    [list(pp.vertices) for pp in motif.data.polygons])
+                xs = cross_sections(kind, family, mloops, d)
+                sverts, sfaces = [], []
+                wide = 0.006 * d
+                for x0, y0, x1, y1 in xs:
+                    ex, ey = x1 - x0, y1 - y0
+                    ln = sqrt(ex * ex + ey * ey)
+                    if ln < 1e-9:
+                        continue
+                    nx, ny = -ey / ln * wide, ex / ln * wide
+                    base = len(sverts)
+                    sverts.extend([(x0 + nx, y0 + ny, 0.0),
+                                   (x1 + nx, y1 + ny, 0.0),
+                                   (x1 - nx, y1 - ny, 0.0),
+                                   (x0 - nx, y0 - ny, 0.0)])
+                    sfaces.append([base, base + 1, base + 2, base + 3])
+                if sfaces:
+                    sme = bpy.data.meshes.new("SymSculpt Collisions")
+                    sme.from_pydata(sverts, [], sfaces)
+                    sme.validate()
+                    sme.update()
+                    sme.materials.append(_collision_material())
+                    sob = bpy.data.objects.new("SymSculpt Collisions",
+                                               sme)
+                    context.collection.objects.link(sob)
+                    sob.matrix_world = Matrix.Identity(4)
+                    sob.show_in_front = True
+                    sob.hide_render = True
+                self.report({'INFO'},
+                            f"{len(xs)} collision segments from the "
+                            f"other planes")
+
             if self.show_rings:
                 # One ring per distinct (radius, order). Two markers
                 # at the same radius but different order each get
@@ -3179,7 +3317,7 @@ if _IN_BLENDER:
             for k in ('distance', 'shell', 'guide_extent',
                       'guide_rings', 'show_crossings',
                       'crossing_min_planes', 'label_crossings',
-                      'show_rings',
+                      'show_sections', 'show_rings',
                       'show_spikes', 'show_polyhedron', 'lift',
                       'translucent', 'show_part'):
                 lay.prop(self, k)
