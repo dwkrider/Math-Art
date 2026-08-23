@@ -2361,6 +2361,17 @@ if _IN_BLENDER:
                         "enough either: five planes through a point "
                         "only bring five parts together if the point "
                         "is on the 5-fold axis, and most are not")
+        mirror: BoolProperty(
+            name="Mirror Motif", default=False,
+            description="Reflect the motif before replicating it, "
+                        "giving the opposite-handed sculpture. These "
+                        "are rotation groups with no mirror in them, "
+                        "so the reflection is a genuinely different "
+                        "object rather than the same one seen from "
+                        "behind -- Hart built Solar Flair both ways "
+                        "round, and the two Topeka installations are "
+                        "the pair. Left on the preset, since either "
+                        "hand is still that sculpture")
         show_leaders: BoolProperty(
             name="Link Cones to Markers", default=False,
             description="Draw a line from each marker on the flat "
@@ -2463,6 +2474,14 @@ if _IN_BLENDER:
                                 f"instead")
             if motif is None:
                 verts, faces = motif_builder(d)
+                if self.mirror:
+                    # Reflect in the plane's own y axis, and reverse
+                    # the winding so the faces still point the way
+                    # they did -- a reflection flips handedness, and
+                    # leaving the winding alone would turn every
+                    # normal inside out.
+                    verts = [(x, -y, z) for x, y, z in verts]
+                    faces = [list(reversed(f)) for f in faces]
                 me = bpy.data.meshes.new("SymSculpt Motif")
                 me.from_pydata(verts, [], faces)
                 me.validate()
@@ -2961,6 +2980,7 @@ if _IN_BLENDER:
             # what gets replicated, straight after which planes it is
             # replicated into
             lay.prop_search(self, 'motif_object', bpy.data, 'objects')
+            lay.prop(self, 'mirror')
             for k in ('distance', 'shell', 'guide_extent',
                       'guide_rings', 'show_crossings',
                       'crossing_min_planes', 'show_polyhedron',
