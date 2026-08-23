@@ -119,8 +119,10 @@ import math
 
 try:
     from .surfaces.encyclopedia import build_zoll
+    from .sharp_creases import mark_sharp
 except ImportError:                       # flat import outside the package
     from surfaces.encyclopedia import build_zoll
+    from sharp_creases import mark_sharp
 
 try:
     import bpy
@@ -609,7 +611,10 @@ if _IN_BLENDER:
             description="Rings across the surface (twice as "
                         "many segments around)")
         smooth: BoolProperty(name="Smooth Shading", default=True,
-                             description="Shade the surface smooth")
+                             description="Shade the surface smooth. "
+                                         "Ignored for Schwarz's lantern, "
+                                         "whose faces are flat and whose "
+                                         "every edge is a fold")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
@@ -677,8 +682,24 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            # The lantern is a POLYHEDRON, not a sampled smooth surface:
+            # every face is planar and every edge is a genuine fold, so
+            # there is nothing for smooth shading to interpolate and
+            # letting it run averages away the spikes that are the whole
+            # point.  Flat-shade it whatever the toggle says, and mark
+            # every edge sharp and creased so a later subdivide or bevel
+            # keeps the faceting too.  The creases are known here at
+            # build time, so they are marked exactly rather than found
+            # by an angle test that shallow folds would slip past.
+            lantern = self.surface == 'SCHWARZ_LANTERN'
             me.polygons.foreach_set(
-                'use_smooth', [self.smooth] * len(me.polygons))
+                'use_smooth',
+                [False if lantern else self.smooth] * len(me.polygons))
+            if lantern:
+                edges = {(min(f[i], f[(i + 1) % len(f)]),
+                          max(f[i], f[(i + 1) % len(f)]))
+                         for f in faces for i in range(len(f))}
+                mark_sharp(me, edges)
             me.update()
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
