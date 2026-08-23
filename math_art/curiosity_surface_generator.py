@@ -66,6 +66,20 @@
 #        makes it famous, finite volume pi(1 - 1/L) with a lateral area
 #        that diverges like 2 pi ln L.
 #
+# 7. Schwarz's lantern -- the companion pathology to Gabriel's horn, and
+#    the one that cost the subject a definition.  A polyhedron every one
+#    of whose vertices lies ON a cylinder, built of 4.m.n triangles by
+#    spiking each cell of an m x n grid out to the cell centre.  Inscribed
+#    polygons always converge to a curve's length, and the same was
+#    assumed of surfaces; Schwarz's lantern shows it is false.  Refine the
+#    height much faster than the circumference and the spikes stay as
+#    sharp as they were while multiplying without limit, so the area
+#    diverges although the surface tends to the cylinder pointwise.  The
+#    area of a cylinder is therefore NOT the supremum of the areas of the
+#    polyhedra inscribed in it -- and any real number above 2.pi.r.h is
+#    the limit of some sequence of lanterns.  Both limits are measured in
+#    `_selftest`.
+#
 # References for 5: J. Tannery, Bulletin des sciences mathematiques,
 #    2e serie, 16 (1892) 190.  O. Zoll, "Ueber Flaechen mit Scharen
 #    geschlossener geodaetischer Linien", Mathematische Annalen 57
@@ -74,6 +88,13 @@
 #    "Encyclopedie des formes mathematiques remarquables",
 #    mathcurve.com, chapter "poire de Tannery"; a converted copy is in
 #    research/books/mathcurve_encyclopedie_formes_mathematiques/.
+#
+# References for 7: H. A. Schwarz, "Sur une definition erronee de l'aire
+#    d'une surface courbe", in "Gesammelte Mathematische Abhandlungen",
+#    vol. 2, Springer 1890, 309-311 (the counterexample and the name).
+#    Construction with a centre vertex per cell after R. Ferreol,
+#    "Encyclopedie des formes mathematiques remarquables", mathcurve.com,
+#    chapter "lampion de Schwarz".
 #
 # References for 4: C. Dupin, "Applications de Geometrie et de
 #    Mechanique", Paris 1822.  B. Odehnal, "Ortho-Circles of Dupin
@@ -279,6 +300,77 @@ def build_gabriels_horn(length=6.0, segments=96, rings=120):
                           (j + 1) * segments + i))
     return verts, faces
 
+def build_schwarz_lantern(sectors=12, rings=12, radius=1.0, height=2.0,
+                          lids=False):
+    """Schwarz's lantern: a polyhedron INSCRIBED in a cylinder whose area
+    can be made to exceed the cylinder's by as much as one likes.
+
+    Unroll the cylinder to a rectangle, cut it into `rings` bands by
+    `sectors` columns, and put a vertex at each cell corner AND at each
+    cell centre -- all of them on the cylinder.  The four corners of a cell
+    lie on a chord plane that cuts INSIDE the cylinder, while the centre
+    stays on the surface, so each cell becomes a shallow outward spike of
+    four triangles: 4 * sectors * rings faces in all.
+
+    Why it matters.  Refining a curve's inscribed polygon always converges
+    to the arc length, and it is tempting to assume the same of surfaces.
+    It is false.  The radial overshoot of a spike is
+    r(1 - cos(pi/sectors)) ~ r.pi^2 / (2.sectors^2), which shrinks with the
+    ANGULAR refinement only, while the number of spikes grows with BOTH.
+    Refine the height much faster than the circumference and the spikes
+    stay as sharp as ever while multiplying without bound, so the total
+    area diverges even though every vertex lies on the cylinder and the
+    surface converges to it pointwise.  Taking rings ~ sectors^3 is enough:
+    area(k, k) -> 2.pi.r.h, but area(k, k^3) -> infinity.  `_selftest`
+    measures both limits, since a lantern with the wrong stagger would
+    still look like a lantern.
+    """
+    sectors = max(3, int(sectors))
+    rings = max(1, int(rings))
+    dth = 2.0 * math.pi / sectors
+    dz = float(height) / rings
+
+    def on_cyl(j, i):                       # angular index j, height index i
+        th = j * dth
+        return (radius * math.cos(th), radius * math.sin(th),
+                -height / 2.0 + i * dz)
+    verts = []
+    for i in range(rings + 1):              # (rings+1) x sectors corners
+        for j in range(sectors):
+            verts.append(on_cyl(j, i))
+
+    def corner(i, j):
+        return i * sectors + (j % sectors)
+    faces = []
+    for i in range(rings):
+        for j in range(sectors):
+            c = len(verts)
+            verts.append(on_cyl(j + 0.5, i + 0.5))     # cell centre, on cyl
+            a, b = corner(i, j), corner(i, j + 1)
+            d, e = corner(i + 1, j + 1), corner(i + 1, j)
+            faces += [[a, b, c], [b, d, c], [d, e, c], [e, a, c]]
+    if lids:                                # close it into a polyhedron
+        faces.append([corner(0, j) for j in range(sectors - 1, -1, -1)])
+        faces.append([corner(rings, j) for j in range(sectors)])
+    return verts, faces
+
+
+def lantern_area(sectors, rings, radius=1.0, height=2.0):
+    """Total area of the lantern's triangles (lids excluded)."""
+    V, F = build_schwarz_lantern(sectors, rings, radius, height)
+    tot = 0.0
+    for f in F:
+        if len(f) != 3:
+            continue
+        a, b, c = (V[i] for i in f)
+        u = [b[i] - a[i] for i in range(3)]
+        w = [c[i] - a[i] for i in range(3)]
+        n = (u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2],
+             u[0] * w[1] - u[1] * w[0])
+        tot += 0.5 * math.sqrt(sum(x * x for x in n))
+    return tot
+
+
 def build_cyclide(kind='RING', ring=1.0, tube=0.45, centre=1.9,
                   power=1.6, segments=96, rings=48):
     """A Dupin cyclide, as the inversion of a torus of revolution.
@@ -424,6 +516,9 @@ if _IN_BLENDER:
                    ('ASTROIDAL', "Astroidal Ellipsoid",
                     "(x/a)^(2/3) + (y/b)^(2/3) + (z/c)^(2/3) = 1, "
                     "with astroid sections and six cusps"),
+                   ('SCHWARZ_LANTERN', "Schwarz's Lantern",
+                    "A polyhedron inscribed in a cylinder whose area can "
+                    "exceed the cylinder's without bound"),
                    ('GABRIEL', "Gabriel's Horn",
                     "y = 1/x revolved: finite volume, infinite "
                     "lateral area"),
@@ -476,6 +571,20 @@ if _IN_BLENDER:
             description="Upper limit L of x in y = 1/x; the enclosed "
                         "volume tends to pi as L grows while the "
                         "lateral area diverges (Gabriel's horn only)")
+        lantern_sectors: IntProperty(
+            name="Sectors", default=12, min=3, max=256,
+            description="Columns around the cylinder; the spikes get "
+                        "blunter as this rises (Schwarz's lantern only)")
+        lantern_rings: IntProperty(
+            name="Bands", default=12, min=1, max=4096,
+            description="Bands up the cylinder.  Raising this alone "
+                        "multiplies the spikes without blunting them, so "
+                        "the area grows without bound -- try bands near "
+                        "the cube of the sectors (Schwarz's lantern only)")
+        lantern_lids: BoolProperty(
+            name="Cap the Ends", default=False,
+            description="Add the top and bottom polygons, which close the "
+                        "lantern into a polyhedron (Schwarz's lantern only)")
         cyclide_ring: FloatProperty(
             name="Ring Radius", default=1.0, min=0.05, max=10.0,
             description="Radius R of the torus centre circle "
@@ -534,6 +643,11 @@ if _IN_BLENDER:
                 verts, faces = build_gabriels_horn(
                     self.horn_length, 2 * res, 3 * res)
                 name = "Gabriel's Horn"
+            elif self.surface == 'SCHWARZ_LANTERN':
+                verts, faces = build_schwarz_lantern(
+                    self.lantern_sectors, self.lantern_rings,
+                    1.0, 2.0, self.lantern_lids)
+                name = "Schwarz's Lantern"
             elif self.surface.startswith('CYCLIDE_'):
                 kind = self.surface.split('_', 1)[1]
                 verts, faces = build_cyclide(
@@ -577,9 +691,19 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            self.report({'INFO'},
-                        f"{name}: V={len(me.vertices)} "
-                        f"F={len(me.polygons)}")
+            if self.surface == 'SCHWARZ_LANTERN':
+                # the number worth seeing: how far the inscribed area has
+                # run away from the cylinder it is inscribed in
+                a = lantern_area(self.lantern_sectors, self.lantern_rings)
+                cyl = 2.0 * math.pi * 1.0 * 2.0
+                self.report({'INFO'},
+                            f"{name}: V={len(me.vertices)} "
+                            f"F={len(me.polygons)}, area {a / cyl:.2f}x the "
+                            f"cylinder it is inscribed in")
+            else:
+                self.report({'INFO'},
+                            f"{name}: V={len(me.vertices)} "
+                            f"F={len(me.polygons)}")
             return {'FINISHED'}
 
         def draw(self, context):
@@ -592,8 +716,16 @@ if _IN_BLENDER:
             elif self.surface == 'PAPERBAG':
                 for k in ('bag_a', 'bag_b'):
                     lay.prop(self, k)
-            for k in ('resolution', 'smooth', 'thickness',
-                      'scale'):
+            elif self.surface == 'GABRIEL':
+                lay.prop(self, 'horn_length')
+            elif self.surface == 'SCHWARZ_LANTERN':
+                for k in ('lantern_sectors', 'lantern_rings',
+                          'lantern_lids'):
+                    lay.prop(self, k)
+            keys = ('smooth', 'thickness', 'scale') \
+                if self.surface == 'SCHWARZ_LANTERN' \
+                else ('resolution', 'smooth', 'thickness', 'scale')
+            for k in keys:                  # the lantern has its own counts
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -818,5 +950,33 @@ def _selftest():
         print("gabriel's horn L=%-5.0f profile r*x=1 to %.0e, volume "
               "%.4f (exact %.4f), lateral area %.2f (> 2 pi ln L = "
               "%.2f)" % (L, worst, vol, want_v, area, want_a))
+
+    # Schwarz's lantern.  Every vertex lies exactly on the cylinder, and
+    # the face count is 4 * sectors * rings.  The two limits are the whole
+    # point of the object, so both are measured: refined evenly the area
+    # converges to the cylinder's, but refined with rings ~ sectors^3 it
+    # runs away -- and must do so monotonically in k.
+    cyl = 2.0 * math.pi * 1.0 * 2.0
+    for s, r in ((6, 4), (12, 12), (9, 40)):
+        verts, faces = build_schwarz_lantern(s, r, 1.0, 2.0)
+        assert len(faces) == 4 * s * r, (len(faces), s, r)
+        assert _finite(verts) and _valid(verts, faces)
+        for (x, y, z) in verts:            # inscribed: all vertices on it
+            assert abs(math.hypot(x, y) - 1.0) < 1e-12, (x, y, z)
+            assert -1.0 - 1e-12 <= z <= 1.0 + 1e-12, z
+        vl, fl = build_schwarz_lantern(s, r, 1.0, 2.0, lids=True)
+        assert _watertight(fl), "capped lantern is not closed"
+    evenly = [lantern_area(k, k) for k in (8, 16, 32, 64, 128)]
+    assert all(evenly[i] > evenly[i + 1] for i in range(len(evenly) - 1)), \
+        evenly                              # settling down onto the cylinder
+    assert abs(evenly[-1] - cyl) / cyl < 2e-3, (evenly[-1], cyl)
+    runaway = [lantern_area(k, k ** 3) for k in (3, 5, 8, 12)]
+    assert all(runaway[i] < runaway[i + 1] for i in range(len(runaway) - 1)), \
+        runaway                             # and here it never settles
+    assert runaway[-1] > 4.0 * cyl, runaway[-1]
+    print("schwarz lantern: all vertices on the cylinder; area(k,k) -> "
+          "%.4f vs cylinder %.4f, while area(k,k^3) climbs %.0f -> %.0f "
+          "(%.1fx the cylinder) with no sign of stopping"
+          % (evenly[-1], cyl, runaway[0], runaway[-1], runaway[-1] / cyl))
 
     print("miscellaneous surfaces standalone tests passed")
