@@ -2782,13 +2782,16 @@ if _IN_BLENDER:
                         "against when a cut looks wrong")
         label_bevels: BoolProperty(
             name="Label the Bevels", default=True,
-            description="Write the cut angle beside every mitred edge "
-                        "of the machinable part: the angle the cut "
-                        "face makes with the part's own face, which "
-                        "is what a saw or a jig is set to, and the "
-                        "dihedral it comes from. Lettered so a cut "
-                        "can be named when checking one against the "
-                        "drawing")
+            description="Write the cut angle beside every edge of the "
+                        "machinable part that beds against a "
+                        "neighbour: the angle the cut face makes with "
+                        "the part's own face, which is what a saw or "
+                        "a jig is set to, and the dihedral it comes "
+                        "from. Lettered so a cut can be named when "
+                        "checking one against the drawing. Shown "
+                        "whether or not Mitre the Part is on, since "
+                        "the angle a square wall should have been cut "
+                        "to is the point of comparing the two")
         show_part: BoolProperty(
             name="Build Machinable Part", default=False,
             description="Add one part as a solid of the given "
@@ -3376,7 +3379,12 @@ if _IN_BLENDER:
                     pv2.extend(lv)
                     pf2.extend([[base + i for i in f] for f in lf])
                     angles.update(dh)
-                    if self.mitre_part and self.label_bevels:
+                    # Not conditional on the mitre.  Mitre the Part is
+                    # there to hold the square-walled part up against
+                    # the cut one, and that comparison is exactly when
+                    # the angle a wall SHOULD be cut to is worth
+                    # reading off.
+                    if self.label_bevels:
                         pls = [outer] + holes
                         pmt = mating_planes(kind, family, pls, d, p_tol)
                         pa, _pn = plane_normals(kind, family)
