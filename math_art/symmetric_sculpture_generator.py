@@ -2394,6 +2394,16 @@ if _IN_BLENDER:
                         "round, and the two Topeka installations are "
                         "the pair. Left on the preset, since either "
                         "hand is still that sculpture")
+        label_crossings: BoolProperty(
+            name="Label Crossings", default=True,
+            description="Letter each marker and print the angle a "
+                        "tip has to fill there -- the wedge between "
+                        "the two bars, which is what the motif's "
+                        "corner must match. Letters run A, B, C by "
+                        "order then radius, so A is the busiest "
+                        "meeting point nearest the centre and the "
+                        "naming does not shift when the guide disc "
+                        "is resized")
         show_rings: BoolProperty(
             name="Mark Radii", default=False,
             description="Draw a circle in the guide plane, centred on "
@@ -2612,6 +2622,7 @@ if _IN_BLENDER:
                 cedges = []
                 cfaces = []
                 corders = []
+                clabels = []
                 for (cx, cy, _k), planes in zip(cross, nparts):
                     if planes < max(3, self.crossing_min_planes):
                         continue
@@ -2669,6 +2680,7 @@ if _IN_BLENDER:
                                        (thru[t][c] - a[c]) ** 2
                                        for c in range(3)))
                         half, wide = 0.11 * d, 0.008 * d
+                        wdirs = []
                         for step in (-1, 1):
                             nb = thru[(mine + step) % len(thru)]
                             # our plane meets that one along this line
@@ -2690,6 +2702,55 @@ if _IN_BLENDER:
                                 (cx - ex * half - px, cy - ey * half - py, 0.0)])
                             cfaces.append([b2, b2 + 1, b2 + 2, b2 + 3])
                             corders.append(planes)
+                            wdirs.append((ex, ey))
+                        if len(wdirs) == 2:
+                            dp = (wdirs[0][0] * wdirs[1][0]
+                                  + wdirs[0][1] * wdirs[1][1])
+                            raw = math.degrees(math.acos(
+                                max(-1.0, min(1.0, dp))))
+                            # The tip fills the SUPPLEMENT of the angle
+                            # between the two trace directions as
+                            # computed. Checked against Whimsy, whose
+                            # tips are 67.45 and 111.87 degrees: those
+                            # are the supplements at the 5-part point
+                            # at radius 0.429 and the 3-part one at
+                            # 0.609, which is where its two tips sit.
+                            clabels.append((planes,
+                                            math.hypot(cx, cy),
+                                            cx, cy, 180.0 - raw))
+                if self.label_crossings and clabels:
+                    lab_coll = bpy.data.collections.new(
+                        "SymSculpt Labels")
+                    context.collection.children.link(lab_coll)
+                    # A, B, ... Z, AA, AB -- ordered by how many parts
+                    # meet and then by radius, so the letters mean the
+                    # same thing from one build to the next instead of
+                    # following whatever order the crossings happened
+                    # to be found in.
+                    clabels.sort(key=lambda r: (-r[0], r[1]))
+                    for i, (npl, _r, lx, ly, wedge) in enumerate(clabels):
+                        tag = ""
+                        n_ = i
+                        while True:
+                            tag = chr(ord('A') + n_ % 26) + tag
+                            n_ = n_ // 26 - 1
+                            if n_ < 0:
+                                break
+                        tc = bpy.data.curves.new(
+                            "SymSculpt Label " + tag, type='FONT')
+                        tc.body = "%s  %.1f°" % (tag, wedge)
+                        tc.size = 0.075 * d
+                        tc.align_x = 'CENTER'
+                        tc.align_y = 'CENTER'
+                        tc.materials.append(_order_material(npl, False))
+                        lo = bpy.data.objects.new(
+                            "SymSculpt Label " + tag, tc)
+                        rr = math.hypot(lx, ly) or 1.0
+                        pad = 0.055 * d * (npl - 2) ** 0.45 + 0.075 * d
+                        lo.location = (lx + lx / rr * pad,
+                                       ly + ly / rr * pad, 0.001 * d)
+                        lab_coll.objects.link(lo)
+                        lo.hide_render = True
                 cme = bpy.data.meshes.new("SymSculpt Crossings")
                 cme.from_pydata(cverts, cedges, cfaces)
                 cme.update()
@@ -3110,7 +3171,8 @@ if _IN_BLENDER:
             lay.prop(self, 'mirror')
             for k in ('distance', 'shell', 'guide_extent',
                       'guide_rings', 'show_crossings',
-                      'crossing_min_planes', 'show_rings',
+                      'crossing_min_planes', 'label_crossings',
+                      'show_rings',
                       'show_spikes', 'show_polyhedron', 'lift',
                       'translucent', 'show_part'):
                 lay.prop(self, k)
