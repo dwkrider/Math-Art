@@ -2282,6 +2282,110 @@ def dragonflies_motif(d=1.0):
                        _DRAGONFLIES_HOLE_C, _DRAGONFLIES_HOLE_D,
                        _DRAGONFLIES_HOLE_E, _DRAGONFLIES_HOLE_F)]
     return polygon_with_holes(outer, holes)
+
+_EDDY_OUTER = (
+    (-1.506327, -0.710118), (-1.435456, -0.557964), (-1.432308, -0.548526),
+    (-1.431108, -0.532694), (-1.428854, -0.520591), (-1.425738, -0.511139),
+    (-1.420729, -0.501005), (-1.412550, -0.490170), (-1.399328, -0.479483),
+    (-1.384545, -0.471519), (-1.367301, -0.465542), (-1.349119, -0.461792),
+    (-1.329045, -0.459843), (-1.307092, -0.459701), (-1.281855, -0.461291),
+    (-1.253965, -0.464690), (-1.226490, -0.469607), (-1.201837, -0.475547),
+    (-1.177916, -0.483014), (-1.156523, -0.491299), (-1.136346, -0.500682),
+    (-1.116979, -0.511305), (-1.098078, -0.523406), (-1.079687, -0.537056),
+    (-1.061882, -0.552304), (-1.047786, -0.566390), (-1.034214, -0.582204),
+    (-1.018409, -0.604082), (-1.004983, -0.626981), (-1.000268, -0.636546),
+    (-0.986066, -0.674537), (-0.978883, -0.707621), (-0.976592, -0.733367),
+    (-0.977251, -0.762164), (-0.981548, -0.789773), (-0.986033, -0.806373),
+    (-0.991968, -0.822788), (-0.999214, -0.838588), (-1.007994, -0.854312),
+    (-1.018020, -0.869405), (-1.029442, -0.884031), (-1.041895, -0.897642),
+    (-1.054924, -0.909788), (-1.082554, -0.929867), (-1.112244, -0.945554),
+    (-1.129198, -0.951717), (-1.145994, -0.955764), (-1.166604, -0.958435),
+    (-1.181949, -0.958294), (-1.187207, -0.966182), (-1.230048, -1.058230),
+    (-1.160721, -1.144474), (-1.139042, -1.128561), (-1.102640, -1.098632),
+    (-1.061215, -1.057885), (-1.038074, -1.030937), (-1.019741, -1.006906),
+    (-1.002083, -0.980757), (-0.988297, -0.956639), (-0.974607, -0.929047),
+    (-0.963252, -0.901839), (-0.954244, -0.875037), (-0.947304, -0.847897),
+    (-0.942215, -0.819244), (-0.939101, -0.789472), (-0.937986, -0.765843),
+    (-0.938922, -0.729173), (-0.934270, -0.725257), (-0.917601, -0.721551),
+    (-0.902141, -0.720855), (-0.882551, -0.722413), (-0.887622, -0.687975),
+    (-0.903777, -0.691126), (-0.916234, -0.691985), (-0.929985, -0.691009),
+    (-0.942804, -0.687726), (-0.956111, -0.651579), (-0.969107, -0.623174),
+    (-0.983605, -0.596548), (-1.001259, -0.569332), (-1.023557, -0.540266),
+    (-1.041466, -0.519504), (-1.072765, -0.489900), (-1.102370, -0.466505),
+    (-1.145784, -0.439330), (-1.196955, -0.415305), (-1.220436, -0.406693),
+    (-1.260824, -0.394686), (-1.297848, -0.385983), (-1.330671, -0.381454),
+    (-1.365980, -0.379406), (-1.401552, -0.380440), (-1.450117, -0.388981),
+    (-1.482543, -0.400854), (-1.510280, -0.415361), (-1.524769, -0.425268),
+    (-1.538261, -0.436319), (-1.551105, -0.448822), (-1.563943, -0.463437),
+    (-1.574165, -0.476832), (-1.583720, -0.491713), (-1.600959, -0.526066),
+    (-1.609661, -0.548833), (-1.616902, -0.572752),
+)
+
+_EDDY_HOLE_A = (
+    (-1.545291, -0.582292), (-1.558838, -0.564373), (-1.550563, -0.539236),
+    (-1.540746, -0.516756), (-1.528882, -0.496101), (-1.515283, -0.477816),
+    (-1.500652, -0.462880), (-1.487884, -0.452982), (-1.473300, -0.444017),
+    (-1.457581, -0.436489), (-1.441934, -0.430916), (-1.422542, -0.426152),
+    (-1.400930, -0.422732), (-1.378399, -0.420984), (-1.360837, -0.421298),
+    (-1.408148, -0.435029), (-1.419953, -0.440393), (-1.436857, -0.451475),
+    (-1.452671, -0.464315), (-1.459098, -0.470874), (-1.469596, -0.487441),
+    (-1.477539, -0.506784), (-1.482098, -0.523436), (-1.482344, -0.541837),
+    (-1.483842, -0.551273), (-1.517136, -0.618619),
+)
+
+_EDDY_HOLE_B = (
+    (-1.171834, -1.046301), (-1.151449, -1.001655), (-1.135558, -0.998440),
+    (-1.116876, -0.992718), (-1.099528, -0.985940), (-1.083816, -0.978104),
+    (-1.059672, -0.962373), (-1.020607, -0.930598), (-1.041368, -0.967415),
+    (-1.056530, -0.988775), (-1.072476, -1.008423), (-1.104184, -1.040712),
+    (-1.148214, -1.077215),
+)
+
+
+def eddy_motif(d=1.0):
+    """One of the sixty flat parts of Hart's Eddy (2018), traced from
+    the cutting template.
+
+    PLACEMENT IS A BEST GUESS, not a solved fit -- treat the numbers
+    as a starting point to nudge, not as Hart's design.
+
+    What is solid: the group and family (sixty identical flat parts,
+    icosahedral, so the 60-plane orbit), and the trace itself, which
+    Hart's own text corroborates -- he says each part carries "eleven
+    small rectangular holes" for cable ties and the tracer found and
+    filled exactly eleven.  The part is a tall arch on two feet, each
+    foot ending in two straight edges meeting at a corner, 64.15 and
+    116.41 degrees.  Those two are supplementary to within 0.6
+    degrees, so both feet are cut from the same pair of guide-line
+    directions -- one taking the acute crossing, the other the obtuse.
+
+    What is not: where it sits.  P1's stabiliser is trivial, so unlike
+    every other preset here nothing pins the motif in its plane -- it
+    floats with four degrees of freedom.  Matching the two foot
+    corners against all 907 guide-line crossings of matching angle
+    gives 15,310 candidate placements; this is the best of them, at
+    41.7% of the straight-edge length lying on a guide line.  But the
+    top ten run 38.3% to 41.7%, a cluster rather than a peak, so the
+    winner is not clearly right.
+
+    And it fails Hart's own check.  He says he "beveled their four
+    mating edges (18 degrees)", and a bevel is half the dihedral, so
+    18 degrees wants a dihedral near 36.  This family offers only
+    34.708 (one neighbouring plane) and 36.789 (two) -- three
+    candidate lines in the whole diagram -- and no candidate placement
+    puts even two of the four longest edges on any of them.  That
+    suggests the family may be wrong: if the 18 is instead the
+    sander's tilt off perpendicular it wants a dihedral near 144,
+    which ICOSA/P1 does not have at all.
+
+    References:
+      - George W. Hart, "Eddy" (2018), Kimball Union Academy;
+        georgehart.com/sculpture/eddy/eddy.html
+    """
+    outer = [(x * d, y * d) for x, y in _EDDY_OUTER]
+    holes = [[(x * d, y * d) for x, y in h]
+             for h in (_EDDY_HOLE_A, _EDDY_HOLE_B)]
+    return polygon_with_holes(outer, holes)
 # preset -> (group, plane family, motif builder)
 PRESETS = {
     'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
@@ -2289,6 +2393,7 @@ PRESETS = {
     'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
     'SOLAR_FLAIR': ('ICOSA', 'P2', solar_flair_motif),
     'DRAGONFLIES': ('OCTA', 'P2', dragonflies_motif),
+    'EDDY': ('ICOSA', 'P1', eddy_motif),
 }
 
 
@@ -2998,6 +3103,17 @@ if _IN_BLENDER:
                     "misses the other eleven. They sit instead on the "
                     "stellation diagram's level-3 vertices, at three "
                     "times the plane distance"),
+                   ('EDDY', "Eddy (placement unsolved)",
+                    "After Eddy (2018): 60 identical arched parts in "
+                    "the 60-plane icosahedral orbit. WARNING -- the "
+                    "placement in the plane is a BEST GUESS, not a "
+                    "solved fit. P1 has no stabiliser, so nothing "
+                    "pins the motif and it floats with four degrees "
+                    "of freedom; this is the best of 15,310 "
+                    "candidates but the field is a cluster, and it "
+                    "does not reproduce Hart's four mating edges "
+                    "beveled at 18 degrees. Loaded so it can be "
+                    "nudged by hand"),
                    ('CUSTOM', "Custom",
                     "Choose the group and plane family yourself. "
                     "Starts from the demo arc motif -- barbed at one "
@@ -4126,7 +4242,7 @@ if _IN_BLENDER:
                     wcoll = bpy.data.collections.new(
                         "SymSculpt Stellation Wedges")
                     out_coll.children.link(wcoll)
-                    WL = 0.30 * d
+                    WL = 0.45 * d
                     nw = 0
                     for si, (cx, cy, sh) in enumerate(wsel):
                         P = (a[0] * d + cx * u[0] + cy * v[0],
@@ -4168,6 +4284,13 @@ if _IN_BLENDER:
                         w_ob = bpy.data.objects.new(nm2, wme)
                         wcoll.objects.link(w_ob)
                         w_ob.matrix_world = Matrix.Identity(4)
+                        # Drawn in front. A wedge sits ON the
+                        # sculpture's surface -- a level-3 point of
+                        # OCTA/P2 is 3.16 out, right at the tips --
+                        # so at three tenths of the plane distance it
+                        # disappears behind the arms that meet there,
+                        # which is exactly where it is wanted.
+                        w_ob.show_in_front = True
                         w_ob.hide_render = True
                         w_ob.parent = obj
                         w_ob.matrix_parent_inverse = Matrix.Identity(4)
