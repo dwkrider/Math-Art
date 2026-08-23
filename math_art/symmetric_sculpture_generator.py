@@ -1134,10 +1134,12 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
         span = max(max(_xs) - min(_xs), max(_ys) - min(_ys)) or 1.0
         # per-edge sideways shift, then meet the shifted edge lines
         shift = []
+        inward = []
         for i in range(n):
             b = per[i]
             if b is None:
                 shift.append(0.0)
+                inward.append(None)
                 continue
             p0, p1 = loop[i], loop[(i + 1) % n]
             ex, ey = p1[0] - p0[0], p1[1] - p0[1]
@@ -1154,6 +1156,7 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
             em = sum(x * y for x, y in
                      zip(_plane_dir(kind, family, nx, ny), m3))
             nm = sum(x * y for x, y in zip(_normalize(a), m3))
+            inward.append((nx, ny))
             if abs(em) < 1e-9:
                 shift.append(0.0)
             else:
@@ -1245,8 +1248,17 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
             p0, p1 = loop[i], loop[(i + 1) % n]
             ex, ey = p1[0] - p0[0], p1[1] - p0[1]
             ln = sqrt(ex * ex + ey * ey) or 1.0
-            nx, ny = -ey / ln, ex / ln
-            sg = 1.0 if shift[i] > 0 else -1.0
+            # The chisel only ever REMOVES.  A mitre shifts one face
+            # outward and the other inward, and on the outward one the
+            # cut plane lies outside the outline entirely -- there the
+            # free boundary bounds the solid and no curve vertex may
+            # move.  Asking which side is waste off sign(shift) against
+            # the raw edge normal inverts that test on exactly that
+            # face, and the run-off pushes the curve OUT onto the plane
+            # instead: material added, as a bump at the base of the
+            # point.  The interior side is the only thing that decides
+            # it, so use the edge's inward normal.
+            nx, ny = inward[i]
             # The run has to be fenced to the joint.  Contiguity alone
             # is not the bound it looks like: 254 of Solar Flair's 427
             # outline points lie beyond one bisector, and they are
@@ -1287,7 +1299,7 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
                         w = (ln + pad - u) / pad
                     t = ((out[v][0] - q0[0]) * nx
                          + (out[v][1] - q0[1]) * ny)
-                    if t * sg >= -1e-12:
+                    if t >= -1e-12:
                         break                # back on the keep side
                     out[v] = (out[v][0] - nx * t * w,
                               out[v][1] - ny * t * w)
