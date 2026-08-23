@@ -2545,9 +2545,14 @@ if _IN_BLENDER:
                 for (cx, cy, _k), planes in zip(cross, nparts):
                     if planes < max(3, self.crossing_min_planes):
                         continue
-                    # Size climbs steeply with order so a hub
-                    # reads from across the viewport.
-                    rad = 0.030 * d * (planes - 2) ** 0.85
+                    # Size climbs with order so a hub reads from
+                    # across the viewport, but gently: a steep
+                    # exponent bought that contrast by shrinking the
+                    # 3-part corners until they were hard to see, and
+                    # they are the ones there are most of. Bigger
+                    # base, flatter curve -- triangles up by two
+                    # thirds, pentagons much as they were.
+                    rad = 0.050 * d * (planes - 2) ** 0.45
                     base = len(cverts)
                     cverts.append((cx, cy, 0.0))       # snap target
                     for t in range(planes):
