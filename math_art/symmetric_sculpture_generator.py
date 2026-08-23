@@ -352,6 +352,24 @@ def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
     return out
 
 
+def crossing_tag(i):
+    """A, B ... Z, AA, AB ... -- the marker's name.
+
+    Shared so a spike, its marker and its label all come out with the
+    same letter: they are the same point of the sculpture and being
+    able to say "spike C" and have it mean one thing is the point of
+    naming them at all. Callers must order the crossings the same way,
+    by part count descending then radius.
+    """
+    tag, n = "", i
+    while True:
+        tag = chr(ord('A') + n % 26) + tag
+        n = n // 26 - 1
+        if n < 0:
+            break
+    return tag
+
+
 def cross_sections(kind, family, loops, d=1.0):
     """Where the copies of the motif in the OTHER planes cut this one.
 
@@ -2870,13 +2888,7 @@ if _IN_BLENDER:
                     # to be found in.
                     clabels.sort(key=lambda r: (-r[0], r[1]))
                     for i, (npl, _r, lx, ly, wedge) in enumerate(clabels):
-                        tag = ""
-                        n_ = i
-                        while True:
-                            tag = chr(ord('A') + n_ % 26) + tag
-                            n_ = n_ // 26 - 1
-                            if n_ < 0:
-                                break
+                        tag = crossing_tag(i)
                         tc = bpy.data.curves.new(
                             "SymSculpt Label " + tag, type='FONT')
                         tc.body = "%s  %.1f°" % (tag, wedge)
@@ -3231,9 +3243,17 @@ if _IN_BLENDER:
                 _allq = crossing_parts(kind, family, _allx, d)
                 meet = [(c, q) for c, q in zip(_allx, _allq)
                         if q >= max(3, self.crossing_min_planes)]
-                kverts, kfaces, korders = [], [], []
+                # Same ordering the labels use, so spike C is the
+                # cone on marker C.
+                meet = sorted(meet, key=lambda r: (-r[1],
+                                                   r[0][0] ** 2
+                                                   + r[0][1] ** 2))
+                spike_coll = bpy.data.collections.new(
+                    "SymSculpt Spikes")
+                context.collection.children.link(spike_coll)
                 L = 0.30 * d
-                for (cx, cy, _k), npl in meet:
+                for si, ((cx, cy, _k), npl) in enumerate(meet):
+                    kverts, kfaces, korders = [], [], []
                     P = (a[0] * d + cx * u[0] + cy * v[0],
                          a[1] * d + cx * u[1] + cy * v[1],
                          a[2] * d + cx * u[2] + cy * v[2])
@@ -3269,21 +3289,28 @@ if _IN_BLENDER:
                         kfaces.append([apex, apex + 1 + i,
                                        apex + 1 + (i + 1) % m])
                         korders.append(npl)
-                if kfaces:
-                    kme = bpy.data.meshes.new("SymSculpt Spikes")
+                    # One object per spike, in its own collection.
+                    # A spike is the wedge the neighbouring parts
+                    # leave for this one, so it is exactly the shape
+                    # to copy out and cut a mitre against -- which
+                    # takes selecting one on its own, not picking it
+                    # out of a single mesh holding all of them.
+                    if not kfaces:
+                        continue
+                    nm = "SymSculpt Spike " + crossing_tag(si)
+                    kme = bpy.data.meshes.new(nm)
                     kme.from_pydata(kverts, [], kfaces)
                     kme.validate()
                     kme.update()
                     _assign_order_materials(kme, korders, True)
-                    spikes = bpy.data.objects.new("SymSculpt Spikes",
-                                                  kme)
-                    context.collection.objects.link(spikes)
-                    spikes.matrix_world = Matrix.Identity(4)
-                    spikes.hide_render = True
-                    spikes.parent = obj
-                    spikes.matrix_parent_inverse = Matrix.Identity(4)
+                    sp_ob = bpy.data.objects.new(nm, kme)
+                    spike_coll.objects.link(sp_ob)
+                    sp_ob.matrix_world = Matrix.Identity(4)
+                    sp_ob.hide_render = True
+                    sp_ob.parent = obj
+                    sp_ob.matrix_parent_inverse = Matrix.Identity(4)
                     if lift_socket is not None:
-                        _drive_z_from_lift(spikes, obj, mod.name,
+                        _drive_z_from_lift(sp_ob, obj, mod.name,
                                            lift_socket)
                 # Leaders: flat marker up to the cone it stands
                 # for. Solid tubes, not wire edges -- a wire is one
@@ -3327,8 +3354,9 @@ if _IN_BLENDER:
                         lorders.append(npl)
                 self.report(
                     {'INFO'},
-                    f"{len(meet)} points where parts meet, "
-                    f"{len(kfaces)} spike faces")
+                    f"{len(meet)} points where parts meet; spikes "
+                    f"{crossing_tag(0)}-{crossing_tag(len(meet) - 1)}"
+                    f" are separate objects in SymSculpt Spikes")
                 if lfaces:
                     lme = bpy.data.meshes.new("SymSculpt Leaders")
                     lme.from_pydata(lverts, [], lfaces)
