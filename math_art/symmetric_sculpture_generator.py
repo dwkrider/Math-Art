@@ -1099,12 +1099,22 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
     out already lying flat, ready to be cut or printed.
 
     A mid-plane point p lifted by s along the plane normal misses the
-    bisecting plane x.(n+m) = 2d by s(1 + n.m), and sliding it along
+    bisecting plane x.(n - m) = 0 by s(1 - n.m), and sliding it along
     the edge's inward normal e closes that by
 
-        lambda = -s (1 + n.m) / (e.m)
+        lambda = s (1 - n.m) / (e.m)
 
-    which is the miter.  The outer face is drawn in, the inner face
+    which is the miter.  With n.m = -cos(theta) for a dihedral theta,
+    and e.m = sin(theta), that is s * cot(theta / 2) -- the offset a
+    slab of half-thickness s needs so its cut face lies in the
+    bisector.
+
+    It read (1 + n.m) until this was checked against cot(theta / 2),
+    which is s * tan(theta / 2): the same thing at 90 degrees and
+    wrong at every other angle, and wrong the WRONG WAY -- a shallow
+    joint needs a long bevel and got a short one, a steep joint the
+    reverse. Krull's 116.57 degree joints were cut 2.6x too deep and
+    Solar Flair's 120s 3x.  The outer face is drawn in, the inner face
     runs proud, and the cut face lands in the bisector -- exactly
     where the neighbouring part's does."""
     a, _ = plane_normals(kind, family)
@@ -1142,7 +1152,7 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
             if abs(em) < 1e-9:
                 shift.append(0.0)
             else:
-                shift.append(-s * (1.0 + nm) / em)
+                shift.append(s * (1.0 - nm) / em)
         def slide(edge, vert):
             """vertex `vert` moved sideways by edge `edge`'s shift"""
             q0, q1 = loop[edge], loop[(edge + 1) % n]
@@ -3595,9 +3605,13 @@ def _selftest():
             if m is None:
                 continue
             b5 = _normalize(m)
-            nb5 = _normalize([aa5[i] + b5[i] for i in range(3)])
-            off5 = 2.0 / sqrt(sum((aa5[i] + b5[i]) ** 2
-                                  for i in range(3)))
+            # x.(n - m) = 0, the bisector that SEPARATES the two
+            # parts. The other one, x.(n + m) = 2d, bisects the wedge
+            # on the far side of both and is what this check used to
+            # ask for -- which is why it passed while the parts were
+            # being cut at tan(theta/2) instead of cot(theta/2).
+            nb5 = _normalize([aa5[i] - b5[i] for i in range(3)])
+            off5 = 0.0
             if not any(all(abs(nb5[k] - q[0][k]) < 1e-9
                            for k in range(3)) for q in bis5):
                 bis5.append((nb5, off5))
@@ -3837,9 +3851,8 @@ def _selftest():
             if m is None:
                 continue
             b3 = _normalize(m)
-            nb3 = _normalize([aa3[i] + b3[i] for i in range(3)])
-            off = 2.0 / sqrt(sum((aa3[i] + b3[i]) ** 2
-                                 for i in range(3)))
+            nb3 = _normalize([aa3[i] - b3[i] for i in range(3)])
+            off = 0.0
             if not any(abs(nb3[0] - q[0][0]) < 1e-9
                        and abs(nb3[1] - q[0][1]) < 1e-9
                        and abs(nb3[2] - q[0][2]) < 1e-9 for q in bis):
