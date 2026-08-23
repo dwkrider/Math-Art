@@ -352,6 +352,39 @@ def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
     return out
 
 
+def meeting_planes(kind, family, point, d=1.0):
+    """The planes whose parts actually converge at `point`, in cyclic
+    order about it.
+
+    NOT every plane through the point. More of the family can pass
+    through than have a part ending there: on ICOSA/P2 the points at
+    radius sqrt(2) carry six planes but only three parts, and picking
+    a part's neighbours out of all six gives the wrong pair -- the
+    marker there reported a 37.38 degree wedge where the answer is 90.
+
+    The parts meeting at X are the images of ours under the rotations
+    that FIX X, so the planes that matter are the images of our plane
+    under that same stabiliser, and there are exactly as many of them
+    as there are parts.
+    """
+    a, _n = plane_normals(kind, family)
+    seen = {}
+    for R in group_rotations(kind):
+        Q = _apply(R, point)
+        if any(abs(Q[c] - point[c]) > 1e-6 for c in range(3)):
+            continue
+        w = _apply(R, a)
+        seen[tuple(round(c, 6) for c in w)] = w
+    axis = _normalize(point)
+    f1 = _normalize(_frame(axis)[0])
+    f2 = (axis[1] * f1[2] - axis[2] * f1[1],
+          axis[2] * f1[0] - axis[0] * f1[2],
+          axis[0] * f1[1] - axis[1] * f1[0])
+    return sorted(seen.values(), key=lambda w: math.atan2(
+        w[0] * f2[0] + w[1] * f2[1] + w[2] * f2[2],
+        w[0] * f1[0] + w[1] * f1[1] + w[2] * f1[2]))
+
+
 def crossing_parts(kind, family, crossings, d=1.0):
     """How many parts actually meet at each crossing.
 
@@ -2662,19 +2695,8 @@ if _IN_BLENDER:
                     P3d = (a[0] * d + cx * u[0] + cy * v[0],
                            a[1] * d + cx * u[1] + cy * v[1],
                            a[2] * d + cx * u[2] + cy * v[2])
-                    axis = _normalize(P3d)
-                    thru = [nn_ for nn_ in normals
-                            if abs(nn_[0] * P3d[0] + nn_[1] * P3d[1]
-                                   + nn_[2] * P3d[2] - d)
-                            < 1e-6 * max(1.0, d)]
+                    thru = meeting_planes(kind, family, P3d, d)
                     if len(thru) >= 3:
-                        f1 = _normalize(_frame(axis)[0])
-                        f2 = (axis[1] * f1[2] - axis[2] * f1[1],
-                              axis[2] * f1[0] - axis[0] * f1[2],
-                              axis[0] * f1[1] - axis[1] * f1[0])
-                        thru = sorted(thru, key=lambda w: math.atan2(
-                            w[0] * f2[0] + w[1] * f2[1] + w[2] * f2[2],
-                            w[0] * f1[0] + w[1] * f1[1] + w[2] * f1[2]))
                         mine = min(range(len(thru)),
                                    key=lambda t: sum(
                                        (thru[t][c] - a[c]) ** 2
@@ -3003,24 +3025,9 @@ if _IN_BLENDER:
                          a[1] * d + cx * u[1] + cy * v[1],
                          a[2] * d + cx * u[2] + cy * v[2])
                     axis = _normalize(P)
-                    # the planes of the family that pass through P
-                    thru = [n for n in normals
-                            if abs(n[0] * P[0] + n[1] * P[1]
-                                   + n[2] * P[2] - d) < 1e-6 * max(1.0, d)]
+                    thru = meeting_planes(kind, family, P, d)
                     if len(thru) < 3:
                         continue
-                    # order them by angle about the axis, so that
-                    # "adjacent" means adjacent around the spike
-                    e1 = _normalize(_frame(axis)[0])
-                    e2 = (axis[1] * e1[2] - axis[2] * e1[1],
-                          axis[2] * e1[0] - axis[0] * e1[2],
-                          axis[0] * e1[1] - axis[1] * e1[0])
-                    def _bearing(n):
-                        return math.atan2(n[0] * e2[0] + n[1] * e2[1]
-                                          + n[2] * e2[2],
-                                          n[0] * e1[0] + n[1] * e1[1]
-                                          + n[2] * e1[2])
-                    thru = sorted(thru, key=_bearing)
                     dirs = []
                     for i in range(len(thru)):
                         n1 = thru[i]
