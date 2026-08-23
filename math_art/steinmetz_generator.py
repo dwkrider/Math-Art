@@ -30,12 +30,20 @@
 # The bicylinder's volume 16 r^3 / 3 was found by Archimedes (Method of
 # Mechanical Theorems) and independently by the electrical engineer
 # Charles Proteus Steinmetz, after whom the solid is named.  The
-# bicylinder is built here directly as an exact watertight mesh of its
-# two cylinder patches (the patch grids follow the cylinders, so the
-# curved edges stay clean); the tricylinder is built by Boolean
-# intersection of three cylinders, and the larger sets by the radial
-# builder, which is exact for these convex star-shaped solids and avoids
-# a fragile stack of a dozen Booleans.
+# bicylinder is built directly as an exact watertight mesh of its two
+# cylinder patches, and every larger set by the radial builder, which
+# samples the boundary as a radial graph and then CUTS THE RIDGES INTO
+# the grid so they exist as real edges and can be creased.
+#
+# Booleans were tried and abandoned.  Cutting the cylinders against one
+# another as solids gives real ridge edges for free, and that is how the
+# tricylinder used to be built, but it only works while the stack is
+# short: six exact Booleans returned an empty mesh outright, and twelve
+# produced a shape wandering more than a whole radius off the truth.  It
+# also facets the cylinders, since a Boolean can only cut the polygons it
+# is given.  The radial route has neither failure -- its vertices sit on
+# the exact surface, which the self-test holds to 1e-9 -- so every solid
+# but the bicylinder now goes through it.
 #
 # References:
 #   - Archimedes, "The Method of Mechanical Theorems" (c. 250 BC);
@@ -277,35 +285,199 @@ def _steinmetz_binding(kind, u):
 
 
 def build_steinmetz_radial(kind='TRICYLINDER', radius=1.0,
-                           phi_segments=96, theta_segments=160):
+                           phi_segments=96, theta_segments=160,
+                           ridges=True):
+    """(verts, faces, ridge_edges) sampled radially about the origin.
+
+    The solid is convex and contains the origin, so its boundary is a
+    radial graph and a direction grid captures it exactly -- every vertex
+    lands ON the true surface, not on a faceted stand-in for it.
+
+    The catch is that the grid knows nothing about the RIDGES, the curves
+    where one cylinder gives way to the next.  They fall wherever they
+    fall, straddling grid quads, and a ridge with no edge along it cannot
+    be creased and shades as though the surface were smooth across it --
+    which loses the one feature that makes a Steinmetz solid look like
+    one.  (Cutting the cylinders against each other as solids does give
+    real ridge edges, and that is how the tricylinder is built, but a
+    stack of six or twelve exact Booleans degrades badly: it returns
+    empty meshes and shapes wandering a whole radius off the truth.)
+
+    So the ridges are inserted into the grid instead.  Each grid vertex
+    is labelled with the cylinder binding there; wherever an edge of the
+    grid joins two different labels, the tie point is found by bisection
+    and inserted.  Cells split by exactly one ridge are cut in two along
+    it, giving a genuine edge on the ridge shared by both sides -- and
+    since it is one grid throughout rather than separately built patches,
+    the two sides share vertices and the surface stays closed.  The
+    inserted edges are returned so they can be creased exactly, rather
+    than rediscovered by an angle test that shallow ridges slip past.
+    """
     m = _Mesh()
     nphi = max(8, phi_segments)
     nth = max(8, theta_segments)
 
-    def pt(i, j):
+    def direction(i, j):
         phi = pi * i / nphi
         theta = 2.0 * pi * (j % nth) / nth
-        u = (sin(phi) * cos(theta), sin(phi) * sin(theta), cos(phi))
+        return (sin(phi) * cos(theta), sin(phi) * sin(theta), cos(phi))
+
+    def surface(u):
         r = _steinmetz_radius(kind, u, radius)
         return (r * u[0], r * u[1], r * u[2])
 
-    grid = [[pt(i, j) for j in range(nth)] for i in range(nphi + 1)]
+    axes = AXIS_SETS[kind] if isinstance(kind, str) else kind
+    lab = [[_steinmetz_binding(axes, direction(i, j)) for j in range(nth)]
+           for i in range(nphi + 1)]
+    pts = [[surface(direction(i, j)) for j in range(nth)]
+           for i in range(nphi + 1)]
+
+    def _tie(u0, u1, k0, k1):
+        """Walk to where cylinders k0 and k1 change places."""
+        def gap(u):
+            def rad(k):
+                d = sum(u[t] * axes[k][t] for t in range(3))
+                off = sum((u[t] - d * axes[k][t]) ** 2 for t in range(3))
+                return radius / sqrt(off) if off > 1e-12 else 1e18
+            return rad(k0) - rad(k1)
+        a, b = 0.0, 1.0
+        ga = gap(u0)
+        for _ in range(40):
+            c = 0.5 * (a + b)
+            uc = [u0[t] + (u1[t] - u0[t]) * c for t in range(3)]
+            n = sqrt(sum(x * x for x in uc)) or 1.0
+            uc = tuple(x / n for x in uc)
+            gc = gap(uc)
+            if (ga < 0.0) == (gc < 0.0):
+                a, ga = c, gc
+            else:
+                b = c
+        c = 0.5 * (a + b)
+        uc = [u0[t] + (u1[t] - u0[t]) * c for t in range(3)]
+        n = sqrt(sum(x * x for x in uc)) or 1.0
+        return c, surface(tuple(x / n for x in uc))
+
+    # crossings cached per grid edge, so the two cells sharing an edge
+    # insert the SAME point and the surface does not tear open
+    cross = {}
+
+    def crossing(i0, j0, i1, j1):
+        # The two cells sharing this edge reach it from opposite ends, so
+        # the key AND the bisection have to be put in a canonical order --
+        # otherwise each side solves separately, lands a hair apart, and
+        # the surface tears along every ridge.
+        a, b = (i0, j0 % nth), (i1, j1 % nth)
+        if b < a:
+            a, b = b, a
+        key = (a, b)
+        if key in cross:
+            return cross[key]
+        k0, k1 = lab[a[0]][a[1]], lab[b[0]][b[1]]
+        p = None
+        if ridges and k0 != k1 and k0 >= 0 and k1 >= 0:
+            pa, pb = pts[a[0]][a[1]], pts[b[0]][b[1]]
+            # At the poles a whole grid row collapses to one point, so the
+            # "edge" between two of its columns has no length; and for
+            # coplanar axes every ridge runs through exactly there.
+            # Splitting a segment that is not a segment produces duplicate
+            # vertices and tears the mesh, so leave those alone.
+            if _vkey(pa) != _vkey(pb):
+                c, q = _tie(direction(*a), direction(*b), k0, k1)
+                # A tie arriving almost on top of a corner buys nothing and
+                # costs a sliver -- and near the poles, where every ridge of
+                # an equidomoid converges, it lands a hair off the pole and
+                # leaves a T-junction against the degenerate row next door.
+                # Both cells sharing this edge read the same cached answer,
+                # so refusing here keeps them agreeing.
+                if 0.01 < c < 0.99:
+                    p = q
+        cross[key] = p
+        return p
+
+    ridge_edges = []
     for i in range(nphi):
         for j in range(nth):
             jn = (j + 1) % nth
-            m.quad(grid[i][j], grid[i][jn], grid[i + 1][jn], grid[i + 1][j])
-    return m.verts, m.faces
+            corners = [(i, j), (i, jn), (i + 1, jn), (i + 1, j)]
+            quad = [pts[a][b] for a, b in corners]
+            labels = [lab[a][b] for a, b in corners]
+            if not ridges or len(set(labels)) == 1:
+                m.quad(*quad)
+                continue
+            # walk the cell boundary, inserting a crossing wherever the
+            # binding cylinder changes
+            ring, marks = [], []
+            for c in range(4):
+                a0, b0 = corners[c]
+                a1, b1 = corners[(c + 1) % 4]
+                ring.append(quad[c])
+                marks.append(False)
+                p = crossing(a0, b0, a1, b1)
+                if p is not None:
+                    ring.append(p)
+                    marks.append(True)
+            cut = [k for k in range(len(ring)) if marks[k]]
+            if len(cut) != 2:
+                # Three or more cylinders meet inside this cell, which only
+                # happens at the isolated points where rings pinch.  The
+                # cell is left whole rather than guessed at -- but it is
+                # emitted as the full ring, crossings included, since the
+                # neighbours have already put those points on the shared
+                # edges and dropping them here would leave a T-junction and
+                # a hole.
+                ids = []
+                for p in ring:
+                    q = m.vid(p)
+                    if q not in ids:
+                        ids.append(q)
+                if len(ids) >= 3:
+                    m.faces.append(ids)
+                continue
+            s, e = cut
+            for part in (ring[s:e + 1], ring[e:] + ring[:s + 1]):
+                ids = []
+                for p in part:
+                    q = m.vid(p)
+                    if q not in ids:
+                        ids.append(q)
+                if len(ids) >= 3:
+                    m.faces.append(ids)
+
+    # The ridges are read back off the finished mesh rather than collected
+    # as they are cut.  An inserted ridge is only half the story: when an
+    # axis set happens to line its ridges up with the grid -- as an
+    # equidomoid does, its ridges running down meridians -- the ridge is
+    # already an edge and nothing needed inserting.  Labelling each face by
+    # the cylinder it belongs to and taking the edges between differently
+    # labelled faces finds both kinds, and cannot drift out of step with
+    # what was actually emitted.
+    ridge_edges = []
+    if ridges:
+        flab = []
+        for face in m.faces:
+            cx = [sum(m.verts[i][t] for i in face) / len(face)
+                  for t in range(3)]
+            n = sqrt(sum(c * c for c in cx)) or 1.0
+            flab.append(_steinmetz_binding(axes, tuple(c / n for c in cx)))
+        share = {}
+        for fi, face in enumerate(m.faces):
+            for t in range(len(face)):
+                a, b = face[t], face[(t + 1) % len(face)]
+                share.setdefault((min(a, b), max(a, b)), []).append(fi)
+        for e, fs in share.items():
+            if len(fs) == 2 and flab[fs[0]] != flab[fs[1]]:
+                ridge_edges.append(e)
+    return m.verts, m.faces, ridge_edges
 
 
 try:
-    from .sharp_creases import mark_sharp_by_angle
+    from .sharp_creases import mark_sharp, mark_sharp_by_angle
 except ImportError:                     # flat import outside the package
-    from sharp_creases import mark_sharp_by_angle
+    from sharp_creases import mark_sharp, mark_sharp_by_angle
 
 try:
     import bpy
     import bmesh
-    import mathutils
     from bpy.props import (IntProperty, FloatProperty,
                            EnumProperty, BoolProperty)
     _IN_BLENDER = True
@@ -314,54 +486,6 @@ except ImportError:
 
 
 if _IN_BLENDER:
-
-    def _cylinder_obj(coll, axis, r, length, seg):
-        bm = bmesh.new()
-        bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False,
-                              segments=seg, radius1=r, radius2=r,
-                              depth=length)
-        if axis == 'X':
-            mat = mathutils.Matrix.Rotation(pi / 2.0, 4, 'Y')
-        elif axis == 'Y':
-            mat = mathutils.Matrix.Rotation(pi / 2.0, 4, 'X')
-        else:
-            mat = mathutils.Matrix.Identity(4)
-        bmesh.ops.transform(bm, matrix=mat, verts=bm.verts)
-        me = bpy.data.meshes.new("sm_tmp")
-        bm.to_mesh(me)
-        bm.free()
-        o = bpy.data.objects.new("sm_tmp", me)
-        coll.objects.link(o)
-        return o
-
-    def _boolean(ctx, a, b):
-        md = a.modifiers.new("b", 'BOOLEAN')
-        md.operation = 'INTERSECT'
-        md.object = b
-        md.solver = 'EXACT'
-        with ctx.temp_override(object=a, active_object=a,
-                               selected_objects=[a]):
-            bpy.ops.object.modifier_apply(modifier=md.name)
-        bpy.data.objects.remove(b, do_unlink=True)
-        return a
-
-    def _build_tricylinder_csg(ctx, r, seg):
-        coll = ctx.collection
-        length = 4.0 * r
-        res = _cylinder_obj(coll, 'X', r, length, seg)
-        for axis in ('Y', 'Z'):
-            res = _boolean(ctx, res, _cylinder_obj(coll, axis, r,
-                                                   length, seg))
-        bm = bmesh.new()
-        bm.from_mesh(res.data)
-        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5 * r)
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-        bm.to_mesh(res.data)
-        bm.free()
-        verts = [v.co[:] for v in res.data.vertices]
-        faces = [list(p.vertices) for p in res.data.polygons]
-        bpy.data.objects.remove(res, do_unlink=True)
-        return verts, faces
 
     class MESH_OT_steinmetz_add(bpy.types.Operator):
         """Add a Steinmetz solid -- the intersection of two or three """ \
@@ -409,6 +533,17 @@ if _IN_BLENDER:
         radius: FloatProperty(
             name="Radius", default=1.0, min=0.05, max=100.0,
             description="Common cylinder radius")
+        smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the cylinder patches smooth.  Turn it off "
+                        "to see the mesh faceting itself")
+        crease_angle: FloatProperty(
+            name="Crease Angle", default=20.0, min=1.0, max=90.0,
+            description="Fold angle above which an edge counts as a "
+                        "ridge.  Ridges get shallower as cylinders are "
+                        "added -- a twelve-axis solid is nearly a sphere "
+                        "-- so a lower value is needed there than for a "
+                        "bicylinder")
         sharp_edges: BoolProperty(
             name="Sharp Edges", default=True,
             description="Mark the solid's fold curves sharp (and "
@@ -421,19 +556,19 @@ if _IN_BLENDER:
             description="Cylinder segments (mesh resolution)")
 
         def execute(self, context):
+            ridge_edges = None
             if self.kind == 'BICYLINDER':
                 verts, faces = build_bicylinder(self.radius, self.segments)
-            elif self.kind == 'TRICYLINDER':
-                verts, faces = _build_tricylinder_csg(context, self.radius,
-                                                      self.segments)
             else:
-                # Booleans over six or twelve cylinders are slow and
-                # fragile; the solid is convex and star-shaped about the
-                # origin, so the radial builder gives it exactly.
+                # Exact cylinders with the ridges inserted, rather than a
+                # stack of Booleans over faceted ones -- see
+                # build_steinmetz_radial for why that route was abandoned.
                 axes = (equidomoid_axes(self.order)
-                        if self.kind == 'EQUIDOMOID' else self.kind)
-                verts, faces = build_steinmetz_radial(
-                    axes, self.radius, 2 * self.segments, 4 * self.segments)
+                        if self.kind == 'EQUIDOMOID'
+                        else AXIS_SETS[self.kind])
+                verts, faces, ridge_edges = build_steinmetz_radial(
+                    axes, self.radius, 2 * self.segments,
+                    4 * self.segments)
 
             verts = [tuple(map(float, v)) for v in verts]
 
@@ -457,9 +592,18 @@ if _IN_BLENDER:
             bm.to_mesh(me)
             bm.free()
             me.polygons.foreach_set('use_smooth',
-                                    [True] * len(me.polygons))
+                                    [self.smooth] * len(me.polygons))
+            n_sharp = 0
             if self.sharp_edges:
-                mark_sharp_by_angle(me, 45.0)
+                # Where the ridges were inserted into the mesh they are
+                # known exactly, so mark those and do not go looking: an
+                # angle test misses the shallow ones, and a twelve-axis
+                # solid is nearly a sphere.  The bicylinder's two folds
+                # are sharp enough for the angle test to find.
+                if ridge_edges:
+                    n_sharp = mark_sharp(me, ridge_edges)
+                else:
+                    n_sharp = mark_sharp_by_angle(me, self.crease_angle)
             me.update()
             obj = bpy.data.objects.new(f"Steinmetz {self.kind.title()}", me)
             context.collection.objects.link(obj)
@@ -474,12 +618,14 @@ if _IN_BLENDER:
                 self.report({'INFO'},
                             f"V={len(me.vertices)} F={len(me.polygons)}, "
                             f"furthest departure from the sphere it tends "
-                            f"to: {far / r:.3f} of the radius")
+                            f"to: {far / r:.3f} of the radius, "
+                            f"{n_sharp} ridge edges creased")
             elif self.kind not in ('BICYLINDER', 'TRICYLINDER'):
                 self.report({'INFO'},
                             f"V={len(me.vertices)} F={len(me.polygons)}, "
                             f"{len(AXIS_SETS[self.kind])} cylinders in "
-                            f"{patch_count(self.kind)} patches")
+                            f"{patch_count(self.kind)} patches, "
+                            f"{n_sharp} ridge edges creased")
             else:
                 self.report({'INFO'},
                             f"V={len(me.vertices)} F={len(me.polygons)}")
@@ -493,7 +639,10 @@ if _IN_BLENDER:
                 lay.prop(self, 'order')
             lay.prop(self, 'radius')
             lay.prop(self, 'segments')
+            lay.prop(self, 'smooth')
             lay.prop(self, 'sharp_edges')
+            if self.sharp_edges:
+                lay.prop(self, 'crease_angle')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.steinmetz_add", icon='MESH_CYLINDER')
@@ -542,7 +691,7 @@ def _selftest():
 
     # Tricylinder (radial proxy for the CSG operator build): watertight,
     # convex, radius stays within [r, sqrt2 r].
-    v, f = build_steinmetz_radial('TRICYLINDER', 1.0, 64, 96)
+    v, f, _rg = build_steinmetz_radial('TRICYLINDER', 1.0, 64, 96)
     man, ne = _edge_manifold(f)
     chi = len(v) - ne + len(f)
     rr = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v]
@@ -572,11 +721,23 @@ def _selftest():
         assert got == n, (kind, got, n)
         per = {ring_patches(kind, k) for k in range(len(AXIS_SETS[kind]))}
         assert len(per) == 1, (kind, per)      # every ring alike
-        v, f = build_steinmetz_radial(kind, 1.0, 48, 96)
+        v, f, rg = build_steinmetz_radial(kind, 1.0, 96, 192)
         man, ne = _edge_manifold(f)
-        assert man and len(v) - ne + len(f) == 2, (kind, man)
+        assert man, kind                          # inserting the ridges
+        assert len(v) - ne + len(f) == 2, (kind, len(v) - ne + len(f))
         rr = [math.sqrt(sum(c * c for c in p)) for p in v]
         assert min(rr) > 0.999, (kind, min(rr))   # insphere is the radius
+        # every vertex sits ON the exact surface, not on a faceted one
+        worst = 0.0
+        for p in v:
+            n = math.sqrt(sum(c * c for c in p))
+            u = tuple(c / n for c in p)
+            worst = max(worst, abs(n - _steinmetz_radius(kind, u, 1.0)))
+        assert worst < 1e-9, (kind, worst)
+        # and the ridges really were inserted, or nothing can be creased
+        assert len(rg) > 4 * n, (kind, len(rg), n)
+    print("steinmetz[n-cylinder]: watertight with the ridges inserted as "
+          "real edges, every vertex exact to 1e-9")
     print("steinmetz[n-cylinder]: patch counts %s -- 4 of 5 published "
           "counts reproduced exactly; TRUNCOCT12 is 216, not the "
           "published 240 (that axis set is in special position)"
@@ -588,9 +749,11 @@ def _selftest():
     # rather than just another prism.
     far = []
     for order in (3, 4, 5, 6, 8, 12, 24):
-        v, f = build_steinmetz_radial(equidomoid_axes(order), 1.0, 96, 192)
+        v, f, _rg = build_steinmetz_radial(
+            equidomoid_axes(order), 1.0, 96, 192)
         man, ne = _edge_manifold(f)
         assert man and len(v) - ne + len(f) == 2, (order, man)
+        assert _rg, ("no ridges inserted", order)
         zs = [p[2] for p in v]
         assert abs(max(zs) - 1.0) < 1e-9 and abs(min(zs) + 1.0) < 1e-9, \
             (order, min(zs), max(zs))          # height = 2r = the diameter
