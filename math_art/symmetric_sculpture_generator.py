@@ -2223,6 +2223,28 @@ if _IN_BLENDER:
             # being able to edit one.
             if self.syncing:
                 return
+            # Assigning the value a preset ALREADY specifies is not an
+            # edit. This matters beyond pedantry: the live generator
+            # replays a stored setup by setattr-ing every property in
+            # declaration order, so it writes preset first and then
+            # group and family at the values that preset just chose --
+            # and without this test that write reported itself as an
+            # edit and left the sidebar showing Custom for a sculpture
+            # that was plainly Solar Flair.
+            if self.preset in PRESETS:
+                g, f, _mb = PRESETS[self.preset]
+                if self.group == g and self.family == f:
+                    return
+            self.user_edited = True
+            if self.preset != 'CUSTOM':
+                self.preset = 'CUSTOM'
+
+        def _motif_to_custom(self, context):
+            # Same idea for the motif: clearing the field, or replaying
+            # the empty default, leaves the preset alone. Only pointing
+            # it at an actual object is an edit.
+            if self.syncing or not self.motif_object:
+                return
             self.user_edited = True
             if self.preset != 'CUSTOM':
                 self.preset = 'CUSTOM'
@@ -2424,7 +2446,7 @@ if _IN_BLENDER:
                         "material so the editable motif reads through "
                         "them; off = the sculpture's real material")
         motif_object: StringProperty(
-            update=_to_custom,
+            update=_motif_to_custom,
             name="Motif Object", default="",
             description="Mesh object to replicate instead of the "
                         "preset motif -- draw it flat on the XY "
