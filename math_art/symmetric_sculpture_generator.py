@@ -2284,112 +2284,93 @@ def dragonflies_motif(d=1.0):
     return polygon_with_holes(outer, holes)
 
 _EDDY_OUTER = (
-    (+0.868062, +0.146124), (+0.663765, -0.055799), (+0.653092, -0.069068),
-    (+0.641738, -0.093756), (+0.630912, -0.111834), (+0.620283, -0.125146),
-    (+0.606211, -0.138423), (+0.586634, -0.150938), (+0.559053, -0.160211),
-    (+0.530590, -0.164185), (+0.499361, -0.163507), (+0.467952, -0.158695),
-    (+0.434582, -0.149866), (+0.399271, -0.137020), (+0.359722, -0.119438),
-    (+0.316996, -0.097374), (+0.275839, -0.073121), (+0.239817, -0.048907),
-    (+0.205882, -0.022679), (+0.176489, +0.003357), (+0.149702, +0.030429),
-    (+0.124953, +0.059009), (+0.101832, +0.089682), (+0.080452, +0.122539),
-    (+0.060963, +0.157610), (+0.046734, +0.188607), (+0.034375, +0.222065),
-    (+0.022045, +0.266583), (+0.014138, +0.311323), (+0.012271, +0.329479),
-    (+0.012108, +0.398896), (+0.020286, +0.456260), (+0.031944, +0.498937),
-    (+0.050151, +0.544752), (+0.073490, +0.586493), (+0.109872, +0.633263),
-    (+0.154363, +0.674302), (+0.206476, +0.709214), (+0.262706, +0.735368),
-    (+0.318998, +0.751129), (+0.375982, +0.758618), (+0.406855, +0.758410),
-    (+0.436217, +0.754900), (+0.470877, +0.746913), (+0.495416, +0.737547),
-    (+0.508551, +0.747071), (+0.632114, +0.869256), (+0.571199, +1.048890),
-    (+0.527974, +1.036309), (+0.451740, +1.009965), (+0.361001, +0.969255),
-    (+0.307820, +0.939797), (+0.264092, +0.912154), (+0.220184, +0.880714),
-    (+0.183700, +0.850224), (+0.145299, +0.814104), (+0.110876, +0.777209),
-    (+0.080459, +0.739568), (+0.053159, +0.700153), (+0.027929, +0.657207),
-    (+0.005200, +0.611291), (-0.010661, +0.574040), (-0.030999, +0.514642),
-    (-0.040796, +0.511129), (-0.069749, +0.515110), (-0.094971, +0.523201),
-    (-0.125477, +0.537368), (-0.137851, +0.479089), (-0.110052, +0.474524),
-    (-0.089553, +0.468484), (-0.068069, +0.458728), (-0.049455, +0.445826),
-    (-0.049630, +0.379898), (-0.045694, +0.326580), (-0.038290, +0.275222),
-    (-0.026171, +0.221038), (-0.007702, +0.161119), (+0.008669, +0.117138),
-    (+0.041258, +0.050995), (+0.074829, -0.004176), (+0.128307, -0.073637),
-    (+0.196105, -0.142662), (+0.228653, -0.170465), (+0.286310, -0.213786),
-    (+0.340535, -0.249801), (+0.390504, -0.276617), (+0.445941, -0.300931),
-    (+0.503634, -0.320459), (+0.586648, -0.335677), (+0.645749, -0.335939),
-    (+0.698896, -0.329179), (+0.728045, -0.321913), (+0.756276, -0.312216),
-    (+0.784332, -0.299804), (+0.813635, -0.283997), (+0.862210, -0.250405),
-    (+0.910331, -0.205550), (+0.937854, -0.174202), (+0.963718, -0.140134),
+    (+0.000000, -0.381966), (-0.186600, -0.266178), (-0.198370, -0.260614),
+    (-0.218752, -0.256585), (-0.234124, -0.251768), (-0.245918, -0.246245),
+    (-0.258302, -0.238157), (-0.271102, -0.225840), (-0.282923, -0.206994),
+    (-0.290963, -0.186547), (-0.296038, -0.163211), (-0.298073, -0.139003),
+    (-0.297472, -0.112620), (-0.294231, -0.084077), (-0.288228, -0.051537),
+    (-0.279461, -0.015834), (-0.268785, +0.019093), (-0.257221, +0.050196),
+    (-0.243788, +0.080107), (-0.229686, +0.106609), (-0.214347, +0.131358),
+    (-0.197524, +0.154861), (-0.178854, +0.177529), (-0.158249, +0.199292),
+    (-0.135661, +0.220044), (-0.115162, +0.236160), (-0.092499, +0.251325),
+    (-0.061609, +0.268444), (-0.029765, +0.282315), (-0.016602, +0.286947),
+    (+0.034970, +0.299470), (+0.079073, +0.303640), (+0.112879, +0.302599),
+    (+0.150190, +0.297250), (+0.185387, +0.287359), (+0.206254, +0.278942),
+    (+0.226654, +0.268670), (+0.265109, +0.242930), (+0.300372, +0.210429),
+    (+0.316112, +0.192126), (+0.329860, +0.173304), (+0.351634, +0.134274),
+    (+0.367381, +0.093254), (+0.372742, +0.070267), (+0.375379, +0.047814),
+    (+0.375634, +0.020622), (+0.373056, +0.000708), (+0.382484, -0.007355),
+    (+0.495386, -0.077376), (+0.618034, -0.000000), (+0.600958, +0.029883),
+    (+0.567755, +0.081845), (+0.521282, +0.142022), (+0.489883, +0.176292),
+    (+0.461522, +0.203859), (+0.430306, +0.230880), (+0.401123, +0.252554),
+    (+0.367412, +0.274645), (+0.333836, +0.293642), (+0.300421, +0.309527),
+    (+0.266244, +0.322779), (+0.229813, +0.333861), (+0.191620, +0.342553),
+    (+0.161095, +0.347688), (+0.113308, +0.352193), (+0.108947, +0.358848),
+    (+0.106733, +0.381082), (+0.108241, +0.401276), (+0.113322, +0.426484),
+    (+0.067789, +0.425270), (+0.069363, +0.403790), (+0.068535, +0.387473),
+    (+0.065121, +0.369759), (+0.058856, +0.353618), (+0.009818, +0.341969),
+    (-0.029113, +0.329517), (-0.065967, +0.314837), (-0.104080, +0.296148),
+    (-0.145321, +0.271714), (-0.175090, +0.251687), (-0.218435, +0.215644),
+    (-0.253448, +0.180832), (-0.295528, +0.128669), (-0.334724, +0.065939),
+    (-0.349576, +0.036776), (-0.371478, -0.013822), (-0.388561, -0.060565),
+    (-0.399568, -0.102501), (-0.407737, -0.148054), (-0.411945, -0.194429),
+    (-0.408426, -0.258856), (-0.398062, -0.302836), (-0.383541, -0.341136),
+    (-0.372932, -0.361505), (-0.360680, -0.380758), (-0.346441, -0.399396),
+    (-0.329456, -0.418355), (-0.295806, -0.448461), (-0.253866, -0.476218),
+    (-0.225646, -0.491076), (-0.195700, -0.504216),
 )
 
 _EDDY_HOLE_A = (
-    (+0.854494, -0.082177), (+0.865558, -0.118997), (+0.837310, -0.154403),
-    (+0.808169, -0.184629), (+0.776831, -0.210705), (+0.744119, -0.231945),
-    (+0.711748, -0.247197), (+0.685366, -0.255475), (+0.656626, -0.261175),
-    (+0.626920, -0.263893), (+0.598493, -0.263516), (+0.564539, -0.259610),
-    (+0.527824, -0.252227), (+0.490631, -0.241613), (+0.462638, -0.230650),
-    (+0.546730, -0.236793), (+0.568867, -0.235218), (+0.602591, -0.227504),
-    (+0.649831, -0.209622), (+0.676545, -0.189291), (+0.700809, -0.162985),
-    (+0.718041, -0.138980), (+0.729395, -0.109600), (+0.737419, -0.095352),
-    (+0.830951, -0.007119),
+    (-0.172132, -0.412669), (-0.197525, -0.427472), (-0.228892, -0.412799),
+    (-0.256566, -0.396538), (-0.281549, -0.377901), (-0.303182, -0.357380),
+    (-0.320304, -0.336042), (-0.331171, -0.317910), (-0.340543, -0.297564),
+    (-0.347870, -0.275967), (-0.352669, -0.254769), (-0.355831, -0.228832),
+    (-0.356903, -0.200221), (-0.355658, -0.170676), (-0.352510, -0.147909),
+    (-0.342053, -0.211517), (-0.336927, -0.227691), (-0.325167, -0.251381),
+    (-0.310953, -0.273930), (-0.303435, -0.283303), (-0.283549, -0.299528),
+    (-0.259659, -0.312865), (-0.238736, -0.321385), (-0.214868, -0.324576),
+    (-0.202843, -0.327995), (-0.120544, -0.381759),
 )
 
 _EDDY_HOLE_B = (
-    (+0.531600, +0.884786), (+0.472301, +0.825288), (+0.444888, +0.829593),
-    (+0.411502, +0.831539), (+0.379630, +0.830995), (+0.349751, +0.827778),
-    (+0.301641, +0.816916), (+0.220034, +0.789197), (+0.275274, +0.835908),
-    (+0.312324, +0.861151), (+0.349614, +0.883182), (+0.419722, +0.916108),
-    (+0.512112, +0.948457),
+    (+0.488972, +0.000116), (+0.434149, +0.033566), (+0.432452, +0.054713),
+    (+0.427933, +0.079878), (+0.421835, +0.103473), (+0.414105, +0.125109),
+    (+0.397435, +0.158930), (+0.362250, +0.214641), (+0.406842, +0.181924),
+    (+0.432226, +0.158893), (+0.455265, +0.135110), (+0.492266, +0.088877),
+    (+0.532820, +0.025979),
 )
 
 
 def eddy_motif(d=1.0):
     """One of the sixty flat parts of Hart's Eddy (2018), traced from
-    the cutting template.
+    the cutting template, in a face plane of the rhombic
+    triacontahedron.
 
-    PLACEMENT IS A BEST GUESS, not a solved fit -- treat the numbers
-    as a starting point to nudge, not as Hart's design.
+    The family is settled by Hart's own bevel.  He says he "beveled
+    their four mating edges (18 degrees)", and a bevel is half the
+    dihedral, so 18 wants a joint at 36 or its supplement 144.  This
+    family's dihedrals are exactly 0, 36, 60, 72, 90, 108, 120 and
+    144 -- whole numbers, with 36 and 144 both giving 18.00 degrees on
+    the nose.  The 60-plane P1 orbit, which the part count alone also
+    allows, offers only 34.708 and 36.789 there: bevels of 17.35 and
+    18.39, close but not Hart's figure.  Thirty planes at fold 2 is
+    also exactly his sixty parts, two to a plane like Solar Flair.
 
-    What is solid: the group and family (sixty identical flat parts,
-    icosahedral, so the 60-plane orbit), and the trace itself, which
-    Hart's own text corroborates -- he says each part carries "eleven
-    small rectangular holes" for cable ties and the tracer found and
-    filled exactly eleven.  The part is a tall arch on two feet, each
-    foot ending in two straight edges meeting at a corner, 64.15 and
-    116.41 degrees.  Those two are supplementary to within 0.6
-    degrees, so both feet are cut from the same pair of guide-line
-    directions -- one taking the acute crossing, the other the obtuse.
+    Placement is still approximate.  The tips are the outline's two
+    sharpest corners, and one is the OUTER corner of the right foot --
+    the points sit on the outside of the ball, so the wedge a tip
+    fills is the exterior angle at its joint, not the interior one the
+    other presets use.  Of the placements putting both tips on meeting
+    points and both outside the body of the part -- 3-way and 5-way
+    joints with the points outward, as Hart describes -- the best puts
+    three of the six longest edges on an 18-degree bevel line, with
+    the tips at radius 0.3820 and 0.6180, which are 1/phi^2 and 1/phi.
 
-    What is not: where it sits.  P1's stabiliser is trivial, so unlike
-    every other preset here nothing pins the motif in its plane -- it
-    floats with four degrees of freedom.
-
-    The tips are its two sharpest corners, and one of them is the far
-    corner of the right foot -- the OUTER one.  That matters: the
-    points sit on the outside of the ball, so the wedge a tip fills is
-    the EXTERIOR angle at the joint, not the interior one every other
-    preset here uses.  Anchoring on the inner corners instead put the
-    body of the part outside its own tips and produced only a cluster
-    of near-equal fits, none of them right.
-
-    This placement is the best of the 112 that put both tips on
-    meeting points AND both outside the body of the part, which is
-    what Hart describes -- 3-way and 5-way joints, points outward.  It
-    scores 17.6% of straight-edge length lying on a guide line against
-    14.9% for the next, the only clear margin any search here has
-    produced.  The 60.37 degree tip lands on a 3-part point at radius
-    0.8803, the 72.52 degree tip on a 5-part point at 1.1943.
-
-    Still a guess: it does not reproduce Hart's four mating edges, and
-    the tip angles do not match their wedges, so the exterior-angle
-    reading is not yet carried through the whole fit.
-
-    And it fails Hart's own check.  He says he "beveled their four
-    mating edges (18 degrees)", and a bevel is half the dihedral, so
-    18 degrees wants a dihedral near 36.  This family offers only
-    34.708 (one neighbouring plane) and 36.789 (two) -- three
-    candidate lines in the whole diagram -- and no candidate placement
-    puts even two of the four longest edges on any of them.  That
-    suggests the family may be wrong: if the 18 is instead the
-    sander's tilt off perpendicular it wants a dihedral near 144,
-    which ICOSA/P1 does not have at all.
+    What still does not check out: it finds five mating runs where
+    Hart cut four, and one of them is a 120 degree joint (a 30 degree
+    bevel) rather than 144.  And the 5-fold tip's angle is soft --
+    a curve runs into it, so it measures anywhere from 72 to 92
+    degrees depending on the window, and it is the anchor to distrust.
 
     References:
       - George W. Hart, "Eddy" (2018), Kimball Union Academy;
@@ -2406,7 +2387,7 @@ PRESETS = {
     'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
     'SOLAR_FLAIR': ('ICOSA', 'P2', solar_flair_motif),
     'DRAGONFLIES': ('OCTA', 'P2', dragonflies_motif),
-    'EDDY': ('ICOSA', 'P1', eddy_motif),
+    'EDDY': ('ICOSA', 'P2', eddy_motif),
 }
 
 
@@ -3116,17 +3097,16 @@ if _IN_BLENDER:
                     "misses the other eleven. They sit instead on the "
                     "stellation diagram's level-3 vertices, at three "
                     "times the plane distance"),
-                   ('EDDY', "Eddy (placement unsolved)",
-                    "After Eddy (2018): 60 identical arched parts in "
-                    "the 60-plane icosahedral orbit. WARNING -- the "
-                    "placement in the plane is a BEST GUESS, not a "
-                    "solved fit. P1 has no stabiliser, so nothing "
-                    "pins the motif and it floats with four degrees "
-                    "of freedom; this is the best of 15,310 "
-                    "candidates but the field is a cluster, and it "
-                    "does not reproduce Hart's four mating edges "
-                    "beveled at 18 degrees. Loaded so it can be "
-                    "nudged by hand"),
+                   ('EDDY', "Eddy (approximate)",
+                    "After Eddy (2018): 60 arched parts, two to each "
+                    "of the 30 rhombic-triacontahedral planes. The "
+                    "family is fixed by Hart's own bevel -- he cut the "
+                    "mating edges at 18 degrees, and this family's "
+                    "dihedrals of 36 and 144 give exactly that. The "
+                    "placement within the plane is still approximate: "
+                    "the tips sit on a 3-part and a 5-part meeting "
+                    "point at 1/phi^2 and 1/phi, points outward, but "
+                    "it finds five mating edges where Hart cut four"),
                    ('CUSTOM', "Custom",
                     "Choose the group and plane family yourself. "
                     "Starts from the demo arc motif -- barbed at one "
