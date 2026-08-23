@@ -1221,6 +1221,77 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04,
                     > limit * limit:
                 p = slide(j if abs(shift[j]) >= abs(shift[i]) else i, i)
             out.append(p)
+
+        # Where a mating edge runs into the curved free boundary the
+        # cut does not stop at the corner: the bisecting plane carries
+        # on and leaves through the sweep several vertices later.
+        # Meeting only the ONE adjacent segment finds that crossing
+        # far away -- the two lines are nearly tangent there -- the
+        # guard above rejects it as a blow-up, and the corner snaps
+        # back onto the unshifted curve in a single step.  That step
+        # is the notch where Solar Flair's narrow point meets its
+        # sweep.  So chisel instead of meeting: walk the run of curve
+        # vertices the shifted line has actually eaten into and lay
+        # them ON it.  It is the same cut the extruded solid would
+        # take from that plane, and it stays local for the reason the
+        # solid version could not -- the run ends at the first vertex
+        # back on the keep side, so the far arm of a star, which sits
+        # beyond the same plane but is not contiguous with this
+        # corner, is never reached.
+        for i in range(n):
+            if shift[i] == 0.0:
+                continue
+            q0 = slide(i, i)
+            p0, p1 = loop[i], loop[(i + 1) % n]
+            ex, ey = p1[0] - p0[0], p1[1] - p0[1]
+            ln = sqrt(ex * ex + ey * ey) or 1.0
+            nx, ny = -ey / ln, ex / ln
+            sg = 1.0 if shift[i] > 0 else -1.0
+            # The run has to be fenced to the joint.  Contiguity alone
+            # is not the bound it looks like: 254 of Solar Flair's 427
+            # outline points lie beyond one bisector, and they are
+            # reached by walking the outline from this very corner --
+            # the far arm of the star is the same run.  Chiselling
+            # them all is the amputation that sank doing this to the
+            # extruded solid.  A joint only exists along the mating
+            # edge, so cut over its span and taper off over a bevel's
+            # width either side, which lands the run-off at zero
+            # instead of ending it on a step.
+            pad = 2.5 * abs(shift[i])
+            for step, start, u_end in ((+1, (i + 2) % n, ln),
+                                       (-1, (i - 1) % n, 0.0)):
+                v = start
+                u_prev = u_end
+                for _ in range(n):
+                    # another mating edge owns its own corners
+                    if per[v] is not None or per[(v - 1) % n] is not None:
+                        break
+                    dx = out[v][0] - p0[0]
+                    dy = out[v][1] - p0[1]
+                    u = (dx * ex + dy * ey) / ln
+                    if u < -pad or u > ln + pad:
+                        break            # past the end of the joint
+                    # A run-off leaves the joint; it does not come
+                    # back.  Frabjous's outline curls round inside
+                    # the span, and following it there chiselled 0.43
+                    # off a part whose bevel is 0.027.  The moment
+                    # the outline turns back along the edge it is no
+                    # longer running off this joint.
+                    if (u - u_prev) * step < -1e-12:
+                        break
+                    u_prev = u
+                    w = 1.0
+                    if u < 0.0:
+                        w = (u + pad) / pad
+                    elif u > ln:
+                        w = (ln + pad - u) / pad
+                    t = ((out[v][0] - q0[0]) * nx
+                         + (out[v][1] - q0[1]) * ny)
+                    if t * sg >= -1e-12:
+                        break                # back on the keep side
+                    out[v] = (out[v][0] - nx * t * w,
+                              out[v][1] - ny * t * w)
+                    v = (v + step) % n
         return out
 
     tops = [offset_loop(l, p, +half, i > 0)
