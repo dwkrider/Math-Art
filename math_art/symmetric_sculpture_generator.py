@@ -2472,6 +2472,25 @@ if _IN_BLENDER:
                                 f"'{self.motif_object}' is not a mesh "
                                 f"object -- built the preset motif "
                                 f"instead")
+            if motif is not None and self.mirror:
+                # A motif the user picked gets mirrored into a COPY.
+                # Reflecting their object in place would edit
+                # something they own and did not ask us to touch, and
+                # toggling the checkbox back would not undo it. Before
+                # this the mirror was simply skipped whenever Motif
+                # Object was set, which looked like the option doing
+                # nothing at all.
+                src = motif.data
+                mme = bpy.data.meshes.new("SymSculpt Motif Mirrored")
+                mme.from_pydata(
+                    [(v.co[0], -v.co[1], v.co[2]) for v in src.vertices],
+                    [],
+                    [list(reversed(pp.vertices)) for pp in src.polygons])
+                mme.validate()
+                mme.update()
+                motif = bpy.data.objects.new("SymSculpt Motif Mirrored",
+                                             mme)
+                context.collection.objects.link(motif)
             if motif is None:
                 verts, faces = motif_builder(d)
                 if self.mirror:
