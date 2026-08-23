@@ -2372,15 +2372,29 @@ if _IN_BLENDER:
                         "round, and the two Topeka installations are "
                         "the pair. Left on the preset, since either "
                         "hand is still that sculpture")
-        show_leaders: BoolProperty(
-            name="Link Cones to Markers", default=False,
-            description="Draw a line from each marker on the flat "
-                        "guide diagram to the spike cone it stands "
-                        "for out on the sculpture, so you can see "
-                        "which point of the diagram is which point of "
-                        "the solid. Baked at the lift the sculpture "
-                        "is built with -- drag the modifier's Lift "
-                        "afterwards and the lines no longer reach")
+        show_rings: BoolProperty(
+            name="Mark Radii", default=False,
+            description="Draw a circle in the guide plane, centred on "
+                        "the origin, through each marker -- so every "
+                        "point at the same distance from the centre "
+                        "lies on one ring. Coloured to match the "
+                        "marker it passes through, and points of "
+                        "different order at the same radius get a "
+                        "ring apiece. Useful for telling which "
+                        "meeting points are the same distance out, "
+                        "which is what fixes how big the part can be")
+        show_spikes: BoolProperty(
+            name="Show Spikes", default=False,
+            description="At every point where parts meet, draw the "
+                        "spike the sculpture forms there -- a hollow "
+                        "cone with one side per part, its edges along "
+                        "the creases where consecutive parts join -- "
+                        "and a tube linking it back to the marker for "
+                        "that point on the flat guide diagram. Both "
+                        "carry the order colour, so a blue cone, blue "
+                        "tube and blue pentagon are one and the same "
+                        "point. Independent of the defining "
+                        "polyhedron, which is just the solid")
         crossing_min_planes: IntProperty(
             name="Mark From", default=3, min=3, max=8,
             description="Only mark points where at least this many "
@@ -2390,13 +2404,9 @@ if _IN_BLENDER:
             name="Show Defining Polyhedron", default=False,
             description="Add the semi-transparent solid whose "
                         "extended face planes are this plane family, "
-                        "and draw the spike the sculpture forms at "
-                        "each point where parts meet: a hollow cone "
-                        "with one side per part, its edges along the "
-                        "creases where consecutive parts join, so it "
-                        "points the way the real spike points. "
-                        "Transparent, so it shows the wedge a corner "
-                        "has to fill without hiding it. Colour is "
+                        "-- just the solid. The spikes at the "
+                        "meeting points are their own option, Show "
+                        "Spikes. Colour is "
                         "the orbit: two "
                         "crossings share one exactly when a rotation "
                         "of the sculpture carries one onto the other, "
@@ -2831,24 +2841,56 @@ if _IN_BLENDER:
                             "them bed against the neighbour"
                             % (len(near), worst, 100.0 * worst / d))
 
-            if self.show_polyhedron:
-                # the solid whose extended face planes are this
-                # family, plus a ball on every vertex and a disc
-                # where that vertex lands in the guide diagram
-                pv, pf = family_polyhedron(kind, family, d)
-                pme = bpy.data.meshes.new("SymSculpt Polyhedron")
-                pme.from_pydata(pv, [], pf)
-                pme.validate()
-                pme.update()
-                solid = bpy.data.objects.new("SymSculpt Polyhedron",
-                                             pme)
-                solid.data.materials.append(_solid_material())
-                context.collection.objects.link(solid)
-                solid.matrix_world = Matrix.Identity(4)
-                solid.hide_render = True
-                solid.parent = obj
-                solid.matrix_parent_inverse = Matrix.Identity(4)
+            if self.show_rings:
+                # One ring per distinct (radius, order). Two markers
+                # at the same radius but different order each get
+                # their own, drawn a hair apart in Z so neither is
+                # hidden inside the other -- they are the same circle
+                # otherwise and would z-fight.
+                rverts, rfaces, rorders = [], [], []
+                allx = crossing_points(kind, family, d, extent,
+                                       self.guide_rings)
+                allq = crossing_parts(kind, family, allx, d)
+                seen = {}
+                for (rx, ry, _k), npl in zip(allx, allq):
+                    if npl < max(3, self.crossing_min_planes):
+                        continue
+                    rr = sqrt(rx * rx + ry * ry)
+                    if rr < 1e-6:
+                        continue
+                    key = (round(rr, 5), npl)
+                    if key not in seen:
+                        seen[key] = len(seen)
+                seg, wide = 192, 0.005 * d
+                for (rr, npl), idx in sorted(seen.items(),
+                                             key=lambda kv: kv[1]):
+                    zz = 1e-4 * d * idx
+                    base = len(rverts)
+                    for t in range(seg):
+                        th = 2.0 * pi * t / seg
+                        c_, s_ = cos(th), sin(th)
+                        rverts.append(((rr - wide) * c_,
+                                       (rr - wide) * s_, zz))
+                        rverts.append(((rr + wide) * c_,
+                                       (rr + wide) * s_, zz))
+                    for t in range(seg):
+                        n2 = (t + 1) % seg
+                        rfaces.append([base + 2 * t, base + 2 * n2,
+                                       base + 2 * n2 + 1,
+                                       base + 2 * t + 1])
+                        rorders.append(npl)
+                if rfaces:
+                    rme = bpy.data.meshes.new("SymSculpt Radii")
+                    rme.from_pydata(rverts, [], rfaces)
+                    rme.validate()
+                    rme.update()
+                    _assign_order_materials(rme, rorders, False)
+                    rings = bpy.data.objects.new("SymSculpt Radii", rme)
+                    context.collection.objects.link(rings)
+                    rings.matrix_world = Matrix.Identity(4)
+                    rings.hide_render = True
 
+            if self.show_spikes:
                 # A hollow cone at every point where parts really
                 # meet, in place of the balls that used to sit on
                 # every guide crossing -- hundreds of them, most on
@@ -2940,41 +2982,85 @@ if _IN_BLENDER:
                     if lift_socket is not None:
                         _drive_z_from_lift(spikes, obj, mod.name,
                                            lift_socket)
-                # Leaders: flat marker up to the cone it stands for.
+                # Leaders: flat marker up to the cone it stands
+                # for. Solid tubes, not wire edges -- a wire is one
+                # pixel whatever the zoom and takes its colour from
+                # the theme, so it neither reads at a distance nor
+                # says which order it belongs to. These carry the same
+                # order material as the cone and the marker at either
+                # end.
+                #
                 # Static, and they have to be: the cone rides the lift
                 # driver while the marker stays down with the guide
                 # diagram, so the two ends move differently and no
                 # single object transform can stretch between them.
                 # The lift in force at build time is baked in instead.
-                if self.show_leaders:
-                    lz = lift_z if self.lift else 0.0
-                    lverts, ledges = [], []
-                    for (cx, cy, _k), npl in meet:
-                        P = (a[0] * d + cx * u[0] + cy * v[0],
-                             a[1] * d + cx * u[1] + cy * v[1],
-                             a[2] * d + cx * u[2] + cy * v[2])
-                        lverts.append((cx, cy, 0.0))
-                        lverts.append((P[0], P[1], P[2] + lz))
-                        ledges.append((len(lverts) - 2, len(lverts) - 1))
-                    if ledges:
-                        lme = bpy.data.meshes.new("SymSculpt Leaders")
-                        lme.from_pydata(lverts, ledges, [])
-                        lme.update()
-                        leads = bpy.data.objects.new(
-                            "SymSculpt Leaders", lme)
-                        context.collection.objects.link(leads)
-                        leads.matrix_world = Matrix.Identity(4)
-                        leads.display_type = 'WIRE'
-                        leads.hide_render = True
-                        leads.parent = obj
-                        leads.matrix_parent_inverse = Matrix.Identity(4)
-                if lift_socket is not None:
-                    _drive_z_from_lift(solid, obj, mod.name,
-                                       lift_socket)
+                lz = lift_z if self.lift else 0.0
+                lverts, lfaces, lorders = [], [], []
+                rtube, sides = 0.008 * d, 8
+                for (cx, cy, _k), npl in meet:
+                    p0 = (cx, cy, 0.0)
+                    p1 = (a[0] * d + cx * u[0] + cy * v[0],
+                          a[1] * d + cx * u[1] + cy * v[1],
+                          a[2] * d + cx * u[2] + cy * v[2] + lz)
+                    ax = (p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])
+                    if sqrt(sum(c * c for c in ax)) < 1e-9:
+                        continue
+                    ax = _normalize(ax)
+                    w1, w2 = _frame(ax)
+                    base = len(lverts)
+                    for end in (p0, p1):
+                        for t in range(sides):
+                            th = 2.0 * pi * t / sides
+                            lverts.append(tuple(
+                                end[c] + rtube * (cos(th) * w1[c]
+                                                  + sin(th) * w2[c])
+                                for c in range(3)))
+                    for t in range(sides):
+                        n2 = (t + 1) % sides
+                        lfaces.append([base + t, base + n2,
+                                       base + sides + n2,
+                                       base + sides + t])
+                        lorders.append(npl)
                 self.report(
                     {'INFO'},
                     f"{len(meet)} points where parts meet, "
                     f"{len(kfaces)} spike faces")
+                if lfaces:
+                    lme = bpy.data.meshes.new("SymSculpt Leaders")
+                    lme.from_pydata(lverts, [], lfaces)
+                    lme.validate()
+                    lme.update()
+                    _assign_order_materials(lme, lorders, False)
+                    leads = bpy.data.objects.new(
+                        "SymSculpt Leaders", lme)
+                    context.collection.objects.link(leads)
+                    leads.matrix_world = Matrix.Identity(4)
+                    leads.hide_render = True
+                    leads.parent = obj
+                    leads.matrix_parent_inverse = Matrix.Identity(4)
+
+            if self.show_polyhedron:
+                # the solid whose extended face planes are this
+                # family, plus a ball on every vertex and a disc
+                # where that vertex lands in the guide diagram
+                pv, pf = family_polyhedron(kind, family, d)
+                pme = bpy.data.meshes.new("SymSculpt Polyhedron")
+                pme.from_pydata(pv, [], pf)
+                pme.validate()
+                pme.update()
+                solid = bpy.data.objects.new("SymSculpt Polyhedron",
+                                             pme)
+                solid.data.materials.append(_solid_material())
+                context.collection.objects.link(solid)
+                solid.matrix_world = Matrix.Identity(4)
+                solid.hide_render = True
+                solid.parent = obj
+                solid.matrix_parent_inverse = Matrix.Identity(4)
+
+                if lift_socket is not None:
+                    _drive_z_from_lift(solid, obj, mod.name,
+                                       lift_socket)
 
             for o in context.selected_objects:
                 o.select_set(False)
@@ -3002,8 +3088,8 @@ if _IN_BLENDER:
             lay.prop(self, 'mirror')
             for k in ('distance', 'shell', 'guide_extent',
                       'guide_rings', 'show_crossings',
-                      'crossing_min_planes', 'show_polyhedron',
-                      'show_leaders', 'lift',
+                      'crossing_min_planes', 'show_rings',
+                      'show_spikes', 'show_polyhedron', 'lift',
                       'translucent', 'show_part'):
                 lay.prop(self, k)
 
