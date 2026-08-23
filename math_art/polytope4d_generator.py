@@ -16,10 +16,26 @@
 # Struts can taper with the local projection scale (near features fat,
 # far features thin), and vertices can be capped with spheres.
 #
+# Beyond the six regular ones the module builds the UNIFORM (semi-regular)
+# polychora -- the 4-dimensional analogues of the Archimedean solids -- by
+# Wythoff's kaleidoscope, in `polytopes/wythoff.py`.  Take the four mirrors
+# of a rank-4 reflection group, mark which of them the generating point is
+# held off ("ringing" nodes of the Coxeter diagram), and the orbit of that
+# point is the vertex set.  All 15 ringings of each of the four groups
+# [3,3,3], [4,3,3], [3,4,3] and [5,3,3] are available, from the 5-cell up
+# to the omnitruncated 120-cell's 14400 vertices and 28800 edges.
+#
 # References:
 # - The six regular convex 4-polytopes: Ludwig Schlafli (c. 1852).
 # - H. S. M. Coxeter, "Regular Polytopes".
 # - Schlegel diagrams: Victor Schlegel (1883).
+# - W. A. Wythoff, "A relation between the polytopes of the C600-family",
+#   Proc. Section of Sciences, K. Akad. van Wetenschappen te Amsterdam 20
+#   (1918), 966-970.
+# - H. S. M. Coxeter, "Wythoff's construction for uniform polytopes",
+#   Proc. London Math. Soc. (2) 38 (1935), 327-339.
+# - Alicia Boole Stott, "Geometrical deduction of semiregular from regular
+#   polytopes and space fillings" (1910).
 
 bl_info = {
     "name": "4D Polytopes",
@@ -137,6 +153,7 @@ try:
                                         polytope_edges, polytope_faces,
                                         polytope_vertices, project_point,
                                         ring_cell_points, rotate4)
+    from .polytopes import wythoff as _wy
 except ImportError:  # flat import outside the package
     from polytopes.regular import (COUNTS, _cell_inradius,
                                        _half_filter, _leonardo_panels,
@@ -145,6 +162,17 @@ except ImportError:  # flat import outside the package
                                        polytope_edges, polytope_faces,
                                        polytope_vertices, project_point,
                                        ring_cell_points, rotate4)
+    from polytopes import wythoff as _wy
+
+
+# the 15 non-empty ringings, in a stable menu order
+_RING_MASKS = [tuple(int(c) for c in format(m, '04b'))
+               for m in range(1, 16)]
+
+
+def wythoff_kind(family, rings):
+    """The `kind` string naming a uniform polychoron."""
+    return "W:%s:%s" % (family, ''.join(str(b) for b in rings))
 
 
 try:
@@ -190,10 +218,30 @@ def build_polytope_ex(kind='CELL8', style='CURVED', proj_dist=1.05,
     material-slot index per face (0 primal, 1 dual if present, then
     one slot per ring); stats is a dict of element counts."""
     systems = []                        # (V4, E, F2) per framework
-    V4 = polytope_vertices(kind)
-    E = polytope_edges(V4)
-    F2 = (polytope_faces(kind, V4, E) if render == 'LEONARDO'
-          else None)
+    if kind.startswith('P:'):
+        _, which, seed, hgt = kind.split(':')
+        V4, E = (_wy.hyperprism(seed, float(hgt)) if which == 'PRISM'
+                 else _wy.hyperpyramid(seed, float(hgt)))
+        F2 = None
+        dual_compound = False
+        rings = 0
+    elif kind.startswith('W:'):
+        # A uniform (semi-regular) polychoron, built from its Coxeter
+        # diagram by the kaleidoscope in polytopes/wythoff.py.  Only
+        # vertices and edges exist for these -- extracting the 2-faces of
+        # an omnitruncated 120-cell is a different order of computation --
+        # so the panel renderer is not offered and dual / ring forms,
+        # which are defined per regular polytope, are skipped.
+        _, fam, bits = kind.split(':')
+        V4, E = _wy.build(fam, tuple(int(c) for c in bits))
+        F2 = None
+        dual_compound = False
+        rings = 0
+    else:
+        V4 = polytope_vertices(kind)
+        E = polytope_edges(V4)
+        F2 = (polytope_faces(kind, V4, E) if render == 'LEONARDO'
+              else None)
     if half:
         V4, E, F2 = _half_filter(V4, E, F2)
     systems.append((V4, E, F2))
@@ -382,6 +430,56 @@ if _IN_BLENDER:
             default='CELL8',
             description="Which of the six regular convex 4-polytopes to "
                         "project into 3D")
+        form: EnumProperty(
+            name="Form",
+            items=[('REGULAR', "Regular",
+                    "One of the six regular convex 4-polytopes"),
+                   ('UNIFORM', "Uniform (semi-regular)",
+                    "A vertex-transitive polytope from Wythoff's "
+                    "kaleidoscope: the truncations, rectifications and "
+                    "expansions of the regular ones, and the "
+                    "4-dimensional analogues of the Archimedean solids"),
+                   ('PRISM', "Hyperprism",
+                    "A polyhedron translated along the fourth axis; the "
+                    "cube's hyperprism is the tesseract"),
+                   ('PYRAMID', "Hyperpyramid",
+                    "A polyhedron joined to a single apex off its "
+                    "hyperplane; the tetrahedron's is the 5-cell")],
+            default='REGULAR',
+            description="Build a regular polytope, a uniform one, or one "
+                        "of the two prismatic families")
+        seed: EnumProperty(
+            name="Base",
+            items=[('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
+                   ('OCTA', "Octahedron", ""),
+                   ('DODECA', "Dodecahedron", ""),
+                   ('ICOSA', "Icosahedron", "")],
+            default='CUBE',
+            description="The 3-dimensional polyhedron the hyperprism or "
+                        "hyperpyramid is raised on")
+        seed_height: FloatProperty(
+            name="Fourth-Axis Extent", default=1.0, min=0.05, max=10.0,
+            description="How far the second copy is translated, or how "
+                        "far the apex stands off, along the fourth axis")
+        family: EnumProperty(
+            name="Symmetry",
+            items=[(k, _wy.FAMILIES[k][0], "order %d"
+                    % _wy.GROUP_ORDER[k]) for k in ('A4', 'B4', 'F4', 'H4')],
+            default='H4',
+            description="Which rank-4 reflection group provides the "
+                        "mirrors (uniform only)")
+        wythoff_rings: EnumProperty(
+            name="Ringed Nodes",
+            items=[(''.join(str(b) for b in bits),
+                    ''.join(str(b) for b in bits),
+                    "Hold the generating point off mirror(s) %s"
+                    % ', '.join(str(i + 1) for i in range(4) if bits[i]))
+                   for bits in _RING_MASKS],
+            default='1000',
+            description="Which nodes of the Coxeter diagram are ringed. "
+                        "The generating point stands off a ringed mirror "
+                        "and lies on an unringed one, so the ringing "
+                        "picks out the polytope (uniform only)")
         style: EnumProperty(
             name="Edges",
             items=[('CURVED', "Curved (stereographic)",
@@ -501,8 +599,15 @@ if _IN_BLENDER:
                         "the printable version)")
 
         def execute(self, context):
+            if self.form == 'UNIFORM':
+                kind = wythoff_kind(self.family, self.wythoff_rings)
+            elif self.form in ('PRISM', 'PYRAMID'):
+                kind = "P:%s:%s:%.6f" % (self.form, self.seed,
+                                         self.seed_height)
+            else:
+                kind = self.kind
             verts, faces, face_mat, st = build_polytope_ex(
-                self.kind, self.style, self.proj_dist, self.rot_xw,
+                kind, self.style, self.proj_dist, self.rot_xw,
                 self.rot_yw, self.rot_zw, self.rot_xy,
                 self.arc_segments, self.radius, self.sides, self.taper,
                 self.vertex_spheres, self.sphere_factor, self.scale,
@@ -581,7 +686,19 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            lay.prop(self, 'kind')
+            lay.prop(self, 'form')
+            if self.form == 'UNIFORM':
+                lay.prop(self, 'family')
+                lay.prop(self, 'wythoff_rings')
+                nv = _wy.expected_vertices(
+                    self.family,
+                    tuple(int(c) for c in self.wythoff_rings))
+                lay.label(text="%d vertices" % nv)
+            elif self.form in ('PRISM', 'PYRAMID'):
+                lay.prop(self, 'seed')
+                lay.prop(self, 'seed_height')
+            else:
+                lay.prop(self, 'kind')
             lay.prop(self, 'style')
             if self.style == 'STRAIGHT':
                 lay.prop(self, 'proj_dist')
@@ -615,11 +732,17 @@ if _IN_BLENDER:
             col = lay.column(align=True)
             col.label(text="Cutaway, Compound & Rings")
             col.prop(self, 'half')
-            col.prop(self, 'dual_compound')
-            row = col.row(align=True)
-            row.enabled = (self.kind == 'CELL120')
+            # the dual and the Hopf rings are defined per regular
+            # polytope, so they are not offered for the uniform ones
+            sub = col.column(align=True)
+            sub.enabled = (self.form == 'REGULAR')
+            sub.prop(self, 'dual_compound')
+            row = sub.row(align=True)
+            row.enabled = (self.form == 'REGULAR'
+                           and self.kind == 'CELL120')
             row.prop(self, 'rings')
-            if self.kind == 'CELL120' and self.rings > 0:
+            if (self.form == 'REGULAR' and self.kind == 'CELL120'
+                    and self.rings > 0):
                 col.prop(self, 'ring_cell_scale')
                 col.prop(self, 'rings_only')
 
