@@ -2552,6 +2552,62 @@ if _IN_BLENDER:
                                        base + 1 + (t + 1) % planes))
                     cfaces.append([base + 1 + t for t in range(planes)])
                     corders.append(planes)
+
+                    # Which two of the lines through here bound the
+                    # wedge this part sits in.
+                    #
+                    # Not all of them: five planes meet at a 5-fold
+                    # hub, so four lines cross in the diagram, but our
+                    # part only beds against the two parts either side
+                    # of it around the axis. Order the planes by
+                    # bearing about the axis, find ours, and its two
+                    # cyclic neighbours are the ones. Their traces in
+                    # this plane are the two edges the tip has to run
+                    # along -- the other lines through the point
+                    # belong to parts further round and are a red
+                    # herring when placing the motif.
+                    P3d = (a[0] * d + cx * u[0] + cy * v[0],
+                           a[1] * d + cx * u[1] + cy * v[1],
+                           a[2] * d + cx * u[2] + cy * v[2])
+                    axis = _normalize(P3d)
+                    thru = [nn_ for nn_ in normals
+                            if abs(nn_[0] * P3d[0] + nn_[1] * P3d[1]
+                                   + nn_[2] * P3d[2] - d)
+                            < 1e-6 * max(1.0, d)]
+                    if len(thru) >= 3:
+                        f1 = _normalize(_frame(axis)[0])
+                        f2 = (axis[1] * f1[2] - axis[2] * f1[1],
+                              axis[2] * f1[0] - axis[0] * f1[2],
+                              axis[0] * f1[1] - axis[1] * f1[0])
+                        thru = sorted(thru, key=lambda w: math.atan2(
+                            w[0] * f2[0] + w[1] * f2[1] + w[2] * f2[2],
+                            w[0] * f1[0] + w[1] * f1[1] + w[2] * f1[2]))
+                        mine = min(range(len(thru)),
+                                   key=lambda t: sum(
+                                       (thru[t][c] - a[c]) ** 2
+                                       for c in range(3)))
+                        half, wide = 0.11 * d, 0.008 * d
+                        for step in (-1, 1):
+                            nb = thru[(mine + step) % len(thru)]
+                            # our plane meets that one along this line
+                            e3 = (a[1] * nb[2] - a[2] * nb[1],
+                                  a[2] * nb[0] - a[0] * nb[2],
+                                  a[0] * nb[1] - a[1] * nb[0])
+                            ex = e3[0] * u[0] + e3[1] * u[1] + e3[2] * u[2]
+                            ey = e3[0] * v[0] + e3[1] * v[1] + e3[2] * v[2]
+                            ln = math.hypot(ex, ey)
+                            if ln < 1e-9:
+                                continue
+                            ex, ey = ex / ln, ey / ln
+                            px, py = -ey * wide, ex * wide
+                            b2 = len(cverts)
+                            cverts.extend([
+                                (cx - ex * half + px, cy - ey * half + py, 0.0),
+                                (cx + ex * half + px, cy + ey * half + py, 0.0),
+                                (cx + ex * half - px, cy + ey * half - py, 0.0),
+                                (cx - ex * half - px, cy - ey * half - py, 0.0)])
+                            cfaces.append([b2, b2 + 1, b2 + 2, b2 + 3])
+                            corders.append(planes)
                 cme = bpy.data.meshes.new("SymSculpt Crossings")
                 cme.from_pydata(cverts, cedges, cfaces)
                 cme.update()
