@@ -2780,6 +2780,15 @@ if _IN_BLENDER:
                         "get the same part with square walls, which "
                         "is the thing to hold the mitred one up "
                         "against when a cut looks wrong")
+        label_bevels: BoolProperty(
+            name="Label the Bevels", default=True,
+            description="Write the cut angle beside every mitred edge "
+                        "of the machinable part: the angle the cut "
+                        "face makes with the part's own face, which "
+                        "is what a saw or a jig is set to, and the "
+                        "dihedral it comes from. Lettered so a cut "
+                        "can be named when checking one against the "
+                        "drawing")
         show_part: BoolProperty(
             name="Build Machinable Part", default=False,
             description="Add one part as a solid of the given "
@@ -2946,6 +2955,19 @@ if _IN_BLENDER:
             # rotation list right down to one per plane.
             fold = len(rots) // len(normals)
 
+            # Everything this operator makes goes in one collection.
+            # A build can produce the sculpture, its motif, the guide
+            # diagram, the crossing marks and their labels, the rings,
+            # the leaders, the defining solid, the machinable part
+            # with its bevel labels and one object per spike -- and
+            # loose in the scene that is a dozen siblings to pick
+            # through, with no way to hide or delete a build in one
+            # go.  Named for the preset so two builds stay apart.
+            out_coll = bpy.data.collections.new(
+                "SymSculpt " + (self.preset if self.preset in PRESETS
+                                else "Custom"))
+            context.collection.children.link(out_coll)
+
             motif = None
             if self.motif_object:
                 ao = bpy.data.objects.get(self.motif_object)
@@ -2974,7 +2996,7 @@ if _IN_BLENDER:
                 mme.update()
                 motif = bpy.data.objects.new("SymSculpt Motif Mirrored",
                                              mme)
-                context.collection.objects.link(motif)
+                out_coll.objects.link(motif)
             if motif is None:
                 verts, faces = motif_builder(d)
                 if self.mirror:
@@ -2990,7 +3012,7 @@ if _IN_BLENDER:
                 me.validate()
                 me.update()
                 motif = bpy.data.objects.new("SymSculpt Motif", me)
-                context.collection.objects.link(motif)
+                out_coll.objects.link(motif)
             # the motif is authored and edited flat on the world
             # XY plane; the node group maps it onto the
             # representative plane with this rotation + offset
@@ -3037,7 +3059,7 @@ if _IN_BLENDER:
             gme.from_pydata(gverts, gedges, [])
             gme.update()
             guides = bpy.data.objects.new("SymSculpt Guides", gme)
-            context.collection.objects.link(guides)
+            out_coll.objects.link(guides)
             guides.matrix_world = Matrix.Identity(4)
             guides.display_type = 'WIRE'
             guides.hide_render = True
@@ -3152,7 +3174,7 @@ if _IN_BLENDER:
                 if self.label_crossings and clabels:
                     lab_coll = bpy.data.collections.new(
                         "SymSculpt Labels")
-                    context.collection.children.link(lab_coll)
+                    out_coll.children.link(lab_coll)
                     # A, B, ... Z, AA, AB -- ordered by how many parts
                     # meet and then by radius, so the letters mean the
                     # same thing from one build to the next instead of
@@ -3183,7 +3205,7 @@ if _IN_BLENDER:
                 cme.update()
                 marks = bpy.data.objects.new("SymSculpt Crossings",
                                              cme)
-                context.collection.objects.link(marks)
+                out_coll.objects.link(marks)
                 marks.matrix_world = Matrix.Identity(4)
                 # Filled, and drawn in front rather than nudged up in
                 # Z: the markers share the plane with the motif, so
@@ -3232,7 +3254,7 @@ if _IN_BLENDER:
                      for i in range(3) for j in range(3))
                  for R in rots])
             obj = bpy.data.objects.new("SymSculpt", pts)
-            context.collection.objects.link(obj)
+            out_coll.objects.link(obj)
 
             mod = obj.modifiers.new("Symmetric Sculpture", 'NODES')
             ng = _node_group()
@@ -3317,6 +3339,7 @@ if _IN_BLENDER:
                 pv2 = []
                 pf2 = []
                 angles = set()
+                bevels = []
                 # A mitre only exists for an edge that lies ON the
                 # line where this plane meets a neighbour. A traced
                 # motif rarely does to 1e-4, so fall back to a slack
@@ -3353,6 +3376,35 @@ if _IN_BLENDER:
                     pv2.extend(lv)
                     pf2.extend([[base + i for i in f] for f in lf])
                     angles.update(dh)
+                    if self.mitre_part and self.label_bevels:
+                        pls = [outer] + holes
+                        pmt = mating_planes(kind, family, pls, d, p_tol)
+                        pa, _pn = plane_normals(kind, family)
+                        for li, lp in enumerate(pls):
+                            nlp = len(lp)
+                            for ei in range(nlp):
+                                nb = pmt[li][ei] if pmt[li] else None
+                                if nb is None:
+                                    continue
+                                q0, q1 = lp[ei], lp[(ei + 1) % nlp]
+                                ex = q1[0] - q0[0]
+                                ey = q1[1] - q0[1]
+                                el = math.hypot(ex, ey) or 1.0
+                                nx, ny = -ey / el, ex / el
+                                mx = (q0[0] + q1[0]) / 2.0
+                                my = (q0[1] + q1[1]) / 2.0
+                                # material lies inside the outer loop
+                                # but outside a hole; the label goes
+                                # on the other side, clear of the part
+                                ins = _polygon_contains(
+                                    lp, (mx + nx * 1e-4,
+                                         my + ny * 1e-4))
+                                if ins == (li > 0):
+                                    nx, ny = -nx, -ny
+                                bevels.append(
+                                    (dihedral_angle(pa, nb),
+                                     mx - nx * 0.15 * d,
+                                     my - ny * 0.15 * d, el))
                 if pv2:
                     # centre on the Z axis and drop the whole thing
                     # below the XY plane, clear of the guide diagram,
@@ -3371,10 +3423,79 @@ if _IN_BLENDER:
                     pme2.update()
                     part = bpy.data.objects.new("SymSculpt Part", pme2)
                     part.data.materials.append(_motif_material())
-                    context.collection.objects.link(part)
+                    out_coll.objects.link(part)
                     part.matrix_world = Matrix.Identity(4)
                     part.parent = obj
                     part.matrix_parent_inverse = Matrix.Identity(4)
+                    if bevels:
+                        # A mitre is set on the machine as the angle
+                        # between the cut face and the face of the
+                        # stock, and that is half the dihedral -- the
+                        # cut lies in the bisector, so it leans the
+                        # same amount off each of the two planes.
+                        # Report the dihedral too: it is the number
+                        # the geometry is stated in, and halving it in
+                        # your head at the saw is how a part gets cut
+                        # to 120 when it wanted 60.
+                        bev_coll = bpy.data.collections.new(
+                            "SymSculpt Bevels")
+                        out_coll.children.link(bev_coll)
+                        bevels.sort(key=lambda r: (-round(r[0], 4),
+                                                   -r[3], r[1], r[2]))
+                        zl = -0.6 * d + 0.004 * d
+                        tsize = 0.036 * d
+                        # Two mitred edges that meet at a point put
+                        # their labels on top of each other -- Solar
+                        # Flair's narrow tip is two edges a few
+                        # degrees apart and its two labels overprinted
+                        # into one unreadable line.  Push overlapping
+                        # pairs apart along whichever axis they
+                        # overlap least, which moves them the shortest
+                        # distance that separates them and so keeps
+                        # each label next to the edge it names.
+                        hw = 0.5 * 16 * tsize * 0.55
+                        hh = 1.25 * tsize
+                        spots = [[bx - cx, by - cy]
+                                 for _t, bx, by, _e in bevels]
+                        for _ in range(60):
+                            moved = False
+                            for i in range(len(spots)):
+                                for j in range(i + 1, len(spots)):
+                                    dx = spots[j][0] - spots[i][0]
+                                    dy = spots[j][1] - spots[i][1]
+                                    ox = 2 * hw - abs(dx)
+                                    oy = 2 * hh - abs(dy)
+                                    if ox <= 0 or oy <= 0:
+                                        continue
+                                    moved = True
+                                    if oy <= ox:
+                                        s_ = 1.0 if dy >= 0 else -1.0
+                                        spots[i][1] -= s_ * oy * 0.5
+                                        spots[j][1] += s_ * oy * 0.5
+                                    else:
+                                        s_ = 1.0 if dx >= 0 else -1.0
+                                        spots[i][0] -= s_ * ox * 0.5
+                                        spots[j][0] += s_ * ox * 0.5
+                            if not moved:
+                                break
+                        for bi, (th, _bx, _by, _el) in enumerate(bevels):
+                            tag = crossing_tag(bi)
+                            nm2 = "SymSculpt Bevel " + tag
+                            tc = bpy.data.curves.new(nm2, type='FONT')
+                            tc.body = ("%s  %.2f° cut" % (tag, th / 2.0)
+                                       + chr(10)
+                                       + "%.2f° dihedral" % th)
+                            tc.size = tsize
+                            tc.align_x = 'CENTER'
+                            tc.align_y = 'CENTER'
+                            tc.materials.append(_motif_material())
+                            bo = bpy.data.objects.new(nm2, tc)
+                            bo.location = (spots[bi][0], spots[bi][1],
+                                           zl)
+                            bev_coll.objects.link(bo)
+                            bo.hide_render = True
+                            bo.parent = part
+                            bo.matrix_parent_inverse =                                 Matrix.Identity(4)
                     self.report(
                         {'INFO'},
                         "Part: %d piece(s), %.4g thick (Shell x "
@@ -3435,7 +3556,7 @@ if _IN_BLENDER:
                     sme.materials.append(_collision_material())
                     sob = bpy.data.objects.new("SymSculpt Collisions",
                                                sme)
-                    context.collection.objects.link(sob)
+                    out_coll.objects.link(sob)
                     sob.matrix_world = Matrix.Identity(4)
                     sob.show_in_front = True
                     sob.hide_render = True
@@ -3488,7 +3609,7 @@ if _IN_BLENDER:
                     rme.update()
                     _assign_order_materials(rme, rorders, False)
                     rings = bpy.data.objects.new("SymSculpt Radii", rme)
-                    context.collection.objects.link(rings)
+                    out_coll.objects.link(rings)
                     rings.matrix_world = Matrix.Identity(4)
                     rings.hide_render = True
 
@@ -3522,7 +3643,7 @@ if _IN_BLENDER:
                                                    + r[0][1] ** 2))
                 spike_coll = bpy.data.collections.new(
                     "SymSculpt Spikes")
-                context.collection.children.link(spike_coll)
+                out_coll.children.link(spike_coll)
                 L = 0.30 * d
                 for si, ((cx, cy, _k), npl) in enumerate(meet):
                     kverts, kfaces, korders = [], [], []
@@ -3637,7 +3758,7 @@ if _IN_BLENDER:
                     _assign_order_materials(lme, lorders, False)
                     leads = bpy.data.objects.new(
                         "SymSculpt Leaders", lme)
-                    context.collection.objects.link(leads)
+                    out_coll.objects.link(leads)
                     leads.matrix_world = Matrix.Identity(4)
                     leads.hide_render = True
                     leads.parent = obj
@@ -3655,7 +3776,7 @@ if _IN_BLENDER:
                 solid = bpy.data.objects.new("SymSculpt Polyhedron",
                                              pme)
                 solid.data.materials.append(_solid_material())
-                context.collection.objects.link(solid)
+                out_coll.objects.link(solid)
                 solid.matrix_world = Matrix.Identity(4)
                 solid.hide_render = True
                 solid.parent = obj
@@ -3695,7 +3816,7 @@ if _IN_BLENDER:
                       'show_sections', 'show_rings',
                       'show_spikes', 'show_polyhedron', 'lift',
                       'translucent', 'show_part',
-                      'mitre_part'):
+                      'mitre_part', 'label_bevels'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
