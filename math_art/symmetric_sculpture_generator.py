@@ -2350,10 +2350,17 @@ if _IN_BLENDER:
                         "n-gon with one side per part, so a triangle "
                         "is where three meet and a pentagon where "
                         "five do, and each carries a vertex on the "
-                        "point to snap to. Lines crossing is NOT "
-                        "enough: five planes through a point only "
-                        "bring five parts together if the point is "
-                        "on the 5-fold axis, and most are not")
+                        "point to snap to. Two bars cross it along "
+                        "the only two guide lines that matter -- the "
+                        "traces of the planes either side of this one "
+                        "round the axis, which are the two edges a "
+                        "tip has to run along. A hub has four lines "
+                        "through it and the angles between them "
+                        "differ, so the other two are a red herring. "
+                        "Lines crossing is NOT "
+                        "enough either: five planes through a point "
+                        "only bring five parts together if the point "
+                        "is on the 5-fold axis, and most are not")
         show_leaders: BoolProperty(
             name="Link Cones to Markers", default=False,
             description="Draw a line from each marker on the flat "
