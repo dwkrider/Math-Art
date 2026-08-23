@@ -248,6 +248,59 @@ def zonogon(base, vecs, nrm):
     return pts
 
 
+def rhombic_rosette(n):
+    """The rhombic rose of order n: (verts, rhombi, ring index per rhombus).
+
+    Start with n unit vectors A_k at angles 2.pi.k/n and lay n rhombi round
+    the origin, each spanned by a consecutive pair -- their acute angle is
+    2.pi/n, so n of them close up exactly.  That leaves notches on the
+    outside, and filling them takes a ring of n rhombi of angle 2.(2.pi/n);
+    filling the next notches takes angle 3.(2.pi/n), and so on until the
+    boundary comes out convex.
+
+    Every rhombus is spanned by a pair A_k, A_{k+j}, and the ones with the
+    same gap j form ring j.  A rhombus sits on the sum of the vectors
+    strictly between its two spanning ones, which is what slots it into the
+    notch left by the previous ring:
+
+        ring j, place k:  base = A_{k+1} + ... + A_{k+j-1}
+                          corners  base, base+A_k, base+A_k+A_{k+j},
+                                   base+A_{k+j}
+
+    The rings run j = 1 .. (n-1)//2, one short of the point where A_k and
+    A_{k+j} would be antiparallel and the rhombus would collapse.  So there
+    are (n-1)/2 rings for odd n and (n-2)/2 for even n, giving n(n-1)/2 and
+    n(n-2)/2 rhombi -- filling a regular 2n-gon and a regular n-gon
+    respectively.  At n = 5 the two ring shapes are the 36-degree and
+    72-degree rhombs of the Penrose tilings.
+    """
+    A = [(math.cos(2 * math.pi * k / n), math.sin(2 * math.pi * k / n))
+         for k in range(n)]
+    verts, index = [], {}
+
+    def vid(p):
+        key = (round(p[0], 9), round(p[1], 9))
+        i = index.get(key)
+        if i is None:
+            i = len(verts)
+            index[key] = i
+            verts.append((p[0], p[1]))
+        return i
+
+    rhombi, rings = [], []
+    for j in range(1, (n - 1) // 2 + 1):
+        for k in range(n):
+            bx = sum(A[(k + t) % n][0] for t in range(1, j))
+            by = sum(A[(k + t) % n][1] for t in range(1, j))
+            u, w = A[k % n], A[(k + j) % n]
+            quad = [(bx, by), (bx + u[0], by + u[1]),
+                    (bx + u[0] + w[0], by + u[1] + w[1]),
+                    (bx + w[0], by + w[1])]
+            rhombi.append([vid(p) for p in quad])
+            rings.append(j)
+    return verts, rhombi, rings
+
+
 # --------------------------------------------------------------------------
 # the zonotope itself
 # --------------------------------------------------------------------------
@@ -599,5 +652,41 @@ def _selftest():
     assert len(pts) == 8 * (6 * 6 - 6 + 2), len(pts)
     reach = max(_norm(p) for p in pts)
     assert reach > max(_norm(p) for p in cub), reach
+
+    # --- rhombic rosette -----------------------------------------------
+    # The counts are the published ones, but the decisive check is AREA:
+    # if the rhombi covered the polygon with a gap or an overlap the total
+    # would not match, and no count would notice.
+    for n in range(3, 17):
+        V, R, rings = rhombic_rosette(n)
+        want = n * (n - 1) // 2 if n % 2 else n * (n - 2) // 2
+        assert len(R) == want, (n, len(R), want)
+        assert len(set(rings)) == (n - 1) // 2, (n, set(rings))
+        edges = {round(math.dist(V[f[i]], V[f[(i + 1) % 4]]), 9)
+                 for f in R for i in range(4)}
+        assert edges == {1.0}, (n, edges)          # every rhombus is unit
+        area = 0.0
+        for f in R:
+            p = [V[i] for i in f]
+            area += abs(sum(p[i][0] * p[(i + 1) % 4][1]
+                            - p[(i + 1) % 4][0] * p[i][1]
+                            for i in range(4))) / 2.0
+        sides = 2 * n if n % 2 else n               # 2n-gon / n-gon
+        rad = max(math.hypot(*v) for v in V)
+        poly = 0.5 * sides * rad * rad * math.sin(2 * math.pi / sides)
+        assert abs(area - poly) < 1e-9, (n, area, poly)
+    # n = 5 is the famous one: the two Penrose rhombs, 36 and 72 degrees
+    V, R, rings = rhombic_rosette(5)
+    acute = set()
+    for f in R:
+        o, a, b = V[f[0]], V[f[1]], V[f[3]]
+        u = (a[0] - o[0], a[1] - o[1])
+        w = (b[0] - o[0], b[1] - o[1])
+        ang = math.degrees(math.acos(max(-1.0, min(1.0,
+                                                   u[0] * w[0] + u[1] * w[1]))))
+        acute.add(round(min(ang, 180.0 - ang), 6))
+    assert acute == {36.0, 72.0}, acute
+    print("rosette: orders 3..16 tile their polygon exactly (area match), "
+          "unit edges throughout; order 5 gives the 36/72 Penrose rhombs")
 
     print("RESULT: OK")
