@@ -1755,13 +1755,67 @@ _SOLAR_FLAIR_HOLE_B = (
 )
 
 
-def solar_flair_motif(d=1.0):
+def solar_flair_motif(d=1.0, smooth=5, corner_deg=24.0):
     """One of the sixty flat pieces of Hart's Solar Flair (2007),
     traced from the cutting template: a long pierced arm running from
     a 5-fold hub to a 3-fold corner in a face plane of the pentagonal
     hexecontahedron, with both tips on their symmetry axes.  See the
-    note above for how the placement is pinned."""
+    note above for how the placement is pinned.
+
+    The stored outline is a polygon, and at the size the part is
+    machined its long swooping sides showed as a row of flat facets.
+    They are resampled through a Catmull-Rom spline here rather than
+    stored more densely, which keeps the table readable and lets the
+    smoothing be turned down.
+
+    Two kinds of vertex are held back from the smoothing: the ends of
+    the four MATING edges, which have to stay dead straight and
+    exactly on their guide lines or the mitre stops finding them, and
+    any vertex where the outline genuinely turns a corner.  Running a
+    spline through those would round off the very features that make
+    the part fit.
+    """
     outer = [(x * d, y * d) for x, y in _SOLAR_FLAIR_OUTER]
+    n = len(outer)
+    if smooth > 1 and n > 6:
+        hard = set()
+        for tx, ty in ((0.0, -1.618033988749895), (1.0, -1.0)):
+            k = min(range(n), key=lambda i: (outer[i][0] / d - tx) ** 2
+                    + (outer[i][1] / d - ty) ** 2)
+            hard |= {(k - 1) % n, k, (k + 1) % n}
+        for i in range(n):
+            a0 = outer[(i - 1) % n]
+            a1 = outer[i]
+            a2 = outer[(i + 1) % n]
+            v1 = (a1[0] - a0[0], a1[1] - a0[1])
+            v2 = (a2[0] - a1[0], a2[1] - a1[1])
+            l1 = sqrt(v1[0] ** 2 + v1[1] ** 2)
+            l2 = sqrt(v2[0] ** 2 + v2[1] ** 2)
+            if l1 < 1e-12 or l2 < 1e-12:
+                continue
+            c = (v1[0] * v2[0] + v1[1] * v2[1]) / (l1 * l2)
+            if math.degrees(math.acos(max(-1.0, min(1.0, c)))) > corner_deg:
+                hard.add(i)
+        marks = sorted(hard)
+        if marks:
+            built = []
+            for a_i, b_i in zip(marks, marks[1:] + [marks[0] + n]):
+                run = [outer[k % n] for k in range(a_i, b_i + 1)]
+                if len(run) <= 2:
+                    built.append(run[0])
+                    continue
+                built.extend(_spline(run, smooth)[:-1])
+            outer = built
+            # Catmull-Rom interpolates its control points, but the
+            # rebuild still lands the tips about 1e-8 out. That is far
+            # inside the mitre's tolerance and would never be noticed
+            # -- which is exactly why it is worth pinning rather than
+            # leaving to drift the next time this is touched.
+            for tx, ty in ((0.0, -1.618033988749895), (1.0, -1.0)):
+                k = min(range(len(outer)),
+                        key=lambda i: (outer[i][0] / d - tx) ** 2
+                        + (outer[i][1] / d - ty) ** 2)
+                outer[k] = (tx * d, ty * d)
     holes = [[(x * d, y * d) for x, y in _SOLAR_FLAIR_HOLE_A],
              [(x * d, y * d) for x, y in _SOLAR_FLAIR_HOLE_B]]
     return polygon_with_holes(outer, holes)
