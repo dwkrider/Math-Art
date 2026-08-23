@@ -2474,10 +2474,10 @@ if _IN_BLENDER:
             bsdf.inputs["Roughness"].default_value = 0.45
         return mat
 
-    def _facet_material():
+    def _stellation_material():
         """Red, and emissive, so the marks stay legible lying flat on
         the guide diagram instead of shading with it."""
-        name = "SymSculpt Facet"
+        name = "SymSculpt Stellation"
         mat = bpy.data.materials.get(name)
         if mat is not None:
             return mat
@@ -2859,23 +2859,23 @@ if _IN_BLENDER:
                         "get the same part with square walls, which "
                         "is the thing to hold the mitred one up "
                         "against when a cut looks wrong")
-        mark_facets: BoolProperty(
-            name="Mark Facet Corners", default=False,
-            description="Ring every corner of the stellation diagram "
+        mark_stellation: BoolProperty(
+            name="Mark Stellation Points", default=False,
+            description="Ring every vertex of the stellation diagram "
                         "in red -- every point where the guide lines "
                         "cross, not just the ones where parts "
-                        "converge. The stellation is drawn rather than "
-                        "written: a solid disc, with one more "
-                        "concentric ring around it for each level out, "
-                        "so a third-stellation corner is a disc inside "
-                        "three rings. These are the corners a motif "
+                        "converge. The level is drawn rather than "
+                        "written, as a target: every mark is the same "
+                        "size and holds one more concentric band per "
+                        "level, so level 0 is a solid disc and level 3 "
+                        "is four bands. These are the points a motif "
                         "sits on when it is a subset of a stellation "
                         "face rather than a part meeting its "
                         "neighbours tip to tip, and then they are the "
                         "only scale the drawing gives you")
-        facet_stellation: IntProperty(
-            name="Stellation", default=-1, min=-1, max=24,
-            description="Which stellation's corners to label. The "
+        stellation_level: IntProperty(
+            name="Stellation Level", default=-1, min=-1, max=24,
+            description="Which stellation's points to mark. The "
                         "guide lines cut the plane into cells, and a "
                         "cell's depth -- how many lines separate it "
                         "from the centre -- is the stellation number: "
@@ -3332,44 +3332,46 @@ if _IN_BLENDER:
                                 f"{n3} three-plane and {n5} "
                                 f"five-plane crossings marked")
 
-            if self.mark_facets:
-                # Every corner of the stellation diagram, not only
+            if self.mark_stellation:
+                # Every vertex of the stellation diagram, not only
                 # the ones where parts converge.  A motif whose
                 # tips meet its neighbours is pinned by the
                 # meeting points above; one that is a SUBSET of a
                 # stellation face, as Hart's Dragonflies is, sits
-                # on ordinary facet corners instead, and then the
-                # radius of the ring its tips sit on is the only
-                # scale the drawing offers.
+                # on ordinary diagram vertices instead, and then
+                # the radius of the ring its tips sit on is the
+                # only scale the drawing offers.
                 #
-                # Drawn, not written: a corner is a place to put a
+                # Drawn, not written: a vertex is a place to put a
                 # tip, so what is wanted at a glance is WHERE they
                 # are, and text at every crossing buries the
-                # diagram it is annotating.  The stellation goes
-                # into the mark instead -- a solid disc, then one
-                # more concentric ring for each level out -- so a
-                # third-stellation corner is a disc inside three
-                # rings and can be picked out across the plane
-                # without reading anything.
+                # diagram it is annotating.  The level goes into
+                # the mark instead, as a target: every mark is the
+                # SAME overall size and is divided into level + 1
+                # concentric bands, so level 0 is one solid disc,
+                # level 1 a disc inside one ring, level 3 four
+                # bands.  Equal outer size is what makes them
+                # comparable -- growing the mark with the level
+                # would make the outer ones shout, and they are
+                # not more important, only further out.
                 corners = stellation_shells(
                     kind, family, d, self.guide_extent)
                 shells = sorted({c[2] for c in corners})
-                want = self.facet_stellation
+                want = self.stellation_level
                 sel = [c for c in corners
                        if want < 0 or c[2] == want]
                 if not sel:
                     self.report(
                         {'WARNING'},
-                        "no corners on stellation %d; this family "
-                        "has %s (raise Guide Extent to reach the "
-                        "outer ones)"
+                        "no stellation points on level %d; this "
+                        "family has %s (raise Guide Extent to reach "
+                        "the outer ones)"
                         % (want, ", ".join(str(x) for x in shells)))
                 fverts = []
                 ffaces = []
-                SEG = 24
-                rd = 0.023 * d          # the solid centre
-                gap = 0.025 * d         # one step out per level
-                wid = 0.010 * d         # ring thickness
+                SEG = 28
+                RAD = 0.10 * d          # the same for every level
+                GAPF = 0.6              # gap as a fraction of a band
                 # Dead flat in the plane, like the crossing marks
                 # and for the same reason: these are places to
                 # snap a tip to, and a mark lifted in Z would put
@@ -3377,18 +3379,26 @@ if _IN_BLENDER:
                 # front instead, so it does not z-fight the motif.
                 zf = 0.0
                 for cx, cy, sh in sel:
-                    b = len(fverts)
-                    fverts.append((cx, cy, zf))
-                    for j in range(SEG):
-                        t = 2.0 * math.pi * j / SEG
-                        fverts.append((cx + rd * math.cos(t),
-                                       cy + rd * math.sin(t), zf))
-                    for j in range(SEG):
-                        ffaces.append([b, b + 1 + j,
-                                       b + 1 + (j + 1) % SEG])
-                    for k in range(1, sh + 1):
-                        r0 = rd + k * gap - wid / 2.0
-                        r1 = r0 + wid
+                    n = sh + 1
+                    # n bands and n-1 gaps fill RAD, so the bands
+                    # thin out as the level rises and the mark
+                    # keeps its size.
+                    wband = RAD / (n + GAPF * (n - 1))
+                    for k in range(n):
+                        r1 = k * wband * (1.0 + GAPF) + wband
+                        r0 = r1 - wband
+                        if r0 <= 1e-12:
+                            b = len(fverts)
+                            fverts.append((cx, cy, zf))
+                            for j in range(SEG):
+                                t = 2.0 * math.pi * j / SEG
+                                fverts.append((cx + r1 * math.cos(t),
+                                               cy + r1 * math.sin(t),
+                                               zf))
+                            for j in range(SEG):
+                                ffaces.append([b, b + 1 + j,
+                                               b + 1 + (j + 1) % SEG])
+                            continue
                         b2 = len(fverts)
                         for j in range(SEG):
                             t = 2.0 * math.pi * j / SEG
@@ -3403,13 +3413,14 @@ if _IN_BLENDER:
                             c1 = c0 + 1
                             ffaces.append([a0, a1, c1, c0])
                 if ffaces:
-                    fme = bpy.data.meshes.new("SymSculpt Facets")
+                    fme = bpy.data.meshes.new(
+                        "SymSculpt Stellation Points")
                     fme.from_pydata(fverts, [], ffaces)
                     fme.validate()
                     fme.update()
-                    fme.materials.append(_facet_material())
-                    fob = bpy.data.objects.new("SymSculpt Facets",
-                                               fme)
+                    fme.materials.append(_stellation_material())
+                    fob = bpy.data.objects.new(
+                        "SymSculpt Stellation Points", fme)
                     out_coll.objects.link(fob)
                     fob.matrix_world = Matrix.Identity(4)
                     fob.display_type = 'SOLID'
@@ -4013,8 +4024,8 @@ if _IN_BLENDER:
                       'guide_rings', 'show_crossings',
                       'crossing_min_planes', 'label_crossings',
                       'show_sections', 'show_rings',
-                      'show_spikes', 'mark_facets',
-                      'facet_stellation',
+                      'show_spikes', 'mark_stellation',
+                      'stellation_level',
                       'show_polyhedron', 'lift',
                       'translucent', 'show_part',
                       'mitre_part', 'label_bevels'):
