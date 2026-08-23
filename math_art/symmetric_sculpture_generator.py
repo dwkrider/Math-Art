@@ -2899,7 +2899,7 @@ if _IN_BLENDER:
                         tag = crossing_tag(i)
                         tc = bpy.data.curves.new(
                             "SymSculpt Label " + tag, type='FONT')
-                        tc.body = "%s  %.1f°" % (tag, wedge)
+                        tc.body = "%s  %.2f°" % (tag, wedge)
                         tc.size = 0.075 * d
                         tc.align_x = 'CENTER'
                         tc.align_y = 'CENTER'
