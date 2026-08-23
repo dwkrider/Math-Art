@@ -2078,12 +2078,165 @@ def solar_flair_motif(d=1.0, smooth=0, corner_deg=24.0):
     return polygon_with_holes(outer, holes)
 
 
+
+_DRAGONFLIES_OUTER = (
+    (+2.443416, +0.383050), (+2.004807, -0.029577), (+1.987261, -0.041804),
+    (+1.900410, -0.093858), (+1.811703, -0.133197), (+1.719230, -0.161387),
+    (+1.614858, -0.180768), (+1.549686, -0.187691), (+1.476445, -0.191789),
+    (+1.315123, -0.190760), (+1.157231, -0.179241), (+1.007138, -0.156699),
+    (+0.879346, -0.128248), (+0.737810, -0.088528), (+0.211579, +0.086185),
+    (+0.661056, +1.055157), (+0.693458, +1.130368), (+0.774718, +1.324271),
+    (+0.834775, +1.477697), (+0.882503, +1.613071), (+0.925610, +1.752616),
+    (+0.978718, +1.949553), (+0.990600, +2.014979), (+0.997704, +2.082649),
+    (+1.003445, +2.287662), (+1.000000, +2.828427), (+0.397455, +2.395116),
+    (+0.488269, +1.870602), (+0.493502, +1.792925), (+0.494505, +1.722797),
+    (+0.486790, +1.609690), (+0.467153, +1.499371), (+0.435723, +1.385315),
+    (+0.380191, +1.223605), (+0.192460, +1.550865), (+0.111656, +1.682828),
+    (+0.031211, +1.807796), (-0.058956, +1.940759), (-0.153593, +2.073224),
+    (-0.269351, +2.227209), (-0.340548, +2.315284), (-0.378945, +2.357093),
+    (-0.418157, +2.394881), (-0.522273, +2.479896), (-0.715742, +2.620070),
+    (-1.000000, +2.828427), (-1.012869, +2.790688), (-1.007931, +2.076481),
+    (-0.866096, +2.026867), (-0.778058, +1.992797), (-0.686341, +1.952450),
+    (-0.600816, +1.909226), (-0.518152, +1.861039), (-0.443174, +1.810669),
+    (-0.372372, +1.756152), (-0.302816, +1.694946), (-0.236282, +1.628391),
+    (-0.172683, +1.556636), (-0.116150, +1.484195), (-0.064598, +1.408690),
+    (-0.014872, +1.325637), (+0.034407, +1.232695), (+0.086215, +1.124010),
+    (+0.140524, +0.999747), (+0.200006, +0.820398), (-0.070749, +0.214492),
+    (-0.287114, +0.273079), (-0.514887, +0.343654), (-0.684401, +0.391372),
+    (-0.845570, +0.429717), (-1.020538, +0.463112), (-1.488730, +0.493222),
+    (-1.770789, +0.498447), (-1.866466, +0.496839), (-1.947730, +0.492389),
+    (-2.079381, +0.477370), (-2.282214, +0.442783), (-2.346453, +0.428085),
+    (-2.396603, +0.408854), (-2.455121, +0.375984), (-2.544634, +0.315770),
+    (-2.695022, +0.209817), (-3.000000, +0.000000), (-2.451983, -0.404201),
+    (-2.128584, -0.084966), (-2.056437, -0.021255), (-1.993224, +0.025913),
+    (-1.909755, +0.074428), (-1.860569, +0.097579), (-1.814016, +0.116042),
+    (-1.715810, +0.145200), (-1.605149, +0.165788), (-1.536537, +0.173338),
+    (-1.468671, +0.177444), (-1.326374, +0.176530), (-1.160988, +0.161717),
+    (-1.004289, +0.137436), (-0.877296, +0.108829), (-0.736024, +0.068762),
+    (-0.230119, -0.100266), (-0.225433, -0.106587), (-0.225062, -0.114797),
+    (-0.236661, -0.147505), (-0.348696, -0.370686), (-0.438501, -0.557997),
+    (-0.540545, -0.780796), (-0.642167, -1.012714), (-0.778491, -1.344048),
+    (-0.829746, -1.479334), (-0.867734, -1.589305), (-1.011504, -2.101615),
+    (-1.000000, -2.828427), (-0.417451, -2.426187), (-0.437654, -2.265760),
+    (-0.465853, -2.119162), (-0.485786, -1.980182), (-0.497890, -1.840859),
+    (-0.500163, -1.717685), (-0.494589, -1.624480), (-0.482505, -1.545416),
+    (-0.393263, -1.259120), (+0.018426, -1.905041), (+0.432710, -2.437063),
+    (+1.000000, -2.828427), (+0.996071, -2.096074), (+0.787956, -2.015973),
+    (+0.700892, -1.978960), (+0.597164, -1.927506), (+0.499881, -1.870539),
+    (+0.401164, -1.802137), (+0.312086, -1.729028), (+0.229704, -1.649310),
+    (+0.151823, -1.560336), (+0.084312, -1.469462), (+0.020945, -1.369045),
+    (-0.212961, -0.853175), (-0.144747, -0.678941), (+0.068197, -0.230945),
+    (+0.288118, -0.293104), (+0.559003, -0.375599), (+0.766141, -0.429961),
+    (+0.881012, -0.455056), (+0.992455, -0.475183), (+1.103438, -0.490894),
+    (+1.219901, -0.502999), (+1.380520, -0.513633), (+1.569036, -0.519915),
+    (+1.731255, -0.520544), (+1.868796, -0.515554), (+1.987878, -0.505516),
+    (+2.104403, -0.489825), (+2.214982, -0.469895), (+2.396959, -0.431503),
+    (+3.000000, -0.000000),
+)
+
+_DRAGONFLIES_HOLE_A = (
+    (+2.615659, -0.061699), (+2.535705, -0.117835), (+2.458215, -0.164953),
+    (+2.383816, -0.202605), (+2.307784, -0.233352), (+2.231226, -0.257110),
+    (+2.146388, -0.276411), (+2.068403, -0.289074), (+1.923094, -0.306915),
+    (+2.122683, -0.186009), (+2.191508, -0.139726), (+2.259273, -0.090121),
+    (+2.321340, -0.040372), (+2.376125, +0.008310), (+2.486260, +0.124041),
+    (+2.690751, -0.004191),
+)
+
+_DRAGONFLIES_HOLE_B = (
+    (-2.023270, +0.233338), (-2.149868, +0.157571), (-2.264515, +0.074512),
+    (-2.361528, -0.009161), (-2.496744, -0.142810), (-2.700096, -0.013379),
+    (-2.596834, +0.064003), (-2.498315, +0.128207), (-2.403626, +0.179740),
+    (-2.313143, +0.218401), (-2.227244, +0.243992), (-1.930352, +0.287739),
+)
+
+_DRAGONFLIES_HOLE_C = (
+    (-0.710795, -2.382819), (-0.807126, -2.452930), (-0.812515, -2.419643),
+    (-0.801081, -2.104999), (-0.719661, -1.752048), (-0.691230, -1.668227),
+    (-0.682228, -1.908065), (-0.670216, -2.051157), (-0.649519, -2.178128),
+    (-0.614537, -2.311123),
+)
+
+_DRAGONFLIES_HOLE_D = (
+    (+0.790857, +2.059973), (+0.705254, +1.716140), (+0.682090, +1.653568),
+    (+0.677096, +1.865459), (+0.665910, +2.010307), (+0.645854, +2.139254),
+    (+0.608743, +2.294185), (+0.801087, +2.435476), (+0.805926, +2.406987),
+)
+
+_DRAGONFLIES_HOLE_E = (
+    (+0.799982, -2.474846), (+0.601906, -2.319826), (+0.363169, -2.053086),
+    (+0.317994, -1.994503), (+0.304999, -1.973166), (+0.316799, -1.979960),
+    (+0.426815, -2.066568), (+0.524756, -2.130404), (+0.615001, -2.179089),
+    (+0.756543, -2.239920), (+0.784709, -2.257268), (+0.791010, -2.267431),
+    (+0.794732, -2.283153),
+)
+
+_DRAGONFLIES_HOLE_F = (
+    (-0.351460, +1.984423), (-0.396546, +2.021129), (-0.447954, +2.058630),
+    (-0.559744, +2.128258), (-0.672161, +2.184880), (-0.801709, +2.236882),
+    (-0.812694, +2.407718), (-0.807456, +2.455852), (-0.572206, +2.266556),
+    (-0.315356, +1.960996),
+)
+
+
+def dragonflies_motif(d=1.0):
+    """One of the twelve flat parts of Hart's Dragonflies (2008),
+    traced from the cutting template and placed in a face plane of
+    the rhombic dodecahedron.
+
+    Hart derives the piece from the RD's third stellation: each part
+    is "designed as a subset of the complete face" of that stellation,
+    chosen so it "does not intersect with the other eleven copies of
+    itself".  That makes it unlike the other presets here.  Frabjous,
+    Krull and Solar Flair end their tips where parts CONVERGE, and
+    those meeting points pin the motif completely; Dragonflies is
+    built to MISS its neighbours, so its six tips land on ordinary
+    vertices of the stellation diagram and no meeting point fixes
+    anything.
+
+    What fixes it instead:
+
+    * the motif is C2 about the plane's own foot point, because the
+      RD's face normals are the octahedral group's 2-fold axes;
+    * the six tips lie at bearings 70.53, 70.53, 38.94 degrees apart,
+      which matches the guide-line directions to 0.18 degrees and
+      fixes the rotation;
+    * the scale is the free parameter, and the guide lines run in the
+      same directions at every radius so bearings cannot supply it.
+      Cell depth in the stellation diagram does: the number of lines
+      separating a cell from the centre IS the stellation index, and
+      for this family the corner rings come out at depth 0 (radii
+      0.7071 and 1, the RD face's own two kinds of vertex), 1
+      (1.7321), 2 (2.1213) and 3 (3).  Three stellations, as Hart's
+      page says the RD has, so his "third stellation" reads off as a
+      tip radius of 3d.  Rendering the twelve-part assembly down the
+      4-fold and 3-fold axes reproduces his two photographs.
+
+    Known issue: the traced outline still shares material with four of
+    its eleven neighbours near the hub, about 7% of the tip radius at
+    the deepest.  Hart's part does not intersect, so that is trace
+    error in the busiest part of the drawing rather than placement,
+    and it wants fixing before this is called finished.
+
+    References:
+      - George W. Hart, "Dragonflies" (2008), georgehart.com/sculpture
+      - H. S. M. Coxeter, P. Du Val, H. T. Flather, J. F. Petrie,
+        "The Fifty-Nine Icosahedra" (1938) -- stellation diagrams,
+        cells and shells
+    """
+    outer = [(x * d, y * d) for x, y in _DRAGONFLIES_OUTER]
+    holes = [[(x * d, y * d) for x, y in h]
+             for h in (_DRAGONFLIES_HOLE_A, _DRAGONFLIES_HOLE_B,
+                       _DRAGONFLIES_HOLE_C, _DRAGONFLIES_HOLE_D,
+                       _DRAGONFLIES_HOLE_E, _DRAGONFLIES_HOLE_F)]
+    return polygon_with_holes(outer, holes)
 # preset -> (group, plane family, motif builder)
 PRESETS = {
     'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
     'KRULL': ('ICOSA', 'P5', krull_motif),
     'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
     'SOLAR_FLAIR': ('ICOSA', 'P2', solar_flair_motif),
+    'DRAGONFLIES': ('OCTA', 'P2', dragonflies_motif),
 }
 
 
@@ -2783,6 +2936,16 @@ if _IN_BLENDER:
                     "twelve 5-fold vertices to one of the twenty "
                     "3-fold ones. Traced from the cutting template, "
                     "with both tips pinned on their symmetry axes"),
+                   ('DRAGONFLIES', "Dragonflies",
+                    "After Dragonflies (2008): 12 six-armed parts in "
+                    "the face planes of the rhombic dodecahedron, the "
+                    "only octahedral preset here. Each is a subset of "
+                    "the face of the RD's THIRD stellation, so unlike "
+                    "the others its tips do not meet their "
+                    "neighbours -- Hart chose the subset so the part "
+                    "misses the other eleven. They sit instead on the "
+                    "stellation diagram's level-3 vertices, at three "
+                    "times the plane distance"),
                    ('CUSTOM', "Custom",
                     "Choose the group and plane family yourself. "
                     "Starts from the demo arc motif -- barbed at one "
