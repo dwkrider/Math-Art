@@ -2415,6 +2415,25 @@ if _IN_BLENDER:
             bsdf.inputs["Roughness"].default_value = 0.45
         return mat
 
+    def _facet_material():
+        """A cool grey, deliberately unlike the warm motif colour and
+        unlike the per-order colours of the meeting-point labels: a
+        facet corner is a different kind of landmark and should not
+        read as one of those."""
+        name = "SymSculpt Facet"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        rgb = (0.35, 0.62, 0.72)
+        mat.diffuse_color = (*rgb, 1.0)
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+            bsdf.inputs["Roughness"].default_value = 0.5
+        return mat
+
     def _node_group():
         """Get or build the replicator node group: instance the motif
         object on the rotation points, optionally ghost the copies
@@ -2780,6 +2799,20 @@ if _IN_BLENDER:
                         "get the same part with square walls, which "
                         "is the thing to hold the mitred one up "
                         "against when a cut looks wrong")
+        label_facets: BoolProperty(
+            name="Label Facet Corners", default=False,
+            description="Tag every corner of the stellation diagram -- "
+                        "every point where the guide lines cross, not "
+                        "just the ones where parts converge. Corners "
+                        "come in rings at a common radius, so each "
+                        "ring gets a lowercase letter and every label "
+                        "carries its radius as a multiple of the plane "
+                        "distance. That radius is the thing to read "
+                        "off when a motif is a subset of a stellation "
+                        "face rather than a part that meets its "
+                        "neighbours tip to tip, because then the "
+                        "corners it sits on are the only scale the "
+                        "drawing gives you")
         label_bevels: BoolProperty(
             name="Label the Bevels", default=True,
             description="Write the cut angle beside every edge of the "
@@ -3201,6 +3234,46 @@ if _IN_BLENDER:
                                        ly + ly / rr * pad, 0.001 * d)
                         lab_coll.objects.link(lo)
                         lo.hide_render = True
+                if self.label_facets:
+                    # Every corner of the stellation diagram, not only
+                    # the ones where parts converge.  A motif whose
+                    # tips meet its neighbours is pinned by the
+                    # meeting points above; one that is a SUBSET of a
+                    # stellation face, as Hart's Dragonflies is, sits
+                    # on ordinary facet corners instead, and then the
+                    # only scale the drawing offers is the radius of
+                    # the ring its tips sit on.  Corners fall in rings
+                    # at a common radius, so letter the rings and put
+                    # the radius on every label.
+                    fac_coll = bpy.data.collections.new(
+                        "SymSculpt Facets")
+                    out_coll.children.link(fac_coll)
+                    byr = {}
+                    for cx, cy, _k in crossing_points(
+                            kind, family, d, self.guide_extent):
+                        byr.setdefault(round(math.hypot(cx, cy), 6),
+                                       []).append((cx, cy))
+                    fmat = _facet_material()
+                    for ri, rad in enumerate(sorted(byr)):
+                        if rad < 1e-9:
+                            continue
+                        ring = crossing_tag(ri).lower()
+                        for ci, (cx, cy) in enumerate(byr[rad]):
+                            nm3 = ("SymSculpt Facet %s%d" % (ring, ci))
+                            tc = bpy.data.curves.new(nm3, type='FONT')
+                            tc.body = "%s r=%.4f" % (ring, rad / d)
+                            tc.size = 0.032 * d
+                            tc.align_x = 'CENTER'
+                            tc.align_y = 'CENTER'
+                            tc.materials.append(fmat)
+                            fo = bpy.data.objects.new(nm3, tc)
+                            rr = math.hypot(cx, cy) or 1.0
+                            pad = 0.05 * d
+                            fo.location = (cx + cx / rr * pad,
+                                           cy + cy / rr * pad,
+                                           0.001 * d)
+                            fac_coll.objects.link(fo)
+                            fo.hide_render = True
                 cme = bpy.data.meshes.new("SymSculpt Crossings")
                 cme.from_pydata(cverts, cedges, cfaces)
                 cme.update()
@@ -3822,7 +3895,8 @@ if _IN_BLENDER:
                       'guide_rings', 'show_crossings',
                       'crossing_min_planes', 'label_crossings',
                       'show_sections', 'show_rings',
-                      'show_spikes', 'show_polyhedron', 'lift',
+                      'show_spikes', 'label_facets',
+                      'show_polyhedron', 'lift',
                       'translucent', 'show_part',
                       'mitre_part', 'label_bevels'):
                 lay.prop(self, k)
