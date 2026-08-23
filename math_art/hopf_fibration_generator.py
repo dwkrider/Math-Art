@@ -106,12 +106,14 @@ def _rot_matrix(ax, ay, az):
 # Kernel: fibre lift to S^3 and stereographic projection to R^3
 # --------------------------------------------------------------------------
 
-def fiber_s3(base, samples, P=1, Q=1):
+def fiber_s3(base, samples, P=1, Q=1, chirality='RIGHT'):
     """The fibre over unit 3-vector `base` = (a,b,c) on S^2, sampled
     at `samples` angles, as an (samples, 4) array on S^3.  With P=Q=1
     this is the Hopf fibre (a great circle); general (P,Q) winds the
     two complex phases at those integer rates, giving a (P,Q) torus
-    curve on the same Clifford torus."""
+    curve on the same Clifford torus.  `chirality='LEFT'` conjugates the
+    second phase (z1 -> conj z1), giving the MIRROR fibration -- the
+    other Villarceau ruling of the same tori."""
     import numpy as np
     a, b, c = base
     beta = math.acos(max(-1.0, min(1.0, c)))   # colatitude in [0, pi]
@@ -120,8 +122,43 @@ def fiber_s3(base, samples, P=1, Q=1):
     t = np.linspace(0.0, 2.0 * pi, samples, endpoint=False)
     p0 = P * t + lam
     p1 = Q * t
+    sgn = -1.0 if chirality == 'LEFT' else 1.0
     return np.stack([ch * np.cos(p0), ch * np.sin(p0),
-                     sh * np.cos(p1), sh * np.sin(p1)], axis=1)
+                     sh * np.cos(p1), sgn * sh * np.sin(p1)], axis=1)
+
+
+def _quat_left(phi):
+    """Unit quaternion (cos phi, sin phi, 0, 0) -- one plane of a
+    left-isoclinic (Clifford) rotation of S^3."""
+    return (math.cos(phi), math.sin(phi), 0.0, 0.0)
+
+
+def _s3_rotate(X, q):
+    """Left quaternion-multiply every S^3 point (row of X) by q.  A left
+    Clifford rotation commutes with the Hopf action, so it descends to a
+    rotation of the base S^2 -- spinning the whole fibre family through
+    each other (the 'flow' / cyclide-morph motion)."""
+    import numpy as np
+    w, i, j, k = q
+    a, b, c, d = X[:, 0], X[:, 1], X[:, 2], X[:, 3]
+    return np.stack([w * a - i * b - j * c - k * d,
+                     w * b + i * a + j * d - k * c,
+                     w * c - i * d + j * a + k * b,
+                     w * d + i * c - j * b + k * a], axis=1)
+
+
+def _so4(a1, a2, a3):
+    """A double (isoclinic-ish) rotation of R^4: rotate the (x1,x2) plane
+    by a1, the (x3,x4) plane by a2, and the (x1,x3) plane by a3.  Applied
+    before stereographic projection it morphs a Hopf torus through the
+    ring / horn / spindle tori and Dupin cyclides."""
+    import numpy as np
+    def rot(i, j, ang):
+        M = np.eye(4)
+        c, s = math.cos(ang), math.sin(ang)
+        M[i, i] = c; M[i, j] = -s; M[j, i] = s; M[j, j] = c
+        return M
+    return rot(0, 1, a1) @ rot(2, 3, a2) @ rot(0, 2, a3)
 
 
 def stereographic(X):
@@ -236,11 +273,70 @@ def great_circle(n_fiber, tilt_deg=55.0):
     return pts
 
 
+def spherical_cap(n, colat_min_deg, colat_max_deg):
+    """`n` base points spiral-filling the spherical zone between
+    colatitudes `colat_min` and `colat_max` (a Fibonacci spiral inside
+    a cap/band): the Segerman-print composition -- a tight twisted core
+    opening into ever-larger loops."""
+    zmax = math.cos(colat_min_deg * pi / 180.0)
+    zmin = math.cos(colat_max_deg * pi / 180.0)
+    ga = pi * (3.0 - sqrt(5.0))
+    pts = []
+    for k in range(max(1, n)):
+        z = zmin + (zmax - zmin) * (k + 0.5) / max(1, n)
+        r = sqrt(max(0.0, 1.0 - z * z))
+        ph = ga * k
+        pts.append((r * math.cos(ph), r * math.sin(ph), z))
+    return pts
+
+
+def loxodrome(n, colat_min_deg, colat_max_deg, turns):
+    """`n` base points along a rhumb line (loxodrome): colatitude sweeps
+    the band while longitude winds `turns` times -- a nested spiral of
+    Villarceau circles (mwalczyk's mode)."""
+    pts = []
+    for k in range(max(1, n)):
+        f = (k + 0.5) / max(1, n)
+        beta = (colat_min_deg + (colat_max_deg - colat_min_deg) * f) * pi / 180.0
+        lam = turns * 2.0 * pi * f
+        pts.append((math.sin(beta) * math.cos(lam),
+                    math.sin(beta) * math.sin(lam), math.cos(beta)))
+    return pts
+
+
+def random_sphere(n, seed):
+    """`n` base points drawn uniformly at random on S^2 (fixed `seed`
+    so the redo panel is reproducible)."""
+    import numpy as np
+    rng = np.random.default_rng(int(seed))
+    v = rng.standard_normal((max(1, n), 3))
+    v /= np.linalg.norm(v, axis=1, keepdims=True)
+    return [tuple(x) for x in v]
+
+
+def curl(n, colat_deg, lobes, amp_deg):
+    """`n` base points on a rose curve beta = b0 + a cos(k s) -- a single
+    floral closed ring (mwalczyk's 'curl')."""
+    pts = []
+    for k in range(max(1, n)):
+        s = 2.0 * pi * k / max(1, n)
+        beta = min(pi - 0.06, max(0.06,
+                   colat_deg * pi / 180.0
+                   + amp_deg * pi / 180.0 * math.cos(lobes * s)))
+        pts.append((math.sin(beta) * math.cos(s),
+                    math.sin(beta) * math.sin(s), math.cos(beta)))
+    return pts
+
+
 _PROVIDERS = {
     'LATITUDES': "Nested tori (circles of latitude)",
     'FLOWER': "Flower (one small circle of base points)",
     'GREATCIRCLE': "Great-circle band",
+    'CAP': "Spherical cap / band spiral (Segerman patch)",
+    'LOXODROME': "Loxodrome (rhumb-line spiral)",
+    'CURL': "Curl (floral rose ring)",
     'FIBONACCI': "Fibonacci sphere (quasi-uniform)",
+    'RANDOM': "Random points on S^2",
     'TETRA': "Tetrahedron vertices",
     'OCTA': "Octahedron vertices",
     'CUBE': "Cube vertices",
@@ -248,49 +344,141 @@ _PROVIDERS = {
     'DODECA': "Dodecahedron vertices",
 }
 
+# presets whose base points form continuous closed ring(s) -- these can
+# be skinned into surfaces (SURFACE output) and carry lat_min/lat_max
+_RING_PRESETS = ('LATITUDES', 'FLOWER', 'GREATCIRCLE', 'CAP',
+                 'LOXODROME', 'CURL')
 
-def base_points(preset, n_lat, n_fiber, lat_min, lat_max):
+
+def base_points(preset, n_lat, n_fiber, lat_min, lat_max, extra=None):
     """Dispatch to a base-point provider; returns a list of unit
-    3-vectors on S^2 (before the generic tilt is applied)."""
+    3-vectors on S^2 (before the generic tilt is applied).  `extra`
+    carries the few preset-specific knobs (turns, seed, curl lobes)."""
+    ex = extra or {}
     if preset == 'LATITUDES':
         return latitudes(n_lat, n_fiber, lat_min, lat_max)
     if preset == 'FLOWER':
         return flower(n_fiber, 0.5 * (lat_min + lat_max))
     if preset == 'GREATCIRCLE':
         return great_circle(n_fiber, 0.5 * (lat_min + lat_max))
+    if preset == 'CAP':
+        return spherical_cap(n_fiber, lat_min, lat_max)
+    if preset == 'LOXODROME':
+        return loxodrome(n_fiber, lat_min, lat_max, ex.get('turns', 5.0))
+    if preset == 'CURL':
+        return curl(n_fiber, 0.5 * (lat_min + lat_max),
+                    ex.get('curl_lobes', 5), ex.get('curl_amp', 25.0))
     if preset == 'FIBONACCI':
         return fibonacci(max(1, n_fiber))
+    if preset == 'RANDOM':
+        return random_sphere(n_fiber, ex.get('seed', 0))
     return _platonic(preset)
+
+
+def base_rings(preset, n_lat, n_fiber, lat_min, lat_max, extra=None):
+    """The base points grouped into closed rings (for SURFACE output),
+    or None when the preset has no ring adjacency to skin."""
+    import numpy as np
+    if preset == 'LATITUDES':
+        rings = []
+        if n_lat == 1:
+            betas = [0.5 * (lat_min + lat_max) * pi / 180.0]
+        else:
+            betas = np.linspace(lat_min, lat_max, n_lat) * pi / 180.0
+        for beta in betas:
+            rings.append([(math.sin(beta) * math.cos(2.0 * pi * k / n_fiber),
+                           math.sin(beta) * math.sin(2.0 * pi * k / n_fiber),
+                           math.cos(beta)) for k in range(n_fiber)])
+        return rings
+    if preset in ('FLOWER', 'GREATCIRCLE', 'CAP', 'LOXODROME', 'CURL'):
+        return [base_points(preset, n_lat, n_fiber, lat_min, lat_max, extra)]
+    return None
 
 
 # --------------------------------------------------------------------------
 # Assembly: project every fibre, tilt/centre/scale to fit the unit cube
 # --------------------------------------------------------------------------
 
+def _longest_run(mask):
+    """Indices of the longest contiguous True run in a cyclic boolean
+    mask (used to keep the in-range arc of a near-axis fibre)."""
+    import numpy as np
+    n = len(mask)
+    if mask.all():
+        return np.arange(n)
+    start = int(np.argmin(mask))               # first False
+    order = np.roll(np.arange(n), -start)
+    m = mask[order]
+    best = (0, 0)
+    i = 0
+    while i < n:
+        if m[i]:
+            j = i
+            while j < n and m[j]:
+                j += 1
+            if j - i > best[1] - best[0]:
+                best = (i, j)
+            i = j
+        else:
+            i += 1
+    return order[best[0]:best[1]]
+
+
 def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
                  P=1, Q=1, lat_min=20.0, lat_max=160.0,
-                 fit_radius=1.0, max_radius=12.0):
-    """Return (fibers, bases): `fibers` is a list of (samples, 3)
-    projected polylines and `bases` the matching tilted base points
-    (for colouring).  The whole set is centred at the origin and
-    uniformly scaled so its 95th-percentile point radius is
-    `fit_radius`; any fibre whose points blow past `max_radius`
-    (a base point near the south pole) is dropped."""
+                 fit_radius=1.0, max_radius=12.0,
+                 sphere_euler=None, s3_rot=0.0, chirality='RIGHT',
+                 include_axis=False, extra=None, return_stats=False):
+    """Return (fibers, bases): `fibers` is a list of (n, 3) projected
+    polylines and `bases` the matching (rotated) base points for
+    colouring.  Centred at the origin and uniformly scaled so the
+    95th-percentile point radius is `fit_radius`.
+
+    `sphere_euler` orients S^2 (defaults to the built-in tilt); `s3_rot`
+    (degrees) applies a left Clifford rotation of S^3 before projecting
+    (the flow / morph); `chirality` in RIGHT/LEFT/BOTH selects the
+    Villarceau ruling(s).  A fibre exceeding `max_radius` (base near the
+    south pole) is dropped, unless `include_axis`, when its in-range arc
+    is kept as an OPEN polyline (the axis fibre as a clipped line).
+
+    With `return_stats` the return is (fibers, bases, closed, stats)
+    where `closed[i]` says whether fibre i is a full loop and `stats`
+    reports how many fibres were dropped."""
     import numpy as np
-    R = _rot_matrix(*_TILT)
-    raw = base_points(preset, n_lat, n_fiber, lat_min, lat_max)
-    bases = [tuple(R @ np.asarray(b)) for b in raw]
+    R = _rot_matrix(*(sphere_euler if sphere_euler is not None else _TILT))
+    raw = base_points(preset, n_lat, n_fiber, lat_min, lat_max, extra)
+    based = [tuple(R @ np.asarray(b)) for b in raw]
+    q = _quat_left(math.radians(s3_rot)) if s3_rot else None
+    chis = ('RIGHT', 'LEFT') if chirality == 'BOTH' else (chirality,)
 
-    polylines = [project_fiber(b, samples, P, Q) for b in bases]
+    fibers, bases, closed, dropped = [], [], [], 0
+    for b in based:
+        for chi in chis:
+            X = fiber_s3(b, samples, P, Q, chi)
+            if q is not None:
+                X = _s3_rotate(X, q)
+            p = stereographic(X)
+            if not np.isfinite(p).all():
+                dropped += 1
+                continue
+            r = np.linalg.norm(p, axis=1)
+            if r.max() < max_radius:
+                fibers.append(p)
+                bases.append(b)
+                closed.append(True)
+            elif include_axis:
+                run = _longest_run(r < max_radius)
+                if len(run) >= 2:
+                    fibers.append(p[run])
+                    bases.append(b)
+                    closed.append(False)
+                else:
+                    dropped += 1
+            else:
+                dropped += 1
 
-    # drop near-line fibres, then centre + scale on what remains
-    kept = [(p, b) for p, b in zip(polylines, bases)
-            if np.isfinite(p).all()
-            and np.linalg.norm(p, axis=1).max() < max_radius]
-    if not kept:
-        return [], []
-    fibers = [p for p, _ in kept]
-    bases = [b for _, b in kept]
+    if not fibers:
+        return ([], [], [], {'dropped': dropped}) if return_stats else ([], [])
 
     allpts = np.concatenate(fibers, axis=0)
     center = 0.5 * (allpts.max(0) + allpts.min(0))
@@ -298,6 +486,8 @@ def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
     ref = np.percentile(rad, 95.0)
     scale = (fit_radius / ref) if ref > 1e-9 else 1.0
     fibers = [(p - center) * scale for p in fibers]
+    if return_stats:
+        return fibers, bases, closed, {'dropped': dropped}
     return fibers, bases
 
 
@@ -309,6 +499,257 @@ def _fiber_color(base):
     hue = (math.atan2(b, a) / (2.0 * pi)) % 1.0
     val = 0.35 + 0.6 * (0.5 * (c + 1.0))       # c in [-1,1] -> val
     return colorsys.hsv_to_rgb(hue, 0.72, val)
+
+
+def _palette_rgb(base, style='RAINBOW', mono=(0.27, 0.86, 0.80)):
+    """Colour a base point under a chosen palette.  All three read the
+    base point on S^2 -- hue from longitude, lightness from latitude --
+    but with different aesthetics: RAINBOW (saturated, black-bg render),
+    PASTEL (soft two-axis ramp, the 3D-print look), MONO (one hue,
+    lightness by latitude)."""
+    import colorsys
+    a, b, c = base
+    hue = (math.atan2(b, a) / (2.0 * pi)) % 1.0
+    lat = 0.5 * (c + 1.0)                        # 1 north .. 0 south
+    if style == 'PASTEL':
+        return colorsys.hsv_to_rgb(hue, 0.40, 0.72 + 0.24 * lat)
+    if style == 'MONO':
+        h, s, _v = colorsys.rgb_to_hsv(*mono)
+        return colorsys.hsv_to_rgb(h, s, 0.42 + 0.5 * lat)
+    return colorsys.hsv_to_rgb(hue, 0.85, 0.35 + 0.55 * lat)
+
+
+def _param_rgb(t01, style='RAINBOW', mono=(0.27, 0.86, 0.80)):
+    """PARAMETER colouring: hue swept by position `t01` along the fibre,
+    revealing the flow direction."""
+    import colorsys
+    if style == 'MONO':
+        h, s, _v = colorsys.rgb_to_hsv(*mono)
+        return colorsys.hsv_to_rgb(h, s, 0.40 + 0.5 * t01)
+    sat = 0.42 if style == 'PASTEL' else 0.85
+    return colorsys.hsv_to_rgb(t01 % 1.0, sat, 0.9)
+
+
+# --------------------------------------------------------------------------
+# Small geometry primitives (beads, markers, control sphere)
+# --------------------------------------------------------------------------
+
+def _unit3(p):
+    m = math.sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]) or 1.0
+    return (p[0] / m, p[1] / m, p[2] / m)
+
+
+def _icosphere(radius=1.0, subdiv=1):
+    """(verts, faces) of an icosphere, verts as tuples."""
+    t = _PHI
+    v = [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
+         (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
+         (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]
+    v = [list(_unit3(p)) for p in v]
+    f = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
+         [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
+         [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
+         [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]]
+    for _ in range(subdiv):
+        mid = {}
+        nf = []
+
+        def midpoint(i, j):
+            key = (min(i, j), max(i, j))
+            if key not in mid:
+                m = _unit3(((v[i][0] + v[j][0]) / 2.0,
+                            (v[i][1] + v[j][1]) / 2.0,
+                            (v[i][2] + v[j][2]) / 2.0))
+                mid[key] = len(v)
+                v.append(list(m))
+            return mid[key]
+        for a, b, c in f:
+            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+            nf += [[a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]]
+        f = nf
+    return [(x * radius, y * radius, z * radius) for x, y, z in v], f
+
+
+def _uv_sphere(radius=1.0, rings=14, segs=22):
+    verts, faces = [], []
+    for i in range(rings + 1):
+        th = pi * i / rings
+        for j in range(segs):
+            ph = 2.0 * pi * j / segs
+            verts.append((radius * math.sin(th) * math.cos(ph),
+                          radius * math.sin(th) * math.sin(ph),
+                          radius * math.cos(th)))
+    for i in range(rings):
+        for j in range(segs):
+            j1 = (j + 1) % segs
+            a = i * segs + j
+            b = i * segs + j1
+            c = (i + 1) * segs + j1
+            d = (i + 1) * segs + j
+            faces.append([a, b, c, d])
+    return verts, faces
+
+
+def _cone(radius=1.0, height=2.0, seg=8):
+    """A cone with apex at +z*height, base ring at z=0, as (verts, faces)."""
+    verts = [(0.0, 0.0, height)]
+    for j in range(seg):
+        ph = 2.0 * pi * j / seg
+        verts.append((radius * math.cos(ph), radius * math.sin(ph), 0.0))
+    faces = [[0, 1 + j, 1 + (j + 1) % seg] for j in range(seg)]
+    faces.append([1 + j for j in range(seg)][::-1])       # base cap
+    return verts, faces
+
+
+def _resample_closed(P, count):
+    """Arc-length-uniform resample of a closed polyline P to `count`
+    points (returns an (count,3) array)."""
+    import numpy as np
+    P = np.asarray(P, float)
+    seg = np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    total = s[-1]
+    if total < 1e-12:
+        return np.repeat(P[:1], count, axis=0)
+    targ = np.linspace(0.0, total, count, endpoint=False)
+    out = np.empty((count, 3))
+    Pw = np.vstack([P, P[:1]])
+    for k, tv in enumerate(targ):
+        i = int(np.searchsorted(s, tv) - 1)
+        i = max(0, min(i, len(seg) - 1))
+        f = (tv - s[i]) / (seg[i] if seg[i] > 1e-12 else 1.0)
+        out[k] = Pw[i] * (1 - f) + Pw[i + 1] * f
+    return out
+
+
+def _place(template_v, template_f, xform, base_v, base_f):
+    """Append a transformed copy of a template mesh to (base_v, base_f).
+    `xform` maps a template vertex (tuple) to a world tuple."""
+    off = len(base_v)
+    base_v.extend(xform(p) for p in template_v)
+    base_f.extend([[off + i for i in fc] for fc in template_f])
+
+
+def _closed_tube(P, radius, sides):
+    """A swept tube along a CLOSED polyline P, with parallel-transported
+    frames whose closure holonomy is distributed so the seam matches.
+    Vertex layout is ring-major: vertex i*sides + j is sample i, side j
+    -- so the caller can colour by fibre parameter i."""
+    import numpy as np
+    P = np.asarray(P, float)
+    m = len(P)
+    T = np.roll(P, -1, 0) - np.roll(P, 1, 0)
+    T /= (np.linalg.norm(T, axis=1, keepdims=True) + 1e-12)
+    ref = np.array([0.0, 0.0, 1.0])
+    if abs(np.dot(ref, T[0])) > 0.9:
+        ref = np.array([1.0, 0.0, 0.0])
+    N = np.empty_like(P)
+    N[0] = np.cross(T[0], ref)
+    N[0] /= np.linalg.norm(N[0])
+    for i in range(1, m):
+        v = N[i - 1] - T[i] * np.dot(N[i - 1], T[i])
+        N[i] = v / (np.linalg.norm(v) or 1.0)
+    v = N[m - 1] - T[0] * np.dot(N[m - 1], T[0])
+    v /= (np.linalg.norm(v) or 1.0)
+    B0 = np.cross(T[0], N[0])
+    ang = math.atan2(float(np.dot(v, B0)), float(np.dot(v, N[0])))
+    verts, faces = [], []
+    for i in range(m):
+        corr = -ang * i / m
+        B = np.cross(T[i], N[i])
+        for j in range(sides):
+            a = 2.0 * pi * j / sides + corr
+            verts.append(tuple(P[i] + radius
+                               * (math.cos(a) * N[i] + math.sin(a) * B)))
+    for i in range(m):
+        i1 = (i + 1) % m
+        for j in range(sides):
+            j1 = (j + 1) % sides
+            faces.append([i * sides + j, i * sides + j1,
+                          i1 * sides + j1, i1 * sides + j])
+    return verts, faces
+
+
+def _open_tube(P, radius, sides):
+    """A swept tube along an OPEN polyline P (no end-to-start closure),
+    with parallel-transported frames -- for the clipped axis fibre."""
+    import numpy as np
+    P = np.asarray(P, float)
+    m = len(P)
+    T = np.zeros_like(P)
+    T[1:-1] = P[2:] - P[:-2]
+    T[0] = P[1] - P[0]
+    T[-1] = P[-1] - P[-2]
+    T /= (np.linalg.norm(T, axis=1, keepdims=True) + 1e-12)
+    ref = np.array([0.0, 0.0, 1.0])
+    N = np.cross(T[0], ref)
+    if np.linalg.norm(N) < 1e-6:
+        N = np.cross(T[0], np.array([1.0, 0.0, 0.0]))
+    N /= np.linalg.norm(N)
+    frames = [N]
+    for i in range(1, m):
+        v = frames[-1] - T[i] * np.dot(frames[-1], T[i])
+        nn = np.linalg.norm(v)
+        frames.append(v / nn if nn > 1e-9 else frames[-1])
+    verts, faces = [], []
+    for i in range(m):
+        B = np.cross(T[i], frames[i])
+        for j in range(sides):
+            a = 2.0 * pi * j / sides
+            verts.append(tuple(P[i] + radius
+                               * (math.cos(a) * frames[i]
+                                  + math.sin(a) * B)))
+    for i in range(m - 1):
+        for j in range(sides):
+            j1 = (j + 1) % sides
+            faces.append([i * sides + j, i * sides + j1,
+                          (i + 1) * sides + j1, (i + 1) * sides + j])
+    return verts, faces
+
+
+# --------------------------------------------------------------------------
+# Fibre surface: skin the fibres over each continuous base ring into the
+# nested tori (the "surface" companion to the fibre bundle)
+# --------------------------------------------------------------------------
+
+def build_fiber_surface(rings, samples, P=1, Q=1, sphere_euler=None,
+                        s3_rot=0.0, chirality='RIGHT', fit_radius=1.0):
+    """Skin the fibres over each closed base ring into a quad torus.
+    `rings` is a list of closed rings of base points (from
+    `base_rings`).  Returns (verts, faces, vbase) with one base point per
+    vertex (for colouring); the whole set is centred and scaled together
+    so the nested tori share a frame."""
+    import numpy as np
+    R = _rot_matrix(*(sphere_euler if sphere_euler is not None else _TILT))
+    q = _quat_left(math.radians(s3_rot)) if s3_rot else None
+    chi = 'RIGHT' if chirality == 'BOTH' else chirality
+    verts, faces, vbase = [], [], []
+    for ring in rings:
+        base_off = len(verts)
+        Nr = len(ring)
+        for b in ring:
+            bb = tuple(R @ np.asarray(b))
+            X = fiber_s3(bb, samples, P, Q, chi)
+            if q is not None:
+                X = _s3_rotate(X, q)
+            pts = stereographic(X)
+            verts.extend(pts.tolist())
+            vbase.extend([bb] * samples)
+        for i in range(Nr):
+            i1 = (i + 1) % Nr
+            for j in range(samples):
+                j1 = (j + 1) % samples
+                faces.append([base_off + i * samples + j,
+                              base_off + i * samples + j1,
+                              base_off + i1 * samples + j1,
+                              base_off + i1 * samples + j])
+    V = np.asarray(verts)
+    center = 0.5 * (V.max(0) + V.min(0))
+    rad = np.linalg.norm(V - center, axis=1)
+    ref = np.percentile(rad, 95.0)
+    scale = (fit_radius / ref) if ref > 1e-9 else 1.0
+    V = (V - center) * scale
+    return V.tolist(), faces, vbase
 
 
 # --------------------------------------------------------------------------
@@ -686,13 +1127,15 @@ def _enclosed_area(gamma_pts):
 
 
 def build_hopf_torus(gamma_pts, m_psi, closed=True, fit_radius=1.0,
-                     max_radius=40.0):
+                     max_radius=40.0, R4=None):
     """Mesh the Hopf torus h^{-1}(gamma): each of the N curve samples
     contributes a fibre circle of `m_psi` points (the Hopf orbit of a
     lift), joined into a quad grid.  `closed` wraps the curve direction
     into a torus; `closed=False` leaves an open annulus (a Hopf band).
-    Returns (verts, faces, area) with verts centred and scaled to the
-    unit cube."""
+    An optional `R4` (4x4 SO(4) matrix) rotates the torus in S^3 before
+    projecting -- morphing it through the ring/horn/spindle tori and
+    Dupin cyclides.  Returns (verts, faces, area) with verts centred and
+    scaled to the unit cube."""
     import numpy as np
     N, M = len(gamma_pts), m_psi
     psi = np.linspace(0.0, 2.0 * pi, M, endpoint=False)
@@ -707,6 +1150,8 @@ def build_hopf_torus(gamma_pts, m_psi, closed=True, fit_radius=1.0,
         z1r, z1i = sb, 0.0
         X = np.stack([cp * z0r - sp * z0i, sp * z0r + cp * z0i,
                       cp * z1r - sp * z1i, sp * z1r + cp * z1i], axis=1)
+        if R4 is not None:
+            X = X @ R4.T
         rings.append(stereographic(X))
     verts = np.concatenate(rings, axis=0)
     center = 0.5 * (verts.max(0) + verts.min(0))
@@ -727,9 +1172,34 @@ def build_hopf_torus(gamma_pts, m_psi, closed=True, fit_radius=1.0,
 
 if _IN_BLENDER:
 
+    def _color_material(name, emission):
+        """A single material whose Base Colour (and, if `emission` > 0,
+        its emission) is driven by the mesh's `hopf_color` attribute."""
+        mat = bpy.data.materials.new(name)
+        mat.use_nodes = True
+        nt = mat.node_tree
+        bsdf = nt.nodes.get("Principled BSDF")
+        vc = nt.nodes.new("ShaderNodeVertexColor")
+        vc.layer_name = "hopf_color"
+        if bsdf:
+            nt.links.new(vc.outputs["Color"], bsdf.inputs["Base Color"])
+            if emission > 0.0:
+                if "Emission Color" in bsdf.inputs:
+                    nt.links.new(vc.outputs["Color"],
+                                 bsdf.inputs["Emission Color"])
+                if "Emission Strength" in bsdf.inputs:
+                    bsdf.inputs["Emission Strength"].default_value = emission
+        return mat
+
+    def _finish(context, obj):
+        context.collection.objects.link(obj)
+        obj.location = context.scene.cursor.location
+        return obj
+
     class CURVE_OT_hopf_fibration_add(bpy.types.Operator):
         """Add fibres of the Hopf fibration of S^3, stereographically
-        projected to R^3 as circles and coloured by base point"""
+        projected to R^3 -- as tubes, a nested-tori surface, or beads --
+        coloured by base point, with a control sphere and S^3 motion"""
         bl_idname = "curve.hopf_fibration_add"
         bl_label = "Hopf Fibration"
         bl_options = {'REGISTER', 'UNDO'}
@@ -741,15 +1211,13 @@ if _IN_BLENDER:
             default='LATITUDES')
         n_lat: IntProperty(
             name="Latitudes / Rings", default=6, min=1, max=48,
-            description="Circles of latitude (LATITUDES), or the "
-                        "point budget for the Fibonacci sphere")
+            description="Circles of latitude (LATITUDES)")
         n_fiber: IntProperty(
-            name="Fibres", default=24, min=1, max=200,
+            name="Fibres", default=24, min=1, max=400,
             description="Fibres per latitude (LATITUDES), or the total "
-                        "number of fibres for FLOWER / GREATCIRCLE / "
-                        "FIBONACCI presets")
+                        "number of fibres for the other point sets")
         samples: IntProperty(
-            name="Samples", default=160, min=24, max=1024,
+            name="Samples", default=160, min=12, max=1024,
             description="Points per fibre")
         wind_p: IntProperty(
             name="Wind P", default=1, min=1, max=12,
@@ -761,18 +1229,42 @@ if _IN_BLENDER:
             description="Winding rate of the second phase")
         lat_min: FloatProperty(
             name="Colat Min", default=20.0, min=1.0, max=179.0,
-            description="Smallest colatitude (deg) for latitude / "
-                        "flower / great-circle presets")
+            description="Smallest colatitude (deg) of the base band")
         lat_max: FloatProperty(
             name="Colat Max", default=160.0, min=1.0, max=179.0,
-            description="Largest colatitude (deg)")
+            description="Largest colatitude (deg) of the base band")
+        turns: FloatProperty(
+            name="Turns", default=5.0, min=0.5, max=40.0,
+            description="Longitude turns of the loxodrome spiral")
+        seed: IntProperty(
+            name="Seed", default=0, min=0, max=9999,
+            description="Random seed for the RANDOM base set")
+        curl_lobes: IntProperty(
+            name="Curl Lobes", default=5, min=2, max=16,
+            description="Petal count of the CURL rose ring")
+        curl_amp: FloatProperty(
+            name="Curl Amplitude", default=25.0, min=0.0, max=80.0,
+            description="Colatitude swing of the CURL rose (deg)")
+        chirality: EnumProperty(
+            name="Chirality",
+            items=[('RIGHT', "Right", "the right-handed fibration"),
+                   ('LEFT', "Left", "the mirror (left) fibration -- the "
+                    "other Villarceau ruling"),
+                   ('BOTH', "Both", "both rulings woven together")],
+            description="Which Villarceau ruling(s) to draw",
+            default='RIGHT')
         output: EnumProperty(
             name="Output",
-            items=[('BEZIER', "Bezier Curve", "auto-smoothed"),
-                   ('POLY', "Poly Curve", ""),
-                   ('NURBS', "NURBS Curve", ""),
-                   ('MESH', "Mesh Tube", "swept tube mesh")],
-            description="Curve type, or a swept mesh tube, for the fibres",
+            items=[('BEZIER', "Bezier Curve", "auto-smoothed curve"),
+                   ('POLY', "Poly Curve", "polyline curve"),
+                   ('NURBS', "NURBS Curve", "NURBS curve"),
+                   ('MESH', "Mesh Tube", "swept tube mesh per fibre"),
+                   ('SURFACE', "Surface", "skin the fibres over each "
+                    "continuous base ring into the nested torus "
+                    "surface(s)"),
+                   ('BEADS', "Beads", "a string of spheres along each "
+                    "fibre (the ball-and-stick look)")],
+            description="How the fibres are realised",
             default='MESH')
         radius: FloatProperty(
             name="Tube Radius", default=0.02, min=0.0, max=1.0,
@@ -784,55 +1276,268 @@ if _IN_BLENDER:
                                             "on curve output")
         tube_sides: IntProperty(name="Tube Sides", default=8,
                                 min=3, max=32,
-                                description="Number of sides around each "
-                                            "swept tube (Mesh output)")
+                                description="Sides around each swept tube")
+        bead_count: IntProperty(
+            name="Beads / Fibre", default=48, min=4, max=400,
+            description="Spheres placed along each fibre (Beads output)")
+        bead_radius: FloatProperty(
+            name="Bead Radius", default=0.03, min=0.001, max=0.5,
+            step=1, precision=3,
+            description="Radius of each bead (Beads output)")
+        markers: IntProperty(
+            name="Markers / Fibre", default=0, min=0, max=24,
+            description="Cone glyphs riding each fibre, pointing along "
+                        "it (0 = none) -- the base-point markers")
+        marker_size: FloatProperty(
+            name="Marker Size", default=0.05, min=0.005, max=0.5,
+            step=1, precision=3, description="Size of the marker cones")
         color_fibers: BoolProperty(
             name="Colour by Base Point", default=True,
-            description="One material per fibre, hue from longitude "
-                        "and value from latitude of its base point")
+            description="Colour each fibre from its base point on S^2")
+        color_style: EnumProperty(
+            name="Palette",
+            items=[('RAINBOW', "Rainbow", "saturated hue by longitude "
+                    "(black-background render)"),
+                   ('PASTEL', "Pastel", "soft two-axis ramp (the 3D-"
+                    "print look)"),
+                   ('MONO', "Mono", "one hue, lightness by latitude"),
+                   ('PARAMETER', "Parameter", "hue swept along each "
+                    "fibre, showing the flow direction")],
+            description="Colour aesthetic (all keyed to the base point)",
+            default='RAINBOW')
+        mono_color: bpy.props.FloatVectorProperty(
+            name="Mono Colour", subtype='COLOR', size=3,
+            min=0.0, max=1.0, default=(0.27, 0.86, 0.80),
+            description="Base hue for the Mono palette")
+        emission: FloatProperty(
+            name="Glow", default=0.0, min=0.0, max=20.0,
+            description="Emission strength (0 = matte; raise for the "
+                        "glowing-on-black look)")
+        sphere_euler: bpy.props.FloatVectorProperty(
+            name="Sphere Rotation", subtype='EULER', size=3,
+            default=_TILT,
+            description="Orientation of the base sphere S^2 (default is "
+                        "a gentle tilt keeping fibres off the axis)")
+        s3_rot: FloatProperty(
+            name="S3 Flow", default=0.0, min=-360.0, max=360.0,
+            description="Left Clifford rotation of S^3 before projecting "
+                        "(deg) -- keyframe it to spin the whole family")
+        include_axis: BoolProperty(
+            name="Keep Axis Fibres", default=False,
+            description="Keep near-pole fibres as clipped open lines "
+                        "(the axis fibre) instead of dropping them")
+        show_base_sphere: BoolProperty(
+            name="Control Sphere", default=False,
+            description="Add a small S^2 beside the fibres with a dot "
+                        "per base point in its fibre's colour")
+        sphere_size: FloatProperty(
+            name="Sphere Size", default=0.5, min=0.05, max=3.0,
+            description="Radius of the control sphere (scene units)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0,
                              description="Overall size of the fibre set")
 
+        # ---- colour helpers -------------------------------------------
+        def _rgb(self, base):
+            return _palette_rgb(base, self.color_style, tuple(self.mono_color))
+
+        def _fiber_vcolors(self, base, n_ring, sides_or_none):
+            """rgba per vertex for one fibre.  PARAMETER varies along the
+            fibre; the others are constant at the base colour."""
+            if self.color_style == 'PARAMETER':
+                cols = []
+                for i in range(n_ring):
+                    rgb = _param_rgb(i / max(1, n_ring), 'RAINBOW',
+                                     tuple(self.mono_color))
+                    reps = sides_or_none if sides_or_none else 1
+                    cols.extend([(*rgb, 1.0)] * reps)
+                return cols
+            rgb = self._rgb(base)
+            per = (sides_or_none or 1) * n_ring
+            return [(*rgb, 1.0)] * per
+
+        # ---- output builders ------------------------------------------
+        def _build_tubes(self, fibers, bases, closed):
+            verts, faces, vcol = [], [], []
+            for Pl, b, cl in zip(fibers, bases, closed):
+                if cl:
+                    v, f = _closed_tube(Pl, self.radius, self.tube_sides)
+                else:
+                    v, f = _open_tube(Pl, self.radius, self.tube_sides)
+                off = len(verts)
+                verts.extend(v)
+                faces.extend([[off + i for i in fc] for fc in f])
+                vcol.extend(self._fiber_vcolors(b, len(Pl), self.tube_sides))
+            return verts, faces, vcol
+
+        def _build_beads(self, fibers, bases):
+            import numpy as np
+            iv, ifc = _icosphere(self.bead_radius, 1)
+            verts, faces, vcol = [], [], []
+            for Pl, b in zip(fibers, bases):
+                pts = _resample_closed(Pl, self.bead_count)
+                for k, c in enumerate(pts):
+                    if self.color_style == 'PARAMETER':
+                        rgb = _param_rgb(k / max(1, self.bead_count),
+                                         'RAINBOW', tuple(self.mono_color))
+                    else:
+                        rgb = self._rgb(b)
+                    off = len(verts)
+                    verts.extend((c[0] + p[0], c[1] + p[1], c[2] + p[2])
+                                 for p in iv)
+                    faces.extend([[off + i for i in fc] for fc in ifc])
+                    vcol.extend([(*rgb, 1.0)] * len(iv))
+            return verts, faces, vcol
+
+        def _add_markers(self, fibers, bases, verts, faces, vcol):
+            import numpy as np
+            cv, cf = _cone(self.marker_size * 0.5, self.marker_size, 8)
+            for Pl, b in zip(fibers, bases):
+                P = np.asarray(Pl)
+                m = len(P)
+                rgb = self._rgb(b)
+                for s in range(self.markers):
+                    i = int(round(s * m / self.markers)) % m
+                    t = P[(i + 1) % m] - P[i - 1]
+                    nt = np.linalg.norm(t)
+                    if nt < 1e-9:
+                        continue
+                    t = t / nt
+                    up = np.array([0.0, 0.0, 1.0])
+                    if abs(np.dot(up, t)) > 0.9:
+                        up = np.array([1.0, 0.0, 0.0])
+                    nx = np.cross(up, t)
+                    nx /= np.linalg.norm(nx)
+                    ny = np.cross(t, nx)
+                    off = len(verts)
+                    for p in cv:
+                        w = P[i] + p[0] * nx + p[1] * ny + p[2] * t
+                        verts.append((w[0], w[1], w[2]))
+                    faces.extend([[off + i2 for i2 in fc] for fc in cf])
+                    vcol.extend([(*rgb, 1.0)] * len(cv))
+
+        def _control_sphere(self, context, bases, parent, extent):
+            import numpy as np
+            r = self.sphere_size
+            cx = extent + r + 0.2 * max(extent, 1.0)
+            sv, sf = _uv_sphere(r, 14, 22)
+            verts = [(x + cx, y, z) for x, y, z in sv]
+            faces = [list(f) for f in sf]
+            vcol = [(0.16, 0.17, 0.2, 1.0)] * len(sv)
+            dv, dfc = _icosphere(0.06 * r + 0.01, 1)
+            for b in bases:
+                rgb = self._rgb(b)
+                c = (b[0] * r * 1.02 + cx, b[1] * r * 1.02, b[2] * r * 1.02)
+                off = len(verts)
+                verts.extend((c[0] + p[0], c[1] + p[1], c[2] + p[2])
+                             for p in dv)
+                faces.extend([[off + i for i in fc] for fc in dfc])
+                vcol.extend([(*rgb, 1.0)] * len(dv))
+            me = bpy.data.meshes.new("Control Sphere")
+            me.from_pydata(verts, [], faces)
+            me.validate(clean_customdata=True)
+            self._write_colors(me, vcol)
+            me.update()
+            obj = bpy.data.objects.new("Control Sphere", me)
+            obj.data.materials.append(
+                _color_material("Hopf Control Sphere", 0.0))
+            _finish(context, obj)
+            obj.parent = parent
+
+        def _write_colors(self, me, vcol):
+            import numpy as np
+            if not vcol or len(vcol) != len(me.vertices):
+                return
+            attr = me.color_attributes.new("hopf_color", 'FLOAT_COLOR',
+                                            'POINT')
+            flat = np.asarray(vcol, dtype=np.float32).ravel()
+            attr.data.foreach_set("color", flat)
+
         def execute(self, context):
             import numpy as np
-            fibers, bases = build_fibers(
+            se = tuple(self.sphere_euler)
+            ex = dict(turns=self.turns, seed=self.seed,
+                      curl_lobes=self.curl_lobes, curl_amp=self.curl_amp)
+            name = f"Hopf Fibration ({self.preset.title()})"
+
+            # -------- SURFACE: skin fibres over continuous base rings ---
+            if self.output == 'SURFACE':
+                rings = base_rings(self.preset, self.n_lat, self.n_fiber,
+                                   self.lat_min, self.lat_max, ex)
+                if rings is None:
+                    self.report({'WARNING'},
+                                "SURFACE needs a ring preset "
+                                "(Latitudes/Flower/Cap/...); drawing tubes")
+                    self.output = 'MESH'
+                else:
+                    verts, faces, vbase = build_fiber_surface(
+                        rings, self.samples, self.wind_p, self.wind_q,
+                        se, self.s3_rot, self.chirality)
+                    verts = [(x * self.scale, y * self.scale, z * self.scale)
+                             for x, y, z in verts]
+                    me = bpy.data.meshes.new(name)
+                    me.from_pydata(verts, [], faces)
+                    me.validate(clean_customdata=True)
+                    me.polygons.foreach_set('use_smooth',
+                                            [True] * len(me.polygons))
+                    if self.color_fibers:
+                        self._write_colors(me, [(*self._rgb(b), 1.0)
+                                                for b in vbase])
+                    me.update()
+                    obj = bpy.data.objects.new(name, me)
+                    if self.color_fibers:
+                        obj.data.materials.append(
+                            _color_material(name, self.emission))
+                    _finish(context, obj)
+                    self._select(context, obj)
+                    if self.show_base_sphere:
+                        flat = np.asarray(verts)
+                        extent = float(np.abs(flat).max()) if len(flat) else 1.0
+                        self._control_sphere(
+                            context, [tuple(_rot_matrix(*se) @ np.asarray(b))
+                                      for b in rings[0]], obj, extent)
+                    self.report({'INFO'},
+                                f"{name}: surface, {len(rings)} ring(s), "
+                                f"{len(verts)} verts")
+                    return {'FINISHED'}
+
+            # -------- fibre bundle (tubes / beads / curves) -------------
+            fibers, bases, closed, stats = build_fibers(
                 self.preset, self.n_lat, self.n_fiber, self.samples,
-                self.wind_p, self.wind_q, self.lat_min, self.lat_max)
+                self.wind_p, self.wind_q, self.lat_min, self.lat_max,
+                sphere_euler=se, s3_rot=self.s3_rot,
+                chirality=self.chirality, include_axis=self.include_axis,
+                extra=ex, return_stats=True)
             if not fibers:
                 self.report({'ERROR'}, "No fibres produced")
                 return {'CANCELLED'}
             fibers = [np.asarray(f) * self.scale for f in fibers]
             d = len(fibers)
-            name = f"Hopf Fibration ({self.preset.title()})"
-            color = self.color_fibers
 
-            if self.output == 'MESH':
-                try:
-                    from .knots import closed_tube as tube
-                except ImportError:
-                    from knots import closed_tube as tube
-                verts, faces, midx = [], [], []
-                for k, Pl in enumerate(fibers):
-                    v, f = tube(Pl, self.radius, self.tube_sides)
-                    base = len(verts)
-                    verts.extend(v)
-                    faces.extend([[base + i for i in face]
-                                  for face in f])
-                    midx.extend([k] * len(f))
+            if self.output in ('MESH', 'BEADS'):
+                if self.output == 'BEADS':
+                    verts, faces, vcol = self._build_beads(fibers, bases)
+                else:
+                    verts, faces, vcol = self._build_tubes(fibers, bases,
+                                                           closed)
+                if self.markers > 0:
+                    self._add_markers(fibers, bases, verts, faces, vcol)
                 me = bpy.data.meshes.new(name)
                 me.from_pydata(verts, [], faces)
                 me.validate(clean_customdata=True)
-                me.polygons.foreach_set(
-                    'use_smooth', [True] * len(me.polygons))
-                if color and len(me.polygons) == len(midx):
-                    me.polygons.foreach_set('material_index', midx)
+                me.polygons.foreach_set('use_smooth',
+                                        [True] * len(me.polygons))
+                if self.color_fibers:
+                    self._write_colors(me, vcol)
                 me.update()
                 obj = bpy.data.objects.new(name, me)
+                if self.color_fibers:
+                    obj.data.materials.append(
+                        _color_material(name, self.emission))
             else:
                 cu = bpy.data.curves.new(name, 'CURVE')
                 cu.dimensions = '3D'
-                for Pl in fibers:
+                for Pl, cl in zip(fibers, closed):
                     if self.output == 'BEZIER':
                         sp = cu.splines.new('BEZIER')
                         sp.bezier_points.add(len(Pl) - 1)
@@ -845,42 +1550,50 @@ if _IN_BLENDER:
                         sp = cu.splines.new(self.output)
                         sp.points.add(len(Pl) - 1)
                         for i, pnt in enumerate(Pl):
-                            sp.points[i].co = (pnt[0], pnt[1],
-                                               pnt[2], 1.0)
+                            sp.points[i].co = (pnt[0], pnt[1], pnt[2], 1.0)
                         if self.output == 'NURBS':
                             sp.order_u = 4
-                    sp.use_cyclic_u = True
+                    sp.use_cyclic_u = cl
                 cu.bevel_depth = self.radius
                 cu.bevel_resolution = self.resolution
                 obj = bpy.data.objects.new(name, cu)
-
-            if color:
-                for k in range(d):
-                    rgb = _fiber_color(bases[k])
-                    mat = bpy.data.materials.new(f"{name} F{k + 1}")
-                    mat.diffuse_color = (*rgb, 1.0)
-                    mat.use_nodes = True
-                    node = mat.node_tree.nodes.get("Principled BSDF")
-                    if node:
-                        node.inputs["Base Color"].default_value = \
-                            (*rgb, 1.0)
-                    obj.data.materials.append(mat)
-                if self.output != 'MESH':
+                if self.color_fibers:
+                    for k in range(d):
+                        rgb = self._rgb(bases[k])
+                        mat = bpy.data.materials.new(f"{name} F{k + 1}")
+                        mat.diffuse_color = (*rgb, 1.0)
+                        mat.use_nodes = True
+                        node = mat.node_tree.nodes.get("Principled BSDF")
+                        if node:
+                            node.inputs["Base Color"].default_value = \
+                                (*rgb, 1.0)
+                        obj.data.materials.append(mat)
                     for k, sp in enumerate(obj.data.splines):
                         sp.material_index = k
 
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
+            _finish(context, obj)
+            self._select(context, obj)
+            if self.show_base_sphere:
+                extent = max((float(np.abs(f).max()) for f in fibers),
+                             default=1.0)
+                self._control_sphere(context, bases, obj, extent)
+
+            drp = stats.get('dropped', 0)
+            self.report(
+                {'INFO'},
+                f"{name}: {d} fibres, {self.samples} samples"
+                + ("" if (self.wind_p, self.wind_q) == (1, 1)
+                   else f", ({self.wind_p},{self.wind_q}) winding")
+                + (f", {drp} near-axis dropped" if drp else "")
+                + (f", chirality {self.chirality.lower()}"
+                   if self.chirality != 'RIGHT' else ""))
+            return {'FINISHED'}
+
+        def _select(self, context, obj):
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            self.report(
-                {'INFO'},
-                f"{name}: {d} fibres, {self.samples} samples each"
-                + ("" if (self.wind_p, self.wind_q) == (1, 1)
-                   else f", ({self.wind_p},{self.wind_q}) winding"))
-            return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
@@ -888,23 +1601,58 @@ if _IN_BLENDER:
             lay.prop(self, 'preset')
             if self.preset == 'LATITUDES':
                 lay.prop(self, 'n_lat')
-            if self.preset in ('LATITUDES', 'FLOWER', 'GREATCIRCLE',
-                               'FIBONACCI'):
+            if self.preset not in ('TETRA', 'OCTA', 'CUBE', 'ICOSA',
+                                   'DODECA'):
                 lay.prop(self, 'n_fiber')
+            if self.preset == 'LOXODROME':
+                lay.prop(self, 'turns')
+            if self.preset == 'CURL':
+                lay.prop(self, 'curl_lobes')
+                lay.prop(self, 'curl_amp')
+            if self.preset == 'RANDOM':
+                lay.prop(self, 'seed')
             lay.prop(self, 'samples')
             row = lay.row(align=True)
             row.prop(self, 'wind_p')
             row.prop(self, 'wind_q')
-            if self.preset in ('LATITUDES', 'FLOWER', 'GREATCIRCLE'):
+            if self.preset in _RING_PRESETS:
                 lay.prop(self, 'lat_min')
                 lay.prop(self, 'lat_max')
+            lay.prop(self, 'chirality')
+
+            lay.separator()
             lay.prop(self, 'output')
-            lay.prop(self, 'radius')
-            if self.output == 'MESH':
+            if self.output in ('BEZIER', 'POLY', 'NURBS'):
+                lay.prop(self, 'radius')
+                if self.radius > 0:
+                    lay.prop(self, 'resolution')
+            elif self.output == 'MESH':
+                lay.prop(self, 'radius')
                 lay.prop(self, 'tube_sides')
-            elif self.radius > 0:
-                lay.prop(self, 'resolution')
+            elif self.output == 'BEADS':
+                lay.prop(self, 'bead_count')
+                lay.prop(self, 'bead_radius')
+            if self.output != 'SURFACE':
+                lay.prop(self, 'markers')
+                if self.markers > 0:
+                    lay.prop(self, 'marker_size')
+
+            lay.separator()
             lay.prop(self, 'color_fibers')
+            if self.color_fibers:
+                lay.prop(self, 'color_style')
+                if self.color_style == 'MONO':
+                    lay.prop(self, 'mono_color')
+                lay.prop(self, 'emission')
+
+            lay.separator()
+            lay.prop(self, 'sphere_euler')
+            lay.prop(self, 's3_rot')
+            if self.output != 'SURFACE':
+                lay.prop(self, 'include_axis')
+            lay.prop(self, 'show_base_sphere')
+            if self.show_base_sphere:
+                lay.prop(self, 'sphere_size')
             lay.prop(self, 'scale')
 
     class MESH_OT_hopf_torus_add(bpy.types.Operator):
@@ -1005,6 +1753,19 @@ if _IN_BLENDER:
         cw_high_wrap: BoolProperty(
             name="High Wrap", default=False,
             description="Use the high-wrap branch m = 2n + w")
+        so4_a1: FloatProperty(
+            name="SO(4) x1x2", default=0.0, min=-180.0, max=180.0,
+            description="Rotate the (x1,x2) plane of S^3 before "
+                        "projecting -- morphs the torus (ring/horn/"
+                        "spindle, Dupin cyclides)")
+        so4_a2: FloatProperty(
+            name="SO(4) x3x4", default=0.0, min=-180.0, max=180.0,
+            description="Rotate the (x3,x4) plane of S^3 before "
+                        "projecting")
+        so4_a3: FloatProperty(
+            name="SO(4) x1x3", default=0.0, min=-180.0, max=180.0,
+            description="Rotate the (x1,x3) plane of S^3 before "
+                        "projecting")
         shade_smooth: BoolProperty(
             name="Shade Smooth", default=True,
             description="Smooth-shade the torus surface")
@@ -1025,8 +1786,13 @@ if _IN_BLENDER:
             except ValueError as exc:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
+            R4 = None
+            if any((self.so4_a1, self.so4_a2, self.so4_a3)):
+                R4 = _so4(math.radians(self.so4_a1),
+                          math.radians(self.so4_a2),
+                          math.radians(self.so4_a3))
             verts, faces, area = build_hopf_torus(
-                gamma, self.m_psi, closed=(self.preset != 'BAND'))
+                gamma, self.m_psi, closed=(self.preset != 'BAND'), R4=R4)
             verts = (np.asarray(verts) * self.scale).tolist()
             if self.preset == 'ELASTICA':
                 name = (f"Willmore Torus ({self.elastica_m}-"
@@ -1054,9 +1820,14 @@ if _IN_BLENDER:
                    f"{area:.3f} sr, closure twist {area / 2.0:.3f} rad")
             if self.preset != 'BAND':
                 energy, length = willmore_energy(gamma)
+                # Pinkall's flat torus is C / <(2pi,0),(A/2,L/2)>; its
+                # conformal modulus is tau = (A/2 + i L/2) / (2 pi).
+                tau_re = (area / 2.0) / (2.0 * pi)
+                tau_im = (length / 2.0) / (2.0 * pi)
                 msg += (f", Willmore energy {energy:.4f} = "
                         f"{energy / (2.0 * pi * pi):.4f} x 2pi^2"
-                        f" (gamma length {length:.3f})")
+                        f" (gamma length {length:.3f}), conformal "
+                        f"tau = {tau_re:.3f} + {tau_im:.3f} i")
             self.report({'INFO'}, msg)
             return {'FINISHED'}
 
@@ -1091,6 +1862,11 @@ if _IN_BLENDER:
                 lay.prop(self, 'amp')
             if self.preset == 'ELLIPSE':
                 lay.prop(self, 'ecc')
+            lay.separator()
+            col = lay.column(align=True)
+            col.prop(self, 'so4_a1')
+            col.prop(self, 'so4_a2')
+            col.prop(self, 'so4_a3')
             lay.prop(self, 'shade_smooth')
             lay.prop(self, 'scale')
 
@@ -1418,6 +2194,59 @@ def _selftest():
         ok_all = ok_all and ok
         print(f"   int H^2 dA = {E2:.4f} vs pi*int(1+k^2)ds = "
               f"{w_curve:.4f}  rel {rel:.2e} {'OK' if ok else 'BAD'}")
+
+    # 13) Phase 1/2 additions: chirality, S^3 rotation, SO(4), the new
+    #     base-point providers, the fibre-surface skinner, and the small
+    #     geometry primitives.
+    b = _normalize((0.4, 0.2, 0.7))
+    XR = fiber_s3(b, 64, 1, 1, 'RIGHT')
+    XL = fiber_s3(b, 64, 1, 1, 'LEFT')
+    chi_ok = (abs(np.linalg.norm(XL, axis=1) - 1.0).max() < 1e-12
+              and np.abs(XR - XL).max() > 1e-6
+              and np.allclose(XL[:, 3], -XR[:, 3]))
+    ok_all = ok_all and chi_ok
+    print(f"chirality: LEFT on S^3 & mirrors RIGHT "
+          f"{'OK' if chi_ok else 'BAD'}")
+
+    Xr = _s3_rotate(XR, _quat_left(0.7))
+    rot_ok = abs(np.linalg.norm(Xr, axis=1) - 1.0).max() < 1e-12
+    R4 = _so4(0.5, -0.9, 0.3)
+    so4_ok = np.allclose(R4 @ R4.T, np.eye(4), atol=1e-12)
+    ok_all = ok_all and rot_ok and so4_ok
+    print(f"S^3 rot keeps |x|=1 {'OK' if rot_ok else 'BAD'}; "
+          f"SO(4) orthogonal {'OK' if so4_ok else 'BAD'}")
+
+    for prov in ('CAP', 'LOXODROME', 'CURL', 'RANDOM'):
+        pts = base_points(prov, 3, 20, 20.0, 160.0,
+                          dict(turns=4.0, seed=1, curl_lobes=5,
+                               curl_amp=25.0))
+        unit = max(abs(np.linalg.norm(p) - 1.0) for p in pts)
+        ok = len(pts) == 20 and unit < 1e-9
+        ok_all = ok_all and ok
+        print(f"provider {prov:10s}: {len(pts)} pts unit dev={unit:.1e} "
+              f"{'OK' if ok else 'BAD'}")
+
+    rings = base_rings('LATITUDES', 4, 16, 20.0, 160.0)
+    Vs, Fs, vb = build_fiber_surface(rings, 48)
+    surf_ok = (len(Vs) == 4 * 16 * 48 and len(Fs) == 4 * 16 * 48
+               and len(vb) == len(Vs) and np.isfinite(np.asarray(Vs)).all())
+    ok_all = ok_all and surf_ok
+    print(f"fibre surface: verts={len(Vs)} faces={len(Fs)} "
+          f"{'OK' if surf_ok else 'BAD'}")
+
+    iv, ifc = _icosphere(0.1, 1)
+    cvv, cff = _cone(0.5, 1.0, 8)
+    P = project_fiber(_normalize((0.3, 0.1, 0.6)), 40)
+    ctv, ctf = _closed_tube(P, 0.05, 6)
+    otv, otf = _open_tube(P[:20], 0.05, 6)
+    prim_ok = (len(iv) == 42 and len(ctv) == 40 * 6 and len(ctf) == 40 * 6
+               and len(otv) == 20 * 6 and len(otf) == 19 * 6
+               and len(cvv) == 9)
+    pal_ok = all(0.0 <= c <= 1.0 for st in ('RAINBOW', 'PASTEL', 'MONO')
+                 for c in _palette_rgb(b, st))
+    ok_all = ok_all and prim_ok and pal_ok
+    print(f"primitives {'OK' if prim_ok else 'BAD'}; "
+          f"palettes {'OK' if pal_ok else 'BAD'}")
 
     assert ok_all
     print("hopf fibration standalone tests passed")
