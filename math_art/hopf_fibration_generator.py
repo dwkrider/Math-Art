@@ -1185,6 +1185,18 @@ if _IN_BLENDER:
             nt.links.new(vc.outputs["Color"], bsdf.inputs["Base Color"])
         return mat
 
+    def _simple_material(name, rgb):
+        """A flat-coloured material whose colour shows in every viewport
+        shading mode (viewport `diffuse_color` for Solid, node base colour
+        for Material Preview / Rendered)."""
+        mat = bpy.data.materials.new(name)
+        mat.diffuse_color = (*rgb, 1.0)
+        mat.use_nodes = True
+        node = mat.node_tree.nodes.get("Principled BSDF")
+        if node:
+            node.inputs["Base Color"].default_value = (*rgb, 1.0)
+        return mat
+
     def _finish(context, obj):
         context.collection.objects.link(obj)
         obj.location = context.scene.cursor.location
@@ -1407,31 +1419,39 @@ if _IN_BLENDER:
                     vcol.extend([(*rgb, 1.0)] * len(cv))
 
         def _control_sphere(self, context, bases, parent, extent):
-            import numpy as np
             r = self.sphere_size
             cx = extent + r + 0.2 * max(extent, 1.0)
             sv, sf = _uv_sphere(r, 14, 22)
             verts = [(x + cx, y, z) for x, y, z in sv]
             faces = [list(f) for f in sf]
-            vcol = [(0.16, 0.17, 0.2, 1.0)] * len(sv)
+            midx = [0] * len(sf)
+            mats = [_simple_material("Control Sphere", (0.16, 0.17, 0.2))]
+            colmap = {}
             dv, dfc = _icosphere(0.06 * r + 0.01, 1)
             for b in bases:
                 rgb = self._rgb(b)
+                key = tuple(round(x, 3) for x in rgb)
+                mi = colmap.get(key)
+                if mi is None:
+                    mi = len(mats)
+                    mats.append(_simple_material(f"Base Dot {mi}", rgb))
+                    colmap[key] = mi
                 c = (b[0] * r * 1.02 + cx, b[1] * r * 1.02, b[2] * r * 1.02)
                 off = len(verts)
                 verts.extend((c[0] + p[0], c[1] + p[1], c[2] + p[2])
                              for p in dv)
                 faces.extend([[off + i for i in fc] for fc in dfc])
-                vcol.extend([(*rgb, 1.0)] * len(dv))
+                midx.extend([mi] * len(dfc))
             me = bpy.data.meshes.new("Control Sphere")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
             me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
-            self._write_colors(me, vcol)
+            if len(me.polygons) == len(midx):
+                me.polygons.foreach_set('material_index', midx)
             me.update()
             obj = bpy.data.objects.new("Control Sphere", me)
-            obj.data.materials.append(
-                _color_material("Hopf Control Sphere"))
+            for m in mats:
+                obj.data.materials.append(m)
             _finish(context, obj)
             obj.parent = parent
 
