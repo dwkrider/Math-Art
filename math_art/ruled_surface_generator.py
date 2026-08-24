@@ -1019,8 +1019,8 @@ def _build_rulings(op, n=None):
                                    op.family, n)
     if m == 'HELICAL_CONE':
         return arrises_helical_cone(
-            op.base_radius, op.height, op.flutes, op.flute_depth,
-            op.twist, op.taper, op.orbit_amp, op.orbit_turns,
+            op.radius, op.cone_height, op.flutes, op.flute_depth,
+            op.cone_twist, op.taper, op.orbit_amp, op.orbit_turns,
             max(8, n // max(1, int(op.flutes))))
     if m == 'SPIRAL':
         return rulings_spiral(op.tightness, op.slope, op.turns,
@@ -1096,8 +1096,8 @@ def _boundary_loops(op):
         # the arrises all meet at the apex, so a "rail" through their
         # far ends would be a point; only the base circle is a curve
         segs = arrises_helical_cone(
-            op.base_radius, op.height, op.flutes, op.flute_depth,
-            op.twist, op.taper, op.orbit_amp, op.orbit_turns, 2)
+            op.radius, op.cone_height, op.flutes, op.flute_depth,
+            op.cone_twist, op.taper, op.orbit_amp, op.orbit_turns, 2)
         return [([s[0] for s in segs[::2]], True)]
     if m == 'HYPERBOLOID':
         # a single ruling family gives clean bottom/top rails
@@ -1387,7 +1387,7 @@ if _IN_BLENDER:
                    ('CURVES', "Bare Curves",
                     "The straight rulings as a bare wireframe of "
                     "edges (no faces)")],
-            default='SURFACE')
+            default='RODS')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
                             max=400,
                             description="Number of rulings drawn in rods "

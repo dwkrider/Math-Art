@@ -370,15 +370,21 @@ def _revolve(profile, segments=96, caps=False):
                 clean = clean[:-1]
             if len(clean) >= 3:
                 faces.append(clean)
+    rims = []
     if caps:
-        # a flat lid on either end that has not closed on the axis;
-        # without them the surface is not a solid and no volume the
-        # divergence theorem computes from it means anything
-        if rows[0][0] != rows[0][1]:
-            faces.append(list(reversed(rows[0])))
-        if rows[-1][0] != rows[-1][1]:
-            faces.append(list(rows[-1]))
-    return verts, faces
+        # A flat lid on either end that has not closed on the axis.
+        # Without them the surface is not a solid and no volume the
+        # divergence theorem computes from it means anything.  Each lid
+        # meets the wall at a genuine circular fold, and those rims are
+        # returned so they can be creased: smooth shading across them
+        # rounds off the cut and makes a drop look like it dissolves
+        # into the air instead of hanging from a pipe.
+        for row, rev in ((rows[0], True), (rows[-1], False)):
+            if row[0] == row[1]:                  # closed on the axis
+                continue
+            faces.append(list(reversed(row)) if rev else list(row))
+            rims.extend((row[i], row[(i + 1) % n]) for i in range(n))
+    return verts, faces, rims
 
 
 def bouguer_profile(a=1.0, extent=1.6, steps=160):
@@ -831,6 +837,7 @@ if _IN_BLENDER:
 
         def execute(self, context):
             res = self.resolution
+            rims = []                     # cap rims to crease, if any
             if self.surface == 'FRESNEL':
                 verts, faces = build_fresnel(
                     self.semi_a, self.semi_b, self.semi_c,
@@ -855,20 +862,20 @@ if _IN_BLENDER:
                     self.horn_length, 2 * res, 3 * res)
                 name = "Gabriel's Horn"
             elif self.surface == 'BOUGUER':
-                verts, faces = _revolve(
+                verts, faces, rims = _revolve(
                     _thin(bouguer_profile(self.dome_a, self.dome_extent,
                                           8 * res), res),
                     2 * res, caps=True)
                 name = "Bouguer Dome"
             elif self.surface == 'PENDANT_DROP':
-                verts, faces = _revolve(
+                verts, faces, rims = _revolve(
                     _thin(pendant_drop_profile(
                         self.drop_a, self.drop_apex, 24 * res,
                         self.drop_span), res),
                     2 * res, caps=True)
                 name = "Hanging Drop"
             elif self.surface == 'NEILOID':
-                verts, faces = _revolve(
+                verts, faces, rims = _revolve(
                     _thin(neiloid_profile(self.dome_a, self.neiloid_z0,
                                           1.0, 4 * res), res),
                     2 * res, caps=True)
@@ -916,6 +923,12 @@ if _IN_BLENDER:
             # keeps the faceting too.  The creases are known here at
             # build time, so they are marked exactly rather than found
             # by an angle test that shallow folds would slip past.
+            # The cut rim of a capped profile is a real fold: the flat
+            # lid meets the curved wall at a circle, and shading
+            # smoothly across it makes the drop look like it dissolves
+            # into the air rather than hanging from a pipe.
+            if rims:
+                mark_sharp(me, rims)
             lantern = self.surface == 'SCHWARZ_LANTERN'
             me.polygons.foreach_set(
                 'use_smooth',
@@ -1282,8 +1295,8 @@ def _selftest():
     # is measured against it -- and refined until it agrees.
     prev = None
     for res_n in (200, 400, 800):
-        V, F = _revolve(neiloid_profile(1.0, 0.2, 1.0, res_n),
-                        res_n, caps=True)
+        V, F, _rims = _revolve(neiloid_profile(1.0, 0.2, 1.0, res_n),
+                               res_n, caps=True)
         vol = abs(_volume(V, F))
         want = math.pi / 4.0 * (1.0 ** 4 - 0.2 ** 4)
         err = abs(vol - want) / want
