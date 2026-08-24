@@ -80,6 +80,28 @@
 #    the limit of some sequence of lanterns.  Both limits are measured in
 #    `_selftest`.
 #
+# 8. Three surfaces of revolution defined by a differential condition
+#    rather than by a formula, each gated on that condition:
+#      Bouguer dome -- a^2 y'' = x sqrt(1 + y'^2), the shape a masonry
+#        dome must take to stand by compression alone.  It is the
+#        catenary's equation (a y'' = sqrt(1+y'^2)) with an extra factor
+#        of x: what the third dimension costs.
+#      Hanging drop -- 2H = z / a^2, mean curvature proportional to
+#        height, which is Young-Laplace with the hydrostatic head.  This
+#        is the classical closed profile; for the same physics solved
+#        variationally, with a contact angle and a free contact line,
+#        see cmc_generator's sessile drop.
+#      Neiloid -- a rho^2 = z^3, the revolution of Neile's semicubical
+#        parabola, checked against its closed-form volume.
+#
+# References for 8: Pierre Bouguer (1734), studied by Charles Bossut
+#    (1778); see E. Benvenuto, "An Introduction to the History of
+#    Structural Mechanics", part II, 344-348.  William Neile (1637-1670)
+#    for the semicubical parabola.  Both, and the hanging drop, from
+#    R. Ferreol, "Encyclopedie des formes mathematiques remarquables"
+#    (mathcurve.com), chapters "dome de Bouguer", "goutte d'eau" and
+#    "neiloide".
+#
 # References for 5: J. Tannery, Bulletin des sciences mathematiques,
 #    2e serie, 16 (1892) 190.  O. Zoll, "Ueber Flaechen mit Scharen
 #    geschlossener geodaetischer Linien", Mathematische Annalen 57
@@ -302,6 +324,137 @@ def build_gabriels_horn(length=6.0, segments=96, rings=120):
                           (j + 1) * segments + i))
     return verts, faces
 
+def _revolve(profile, segments=96, caps=False):
+    """Revolve a (rho, z) profile about Oz.
+
+    Rings whose radius has collapsed to zero become a single vertex, so
+    a profile that reaches the axis closes with a fan instead of a band
+    of degenerate quads.
+    """
+    n = max(3, int(segments))
+    th = [2.0 * math.pi * i / n for i in range(n)]
+    verts, rows = [], []
+    for rho, z in profile:
+        if abs(rho) < 1e-12:
+            rows.append([len(verts)] * n)
+            verts.append((0.0, 0.0, z))
+        else:
+            base = len(verts)
+            verts.extend((rho * math.cos(t), rho * math.sin(t), z)
+                         for t in th)
+            rows.append([base + i for i in range(n)])
+    faces = []
+    for a, b in zip(rows, rows[1:]):
+        for i in range(n):
+            j = (i + 1) % n
+            ring = [a[i], a[j], b[j], b[i]]
+            clean = [ring[0]] + [q for p, q in zip(ring, ring[1:])
+                                 if p != q]
+            if len(clean) > 2 and clean[0] == clean[-1]:
+                clean = clean[:-1]
+            if len(clean) >= 3:
+                faces.append(clean)
+    if caps:
+        # a flat lid on either end that has not closed on the axis;
+        # without them the surface is not a solid and no volume the
+        # divergence theorem computes from it means anything
+        if rows[0][0] != rows[0][1]:
+            faces.append(list(reversed(rows[0])))
+        if rows[-1][0] != rows[-1][1]:
+            faces.append(list(rows[-1]))
+    return verts, faces
+
+
+def bouguer_profile(a=1.0, extent=1.6, steps=160):
+    """[(rho, z)] of the BOUGUER DOME, the dome of constant thrust.
+
+        a^2 y'' = x sqrt(1 + y'^2),   z = f(rho)
+
+    Bouguer asked in 1734 what shape a masonry dome must take so that
+    the line of thrust runs inside the masonry everywhere -- so that it
+    stands by compression alone.  The answer is this profile.  It is
+    worth comparing with the CATENARY, which solves the same equation
+    without the leading x, a y'' = sqrt(1 + y'^2), and is the answer to
+    the corresponding question for an ARCH: the extra factor of x is
+    what the third dimension costs.
+
+    Integrated in the closed form the source gives,
+    f(x) = a * integral_0^x sinh(X^2 / 2a^2) dX, by Simpson's rule.
+    """
+    n = max(8, int(steps))
+    h = float(extent) / n
+
+    def g(x):
+        return math.sinh(x * x / (2.0 * a * a))
+    # accumulate the integral one step at a time, each step by Simpson's
+    # rule on its own midpoint -- so the profile is sampled at every x
+    # rather than at every other one
+    xs, zs, acc = [0.0], [0.0], 0.0
+    for i in range(n):
+        x0 = i * h
+        acc += h / 6.0 * (g(x0) + 4.0 * g(x0 + 0.5 * h) + g(x0 + h))
+        xs.append(x0 + h)
+        zs.append(a * acc)
+    top = zs[-1]
+    return [(x, top - z) for x, z in zip(xs, zs)]
+
+
+def pendant_drop_profile(a=1.0, apex=1.0, steps=600, span=2.6):
+    """[(rho, z)] of the HANGING DROP OF WATER.
+
+    The drop hanging at the end of a vertical pipe is the surface of
+    revolution whose mean curvature at each point is proportional to the
+    height, which is Young-Laplace with the hydrostatic head included:
+
+        dphi/ds + sin(phi) / rho = z / a^2
+
+    with rho' = cos(phi), z' = sin(phi) along the profile's arclength.
+    Integrated by RK4 from the apex, where the sin(phi)/rho term is
+    removable -- both principal curvatures are equal there, so
+    dphi/ds = z / (2 a^2).
+
+    This is the classical closed profile.  For the same physics solved
+    variationally, with a real contact angle and a free contact line,
+    see `cmc_generator`, whose sessile drop minimizes the same energy.
+    """
+    ds = float(span) / max(16, int(steps))
+    rho, z, phi = 0.0, float(apex), 0.0
+
+    def dphi(r, zz, ph):
+        return (zz / (a * a) - (math.sin(ph) / r if r > 1e-9
+                                else zz / (2.0 * a * a)))
+    out = [(0.0, z)]
+    for _ in range(int(steps)):
+        k = []
+        st = (rho, z, phi)
+        for w in (0.0, 0.5, 0.5, 1.0):
+            r_, z_, p_ = (st[0] + w * ds * (k[-1][0] if k else 0.0),
+                          st[1] + w * ds * (k[-1][1] if k else 0.0),
+                          st[2] + w * ds * (k[-1][2] if k else 0.0))
+            k.append((math.cos(p_), math.sin(p_), dphi(r_, z_, p_)))
+        rho += ds / 6.0 * (k[0][0] + 2 * k[1][0] + 2 * k[2][0] + k[3][0])
+        z += ds / 6.0 * (k[0][1] + 2 * k[1][1] + 2 * k[2][1] + k[3][1])
+        phi += ds / 6.0 * (k[0][2] + 2 * k[1][2] + 2 * k[2][2] + k[3][2])
+        if rho < 0.0:
+            break
+        out.append((rho, z))
+    return out
+
+
+def neiloid_profile(a=1.0, z0=0.15, z1=1.0, steps=96):
+    """[(rho, z)] of the NEILOID, a rho^2 = z^3.
+
+    The solid of revolution of Neile's semicubical parabola.  Foresters
+    use it as one of the standard idealised trunk shapes, between the
+    cone and the paraboloid, and it has the tidy closed volume
+    V = pi (z2^4 - z1^4) / 4a between two horizontal planes -- which is
+    what `_selftest` measures the mesh against.
+    """
+    n = max(4, int(steps))
+    return [(math.sqrt(max(0.0, (z0 + (z1 - z0) * i / n) ** 3 / a)),
+             z0 + (z1 - z0) * i / n) for i in range(n + 1)]
+
+
 def build_schwarz_lantern(sectors=12, rings=12, radius=1.0, height=2.0,
                           lids=False):
     """Schwarz's lantern: a polyhedron INSCRIBED in a cylinder whose area
@@ -518,6 +671,17 @@ if _IN_BLENDER:
                    ('ASTROIDAL', "Astroidal Ellipsoid",
                     "(x/a)^(2/3) + (y/b)^(2/3) + (z/c)^(2/3) = 1, "
                     "with astroid sections and six cusps"),
+                   ('BOUGUER', "Bouguer Dome",
+                    "The dome of constant thrust (Bouguer 1734): the "
+                    "shape a masonry dome must take to stand by "
+                    "compression alone"),
+                   ('PENDANT_DROP', "Hanging Drop of Water",
+                    "The drop hanging from a vertical pipe: a surface "
+                    "of revolution whose curvature is proportional to "
+                    "the height"),
+                   ('NEILOID', "Neiloid",
+                    "a rho^2 = z^3, the solid of revolution of Neile's "
+                    "semicubical parabola"),
                    ('SCHWARZ_LANTERN', "Schwarz's Lantern",
                     "A polyhedron inscribed in a cylinder whose area can "
                     "exceed the cylinder's without bound"),
@@ -573,6 +737,32 @@ if _IN_BLENDER:
             description="Upper limit L of x in y = 1/x; the enclosed "
                         "volume tends to pi as L grows while the "
                         "lateral area diverges (Gabriel's horn only)")
+        dome_a: FloatProperty(
+            name="Scale a", default=1.0, min=0.05, max=10.0,
+            description="The a in Bouguer's a^2 y'' = x sqrt(1 + y'^2), "
+                        "and the a in the neiloid's a rho^2 = z^3")
+        dome_extent: FloatProperty(
+            name="Base Radius", default=1.6, min=0.2, max=6.0,
+            description="How far out the dome's profile runs "
+                        "(Bouguer dome only)")
+        drop_a: FloatProperty(
+            name="Capillary Length", default=1.0, min=0.1, max=6.0,
+            description="The a in 2H = z / a^2: large a is a nearly "
+                        "spherical drop, small a a long pendant one "
+                        "(hanging drop only)")
+        drop_apex: FloatProperty(
+            name="Apex Height", default=1.0, min=0.05, max=6.0,
+            description="Height of the drop's lowest point above the "
+                        "zero-curvature plane (hanging drop only)")
+        drop_span: FloatProperty(
+            name="Profile Length", default=2.2, min=0.3, max=8.0,
+            description="How far the profile is integrated along its "
+                        "own arc before the neck is cut (hanging drop "
+                        "only)")
+        neiloid_z0: FloatProperty(
+            name="Base Height", default=0.2, min=0.01, max=0.95,
+            description="Where the trunk is cut off below; the tip at "
+                        "z = 0 is a cusp (neiloid only)")
         lantern_sectors: IntProperty(
             name="Sectors", default=12, min=3, max=256,
             description="Columns around the cylinder; the spikes get "
@@ -648,6 +838,22 @@ if _IN_BLENDER:
                 verts, faces = build_gabriels_horn(
                     self.horn_length, 2 * res, 3 * res)
                 name = "Gabriel's Horn"
+            elif self.surface == 'BOUGUER':
+                verts, faces = _revolve(
+                    bouguer_profile(self.dome_a, self.dome_extent,
+                                    8 * res), 2 * res, caps=True)
+                name = "Bouguer Dome"
+            elif self.surface == 'PENDANT_DROP':
+                verts, faces = _revolve(
+                    pendant_drop_profile(self.drop_a, self.drop_apex,
+                                         12 * res, self.drop_span),
+                    2 * res, caps=True)
+                name = "Hanging Drop"
+            elif self.surface == 'NEILOID':
+                verts, faces = _revolve(
+                    neiloid_profile(self.dome_a, self.neiloid_z0, 1.0,
+                                    4 * res), 2 * res, caps=True)
+                name = "Neiloid"
             elif self.surface == 'SCHWARZ_LANTERN':
                 verts, faces = build_schwarz_lantern(
                     self.lantern_sectors, self.lantern_rings,
@@ -739,6 +945,31 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             elif self.surface == 'GABRIEL':
                 lay.prop(self, 'horn_length')
+            elif self.surface == 'BOUGUER':
+                verts, faces = _revolve(
+                    bouguer_profile(self.dome_a, self.dome_extent,
+                                    8 * res), 2 * res, caps=True)
+                name = "Bouguer Dome"
+            elif self.surface == 'PENDANT_DROP':
+                verts, faces = _revolve(
+                    pendant_drop_profile(self.drop_a, self.drop_apex,
+                                         12 * res, self.drop_span),
+                    2 * res, caps=True)
+                name = "Hanging Drop"
+            elif self.surface == 'NEILOID':
+                verts, faces = _revolve(
+                    neiloid_profile(self.dome_a, self.neiloid_z0, 1.0,
+                                    4 * res), 2 * res, caps=True)
+                name = "Neiloid"
+            elif self.surface == 'BOUGUER':
+                for k in ('dome_a', 'dome_extent'):
+                    lay.prop(self, k)
+            elif self.surface == 'PENDANT_DROP':
+                for k in ('drop_a', 'drop_apex', 'drop_span'):
+                    lay.prop(self, k)
+            elif self.surface == 'NEILOID':
+                for k in ('dome_a', 'neiloid_z0'):
+                    lay.prop(self, k)
             elif self.surface == 'SCHWARZ_LANTERN':
                 for k in ('lantern_sectors', 'lantern_rings',
                           'lantern_lids'):
@@ -999,5 +1230,64 @@ def _selftest():
           "%.4f vs cylinder %.4f, while area(k,k^3) climbs %.0f -> %.0f "
           "(%.1fx the cylinder) with no sign of stopping"
           % (evenly[-1], cyl, runaway[0], runaway[-1], runaway[-1] / cyl))
+
+    # ---- three surfaces of revolution defined by a differential ------
+    # condition rather than a formula.  Each is checked on that
+    # condition, or on a closed form the source states independently.
+    a = 1.0
+    P = bouguer_profile(a=a, extent=1.6, steps=4000)
+    xs = [p[0] for p in P]
+    ys = [p[1] for p in P]
+    res = 0.0
+    for i in range(2, len(P) - 2):
+        h = xs[i + 1] - xs[i]
+        y1 = (ys[i + 1] - ys[i - 1]) / (2 * h)
+        y2 = (ys[i + 1] - 2 * ys[i] + ys[i - 1]) / (h * h)
+        if 0.15 < xs[i] < 1.45:
+            res = max(res, abs(a * a * y2 + xs[i]
+                               * math.sqrt(1.0 + y1 * y1)))
+    assert res < 1e-5, res
+    print("bouguer dome: profile satisfies a^2 y'' = x sqrt(1+y'^2) to "
+          "%.0e -- the catenary's equation with the extra factor of x "
+          "that the third dimension costs" % res)
+
+    # The hanging drop: its DEFINITION is 2H = z / a^2, and that is
+    # measured back off the finished profile rather than trusted from
+    # the integrator that produced it.
+    P = pendant_drop_profile(a=1.0, apex=1.0, steps=3000, span=2.2)
+    rho = [p[0] for p in P]
+    zz = [p[1] for p in P]
+    worst = 0.0
+    for i in range(3, len(P) - 6):
+        if rho[i] < 0.15:
+            continue
+        dr = (rho[i + 1] - rho[i - 1]) / 2.0
+        dz = (zz[i + 1] - zz[i - 1]) / 2.0
+        ds = math.hypot(dr, dz)
+        ph = math.atan2(dz, dr)
+        ph0 = math.atan2((zz[i] - zz[i - 2]) / 2.0,
+                         (rho[i] - rho[i - 2]) / 2.0)
+        ph1 = math.atan2((zz[i + 2] - zz[i]) / 2.0,
+                         (rho[i + 2] - rho[i]) / 2.0)
+        twoH = (ph1 - ph0) / (2.0 * ds) + math.sin(ph) / rho[i]
+        worst = max(worst, abs(twoH - zz[i] / 1.0))
+    assert worst < 1e-4, worst
+    print("hanging drop: mean curvature stays proportional to height, "
+          "|2H - z/a^2| < %.0e measured off the profile" % worst)
+
+    # Neiloid: the source gives the volume in closed form, so the mesh
+    # is measured against it -- and refined until it agrees.
+    prev = None
+    for res_n in (200, 400, 800):
+        V, F = _revolve(neiloid_profile(1.0, 0.2, 1.0, res_n),
+                        res_n, caps=True)
+        vol = abs(_volume(V, F))
+        want = math.pi / 4.0 * (1.0 ** 4 - 0.2 ** 4)
+        err = abs(vol - want) / want
+        assert prev is None or err < prev, (res_n, err, prev)
+        prev = err
+    assert err < 1e-4, err
+    print("neiloid: volume converges on the published "
+          "pi(z2^4 - z1^4)/4a, relative error %.1e at 800 steps" % err)
 
     print("miscellaneous surfaces standalone tests passed")
