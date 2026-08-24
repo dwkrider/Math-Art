@@ -2284,60 +2284,60 @@ def dragonflies_motif(d=1.0):
     return polygon_with_holes(outer, holes)
 
 _EDDY_OUTER = (
-    (-0.814316, +0.121309), (-0.844179, +0.108303), (-0.872316, +0.093580),
-    (-0.914172, +0.065957), (-0.947739, +0.035986), (-0.964641, +0.017161),
-    (-0.978797, -0.001342), (-0.990966, -0.020461), (-1.001575, -0.040830),
-    (-1.016096, -0.079130), (-1.026460, -0.123110), (-1.029979, -0.187537),
-    (-1.025771, -0.233912), (-1.017602, -0.279465), (-1.006595, -0.321401),
-    (-0.989512, -0.368144), (-0.967610, -0.418742), (-0.952758, -0.447905),
-    (-0.913562, -0.510635), (-0.871482, -0.562798), (-0.836469, -0.597610),
-    (-0.793124, -0.633653), (-0.763355, -0.653680), (-0.722114, -0.678114),
-    (-0.684001, -0.696803), (-0.647147, -0.711483), (-0.608216, -0.723935),
-    (-0.559178, -0.735584), (-0.552913, -0.751725), (-0.549499, -0.769439),
-    (-0.548671, -0.785756), (-0.550245, -0.807236), (-0.504712, -0.808450),
-    (-0.509793, -0.783242), (-0.511301, -0.763048), (-0.509087, -0.740814),
-    (-0.504726, -0.734159), (-0.456939, -0.729654), (-0.426414, -0.724519),
-    (-0.388221, -0.715827), (-0.351790, -0.704745), (-0.317613, -0.691493),
-    (-0.284198, -0.675608), (-0.250622, -0.656611), (-0.216911, -0.634520),
-    (-0.187728, -0.612846), (-0.156512, -0.585825), (-0.128151, -0.558258),
-    (-0.096752, -0.523988), (-0.050279, -0.463811), (-0.017076, -0.411849),
-    (+0.000000, -0.381966), (-0.123353, -0.305730), (-0.236154, -0.375588),
-    (-0.245481, -0.383488), (-0.241787, -0.403580), (-0.241736, -0.431268),
-    (-0.244066, -0.454217), (-0.249121, -0.477700), (-0.264561, -0.519215),
-    (-0.286029, -0.558741), (-0.304394, -0.570092), (-0.319781, -0.588966),
-    (-0.354691, -0.622039), (-0.392793, -0.648350), (-0.412839, -0.659194),
-    (-0.433353, -0.668182), (-0.468197, -0.678645), (-0.505155, -0.684565),
-    (-0.538961, -0.685606), (-0.583064, -0.681436), (-0.634636, -0.668913),
-    (-0.647799, -0.664281), (-0.679643, -0.650410), (-0.710533, -0.633291),
-    (-0.733196, -0.618126), (-0.753695, -0.602010), (-0.776283, -0.581258),
-    (-0.796888, -0.559495), (-0.815558, -0.536827), (-0.832381, -0.513324),
-    (-0.847720, -0.488575), (-0.861822, -0.462073), (-0.875255, -0.432162),
-    (-0.886819, -0.401059), (-0.897495, -0.366132), (-0.906262, -0.330429),
-    (-0.912265, -0.297889), (-0.915506, -0.269346), (-0.916107, -0.242963),
-    (-0.914072, -0.218755), (-0.908997, -0.195419), (-0.900877, -0.175101),
-    (-0.888977, -0.156384), (-0.876097, -0.144196), (-0.863633, -0.136237),
-    (-0.851760, -0.130843), (-0.836308, -0.126155), (-0.815846, -0.122255),
-    (-0.804841, -0.115453), (-0.618034, +0.000000),
+    (-0.618034, +0.000000), (-0.851423, +0.144242), (-0.865172, +0.152740),
+    (-0.890737, +0.157612), (-0.910042, +0.163470), (-0.924875, +0.170209),
+    (-0.940447, +0.180152), (-0.956539, +0.195380), (-0.971406, +0.218764),
+    (-0.981551, +0.244149), (-0.987891, +0.273304), (-0.990434, +0.303548),
+    (-0.989683, +0.336510), (-0.985634, +0.372170), (-0.978134, +0.412824),
+    (-0.967181, +0.457430), (-0.953843, +0.501067), (-0.939395, +0.539925),
+    (-0.922612, +0.577295), (-0.904994, +0.610405), (-0.885830, +0.641326),
+    (-0.864812, +0.670689), (-0.841486, +0.699010), (-0.815743, +0.726200),
+    (-0.787523, +0.752126), (-0.761912, +0.772261), (-0.733598, +0.791207),
+    (-0.695005, +0.812595), (-0.655221, +0.829925), (-0.638775, +0.835712),
+    (-0.574344, +0.851358), (-0.519243, +0.856567), (-0.477007, +0.855267),
+    (-0.430833, +0.847871), (-0.387301, +0.834799), (-0.361672, +0.823569),
+    (-0.336627, +0.810021), (-0.289024, +0.777149), (-0.245409, +0.735829),
+    (-0.226185, +0.712249), (-0.203422, +0.697773), (-0.176783, +0.648097),
+    (-0.157675, +0.595935), (-0.151541, +0.566302), (-0.148812, +0.537336),
+    (-0.149058, +0.502450), (-0.153855, +0.477054), (-0.141009, +0.469114),
+    (+0.000000, +0.381966), (+0.154112, +0.477212), (+0.132778, +0.514547),
+    (+0.091296, +0.579466), (+0.033234, +0.654649), (-0.005994, +0.697464),
+    (-0.041427, +0.731905), (-0.080427, +0.765664), (-0.116887, +0.792743),
+    (-0.159004, +0.820342), (-0.200953, +0.844076), (-0.242700, +0.863922),
+    (-0.285399, +0.880479), (-0.330915, +0.894324), (-0.378632, +0.905184),
+    (-0.416768, +0.911599), (-0.476471, +0.917228), (-0.481920, +0.925542),
+    (-0.484686, +0.953320), (-0.482802, +0.978550), (-0.476454, +1.010044),
+    (-0.533341, +1.008527), (-0.531374, +0.981691), (-0.532409, +0.961305),
+    (-0.536674, +0.939174), (-0.544501, +0.919008), (-0.605767, +0.904454),
+    (-0.654406, +0.888897), (-0.700450, +0.870557), (-0.748067, +0.847207),
+    (-0.799592, +0.816681), (-0.836784, +0.791660), (-0.890937, +0.746629),
+    (-0.934681, +0.703136), (-0.987254, +0.637966), (-1.036224, +0.559594),
+    (-1.054779, +0.523159), (-1.082143, +0.459944), (-1.103486, +0.401545),
+    (-1.117237, +0.349152), (-1.127443, +0.292240), (-1.132701, +0.234301),
+    (-1.128304, +0.153809), (-1.115356, +0.098862), (-1.097214, +0.051012),
+    (-1.083960, +0.025563), (-1.068756, +0.001677), (-1.051070, -0.021440),
+    (-1.029954, -0.044959), (-0.988016, -0.082404), (-0.935723, -0.116915),
+    (-0.900570, -0.135309), (-0.863261, -0.151558),
 )
 
 _EDDY_HOLE_A = (
-    (-0.738578, -0.000207), (-0.820877, -0.053971), (-0.832902, -0.057390),
-    (-0.856770, -0.060581), (-0.877693, -0.069101), (-0.901583, -0.082438),
-    (-0.921469, -0.098663), (-0.928987, -0.108036), (-0.943201, -0.130585),
-    (-0.954961, -0.154275), (-0.960087, -0.170449), (-0.970544, -0.234057),
-    (-0.973692, -0.211290), (-0.974937, -0.181745), (-0.973865, -0.153134),
-    (-0.970703, -0.127197), (-0.965904, -0.105999), (-0.958577, -0.084402),
-    (-0.949205, -0.064056), (-0.938338, -0.045924), (-0.921216, -0.024586),
-    (-0.899583, -0.004065), (-0.874600, +0.014572), (-0.846926, +0.030833),
-    (-0.815559, +0.045506), (-0.790166, +0.030703),
+    (-0.833089, -0.038359), (-0.864814, -0.056853), (-0.904002, -0.038521),
+    (-0.938577, -0.018205), (-0.969790, +0.005079), (-0.996817, +0.030717),
+    (-1.018208, +0.057376), (-1.031785, +0.080029), (-1.043494, +0.105449),
+    (-1.052648, +0.132431), (-1.058644, +0.158915), (-1.062594, +0.191319),
+    (-1.063934, +0.227065), (-1.062378, +0.263977), (-1.058445, +0.292421),
+    (-1.045381, +0.212952), (-1.038976, +0.192745), (-1.024284, +0.163148),
+    (-1.006526, +0.134976), (-0.997133, +0.123266), (-0.972288, +0.102995),
+    (-0.942441, +0.086332), (-0.916301, +0.075688), (-0.886481, +0.071701),
+    (-0.871458, +0.067429), (-0.768637, +0.000259),
 )
 
 _EDDY_HOLE_B = (
-    (-0.085214, -0.407945), (-0.125768, -0.470843), (-0.162769, -0.517076),
-    (-0.185808, -0.540859), (-0.211192, -0.563890), (-0.255784, -0.596607),
-    (-0.220599, -0.540896), (-0.203929, -0.507075), (-0.196199, -0.485439),
-    (-0.190101, -0.461844), (-0.185582, -0.436679), (-0.183885, -0.415532),
-    (-0.129062, -0.382082),
+    (-0.007133, +0.477357), (-0.075626, +0.519148), (-0.077746, +0.545568),
+    (-0.083392, +0.577008), (-0.091011, +0.606487), (-0.100668, +0.633518),
+    (-0.121495, +0.675773), (-0.165454, +0.745376), (-0.109742, +0.704500),
+    (-0.078029, +0.675726), (-0.049245, +0.646013), (-0.003017, +0.588251),
+    (+0.047649, +0.509669),
 )
 
 
@@ -2356,39 +2356,40 @@ def eddy_motif(d=1.0):
     18.39, close but not Hart's figure.  Thirty planes at fold 2 is
     also exactly his sixty parts, two to a plane like Solar Flair.
 
-    Placement is exact.  The tips land on the meeting points the
-    generator labels B and F: B a 5-part point at radius 1/phi, F a
-    3-part point at radius 1/phi^2.  Those are the 5-way and 3-way
-    joints Hart assembles -- one of each per part, three components
-    to a module and five modules to a whorl -- and the tips sit on
-    them to 4e-09.
+    Placement is exact.  The tips are the outline's two sharpest
+    vertices -- 32.0 and 29.4 degrees -- and they land on the meeting
+    points the generator labels B and E: B a 5-part point at radius
+    1/phi, E a 3-part point at radius 1/phi^2.  Those are the 5-way
+    and 3-way joints Hart assembles, one of each per part.
 
-    With them there the part beds against its neighbours along FOUR
-    edges, every one at dihedral 144 and nothing else.  Four is what
-    Hart cut, and 144 degrees is a 72 degree face angle, which is 18
-    degrees off square -- the figure he quotes for the bevel he
-    sanded.  Nothing here was fitted to that: the two tips fix the
-    placement completely, and the edges fall where they fall.
+    With them there the part beds along FOUR edges, every one at
+    dihedral 144 and nothing else, holding at a 1e-6 tolerance.  Four
+    is what Hart cut, and 144 degrees is a 72 degree face angle --
+    18 degrees off square, the figure he quotes for the bevel he
+    sanded.  Two tips fix a similarity completely, so the edges fall
+    where they fall; the agreement is a check, not an input.  They are
+    then snapped exactly onto their guide lines, corrections blended
+    into the neighbouring vertices so the curves stay smooth.
 
-    The four mating edges are snapped exactly onto their guide lines
-    -- they now hold at a 1e-6 tolerance, not merely 0.006 -- and the
-    corrections needed were at most 0.0047, well inside the trace's
-    own error.  A general affine was tried for this first and is the
-    wrong tool: with the two tips using four of its six degrees of
-    freedom, least squares spends the other two collapsing the motif
-    flat onto the lines, and it returns a singular matrix.  Snapping
-    the mating vertices and blending the correction into their
-    neighbours keeps the shape and gets the same result.
+    Three traps, all of which cost real time here.
 
-    Two traps sit in that sentence and both cost real time.  Hart's
-    "18 degrees" is the tilt off SQUARE, not the half-dihedral, so it
-    calls for a 144 degree joint and not a 36 degree one -- reading it
-    the other way sent the search into the 60-plane P1 orbit, which
-    has no 144 at all.  And the tips sit on the OUTSIDE of the ball,
-    so a tip fills the exterior angle at its joint rather than the
-    interior one Frabjous, Krull and Solar Flair use; anchoring on the
-    feet's inner corners put the body of the part outside its own
-    tips and produced only clusters of near-equal wrong answers.
+    Hart's "18 degrees" is the tilt off SQUARE, not the half-dihedral,
+    so it calls for a 144 degree joint and not a 36 -- reading it the
+    other way sent the search into the 60-plane P1 orbit, which has no
+    144 at all, and P1 survived three failed searches on the strength
+    of a 36.789 that gives 18.39.
+
+    The tips sit on the OUTSIDE of the ball, so a tip fills the
+    exterior angle at its joint, not the interior one Frabjous, Krull
+    and Solar Flair use.
+
+    And each foot ends in TWO sharp corners about 0.15 apart, so
+    "the tip" is a choice.  Picking the wrong one of the pair still
+    admits an all-144 placement -- on B and F, with four edges -- but
+    it beds 0.63 where this one beds 0.94, and it leaves the visible
+    arm-end short of its meeting point.  B/E, B/F, A/E and A/F are all
+    congruent as point pairs (separation 0.7265 in each case), so the
+    labels alone cannot tell them apart; the bedded length can.
 
     References:
       - George W. Hart, "Eddy" (2018), Kimball Union Academy;
