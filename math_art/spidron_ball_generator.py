@@ -22,6 +22,21 @@
 # an odd number of sides is refined with edge midpoints first so the
 # alternation can close.
 #
+# HOW the boundary is displaced decides whether the result is Nylander's
+# interlocked ball or a heap of separate spikes, and the difference is
+# worth stating plainly.  A solid's vertex belongs to three faces and an
+# edge midpoint to two.  Displace each along ITS OWN FACE'S NORMAL
+# (Relief Style: Per Face) and the three copies of a shared vertex fly
+# apart in three directions, tearing the surface into disconnected
+# shards.  Displace RADIALLY instead (Relief Style: Woven, the default)
+# -- vertices pushed out, midpoints pulled in -- and every face computes
+# the same position for a shared point, because the displacement depends
+# only on the point and the centre.  The nests then meet exactly and the
+# ball reads as one continuous corrugated surface of interlocking
+# spirals.  The parities agree for free: on the refined boundary the
+# solid's vertices always land on even indices and the midpoints on odd
+# ones, in every face.
+#
 # TWO HONEST LIMITS.  First, the general construction is always
 # DRAWABLE but not generally FOLDABLE: only regular skew polygons
 # reliably admit a folding, and the two degrees of freedom that case has
@@ -218,11 +233,43 @@ def two_colour(faces):
     return col, ok
 
 
-def build(seed='DODECA', rings=8, scale=0.62, twist=radians(30.0),
-          relief=0.0, chirality='ALTERNATE', open_center=False):
+def woven_boundary(face, V, relief):
+    """The skew 2n-gon a face contributes to the WOVEN ball.
+
+    A face's boundary is refined to its own vertices plus its edge
+    midpoints, and those points are then displaced RADIALLY -- vertices
+    pushed out, midpoints pulled in -- rather than along the face's own
+    normal.
+
+    That distinction is the whole difference between a heap of separate
+    spiky decorations and Nylander's interlocked spidroball.  A solid's
+    vertex belongs to three faces and an edge midpoint to two; displace
+    each along its own face's normal and the three copies fly apart in
+    three different directions, leaving the surface torn.  Displace
+    along the radius instead and every face computes the *same* position
+    for a shared point, because the displacement depends only on the
+    point and the centre -- so the nests meet exactly and the ball reads
+    as one continuous corrugated surface.  The parities agree for free:
+    on the refined boundary the solid's vertices all land on even
+    indices and the midpoints on odd ones, in every face.
+    """
+    n = len(face)
+    pts = []
+    for k in range(n):
+        a = V[face[k]]
+        b = V[face[(k + 1) % n]]
+        pts.append(tuple(a * (1.0 + relief)))
+        pts.append(tuple(0.5 * (a + b) * (1.0 - relief)))
+    return pts
+
+
+def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
+          relief=0.22, chirality='ALTERNATE', open_center=False,
+          relief_style='WOVEN'):
     """Spidronise every face of the seed solid."""
     SV, SF = seed_solid(seed)
     A = np.asarray(SV, float)
+    A = A / float(np.linalg.norm(A, axis=1).max())      # unit circumradius
     col, colour_ok = two_colour(SF)
 
     verts, faces, mats = [], [], []
@@ -233,8 +280,13 @@ def build(seed='DODECA', rings=8, scale=0.62, twist=radians(30.0),
         if float(N @ (C - A.mean(axis=0))) < 0.0:
             N = -N                       # outward
         if relief > 0.0:
-            span = float(np.linalg.norm(np.asarray(poly) - C, axis=1).mean())
-            poly = sm.skew_lift(poly, relief * span, normal=N, centre=C)
+            if relief_style == 'WOVEN':
+                poly = woven_boundary(f, A, relief)
+            else:
+                span = float(np.linalg.norm(
+                    np.asarray(poly) - C, axis=1).mean())
+                poly = sm.skew_lift(poly, relief * span, normal=N,
+                                    centre=C)
         if chirality == 'CW':
             ch = 1
         elif chirality == 'CCW':
@@ -274,20 +326,20 @@ if _IN_BLENDER:
             name="Solid", items=SEED_ITEMS, default='DODECA',
             description="Base polyhedron whose faces are spidronised")
         rings: IntProperty(
-            name="Rings", default=8, min=1, max=14,
+            name="Rings", default=14, min=1, max=20,
             description="How many times the spiral step repeats on each "
                         "face")
         scale_step: FloatProperty(
-            name="Ring Scale", default=0.62, min=0.3, max=0.95,
+            name="Ring Scale", default=0.82, min=0.3, max=0.97,
             description="How much each ring shrinks toward the centre "
                         "of its face")
         twist: FloatProperty(
-            name="Twist", default=radians(30.0),
+            name="Twist", default=radians(22.0),
             min=radians(-90.0), max=radians(90.0), subtype='ANGLE',
             description="How far each ring turns about the face normal. "
                         "Thirty degrees is the classical hexagonal value")
         relief: FloatProperty(
-            name="Relief", default=0.0, min=0.0, max=0.8,
+            name="Relief", default=0.22, min=0.0, max=0.8,
             description="Lift alternate boundary points out of the face "
                         "plane before spiralling, so the nests stand "
                         "proud of the solid. Zero decorates each face "
@@ -301,6 +353,18 @@ if _IN_BLENDER:
                     "Neighbouring faces wound oppositely, the pairing "
                     "an assembly of these solids requires")],
             description="Which way each face's spiral winds")
+        relief_style: EnumProperty(
+            name="Relief Style", default='WOVEN',
+            items=[('WOVEN', "Woven",
+                    "Displace shared boundary points radially, so "
+                    "neighbouring faces meet exactly and the ball reads "
+                    "as one interlocked surface"),
+                   ('FACE', "Per Face",
+                    "Displace each face's boundary along its own "
+                    "normal, leaving the faces as separate raised "
+                    "decorations")],
+            description="How the relief lifts each face's boundary out "
+                        "of the solid")
         open_center: BoolProperty(
             name="Open Centres", default=False,
             description="Leave the small hole at the centre of each "
@@ -310,7 +374,7 @@ if _IN_BLENDER:
             V, F, M, colour_ok = build(
                 self.seed, int(self.rings), float(self.scale_step),
                 float(self.twist), float(self.relief), self.chirality,
-                self.open_center)
+                self.open_center, self.relief_style)
             if not F:
                 self.report({'ERROR'}, "no geometry generated")
                 return {'CANCELLED'}
@@ -342,7 +406,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             for p in ('seed', 'rings', 'scale_step', 'twist', 'relief',
-                      'chirality', 'open_center'):
+                      'relief_style', 'chirality', 'open_center'):
                 lay.prop(self, p)
             lay.prop(self, 'align')
 
@@ -452,6 +516,46 @@ def _selftest():
     chk("relief pushes vertices off the face planes",
         r1.max() > r0.max() + 1e-6,
         "rmax %.4f -> %.4f" % (r0.max(), r1.max()))
+
+    print("spidron_ball: relief styles")
+    # THE invariant that separates the interlocked ball from a heap of
+    # spikes: neighbouring faces must agree exactly on every boundary
+    # point they share.
+    for style, want_ok in (('WOVEN', True), ('FACE', False)):
+        for kind in ('DODECA', 'CUBE', 'ICOSA'):
+            SV, SF = seed_solid(kind)
+            A = np.asarray(SV, float)
+            A = A / float(np.linalg.norm(A, axis=1).max())
+            bnds = []
+            for f in SF:
+                if style == 'WOVEN':
+                    bnds.append(np.asarray(woven_boundary(f, A, 0.22),
+                                           float))
+                else:
+                    poly = [tuple(A[i]) for i in f]
+                    C = np.mean([A[i] for i in f], axis=0)
+                    N = sm._best_fit_normal(np.asarray(poly, float))
+                    if float(N @ (C - A.mean(axis=0))) < 0.0:
+                        N = -N
+                    span = float(np.linalg.norm(
+                        np.asarray(poly) - C, axis=1).mean())
+                    bnds.append(np.asarray(
+                        sm.skew_lift(poly, 0.22 * span, normal=N,
+                                     centre=C), float))
+            adj = face_adjacency(SF)
+            worst = 0.0
+            for i in range(len(SF)):
+                for j in adj[i]:
+                    if j <= i:
+                        continue
+                    dm = np.linalg.norm(
+                        bnds[i][:, None, :] - bnds[j][None, :, :], axis=2)
+                    # two faces share an edge: 3 boundary points
+                    # (two solid vertices and their midpoint)
+                    worst = max(worst, float(np.sort(dm.min(axis=1))[2]))
+            got = worst < 1e-9
+            chk("%-5s %-7s neighbours agree on shared points"
+                % (style, kind), got == want_ok, "%.1e" % worst)
 
     Vcw, _, _, _ = build('CUBE', rings=4, chirality='CW')
     Vcc, _, _, _ = build('CUBE', rings=4, chirality='CCW')

@@ -48,9 +48,9 @@ PARAMS = {
     # The dodecahedron is Nylander's subject and the one the name
     # "spidroball" refers to; relief lifts the nests out of the faces
     # so the solid does not read as a flat-shaded dodecahedron.
-    "mesh.spidron_ball_add": dict(seed='DODECA', rings=8,
-                                  scale_step=0.62,
-                                  twist=0.523599, relief=0.35),
+    "mesh.spidron_ball_add": dict(seed='DODECA', rings=14,
+                                  scale_step=0.82, twist=0.383972,
+                                  relief=0.22, relief_style='WOVEN'),
     # -- solids ---------------------------------------------------
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
