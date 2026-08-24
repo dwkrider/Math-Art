@@ -1172,9 +1172,9 @@ def build_hopf_torus(gamma_pts, m_psi, closed=True, fit_radius=1.0,
 
 if _IN_BLENDER:
 
-    def _color_material(name, emission):
-        """A single material whose Base Colour (and, if `emission` > 0,
-        its emission) is driven by the mesh's `hopf_color` attribute."""
+    def _color_material(name):
+        """A single material whose Base Colour is driven by the mesh's
+        `hopf_color` attribute."""
         mat = bpy.data.materials.new(name)
         mat.use_nodes = True
         nt = mat.node_tree
@@ -1183,12 +1183,6 @@ if _IN_BLENDER:
         vc.layer_name = "hopf_color"
         if bsdf:
             nt.links.new(vc.outputs["Color"], bsdf.inputs["Base Color"])
-            if emission > 0.0:
-                if "Emission Color" in bsdf.inputs:
-                    nt.links.new(vc.outputs["Color"],
-                                 bsdf.inputs["Emission Color"])
-                if "Emission Strength" in bsdf.inputs:
-                    bsdf.inputs["Emission Strength"].default_value = emission
         return mat
 
     def _finish(context, obj):
@@ -1265,7 +1259,7 @@ if _IN_BLENDER:
                    ('BEADS', "Beads", "a string of spheres along each "
                     "fibre (the ball-and-stick look)")],
             description="How the fibres are realised",
-            default='MESH')
+            default='BEZIER')
         radius: FloatProperty(
             name="Tube Radius", default=0.02, min=0.0, max=1.0,
             step=1, precision=3,
@@ -1309,10 +1303,6 @@ if _IN_BLENDER:
             name="Mono Colour", subtype='COLOR', size=3,
             min=0.0, max=1.0, default=(0.27, 0.86, 0.80),
             description="Base hue for the Mono palette")
-        emission: FloatProperty(
-            name="Glow", default=0.0, min=0.0, max=20.0,
-            description="Emission strength (0 = matte; raise for the "
-                        "glowing-on-black look)")
         sphere_euler: bpy.props.FloatVectorProperty(
             name="Sphere Rotation", subtype='EULER', size=3,
             default=_TILT,
@@ -1436,11 +1426,12 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new("Control Sphere")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
             self._write_colors(me, vcol)
             me.update()
             obj = bpy.data.objects.new("Control Sphere", me)
             obj.data.materials.append(
-                _color_material("Hopf Control Sphere", 0.0))
+                _color_material("Hopf Control Sphere"))
             _finish(context, obj)
             obj.parent = parent
 
@@ -1487,15 +1478,17 @@ if _IN_BLENDER:
                     obj = bpy.data.objects.new(name, me)
                     if self.color_fibers:
                         obj.data.materials.append(
-                            _color_material(name, self.emission))
+                            _color_material(name))
                     _finish(context, obj)
                     self._select(context, obj)
                     if self.show_base_sphere:
                         flat = np.asarray(verts)
                         extent = float(np.abs(flat).max()) if len(flat) else 1.0
+                        Rse = _rot_matrix(*se)
                         self._control_sphere(
-                            context, [tuple(_rot_matrix(*se) @ np.asarray(b))
-                                      for b in rings[0]], obj, extent)
+                            context, [tuple(Rse @ np.asarray(b))
+                                      for ring in rings for b in ring],
+                            obj, extent)
                     self.report({'INFO'},
                                 f"{name}: surface, {len(rings)} ring(s), "
                                 f"{len(verts)} verts")
@@ -1533,7 +1526,7 @@ if _IN_BLENDER:
                 obj = bpy.data.objects.new(name, me)
                 if self.color_fibers:
                     obj.data.materials.append(
-                        _color_material(name, self.emission))
+                        _color_material(name))
             else:
                 cu = bpy.data.curves.new(name, 'CURVE')
                 cu.dimensions = '3D'
@@ -1643,7 +1636,6 @@ if _IN_BLENDER:
                 lay.prop(self, 'color_style')
                 if self.color_style == 'MONO':
                     lay.prop(self, 'mono_color')
-                lay.prop(self, 'emission')
 
             lay.separator()
             lay.prop(self, 'sphere_euler')
