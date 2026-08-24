@@ -2457,6 +2457,38 @@ if _IN_BLENDER:
                 (fam, family_label(self.group, fam), desc, '', k))
         return _FAMILY_ITEMS
 
+    _BUILDING_BANDS = [False]
+    _SHELL_ITEMS = []
+
+    def _shell_items(self, context):
+        """The stellation levels this group and family actually has.
+
+        Kept alive in a module-level list: Blender does not own the
+        strings a dynamic enum hands back, and letting them be
+        collected corrupts the menu -- the same reason _FAMILY_ITEMS
+        exists.
+        """
+        _SHELL_ITEMS.clear()
+        _SHELL_ITEMS.append(
+            ('ALL', "All", "Mark every level. Wedges are not built "
+                           "for All -- there are too many to read, and "
+                           "they overlap; pick a level for those", '', -1))
+        try:
+            shells = sorted({sh for _x, _y, sh in stellation_shells(
+                self.group, self.family, self.distance,
+                self.guide_extent)})
+        except Exception:
+            shells = [0]
+        for sh in shells:
+            _SHELL_ITEMS.append(
+                (str(sh), "Level %d" % sh,
+                 "The polyhedron's own face planes" if sh == 0 else
+                 "The %s stellation" % ("first" if sh == 1 else
+                                        "second" if sh == 2 else
+                                        "third" if sh == 3 else
+                                        "%dth" % sh), '', sh))
+        return _SHELL_ITEMS
+
     def _ghost_material():
         """Shared translucent material for the replicated copies, so
         the editable motif stands out from the full sculpture."""
@@ -3228,20 +3260,20 @@ if _IN_BLENDER:
                         "face rather than a part meeting its "
                         "neighbours tip to tip, and then they are the "
                         "only scale the drawing gives you")
-        stellation_level: IntProperty(
-            name="Stellation Level", default=-1, min=-1, max=24,
-            description="Which stellation's points to mark. The "
-                        "guide lines cut the plane into cells, and a "
-                        "cell's depth -- how many lines separate it "
-                        "from the centre -- is the stellation number: "
-                        "0 is the polyhedron's own face, 1 the first "
-                        "stellation, and so on. -1 labels every "
-                        "shell. Set it to the stellation a design is "
-                        "quoted as being drawn on and the corners it "
-                        "may sit on are the only ones shown -- Hart's "
-                        "Dragonflies is a subset of the RD's third "
-                        "stellation, so 3 leaves exactly the six "
-                        "corners at radius 3")
+        stellation_level: EnumProperty(
+            name="Stellation Level",
+            items=_shell_items, default=-1,
+            description="Which stellation's points to mark. The guide "
+                        "lines cut the plane into cells, and a cell's "
+                        "depth -- how many lines separate it from the "
+                        "centre -- is the stellation number: level 0 "
+                        "is the polyhedron's own face, 1 the first "
+                        "stellation, and so on. Set it to the "
+                        "stellation a design is quoted as being drawn "
+                        "on and only the points it may sit on are "
+                        "shown -- Hart's Dragonflies is a subset of "
+                        "the RD's third stellation, so Level 3 leaves "
+                        "exactly the six points at radius 3")
         label_bevels: BoolProperty(
             name="Label the Bevels", default=True,
             description="Write the cut angle beside every edge of the "
@@ -3712,7 +3744,8 @@ if _IN_BLENDER:
                 corners = stellation_shells(
                     kind, family, d, self.guide_extent)
                 shells = sorted({c[2] for c in corners})
-                want = self.stellation_level
+                want = (-1 if self.stellation_level == 'ALL'
+                        else int(self.stellation_level))
                 sel = [c for c in corners
                        if want < 0 or c[2] == want]
                 if not sel:
@@ -4256,10 +4289,20 @@ if _IN_BLENDER:
                 # selectable object apiece, so it can be copied out
                 # and used as the fixture to machine the corner
                 # against exactly as a spike is.
-                wsel = [p for p in stellation_shells(kind, family, d,
-                                                     extent)
-                        if self.stellation_level < 0
-                        or p[2] == self.stellation_level]
+                # Only for one level.  All would build a wedge on
+                # every crossing in range -- twenty on OCTA/P2 and
+                # far more on the bigger families -- overlapping each
+                # other into an unreadable thicket, and each one is a
+                # separate object to pick through.
+                wsel = ([] if self.stellation_level == 'ALL' else
+                        [p for p in stellation_shells(kind, family, d,
+                                                      extent)
+                         if p[2] == int(self.stellation_level)])
+                if self.stellation_level == 'ALL':
+                    self.report({'INFO'},
+                                "Stellation Wedges needs a single "
+                                "level; leave Stellation Level on All "
+                                "for the marks alone")
                 wsel.sort(key=lambda r: (r[2], r[0] ** 2 + r[1] ** 2))
                 if wsel:
                     wcoll = bpy.data.collections.new(
@@ -4540,12 +4583,116 @@ if _IN_BLENDER:
 
     ADD_MENU = True
 
+    _COLL_SIG = {}
+
+    def _plane_loops(motif):
+        """The motif's outline in its plane's own coordinates.
+
+        The motif lies in XY and the plane's coordinates ARE that XY,
+        so its world transform is already the placement -- which is
+        why dragging it moves the part.
+        """
+        mw = motif.matrix_world
+        verts = [tuple((mw @ v.co)[:2]) + (0.0,)
+                 for v in motif.data.vertices]
+        faces = [list(p.vertices) for p in motif.data.polygons]
+        if not verts or not faces:
+            return None
+        return boundary_loops(verts, faces)
+
+    def _motif_signature(motif):
+        mw = motif.matrix_world
+        return (len(motif.data.vertices), len(motif.data.polygons),
+                tuple(round(c, 6) for row in mw for c in row))
+
+    def _rebuild_bands(motif, bands, kind, family, d, thick):
+        loops = _plane_loops(motif)
+        if not loops:
+            return 0
+        xs = cross_sections(kind, family, loops, d, with_sin=True)
+        vs, fs = [], []
+        for x0, y0, x1, y1, sin_t in xs:
+            ex, ey = x1 - x0, y1 - y0
+            ln = sqrt(ex * ex + ey * ey)
+            if ln < 1e-9:
+                continue
+            wide = 0.5 * thick / max(sin_t, 0.125)
+            nx, ny = -ey / ln * wide, ex / ln * wide
+            b = len(vs)
+            vs.extend([(x0 + nx, y0 + ny, 0.0), (x1 + nx, y1 + ny, 0.0),
+                       (x1 - nx, y1 - ny, 0.0), (x0 - nx, y0 - ny, 0.0)])
+            fs.append([b, b + 1, b + 2, b + 3])
+        me = bands.data
+        me.clear_geometry()
+        if vs:
+            me.from_pydata(vs, [], fs)
+            me.validate()
+        me.update()
+        return len(fs)
+
+    @bpy.app.handlers.persistent
+    def _follow_motif(scene, depsgraph):
+        """Redraw the collision bands when the motif is moved.
+
+        The sculpture itself follows on its own -- the node group
+        instances the motif object, so the depsgraph carries a drag
+        straight through. The bands do not: they are a Python
+        computation baked into a mesh at build time, and they went
+        stale the moment the motif shifted, which is exactly when
+        their advice matters most.
+
+        A full rebuild is the wrong answer here. It would regenerate
+        the motif from its preset at the canonical placement and throw
+        the drag away, so only the bands are recomputed, in place.
+        """
+        if _BUILDING_BANDS[0]:
+            return
+        touched = [u.id.name for u in depsgraph.updates
+                   if isinstance(u.id, bpy.types.Object)
+                   and u.id.name.startswith("SymSculpt Motif")]
+        if not touched:
+            return
+        _BUILDING_BANDS[0] = True
+        try:
+            for coll in bpy.data.collections:
+                motif = bands = root = None
+                for ob in coll.objects:
+                    if ob.name.startswith("SymSculpt Motif"):
+                        motif = ob
+                    elif ob.name.startswith("SymSculpt Collisions"):
+                        bands = ob
+                    elif getattr(getattr(ob, "math_art", None),
+                                 "generator", "") ==                             "object.symmetric_sculpture_add":
+                        root = ob
+                if motif is None or bands is None or root is None:
+                    continue
+                if motif.name not in touched:
+                    continue
+                sig = _motif_signature(motif)
+                if _COLL_SIG.get(bands.name) == sig:
+                    continue
+                _COLL_SIG[bands.name] = sig
+                # the live system names the slot after the operator
+                # id with the dots swapped for underscores
+                slot = root.math_art.generator.replace(".", "_")
+                pg = getattr(root.math_art, slot, None)
+                if pg is None:
+                    continue
+                _rebuild_bands(motif, bands, pg.group, pg.family,
+                               pg.distance, abs(pg.shell) * pg.distance)
+        finally:
+            _BUILDING_BANDS[0] = False
+
     def register():
         bpy.utils.register_class(OBJECT_OT_symmetric_sculpture_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+        if _follow_motif not in bpy.app.handlers.depsgraph_update_post:
+            bpy.app.handlers.depsgraph_update_post.append(_follow_motif)
 
     def unregister():
+        if _follow_motif in bpy.app.handlers.depsgraph_update_post:
+            bpy.app.handlers.depsgraph_update_post.remove(_follow_motif)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(
