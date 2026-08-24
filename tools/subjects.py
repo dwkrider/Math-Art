@@ -30,6 +30,27 @@ PARAMS = {
     # 1 of the icosahedral vertex set -- has big obvious pentagons and
     # says "this is a polyhedron through someone else's vertices".
     "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
+    # -- spidrons -------------------------------------------------
+    # The bare rosette default is the whole hexagonal subdivision,
+    # which at icon size is a grey disc of slivers; six arms wound
+    # both ways is the figure the tiling papers actually show, and
+    # the spiral arms survive being shrunk.
+    "mesh.spidron_rosette_add": dict(layout_kind='ROSETTE',
+                                     arm_parts=6, corners=6, rings=6,
+                                     winding='OUT', color_by='SHAPE',
+                                     margin=0.06),
+    # Flat, the nest is just a hexagon of triangles -- the whole point
+    # is that it folds, so shoot it mid-fold where the crumple reads.
+    # (`import math` lives below these tables, so angles are literal
+    # radians here: 0.698132 rad = 40 deg, 0.523599 rad = 30 deg.)
+    "mesh.spidron_nest_add": dict(fold=0.698132, rings=7,
+                                  cap_center=True),
+    # The dodecahedron is Nylander's subject and the one the name
+    # "spidroball" refers to; relief lifts the nests out of the faces
+    # so the solid does not read as a flat-shaded dodecahedron.
+    "mesh.spidron_ball_add": dict(seed='DODECA', rings=8,
+                                  scale_step=0.62,
+                                  twist=0.523599, relief=0.35),
     # -- solids ---------------------------------------------------
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
@@ -194,6 +215,9 @@ ORIENT = {
     # solid, not a plane figure, so it wants a turn rather than a plan
     # view (from overhead a tetrahedron simply squares off).
     "mesh.ifs_add": (0.0, 0.0, math.pi / 8),
+    # The folded nest is a relief: straight down hides the fold and
+    # straight on hides the spiral, so tip it into a three-quarter view.
+    "mesh.spidron_nest_add": (0.9, 0.0, 0.4),
     # The spanned saddle is built on a circle in XY and one in XZ, and
     # the studio camera looks very nearly down the second circle's axis
     # -- straight on, the four lobes overlap into a featureless blob.
@@ -253,6 +277,7 @@ PLAN_VIEW = {
     "mesh.kuniform_add", "mesh.monohedral_add", "mesh.isohedral_add",
     "mesh.aperiodic_add", "mesh.reptile_add", "mesh.voderberg_add",
     "mesh.spiral_tiling_add", "mesh.fractal_tiling_add",
+    "mesh.spidron_rosette_add",
     "mesh.fractal_reptile_add", "mesh.islamic_pattern_add",
     "mesh.celtic_knot_2d_add",
     "mesh.knot_carpet_add", "mesh.hyperbolic_tiling_add",
