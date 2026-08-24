@@ -285,6 +285,34 @@ def _motion(kind, v, radius=1.0, pitch=0.4, tilt=0.6, wobbles=3):
                        np.stack([zero, sw, cw], -1)], -2)
         A = Rz @ Rx
         T = np.stack([radius * c, radius * s, zero], -1)
+    elif kind == 'ROTOID':
+        # The generalized helicoid: instead of screwing the curve about
+        # a fixed AXIS, carry it along a spine CURVE in the spine's own
+        # normal plane, turning it as it goes.  The spine here is a
+        # circular helix of radius `radius` and pitch `pitch`, and
+        # `tilt` is how many turns the curve makes per turn of the
+        # spine.  Two knobs recover three classical surfaces:
+        #   tilt = 0            a plain tube about the helix -- a COIL
+        #   pitch = 0, tilt = 0 a tube about a circle -- a TORUS
+        #   tilt != 0           the rotoid proper
+        # A is assembled from the spine's own orthonormal Frenet frame,
+        # so it is a rigid motion exactly and the swept curve stays
+        # congruent to itself.
+        T3 = np.stack([-radius * s, radius * c,
+                       np.full(n, pitch)], -1)
+        T3 = T3 / np.linalg.norm(T3, axis=1)[:, None]        # tangent
+        N3 = np.stack([-c, -s, zero], -1)                    # to the axis
+        B3 = np.cross(T3, N3)
+        psi = tilt * v
+        cp, sp = np.cos(psi), np.sin(psi)
+        Np = cp[:, None] * N3 - sp[:, None] * B3
+        Bp = sp[:, None] * N3 + cp[:, None] * B3
+        # columns are the images of e1, e2, e3.  The generatrix is drawn
+        # with y = 0, so only the first and third matter for the shape;
+        # the middle one is taken as -T3 rather than +T3 so the frame is
+        # right-handed and the motion is a rotation, not a reflection.
+        A = np.stack([Np, -T3, Bp], axis=-1)
+        T = np.stack([radius * c, radius * s, pitch * v], -1)
     else:
         raise ValueError("unknown motion %r" % (kind,))
     return A, T
@@ -298,6 +326,7 @@ MOTIONS = (
     ('TRANSLATION', "Translation"),
     ('REVOLUTION', "Revolution"),
     ('HELICOID', "Helicoidal"),
+    ('ROTOID', "Rotoid (along a helix)"),
 )
 
 GENERATRICES = (
