@@ -713,27 +713,47 @@ def _open_tube(P, radius, sides):
 # --------------------------------------------------------------------------
 
 def build_fiber_surface(rings, samples, P=1, Q=1, sphere_euler=None,
-                        s3_rot=0.0, chirality='RIGHT', fit_radius=1.0):
+                        s3_rot=0.0, chirality='RIGHT', fit_radius=1.0,
+                        max_ring_radius=10.0):
     """Skin the fibres over each closed base ring into a quad torus.
     `rings` is a list of closed rings of base points (from
-    `base_rings`).  Returns (verts, faces, vbase) with one base point per
-    vertex (for colouring); the whole set is centred and scaled together
-    so the nested tori share a frame."""
+    `base_rings`).  A Clifford torus whose base circle approaches the
+    projection pole projects to a near-infinite, near-flat sheet that
+    swamps the others; such degenerate rings (raw projected radius past
+    `max_ring_radius`) are dropped so the kept tori nest cleanly.
+    Returns (verts, faces, vbase, dropped) with one base point per vertex
+    (for colouring); the kept tori are centred and scaled together so
+    they share a frame."""
     import numpy as np
     R = _rot_matrix(*(sphere_euler if sphere_euler is not None else _TILT))
     q = _quat_left(math.radians(s3_rot)) if s3_rot else None
     chi = 'RIGHT' if chirality == 'BOTH' else chirality
-    verts, faces, vbase = [], [], []
+
+    built = []                                   # (bb_list, pts_list, maxr)
     for ring in rings:
-        base_off = len(verts)
-        Nr = len(ring)
+        bb_list, pts_list, maxr = [], [], 0.0
         for b in ring:
             bb = tuple(R @ np.asarray(b))
             X = fiber_s3(bb, samples, P, Q, chi)
             if q is not None:
                 X = _s3_rotate(X, q)
-            pts = stereographic(X)
-            verts.extend(pts.tolist())
+            p = stereographic(X)
+            bb_list.append(bb)
+            pts_list.append(p)
+            maxr = max(maxr, float(np.linalg.norm(p, axis=1).max()))
+        built.append((bb_list, pts_list, maxr))
+
+    kept = [b for b in built if b[2] <= max_ring_radius]
+    if not kept:                                 # all degenerate: keep the
+        kept = [min(built, key=lambda b: b[2])]  # smallest so something shows
+    dropped = len(built) - len(kept)
+
+    verts, faces, vbase = [], [], []
+    for bb_list, pts_list, _r in kept:
+        base_off = len(verts)
+        Nr = len(bb_list)
+        for bb, p in zip(bb_list, pts_list):
+            verts.extend(p.tolist())
             vbase.extend([bb] * samples)
         for i in range(Nr):
             i1 = (i + 1) % Nr
@@ -749,7 +769,7 @@ def build_fiber_surface(rings, samples, P=1, Q=1, sphere_euler=None,
     ref = np.percentile(rad, 95.0)
     scale = (fit_radius / ref) if ref > 1e-9 else 1.0
     V = (V - center) * scale
-    return V.tolist(), faces, vbase
+    return V.tolist(), faces, vbase, dropped
 
 
 # --------------------------------------------------------------------------
@@ -1498,7 +1518,7 @@ if _IN_BLENDER:
                                 "(Latitudes/Flower/Cap/...); drawing tubes")
                     self.output = 'MESH'
                 else:
-                    verts, faces, vbase = build_fiber_surface(
+                    verts, faces, vbase, sdrop = build_fiber_surface(
                         rings, self.samples, self.wind_p, self.wind_q,
                         se, self.s3_rot, self.chirality)
                     verts = [(x * self.scale, y * self.scale, z * self.scale)
@@ -1539,9 +1559,12 @@ if _IN_BLENDER:
                             context, [tuple(Rse @ np.asarray(b))
                                       for ring in rings for b in ring],
                             obj, extent)
-                    self.report({'INFO'},
-                                f"{name}: surface, {len(rings)} ring(s), "
-                                f"{len(verts)} verts")
+                    self.report(
+                        {'INFO'},
+                        f"{name}: surface, {len(rings) - sdrop} nested "
+                        f"tori, {len(verts)} verts"
+                        + (f", {sdrop} degenerate (near-pole) tori dropped"
+                           if sdrop else ""))
                     return {'FINISHED'}
 
             # -------- fibre bundle (tubes / beads / curves) -------------
@@ -1692,7 +1715,9 @@ if _IN_BLENDER:
             lay.separator()
             col = lay.column(align=True)
             col.label(text="Sphere Rotation")
-            col.prop(self, 'sphere_euler', text="")
+            col.prop(self, 'sphere_euler', index=0, text="X")
+            col.prop(self, 'sphere_euler', index=1, text="Y")
+            col.prop(self, 'sphere_euler', index=2, text="Z")
             lay.prop(self, 's3_rot')
             if self.output != 'SURFACE':
                 lay.prop(self, 'include_axis')
@@ -2275,13 +2300,19 @@ def _selftest():
         print(f"provider {prov:10s}: {len(pts)} pts unit dev={unit:.1e} "
               f"{'OK' if ok else 'BAD'}")
 
-    rings = base_rings('LATITUDES', 4, 16, 20.0, 160.0)
-    Vs, Fs, vb = build_fiber_surface(rings, 48)
+    # moderate range so no ring is dropped, then an extreme range that
+    # must drop the near-pole degenerate tori
+    rings = base_rings('LATITUDES', 4, 16, 40.0, 120.0)
+    Vs, Fs, vb, drp = build_fiber_surface(rings, 48)
     surf_ok = (len(Vs) == 4 * 16 * 48 and len(Fs) == 4 * 16 * 48
-               and len(vb) == len(Vs) and np.isfinite(np.asarray(Vs)).all())
+               and len(vb) == len(Vs) and drp == 0
+               and np.isfinite(np.asarray(Vs)).all())
+    rings2 = base_rings('LATITUDES', 6, 16, 20.0, 175.0)
+    _v, _f, _vb, drp2 = build_fiber_surface(rings2, 48)
+    surf_ok = surf_ok and drp2 > 0 and np.isfinite(np.asarray(_v)).all()
     ok_all = ok_all and surf_ok
-    print(f"fibre surface: verts={len(Vs)} faces={len(Fs)} "
-          f"{'OK' if surf_ok else 'BAD'}")
+    print(f"fibre surface: verts={len(Vs)} faces={len(Fs)} dropped={drp}; "
+          f"extreme-range dropped={drp2} {'OK' if surf_ok else 'BAD'}")
 
     iv, ifc = _icosphere(0.1, 1)
     cvv, cff = _cone(0.5, 1.0, 8)
