@@ -26,9 +26,9 @@
 # deliberately.
 #
 # HOW DEEP TO GO.  The fold decays as it travels inward, but slowly:
-# beta_k tends to sqrt(2/k), so a nest whose outer edge spanned the
-# observable universe would still be inclined more than six degrees by
-# the time its rings reached the size of a quark.  Szilassi's practical
+# beta_k tends to sqrt(2/k), so on Szilassi's own arithmetic a nest whose
+# outer edge measured 10^23 m would still be inclined about six degrees
+# by the time its rings had shrunk to 10^-16 m.  Szilassi's practical
 # advice is that a model needs five or six rings and that eight or nine
 # is the most worth drawing; the default here is seven.
 #
@@ -68,8 +68,8 @@
 #   and its pro-rotation, anti-rotation and pleats modes.
 # - Erik D. Demaine, Martin L. Demaine, Vi Hart, Gregory N. Price &
 #   Tomohiro Tachi, "(Non)existence of pleated folds: how paper folds
-#   between creases", Graphs and Combinatorics 27 (2011), pp. 377-397
-#   -- why the pleats mode at zero twist cannot be an exact rigid fold.
+#   between creases", Graphs and Combinatorics 27 (2011), pp. 377-397;
+#   why the pleats mode at zero twist cannot be an exact rigid fold.
 
 bl_info = {
     "name": "Folded Hexagon Nest",
@@ -89,9 +89,11 @@ import numpy as np
 try:
     from . import spidron_math as sm
     from .polyhedra import fit as _fit
+    from .patterns import common as pc
 except Exception:                       # legacy single-file / CLI use
     import spidron_math as sm
     from polyhedra import fit as _fit
+    from patterns import common as pc
 
 
 BOUNDARY_ITEMS = [
@@ -166,7 +168,6 @@ if _IN_BLENDER:
     def _new_object(context, name, verts, faces, mats, operator):
         me = bpy.data.meshes.new(name)
         me.from_pydata([tuple(v) for v in verts], [], faces)
-        from .patterns import common as pc
         cols = pc.PALETTE_RGBA
         nmat = (max(mats) + 1) if mats else 1
         for i in range(nmat):

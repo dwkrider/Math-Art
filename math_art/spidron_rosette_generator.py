@@ -109,29 +109,39 @@ WINDING_ITEMS = [
 
 
 def build_polys(layout, m, n, rings, arm, winding, tiles_x, tiles_y):
-    """Return (polys, types) in the plane for the chosen layout."""
+    """Return (polys, types, ring_index) in the plane for the chosen
+    layout.  `types` distinguishes the triangle shapes (and, for the
+    rosettes, the winding); `ring_index` is carried separately so
+    colouring by ring is possible in every layout rather than only in
+    the full figure."""
     if layout == 'FIGURE':
-        return sm.full_figure_polys(m, rings)
+        polys, types = sm.full_figure_polys(m, rings)
+        return polys, [t % 2 for t in types], [t // 2 for t in types]
     if layout == 'ARM':
         tris = sm.arm_polys(m, rings, arm, 0)
-        return [list(t) for t, _ in tris], [k for _, k in tris]
+        return ([list(t) for t, _ in tris], [k for _, k in tris],
+                [i // 2 for i in range(len(tris))])
     if layout == 'ROSETTE':
-        return sm.rosette_polys(m, n, rings, arm, winding)
+        polys, types = sm.rosette_polys(m, n, rings, arm, winding)
+        per = len(polys) // max(1, (n * (2 if winding == 'BOTH' else 1)))
+        return polys, types, [(i % per) // 2 for i in range(len(polys))]
 
-    polys, types = sm.rosette_polys(m, n, rings, arm, winding)
+    polys, types, rix = build_polys('ROSETTE', m, n, rings, arm,
+                                    winding, 1, 1)
     # lattice pitch: the rosette spans the circumcircle of the n-gon of
     # unit-circumradius arms, so a square lattice at 2R packs them
     # touching without overlap.
     step = 2.0
-    out_p, out_t = [], []
+    out_p, out_t, out_r = [], [], []
     for iy in range(tiles_y):
         for ix in range(tiles_x):
             dx = (ix - 0.5 * (tiles_x - 1)) * step
             dy = (iy - 0.5 * (tiles_y - 1)) * step
-            for p, t in zip(polys, types):
+            for p, t, r in zip(polys, types, rix):
                 out_p.append([(x + dx, y + dy) for (x, y) in p])
                 out_t.append(t)
-    return out_p, out_t
+                out_r.append(r)
+    return out_p, out_t, out_r
 
 
 try:
@@ -209,7 +219,7 @@ if _IN_BLENDER:
 
         def execute(self, context):
             m, n = int(self.arm_parts), int(self.corners)
-            polys, types = build_polys(
+            polys, types, rix = build_polys(
                 self.layout_kind, m, n, int(self.rings), self.arm,
                 self.winding, int(self.tiles_x), int(self.tiles_y))
             if not polys:
@@ -217,7 +227,7 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             if self.color_by == 'RING':
                 npal = len(pc.PALETTE_RGBA)
-                types = [t % npal for t in types]
+                types = [r % npal for r in rix]
                 cby = 'TYPE'
             elif self.color_by == 'SHAPE':
                 types = [t % 2 for t in types]
@@ -297,30 +307,33 @@ def _selftest():
 
     print("spidron_rosette: layouts")
     for lay in ('FIGURE', 'ARM', 'ROSETTE', 'TILING'):
-        p, t = build_polys(lay, 6, 6, 6, 'SPIDRON', 'OUT', 2, 2)
+        p, t, r = build_polys(lay, 6, 6, 6, 'SPIDRON', 'OUT', 2, 2)
         chk("%-8s builds triangles" % lay,
             len(p) > 0 and all(len(q) == 3 for q in p),
             "%d tris" % len(p))
-        chk("%-8s types align with polys" % lay, len(p) == len(t))
+        chk("%-8s types align with polys" % lay,
+            len(p) == len(t) == len(r))
+        chk("%-8s ring index spans the rings" % lay,
+            max(r) + 1 == 6 or lay == 'ROSETTE', "max ring %d" % max(r))
 
     # counts are exactly predictable
-    p, _ = build_polys('FIGURE', 6, 6, 5, 'SPIDRON', 'OUT', 1, 1)
+    p, _, _ = build_polys('FIGURE', 6, 6, 5, 'SPIDRON', 'OUT', 1, 1)
     chk("full figure = 2*m per ring", len(p) == 2 * 6 * 5, "%d" % len(p))
-    p, _ = build_polys('ARM', 8, 6, 7, 'SPIDRON', 'OUT', 1, 1)
+    p, _, _ = build_polys('ARM', 8, 6, 7, 'SPIDRON', 'OUT', 1, 1)
     chk("arm = 2 per ring", len(p) == 2 * 7, "%d" % len(p))
-    p, _ = build_polys('ROSETTE', 6, 5, 4, 'SPIDRON', 'BOTH', 1, 1)
+    p, _, _ = build_polys('ROSETTE', 6, 5, 4, 'SPIDRON', 'BOTH', 1, 1)
     chk("BOTH winding doubles the rosette", len(p) == 2 * 5 * 2 * 4,
         "%d" % len(p))
-    p, _ = build_polys('TILING', 6, 6, 3, 'SPIDRON', 'OUT', 3, 2)
-    chk("tiling repeats the rosette", len(p) == 6 * 6 * 2 * 3 // 6 * 6,
+    p, _, _ = build_polys('TILING', 6, 6, 3, 'SPIDRON', 'OUT', 3, 2)
+    chk("tiling repeats the rosette", len(p) == 6 * (6 * 2 * 3),
         "%d" % len(p))
 
     print("spidron_rosette: geometry")
     for m in (5, 6, 8, 12):
-        p, _ = build_polys('FIGURE', m, 6, 4, 'SPIDRON', 'OUT', 1, 1)
+        p, _, _ = build_polys('FIGURE', m, 6, 4, 'SPIDRON', 'OUT', 1, 1)
         chk("m=%2d every triangle has positive area" % m,
             all(abs(_poly_area(q)) > 1e-12 for q in p))
-    p, _ = build_polys('FIGURE', 6, 6, 8, 'SPIDRON', 'OUT', 1, 1)
+    p, _, _ = build_polys('FIGURE', 6, 6, 8, 'SPIDRON', 'OUT', 1, 1)
     tot = sum(abs(_poly_area(q)) for q in p)
     R = 1.0
     outer = 0.5 * 6 * R * R * sin(2 * pi / 6)
@@ -330,10 +343,10 @@ def _selftest():
         abs(tot - (outer - inner)) < 1e-12, "%.2e" % abs(tot - (outer - inner)))
 
     for arm in sm.ARM_KINDS:
-        p, _ = build_polys('ARM', 6, 6, 8, arm, 'OUT', 1, 1)
+        p, _, _ = build_polys('ARM', 6, 6, 8, arm, 'OUT', 1, 1)
         chk("%-8s arm builds" % arm, len(p) == 16)
-    a1, _ = build_polys('ARM', 6, 6, 6, 'SPIDRON', 'OUT', 1, 1)
-    a2, _ = build_polys('ARM', 6, 6, 6, 'CREEPER', 'OUT', 1, 1)
+    a1, _, _ = build_polys('ARM', 6, 6, 6, 'SPIDRON', 'OUT', 1, 1)
+    a2, _, _ = build_polys('ARM', 6, 6, 6, 'CREEPER', 'OUT', 1, 1)
     chk("arms are genuinely different figures",
         max(abs(np.array(a1[6]) - np.array(a2[6])).max(), 0.0) > 1e-6)
 

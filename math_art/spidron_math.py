@@ -445,7 +445,7 @@ def spidronise(poly, scale, twist, rings, chirality=1, centre=None,
     return verts, faces, mats
 
 
-def skew_lift(poly, dz, normal=None, centre=None):
+def skew_lift(poly, dz, normal=None):
     """Alternate a polygon's vertices +/- dz along its normal, turning a
     planar 2k-gon into a regular skew 2k-gon.  This is what makes a
     spidronised face stand out of the solid (Nylander's spidroball
@@ -473,7 +473,7 @@ def skew_lift(poly, dz, normal=None, centre=None):
 def square_theta_max(s):
     """Largest twist that keeps the square crease pattern free of
     self-intersection (paper Eq. 1)."""
-    if s <= SQRT3 * 0.0 + sqrt(2.0) / 2.0:
+    if s <= sqrt(2.0) / 2.0:
         return pi / 4.0
     return acos(_clamp((1.0 + sqrt(max(2.0 * s * s - 1.0, 0.0))) / (2.0 * s)))
 
@@ -489,8 +489,8 @@ def _square_outer(rho):
     """The four outer-boundary vertices of a ring at isotropic dihedral
     `rho` (paper Eq. 3 with rho1 = -rho2 = rho), unit edge."""
     t = tan(0.5 * rho)
-    d = abs(t) / sqrt(2.0 * t * t + t * t * t * t) if abs(t) > 1e-12 else 0.0
-    # d = 1 / sqrt(2 + t^2), guarded for t -> 0 (flat: d = 1/sqrt(2))
+    # Eq. 3 with rho1 = -rho2 = rho collapses to d = 1/sqrt(2 + t^2);
+    # at rho = 0 that is 1/sqrt(2), the flat unit square.
     d = 1.0 / sqrt(2.0 + t * t)
     h = sqrt(max(1.0 - 2.0 * d * d, 0.0))
     sg = 1.0 if rho >= 0 else -1.0
@@ -547,6 +547,21 @@ def square_solve_ring(rho, s, theta, mode='PRO'):
     """
     P = _square_outer(rho)
     r1, r2 = square_crease_lengths(s, theta)
+    # THE FLAT STATE IS A TANGENT ROOT.  At rho = 0 the ring is planar
+    # and the metric residual touches zero without changing sign, so the
+    # sign-change scan below cannot see it -- the solve would return
+    # nothing, or succeed only when float noise in the caller's
+    # parameters happened to perturb the tangency into a crossing.  The
+    # flat state is known in closed form, so return it directly.
+    if abs(rho) < 1e-7:
+        c, sn = cos(theta), sin(theta)
+        Rz = np.array([[c, -sn, 0.0], [sn, c, 0.0], [0.0, 0.0, 1.0]])
+        for sg in (1.0, -1.0):
+            Rs = Rz if sg > 0 else Rz.T
+            Q = (Rs @ P.T).T * s
+            if abs(float(np.linalg.norm(Q[0] - P[0])) - r1) < 1e-9:
+                return Q, 0.0
+        return (Rz @ P.T).T * s, 0.0
     ctr = P.mean(axis=0)
     circles = []
     for i in range(4):
@@ -749,6 +764,14 @@ def _selftest():
         worst = max(worst, max(v) - min(v))
     chk("four independent forms agree", worst < 1e-11, "spread %.2e" % worst)
     chk("a(0+) -> 30 deg", abs(degrees(fold_turn(1e-9)) - 30.0) < 1e-6)
+    # Kiss's gamma and Szilassi's a measure the same azimuth advance in
+    # frames that differ by a constant; pinning that constant validates
+    # gamma, which nothing else exercises.
+    off = [degrees(ring_twist(b)) + degrees(fold_turn(b))
+           for b in np.linspace(0.05, BETA_PHYSICAL, 200)]
+    chk("Kiss gamma = 210 deg - Szilassi a(beta)",
+        max(abs(o - 210.0) for o in off) < 1e-9,
+        "offset %.9f deg" % off[0])
     chk("a(60) == 60 deg",
         abs(degrees(fold_turn(BETA_PHYSICAL)) - 60.0) < 1e-9)
     chk("b(60) == 30 deg",

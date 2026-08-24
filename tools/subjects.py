@@ -32,9 +32,10 @@ PARAMS = {
     "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
     # -- spidrons -------------------------------------------------
     # The bare rosette default is the whole hexagonal subdivision,
-    # which at icon size is a grey disc of slivers; six arms wound
-    # both ways is the figure the tiling papers actually show, and
-    # the spiral arms survive being shrunk.
+    # which at icon size is a grey disc of slivers.  Six arms, six
+    # rings and a little grout keep the triangles big enough to read,
+    # and colouring by shape makes the two-triangle spiral step visible
+    # where colouring by ring just muddies at this size.
     "mesh.spidron_rosette_add": dict(layout_kind='ROSETTE',
                                      arm_parts=6, corners=6, rings=6,
                                      winding='OUT', color_by='SHAPE',
@@ -42,7 +43,7 @@ PARAMS = {
     # Flat, the nest is just a hexagon of triangles -- the whole point
     # is that it folds, so shoot it mid-fold where the crumple reads.
     # (`import math` lives below these tables, so angles are literal
-    # radians here: 0.698132 rad = 40 deg, 0.523599 rad = 30 deg.)
+    # radians here: 0.698132 rad = 40 deg, 0.383972 rad = 22 deg.)
     "mesh.spidron_nest_add": dict(fold=0.698132, rings=7,
                                   cap_center=True),
     # The dodecahedron is Nylander's subject and the one the name

@@ -37,6 +37,17 @@
 # solid's vertices always land on even indices and the midpoints on odd
 # ones, in every face.
 #
+# Nylander reached the same interlocking by a different route, and his
+# 2010 source is reproduced in `nylander_dodeca_nest` as a check.  He
+# lifts along the face normal -- the Per Face style -- but SOLVES the
+# lift from the dihedral angle, dz = a*b/sqrt(a*b^2 + 1) with
+# a = sin^2(pi/n) and b = tan(alpha/2), so that the raised points of
+# neighbouring faces land on one another regardless.  The self-test
+# confirms his twelve faces do share every boundary point, to 3e-17.
+# His solution is exact for the dodecahedron; the radial displacement
+# used here is not tuned to any particular solid, so it holds on all
+# seven seeds and at any relief.
+#
 # TWO HONEST LIMITS.  First, the general construction is always
 # DRAWABLE but not generally FOLDABLE: only regular skew polygons
 # reliably admit a folding, and the two degrees of freedom that case has
@@ -74,6 +85,9 @@
 # - Peter Pearce, "Structure in Nature is a Strategy for Design" (MIT
 #   Press, 1978), ch. 8 -- the saddle polyhedra and space-filling
 #   systems whose faces the Bridges catalogue spidronises.
+# - Paul Nylander, "Dodeca-Spidroball" (bugman123.com, 2010), AutoLisp
+#   and POV-Ray sources; the dihedral-solved lift reproduced in
+#   `nylander_dodeca_nest` and checked in the self-test.
 
 bl_info = {
     "name": "Spiral-Faced Polyhedron",
@@ -86,7 +100,7 @@ bl_info = {
     "category": "Add Mesh",
 }
 
-from math import cos, sin, pi, sqrt, radians, degrees
+from math import cos, sin, tan, acos, pi, sqrt, radians, degrees
 
 import numpy as np
 
@@ -95,11 +109,13 @@ try:
     from .polyhedra import seeds as _seeds
     from .polyhedra import hull as _hull
     from .polyhedra import fit as _fit
+    from .patterns import common as pc
 except Exception:                       # legacy single-file / CLI use
     import spidron_math as sm
     from polyhedra import seeds as _seeds
     from polyhedra import hull as _hull
     from polyhedra import fit as _fit
+    from patterns import common as pc
 
 PHI = 0.5 * (1.0 + sqrt(5.0))
 
@@ -233,6 +249,51 @@ def two_colour(faces):
     return col, ok
 
 
+def nylander_dodeca_nest():
+    """Paul Nylander's dodeca-spidroball boundary, reproduced exactly
+    from his 2010 AutoLisp source, for validation.
+
+    His route to an interlocking ball differs from this module's: he
+    lifts along the FACE NORMAL, like Relief Style: Per Face, but solves
+    the lift `dz` from the solid's dihedral angle so that the raised
+    points of neighbouring faces land on each other anyway.  The Woven
+    style instead displaces radially, which makes neighbours meet by
+    construction on any solid at any relief.  Both are correct; his is
+    exact for the dodecahedron, this module's generalises.
+
+    Returns (boundary, face_frames, constants).
+    """
+    n_arm = 5
+    n = 2 * n_arm
+    alpha = acos(-sqrt(5.0) / 5.0)          # dihedral, 116.565 deg
+    a = sin(pi / n) ** 2
+    b = tan(alpha / 2.0)
+    dz = a * b / sqrt(a * b * b + 1.0)
+    r = sqrt(1.0 - dz * dz / a)
+    z0 = r * b * cos(pi / n_arm) + dz
+    nodes = np.array([[r * cos(i * pi / n_arm), r * sin(i * pi / n_arm),
+                       (2 * (i % 2) - 1) * dz + z0] for i in range(n)])
+
+    def rz(t):
+        c, s = cos(t), sin(t)
+        return np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+
+    def ry(t):
+        c, s = cos(t), sin(t)
+        return np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
+
+    def euler(phi, th, psi):
+        return rz(psi) @ ry(th) @ rz(phi)
+
+    frames = [euler(0.0, 0.0, 0.0), euler(0.0, pi, 0.0)]
+    th = 0.0
+    for _ in range(5):
+        frames.append(euler(0.2 * pi, alpha, th))
+        frames.append(euler(0.0, pi - alpha, th + 0.2 * pi))
+        th += 0.4 * pi
+    return nodes, frames, dict(alpha=alpha, a=a, b=b, dz=dz, r=r, z0=z0)
+
+
 def woven_boundary(face, V, relief):
     """The skew 2n-gon a face contributes to the WOVEN ball.
 
@@ -285,8 +346,7 @@ def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
             else:
                 span = float(np.linalg.norm(
                     np.asarray(poly) - C, axis=1).mean())
-                poly = sm.skew_lift(poly, relief * span, normal=N,
-                                    centre=C)
+                poly = sm.skew_lift(poly, relief * span, normal=N)
         if chirality == 'CW':
             ch = 1
         elif chirality == 'CCW':
@@ -381,7 +441,6 @@ if _IN_BLENDER:
             V = _fit.fit_cube(V, 2.0)
             me = bpy.data.meshes.new("Spidron Ball")
             me.from_pydata([tuple(v) for v in V], [], F)
-            from .patterns import common as pc
             cols = pc.PALETTE_RGBA
             nmat = (max(M) + 1) if M else 1
             for i in range(nmat):
@@ -517,6 +576,35 @@ def _selftest():
         r1.max() > r0.max() + 1e-6,
         "rmax %.4f -> %.4f" % (r0.max(), r1.max()))
 
+    print("spidron_ball: Nylander's dodeca-spidroball (literature check)")
+    nodes, frames, K = nylander_dodeca_nest()
+    chk("dihedral = arccos(-1/sqrt5) = 116.565 deg",
+        abs(degrees(K['alpha']) - 116.56505117707799) < 1e-9)
+    chk("b = tan(alpha/2) is the golden ratio",
+        abs(K['b'] - PHI) < 1e-12, "%.12f" % K['b'])
+    chk("his constants reproduce", abs(K['dz'] - 0.138197) < 1e-6
+        and abs(K['r'] - 0.894427) < 1e-6
+        and abs(K['z0'] - 1.309017) < 1e-6,
+        "dz=%.6f r=%.6f z0=%.6f" % (K['dz'], K['r'], K['z0']))
+    pts = [(M @ nodes.T).T for M in frames]
+    chk("his construction places 12 faces", len(pts) == 12)
+    shared = []
+    for j in range(1, len(pts)):
+        d = np.linalg.norm(pts[0][:, None, :] - pts[j][None, :, :], axis=2)
+        shared.append(float(d.min()))
+    chk("his neighbours share boundary points exactly",
+        min(shared) < 1e-12, "closest %.1e" % min(shared))
+    # every raised point of his nest is shared with the two faces that
+    # meet there -- the same interlocking the Woven style guarantees by
+    # construction, reached by solving dz from the dihedral instead.
+    allp = np.vstack(pts)
+    hits = 0
+    for p in pts[0]:
+        d = np.linalg.norm(allp - p, axis=1)
+        hits += int((d < 1e-9).sum() > 1)
+    chk("every one of his boundary points is shared", hits == len(pts[0]),
+        "%d of %d" % (hits, len(pts[0])))
+
     print("spidron_ball: relief styles")
     # THE invariant that separates the interlocked ball from a heap of
     # spikes: neighbouring faces must agree exactly on every boundary
@@ -540,8 +628,7 @@ def _selftest():
                     span = float(np.linalg.norm(
                         np.asarray(poly) - C, axis=1).mean())
                     bnds.append(np.asarray(
-                        sm.skew_lift(poly, 0.22 * span, normal=N,
-                                     centre=C), float))
+                        sm.skew_lift(poly, 0.22 * span, normal=N), float))
             adj = face_adjacency(SF)
             worst = 0.0
             for i in range(len(SF)):
