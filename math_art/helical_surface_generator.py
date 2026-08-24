@@ -27,6 +27,25 @@
 #   CORKSCREW -- the "twisted sphere": a sphere stretched
 #     along a diameter and sheared upward while it turns, so
 #     each meridian circle climbs by b per radian of turn.
+#   HELICONE -- the helico-conical surface, where the curve is carried
+#     by SIMILARITIES rather than rigid motions: turned and scaled at
+#     once, so its copies are similar but not congruent and each
+#     u-curve is a conical spiral.  It is the one sweep here that is
+#     deliberately not a Darboux surface.
+#   EGG_BOX -- z = a(sin(x/b) + sin(y/b)), one sinusoid slid along a
+#     perpendicular one: the simplest translation surface, and a
+#     standard picture of extrema and saddle points.
+#   SINE_TORUS -- a torus whose tube breathes, z = b sin(v) cos(k u).
+#     One parameter gives three surfaces: integer k a torus,
+#     half-odd-integer k a KLEIN BOTTLE (the tube returns inside out
+#     after one turn), and k = 1/2 with equal radii a CROSS-CAP, the
+#     closing of the hole dropping the genus by one.  El-Milick built
+#     that model in 1947 and called it a one-sided cyclide.
+#
+# The ROTOID motion added to the Darboux family carries the curve along
+# a helical SPINE instead of about a fixed axis, turning it as it goes:
+# no turn gives a tube (a coil, or a torus if the spine is flat) and a
+# turn gives the generalized helicoid proper.
 #
 # Each surface is built by a pure-python function that works
 # without bpy, so this file can be run standalone for its
@@ -43,6 +62,13 @@
 #   "Encyclopedie des formes mathematiques remarquables", mathcurve.com,
 #   chapter "surface de Darboux"; a converted copy is in
 #   research/books/mathcurve_encyclopedie_formes_mathematiques/.
+# - Rotoid, helico-conical surface, egg box and sine torus: R. Ferreol,
+#   "Encyclopedie des formes mathematiques remarquables"
+#   (mathcurve.com), chapters "rotoide", "surface helicoconique",
+#   "boite a oeufs" and "tore sinusoidal".
+# - Sine torus at k = 1/2: Maurice El-Milick (1947), who called it a
+#   one-sided cyclide; his model is in the Institut Henri Poincare
+#   collection.
 # - The helicoid is a classical minimal and ruled surface
 #   (J. B. C. Meusnier, 1776); the hyperbolic helicoid, conical
 #   seashell and twisted-sphere forms here are standard parametric
@@ -62,8 +88,11 @@ bl_info = {
 }
 
 import math
+from fractions import Fraction
 
 import numpy as np
+
+_TWO_PI = 2.0 * math.pi
 
 try:
     from .surfaces.encyclopedia import build_darboux
@@ -187,6 +216,150 @@ def build_corkscrew(a=1.0, b=0.3, res=96):
     return verts, faces
 
 
+def build_helicone(profile=2, turns=2.0, height=1.0, res_u=64, res_v=160):
+    """(verts, faces): the helico-conical surface, or "helicone".
+
+        x = v (f(u) cos v - g(u) sin v)
+        y = v (f(u) sin v + g(u) cos v)
+        z = v h(u)
+
+    The generatrix is carried by SIMILARITIES -- rotate by v and scale
+    by v at the same time -- so the copies are all similar to one
+    another but, unlike a Darboux sweep, not congruent: they grow as
+    they turn.  Each u = constant curve is therefore a conical spiral,
+    and the surface fills a cone.
+
+    `profile` picks the generatrix: 2 is the parabola of the source's
+    figure, higher values are the flatter even powers.
+    """
+    nu, nv = max(3, int(res_u)), max(3, int(res_v))
+    p = max(1, int(profile))
+    u = np.linspace(-1.0, 1.0, nu)
+    f, g, h = u, np.zeros_like(u), height * (1.0 - np.abs(u) ** p)
+    v = np.linspace(0.05, _TWO_PI * turns, nv)
+    cv, sv = np.cos(v), np.sin(v)
+    P = np.stack([
+        v[:, None] * (f[None, :] * cv[:, None] - g[None, :] * sv[:, None]),
+        v[:, None] * (f[None, :] * sv[:, None] + g[None, :] * cv[:, None]),
+        v[:, None] * h[None, :] * np.ones_like(cv)[:, None]], -1)
+    verts = [tuple(P[i, j]) for i in range(nv) for j in range(nu)]
+    faces = [[i * nu + j, i * nu + j + 1,
+              (i + 1) * nu + j + 1, (i + 1) * nu + j]
+             for i in range(nv - 1) for j in range(nu - 1)]
+    return verts, faces
+
+
+def build_translation_surface(amp=0.35, wavelength=1.0, extent=3.0,
+                              res=72):
+    """(verts, faces): the EGG BOX, z = a (sin(x/b) + sin(y/b)).
+
+    A translation surface is the sum of two curves, P(u,v) = c1(u) +
+    c2(v) -- one curve slid along the other without turning.  Take both
+    to be the same sinusoid, laid perpendicular, and the sum is the egg
+    box: a field of alternating bumps and hollows whose saddle points
+    sit where one curve is rising as fast as the other falls.
+
+    Ferreol notes the curiosity that replacing the sum by a PRODUCT
+    gives an egg box too, because
+    a sin(x/b) sin(y/b) is itself a sum of two sinusoids in the rotated
+    coordinates (y-x)/b and (x+y)/b -- the same surface turned 45
+    degrees and rescaled.  `_selftest` checks that identity.
+    """
+    n = max(3, int(res))
+    b = max(1e-6, wavelength)
+    t = np.linspace(-extent, extent, n)
+    c1 = np.stack([t, np.zeros_like(t), amp * np.sin(t / b)], -1)
+    c2 = np.stack([np.zeros_like(t), t, amp * np.sin(t / b)], -1)
+    P = c1[:, None, :] + c2[None, :, :]
+    verts = [tuple(P[i, j]) for i in range(n) for j in range(n)]
+    faces = [[i * n + j, i * n + j + 1, (i + 1) * n + j + 1,
+              (i + 1) * n + j]
+             for i in range(n - 1) for j in range(n - 1)]
+    return verts, faces
+
+
+def build_sine_torus(major=1.0, minor=0.4, k=0.5, res_u=192, res_v=64):
+    """(verts, faces): the SINE TORUS,
+
+        x = (a + b cos v) cos u,  y = (a + b cos v) sin u,
+        z = b sin v cos(k u)
+
+    A torus whose tube, instead of being circular, is an ellipse one of
+    whose axes breathes sinusoidally as it goes round -- so the source
+    describes it as a variable ellipse revolved about an axis.  The
+    single parameter k decides what it is:
+
+        k = 0                  z no longer depends on u: an exact TORUS
+        k = 1/2 and a > b      a KLEIN BOTTLE, immersed in 3-space
+        k = 1/2 and a = b      the hole closes and it becomes a
+                               CROSS-CAP -- losing the hole drops the
+                               genus by one, carrying the Klein bottle
+                               to the projective plane
+
+    El-Milick built the k = 1/2 model in 1947 and called it a one-sided
+    cyclide; it is in the Institut Henri Poincare collection.
+
+    What closes the surface is the seam, and getting it wrong silently
+    turns every case into a torus.  After ONE turn in u,
+
+        z(u + 2pi, v) = b sin v cos(ku + 2 pi k)
+
+    so for integer k the surface simply meets itself -- a torus seam --
+    while for half-odd-integer k the sign flips and it meets itself
+    REVERSED: F(u + 2pi, v) = F(u, -v).  The tube comes back inside out,
+    which is exactly the Klein bottle's identification.  So the grid runs
+    one turn and its seam is joined by INDEX with v negated in the
+    flipped case.  Welding by coordinate instead would fuse the
+    self-intersections an immersion necessarily has and destroy the
+    Euler characteristic; wrapping both directions plainly (the obvious
+    thing) forces chi = 0 and orientable no matter what the geometry
+    does.  A ring that genuinely degenerates to a point -- which is how
+    a = b closes the hole -- is collapsed to a single vertex.
+    """
+    frac = Fraction(float(k)).limit_denominator(12)
+    flip = (2 * frac).denominator == 1 and int(2 * frac) % 2 == 1
+    turns = 1 if flip else frac.denominator
+    nu = max(8, int(res_u))
+    nv = max(6, int(res_v))
+    nv += nv % 2                      # v -> -v must pair up columns
+    u = _TWO_PI * turns * np.arange(nu) / nu
+    v = _TWO_PI * np.arange(nv) / nv
+    R = major + minor * np.cos(v)
+    P = np.stack([
+        R[None, :] * np.cos(u)[:, None],
+        R[None, :] * np.sin(u)[:, None],
+        (minor * np.sin(v))[None, :] * np.cos(k * u)[:, None]], -1)
+
+    index = np.arange(nu * nv).reshape(nu, nv)
+    keep = np.ones(nu * nv, dtype=bool)
+    for j in range(nv):                       # collapse degenerate rings
+        ring = P[:, j, :]
+        if float(np.max(np.abs(ring - ring[0]))) < 1e-12:
+            keep[index[1:, j]] = False
+            index[1:, j] = index[0, j]
+    order = np.cumsum(keep) - 1
+    verts = [tuple(P.reshape(-1, 3)[i]) for i in range(nu * nv) if keep[i]]
+
+    def vid(i, j):
+        if i >= nu:                   # across the seam
+            i -= nu
+            if flip:
+                j = -j
+        return int(order[index[i, j % nv]])
+    faces = []
+    for i in range(nu):
+        for j in range(nv):
+            ring = [vid(i, j), vid(i + 1, j),
+                    vid(i + 1, j + 1), vid(i, j + 1)]
+            clean = [ring[0]] + [b for a, b in zip(ring, ring[1:])
+                                 if a != b]
+            if len(clean) > 2 and clean[0] == clean[-1]:
+                clean = clean[:-1]
+            if len(clean) >= 3:
+                faces.append(clean)
+    return verts, faces
+
+
 _SURFACES = [
     ('DARBOUX', "Darboux Surface",
      "A rigid curve swept by a motion. Translation, revolution and "
@@ -200,6 +373,17 @@ _SURFACES = [
      "Conical spiral shell winding n whorls to an apex"),
     ('CORKSCREW', "Corkscrew",
      "Twisted sphere: a sphere sheared upward as it turns"),
+    ('HELICONE', "Helico-Conical Surface",
+     "A curve carried by SIMILARITIES -- turned and scaled together -- "
+     "so its copies are similar rather than congruent and each traces "
+     "a conical spiral"),
+    ('EGG_BOX', "Egg Box",
+     "z = a(sin(x/b) + sin(y/b)): one sinusoid slid along a "
+     "perpendicular one, the simplest translation surface"),
+    ('SINE_TORUS', "Sine Torus",
+     "A torus whose tube breathes: z = b sin(v) cos(k u). Integer k "
+     "gives a torus, half-odd-integer k a Klein bottle, and k = 1/2 "
+     "with equal radii a cross-cap"),
 ]
 
 
@@ -314,6 +498,22 @@ if _IN_BLENDER:
             name="Opening", default=0.37, min=0.0, max=2.0,
             description="Offset radius that keeps the shell "
                         "mouth open (c)")
+        profile: IntProperty(
+            name="Profile Power", default=2, min=1, max=8,
+            description="Generatrix z = 1 - |u|^p; 2 is the parabola of "
+                        "the source's figure and higher powers flatten "
+                        "it (helico-conical surface only)")
+        wavelength: FloatProperty(
+            name="Wavelength", default=1.0, min=0.05, max=10.0,
+            description="b in sin(x/b): the spacing of the bumps "
+                        "(egg box only)")
+        sine_k: FloatProperty(
+            name="Modulation k", default=0.5, min=0.0, max=4.0,
+            description="k in z = b sin(v) cos(k u).  Whole numbers "
+                        "give a torus; halves of odd numbers bring the "
+                        "tube back inside out and give a KLEIN BOTTLE, "
+                        "and k = 1/2 with the two radii equal closes "
+                        "the hole into a CROSS-CAP (sine torus only)")
         cork_a: FloatProperty(
             name="Sphere Radius", default=0.5, min=0.01,
             max=10.0,
@@ -356,6 +556,21 @@ if _IN_BLENDER:
                     self.whorls, self.aspect, self.height,
                     self.opening, self.resolution)
                 name = "Seashell"
+            elif self.surface == 'HELICONE':
+                verts, faces = build_helicone(
+                    self.profile, self.turns, self.height,
+                    self.resolution, 2 * self.resolution)
+                name = "Helico-Conical Surface"
+            elif self.surface == 'EGG_BOX':
+                verts, faces = build_translation_surface(
+                    self.aspect, self.wavelength, self.extent,
+                    self.resolution)
+                name = "Egg Box"
+            elif self.surface == 'SINE_TORUS':
+                verts, faces = build_sine_torus(
+                    self.path_radius, self.curve_size, self.sine_k,
+                    3 * self.resolution, self.resolution)
+                name = "Sine Torus"
             else:
                 verts, faces = build_corkscrew(
                     self.cork_a, self.cork_b, self.resolution)
@@ -418,6 +633,12 @@ if _IN_BLENDER:
             elif self.surface == 'SEASHELL':
                 keys = ('whorls', 'aspect', 'height',
                         'opening')
+            elif self.surface == 'HELICONE':
+                keys = ('profile', 'turns', 'height')
+            elif self.surface == 'EGG_BOX':
+                keys = ('aspect', 'wavelength', 'extent')
+            elif self.surface == 'SINE_TORUS':
+                keys = ('path_radius', 'curve_size', 'sine_k')
             else:
                 keys = ('cork_a', 'cork_b')
             for k in keys + ('resolution', 'smooth',
@@ -472,4 +693,79 @@ def _selftest():
     assert all(f[2] == len(verts) - 1 for f in tris)
     print(f"seashell apex {tuple(round(c, 6) for c in apex)}"
           f" welded into {len(tris)} triangles")
+    # ---- helicone: similar copies, not congruent ones -----------------
+    # A Darboux sweep carries a RIGID curve, so its copies are congruent.
+    # The helicone carries it by similarities instead, so distances
+    # inside a copy all scale by the same factor v -- checking the whole
+    # distance matrix says "similar" and would catch a shear that a
+    # single distance would not.
+    nu, nv = 24, 40
+    V, F = build_helicone(res_u=nu, res_v=nv)
+    P = np.asarray(V).reshape(nv, nu, 3)
+    ratios = []
+    for row in (5, 17, 33):
+        D0 = np.linalg.norm(P[5][:, None] - P[5][None, :], axis=-1)
+        Dk = np.linalg.norm(P[row][:, None] - P[row][None, :], axis=-1)
+        m = D0 > 1e-9
+        ratios.append(float((Dk[m] / D0[m]).std()))
+    assert max(ratios) < 1e-9, ratios
+    print("helicone: each swept copy is SIMILAR to the first (distance "
+          "ratios constant to %.0e), not congruent -- a similarity "
+          "sweep, unlike Darboux's" % max(ratios))
+
+    # ---- egg box: the sum/product identity ---------------------------
+    # a sin(x/b) sin(y/b) = (a/2)(sin((y-x+pi/2)/b) + sin((x+y-pi/2)/b)),
+    # so the product form really is the same surface turned and rescaled.
+    xs = np.linspace(-3.0, 3.0, 41)
+    X, Y = np.meshgrid(xs, xs, indexing='ij')
+    b = 1.0
+    lhs = np.sin(X / b) * np.sin(Y / b)
+    rhs = 0.5 * (np.sin((Y - X + math.pi / 2) / b)
+                 + np.sin((X + Y - math.pi / 2) / b))
+    assert float(np.max(np.abs(lhs - rhs))) < 1e-12
+    V, F = build_translation_surface(res=24)
+    P = np.asarray(V).reshape(24, 24, 3)
+    # a translation surface: sliding along v is the same shift at every u
+    shift = P[:, 7, :] - P[:, 3, :]
+    assert float(np.max(np.abs(shift - shift[0]))) < 1e-12
+    print("egg box: sum and product forms agree to 1e-12, and the sweep "
+          "is a pure translation (same shift at every station)")
+
+    # ---- sine torus: one parameter, three surfaces --------------------
+    # The seam is what decides the topology, so each case is checked on
+    # chi AND sidedness -- chi = 0 alone cannot tell a torus from a
+    # Klein bottle.
+    try:
+        from .minsurf.topology import euler_characteristic as _euler
+        from .other_polyhedra_generator import is_orientable as _ori
+    except ImportError:                       # flat import
+        from minsurf.topology import euler_characteristic as _euler
+        from other_polyhedra_generator import is_orientable as _ori
+    cases = ((1.0, 0.4, 0.0, 0, True, "torus"),
+             (1.0, 0.4, 1.0, 0, True, "torus"),
+             (1.0, 0.4, 0.5, 0, False, "Klein bottle"),
+             (1.0, 0.4, 1.5, 0, False, "Klein bottle"),
+             (1.0, 1.0, 0.5, 1, False, "cross-cap"))
+    for a, bb, kk, chi_w, ori_w, label in cases:
+        V, F = build_sine_torus(a, bb, kk, res_u=180, res_v=42)
+        F = [list(f) for f in F]
+        cnt = {}
+        for f in F:
+            for i in range(len(f)):
+                p, q = f[i], f[(i + 1) % len(f)]
+                cnt[(min(p, q), max(p, q))] = \
+                    cnt.get((min(p, q), max(p, q)), 0) + 1
+        assert all(c == 2 for c in cnt.values()), (label, "not closed")
+        chi = _euler(len(V), F)
+        ori = _ori(F)
+        assert chi == chi_w and ori == ori_w, (label, chi, ori)
+    # and k = 0 is an EXACT torus, not merely a torus-shaped thing
+    V, F = build_sine_torus(1.0, 0.4, 0.0, res_u=96, res_v=48)
+    A = np.asarray(V)
+    d = np.hypot(np.hypot(A[:, 0], A[:, 1]) - 1.0, A[:, 2])
+    assert float(d.max() - d.min()) < 1e-12, (d.min(), d.max())
+    print("sine torus: k = 0 and 1 give a torus (k = 0 exactly, tube "
+          "radius constant to 1e-12), k = 1/2 and 3/2 a Klein bottle, "
+          "and k = 1/2 with a = b a cross-cap")
+
     print("helical standalone tests passed")

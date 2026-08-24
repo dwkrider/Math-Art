@@ -40,6 +40,12 @@
 #     screwing up the axis; the right helicoid (slope 0) is minimal.
 #   TWIST_STRIP   -- an n-half-twist ruled band; odd n is a Mobius
 #     band (one-sided), even n an orientable twisted annulus.
+#   NAMED         -- five ruled surfaces that are named after what they
+#     were built for rather than after their equation: Gaudi's
+#     sinusoidal conoid (the Sagrada Familia escoles roof), Guimard's
+#     Art Nouveau surface, the milk carton / berlingot, the skew ruled
+#     cubic (a conic and a line joined by a homography), and Monge's
+#     surface of constant slope, the shape a heap of dry sand takes.
 #   HYPAR         -- the doubly-ruled hyperbolic paraboloid, either as
 #     z = c((x/a)^2 - (y/b)^2) or as the bilinear patch spanning four
 #     user-set skew corner points (the surface of any four points in
@@ -63,6 +69,17 @@
 # - F. A. Farris, "Spiral Ruled Surfaces," Bridges 2022 Conference
 #   Proceedings, pp. 289-292; and F. A. Farris, "Creating
 #   Symmetry" (Princeton Univ. Press, 2015).
+# - Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia
+#   escoles; Hector Guimard (1867-1942).  Both parametrizations, and the
+#   milk carton's, from R. Ferreol, "Encyclopedie des formes
+#   mathematiques remarquables" (mathcurve.com), chapters "surface de
+#   Gaudi", "surface de Guimard" and "berlingot".
+# - Milk carton: H. M. Cundy & A. P. Rollett, "Mathematical Models"
+#   (1951), 185-188.
+# - Surface of constant slope: Gaspard Monge (1807); see also R. Iss
+#   (1985).
+# - Ruled cubics as a conic and a line joined by a homography: the
+#   classification in R. Ferreol, ibid., chapter "cubique reglee".
 # - J. Plucker, "On a New Geometry of Space" (1865); H. Whitney,
 #   "The general type of singularity of a set of 2n-1 smooth
 #   functions of n variables" (1943).
@@ -360,6 +377,41 @@ def build_helical_cone(base_radius=1.0, height=2.0, flutes=6,
 # 3. spiral ruled surface (Farris)
 # --------------------------------------------------------------------
 
+def arrises_helical_cone(base_radius=1.0, height=2.0, flutes=6,
+                         flute_depth=0.18, twist=2.0, taper=1.0,
+                         orbit_amp=0.0, orbit_turns=1.0, n=48):
+    """Segments along the compound helical cone's ARRISES.
+
+    Every other mode here is straight-ruled, and its rod output draws
+    the rulings.  This one is not: the flutes wind as they climb and the
+    radius falls off faster than linearly, so no straight line lies in
+    the surface.  What it does have is its `flutes` ridge curves, the
+    arrises running from base to apex, and those are the lines a
+    Solomonic column is actually read by -- so they are what the rod and
+    curve outputs draw here.  Each is emitted as a polyline of short
+    segments rather than one straight rod.
+
+    A ridge sits where cos(flutes.theta + 2pi.twist.t) = 1, so
+    theta_k(t) = 2pi(k - twist.t) / flutes.
+    """
+    m = max(1, int(flutes))
+    steps = max(8, int(n))
+    segs = []
+    for k in range(m):
+        pts = []
+        for j in range(steps + 1):
+            t = j / steps
+            th = _TWO_PI * (k - twist * t) / m
+            Rt = base_radius * (1.0 - t) ** max(taper, 1e-6)
+            r = Rt * (1.0 + flute_depth * (1.0 - t))
+            cx = orbit_amp * Rt * math.cos(_TWO_PI * orbit_turns * t)
+            cy = orbit_amp * Rt * math.sin(_TWO_PI * orbit_turns * t)
+            pts.append((cx + r * math.cos(th), cy + r * math.sin(th),
+                        height * t))
+        segs.extend(zip(pts, pts[1:]))
+    return segs
+
+
 def build_spiral_ruled(tightness=0.15, slope=1.0, turns=2.0,
                        petals=1, petal_amp=0.0, v_extent=1.0,
                        res_u=200, res_v=20):
@@ -415,6 +467,101 @@ def rulings_spiral(tightness=0.15, slope=1.0, turns=2.0, petals=1,
 # --------------------------------------------------------------------
 # 4. conoids  (right conoid S = (v cos u, v sin u, h(u)))
 # --------------------------------------------------------------------
+
+def named_ruled_curves(kind, u, amp=0.5, extent=1.0, folds=2,
+                       wallis_a=1.0, wallis_b=0.6):
+    """The two directrix curves A(u), B(u) of a named ruled surface.
+
+    Every one of these is "the union of the lines A(u) B(u)" for two
+    curves, which is the oldest way of writing a ruled surface down and
+    the way all five sources state them.  Returning the pair rather than
+    a mesh keeps the definition in one place: the surface, its rulings
+    and its self-test all read the same two curves.
+    """
+    u = np.asarray(u, dtype=float)
+    z = np.zeros_like(u)
+    if kind == 'GAUDI':
+        # Right conoid z = k x sin(y/a): rulings run along x at each
+        # height y, all meeting the y-axis at right angles.  Gaudi
+        # roofed the Sagrada Familia escoles with it -- a warped surface
+        # you can nevertheless build out of straight timber.
+        a = max(1e-6, wallis_a)
+        k = amp / max(1e-6, extent)
+        return (np.stack([-extent + z, u, -k * extent * np.sin(u / a)], -1),
+                np.stack([extent + z, u, k * extent * np.sin(u / a)], -1))
+    if kind == 'GUIMARD':
+        # M moves along a line with a sinusoidal law, N around a circle
+        # with a doubled sinusoid, and the segment MN sweeps the surface
+        # Guimard used in his Art Nouveau ironwork.
+        a, b, c = wallis_a, extent, amp
+        return (np.stack([a * np.cos(u), z, z], -1),
+                np.stack([b * np.cos(u), b * np.sin(u),
+                          c * np.sin(u) ** 2], -1))
+    if kind == 'MILK_CARTON':
+        # The "berlingot": every horizontal section is an ellipse whose
+        # axes trade places as the height rises, so the top and bottom
+        # degenerate into two perpendicular segments.  Linear in the
+        # ruling parameter, which is why a paper carton folds flat.
+        k, al = max(1e-6, amp), max(1e-6, extent)
+        return (np.stack([z, 2 * k * al * np.sin(u), -al + z], -1),
+                np.stack([2 * k * al * np.cos(u), z, al + z], -1))
+    if kind == 'RULED_CUBIC':
+        # A conic, a line meeting its plane, and a homography between
+        # them: join corresponding points and the union is a cubic
+        # surface.  Here the conic is the unit circle taken rationally
+        # and the line is Oz, with the identity homography.
+        s = np.tan(np.clip(u, -1.5, 1.5))
+        d = 1.0 + s * s
+        return (np.stack([(1.0 - s * s) / d, 2.0 * s / d, z], -1),
+                np.stack([z, z, extent * s], -1))
+    # CONSTANT_SLOPE -- Monge's sandpile.  Rise from each point of a
+    # closed base curve along the curve's outward normal at a fixed
+    # angle; the result is the shape a heap of dry sand takes, and it is
+    # developable, since a constant-slope surface is the envelope of a
+    # one-parameter family of equal cones.
+    n = max(2, int(folds))
+    r = 1.0 + wallis_b * np.cos(n * u)               # base curve radius
+    dr = -wallis_b * n * np.sin(n * u)
+    cu, su = np.cos(u), np.sin(u)
+    base = np.stack([r * cu, r * su, z], -1)
+    # outward normal of the polar curve r(u)
+    tx, ty = dr * cu - r * su, dr * su + r * cu
+    ln = np.sqrt(tx * tx + ty * ty)
+    nx, ny = ty / ln, -tx / ln
+    slope = math.tan(math.radians(min(85.0, max(5.0, wallis_a * 45.0))))
+    top = base + extent * np.stack([nx, ny, slope * np.ones_like(u)], -1)
+    return base, top
+
+
+def build_named_ruled(kind='GAUDI', amp=0.5, extent=1.0, folds=2,
+                      wallis_a=1.0, wallis_b=0.6, res_u=160, res_v=16):
+    """Mesh a named ruled surface as the lines joining its two curves."""
+    wrap = kind in ('GUIMARD', 'MILK_CARTON', 'CONSTANT_SLOPE')
+    if kind == 'GAUDI':
+        u = np.linspace(-math.pi * wallis_a, math.pi * wallis_a, res_u)
+    elif kind == 'RULED_CUBIC':
+        u = np.linspace(-1.45, 1.45, res_u)
+    else:
+        u = np.linspace(0.0, _TWO_PI, res_u, endpoint=not wrap)
+    A, B = named_ruled_curves(kind, u, amp, extent, folds,
+                              wallis_a, wallis_b)
+    v = np.linspace(0.0, 1.0, res_v + 1)
+    P = A[:, None, :] + v[None, :, None] * (B - A)[:, None, :]
+    return _mesh_grid(P, wrap_u=wrap)
+
+
+def rulings_named_ruled(kind='GAUDI', amp=0.5, extent=1.0, folds=2,
+                        wallis_a=1.0, wallis_b=0.6, n=48):
+    if kind == 'GAUDI':
+        u = np.linspace(-math.pi * wallis_a, math.pi * wallis_a, n)
+    elif kind == 'RULED_CUBIC':
+        u = np.linspace(-1.45, 1.45, n)
+    else:
+        u = np.linspace(0.0, _TWO_PI, n, endpoint=False)
+    A, B = named_ruled_curves(kind, u, amp, extent, folds,
+                              wallis_a, wallis_b)
+    return [(tuple(A[i]), tuple(B[i])) for i in range(len(u))]
+
 
 def build_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
                  wallis_b=0.6, extent=1.0, res_u=120, res_v=16):
@@ -744,6 +891,65 @@ _MODES = [
     ('KNOT_SPAN', "Concentric Toroidal Knots",
      "Straight rulings strung between two concentric (p, q) torus "
      "knots; outer q=0 degenerates the outer curve to a circle"),
+    ('GAUDI', "Gaudi's Surface",
+     "Sinusoidal conoid z = k x sin(y/a); Gaudi roofed the Sagrada "
+     "Familia escoles with it, a warped surface built from straight "
+     "timber"),
+    ('GUIMARD', "Guimard's Surface",
+     "The lines joining a point moving sinusoidally along a line to a "
+     "point on a doubled sinusoid round a circle; Art Nouveau ironwork"),
+    ('MILK_CARTON', "Milk Carton",
+     "The berlingot: elliptical sections whose axes trade places with "
+     "height, closing to two perpendicular segments at top and bottom"),
+    ('RULED_CUBIC', "Skew Ruled Cubic",
+     "A conic, a line meeting its plane, and a homography between them; "
+     "the joining lines sweep a cubic surface"),
+    ('CONSTANT_SLOPE', "Surface of Constant Slope",
+     "Monge's sandpile: rise from a closed base curve along its normal "
+     "at a fixed angle, so every tangent plane leans the same way"),
+]
+
+#: modes whose natural default output is the filled SURFACE rather than
+#: the rulings.  The compound helical cone is the one such: it is not
+#: straight-ruled, so its rod output draws arrises rather than rulings
+#: and is a deliberate choice rather than the obvious first look.
+_SURFACE_FIRST = {'HELICAL_CONE'}
+
+
+def effective_output(op):
+    """Resolve the AUTO output against the mode.
+
+    Blender gives an enum one default, but the right first look differs
+    by surface: a ruled surface is best shown BY its rulings, while the
+    helical cone has none and reads as a column only when filled.  AUTO
+    is the sentinel that lets one property mean both.
+    """
+    if op.output != 'AUTO':
+        return op.output
+    return 'SURFACE' if op.mode in _SURFACE_FIRST else 'RODS'
+
+
+#: the five surfaces above, which share one builder
+_NAMED_MODES = ('GAUDI', 'GUIMARD', 'MILK_CARTON', 'RULED_CUBIC',
+                'CONSTANT_SLOPE')
+
+_NAMED_LABELS = [
+    ('GAUDI', "Gaudi's Surface",
+     "Sinusoidal conoid z = k x sin(y/a); Gaudi roofed the Sagrada "
+     "Familia escoles with it, a warped surface built from straight "
+     "timber"),
+    ('GUIMARD', "Guimard's Surface",
+     "The lines joining a point moving sinusoidally along a line to a "
+     "point on a doubled sinusoid round a circle; Art Nouveau ironwork"),
+    ('MILK_CARTON', "Milk Carton",
+     "The berlingot: elliptical sections whose axes trade places with "
+     "height, closing to two perpendicular segments at top and bottom"),
+    ('RULED_CUBIC', "Skew Ruled Cubic",
+     "A conic, a line meeting its plane, and a homography between them; "
+     "the joining lines sweep a cubic surface"),
+    ('CONSTANT_SLOPE', "Surface of Constant Slope",
+     "Monge's sandpile: rise from a closed base curve along its normal "
+     "at a fixed angle, so every tangent plane leans the same way"),
 ]
 
 _CONOID_KINDS = [
@@ -759,8 +965,9 @@ _CONOID_KINDS = [
 ]
 
 # modes that are genuinely straight-ruled -> rods available
-_RULED = {'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV',
-          'HELICOID', 'TWIST_STRIP', 'HYPAR', 'KNOT_SPAN'}
+_RULED = ({'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV', 'HELICOID',
+           'TWIST_STRIP', 'HYPAR', 'KNOT_SPAN', 'HELICAL_CONE'}
+          | set(_NAMED_MODES))
 
 
 def _build_surface(op):
@@ -786,6 +993,11 @@ def _build_surface(op):
                           op.wallis_a, op.wallis_b, op.v_extent,
                           op.res_u, op.res_v)
         return (*vf, "Conoid")
+    if m in _NAMED_MODES:
+        vf = build_named_ruled(m, op.amp, op.v_extent, op.folds,
+                               op.wallis_a, op.wallis_b,
+                               op.res_u, op.res_v)
+        return (*vf, dict((i[0], i[1]) for i in _NAMED_LABELS)[m])
     if m == 'TANGENT_DEV':
         vf = build_tangent_developable(op.radius, op.pitch, op.turns,
                                        op.v_extent, op.v_min,
@@ -825,12 +1037,20 @@ def _build_rulings(op, n=None):
     if m == 'HYPERBOLOID':
         return rulings_hyperboloid(op.radius, op.height, op.twist,
                                    op.family, n)
+    if m == 'HELICAL_CONE':
+        return arrises_helical_cone(
+            op.radius, op.cone_height, op.flutes, op.flute_depth,
+            op.cone_twist, op.taper, op.orbit_amp, op.orbit_turns,
+            max(8, n // max(1, int(op.flutes))))
     if m == 'SPIRAL':
         return rulings_spiral(op.tightness, op.slope, op.turns,
                               op.petals, op.petal_amp, op.v_extent, n)
     if m == 'CONOID':
         return rulings_conoid(op.conoid_kind, op.amp, op.folds,
                               op.wallis_a, op.wallis_b, op.v_extent, n)
+    if m in _NAMED_MODES:
+        return rulings_named_ruled(m, op.amp, op.v_extent, op.folds,
+                                   op.wallis_a, op.wallis_b, n)
     if m == 'TANGENT_DEV':
         return rulings_tangent_developable(op.radius, op.pitch,
                                            op.turns, op.v_extent,
@@ -892,6 +1112,13 @@ def _boundary_loops(op):
     N = max(8, op.res_u)
     if m == 'HYPAR':
         return _hypar_boundary(op, N)
+    if m == 'HELICAL_CONE':
+        # the arrises all meet at the apex, so a "rail" through their
+        # far ends would be a point; only the base circle is a curve
+        segs = arrises_helical_cone(
+            op.radius, op.cone_height, op.flutes, op.flute_depth,
+            op.cone_twist, op.taper, op.orbit_amp, op.orbit_turns, 2)
+        return [([s[0] for s in segs[::2]], True)]
     if m == 'HYPERBOLOID':
         # a single ruling family gives clean bottom/top rails
         segs = rulings_hyperboloid(op.radius, op.height, op.twist,
@@ -1168,8 +1395,15 @@ if _IN_BLENDER:
         output: EnumProperty(
             name="Output",
             description="Build the filled surface, or its straight "
-                        "rulings as solid rods or bare curves",
-            items=[('SURFACE', "Surface",
+                        "rulings as solid rods or bare curves.  The "
+                        "compound helical cone is not straight-ruled, "
+                        "so for that one these draw its arrises -- the "
+                        "helical ridges of its flutes",
+            items=[('AUTO', "Automatic",
+                    "Rulings as rods for the straight-ruled surfaces, "
+                    "and the filled surface for the compound helical "
+                    "cone, which has none"),
+                   ('SURFACE', "Surface",
                     "The filled ruled surface"),
                    ('RODS', "Rulings as Rods",
                     "The straight rulings as solid rods (string / "
@@ -1177,7 +1411,7 @@ if _IN_BLENDER:
                    ('CURVES', "Bare Curves",
                     "The straight rulings as a bare wireframe of "
                     "edges (no faces)")],
-            default='SURFACE')
+            default='AUTO')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
                             max=400,
                             description="Number of rulings drawn in rods "
@@ -1207,12 +1441,13 @@ if _IN_BLENDER:
             verts, faces, name = _build_surface(self)
             edges = []
             info = ""
-            want_rulings = self.output in ('RODS', 'CURVES')
+            out = effective_output(self)
+            want_rulings = out in ('RODS', 'CURVES')
             if want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
                 if self.show_boundaries:
                     segs = segs + _loop_segments(_boundary_loops(self))
-                if self.output == 'RODS':
+                if out == 'RODS':
                     verts, faces = _rods(segs, self.rod_radius, 8)
                     name += " (Rods)"
                 else:
@@ -1245,7 +1480,7 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            if self.thickness > 0 and self.output == 'SURFACE':
+            if self.thickness > 0 and out == 'SURFACE':
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
                 mod.offset = 0.0
@@ -1272,6 +1507,18 @@ if _IN_BLENDER:
             elif m == 'SPIRAL':
                 keys = ('tightness', 'slope', 'turns', 'petals',
                         'petal_amp', 'v_extent')
+            elif m in _NAMED_MODES:
+                nk = m
+                if nk == 'GAUDI':
+                    keys = ('amp', 'wallis_a', 'v_extent')
+                elif nk == 'GUIMARD':
+                    keys = ('amp', 'wallis_a', 'v_extent')
+                elif nk == 'MILK_CARTON':
+                    keys = ('amp', 'v_extent')
+                elif nk == 'RULED_CUBIC':
+                    keys = ('v_extent',)
+                else:
+                    keys = ('folds', 'wallis_a', 'wallis_b', 'v_extent')
             elif m == 'CONOID':
                 lay.prop(self, 'conoid_kind')
                 keys = ('amp',)
@@ -1309,11 +1556,11 @@ if _IN_BLENDER:
             lay.prop(self, 'res_v')
             if m in _RULED:
                 lay.prop(self, 'output')
-                if self.output in ('RODS', 'CURVES'):
+                if effective_output(self) in ('RODS', 'CURVES'):
                     if m == 'HYPERBOLOID':
                         lay.prop(self, 'family')
                     lay.prop(self, 'n_rods')
-                    if self.output == 'RODS':
+                    if effective_output(self) == 'RODS':
                         lay.prop(self, 'rod_radius')
                     lay.prop(self, 'show_boundaries')
             for k in ('smooth', 'thickness', 'scale'):
@@ -1490,4 +1737,74 @@ def _selftest():
                'TWIST_STRIP', 'HYPAR'):
         assert md in _RULED
     print(f"curves: {len(segs)} segments -> V={len(ev)} E={len(ee)} OK")
+
+    # ---- the five named ruled surfaces --------------------------------
+    # Each is checked on the property that DEFINES it, not on its mesh.
+    for kd in ('GAUDI', 'GUIMARD', 'MILK_CARTON', 'RULED_CUBIC',
+               'CONSTANT_SLOPE'):
+        V, F = build_named_ruled(kd, res_u=90, res_v=8)
+        assert len(F) > 0 and np.all(np.isfinite(np.asarray(V))), kd
+        assert len(rulings_named_ruled(kd, n=24)) == 24, kd
+
+    # Milk carton: the source gives a closed-form volume, which is an
+    # independent check on the parametrization rather than on the mesh.
+    k, al = 0.5, 1.0
+    V, F = build_named_ruled('MILK_CARTON', amp=k, extent=al,
+                             res_u=320, res_v=160)
+    V = np.asarray(V)
+    vol = 0.0
+    for f in F:
+        for i in range(1, len(f) - 1):
+            a, b, c = V[f[0]], V[f[i]], V[f[i + 1]]
+            vol += float(np.dot(a, np.cross(b, c))) / 6.0
+    want = 4.0 * math.pi * k * k * al ** 3 / 3.0
+    assert abs(abs(vol) - want) < 1e-3 * want, (abs(vol), want)
+    print("milk carton: volume %.6f vs the published 4.pi.k^2.a^3/3 = "
+          "%.6f OK" % (abs(vol), want))
+
+    # Constant slope: the tangent plane must make the SAME angle with the
+    # horizontal everywhere -- that is the definition.  Measured on the
+    # analytic tangent plane, not on mesh triangles: a quad only lies in
+    # the tangent plane in the limit, so a mesh test would be reporting
+    # its own truncation error (it falls off like 1/res, from 1.4e-2 at
+    # res 100 to 2.2e-5 at 1600).
+    uu = np.linspace(0.0, _TWO_PI, 900, endpoint=False)
+    du = 1e-7
+    worst = 0.0
+    for vv in (0.0, 0.35, 0.7, 1.0):
+        A, B = named_ruled_curves('CONSTANT_SLOPE', uu)
+        A2, B2 = named_ruled_curves('CONSTANT_SLOPE', uu + du)
+        P = A + vv * (B - A)
+        Pu = ((A2 + vv * (B2 - A2)) - P) / du
+        N = np.cross(Pu, B - A)
+        nz = np.abs(N[:, 2] / np.linalg.norm(N, axis=1))
+        worst = max(worst, float(nz.max() - nz.min()))
+        assert abs(float(nz.mean()) - 1.0 / math.sqrt(2.0)) < 1e-6, nz.mean()
+    assert worst < 1e-9, worst
+    print("constant slope: tangent plane holds one angle to the "
+          "horizontal across the whole surface (spread %.1e) OK" % worst)
+
+    # Ruled cubic: it should satisfy a cubic and NOT a quadric.  Fitting
+    # both and looking at the null space says which -- a cubic with a
+    # 1-dimensional null space is one surface, not a coincidence.
+    uu = np.linspace(-1.4, 1.4, 80)
+    A, B = named_ruled_curves('RULED_CUBIC', uu)
+    vv = np.linspace(0.0, 1.0, 18)
+    P = (A[:, None, :] + vv[None, :, None] * (B - A)[:, None, :])
+    P = P.reshape(-1, 3)
+    P = P[np.all(np.isfinite(P), axis=1)]
+
+    def _nullity(deg):
+        mon = [(i, j, k) for i in range(deg + 1)
+               for j in range(deg + 1 - i) for k in range(deg + 1 - i - j)]
+        M = np.stack([P[:, 0] ** i * P[:, 1] ** j * P[:, 2] ** k
+                      for i, j, k in mon], 1)
+        s = np.linalg.svd(M, compute_uv=False)
+        return int(np.sum(s < 1e-6 * s[0])), float(s[-1] / s[0])
+    n2, _r2 = _nullity(2)
+    n3, r3 = _nullity(3)
+    assert n2 == 0, "the ruled cubic collapsed onto a quadric"
+    assert n3 == 1, ("expected exactly one cubic", n3)
+    print("ruled cubic: no quadric fits, and exactly one cubic does "
+          "(residual %.1e) OK" % r3)
     print("RESULT: OK")

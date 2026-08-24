@@ -66,6 +66,42 @@
 #        makes it famous, finite volume pi(1 - 1/L) with a lateral area
 #        that diverges like 2 pi ln L.
 #
+# 7. Schwarz's lantern -- the companion pathology to Gabriel's horn, and
+#    the one that cost the subject a definition.  A polyhedron every one
+#    of whose vertices lies ON a cylinder, built of 4.m.n triangles by
+#    spiking each cell of an m x n grid out to the cell centre.  Inscribed
+#    polygons always converge to a curve's length, and the same was
+#    assumed of surfaces; Schwarz's lantern shows it is false.  Refine the
+#    height much faster than the circumference and the spikes stay as
+#    sharp as they were while multiplying without limit, so the area
+#    diverges although the surface tends to the cylinder pointwise.  The
+#    area of a cylinder is therefore NOT the supremum of the areas of the
+#    polyhedra inscribed in it -- and any real number above 2.pi.r.h is
+#    the limit of some sequence of lanterns.  Both limits are measured in
+#    `_selftest`.
+#
+# 8. Three surfaces of revolution defined by a differential condition
+#    rather than by a formula, each gated on that condition:
+#      Bouguer dome -- a^2 y'' = x sqrt(1 + y'^2), the shape a masonry
+#        dome must take to stand by compression alone.  It is the
+#        catenary's equation (a y'' = sqrt(1+y'^2)) with an extra factor
+#        of x: what the third dimension costs.
+#      Hanging drop -- 2H = z / a^2, mean curvature proportional to
+#        height, which is Young-Laplace with the hydrostatic head.  This
+#        is the classical closed profile; for the same physics solved
+#        variationally, with a contact angle and a free contact line,
+#        see cmc_generator's sessile drop.
+#      Neiloid -- a rho^2 = z^3, the revolution of Neile's semicubical
+#        parabola, checked against its closed-form volume.
+#
+# References for 8: Pierre Bouguer (1734), studied by Charles Bossut
+#    (1778); see E. Benvenuto, "An Introduction to the History of
+#    Structural Mechanics", part II, 344-348.  William Neile (1637-1670)
+#    for the semicubical parabola.  Both, and the hanging drop, from
+#    R. Ferreol, "Encyclopedie des formes mathematiques remarquables"
+#    (mathcurve.com), chapters "dome de Bouguer", "goutte d'eau" and
+#    "neiloide".
+#
 # References for 5: J. Tannery, Bulletin des sciences mathematiques,
 #    2e serie, 16 (1892) 190.  O. Zoll, "Ueber Flaechen mit Scharen
 #    geschlossener geodaetischer Linien", Mathematische Annalen 57
@@ -74,6 +110,13 @@
 #    "Encyclopedie des formes mathematiques remarquables",
 #    mathcurve.com, chapter "poire de Tannery"; a converted copy is in
 #    research/books/mathcurve_encyclopedie_formes_mathematiques/.
+#
+# References for 7: H. A. Schwarz, "Sur une definition erronee de l'aire
+#    d'une surface courbe", in "Gesammelte Mathematische Abhandlungen",
+#    vol. 2, Springer 1890, 309-311 (the counterexample and the name).
+#    Construction with a centre vertex per cell after R. Ferreol,
+#    "Encyclopedie des formes mathematiques remarquables", mathcurve.com,
+#    chapter "lampion de Schwarz".
 #
 # References for 4: C. Dupin, "Applications de Geometrie et de
 #    Mechanique", Paris 1822.  B. Odehnal, "Ortho-Circles of Dupin
@@ -98,8 +141,10 @@ import math
 
 try:
     from .surfaces.encyclopedia import build_zoll
+    from .sharp_creases import mark_sharp
 except ImportError:                       # flat import outside the package
     from surfaces.encyclopedia import build_zoll
+    from sharp_creases import mark_sharp
 
 try:
     import bpy
@@ -279,6 +324,230 @@ def build_gabriels_horn(length=6.0, segments=96, rings=120):
                           (j + 1) * segments + i))
     return verts, faces
 
+def _thin(profile, keep):
+    """Subsample a profile to about `keep` points, ends included.
+
+    The three ODE profiles are integrated FINELY -- accuracy there is
+    cheap and is what the self-tests measure -- but meshing every step
+    would spend tens of thousands of vertices on a smooth curve.  So the
+    integration stays fine and only the mesh is thinned.
+    """
+    n = len(profile)
+    if n <= keep or keep < 2:
+        return profile
+    step = (n - 1) / float(keep - 1)
+    out = [profile[int(round(i * step))] for i in range(keep)]
+    return out
+
+
+def _revolve(profile, segments=96, caps=False):
+    """Revolve a (rho, z) profile about Oz.
+
+    Rings whose radius has collapsed to zero become a single vertex, so
+    a profile that reaches the axis closes with a fan instead of a band
+    of degenerate quads.
+    """
+    n = max(3, int(segments))
+    th = [2.0 * math.pi * i / n for i in range(n)]
+    verts, rows = [], []
+    for rho, z in profile:
+        if abs(rho) < 1e-12:
+            rows.append([len(verts)] * n)
+            verts.append((0.0, 0.0, z))
+        else:
+            base = len(verts)
+            verts.extend((rho * math.cos(t), rho * math.sin(t), z)
+                         for t in th)
+            rows.append([base + i for i in range(n)])
+    faces = []
+    for a, b in zip(rows, rows[1:]):
+        for i in range(n):
+            j = (i + 1) % n
+            ring = [a[i], a[j], b[j], b[i]]
+            clean = [ring[0]] + [q for p, q in zip(ring, ring[1:])
+                                 if p != q]
+            if len(clean) > 2 and clean[0] == clean[-1]:
+                clean = clean[:-1]
+            if len(clean) >= 3:
+                faces.append(clean)
+    rims = []
+    if caps:
+        # A flat lid on either end that has not closed on the axis.
+        # Without them the surface is not a solid and no volume the
+        # divergence theorem computes from it means anything.  Each lid
+        # meets the wall at a genuine circular fold, and those rims are
+        # returned so they can be creased: smooth shading across them
+        # rounds off the cut and makes a drop look like it dissolves
+        # into the air instead of hanging from a pipe.
+        for row, rev in ((rows[0], True), (rows[-1], False)):
+            if row[0] == row[1]:                  # closed on the axis
+                continue
+            faces.append(list(reversed(row)) if rev else list(row))
+            rims.extend((row[i], row[(i + 1) % n]) for i in range(n))
+    return verts, faces, rims
+
+
+def bouguer_profile(a=1.0, extent=1.6, steps=160):
+    """[(rho, z)] of the BOUGUER DOME, the dome of constant thrust.
+
+        a^2 y'' = x sqrt(1 + y'^2),   z = f(rho)
+
+    Bouguer asked in 1734 what shape a masonry dome must take so that
+    the line of thrust runs inside the masonry everywhere -- so that it
+    stands by compression alone.  The answer is this profile.  It is
+    worth comparing with the CATENARY, which solves the same equation
+    without the leading x, a y'' = sqrt(1 + y'^2), and is the answer to
+    the corresponding question for an ARCH: the extra factor of x is
+    what the third dimension costs.
+
+    Integrated in the closed form the source gives,
+    f(x) = a * integral_0^x sinh(X^2 / 2a^2) dX, by Simpson's rule.
+    """
+    n = max(8, int(steps))
+    h = float(extent) / n
+
+    def g(x):
+        return math.sinh(x * x / (2.0 * a * a))
+    # accumulate the integral one step at a time, each step by Simpson's
+    # rule on its own midpoint -- so the profile is sampled at every x
+    # rather than at every other one
+    xs, zs, acc = [0.0], [0.0], 0.0
+    for i in range(n):
+        x0 = i * h
+        acc += h / 6.0 * (g(x0) + 4.0 * g(x0 + 0.5 * h) + g(x0 + h))
+        xs.append(x0 + h)
+        zs.append(a * acc)
+    top = zs[-1]
+    return [(x, top - z) for x, z in zip(xs, zs)]
+
+
+def pendant_drop_profile(a=1.0, apex=1.0, steps=600, span=2.6):
+    """[(rho, z)] of the HANGING DROP OF WATER.
+
+    The drop hanging at the end of a vertical pipe is the surface of
+    revolution whose mean curvature at each point is proportional to the
+    height, which is Young-Laplace with the hydrostatic head included:
+
+        dphi/ds + sin(phi) / rho = z / a^2
+
+    with rho' = cos(phi), z' = sin(phi) along the profile's arclength.
+    Integrated by RK4 from the apex, where the sin(phi)/rho term is
+    removable -- both principal curvatures are equal there, so
+    dphi/ds = z / (2 a^2).
+
+    This is the classical closed profile.  For the same physics solved
+    variationally, with a real contact angle and a free contact line,
+    see `cmc_generator`, whose sessile drop minimizes the same energy.
+    """
+    ds = float(span) / max(16, int(steps))
+    rho, z, phi = 0.0, float(apex), 0.0
+
+    def dphi(r, zz, ph):
+        return (zz / (a * a) - (math.sin(ph) / r if r > 1e-9
+                                else zz / (2.0 * a * a)))
+    out = [(0.0, z)]
+    for _ in range(int(steps)):
+        k = []
+        st = (rho, z, phi)
+        for w in (0.0, 0.5, 0.5, 1.0):
+            r_, z_, p_ = (st[0] + w * ds * (k[-1][0] if k else 0.0),
+                          st[1] + w * ds * (k[-1][1] if k else 0.0),
+                          st[2] + w * ds * (k[-1][2] if k else 0.0))
+            k.append((math.cos(p_), math.sin(p_), dphi(r_, z_, p_)))
+        rho += ds / 6.0 * (k[0][0] + 2 * k[1][0] + 2 * k[2][0] + k[3][0])
+        z += ds / 6.0 * (k[0][1] + 2 * k[1][1] + 2 * k[2][1] + k[3][1])
+        phi += ds / 6.0 * (k[0][2] + 2 * k[1][2] + 2 * k[2][2] + k[3][2])
+        if rho < 0.0:
+            break
+        out.append((rho, z))
+    return out
+
+
+def neiloid_profile(a=1.0, z0=0.15, z1=1.0, steps=96):
+    """[(rho, z)] of the NEILOID, a rho^2 = z^3.
+
+    The solid of revolution of Neile's semicubical parabola.  Foresters
+    use it as one of the standard idealised trunk shapes, between the
+    cone and the paraboloid, and it has the tidy closed volume
+    V = pi (z2^4 - z1^4) / 4a between two horizontal planes -- which is
+    what `_selftest` measures the mesh against.
+    """
+    n = max(4, int(steps))
+    return [(math.sqrt(max(0.0, (z0 + (z1 - z0) * i / n) ** 3 / a)),
+             z0 + (z1 - z0) * i / n) for i in range(n + 1)]
+
+
+def build_schwarz_lantern(sectors=12, rings=12, radius=1.0, height=2.0,
+                          lids=False):
+    """Schwarz's lantern: a polyhedron INSCRIBED in a cylinder whose area
+    can be made to exceed the cylinder's by as much as one likes.
+
+    Unroll the cylinder to a rectangle, cut it into `rings` bands by
+    `sectors` columns, and put a vertex at each cell corner AND at each
+    cell centre -- all of them on the cylinder.  The four corners of a cell
+    lie on a chord plane that cuts INSIDE the cylinder, while the centre
+    stays on the surface, so each cell becomes a shallow outward spike of
+    four triangles: 4 * sectors * rings faces in all.
+
+    Why it matters.  Refining a curve's inscribed polygon always converges
+    to the arc length, and it is tempting to assume the same of surfaces.
+    It is false.  The radial overshoot of a spike is
+    r(1 - cos(pi/sectors)) ~ r.pi^2 / (2.sectors^2), which shrinks with the
+    ANGULAR refinement only, while the number of spikes grows with BOTH.
+    Refine the height much faster than the circumference and the spikes
+    stay as sharp as ever while multiplying without bound, so the total
+    area diverges even though every vertex lies on the cylinder and the
+    surface converges to it pointwise.  Taking rings ~ sectors^3 is enough:
+    area(k, k) -> 2.pi.r.h, but area(k, k^3) -> infinity.  `_selftest`
+    measures both limits, since a lantern with the wrong stagger would
+    still look like a lantern.
+    """
+    sectors = max(3, int(sectors))
+    rings = max(1, int(rings))
+    dth = 2.0 * math.pi / sectors
+    dz = float(height) / rings
+
+    def on_cyl(j, i):                       # angular index j, height index i
+        th = j * dth
+        return (radius * math.cos(th), radius * math.sin(th),
+                -height / 2.0 + i * dz)
+    verts = []
+    for i in range(rings + 1):              # (rings+1) x sectors corners
+        for j in range(sectors):
+            verts.append(on_cyl(j, i))
+
+    def corner(i, j):
+        return i * sectors + (j % sectors)
+    faces = []
+    for i in range(rings):
+        for j in range(sectors):
+            c = len(verts)
+            verts.append(on_cyl(j + 0.5, i + 0.5))     # cell centre, on cyl
+            a, b = corner(i, j), corner(i, j + 1)
+            d, e = corner(i + 1, j + 1), corner(i + 1, j)
+            faces += [[a, b, c], [b, d, c], [d, e, c], [e, a, c]]
+    if lids:                                # close it into a polyhedron
+        faces.append([corner(0, j) for j in range(sectors - 1, -1, -1)])
+        faces.append([corner(rings, j) for j in range(sectors)])
+    return verts, faces
+
+
+def lantern_area(sectors, rings, radius=1.0, height=2.0):
+    """Total area of the lantern's triangles (lids excluded)."""
+    V, F = build_schwarz_lantern(sectors, rings, radius, height)
+    tot = 0.0
+    for f in F:
+        if len(f) != 3:
+            continue
+        a, b, c = (V[i] for i in f)
+        u = [b[i] - a[i] for i in range(3)]
+        w = [c[i] - a[i] for i in range(3)]
+        n = (u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2],
+             u[0] * w[1] - u[1] * w[0])
+        tot += 0.5 * math.sqrt(sum(x * x for x in n))
+    return tot
+
+
 def build_cyclide(kind='RING', ring=1.0, tube=0.45, centre=1.9,
                   power=1.6, segments=96, rings=48):
     """A Dupin cyclide, as the inversion of a torus of revolution.
@@ -424,6 +693,20 @@ if _IN_BLENDER:
                    ('ASTROIDAL', "Astroidal Ellipsoid",
                     "(x/a)^(2/3) + (y/b)^(2/3) + (z/c)^(2/3) = 1, "
                     "with astroid sections and six cusps"),
+                   ('BOUGUER', "Bouguer Dome",
+                    "The dome of constant thrust (Bouguer 1734): the "
+                    "shape a masonry dome must take to stand by "
+                    "compression alone"),
+                   ('PENDANT_DROP', "Hanging Drop of Water",
+                    "The drop hanging from a vertical pipe: a surface "
+                    "of revolution whose curvature is proportional to "
+                    "the height"),
+                   ('NEILOID', "Neiloid",
+                    "a rho^2 = z^3, the solid of revolution of Neile's "
+                    "semicubical parabola"),
+                   ('SCHWARZ_LANTERN', "Schwarz's Lantern",
+                    "A polyhedron inscribed in a cylinder whose area can "
+                    "exceed the cylinder's without bound"),
                    ('GABRIEL', "Gabriel's Horn",
                     "y = 1/x revolved: finite volume, infinite "
                     "lateral area"),
@@ -476,6 +759,46 @@ if _IN_BLENDER:
             description="Upper limit L of x in y = 1/x; the enclosed "
                         "volume tends to pi as L grows while the "
                         "lateral area diverges (Gabriel's horn only)")
+        dome_a: FloatProperty(
+            name="Scale a", default=1.0, min=0.05, max=10.0,
+            description="The a in Bouguer's a^2 y'' = x sqrt(1 + y'^2), "
+                        "and the a in the neiloid's a rho^2 = z^3")
+        dome_extent: FloatProperty(
+            name="Base Radius", default=1.6, min=0.2, max=6.0,
+            description="How far out the dome's profile runs "
+                        "(Bouguer dome only)")
+        drop_a: FloatProperty(
+            name="Capillary Length", default=1.0, min=0.1, max=6.0,
+            description="The a in 2H = z / a^2: large a is a nearly "
+                        "spherical drop, small a a long pendant one "
+                        "(hanging drop only)")
+        drop_apex: FloatProperty(
+            name="Apex Height", default=1.0, min=0.05, max=6.0,
+            description="Height of the drop's lowest point above the "
+                        "zero-curvature plane (hanging drop only)")
+        drop_span: FloatProperty(
+            name="Profile Length", default=2.2, min=0.3, max=8.0,
+            description="How far the profile is integrated along its "
+                        "own arc before the neck is cut (hanging drop "
+                        "only)")
+        neiloid_z0: FloatProperty(
+            name="Base Height", default=0.2, min=0.01, max=0.95,
+            description="Where the trunk is cut off below; the tip at "
+                        "z = 0 is a cusp (neiloid only)")
+        lantern_sectors: IntProperty(
+            name="Sectors", default=12, min=3, max=256,
+            description="Columns around the cylinder; the spikes get "
+                        "blunter as this rises (Schwarz's lantern only)")
+        lantern_rings: IntProperty(
+            name="Bands", default=12, min=1, max=4096,
+            description="Bands up the cylinder.  Raising this alone "
+                        "multiplies the spikes without blunting them, so "
+                        "the area grows without bound -- try bands near "
+                        "the cube of the sectors (Schwarz's lantern only)")
+        lantern_lids: BoolProperty(
+            name="Cap the Ends", default=False,
+            description="Add the top and bottom polygons, which close the "
+                        "lantern into a polyhedron (Schwarz's lantern only)")
         cyclide_ring: FloatProperty(
             name="Ring Radius", default=1.0, min=0.05, max=10.0,
             description="Radius R of the torus centre circle "
@@ -500,7 +823,10 @@ if _IN_BLENDER:
             description="Rings across the surface (twice as "
                         "many segments around)")
         smooth: BoolProperty(name="Smooth Shading", default=True,
-                             description="Shade the surface smooth")
+                             description="Shade the surface smooth. "
+                                         "Ignored for Schwarz's lantern, "
+                                         "whose faces are flat and whose "
+                                         "every edge is a fold")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
@@ -511,6 +837,7 @@ if _IN_BLENDER:
 
         def execute(self, context):
             res = self.resolution
+            rims = []                     # cap rims to crease, if any
             if self.surface == 'FRESNEL':
                 verts, faces = build_fresnel(
                     self.semi_a, self.semi_b, self.semi_c,
@@ -534,6 +861,30 @@ if _IN_BLENDER:
                 verts, faces = build_gabriels_horn(
                     self.horn_length, 2 * res, 3 * res)
                 name = "Gabriel's Horn"
+            elif self.surface == 'BOUGUER':
+                verts, faces, rims = _revolve(
+                    _thin(bouguer_profile(self.dome_a, self.dome_extent,
+                                          8 * res), res),
+                    2 * res, caps=True)
+                name = "Bouguer Dome"
+            elif self.surface == 'PENDANT_DROP':
+                verts, faces, rims = _revolve(
+                    _thin(pendant_drop_profile(
+                        self.drop_a, self.drop_apex, 24 * res,
+                        self.drop_span), res),
+                    2 * res, caps=True)
+                name = "Hanging Drop"
+            elif self.surface == 'NEILOID':
+                verts, faces, rims = _revolve(
+                    _thin(neiloid_profile(self.dome_a, self.neiloid_z0,
+                                          1.0, 4 * res), res),
+                    2 * res, caps=True)
+                name = "Neiloid"
+            elif self.surface == 'SCHWARZ_LANTERN':
+                verts, faces = build_schwarz_lantern(
+                    self.lantern_sectors, self.lantern_rings,
+                    1.0, 2.0, self.lantern_lids)
+                name = "Schwarz's Lantern"
             elif self.surface.startswith('CYCLIDE_'):
                 kind = self.surface.split('_', 1)[1]
                 verts, faces = build_cyclide(
@@ -563,8 +914,30 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            # The lantern is a POLYHEDRON, not a sampled smooth surface:
+            # every face is planar and every edge is a genuine fold, so
+            # there is nothing for smooth shading to interpolate and
+            # letting it run averages away the spikes that are the whole
+            # point.  Flat-shade it whatever the toggle says, and mark
+            # every edge sharp and creased so a later subdivide or bevel
+            # keeps the faceting too.  The creases are known here at
+            # build time, so they are marked exactly rather than found
+            # by an angle test that shallow folds would slip past.
+            # The cut rim of a capped profile is a real fold: the flat
+            # lid meets the curved wall at a circle, and shading
+            # smoothly across it makes the drop look like it dissolves
+            # into the air rather than hanging from a pipe.
+            if rims:
+                mark_sharp(me, rims)
+            lantern = self.surface == 'SCHWARZ_LANTERN'
             me.polygons.foreach_set(
-                'use_smooth', [self.smooth] * len(me.polygons))
+                'use_smooth',
+                [False if lantern else self.smooth] * len(me.polygons))
+            if lantern:
+                edges = {(min(f[i], f[(i + 1) % len(f)]),
+                          max(f[i], f[(i + 1) % len(f)]))
+                         for f in faces for i in range(len(f))}
+                mark_sharp(me, edges)
             me.update()
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
@@ -577,9 +950,19 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            self.report({'INFO'},
-                        f"{name}: V={len(me.vertices)} "
-                        f"F={len(me.polygons)}")
+            if self.surface == 'SCHWARZ_LANTERN':
+                # the number worth seeing: how far the inscribed area has
+                # run away from the cylinder it is inscribed in
+                a = lantern_area(self.lantern_sectors, self.lantern_rings)
+                cyl = 2.0 * math.pi * 1.0 * 2.0
+                self.report({'INFO'},
+                            f"{name}: V={len(me.vertices)} "
+                            f"F={len(me.polygons)}, area {a / cyl:.2f}x the "
+                            f"cylinder it is inscribed in")
+            else:
+                self.report({'INFO'},
+                            f"{name}: V={len(me.vertices)} "
+                            f"F={len(me.polygons)}")
             return {'FINISHED'}
 
         def draw(self, context):
@@ -592,8 +975,25 @@ if _IN_BLENDER:
             elif self.surface == 'PAPERBAG':
                 for k in ('bag_a', 'bag_b'):
                     lay.prop(self, k)
-            for k in ('resolution', 'smooth', 'thickness',
-                      'scale'):
+            elif self.surface == 'GABRIEL':
+                lay.prop(self, 'horn_length')
+            elif self.surface == 'BOUGUER':
+                for k in ('dome_a', 'dome_extent'):
+                    lay.prop(self, k)
+            elif self.surface == 'PENDANT_DROP':
+                for k in ('drop_a', 'drop_apex', 'drop_span'):
+                    lay.prop(self, k)
+            elif self.surface == 'NEILOID':
+                for k in ('dome_a', 'neiloid_z0'):
+                    lay.prop(self, k)
+            elif self.surface == 'SCHWARZ_LANTERN':
+                for k in ('lantern_sectors', 'lantern_rings',
+                          'lantern_lids'):
+                    lay.prop(self, k)
+            keys = ('smooth', 'thickness', 'scale') \
+                if self.surface == 'SCHWARZ_LANTERN' \
+                else ('resolution', 'smooth', 'thickness', 'scale')
+            for k in keys:                  # the lantern has its own counts
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -818,5 +1218,92 @@ def _selftest():
         print("gabriel's horn L=%-5.0f profile r*x=1 to %.0e, volume "
               "%.4f (exact %.4f), lateral area %.2f (> 2 pi ln L = "
               "%.2f)" % (L, worst, vol, want_v, area, want_a))
+
+    # Schwarz's lantern.  Every vertex lies exactly on the cylinder, and
+    # the face count is 4 * sectors * rings.  The two limits are the whole
+    # point of the object, so both are measured: refined evenly the area
+    # converges to the cylinder's, but refined with rings ~ sectors^3 it
+    # runs away -- and must do so monotonically in k.
+    cyl = 2.0 * math.pi * 1.0 * 2.0
+    for s, r in ((6, 4), (12, 12), (9, 40)):
+        verts, faces = build_schwarz_lantern(s, r, 1.0, 2.0)
+        assert len(faces) == 4 * s * r, (len(faces), s, r)
+        assert _finite(verts) and _valid(verts, faces)
+        for (x, y, z) in verts:            # inscribed: all vertices on it
+            assert abs(math.hypot(x, y) - 1.0) < 1e-12, (x, y, z)
+            assert -1.0 - 1e-12 <= z <= 1.0 + 1e-12, z
+        vl, fl = build_schwarz_lantern(s, r, 1.0, 2.0, lids=True)
+        assert _watertight(fl), "capped lantern is not closed"
+    evenly = [lantern_area(k, k) for k in (8, 16, 32, 64, 128)]
+    assert all(evenly[i] > evenly[i + 1] for i in range(len(evenly) - 1)), \
+        evenly                              # settling down onto the cylinder
+    assert abs(evenly[-1] - cyl) / cyl < 2e-3, (evenly[-1], cyl)
+    runaway = [lantern_area(k, k ** 3) for k in (3, 5, 8, 12)]
+    assert all(runaway[i] < runaway[i + 1] for i in range(len(runaway) - 1)), \
+        runaway                             # and here it never settles
+    assert runaway[-1] > 4.0 * cyl, runaway[-1]
+    print("schwarz lantern: all vertices on the cylinder; area(k,k) -> "
+          "%.4f vs cylinder %.4f, while area(k,k^3) climbs %.0f -> %.0f "
+          "(%.1fx the cylinder) with no sign of stopping"
+          % (evenly[-1], cyl, runaway[0], runaway[-1], runaway[-1] / cyl))
+
+    # ---- three surfaces of revolution defined by a differential ------
+    # condition rather than a formula.  Each is checked on that
+    # condition, or on a closed form the source states independently.
+    a = 1.0
+    P = bouguer_profile(a=a, extent=1.6, steps=4000)
+    xs = [p[0] for p in P]
+    ys = [p[1] for p in P]
+    res = 0.0
+    for i in range(2, len(P) - 2):
+        h = xs[i + 1] - xs[i]
+        y1 = (ys[i + 1] - ys[i - 1]) / (2 * h)
+        y2 = (ys[i + 1] - 2 * ys[i] + ys[i - 1]) / (h * h)
+        if 0.15 < xs[i] < 1.45:
+            res = max(res, abs(a * a * y2 + xs[i]
+                               * math.sqrt(1.0 + y1 * y1)))
+    assert res < 1e-5, res
+    print("bouguer dome: profile satisfies a^2 y'' = x sqrt(1+y'^2) to "
+          "%.0e -- the catenary's equation with the extra factor of x "
+          "that the third dimension costs" % res)
+
+    # The hanging drop: its DEFINITION is 2H = z / a^2, and that is
+    # measured back off the finished profile rather than trusted from
+    # the integrator that produced it.
+    P = pendant_drop_profile(a=1.0, apex=1.0, steps=3000, span=2.2)
+    rho = [p[0] for p in P]
+    zz = [p[1] for p in P]
+    worst = 0.0
+    for i in range(3, len(P) - 6):
+        if rho[i] < 0.15:
+            continue
+        dr = (rho[i + 1] - rho[i - 1]) / 2.0
+        dz = (zz[i + 1] - zz[i - 1]) / 2.0
+        ds = math.hypot(dr, dz)
+        ph = math.atan2(dz, dr)
+        ph0 = math.atan2((zz[i] - zz[i - 2]) / 2.0,
+                         (rho[i] - rho[i - 2]) / 2.0)
+        ph1 = math.atan2((zz[i + 2] - zz[i]) / 2.0,
+                         (rho[i + 2] - rho[i]) / 2.0)
+        twoH = (ph1 - ph0) / (2.0 * ds) + math.sin(ph) / rho[i]
+        worst = max(worst, abs(twoH - zz[i] / 1.0))
+    assert worst < 1e-4, worst
+    print("hanging drop: mean curvature stays proportional to height, "
+          "|2H - z/a^2| < %.0e measured off the profile" % worst)
+
+    # Neiloid: the source gives the volume in closed form, so the mesh
+    # is measured against it -- and refined until it agrees.
+    prev = None
+    for res_n in (200, 400, 800):
+        V, F, _rims = _revolve(neiloid_profile(1.0, 0.2, 1.0, res_n),
+                               res_n, caps=True)
+        vol = abs(_volume(V, F))
+        want = math.pi / 4.0 * (1.0 ** 4 - 0.2 ** 4)
+        err = abs(vol - want) / want
+        assert prev is None or err < prev, (res_n, err, prev)
+        prev = err
+    assert err < 1e-4, err
+    print("neiloid: volume converges on the published "
+          "pi(z2^4 - z1^4)/4a, relative error %.1e at 800 steps" % err)
 
     print("miscellaneous surfaces standalone tests passed")

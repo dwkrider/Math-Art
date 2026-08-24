@@ -26,6 +26,16 @@
 #     stereographically projected to R^3 (embedded, with a round
 #     great-circle boundary).
 #
+#   * Morin's surface -- the halfway model of turning a sphere inside
+#     out: the moment in Morin's eversion when the surface is exactly
+#     half turned through, so that a quarter turn about the axis carries
+#     it onto itself while exchanging its two sides.  Apery's
+#     parametrization puts it in one family with Boy's surface, indexed
+#     by an order n, and the family's PARITY decides the topology: even n
+#     is an immersed sphere (n = 2 is Morin's), odd n an immersed
+#     projective plane (n = 3 is Boy's).  Both are exact identities in
+#     the formula -- see minsurf/topology.build_morin.
+#
 # Non-orientable surfaces cannot embed in 3-space, so KLEIN / KLEIN8 /
 # CROSSCAP / ROMAN / BOY are immersions with self-intersections. The
 # parametric grids are closed combinatorially -- boundary
@@ -51,6 +61,14 @@
 #   S^3", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman
 #   and Daniel Asimov (cf. G. Francis, "A Topological Picturebook",
 #   Springer 1987).
+# - Morin's surface: Bernard Morin (1933-2018); B. Morin and J.-P. Petit
+#   on turning a sphere inside out.  Parametrization by Francois Apery,
+#   "Models of the Real Projective Plane" (Vieweg, 1987), p. 104; via
+#   R. Ferreol, "Encyclopedie des formes mathematiques remarquables"
+#   (mathcurve.com), chapter "surface de Morin".
+# - Sphere eversion exists at all: Stephen Smale, "A classification of
+#   immersions of the two-sphere", Trans. AMS 90 (1959), 281-290 -- a
+#   proof that gave no picture, which is what Morin's model supplies.
 # - Menagerie after ch. 6 of H. Segerman, "Visualizing Mathematics
 #   with 3D Printing" (2016).
 
@@ -71,7 +89,7 @@ import numpy as np
 # The mathematics lives in the sibling `minsurf` engine package;
 # this module is the Blender layer over it.
 try:
-    from .minsurf.topology import (build_boy, build_crosscap,
+    from .minsurf.topology import (build_boy, build_crosscap, build_morin,
                                    build_steiner,
                                        build_genus, build_klein_bottle,
                                       build_nonorientable,
@@ -80,7 +98,7 @@ try:
                                        build_sudanese_mobius,
                                        build_twist_strip, edge_face_counts)
 except ImportError:  # flat import outside the package
-    from minsurf.topology import (build_boy, build_crosscap,
+    from minsurf.topology import (build_boy, build_crosscap, build_morin,
                                   build_steiner,
                                       build_genus, build_klein_bottle,
                                       build_klein_figure8, build_roman,
@@ -201,6 +219,12 @@ PRESET_ITEMS = [
      "Roman surface at 0 degrees to the cross-cap at 90"),
     ('BOY', "Boy's Surface",
      "Boy's surface, Bryant-Kusner parametrization"),
+    ('MORIN', "Morin's Surface",
+     "The halfway model of turning a sphere inside out: the moment in "
+     "Morin's eversion when the surface is exactly half turned through "
+     "and a quarter turn exchanges its two sides.  Apery's order-n "
+     "family, in which EVEN n gives an immersed sphere (n = 2 is "
+     "Morin's) and ODD n an immersed projective plane (n = 3 is Boy's)"),
     ('NONORIENT', "Non-Orientable Genus-k",
      "The closed non-orientable surface N_k: a sphere with k "
      "cross-caps. k = 1 is the projective plane, k = 2 the Klein "
@@ -213,6 +237,7 @@ PRESET_ITEMS = [
 ]
 
 _IMMERSIONS = {'KLEIN', 'KLEIN8', 'SUDANESE', 'CROSSCAP', 'ROMAN', 'BOY',
+               'MORIN',
                'STEINER'}
 
 
@@ -252,6 +277,20 @@ if _IN_BLENDER:
         res_v: IntProperty(
             name="Resolution V", default=48, min=4, max=512,
             description="Samples along v (across / radial)")
+        morin_order: IntProperty(
+            name="Order", default=2, min=2, max=12,
+            description="Order n of Apery's family, and the surface's "
+                        "rotational symmetry.  EVEN n gives an immersed "
+                        "sphere -- 2 is Morin's own surface -- and ODD n "
+                        "an immersed projective plane, 3 being Boy's "
+                        "(Morin's surface only)")
+        morin_k: FloatProperty(
+            name="Pinch", default=1.0, min=0.0, max=1.35,
+            description="Apery's k.  It only enters the denominator "
+                        "sqrt2 - k sin 2u sin nv, so it deepens the "
+                        "surface's lobes without touching any of its "
+                        "symmetries; 0 flattens it to a round shape "
+                        "(Morin's surface only)")
         steiner_angle: FloatProperty(
             name="Projection Angle", default=0.0, min=-180.0, max=180.0,
             description="Direction, in degrees, from which the "
@@ -325,6 +364,11 @@ if _IN_BLENDER:
             elif p == 'BOY':
                 V, F = build_boy(self.res_u, self.res_v)
                 name = "Boy Surface"
+            elif p == 'MORIN':
+                V, F = build_morin(max(8, self.res_v), max(8, self.res_u),
+                                   self.morin_order, self.morin_k)
+                name = ("Morin Surface" if self.morin_order % 2 == 0
+                        else "Boy Surface (Apery n=%d)" % self.morin_order)
             elif p == 'NONORIENT':
                 V, F = build_nonorientable(
                     self.cross_caps, max(16, self.res_u),
@@ -380,6 +424,12 @@ if _IN_BLENDER:
             else:
                 if p == 'STEINER':
                     lay.prop(self, 'steiner_angle')
+                if p == 'MORIN':
+                    lay.prop(self, 'morin_order')
+                    lay.prop(self, 'morin_k')
+                    lay.label(text=("immersed sphere (Morin)"
+                                    if self.morin_order % 2 == 0
+                                    else "projective plane (Boy)"))
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')
                 lay.prop(self, 'thickness')

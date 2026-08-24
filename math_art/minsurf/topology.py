@@ -284,6 +284,101 @@ def build_boy(ntheta, nrings):
     return np.array(verts), faces
 
 
+def morin_point(u, v, n=2, k=1.0):
+    """Apery's parametrization of the Morin-Boy family, order n.
+
+        x + iy = K ( A e^{i(n-1)v} + B e^{-iv} ),   z = K cos u
+        A = 2 cos u / (n - 1),  B = sqrt2 sin u,
+        K = cos u / (sqrt2 - k sin 2u sin nv)
+
+    Written with x and y as one complex number, which is what makes the
+    surface's symmetries obvious rather than a surprise: under
+    v -> v + phi the two terms turn by (n-1)phi and -phi, so they agree
+    on a single rotation exactly when n.phi is a multiple of 2.pi.
+    """
+    cu, su = np.cos(u), np.sin(u)
+    K = cu / (math.sqrt(2.0) - k * np.sin(2.0 * u) * np.sin(n * v))
+    A = 2.0 * cu / (n - 1.0)
+    B = math.sqrt(2.0) * su
+    return (K * (A * np.cos((n - 1) * v) + B * np.cos(v)),
+            K * (A * np.sin((n - 1) * v) - B * np.sin(v)),
+            K * cu)
+
+
+def build_morin(nu, nv, n=2, k=1.0):
+    """Morin's surface (even n) or Boy's surface (odd n), order n.
+
+    Morin's surface is the halfway model of turning a sphere inside out.
+    Smale proved in 1957 that an eversion exists without saying what one
+    looks like; Morin, who was blind, produced the model at the midpoint
+    of the motion, where the surface is exactly half turned through and
+    the two sides can be exchanged.  Apery's parametrization puts it in
+    one family with Boy's surface, and the family's PARITY decides the
+    topology:
+
+      * even n -- the map is injective on the domain, so the picture is
+        an immersed SPHERE.  n = 2 is Morin's surface.
+      * odd n -- the map satisfies F(-u, v + pi) = F(u, v) identically,
+        so the domain double-covers the image and the picture is an
+        immersed PROJECTIVE PLANE.  n = 3 is Boy's surface.
+
+    Both facts are exact identities in the formula, not observations
+    about a picture, and `_selftest` checks them as such along with the
+    two symmetries every member has:
+
+        F(u, v + 2.pi/n)  = R_z(-2.pi/n) F(u, v)        order n
+        F(-u, v + pi/n)   = R_z(pi - pi/n) F(u, v)      swaps the sides
+
+    The second is the one that matters here.  It carries the surface onto
+    itself while reversing u, which reverses the orientation of the
+    parametrization -- so it exchanges the inside with the outside.  At
+    n = 2 its rotation is pi - pi/2 = a QUARTER TURN, which is precisely
+    the move Morin and Petit describe at the centre of the eversion.
+
+    The domain is u in [-pi/2, pi/2] (halved for odd n, where the rest is
+    a repeat) by v around a circle.  K carries cos u, so both u = +-pi/2
+    edges collapse to the origin; those poles are the triple point.
+    """
+    nv += nv % 2                     # v ~ v + pi pairs columns for odd n
+    odd = (n % 2 == 1)
+    u0, u1 = (0.0, math.pi / 2) if odd else (-math.pi / 2, math.pi / 2)
+    v = TAU * np.arange(nv) / nv
+
+    verts, rows = [], []
+    for i in range(nu + 1):
+        u = u0 + (u1 - u0) * i / nu
+        if abs(abs(u) - math.pi / 2) < 1e-12:        # collapsed pole
+            rows.append([len(verts)] * nv)
+            verts.append((0.0, 0.0, 0.0))
+            continue
+        x, y, z = morin_point(u, v, n, k)
+        if odd and i == 0:
+            # u = 0 is a half circle: F(0, v + pi) = F(0, v), so the two
+            # halves of the row are the same points and must share indices
+            half = nv // 2
+            base = len(verts)
+            verts.extend(zip(x[:half], y[:half], z[:half]))
+            rows.append([base + (j % half) for j in range(nv)])
+            continue
+        base = len(verts)
+        verts.extend(zip(x, y, z))
+        rows.append([base + j for j in range(nv)])
+
+    faces = []
+    for i in range(nu):
+        a, b = rows[i], rows[i + 1]
+        for j in range(nv):
+            jn = (j + 1) % nv
+            quad = [a[j], a[jn], b[jn], b[j]]
+            ring = []
+            for q in quad:                            # poles degenerate
+                if q not in ring:
+                    ring.append(q)
+            if len(ring) >= 3:
+                faces.append(tuple(ring))
+    return np.array(verts, dtype=float), faces
+
+
 _GENUS_R = 1.0          # circle radius
 
 
@@ -661,6 +756,50 @@ def _selftest():
     ok &= not bad
     print("topology: 7 Steiner shadows are all closed one-sided "
           "surfaces with chi = 1 %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # Morin / Boy family.  The two symmetries and the parity rule are
+    # exact identities in Apery's formula, so they are checked as
+    # identities -- on the parametrization, at machine precision --
+    # rather than inferred from the mesh.
+    def _rz(t):
+        c, s = math.cos(t), math.sin(t)
+        return np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+
+    def _pt(u, v, n):
+        return np.array(morin_point(np.float64(u), np.float64(v), n))
+    bad = []
+    probes = [(0.3, 0.4), (-0.7, 2.2), (1.1, 5.0), (0.9, 1.3), (1.4, 0.05)]
+    for n in (2, 3, 4, 5, 6, 7):
+        rot = max(np.linalg.norm(_pt(u, v + TAU / n, n)
+                                 - _rz(-TAU / n) @ _pt(u, v, n))
+                  for u, v in probes)
+        swap = max(np.linalg.norm(_pt(-u, v + math.pi / n, n)
+                                  - _rz(math.pi - math.pi / n) @ _pt(u, v, n))
+                   for u, v in probes)
+        rp2 = max(np.linalg.norm(_pt(-u, v + math.pi, n) - _pt(u, v, n))
+                  for u, v in probes)
+        if rot > 1e-12:
+            bad.append('n=%d:rotation %.1e' % (n, rot))
+        if swap > 1e-12:
+            bad.append('n=%d:side-swap %.1e' % (n, swap))
+        # odd n folds onto RP^2, even n does not -- that is the whole
+        # difference between a Boy surface and a Morin surface
+        if (n % 2 == 1) != (rp2 < 1e-12):
+            bad.append('n=%d:parity rp2=%.1e' % (n, rp2))
+        V, F = build_morin(40, 40, n)
+        chi = _chi(V, F)
+        want = 1 if n % 2 else 2
+        if chi != want:
+            bad.append('n=%d:chi=%d want %d' % (n, chi, want))
+        if _orientable(F) != (n % 2 == 0):
+            bad.append('n=%d:sidedness' % n)
+        if not np.all(np.isfinite(V)):
+            bad.append('n=%d:non-finite' % n)
+    ok &= not bad
+    print("topology: Morin/Boy family n = 2..7 -- order-n rotation and "
+          "the side-swapping symmetry exact to 1e-12; even n closed "
+          "two-sided chi = 2 (Morin), odd n one-sided chi = 1 (Boy) %s"
           % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     print("RESULT:", "OK" if ok else "FAIL")

@@ -23,6 +23,11 @@
 # - Polar zonohedra and rhombic spirallohedra: Russell Towle
 #   (zonohedra.com).
 # - Antiprism (Adrian Rossiter), the `zono` program.
+# - Rhombic rose (the flat, two-dimensional case): Alan H. Schoen,
+#   "Rhombic rosettes" (schoengeometry.com); construction and counts from
+#   Robert Ferreol, "Encyclopedie des formes mathematiques remarquables"
+#   (mathcurve.com), "rosace rhombique".  Its order-5 pair of rhombi are
+#   the ones in Roger Penrose's rhomb tilings.
 
 bl_info = {
     "name": "Zonohedra Generator",
@@ -208,6 +213,10 @@ if _IN_BLENDER:
         ('ENNEACONTA', "Rhombic Enneacontahedron", "10 dodecahedral axes"),
         ('CUBE', "Cube", "3 orthogonal vectors"),
         ('RANDOM', "Random Star", "n random unit vectors"),
+        ('ROSETTE', "Rhombic Rose",
+         "The two-dimensional member of the family: rings of rhombi "
+         "filling a regular polygon.  At order 5 its two rhombi are the "
+         "ones the Penrose tilings are made of"),
     ]
 
     class MESH_OT_zonohedron_add(bpy.types.Operator):
@@ -301,6 +310,13 @@ if _IN_BLENDER:
                     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
                     bm.to_mesh(me)
                     bm.free()
+                elif kind == 'ROSETTE':
+                    # flat: the zonogon rather than the zonotope
+                    rv, rf, _rings = _zt.rhombic_rosette(self.n)
+                    me = bpy.data.meshes.new("Rhombic Rose")
+                    me.from_pydata([(x, y, 0.0) for (x, y) in rv], [],
+                                   [tuple(f) for f in rf])
+                    me.validate(clean_customdata=True)
                 else:
                     # The faces come straight out of the star (see
                     # polyhedra/zonotope.py), so there is no 2^n subset-sum
@@ -380,7 +396,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'kind')
-            if self.kind in ('POLAR', 'SPIRAL', 'RANDOM'):
+            if self.kind in ('POLAR', 'SPIRAL', 'RANDOM', 'ROSETTE'):
                 lay.prop(self, 'n')
             if self.kind == 'SPIRAL':
                 lay.prop(self, 'spiral_width')
