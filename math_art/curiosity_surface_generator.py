@@ -324,6 +324,22 @@ def build_gabriels_horn(length=6.0, segments=96, rings=120):
                           (j + 1) * segments + i))
     return verts, faces
 
+def _thin(profile, keep):
+    """Subsample a profile to about `keep` points, ends included.
+
+    The three ODE profiles are integrated FINELY -- accuracy there is
+    cheap and is what the self-tests measure -- but meshing every step
+    would spend tens of thousands of vertices on a smooth curve.  So the
+    integration stays fine and only the mesh is thinned.
+    """
+    n = len(profile)
+    if n <= keep or keep < 2:
+        return profile
+    step = (n - 1) / float(keep - 1)
+    out = [profile[int(round(i * step))] for i in range(keep)]
+    return out
+
+
 def _revolve(profile, segments=96, caps=False):
     """Revolve a (rho, z) profile about Oz.
 
@@ -840,19 +856,22 @@ if _IN_BLENDER:
                 name = "Gabriel's Horn"
             elif self.surface == 'BOUGUER':
                 verts, faces = _revolve(
-                    bouguer_profile(self.dome_a, self.dome_extent,
-                                    8 * res), 2 * res, caps=True)
+                    _thin(bouguer_profile(self.dome_a, self.dome_extent,
+                                          8 * res), res),
+                    2 * res, caps=True)
                 name = "Bouguer Dome"
             elif self.surface == 'PENDANT_DROP':
                 verts, faces = _revolve(
-                    pendant_drop_profile(self.drop_a, self.drop_apex,
-                                         12 * res, self.drop_span),
+                    _thin(pendant_drop_profile(
+                        self.drop_a, self.drop_apex, 24 * res,
+                        self.drop_span), res),
                     2 * res, caps=True)
                 name = "Hanging Drop"
             elif self.surface == 'NEILOID':
                 verts, faces = _revolve(
-                    neiloid_profile(self.dome_a, self.neiloid_z0, 1.0,
-                                    4 * res), 2 * res, caps=True)
+                    _thin(neiloid_profile(self.dome_a, self.neiloid_z0,
+                                          1.0, 4 * res), res),
+                    2 * res, caps=True)
                 name = "Neiloid"
             elif self.surface == 'SCHWARZ_LANTERN':
                 verts, faces = build_schwarz_lantern(
@@ -945,22 +964,6 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             elif self.surface == 'GABRIEL':
                 lay.prop(self, 'horn_length')
-            elif self.surface == 'BOUGUER':
-                verts, faces = _revolve(
-                    bouguer_profile(self.dome_a, self.dome_extent,
-                                    8 * res), 2 * res, caps=True)
-                name = "Bouguer Dome"
-            elif self.surface == 'PENDANT_DROP':
-                verts, faces = _revolve(
-                    pendant_drop_profile(self.drop_a, self.drop_apex,
-                                         12 * res, self.drop_span),
-                    2 * res, caps=True)
-                name = "Hanging Drop"
-            elif self.surface == 'NEILOID':
-                verts, faces = _revolve(
-                    neiloid_profile(self.dome_a, self.neiloid_z0, 1.0,
-                                    4 * res), 2 * res, caps=True)
-                name = "Neiloid"
             elif self.surface == 'BOUGUER':
                 for k in ('dome_a', 'dome_extent'):
                     lay.prop(self, k)

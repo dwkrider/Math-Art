@@ -377,6 +377,41 @@ def build_helical_cone(base_radius=1.0, height=2.0, flutes=6,
 # 3. spiral ruled surface (Farris)
 # --------------------------------------------------------------------
 
+def arrises_helical_cone(base_radius=1.0, height=2.0, flutes=6,
+                         flute_depth=0.18, twist=2.0, taper=1.0,
+                         orbit_amp=0.0, orbit_turns=1.0, n=48):
+    """Segments along the compound helical cone's ARRISES.
+
+    Every other mode here is straight-ruled, and its rod output draws
+    the rulings.  This one is not: the flutes wind as they climb and the
+    radius falls off faster than linearly, so no straight line lies in
+    the surface.  What it does have is its `flutes` ridge curves, the
+    arrises running from base to apex, and those are the lines a
+    Solomonic column is actually read by -- so they are what the rod and
+    curve outputs draw here.  Each is emitted as a polyline of short
+    segments rather than one straight rod.
+
+    A ridge sits where cos(flutes.theta + 2pi.twist.t) = 1, so
+    theta_k(t) = 2pi(k - twist.t) / flutes.
+    """
+    m = max(1, int(flutes))
+    steps = max(8, int(n))
+    segs = []
+    for k in range(m):
+        pts = []
+        for j in range(steps + 1):
+            t = j / steps
+            th = _TWO_PI * (k - twist * t) / m
+            Rt = base_radius * (1.0 - t) ** max(taper, 1e-6)
+            r = Rt * (1.0 + flute_depth * (1.0 - t))
+            cx = orbit_amp * Rt * math.cos(_TWO_PI * orbit_turns * t)
+            cy = orbit_amp * Rt * math.sin(_TWO_PI * orbit_turns * t)
+            pts.append((cx + r * math.cos(th), cy + r * math.sin(th),
+                        height * t))
+        segs.extend(zip(pts, pts[1:]))
+    return segs
+
+
 def build_spiral_ruled(tightness=0.15, slope=1.0, turns=2.0,
                        petals=1, petal_amp=0.0, v_extent=1.0,
                        res_u=200, res_v=20):
@@ -856,12 +891,29 @@ _MODES = [
     ('KNOT_SPAN', "Concentric Toroidal Knots",
      "Straight rulings strung between two concentric (p, q) torus "
      "knots; outer q=0 degenerates the outer curve to a circle"),
-    ('NAMED', "Named Surfaces",
-     "Gaudi's and Guimard's surfaces, the milk carton, the skew ruled "
-     "cubic and Monge's surface of constant slope"),
+    ('GAUDI', "Gaudi's Surface",
+     "Sinusoidal conoid z = k x sin(y/a); Gaudi roofed the Sagrada "
+     "Familia escoles with it, a warped surface built from straight "
+     "timber"),
+    ('GUIMARD', "Guimard's Surface",
+     "The lines joining a point moving sinusoidally along a line to a "
+     "point on a doubled sinusoid round a circle; Art Nouveau ironwork"),
+    ('MILK_CARTON', "Milk Carton",
+     "The berlingot: elliptical sections whose axes trade places with "
+     "height, closing to two perpendicular segments at top and bottom"),
+    ('RULED_CUBIC', "Skew Ruled Cubic",
+     "A conic, a line meeting its plane, and a homography between them; "
+     "the joining lines sweep a cubic surface"),
+    ('CONSTANT_SLOPE', "Surface of Constant Slope",
+     "Monge's sandpile: rise from a closed base curve along its normal "
+     "at a fixed angle, so every tangent plane leans the same way"),
 ]
 
-_NAMED_KINDS = [
+#: the five surfaces above, which share one builder
+_NAMED_MODES = ('GAUDI', 'GUIMARD', 'MILK_CARTON', 'RULED_CUBIC',
+                'CONSTANT_SLOPE')
+
+_NAMED_LABELS = [
     ('GAUDI', "Gaudi's Surface",
      "Sinusoidal conoid z = k x sin(y/a); Gaudi roofed the Sagrada "
      "Familia escoles with it, a warped surface built from straight "
@@ -893,8 +945,9 @@ _CONOID_KINDS = [
 ]
 
 # modes that are genuinely straight-ruled -> rods available
-_RULED = {'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV',
-          'HELICOID', 'TWIST_STRIP', 'HYPAR', 'KNOT_SPAN', 'NAMED'}
+_RULED = ({'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV', 'HELICOID',
+           'TWIST_STRIP', 'HYPAR', 'KNOT_SPAN', 'HELICAL_CONE'}
+          | set(_NAMED_MODES))
 
 
 def _build_surface(op):
@@ -920,12 +973,11 @@ def _build_surface(op):
                           op.wallis_a, op.wallis_b, op.v_extent,
                           op.res_u, op.res_v)
         return (*vf, "Conoid")
-    if m == 'NAMED':
-        vf = build_named_ruled(op.named_kind, op.amp, op.v_extent,
-                               op.folds, op.wallis_a, op.wallis_b,
+    if m in _NAMED_MODES:
+        vf = build_named_ruled(m, op.amp, op.v_extent, op.folds,
+                               op.wallis_a, op.wallis_b,
                                op.res_u, op.res_v)
-        return (*vf, dict((i[0], i[1]) for i in _NAMED_KINDS)[
-            op.named_kind])
+        return (*vf, dict((i[0], i[1]) for i in _NAMED_LABELS)[m])
     if m == 'TANGENT_DEV':
         vf = build_tangent_developable(op.radius, op.pitch, op.turns,
                                        op.v_extent, op.v_min,
@@ -965,15 +1017,20 @@ def _build_rulings(op, n=None):
     if m == 'HYPERBOLOID':
         return rulings_hyperboloid(op.radius, op.height, op.twist,
                                    op.family, n)
+    if m == 'HELICAL_CONE':
+        return arrises_helical_cone(
+            op.base_radius, op.height, op.flutes, op.flute_depth,
+            op.twist, op.taper, op.orbit_amp, op.orbit_turns,
+            max(8, n // max(1, int(op.flutes))))
     if m == 'SPIRAL':
         return rulings_spiral(op.tightness, op.slope, op.turns,
                               op.petals, op.petal_amp, op.v_extent, n)
     if m == 'CONOID':
         return rulings_conoid(op.conoid_kind, op.amp, op.folds,
                               op.wallis_a, op.wallis_b, op.v_extent, n)
-    if m == 'NAMED':
-        return rulings_named_ruled(op.named_kind, op.amp, op.v_extent,
-                                   op.folds, op.wallis_a, op.wallis_b, n)
+    if m in _NAMED_MODES:
+        return rulings_named_ruled(m, op.amp, op.v_extent, op.folds,
+                                   op.wallis_a, op.wallis_b, n)
     if m == 'TANGENT_DEV':
         return rulings_tangent_developable(op.radius, op.pitch,
                                            op.turns, op.v_extent,
@@ -1035,6 +1092,13 @@ def _boundary_loops(op):
     N = max(8, op.res_u)
     if m == 'HYPAR':
         return _hypar_boundary(op, N)
+    if m == 'HELICAL_CONE':
+        # the arrises all meet at the apex, so a "rail" through their
+        # far ends would be a point; only the base circle is a curve
+        segs = arrises_helical_cone(
+            op.base_radius, op.height, op.flutes, op.flute_depth,
+            op.twist, op.taper, op.orbit_amp, op.orbit_turns, 2)
+        return [([s[0] for s in segs[::2]], True)]
     if m == 'HYPERBOLOID':
         # a single ruling family gives clean bottom/top rails
         segs = rulings_hyperboloid(op.radius, op.height, op.twist,
@@ -1082,9 +1146,6 @@ if _IN_BLENDER:
                            default='HYPERBOLOID',
                            description="Which ruled-surface family to "
                                        "build")
-        named_kind: EnumProperty(
-            name="Surface", items=_NAMED_KINDS, default='GAUDI',
-            description="Which named ruled surface to build")
         conoid_kind: EnumProperty(name="Conoid", items=_CONOID_KINDS,
                                   default='PLUCKER',
                                   description="Which right conoid to "
@@ -1314,7 +1375,10 @@ if _IN_BLENDER:
         output: EnumProperty(
             name="Output",
             description="Build the filled surface, or its straight "
-                        "rulings as solid rods or bare curves",
+                        "rulings as solid rods or bare curves.  The "
+                        "compound helical cone is not straight-ruled, "
+                        "so for that one these draw its arrises -- the "
+                        "helical ridges of its flutes",
             items=[('SURFACE', "Surface",
                     "The filled ruled surface"),
                    ('RODS', "Rulings as Rods",
@@ -1418,9 +1482,8 @@ if _IN_BLENDER:
             elif m == 'SPIRAL':
                 keys = ('tightness', 'slope', 'turns', 'petals',
                         'petal_amp', 'v_extent')
-            elif m == 'NAMED':
-                lay.prop(self, 'named_kind')
-                nk = self.named_kind
+            elif m in _NAMED_MODES:
+                nk = m
                 if nk == 'GAUDI':
                     keys = ('amp', 'wallis_a', 'v_extent')
                 elif nk == 'GUIMARD':
