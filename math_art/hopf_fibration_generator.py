@@ -1658,7 +1658,9 @@ if _IN_BLENDER:
                     lay.prop(self, 'mono_color')
 
             lay.separator()
-            lay.prop(self, 'sphere_euler')
+            col = lay.column(align=True)
+            col.label(text="Sphere Rotation")
+            col.prop(self, 'sphere_euler', text="")
             lay.prop(self, 's3_rot')
             if self.output != 'SURFACE':
                 lay.prop(self, 'include_axis')
