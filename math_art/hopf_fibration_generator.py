@@ -1185,16 +1185,27 @@ if _IN_BLENDER:
             nt.links.new(vc.outputs["Color"], bsdf.inputs["Base Color"])
         return mat
 
-    def _simple_material(name, rgb):
+    def _simple_material(name, rgb, alpha=1.0):
         """A flat-coloured material whose colour shows in every viewport
         shading mode (viewport `diffuse_color` for Solid, node base colour
-        for Material Preview / Rendered)."""
+        for Material Preview / Rendered).  `alpha` < 1 makes it
+        translucent so nested surfaces read through each other."""
         mat = bpy.data.materials.new(name)
-        mat.diffuse_color = (*rgb, 1.0)
+        mat.diffuse_color = (*rgb, alpha)
         mat.use_nodes = True
         node = mat.node_tree.nodes.get("Principled BSDF")
         if node:
             node.inputs["Base Color"].default_value = (*rgb, 1.0)
+            if alpha < 1.0 and "Alpha" in node.inputs:
+                node.inputs["Alpha"].default_value = alpha
+        if alpha < 1.0:
+            for attr, val in (('blend_method', 'BLEND'),
+                              ('surface_render_method', 'BLENDED'),
+                              ('show_transparent_back', False)):
+                try:
+                    setattr(mat, attr, val)
+                except (AttributeError, TypeError):
+                    pass
         return mat
 
     def _finish(context, obj):
@@ -1283,6 +1294,11 @@ if _IN_BLENDER:
         tube_sides: IntProperty(name="Tube Sides", default=8,
                                 min=3, max=32,
                                 description="Sides around each swept tube")
+        surface_alpha: FloatProperty(
+            name="Surface Opacity", default=0.55, min=0.05, max=1.0,
+            description="Opacity of the nested tori (Surface output); "
+                        "below 1 the tori read through each other "
+                        "(shows in Material Preview / Rendered)")
         bead_count: IntProperty(
             name="Beads / Fibre", default=48, min=4, max=400,
             description="Spheres placed along each fibre (Beads output)")
@@ -1492,14 +1508,27 @@ if _IN_BLENDER:
                     me.validate(clean_customdata=True)
                     me.polygons.foreach_set('use_smooth',
                                             [True] * len(me.polygons))
-                    if self.color_fibers:
-                        self._write_colors(me, [(*self._rgb(b), 1.0)
-                                                for b in vbase])
-                    me.update()
                     obj = bpy.data.objects.new(name, me)
-                    if self.color_fibers:
-                        obj.data.materials.append(
-                            _color_material(name))
+                    if self.color_fibers and len(me.polygons) == len(faces):
+                        # one (deduped) material per fibre colour, keyed to
+                        # each face's base point -- shows in every shading
+                        # mode; surface_alpha lets the nested tori read
+                        # through each other.
+                        mats, colmap, midx = [], {}, []
+                        for f in faces:
+                            rgb = self._rgb(vbase[f[0]])
+                            key = tuple(round(x, 3) for x in rgb)
+                            mi = colmap.get(key)
+                            if mi is None:
+                                mi = len(mats)
+                                mats.append(_simple_material(
+                                    f"{name} {mi}", rgb, self.surface_alpha))
+                                colmap[key] = mi
+                            midx.append(mi)
+                        for m in mats:
+                            obj.data.materials.append(m)
+                        me.polygons.foreach_set('material_index', midx)
+                    me.update()
                     _finish(context, obj)
                     self._select(context, obj)
                     if self.show_base_sphere:
@@ -1646,6 +1675,8 @@ if _IN_BLENDER:
             elif self.output == 'BEADS':
                 lay.prop(self, 'bead_count')
                 lay.prop(self, 'bead_radius')
+            elif self.output == 'SURFACE':
+                lay.prop(self, 'surface_alpha')
             if self.output != 'SURFACE':
                 lay.prop(self, 'markers')
                 if self.markers > 0:
