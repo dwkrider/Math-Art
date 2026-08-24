@@ -7,7 +7,10 @@
 #     edge midpoints -- a centrally symmetric hexagon dimer);
 #   * the 3 convex hexagons that tile (Reinhardt Types 1-3);
 #   * the 15 convex pentagons that tile the plane;
-#   * Durer's tiling (1525), the one NON-PERIODIC member here.
+#   * Durer's tiling (1525), a NON-PERIODIC member;
+#   * Durer's ORIGINAL pentagon-and-rhombus tiling (1525) -- strictly
+#     DIHEDRAL (two prototiles), kept here as the historical companion
+#     of the hexagon version above; see its section for the exception.
 #
 # Each tiling is described by a TRANSLATIONAL UNIT CELL: two lattice
 # vectors b1, b2 plus the tile copies (rotated / reflected / glided)
@@ -34,11 +37,13 @@
 #   construction followed here (base hexagon, wedge offsets and the
 #   interleaved second family) is Robert Ferreol's, in "Encyclopedie des
 #   formes mathematiques remarquables" (mathcurve.com), "pavage de
-#   Durer".  Durer's own n = 5 figure refines the hexagon further into a
-#   regular pentagon and a 36-degree rhombus; that refinement is not
-#   built here, since the two shapes do not partition this hexagon (a
-#   unit pentagon and rhomb total 2.308 against its 2.127) and the
-#   source's figures are the only record of how the pieces actually go.
+#   Durer".  Durer's own n = 5 figure replaces the hexagon by a regular
+#   pentagon plus a 36-degree rhombus; that dihedral tiling IS built
+#   here (DURER5, radial and two periodic variants).  The substitution
+#   is combinatorial, not a dissection -- a unit pentagon and rhomb
+#   total area 2.308 against the hexagon's 2.127, so the metric layout
+#   had to be reconstructed from the source's figures; the DURER5
+#   section records what was established.
 
 bl_info = {
     "name": "Monohedral Tiling",
@@ -341,6 +346,140 @@ def build_durer_radial(order=5, depth=3):
     return polys, types
 
 
+# --------------------------------------------------------------------
+# Durer's ORIGINAL pentagon-and-rhombus tiling (DURER5)
+# --------------------------------------------------------------------
+#
+# Durer's own 1525 plate does not show the hexagon: for n = 5 he drew a
+# patch of unit REGULAR PENTAGONS and unit 36-degree RHOMBI around a
+# central pentagon.  Ferreol presents this as the hexagon tiling with
+# each hexagon replaced by a pentagon-and-rhomb motif, but the
+# substitution cannot be a dissection (the areas differ), so the actual
+# metric layout was reconstructed here from the source's figures and
+# verified computationally.  What was established:
+#
+#   * Only two vertex figures occur: 108+108+108+36 (three pentagons
+#     and a rhomb tip) and 108+108+144 (two pentagons and a rhomb's fat
+#     corner).  All edges are unit, every edge direction is a multiple
+#     of 36 degrees, so every vertex lies in the ring Z[zeta_10] -- the
+#     reconstruction was done in exact cyclotomic arithmetic.
+#   * The radial tiling is 10 wedges about a central pentagon, wedge j
+#     on axis 18 + 36.j degrees.  Even wedges are anchored at the
+#     centre pentagon's five VERTICES, odd wedges further out at the
+#     apexes of the five first-corona pentagons -- exactly Ferreol's
+#     two interleaved hexagon families (Piece / Piece2).
+#   * Within a wedge, nodes repeat on the lattice tau_j, tau_{j+1}
+#     where tau_j = phi^2 . (cos 36j, sin 36j) -- the golden ratio
+#     squared, phi^2 = 2.618..., against 2.cos(18) = 1.902 for the
+#     hexagons.  Row n holds n+1 nodes, Durer's 1, 2, 3, ... wedges.
+#   * Each node carries one thin rhomb (tip at the node, long axis on
+#     the wedge) and two pentagons; tiles shared between wedges (the
+#     centre pentagon belongs to all five even wedges) are deduplicated
+#     by vertex set.  Growing this to depth 9 (1551 tiles) covers a
+#     disc of radius 18 with no gap or overlap, so the arrangement
+#     continues to the whole plane -- Durer's patch does extend.
+#   * The result has exact 5-fold rotational symmetry, and therefore NO
+#     translational symmetry at all (the crystallographic restriction:
+#     a plane tiling with a global 5-fold rotation admits no
+#     translation), with an unrepeatable centre like the hexagon
+#     version.
+#
+# The same two tiles also tile PERIODICALLY; the source shows both
+# variants, built here as unit cells: pmm (mirror pairs of pentagons
+# with upright rhombi between the rows) and p2 (strips of alternating
+# up/down pentagons with all rhombi leaning the same way, which kills
+# the mirrors).  Both are 2 pentagons + 1 rhomb per cell.
+#
+# This module is otherwise monohedral; DURER5 is the one DIHEDRAL entry,
+# kept here deliberately as the historical companion of the DURER
+# hexagon above -- same source, same wedge construction, same absent
+# translation -- rather than exiled to a module that shares none of
+# that machinery.
+
+_D5_DIR = [np.array([cos(pi / 5 * k), sin(pi / 5 * k)]) for k in range(10)]
+_D5_PHI2 = (3.0 + sqrt(5.0)) / 2.0          # phi^2, the node lattice pitch
+_D5_RC = 1.0 / (2.0 * sin(pi / 5))          # pentagon circumradius
+_D5_RIN = 1.0 / (2.0 * tan(pi / 5))         # pentagon inradius
+
+
+def _d5_pent(v, k):
+    """Unit regular pentagon walked CCW from vertex v, first edge along
+    direction 36k degrees; interior angles of 108 turn the heading by
+    72 = two grid steps, so the edge directions are k, k+2, ... k+8."""
+    pts = [np.asarray(v, float)]
+    for j in range(4):
+        pts.append(pts[-1] + _D5_DIR[(k + 2 * j) % 10])
+    return np.array(pts)
+
+
+def _d5_rhomb(v, k, fat=False):
+    """Unit 36-degree rhombus with a corner at v: the sharp (36) corner
+    when the edges leave along adjacent grid directions k, k+1, the fat
+    (144) corner when they straddle four steps, k and k+4."""
+    a, b = _D5_DIR[k % 10], _D5_DIR[(k + (4 if fat else 1)) % 10]
+    v = np.asarray(v, float)
+    return np.array([v, v + a, v + a + b, v + b])
+
+
+def _durer5_cell(variant='PMM'):
+    """The two PERIODIC pentagon-and-rhombus tilings shown by Ferreol.
+
+    PMM: mirror-image pentagon pairs share a horizontal edge; upright
+    rhombi (fat corners on the pair axis) fill the 144-degree notches.
+    P2: strips of alternating up/down pentagons; a rhombus leans on
+    each down-pentagon's top edge, all leaning the same way, so only
+    half-turns survive.  Cells are 2 pentagons + 1 rhomb either way.
+    """
+    A = np.zeros(2)
+    if variant == 'P2':
+        C = _D5_DIR[0] + _D5_DIR[2]              # third vertex of the up tile
+        cell = [(_d5_pent(A, 0), 0), (_d5_pent(C, 7), 1),
+                (_d5_rhomb(C, 0, fat=True), 2)]
+        return _D5_PHI2 * _D5_DIR[0], _D5_DIR[1] + _D5_DIR[3], cell
+    B = _D5_DIR[0]
+    cell = [(_d5_pent(A, 0), 0), (_d5_pent(A, 7), 1),
+            (_d5_rhomb(B, 8, fat=True), 2)]
+    return (_D5_PHI2 - 1.0) * _D5_DIR[0], _D5_PHI2 * _D5_DIR[2], cell
+
+
+def build_durer5_radial(depth=3):
+    """Durer's original 1525 arrangement: 10 wedges of pentagon-and-rhomb
+    nodes about a central pentagon, growing 1, 2, 3, ... per row.
+
+    Wedge j sits on axis 18 + 36j degrees; even wedges anchor at the
+    centre pentagon's vertices, odd wedges at the first-corona apexes.
+    Node (n, k) is the anchor offset by k.tau_{j+1} + (n-k).tau_j and
+    carries a thin rhomb (tip at the node) and two pentagons; tiles on
+    wedge seams coincide between wedges and are emitted once.  Types:
+    pentagon 0, rhombus 1 -- the two prototiles.
+    """
+    c0 = np.array([0.5, _D5_RIN])               # centre pentagon's centre
+    seen = set()
+    polys, types = [], []
+
+    def emit(p, t):
+        key = frozenset((round(float(x), 6), round(float(y), 6))
+                        for x, y in p)
+        if key not in seen:
+            seen.add(key)
+            polys.append(p)
+            types.append(t)
+
+    for j in range(10):
+        ax = _D5_DIR[j] + _D5_DIR[(j + 1) % 10]
+        ax = ax / np.linalg.norm(ax)            # wedge axis, 18 + 36j deg
+        rad = _D5_RC if j % 2 == 0 else _D5_RC + 2.0 * _D5_RIN
+        anchor = c0 + rad * ax
+        for n in range(depth + 1):
+            for k in range(n + 1):
+                a = (anchor + _D5_PHI2
+                     * (k * _D5_DIR[(j + 1) % 10] + (n - k) * _D5_DIR[j]))
+                emit(_d5_rhomb(a, j), 1)
+                emit(_d5_pent(a, (4 + j) % 10), 0)
+                emit(_d5_pent(a, (7 + j) % 10), 0)
+    return polys, types
+
+
 # Registry of finished tilings: name -> (label, builder)
 _CELLS = {
     'TRIANGLE': ("Triangle", _tri_cell),
@@ -351,6 +490,7 @@ _CELLS = {
     'HEX1': ("Hexagon Type 1", _hex1_cell),
     'HEX2': ("Hexagon Type 2", _hex2_cell),
     'DURER': ("Durer's Tiling", _durer_cell),
+    'DURER5': ("Durer Pentagons (1525)", _durer5_cell),
 }
 
 
@@ -358,19 +498,25 @@ def _unit_cell(name):
     return _CELLS[name][1]()
 
 
-def build_patch(name, nx, ny, layout='LATTICE', order=5):
+def build_patch(name, nx, ny, layout='LATTICE', order=5, variant='PMM'):
     """Replicate a tiling's unit cell over an nx x ny run of the lattice.
     Returns (polys, types): a list of (N, 2) CCW polygon arrays and a
     parallel list of per-tile orientation-orbit indices.
 
-    Durer's tiling also accepts layout='RADIAL', which abandons the
-    lattice for his rotational arrangement; there `nx` sets how many
-    rings deep the wedges go and `ny` is unused.
+    The two Durer tilings also accept layout='RADIAL', which abandons
+    the lattice for the rotational arrangement; there `nx` sets how many
+    rings deep the wedges go and `ny` is unused.  For DURER5 the
+    periodic layout picks its wallpaper group through `variant` ('PMM'
+    or 'P2').
     """
     if name == 'DURER' and layout == 'RADIAL':
         return build_durer_radial(order, max(1, nx))
+    if name == 'DURER5' and layout == 'RADIAL':
+        return build_durer5_radial(max(1, nx))
     if name == 'DURER':
         b1, b2, cell = _durer_cell(order)
+    elif name == 'DURER5':
+        b1, b2, cell = _durer5_cell(variant)
     else:
         b1, b2, cell = _unit_cell(name)
     b1 = np.asarray(b1, float)
@@ -387,7 +533,7 @@ def build_patch(name, nx, ny, layout='LATTICE', order=5):
 
 # ordered list of implemented tiling keys (menu + self-test order)
 _ORDER = ['TRIANGLE', 'QUAD', 'PENT1', 'PENT2', 'PENT5', 'HEX1', 'HEX2',
-          'DURER']
+          'DURER', 'DURER5']
 
 
 # --------------------------------------------------------------------
@@ -450,11 +596,11 @@ if _IN_BLENDER:
                         "(parented to an empty)")
         durer_layout: EnumProperty(
             name="Layout",
-            description="How the prototile is repeated (Durer's tiling "
-                        "only)",
+            description="How the tiles are repeated (the two Durer "
+                        "tilings only)",
             items=[('LATTICE', "Periodic",
-                    "Repeat by translation, the ordinary use of a "
-                    "centrally symmetric hexagon"),
+                    "Repeat by translation -- the ordinary periodic use "
+                    "of the same tiles"),
                    ('RADIAL', "Radial (Durer)",
                     "Durer's rotational arrangement: wedges turned about "
                     "a centre, which covers the plane with NO "
@@ -465,14 +611,27 @@ if _IN_BLENDER:
             description="Rotational order n; the prototile has two "
                         "angles of 360/n degrees.  Durer drew n = 5 "
                         "(Durer's tiling only)")
+        durer5_variant: EnumProperty(
+            name="Wallpaper Group",
+            description="Which periodic arrangement of the pentagon and "
+                        "rhombus to build (Durer pentagons, periodic "
+                        "layout only)",
+            items=[('PMM', "pmm",
+                    "Mirror pairs of pentagons with upright rhombi; two "
+                    "perpendicular mirror axes"),
+                   ('P2', "p2",
+                    "Strips of alternating pentagons with every rhombus "
+                    "leaning the same way; half-turns only, no mirrors")],
+            default='PMM')
 
         def execute(self, context):
             label = _CELLS[self.tiling][0]
-            lay = (self.durer_layout if self.tiling == 'DURER'
+            lay = (self.durer_layout if self.tiling in ('DURER', 'DURER5')
                    else 'LATTICE')
             cells = tg.cells_from_polys(
                 lambda a, b: build_patch(self.tiling, a, b, lay,
-                                         self.durer_order),
+                                         self.durer_order,
+                                         self.durer5_variant),
                 self.nx, self.ny, self.color_by, self.margin,
                 self.height, self.trim)
             obj = pc.emit(context, "Monohedral %s" % label, cells,
@@ -494,11 +653,14 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'tiling')
-            if self.tiling == 'DURER':
+            if self.tiling in ('DURER', 'DURER5'):
                 lay.prop(self, 'durer_layout')
+            if self.tiling == 'DURER':
                 lay.prop(self, 'durer_order')
+            if self.tiling == 'DURER5' and self.durer_layout == 'LATTICE':
+                lay.prop(self, 'durer5_variant')
             lay.prop(self, 'nx')
-            if not (self.tiling == 'DURER'
+            if not (self.tiling in ('DURER', 'DURER5')
                     and self.durer_layout == 'RADIAL'):
                 lay.prop(self, 'ny')      # radial depth uses nx alone
             for p in ('color_by', 'margin', 'height'):
@@ -605,6 +767,60 @@ def _selftest():
                            order)
     print("Durer radial          prototile exact; covers with no gap or "
           "overlap, n-fold rotation yes, translation symmetry none")
+
+    # Durer's ORIGINAL pentagon-and-rhombus tiling.  The p2 periodic
+    # variant first (pmm went through _coverage above), then the radial
+    # arrangement: every tile a unit regular pentagon or unit 36-degree
+    # rhomb, exact coverage, 5-fold rotation present, translation absent.
+    polys, _t = build_patch('DURER5', 6, 6, 'LATTICE', variant='P2')
+    allv = np.vstack([np.asarray(p, float) for p in polys])
+    C = allv.mean(axis=0)
+    defects = 0
+    for ix in range(25):
+        for iy in range(25):
+            gx = C[0] - 2.5 + 5.0 * ix / 24 + 0.0137
+            gy = C[1] - 2.5 + 5.0 * iy / 24 + 0.0071
+            if sum(1 for p in polys if tg._pip(p, gx, gy)) != 1:
+                defects += 1
+    assert defects == 0, ("DURER5 p2", defects)
+
+    polys, kinds = build_durer5_radial(3)
+    assert len(polys) == 261, len(polys)
+    for p, kd in zip(polys, kinds):
+        P = np.asarray(p, float)
+        n = len(P)
+        assert n == (5 if kd == 0 else 4), (n, kd)
+        angs = []
+        for i in range(n):
+            u, w = P[i - 1] - P[i], P[(i + 1) % n] - P[i]
+            lu, lw = np.linalg.norm(u), np.linalg.norm(w)
+            assert abs(lw - 1.0) < 1e-9, lw          # unit edges
+            angs.append(round(float(np.degrees(
+                np.arccos(np.clip(u @ w / lu / lw, -1, 1)))), 6))
+        assert sorted(angs) == ([108.0] * 5 if kd == 0
+                                else [36.0, 36.0, 144.0, 144.0]), angs
+    c5 = np.array([0.5, _D5_RIN])
+    cen = np.array([np.asarray(p, float).mean(axis=0) for p in polys])
+    defects = 0
+    for k in range(len(cen)):                # sample inside the safe disc
+        gx, gy = cen[k] + np.array([0.0137, 0.0071])
+        if hypot(gx - c5[0], gy - c5[1]) > 4.5:
+            continue
+        if sum(1 for p in polys if tg._pip(p, gx, gy)) != 1:
+            defects += 1
+    assert defects == 0, ("DURER5 radial", defects)
+    th = 2 * np.pi / 5
+    R = np.array([[np.cos(th), -np.sin(th)], [np.sin(th), np.cos(th)]])
+
+    def key5(A):
+        return sorted((round(float(x), 6), round(float(y), 6))
+                      for x, y in A)
+    assert key5(cen - c5) == key5((cen - c5) @ R.T), "not 5-fold"
+    moved = any(key5(cen + (t - cen[0])) == key5(cen) for t in cen[1:24])
+    assert not moved, "a translation fixes Durer5 -- that is periodic"
+    print("Durer pentagons(1525) tiles exact (unit regular pentagon + "
+          "36-deg rhomb); radial covers with no gap or overlap, 5-fold "
+          "rotation yes, translation none; pmm and p2 variants cover")
 
     print("RESULT:", "OK" if not bad else "BAD %s" % bad)
     assert not bad
