@@ -909,6 +909,26 @@ _MODES = [
      "at a fixed angle, so every tangent plane leans the same way"),
 ]
 
+#: modes whose natural default output is the filled SURFACE rather than
+#: the rulings.  The compound helical cone is the one such: it is not
+#: straight-ruled, so its rod output draws arrises rather than rulings
+#: and is a deliberate choice rather than the obvious first look.
+_SURFACE_FIRST = {'HELICAL_CONE'}
+
+
+def effective_output(op):
+    """Resolve the AUTO output against the mode.
+
+    Blender gives an enum one default, but the right first look differs
+    by surface: a ruled surface is best shown BY its rulings, while the
+    helical cone has none and reads as a column only when filled.  AUTO
+    is the sentinel that lets one property mean both.
+    """
+    if op.output != 'AUTO':
+        return op.output
+    return 'SURFACE' if op.mode in _SURFACE_FIRST else 'RODS'
+
+
 #: the five surfaces above, which share one builder
 _NAMED_MODES = ('GAUDI', 'GUIMARD', 'MILK_CARTON', 'RULED_CUBIC',
                 'CONSTANT_SLOPE')
@@ -1379,7 +1399,11 @@ if _IN_BLENDER:
                         "compound helical cone is not straight-ruled, "
                         "so for that one these draw its arrises -- the "
                         "helical ridges of its flutes",
-            items=[('SURFACE', "Surface",
+            items=[('AUTO', "Automatic",
+                    "Rulings as rods for the straight-ruled surfaces, "
+                    "and the filled surface for the compound helical "
+                    "cone, which has none"),
+                   ('SURFACE', "Surface",
                     "The filled ruled surface"),
                    ('RODS', "Rulings as Rods",
                     "The straight rulings as solid rods (string / "
@@ -1387,7 +1411,7 @@ if _IN_BLENDER:
                    ('CURVES', "Bare Curves",
                     "The straight rulings as a bare wireframe of "
                     "edges (no faces)")],
-            default='RODS')
+            default='AUTO')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
                             max=400,
                             description="Number of rulings drawn in rods "
@@ -1417,12 +1441,13 @@ if _IN_BLENDER:
             verts, faces, name = _build_surface(self)
             edges = []
             info = ""
-            want_rulings = self.output in ('RODS', 'CURVES')
+            out = effective_output(self)
+            want_rulings = out in ('RODS', 'CURVES')
             if want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
                 if self.show_boundaries:
                     segs = segs + _loop_segments(_boundary_loops(self))
-                if self.output == 'RODS':
+                if out == 'RODS':
                     verts, faces = _rods(segs, self.rod_radius, 8)
                     name += " (Rods)"
                 else:
@@ -1455,7 +1480,7 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            if self.thickness > 0 and self.output == 'SURFACE':
+            if self.thickness > 0 and out == 'SURFACE':
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
                 mod.offset = 0.0
@@ -1531,11 +1556,11 @@ if _IN_BLENDER:
             lay.prop(self, 'res_v')
             if m in _RULED:
                 lay.prop(self, 'output')
-                if self.output in ('RODS', 'CURVES'):
+                if effective_output(self) in ('RODS', 'CURVES'):
                     if m == 'HYPERBOLOID':
                         lay.prop(self, 'family')
                     lay.prop(self, 'n_rods')
-                    if self.output == 'RODS':
+                    if effective_output(self) == 'RODS':
                         lay.prop(self, 'rod_radius')
                     lay.prop(self, 'show_boundaries')
             for k in ('smooth', 'thickness', 'scale'):
