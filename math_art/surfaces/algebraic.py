@@ -876,8 +876,50 @@ def _f_titeica(x, y, z, mu):
     return x * y * z - a ** 3
 
 
+# Three more from the encyclopedia.  A fourth chapter, the BISPHERICAL
+# surfaces, is deliberately not here: it names a CLASS -- those whose
+# leading terms are divisible by (x^2+y^2+z^2)^2 -- rather than a
+# surface, and its quartic members are the Darboux cyclides, of which
+# this project already builds the Dupin ones.
+def _f_henrici(x, y, z, mu):
+    # xyz = k (x + y + z - a)^3, Henrici's cubic of 1869.  A cubic
+    # surface written as the coordinate planes against a plane cubed,
+    # so its shape is governed by the single ratio k.
+    a, k = 1.0, 0.10
+    return x * y * z - k * (x + y + z - a) ** 3
+
+
+def _f_cushion(x, y, z, mu):
+    # Bouligand's pillow (1928), x^2 y^2 + a^4 = a^2(x^2 + y^2 + 2z^2).
+    # The equivalent form a sqrt2 z = +- sqrt((a^2-x^2)(a^2-y^2)) shows
+    # why it is a pillow: over the square |x|, |y| <= a the height is a
+    # product of two arches, so it bulges in the middle and creases to
+    # nothing along all four edges.
+    a = 1.0
+    return (x * x * y * y + a ** 4
+            - a * a * (x * x + y * y + 2.0 * z * z))
+
+
+def _f_cassini_3d(x, y, z, mu):
+    # The Cassinian surface with n poles: the locus where the GEOMETRIC
+    # MEAN of the distances to n points is constant, product MA_i = b^n.
+    # The poles are put on a circle in the z = 0 plane, so mu turns a
+    # peanut (n = 2) into a ring of lobes that fuse as b grows.
+    n, b = 3, 1.15
+    prod = 1.0
+    for i in range(n):
+        t = 2.0 * math.pi * i / n
+        prod = prod * ((x - math.cos(t)) ** 2 + (y - math.sin(t)) ** 2
+                       + z * z)
+    return prod - b ** (2 * n)
+
+
 _MATHCURVE = (
     ('CARTAN', "Cartan's Umbrella", 'BOX', 1.4, _f_cartan),
+    ('HENRICI', "Henrici Cubic", 'BOX', 2.2, _f_henrici),
+    ('CUSHION', "Bouligand's Pillow", 'BOX', 1.6, _f_cushion),
+    ('CASSINI_3D', "Cassinian Surface (3 poles)", 'BOX', 2.0,
+     _f_cassini_3d),
     ('CASSINI', "Cassini Surface", 'BOX', 1.7, _f_cassini),
     ('CASSINI_REV', "Cassini Surface of Revolution", 'BOX', 1.2,
      _f_cassini_rev),
@@ -1380,6 +1422,31 @@ def _selftest():
     print("algebraic: %d presets mesh solid, finite, in the 2 m cube %s"
           % (len(PRESETS), 'OK' if good else
              'FAIL empty=%s thin=%s' % (empty, thin)))
+
+    # Bouligand's pillow is stated by the source in two forms, an
+    # implicit one and an explicit one.  Feeding the explicit height
+    # into the implicit equation checks the transcription of both at
+    # once -- which no picture of the surface could do.
+    a = 1.0
+    worst = 0.0
+    for x, y in ((0.3, 0.4), (0.8, -0.2), (0.0, 0.9), (-0.55, 0.71)):
+        z = math.sqrt((a * a - x * x) * (a * a - y * y)) / (a * math.sqrt(2))
+        worst = max(worst, abs(PRESETS['CUSHION'][1](x, y, z, 0.0)))
+    assert worst < 1e-12, worst
+    print("cushion: the source's implicit and explicit forms agree to "
+          "%.0e" % worst)
+
+    # The three new encyclopedia surfaces must actually have a level
+    # set inside the box they are clipped to -- an empty one renders as
+    # nothing at all and looks like a missing feature.
+    for key in ('HENRICI', 'CUSHION', 'CASSINI_3D'):
+        _lbl, fn, _shape, clip = PRESETS[key]
+        g = np.linspace(-clip, clip, 33)
+        X, Y, Z = np.meshgrid(g, g, g, indexing='ij')
+        V = fn(X, Y, Z, 0.0)
+        assert float(V.min()) < 0.0 < float(V.max()), key
+    print("henrici / cushion / cassinian: all three cross zero inside "
+          "their clip boxes")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
