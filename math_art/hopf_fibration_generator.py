@@ -1317,11 +1317,12 @@ if _IN_BLENDER:
             description="Base hue for the Mono palette")
         sphere_euler: bpy.props.FloatVectorProperty(
             name="Sphere Rotation", subtype='EULER', size=3,
-            default=_TILT,
+            default=_TILT, step=9,
             description="Orientation of the base sphere S^2 (default is "
-                        "a gentle tilt keeping fibres off the axis)")
+                        "a gentle tilt keeping fibres off the axis); "
+                        "arrow-click steps are about 5 degrees")
         s3_rot: FloatProperty(
-            name="S3 Flow", default=0.0, min=-360.0, max=360.0,
+            name="S3 Flow", default=0.0, min=-360.0, max=360.0, step=500,
             description="Left Clifford rotation of S^3 before projecting "
                         "(deg) -- keyframe it to spin the whole family")
         include_axis: BoolProperty(
@@ -1769,15 +1770,18 @@ if _IN_BLENDER:
             description="Use the high-wrap branch m = 2n + w")
         so4_a1: FloatProperty(
             name="SO(4) x1x2", default=0.0, min=-180.0, max=180.0,
+            step=500,
             description="Rotate the (x1,x2) plane of S^3 before "
                         "projecting -- morphs the torus (ring/horn/"
                         "spindle, Dupin cyclides)")
         so4_a2: FloatProperty(
             name="SO(4) x3x4", default=0.0, min=-180.0, max=180.0,
+            step=500,
             description="Rotate the (x3,x4) plane of S^3 before "
                         "projecting")
         so4_a3: FloatProperty(
             name="SO(4) x1x3", default=0.0, min=-180.0, max=180.0,
+            step=500,
             description="Rotate the (x1,x3) plane of S^3 before "
                         "projecting")
         shade_smooth: BoolProperty(
