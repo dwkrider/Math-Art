@@ -396,6 +396,11 @@ if _IN_BLENDER:
 
         def draw(self, context):
             L = self.layout
+            # house convention: labels in the left column.  Without
+            # this an IntProperty draws as a slider with its name
+            # inside the widget, so the numeric fields sit out of line
+            # with the enums above them.
+            L.use_property_split = True
             L.prop(self, "family")
             L.prop(self, "solid")
             L.prop(self, "face_style")
