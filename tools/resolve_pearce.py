@@ -150,6 +150,12 @@ def core_match(cs, rs):
             and cs['branches'] == rs['branches'] and csz == rsz)
 
 
+MAX_NGON = 12
+MAX_FACES = 26
+MIXED_RADIUS = 2
+MIXED_RING_CAP = 400000
+MIXED_BUDGET = 200000
+
 NETS = [('SRS', 3, 5), ('DIAMOND', 2, 3), ('BCC', 2, 3),
         ('FCC', 2, 2), ('SC', 2, 2)]
 
@@ -185,7 +191,7 @@ for r in pt.TABLE:
     want = collections.Counter()
     for fd in r['faces']:
         want[fd['n']] += fd['count']
-    if max(want) > 12 or r['faces_total'] > 14:
+    if max(want) > MAX_NGON or r['faces_total'] > MAX_FACES:
         print("#%-3d %-40s SKIP (too large: F=%d, max n=%d)"
               % (num, r['name'], r['faces_total'], max(want)), flush=True)
         continue
@@ -223,6 +229,58 @@ for r in pt.TABLE:
                 break
         if hit and hit[0] == 'FULL':
             break
+    if hit is None or hit[0] != 'FULL':
+        # Stage 2: the classical nets each carry ONE branch class, so a
+        # row mixing classes cannot be found in any of them.  Build the
+        # Universal Net restricted to exactly the classes this row uses
+        # -- which is what keeps it searchable.
+        for kinds in pn.kinds_for_row(dict(r['branches'])):
+            try:
+                Vi, idx, adj = pn.mixed_net(kinds, n=2)
+            except Exception:
+                continue
+            if not Vi:
+                continue
+            full = max((len(a) for a in adj.values()), default=0)
+            mid = (8, 8, 8)
+            centre, bestd = None, None
+            for p in Vi:
+                if len(adj[p]) != full:
+                    continue
+                d = sum((a - b) ** 2 for a, b in zip(p, mid))
+                if bestd is None or d < bestd:
+                    bestd, centre = d, p
+            if centre is None:
+                continue
+            pool = set()
+            for L in want:
+                pool |= local_rings(idx, adj, centre, MIXED_RADIUS, L,
+                                    cap=MIXED_RING_CAP)
+            if not pool:
+                continue
+            for s_ in sorted(pool):
+                if len(s_) not in want:
+                    continue
+                for g in grow_exact(pool, r['faces_total'], s_, want,
+                                    budget=MIXED_BUDGET):
+                    V, F = pn.compact(Vi, g)
+                    try:
+                        F = pn.orient_faces(V, F)
+                        cs = cell_sig(V, F)
+                    except Exception:
+                        continue
+                    if cs['chi'] != 2:
+                        continue
+                    if full_match(cs, rs):
+                        hit = ('FULL', 'MIXED%s' % (kinds,), V, F)
+                        break
+                    if core_match(cs, rs) and hit is None:
+                        hit = ('CORE', 'MIXED%s' % (kinds,), V, F)
+                if hit and hit[0] == 'FULL':
+                    break
+            if hit and hit[0] == 'FULL':
+                break
+
     if hit:
         resolved[num] = hit
         print("#%-3d %-40s %s via %s (V=%d F=%d)"

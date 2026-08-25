@@ -84,6 +84,7 @@ try:
     from . import pearce_net as pnet
     from . import pearce_data as pdata
     from . import pearce_surface as psurf
+    from . import pearce_tiling as ptile
     from . import spidron_math as sm
     from .patterns import common as pc
     from . import sharp_creases as _sc
@@ -91,6 +92,7 @@ except Exception:                       # legacy single-file / CLI use
     import pearce_net as pnet
     import pearce_data as pdata
     import pearce_surface as psurf
+    import pearce_tiling as ptile
     import spidron_math as sm
     from patterns import common as pc
     import sharp_creases as _sc
@@ -156,11 +158,17 @@ def spidron_faces(solid, rings, scale, twist):
 # --------------------------------------------------------------------
 
 def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
-          rings=5, scale=0.60, twist=0.0):
-    """Geometry for one saddle polyhedron.
+          rings=5, scale=0.60, twist=0.0, layout='SINGLE',
+          nx=1, ny=1, nz=1, gap=1.0):
+    """Geometry for one saddle polyhedron, or a block of the packing.
 
     Returns (verts, tris, face_id, info)."""
     solid = pdata.by_key(key) if key else pdata.SOLIDS[0]
+
+    if layout == 'BLOCK':
+        return _build_block(solid, face_style, density, smoothness,
+                            rings, scale, twist, nx, ny, nz, gap)
+
     V0, F0 = solid['verts'], solid['faces']
 
     if face_style == 'SPIDRON':
@@ -184,6 +192,63 @@ def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
     info['solid'] = solid
     info['aspect'] = psurf.aspect(V)
     return V, T, fid, info
+
+
+def _cell_geometry(V0, F0, face_style, density, smoothness, rings,
+                   scale, twist):
+    """One cell's mesh, in its own coordinates (no fitting)."""
+    if face_style == 'SPIDRON':
+        cell = dict(verts=V0, faces=F0)
+        V, T, fid, flags = spidron_faces(cell, rings, scale, twist)
+        return V, T, fid, flags
+    if face_style == 'NET':
+        V, T, fid = _net_mesh(V0, F0)
+        return V, T, fid, []
+    relax = (face_style == 'MINIMAL')
+    V, T, fid = psurf.solid_surface(
+        V0, F0, density=density,
+        iters=smoothness if relax else 0, relax=relax)
+    return V, T, fid, pnet_flags(V0, F0)
+
+
+def pnet_flags(V0, F0):
+    return [pnet.is_equilateral_equiangular([V0[i] for i in f])
+            for f in F0]
+
+
+def _build_block(solid, face_style, density, smoothness, rings, scale,
+                 twist, nx, ny, nz, gap):
+    """A block of the space filling: every cell of the packing.
+
+    The packing is verified, not assumed -- `pearce_tiling.pack`
+    reports whether the cells' volume actually accounts for the block,
+    and the operator passes that on rather than presenting a partial
+    packing as a space filling."""
+    V0, F0 = solid['verts'], solid['faces']
+    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz)
+
+    verts, tris, face_id = [], [], []
+    for ci, pts in enumerate(copies):
+        CV, CT, cfid, _flags = _cell_geometry(
+            pts, F0, face_style, density, smoothness, rings, scale,
+            twist)
+        CV = np.asarray(CV, float)
+        if gap < 1.0:
+            c = CV.mean(axis=0)
+            CV = c + (CV - c) * gap
+        base = len(verts)
+        verts.extend([tuple(p) for p in CV])
+        for t, f in zip(CT, cfid):
+            tris.append(tuple(base + i for i in t))
+            # colour by cell, so the packing reads as separate solids
+            face_id.append(ci)
+    V = psurf.fit_unit(np.asarray(verts, float))
+    flags = pnet_flags(V0, F0)
+    info = dict(true_nests=sum(1 for x in flags if x) * len(copies),
+                generalised=sum(1 for x in flags if not x) * len(copies),
+                faces=len(F0) * len(copies), solid=solid,
+                aspect=psurf.aspect(V), packing=rep)
+    return V, tris, face_id, info
 
 
 def face_boundary_edges(tris, face_id):
@@ -307,6 +372,24 @@ if _IN_BLENDER:
             name="Nest twist", default=0.0, min=radians(-60.0),
             max=radians(60.0), subtype='ANGLE',
             description="Rotation between spidron annuli")
+        layout: EnumProperty(
+            name="Layout",
+            items=[('SINGLE', "One solid",
+                    "A single saddle polyhedron"),
+                   ('BLOCK', "Space filling",
+                    "Fill a block of unit cells with the packing this "
+                    "solid belongs to")],
+            default='SINGLE')
+        nx: IntProperty(name="Cells across", default=1, min=1, max=6,
+                        description="Unit cells along X")
+        ny: IntProperty(name="Cells deep", default=1, min=1, max=6,
+                        description="Unit cells along Y")
+        nz: IntProperty(name="Cells high", default=1, min=1, max=6,
+                        description="Unit cells along Z")
+        gap: FloatProperty(
+            name="Shrink", default=1.0, min=0.5, max=1.0,
+            description="Shrink each cell about its own centre so the "
+                        "packing reads as separate solids")
         smooth: BoolProperty(
             name="Smooth shading", default=True,
             description="Shade smooth, with creases along the branches")
@@ -316,6 +399,13 @@ if _IN_BLENDER:
             L.prop(self, "family")
             L.prop(self, "solid")
             L.prop(self, "face_style")
+            L.prop(self, "layout")
+            if self.layout == 'BLOCK':
+                r = L.row(align=True)
+                r.prop(self, "nx")
+                r.prop(self, "ny")
+                r.prop(self, "nz")
+                L.prop(self, "gap")
             if self.face_style in ('MINIMAL', 'RULED'):
                 L.prop(self, "density")
             if self.face_style == 'MINIMAL':
@@ -335,7 +425,9 @@ if _IN_BLENDER:
                 V, T, fid, info = build(
                     key=key, face_style=self.face_style,
                     density=self.density, smoothness=self.smoothness,
-                    rings=self.rings, scale=self.scale, twist=self.twist)
+                    rings=self.rings, scale=self.scale, twist=self.twist,
+                    layout=self.layout, nx=self.nx, ny=self.ny,
+                    nz=self.nz, gap=self.gap)
             except Exception as exc:
                 self.report({'ERROR'}, "Build failed: %s" % exc)
                 return {'CANCELLED'}
@@ -367,6 +459,17 @@ if _IN_BLENDER:
                         % (info['true_nests'], info['generalised']))
             if ncrease:
                 msg += ", %d branch creases" % ncrease
+            rep = info.get('packing')
+            if rep is not None:
+                msg += (" | packing: %d cells, %.1f%% of the block"
+                        % (rep['copies'], 100.0 * rep['ratio']))
+                if not rep['fills']:
+                    # say so rather than pass a partial packing off as
+                    # a space filling -- many of Pearce's solids only
+                    # fill space in combination with a partner cell
+                    msg += " -- does NOT fill space alone"
+                    self.report({'WARNING'}, msg)
+                    return {'FINISHED'}
             self.report({'INFO'}, msg)
             return {'FINISHED'}
 
@@ -428,6 +531,36 @@ def _selftest():
             and info['generalised'] == sum(1 for x in flags if not x),
             "%d true / %d generalised of %d"
             % (info['true_nests'], info['generalised'], len(s['faces'])))
+
+    # --- space filling ------------------------------------------
+    print("  space filling:")
+    for s in pdata.SOLIDS:
+        tag = "#%d %s" % (s['number'], s['name'])
+        try:
+            _V, _T, fid, info = build(key=s['key'], layout='BLOCK',
+                                      nx=1, ny=1, nz=1, density=2,
+                                      smoothness=4)
+            rep = info['packing']
+        except Exception as exc:
+            chk("%s packs" % tag, False, str(exc))
+            continue
+        chk("%s: packing built" % tag, rep['copies'] >= 1,
+            "%d cells, %.3f of the block, fills=%s"
+            % (rep['copies'], rep['ratio'], rep['fills']))
+        chk("  no face used by more than two cells",
+            rep['overused_faces'] == 0)
+        chk("  one colour group per cell",
+            len(set(fid)) == rep['copies'])
+        if rep['fills']:
+            # a block twice as wide must hold twice as many cells, or
+            # the packing is not periodic and the fill was a fluke
+            _V2, _T2, _f2, i2 = build(key=s['key'], layout='BLOCK',
+                                      nx=2, ny=1, nz=1, density=2,
+                                      smoothness=4)
+            chk("  doubling the block doubles the cells",
+                i2['packing']['copies'] == 2 * rep['copies']
+                and i2['packing']['fills'],
+                "%d -> %d" % (rep['copies'], i2['packing']['copies']))
 
     print("RESULT:", "OK" if ok else "BAD")
     if not ok:
