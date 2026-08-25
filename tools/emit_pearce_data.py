@@ -1,9 +1,4 @@
-"""Emit math_art/pearce_data.py from tools/resolve_pearce.py's output.
-
-Re-run after a longer resolver pass to widen the operator's coverage;
-the gate in pearce_data._selftest re-checks every emitted solid against
-its Table 8.1 row.
-"""
+"""Emit math_art/pearce_data.py from the resolver's output."""
 import sys, pickle, re, collections
 MA = r"C:\Users\dkrid\Projects\2026_07_21_Math_Art\.claude\worktrees\spidrons\math_art"
 sys.path.insert(0, MA)
@@ -70,6 +65,70 @@ def fmt_tuple(t, per=6, indent=8):
     return (",\n" + pad).join(lines)
 
 
+def validate(num, V, F, kind):
+    """The acceptance gate, applied BEFORE emitting.
+
+    The resolver's match test only compares counts; this checks the
+    geometry itself -- that every corner is a Universal Node angle,
+    that each face's plane direction is the one the table names, and
+    that the complex is orientable.  Entries that satisfy the resolver
+    but fail here must not ship."""
+    r = BY_NUM[num]
+    try:
+        if not all(pn.closes([V[i] for i in f]) for f in F):
+            return "a circuit does not close"
+        v, e, f_, chi = pn.euler(V, F)
+        if (v, e, f_) != (r['nodes_total'], r['branches_total'],
+                          r['faces_total']):
+            return "V/E/F %r != %r" % ((v, e, f_),
+                                       (r['nodes_total'],
+                                        r['branches_total'],
+                                        r['faces_total']))
+        if chi != 2:
+            return "chi = %d" % chi
+        if not pn.is_closed_surface(F):
+            return "not a closed surface"
+        if not pn.orientation_consistent(pn.orient_faces(V, F)):
+            return "not orientable"
+        legal = set(pn.TABULATED)
+        for cyc in F:
+            for a in pn.circuit_angles([V[i] for i in cyc]):
+                if pn.angle_label(a) not in legal:
+                    return ("corner %s is not a Universal Node angle"
+                            % pn.angle_label(a))
+        got = {}
+        for cyc in F:
+            loop = [V[i] for i in cyc]
+            k = (len(cyc), pn.face_symmetry_label(loop),
+                 pn.face_plane_class(loop))
+            got[k] = got.get(k, 0) + 1
+        want = {}
+        for fd in r['faces']:
+            k = (fd['n'], fd['symmetry'], fd['plane'])
+            want[k] = want.get(k, 0) + fd['count']
+        if got != want:
+            return "face inventory %r != %r" % (got, want)
+        if kind == 'FULL':
+            pts = [V[i] for i in range(len(V))]
+            if pn.axis_counts(pts) != tuple(r['axes']):
+                return "axes %r != %r" % (pn.axis_counts(pts),
+                                          tuple(r['axes']))
+    except Exception as exc:
+        return "gate raised: %s" % exc
+    return None
+
+
+rejected = {}
+for _num in sorted(resolved):
+    _kind, _net, _V, _F = resolved[_num]
+    _why = validate(_num, _V, _F, _kind)
+    if _why:
+        rejected[_num] = _why
+        del resolved[_num]
+print("rejected by the gate: %d" % len(rejected))
+for _n, _why in sorted(rejected.items()):
+    print("  #%-3d %s" % (_n, _why))
+
 out = [HEAD]
 out.append("SOLIDS = (\n")
 nums = sorted(resolved)
@@ -88,13 +147,19 @@ for num in nums:
     out.append("    ),\n")
 out.append(")\n\n")
 
+FMT_UNRES = '    (%d, %r, %r),\n'
 unres = [r['number'] for r in pt.TABLE if r['number'] not in resolved]
-out.append("#: rows of Table 8.1 with no verified geometry yet.  They are\n")
-out.append("#: NOT offered by the operator.  See the module header.\n")
+out.append("#: Rows of Table 8.1 with no verified geometry, each with the\n")
+out.append("#: reason.  They are NOT offered by the operator.  A row whose\n")
+out.append("#: reason is not 'no geometry found' is a SEARCH RESULT THAT\n")
+out.append("#: FAILED THE GATE -- the resolver matched it on counts but the\n")
+out.append("#: geometry did not survive checking, which is worth recording\n")
+out.append("#: and is not worth shipping.\n")
 out.append("UNRESOLVED = (\n")
 for n in unres:
     r = BY_NUM[n]
-    out.append("    (%d, %r),\n" % (n, r['name']))
+    why = rejected.get(n, "no geometry found by the search")
+    out.append(FMT_UNRES % (n, r["name"], why))
 out.append(")\n\n")
 
 out.append('''
@@ -155,7 +220,7 @@ def _selftest():
         all(s['number'] in rows for s in SOLIDS))
     chk("no solid is also listed unresolved",
         not ({s['number'] for s in SOLIDS}
-             & {n for n, _ in UNRESOLVED}))
+             & {u[0] for u in UNRESOLVED}))
     chk("resolved + unresolved == 53",
         len(SOLIDS) + len(UNRESOLVED) == 53,
         "%d + %d" % (len(SOLIDS), len(UNRESOLVED)))

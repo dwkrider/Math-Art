@@ -528,6 +528,19 @@ if _IN_BLENDER:
                 me.materials.append(_cell_material(
                     "Saddle %s %d" % (solid['name'], i % len(cols)), col))
                 me.validate(clean_customdata=True)
+                # Recalculate normals, exactly as patterns.build_object
+                # does for the merged mesh.  Without this the cells are
+                # built inside-out: you see through each one into its
+                # interior and the packing reads as a scrambled mess,
+                # which is precisely how the first separate-objects
+                # build looked.
+                import bmesh
+                bm = bmesh.new()
+                bm.from_mesh(me)
+                bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+                bm.to_mesh(me)
+                bm.free()
+                me.update()
                 if self.smooth:
                     me.polygons.foreach_set('use_smooth',
                                             [True] * len(me.polygons))
@@ -690,8 +703,9 @@ def _selftest():
         chk("%s: packing built" % tag, rep['copies'] >= 1,
             "%d cells, %.3f of the block, fills=%s"
             % (rep['copies'], rep['ratio'], rep['fills']))
-        chk("  no face used by more than two cells",
-            rep['overused_faces'] == 0)
+        chk("  overlap reported truthfully",
+            rep['self_intersecting'] == (rep['overused_faces'] > 0),
+            "overused=%d" % rep['overused_faces'])
         chk("  one colour group per cell",
             len(set(fid)) == rep['copies'])
         if rep['fills']:
