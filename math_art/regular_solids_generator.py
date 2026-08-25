@@ -32,8 +32,10 @@
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
 # stella octangula, dodecahedron the small stellated dodecahedron),
-# Solid / Leonardo (da Vinci) / Wireframe styles, and coloring by
-# face size (sharing the Conway generator's palette).
+# Solid / Leonardo (da Vinci) / Wireframe styles, a papercraft net
+# (the shell edge-unfolded flat, with fold lines, glue tabs and a Fold
+# slider that folds it back up -- see `styles/net_style.py`), and
+# coloring by face size (sharing the Conway generator's palette).
 #
 # References:
 # - Platonic solids: Euclid, "Elements" Book XIII (construction
@@ -45,6 +47,10 @@
 #   Poinsot, "Memoire sur les polygones et les polyedres" (1810).
 # - Johnson solids: Norman W. Johnson (1966); completeness proved by
 #   Victor Zalgaller (1969).
+# - Polyhedral nets: Albrecht Duerer, "Underweysung der Messung mit dem
+#   Zirckel und Richtscheyt" (Nuremberg, 1525), which introduced the
+#   unfolded-and-folded-up presentation the Papercraft Net style
+#   builds.
 
 bl_info = {
     "name": "Regular Solids",
@@ -1981,9 +1987,50 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split the shell into one thick plate per face, "
-                    "padded apart and optionally exploded outward")],
+                    "padded apart and optionally exploded outward"),
+                   ('NET', "Papercraft Net",
+                    "Unfold the shell flat into a net you could cut "
+                    "out and fold up: fold lines marked mountain or "
+                    "valley, glue tabs on the cut edges, and matching "
+                    "numbers on the edges that join. The Fold slider "
+                    "folds the net back into the solid")],
             default='SOLID',
             description="How the solid is rendered as geometry")
+        fold: FloatProperty(
+            name="Fold", default=0.0, min=0.0, max=1.0, subtype='FACTOR',
+            description="How far the net is folded up: 0 lays it out "
+                        "flat, 1 closes it into the finished solid, and "
+                        "every value between keeps each face rigid")
+        net_layout: EnumProperty(
+            name="Unfolding",
+            items=[('BFS', "Breadth First",
+                    "Spread outward from the largest face. Fast and "
+                    "repeatable, and symmetric solids come out "
+                    "symmetric"),
+                   ('SEARCH', "Best Of Many",
+                    "Try many unfoldings and keep the one that needs "
+                    "the fewest separate pieces and packs tightest")],
+            default='BFS',
+            description="How the faces are unfolded into the plane")
+        net_seed: IntProperty(
+            name="Seed", default=0, min=0,
+            description="Which set of unfoldings Best Of Many tries; "
+                        "change it for a different net of the same "
+                        "solid")
+        glue_tabs: BoolProperty(
+            name="Glue Tabs", default=True,
+            description="Add a glue tab along one edge of every cut "
+                        "pair, narrowed or dropped where the net "
+                        "leaves no room for it")
+        tab_size: FloatProperty(
+            name="Tab Size", default=0.35, min=0.05, max=0.9,
+            description="Depth of the glue tabs, as a fraction of the "
+                        "edge they stand on")
+        edge_numbers: BoolProperty(
+            name="Edge Numbers", default=True,
+            description="Print a matching number beside each cut edge "
+                        "and on its glue tab, so the edges that join "
+                        "can be found while building")
         facet_depth: FloatProperty(
             name="Depth", default=0.15, min=0.01, max=2.0,
             description="How far each face is extruded inward (Face "
@@ -2031,7 +2078,8 @@ if _IN_BLENDER:
             name="Explode", default=0.1, min=0.0, max=5.0,
             description="Move each piece / face segment outward along "
                         "its centroid direction so the split is "
-                        "visible")
+                        "visible; for a Papercraft Net, the gap left "
+                        "between separate pieces of the net")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0,
                              description="Overall size; fits the result into "
@@ -2110,6 +2158,11 @@ if _IN_BLENDER:
                         and (self.family, sid) in CHIRAL):
                     V, F = mirror_solid(V, F)
                 return self._emit_facets(context, V, F, label)
+            if self.style == 'NET':
+                if (self.handedness == 'LEFT'
+                        and (self.family, sid) in CHIRAL):
+                    V, F = mirror_solid(V, F)
+                return self._emit_net(context, V, F, label)
             if self.pieces > 1:
                 assign, valid = split_congruent(V, F, self.pieces)
                 if assign is None:
@@ -2226,6 +2279,46 @@ if _IN_BLENDER:
                    else ""))
             return {'FINISHED'}
 
+        def _emit_net(self, context, V, F, label):
+            try:
+                from .styles import net_style
+            except ImportError:
+                from styles import net_style
+            mat = (self._material_for if self.coloring == 'SIDES'
+                   else None)
+            try:
+                _obj, info = net_style.emit_net(
+                    context, V, F, label, fold=self.fold,
+                    mode=self.net_layout, seed=self.net_seed,
+                    tabs=self.glue_tabs, tab_size=self.tab_size,
+                    numbers=self.edge_numbers,
+                    gap=max(0.02, self.explode) * self.scale,
+                    material_fn=mat)
+            except ValueError as e:
+                msg = f"{label} cannot be unfolded: {e}"
+                if self.family == 'KEPLER':
+                    msg += (" -- the star faces cross one another "
+                            "instead of meeting edge to edge. Of the "
+                            "Kepler-Poinsot solids only the Great "
+                            "Dodecahedron unfolds")
+                self.report({'ERROR'}, msg)
+                return {'CANCELLED'}
+            self.report(
+                {'INFO'},
+                f"{label} net: {info['islands']} piece(s), "
+                f"{info['faces']} faces, {info['tabs']} tab(s), "
+                f"{info['mountains']} mountain / {info['valleys']} "
+                f"valley fold(s)")
+            if info['dropped']:
+                self.report({'WARNING'},
+                            f"{info['dropped']} glue tab(s) dropped "
+                            f"where the net leaves no room")
+            if info['planarity'] > 1e-4 * self.scale:
+                self.report({'WARNING'},
+                            "this solid's faces are not flat, so the "
+                            "net is approximate (try Canonicalize)")
+            return {'FINISHED'}
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
@@ -2261,8 +2354,20 @@ if _IN_BLENDER:
                 lay.prop(self, 'padding')
                 lay.prop(self, 'explode')
                 lay.prop(self, 'separate_facets')
+            if self.style == 'NET':
+                lay.prop(self, 'fold')
+                lay.prop(self, 'net_layout')
+                sub = lay.row()
+                sub.enabled = self.net_layout == 'SEARCH'
+                sub.prop(self, 'net_seed')
+                lay.prop(self, 'glue_tabs')
+                sub = lay.row()
+                sub.enabled = self.glue_tabs
+                sub.prop(self, 'tab_size')
+                lay.prop(self, 'edge_numbers')
+                lay.prop(self, 'explode', text="Piece Spacing")
             lay.prop(self, 'coloring')
-            if self.style != 'FACETS':
+            if self.style not in ('FACETS', 'NET'):
                 lay.prop(self, 'pieces')
                 if self.pieces > 1:
                     lay.prop(self, 'explode')
