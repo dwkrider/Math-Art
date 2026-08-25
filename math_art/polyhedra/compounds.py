@@ -1606,8 +1606,13 @@ COMPOUNDS = [
 #: symmetry, ...") -- so the grouping is the paper's rather than one
 #: invented here, and a row lands in its band by its own number.
 _GROUP_ORDER = [
+    # The compound of five tetrahedra leads deliberately: a callback
+    # enum takes no `default=`, so whatever sits first here is what the
+    # operator opens with, and the five tetrahedra are the compound that
+    # says "compound" at a glance -- the stella octangula reads as a
+    # single stellated octahedron until you look twice.
     ('Classical compounds',
-     ['STELLA', '5TETRA', '10TETRA', '5CUBES', '5OCTA']),
+     ['5TETRA', 'STELLA', '10TETRA', '5CUBES', '5OCTA']),
     ('A solid with its dual',
      ['CUBE_OCTA', 'DODECA_ICOSA', 'PRISM_DUAL', 'ANTIPRISM_DUAL']),
     ('One solid inscribed in another', None),      # filled from INSCRIBED

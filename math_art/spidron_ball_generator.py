@@ -352,6 +352,10 @@ def woven_boundary(face, V, relief):
 
 
 COLOR_ITEMS = [
+    ('PAIR', "Joined Arms",
+     "Give the two arms that meet across an edge of the solid the same "
+     "colour, so a petal spanning two faces reads as one shape rather "
+     "than as two halves"),
     ('ARM', "Arm",
      "One colour per spiral arm, so each face reads as a pinwheel -- "
      "the colouring Nylander's renderings use"),
@@ -371,7 +375,47 @@ COLOR_ITEMS = [
 NPAL = 12
 
 
-def _material_index(color_by, face_i, ring_i, arm_i, kind, ch):
+def arm_keys(face, mpoly):
+    """A global key per arm, shared by the arms that meet across an edge.
+
+    An arm spans two consecutive points of the face's boundary.  When
+    the boundary has been refined -- vertices and edge midpoints, so
+    2n points for an n-sided face -- each arm runs from one of the
+    solid's VERTICES to the midpoint of one of its EDGES, which is
+    exactly a half-edge of the solid.  A half-edge belongs to both
+    faces that share its edge, and both of them lay an arm along it, so
+    keying on (vertex, edge) pairs those two arms and nothing else.
+
+    Without relief the boundary is the raw face, one arm per edge, and
+    the edge itself is the key -- the two faces sharing that edge each
+    contribute one arm to it.
+
+    Returns a list of `mpoly` hashable keys, or None if the boundary is
+    neither of those two shapes.
+    """
+    n = len(face)
+
+    def edge(i, j):
+        a, b = int(face[i % n]), int(face[j % n])
+        return (a, b) if a < b else (b, a)
+
+    if mpoly == 2 * n:                  # refined: vertex, midpoint, ...
+        keys = []
+        for k in range(mpoly):
+            i = k // 2
+            if k % 2 == 0:              # vertex face[i] -> midpoint of i,i+1
+                keys.append((int(face[i]), edge(i, i + 1)))
+            else:                       # midpoint of i,i+1 -> vertex i+1
+                keys.append((int(face[(i + 1) % n]), edge(i, i + 1)))
+        return keys
+    if mpoly == n:                      # unrefined: one arm per edge
+        return [edge(k, k + 1) for k in range(n)]
+    return None
+
+
+def _material_index(color_by, face_i, ring_i, arm_i, kind, ch, pair_i=0):
+    if color_by == 'PAIR':
+        return pair_i % NPAL
     if color_by == 'ARM':
         return arm_i % NPAL
     if color_by == 'RING':
@@ -387,7 +431,7 @@ def _material_index(color_by, face_i, ring_i, arm_i, kind, ch):
 
 def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
           relief=0.22, chirality='ALTERNATE', open_center=False,
-          relief_style='WOVEN', color_by='ARM'):
+          relief_style='WOVEN', color_by='PAIR'):
     """Spidronise every face of the seed solid."""
     SV, SF = seed_solid(seed)
     A = np.asarray(SV, float)
@@ -395,6 +439,7 @@ def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
     col, colour_ok = two_colour(SF)
 
     verts, faces, mats, labels = [], [], [], []
+    pair_index = {}
     for fi, f in enumerate(SF):
         poly = [tuple(A[i]) for i in f]
         C = np.mean([A[i] for i in f], axis=0)
@@ -426,6 +471,7 @@ def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
         # each triangle be recovered here without threading extra
         # bookkeeping through the kernel.
         mpoly = len(poly)
+        akeys = arm_keys(f, mpoly)
         n_ann = rings * 2 * mpoly
         for ti in range(len(fc)):
             if ti < n_ann:
@@ -434,8 +480,15 @@ def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
                 kind = ti % 2
             else:
                 ring_i, arm_i, kind = rings, ti - n_ann, 2
+            if akeys is None:
+                pair_i = arm_i
+            else:
+                key = akeys[arm_i % len(akeys)]
+                if key not in pair_index:
+                    pair_index[key] = len(pair_index)
+                pair_i = pair_index[key]
             mats.append(_material_index(color_by, fi, ring_i, arm_i,
-                                        kind, ch))
+                                        kind, ch, pair_i))
             labels.append((fi, arm_i))
     return verts, faces, mats, colour_ok, labels
 
@@ -503,7 +556,7 @@ if _IN_BLENDER:
             description="How the relief lifts each face's boundary out "
                         "of the solid")
         color_by: EnumProperty(
-            name="Color", items=COLOR_ITEMS, default='ARM',
+            name="Color", items=COLOR_ITEMS, default='PAIR',
             description="How materials are assigned across the "
                         "spidronised faces")
         smooth: BoolProperty(
@@ -672,8 +725,52 @@ def _selftest():
         r1.max() > r0.max() + 1e-6,
         "rmax %.4f -> %.4f" % (r0.max(), r1.max()))
 
+    print("spidron_ball: joined-arm colouring")
+    # Every arm key must be claimed by exactly two arms, and those two
+    # must sit on DIFFERENT faces -- that is what makes a petal spanning
+    # a fold read as one shape.  The count follows: one key per
+    # half-edge with relief (2E), one per edge without it (E).
+    for kind in want:
+        _SV, SF2 = seed_solid(kind)
+        E = sum(len(f) for f in SF2) // 2
+        for refined, target in ((True, 2 * E), (False, E)):
+            owners = {}
+            for fi2, f2 in enumerate(SF2):
+                mp = 2 * len(f2) if refined else len(f2)
+                for k in arm_keys(f2, mp):
+                    owners.setdefault(k, []).append(fi2)
+            ok_n = len(owners) == target
+            ok_pair = all(len(v) == 2 and v[0] != v[1]
+                          for v in owners.values())
+            chk("%-16s %s arm keys pair across faces"
+                % (kind, "relief " if refined else "flat   "),
+                ok_n and ok_pair,
+                "%d keys, want %d" % (len(owners), target))
+    # and the paired arms really do get the same material.  `build`
+    # emits ring-major (all arms of ring 0, then ring 1, ...), so read
+    # the (face, arm) labels it returns rather than trying to stride
+    # through the material list.
+    _V4, _F4, M4, _o4, lb4 = build('DODECA', rings=4, color_by='PAIR')
+    _SVd, SFd = seed_solid('DODECA')
+    by_key = {}
+    for (fi2, ai2), m in zip(lb4, M4):
+        ks = arm_keys(SFd[fi2], 2 * len(SFd[fi2]))
+        by_key.setdefault(ks[ai2 % len(ks)], set()).add(m)
+    mixed = sum(1 for v in by_key.values() if len(v) != 1)
+    chk("paired arms share one material", mixed == 0,
+        "%d of %d keys mixed" % (mixed, len(by_key)))
+    # and the pairing is not vacuous: neighbouring arms within a face
+    # must still differ, or "same colour" would just mean "one colour"
+    per_face = {}
+    for (fi2, ai2), m in zip(lb4, M4):
+        per_face.setdefault(fi2, {})[ai2] = m
+    varied = sum(1 for d in per_face.values() if len(set(d.values())) > 2)
+    chk("faces still carry several colours", varied == len(per_face),
+        "%d of %d faces" % (varied, len(per_face)))
+
     print("spidron_ball: colour modes and creases")
-    for cb, lo, hi in (('ARM', 8, 12), ('RING', 5, 12), ('FACE', 8, 12),
+    for cb, lo, hi in (('PAIR', 8, 12), ('ARM', 8, 12),
+                       ('RING', 5, 12), ('FACE', 8, 12),
                        ('SHAPE', 2, 3), ('CHIRALITY', 1, 2),
                        ('UNIFORM', 1, 1)):
         _, _, M, _, _ = build('DODECA', rings=6, color_by=cb)

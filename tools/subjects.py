@@ -30,6 +30,12 @@ PARAMS = {
     # 1 of the icosahedral vertex set -- has big obvious pentagons and
     # says "this is a polyhedron through someone else's vertices".
     "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
+    # The compound of five tetrahedra is the operator's own default and
+    # the clearest advertisement for it: five interpenetrating solids
+    # whose separateness is obvious at icon size, where the stella
+    # octangula just reads as one spiky ball.
+    "mesh.polyhedron_compound_add": dict(family='CLASSICAL',
+                                         compound='5TETRA'),
     # -- spidrons -------------------------------------------------
     # The bare rosette default is the whole hexagonal subdivision,
     # which at icon size is a grey disc of slivers.  Six arms, six
