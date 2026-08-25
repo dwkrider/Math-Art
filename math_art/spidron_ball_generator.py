@@ -54,7 +54,34 @@
 # confirms his twelve faces do share every boundary point, to 3e-17.
 # His solution is exact for the dodecahedron; the radial displacement
 # used here is not tuned to any particular solid, so it holds on all
-# seven seeds and at any relief.
+# seven seeds and at any relief.  His boundary is in fact this module's
+# Woven boundary at relief tan^2(pi/10) = 0.105573 exactly -- the value
+# `regular_relief` derives as the one relief that puts all ten boundary
+# points of a face at the SAME distance from the face's axis, i.e. that
+# makes the skew decagon regular.
+#
+# THE TWIST THAT MAKES THE PETALS.  Nylander's ring recursion is
+# Rz(dtheta) * (2/3) per ring with dtheta = 36.53 degrees -- one FULL
+# node step of the ten-point boundary (36 deg) plus half a degree.  The
+# full step is the load-bearing part, and it is not a planar-spidron
+# habit: the skew decagon's corrugation has period TWO nodes, so
+# rotating by one step maps the boundary onto its parity mirror --
+# raised points land where lowered ones were.  Each ring therefore
+# advances the corrugation phase by one node, an arm climbs over the
+# adjacent fold as it spirals in, and the outermost triangles stay wide
+# and flat -- the broad petals and deep five-arm vortices of his
+# renders.  A small fixed twist (this generator's old default) never
+# flips the parity, and the same kernel yields a shallow rosette
+# instead.  Twist Style: Advance builds the full step in for any face
+# size (2*pi/m for an m-point boundary, so pentagons and hexagons each
+# advance by their own step on the truncated icosahedron); the Twist
+# knob is then only the excess on top.  Nylander's own excess, 0.53 deg,
+# comes from a formula his source comments doubt ("not sure if this is
+# right"), and at 8 rings it curves each arm by all of 4 degrees; zero
+# excess is visually the same object.  With Advance, scale 2/3, 8
+# rings, relief 0.10557 and uniform chirality, this module reproduces
+# his published ball exactly (vertex-for-vertex, to 5e-16 -- asserted
+# in `_selftest`).
 #
 # TWO HONEST LIMITS.  First, the general construction is always
 # DRAWABLE but not generally FOLDABLE: only regular skew polygons
@@ -108,7 +135,8 @@ bl_info = {
     "category": "Add Mesh",
 }
 
-from math import cos, sin, tan, acos, pi, sqrt, radians, degrees
+from math import (cos, sin, tan, acos, atan2, pi, sqrt, radians,
+                  degrees)
 
 import numpy as np
 
@@ -259,9 +287,25 @@ def two_colour(faces):
     return col, ok
 
 
-def nylander_dodeca_nest():
-    """Paul Nylander's dodeca-spidroball boundary, reproduced exactly
-    from his 2010 AutoLisp source, for validation.
+def regular_relief(n):
+    """The relief that makes an n-gon face's woven boundary a REGULAR
+    skew 2n-gon: tan^2(pi/(2n)).
+
+    The woven boundary pulls the face's vertices in by (1 - e) and
+    pushes its edge midpoints out by (1 + e).  Seen from the face's
+    axis the vertices sit at the pentagon circumradius r_c and the
+    midpoints at its apothem r_a = r_c cos(pi/n), so one relief
+    equalises the two: (1 - e) r_c = (1 + e) r_a, i.e.
+    e = (1 - cos(pi/n)) / (1 + cos(pi/n)) = tan^2(pi/(2n)).  For the
+    pentagon that is 0.105573, and the resulting skew decagon is
+    node-for-node Nylander's boundary (see `nylander_dodeca_nest`).
+    """
+    return tan(pi / (2.0 * n)) ** 2
+
+
+def nylander_dodeca_nest(rings=0):
+    """Paul Nylander's dodeca-spidroball, reproduced exactly from his
+    2010 AutoLisp/POV-Ray sources, for validation.
 
     His route to an interlocking ball differs from this module's: he
     lifts along the FACE NORMAL, like Relief Style: Per Face, but solves
@@ -271,7 +315,15 @@ def nylander_dodeca_nest():
     construction on any solid at any relief.  Both are correct; his is
     exact for the dodecahedron, this module's generalises.
 
-    Returns (boundary, face_frames, constants).
+    With `rings` = 0 the returned nodes are his ten boundary points.
+    With `rings` > 0 they also contain his spiral: his recursion is
+    Rtrans = Rz(dtheta) * scale applied in the face's local frame
+    (about the face axis, toward the face-plane centre, so the +/-dz
+    corrugation shrinks with each ring), giving (rings + 1) * 10 nodes
+    ring by ring.  His published renders use rings = 8.
+
+    Returns (nodes, face_frames, constants); constants carries his
+    dtheta (36.53 deg -- one 36-deg node step plus 0.53) and scale 2/3.
     """
     n_arm = 5
     n = 2 * n_arm
@@ -281,8 +333,22 @@ def nylander_dodeca_nest():
     dz = a * b / sqrt(a * b * b + 1.0)
     r = sqrt(1.0 - dz * dz / a)
     z0 = r * b * cos(pi / n_arm) + dz
-    nodes = np.array([[r * cos(i * pi / n_arm), r * sin(i * pi / n_arm),
-                       (2 * (i % 2) - 1) * dz + z0] for i in range(n)])
+    # his ring recursion constants; the sources flag both as "not sure
+    # if this is right", but they are what rendered the reference
+    # images: dtheta = acos((1 + 2 sqrt3 + 1/(dz^2/a - 1))/4) = 36.532
+    # degrees, scale = 2/3.
+    dtheta = acos((1.0 + 2.0 * sqrt(3.0)
+                   + 1.0 / (dz * dz / a - 1.0)) / 4.0)
+    scale = 2.0 / 3.0
+    ring0 = np.array([[r * cos(i * pi / n_arm), r * sin(i * pi / n_arm),
+                       (2 * (i % 2) - 1) * dz] for i in range(n)])
+    c, s = cos(dtheta), sin(dtheta)
+    Rtrans = np.array([[c, -s, 0.0], [s, c, 0.0],
+                       [0.0, 0.0, 1.0]]) * scale
+    loops = [ring0]
+    for _ in range(rings):
+        loops.append((Rtrans @ loops[-1].T).T)
+    nodes = np.vstack(loops) + np.array([0.0, 0.0, z0])
 
     def rz(t):
         c, s = cos(t), sin(t)
@@ -301,7 +367,8 @@ def nylander_dodeca_nest():
         frames.append(euler(0.2 * pi, alpha, th))
         frames.append(euler(0.0, pi - alpha, th + 0.2 * pi))
         th += 0.4 * pi
-    return nodes, frames, dict(alpha=alpha, a=a, b=b, dz=dz, r=r, z0=z0)
+    return nodes, frames, dict(alpha=alpha, a=a, b=b, dz=dz, r=r, z0=z0,
+                               dtheta=dtheta, scale=scale)
 
 
 def arm_boundary_edges(faces, labels):
@@ -430,15 +497,37 @@ def arm_keys(face, mpoly):
     return None
 
 
-def _material_index(color_by, face_i, ring_i, arm_i, kind, ch, pair_i=0):
+def limb_index(arm_i, ring_i, mpoly, ch, twist_style):
+    """Which spiral LIMB a triangle belongs to.
+
+    With Twist Style Advance each ring is turned by a whole node step,
+    so the triangle at (ring t, arm k) does not sit radially inward of
+    (ring t-1, arm k) -- it sits one step around from it.  A limb that
+    reads as one continuous band sweeping from the rim into the vortex
+    therefore has an arm index that DRIFTS by one per ring, in the
+    direction the rings are wound.  Colouring by `arm_i` alone slices
+    that band into differently coloured pieces, one per ring, which is
+    not what a viewer means by an arm.
+
+    Verified against the geometry: grouping by this index holds each
+    group to about a 23-degree azimuth band on a pentagon face, against
+    345 degrees -- i.e. the whole face -- for the raw arm index.
+    """
+    if twist_style != 'ADVANCE':
+        return arm_i % mpoly
+    return (arm_i + ch * ring_i) % mpoly
+
+
+def _material_index(color_by, face_i, ring_i, arm_i, kind, ch, pair_i=0,
+                    npal=NPAL):
     if color_by == 'PAIR':
-        return pair_i % NPAL
+        return pair_i % npal
     if color_by == 'ARM':
-        return arm_i % NPAL
+        return arm_i % npal
     if color_by == 'RING':
-        return ring_i % NPAL
+        return ring_i % npal
     if color_by == 'FACE':
-        return face_i % NPAL
+        return face_i % npal
     if color_by == 'SHAPE':
         return kind
     if color_by == 'CHIRALITY':
@@ -446,10 +535,20 @@ def _material_index(color_by, face_i, ring_i, arm_i, kind, ch, pair_i=0):
     return 0
 
 
-def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
-          relief=0.22, chirality='ALTERNATE', open_center=False,
-          relief_style='WOVEN', color_by='PAIR'):
-    """Spidronise every face of the seed solid."""
+def build(seed='DODECA', rings=8, scale=2.0 / 3.0, twist=0.0,
+          relief=regular_relief(5), chirality='CW', open_center=False,
+          relief_style='WOVEN', color_by='PAIR', twist_style='ADVANCE',
+          colors=5):
+    """Spidronise every face of the seed solid.
+
+    With `twist_style` = 'ADVANCE' each ring turns by one node step of
+    the face's boundary (2*pi/m for an m-point boundary) PLUS `twist`;
+    on a woven boundary the step flips the corrugation parity, which is
+    what weaves the arms (see the module header).  'FIXED' turns by
+    exactly `twist`, the planar-rosette behaviour.  The defaults
+    reproduce Nylander's dodeca-spidroball (his own excess over the
+    step is 0.53 deg; zero is visually identical).
+    """
     SV, SF = seed_solid(seed)
     A = np.asarray(SV, float)
     A = A / float(np.linalg.norm(A, axis=1).max())      # unit circumradius
@@ -476,7 +575,13 @@ def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
             ch = -1
         else:
             ch = 1 if col[fi] == 0 else -1
-        v, fc, mt = sm.spidronise(poly, scale, twist, rings,
+        tw = twist
+        if twist_style == 'ADVANCE':
+            # one node step of THIS face's boundary, so mixed solids
+            # (pentagons and hexagons on the truncated icosahedron)
+            # each advance by their own step
+            tw = 2.0 * pi / len(poly) + twist
+        v, fc, mt = sm.spidronise(poly, scale, tw, rings,
                                   chirality=ch, centre=C, normal=N,
                                   cap=not open_center)
         o = len(verts)
@@ -497,15 +602,24 @@ def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
                 kind = ti % 2
             else:
                 ring_i, arm_i, kind = rings, ti - n_ann, 2
+            limb = limb_index(arm_i, ring_i, mpoly, ch, twist_style)
             if akeys is None:
-                pair_i = arm_i
+                pair_i = limb
             else:
-                key = akeys[arm_i % len(akeys)]
+                key = akeys[limb % len(akeys)]
                 if key not in pair_index:
                     pair_index[key] = len(pair_index)
                 pair_i = pair_index[key]
-            mats.append(_material_index(color_by, fi, ring_i, arm_i,
-                                        kind, ch, pair_i))
+            mats.append(_material_index(color_by, fi, ring_i, limb,
+                                        kind, ch, pair_i, colors))
+            # Creases follow MESH ADJACENCY, not the colour grouping.
+            # The ribbon a triangle belongs to physically is the chain
+            # of constant arm index -- that is what shares edges ring to
+            # ring -- whereas `limb` groups by constant azimuth, which
+            # under Advance drifts one step per ring.  Labelling the
+            # creases with `limb` marked every ring-to-ring edge sharp
+            # as well, creasing the ribbon along its own length and
+            # undoing the smooth shading entirely.
             labels.append((fi, arm_i))
     return verts, faces, mats, colour_ok, labels
 
@@ -533,27 +647,46 @@ if _IN_BLENDER:
             name="Solid", items=SEED_ITEMS, default='DODECA',
             description="Base polyhedron whose faces are spidronised")
         rings: IntProperty(
-            name="Rings", default=14, min=1, max=20,
+            name="Rings", default=8, min=1, max=20,
             description="How many times the spiral step repeats on each "
-                        "face")
+                        "face. Nylander's ball uses eight")
         scale_step: FloatProperty(
-            name="Ring Scale", default=0.82, min=0.3, max=0.97,
+            name="Ring Scale", default=2.0 / 3.0, min=0.3, max=0.97,
             description="How much each ring shrinks toward the centre "
-                        "of its face")
+                        "of its face. Two thirds is Nylander's value; "
+                        "larger makes a shallower, denser vortex")
+        twist_style: EnumProperty(
+            name="Twist Style", default='ADVANCE',
+            items=[('ADVANCE', "Advance",
+                    "Each ring turns one node step of the face's "
+                    "boundary plus Twist, so the corrugation phase "
+                    "advances by a node per ring and the arms weave "
+                    "over the folds -- the broad-petalled look of "
+                    "Nylander's spidroball"),
+                   ('FIXED', "Fixed",
+                    "Each ring turns by exactly Twist, so the arms "
+                    "stay on fixed nodes -- a shallower rosette "
+                    "decoration")],
+            description="What one ring's rotation is measured against")
         twist: FloatProperty(
-            name="Twist", default=radians(22.0),
+            name="Twist", default=0.0,
             min=radians(-90.0), max=radians(90.0), subtype='ANGLE',
-            description="How far each ring turns about the face normal. "
-                        "Thirty degrees is the classical hexagonal value")
+            description="Extra rotation per ring: on top of the node "
+                        "step when the style is Advance (Nylander's "
+                        "own excess is half a degree), the whole "
+                        "rotation when it is Fixed")
         relief: FloatProperty(
-            name="Relief", default=0.22, min=0.0, max=0.8,
+            name="Relief", default=regular_relief(5), min=0.0, max=0.8,
             description="Lift alternate boundary points out of the face "
                         "plane before spiralling, so the nests stand "
                         "proud of the solid. Zero decorates each face "
-                        "flat")
+                        "flat; 0.106 makes a pentagon's skew boundary "
+                        "regular, which is exactly Nylander's ball")
         chirality: EnumProperty(
-            name="Chirality", default='ALTERNATE',
-            items=[('CW', "Clockwise", "Every face wound the same way"),
+            name="Chirality", default='CW',
+            items=[('CW', "Clockwise",
+                    "Every face wound the same way, as Nylander's "
+                    "renders are"),
                    ('CCW', "Anticlockwise",
                     "Every face wound the other way"),
                    ('ALTERNATE', "Alternate",
@@ -586,6 +719,12 @@ if _IN_BLENDER:
                         "arms crisp under smooth shading, and creased "
                         "under a Subdivision Surface, while the "
                         "surface stays smooth along each arm")
+        colors: IntProperty(
+            name="Colors", default=5, min=1, max=12,
+            description="How many materials the palette is cut down to. "
+                        "Five is enough to keep neighbouring limbs "
+                        "apart on most solids without the ball turning "
+                        "into a colour chart")
         open_center: BoolProperty(
             name="Open Centres", default=False,
             description="Leave the small hole at the centre of each "
@@ -596,7 +735,7 @@ if _IN_BLENDER:
                 self.seed, int(self.rings), float(self.scale_step),
                 float(self.twist), float(self.relief), self.chirality,
                 self.open_center, self.relief_style,
-                self.color_by)
+                self.color_by, self.twist_style, int(self.colors))
             if not F:
                 self.report({'ERROR'}, "no geometry generated")
                 return {'CANCELLED'}
@@ -629,9 +768,10 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for p in ('seed', 'rings', 'scale_step', 'twist', 'relief',
-                      'relief_style', 'chirality', 'color_by',
-                      'open_center', 'smooth', 'sharp_edges'):
+            for p in ('seed', 'rings', 'scale_step', 'twist_style',
+                      'twist', 'relief', 'relief_style', 'chirality',
+                      'color_by', 'open_center', 'smooth',
+                      'sharp_edges'):
                 lay.prop(self, p)
             lay.prop(self, 'align')
 
@@ -785,15 +925,65 @@ def _selftest():
     chk("faces still carry several colours", varied == len(per_face),
         "%d of %d faces" % (varied, len(per_face)))
 
+    print("spidron_ball: limbs follow the spiral")
+    # The claim that makes Joined Arms mean what a viewer expects: a
+    # limb index holds a group of triangles inside a narrow azimuth
+    # band, sweeping from rim to vortex, where the raw arm index
+    # smears the same group right round the face.
+    SVl, SFl = seed_solid('DODECA')
+    Al = np.asarray(SVl, float)
+    Al = Al / float(np.linalg.norm(Al, axis=1).max())
+    fl = SFl[0]
+    polyl = woven_boundary(fl, Al, regular_relief(5))
+    Cl = np.mean([Al[i] for i in fl], axis=0)
+    Nl = sm._best_fit_normal(np.asarray(polyl, float))
+    if float(Nl @ (Cl - Al.mean(axis=0))) < 0.0:
+        Nl = -Nl
+    ml, rgs = len(polyl), 6
+    Vl, Fl, _Ml = sm.spidronise(polyl, 2.0 / 3.0, 2.0 * pi / ml, rgs,
+                                chirality=1, centre=Cl, normal=Nl,
+                                cap=False)
+    Vl = np.asarray(Vl, float)
+    e1 = np.asarray(polyl[0], float) - Cl
+    e1 = e1 - float(e1 @ Nl) * Nl
+    e1 /= np.linalg.norm(e1)
+    e2 = np.cross(Nl, e1)
+
+    def _spread(by_limb):
+        grp = {}
+        for ti in range(len(Fl)):
+            rt, ar = ti // (2 * ml), (ti % (2 * ml)) // 2
+            d = Vl[list(Fl[ti])].mean(axis=0) - Cl
+            a = degrees(atan2(float(d @ e2), float(d @ e1))) % 360.0
+            key = limb_index(ar, rt, ml, 1, 'ADVANCE') if by_limb else ar
+            grp.setdefault(key, []).append(a)
+        out = []
+        for v in grp.values():
+            v = np.asarray(v)
+            v = (v - v[0] + 180.0) % 360.0 - 180.0
+            out.append(float(v.max() - v.min()))
+        return float(np.mean(out))
+    s_limb, s_arm = _spread(True), _spread(False)
+    chk("limb index holds one azimuth band",
+        s_limb < 40.0 and s_arm > 300.0,
+        "limb %.0f deg vs raw arm %.0f deg" % (s_limb, s_arm))
+    # and under FIXED there is no drift to compensate
+    chk("no drift compensation under Twist Style Fixed",
+        all(limb_index(a, r, ml, 1, 'FIXED') == a
+            for a in range(ml) for r in range(rgs)))
+
     print("spidron_ball: colour modes and creases")
-    for cb, lo, hi in (('PAIR', 8, 12), ('ARM', 8, 12),
-                       ('RING', 5, 12), ('FACE', 8, 12),
-                       ('SHAPE', 2, 3), ('CHIRALITY', 1, 2),
-                       ('UNIFORM', 1, 1)):
+    for cb, lo, hi in (('PAIR', 5, 5), ('ARM', 5, 5), ('RING', 5, 5),
+                       ('FACE', 5, 5), ('SHAPE', 2, 3),
+                       ('CHIRALITY', 1, 2), ('UNIFORM', 1, 1)):
         _, _, M, _, _ = build('DODECA', rings=6, color_by=cb)
         used = len(set(M))
         chk("colour by %-9s uses %2d materials" % (cb, used),
             lo <= used <= hi and max(M) < NPAL)
+    for n in (1, 3, 5, 12):
+        _, _, M, _, _ = build('DODECA', rings=6, color_by='PAIR', colors=n)
+        chk("colors=%-2d honoured" % n, len(set(M)) == n,
+            "%d used" % len(set(M)))
     V, F, M, _, labels = build('DODECA', rings=6)
     ce = arm_boundary_edges(F, labels)
     chk("arm boundaries found to crease", len(ce) > 0, "%d edges" % len(ce))
@@ -866,6 +1056,76 @@ def _selftest():
     chk("Woven at relief 0.10557 reproduces his boundary",
         len(mine) == 50 and np.allclose(rh, rm, atol=1e-6),
         "%d points, radii %.6f/%.6f" % (len(mine), rm[0], rm[-1]))
+    # and that relief is not a fitted number: it is the one value that
+    # makes the skew decagon REGULAR (all boundary points equidistant
+    # from the face axis), tan^2(pi/10)
+    chk("his relief is derived: tan^2(pi/10) = 0.105573",
+        abs(regular_relief(5) - 0.1055728090000841) < 1e-13
+        and abs(regular_relief(5)
+                - (1.0 - cos(pi / 5.0)) / (1.0 + cos(pi / 5.0))) < 1e-15,
+        "%.12f" % regular_relief(5))
+    A5 = np.asarray(seed_solid('DODECA')[0], float)
+    A5 = A5 / float(np.linalg.norm(A5, axis=1).max())
+    f5 = seed_solid('DODECA')[1][0]
+    C5 = A5[list(f5)].mean(axis=0)
+    N5 = sm._best_fit_normal(A5[list(f5)])
+    if float(N5 @ C5) < 0.0:
+        N5 = -N5
+    dax = []
+    for q in woven_boundary(f5, A5, regular_relief(5)):
+        w = np.asarray(q) - C5
+        w = w - float(w @ N5) * N5
+        dax.append(float(np.linalg.norm(w)))
+    chk("regular relief equalises distance from the face axis",
+        max(dax) - min(dax) < 1e-12,
+        "spread %.1e" % (max(dax) - min(dax)))
+    # HIS SPIRAL, not just his boundary.  His ring recursion
+    # Rz(dtheta) * (2/3) has dtheta = one 36-degree node step of the
+    # decagon plus 0.53 -- the full step is what flips the corrugation
+    # parity each ring and weaves the arms; it is this module's
+    # ADVANCE twist style with a 0.53-degree excess.
+    chk("his dtheta = 36.532 deg = node step + 0.53",
+        abs(degrees(K['dtheta']) - 36.531915275721104) < 1e-9
+        and abs(K['scale'] - 2.0 / 3.0) < 1e-15,
+        "dtheta %.6f deg" % degrees(K['dtheta']))
+    # THE reproduction of his published ball: ADVANCE + his excess +
+    # his scale + the derived relief + uniform chirality rebuilds his
+    # spiral NODE FOR NODE (face 0 in its local face frame, all nine
+    # rings), and by face congruence the whole ball.
+    his90 = nylander_dodeca_nest(rings=8)[0]
+    his90 = his90 - np.array([0.0, 0.0, K['z0']])
+    his90 = his90 / np.linalg.norm(his90[0][:2])
+    V9, _, _, _, _ = build('DODECA', rings=8, scale=2.0 / 3.0,
+                           twist=float(K['dtheta'] - pi / 5.0),
+                           relief=regular_relief(5), chirality='CW',
+                           open_center=True, twist_style='ADVANCE')
+    blk = np.asarray(V9[:90], float)
+    P0 = blk[0] - C5
+    e3 = N5
+    e1 = P0 - float(P0 @ e3) * e3
+    e1 = e1 / np.linalg.norm(e1)
+    e2 = np.cross(e3, e1)
+    loc = (blk - C5) @ np.stack([e1, e2, e3], axis=1)
+    loc = loc / np.linalg.norm(loc[0][:2])
+    err9 = float(np.abs(loc - his90).max())
+    chk("ADVANCE rebuilds his spiral node for node", err9 < 1e-12,
+        "max dev %.1e" % err9)
+    # the two twist styles are the same kernel: ADVANCE(t) is exactly
+    # FIXED(t + 2*pi/m) on an m-point boundary
+    Va2, _, _, _, _ = build('DODECA', rings=3, scale=0.7, twist=0.3,
+                            twist_style='ADVANCE')
+    Vf2, _, _, _, _ = build('DODECA', rings=3, scale=0.7,
+                            twist=0.3 + 2.0 * pi / 10.0,
+                            twist_style='FIXED')
+    chk("ADVANCE(t) == FIXED(t + step)",
+        float(np.abs(np.asarray(Va2) - np.asarray(Vf2)).max()) < 1e-12)
+    # and the defaults are that regime: they must weave, not rosette
+    chk("defaults are the Nylander regime",
+        build.__defaults__[1] == 8 and abs(build.__defaults__[2]
+                                           - 2.0 / 3.0) < 1e-15
+        and abs(build.__defaults__[4] - regular_relief(5)) < 1e-15
+        and build.__defaults__[5] == 'CW'
+        and build.__defaults__[9] == 'ADVANCE')
 
     print("spidron_ball: relief styles")
     # THE invariant that separates the interlocked ball from a heap of

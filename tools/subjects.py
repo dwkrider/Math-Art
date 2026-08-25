@@ -53,11 +53,16 @@ PARAMS = {
     "mesh.spidron_nest_add": dict(fold=0.698132, rings=7,
                                   cap_center=True),
     # The dodecahedron is Nylander's subject and the one the name
-    # "spidroball" refers to; relief lifts the nests out of the faces
-    # so the solid does not read as a flat-shaded dodecahedron.
-    "mesh.spidron_ball_add": dict(seed='DODECA', rings=14,
-                                  scale_step=0.82, twist=0.383972,
-                                  relief=0.22, relief_style='WOVEN'),
+    # "spidroball" refers to.  The operator defaults ARE his published
+    # ball (Advance twist, ring scale 2/3, 8 rings, relief 0.10557,
+    # uniform chirality); 0.009284 rad = 0.532 deg is his own excess
+    # over the node step, kept here so the figure is exactly his.
+    "mesh.spidron_ball_add": dict(seed='DODECA', rings=8,
+                                  scale_step=0.666667, twist=0.009284,
+                                  relief=0.105573, chirality='CW',
+                                  twist_style='ADVANCE',
+                                  relief_style='WOVEN',
+                                  color_by='PAIR', colors=5),
     # -- solids ---------------------------------------------------
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
