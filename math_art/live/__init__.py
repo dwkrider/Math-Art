@@ -141,7 +141,7 @@ if _IN_BLENDER:
                 name="Generator",
                 description="Operator that built this object"),
             'autobuild': bpy.props.BoolProperty(
-                name="Auto Update", default=False,
+                name="Auto Update", default=True,
                 description="Rebuild the geometry as the settings "
                             "change, rather than on demand"),
             'built_sig': bpy.props.StringProperty(),
