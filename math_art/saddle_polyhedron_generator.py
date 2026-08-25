@@ -372,7 +372,7 @@ if _IN_BLENDER:
             name="Nest twist", default=0.0, min=radians(-60.0),
             max=radians(60.0), subtype='ANGLE',
             description="Rotation between spidron annuli")
-        layout: EnumProperty(
+        layout_kind: EnumProperty(
             name="Layout",
             items=[('SINGLE', "One solid",
                     "A single saddle polyhedron"),
@@ -395,6 +395,10 @@ if _IN_BLENDER:
             description="Shade smooth, with creases along the branches")
 
         def draw(self, context):
+            # NB: the space-filling selector is `layout_kind`, never
+            # `layout` -- an operator property called `layout` shadows
+            # Operator.layout, so `self.layout` returns the enum STRING
+            # and every draw call raises, leaving the panel blank.
             L = self.layout
             # house convention: labels in the left column.  Without
             # this an IntProperty draws as a slider with its name
@@ -404,8 +408,8 @@ if _IN_BLENDER:
             L.prop(self, "family")
             L.prop(self, "solid")
             L.prop(self, "face_style")
-            L.prop(self, "layout")
-            if self.layout == 'BLOCK':
+            L.prop(self, "layout_kind")
+            if self.layout_kind == 'BLOCK':
                 r = L.row(align=True)
                 r.prop(self, "nx")
                 r.prop(self, "ny")
@@ -431,7 +435,7 @@ if _IN_BLENDER:
                     key=key, face_style=self.face_style,
                     density=self.density, smoothness=self.smoothness,
                     rings=self.rings, scale=self.scale, twist=self.twist,
-                    layout=self.layout, nx=self.nx, ny=self.ny,
+                    layout=self.layout_kind, nx=self.nx, ny=self.ny,
                     nz=self.nz, gap=self.gap)
             except Exception as exc:
                 self.report({'ERROR'}, "Build failed: %s" % exc)
