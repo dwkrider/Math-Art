@@ -156,7 +156,7 @@ MIXED_RADIUS = 2
 MIXED_RING_CAP = 400000
 MIXED_BUDGET = 200000
 
-NETS = [('SRS', 3, 5), ('DIAMOND', 2, 3), ('BCC', 2, 3),
+NETS = [('NBO', 3, 3), ('SRS', 3, 5), ('DIAMOND', 2, 3), ('BCC', 2, 3),
         ('FCC', 2, 2), ('SC', 2, 2)]
 
 chunks = {}

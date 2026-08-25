@@ -98,6 +98,91 @@ except Exception:                       # legacy single-file / CLI use
     import sharp_creases as _sc
 
 
+# --------------------------------------------------------------------
+# Decatrihedron twist limits, migrated from the space-filler
+# --------------------------------------------------------------------
+#
+# Measured intersection-free twist bounds for the spidron nests on the
+# decatrihedron (Table 8.1 entry 1), against ring scale.  Kept because
+# the result they encode was hard won and is easy to get wrong: THE
+# SAFE REGION IS NOT SYMMETRIC IN THE SIGN OF THE TWIST for a single
+# polyhedron, and it cannot be, because the bare cell is CHIRAL.
+# Winding +t and -t about the outward normals of a chiral cell are not
+# mirror-equivalent operations.  At ring scale 0.60 one form is clean
+# from -38.9 to +14.5 degrees; the other form is that interval negated.
+# A packing contains both forms, so its safe interval is the symmetric
+# minimum of the two -- the second table.
+#
+# An earlier revision of the space-filler claimed the region was
+# symmetric.  That was an artefact of only ever sweeping the two-cell
+# repeat unit, where the intersection of the two mirror-related
+# intervals is symmetric by construction; a single cell shows the
+# asymmetry directly, as a folded-over spike on one sign only.
+
+#: (ring scale, negative bound, positive bound) in degrees, form 0
+TWIST_LIMITS = (
+    (0.35, 60.00, 52.73), (0.40, 60.00, 36.91), (0.45, 60.00, 28.24),
+    (0.50, 60.00, 22.27), (0.55, 56.60, 17.81), (0.60, 38.91, 14.53),
+    (0.65, 27.30, 12.07), (0.70, 20.27, 9.84), (0.75, 15.00, 7.85),
+    (0.80, 10.90, 5.98), (0.85, 7.50, 4.34), (0.90, 4.57, 2.70),
+    (0.95, 2.11, 1.29), (0.97, 1.17, 0.70),
+)
+
+#: (ring scale, symmetric bound) in degrees, for a packing of both forms
+TWIST_LIMITS_PACKED = (
+    (0.35, 52.73), (0.40, 36.91), (0.45, 28.24), (0.50, 22.27),
+    (0.55, 17.81), (0.60, 14.18), (0.65, 11.37), (0.70, 8.91),
+    (0.75, 6.91), (0.80, 5.04), (0.85, 3.52), (0.90, 2.23),
+    (0.95, 1.05), (0.97, 0.59),
+)
+
+#: the entry the limits were measured on; they do NOT generalise
+TWIST_LIMIT_SOLID = 'DECATRIHEDRON'
+
+
+def _interp(table, scale):
+    s = min(max(float(scale), table[0][0]), table[-1][0])
+    for i in range(len(table) - 1):
+        r0, r1 = table[i], table[i + 1]
+        if s <= r1[0]:
+            f = (s - r0[0]) / (r1[0] - r0[0])
+            return tuple(a + f * (b - a) for a, b in zip(r0[1:], r1[1:]))
+    return tuple(table[-1][1:])
+
+
+def twist_limits(scale, form=0):
+    """Intersection-free twist interval of ONE cell, in radians.
+
+    Returns (neg, pos) magnitudes; form 1 is the mirror-wound cell, so
+    its interval is the other one's negated."""
+    neg, pos = _interp(TWIST_LIMITS, scale)
+    if form:
+        neg, pos = pos, neg
+    return radians(neg), radians(pos)
+
+
+def twist_limit_packed(scale):
+    """Symmetric bound for a packing, which contains both forms."""
+    return radians(_interp(TWIST_LIMITS_PACKED, scale)[0])
+
+
+def clamp_twist(key, twist, scale, packed):
+    """Clamp to the measured safe interval where one exists.
+
+    Only entry 1 has measured data, so every other solid is returned
+    untouched rather than clamped to a bound that was never measured
+    for it."""
+    if key != TWIST_LIMIT_SOLID:
+        return twist, False
+    if packed:
+        lim = twist_limit_packed(scale)
+        out = max(-lim, min(lim, twist))
+    else:
+        neg, pos = twist_limits(scale)
+        out = max(-neg, min(pos, twist))
+    return out, abs(out - twist) > 1e-12
+
+
 FAMILY_LABELS = {
     'TRIHEDRA': "Three faces",
     'TETRAHEDRA': "Four faces",

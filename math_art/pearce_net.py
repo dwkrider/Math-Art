@@ -552,7 +552,21 @@ SC_BASE8 = ((0, 0, 0),)
 SC_NBR8 = tuple(v for v in (
     (8, 0, 0), (-8, 0, 0), (0, 8, 0), (0, -8, 0), (0, 0, 8), (0, 0, -8)))
 
+#: the NbO net (RCSR `nbo`), 4-connected and SQUARE-PLANAR.  Vertices
+#: are Wyckoff 6b of Im-3m, which in eighths of our cubic cell are the
+#: axis midpoints at multiples of 4 with the all-even and all-odd sites
+#: (cell corners and body centres) left vacant -- the ordered-vacancy
+#: rock salt pattern.  Its bond is the HALF-<100> branch, so the net
+#: sits inside the Universal Node system unchanged.  Verified: every
+#: interior vertex has degree 4 with bond angles exactly 90 and 180
+#: degrees and its four branches coplanar, matching RCSR's 4/mmm.
+NBO_BASE8 = ((0, 4, 4), (4, 0, 4), (4, 4, 0),
+             (4, 0, 0), (0, 4, 0), (0, 0, 4))
+NBO_NBR8 = ((4, 0, 0), (-4, 0, 0), (0, 4, 0),
+            (0, -4, 0), (0, 0, 4), (0, 0, -4))
+
 NETS = {
+    'NBO': (NBO_BASE8, NBO_NBR8),
     'SRS': (SRS_BASE8, SRS_NBR8),
     'DIAMOND': (DIAMOND_BASE8, DIAMOND_NBR8),
     'BCC': (BCC_BASE8, BCC_NBR8),
