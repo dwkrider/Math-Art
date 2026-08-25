@@ -1297,6 +1297,135 @@ if _IN_BLENDER:
         context.view_layer.objects.active = obj
         return obj, net['info']
 
+    # ------------------------------------------------------------ #
+    #  operator-side wiring, shared by every generator offering the  #
+    #  style, so its properties and wording stay identical           #
+    # ------------------------------------------------------------ #
+
+    from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
+                           IntProperty)
+
+    def net_enum_item():
+        """The ('NET', ...) entry for a generator's style enum."""
+        return ('NET', "Papercraft Net",
+                "Unfold the shell flat into a net you could cut out "
+                "and fold up: fold lines marked mountain or valley, "
+                "glue tabs on the cut edges, and matching numbers on "
+                "the edges that join. The Fold slider folds the net "
+                "back into the solid")
+
+    class NetStyleProps:
+        """Property mixin for operators offering the Papercraft Net
+        style.  Inherit it alongside `bpy.types.Operator`:
+        `register_class` gathers annotations from base classes too,
+        which is how `bpy_extras`' `AddObjectHelper` works and how
+        several generators here already take their properties.  Never
+        register this class itself, and never derive it from a
+        `bpy.types` class."""
+        fold: FloatProperty(
+            name="Fold", default=0.0, min=0.0, max=1.0, subtype='FACTOR',
+            description="How far the net is folded up: 0 lays it out "
+                        "flat, 1 closes it into the finished solid, and "
+                        "every value between keeps each face rigid")
+        net_layout: EnumProperty(
+            name="Unfolding",
+            items=[('BFS', "Breadth First",
+                    "Spread outward from the largest face. Fast and "
+                    "repeatable, and symmetric solids come out "
+                    "symmetric"),
+                   ('SEARCH', "Best Of Many",
+                    "Try many unfoldings and keep the one that needs "
+                    "the fewest separate pieces and packs tightest")],
+            default='BFS',
+            description="How the faces are unfolded into the plane")
+        net_seed: IntProperty(
+            name="Seed", default=0, min=0,
+            description="Which set of unfoldings Best Of Many tries; "
+                        "change it for a different net of the same "
+                        "solid")
+        glue_tabs: BoolProperty(
+            name="Glue Tabs", default=True,
+            description="Add a glue tab along one edge of every cut "
+                        "pair, narrowed or dropped where the net "
+                        "leaves no room for it")
+        tab_size: FloatProperty(
+            name="Tab Size", default=0.1, min=0.02, max=0.9,
+            description="Depth of the glue tabs, as a fraction of the "
+                        "edge they stand on")
+        edge_numbers: BoolProperty(
+            name="Edge Numbers", default=True,
+            description="Print a matching number beside each cut edge "
+                        "and on its glue tab, so the edges that join "
+                        "can be found while building")
+
+    def draw_net_props(lay, op):
+        """The Papercraft Net block of an operator's `draw()`."""
+        lay.prop(op, 'fold')
+        lay.prop(op, 'net_layout')
+        row = lay.row()
+        row.enabled = op.net_layout == 'SEARCH'
+        row.prop(op, 'net_seed')
+        lay.prop(op, 'glue_tabs')
+        row = lay.row()
+        row.enabled = op.glue_tabs
+        row.prop(op, 'tab_size')
+        lay.prop(op, 'edge_numbers')
+
+    # Every candidate tab is overlap-tested against its whole island, so
+    # tabbing costs roughly O(faces^2) where the unfolding itself is
+    # near-linear: measured 7 s at 1280 faces, 41 s at 2880, 127 s at
+    # 5120, against 0.8 s to unfold that last one.  A dense mesh should
+    # therefore lose its tabs, not its net.
+    NET_TAB_FACE_LIMIT = 1500
+
+    def emit_net_from_operator(op, context, V, F, label, gap=None,
+                               material_fn=None, hint=None):
+        """The whole NET branch of an operator's `execute()`: guard,
+        build, report.  Returns {'FINISHED'} or {'CANCELLED'}.
+
+        `gap` and the planarity threshold are taken from the geometry's
+        own bounding box rather than a `scale` property, because the
+        generators do not agree on one -- several ship raw-scale
+        coordinates -- and `tab_size` is edge-relative already.  `hint`
+        is appended to the error when a surface will not unfold.
+        """
+        ext = _bbox_diag(V)
+        tabs, numbers = op.glue_tabs, op.edge_numbers
+        skipped = tabs and len(F) > NET_TAB_FACE_LIMIT
+        if skipped:
+            tabs = numbers = False
+        if gap is None:
+            gap = 0.05 * ext
+        try:
+            _obj, info = emit_net(
+                context, V, F, label, fold=op.fold, mode=op.net_layout,
+                seed=op.net_seed, tabs=tabs, tab_size=op.tab_size,
+                numbers=numbers, gap=gap, material_fn=material_fn)
+        except ValueError as e:
+            msg = f"{label} cannot be unfolded: {e}"
+            if hint:
+                msg += " -- " + hint
+            op.report({'ERROR'}, msg)
+            return {'CANCELLED'}
+        op.report({'INFO'},
+                  f"{label} net: {info['islands']} piece(s), "
+                  f"{info['faces']} faces, {info['tabs']} tab(s), "
+                  f"{info['mountains']} mountain / {info['valleys']} "
+                  f"valley fold(s)")
+        if skipped:
+            op.report({'WARNING'},
+                      f"glue tabs and edge numbers skipped above "
+                      f"{NET_TAB_FACE_LIMIT} faces ({len(F)} here)")
+        if info['dropped']:
+            op.report({'WARNING'},
+                      f"{info['dropped']} glue tab(s) dropped where "
+                      f"the net leaves no room")
+        if info['planarity'] > 5e-5 * ext:
+            op.report({'WARNING'},
+                      "this solid's faces are not flat, so the net is "
+                      "approximate")
+        return {'FINISHED'}
+
     def register():
         pass
 
