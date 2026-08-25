@@ -86,6 +86,7 @@ _MODULE_NAMES = [
     'invariant_manifold_generator',
     'spacefill_generator',
     'spidron_ball_generator',
+    'spidron_spacefill_generator',
     'interlocking_generator',
     'link_generator',
     'topological_surface_generator',

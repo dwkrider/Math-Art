@@ -65,6 +65,12 @@ PARAMS = {
                                   twist_style='ADVANCE',
                                   relief_style='WOVEN',
                                   color_by='PAIR', colors=5),
+    # The two-cell repeat unit IS the subject: on a single decatrihedron
+    # the space-filling's CW-meets-CCW rule is invisible, and the pair
+    # of opposite-winding polyhedra (coloured by form) is the paper's
+    # own Figure 3.  A small gap keeps the two solids readable as two.
+    "mesh.spidron_spacefill_add": dict(layout_kind='UNIT', rings=6,
+                                       gap=0.94, color_by='FORM'),
     # -- solids ---------------------------------------------------
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The

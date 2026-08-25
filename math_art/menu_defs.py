@@ -124,6 +124,7 @@ POLYHEDRA = Menu(
         _e("mesh.hyperbolic_honeycomb_add", 'META_BALL'),
         _e("mesh.spacefill_add", 'SNAP_VOLUME'),
         _e("mesh.spidron_ball_add", 'MESH_ICOSPHERE'),
+        _e("mesh.spidron_spacefill_add", 'SNAP_VOLUME'),
         _e("mesh.interlocking_add", 'MOD_BUILD'),
         _e("mesh.geodesic_add", 'MESH_UVSPHERE'),
         _e("mesh.spiked_polyhedron_add", 'LIGHT_SUN'),
