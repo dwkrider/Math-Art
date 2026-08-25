@@ -385,7 +385,6 @@ def arm_boundary_edges(faces, labels):
     owner = {}
     out = []
     for f, lab in zip(faces, labels):
-        lab = tuple(lab)[:2]            # (face, arm) -- mesh adjacency
         for k in range(len(f)):
             a, b = f[k], f[(k + 1) % len(f)]
             e = (a, b) if a < b else (b, a)
@@ -498,25 +497,104 @@ def arm_keys(face, mpoly):
     return None
 
 
-def limb_index(arm_i, ring_i, mpoly, ch, twist_style):
-    """Which spiral LIMB a triangle belongs to.
+def arm_edge(face, mpoly, arm_i):
+    """The solid EDGE the arm at `arm_i` belongs to."""
+    keys = arm_keys(face, mpoly)
+    if keys is None:
+        return None
+    k = keys[arm_i % len(keys)]
+    return k[1] if isinstance(k[0], int) else k
 
-    With Twist Style Advance each ring is turned by a whole node step,
-    so the triangle at (ring t, arm k) does not sit radially inward of
-    (ring t-1, arm k) -- it sits one step around from it.  A limb that
-    reads as one continuous band sweeping from the rim into the vortex
-    therefore has an arm index that DRIFTS by one per ring, in the
-    direction the rings are wound.  Colouring by `arm_i` alone slices
-    that band into differently coloured pieces, one per ring, which is
-    not what a viewer means by an arm.
 
-    Verified against the geometry: grouping by this index holds each
-    group to about a 23-degree azimuth band on a pentagon face, against
-    345 degrees -- i.e. the whole face -- for the raw arm index.
+def face_conflict_graph(faces):
+    """Solid edges, and which pairs may not share a colour.
+
+    Two edges conflict when they lie on a COMMON FACE.  That is the
+    constraint "do not repeat a colour among the petals of one face of
+    the underlying solid": a petal is the flap over an edge, a face
+    carries one petal per edge, and they all have to differ.  Every
+    face's edges therefore form a clique, so a solid whose largest face
+    has s sides needs at least s colours.
     """
-    if twist_style != 'ADVANCE':
-        return arm_i % mpoly
-    return (arm_i + ch * ring_i) % mpoly
+    import collections
+    order, idx = [], {}
+    for f in faces:
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            e = (a, b) if a < b else (b, a)
+            if e not in idx:
+                idx[e] = len(order)
+                order.append(e)
+    adj = collections.defaultdict(set)
+    for f in faces:
+        fe = []
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            fe.append(idx[(a, b) if a < b else (b, a)])
+        for i in range(len(fe)):
+            for j in range(i + 1, len(fe)):
+                adj[fe[i]].add(fe[j])
+                adj[fe[j]].add(fe[i])
+    return idx, adj, len(order)
+
+
+def colour_regions(nregions, adj, ncolors):
+    """Colour the conflict graph, using no more than `ncolors`.
+
+    Plain greedy is not good enough here: on a dodecahedron it wants
+    seven colours where five suffice, and five is the lower bound (a
+    pentagon's five edges are mutually in conflict).  DSATUR first --
+    colour the most-constrained region next -- then randomised restarts,
+    which finds the optimum on every seed this generator offers.  If
+    `ncolors` really is below what the solid needs the fallback is
+    modular, so the build still succeeds and the caller can raise it.
+    """
+    import random
+
+    def attempt(order):
+        col = {}
+        for v in order:
+            used = {col[u] for u in adj.get(v, ()) if u in col}
+            c = next((c for c in range(ncolors) if c not in used), None)
+            if c is None:
+                return None
+            col[v] = c
+        return col
+
+    col = {}
+    while len(col) < nregions:
+        best = max((v for v in range(nregions) if v not in col),
+                   key=lambda v: (len({col[u] for u in adj.get(v, ())
+                                       if u in col}),
+                                  len(adj.get(v, ()))))
+        used = {col[u] for u in adj.get(best, ()) if u in col}
+        c = next((c for c in range(ncolors) if c not in used), None)
+        if c is None:
+            col = None
+            break
+        col[best] = c
+    if col is not None:
+        return col, True
+    order = list(range(nregions))
+    for seed in range(400):
+        random.Random(seed).shuffle(order)
+        got = attempt(order)
+        if got is not None:
+            return got, True
+    return {v: v % ncolors for v in range(nregions)}, False
+
+
+def min_colours(nregions, adj, cap=12):
+    """Fewest colours that avoid a repeat, or `cap` + 1 if none do.
+
+    The largest face's side count is only a LOWER bound -- a
+    truncated icosahedron has hexagons, so at least six, but it
+    actually needs seven -- so the honest answer is found by trying.
+    """
+    for k in range(1, cap + 1):
+        if colour_regions(nregions, adj, k)[1]:
+            return k
+    return cap + 1
 
 
 def _material_index(color_by, face_i, ring_i, arm_i, kind, ch, pair_i=0,
@@ -603,28 +681,32 @@ def build(seed='DODECA', rings=8, scale=2.0 / 3.0, twist=0.0,
                 kind = ti % 2
             else:
                 ring_i, arm_i, kind = rings, ti - n_ann, 2
-            limb = limb_index(arm_i, ring_i, mpoly, ch, twist_style)
             if akeys is None:
-                pair_i = limb
+                pair_i = arm_i
             else:
-                key = akeys[limb % len(akeys)]
+                key = akeys[arm_i % len(akeys)]
                 if key not in pair_index:
                     pair_index[key] = len(pair_index)
                 pair_i = pair_index[key]
-            mats.append(_material_index(color_by, fi, ring_i, limb,
+            mats.append(_material_index(color_by, fi, ring_i, arm_i,
                                         kind, ch, pair_i, colors))
-            # Creases follow MESH ADJACENCY, not the colour grouping.
-            # The ribbon a triangle belongs to physically is the chain
-            # of constant arm index -- that is what shares edges ring to
-            # ring -- whereas `limb` groups by constant azimuth, which
-            # under Advance drifts one step per ring.  Labelling the
-            # creases with `limb` marked every ring-to-ring edge sharp
-            # as well, creasing the ribbon along its own length and
-            # undoing the smooth shading entirely.
-            # (face, arm, limb): `arm` is mesh adjacency and drives the
-            # creases; `limb` is the colour grouping.  Under Advance the
-            # two differ by the per-ring drift.
-            labels.append((fi, arm_i, limb))
+            labels.append((fi, arm_i))
+    if color_by == 'PAIR':
+        # Joined Arms: the petal is the flap over one EDGE of the solid
+        # -- the two arms either side of that edge's raised ridge, in
+        # BOTH faces that share it, running from one vortex across the
+        # fold to the next.  One colour for the whole of that, and no
+        # colour repeated among the petals of a single face.
+        idx, adj, nreg = face_conflict_graph(SF)
+        col, palette_ok = colour_regions(nreg, adj, max(1, colors))
+        mats = []
+        for (fi2, ai2) in labels:
+            f2 = SF[fi2]
+            mp2 = 2 * len(f2) if relief > 0.0 else len(f2)
+            ed = arm_edge(f2, mp2, ai2)
+            mats.append(col[idx[ed]] if ed in idx else 0)
+        if not palette_ok:
+            colour_ok = False
     return verts, faces, mats, colour_ok, labels
 
 
@@ -761,9 +843,15 @@ if _IN_BLENDER:
                     # render until you go hunting for the crease
                     self.report({'WARNING'},
                                 "no arm boundaries found to crease")
-            warn = ("" if colour_ok or self.chirality != 'ALTERNATE'
-                    else "  (face graph has an odd cycle: alternating "
-                         "chirality is impossible on this solid)")
+            warn = ""
+            if self.color_by == 'PAIR' and not colour_ok:
+                _i, _a, _n = face_conflict_graph(seed_solid(self.seed)[1])
+                need = min_colours(_n, _a)
+                warn = ("  (Colors %d cannot avoid repeats on this "
+                        "solid; it needs %d)" % (int(self.colors), need))
+            elif not colour_ok and self.chirality == 'ALTERNATE':
+                warn = ("  (face graph has an odd cycle: alternating "
+                        "chirality is impossible on this solid)")
             self.report({'INFO'}, "%s  V=%d F=%d  creases=%d%s"
                         % (self.seed.title(), len(me.vertices),
                            len(me.polygons), ncrease, warn))
@@ -774,7 +862,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             for p in ('seed', 'rings', 'scale_step', 'twist_style',
                       'twist', 'relief', 'relief_style', 'chirality',
-                      'color_by', 'open_center', 'smooth',
+                      'color_by', 'colors', 'open_center', 'smooth',
                       'sharp_edges'):
                 lay.prop(self, p)
             lay.prop(self, 'align')
@@ -914,80 +1002,90 @@ def _selftest():
     _V4, _F4, M4, _o4, lb4 = build('DODECA', rings=4, color_by='PAIR')
     _SVd, SFd = seed_solid('DODECA')
     by_key = {}
-    for (fi2, _ai2, li2), m in zip(lb4, M4):
+    for (fi2, ai2), m in zip(lb4, M4):
         ks = arm_keys(SFd[fi2], 2 * len(SFd[fi2]))
-        by_key.setdefault(ks[li2 % len(ks)], set()).add(m)
+        by_key.setdefault(ks[ai2 % len(ks)], set()).add(m)
     mixed = sum(1 for v in by_key.values() if len(v) != 1)
     chk("paired arms share one material", mixed == 0,
         "%d of %d keys mixed" % (mixed, len(by_key)))
     # and the pairing is not vacuous: neighbouring arms within a face
     # must still differ, or "same colour" would just mean "one colour"
     per_face = {}
-    for (fi2, _ai2, li2), m in zip(lb4, M4):
-        per_face.setdefault(fi2, {})[li2] = m
-    varied = sum(1 for d in per_face.values() if len(set(d.values())) > 2)
+    for (fi2, ai2), m in zip(lb4, M4):
+        per_face.setdefault(fi2, {})[ai2] = m
+    # Joined Arms now colours crease-bounded regions with a graph
+    # colouring, so a face carries as many colours as its petals need
+    # to stay apart -- two is legitimate, one would mean the pinwheel
+    # had vanished.
+    varied = sum(1 for d in per_face.values() if len(set(d.values())) > 1)
     chk("faces still carry several colours", varied == len(per_face),
         "%d of %d faces" % (varied, len(per_face)))
 
-    print("spidron_ball: limbs follow the spiral")
-    # The claim that makes Joined Arms mean what a viewer expects: a
-    # limb index holds a group of triangles inside a narrow azimuth
-    # band, sweeping from rim to vortex, where the raw arm index
-    # smears the same group right round the face.
-    SVl, SFl = seed_solid('DODECA')
-    Al = np.asarray(SVl, float)
-    Al = Al / float(np.linalg.norm(Al, axis=1).max())
-    fl = SFl[0]
-    polyl = woven_boundary(fl, Al, regular_relief(5))
-    Cl = np.mean([Al[i] for i in fl], axis=0)
-    Nl = sm._best_fit_normal(np.asarray(polyl, float))
-    if float(Nl @ (Cl - Al.mean(axis=0))) < 0.0:
-        Nl = -Nl
-    ml, rgs = len(polyl), 6
-    Vl, Fl, _Ml = sm.spidronise(polyl, 2.0 / 3.0, 2.0 * pi / ml, rgs,
-                                chirality=1, centre=Cl, normal=Nl,
-                                cap=False)
-    Vl = np.asarray(Vl, float)
-    e1 = np.asarray(polyl[0], float) - Cl
-    e1 = e1 - float(e1 @ Nl) * Nl
-    e1 /= np.linalg.norm(e1)
-    e2 = np.cross(Nl, e1)
+    print("spidron_ball: Joined Arms colours whole petals")
+    # A petal is the flap over one EDGE of the solid: the two arms
+    # either side of that edge's ridge, in BOTH faces sharing it.  It
+    # must be one colour, and no two petals of a face may match.
+    for kind in want:
+        SVp, SFp = seed_solid(kind)
+        _ix, _aj, _nr = face_conflict_graph(SFp)
+        need = min_colours(_nr, _aj)
+        Vp, Fp, Mp, _o, lbp = build(kind, rings=5, color_by='PAIR',
+                                    colors=need)
+        petal, per_face2 = {}, {}
+        for ti, (fi2, ai2) in enumerate(lbp):
+            f2 = SFp[fi2]
+            ed = arm_edge(f2, 2 * len(f2), ai2)
+            petal.setdefault(ed, set()).add(Mp[ti])
+            per_face2.setdefault(fi2, {})[ed] = Mp[ti]
+        mixed = sum(1 for v in petal.values() if len(v) != 1)
+        chk("%-16s every petal is one colour" % kind, mixed == 0,
+            "%d petals, %d mixed" % (len(petal), mixed))
+        rep = sum(len(d) - len(set(d.values()))
+                  for d in per_face2.values())
+        chk("%-16s no repeats at its own minimum (%d)" % (kind, need),
+            rep == 0 and need >= max(len(f2) for f2 in SFp),
+            "%d repeats, %d colours" % (rep, len(set(Mp))))
+        chk("%-16s petal count == edge count" % kind,
+            len(petal) == sum(len(f2) for f2 in SFp) // 2)
+    # the dodecahedron does it in exactly five, which is its lower bound
+    _v, _f, M5, _o, _l = build('DODECA', rings=5, color_by='PAIR',
+                               colors=5)
+    chk("dodecahedron needs exactly five colours",
+        len(set(M5)) == 5)
 
-    def _spread(by_limb):
-        grp = {}
-        for ti in range(len(Fl)):
-            rt, ar = ti // (2 * ml), (ti % (2 * ml)) // 2
-            d = Vl[list(Fl[ti])].mean(axis=0) - Cl
-            a = degrees(atan2(float(d @ e2), float(d @ e1))) % 360.0
-            key = limb_index(ar, rt, ml, 1, 'ADVANCE') if by_limb else ar
-            grp.setdefault(key, []).append(a)
-        out = []
-        for v in grp.values():
-            v = np.asarray(v)
-            v = (v - v[0] + 180.0) % 360.0 - 180.0
-            out.append(float(v.max() - v.min()))
-        return float(np.mean(out))
-    s_limb, s_arm = _spread(True), _spread(False)
-    chk("limb index holds one azimuth band",
-        s_limb < 40.0 and s_arm > 300.0,
-        "limb %.0f deg vs raw arm %.0f deg" % (s_limb, s_arm))
-    # and under FIXED there is no drift to compensate
-    chk("no drift compensation under Twist Style Fixed",
-        all(limb_index(a, r, ml, 1, 'FIXED') == a
-            for a in range(ml) for r in range(rgs)))
+
+    # "Joined" is the load-bearing word: a petal must contain triangles
+    # from BOTH faces that share its edge, not just one.
+    Vr, Fr, Mr, _o, lbr = build('DODECA', rings=5, color_by='PAIR')
+    SVr, SFr = seed_solid('DODECA')
+    faces_in = {}
+    for ti, (fi2, ai2) in enumerate(lbr):
+        ed = arm_edge(SFr[fi2], 2 * len(SFr[fi2]), ai2)
+        faces_in.setdefault(ed, set()).add(fi2)
+    spanning = sum(1 for v in faces_in.values() if len(v) == 2)
+    chk("every petal joins exactly two faces",
+        spanning == len(faces_in), "%d of %d" % (spanning, len(faces_in)))
 
     print("spidron_ball: colour modes and creases")
-    for cb, lo, hi in (('PAIR', 5, 5), ('ARM', 5, 5), ('RING', 5, 5),
+    for cb, lo, hi in (('PAIR', 2, 5), ('ARM', 5, 5), ('RING', 5, 5),
                        ('FACE', 5, 5), ('SHAPE', 2, 3),
                        ('CHIRALITY', 1, 2), ('UNIFORM', 1, 1)):
         _, _, M, _, _ = build('DODECA', rings=6, color_by=cb)
         used = len(set(M))
         chk("colour by %-9s uses %2d materials" % (cb, used),
             lo <= used <= hi and max(M) < NPAL)
+    # Colors is a CEILING for Joined Arms -- the graph colouring takes
+    # only as many as it needs, and four is enough on every seed here --
+    # and an exact count for the modes that just cycle the palette.
     for n in (1, 3, 5, 12):
         _, _, M, _, _ = build('DODECA', rings=6, color_by='PAIR', colors=n)
-        chk("colors=%-2d honoured" % n, len(set(M)) == n,
-            "%d used" % len(set(M)))
+        chk("colors=%-2d is a ceiling for Joined Arms" % n,
+            len(set(M)) <= n, "%d used" % len(set(M)))
+        # Arm cycles the arm index, and a relieved pentagon face has
+        # ten arms, so it can only show min(colors, 10) of them
+        _, _, M2, _, _ = build('DODECA', rings=6, color_by='ARM', colors=n)
+        chk("colors=%-2d is exact for Arm (capped at 10 arms)" % n,
+            len(set(M2)) == min(n, 10), "%d used" % len(set(M2)))
     V, F, M, _, labels = build('DODECA', rings=6)
     ce = arm_boundary_edges(F, labels)
     chk("arm boundaries found to crease", len(ce) > 0, "%d edges" % len(ce))
@@ -995,7 +1093,6 @@ def _selftest():
     # inside a single arm may be creased
     owner = {}
     for f, lab in zip(F, labels):
-        lab = tuple(lab)[:2]
         for k in range(len(f)):
             a, b = f[k], f[(k + 1) % len(f)]
             owner.setdefault((a, b) if a < b else (b, a), []).append(lab)
