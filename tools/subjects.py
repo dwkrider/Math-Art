@@ -71,6 +71,15 @@ PARAMS = {
     # own Figure 3.  A small gap keeps the two solids readable as two.
     "mesh.spidron_spacefill_add": dict(layout_kind='UNIT', rings=6,
                                        gap=0.94, color_by='FORM'),
+    # Pearce's diamond tetrahedron is the famous one: four REGULAR
+    # skew hexagons, the interstitial domain of the diamond net, and
+    # the solid that reads unmistakably as a saddle polyhedron at icon
+    # size.  Relaxed to the minimal surface, which is Pearce's own
+    # definition of the face.
+    "mesh.saddle_polyhedron_add": dict(family='TETRAHEDRA',
+                                       solid='DIAMOND_TETRAHEDRON',
+                                       face_style='MINIMAL',
+                                       density=4, smoothness=40),
     # -- solids ---------------------------------------------------
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
@@ -225,6 +234,12 @@ import math                                              # noqa: E402
 GYROID_POSE = (-0.1967, 0.1944, -1.8216)
 
 ORIENT = {
+    # The diamond tetrahedron's 3-fold axis is vertical by
+    # construction, and straight down it the four hexagons stack into a
+    # flat hexagonal silhouette -- the one view that hides the saddle
+    # curvature the generator exists to show.  Tip it off the axis so
+    # two faces turn toward the camera.
+    "mesh.saddle_polyhedron_add": (0.95, 0.0, 0.5),
     # A tetrahedron sitting face-on reads as a flat triangle; a sixth
     # of a turn puts an edge toward the camera and it reads as a solid.
     "mesh.regular_solid_add": (0.0, 0.0, 0.62),
