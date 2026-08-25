@@ -406,30 +406,108 @@ def face_adjacency(F):
     return adj
 
 
-def spanning_tree(F, adj, root, rng=None):
-    """Dual spanning tree.  `parent[fi]` is None for the root, else
-    (parent face, slot in this face, slot in the parent).  Returns
-    (parent, breadth-first order)."""
-    parent = [None] * len(F)
-    seen = [False] * len(F)
-    seen[root] = True
-    order = [root]
-    frontier = [root]
-    while frontier:
-        if rng is None:
-            fi = frontier.pop(0)
-            nbs = adj[fi]
+def _poly_area(P):
+    """Unsigned area of a simple 2D polygon."""
+    s = 0.0
+    for k in range(len(P)):
+        q = P[(k + 1) % len(P)]
+        s += P[k][0] * q[1] - q[0] * P[k][1]
+    return abs(s) / 2.0
+
+
+def _fits(trial, members, flat, boxes, eps):
+    """Whether `trial` clears every polygon already placed."""
+    tb = _bounds(trial)
+    for fj in members:
+        bj = boxes[fj]
+        if (bj[0] > tb[2] - eps or bj[2] < tb[0] + eps
+                or bj[1] > tb[3] - eps or bj[3] < tb[1] + eps):
+            continue
+        if poly_overlap(trial, flat[fj], eps) > 0.0:
+            return False
+    return True
+
+
+def greedy_layout(F, local, adj, areas, eps, rng=None, first_root=None):
+    """Lay the faces down one at a time, trying every already-placed
+    neighbour as a hinge and starting a new island only when a face
+    fits nowhere.
+
+    The obvious method -- fix a spanning tree, lay it out, then cut
+    hinges wherever the result self-overlaps -- gives each face exactly
+    ONE chance to land, and when it fails it detaches that face's whole
+    subtree.  On a coiled solid like a spirallohedron, whose unfolding
+    curls back over itself almost immediately, that shears the net into
+    confetti: the first bad hinge near the root throws away everything
+    below it, and the pieces are then never reconsidered.
+
+    Placing incrementally fixes both halves of that.  A face that
+    collides where its parent would have put it usually has another
+    placed neighbour that seats it somewhere clear, so it stays attached
+    to the sheet instead of becoming its own island; and because a face
+    is retried whenever a further neighbour of it is placed, pieces that
+    fit nowhere early are picked up later rather than lost.
+
+    Returns (parent, order, flat, islands, island_of); `order` places
+    every parent before its children, as the folding needs.
+    """
+    nF = len(F)
+    flat = [None] * nF
+    parent = [None] * nF
+    island_of = [None] * nF
+    boxes = {}
+    order = []
+    unplaced = set(range(nF))
+    islands = []
+    while unplaced:
+        if first_root is not None and first_root in unplaced:
+            root = first_root
+        elif rng is None:
+            root = max(unplaced, key=lambda i: (areas[i], -i))
         else:
-            fi = frontier.pop(rng.randrange(len(frontier)))
-            nbs = list(adj[fi])
-            rng.shuffle(nbs)
-        for (nb, kh, kn) in nbs:
-            if not seen[nb]:
-                seen[nb] = True
-                parent[nb] = (fi, kn, kh)
-                order.append(nb)
-                frontier.append(nb)
-    return parent, order
+            root = rng.choice(sorted(unplaced))
+        flat[root] = list(local[root])
+        boxes[root] = _bounds(flat[root])
+        island_of[root] = root
+        order.append(root)
+        unplaced.discard(root)
+        members = [root]
+        queue = [root]
+        qi = 0
+        while qi < len(queue):
+            cur = queue[qi]
+            qi += 1
+            nbs = list(adj[cur])
+            if rng is not None:
+                rng.shuffle(nbs)
+            for (nb, _kh, _kn) in nbs:
+                if nb not in unplaced:
+                    continue
+                # every hinge this face could hang from, not just the
+                # one the spanning tree would have handed it
+                hinges = [h for h in adj[nb] if island_of[h[0]] == root]
+                if rng is not None:
+                    rng.shuffle(hinges)
+                for (p, kn, kp) in hinges:
+                    m, mp = len(F[nb]), len(F[p])
+                    a0 = local[nb][kn]
+                    a1 = local[nb][(kn + 1) % m]
+                    b1 = flat[p][kp]
+                    b0 = flat[p][(kp + 1) % mp]
+                    trial = _place(local[nb], (a0, a1), (b0, b1))
+                    if not _fits(trial, members, flat, boxes, eps):
+                        continue
+                    flat[nb] = trial
+                    boxes[nb] = _bounds(trial)
+                    parent[nb] = (p, kn, kp)
+                    island_of[nb] = root
+                    order.append(nb)
+                    members.append(nb)
+                    unplaced.discard(nb)
+                    queue.append(nb)
+                    break
+        islands.append((root, members))
+    return parent, order, flat, islands, island_of
 
 
 # ---------------------------------------------------------------- #
@@ -455,23 +533,6 @@ def _place(local, hinge_local, hinge_target):
         x, y = p[0] - a0[0], p[1] - a0[1]
         out.append((b0[0] + c * x - s * y, b0[1] + s * x + c * y))
     return out
-
-
-def layout(F, local, parent, order):
-    """Flat 2D position of every face corner, one list per face."""
-    flat = [None] * len(F)
-    flat[order[0]] = list(local[order[0]])
-    for fi in order[1:]:
-        pfi, kn, kh = parent[fi]
-        m, mp = len(F[fi]), len(F[pfi])
-        # the shared edge, as this face walks it
-        a0 = local[fi][kn]
-        a1 = local[fi][(kn + 1) % m]
-        # ... and as the parent walks it, reversed to match direction
-        b1 = flat[pfi][kh]
-        b0 = flat[pfi][(kh + 1) % mp]
-        flat[fi] = _place(local[fi], (a0, a1), (b0, b1))
-    return flat
 
 
 # ---------------------------------------------------------------- #
@@ -526,58 +587,6 @@ def find_overlaps(flat, faces, eps):
                 hits.append((d, fi, fj))
     hits.sort(reverse=True)
     return hits
-
-
-# ---------------------------------------------------------------- #
-#  islands: cut hinges until nothing overlaps                      #
-# ---------------------------------------------------------------- #
-
-def split_islands(F, parent, order, flat, eps):
-    """Partition the faces into islands that are each overlap-free.
-
-    Cutting a hinge does not move anything: the subtree below it keeps
-    the layout it already had, and only stops being tested against the
-    faces it left behind (the islands are packed apart later).  So the
-    loop is simply "cut the worst offender's hinge and re-test".
-    """
-    depth = [0] * len(F)
-    kids = [[] for _ in F]
-    for fi in order[1:]:
-        pfi = parent[fi][0]
-        depth[fi] = depth[pfi] + 1
-        kids[pfi].append(fi)
-    roots = [order[0]]
-    island_of = [order[0]] * len(F)
-    members = {order[0]: list(order)}
-    cuts = set()
-    pending = [order[0]]
-    while pending:
-        r = pending.pop()
-        hits = find_overlaps(flat, members[r], eps)
-        if not hits:
-            continue
-        _d, fi, fj = hits[0]
-        # detach the deeper of the pair; never the island's own root
-        cand = fi if depth[fi] >= depth[fj] else fj
-        if cand == r:
-            cand = fj if cand == fi else fi
-        if cand == r:                       # both are the root: impossible
-            continue
-        sub = []
-        stack = [cand]
-        while stack:
-            x = stack.pop()
-            sub.append(x)
-            stack.extend(k for k in kids[x] if island_of[k] == island_of[r])
-        cuts.add(cand)
-        subset = set(sub)
-        members[r] = [x for x in members[r] if x not in subset]
-        members[cand] = sub
-        for x in sub:
-            island_of[x] = cand
-        roots.append(cand)
-        pending.extend((r, cand))
-    return [(r, members[r]) for r in roots], cuts, island_of
 
 
 # ---------------------------------------------------------------- #
@@ -932,44 +941,24 @@ def build_net(V, F, mode='BFS', seed=0, fold=0.0, tabs=True,
     adj = face_adjacency(F)
     eps = 1e-7 * diag
 
-    areas = []
-    for fi, f in enumerate(F):
-        P = local[fi]
-        s = 0.0
-        for k in range(len(P)):
-            q = P[(k + 1) % len(P)]
-            s += P[k][0] * q[1] - q[0] * P[k][1]
-        areas.append(abs(s) / 2.0)
-    root0 = max(range(len(F)), key=lambda i: areas[i])
-
-    def attempt(rt, rng):
-        parent, order = spanning_tree(F, adj, rt, rng)
-        flat = layout(F, local, parent, order)
-        return parent, order, flat
-
+    areas = [_poly_area(local[fi]) for fi in range(len(F))]
     best = None
     if mode == 'SEARCH':
         if tries is None:
             tries = max(4, min(40, int(4000 / max(1, len(F)))))
-        rng = random.Random(seed)
-        cands = [attempt(root0, None)]
+        pick = random.Random(seed)
+        runs = [greedy_layout(F, local, adj, areas, eps)]
         for _ in range(tries):
-            cands.append(attempt(rng.randrange(len(F)), rng))
-        # rank by the cheap proxy first, split only the best few
-        ranked = sorted(
-            cands,
-            key=lambda c: len(find_overlaps(c[2], list(range(len(F))), eps)))
-        for cand in ranked[:3]:
-            parent, order, flat = cand
-            isl, cuts, iof = split_islands(F, parent, order, flat, eps)
-            score = (len(isl), _spread(flat))
+            runs.append(greedy_layout(
+                F, local, adj, areas, eps,
+                rng=random.Random(pick.randrange(1 << 30))))
+        for run in runs:
+            score = (len(run[3]), _spread(run[2]))
             if best is None or score < best[0]:
-                best = (score, parent, order, flat, isl, cuts, iof)
-    if best is None:
-        parent, order, flat = attempt(root0, None)
-        isl, cuts, iof = split_islands(F, parent, order, flat, eps)
-        best = ((len(isl), 0.0), parent, order, flat, isl, cuts, iof)
-    _score, parent, order, flat, islands, _cuts, island_of = best
+                best = (score, run)
+    else:
+        best = ((0, 0.0), greedy_layout(F, local, adj, areas, eps))
+    parent, order, flat, islands, island_of = best[1]
 
     # --- cut edges, paired ---
     tab_pairs = []
@@ -1486,10 +1475,10 @@ def _selftest():
         FF = orient_consistently(W, FF)
         frames, local, _p = face_frames(W, FF)
         adj = face_adjacency(FF)
-        par, order = spanning_tree(FF, adj, 0, None)
-        flat = layout(FF, local, par, order)
+        areas = [_poly_area(local[fi]) for fi in range(len(FF))]
         eps = 1e-7 * _bbox_diag(W)
-        isl, _c, iof = split_islands(FF, par, order, flat, eps)
+        par, order, flat, isl, iof = greedy_layout(FF, local, adj, areas,
+                                                   eps)
         clean = all(not find_overlaps(flat, mem, eps) for _r, mem in isl)
         # areas preserved by the unfolding
         worst_a = 0.0
@@ -1578,9 +1567,10 @@ def _selftest():
     SF2 = orient_consistently(SV2, SF2)
     _fr, loc, _pl = face_frames(SV2, SF2)
     padj = face_adjacency(SF2)
-    par, order = spanning_tree(SF2, padj, 0, None)
-    fl = layout(SF2, loc, par, order)
-    _isl, _c, iof = split_islands(SF2, par, order, fl, 1e-9)
+    ar = [_poly_area(loc[fi]) for fi in range(len(SF2))]
+    # root at the first triangle so the other one hangs off the diagonal
+    par, order, fl, _isl, iof = greedy_layout(SF2, loc, padj, ar, 1e-9,
+                                              first_root=0)
     Amap = full_fold_maps(SV2, SF2, fl)
     _th, sg, _hg = fold_angles(SF2, par, order, fl, Amap, iof)
     nflat = sum(1 for fi in range(len(SF2))
