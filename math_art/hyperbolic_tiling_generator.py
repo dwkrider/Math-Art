@@ -385,7 +385,7 @@ SPIDRON_COLOR_ITEMS = [
 
 
 def build_spidron_fill(p, q, r, form, model, depth, max_tiles, rings,
-                       color_mode='ARM', checker=False):
+                       color_mode='ARM', checker=False, cap_cores=False):
     """Spidron-fill every face of the tiling, for a flat disk model.
     Returns (polys, mats): one flat polygon per nest triangle and its
     material index.
@@ -416,7 +416,7 @@ def build_spidron_fill(p, q, r, form, model, depth, max_tiles, rings,
         else:
             need = int(np.ceil(np.log(0.006 / span) / np.log(ratio)))
             rk = min(rings, max(1, need))
-        tris, arms, rixs, _core = _nest_klein(K, rk)
+        tris, arms, rixs, core = _nest_klein(K, rk)
         base = int(tilepar[i])
         for t, ai, ri in zip(tris, arms, rixs):
             polys.append(_tri_poly(t, model))
@@ -426,6 +426,25 @@ def build_spidron_fill(p, q, r, form, model, depth, max_tiles, rings,
                 mats.append(0)
             else:                       # ARM two-tone
                 mats.append((ai + base) % 2)
+        if cap_cores and len(core) >= 3:
+            # The nest never closes -- each ring is smaller than the
+            # last for ever -- so a finite build always leaves the
+            # innermost polygon open.  Kaplan draws that hole; capping
+            # it fills the tile completely instead.  The cap is the
+            # core polygon itself, taken as one face, so it lands
+            # exactly on the innermost ring with no seam.
+            polys.append(_tri_poly(core, model)
+                         if len(core) == 3 else
+                         (np.array([(v[0], v[1]) for v in core])
+                          if model == 'KLEIN'
+                          else np.array([_to_poincare(
+                              _lift_klein(v[0], v[1])) for v in core])))
+            if color_mode == 'RING':
+                mats.append((rk + base) % 2)
+            elif color_mode == 'UNIFORM':
+                mats.append(0)
+            else:
+                mats.append(base % 2)
     return polys, mats
 
 
@@ -513,6 +532,13 @@ if _IN_BLENDER:
             description="How the nest triangles are coloured -- "
                         "Kaplan's point that different colourings "
                         "bring out different geometric features")
+        spidron_cap: BoolProperty(
+            name="Cap Centres", default=True,
+            description="Close the small hole left at the centre of "
+                        "every tile. The nest never closes -- each ring "
+                        "is smaller than the last for ever -- so a "
+                        "finite build always leaves one open; turn this "
+                        "off for the open centres of Kaplan's pictures")
         spidron_checker: BoolProperty(
             name="Checkerboard", default=False,
             description="Flip the two-tone's phase on alternating "
@@ -584,7 +610,7 @@ if _IN_BLENDER:
                         self.p, self.q, self.r, self.form, self.model,
                         self.depth, self.max_tiles,
                         int(self.spidron_rings), self.spidron_color,
-                        self.spidron_checker)
+                        self.spidron_checker, self.spidron_cap)
                     if not polys:
                         self.report({'ERROR'}, "no tiles generated")
                         return {'CANCELLED'}
@@ -667,6 +693,7 @@ if _IN_BLENDER:
             if spid:
                 lay.prop(self, 'spidron_rings')
                 lay.prop(self, 'spidron_color')
+                lay.prop(self, 'spidron_cap')
                 if self.spidron_color != 'UNIFORM':
                     lay.prop(self, 'spidron_checker')
             else:
@@ -947,6 +974,28 @@ def _selftest():
             ((6, 4), 'ARM', True, 'KLEIN')):
         polys, mats = build_spidron_fill(p_, q_, 2, 'REGULAR', model,
                                          20, 400, 4, mode, chk_)
+        pc_, _mc = build_spidron_fill(p_, q_, 2, 'REGULAR', model,
+                                      20, 400, 4, mode, chk_, True)
+        # Capping closes each tile's unreachable core.  It must ADD
+        # faces without disturbing any that were already there, and add
+        # no more than one per tile -- a tile whose nest stopped at a
+        # sub-pixel ring gets no cap.
+        # (the cap for a tile is appended right after that tile's own
+        # triangles, so the two lists interleave -- compare as sets,
+        # not position by position)
+        def _fk(pp):
+            return tuple(sorted((round(float(v[0]), 9),
+                                 round(float(v[1]), 9)) for v in pp))
+        cap_added = len(pc_) - len(polys)
+        kept = set(map(_fk, pc_))
+        cap_ok = (cap_added > 0
+                  and all(_fk(a) in kept for a in polys)
+                  and all(len(pp) >= 3 for pp in pc_)
+                  and max(float(np.hypot(v[0], v[1]))
+                          for pp in pc_ for v in pp) <= 1.0 + 1e-9)
+        spid_ok = spid_ok and cap_ok
+        print("cap  {%d,%d} %-8s  +%4d faces, originals kept  %s"
+              % (p_, q_, model, cap_added, "OK" if cap_ok else "BAD"))
         rmax = max(float(np.hypot(v[0], v[1]))
                    for pp in polys for v in pp)
         good = (len(polys) > 200 and set(mats) <= {0, 1}
