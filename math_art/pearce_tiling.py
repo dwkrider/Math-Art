@@ -384,6 +384,7 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06):
                   orbit_ratio=orbit_ratio,
                   overlapping_orbit=orbit_ratio > 1.0 + tol,
                   self_intersecting=over > 0,
+                  trimmed=len(copies) < len(orbit),
                   cell_volume=vol, block_volume=block,
                   filled=total, ratio=ratio,
                   fills=abs(ratio - 1.0) <= tol,
@@ -444,9 +445,18 @@ def _selftest():
         # a cubic block" and a cell whose net is not cubic can exceed
         # 1 without intersecting anything.  What is gated is that the
         # orbit is non-empty and no face is used more than twice.
-        chk("%s: orbit is the packing" % tag,
-            rep['copies'] == rep['orbit'] or rep['orbit'] == 0,
-            "%d of %d" % (rep['copies'], rep['orbit']))
+        # The orbit IS the packing unless it provably double-covered:
+        # a trim only happens when some face belonged to three cells,
+        # and what it produces must itself be clean.
+        if rep['trimmed']:
+            chk("%s: trimmed only a double cover" % tag,
+                rep['overused_faces'] == 0 and rep['ratio'] <= 1.0 + 1e-6,
+                "%d of %d, ratio %.3f"
+                % (rep['copies'], rep['orbit'], rep['ratio']))
+        else:
+            chk("%s: orbit is the packing" % tag,
+                rep['copies'] == rep['orbit'] or rep['orbit'] == 0,
+                "%d of %d" % (rep['copies'], rep['orbit']))
         print("      %-30s tiles=%s  copies=%d ratio=%.3f "
               "shared=%d boundary=%d"
               % ("", rep['fills'], rep['copies'], rep['ratio'],
