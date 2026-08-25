@@ -120,6 +120,37 @@ def cell_orbit(verts, faces, net, nx=1, ny=1, nz=1, chiral_only=None):
     return list(seen.values())
 
 
+def translation_orbit(verts, faces, net, nx=1, ny=1, nz=1):
+    """Copies of the cell related by TRANSLATION only.
+
+    The rotation-free part of the orbit.  Used as a safe fallback for
+    solids that do not tile alone: translates of a single cell cannot
+    intersect unless the cell exceeds its own lattice period."""
+    V0 = np.asarray(verts, int)
+    span = int(np.ceil(float((V0.max(axis=0) - V0.min(axis=0)).max()) / 8.0))
+    margin = max(1, span)
+    n = max(nx, ny, nz) + 2 * margin
+    sites = _net_sites(net, n)
+    shift = np.asarray([8 * margin] * 3, int)
+    hi = np.array([8.0 * nx, 8.0 * ny, 8.0 * nz])
+
+    seen = {}
+    for anchor in sorted(sites):
+        off = np.asarray(anchor, int) - V0[0]
+        Q = V0 + off
+        pts = [tuple(int(x) for x in p) for p in Q]
+        if any(p not in sites for p in pts):
+            continue
+        c = Q.mean(axis=0) - shift
+        if not np.all((c >= -1e-9) & (c < hi - 1e-9)):
+            continue
+        key = tuple(sorted(pts))
+        if key in seen:
+            continue
+        seen[key] = pts
+    return list(seen.values())
+
+
 def _cell_triangles(pts, faces):
     """Fan-triangulate a cell's skew faces, for point-in-solid tests."""
     P = np.asarray(pts, float)
@@ -256,23 +287,41 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06):
         sh, bd, ov = face_census(cs, faces)
         return r, sh, bd, ov
 
-    # The whole orbit first.  If its volume accounts for the block
-    # EXACTLY and no face is used by more than two cells, it cannot
-    # contain an overlap -- overlapping cells would push the total
-    # above the block -- so it is already the packing, and no selection
-    # is needed.  This is what the decatrihedron and the classical
-    # tetrahedra do.
-    r, sh, bd, ov = score(orbit)
-    copies = orbit
-    if not (abs(r - 1.0) <= tol and ov == 0):
-        # otherwise select a face-to-face connected subset
-        grown = disjoint_packing(orbit, faces)
-        rg, shg, bdg, ovg = score(grown)
-        if ovg == 0 and (ov != 0 or abs(rg - 1.0) < abs(r - 1.0)):
-            copies = grown
-    ratio, shared, boundary, over = score(copies)
+    # Choose between the whole orbit and a face-to-face connected
+    # subset of it.
+    #
+    # A RATIO ABOVE 1 IS PROOF OF OVERLAP: the cells cannot occupy more
+    # volume than the block they sit in unless they intersect each
+    # other.  So it disqualifies a candidate outright -- it is not
+    # merely a worse fit.  An earlier revision ranked candidates by
+    # |ratio - 1| alone and therefore preferred a 1.333 orbit over a
+    # 0.167 subset, emitting visibly intersecting cells for the
+    # wurtzite trihedron.  Under-filling is honest and looks like what
+    # it is; over-filling is a tangle.
+    orbit_ratio = score(orbit)[0]
+    # A third candidate: the cell's pure TRANSLATIONS, with no rotation
+    # at all.  Translates of one cell by the net's own lattice can only
+    # overlap if the cell is bigger than its lattice period, so this is
+    # a safe arrangement even for a solid that does not tile alone --
+    # gappy rather than tangled, and far more use than the single cell
+    # a face-growth search returns in that case.
+    trans = translation_orbit(verts, faces, net, nx, ny, nz)
+    candidates = [orbit, disjoint_packing(orbit, faces), trans]
+    best = None
+    for cs in candidates:
+        if not cs:
+            continue
+        r, sh, bd, ov = score(cs)
+        if r > 1.0 + tol or ov > 0:
+            continue                    # overlapping -- never emit
+        if best is None or r > score(best)[0]:
+            best = cs
+    copies = best if best is not None else []
+    ratio, shared, boundary, over = score(copies) if copies else (0.0, 0, 0, 0)
     total = vol * len(copies)
     report = dict(copies=len(copies), orbit=len(orbit),
+                  orbit_ratio=orbit_ratio,
+                  overlapping_orbit=orbit_ratio > 1.0 + tol,
                   cell_volume=vol, block_volume=block,
                   filled=total, ratio=ratio,
                   fills=abs(ratio - 1.0) <= tol,
@@ -324,6 +373,10 @@ def _selftest():
         chk("%s: no face used by more than two cells" % tag,
             rep['overused_faces'] == 0,
             "%d overused" % rep['overused_faces'])
+        # the hard gate: never emit cells that intersect.  Total volume
+        # above the block is proof they do.
+        chk("%s: emitted cells do not overlap" % tag,
+            rep['ratio'] <= 1.0 + 1e-6, "ratio %.3f" % rep['ratio'])
         print("      %-30s tiles=%s  copies=%d ratio=%.3f "
               "shared=%d boundary=%d"
               % ("", rep['fills'], rep['copies'], rep['ratio'],

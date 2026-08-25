@@ -251,6 +251,46 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
     return V, tris, face_id, info
 
 
+def build_cells(key=None, face_style='MINIMAL', density=3, smoothness=25,
+                rings=5, scale=0.60, twist=0.0, nx=1, ny=1, nz=1,
+                gap=1.0):
+    """The packing as SEPARATE cells, still in register with each other.
+
+    Returns (cells, info) where each cell is (verts, tris, face_id).
+    One transform is computed for the whole block and applied to every
+    cell, so the pieces stay assembled -- fitting each cell to the unit
+    cube individually would scale them differently and scatter the
+    packing."""
+    solid = pdata.by_key(key) if key else pdata.SOLIDS[0]
+    V0, F0 = solid['verts'], solid['faces']
+    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz)
+
+    raw = []
+    for pts in copies:
+        CV, CT, cfid, _flags = _cell_geometry(
+            pts, F0, face_style, density, smoothness, rings, scale, twist)
+        CV = np.asarray(CV, float)
+        if gap < 1.0:
+            c = CV.mean(axis=0)
+            CV = c + (CV - c) * gap
+        raw.append((CV, CT, cfid))
+
+    # one common fit for the whole block
+    allv = np.concatenate([c[0] for c in raw], axis=0) if raw else \
+        np.zeros((1, 3))
+    lo, hi = allv.min(axis=0), allv.max(axis=0)
+    centre = 0.5 * (lo + hi)
+    ext = float((hi - lo).max())
+    s = (2.0 / ext) if ext > 1e-12 else 1.0
+
+    cells = [((CV - centre) * s, CT, cfid) for CV, CT, cfid in raw]
+    flags = pnet_flags(V0, F0)
+    info = dict(solid=solid, packing=rep, faces=len(F0),
+                true_nests=sum(1 for x in flags if x),
+                generalised=sum(1 for x in flags if not x))
+    return cells, info
+
+
 def face_boundary_edges(tris, face_id):
     """Edges where two DIFFERENT saddle faces meet -- the branches.
 
@@ -386,6 +426,11 @@ if _IN_BLENDER:
                         description="Unit cells along Y")
         nz: IntProperty(name="Cells high", default=1, min=1, max=6,
                         description="Unit cells along Z")
+        separate: BoolProperty(
+            name="Separate objects", default=False,
+            description="Emit each cell of the packing as its own "
+                        "object, grouped in a collection, instead of "
+                        "one merged mesh")
         gap: FloatProperty(
             name="Shrink", default=1.0, min=0.5, max=1.0,
             description="Shrink each cell about its own centre so the "
@@ -415,6 +460,7 @@ if _IN_BLENDER:
                 r.prop(self, "ny")
                 r.prop(self, "nz")
                 L.prop(self, "gap")
+                L.prop(self, "separate")
             if self.face_style in ('MINIMAL', 'RULED'):
                 L.prop(self, "density")
             if self.face_style == 'MINIMAL':
@@ -425,11 +471,71 @@ if _IN_BLENDER:
                 L.prop(self, "twist")
             L.prop(self, "smooth")
 
+        def _execute_separate(self, context, key):
+            """One object per cell, grouped in their own collection."""
+            try:
+                cells, info = build_cells(
+                    key=key, face_style=self.face_style,
+                    density=self.density, smoothness=self.smoothness,
+                    rings=self.rings, scale=self.scale, twist=self.twist,
+                    nx=self.nx, ny=self.ny, nz=self.nz, gap=self.gap)
+            except Exception as exc:
+                self.report({'ERROR'}, "Build failed: %s" % exc)
+                return {'CANCELLED'}
+            if not cells:
+                self.report({'ERROR'}, "no geometry generated")
+                return {'CANCELLED'}
+
+            solid = info['solid']
+            coll = bpy.data.collections.new("Saddle %s packing"
+                                            % solid['name'])
+            context.scene.collection.children.link(coll)
+
+            made = 0
+            for i, (CV, CT, cfid) in enumerate(cells):
+                me = bpy.data.meshes.new("Saddle %s cell %03d"
+                                         % (solid['name'], i + 1))
+                # give each cell its own origin at its centroid, so the
+                # pieces can be moved apart, and put that offset back on
+                # the object so the packing still reads as assembled
+                origin = np.asarray(CV, float).mean(axis=0)
+                local = [tuple(p) for p in (np.asarray(CV, float) - origin)]
+                me.from_pydata(local, [], [tuple(t) for t in CT])
+                cols = pc.PALETTE
+                col = cols[i % len(cols)]
+                me.materials.append(pc._material(
+                    "Saddle %s %d" % (solid['name'], i % len(cols)), col))
+                me.validate(clean_customdata=True)
+                if self.smooth:
+                    me.polygons.foreach_set('use_smooth',
+                                            [True] * len(me.polygons))
+                me.update()
+                if self.smooth and self.face_style != 'NET':
+                    _sc.mark_sharp(me, face_boundary_edges(CT, cfid))
+                obj = bpy.data.objects.new(me.name, me)
+                obj.location = tuple(float(x) for x in origin)
+                coll.objects.link(obj)
+                made += 1
+
+            rep = info['packing']
+            msg = ("Table 8.1 #%d %s: %d cells as separate objects, "
+                   "%.1f%% of the block"
+                   % (solid['number'], solid['name'], made,
+                      100.0 * rep['ratio']))
+            if not rep['fills']:
+                self.report({'WARNING'},
+                            msg + " -- does NOT fill space alone")
+                return {'FINISHED'}
+            self.report({'INFO'}, msg)
+            return {'FINISHED'}
+
         def execute(self, context):
             if not pdata.SOLIDS:
                 self.report({'ERROR'}, "No verified saddle polyhedra")
                 return {'CANCELLED'}
             key = self.solid if self.solid != 'NONE' else None
+            if self.layout_kind == 'BLOCK' and self.separate:
+                return self._execute_separate(context, key)
             try:
                 V, T, fid, info = build(
                     key=key, face_style=self.face_style,
@@ -570,6 +676,35 @@ def _selftest():
                 i2['packing']['copies'] == 2 * rep['copies']
                 and i2['packing']['fills'],
                 "%d -> %d" % (rep['copies'], i2['packing']['copies']))
+
+    # --- separate cells ------------------------------------------
+    print("  separate cells:")
+    for s in pdata.SOLIDS:
+        tag = "#%d %s" % (s['number'], s['name'])
+        cells, info = build_cells(key=s['key'], density=2, smoothness=4,
+                                  nx=1, ny=1, nz=1)
+        rep = info['packing']
+        chk("%s: one piece per cell" % tag,
+            len(cells) == rep['copies'], "%d" % len(cells))
+        if not cells:
+            continue
+        # the pieces must stay in register: their union has to be the
+        # same 2 m block the merged build produces, or the packing has
+        # been scattered by per-cell fitting
+        allv = np.concatenate([c[0] for c in cells], axis=0)
+        ext = allv.max(axis=0) - allv.min(axis=0)
+        chk("  union still fits the 2 m block",
+            abs(float(ext.max()) - 2.0) < 1e-6, "%.6f" % float(ext.max()))
+        chk("  cells are not individually rescaled",
+            all(float(np.asarray(c[0]).max(axis=0).max()
+                      - np.asarray(c[0]).min(axis=0).min()) <= 2.0 + 1e-6
+                for c in cells))
+        merged_v, merged_t, _f, _i = build(key=s['key'], layout='BLOCK',
+                                           nx=1, ny=1, nz=1, density=2,
+                                           smoothness=4)
+        chk("  same triangle count as the merged block",
+            sum(len(c[1]) for c in cells) == len(merged_t),
+            "%d vs %d" % (sum(len(c[1]) for c in cells), len(merged_t)))
 
     print("RESULT:", "OK" if ok else "BAD")
     if not ok:
