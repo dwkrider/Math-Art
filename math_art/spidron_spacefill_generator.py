@@ -53,15 +53,35 @@
 # THE PARAMETERS.  The paper warns that the faces of this polyhedron
 # pass very close to one another, so the nest's scale factor and
 # rotation angle need care to avoid self-intersection.  A numerical
-# triangle-intersection sweep over the two-cell repeat unit (all face
-# pairs, within and between cells, shared surfaces excluded) shows the
-# collisions all come from the two OUTERMOST rings swinging past the
-# boundary: the safe region is roughly twist <= 9 degrees at ring
-# scale 0.70, widening to twist <= 15 degrees by ring scale 0.55, and
-# once those rings clear, deeper rings never collide, so the ring
-# count is free.  The defaults -- ring scale 0.60, twist 12 degrees --
-# sit inside that region with margin (still clean at 0.62 / 13 degrees
-# and at 8 rings), and the self-test asserts they stay clean.
+# triangle-intersection sweep shows the collisions all come from the
+# outermost rings swinging past the boundary; once those clear, deeper
+# rings never collide, so the ring count is free (the measured limits
+# are identical from 3 rings to 8).
+#
+# The safe region is NOT symmetric in the sign of the twist for a
+# single polyhedron -- it cannot be, because the bare cell is CHIRAL.
+# Winding +t and -t about the outward normals of a chiral cell are not
+# mirror-equivalent operations, and the measured limits differ widely:
+# at ring scale 0.60 a colour-0 cell stays intersection-free from
+# -38.9 to +14.5 degrees.  A colour-1 cell is the body-centring
+# translate of a colour-0 cell with the twist negated, so its region
+# is the same interval negated (-14.5 to +38.9).  The space-filling
+# layouts contain both forms plus CROSS-cell face pairs, and one of
+# those binds slightly before the intra-cell limit: the measured
+# symmetric bound is +-14.18 degrees at scale 0.60 (identical for the
+# two-cell unit and the 8-cell block).  An earlier revision of
+# this header claimed the region itself was symmetric in twist sign --
+# that was an artefact of sweeping only the two-cell repeat unit,
+# where the intersection of the two mirror-related per-form intervals
+# is symmetric by construction; a single polyhedron (Layout =
+# Polyhedron builds a colour-0 cell) shows the asymmetry directly as a
+# folded-over spike on one twist sign only.  `TWIST_LIMITS` tabulates
+# the bisected per-form limits against ring scale, `twist_limits()`
+# interpolates them, and the operator clamps the twist to the safe
+# interval of the layout being built unless the user opts out.  The
+# defaults -- ring scale 0.60, twist 12 degrees -- sit inside the
+# symmetric region with margin, and the self-test asserts both the
+# defaults and the tabulated limits against a direct sweep.
 #
 # References:
 # - Walt van Ballegooijen, Paul Gailiunas & Daniel Erdely,
@@ -292,6 +312,161 @@ def nest_face(P, cell_centre, colour, scale, twist, rings, cap=True):
                          centre=C, normal=N, cap=cap)
 
 
+# --------------------------------------------------------------------
+# Safe-twist limits (see THE PARAMETERS in the header)
+# --------------------------------------------------------------------
+
+# (ring scale, largest clean negative twist, largest clean positive
+# twist) in DEGREES for a single colour-0 cell, bisected to 0.2 deg
+# with `form_intersects` (the values are identical from 3 to 8 rings,
+# so ring count does not enter).  A colour-1 cell is the translated
+# mirror-wound form: its interval is this one negated.  Layouts that
+# contain both forms get the symmetric intersection of the two.
+TWIST_LIMITS = (
+    (0.35, 60.00, 52.73),
+    (0.40, 60.00, 36.91),
+    (0.45, 60.00, 28.24),
+    (0.50, 60.00, 22.27),
+    (0.55, 56.60, 17.81),
+    (0.60, 38.91, 14.53),
+    (0.65, 27.30, 12.07),
+    (0.70, 20.27, 9.84),
+    (0.75, 15.00, 7.85),
+    (0.80, 10.90, 5.98),
+    (0.85, 7.50, 4.34),
+    (0.90, 4.57, 2.70),
+    (0.95, 2.11, 1.29),
+    (0.97, 1.17, 0.70),
+)
+
+
+# The same measurement over the two-cell repeat unit and the 8-cell
+# block at gap 1: (ring scale, symmetric limit).  Within one cell the
+# +14.5-degree intra-cell bound governs, but a CROSS-cell collision
+# between neighbouring cells binds slightly earlier on the other sign
+# (14.18 degrees at scale 0.60, identical for unit and block); the
+# infinite packing at -t is the body-centring translate of the packing
+# at +t, so its true safe interval is the symmetric minimum of the
+# two, which is this column.
+TWIST_LIMITS_PACKED = (
+    (0.35, 52.73), (0.40, 36.91), (0.45, 28.24), (0.50, 22.27),
+    (0.55, 17.81), (0.60, 14.18), (0.65, 11.37), (0.70, 8.91),
+    (0.75, 6.91), (0.80, 5.04), (0.85, 3.52), (0.90, 2.23),
+    (0.95, 1.05), (0.97, 0.59),
+)
+
+
+def _interp(table, scale):
+    s = min(max(float(scale), table[0][0]), table[-1][0])
+    for i in range(len(table) - 1):
+        r0, r1 = table[i], table[i + 1]
+        if s <= r1[0]:
+            f = (s - r0[0]) / (r1[0] - r0[0])
+            return tuple(a + f * (b - a)
+                         for a, b in zip(r0[1:], r1[1:]))
+    return tuple(table[-1][1:])
+
+
+def twist_limits(scale, colour=0):
+    """The intersection-free twist interval of one cell, in radians.
+
+    Returns (neg, pos) magnitudes: a cell of `colour` is free of
+    self-intersection for twists in [-neg, +pos].  Linear interpolation
+    of TWIST_LIMITS; the measured curves are convex decreasing, so the
+    chord sits inside the safe region."""
+    neg, pos = _interp(TWIST_LIMITS, scale)
+    if colour:
+        neg, pos = pos, neg
+    return radians(neg), radians(pos)
+
+
+def twist_limit_packed(scale):
+    """The symmetric intersection-free twist bound of the space-filling
+    layouts (both forms present, gap 1 worst case), in radians."""
+    return radians(_interp(TWIST_LIMITS_PACKED, scale)[0])
+
+
+def _default_cells(layout):
+    """The canonical cell selection for the CELL and UNIT layouts:
+    (V, cells, keys) with keys the near-centre colour-0 cell, plus its
+    lowest-keyed neighbour for UNIT."""
+    n = 3
+    V, cells = enumerate_cells(n)
+    mid = np.full(3, n / 2.0)
+    c0 = min((k for k, c in cells.items() if c['colour'] == 0),
+             key=lambda k: (float(np.linalg.norm(cells[k]['centre']
+                                                 - mid)),
+                            cells[k]['centre8']))
+    if layout == 'CELL':
+        return V, cells, [c0]
+    owners = face_owners(cells)
+    nbrs = set()
+    for f in cells[c0]['rings']:
+        for k in owners.get(f, ()):
+            if k != c0:
+                nbrs.add(k)
+    c1 = min(nbrs, key=lambda k: cells[k]['centre8'])
+    return V, cells, [c0, c1]
+
+
+def nest_triangles(V, cells, keys, scale, twist, rings):
+    """Every nest triangle of the listed cells, as (3, 3) arrays."""
+    tris = []
+    for k in keys:
+        c = cells[k]
+        for f in c['rings']:
+            v, fc, _kd = nest_face(V[list(f)], c['centre'], c['colour'],
+                                   scale, twist, rings)
+            A = np.asarray(v)
+            tris.extend(A[list(t)] for t in fc)
+    return tris
+
+
+def _tri_soup_intersects(tris):
+    """Any proper intersection in this triangle set?  Pairs sharing a
+    vertex (mesh adjacency, and the exactly coincident shared surfaces
+    of neighbouring cells) do not count."""
+    T = np.asarray(tris, float)
+    n = len(T)
+    lo = T.min(axis=1)
+    hi = T.max(axis=1)
+    ov = np.ones((n, n), bool)
+    for a in range(3):
+        ov &= lo[:, None, a] <= hi[None, :, a] + 1e-12
+        ov &= lo[None, :, a] <= hi[:, None, a] + 1e-12
+    ii, jj = np.nonzero(np.triu(ov, 1))
+    for i, j in zip(ii, jj):
+        t1, t2 = T[i], T[j]
+        d = np.linalg.norm(t1[:, None, :] - t2[None, :, :], axis=2)
+        if float(d.min()) < 1e-9:
+            continue
+        if _tri_tri(t1, t2):
+            return True
+    return False
+
+
+def form_intersects(scale, twist, rings=4, colour=0):
+    """Does a single cell of this colour self-intersect at these nest
+    parameters?  (The measurement behind TWIST_LIMITS.)"""
+    n = 3
+    V, cells = enumerate_cells(n)
+    mid = np.full(3, n / 2.0)
+    key = min((k for k, c in cells.items() if c['colour'] == colour),
+              key=lambda k: (float(np.linalg.norm(cells[k]['centre']
+                                                  - mid)),
+                             cells[k]['centre8']))
+    return _tri_soup_intersects(
+        nest_triangles(V, cells, [key], scale, twist, rings))
+
+
+def unit_intersects(scale, twist, rings=4):
+    """Does the two-cell repeat unit (at gap 1, shared surface
+    coincident and excluded) self-intersect?"""
+    V, cells, keys = _default_cells('UNIT')
+    return _tri_soup_intersects(
+        nest_triangles(V, cells, keys, scale, twist, rings))
+
+
 COLOR_ITEMS = [
     ('FORM', "Form",
      "One colour per spidronised form, showing the clockwise and "
@@ -309,47 +484,40 @@ NPAL = 12
 
 def build(layout='UNIT', nx=1, ny=1, nz=1, rings=6, scale=0.60,
           twist=radians(12.0), gap=0.92, mirror=False, color_by='FORM',
-          open_center=False):
+          open_center=False, limit_twist=False):
     """Build spidronised decatrihedra.
 
     layout: 'CELL' one polyhedron, 'UNIT' the two-cell repeat unit,
     'BLOCK' every cell whose centre falls in an nx x ny x nz box of
     unit cells.  Each cell is shrunk about its own centre by `gap`;
     at gap = 1 coincident faces of neighbouring cells match exactly.
-    `mirror` builds the enantiomorphic space-filling.
+    `mirror` builds the enantiomorphic space-filling.  `limit_twist`
+    clamps the twist to the intersection-free interval of the layout:
+    the (asymmetric) colour-0 interval for CELL, the symmetric
+    two-form intersection for UNIT and BLOCK.
 
     Returns (verts, faces, mats, labels, info): labels carries
     (cell_key, face_ring, arm) per triangle for creasing, info the cell
-    count and form split."""
+    count, form split, and the twist actually used ('twist',
+    'twist_clamped')."""
+    twist = float(twist)
+    twist_in = twist
+    if limit_twist:
+        if layout == 'CELL':
+            neg, pos = twist_limits(scale)      # colour-0 interval
+        else:                                   # both forms + cross-cell
+            neg = pos = twist_limit_packed(scale)
+        twist = min(max(twist, -neg), pos)
     if layout == 'BLOCK':
         n = max(nx, ny, nz) + 2
-    else:
-        n = 3
-    V, cells = enumerate_cells(n)
-
-    if layout == 'BLOCK':
+        V, cells = enumerate_cells(n)
         lo = np.array([1.0, 1.0, 1.0])
         hi = lo + np.array([nx, ny, nz], float)
         keep = [k for k, c in cells.items()
                 if (c['centre'] >= lo - 1e-9).all()
                 and (c['centre'] < hi - 1e-9).all()]
     else:
-        mid = np.full(3, n / 2.0)
-        c0 = min((k for k, c in cells.items() if c['colour'] == 0),
-                 key=lambda k: (float(np.linalg.norm(cells[k]['centre']
-                                                     - mid)),
-                                cells[k]['centre8']))
-        if layout == 'CELL':
-            keep = [c0]
-        else:                            # UNIT: nearest neighbour cell
-            owners = face_owners(cells)
-            nbrs = set()
-            for f in cells[c0]['rings']:
-                for k in owners.get(f, ()):
-                    if k != c0:
-                        nbrs.add(k)
-            c1 = min(nbrs, key=lambda k: cells[k]['centre8'])
-            keep = [c0, c1]
+        V, cells, keep = _default_cells(layout)
 
     verts, faces, mats, labels = [], [], [], []
     face_index = {}
@@ -391,7 +559,8 @@ def build(layout='UNIT', nx=1, ny=1, nz=1, rings=6, scale=0.60,
         P[:, 0] = -P[:, 0]
         faces = [tuple(reversed(t)) for t in faces]
     verts = [tuple(p) for p in P]
-    info = dict(cells=len(keep), faces=len(face_index), forms=forms)
+    info = dict(cells=len(keep), faces=len(face_index), forms=forms,
+                twist=twist, twist_clamped=(twist != twist_in))
     return verts, faces, mats, labels, info
 
 
@@ -450,16 +619,26 @@ if _IN_BLENDER:
         scale_step: FloatProperty(
             name="Ring Scale", default=0.60, min=0.35, max=0.97,
             description="How much each ring shrinks toward the centre "
-                        "of its face. Beyond about 0.62 at the default "
+                        "of its face. Beyond about 0.65 at the default "
                         "twist, neighbouring faces of this polyhedron "
                         "start to cross -- they pass very close")
         twist: FloatProperty(
             name="Twist", default=radians(12.0),
             min=radians(-60.0), max=radians(60.0), subtype='ANGLE',
             description="Rotation of each ring toward the face centre. "
-                        "Beyond about 13 degrees at the default ring "
-                        "scale the outermost rings of neighbouring "
-                        "faces collide")
+                        "The collision-free range depends on the ring "
+                        "scale and, for a single polyhedron, on the "
+                        "twist sign -- the cell is chiral, so one "
+                        "winding direction has far more room than the "
+                        "other (about -39 to +14 degrees at the "
+                        "default ring scale)")
+        limit_twist: BoolProperty(
+            name="Limit Twist", default=True,
+            description="Clamp the twist to the measured collision-"
+                        "free range for this ring scale and layout. "
+                        "The faces of this polyhedron pass very close "
+                        "to one another; disable to drive past the "
+                        "limit and let the outermost rings collide")
         gap: FloatProperty(
             name="Gap Factor", default=0.92, min=0.05, max=1.0,
             description="Scale of each polyhedron about its own centre "
@@ -491,7 +670,7 @@ if _IN_BLENDER:
                 self.layout_kind, int(self.nx), int(self.ny),
                 int(self.nz), int(self.rings), float(self.scale_step),
                 float(self.twist), float(self.gap), self.mirror,
-                self.color_by, self.open_center)
+                self.color_by, self.open_center, self.limit_twist)
             if not F:
                 self.report({'ERROR'}, "no geometry generated")
                 return {'CANCELLED'}
@@ -511,12 +690,18 @@ if _IN_BLENDER:
                 if ncrease == 0:
                     self.report({'WARNING'},
                                 "no arm boundaries found to crease")
+            note = ""
+            if info.get('twist_clamped'):
+                from math import degrees as _deg
+                note = ("  twist limited to %.1f deg (turn off Limit "
+                        "Twist to override)" % _deg(info['twist']))
             self.report({'INFO'},
                         "%d polyhedra (%d CW + %d CCW), %d faces  "
-                        "V=%d F=%d  creases=%d"
+                        "V=%d F=%d  creases=%d%s"
                         % (info['cells'], info['forms'][0],
                            info['forms'][1], info['faces'],
-                           len(me.vertices), len(me.polygons), ncrease))
+                           len(me.vertices), len(me.polygons), ncrease,
+                           note))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -526,9 +711,9 @@ if _IN_BLENDER:
             if self.layout_kind == 'BLOCK':
                 for p in ('nx', 'ny', 'nz'):
                     lay.prop(self, p)
-            for p in ('rings', 'scale_step', 'twist', 'gap', 'mirror',
-                      'color_by', 'open_center', 'smooth',
-                      'sharp_edges'):
+            for p in ('rings', 'scale_step', 'twist', 'limit_twist',
+                      'gap', 'mirror', 'color_by', 'open_center',
+                      'smooth', 'sharp_edges'):
                 lay.prop(self, p)
             lay.prop(self, 'align')
 
@@ -909,53 +1094,68 @@ def _selftest():
     chk("repeat unit has four external faces (3 + 3 - 2 shared)",
         info['faces'] == 5,
         "%d distinct decagons, 1 shared" % info['faces'])
-    Vu, cu = enumerate_cells(3)
-    ou = face_owners(cu)
-    mid = np.full(3, 1.5)
-    c0u = min((k for k, c in cu.items() if c['colour'] == 0),
-              key=lambda k: (float(np.linalg.norm(cu[k]['centre'] - mid)),
-                             cu[k]['centre8']))
-    nbrs = set()
-    for f in cu[c0u]['rings']:
-        for k in ou.get(f, ()):
-            if k != c0u:
-                nbrs.add(k)
-    c1u = min(nbrs, key=lambda k: cu[k]['centre8'])
+    _Vu, cu, (c0u, c1u) = _default_cells('UNIT')
     fs0 = set(cu[c0u]['rings'])
     fs1 = set(cu[c1u]['rings'])
     chk("unit shares exactly one face, four faces free",
         len(fs0 & fs1) == 1 and len(fs0 ^ fs1) == 4)
+    chk("no self-intersection at the default parameters",
+        not unit_intersects(0.60, radians(12.0), 4))
 
-    # no self-intersection at the defaults, within the repeat unit
-    nests = []
-    for k in (c0u, c1u):
-        for f in cu[k]['rings']:
-            v, fc, _kd = nest_face(Vu[list(f)], cu[k]['centre'],
-                                   cu[k]['colour'], 0.60,
-                                   radians(12.0), 4)
-            A = np.asarray(v)
-            nests.append([A[list(t)] for t in fc])
-    hit = False
-    for i, j in combinations(range(len(nests)), 2):
-        if hit:
-            break
-        for t1 in nests[i]:
-            if hit:
-                break
-            lo1 = np.min(t1, axis=0)
-            hi1 = np.max(t1, axis=0)
-            for t2 in nests[j]:
-                lo2 = np.min(t2, axis=0)
-                hi2 = np.max(t2, axis=0)
-                if (lo1 > hi2 + 1e-12).any() or (lo2 > hi1 + 1e-12).any():
-                    continue
-                if np.abs(np.sort(t1.ravel())
-                          - np.sort(t2.ravel())).max() < 1e-9:
-                    continue
-                if _tri_tri(t1, t2):
-                    hit = True
-                    break
-    chk("no self-intersection at the default parameters", not hit)
+    print("spidron_spacefill: safe-twist limits (chirality)")
+    # The bare cell is chiral, so the safe region of a SINGLE cell is
+    # NOT symmetric in twist sign -- and the two forms mirror each
+    # other exactly (colour 1 is the translated cell wound the other
+    # way).  Sweep both signs and both forms.
+    chk("colour 0 clean at -22 deg (scale 0.60)",
+        not form_intersects(0.60, radians(-22.0), 3, colour=0))
+    chk("colour 0 collides at +22 deg -- asymmetric",
+        form_intersects(0.60, radians(22.0), 3, colour=0))
+    chk("colour 1 clean at +22 deg -- the mirror interval",
+        not form_intersects(0.60, radians(22.0), 3, colour=1))
+    chk("colour 1 collides at -22 deg",
+        form_intersects(0.60, radians(-22.0), 3, colour=1))
+    for s in (0.50, 0.60, 0.80):
+        neg, pos = twist_limits(s)
+        eps = radians(0.05)
+        chk("scale %.2f: clean at both tabulated limits" % s,
+            not form_intersects(s, pos - eps, 3)
+            and not form_intersects(s, -(neg - eps), 3),
+            "-%.1f..+%.1f deg" % (np.degrees(neg), np.degrees(pos)))
+        past = radians(1.0)
+        chk("scale %.2f: collides just past the limits" % s,
+            (pos > radians(59.0) or form_intersects(s, pos + past, 3))
+            and (neg > radians(59.0)
+                 or form_intersects(s, -(neg + past), 3)))
+    # the space-filling layouts get the symmetric packed bound, which
+    # a cross-cell collision makes slightly tighter than the intra-
+    # cell limit
+    _n60, pos60 = twist_limits(0.60)
+    sym60 = twist_limit_packed(0.60)
+    chk("packed bound is tighter than the intra-cell one",
+        sym60 < pos60,
+        "%.2f < %.2f deg" % (np.degrees(sym60), np.degrees(pos60)))
+    eps = radians(0.05)
+    chk("unit clean at both ends of the packed interval",
+        not unit_intersects(0.60, sym60 - eps, 3)
+        and not unit_intersects(0.60, -(sym60 - eps), 3))
+    chk("unit collides just past it",
+        unit_intersects(0.60, sym60 + radians(1.0), 3)
+        and unit_intersects(0.60, -(sym60 + radians(1.0)), 3))
+    # and build() clamps per layout when asked
+    _v, _f, _m, _lb, ci = build('CELL', rings=3, twist=radians(22.0),
+                                limit_twist=True)
+    chk("CELL build clamps +22 deg to the colour-0 limit",
+        ci['twist_clamped']
+        and abs(ci['twist'] - pos60) < 1e-9)
+    _v, _f, _m, _lb, ci = build('CELL', rings=3, twist=radians(-22.0),
+                                limit_twist=True)
+    chk("CELL build leaves -22 deg alone (room on that side)",
+        not ci['twist_clamped'])
+    _v, _f, _m, _lb, ci = build('UNIT', rings=3, twist=radians(-22.0),
+                                limit_twist=True)
+    chk("UNIT build clamps -22 deg to the packed bound",
+        ci['twist_clamped'] and abs(ci['twist'] + sym60) < 1e-9)
 
     _v, _f, _m, _lb, info = build('BLOCK', nx=1, ny=1, nz=1, rings=3)
     chk("one lattice cell holds eight polyhedra",
