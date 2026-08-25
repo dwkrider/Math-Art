@@ -514,6 +514,7 @@ if _IN_BLENDER:
             context.scene.collection.children.link(coll)
 
             made = 0
+            pieces = []
             for i, (CV, CT, cfid) in enumerate(cells):
                 me = bpy.data.meshes.new("Saddle %s cell %03d"
                                          % (solid['name'], i + 1))
@@ -550,7 +551,26 @@ if _IN_BLENDER:
                 obj = bpy.data.objects.new(me.name, me)
                 obj.location = tuple(float(x) for x in origin)
                 coll.objects.link(obj)
+                pieces.append(obj)
                 made += 1
+
+            # Parent the cells to an EMPTY root.  This is the house
+            # convention for a generator that lays its output out as
+            # separate objects, and the live rebuild depends on it:
+            # with no root it picks one cell as the anchor and moves
+            # every other cell by a delta transform relative to it, so
+            # a rebuild collapses the packing onto the origin.  The
+            # Empty gives the group a single unambiguous anchor.
+            root = bpy.data.objects.new(
+                "Saddle %s packing" % solid['name'], None)
+            root.empty_display_size = 0.2
+            coll.objects.link(root)
+            for obj in pieces:
+                obj.parent = root
+            for o in context.selected_objects:
+                o.select_set(False)
+            root.select_set(True)
+            context.view_layer.objects.active = root
 
             rep = info['packing']
             msg = ("Table 8.1 #%d %s: %d cells as separate objects, "
