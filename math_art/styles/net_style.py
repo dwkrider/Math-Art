@@ -848,9 +848,15 @@ _DIGIT = {'0': "abcdef", '1': "bc", '2': "abged", '3': "abgcd",
 
 def digit_strokes(number, height=1.0, weight=0.16):
     """Quads spelling `number` in a seven-segment hand, laid out with
-    its baseline on y = 0 starting at x = 0.  No font file, no text
-    objects: the glyphs are mesh, so they fold with the face they are
-    printed on."""
+    its baseline on y = 0 starting at x = 0.
+
+    This is the fallback letterform, used outside Blender (so the
+    self-test can run headless) and if the real font cannot be
+    tessellated.  Inside Blender the numbers come from Blender's own
+    font instead -- see `_font_glyphs` -- which is what a reader
+    actually wants to read off a printed net.  Either way the glyphs are
+    mesh, so they ride the face they are printed on as it folds.
+    """
     w = 0.55 * height
     pitch = w + 0.30 * height
     t = weight * height * 0.5
@@ -870,14 +876,15 @@ def digit_strokes(number, height=1.0, weight=0.16):
     return out
 
 
-def _place_number(number, a, b, inward, height, along=0.5, lift=0.0):
-    """Strokes for `number`, centred `along` the directed edge a->b and
-    standing `inward` from it."""
+def _place_number(glyphs, a, b, inward, height, along=0.5, lift=0.0):
+    """Glyph outlines centred `along` the directed edge a->b and
+    standing `inward` from it.  `glyphs` are polygons with their
+    baseline on y = 0, from whichever letterform source is in use."""
     ex, ey = b[0] - a[0], b[1] - a[1]
     L = sqrt(ex * ex + ey * ey) or 1.0
     ex, ey = ex / L, ey / L
     nx, ny = (-ey, ex) if inward > 0 else (ey, -ex)
-    quads = digit_strokes(number, height)
+    quads = glyphs
     if not quads:
         return []
     xs = [p[0] for q in quads for p in q]
@@ -901,12 +908,19 @@ def _place_number(number, a, b, inward, height, along=0.5, lift=0.0):
 # ---------------------------------------------------------------- #
 
 def build_net(V, F, mode='BFS', seed=0, fold=0.0, tabs=True,
-              tab_size=0.35, numbers=True, gap=0.1, tries=None):
+              tab_size=0.1, numbers=True, gap=0.1, tries=None,
+              glyph_fn=None):
     """Unfold (V, F) and return the net as ready-to-build mesh data.
+
+    `glyph_fn(number, height)` supplies the letterform for the edge
+    numbers as polygons on a y = 0 baseline; it defaults to the built-in
+    stroke font so this stays runnable with no Blender.
 
     Raises ValueError with a user-readable message if the surface is not
     a closed, connected, two-faces-per-edge shell.
     """
+    if glyph_fn is None:
+        glyph_fn = digit_strokes
     diag = _bbox_diag(V)
     tol = 1e-6 * diag
     V, F = weld_vertices(V, F, tol)
@@ -1063,9 +1077,11 @@ def build_net(V, F, mode='BFS', seed=0, fold=0.0, tabs=True,
                     d = sqrt((ctr[0] - mid[0]) ** 2
                              + (ctr[1] - mid[1]) ** 2)
                     h = min(h, 0.5 * d)
-                    polys = _place_number(pid, a, b, -1, h, 0.5, lift)
+                    polys = _place_number(glyph_fn(pid, h), a, b, -1, h,
+                                          0.5, lift)
                 else:
-                    polys = _place_number(pid, a, b, +1, h, 0.5, lift)
+                    polys = _place_number(glyph_fn(pid, h), a, b, +1, h,
+                                          0.5, lift)
                 for poly in polys:
                     emit_poly(fi, poly, 2)
 
@@ -1129,13 +1145,74 @@ if _IN_BLENDER:
                 bsdf.inputs["Roughness"].default_value = 0.6
         return mat
 
+    _FONT_CACHE = {}
+
+    def _font_glyphs(number, height):
+        """`number` set in Blender's own font and tessellated to filled
+        outlines, scaled to `height` with its baseline on y = 0.
+
+        Real type rather than the seven-segment strokes: these are the
+        numbers someone reads while gluing the model up, so they should
+        look like numbers.  The glyphs are still mesh and still part of
+        the net object, so they fold with the face they sit on -- which
+        text objects, being separate objects with their own transforms,
+        would not do.  Cached per number at unit height; the caller's
+        height is a plain scale.
+        """
+        key = int(number)
+        polys = _FONT_CACHE.get(key)
+        if polys is None:
+            polys = []
+            cu = ob = None
+            try:
+                cu = bpy.data.curves.new(f"_net_num_{key}", type='FONT')
+                cu.body = str(key)
+                cu.align_x = 'LEFT'
+                cu.align_y = 'BOTTOM_BASELINE'
+                # a printed number is a few millimetres tall, so the
+                # default curve resolution spends hundreds of triangles
+                # per digit on smoothness nobody can see; 4 keeps the
+                # letterforms and cuts the tessellation by ~4x
+                cu.resolution_u = 4
+                ob = bpy.data.objects.new(f"_net_num_{key}", cu)
+                me = ob.to_mesh()
+                if me is not None and len(me.polygons):
+                    pts = [(v.co.x, v.co.y) for v in me.vertices]
+                    raw = [[pts[i] for i in p.vertices]
+                           for p in me.polygons]
+                    ys = [p[1] for f in raw for p in f]
+                    xs = [p[0] for f in raw for p in f]
+                    # digits have no descender, so the glyph box IS the
+                    # cap height: normalise it to 1 and rebase to (0, 0)
+                    span = (max(ys) - min(ys)) or 1.0
+                    x0, y0 = min(xs), min(ys)
+                    polys = [[((x - x0) / span, (y - y0) / span)
+                              for (x, y) in f] for f in raw]
+                ob.to_mesh_clear()
+            except (RuntimeError, AttributeError):
+                polys = []                  # fall back to the strokes
+            finally:
+                # both datablocks, always: removing the object leaves
+                # the font curve behind at zero users, and one per
+                # number would quietly fill the file with orphan data
+                if ob is not None:
+                    bpy.data.objects.remove(ob)
+                if cu is not None:
+                    bpy.data.curves.remove(cu)
+            _FONT_CACHE[key] = polys
+        if not polys:
+            return digit_strokes(number, height)
+        return [[(x * height, y * height) for (x, y) in f]
+                for f in polys]
+
     def emit_net(context, V, F, label, fold=0.0, mode='BFS', seed=0,
-                 tabs=True, tab_size=0.35, numbers=True, gap=0.1,
+                 tabs=True, tab_size=0.1, numbers=True, gap=0.1,
                  material_fn=None):
         """Build the net object.  Raises ValueError (with a message fit
         for `report`) if the surface cannot be unfolded."""
         net = build_net(V, F, mode=mode, seed=seed, fold=fold, tabs=tabs,
-                        tab_size=tab_size, numbers=numbers, gap=gap)
+                        tab_size=tab_size, numbers=numbers, gap=gap,
+                        glyph_fn=_font_glyphs)
         me = bpy.data.meshes.new("Net")
         me.from_pydata(net['verts'], [], net['faces'])
         me.validate(clean_customdata=True)

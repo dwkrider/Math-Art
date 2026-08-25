@@ -2023,7 +2023,7 @@ if _IN_BLENDER:
                         "pair, narrowed or dropped where the net "
                         "leaves no room for it")
         tab_size: FloatProperty(
-            name="Tab Size", default=0.35, min=0.05, max=0.9,
+            name="Tab Size", default=0.1, min=0.02, max=0.9,
             description="Depth of the glue tabs, as a fraction of the "
                         "edge they stand on")
         edge_numbers: BoolProperty(
