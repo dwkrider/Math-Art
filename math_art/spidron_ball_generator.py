@@ -1,4 +1,4 @@
-# Spiral-Faced Polyhedron -- spidronised solids, the "spidroball".
+# Spidroball -- spidronised solids.
 #
 # Take a polyhedron and replace every face with a spidron nest.  The
 # result is what Daniel Erdely, Amina Buhler-Allen and Marc Pelletier
@@ -90,7 +90,7 @@
 #   `nylander_dodeca_nest` and checked in the self-test.
 
 bl_info = {
-    "name": "Spiral-Faced Polyhedron",
+    "name": "Spidroball",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
@@ -110,12 +110,14 @@ try:
     from .polyhedra import hull as _hull
     from .polyhedra import fit as _fit
     from .patterns import common as pc
+    from . import sharp_creases as _sc
 except Exception:                       # legacy single-file / CLI use
     import spidron_math as sm
     from polyhedra import seeds as _seeds
     from polyhedra import hull as _hull
     from polyhedra import fit as _fit
     from patterns import common as pc
+    import sharp_creases as _sc
 
 PHI = 0.5 * (1.0 + sqrt(5.0))
 
@@ -294,6 +296,31 @@ def nylander_dodeca_nest():
     return nodes, frames, dict(alpha=alpha, a=a, b=b, dz=dz, r=r, z0=z0)
 
 
+def arm_boundary_edges(faces, labels):
+    """Edges where two DIFFERENT spiral arms meet.
+
+    Shading the ball smooth blurs the whole face into one soft blob;
+    what should stay crisp is the fold between one spiral arm and the
+    next, which is where the real geometric discontinuity is.  Within an
+    arm the surface is genuinely smooth as it winds inward, so those
+    edges are left alone.  Faces of the seed solid do not share mesh
+    vertices at all -- each nest is built independently -- so no edge
+    ever spans two faces and the labels only ever separate arms.
+    """
+    owner = {}
+    out = []
+    for f, lab in zip(faces, labels):
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            e = (a, b) if a < b else (b, a)
+            if e in owner:
+                if owner[e] != lab:
+                    out.append(e)
+            else:
+                owner[e] = lab
+    return out
+
+
 def woven_boundary(face, V, relief):
     """The skew 2n-gon a face contributes to the WOVEN ball.
 
@@ -324,16 +351,50 @@ def woven_boundary(face, V, relief):
     return pts
 
 
+COLOR_ITEMS = [
+    ('ARM', "Arm",
+     "One colour per spiral arm, so each face reads as a pinwheel -- "
+     "the colouring Nylander's renderings use"),
+    ('RING', "Ring",
+     "One colour per ring, banding each face from its rim to its "
+     "centre and showing how fast the spiral shrinks"),
+    ('FACE', "Face", "One colour per face of the underlying solid"),
+    ('SHAPE', "Triangle Shape",
+     "One colour per triangle shape, so the two triangles of each "
+     "spiral step read differently"),
+    ('CHIRALITY', "Chirality",
+     "One colour per winding direction, showing which faces are wound "
+     "which way"),
+    ('UNIFORM', "Uniform", "A single material"),
+]
+
+NPAL = 12
+
+
+def _material_index(color_by, face_i, ring_i, arm_i, kind, ch):
+    if color_by == 'ARM':
+        return arm_i % NPAL
+    if color_by == 'RING':
+        return ring_i % NPAL
+    if color_by == 'FACE':
+        return face_i % NPAL
+    if color_by == 'SHAPE':
+        return kind
+    if color_by == 'CHIRALITY':
+        return 0 if ch > 0 else 1
+    return 0
+
+
 def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
           relief=0.22, chirality='ALTERNATE', open_center=False,
-          relief_style='WOVEN'):
+          relief_style='WOVEN', color_by='ARM'):
     """Spidronise every face of the seed solid."""
     SV, SF = seed_solid(seed)
     A = np.asarray(SV, float)
     A = A / float(np.linalg.norm(A, axis=1).max())      # unit circumradius
     col, colour_ok = two_colour(SF)
 
-    verts, faces, mats = [], [], []
+    verts, faces, mats, labels = [], [], [], []
     for fi, f in enumerate(SF):
         poly = [tuple(A[i]) for i in f]
         C = np.mean([A[i] for i in f], axis=0)
@@ -358,9 +419,25 @@ def build(seed='DODECA', rings=14, scale=0.82, twist=radians(22.0),
                                   cap=not open_center)
         o = len(verts)
         verts.extend(v)
-        faces.extend([tuple(i + o for i in t) for t in fc])
-        mats.extend([m + (0 if ch > 0 else 3) for m in mt])
-    return verts, faces, mats, colour_ok
+        faces.extend([tuple(i + o for i in tri) for tri in fc])
+        # `spidronise` lays the annulus down ring by ring, and within a
+        # ring arm by arm, two triangles at a time; any cap triangles
+        # follow.  That fixed order is what lets the ring and arm of
+        # each triangle be recovered here without threading extra
+        # bookkeeping through the kernel.
+        mpoly = len(poly)
+        n_ann = rings * 2 * mpoly
+        for ti in range(len(fc)):
+            if ti < n_ann:
+                ring_i = ti // (2 * mpoly)
+                arm_i = (ti % (2 * mpoly)) // 2
+                kind = ti % 2
+            else:
+                ring_i, arm_i, kind = rings, ti - n_ann, 2
+            mats.append(_material_index(color_by, fi, ring_i, arm_i,
+                                        kind, ch))
+            labels.append((fi, arm_i))
+    return verts, faces, mats, colour_ok, labels
 
 
 try:
@@ -379,7 +456,7 @@ if _IN_BLENDER:
         """Add a spidronised solid: every face replaced by a spiral
         nest of triangles"""
         bl_idname = "mesh.spidron_ball_add"
-        bl_label = "Spiral-Faced Polyhedron"
+        bl_label = "Spidroball"
         bl_options = {'REGISTER', 'UNDO'}
 
         seed: EnumProperty(
@@ -425,47 +502,66 @@ if _IN_BLENDER:
                     "decorations")],
             description="How the relief lifts each face's boundary out "
                         "of the solid")
+        color_by: EnumProperty(
+            name="Color", items=COLOR_ITEMS, default='ARM',
+            description="How materials are assigned across the "
+                        "spidronised faces")
+        smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the spiral surfaces smooth instead of "
+                        "faceted")
+        sharp_edges: BoolProperty(
+            name="Sharp Creases", default=True,
+            description="Keep the fold between neighbouring spiral "
+                        "arms crisp under smooth shading, and creased "
+                        "under a Subdivision Surface, while the "
+                        "surface stays smooth along each arm")
         open_center: BoolProperty(
             name="Open Centres", default=False,
             description="Leave the small hole at the centre of each "
                         "face open instead of closing it")
 
         def execute(self, context):
-            V, F, M, colour_ok = build(
+            V, F, M, colour_ok, labels = build(
                 self.seed, int(self.rings), float(self.scale_step),
                 float(self.twist), float(self.relief), self.chirality,
-                self.open_center, self.relief_style)
+                self.open_center, self.relief_style,
+                self.color_by)
             if not F:
                 self.report({'ERROR'}, "no geometry generated")
                 return {'CANCELLED'}
-            V = _fit.fit_cube(V, 2.0)
-            me = bpy.data.meshes.new("Spidron Ball")
-            me.from_pydata([tuple(v) for v in V], [], F)
-            cols = pc.PALETTE_RGBA
-            nmat = (max(M) + 1) if M else 1
-            for i in range(nmat):
-                mat = bpy.data.materials.new("Spidron Ball %d" % i)
-                mat.use_nodes = False
-                mat.diffuse_color = cols[i % len(cols)]
-                me.materials.append(mat)
-            if M:
-                me.polygons.foreach_set('material_index', M)
-            me.validate(clean_customdata=True)
-            me.update()
-            import bpy_extras.object_utils as _ou
-            _ou.object_data_add(context, me, operator=self)
+            obj = pc.build_object(context, "Spidroball", V, F, M,
+                                  span=2.0, fit=True, operator=self)
+            if obj is None:
+                self.report({'ERROR'}, "no geometry generated")
+                return {'CANCELLED'}
+            me = obj.data
+            if self.smooth:
+                me.polygons.foreach_set('use_smooth',
+                                        [True] * len(me.polygons))
+                me.update()
+            ncrease = 0
+            if self.sharp_edges:
+                ncrease = _sc.mark_sharp(me, arm_boundary_edges(F, labels))
+                if ncrease == 0:
+                    # marking nothing looks exactly like success in a
+                    # render until you go hunting for the crease
+                    self.report({'WARNING'},
+                                "no arm boundaries found to crease")
             warn = ("" if colour_ok or self.chirality != 'ALTERNATE'
                     else "  (face graph has an odd cycle: alternating "
                          "chirality is impossible on this solid)")
-            self.report({'INFO'}, "%s  V=%d F=%d%s"
-                        % (self.seed.title(), len(V), len(F), warn))
+            self.report({'INFO'}, "%s  V=%d F=%d  creases=%d%s"
+                        % (self.seed.title(), len(me.vertices),
+                           len(me.polygons), ncrease, warn))
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             for p in ('seed', 'rings', 'scale_step', 'twist', 'relief',
-                      'relief_style', 'chirality', 'open_center'):
+                      'relief_style', 'chirality', 'color_by',
+                      'open_center', 'smooth', 'sharp_edges'):
                 lay.prop(self, p)
             lay.prop(self, 'align')
 
@@ -542,7 +638,7 @@ def _selftest():
 
     print("spidron_ball: build")
     for kind in want:
-        V, F, M, cok = build(kind, rings=4, scale=0.62,
+        V, F, M, cok, _lb = build(kind, rings=4, scale=0.62,
                              twist=radians(30.0))
         chk("%-16s builds" % kind, len(F) > 0,
             "V=%d F=%d" % (len(V), len(F)))
@@ -555,7 +651,7 @@ def _selftest():
                 bad += 1
         chk("%-16s no degenerate faces" % kind, bad == 0, "%d bad" % bad)
 
-    V, F, M, _ = build('DODECA', rings=8, scale=0.62,
+    V, F, M, _, _ = build('DODECA', rings=8, scale=0.62,
                        twist=radians(30.0), relief=0.35)
     Vf = _fit.fit_cube(V, 2.0)
     A = np.array(Vf)
@@ -566,15 +662,40 @@ def _selftest():
     chk("relief keeps the solid three-dimensional",
         min(ext) > 0.5 * max(ext), "aspect %.3f" % (min(ext) / max(ext)))
 
-    Vf0, _, _, _ = build('DODECA', rings=6, scale=0.62,
+    Vf0, _, _, _, _ = build('DODECA', rings=6, scale=0.62,
                          twist=radians(30.0), relief=0.0)
-    Vf1, _, _, _ = build('DODECA', rings=6, scale=0.62,
+    Vf1, _, _, _, _ = build('DODECA', rings=6, scale=0.62,
                          twist=radians(30.0), relief=0.4)
     r0 = np.linalg.norm(np.array(Vf0), axis=1)
     r1 = np.linalg.norm(np.array(Vf1), axis=1)
     chk("relief pushes vertices off the face planes",
         r1.max() > r0.max() + 1e-6,
         "rmax %.4f -> %.4f" % (r0.max(), r1.max()))
+
+    print("spidron_ball: colour modes and creases")
+    for cb, lo, hi in (('ARM', 8, 12), ('RING', 5, 12), ('FACE', 8, 12),
+                       ('SHAPE', 2, 3), ('CHIRALITY', 1, 2),
+                       ('UNIFORM', 1, 1)):
+        _, _, M, _, _ = build('DODECA', rings=6, color_by=cb)
+        used = len(set(M))
+        chk("colour by %-9s uses %2d materials" % (cb, used),
+            lo <= used <= hi and max(M) < NPAL)
+    V, F, M, _, labels = build('DODECA', rings=6)
+    ce = arm_boundary_edges(F, labels)
+    chk("arm boundaries found to crease", len(ce) > 0, "%d edges" % len(ce))
+    # every creased edge must separate two different arms, and no edge
+    # inside a single arm may be creased
+    owner = {}
+    for f, lab in zip(F, labels):
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            owner.setdefault((a, b) if a < b else (b, a), []).append(lab)
+    bad = sum(1 for e in ce if len(set(owner[e])) < 2)
+    chk("every crease separates two arms", bad == 0, "%d bad" % bad)
+    inner = sum(1 for e, l in owner.items()
+                if len(l) == 2 and len(set(l)) == 2)
+    chk("creases are exactly the arm-to-arm joins",
+        len(set(ce)) == inner, "%d vs %d" % (len(set(ce)), inner))
 
     print("spidron_ball: Nylander's dodeca-spidroball (literature check)")
     nodes, frames, K = nylander_dodeca_nest()
@@ -644,8 +765,8 @@ def _selftest():
             chk("%-5s %-7s neighbours agree on shared points"
                 % (style, kind), got == want_ok, "%.1e" % worst)
 
-    Vcw, _, _, _ = build('CUBE', rings=4, chirality='CW')
-    Vcc, _, _, _ = build('CUBE', rings=4, chirality='CCW')
+    Vcw, _, _, _, _ = build('CUBE', rings=4, chirality='CW')
+    Vcc, _, _, _, _ = build('CUBE', rings=4, chirality='CCW')
     chk("chirality changes the geometry",
         np.abs(np.array(Vcw) - np.array(Vcc)).max() > 1e-6)
     # ALTERNATE cannot oppose EVERY neighbour on these solids (above),

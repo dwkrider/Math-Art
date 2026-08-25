@@ -1,4 +1,4 @@
-# Triangle Spiral Rosette -- planar spidron figures and tilings.
+# Spidron Rosette -- planar spidron figures and tilings.
 #
 # The two-dimensional half of the spidron family: the nested-polygon
 # subdivision itself, single spiralling arms, rosettes assembled from
@@ -52,7 +52,7 @@
 #   similarity that fixes the 1/sqrt(3) scale and 30-degree turn.
 
 bl_info = {
-    "name": "Triangle Spiral Rosette",
+    "name": "Spidron Rosette",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
@@ -160,7 +160,7 @@ if _IN_BLENDER:
         """Add a spidron figure: a spiral of triangles filling a
         regular polygon, as a single arm, a rosette or a tiling"""
         bl_idname = "mesh.spidron_rosette_add"
-        bl_label = "Triangle Spiral Rosette"
+        bl_label = "Spidron Rosette"
         bl_options = {'REGISTER', 'UNDO'}
 
         layout_kind: EnumProperty(

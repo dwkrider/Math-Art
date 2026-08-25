@@ -1,4 +1,4 @@
-# Folded Hexagon Nest -- the spidron's rigid fold, as a relief surface.
+# Spidron Nest -- the spidron's rigid fold, as a relief surface.
 #
 # Six spidron arms fill a regular hexagon; that hexagon can be folded
 # into three dimensions WITHOUT DISTORTING A SINGLE TRIANGLE, and the
@@ -72,7 +72,7 @@
 #   why the pleats mode at zero twist cannot be an exact rigid fold.
 
 bl_info = {
-    "name": "Folded Hexagon Nest",
+    "name": "Spidron Nest",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
@@ -165,28 +165,11 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    def _new_object(context, name, verts, faces, mats, operator):
-        me = bpy.data.meshes.new(name)
-        me.from_pydata([tuple(v) for v in verts], [], faces)
-        cols = pc.PALETTE_RGBA
-        nmat = (max(mats) + 1) if mats else 1
-        for i in range(nmat):
-            mat = bpy.data.materials.new("%s %d" % (name, i))
-            mat.use_nodes = False
-            mat.diffuse_color = cols[i % len(cols)]
-            me.materials.append(mat)
-        if mats:
-            me.polygons.foreach_set('material_index', mats)
-        me.validate(clean_customdata=True)
-        me.update()
-        import bpy_extras.object_utils as _ou
-        return _ou.object_data_add(context, me, operator=operator)
-
     class MESH_OT_spidron_nest_add(bpy.types.Operator, AddObjectHelper):
         """Add a folded spidron nest: a hexagon of triangles crumpled
         into relief without distorting any of them"""
         bl_idname = "mesh.spidron_nest_add"
-        bl_label = "Folded Hexagon Nest"
+        bl_label = "Spidron Nest"
         bl_options = {'REGISTER', 'UNDO'}
 
         boundary: EnumProperty(
@@ -264,8 +247,11 @@ if _IN_BLENDER:
             if not F:
                 self.report({'ERROR'}, "no geometry generated")
                 return {'CANCELLED'}
-            V = _fit.fit_cube(V, 2.0)
-            obj = _new_object(context, label, V, F, M, self)
+            obj = pc.build_object(context, label, V, F, M,
+                                  span=2.0, fit=True, operator=self)
+            if obj is None:
+                self.report({'ERROR'}, "no geometry generated")
+                return {'CANCELLED'}
             if self.thickness > 0.0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = float(self.thickness)
