@@ -37,6 +37,14 @@
 # solid's vertices always land on even indices and the midpoints on odd
 # ones, in every face.
 #
+# WHICH WAY the radial displacement goes matters as much as the fact
+# that it is radial.  The solid's VERTICES move IN and its EDGE
+# MIDPOINTS move OUT.  Pushing the vertices out instead raises a spike
+# where three faces already converge on a point, and the ball comes out
+# a hedgehog; raising the edge midpoints lifts a ridge along every
+# edge, and the arms of the two faces that share it sweep up over that
+# ridge together, which is what makes the surface read as woven.
+#
 # Nylander reached the same interlocking by a different route, and his
 # 2010 source is reproduced in `nylander_dodeca_nest` as a check.  He
 # lifts along the face normal -- the Per Face style -- but SOLVES the
@@ -325,9 +333,18 @@ def woven_boundary(face, V, relief):
     """The skew 2n-gon a face contributes to the WOVEN ball.
 
     A face's boundary is refined to its own vertices plus its edge
-    midpoints, and those points are then displaced RADIALLY -- vertices
-    pushed out, midpoints pulled in -- rather than along the face's own
-    normal.
+    midpoints, and those points are then displaced RADIALLY -- the
+    solid's VERTICES PULLED IN, its EDGE MIDPOINTS PUSHED OUT -- rather
+    than along the face's own normal.
+
+    That direction is not a free choice: it is what Nylander's
+    dodeca-spidroball does, and reversing it is what made this
+    generator's early output a hedgehog instead of a spidroball.
+    Raising the vertices puts a spike where three faces already meet at
+    a point; raising the edge midpoints instead lifts a ridge along
+    every edge, and the arms of the two faces sharing that edge sweep up
+    over it together.  `_selftest` pins this against his own numbers:
+    at relief 0.10557 the boundary reproduces his 50 points exactly.
 
     That distinction is the whole difference between a heap of separate
     spiky decorations and Nylander's interlocked spidroball.  A solid's
@@ -346,8 +363,8 @@ def woven_boundary(face, V, relief):
     for k in range(n):
         a = V[face[k]]
         b = V[face[(k + 1) % n]]
-        pts.append(tuple(a * (1.0 + relief)))
-        pts.append(tuple(0.5 * (a + b) * (1.0 - relief)))
+        pts.append(tuple(a * (1.0 - relief)))
+        pts.append(tuple(0.5 * (a + b) * (1.0 + relief)))
     return pts
 
 
@@ -822,6 +839,33 @@ def _selftest():
         hits += int((d < 1e-9).sum() > 1)
     chk("every one of his boundary points is shared", hits == len(pts[0]),
         "%d of %d" % (hits, len(pts[0])))
+    # THE reconciliation: his boundary is the Woven boundary.  His 50
+    # distinct points split 20 + 30 -- one per dodecahedron vertex and
+    # one per edge -- and the vertices sit at 0.894 of the circumradius
+    # while the midpoints sit at 1.106 of the midradius.  Both are
+    # 1 -/+ 0.10557, so it is a symmetric radial relief with the
+    # VERTICES PULLED IN.  Reproduce it exactly.
+    uni = []
+    for q in np.vstack(pts):
+        if not any(np.linalg.norm(q - w) < 1e-9 for w in uni):
+            uni.append(q)
+    rh = np.sort(np.linalg.norm(np.array(uni), axis=1))
+    chk("his 50 points are 20 vertices + 30 edge midpoints",
+        len(uni) == 50 and (np.abs(rh - rh[0]) < 1e-6).sum() == 20
+        and (np.abs(rh - rh[-1]) < 1e-6).sum() == 30,
+        "%d points" % len(uni))
+    Aw = np.asarray(seed_solid('DODECA')[0], float)
+    Aw = Aw / float(np.linalg.norm(Aw, axis=1).max()) * 1.6472782070926637
+    mine = []
+    for f2 in seed_solid('DODECA')[1]:
+        for q in woven_boundary(f2, Aw, 0.1055728090000841):
+            if not any(np.linalg.norm(np.asarray(q) - np.asarray(w)) < 1e-9
+                       for w in mine):
+                mine.append(q)
+    rm = np.sort(np.linalg.norm(np.array(mine), axis=1))
+    chk("Woven at relief 0.10557 reproduces his boundary",
+        len(mine) == 50 and np.allclose(rh, rm, atol=1e-6),
+        "%d points, radii %.6f/%.6f" % (len(mine), rm[0], rm[-1]))
 
     print("spidron_ball: relief styles")
     # THE invariant that separates the interlocked ball from a heap of
