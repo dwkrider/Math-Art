@@ -107,23 +107,25 @@ if _IN_BLENDER:
     #    corrupted, hence `_ITEM_CACHE`;
     #  * `default=` is not allowed on a callback enum, so the initial
     #    value is whatever sits at index 0 -- and if that is a heading,
-    #    the operator starts with an EMPTY selection.  Hence the "All
-    #    families" entry and the fallback in `execute`.
+    #    the operator starts with an EMPTY selection.
     #
-    # "All families" is the default deliberately.  It keeps the whole
-    # list reachable in one place, and it keeps
-    # `polyhedron_compound_add(compound='S19_...')` working from a script
-    # without naming the family -- which is how the docs' variant
-    # machinery and every existing call reach this operator.
+    # The family list is therefore families only, and every family's
+    # compound list begins with a real compound rather than a heading,
+    # so index 0 is always selectable.  `_ALL` below is an INTERNAL
+    # sentinel, never offered in the dropdown: `_compound_items` answers
+    # with the whole catalogue when `self` is None, which is how the
+    # property reads when it is introspected off the type rather than
+    # off an operator instance.  That keeps
+    # `polyhedron_compound_add(compound='S68_...')` working from a
+    # script without naming the family.
+    _ALL = '_ALL'
     _ITEM_CACHE = {}
 
     def _family_items(self, context):
         got = _ITEM_CACHE.get('_families')
         if got is None:
-            got = [('ALL', "All families",
-                    "Every compound, grouped under its family")]
-            got += [(key, head, "%d compounds" % len(rows))
-                    for key, head, rows in _cmp.compound_families()]
+            got = [(key, head, "%d compounds" % len(rows))
+                   for key, head, rows in _cmp.compound_families()]
             _ITEM_CACHE['_families'] = got
         return got
 
@@ -131,10 +133,10 @@ if _IN_BLENDER:
         # self is None when the property is introspected off the type,
         # which is how the docs tooling enumerates variants -- answer
         # with the whole list there rather than with nothing.
-        fam = getattr(self, 'family', 'ALL') if self is not None else 'ALL'
+        fam = getattr(self, 'family', _ALL) if self is not None else _ALL
         got = _ITEM_CACHE.get(fam)
         if got is None:
-            if fam == 'ALL':
+            if fam == _ALL:
                 got = []
                 for _key, head, rows in _cmp.compound_families():
                     if got:
@@ -150,7 +152,7 @@ if _IN_BLENDER:
 
     def _first_compound(fam):
         """The first real (non-heading) key of a family."""
-        for it in _compound_items(None, None) if fam == 'ALL' else \
+        for it in _compound_items(None, None) if fam == _ALL else \
                 _ITEM_CACHE.get(fam, []):
             if it and it[0]:
                 return it[0]
@@ -219,10 +221,10 @@ if _IN_BLENDER:
 
         def execute(self, context):
             # A callback enum takes no `default=`, so on first use the
-            # value is index 0 -- a heading in "All families" mode, whose
-            # identifier is the empty string.  The UI never lets a
-            # heading be picked, so this only ever fires on that first
-            # call, but it fires every time the operator is run fresh.
+            # value is index 0.  With families-only that is a real
+            # compound, so this fallback is belt and braces rather than
+            # load-bearing -- but it costs nothing and covers a family
+            # whose list has not been built yet.
             key = self.compound or _first_compound(self.family)
             try:
                 axis_kind = any(key == r[0] for r in AXIS_COMPOUNDS)
