@@ -354,6 +354,28 @@ except Exception:
 
 if _IN_BLENDER:
 
+    def _cell_material(name, color):
+        """A shaded material for one cell.
+
+        `patterns.common` re-exports PALETTE_RGBA but not the material
+        helper (that one lives in patterns.emit), so this builds the
+        material directly.  use_nodes matters: without it every cell
+        renders flat grey, which this project has been bitten by twice.
+
+        Module level, not class level: a name defined in a class body
+        is not in scope inside its methods, so a bare call to it from
+        execute() raises NameError.
+        """
+        mat = bpy.data.materials.get(name)
+        if mat is None:
+            mat = bpy.data.materials.new(name)
+            mat.diffuse_color = color
+            mat.use_nodes = True
+            node = mat.node_tree.nodes.get("Principled BSDF")
+            if node:
+                node.inputs[0].default_value = color
+        return mat
+
     def _family_items(self, context):
         out = []
         for fam in pdata.families():
@@ -501,9 +523,9 @@ if _IN_BLENDER:
                 origin = np.asarray(CV, float).mean(axis=0)
                 local = [tuple(p) for p in (np.asarray(CV, float) - origin)]
                 me.from_pydata(local, [], [tuple(t) for t in CT])
-                cols = pc.PALETTE
+                cols = pc.PALETTE_RGBA
                 col = cols[i % len(cols)]
-                me.materials.append(pc._material(
+                me.materials.append(_cell_material(
                     "Saddle %s %d" % (solid['name'], i % len(cols)), col))
                 me.validate(clean_customdata=True)
                 if self.smooth:
@@ -523,8 +545,10 @@ if _IN_BLENDER:
                    % (solid['number'], solid['name'], made,
                       100.0 * rep['ratio']))
             if not rep['fills']:
-                self.report({'WARNING'},
-                            msg + " -- does NOT fill space alone")
+                tail = (" -- no packing found for this solid in its net; "
+                        "showing one cell" if rep['copies'] <= 1
+                        else " -- does NOT fill space alone")
+                self.report({'WARNING'}, msg + tail)
                 return {'FINISHED'}
             self.report({'INFO'}, msg)
             return {'FINISHED'}
@@ -582,7 +606,11 @@ if _IN_BLENDER:
                     # say so rather than pass a partial packing off as
                     # a space filling -- many of Pearce's solids only
                     # fill space in combination with a partner cell
-                    msg += " -- does NOT fill space alone"
+                    if rep['copies'] <= 1:
+                        msg += (" -- no packing found for this solid in "
+                                "its net; showing one cell")
+                    else:
+                        msg += " -- does NOT fill space alone"
                     self.report({'WARNING'}, msg)
                     return {'FINISHED'}
             self.report({'INFO'}, msg)

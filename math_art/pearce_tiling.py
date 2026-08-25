@@ -307,16 +307,29 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06):
     # a face-growth search returns in that case.
     trans = translation_orbit(verts, faces, net, nx, ny, nz)
     candidates = [orbit, disjoint_packing(orbit, faces), trans]
+
+    # Rank by ADJACENCY first, then coverage.  A packing whose cells do
+    # not touch is not a packing, however much volume it accounts for:
+    # ranking on volume alone picked disconnected translates of the
+    # wurtzite trihedron -- two cells floating apart, which reads as
+    # broken and is worse than saying nothing was found.
     best = None
+    best_key = None
     for cs in candidates:
         if not cs:
             continue
         r, sh, bd, ov = score(cs)
         if r > 1.0 + tol or ov > 0:
             continue                    # overlapping -- never emit
-        if best is None or r > score(best)[0]:
-            best = cs
-    copies = best if best is not None else []
+        if len(cs) > 1 and sh == 0:
+            continue                    # disconnected -- not a packing
+        key = (r, sh)
+        if best is None or key > best_key:
+            best, best_key = cs, key
+    if best is None:
+        # nothing valid: show one cell rather than a misleading spread
+        best = orbit[:1] if orbit else []
+    copies = best
     ratio, shared, boundary, over = score(copies) if copies else (0.0, 0, 0, 0)
     total = vol * len(copies)
     report = dict(copies=len(copies), orbit=len(orbit),
