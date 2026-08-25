@@ -202,6 +202,47 @@ def _face_keys(pts, faces):
     return [tuple(sorted(tuple(pts[i]) for i in cyc)) for cyc in faces]
 
 
+def _trim_overlap(copies, faces, cap):
+    """Largest subset using no face more than twice, up to `cap` cells.
+
+    Deterministic: the orderings are drawn from a fixed seed sequence,
+    so the same block always yields the same packing.  Subsets that
+    reach the cap and share the most faces win, because a packing whose
+    cells meet face to face is the one Pearce describes."""
+    keys = [_face_keys(p, faces) for p in copies]
+    best = None
+    best_key = None
+    for t in range(400):
+        order = list(range(len(copies)))
+        _shuffle(order, t)
+        used = {}
+        sel = []
+        for i in order:
+            if len(sel) >= cap:
+                break
+            if any(used.get(k, 0) >= 2 for k in keys[i]):
+                continue
+            for k in keys[i]:
+                used[k] = used.get(k, 0) + 1
+            sel.append(i)
+        shared = sum(1 for v in used.values() if v == 2)
+        key = (len(sel), shared)
+        if best is None or key > best_key:
+            best, best_key = sel, key
+        if len(sel) == cap and shared:
+            break
+    return [copies[i] for i in sorted(best)] if best else []
+
+
+def _shuffle(seq, seed):
+    """A small deterministic shuffle (no dependence on `random`)."""
+    x = seed * 2654435761 + 1
+    for i in range(len(seq) - 1, 0, -1):
+        x = (x * 1103515245 + 12345) & 0x7FFFFFFF
+        j = x % (i + 1)
+        seq[i], seq[j] = seq[j], seq[i]
+
+
 def disjoint_packing(copies, faces):
     """Grow a packing from one cell by MATCHING FACES.
 
@@ -317,6 +358,20 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06):
     # So: keep the orbit, report the numbers, and only fall back to a
     # face-connected subset when the orbit is empty.
     copies = orbit
+    if orbit and score(orbit)[3] > 0:
+        # A face belonging to THREE cells is proof of overlap that does
+        # not depend on any volume denominator, so it is safe to act on
+        # even for a cell whose net is not cubic.  It fires for exactly
+        # one solid, the fcc orthorhombic tetrahedron, whose orbit
+        # double-covers the block (24 cells at twice the volume).
+        #
+        # Trim to a subset that uses no face more than twice, capped at
+        # the number of cells the block can actually hold.  The cap is
+        # what makes it a packing rather than merely a legal face
+        # census: without it the search happily returns 13 cells, which
+        # is 8% more volume than the block has.
+        cap = int(round(block / vol)) if vol > 1e-9 else len(orbit)
+        copies = _trim_overlap(orbit, faces, cap)
     if not copies:
         copies = disjoint_packing(orbit, faces) or \
             translation_orbit(verts, faces, net, nx, ny, nz)

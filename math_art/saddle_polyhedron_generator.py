@@ -227,7 +227,8 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
     V0, F0 = solid['verts'], solid['faces']
     copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz)
 
-    verts, tris, face_id = [], [], []
+    verts, tris, face_id, crease_id = [], [], [], []
+    nf = len(F0)
     for ci, pts in enumerate(copies):
         CV, CT, cfid, _flags = _cell_geometry(
             pts, F0, face_style, density, smoothness, rings, scale,
@@ -242,12 +243,18 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
             tris.append(tuple(base + i for i in t))
             # colour by cell, so the packing reads as separate solids
             face_id.append(ci)
+            # crease by (cell, face): the outer edges of each polyhedron
+            # are where two of ITS saddle faces meet, and grouping by
+            # cell alone would leave those edges smoothed over -- the
+            # solids then read as blobs under smooth shading
+            crease_id.append(ci * nf + f)
     V = psurf.fit_unit(np.asarray(verts, float))
     flags = pnet_flags(V0, F0)
     info = dict(true_nests=sum(1 for x in flags if x) * len(copies),
                 generalised=sum(1 for x in flags if not x) * len(copies),
                 faces=len(F0) * len(copies), solid=solid,
-                aspect=psurf.aspect(V), packing=rep)
+                aspect=psurf.aspect(V), packing=rep,
+                crease_id=crease_id)
     return V, tris, face_id, info
 
 
@@ -622,7 +629,11 @@ if _IN_BLENDER:
                 if self.face_style != 'NET':
                     # crease along the branches: the edges where two
                     # different saddle faces meet
-                    ncrease = _sc.mark_sharp(me, face_boundary_edges(T, fid))
+                    # crease on the per-FACE grouping, which in a
+                    # packing is not the same as the colour grouping
+                    ncrease = _sc.mark_sharp(
+                        me, face_boundary_edges(
+                            T, info.get('crease_id') or fid))
 
             msg = ("Table 8.1 #%d %s: %d faces"
                    % (solid['number'], solid['name'], info['faces']))
