@@ -385,6 +385,7 @@ def arm_boundary_edges(faces, labels):
     owner = {}
     out = []
     for f, lab in zip(faces, labels):
+        lab = tuple(lab)[:2]            # (face, arm) -- mesh adjacency
         for k in range(len(f)):
             a, b = f[k], f[(k + 1) % len(f)]
             e = (a, b) if a < b else (b, a)
@@ -620,7 +621,10 @@ def build(seed='DODECA', rings=8, scale=2.0 / 3.0, twist=0.0,
             # creases with `limb` marked every ring-to-ring edge sharp
             # as well, creasing the ribbon along its own length and
             # undoing the smooth shading entirely.
-            labels.append((fi, arm_i))
+            # (face, arm, limb): `arm` is mesh adjacency and drives the
+            # creases; `limb` is the colour grouping.  Under Advance the
+            # two differ by the per-ring drift.
+            labels.append((fi, arm_i, limb))
     return verts, faces, mats, colour_ok, labels
 
 
@@ -910,17 +914,17 @@ def _selftest():
     _V4, _F4, M4, _o4, lb4 = build('DODECA', rings=4, color_by='PAIR')
     _SVd, SFd = seed_solid('DODECA')
     by_key = {}
-    for (fi2, ai2), m in zip(lb4, M4):
+    for (fi2, _ai2, li2), m in zip(lb4, M4):
         ks = arm_keys(SFd[fi2], 2 * len(SFd[fi2]))
-        by_key.setdefault(ks[ai2 % len(ks)], set()).add(m)
+        by_key.setdefault(ks[li2 % len(ks)], set()).add(m)
     mixed = sum(1 for v in by_key.values() if len(v) != 1)
     chk("paired arms share one material", mixed == 0,
         "%d of %d keys mixed" % (mixed, len(by_key)))
     # and the pairing is not vacuous: neighbouring arms within a face
     # must still differ, or "same colour" would just mean "one colour"
     per_face = {}
-    for (fi2, ai2), m in zip(lb4, M4):
-        per_face.setdefault(fi2, {})[ai2] = m
+    for (fi2, _ai2, li2), m in zip(lb4, M4):
+        per_face.setdefault(fi2, {})[li2] = m
     varied = sum(1 for d in per_face.values() if len(set(d.values())) > 2)
     chk("faces still carry several colours", varied == len(per_face),
         "%d of %d faces" % (varied, len(per_face)))
@@ -991,6 +995,7 @@ def _selftest():
     # inside a single arm may be creased
     owner = {}
     for f, lab in zip(F, labels):
+        lab = tuple(lab)[:2]
         for k in range(len(f)):
             a, b = f[k], f[(k + 1) % len(f)]
             owner.setdefault((a, b) if a < b else (b, a), []).append(lab)
