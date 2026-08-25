@@ -69,8 +69,6 @@ PARAMS = {
     # the space-filling's CW-meets-CCW rule is invisible, and the pair
     # of opposite-winding polyhedra (coloured by form) is the paper's
     # own Figure 3.  A small gap keeps the two solids readable as two.
-    "mesh.spidron_spacefill_add": dict(layout_kind='UNIT', rings=6,
-                                       gap=0.94, color_by='FORM'),
     # Pearce's diamond tetrahedron is the famous one: four REGULAR
     # skew hexagons, the interstitial domain of the diamond net, and
     # the solid that reads unmistakably as a saddle polyhedron at icon

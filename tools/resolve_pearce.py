@@ -156,8 +156,20 @@ MIXED_RADIUS = 2
 MIXED_RING_CAP = 400000
 MIXED_BUDGET = 200000
 
-NETS = [('NBO', 3, 3), ('SRS', 3, 5), ('DIAMOND', 2, 3), ('BCC', 2, 3),
-        ('FCC', 2, 2), ('SC', 2, 2)]
+# Register every RCSR net that passes its own coordination gate, then
+# search the hand-built nets first (they are the classical ones and
+# resolve fastest) followed by whatever RCSR adds.
+try:
+    import rcsr_nets as _rcsr
+    _added = _rcsr.register(pn.NETS)
+except Exception as _exc:                       # mirror absent
+    _added = []
+    print("RCSR nets unavailable: %s" % _exc)
+print("RCSR nets registered: %d %s" % (len(_added), _added))
+
+NETS = ([('NBO', 3, 3), ('SRS', 3, 5), ('DIAMOND', 2, 3), ('BCC', 2, 3),
+         ('FCC', 2, 2), ('SC', 2, 2)]
+        + [(n, 2, 2) for n in _added])
 
 chunks = {}
 for net, n, rad in NETS:

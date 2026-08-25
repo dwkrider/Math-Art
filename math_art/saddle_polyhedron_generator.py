@@ -244,15 +244,17 @@ def spidron_faces(solid, rings, scale, twist):
 
 def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
           rings=5, scale=0.60, twist=0.0, layout='SINGLE',
-          nx=1, ny=1, nz=1, gap=1.0):
+          nx=1, ny=1, nz=1, gap=1.0, colour_by='CELL', mirror=False):
+    """layout: SINGLE, UNIT (two cells sharing a face) or BLOCK."""
     """Geometry for one saddle polyhedron, or a block of the packing.
 
     Returns (verts, tris, face_id, info)."""
     solid = pdata.by_key(key) if key else pdata.SOLIDS[0]
 
-    if layout == 'BLOCK':
+    if layout in ('BLOCK', 'UNIT'):
         return _build_block(solid, face_style, density, smoothness,
-                            rings, scale, twist, nx, ny, nz, gap)
+                            rings, scale, twist, nx, ny, nz, gap,
+                            colour_by, mirror, unit=(layout == 'UNIT'))
 
     V0, F0 = solid['verts'], solid['faces']
 
@@ -279,6 +281,53 @@ def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
     return V, T, fid, info
 
 
+def _face_pair(copies, faces):
+    """Two cells of a packing that share a face, or None."""
+    keys = [[tuple(sorted(tuple(pts[i]) for i in cyc)) for cyc in faces]
+            for pts in copies]
+    owner = {}
+    for ci, ks in enumerate(keys):
+        for k in ks:
+            owner.setdefault(k, []).append(ci)
+    for k, v in sorted(owner.items()):
+        if len(v) == 2:
+            return [copies[v[0]], copies[v[1]]]
+    return None
+
+
+def form_colours(copies, faces):
+    """Two-colour the packing by face adjacency.
+
+    Pearce's decatrihedron space-filling needs two spidron-wound forms,
+    because any two coincident faces must read clockwise from one cell
+    and counter-clockwise from the other.  Cell adjacency is bipartite,
+    so a breadth-first 2-colouring gives exactly that alternation -- and
+    it generalises off the triamond net, which the old space-filler's
+    hard-coded translation classes did not."""
+    keys = [[tuple(sorted(tuple(pts[i]) for i in cyc)) for cyc in faces]
+            for pts in copies]
+    owner = {}
+    for ci, ks in enumerate(keys):
+        for k in ks:
+            owner.setdefault(k, []).append(ci)
+    colour = {}
+    for start in range(len(copies)):
+        if start in colour:
+            continue
+        colour[start] = 0
+        stack = [start]
+        while stack:
+            i = stack.pop()
+            for k in keys[i]:
+                for j in owner.get(k, ()):
+                    if j == i:
+                        continue
+                    if j not in colour:
+                        colour[j] = 1 - colour[i]
+                        stack.append(j)
+    return [colour.get(i, 0) for i in range(len(copies))]
+
+
 def _cell_geometry(V0, F0, face_style, density, smoothness, rings,
                    scale, twist):
     """One cell's mesh, in its own coordinates (no fitting)."""
@@ -302,7 +351,8 @@ def pnet_flags(V0, F0):
 
 
 def _build_block(solid, face_style, density, smoothness, rings, scale,
-                 twist, nx, ny, nz, gap):
+                 twist, nx, ny, nz, gap, colour_by='CELL', mirror=False,
+                 unit=False):
     """A block of the space filling: every cell of the packing.
 
     The packing is verified, not assumed -- `pearce_tiling.pack`
@@ -311,13 +361,31 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
     packing as a space filling."""
     V0, F0 = solid['verts'], solid['faces']
     copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz)
+    if unit:
+        # The repeat unit: two cells sharing a face.  For the
+        # decatrihedron this is the Bridges paper's basic unit -- three
+        # faces cannot be split half clockwise and half
+        # counter-clockwise, so the smallest decorated piece that obeys
+        # the matching rule is a pair sharing one face, with four
+        # external faces.
+        copies = _face_pair(copies, F0) or copies[:1]
+        # the report must describe what was BUILT, not the packing the
+        # unit was taken from
+        rep = dict(rep, copies=len(copies), fills=False, unit=True)
+    forms = form_colours(copies, F0)
 
     verts, tris, face_id, crease_id = [], [], [], []
     nf = len(F0)
     for ci, pts in enumerate(copies):
+        # The two forms wind their nests opposite ways: a rotation of
+        # +t about a face's OUTWARD normal is a rotation of -t about
+        # the inward one, so the two cells meeting at a shared face
+        # build the same surface -- Pearce's clockwise-meets-
+        # counter-clockwise rule, which is what makes the decorated
+        # packing close.
+        t = -twist if forms[ci] else twist
         CV, CT, cfid, _flags = _cell_geometry(
-            pts, F0, face_style, density, smoothness, rings, scale,
-            twist)
+            pts, F0, face_style, density, smoothness, rings, scale, t)
         CV = np.asarray(CV, float)
         if gap < 1.0:
             c = CV.mean(axis=0)
@@ -327,13 +395,23 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
         for t, f in zip(CT, cfid):
             tris.append(tuple(base + i for i in t))
             # colour by cell, so the packing reads as separate solids
-            face_id.append(ci)
+            if colour_by == 'FORM':
+                face_id.append(forms[ci])
+            elif colour_by == 'FACE':
+                face_id.append(f)
+            elif colour_by == 'UNIFORM':
+                face_id.append(0)
+            else:                        # CELL
+                face_id.append(ci)
             # crease by (cell, face): the outer edges of each polyhedron
             # are where two of ITS saddle faces meet, and grouping by
             # cell alone would leave those edges smoothed over -- the
             # solids then read as blobs under smooth shading
             crease_id.append(ci * nf + f)
-    V = psurf.fit_unit(np.asarray(verts, float))
+    V = np.asarray(verts, float)
+    if mirror:
+        V = V * np.array([-1.0, 1.0, 1.0])   # the enantiomorphic packing
+    V = psurf.fit_unit(V)
     flags = pnet_flags(V0, F0)
     info = dict(true_nests=sum(1 for x in flags if x) * len(copies),
                 generalised=sum(1 for x in flags if not x) * len(copies),
@@ -530,6 +608,9 @@ if _IN_BLENDER:
             name="Layout",
             items=[('SINGLE', "One solid",
                     "A single saddle polyhedron"),
+                   ('UNIT', "Repeat unit",
+                    "Two cells sharing a face -- the smallest piece of "
+                    "the packing that obeys the winding rule"),
                    ('BLOCK', "Space filling",
                     "Fill a block of unit cells with the packing this "
                     "solid belongs to")],
@@ -540,6 +621,26 @@ if _IN_BLENDER:
                         description="Unit cells along Y")
         nz: IntProperty(name="Cells high", default=1, min=1, max=6,
                         description="Unit cells along Z")
+        colour_by: EnumProperty(
+            name="Colour",
+            items=[('CELL', "Cell", "One colour per polyhedron"),
+                   ('FORM', "Form",
+                    "By winding form: the two classes of cell whose "
+                    "nests wind opposite ways, so a shared face reads "
+                    "clockwise from one and counter-clockwise from the "
+                    "other"),
+                   ('FACE', "Face", "By face within each polyhedron"),
+                   ('UNIFORM', "Uniform", "A single colour")],
+            default='CELL')
+        mirror: BoolProperty(
+            name="Mirror", default=False,
+            description="Build the enantiomorphic packing; a chiral "
+                        "cell's space filling exists in two mirror forms")
+        limit_twist: BoolProperty(
+            name="Limit twist", default=True,
+            description="Clamp the nest twist to the measured "
+                        "intersection-free range. Measured for the "
+                        "decatrihedron only; other solids are left alone")
         separate: BoolProperty(
             name="Separate objects", default=False,
             description="Emit each cell of the packing as its own "
@@ -568,12 +669,15 @@ if _IN_BLENDER:
             L.prop(self, "solid")
             L.prop(self, "face_style")
             L.prop(self, "layout_kind")
-            if self.layout_kind == 'BLOCK':
-                r = L.row(align=True)
-                r.prop(self, "nx")
-                r.prop(self, "ny")
-                r.prop(self, "nz")
+            if self.layout_kind in ('BLOCK', 'UNIT'):
+                if self.layout_kind == 'BLOCK':
+                    r = L.row(align=True)
+                    r.prop(self, "nx")
+                    r.prop(self, "ny")
+                    r.prop(self, "nz")
                 L.prop(self, "gap")
+                L.prop(self, "colour_by")
+                L.prop(self, "mirror")
                 L.prop(self, "separate")
             if self.face_style in ('MINIMAL', 'RULED'):
                 L.prop(self, "density")
@@ -583,6 +687,7 @@ if _IN_BLENDER:
                 L.prop(self, "rings")
                 L.prop(self, "scale")
                 L.prop(self, "twist")
+                L.prop(self, "limit_twist")
             L.prop(self, "smooth")
 
         def _execute_separate(self, context, key):
@@ -683,15 +788,20 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, "No verified saddle polyhedra")
                 return {'CANCELLED'}
             key = self.solid if self.solid != 'NONE' else None
-            if self.layout_kind == 'BLOCK' and self.separate:
+            if self.layout_kind in ('BLOCK', 'UNIT') and self.separate:
                 return self._execute_separate(context, key)
             try:
+                tw, clamped = (clamp_twist(
+                    key or '', self.twist, self.scale,
+                    self.layout_kind in ('BLOCK', 'UNIT'))
+                    if self.limit_twist else (self.twist, False))
                 V, T, fid, info = build(
                     key=key, face_style=self.face_style,
                     density=self.density, smoothness=self.smoothness,
-                    rings=self.rings, scale=self.scale, twist=self.twist,
+                    rings=self.rings, scale=self.scale, twist=tw,
                     layout=self.layout_kind, nx=self.nx, ny=self.ny,
-                    nz=self.nz, gap=self.gap)
+                    nz=self.nz, gap=self.gap,
+                    colour_by=self.colour_by, mirror=self.mirror)
             except Exception as exc:
                 self.report({'ERROR'}, "Build failed: %s" % exc)
                 return {'CANCELLED'}
@@ -727,6 +837,8 @@ if _IN_BLENDER:
                         % (info['true_nests'], info['generalised']))
             if ncrease:
                 msg += ", %d branch creases" % ncrease
+            if self.face_style == 'SPIDRON' and clamped:
+                msg += " | twist clamped to the measured safe range"
             rep = info.get('packing')
             if rep is not None:
                 msg += (" | packing: %d cells, %.1f%% of the block"

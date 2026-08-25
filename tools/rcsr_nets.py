@@ -215,13 +215,49 @@ def build(rec, blocks=3, eighths=8):
                 return None
 
     cls = collections.Counter()
+    offs = set()
     for p in interior:
         for q in adj[p]:
-            cls[pn.branch_class(tuple(q[i] - p[i] for i in range(3)))] += 1
-    return base, tuple(sorted({tuple(v[i] - base[0][i] for i in range(3))
-                               for v in ()})), dict(
+            v = tuple(q[i] - p[i] for i in range(3))
+            cls[pn.branch_class(v)] += 1
+            offs.add(v)
+    return base, tuple(sorted(offs)), dict(
         name=rec["name"], group=rec["group"], cn=sorted(set(cn_of.values())),
         classes=dict(cls), sites=len(base), interior=len(interior))
+
+
+def register(into, limit=None):
+    """Add every accepted RCSR net to a pearce_net-style NETS dict.
+
+    Returns the names added.  Existing entries are never overwritten --
+    the hand-built srs and diamond nets are verified and stay."""
+    added = []
+    for name, base, nbrs, _info in survey_full(limit=limit, verbose=False):
+        key = name.upper()
+        if key in into:
+            continue
+        into[key] = (tuple(base), tuple(nbrs))
+        added.append(key)
+    return added
+
+
+def survey_full(limit=None, verbose=True):
+    recs = [r for r in parse_cgd() if is_cubic(r)]
+    out = []
+    for r in recs[:limit]:
+        try:
+            res = build(r)
+        except Exception:
+            res = None
+        if res is None:
+            continue
+        base, nbrs, info = res
+        out.append((r["name"], base, nbrs, info))
+        if verbose:
+            print("%-8s %-10s sites=%-3d cn=%-8s branches=%d"
+                  % (info["name"], info["group"], info["sites"],
+                     info["cn"], len(nbrs)))
+    return out
 
 
 def survey(limit=None, verbose=True):
