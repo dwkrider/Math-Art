@@ -37,15 +37,15 @@ PARAMS = {
     "mesh.polyhedron_compound_add": dict(family='CLASSICAL',
                                          compound='5TETRA'),
     # -- spidrons -------------------------------------------------
-    # The bare rosette default is the whole hexagonal subdivision,
-    # which at icon size is a grey disc of slivers.  Six arms, six
-    # rings and a little grout keep the triangles big enough to read,
-    # and colouring by shape makes the two-triangle spiral step visible
-    # where colouring by ring just muddies at this size.
-    "mesh.spidron_rosette_add": dict(layout_kind='ROSETTE',
-                                     arm_parts=6, corners=6, rings=6,
-                                     winding='OUT', color_by='SHAPE',
-                                     margin=0.06),
+    # The whole hexagonal subdivision coloured BY ARM: six spiral
+    # limbs meeting at the centre, which is the picture the word
+    # "spidron" means.  Six rings keep the outer triangles big enough
+    # to read at icon size (the deeper rings are invisible anyway),
+    # and no grout -- the margin would cut each arm into slivers where
+    # the solid arm is the subject.
+    "mesh.spidron_rosette_add": dict(layout_kind='FIGURE',
+                                     arm_parts=6, rings=6,
+                                     arm='SPIDRON', color_by='ARM'),
     # Flat, the nest is just a hexagon of triangles -- the whole point
     # is that it folds, so shoot it mid-fold where the crumple reads.
     # (`import math` lives below these tables, so angles are literal

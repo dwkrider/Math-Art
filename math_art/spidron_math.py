@@ -197,32 +197,80 @@ def arm_polys(m, rings, arm='SPIDRON', index=0, R=1.0, phi=0.0,
     return out
 
 
-def rosette_polys(m, n, rings, arm='SPIDRON', winding='OUT',
-                  R=1.0, chirality=1):
-    """A rosette: `n` copies of an m-part arm placed round a regular
-    n-gon.  `winding` is OUT, IN or BOTH (the superimposed design of
-    Gangopadhyay's papers 2, 5 and 6).  Returns (polys, types)."""
-    polys, types = [], []
+def rosette_ngon(m, n, R=1.0):
+    """The regular n-gon a rosette's arms are carried round.
 
-    def _emit(tris, tbase, rot, flip):
-        c, s = cos(rot), sin(rot)
-        for tri, kind in tris:
-            p = []
-            for (x, y) in tri:
-                if flip:
-                    y = -y
-                p.append((c * x - s * y, s * x + c * y))
-            polys.append(p)
-            types.append(tbase + kind)
+    Its SIDE equals the base edge of an m-part arm of circumradius R
+    (2R sin(pi/m)), so the arm drops onto each edge at its natural
+    size -- this is what makes Corners and Arm Parts independent: the
+    arm keeps its own m-part geometry whatever polygon it is wound
+    round.  Returns the n vertices, counterclockwise."""
+    L = 2.0 * R * sin(pi / m)
+    Rn = L / (2.0 * sin(pi / n))
+    return ring_polygon(n, Rn, pi / n - pi / 2.0)
 
-    base = arm_polys(m, rings, arm, 0, R, 0.0, chirality)
+
+def rosette_polys(m, n, rings, arm='SPIDRON', winding='OUT', R=1.0):
+    """A rosette: `n` copies of an m-part arm carried round a regular
+    n-gon, one arm per edge, spiralling on the OUTSIDE of the polygon
+    -- the "polygonal designs inscribing a regular n-gon" of the
+    Gangopadhyay papers.  The centre stays an empty n-gon and the arms
+    make a wreath of n spirals round it.
+
+    `winding` picks the sense: OUT is the paper's clockwise design,
+    IN the anticlockwise one -- the same arms mirrored edge for edge
+    (each IN arm is the OUT arm reflected across its edge's
+    perpendicular bisector) -- and BOTH superimposes the two, the
+    richest figure and the one the tiling papers build from.
+
+    Returns (polys, kinds, ring_ix, arm_ix): triangle vertex lists,
+    the 0/1 triangle shape, the ring each triangle belongs to, and
+    which arm it is part of -- OUT arms are numbered 0..n-1 anticlock-
+    wise round the polygon, IN arms n..2n-1, so colour-by-arm works in
+    every winding."""
+    base = arm_polys(m, rings, arm, 0, R, 0.0)
+    # canonical frame: base edge A->B mapped to (0,0)->(L,0), with the
+    # arm's body (which spirals toward the m-gon centre) at y > 0.
+    ag = 2.0 * pi / m
+    A = (R, 0.0)
+    B = (R * cos(ag), R * sin(ag))
+    L = hypot(B[0] - A[0], B[1] - A[1])
+    e1 = ((B[0] - A[0]) / L, (B[1] - A[1]) / L)
+    e2 = (-e1[1], e1[0])
+    sgn = 1.0 if (-A[0] * e2[0] - A[1] * e2[1]) >= 0.0 else -1.0
+
+    def canon(p):
+        qx, qy = p[0] - A[0], p[1] - A[1]
+        return (qx * e1[0] + qy * e1[1],
+                sgn * (qx * e2[0] + qy * e2[1]))
+
+    cbase = [([canon(v) for v in tri], kind) for tri, kind in base]
+
+    V = rosette_ngon(m, n, R)
+    polys, kinds, ring_ix, arm_ix = [], [], [], []
     for j in range(n):
-        rot = 2.0 * pi * j / n
-        if winding in ('OUT', 'BOTH'):
-            _emit(base, 0, rot, False)
-        if winding in ('IN', 'BOTH'):
-            _emit(base, 2, rot + pi / n, True)
-    return polys, types
+        Vj, Vj1 = V[j], V[(j + 1) % n]
+        ex = ((Vj1[0] - Vj[0]) / L, (Vj1[1] - Vj[1]) / L)
+        nout = (ex[1], -ex[0])          # outward normal of a CCW n-gon
+
+        def place(p, mirror):
+            x, y = p
+            if mirror:
+                x = L - x
+            return (Vj[0] + x * ex[0] + y * nout[0],
+                    Vj[1] + x * ex[1] + y * nout[1])
+
+        for mirror, aid in ((True, j), (False, n + j)):
+            if mirror and winding not in ('OUT', 'BOTH'):
+                continue
+            if not mirror and winding not in ('IN', 'BOTH'):
+                continue
+            for i, (tri, kind) in enumerate(cbase):
+                polys.append([place(v, mirror) for v in tri])
+                kinds.append(kind)
+                ring_ix.append(i // 2)
+                arm_ix.append(aid)
+    return polys, kinds, ring_ix, arm_ix
 
 
 def full_figure_polys(m, rings, R=1.0, phi=0.0):
