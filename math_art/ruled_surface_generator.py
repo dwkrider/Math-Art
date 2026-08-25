@@ -216,6 +216,111 @@ def _rods(segments, radius=0.02, sides=8):
     return verts, faces
 
 
+def _tube(pts, closed=True, radius=0.02, sides=8):
+    """Sweep one continuous tube along a polyline.
+
+    `_rods` gives every segment its own capped cylinder, which is right
+    for the rulings -- they really are separate sticks -- but wrong for
+    a boundary rail, where consecutive chords share an endpoint.  Two
+    capped cylinders meeting at an angle leave a visible lump at every
+    joint, and on a rail that approximates a circle the result is a ring
+    of bumps rather than a smooth hoop.
+
+    Here the cross-sections are shared: one ring of `sides` points per
+    polyline vertex, oriented on the average of the incoming and
+    outgoing tangents, quad-stripped to its neighbours.  The frame is
+    carried along by parallel transport so the tube does not spin about
+    its own axis, and for a closed rail the leftover holonomy is spread
+    evenly around the loop so the seam closes without a twist.
+    """
+    P = np.asarray(pts, dtype=float)
+    if len(P) > 1 and closed and np.linalg.norm(P[0] - P[-1]) < 1e-12:
+        P = P[:-1]                      # drop a duplicated closing point
+    n = len(P)
+    if n < 2:
+        return [], []
+
+    if closed:
+        T = np.roll(P, -1, axis=0) - np.roll(P, 1, axis=0)
+    else:
+        T = np.empty_like(P)
+        T[1:-1] = P[2:] - P[:-2]
+        T[0] = P[1] - P[0]
+        T[-1] = P[-1] - P[-2]
+    L = np.linalg.norm(T, axis=1, keepdims=True)
+    L[L < 1e-12] = 1.0
+    T = T / L
+
+    ref = np.array([0.0, 0.0, 1.0])
+    if abs(float(T[0] @ ref)) > 0.9:
+        ref = np.array([1.0, 0.0, 0.0])
+    N = np.cross(T[0], ref)
+    N /= np.linalg.norm(N)
+    normals = [N]
+    for i in range(1, n):
+        prev, cur = T[i - 1], T[i]
+        v = np.cross(prev, cur)
+        s = float(np.linalg.norm(v))
+        Nn = normals[-1]
+        if s > 1e-12:                   # rotate the frame onto the new tangent
+            axis = v / s
+            ang = math.atan2(s, float(prev @ cur))
+            c, sn = math.cos(ang), math.sin(ang)
+            Nn = (Nn * c + np.cross(axis, Nn) * sn
+                  + axis * float(axis @ Nn) * (1.0 - c))
+        Nn = Nn - float(Nn @ cur) * cur
+        ln = float(np.linalg.norm(Nn))
+        Nn = normals[-1] if ln < 1e-12 else Nn / ln
+        normals.append(Nn)
+
+    if closed:
+        # close the frame: whatever angle the transported normal has
+        # drifted by after one lap gets unwound evenly along the loop
+        last = normals[-1]
+        v = np.cross(last, T[-1])
+        drift = math.atan2(float(np.cross(last, normals[0]) @ T[0]),
+                           float(last @ normals[0]))
+        for i in range(n):
+            a = -drift * i / n
+            c, sn = math.cos(a), math.sin(a)
+            Ni, Ti = normals[i], T[i]
+            normals[i] = (Ni * c + np.cross(Ti, Ni) * sn
+                          + Ti * float(Ti @ Ni) * (1.0 - c))
+
+    verts, faces = [], []
+    for i in range(n):
+        Ti = T[i]
+        Ni = normals[i]
+        Bi = np.cross(Ti, Ni)
+        for k in range(sides):
+            ang = _TWO_PI * k / sides
+            verts.append(tuple(P[i] + radius * (math.cos(ang) * Ni
+                                                + math.sin(ang) * Bi)))
+    rings = n if closed else n - 1
+    for i in range(rings):
+        a0 = i * sides
+        a1 = ((i + 1) % n) * sides
+        for k in range(sides):
+            k1 = (k + 1) % sides
+            faces.append([a0 + k, a0 + k1, a1 + k1, a1 + k])
+    if not closed:
+        faces.append(list(range(sides))[::-1])
+        base = (n - 1) * sides
+        faces.append([base + k for k in range(sides)])
+    return verts, faces
+
+
+def _tubes(loops, radius=0.02, sides=8):
+    """`_tube` over a list of (points, closed) polylines, merged."""
+    verts, faces = [], []
+    for pts, closed in loops:
+        v, f = _tube(pts, closed, radius, sides)
+        o = len(verts)
+        verts.extend(v)
+        faces.extend([[i + o for i in q] for q in f])
+    return verts, faces
+
+
 # --------------------------------------------------------------------
 # 1. stick hyperboloid
 # --------------------------------------------------------------------
@@ -1109,7 +1214,9 @@ def _boundary_loops(op):
     m = op.mode
     if m not in _RULED:
         return []
-    N = max(8, op.res_u)
+    # A rail is a smooth curve, not one point per stick: sample it far
+    # more finely than the ruling count so the hoop reads as a circle.
+    N = max(96, op.res_u)
     if m == 'HYPAR':
         return _hypar_boundary(op, N)
     if m == 'HELICAL_CONE':
@@ -1445,13 +1552,21 @@ if _IN_BLENDER:
             want_rulings = out in ('RODS', 'CURVES')
             if want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
-                if self.show_boundaries:
-                    segs = segs + _loop_segments(_boundary_loops(self))
+                loops = (_boundary_loops(self)
+                         if self.show_boundaries else [])
                 if out == 'RODS':
                     verts, faces = _rods(segs, self.rod_radius, 8)
+                    # the rails are continuous curves, so they are swept
+                    # as one tube each instead of a capped cylinder per
+                    # chord, which would lump at every joint
+                    tv, tf = _tubes(loops, self.rod_radius, 8)
+                    o = len(verts)
+                    verts = list(verts) + tv
+                    faces = list(faces) + [[i + o for i in q] for q in tf]
                     name += " (Rods)"
                 else:
-                    verts, faces = _edges(segs)
+                    verts, faces = _edges(
+                        segs + _loop_segments(loops))
                     name += " (Curves)"
             elif want_rulings:
                 info = " [rulings N/A for this mode]"
