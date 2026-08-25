@@ -614,7 +614,8 @@ def _material_index(color_by, face_i, ring_i, arm_i, kind, ch, pair_i=0,
     return 0
 
 
-def build(seed='DODECA', rings=8, scale=2.0 / 3.0, twist=0.0,
+def build(seed='DODECA', rings=8, scale=2.0 / 3.0,
+          twist=radians(-15.0),
           relief=regular_relief(5), chirality='CW', open_center=False,
           relief_style='WOVEN', color_by='PAIR', twist_style='ADVANCE',
           colors=5):
@@ -755,7 +756,7 @@ if _IN_BLENDER:
                     "decoration")],
             description="What one ring's rotation is measured against")
         twist: FloatProperty(
-            name="Twist", default=0.0,
+            name="Twist", default=radians(-15.0),
             min=radians(-90.0), max=radians(90.0), subtype='ANGLE',
             description="Extra rotation per ring: on top of the node "
                         "step when the style is Advance (Nylander's "
@@ -1228,6 +1229,12 @@ def _selftest():
         and abs(build.__defaults__[4] - regular_relief(5)) < 1e-15
         and build.__defaults__[5] == 'CW'
         and build.__defaults__[9] == 'ADVANCE')
+    # the default twist is an EXCESS on top of the node step, so it can
+    # be nonzero without leaving that regime; -15 degrees opens the
+    # arms out from Nylander's near-zero excess
+    chk("default twist is -15 degrees",
+        abs(degrees(build.__defaults__[3]) + 15.0) < 1e-12,
+        "%.3f deg" % degrees(build.__defaults__[3]))
 
     print("spidron_ball: relief styles")
     # THE invariant that separates the interlocked ball from a heap of

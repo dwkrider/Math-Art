@@ -55,10 +55,12 @@ PARAMS = {
     # The dodecahedron is Nylander's subject and the one the name
     # "spidroball" refers to.  The operator defaults ARE his published
     # ball (Advance twist, ring scale 2/3, 8 rings, relief 0.10557,
-    # uniform chirality); 0.009284 rad = 0.532 deg is his own excess
-    # over the node step, kept here so the figure is exactly his.
+    # uniform chirality).  The twist is an EXCESS on top of the node
+    # step: Nylander's own is +0.532 deg, and -0.261799 rad = -15 deg
+    # opens the arms out from that, which reads better at icon size
+    # and is the operator's default, so icon and defaults agree.
     "mesh.spidron_ball_add": dict(seed='DODECA', rings=8,
-                                  scale_step=0.666667, twist=0.009284,
+                                  scale_step=0.666667, twist=-0.261799,
                                   relief=0.105573, chirality='CW',
                                   twist_style='ADVANCE',
                                   relief_style='WOVEN',
