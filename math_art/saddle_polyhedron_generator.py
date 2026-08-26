@@ -204,14 +204,14 @@ def true_nest_faces(solid):
 
     Exact test, applied per face: one edge length and one included
     angle throughout.  No per-solid judgement calls."""
-    V = solid['verts']
+    V = pdata.points(solid)
     return [pnet.is_equilateral_equiangular([V[i] for i in f])
             for f in solid['faces']]
 
 
 def spidron_faces(solid, rings, scale, twist):
     """Spidron nests on every face, with a true/generalised split."""
-    V = solid['verts']
+    V = pdata.points(solid)
     flags = true_nest_faces(solid)
     P = np.asarray(V, float)
     centre = P.mean(axis=0)
@@ -256,7 +256,11 @@ def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
                             rings, scale, twist, nx, ny, nz, gap,
                             colour_by, mirror, unit=(layout == 'UNIT'))
 
-    V0, F0 = solid['verts'], solid['faces']
+    # CARTESIAN, always.  A hexagonal solid's vertices are integer
+    # twenty-fourths of its own cell; read as Cartesian they give a
+    # sheared solid that still meshes and still looks plausible, which
+    # is the worst kind of wrong.
+    V0, F0 = pdata.points(solid), solid['faces']
 
     if face_style == 'SPIDRON':
         V, T, fid, flags = spidron_faces(solid, rings, scale, twist)
@@ -359,8 +363,9 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
     reports whether the cells' volume actually accounts for the block,
     and the operator passes that on rather than presenting a partial
     packing as a space filling."""
-    V0, F0 = solid['verts'], solid['faces']
-    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz)
+    V0, F0 = pdata.points(solid), solid['faces']
+    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz,
+                             lattice=solid.get('lattice'))
     if unit:
         # The repeat unit: two cells sharing a face.  For the
         # decatrihedron this is the Bridges paper's basic unit -- three
@@ -432,8 +437,9 @@ def build_cells(key=None, face_style='MINIMAL', density=3, smoothness=25,
     cube individually would scale them differently and scatter the
     packing."""
     solid = pdata.by_key(key) if key else pdata.SOLIDS[0]
-    V0, F0 = solid['verts'], solid['faces']
-    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz)
+    V0, F0 = pdata.points(solid), solid['faces']
+    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz,
+                             lattice=solid.get('lattice'))
 
     raw = []
     for pts in copies:
@@ -775,9 +781,14 @@ if _IN_BLENDER:
                    % (solid['number'], solid['name'], made,
                       100.0 * rep['ratio']))
             if not rep['fills']:
-                tail = (" -- no packing found for this solid in its net; "
-                        "showing one cell" if rep['copies'] <= 1
-                        else " -- does NOT fill space alone")
+                if rep.get('no_packing'):
+                    tail = (" -- not in the cubic net; fills space only "
+                            "in combination, so one cell is shown")
+                elif rep['copies'] <= 1:
+                    tail = (" -- no packing found for this solid in its "
+                            "net; showing one cell")
+                else:
+                    tail = " -- does NOT fill space alone"
                 self.report({'WARNING'}, msg + tail)
                 return {'FINISHED'}
             self.report({'INFO'}, msg)
@@ -847,7 +858,11 @@ if _IN_BLENDER:
                     # say so rather than pass a partial packing off as
                     # a space filling -- many of Pearce's solids only
                     # fill space in combination with a partner cell
-                    if rep['copies'] <= 1:
+                    if rep.get('no_packing'):
+                        msg += (" -- this solid is not in the cubic net; "
+                                "it fills space only in combination with "
+                                "others, so one cell is shown")
+                    elif rep['copies'] <= 1:
                         msg += (" -- no packing found for this solid in "
                                 "its net; showing one cell")
                     else:

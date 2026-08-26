@@ -313,14 +313,28 @@ def face_census(copies, faces):
     return shared, boundary, over
 
 
-def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06):
+def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06, lattice=None):
     """Build the packing and CHECK it fills the block.
 
     Returns (copies, report).  `report['fills']` is True only if the
     cells' total volume accounts for the block's volume, which is what
     catches overlapping orbit images and cells that need a partner."""
-    orbit = cell_orbit(verts, faces, net, nx, ny, nz)
     vol = abs(cell_volume(verts, faces))
+    if lattice not in (None, 'CUBIC8'):
+        # A solid outside the cubic grid has no cubic net to orbit in,
+        # and its packing is a different problem: the wurtzite pair only
+        # fill space in COMBINATION (measured: 2 small + 1 mid + 1 large,
+        # or 3 small + 3 mid, close the hexagonal cell exactly), which is
+        # a multi-cell system rather than one cell's orbit.  Report that
+        # plainly instead of raising on a missing net.
+        return [list(verts)], dict(
+            copies=1, orbit=1, orbit_ratio=0.0, overlapping_orbit=False,
+            self_intersecting=False, trimmed=False, cell_volume=vol,
+            block_volume=0.0, filled=vol, ratio=0.0, fills=False,
+            shared_faces=0, boundary_faces=len(faces), overused_faces=0,
+            lattice=lattice, no_packing=True)
+
+    orbit = cell_orbit(verts, faces, net, nx, ny, nz)
     block = float(8 * nx) * float(8 * ny) * float(8 * nz)
 
     def score(cs):
@@ -389,7 +403,7 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06):
                   filled=total, ratio=ratio,
                   fills=abs(ratio - 1.0) <= tol,
                   shared_faces=shared, boundary_faces=boundary,
-                  overused_faces=over)
+                  overused_faces=over, no_packing=False)
     return copies, report
 
 
@@ -423,13 +437,19 @@ def _selftest():
 
     for s in pdata.SOLIDS:
         tag = "#%d %s" % (s['number'], s['name'])
-        V, F = s['verts'], s['faces']
+        V, F = pdata.points(s), s['faces']
         vol = abs(cell_volume(V, F))
         chk("%s: closed cell has volume" % tag, vol > 1e-9, "%.2f" % vol)
         try:
-            copies, rep = pack(V, F, s['net'], 1, 1, 1)
+            copies, rep = pack(V, F, s['net'], 1, 1, 1,
+                               lattice=s.get('lattice'))
         except Exception as exc:
             chk("%s: packs" % tag, False, str(exc))
+            continue
+        if rep.get('no_packing'):
+            chk("%s: outside the cubic net, one cell reported" % tag,
+                rep['copies'] == 1 and not rep['fills'],
+                "lattice %s" % rep.get('lattice'))
             continue
         chk("%s: orbit is non-empty" % tag, rep['copies'] >= 1,
             "%d copies, ratio %.3f" % (rep['copies'], rep['ratio']))
