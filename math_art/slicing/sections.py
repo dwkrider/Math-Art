@@ -309,15 +309,21 @@ def to_world(pt2, u, v, n, d):
             d * n[2] + pt2[0] * u[2] + pt2[1] * v[2])
 
 
-def layer_offsets(lo, hi, thickness):
+def layer_offsets(lo, hi, thickness, spacing=None):
     """Plane offsets for a stacked model, one per material layer.
 
     Each plane sits at the CENTRE of the layer it represents, so the
     finished stack is as tall as the object instead of overshooting it
     by a layer, and neither end slice is a near-empty sliver.
+
+    `spacing` is the distance between planes.  Left unset it is the
+    material thickness, which is what a glued stack needs to reproduce
+    the shape -- set it wider and the slices stand apart, which is a
+    contour model rather than a solid one, and reads very differently.
     """
+    step = spacing if (spacing and spacing > 0.0) else thickness
     span = hi - lo
-    if thickness <= 0.0 or span <= 0.0:
+    if step <= 0.0 or span <= 0.0:
         return []
     # Round to the nearest whole layer rather than truncating.  An
     # object whose height is a hair under a whole number of layers --
@@ -326,9 +332,9 @@ def layer_offsets(lo, hi, thickness):
     # point, shortening the stack by a full sheet thickness.  Rounding
     # can overshoot the true height by at most half a layer, which is
     # a partial slice you would cut anyway.
-    count = max(1, int(round(span / thickness)))
-    start = lo + 0.5 * (span - count * thickness)
-    return [start + thickness * (k + 0.5) for k in range(count)]
+    count = max(1, int(round(span / step)))
+    start = lo + 0.5 * (span - count * step)
+    return [start + step * (k + 0.5) for k in range(count)]
 
 
 def spread_offsets(lo, hi, count):
@@ -473,6 +479,12 @@ def _selftest():
     assert abs(offs[0] + 0.875) < 1e-12, f"first layer centre {offs[0]}"
     assert abs(offs[-1] - 0.875) < 1e-12, f"last layer centre {offs[-1]}"
     assert abs((offs[-1] - offs[0]) - 1.75) < 1e-12, "layer pitch"
+
+    # a wider spacing thins the stack out without moving its centre
+    wide = layer_offsets(-1.0, 1.0, 0.25, spacing=0.5)
+    assert len(wide) == 4, f"2.0 / 0.5 = 4 planes, got {len(wide)}"
+    assert abs((wide[0] + wide[-1]) * 0.5) < 1e-12, "still centred"
+    assert abs((wide[1] - wide[0]) - 0.5) < 1e-12, "planes half a unit apart"
 
     # --- the committed offset is the nudged one, not the request --
     sl, off, faults, _ = section_family(V, F, (0, 0, 1), [0.0])

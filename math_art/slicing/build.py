@@ -63,8 +63,11 @@ class Settings:
         self.ring_count = 4
         self.rib_count = 12
         self.curve = None               # list of 3-D points, for RIBS
+        self.stack_spacing = 0.0        # 0 = one material thickness
+        self.use_dowels = True
         self.dowels = 2
         self.dowel_diameter = 4.0
+        self.dowel_spacing = 30.0       # least gap between dowels
         self.flare = 0.0                # Fusion's Notch Factor
         self.flare_angle = 45.0         # Fusion's Notch Angle
         self.tool_diameter = 0.0        # > 0 turns on dog-bone relief
@@ -146,7 +149,8 @@ def _half_plane_clip(part, keep_dir, big):
     return out
 
 
-def place_dowels(family, count, diameter, samples=28):
+def place_dowels(family, count, diameter, min_gap=0.0,
+                 samples=28):
     """Alignment dowel holes running through a whole stack.
 
     A stacked model with nothing to register it is the one configuration
@@ -164,6 +168,9 @@ def place_dowels(family, count, diameter, samples=28):
         return [], 0
     r = 0.5 * diameter
     need = r * 1.6
+    # dowels too close together do not register a stack any better than
+    # one dowel does, so keep them apart by at least the asked-for gap
+    apart = max(4.0 * r, float(min_gap))
 
     smallest = min((p for ps in stacks for p in ps), key=lambda p: p.area())
     x0, y0, x1, y1 = smallest.bounds()
@@ -194,7 +201,7 @@ def place_dowels(family, count, diameter, samples=28):
     for _c, pt in cands:
         if len(chosen) >= count:
             break
-        if any(math.dist(pt, q) < 4.0 * r for q in chosen):
+        if any(math.dist(pt, q) < apart for q in chosen):
             continue
         worst = min(min(clearance(pt, p) for p in ps) for ps in stacks)
         if worst >= need:
@@ -232,13 +239,16 @@ def build(verts, faces, settings, name='slices'):
         n = _axis_vec(st.axis)
         span = (float(np.dot(hi, n)), float(np.dot(lo, n)))
         a, b = min(span), max(span)
-        offs = sections.layer_offsets(a, b, st.thickness)
+        offs = sections.layer_offsets(a, b, st.thickness,
+                                      st.stack_spacing)
         fam, faults = _family_from_parallel(st.axis.upper(), V, faces,
                                             n, offs)
         families.append(fam)
         report['faults'] += faults
-        pts, drilled = place_dowels(fam, st.dowels, st.dowel_diameter)
-        report['dowels'] = len(pts)
+        if st.use_dowels:
+            pts, _drilled = place_dowels(fam, st.dowels, st.dowel_diameter,
+                                         st.dowel_spacing)
+            report['dowels'] = len(pts)
 
     elif st.technique == 'INTERLOCKED':
         if st.axis_a.upper() == st.axis_b.upper():
@@ -401,6 +411,7 @@ def _selftest():
     # --- stacked: count is DERIVED from thickness, not invented ---
     st = Settings(technique='STACKED', target_size=100.0, thickness=5.0,
                   axis='Z', dowels=2, dowel_diameter=4.0,
+                  dowel_spacing=10.0,
                   sheet_width=400.0, sheet_height=300.0)
     d, fams, rep = build(V, F, st, 'sphere')
     assert not rep['faults'], rep['faults']
@@ -412,6 +423,25 @@ def _selftest():
     assert rep['dowels'] == 2, f"two dowels through the stack: {rep}"
     holed = [p for p in fams[0].all_parts() if p.holes]
     assert len(holed) > 10, "the dowels pass through most of the stack"
+
+    # spacing wider than the stock thins the stack out
+    st_sp = Settings(technique='STACKED', target_size=100.0, thickness=5.0,
+                     stack_spacing=10.0, axis='Z', use_dowels=False,
+                     sheet_width=400.0, sheet_height=300.0)
+    _, fsp, rsp = build(V, F, st_sp, 'sphere')
+    assert len(fsp[0].planes) == 10,         f"100 mm at 10 mm spacing is 10 slices, got {len(fsp[0].planes)}"
+    assert rsp['dowels'] == 0, "dowels switched off means no dowels"
+    assert not any(p.holes for p in fsp[0].all_parts()),         "and no dowel holes drilled either"
+
+    # asking for the dowels further apart than the piece allows gives
+    # fewer dowels, not dowels crowded together where they register
+    # nothing
+    st_far = Settings(technique='STACKED', target_size=100.0, thickness=5.0,
+                      axis='Z', dowels=2, dowel_diameter=4.0,
+                      dowel_spacing=90.0,
+                      sheet_width=400.0, sheet_height=300.0)
+    _, _, rep_far = build(V, F, st_far, 'sphere')
+    assert rep_far['dowels'] < 2,         f"a 90 mm gap does not fit twice across this piece: {rep_far}"
 
     # --- stacked along a different axis really is different -------
     st_x = Settings(technique='STACKED', target_size=100.0, thickness=5.0,

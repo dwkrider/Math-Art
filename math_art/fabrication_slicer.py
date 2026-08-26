@@ -206,31 +206,30 @@ if _IN_BLENDER:
         context.scene.collection.children.link(coll)
         return coll
 
-    def _plate_mesh(name, part, plane, thickness, place):
-        """A part as a closed SOLID plate of the given thickness.
+    def _cap_ngon(part):
+        """Fill the cap as ONE n-gon, ear-clipped by Blender.
 
-        The caps are filled with `triangle_fill`, which takes the
-        outline and its holes as separate loops and leaves the holes
-        open -- a dowel hole or a torus slice's middle stays a hole
-        instead of being paved over, which a plain n-gon cap cannot
-        express.  `solidify` then gives the shell.  (Building the walls
-        by hand and leaving the ends open, as this first did, produces
-        a tube -- not a solid at all.)
-
-        The fill is then REPAIRED before solidifying, because on a
-        slice carrying a thin slot notch it occasionally leaves stray
-        edges with no face on them, and here and there a duplicated
-        overlapping triangle.  Solidifying that gives a plate that
-        looks right from outside and is not manifold.  Welding
-        coincident vertices, dropping degenerate faces and deleting
-        the leftover wire edges costs nothing and makes the result
-        solid; `_plate_is_solid` re-checks it afterwards rather than
-        assuming the repair worked.
-
-        Work happens in a local frame with the plate flat in z, so the
-        fill sees a genuinely planar outline; `place` maps the finished
-        local point into the world.
+        Holes are bridged into the outline first, so what gets filled
+        is always a single loop -- the case Blender's n-gon
+        triangulator is reliable at.  Returns (bmesh, filled area).
         """
+        import bmesh
+        from .slicing import polyclip as _pc
+
+        ring = (_pc.bridge_holes(part.outer, part.holes)
+                if part.holes else list(part.outer))
+        bm = bmesh.new()
+        vs = [bm.verts.new((x, y, 0.0)) for x, y in ring]
+        try:
+            face = bm.faces.new(vs)
+        except ValueError:
+            return bm, 0.0
+        bmesh.ops.triangulate(bm, faces=[face], ngon_method='EAR_CLIP')
+        bmesh.ops.dissolve_degenerate(bm, dist=1e-9, edges=bm.edges[:])
+        return bm, sum(f.calc_area() for f in bm.faces)
+
+    def _cap_scanfill(part):
+        """Fill the cap from the outline and hole loops separately."""
         import bmesh
         bm = bmesh.new()
         edges = []
@@ -239,45 +238,154 @@ if _IN_BLENDER:
             for i in range(len(vs)):
                 try:
                     edges.append(bm.edges.new((vs[i], vs[(i + 1) % len(vs)])))
-                except ValueError:        # duplicate edge: skip it
+                except ValueError:
                     pass
         bmesh.ops.triangle_fill(bm, edges=edges, use_beauty=False,
                                 use_dissolve=False)
+        return bm, sum(f.calc_area() for f in bm.faces)
 
-        span = max((abs(c) for v in bm.verts for c in (v.co.x, v.co.y)),
-                   default=1.0)
-        bmesh.ops.remove_doubles(bm, verts=bm.verts[:],
-                                 dist=max(1e-9, span * 1e-9))
-        bmesh.ops.dissolve_degenerate(bm, dist=max(1e-9, span * 1e-9),
-                                      edges=bm.edges[:])
-        stray = [e for e in bm.edges if not e.link_faces]
-        if stray:
-            bmesh.ops.delete(bm, geom=stray, context='EDGES')
-        loose = [v for v in bm.verts if not v.link_edges]
-        if loose:
-            bmesh.ops.delete(bm, geom=loose, context='VERTS')
+    def _clean_cap(bm):
+        """A fill turned into a clean, manifold-ready triangulation.
 
-        if bm.faces:
-            bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=thickness)
-        bm.normal_update()
+        Returns (points, triangles, area).  Scanfill in particular will
+        hand back the same triangle twice, and triangles collapsed to a
+        line; left in, the shared edges end up carrying four faces and
+        the plate is non-manifold however carefully the walls are
+        built, with a volume some multiple of the truth.
+        """
+        index, pts, tris, seen = {}, [], [], set()
 
-        # verify rather than assume: a plate whose repair did not take
-        # is still emitted (it is a preview, and a wrong-looking plate
-        # beats a missing one) but it gets counted and reported
-        solid = bool(bm.faces) and all(
-            len(e.link_faces) == 2 for e in bm.edges)
+        def vid(p):
+            key = (round(p[0], 9), round(p[1], 9))
+            if key not in index:
+                index[key] = len(pts)
+                pts.append(p)
+            return index[key]
 
-        # centre the plate on its own plane, whichever way solidify went
-        zs = [v.co.z for v in bm.verts]
-        shift = -0.5 * (min(zs) + max(zs)) if zs else 0.0
-        for vert in bm.verts:
-            vert.co = place(vert.co.x, vert.co.y, vert.co.z + shift)
+        for f in bm.faces:
+            co = [(v.co.x, v.co.y) for v in f.verts]
+            if len(co) != 3:
+                continue
+            a, b, c = co
+            if ((b[0] - a[0]) * (c[1] - a[1])
+                    - (b[1] - a[1]) * (c[0] - a[0])) < 0.0:
+                a, b, c = a, c, b
+            idx = (vid(a), vid(b), vid(c))
+            if len(set(idx)) < 3:
+                continue
+            key = frozenset(idx)
+            if key in seen:
+                continue
+            seen.add(key)
+            tris.append(idx)
+
+        # an edge carrying more than two triangles is a fold in the
+        # fill: drop the offenders rather than emit a plate no cutter
+        # could make sense of
+        for _ in range(2):
+            use = {}
+            for a, b, c in tris:
+                for e in ((a, b), (b, c), (c, a)):
+                    use[(min(e), max(e))] = use.get((min(e), max(e)), 0) + 1
+            over = {e for e, n in use.items() if n > 2}
+            if not over:
+                break
+            keep = []
+            for t in tris:
+                a, b, c = t
+                es = {(min(x, y), max(x, y))
+                      for x, y in ((a, b), (b, c), (c, a))}
+                if es & over:
+                    over -= es
+                    continue
+                keep.append(t)
+            tris = keep
+
+        area = 0.0
+        for a, b, c in tris:
+            pa, pb, pc_ = pts[a], pts[b], pts[c]
+            area += 0.5 * abs((pb[0] - pa[0]) * (pc_[1] - pa[1])
+                              - (pb[1] - pa[1]) * (pc_[0] - pa[0]))
+        return pts, tris, area
+
+    def _plate_mesh(name, part, plane, thickness, place):
+        """A part as a closed SOLID plate of the given thickness.
+
+        The plate is built explicitly rather than by extruding the cap
+        with `solidify`.  Solidify pushes each face along its OWN
+        normal, so a cap whose triangles disagree about which way is up
+        gets extruded both ways at once and the plate comes out twice
+        as thick as the stock -- which is what happened to every slice
+        carrying a dowel hole, and `recalc_face_normals` did not save
+        it.  Here the two caps and the side walls are emitted directly,
+        so the thickness is exactly the thickness by construction.
+
+        The side walls come from the BOUNDARY EDGES of the cleaned
+        triangulation -- those used by exactly one triangle -- so the
+        outline and the holes are handled by one rule with no special
+        cases.
+
+        Two fills are available and each is used where it has been
+        shown to work.  Scanfill takes the outline and its holes as
+        separate loops and gets holed slices right, but on a plain
+        outline carrying a thin slot notch it will silently leave part
+        of the outline unfilled -- which is how a slice once came out
+        visibly truncated.  The n-gon ear-clip is solid on a single
+        loop but needs holes bridged into it first, and the bridged
+        ring's coincident vertices come back as rubbish.  So holes go
+        to scanfill, plain outlines to the ear-clip -- and the result
+        is measured against the part's KNOWN area after cleaning, not
+        before, so that geometry lost by either the fill or the clean
+        is caught rather than shipped.
+        """
+        import bmesh
+
+        want = part.area()
+        order = ((_cap_scanfill, _cap_ngon) if part.holes
+                 else (_cap_ngon, _cap_scanfill))
+        best = None
+        for fill in order:
+            bm, _raw = fill(part)
+            pts2, faces_idx, got = _clean_cap(bm)
+            bm.free()
+            err = abs(got - want)
+            if best is None or err < best[0]:
+                best = (err, pts2, faces_idx, got)
+            if want <= 0.0 or err <= 0.01 * want:
+                break
+        err, pts2, faces_idx, got = best
+        faithful = want <= 0.0 or err <= 0.01 * want
+
+        edge_use = {}
+        for a, b, c in faces_idx:
+            for e in ((a, b), (b, c), (c, a)):
+                key = (min(e), max(e))
+                edge_use[key] = edge_use.get(key, 0) + 1
+        walls = [e for e, n in edge_use.items() if n == 1]
+
+        half = 0.5 * thickness
+        n = len(pts2)
+        verts = ([place(x, y, -half) for x, y in pts2]
+                 + [place(x, y, half) for x, y in pts2])
+        faces = [(c, b, a) for a, b, c in faces_idx]          # bottom
+        faces += [(a + n, b + n, c + n) for a, b, c in faces_idx]
+        for a, b in walls:
+            faces.append((a, b, b + n, a + n))
 
         me = bpy.data.meshes.new(name)
-        bm.to_mesh(me)
-        bm.free()
+        me.from_pydata(verts, [], faces)
         me.validate(clean_customdata=True)
         me.update()
+
+        chk = bmesh.new()
+        chk.from_mesh(me)
+        solid = (faithful and bool(chk.faces)
+                 and all(len(e.link_faces) == 2 for e in chk.edges))
+        if chk.calc_volume(signed=True) < 0.0:
+            bmesh.ops.reverse_faces(chk, faces=chk.faces[:])
+            chk.to_mesh(me)
+            me.update()
+        chk.free()
         return me, solid
 
     def _sheet_mesh(name, sheet, place):
@@ -380,8 +488,23 @@ if _IN_BLENDER:
             name="Ribs", default=12, min=2, max=200,
             description="Number of ribs along the curve")
 
+        stack_spacing: FloatProperty(
+            name="Slice Spacing", default=0.0, min=0.0, max=200.0,
+            description="Distance between slice planes, in millimetres. "
+                        "Zero uses the material thickness, which is what "
+                        "a glued stack needs to reproduce the shape; "
+                        "wider spreads the slices into a contour model")
+        use_dowels: BoolProperty(
+            name="Dowels", default=True,
+            description="Drill alignment holes through the whole stack, "
+                        "so the glued slices line up")
+        dowel_spacing: FloatProperty(
+            name="Dowel Spacing", default=30.0, min=0.0, max=1000.0,
+            description="Least distance between dowels, in millimetres. "
+                        "Dowels crowded together register a stack no "
+                        "better than a single dowel does")
         dowels: IntProperty(
-            name="Dowels", default=2, min=0, max=8,
+            name="Dowel Count", default=2, min=0, max=8,
             description="Alignment dowel holes through the whole "
                         "stack, so the glued slices line up")
         dowel_diameter: FloatProperty(
@@ -427,12 +550,6 @@ if _IN_BLENDER:
             name="Shell Thickness", default=0.05, min=0.001, max=10.0,
             description="Thickness given to an open surface, in the "
                         "object's own units")
-        match_size: BoolProperty(
-            name="Match Object Size", default=True,
-            description="Build the previewed slices at the size of the "
-                        "object they came from, so the two can be "
-                        "compared directly. Turn off to see them at "
-                        "the real millimetre size they will be cut at")
         preview: BoolProperty(
             name="Assembled Preview", default=True,
             description="Build the assembled 3-D model as well as the "
@@ -476,8 +593,10 @@ if _IN_BLENDER:
                 count_a=self.count_a, count_b=self.count_b,
                 radial_count=self.radial_count,
                 ring_count=self.ring_count, rib_count=self.rib_count,
-                dowels=self.dowels,
+                stack_spacing=self.stack_spacing,
+                use_dowels=self.use_dowels, dowels=self.dowels,
                 dowel_diameter=self.dowel_diameter,
+                dowel_spacing=self.dowel_spacing,
                 flare=self.flare, flare_angle=self.flare_angle,
                 tool_diameter=self.tool_diameter,
                 label_height=self.label_height,
@@ -508,9 +627,17 @@ if _IN_BLENDER:
             extent = max(max(xs) - min(xs), max(ys) - min(ys),
                          z_hi - z_lo) or 1.0
             applied = report['scale']
-            k = (1.0 / applied) if self.match_size else MM
+            # Two different scales, each fixed to what its output is
+            # FOR.  The slices exist to be compared against the object
+            # they came from, so they are always rebuilt at the
+            # object's own size.  The sheets exist to be cut, so they
+            # are always at the real millimetre size of the model you
+            # asked for -- a sheet drawn at the object's scale would
+            # misreport how big the stock has to be.
+            k_prev = 1.0 / applied
+            k_sheet = MM
             gap = 0.08 * extent
-            half_h = 0.5 * k * applied * (z_hi - z_lo)
+            half_h = 0.5 * (z_hi - z_lo)
 
             layout = _collection(context, f"{obj.name} Layout")
             sheets = drawing.sheets
@@ -525,7 +652,8 @@ if _IN_BLENDER:
                 dx = -0.5 * sheet.width
 
                 def place(x, y, dx=dx, dy=dy):
-                    return (cx + k * (x + dx), cy + k * (y + dy), sheet_z)
+                    return (cx + k_sheet * (x + dx),
+                            cy + k_sheet * (y + dy), sheet_z)
 
                 me = _sheet_mesh(f"{obj.name} sheet {sheet.index + 1}",
                                  sheet, place)
@@ -545,12 +673,12 @@ if _IN_BLENDER:
 
                         def place(x, y, z, u=u, v=v, n=n, d=d, push=push):
                             t = d + z + push
-                            return (cx + k * (t * n[0] + x * u[0]
-                                              + y * v[0]),
-                                    cy + k * (t * n[1] + x * u[1]
-                                              + y * v[1]),
-                                    base_z + k * (t * n[2] + x * u[2]
-                                                  + y * v[2]))
+                            return (cx + k_prev * (t * n[0] + x * u[0]
+                                                   + y * v[0]),
+                                    cy + k_prev * (t * n[1] + x * u[1]
+                                                   + y * v[1]),
+                                    base_z + k_prev * (t * n[2] + x * u[2]
+                                                       + y * v[2]))
 
                         for part in plane.parts:
                             me, solid = _plate_mesh(
@@ -563,7 +691,7 @@ if _IN_BLENDER:
 
             summary = _build.summarise(report)
             if unsolid:
-                summary += f"; {unsolid} preview plates are not solid"
+                summary += f"; {unsolid} preview plates came out wrong"
             level = 'WARNING' if (unsolid
                                   or report['nest'].get('oversize')
                                   or report.get('faults')
@@ -574,7 +702,15 @@ if _IN_BLENDER:
             return {'FINISHED'}
 
         def draw(self, context):
+            # House style: `use_property_split` puts the label in its
+            # own column beside the field, the way every other
+            # generator in this add-on draws.  Properties also go one
+            # per row rather than paired side by side -- Blender splits
+            # the width between a pair and truncates the second label
+            # to something like "Sec...", which reads as a bug.
             lay = self.layout
+            lay.use_property_split = True
+            lay.use_property_decorate = False
             lay.prop(self, 'technique')
 
             box = lay.box()
@@ -586,32 +722,27 @@ if _IN_BLENDER:
             box = lay.box()
             box.label(text="Slices")
             if self.technique == 'INTERLOCKED':
-                row = box.row()
-                row.prop(self, 'axis_a')
-                row.prop(self, 'axis_b')
+                box.prop(self, 'axis_a')
+                box.prop(self, 'axis_b')
                 if self.axis_a == self.axis_b:
-                    box.label(text="The two axes must differ",
-                              icon='ERROR')
-                row = box.row()
-                row.prop(self, 'count_a')
-                row.prop(self, 'count_b')
+                    box.label(text="The two axes must differ", icon='ERROR')
+                box.prop(self, 'count_a')
+                box.prop(self, 'count_b')
             else:
                 box.prop(self, 'axis')
             if self.technique == 'STACKED':
-                sub = box.column()
-                sub.enabled = False
-                sub.label(text="Slice count follows the thickness")
-                box.prop(self, 'dowels')
-                if self.dowels:
+                box.prop(self, 'stack_spacing')
+                box.prop(self, 'use_dowels')
+                if self.use_dowels:
+                    box.prop(self, 'dowels')
                     box.prop(self, 'dowel_diameter')
+                    box.prop(self, 'dowel_spacing')
             elif self.technique == 'RADIAL':
-                row = box.row()
-                row.prop(self, 'radial_count')
-                row.prop(self, 'ring_count')
+                box.prop(self, 'radial_count')
+                box.prop(self, 'ring_count')
             elif self.technique == 'RIBS':
                 box.prop(self, 'rib_count')
-                box.label(text="Select a curve object as well",
-                          icon='INFO')
+                box.label(text="Select a curve object as well", icon='INFO')
 
             if self.technique != 'STACKED':
                 box = lay.box()
@@ -625,9 +756,8 @@ if _IN_BLENDER:
 
             box = lay.box()
             box.label(text="Sheet")
-            row = box.row()
-            row.prop(self, 'sheet_width')
-            row.prop(self, 'sheet_height')
+            box.prop(self, 'sheet_width')
+            box.prop(self, 'sheet_height')
             box.prop(self, 'margin')
             box.prop(self, 'label_height')
 
@@ -638,7 +768,6 @@ if _IN_BLENDER:
                 box.prop(self, 'shell_thickness')
             box.prop(self, 'preview')
             if self.preview:
-                box.prop(self, 'match_size')
                 box.prop(self, 'explode')
 
     # -------------------------------------------------------------- #
