@@ -157,6 +157,29 @@ print("rejected by the gate: %d" % len(rejected))
 for _n, _why in sorted(rejected.items()):
     print("  #%-3d %s" % (_n, _why))
 
+#: Any net a surviving solid uses that `pearce_net` does not define has
+#: to be shipped alongside the data: the resolver registers RCSR nets at
+#: run time from a local mirror, and the extension has no mirror.  A
+#: solid whose net cannot be shipped is dropped rather than emitted with
+#: a net reference that will not resolve at build time.
+extra_nets = {}
+for _num in sorted(resolved):
+    _net = resolved[_num][1]
+    if not isinstance(_net, str) or _net in pn.NETS:
+        continue
+    try:
+        import rcsr_nets as _rc
+        for _nm, _base, _nbrs, _info in _rc.survey_full(verbose=False):
+            if _nm.upper() == _net:
+                extra_nets[_net] = (tuple(_base), tuple(_nbrs))
+                break
+    except Exception as _e:
+        print("cannot ship net %s: %s" % (_net, _e))
+    if _net not in extra_nets:
+        print("dropping #%d: net %s is not shippable" % (_num, _net))
+        del resolved[_num]
+print("nets shipped with the data: %s" % sorted(extra_nets))
+
 out = [HEAD]
 out.append("SOLIDS = (\n")
 nums = sorted(resolved)
@@ -190,7 +213,31 @@ for n in unres:
     out.append(FMT_UNRES % (n, r["name"], why))
 out.append(")\n\n")
 
-out.append('''
+out.append("#: Nets these solids use that `pearce_net` does not build in.\n")
+out.append("#: The resolver registers RCSR nets at run time from a local\n")
+out.append("#: mirror; the extension has no such mirror, so any net a\n")
+out.append("#: shipped solid depends on has to travel WITH the data.\n")
+out.append("EXTRA_NETS = {\n")
+for _nm in sorted(extra_nets):
+    _b, _nb = extra_nets[_nm]
+    out.append("    %r: (\n        (%s),\n        (%s),\n    ),\n"
+               % (_nm, fmt_tuple(_b, per=5, indent=9),
+                  fmt_tuple(_nb, per=5, indent=9)))
+out.append("}\n\n\n")
+
+out.append('''def _register_nets():
+    """Make EXTRA_NETS visible to pearce_net, so the data is complete."""
+    try:
+        from . import pearce_net as _pn
+    except Exception:
+        import pearce_net as _pn
+    for _k, _v in EXTRA_NETS.items():
+        _pn.NETS.setdefault(_k, _v)
+
+
+_register_nets()
+
+
 def by_key(key):
     for s in SOLIDS:
         if s['key'] == key:

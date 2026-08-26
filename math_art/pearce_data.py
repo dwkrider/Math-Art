@@ -70,6 +70,19 @@ SOLIDS = (
         ),
     ),
     dict(
+        number=13, key='FCC_TETRAGONAL_TETRAHEDRON',
+        name='fcc tetragonal tetrahedron',
+        net='FCC', match='CORE',
+        verts=(
+            (4, 4, 0), (4, 0, 4), (0, 4, 4), (4, 4, 8), (4, 8, 4),
+            (8, 4, 4),
+        ),
+        faces=(
+            (5, 1, 2, 0), (0, 2, 4, 5), (5, 3, 2, 1),
+            (2, 3, 5, 4),
+        ),
+    ),
+    dict(
         number=14, key='FCC_ORTHORHOMBIC_TETRAHEDRON',
         name='fcc orthorhombic tetrahedron',
         net='FCC', match='FULL',
@@ -80,6 +93,20 @@ SOLIDS = (
         faces=(
             (4, 2, 1, 0), (0, 1, 3, 4), (1, 2, 4, 5),
             (5, 4, 3, 1),
+        ),
+    ),
+    dict(
+        number=30, key='TRUNCATED_TETRAGONAL_TETRAHEDRON',
+        name='Truncated tetragonal tetrahedron',
+        net='MJT', match='FULL',
+        verts=(
+            (2, 6, 8), (4, 4, 8), (6, 6, 8), (2, 8, 6), (4, 8, 4),
+            (6, 8, 6), (2, 8, 10), (2, 10, 8), (4, 8, 12), (4, 12, 8),
+            (6, 8, 10), (6, 10, 8),
+        ),
+        faces=(
+            (3, 4, 5, 2, 1, 0), (0, 1, 2, 10, 8, 6), (6, 7, 3, 0),
+            (2, 5, 11, 10), (7, 9, 11, 5, 4, 3), (8, 10, 11, 9, 7, 6),
         ),
     ),
 )
@@ -100,7 +127,6 @@ UNRESOLVED = (
     (8, 'bcc trihedron', "face inventory {(4, 'MIRROR', None): 3} != {(4, 'MIRROR', '110'): 3}"),
     (9, 'Rectangular trihedron (enantiomorphic)', 'not orientable'),
     (10, 'Double rectangular trihedron', 'no geometry found by the search'),
-    (13, 'fcc tetragonal tetrahedron', 'no geometry found by the search'),
     (15, 'Universal tetrahedron', 'no geometry found by the search'),
     (16, 'Digonal tetrahedron', 'no geometry found by the search'),
     (17, 'Truncated orthorhombic tetrahedron', 'no geometry found by the search'),
@@ -116,7 +142,6 @@ UNRESOLVED = (
     (27, 'Triangular hexahedron', 'no geometry found by the search'),
     (28, 'Cubical saddle hexahedron', 'no geometry found by the search'),
     (29, 'Saddle cube', 'no geometry found by the search'),
-    (30, 'Truncated tetragonal tetrahedron', 'no geometry found by the search'),
     (31, 'Universal hexahedron', 'no geometry found by the search'),
     (32, 'Augmented universal hexahedron', 'no geometry found by the search'),
     (33, 'Bioctagonal hexahedron', 'no geometry found by the search'),
@@ -141,6 +166,37 @@ UNRESOLVED = (
     (52, 'Truncated saddle dodecahedron', 'no geometry found by the search'),
     (53, 'Universal cuboctadodecahedron', 'no geometry found by the search'),
 )
+
+#: Nets these solids use that `pearce_net` does not build in.
+#: The resolver registers RCSR nets at run time from a local
+#: mirror; the extension has no such mirror, so any net a
+#: shipped solid depends on has to travel WITH the data.
+EXTRA_NETS = {
+    'MJT': (
+        ((0, 0, 4), (0, 2, 2), (0, 2, 6), (0, 4, 0), (0, 4, 4),
+         (0, 6, 2), (0, 6, 6), (2, 0, 2), (2, 0, 6), (2, 2, 0),
+         (2, 2, 4), (2, 4, 2), (2, 4, 6), (2, 6, 0), (2, 6, 4),
+         (4, 0, 0), (4, 0, 4), (4, 2, 2), (4, 2, 6), (4, 4, 0),
+         (4, 6, 2), (4, 6, 6), (6, 0, 2), (6, 0, 6), (6, 2, 0),
+         (6, 2, 4), (6, 4, 2), (6, 4, 6), (6, 6, 0), (6, 6, 4)),
+        ((-2, -2, 0), (-2, 0, -2), (-2, 0, 2), (-2, 2, 0), (0, -2, -2),
+         (0, -2, 2), (0, 2, -2), (0, 2, 2), (2, -2, 0), (2, 0, -2),
+         (2, 0, 2), (2, 2, 0)),
+    ),
+}
+
+
+def _register_nets():
+    """Make EXTRA_NETS visible to pearce_net, so the data is complete."""
+    try:
+        from . import pearce_net as _pn
+    except Exception:
+        import pearce_net as _pn
+    for _k, _v in EXTRA_NETS.items():
+        _pn.NETS.setdefault(_k, _v)
+
+
+_register_nets()
 
 
 def by_key(key):
