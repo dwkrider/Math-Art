@@ -224,7 +224,9 @@ def oriented(code, size=2.0):
     but tipped at an arbitrary angle so a shallow nest looks like a
     steep one.
     """
-    pts = boundary(code)
+    pts = from_solid(code) if code in UNVERIFIED else boundary(code)
+    if pts is None:
+        pts = boundary(code)
     if pts is None:
         return None
     P = np.asarray(pts, float)
@@ -255,9 +257,51 @@ def info(code):
                 angles=tuple(angles), flat=(group == 'flat'))
 
 
+def from_solid(code, tol=0.05):
+    """The nest taken straight off a saddle polyhedron that carries it.
+
+    Rebuilding a nest from its published boundary spec does not always
+    give the published nest: the angle sequence, group and symmetry
+    together still admit more than one circuit for nine of the 34.  But
+    a nest IS a face of a Pearce solid, so where we have such a solid
+    the face can simply be lifted -- no search, no ambiguity.
+
+    Returns Cartesian points, or None when no shipped solid carries it.
+    """
+    try:
+        from . import pearce_data as pdata
+    except Exception:
+        import pearce_data as pdata
+    n, group, sym, angles = NESTS[code]
+    want_ang = tuple(sorted(round(a, 2) for a in angles))
+    want_sym = _SYM_LABEL.get(sym)
+    for solid in pdata.SOLIDS:
+        X = pdata.points(solid)
+        for cyc in solid['faces']:
+            if len(cyc) != n:
+                continue
+            loop = [X[i] for i in cyc]
+            got = tuple(sorted(round(a, 2)
+                               for a in pnet.circuit_angles(loop)))
+            if len(got) != len(want_ang):
+                continue
+            if any(abs(g - w) > tol for g, w in zip(got, want_ang)):
+                continue
+            if want_sym and pnet.face_symmetry_label(loop) != want_sym:
+                continue
+            return [tuple(float(c) for c in p) for p in loop]
+    return None
+
+
+def recovered_codes():
+    """Held-back nests that a shipped solid can supply after all."""
+    return tuple(c for c in UNVERIFIED if from_solid(c) is not None)
+
+
 def verified_codes():
     """Nest codes whose reconstruction matches the published symmetry."""
-    return tuple(c for c in CODES if c not in UNVERIFIED)
+    rec = set(recovered_codes())
+    return tuple(c for c in CODES if c not in UNVERIFIED or c in rec)
 
 
 def _selftest():
@@ -323,8 +367,13 @@ def _selftest():
             wrong.append(code)
     chk("every offered nest has the published symmetry", not wrong,
         " ".join(wrong))
-    chk("25 offered, 9 held back", len(verified_codes()) == 25,
-        "%d offered" % len(verified_codes()))
+    rec = recovered_codes()
+    chk("every held-back nest is either recovered or absent",
+        all(c in rec or from_solid(c) is None for c in UNVERIFIED),
+        "recovered: %s" % " ".join(rec))
+    chk("offered = 34 - held back + recovered",
+        len(verified_codes()) == 34 - len(UNVERIFIED) + len(rec),
+        "%d offered, %d recovered" % (len(verified_codes()), len(rec)))
 
     # the decatrihedron's face is n10a, and it is NOT the planar decagon
     pts = boundary('n10a')
