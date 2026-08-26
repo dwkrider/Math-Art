@@ -988,22 +988,38 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             self.report({'INFO'},
                         f"Wrote {len(written)} file(s) for "
-                        f"{len(drawing.sheets)} sheet(s)")
+                        f"{len(drawing.sheets)} sheet(s) from "
+                        f"{coll.name}")
             return {'FINISHED'}
 
     def _find_layout(context):
-        """The object carrying a sliced layout: the selected group's
-        root if there is one, otherwise any."""
+        """The object carrying the layout to export.
+
+        Order matters, and the fallback is what bit: a file that has
+        been sliced more than once holds several roots, and simply
+        taking the first object with a drawing on it exports whichever
+        happened to come first in the file -- so a six-sheet job on
+        screen came out as somebody else's three-sheet DXF, silently.
+
+        So: the group the selection is actually in, then the group
+        belonging to the selected SOURCE object (clicking Export with
+        the sliced mesh selected is the obvious thing to do), and only
+        then any layout at all -- and the exporter says which one it
+        used, so the wrong answer cannot be a quiet one.
+        """
         obj = context.active_object
-        for candidate in (obj, getattr(obj, 'parent', None),
-                          getattr(getattr(obj, 'parent', None),
-                                  'parent', None)):
+        chain = [obj]
+        for _ in range(3):
+            chain.append(getattr(chain[-1], 'parent', None))
+        for candidate in chain:
             if candidate is not None and DRAWING_KEY in candidate:
                 return candidate
-        for candidate in bpy.data.objects:
-            if DRAWING_KEY in candidate:
-                return candidate
-        return None
+        if obj is not None:
+            named = bpy.data.objects.get(f"{obj.name} Slices")
+            if named is not None and DRAWING_KEY in named:
+                return named
+        found = [o for o in bpy.data.objects if DRAWING_KEY in o]
+        return found[0] if found else None
 
     _CLASSES = (OBJECT_OT_fabrication_slice,
                 OBJECT_OT_fabrication_slice_export)

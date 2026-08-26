@@ -52,6 +52,19 @@ def _header():
             + _g(0, 'ENDSEC'))
 
 
+def _tables_named(pairs):
+    """LAYER table from (layer name, operation) pairs, so a per-sheet
+    name still takes its operation's colour."""
+    out = _g(0, 'SECTION') + _g(2, 'TABLES')
+    out += _g(0, 'TABLE') + _g(2, 'LAYER') + _g(70, len(pairs))
+    for name, op in pairs:
+        _rgb, aci, _cuts = LAYER_STYLE[op]
+        out += (_g(0, 'LAYER') + _g(2, name) + _g(70, 0)
+                + _g(62, aci) + _g(6, 'CONTINUOUS'))
+    out += _g(0, 'ENDTAB') + _g(0, 'ENDSEC')
+    return out
+
+
 def _tables(layers):
     out = _g(0, 'SECTION') + _g(2, 'TABLES')
     out += _g(0, 'TABLE') + _g(2, 'LAYER') + _g(70, len(layers))
@@ -74,34 +87,59 @@ def _polyline(points, closed, layer):
     return out
 
 
-def job_dxf(drawing, include_frame=True, gap=20.0):
-    """The whole job as one DXF, sheets tiled side by side.
+def layer_name(sheet_index, operation, sheets=1):
+    """`CUT` for a one-sheet job, `S02_CUT` for a longer one.
 
-    The operation layers are shared across the file, which is the
-    point: one document whose CUT, HOLE and ENGRAVE layers can each be
-    switched off or mapped to a power in a single action, however many
-    sheets the job runs to.  Each sheet keeps its own frame on the
-    non-cutting SHEET layer, so where one ends and the next begins is
-    still legible.
+    A job of one sheet gains nothing from a prefix, and a job of six
+    needs one badly.
     """
-    placed, x = [], 0.0
+    if sheets <= 1:
+        return operation
+    return f"S{sheet_index + 1:02d}_{operation}"
+
+
+def job_dxf(drawing, include_frame=True):
+    """The whole job as one DXF, ONE LAYER SET PER SHEET.
+
+    Two decisions here, both aimed at the machine rather than at the
+    screen.
+
+    Every sheet is drawn at the SAME ORIGIN, stacked rather than tiled.
+    A laser operator isolates one sheet's layers, and what they then
+    want is that sheet sitting at 0,0 ready to cut -- not sitting two
+    metres to the right because it happened to be fifth in the job.
+
+    And every sheet gets its own layers -- S01_CUT, S01_HOLE, S02_CUT
+    and so on -- so a sheet can be shown, hidden or sent on its own.
+    Sharing one CUT layer across the job puts all six sheets on top of
+    one another with no way to separate them, which is the one thing a
+    single file must not do.  The operation stays in the name so the
+    cut/engrave distinction, and its colour, survive.
+    """
+    n = len(drawing.sheets)
+    placed = []
     for sheet in drawing.sheets:
         for e in sheet.ordered():
             if not include_frame and e.layer == 'SHEET':
                 continue
-            placed.append((e.layer,
-                           [(px + x, py) for px, py in e.points],
-                           e.closed))
-        x += sheet.width + gap
+            placed.append((layer_name(sheet.index, e.layer, n),
+                           e.layer, list(e.points), e.closed))
 
-    used = [n for n in LAYER_ORDER if any(p[0] == n for p in placed)]
+    used, seen = [], set()
+    for op in LAYER_ORDER:
+        for sheet in drawing.sheets:
+            name = layer_name(sheet.index, op, n)
+            if name not in seen and any(p[0] == name for p in placed):
+                seen.add(name)
+                used.append((name, op))
+
     body = _g(0, 'SECTION') + _g(2, 'ENTITIES')
-    for layer in LAYER_ORDER:
-        for name, pts, closed in placed:
-            if name == layer:
-                body += _polyline(pts, closed, layer)
+    for name, _op in used:
+        for lname, _base, pts, closed in placed:
+            if lname == name:
+                body += _polyline(pts, closed, lname)
     body += _g(0, 'ENDSEC')
-    return _header() + _tables(used or ['CUT']) + body + _g(0, 'EOF')
+    return _header() + _tables_named(used) + body + _g(0, 'EOF')
 
 
 def sheet_dxf(sheet, include_frame=True):
@@ -236,7 +274,7 @@ def _selftest():
         f"the two exporters must agree polyline-for-polyline: "
         f"svg={svg_counts} dxf={dxf_counts}")
 
-    # --- the whole job in ONE file, sheets tiled ------------------
+    # --- the whole job in ONE file, a layer set per sheet ---------
     two = Drawing('t', 100.0, 60.0)
     two.sheet(0).add('CUT', [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)],
                      True, 'a')
@@ -246,10 +284,20 @@ def _selftest():
     polys = sum(1 for g in job if g == (0, 'POLYLINE'))
     assert polys == 4, f"two parts and two sheet frames, got {polys}"
     assert sum(1 for c, v in job if c == 0 and v == 'EOF') == 1,         "one file means one EOF, not one per sheet"
-    xs = [float(v) for c, v in job if c == 10]
-    assert max(xs) > 100.0,         "the second sheet must be tiled clear of the first, not stacked"
     layers = {v for c, v in job if c == 8}
-    assert layers == {'CUT', 'SHEET'},         f"operation layers are shared across the file: {layers}"
+    assert layers == {'S01_CUT', 'S01_SHEET', 'S02_CUT', 'S02_SHEET'}, (
+        "each sheet needs its OWN layers or the six of them land on top "
+        f"of one another with no way to separate them: {sorted(layers)}")
+    xs = [float(v) for c, v in job if c == 10]
+    assert max(xs) <= 100.0 + 1e-9, (
+        "sheets stack at a common origin -- an isolated sheet has to sit "
+        f"at 0,0 ready to cut, not offset by its place in the job: {max(xs)}")
+
+    # a single-sheet job keeps the plain names
+    one = Drawing('t', 100.0, 60.0)
+    one.sheet(0).add('CUT', [(0.0, 0.0), (5.0, 0.0), (5.0, 5.0)], True, 'a')
+    solo = {v for c, v in parse_groups(job_dxf(one)) if c == 8}
+    assert solo == {'CUT', 'SHEET'},         f"one sheet needs no prefix: {sorted(solo)}"
 
     # --- dropping the frame drops it from both the table and body -
     plain = parse_groups(sheet_dxf(s, include_frame=False))
