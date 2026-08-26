@@ -422,85 +422,6 @@ def offset_polygon(poly, dist, miter_limit=4.0):
     return out
 
 
-def bridge_holes(outer, holes):
-    """Merge holes into their outline, giving ONE simple ring.
-
-    A ring with holes is not something most triangulators take: the
-    holes have to be connected to the outline by a pair of coincident
-    "bridge" edges, after which the whole thing is a single simple
-    polygon that happens to touch itself along those bridges.  Because
-    the bridge has zero width, the merged ring encloses exactly
-    outline-minus-holes -- which is what the area check in the
-    self-test pins down.
-
-    The construction is the standard one: take the hole's rightmost
-    vertex, cast a ray to the right, and join it to a visible vertex of
-    the outline.  Where the ray lands in the middle of an edge, the
-    candidate is that edge's righter endpoint, and any reflex vertex
-    lying inside the triangle formed can block the join -- so the
-    blocker with the shallowest angle is used instead, which is
-    guaranteed visible.
-
-    Holes are merged rightmost-first, so a hole joined earlier is
-    already part of the outline when a hole further left looks for
-    something to see.
-    """
-    ring = list(as_ccw(outer))
-    for hole in sorted((as_cw(h) for h in holes),
-                       key=lambda h: -max(p[0] for p in h)):
-        if len(hole) < 3:
-            continue
-        m = max(range(len(hole)), key=lambda i: hole[i][0])
-        M = hole[m]
-
-        # nearest edge crossing the ray M -> +x
-        best_t, best_i, best_pt = float('inf'), None, None
-        n = len(ring)
-        for i in range(n):
-            a, b = ring[i], ring[(i + 1) % n]
-            if (a[1] > M[1]) == (b[1] > M[1]):
-                continue
-            t = a[0] + (M[1] - a[1]) * (b[0] - a[0]) / (b[1] - a[1])
-            if t >= M[0] - 1e-12 and t < best_t:
-                best_t, best_i, best_pt = t, i, (t, M[1])
-        if best_i is None:
-            continue                       # hole is not inside: skip it
-
-        a, b = ring[best_i], ring[(best_i + 1) % n]
-        p_idx = best_i if a[0] > b[0] else (best_i + 1) % n
-        P = ring[p_idx]
-
-        # any reflex vertex inside triangle (M, hit, P) blocks the view
-        def inside(p, q, r, s):
-            def side(u, v, w):
-                return ((v[0] - u[0]) * (w[1] - u[1])
-                        - (v[1] - u[1]) * (w[0] - u[0]))
-            d1, d2, d3 = side(p, q, s), side(q, r, s), side(r, p, s)
-            neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
-            pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
-            return not (neg and pos)
-
-        best_ang = None
-        for i, R in enumerate(ring):
-            if i == p_idx or R[0] < M[0]:
-                continue
-            prv, nxt = ring[(i - 1) % n], ring[(i + 1) % n]
-            crs = ((R[0] - prv[0]) * (nxt[1] - R[1])
-                   - (R[1] - prv[1]) * (nxt[0] - R[0]))
-            if crs >= 0:                   # convex: cannot block
-                continue
-            if not inside(M, best_pt, P, R):
-                continue
-            ang = abs(math.atan2(R[1] - M[1], R[0] - M[0]))
-            if best_ang is None or ang < best_ang:
-                best_ang, p_idx = ang, i
-
-        rotated = hole[m:] + hole[:m]
-        ring = (ring[:p_idx + 1] + rotated + [rotated[0]]
-                + ring[p_idx:])
-    return ring
-
-
 def arc_points(cx, cy, r, a0, a1, segments=12):
     """Polyline approximation of an arc, endpoints included."""
     out = []
@@ -669,42 +590,6 @@ def _selftest():
     notched, hits = dogbone(_notched_square(), 0.05)
     assert hits == 2, \
         f"a rectangular notch has two inside corners, got {hits}"
-    # --- bridging holes into one ring -----------------------------
-    # the bridge has zero width, so the merged ring encloses exactly
-    # the material: outline minus holes, to the last decimal
-    outer10 = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)]
-    h1 = [(2.0, 2.0), (2.0, 4.0), (4.0, 4.0), (4.0, 2.0)]
-    h2 = [(6.0, 6.0), (6.0, 8.0), (8.0, 8.0), (8.0, 6.0)]
-
-    merged = bridge_holes(outer10, [h1])
-    assert abs(area(merged) - (100.0 - 4.0)) < 1e-9, \
-        f"one hole bridged: area {area(merged)}"
-    merged = bridge_holes(outer10, [h1, h2])
-    assert abs(area(merged) - (100.0 - 8.0)) < 1e-9, \
-        f"two holes bridged: area {area(merged)}"
-    assert len(merged) == 4 + 2 * (4 + 2), (
-        "each hole adds its own ring plus the two repeated vertices "
-        f"that make the there-and-back bridge: {len(merged)}")
-
-    # order must not matter: the same holes given the other way round
-    other = bridge_holes(outer10, [h2, h1])
-    assert abs(area(other) - area(merged)) < 1e-9, \
-        "hole order must not change the merged area"
-
-    # no holes is the identity
-    assert bridge_holes(outer10, []) == list(outer10), "no holes, no change"
-
-    # a hole outside the outline is ignored rather than corrupting it
-    stray = [(20.0, 20.0), (20.0, 21.0), (21.0, 21.0), (21.0, 20.0)]
-    assert abs(area(bridge_holes(outer10, [stray])) - 100.0) < 1e-9, \
-        "a hole that is not inside the outline is skipped"
-
-    # a hole tucked against the outline still bridges cleanly -- this
-    # is the case a scanline fill is most likely to drop
-    tight = [(9.0, 4.0), (9.0, 6.0), (9.6, 6.0), (9.6, 4.0)]
-    assert abs(area(bridge_holes(outer10, [tight])) - (100.0 - 1.2)) < 1e-9, \
-        "a hole close to the rim bridges too"
-
     base_area = area(_notched_square())
     # the over-cut is a 16-gon, not a circle, so compare against the
     # exact polygonal area -- a pi*r^2 estimate is off by more than the

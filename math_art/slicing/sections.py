@@ -309,19 +309,24 @@ def to_world(pt2, u, v, n, d):
             d * n[2] + pt2[0] * u[2] + pt2[1] * v[2])
 
 
-def layer_offsets(lo, hi, thickness, spacing=None):
+def layer_offsets(lo, hi, thickness, gap=0.0):
     """Plane offsets for a stacked model, one per material layer.
 
     Each plane sits at the CENTRE of the layer it represents, so the
     finished stack is as tall as the object instead of overshooting it
     by a layer, and neither end slice is a near-empty sliver.
 
-    `spacing` is the distance between planes.  Left unset it is the
-    material thickness, which is what a glued stack needs to reproduce
-    the shape -- set it wider and the slices stand apart, which is a
-    contour model rather than a solid one, and reads very differently.
+    `gap` is the space LEFT BETWEEN neighbouring slices, so the pitch
+    is thickness + gap.  Zero stacks them touching, which is what a
+    glued model needs to reproduce the shape; larger stands them apart
+    into a contour model.
+
+    Defining it as the gap rather than as the pitch is deliberate: a
+    pitch smaller than the material is not a sparser stack, it is
+    slices overlapping one another, which is not a thing that can be
+    built.  Measuring the space between them cannot express that.
     """
-    step = spacing if (spacing and spacing > 0.0) else thickness
+    step = thickness + max(0.0, gap or 0.0)
     span = hi - lo
     if step <= 0.0 or span <= 0.0:
         return []
@@ -480,11 +485,14 @@ def _selftest():
     assert abs(offs[-1] - 0.875) < 1e-12, f"last layer centre {offs[-1]}"
     assert abs((offs[-1] - offs[0]) - 1.75) < 1e-12, "layer pitch"
 
-    # a wider spacing thins the stack out without moving its centre
-    wide = layer_offsets(-1.0, 1.0, 0.25, spacing=0.5)
-    assert len(wide) == 4, f"2.0 / 0.5 = 4 planes, got {len(wide)}"
+    # a gap thins the stack out without moving its centre, and the
+    # pitch is thickness + gap -- never less than the material
+    wide = layer_offsets(-1.0, 1.0, 0.25, gap=0.25)
+    assert len(wide) == 4, f"pitch 0.5 over 2.0 is 4 planes, got {len(wide)}"
     assert abs((wide[0] + wide[-1]) * 0.5) < 1e-12, "still centred"
-    assert abs((wide[1] - wide[0]) - 0.5) < 1e-12, "planes half a unit apart"
+    assert abs((wide[1] - wide[0]) - 0.5) < 1e-12, "pitch is 0.25 + 0.25"
+    assert len(layer_offsets(-1.0, 1.0, 0.25, gap=0.0)) == 8,         "no gap is the touching stack"
+    assert len(layer_offsets(-1.0, 1.0, 0.25, gap=-5.0)) == 8,         "a negative gap cannot make slices overlap"
 
     # --- the committed offset is the nudged one, not the request --
     sl, off, faults, _ = section_family(V, F, (0, 0, 1), [0.0])

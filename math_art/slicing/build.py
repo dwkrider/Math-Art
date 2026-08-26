@@ -63,7 +63,7 @@ class Settings:
         self.ring_count = 4
         self.rib_count = 12
         self.curve = None               # list of 3-D points, for RIBS
-        self.stack_spacing = 0.0        # 0 = one material thickness
+        self.slice_gap = 0.0            # space left between slices
         self.use_dowels = True
         self.dowels = 2
         self.dowel_diameter = 4.0
@@ -240,7 +240,7 @@ def build(verts, faces, settings, name='slices'):
         span = (float(np.dot(hi, n)), float(np.dot(lo, n)))
         a, b = min(span), max(span)
         offs = sections.layer_offsets(a, b, st.thickness,
-                                      st.stack_spacing)
+                                      st.slice_gap)
         fam, faults = _family_from_parallel(st.axis.upper(), V, faces,
                                             n, offs)
         families.append(fam)
@@ -424,14 +424,18 @@ def _selftest():
     holed = [p for p in fams[0].all_parts() if p.holes]
     assert len(holed) > 10, "the dowels pass through most of the stack"
 
-    # spacing wider than the stock thins the stack out
+    # a gap between slices thins the stack out; the pitch is the
+    # material plus the gap, never less than the material
     st_sp = Settings(technique='STACKED', target_size=100.0, thickness=5.0,
-                     stack_spacing=10.0, axis='Z', use_dowels=False,
+                     slice_gap=5.0, axis='Z', use_dowels=False,
                      sheet_width=400.0, sheet_height=300.0)
     _, fsp, rsp = build(V, F, st_sp, 'sphere')
-    assert len(fsp[0].planes) == 10,         f"100 mm at 10 mm spacing is 10 slices, got {len(fsp[0].planes)}"
+    assert len(fsp[0].planes) == 10, (
+        "5 mm stock with a 5 mm gap is a 10 mm pitch, so 10 slices; "
+        f"got {len(fsp[0].planes)}")
     assert rsp['dowels'] == 0, "dowels switched off means no dowels"
-    assert not any(p.holes for p in fsp[0].all_parts()),         "and no dowel holes drilled either"
+    assert not any(p.holes for p in fsp[0].all_parts()), \
+        "and no dowel holes drilled either"
 
     # asking for the dowels further apart than the piece allows gives
     # fewer dowels, not dowels crowded together where they register

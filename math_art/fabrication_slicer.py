@@ -206,30 +206,17 @@ if _IN_BLENDER:
         context.scene.collection.children.link(coll)
         return coll
 
-    def _cap_ngon(part):
-        """Fill the cap as ONE n-gon, ear-clipped by Blender.
+    def _cap_fill(part):
+        """Fill the cap from the outline and its hole loops.
 
-        Holes are bridged into the outline first, so what gets filled
-        is always a single loop -- the case Blender's n-gon
-        triangulator is reliable at.  Returns (bmesh, filled area).
+        The projection normal is passed EXPLICITLY.  Left to work it
+        out from the edge set, `triangle_fill` occasionally picks the
+        wrong one and the fill collapses -- on one relief slice it
+        returned 96 triangles covering 7% of the outline, which is what
+        made a panel come out visibly truncated.  The cap is always
+        built flat in z here, so the normal is known and there is no
+        reason to let it be guessed.
         """
-        import bmesh
-        from .slicing import polyclip as _pc
-
-        ring = (_pc.bridge_holes(part.outer, part.holes)
-                if part.holes else list(part.outer))
-        bm = bmesh.new()
-        vs = [bm.verts.new((x, y, 0.0)) for x, y in ring]
-        try:
-            face = bm.faces.new(vs)
-        except ValueError:
-            return bm, 0.0
-        bmesh.ops.triangulate(bm, faces=[face], ngon_method='EAR_CLIP')
-        bmesh.ops.dissolve_degenerate(bm, dist=1e-9, edges=bm.edges[:])
-        return bm, sum(f.calc_area() for f in bm.faces)
-
-    def _cap_scanfill(part):
-        """Fill the cap from the outline and hole loops separately."""
         import bmesh
         bm = bmesh.new()
         edges = []
@@ -241,17 +228,17 @@ if _IN_BLENDER:
                 except ValueError:
                     pass
         bmesh.ops.triangle_fill(bm, edges=edges, use_beauty=False,
-                                use_dissolve=False)
-        return bm, sum(f.calc_area() for f in bm.faces)
+                                use_dissolve=False, normal=(0.0, 0.0, 1.0))
+        return bm
 
     def _clean_cap(bm):
         """A fill turned into a clean, manifold-ready triangulation.
 
-        Returns (points, triangles, area).  Scanfill in particular will
-        hand back the same triangle twice, and triangles collapsed to a
-        line; left in, the shared edges end up carrying four faces and
-        the plate is non-manifold however carefully the walls are
-        built, with a volume some multiple of the truth.
+        Returns (points, triangles, area).  The fill can hand back the
+        same triangle twice, and triangles collapsed to a line; left
+        in, the shared edges end up carrying four faces and the plate
+        is non-manifold however carefully the walls are built, with a
+        volume some multiple of the truth.
         """
         index, pts, tris, seen = {}, [], [], set()
 
@@ -286,7 +273,8 @@ if _IN_BLENDER:
             use = {}
             for a, b, c in tris:
                 for e in ((a, b), (b, c), (c, a)):
-                    use[(min(e), max(e))] = use.get((min(e), max(e)), 0) + 1
+                    k = (min(e), max(e))
+                    use[k] = use.get(k, 0) + 1
             over = {e for e, n in use.items() if n > 2}
             if not over:
                 break
@@ -325,36 +313,21 @@ if _IN_BLENDER:
         outline and the holes are handled by one rule with no special
         cases.
 
-        Two fills are available and each is used where it has been
-        shown to work.  Scanfill takes the outline and its holes as
-        separate loops and gets holed slices right, but on a plain
-        outline carrying a thin slot notch it will silently leave part
-        of the outline unfilled -- which is how a slice once came out
-        visibly truncated.  The n-gon ear-clip is solid on a single
-        loop but needs holes bridged into it first, and the bridged
-        ring's coincident vertices come back as rubbish.  So holes go
-        to scanfill, plain outlines to the ear-clip -- and the result
-        is measured against the part's KNOWN area after cleaning, not
-        before, so that geometry lost by either the fill or the clean
-        is caught rather than shipped.
+        The cap comes from `_cap_fill`, and the result is measured
+        against the part's known area after cleaning.  An n-gon
+        ear-clip was tried here too and is simply worse: on these
+        outlines it returns overlapping triangles covering a fifth
+        more area than the part has.
         """
         import bmesh
 
         want = part.area()
-        order = ((_cap_scanfill, _cap_ngon) if part.holes
-                 else (_cap_ngon, _cap_scanfill))
-        best = None
-        for fill in order:
-            bm, _raw = fill(part)
-            pts2, faces_idx, got = _clean_cap(bm)
-            bm.free()
-            err = abs(got - want)
-            if best is None or err < best[0]:
-                best = (err, pts2, faces_idx, got)
-            if want <= 0.0 or err <= 0.01 * want:
-                break
-        err, pts2, faces_idx, got = best
-        faithful = want <= 0.0 or err <= 0.01 * want
+        bm = _cap_fill(part)
+        pts2, faces_idx, got = _clean_cap(bm)
+        bm.free()
+        # measured against the part's KNOWN area AFTER cleaning, so
+        # geometry lost by either the fill or the clean is caught
+        faithful = want <= 0.0 or abs(got - want) <= 0.01 * want
 
         edge_use = {}
         for a, b, c in faces_idx:
@@ -488,12 +461,13 @@ if _IN_BLENDER:
             name="Ribs", default=12, min=2, max=200,
             description="Number of ribs along the curve")
 
-        stack_spacing: FloatProperty(
+        slice_gap: FloatProperty(
             name="Slice Spacing", default=0.0, min=0.0, max=200.0,
-            description="Distance between slice planes, in millimetres. "
-                        "Zero uses the material thickness, which is what "
-                        "a glued stack needs to reproduce the shape; "
-                        "wider spreads the slices into a contour model")
+            description="Space left BETWEEN neighbouring slices, in "
+                        "millimetres, so the pitch is this plus the "
+                        "material thickness. Zero stacks them touching, "
+                        "which is what a glued model needs; larger "
+                        "stands them apart into a contour model")
         use_dowels: BoolProperty(
             name="Dowels", default=True,
             description="Drill alignment holes through the whole stack, "
@@ -593,7 +567,7 @@ if _IN_BLENDER:
                 count_a=self.count_a, count_b=self.count_b,
                 radial_count=self.radial_count,
                 ring_count=self.ring_count, rib_count=self.rib_count,
-                stack_spacing=self.stack_spacing,
+                slice_gap=self.slice_gap,
                 use_dowels=self.use_dowels, dowels=self.dowels,
                 dowel_diameter=self.dowel_diameter,
                 dowel_spacing=self.dowel_spacing,
@@ -731,7 +705,7 @@ if _IN_BLENDER:
             else:
                 box.prop(self, 'axis')
             if self.technique == 'STACKED':
-                box.prop(self, 'stack_spacing')
+                box.prop(self, 'slice_gap')
                 box.prop(self, 'use_dowels')
                 if self.use_dowels:
                     box.prop(self, 'dowels')
