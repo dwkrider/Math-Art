@@ -104,6 +104,12 @@ MM = 0.001
 
 DRAWING_KEY = 'math_art_slice_drawing'
 
+# Object types that can hand back a mesh through `to_mesh()`.  A curve
+# with a bevel is a closed tube and slices perfectly well, so there was
+# never a reason to insist on a MESH -- which is what made the operator
+# grey out with a knot selected.
+MESHABLE = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}
+
 AXIS_ITEMS = [('X', "X", "Slice along the X axis"),
               ('Y', "Y", "Slice along the Y axis"),
               ('Z', "Z", "Slice along the Z axis")]
@@ -153,7 +159,7 @@ if _IN_BLENDER:
         """
         dg = context.evaluated_depsgraph_get()
         temp_mod = None
-        if solidify:
+        if solidify and hasattr(obj, 'modifiers'):
             temp_mod = obj.modifiers.new("MathArtSliceSolidify", 'SOLIDIFY')
             temp_mod.thickness = solidify
             temp_mod.offset = 0.0
@@ -163,6 +169,8 @@ if _IN_BLENDER:
         try:
             ev = obj.evaluated_get(dg)
             me = ev.to_mesh()
+            if me is None:
+                return [], [], False
             mw = obj.matrix_world
             verts = [tuple(mw @ v.co) for v in me.vertices]
             tris = []
@@ -185,6 +193,8 @@ if _IN_BLENDER:
             dg = context.evaluated_depsgraph_get()
             ev = obj.evaluated_get(dg)
             me = ev.to_mesh()
+            if me is None:
+                return [], [], False
             mw = obj.matrix_world
             pts = [tuple(mw @ v.co) for v in me.vertices]
             ev.to_mesh_clear()
@@ -391,6 +401,12 @@ if _IN_BLENDER:
         bl_label = "Slice for Fabrication"
         bl_options = {'REGISTER', 'UNDO'}
 
+        target: StringProperty(
+            name="Object",
+            description="The object to slice. Anything that can be "
+                        "turned into geometry works, so a curve with a "
+                        "bevel -- a knot, say -- slices as the tube it "
+                        "draws")
         technique: EnumProperty(
             name="Technique",
             items=[
@@ -535,11 +551,35 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            obj = context.active_object
-            return obj is not None and obj.type == 'MESH'
+            # Enabled whenever there is anything in the file that could
+            # be sliced.  The object is CHOSEN in the panel rather than
+            # taken from the selection, so gating on what happens to be
+            # active only made the entry grey out for no good reason.
+            return any(o.type in MESHABLE for o in bpy.data.objects)
+
+        def invoke(self, context, event):
+            act = context.active_object
+            if act is not None and act.type in MESHABLE:
+                self.target = act.name
+            return self.execute(context)
+
+        def _object(self, context):
+            obj = bpy.data.objects.get(self.target) if self.target else None
+            if obj is None:
+                obj = context.active_object
+            return obj
 
         def execute(self, context):
-            obj = context.active_object
+            obj = self._object(context)
+            if obj is None:
+                self.report({'ERROR'}, "Pick an object to slice.")
+                return {'CANCELLED'}
+            if obj.type not in MESHABLE:
+                self.report({'ERROR'},
+                            f"{obj.name} is a {obj.type.lower()} and has no "
+                            f"geometry to slice.")
+                return {'CANCELLED'}
+            self.target = obj.name
             solidify = 0.0
             verts, tris, open_surface = _evaluated_mesh(context, obj, 0.0)
             if open_surface and self.close_surface:
@@ -554,7 +594,9 @@ if _IN_BLENDER:
                     "thickness with a Solidify modifier.")
                 return {'CANCELLED'}
             if not tris:
-                self.report({'ERROR'}, "The active mesh has no faces.")
+                self.report({'ERROR'},
+                            f"{obj.name} has no surfaces to slice. A curve "
+                            f"needs a bevel or an extrude to become a solid.")
                 return {'CANCELLED'}
 
             settings = _build.Settings(
@@ -685,6 +727,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.use_property_decorate = False
+            lay.prop_search(self, 'target', bpy.data, 'objects')
             lay.prop(self, 'technique')
 
             box = lay.box()
