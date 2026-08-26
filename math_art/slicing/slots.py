@@ -410,41 +410,74 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
     return crossings, report
 
 
-def cut_slots(all_parts, dogbone_radius=0.0):
+def cut_slots(families, dogbone_radius=0.0):
     """Subtract every planned slot from its part.
 
+    A slot that cuts a piece IN TWO yields two pieces, and BOTH are
+    kept.  Keeping only the largest -- which is what this did -- throws
+    the rest of the material away silently, and on a shape where the
+    clearance cuts run right across a narrow slice that shows up as
+    slices simply missing from the model.  A severed piece is a fact
+    about the design, not a fragment to be discarded.
+
     Returns a report.  A part whose slot cannot be cut keeps its
-    un-slotted outline and carries the error, so the layout still shows
-    the piece and the operator can say which joints failed -- an
-    exception here would throw away a whole sheet of good parts for one
-    bad notch.
+    un-slotted outline and carries the error, so the layout still
+    shows the piece and the operator can say which joints failed -- an
+    exception here would throw away a whole sheet of good parts for
+    one bad notch.
     """
     report = {'cut': 0, 'failed': 0, 'split': 0, 'consumed': 0,
-              'relieved': 0}
-    for part in all_parts:
-        ring = part.outer
-        for slot in part.slots:
-            try:
-                rings, _ = pc.difference_robust(ring, slot)
-            except pc.DegenerateClip as exc:
-                part.fail('slot_clip', str(exc))
-                report['failed'] += 1
-                continue
-            if not rings:
-                part.fail('slot_consumed', "the slot removed the whole part")
-                report['consumed'] += 1
-                continue
-            if len(rings) > 1:
-                part.fail('slot_split',
-                          f"the slot cut the part into {len(rings)} pieces")
-                report['split'] += 1
-                rings = [max(rings, key=pc.area)]
-            ring = rings[0]
-            report['cut'] += 1
-        if dogbone_radius > 0.0:
-            ring, hits = pc.dogbone(ring, dogbone_radius)
-            report['relieved'] += hits
-        part.outer = pc.as_ccw(ring)
+              'relieved': 0, 'fragments': 0}
+    for fam in families:
+        for plane in fam.planes:
+            fresh = []
+            for part in plane.parts:
+                rings = [part.outer]
+                for slot in part.slots:
+                    out = []
+                    for ring in rings:
+                        try:
+                            got, _ = pc.difference_robust(ring, slot)
+                        except pc.DegenerateClip as exc:
+                            part.fail('slot_clip', str(exc))
+                            report['failed'] += 1
+                            out.append(ring)
+                            continue
+                        out.extend(got)
+                    if not out:
+                        part.fail('slot_consumed',
+                                  "the slot removed the whole part")
+                        report['consumed'] += 1
+                        out = rings
+                    elif len(out) > len(rings):
+                        report['split'] += 1
+                    rings = out
+                    report['cut'] += 1
+
+                rings.sort(key=pc.area, reverse=True)
+                if dogbone_radius > 0.0:
+                    relieved = []
+                    for ring in rings:
+                        ring, hits = pc.dogbone(ring, dogbone_radius)
+                        report['relieved'] += hits
+                        relieved.append(ring)
+                    rings = relieved
+
+                part.outer = pc.as_ccw(rings[0])
+                keep = [h for h in part.holes
+                        if pc.point_in_polygon(h[0], part.outer)]
+                for extra in rings[1:]:
+                    q = _parts.Part(extra,
+                                    [h for h in part.holes
+                                     if pc.point_in_polygon(h[0], extra)],
+                                    part.family, part.slice_index,
+                                    len(plane.parts) + len(fresh),
+                                    part.offset)
+                    q.errors = list(part.errors)
+                    fresh.append(q)
+                    report['fragments'] += 1
+                part.holes = keep
+            plane.parts.extend(fresh)
     return report
 
 
@@ -536,7 +569,7 @@ def _selftest():
 
     # --- the slot really is cut, and by the right area ------------
     before = pa.parts[0].area()
-    cut = cut_slots([pa.parts[0], pb.parts[0]])
+    cut = cut_slots([fa, fb])
     assert cut['failed'] == 0 and cut['split'] == 0, cut
     removed = before - pa.parts[0].area()
     expect = 0.1 * (t1 - mid)          # width x depth, mouth overshoot

@@ -520,7 +520,11 @@ def build(verts, faces, settings, name='slices'):
         report['unconnected'] = len(loose)
         for p in loose:
             p.fail('unconnected', "no joint holds this piece")
-    report['cut'] = _slots.cut_slots(all_parts, 0.5 * st.tool_diameter)
+    report['cut'] = _slots.cut_slots(families, 0.5 * st.tool_diameter)
+    # a slot may have severed a piece into several, so the part list
+    # and the labels are both re-derived rather than reused
+    all_parts = [p for fam in families for p in fam.all_parts()]
+    _slots.label_parts(families)
 
     drawing, nrep = _layout.nest(
         all_parts, st.sheet_width, st.sheet_height, st.margin,

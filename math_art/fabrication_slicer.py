@@ -627,6 +627,20 @@ if _IN_BLENDER:
                 self.target = act.name
             return self.execute(context)
 
+        def _bail(self, message):
+            """Give up on this run WITHOUT cancelling the operator.
+
+            A cancelled operator gets no redo panel, so a run that
+            failed for want of a setting left the user with an error
+            and no way to reach the setting that would fix it -- pick
+            Ribs with no curve in the file and the generator simply
+            vanished.  Reporting and finishing keeps the panel on
+            screen, where the technique, the object and the curve can
+            all still be changed.
+            """
+            self.report({'WARNING'}, message)
+            return {'FINISHED'}
+
         def _object(self, context):
             obj = bpy.data.objects.get(self.target) if self.target else None
             if obj is None:
@@ -636,13 +650,11 @@ if _IN_BLENDER:
         def execute(self, context):
             obj = self._object(context)
             if obj is None:
-                self.report({'ERROR'}, "Pick an object to slice.")
-                return {'CANCELLED'}
+                return self._bail("Pick an object to slice.")
             if obj.type not in MESHABLE:
-                self.report({'ERROR'},
-                            f"{obj.name} is a {obj.type.lower()} and has no "
-                            f"geometry to slice.")
-                return {'CANCELLED'}
+                return self._bail(
+                    f"{obj.name} is a {obj.type.lower()} and has no "
+                    f"geometry to slice.")
             self.target = obj.name
             solidify = 0.0
             verts, tris, open_surface = _evaluated_mesh(context, obj, 0.0)
@@ -651,17 +663,14 @@ if _IN_BLENDER:
                 verts, tris, open_surface = _evaluated_mesh(
                     context, obj, solidify)
             if open_surface:
-                self.report(
-                    {'ERROR'},
+                return self._bail(
                     "This surface has a boundary, so it has no inside to "
                     "slice. Turn on Close Open Surfaces, or give it "
                     "thickness with a Solidify modifier.")
-                return {'CANCELLED'}
             if not tris:
-                self.report({'ERROR'},
-                            f"{obj.name} has no surfaces to slice. A curve "
-                            f"needs a bevel or an extrude to become a solid.")
-                return {'CANCELLED'}
+                return self._bail(
+                    f"{obj.name} has no surfaces to slice. A curve needs a "
+                    f"bevel or an extrude to become a solid.")
 
             settings = _build.Settings(
                 technique=self.technique, target_size=self.target_size,
@@ -687,8 +696,7 @@ if _IN_BLENDER:
                 drawing, families, report = _build.build(
                     verts, tris, settings, obj.name)
             except ValueError as exc:
-                self.report({'ERROR'}, str(exc))
-                return {'CANCELLED'}
+                return self._bail(str(exc))
 
             # --- where the two results go, relative to the original ---
             # The point of building both is comparing them against the
@@ -824,6 +832,13 @@ if _IN_BLENDER:
             elif self.technique == 'RIBS':
                 box.prop(self, 'rib_count')
                 box.prop(self, 'curve_object')
+                # Where the curve is not flat there is no spine to slot
+                # into, and the ribs are held by threading them on a
+                # rod instead -- so whether they carry that hole is a
+                # choice, exactly as the dowels are for a stack.
+                box.prop(self, 'use_dowels', text="Threading Hole")
+                if self.use_dowels:
+                    box.prop(self, 'dowel_diameter', text="Hole Diameter")
 
             if self.technique != 'STACKED':
                 box = lay.box()
