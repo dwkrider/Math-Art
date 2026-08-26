@@ -121,20 +121,30 @@ def _family_from_planes(name, verts, faces, spec):
     return _slots.Family(name, planes), faults
 
 
-def _half_plane_clip(part, keep_dir, big):
-    """Trim a part to the half of its plane on the `keep_dir` side.
+def hub_radius(count, thickness, safety=1.15):
+    """How far back from the axis radial fins have to start.
 
-    Radial fins are half-planes: a fin that ran clean through the axis
-    would have to pass through every other fin there, and no amount of
-    slotting fixes a joint that N pieces all want to occupy.
+    N fins meeting at one axis all want to occupy it, and being
+    half-planes is not enough to save them: near the axis the wedge
+    between neighbours is narrower than the material.  Two fins of
+    thickness t separated by angle 2*pi/N stay clear of one another
+    only beyond radius t / (2 sin(pi/N)), so that is where they begin
+    -- and the rings, which each fin is slotted to several times, are
+    what hold them.
     """
-    dx, dy = keep_dir
-    px, py = -dy, dx
-    # a rectangle covering everything on the wrong side of the axis
-    clip = [(-px * big - dx * big, -py * big - dy * big),
-            (px * big - dx * big, py * big - dy * big),
-            (px * big, py * big),
-            (-px * big, -py * big)]
+    n = max(2, int(count))
+    return safety * thickness / (2.0 * math.sin(math.pi / n))
+
+
+def _half_plane_clip(part, inner, big):
+    """Trim a fin to the wedge beyond `inner` on its own side.
+
+    Cuts away the far half of the plane AND the disc around the axis,
+    which is what keeps N fins from colliding where they all meet.
+    """
+    # a rectangle covering everything at radius below `inner`,
+    # including the whole of the far half-plane
+    clip = [(-big, -big), (inner, -big), (inner, big), (-big, big)]
     try:
         rings, _ = pc.difference_robust(part.outer, clip)
     except pc.DegenerateClip:
@@ -190,100 +200,116 @@ def resample_by_arclength(C, count, closed=None, tol=1e-6):
     return np.asarray(pts), np.asarray(tans), closed, total
 
 
-def place_dowels(family, count, diameter, min_gap=0.0, samples=14):
+def place_dowels(family, count, diameter, min_gap=0.0, samples=16):
     """Alignment dowels down a stack.
 
-    A dowel does not have to run the whole height of the model, and
-    insisting that it did was wrong: on a shape whose slices wander --
-    a knot, where one layer's material is nowhere near the next one's
-    -- no single position passes through every slice, so nothing got
-    drilled at all.  What a dowel actually has to do is register a
-    slice against its NEIGHBOUR.
+    Two things this gets right that the obvious version does not.
 
-    So dowels are placed as RUNS.  Walking the stack, a position is
-    kept as long as it still lands in material; when it runs out the
-    run ends there and a fresh one is started for the slices that
-    follow.  Every slice big enough to hold `count` dowels gets them;
-    a slice too small for even one simply goes without, which is a
-    fact about that slice and is reported rather than hidden.
+    A dowel does NOT have to run the whole height of the model.  What
+    it has to do is register a slice against its NEIGHBOUR, so dowels
+    are placed as runs: walking the stack, a position is kept while it
+    still lands in material, and when it runs out that run ends and a
+    fresh one starts for the slices that follow.  Insisting on one
+    position through every slice meant a shape whose slices wander --
+    a knot, where one layer's material is nowhere near the next -- got
+    no dowels at all.
 
-    A position is only ever STARTED if it also lands in a neighbouring
-    slice, since a hole that exists in one slice alone registers
-    nothing.
+    And the unit that needs dowelling is the PIECE, not the slice.  A
+    slice through a knot is three separate blobs that will be three
+    separate parts on the sheet; two positions chosen for the slice
+    can both land in one blob and leave the other two bare, which is
+    exactly what happened.  So every PART is topped up to `count`
+    independently.
 
-    Returns (runs, drilled, slices_with, slices_without).
+    A part too small to hold even one dowel simply goes without, and
+    is counted rather than passed over in silence.
+
+    Returns (runs, drilled, parts_with, parts_without).
     """
     planes = [pl for pl in family.planes if pl.parts]
+    parts_total = sum(len(pl.parts) for pl in planes)
     if count <= 0 or diameter <= 0.0 or not planes:
-        return 0, 0, 0, len(planes)
+        return 0, 0, 0, parts_total
 
     r = 0.5 * diameter
     need = r * 1.6
-    apart = max(4.0 * r, float(min_gap))
+    # Just clear of touching when no spacing is asked for.  A wider
+    # floor than that refuses a second dowel on every narrow piece,
+    # which is most of them on a tube-shaped model.
+    apart = max(2.2 * r, float(min_gap))
 
-    def host(pt, plane):
-        """The part of `plane` that could carry a dowel at `pt`."""
-        for q in plane.parts:
-            if not pc.point_in_polygon(pt, q.outer):
-                continue
-            d = pc.polygon_distance(pt, q.outer)
-            blocked = False
-            for h in q.holes:
-                if pc.point_in_polygon(pt, h):
-                    blocked = True
-                    break
-                d = min(d, pc.polygon_distance(pt, h))
-            if not blocked and d >= need:
-                return q
-        return None
+    def fits(pt, part):
+        if not pc.point_in_polygon(pt, part.outer):
+            return False
+        d = pc.polygon_distance(pt, part.outer)
+        for h in part.holes:
+            if pc.point_in_polygon(pt, h):
+                return False
+            d = min(d, pc.polygon_distance(pt, h))
+        return d >= need
 
-    def candidates(plane):
-        """Room in this slice, roomiest first."""
+    def hosted(pt, plane):
+        return plane is not None and any(fits(pt, q) for q in plane.parts)
+
+    def candidates(part, limit=80):
+        """Room in this part, roomiest first."""
+        x0, y0, x1, y1 = part.bounds()
+        if min(x1 - x0, y1 - y0) < 2.0 * need:
+            return []
         out = []
-        for q in plane.parts:
-            x0, y0, x1, y1 = q.bounds()
-            if min(x1 - x0, y1 - y0) < 2.0 * need:
-                continue
-            for i in range(samples):
-                for j in range(samples):
-                    pt = (x0 + (x1 - x0) * (i + 0.5) / samples,
-                          y0 + (y1 - y0) * (j + 0.5) / samples)
-                    if host(pt, plane) is not None:
-                        out.append((pc.polygon_distance(pt, q.outer), pt))
+        for i in range(samples):
+            for j in range(samples):
+                pt = (x0 + (x1 - x0) * (i + 0.5) / samples,
+                      y0 + (y1 - y0) * (j + 0.5) / samples)
+                if not pc.point_in_polygon(pt, part.outer):
+                    continue
+                d = pc.polygon_distance(pt, part.outer)
+                bad = False
+                for h in part.holes:
+                    if pc.point_in_polygon(pt, h):
+                        bad = True
+                        break
+                    d = min(d, pc.polygon_distance(pt, h))
+                if bad or d < need:
+                    continue
+                out.append((d, pt))
+        # Roomiest first, but keep a LONG list: the second dowel has
+        # to clear the first by `apart`, and a short list is all
+        # clustered around the middle of the piece, so the runner-up
+        # positions were being thrown away before anything could pick
+        # one far enough out.
         out.sort(key=lambda kv: -kv[0])
-        return [pt for _c, pt in out]
+        return [pt for _d, pt in out[:limit]]
 
     active, runs, drilled, with_holes = [], 0, 0, 0
     for i, plane in enumerate(planes):
-        active = [pt for pt in active if host(pt, plane) is not None]
-        if len(active) < count:
-            nxt = planes[i + 1] if i + 1 < len(planes) else None
-            prv = planes[i - 1] if i > 0 else None
-            for pt in candidates(plane):
-                if len(active) >= count:
-                    break
-                if any(math.dist(pt, q) < apart for q in active):
-                    continue
-                # a lone hole registers nothing: it has to reach a
-                # neighbour to be a joint at all
-                shares = ((nxt is not None and host(pt, nxt) is not None)
-                          or (prv is not None and host(pt, prv) is not None))
-                if not shares:
-                    continue
-                active.append(pt)
-                runs += 1
-        drilled_here = 0
-        for pt in active:
-            q = host(pt, plane)
-            if q is None:
-                continue
-            q.holes.append(pc.as_cw(
-                pc.arc_points(pt[0], pt[1], r, 0.0, 2.0 * math.pi, 16)[:-1]))
-            drilled += 1
-            drilled_here += 1
-        if drilled_here:
-            with_holes += 1
-    return runs, drilled, with_holes, len(planes) - with_holes
+        nxt = planes[i + 1] if i + 1 < len(planes) else None
+        prv = planes[i - 1] if i > 0 else None
+        carried = []
+        for part in plane.parts:
+            mine = [pt for pt in active if fits(pt, part)]
+            if len(mine) < count:
+                for pt in candidates(part):
+                    if len(mine) >= count:
+                        break
+                    if any(math.dist(pt, q) < apart for q in mine):
+                        continue
+                    # a lone hole registers nothing: it has to reach a
+                    # neighbouring slice to be a joint at all
+                    if not (hosted(pt, nxt) or hosted(pt, prv)):
+                        continue
+                    mine.append(pt)
+                    runs += 1
+            for pt in mine:
+                part.holes.append(pc.as_cw(
+                    pc.arc_points(pt[0], pt[1], r, 0.0,
+                                  2.0 * math.pi, 16)[:-1]))
+                drilled += 1
+            if mine:
+                with_holes += 1
+            carried.extend(mine)
+        active = carried
+    return runs, drilled, with_holes, parts_total - with_holes
 
 
 def build(verts, faces, settings, name='slices'):
@@ -317,7 +343,7 @@ def build(verts, faces, settings, name='slices'):
                 fam, st.dowels, st.dowel_diameter, st.dowel_spacing)
             report['dowels'] = runs
             report['dowel_holes'] = drilled
-            report['dowel_slices'] = with_h
+            report['dowel_parts'] = with_h
             report['dowels_missing'] = without
 
     elif st.technique == 'INTERLOCKED':
@@ -339,9 +365,18 @@ def build(verts, faces, settings, name='slices'):
         ax = _axis_vec(st.axis)
         e1, e2, _ = sections.plane_frame(ax)
         big = float(np.linalg.norm(hi - lo)) * 2.0
+        inner = hub_radius(st.radial_count, st.thickness)
+        report['hub_radius'] = inner
         spec = []
         for k in range(max(1, st.radial_count)):
-            th = math.pi * k / max(1, st.radial_count)
+            # The FULL turn, not half of it.  A whole diametral plane
+            # at angle th also covers th + pi, so [0, pi) would be
+            # right for whole planes -- but these fins are clipped to
+            # half-planes (they must be, or every fin would have to
+            # pass through every other at the axis), and a half-plane
+            # covers ONE direction.  Half a turn of them therefore
+            # dressed only half the object.
+            th = 2.0 * math.pi * k / max(1, st.radial_count)
             radial = tuple(e1[i] * math.cos(th) + e2[i] * math.sin(th)
                            for i in range(3))
             normal = tuple(ax[(i + 1) % 3] * radial[(i + 2) % 3]
@@ -355,7 +390,7 @@ def build(verts, faces, settings, name='slices'):
         for plane in fins.planes:
             kept = []
             for part in plane.parts:
-                kept += _half_plane_clip(part, (1.0, 0.0), big)
+                kept += _half_plane_clip(part, inner, big)
             for i, q in enumerate(kept):
                 q.index = i
             plane.parts = kept
@@ -529,10 +564,10 @@ def summarise(report):
                    f"(no joint reaches them)")
     if report.get('dowel_holes'):
         out.append(f"{report['dowel_holes']} dowel holes in "
-                   f"{report['dowel_slices']} slices "
+                   f"{report['dowel_parts']} pieces "
                    f"({report['dowels']} runs)")
     if report.get('dowels_missing'):
-        out.append(f"{report['dowels_missing']} slices too small for a "
+        out.append(f"{report['dowels_missing']} pieces too small for a "
                    f"dowel")
     if report.get('spine') == 'wire':
         out.append("the curve is not flat, so there is no spine to slot "
@@ -571,10 +606,14 @@ def _selftest():
     # every slice that can take a dowel gets one -- a dowel registers a
     # slice against its neighbour, so it does NOT have to run the whole
     # height of the model
-    assert rep['dowel_slices'] >= len(fams[0].planes) - 2, (
-        f"all but the smallest slices should be dowelled: "
-        f"{rep['dowel_slices']} of {len(fams[0].planes)}")
-    assert rep['dowel_holes'] >= rep['dowel_slices'],         "each dowelled slice carries at least one hole"
+    n_parts = len(fams[0].all_parts())
+    assert rep['dowel_parts'] >= n_parts - 2, (
+        f"every piece big enough should be dowelled: "
+        f"{rep['dowel_parts']} of {n_parts}")
+    # count=2 means TWO dowels in each piece, not two in the model
+    assert rep['dowel_holes'] >= 2 * rep['dowel_parts'] - 2, (
+        f"a dowel count of 2 should put two holes in each piece: "
+        f"{rep['dowel_holes']} holes over {rep['dowel_parts']} pieces")
 
     # a gap between slices thins the stack out; the pitch is the
     # material plus the gap, never less than the material
@@ -644,9 +683,25 @@ def _selftest():
     # past the axis is exactly right, and anything more is a fin that
     # was never clipped
     slack = 0.5 * st3.kerf + 1e-6
+    # the fins must go all the way round: half-plane fins cover one
+    # direction each, so half a turn of them dresses half the object
+    dirs = sorted(math.atan2(pl.u[1], pl.u[0]) % (2 * math.pi)
+                  for pl in fams3[0].planes)
+    widest = max((dirs[(i + 1) % len(dirs)] - dirs[i]) % (2 * math.pi)
+                 for i in range(len(dirs)))
+    assert widest < 1.2 * (2 * math.pi / len(dirs)), (
+        "half-plane fins must spread over the whole turn; widest gap is "
+        f"{math.degrees(widest):.0f} deg over {len(dirs)} fins")
+
+    # and they must start clear of the axis, or they collide there
+    want_hub = hub_radius(st3.radial_count, st3.thickness)
+    assert want_hub > st3.thickness, f"hub radius {want_hub}"
     for plane in fams3[0].planes:
         for part in plane.parts:
             xs = [p[0] for p in part.outer]
+            assert min(xs) > want_hub - 0.5 * st3.kerf - 1e-6, (
+                f"a fin must start beyond the hub radius {want_hub:.2f}: "
+                f"reaches {min(xs):.2f}")
             assert min(xs) > -slack, (
                 "a fin is a HALF plane, so it must not cross its axis: "
                 f"reaches x={min(xs)}")
