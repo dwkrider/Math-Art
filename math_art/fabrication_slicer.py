@@ -866,6 +866,19 @@ if _IN_BLENDER:
             if self.preview:
                 box.prop(self, 'explode')
 
+            # The exporter is deliberately not in the Add menu -- an Add
+            # menu lists things you can add -- but it has to be
+            # reachable from SOMEWHERE, and this panel is where you
+            # already are once a layout exists.  Without this button it
+            # was findable only through F3 search, which is the same as
+            # not shipping it.
+            box = lay.box()
+            box.label(text="Export")
+            row = box.row()
+            row.enabled = _find_layout(bpy.context) is not None
+            row.operator("object.fabrication_slice_export",
+                         text="Export SVG / DXF", icon='EXPORT')
+
     # -------------------------------------------------------------- #
     #  the export operator                                           #
     # -------------------------------------------------------------- #
