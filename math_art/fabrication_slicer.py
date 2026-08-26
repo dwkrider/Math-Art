@@ -185,21 +185,48 @@ if _IN_BLENDER:
                 obj.modifiers.remove(temp_mod)
         return verts, tris, open_surface
 
-    def _curve_points(context, exclude):
-        """Sampled points of a selected curve object, if there is one."""
+    def _spline_points(obj):
+        """The centreline of a curve object, in world space.
+
+        Read from the SPLINE control points rather than from the
+        evaluated mesh.  A curve carrying a bevel evaluates to the
+        tube's SURFACE, so sampling that would scatter the ribs around
+        the outside of the knot instead of running them along the
+        middle of it.
+        """
+        if obj is None or obj.type != 'CURVE':
+            return None
+        mw = obj.matrix_world
+        best = []
+        for spline in obj.data.splines:
+            if spline.type == 'BEZIER':
+                pts = [tuple(mw @ p.co) for p in spline.bezier_points]
+            else:
+                pts = [tuple(mw @ p.co.to_3d()) for p in spline.points]
+            if len(pts) > len(best):
+                best = pts
+        return best if len(best) >= 2 else None
+
+    def _curve_points(context, target, named):
+        """The spine for the Ribs technique.
+
+        The curve named in the panel if there is one; otherwise the
+        sliced object itself when that is a curve -- ribbing a knot
+        along its own centreline is the obvious thing to mean -- and
+        failing that any curve that happens to be selected, which is
+        how this worked before there was a field for it.
+        """
+        pts = _spline_points(bpy.data.objects.get(named) if named else None)
+        if pts:
+            return pts
+        pts = _spline_points(target)
+        if pts:
+            return pts
         for obj in context.selected_objects:
-            if obj is exclude or obj.type != 'CURVE':
-                continue
-            dg = context.evaluated_depsgraph_get()
-            ev = obj.evaluated_get(dg)
-            me = ev.to_mesh()
-            if me is None:
-                return [], [], False
-            mw = obj.matrix_world
-            pts = [tuple(mw @ v.co) for v in me.vertices]
-            ev.to_mesh_clear()
-            if len(pts) >= 2:
-                return pts
+            if obj is not target:
+                pts = _spline_points(obj)
+                if pts:
+                    return pts
         return None
 
     # -------------------------------------------------------------- #
@@ -407,6 +434,11 @@ if _IN_BLENDER:
                         "turned into geometry works, so a curve with a "
                         "bevel -- a knot, say -- slices as the tube it "
                         "draws")
+        curve_object: StringProperty(
+            name="Curve",
+            description="The curve the ribs run along. Leave it empty "
+                        "to use the sliced object itself, when that is "
+                        "a curve")
         technique: EnumProperty(
             name="Technique",
             items=[
@@ -616,7 +648,7 @@ if _IN_BLENDER:
                 flare=self.flare, flare_angle=self.flare_angle,
                 tool_diameter=self.tool_diameter,
                 label_height=self.label_height,
-                curve=_curve_points(context, obj)
+                curve=_curve_points(context, obj, self.curve_object)
                 if self.technique == 'RIBS' else None)
 
             try:
@@ -759,7 +791,7 @@ if _IN_BLENDER:
                 box.prop(self, 'ring_count')
             elif self.technique == 'RIBS':
                 box.prop(self, 'rib_count')
-                box.label(text="Select a curve object as well", icon='INFO')
+                box.prop_search(self, 'curve_object', bpy.data, 'objects')
 
             if self.technique != 'STACKED':
                 box = lay.box()

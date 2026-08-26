@@ -304,8 +304,8 @@ def build(verts, faces, settings, name='slices'):
         curve = st.curve
         if not curve or len(curve) < 2:
             raise ValueError(
-                "the Ribs technique needs a curve to run along; select a "
-                "curve object as well as the mesh")
+                "the Ribs technique needs a curve to run along: pick one "
+                "in the Curve field, or slice a curve object itself")
         C = np.asarray(curve, dtype=float)
         C = (C - (np.asarray(verts).min(axis=0)
                   + np.asarray(verts).max(axis=0)) * 0.5) * applied
