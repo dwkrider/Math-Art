@@ -83,7 +83,7 @@ bl_info = {
     "category": "Add Mesh",
 }
 
-from math import cos, sin, pi, sqrt, hypot
+from math import cos, sin, pi, sqrt, hypot, radians
 
 import numpy as np
 
@@ -91,13 +91,19 @@ try:
     from .patterns import common as pc
     from . import tiling_generator as tg
     from . import spidron_math as sm
+    from . import spidron_nests as sn
 except Exception:                       # legacy single-file / CLI use
     from patterns import common as pc
     import tiling_generator as tg
     import spidron_math as sm
+    import spidron_nests as sn
 
 
 LAYOUT_ITEMS = [
+    ('NEST', "Named Nest",
+     "One of the 34 nests catalogued for spidronised space-fillers. "
+     "A nest is a spidronised polygon; only seven of them are flat, "
+     "so most are SKEW and cannot be drawn as a planar rosette"),
     ('FIGURE', "Full Figure",
      "The whole polygon subdivision: the starting polygon filled by "
      "its arms, every triangle of every ring"),
@@ -265,6 +271,27 @@ if _IN_BLENDER:
             name="Layout", items=LAYOUT_ITEMS, default='FIGURE',
             description="What to build: the whole polygon subdivision, "
                         "one arm, a rosette of arms, or a tiling")
+        nest: EnumProperty(
+            name="Nest",
+            items=lambda self, ctx: [
+                (c, "%s  (%d-gon, %s)" % (c, sn.NESTS[c][0],
+                                          sn.NESTS[c][1]),
+                 "Angles: %s" % ", ".join(
+                     "%g" % a for a in sn.NESTS[c][3]))
+                for c in sn.CODES],
+            description="Which catalogued nest to build")
+        nest_step: FloatProperty(
+            name="Nest step", default=0.5774, min=0.05, max=0.95,
+            description="Shrink factor between successive annuli. The "
+                        "hexagonal nest's own value is 1/sqrt(3)")
+        nest_twist: FloatProperty(
+            name="Nest twist", default=radians(30.0),
+            min=radians(-90.0), max=radians(90.0), subtype='ANGLE',
+            description="Rotation between annuli. The hexagonal nest's "
+                        "own value is 30 degrees")
+        cap_center: BoolProperty(
+            name="Cap centre", default=False,
+            description="Close the small polygon left at the centre")
         arm: EnumProperty(
             name="Arm", items=ARM_ITEMS, default='SPIDRON',
             description="Which limb of the spidron family to draw. In "
@@ -342,7 +369,39 @@ if _IN_BLENDER:
             description="Build one object per triangle under a parent "
                         "empty instead of a single merged mesh")
 
+        def _execute_nest(self, context):
+            """One catalogued nest: its boundary, spidronised.
+
+            Most nests are SKEW, so this is not a planar rosette -- the
+            boundary comes from `spidron_nests`, which reconstructs it
+            from the published angle sequence as a circuit of Universal
+            Node branches."""
+            code = self.nest
+            pts = sn.boundary(code)
+            if pts is None:
+                self.report({'ERROR'}, "cannot construct nest %s" % code)
+                return {'CANCELLED'}
+            loop = np.asarray(pts, float)
+            verts, faces, mats = sm.spidronise(
+                loop, float(self.nest_step), float(self.nest_twist),
+                int(self.rings), cap=self.cap_center)
+            obj = pc.build_object(context, "Spidron Nest %s" % code,
+                                  [tuple(v) for v in verts],
+                                  [tuple(f) for f in faces], list(mats),
+                                  span=2.0, fit=True)
+            if obj is None:
+                self.report({'ERROR'}, "no geometry generated")
+                return {'CANCELLED'}
+            n, group, sym, angles = sn.NESTS[code]
+            self.report({'INFO'},
+                        "Nest %s: %d-gon, %s, %s, %d rings%s"
+                        % (code, n, group, sym, int(self.rings),
+                           "" if group == 'flat' else " (skew)"))
+            return {'FINISHED'}
+
         def execute(self, context):
+            if self.layout_kind == 'NEST':
+                return self._execute_nest(context)
             m, n = int(self.arm_parts), int(self.corners)
             polys, kinds, rix, aix = build_polys(
                 self.layout_kind, m, n, int(self.rings), self.arm,
@@ -401,6 +460,13 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'layout_kind')
+            if self.layout_kind == 'NEST':
+                lay.prop(self, 'nest')
+                lay.prop(self, 'rings')
+                lay.prop(self, 'nest_step')
+                lay.prop(self, 'nest_twist')
+                lay.prop(self, 'cap_center')
+                return
             lay.prop(self, 'arm_parts')
             # the arm kind matters in EVERY layout: in the full figure
             # it decides how the triangles group into arms, which is
