@@ -102,7 +102,22 @@ except ImportError:                       # headless / flat import
 # Metric units -- and the exporters multiply back up.
 MM = 0.001
 
+# The finished layout, as JSON, stored on the SLICED OBJECT.
+#
+# Not on the root of the group it produced, which is where it used to
+# live and which is wrong in one specific and invisible way: a live
+# rebuild transplants the new build onto the EXISTING root and deletes
+# the new one, and custom properties do not come across the
+# transplant.  The root therefore kept whatever drawing it was first
+# built with, so editing the settings in the sidebar until the job
+# needed more sheets exported the old, shorter job.  The sliced object
+# is not part of the build, survives every rebuild untouched, and is
+# rewritten on each one.
 DRAWING_KEY = 'math_art_slice_drawing'
+
+# The sliced object's name, stored on the group root.  A stale copy is
+# harmless: the name does not change when the geometry is rebuilt.
+SOURCE_KEY = 'math_art_slice_source'
 
 # Object types that can hand back a mesh through `to_mesh()`.  A curve
 # with a bevel is a closed tube and slices perfectly well, so there was
@@ -780,10 +795,10 @@ if _IN_BLENDER:
                 sob = bpy.data.objects.new(me.name, me)
                 layout.objects.link(sob)
                 sob.parent = sheets_at
-            # The drawing rides on the ROOT object, not the
-            # collection: the exporter has to find it again after a
-            # rebuild, and the root is what persists.
-            root[DRAWING_KEY] = drawing_to_json(drawing)
+            obj[DRAWING_KEY] = drawing_to_json(drawing)
+            root[SOURCE_KEY] = obj.name
+            if DRAWING_KEY in root:        # written by an older build
+                del root[DRAWING_KEY]
 
             unsolid = 0
             if self.preview:
@@ -995,17 +1010,12 @@ if _IN_BLENDER:
     def _find_layout(context):
         """The object carrying the layout to export.
 
-        Order matters, and the fallback is what bit: a file that has
-        been sliced more than once holds several roots, and simply
-        taking the first object with a drawing on it exports whichever
-        happened to come first in the file -- so a six-sheet job on
-        screen came out as somebody else's three-sheet DXF, silently.
-
-        So: the group the selection is actually in, then the group
-        belonging to the selected SOURCE object (clicking Export with
-        the sliced mesh selected is the obvious thing to do), and only
-        then any layout at all -- and the exporter says which one it
-        used, so the wrong answer cannot be a quiet one.
+        The layout lives on the SLICED OBJECT (see DRAWING_KEY), so the
+        search is: the selection itself, then whatever the selected
+        group says it was sliced from, and only then any layout in the
+        file.  That last fallback is what once exported somebody
+        else's job from a file sliced more than once, so the exporter
+        reports which layout it used.
         """
         obj = context.active_object
         chain = [obj]
@@ -1014,10 +1024,18 @@ if _IN_BLENDER:
         for candidate in chain:
             if candidate is not None and DRAWING_KEY in candidate:
                 return candidate
+        for candidate in chain:
+            if candidate is None or SOURCE_KEY not in candidate:
+                continue
+            source = bpy.data.objects.get(candidate[SOURCE_KEY])
+            if source is not None and DRAWING_KEY in source:
+                return source
         if obj is not None:
             named = bpy.data.objects.get(f"{obj.name} Slices")
-            if named is not None and DRAWING_KEY in named:
-                return named
+            if named is not None and SOURCE_KEY in named:
+                source = bpy.data.objects.get(named[SOURCE_KEY])
+                if source is not None and DRAWING_KEY in source:
+                    return source
         found = [o for o in bpy.data.objects if DRAWING_KEY in o]
         return found[0] if found else None
 
