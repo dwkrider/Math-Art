@@ -44,18 +44,6 @@ SOLIDS = (
         ),
     ),
     dict(
-        number=6, key='WURTZITE_TRIHEDRON',
-        name='Wurtzite trihedron',
-        net='BCC', match='FULL',
-        verts=(
-            (4, 4, 4), (4, 4, 12), (4, 12, 4), (0, 8, 8), (12, 4, 4),
-            (8, 0, 8), (8, 8, 0), (8, 8, 8),
-        ),
-        faces=(
-            (0, 3, 1, 7, 2, 6), (5, 4, 7, 1, 3, 0), (6, 2, 7, 4, 5, 0),
-        ),
-    ),
-    dict(
         number=11, key='DIAMOND_TETRAHEDRON',
         name='Diamond tetrahedron',
         net='DIAMOND', match='FULL',
@@ -107,6 +95,7 @@ UNRESOLVED = (
     (3, 'Trirectangular trihedron', 'no geometry found by the search'),
     (4, 'Digonal trihedron (enantiomorphic)', 'not orientable'),
     (5, 'Trigonal trihedron', "face inventory {(4, 'MIRROR', None): 3} != {(4, 'MIRROR', '111'): 3}"),
+    (6, 'Wurtzite trihedron', 'face angles ("109d28\'", "109d28\'", "70d32\'", "70d32\'", "70d32\'", "70d32\'") match no face of the row'),
     (7, 'Delta trihedron', 'no geometry found by the search'),
     (8, 'bcc trihedron', "face inventory {(4, 'MIRROR', None): 3} != {(4, 'MIRROR', '110'): 3}"),
     (9, 'Rectangular trihedron (enantiomorphic)', 'not orientable'),
@@ -269,6 +258,26 @@ def _selftest():
                 allang.add(pnet.angle_label(a))
         chk("%s: angles are Universal Node angles" % tag,
             allang <= legal, " ".join(sorted(allang - legal)))
+        # and that each face's angles are the row's, not merely legal
+        bad = []
+        for cyc in F:
+            loop = [V[i] for i in cyc]
+            ga = tuple(sorted(pnet.angle_label(a)
+                              for a in pnet.circuit_angles(loop)))
+            ok = False
+            for fd in r['faces']:
+                if fd['n'] != len(cyc):
+                    continue
+                want = list(fd['angles'])
+                if len(want) == 1:
+                    want = want * fd['n']
+                if len(want) != fd['n'] or tuple(sorted(want)) == ga:
+                    ok = True
+                    break
+            if not ok:
+                bad.append(ga)
+        chk("%s: face angles match the row" % tag, not bad,
+            "%s" % (bad[:1],))
         # 6. symmetry axes
         pts = [V[i] for i in range(len(V))]
         ax = pnet.axis_counts(pts)

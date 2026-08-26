@@ -54,6 +54,59 @@ def local_rings(idx, adj, centre, radius, L, cap=200000):
     return rings
 
 
+def angle_key(loop_pts):
+    """The multiset of a circuit's corner angles, rounded to a minute."""
+    return tuple(sorted(pn.angle_label(a) for a in pn.circuit_angles(loop_pts)))
+
+
+def row_angle_keys(r):
+    """Angle multisets the row's faces are allowed to have.
+
+    Table 8.1 gives each face's corner angles, so a circuit whose angles
+    do not match ANY of the row's faces cannot be one of them.  Filtering
+    the ring pool on this before growing surfaces is far cheaper than
+    growing and rejecting: growth is exponential in the pool size, so
+    shrinking the pool is the leverage.
+
+    A face whose printed angle list is shorter than its side count is
+    truncated in the book ("etc."), and contributes no constraint -- for
+    those we fall back to matching on face size alone rather than
+    inventing the missing corners.
+    """
+    out = {}
+    for f in r['faces']:
+        n = f['n']
+        angs = list(f['angles'])
+        if len(angs) == 1:
+            angs = angs * n                    # equiangular
+        if len(angs) != n:
+            out.setdefault(n, None)            # truncated: no constraint
+            continue
+        key = tuple(sorted(angs))
+        if out.get(n, 'x') is None:
+            continue                           # already unconstrained
+        out.setdefault(n, set())
+        out[n].add(key)
+    return out
+
+
+def filter_pool(pool, Vi, keys):
+    """Keep only circuits whose angle multiset the row allows."""
+    if not keys:
+        return pool
+    out = set()
+    for r in pool:
+        want = keys.get(len(r), 'missing')
+        if want == 'missing':
+            continue                           # row has no face this size
+        if want is None:
+            out.add(r)                         # truncated: size-only
+            continue
+        if angle_key([Vi[i] for i in r]) in want:
+            out.add(r)
+    return out
+
+
 def grow_exact(pool, nfaces, seed, want_sizes, budget=60000):
     """Closed surfaces of exactly nfaces whose face-size multiset is
     `want_sizes`."""
@@ -232,7 +285,25 @@ def rings_for(net, L):
 
 resolved = {}
 t_start = time.time()
-for r in pt.TABLE:
+
+
+def _row_cost(r):
+    """Cheapest rows first.
+
+    A row using ONE branch class is answered by a classical net in well
+    under a second; a row using two or three has no such net -- every
+    available net supplies exactly one class -- so it falls through to
+    the mixed-net stage, which measured 100 to 840 seconds per row.
+    Sweeping in table order therefore spends an hour on row 2 before
+    ever reaching the cheap rows further down.  Cost order clears
+    everything affordable first, so a bounded run returns the most
+    solids it can rather than the ones that happen to come first."""
+    need = sum(1 for c in ('100', '110', '111') if r['branches'].get(c, 0))
+    return (need, r['faces_total'], max(
+        (fd['n'] for fd in r['faces']), default=0), r['number'])
+
+
+for r in sorted(pt.TABLE, key=_row_cost):
     num = r['number']
     want = collections.Counter()
     for fd in r['faces']:
@@ -245,6 +316,7 @@ for r in pt.TABLE:
     rs = row_sig(r)
     hit = None
     need = {c for c in ('100', '110', '111') if r['branches'].get(c, 0)}
+    akeys = row_angle_keys(r)
     # nets that can supply this row's classes, closest match first
     usable = [(net, n, rad) for net, n, rad in NETS
               if need <= NET_CLASSES.get(net, set())]
@@ -262,6 +334,9 @@ for r in pt.TABLE:
         if not pool:
             continue
         Vi = chunks[net][0]
+        pool = filter_pool(pool, Vi, akeys)
+        if not pool:
+            continue
         for s in sorted(pool):
             if len(s) not in want:
                 continue
@@ -311,6 +386,7 @@ for r in pt.TABLE:
             for L in want:
                 pool |= local_rings(idx, adj, centre, MIXED_RADIUS, L,
                                     cap=MIXED_RING_CAP)
+            pool = filter_pool(pool, Vi, akeys)
             if not pool:
                 continue
             for s_ in sorted(pool):

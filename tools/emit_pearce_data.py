@@ -96,6 +96,34 @@ def validate(num, V, F, kind):
                 if pn.angle_label(a) not in legal:
                     return ("corner %s is not a Universal Node angle"
                             % pn.angle_label(a))
+        # face CORNER ANGLES, not merely legal ones.  The gate used to
+        # check that every angle was a Universal Node angle, which any
+        # cell of the net passes trivially -- so a solid could match on
+        # topology, valences, branch classes, face symmetry, face planes
+        # and symmetry axes while its corners were the wrong angles
+        # entirely.  Entry 6 shipped that way: hexagons of 2x109d28' +
+        # 4x70d32' against a row that says all six corners are 109d28'.
+        for cyc in F:
+            loop = [V[i] for i in cyc]
+            got_ang = tuple(sorted(pn.angle_label(a)
+                                   for a in pn.circuit_angles(loop)))
+            ok = False
+            for fd in r['faces']:
+                if fd['n'] != len(cyc):
+                    continue
+                want = list(fd['angles'])
+                if len(want) == 1:
+                    want = want * fd['n']
+                if len(want) != fd['n']:
+                    ok = True            # book truncates this list
+                    break
+                if tuple(sorted(want)) == got_ang:
+                    ok = True
+                    break
+            if not ok:
+                return ("face angles %s match no face of the row"
+                        % (got_ang,))
+
         got = {}
         for cyc in F:
             loop = [V[i] for i in cyc]
@@ -278,6 +306,26 @@ def _selftest():
                 allang.add(pnet.angle_label(a))
         chk("%s: angles are Universal Node angles" % tag,
             allang <= legal, " ".join(sorted(allang - legal)))
+        # and that each face's angles are the row's, not merely legal
+        bad = []
+        for cyc in F:
+            loop = [V[i] for i in cyc]
+            ga = tuple(sorted(pnet.angle_label(a)
+                              for a in pnet.circuit_angles(loop)))
+            ok = False
+            for fd in r['faces']:
+                if fd['n'] != len(cyc):
+                    continue
+                want = list(fd['angles'])
+                if len(want) == 1:
+                    want = want * fd['n']
+                if len(want) != fd['n'] or tuple(sorted(want)) == ga:
+                    ok = True
+                    break
+            if not ok:
+                bad.append(ga)
+        chk("%s: face angles match the row" % tag, not bad,
+            "%s" % (bad[:1],))
         # 6. symmetry axes
         pts = [V[i] for i in range(len(V))]
         ax = pnet.axis_counts(pts)
