@@ -87,6 +87,17 @@ LEGAL_ANGLES = (
 )
 
 # Entries that could not be reconciled with the book (none).
+#: Rows whose PRINTED data does not balance, transcribed as printed
+#: rather than repaired.  Both have 1 x 3-gon + 2 x 4-gon, a side-sum of
+#: 11 against 2E = 12, which no closed surface can have; the faces are
+#: corroborated by the Bridges 2009 nest table (n3c/n4i and n3d/n4j), so
+#: the inconsistency is in the book and not in the reading of it.  They
+#: are skipped by check 5 only -- every other check still applies.
+ERRATA = {
+    7: "1 x 3-gon + 2 x 4-gon = 11 sides, but 2E = 12",
+    10: "1 x 3-gon + 2 x 4-gon = 11 sides, but 2E = 12",
+}
+
 UNRESOLVED = ()
 
 TABLE = (
@@ -155,10 +166,16 @@ TABLE = (
          primary=((3, 2),), secondary=((2, 3),), nodes_total=5,
          branches={'100': 4, '110': 0, '111': 2}, branches_total=6,
          faces_total=3,
-         # Book prints this face as a 3-gon with three angles; repaired to a
-         # 4-gon with the forced 90d fourth corner (see header notes).
-         faces=(dict(count=1, n=4, kind='', symmetry='MIRROR',
-                     angles=("54d44'", "70d32'", "54d44'", "90d"),
+         # AS PRINTED.  The book's own row does not balance: 1 x 3-gon
+         # + 2 x 4-gon is a side-sum of 11, and a closed surface needs
+         # an even one (11 != 2E = 12).  An earlier revision "repaired"
+         # it by promoting the 3-gon to a 4-gon, which invents data;
+         # the Bridges 2009 nest table independently lists this face as
+         # the 3-gon n3c, so the 3-gon is what Pearce meant and the
+         # inconsistency is his.  Transcribed as printed and excluded
+         # from the side-sum check via ERRATA.
+         faces=(dict(count=1, n=3, kind='', symmetry='MIRROR',
+                     angles=("54d44'", "70d32'", "54d44'"),
                      plane='110'),
                 dict(count=2, n=4, kind='ENANTIO', symmetry='NONE',
                      angles=("90d", "54d44'", "54d44'", "90d"),
@@ -194,10 +211,12 @@ TABLE = (
          primary=((3, 2),), secondary=((2, 3),), nodes_total=5,
          branches={'100': 3, '110': 2, '111': 1}, branches_total=6,
          faces_total=3,
-         # Book prints this face as a 3-gon 45d/90d/45d; repaired to a 4-gon
-         # with the forced 90d fourth corner (see header notes).
-         faces=(dict(count=1, n=4, kind='', symmetry='MIRROR',
-                     angles=("45d", "90d", "45d", "90d"), plane='110'),
+         # AS PRINTED, and inconsistent in the same way as entry 7:
+         # 1 x 3-gon + 2 x 4-gon gives a side-sum of 11 against 2E = 12.
+         # Bridges 2009 lists this face as the 3-gon n3d, so again the
+         # 3-gon is Pearce's intent and the error is his.  See ERRATA.
+         faces=(dict(count=1, n=3, kind='', symmetry='MIRROR',
+                     angles=("45d", "90d", "45d"), plane='110'),
                 dict(count=1, n=4, kind='RIGHT', symmetry='NONE',
                      angles=("90d", "45d", "54d44'", "54d44'"),
                      plane='110'),
@@ -748,11 +767,21 @@ def _selftest():
             "entry %d: face counts %d != total %d"
             % (n, f_sum, e['faces_total']))
 
-        # 5. face sides: each branch borders exactly two faces
+        # 5. face sides: each branch borders exactly two faces.
+        #    Entries in ERRATA are transcribed AS PRINTED and do not
+        #    balance here -- that is the book's inconsistency, recorded
+        #    rather than repaired, so the check reports it and moves on.
         sides = sum(f['count'] * f['n'] for f in e['faces'])
-        assert sides == 2 * e['branches_total'], (
-            "entry %d: face sides %d != 2*branches %d"
-            % (n, sides, 2 * e['branches_total']))
+        if n in ERRATA:
+            assert sides != 2 * e['branches_total'], (
+                "entry %d is listed in ERRATA but now balances (%d == %d)"
+                " -- remove it from ERRATA" % (n, sides,
+                                               2 * e['branches_total']))
+            print("    entry %d: known book erratum -- %s" % (n, ERRATA[n]))
+        else:
+            assert sides == 2 * e['branches_total'], (
+                "entry %d: face sides %d != 2*branches %d"
+                % (n, sides, 2 * e['branches_total']))
 
         # 6. Euler: V - E + F = 2
         euler = e['nodes_total'] - e['branches_total'] + e['faces_total']
