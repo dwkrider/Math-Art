@@ -245,14 +245,36 @@ if _IN_BLENDER:
     # -------------------------------------------------------------- #
 
     def _collection(context, name):
+        """The output collection, emptied of a previous run's contents.
+
+        Except during a LIVE REBUILD, where the previous generation is
+        the framework's to dispose of -- and where one of the objects
+        in there is the very root being rebuilt, so clearing the
+        collection would delete the object under the caller's feet.
+        """
         old = bpy.data.collections.get(name)
         if old is not None:
-            for obj in list(old.objects):
-                bpy.data.objects.remove(obj, do_unlink=True)
+            try:
+                from .live import build as _live
+            except ImportError:
+                from live import build as _live
+            if not _live.is_building():
+                for obj in list(old.objects):
+                    bpy.data.objects.remove(obj, do_unlink=True)
             return old
         coll = bpy.data.collections.new(name)
         context.scene.collection.children.link(coll)
         return coll
+
+    def _group(coll, name, parent=None):
+        """An Empty used purely to hang objects off."""
+        empty = bpy.data.objects.new(name, None)
+        empty.empty_display_type = 'PLAIN_AXES'
+        empty.empty_display_size = 0.05
+        coll.objects.link(empty)
+        if parent is not None:
+            empty.parent = parent
+        return empty
 
     def _cap_fill(part):
         """Fill the cap from the outline and its hole loops.
@@ -727,7 +749,17 @@ if _IN_BLENDER:
             gap = 0.08 * extent
             half_h = 0.5 * (z_hi - z_lo)
 
-            layout = _collection(context, f"{obj.name} Layout")
+            # ONE collection, and everything in it hangs off a single
+            # Empty.  The live-edit framework anchors a multi-object
+            # build on the one object nothing else owns, and re-homes
+            # the rest onto whatever collections THAT object is in --
+            # so two sibling collections would be collapsed into one on
+            # the first rebuild anyway.  The plates and the sheets stay
+            # told apart by their parent instead, which survives.
+            group = _collection(context, f"{obj.name} Slices")
+            root = _group(group, f"{obj.name} Slices")
+            sheets_at = _group(group, f"{obj.name} Sheets", root)
+            layout = group
             sheets = drawing.sheets
             pad = 0.05 * drawing.sheet_height
             total = (len(sheets) * drawing.sheet_height
@@ -747,11 +779,16 @@ if _IN_BLENDER:
                                  sheet, place)
                 sob = bpy.data.objects.new(me.name, me)
                 layout.objects.link(sob)
-            layout[DRAWING_KEY] = drawing_to_json(drawing)
+                sob.parent = sheets_at
+            # The drawing rides on the ROOT object, not the
+            # collection: the exporter has to find it again after a
+            # rebuild, and the root is what persists.
+            root[DRAWING_KEY] = drawing_to_json(drawing)
 
             unsolid = 0
             if self.preview:
-                prev = _collection(context, f"{obj.name} Slices")
+                prev = group
+                plates_at = _group(group, f"{obj.name} Plates", root)
                 base_z = z_hi + gap + half_h
                 for fam in families:
                     for plane in fam.planes:
@@ -774,8 +811,18 @@ if _IN_BLENDER:
                                 self.thickness, place)
                             if not solid:
                                 unsolid += 1
-                            prev.objects.link(
-                                bpy.data.objects.new(me.name, me))
+                            pob = bpy.data.objects.new(me.name, me)
+                            prev.objects.link(pob)
+                            pob.parent = plates_at
+
+            # Leave the ROOT active: the live framework breaks a tie
+            # between candidate roots with the active object, and a
+            # plate winning that tie would anchor the group on a piece
+            # that the next rebuild deletes.
+            for o in context.selected_objects:
+                o.select_set(False)
+            root.select_set(True)
+            context.view_layer.objects.active = root
 
             summary = _build.summarise(report)
             if unsolid:
@@ -901,8 +948,10 @@ if _IN_BLENDER:
                         "the operation carried as stroke colour")
         write_dxf: BoolProperty(
             name="DXF", default=True,
-            description="Write DXF R12, with one named layer per "
-                        "operation. One drawing unit is one millimetre")
+            description="Write ONE DXF R12 file for the whole job, "
+                        "sheets tiled side by side, with a named layer "
+                        "per operation. One drawing unit is one "
+                        "millimetre")
         include_frame: BoolProperty(
             name="Sheet Outline", default=True,
             description="Include a non-cutting rectangle showing the "
@@ -927,8 +976,12 @@ if _IN_BLENDER:
                 written += _svg.write(
                     drawing, lambda i: f"{stem}_{i + 1:02d}.svg")
             if self.write_dxf:
-                written += _dxf.write(
-                    drawing, lambda i: f"{stem}_{i + 1:02d}.dxf")
+                # ONE DXF for the whole job.  DXF has no page, so a
+                # single file means a single drawing: the sheets tiled
+                # side by side, sharing one set of named operation
+                # layers that can be switched or re-powered in one go.
+                written += _dxf.write(drawing, f"{stem}.dxf",
+                                      self.include_frame)
             if not written:
                 self.report({'ERROR'}, "Nothing to write: pick SVG, DXF "
                                        "or both.")
@@ -939,15 +992,17 @@ if _IN_BLENDER:
             return {'FINISHED'}
 
     def _find_layout(context):
-        """The layout collection for the active object, or any."""
+        """The object carrying a sliced layout: the selected group's
+        root if there is one, otherwise any."""
         obj = context.active_object
-        if obj is not None:
-            coll = bpy.data.collections.get(f"{obj.name} Layout")
-            if coll is not None and DRAWING_KEY in coll:
-                return coll
-        for coll in bpy.data.collections:
-            if DRAWING_KEY in coll:
-                return coll
+        for candidate in (obj, getattr(obj, 'parent', None),
+                          getattr(getattr(obj, 'parent', None),
+                                  'parent', None)):
+            if candidate is not None and DRAWING_KEY in candidate:
+                return candidate
+        for candidate in bpy.data.objects:
+            if DRAWING_KEY in candidate:
+                return candidate
         return None
 
     _CLASSES = (OBJECT_OT_fabrication_slice,

@@ -393,15 +393,30 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
                 # the WHOLE span out of one piece so the other passes
                 # through.  Prefer to notch whichever has more material
                 # to spare.
+                # Which piece gets notched is not arbitrary.  Prefer a
+                # piece from a family that has NOT been trimmed: a
+                # radial fin is already cut back to a half-plane, while
+                # the ring it meets is whole and has material to spare
+                # -- and notching the ring is also the globe
+                # construction, where the fins slide into slots in the
+                # rings.  Going on area alone put every notch in the
+                # fins on a lumpy model and left whole rings with no
+                # slots at all.
+                whole_a = 0 if fam_a.trimmed else 1
+                whole_b = 0 if fam_b.trimmed else 1
                 opts = []
                 if reach_a_hi:
-                    opts.append((part_a.area(), part_a, oa, da, t1, t0))
+                    opts.append(((whole_a, part_a.area()),
+                                 part_a, oa, da, t1, t0))
                 if reach_a_lo:
-                    opts.append((part_a.area(), part_a, oa, da, t0, t1))
+                    opts.append(((whole_a, part_a.area()),
+                                 part_a, oa, da, t0, t1))
                 if reach_b_hi:
-                    opts.append((part_b.area(), part_b, ob, db, t1, t0))
+                    opts.append(((whole_b, part_b.area()),
+                                 part_b, ob, db, t1, t0))
                 if reach_b_lo:
-                    opts.append((part_b.area(), part_b, ob, db, t0, t1))
+                    opts.append(((whole_b, part_b.area()),
+                                 part_b, ob, db, t0, t1))
                 if not opts:
                     cr.errors.append(
                         ('no_rim',

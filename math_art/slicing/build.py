@@ -112,12 +112,23 @@ def _family_from_parallel(name, verts, faces, normal, offsets):
 
 
 def _family_from_planes(name, verts, faces, spec):
-    sl, committed, faults = sections.section_planes(verts, faces, spec)
+    """A family from explicit plane specs.
+
+    The frame stored on each plane is the one the SECTIONER used, not
+    the one the caller asked for.  `section_planes` orthonormalises
+    what it is given and re-derives v = n x u, so a caller who hands it
+    a left-handed (u, v, n) gets polygons mirrored against the frame it
+    recorded -- silently, and invisibly on any symmetric shape.
+    Storing the frame that actually produced the coordinates makes that
+    class of mistake impossible rather than merely unlikely.
+    """
+    sl, committed, faults, frames = sections.section_planes(
+        verts, faces, spec)
     planes = []
     for k, loops in enumerate(sl):
-        normal, _off, u, v = spec[k]
+        u, v, n = frames[k]
         ps = _parts.build_parts(loops, name, k, committed[k])
-        planes.append(_slots.SlicePlane(normal, committed[k], u, v, k, ps))
+        planes.append(_slots.SlicePlane(n, committed[k], u, v, k, ps))
     return _slots.Family(name, planes), faults
 
 
@@ -379,8 +390,18 @@ def build(verts, faces, settings, name='slices'):
             th = 2.0 * math.pi * k / max(1, st.radial_count)
             radial = tuple(e1[i] * math.cos(th) + e2[i] * math.sin(th)
                            for i in range(3))
-            normal = tuple(ax[(i + 1) % 3] * radial[(i + 2) % 3]
-                           - ax[(i + 2) % 3] * radial[(i + 1) % 3]
+            # radial x axis, NOT axis x radial.  The frame recorded
+            # for this plane is (u, v) = (radial, axis), and
+            # `section_planes` re-derives v as n x u -- so if n points
+            # the other way it hands back v = -axis and every fin
+            # polygon is MIRRORED IN Z against the frame its own plane
+            # claims.  On a z-symmetric shape that is invisible; on a
+            # lumpy one each fin reads the solid at the wrong height,
+            # its silhouette truncates the shared span inside the ring,
+            # and the ring's rim stops being an end of the span at all
+            # -- which is how rings ended up with no slots.
+            normal = tuple(radial[(i + 1) % 3] * ax[(i + 2) % 3]
+                           - radial[(i + 2) % 3] * ax[(i + 1) % 3]
                            for i in range(3))
             # frame (u, v) = (radial, axis): 2-D coords are (r, z), so
             # the half we keep is simply r >= 0

@@ -254,8 +254,11 @@ def section_planes(verts, faces, planes, jitter=None, tries=4):
     `section_family`, which does bucket and is much faster for the
     sixty-plane case.
 
-    Returns (slices, committed_offsets, faults) exactly as
-    `section_family` does, so callers can treat the two alike.
+    Returns (slices, committed_offsets, faults, frames).  `frames[k]`
+    is the (u, v, n) this function ACTUALLY used after
+    orthonormalising -- callers must store that rather than the frame
+    they asked for, or their 2-D coordinates and their recorded frame
+    will disagree by a reflection.
     """
     V = np.asarray(verts, dtype=float)
     tris = faces if (faces and len(faces[0]) == 3) else triangulate(faces)
@@ -268,7 +271,7 @@ def section_planes(verts, faces, planes, jitter=None, tries=4):
         jitter = 1e-7 * (float(np.linalg.norm(hi - lo)) or 1.0)
     nudges = (0.5, -1.37, 2.11, -3.29)
 
-    slices, committed, faults = [], [], []
+    slices, committed, faults, frames = [], [], [], []
     for k, (normal, offset, u, v) in enumerate(planes):
         n = np.asarray(normal, dtype=float)
         n = n / (np.linalg.norm(n) or 1.0)
@@ -299,7 +302,8 @@ def section_planes(verts, faces, planes, jitter=None, tries=4):
             got = []
         slices.append(got)
         committed.append(used)
-    return slices, committed, faults
+        frames.append((tuple(u), tuple(v), tuple(n)))
+    return slices, committed, faults, frames
 
 
 def to_world(pt2, u, v, n, d):
@@ -507,13 +511,19 @@ def _selftest():
     pl = [((0, 0, 1), 0.0, (1, 0, 0), (0, 1, 0)),
           ((1, 0, 0), 0.0, (0, 1, 0), (0, 0, 1)),
           ((1, 1, 0), 0.0, (0, 0, 1), (1, -1, 0))]
-    sl, off, faults = section_planes(V, F, pl)
+    sl, off, faults, frames = section_planes(V, F, pl)
     assert not faults, f"section_planes faulted: {faults}"
     got = [pc.area(s[0]) for s in sl]
     for a in got:
         assert abs(a - math.pi) < 2e-2, \
             f"every great-circle section of a unit sphere has area ~pi: {got}"
     assert off[0] != 0.0, "section_planes commits its nudge too"
+    # the frames handed back must be right-handed, whatever was asked
+    for u, v, n in frames:
+        cross = (u[1] * v[2] - u[2] * v[1],
+                 u[2] * v[0] - u[0] * v[2],
+                 u[0] * v[1] - u[1] * v[0])
+        assert sum(cross[i] * n[i] for i in range(3)) > 0.999,             "section_planes must return the right-handed frame it used"
 
     # --- an open surface is a fault, not a silent broken outline --
     V, F = _cube(1.0)

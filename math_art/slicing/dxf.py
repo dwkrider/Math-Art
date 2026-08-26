@@ -74,6 +74,36 @@ def _polyline(points, closed, layer):
     return out
 
 
+def job_dxf(drawing, include_frame=True, gap=20.0):
+    """The whole job as one DXF, sheets tiled side by side.
+
+    The operation layers are shared across the file, which is the
+    point: one document whose CUT, HOLE and ENGRAVE layers can each be
+    switched off or mapped to a power in a single action, however many
+    sheets the job runs to.  Each sheet keeps its own frame on the
+    non-cutting SHEET layer, so where one ends and the next begins is
+    still legible.
+    """
+    placed, x = [], 0.0
+    for sheet in drawing.sheets:
+        for e in sheet.ordered():
+            if not include_frame and e.layer == 'SHEET':
+                continue
+            placed.append((e.layer,
+                           [(px + x, py) for px, py in e.points],
+                           e.closed))
+        x += sheet.width + gap
+
+    used = [n for n in LAYER_ORDER if any(p[0] == n for p in placed)]
+    body = _g(0, 'SECTION') + _g(2, 'ENTITIES')
+    for layer in LAYER_ORDER:
+        for name, pts, closed in placed:
+            if name == layer:
+                body += _polyline(pts, closed, layer)
+    body += _g(0, 'ENDSEC')
+    return _header() + _tables(used or ['CUT']) + body + _g(0, 'EOF')
+
+
 def sheet_dxf(sheet, include_frame=True):
     """One sheet as a complete DXF R12 document."""
     entities = sheet.ordered()
@@ -91,16 +121,17 @@ def sheet_dxf(sheet, include_frame=True):
     return _header() + _tables(used or ['CUT']) + body + _g(0, 'EOF')
 
 
-def write(drawing, path_for_sheet):
-    """Write one DXF per sheet -- DXF has no page concept, and one file
-    per sheet is how the parts actually get cut."""
-    written = []
-    for sheet in drawing.sheets:
-        p = path_for_sheet(sheet.index)
-        with open(p, 'w', encoding='ascii', newline='\r\n') as fh:
-            fh.write(sheet_dxf(sheet))
-        written.append(p)
-    return written
+def write(drawing, path, include_frame=True):
+    """Write the whole job as ONE DXF file.
+
+    DXF has no page, so a multi-sheet job cannot be paginated -- but it
+    can be a single drawing, which is what one file has to mean: the
+    sheets tiled side by side, sharing one set of named operation
+    layers that can each be switched on or mapped to a power in one go.
+    """
+    with open(path, 'w', encoding='ascii', newline='\r\n') as fh:
+        fh.write(job_dxf(drawing, include_frame))
+    return [path]
 
 
 def parse_groups(text):
@@ -204,6 +235,21 @@ def _selftest():
     assert svg_counts == dxf_counts, (
         f"the two exporters must agree polyline-for-polyline: "
         f"svg={svg_counts} dxf={dxf_counts}")
+
+    # --- the whole job in ONE file, sheets tiled ------------------
+    two = Drawing('t', 100.0, 60.0)
+    two.sheet(0).add('CUT', [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)],
+                     True, 'a')
+    two.sheet(1).add('CUT', [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)],
+                     True, 'b')
+    job = parse_groups(job_dxf(two))
+    polys = sum(1 for g in job if g == (0, 'POLYLINE'))
+    assert polys == 4, f"two parts and two sheet frames, got {polys}"
+    assert sum(1 for c, v in job if c == 0 and v == 'EOF') == 1,         "one file means one EOF, not one per sheet"
+    xs = [float(v) for c, v in job if c == 10]
+    assert max(xs) > 100.0,         "the second sheet must be tiled clear of the first, not stacked"
+    layers = {v for c, v in job if c == 8}
+    assert layers == {'CUT', 'SHEET'},         f"operation layers are shared across the file: {layers}"
 
     # --- dropping the frame drops it from both the table and body -
     plain = parse_groups(sheet_dxf(s, include_frame=False))
