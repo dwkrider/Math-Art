@@ -206,6 +206,12 @@ if _IN_BLENDER:
                 pts = [tuple(mw @ p.co) for p in spline.bezier_points]
             else:
                 pts = [tuple(mw @ p.co.to_3d()) for p in spline.points]
+            # Close the loop explicitly on a cyclic spline.  The
+            # control points do not repeat the seam, so without this
+            # the closing segment is missing from the polyline and the
+            # ribs come out unevenly spaced right across it.
+            if spline.use_cyclic_u and len(pts) > 2:
+                pts.append(pts[0])
             if len(pts) > len(best):
                 best = pts
         return best if len(best) >= 2 else None

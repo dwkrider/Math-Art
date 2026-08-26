@@ -149,74 +149,141 @@ def _half_plane_clip(part, keep_dir, big):
     return out
 
 
-def place_dowels(family, count, diameter, min_gap=0.0,
-                 samples=28):
-    """Alignment dowel holes running through a whole stack.
+def resample_by_arclength(C, count, closed=None, tol=1e-6):
+    """`count` points and unit tangents spaced evenly ALONG the curve.
 
-    A stacked model with nothing to register it is the one configuration
-    Fusion refuses to offer, and rightly: sixty free discs do not glue
-    up straight.  A dowel has to pass through EVERY slice, so candidate
-    positions are drawn from the most constrained slice -- the one with
-    the least material -- and then verified against all the others.
-    Starting from the smallest slice is what keeps this affordable;
-    grid-searching every slice would be minutes of Python.
+    Sampling the control points by index instead -- which is what this
+    did at first -- spaces the ribs by however densely the curve
+    happens to be described, not by distance.  On a knot that bunches
+    them through the tight bends and strands them along the straights.
+
+    A closed curve is detected from its endpoints and sampled without
+    repeating the seam; an open one is inset slightly from both ends,
+    where a perpendicular plane tends to graze the cap rather than cut
+    a rib out of it.
     """
-    if count <= 0 or diameter <= 0.0:
-        return [], 0
-    stacks = [pl.parts for pl in family.planes if pl.parts]
-    if not stacks:
-        return [], 0
+    C = np.asarray(C, dtype=float)
+    seg = np.linalg.norm(np.diff(C, axis=0), axis=1)
+    cum = np.concatenate([[0.0], np.cumsum(seg)])
+    total = float(cum[-1])
+    if total <= 0.0:
+        raise ValueError("the curve has no length to space ribs along")
+    if closed is None:
+        extent = float(np.linalg.norm(C.max(axis=0) - C.min(axis=0))) or 1.0
+        closed = float(np.linalg.norm(C[0] - C[-1])) < 0.02 * extent
+
+    n = max(2, int(count))
+    if closed:
+        targets = np.linspace(0.0, total, n, endpoint=False)
+    else:
+        targets = np.linspace(0.02 * total, 0.98 * total, n)
+
+    pts, tans = [], []
+    for t in targets:
+        k = int(np.searchsorted(cum, t, side='right') - 1)
+        k = max(0, min(len(seg) - 1, k))
+        span = seg[k] if seg[k] > tol else 1.0
+        f = (t - cum[k]) / span
+        pts.append(C[k] + f * (C[k + 1] - C[k]))
+        d = C[k + 1] - C[k]
+        tans.append(d / (np.linalg.norm(d) or 1.0))
+    return np.asarray(pts), np.asarray(tans), closed, total
+
+
+def place_dowels(family, count, diameter, min_gap=0.0, samples=14):
+    """Alignment dowels down a stack.
+
+    A dowel does not have to run the whole height of the model, and
+    insisting that it did was wrong: on a shape whose slices wander --
+    a knot, where one layer's material is nowhere near the next one's
+    -- no single position passes through every slice, so nothing got
+    drilled at all.  What a dowel actually has to do is register a
+    slice against its NEIGHBOUR.
+
+    So dowels are placed as RUNS.  Walking the stack, a position is
+    kept as long as it still lands in material; when it runs out the
+    run ends there and a fresh one is started for the slices that
+    follow.  Every slice big enough to hold `count` dowels gets them;
+    a slice too small for even one simply goes without, which is a
+    fact about that slice and is reported rather than hidden.
+
+    A position is only ever STARTED if it also lands in a neighbouring
+    slice, since a hole that exists in one slice alone registers
+    nothing.
+
+    Returns (runs, drilled, slices_with, slices_without).
+    """
+    planes = [pl for pl in family.planes if pl.parts]
+    if count <= 0 or diameter <= 0.0 or not planes:
+        return 0, 0, 0, len(planes)
+
     r = 0.5 * diameter
     need = r * 1.6
-    # dowels too close together do not register a stack any better than
-    # one dowel does, so keep them apart by at least the asked-for gap
     apart = max(4.0 * r, float(min_gap))
 
-    smallest = min((p for ps in stacks for p in ps), key=lambda p: p.area())
-    x0, y0, x1, y1 = smallest.bounds()
+    def host(pt, plane):
+        """The part of `plane` that could carry a dowel at `pt`."""
+        for q in plane.parts:
+            if not pc.point_in_polygon(pt, q.outer):
+                continue
+            d = pc.polygon_distance(pt, q.outer)
+            blocked = False
+            for h in q.holes:
+                if pc.point_in_polygon(pt, h):
+                    blocked = True
+                    break
+                d = min(d, pc.polygon_distance(pt, h))
+            if not blocked and d >= need:
+                return q
+        return None
 
-    def clearance(pt, part):
-        if not pc.point_in_polygon(pt, part.outer):
-            return -1.0
-        d = pc.polygon_distance(pt, part.outer)
-        for h in part.holes:
-            if pc.point_in_polygon(pt, h):
-                return -1.0
-            d = min(d, pc.polygon_distance(pt, h))
-        return d
+    def candidates(plane):
+        """Room in this slice, roomiest first."""
+        out = []
+        for q in plane.parts:
+            x0, y0, x1, y1 = q.bounds()
+            if min(x1 - x0, y1 - y0) < 2.0 * need:
+                continue
+            for i in range(samples):
+                for j in range(samples):
+                    pt = (x0 + (x1 - x0) * (i + 0.5) / samples,
+                          y0 + (y1 - y0) * (j + 0.5) / samples)
+                    if host(pt, plane) is not None:
+                        out.append((pc.polygon_distance(pt, q.outer), pt))
+        out.sort(key=lambda kv: -kv[0])
+        return [pt for _c, pt in out]
 
-    cands = []
-    for i in range(samples):
-        for j in range(samples):
-            pt = (x0 + (x1 - x0) * (i + 0.5) / samples,
-                  y0 + (y1 - y0) * (j + 0.5) / samples)
-            c = clearance(pt, smallest)
-            if c >= need:
-                cands.append((c, pt))
-    if not cands:
-        return [], 0
-
-    cands.sort(reverse=True)
-    chosen = []
-    for _c, pt in cands:
-        if len(chosen) >= count:
-            break
-        if any(math.dist(pt, q) < apart for q in chosen):
-            continue
-        worst = min(min(clearance(pt, p) for p in ps) for ps in stacks)
-        if worst >= need:
-            chosen.append(pt)
-
-    drilled = 0
-    for ps in stacks:
-        for part in ps:
-            for pt in chosen:
-                if clearance(pt, part) >= need:
-                    part.holes.append(
-                        pc.as_cw(pc.arc_points(pt[0], pt[1], r,
-                                               0.0, 2.0 * math.pi, 16)[:-1]))
-                    drilled += 1
-    return chosen, drilled
+    active, runs, drilled, with_holes = [], 0, 0, 0
+    for i, plane in enumerate(planes):
+        active = [pt for pt in active if host(pt, plane) is not None]
+        if len(active) < count:
+            nxt = planes[i + 1] if i + 1 < len(planes) else None
+            prv = planes[i - 1] if i > 0 else None
+            for pt in candidates(plane):
+                if len(active) >= count:
+                    break
+                if any(math.dist(pt, q) < apart for q in active):
+                    continue
+                # a lone hole registers nothing: it has to reach a
+                # neighbour to be a joint at all
+                shares = ((nxt is not None and host(pt, nxt) is not None)
+                          or (prv is not None and host(pt, prv) is not None))
+                if not shares:
+                    continue
+                active.append(pt)
+                runs += 1
+        drilled_here = 0
+        for pt in active:
+            q = host(pt, plane)
+            if q is None:
+                continue
+            q.holes.append(pc.as_cw(
+                pc.arc_points(pt[0], pt[1], r, 0.0, 2.0 * math.pi, 16)[:-1]))
+            drilled += 1
+            drilled_here += 1
+        if drilled_here:
+            with_holes += 1
+    return runs, drilled, with_holes, len(planes) - with_holes
 
 
 def build(verts, faces, settings, name='slices'):
@@ -246,16 +313,12 @@ def build(verts, faces, settings, name='slices'):
         families.append(fam)
         report['faults'] += faults
         if st.use_dowels and st.dowels > 0:
-            pts, _drilled = place_dowels(fam, st.dowels, st.dowel_diameter,
-                                         st.dowel_spacing)
-            report['dowels'] = len(pts)
-            # A dowel has to pass through EVERY slice, so a shape whose
-            # slices wander -- a knot, where one layer's material is
-            # nowhere near the next one's -- may have no such position
-            # at all.  Say so: silently drilling nothing looks exactly
-            # like the feature being broken.
-            if len(pts) < st.dowels:
-                report['dowels_short'] = (st.dowels, len(pts))
+            runs, drilled, with_h, without = place_dowels(
+                fam, st.dowels, st.dowel_diameter, st.dowel_spacing)
+            report['dowels'] = runs
+            report['dowel_holes'] = drilled
+            report['dowel_slices'] = with_h
+            report['dowels_missing'] = without
 
     elif st.technique == 'INTERLOCKED':
         if st.axis_a.upper() == st.axis_b.upper():
@@ -316,19 +379,16 @@ def build(verts, faces, settings, name='slices'):
         C = np.asarray(curve, dtype=float)
         C = (C - (np.asarray(verts).min(axis=0)
                   + np.asarray(verts).max(axis=0)) * 0.5) * applied
-        idx = np.linspace(0, len(C) - 1, max(2, st.rib_count))
+        rib_pts, rib_tans, closed, length = resample_by_arclength(
+            C, st.rib_count)
+        report['curve_length'] = length
+        report['curve_closed'] = closed
         spec, anchors = [], []
-        for k, f in enumerate(idx):
-            i = int(round(f))
-            j = min(len(C) - 1, i + 1) if i + 1 < len(C) else i - 1
-            t = C[j] - C[i]
-            t = t / (np.linalg.norm(t) or 1.0)
-            if j < i:
-                t = -t
+        for P, t in zip(rib_pts, rib_tans):
             u, v, nn = sections.plane_frame(t)
-            spec.append((tuple(nn), float(np.dot(C[i], nn)),
+            spec.append((tuple(nn), float(np.dot(P, nn)),
                          tuple(u), tuple(v)))
-            anchors.append((C[i], u, v, nn))
+            anchors.append((P, u, v, nn))
         ribs, faults = _family_from_planes('C', V, faces, spec)
         report['faults'] += faults
 
@@ -458,8 +518,6 @@ def summarise(report):
             out.append(f"{cut[key]} {text}")
     if cut.get('relieved'):
         out.append(f"{cut['relieved']} dog-bone corners")
-    if report.get('dowels'):
-        out.append(f"{report['dowels']} dowels")
     if report['nest'].get('oversize'):
         out.append(f"{report['nest']['oversize']} parts too big for the sheet")
     if report.get('faults'):
@@ -469,11 +527,13 @@ def summarise(report):
     if report.get('unconnected'):
         out.append(f"{report['unconnected']} pieces nothing holds "
                    f"(no joint reaches them)")
-    if report.get('dowels_short'):
-        want, got = report['dowels_short']
-        out.append(f"only {got} of {want} dowels fit: a dowel must pass "
-                   f"through every slice, and this shape leaves nowhere "
-                   f"that does")
+    if report.get('dowel_holes'):
+        out.append(f"{report['dowel_holes']} dowel holes in "
+                   f"{report['dowel_slices']} slices "
+                   f"({report['dowels']} runs)")
+    if report.get('dowels_missing'):
+        out.append(f"{report['dowels_missing']} slices too small for a "
+                   f"dowel")
     if report.get('spine') == 'wire':
         out.append("the curve is not flat, so there is no spine to slot "
                    "into: thread the ribs on a rod through their holes")
@@ -508,6 +568,13 @@ def _selftest():
     assert rep['dowels'] == 2, f"two dowels through the stack: {rep}"
     holed = [p for p in fams[0].all_parts() if p.holes]
     assert len(holed) > 10, "the dowels pass through most of the stack"
+    # every slice that can take a dowel gets one -- a dowel registers a
+    # slice against its neighbour, so it does NOT have to run the whole
+    # height of the model
+    assert rep['dowel_slices'] >= len(fams[0].planes) - 2, (
+        f"all but the smallest slices should be dowelled: "
+        f"{rep['dowel_slices']} of {len(fams[0].planes)}")
+    assert rep['dowel_holes'] >= rep['dowel_slices'],         "each dowelled slice carries at least one hole"
 
     # a gap between slices thins the stack out; the pitch is the
     # material plus the gap, never less than the material
@@ -585,6 +652,31 @@ def _selftest():
                 f"reaches x={min(xs)}")
     assert rep3['interlock']['spans'] > 0, \
         f"fins must actually join the rings: {rep3['interlock']}"
+
+    # --- ribs are spaced by DISTANCE along the curve, not by index -
+    circle = [(math.cos(a), math.sin(a), 0.0)
+              for a in np.linspace(0.0, 2 * math.pi, 400, endpoint=False)]
+    circle.append(circle[0])
+    # deliberately lopsided sampling: dense on one side, sparse on the
+    # other, which is exactly what a curve's control points look like
+    lop = [circle[i] for i in
+           sorted(set(list(range(0, 200, 2)) + list(range(200, 400, 30))))]
+    lop.append(lop[0])
+    pts, tans, closed, total = resample_by_arclength(lop, 12)
+    assert closed, "a curve that returns to its start is closed"
+    assert len(pts) == 12, f"12 ribs, got {len(pts)}"
+    gaps = [float(np.linalg.norm(pts[(i + 1) % 12] - pts[i]))
+            for i in range(12)]
+    assert max(gaps) - min(gaps) < 0.05 * max(gaps), (
+        "ribs must be evenly spaced along the curve however unevenly "
+        f"it is described: gaps {min(gaps):.4f}..{max(gaps):.4f}")
+    for t in tans:
+        assert abs(float(np.linalg.norm(t)) - 1.0) < 1e-9, "unit tangents"
+    # and an open curve is inset from its ends rather than sampling them
+    line = [(0.0, 0.0, z) for z in np.linspace(-1.0, 1.0, 50)]
+    pts2, _t2, closed2, _L = resample_by_arclength(line, 6)
+    assert not closed2, "a straight line is not closed"
+    assert pts2[0][2] > -1.0 and pts2[-1][2] < 1.0, "inset from the ends"
 
     # --- ribs along a curve ---------------------------------------
     curve = [(0.0, 0.0, z) for z in np.linspace(-0.9, 0.9, 12)]
