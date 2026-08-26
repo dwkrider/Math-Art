@@ -224,9 +224,7 @@ def oriented(code, size=2.0):
     but tipped at an arbitrary angle so a shallow nest looks like a
     steep one.
     """
-    pts = from_solid(code) if code in UNVERIFIED else boundary(code)
-    if pts is None:
-        pts = boundary(code)
+    pts = source_points(code)
     if pts is None:
         return None
     P = np.asarray(pts, float)
@@ -291,6 +289,19 @@ def from_solid(code, tol=0.05):
                 continue
             return [tuple(float(c) for c in p) for p in loop]
     return None
+
+
+def source_points(code):
+    """The points a nest is actually BUILT from.
+
+    A held-back code is lifted off a carrying solid; everything else is
+    reconstructed from its boundary spec.  Checks must use this, not
+    `boundary`, or they test a circuit the generator never draws."""
+    if code in UNVERIFIED:
+        got = from_solid(code)
+        if got is not None:
+            return got
+    return boundary(code)
 
 
 def recovered_codes():
@@ -360,7 +371,7 @@ def _selftest():
     # the same corners
     wrong = []
     for code in verified_codes():
-        pts = boundary(code)
+        pts = source_points(code)
         want = _SYM_LABEL.get(NESTS[code][2])
         if pts is None or (want and
                            pnet.face_symmetry_label(pts) != want):
