@@ -311,6 +311,13 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
             # full-depth notch and the other passes through it intact.
             # No capture, but buildable, and counted separately so the
             # difference is visible.
+            # Several spans on one line still rule out a half-lap.  It
+            # is tempting to allow one anyway on the outermost span --
+            # only one piece has to travel, after all, the other can be
+            # pre-placed -- but that reasoning fails as soon as there
+            # are two spans: whichever piece slides must drive its
+            # material through the other's at the first span to reach
+            # the second.  Those crossings are cleared instead.
             lap = flexible or len(shared) <= 1
 
             oa, da = to_frame(pa, point, w)
@@ -357,8 +364,11 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
                 reach_a_lo = reaches(lo_a, t0, a_near)
                 reach_b_hi = reaches(hi_b, t1, b_far)
                 reach_b_lo = reaches(lo_b, t0, b_near)
+
+                lap_hi_lo = reach_a_hi and reach_b_lo
+                lap_lo_hi = reach_a_lo and reach_b_hi
                 mid = 0.5 * (t0 + t1)
-                if lap and reach_a_hi and reach_b_lo:
+                if lap and lap_hi_lo:
                     part_a.slots.append(
                         slot_polygon(oa, da, t1, mid, half, flare,
                                      flare_angle, overshoot))
@@ -368,7 +378,7 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
                     cr.spans.append((t0, t1))
                     report['spans'] += 1
                     continue
-                if lap and reach_a_lo and reach_b_hi:
+                if lap and lap_lo_hi:
                     part_a.slots.append(
                         slot_polygon(oa, da, t0, mid, half, flare,
                                      flare_angle, overshoot))

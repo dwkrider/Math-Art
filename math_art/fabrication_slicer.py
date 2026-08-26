@@ -526,10 +526,10 @@ if _IN_BLENDER:
             description="Direction of the second family, which must "
                         "differ from the first")
         count_a: IntProperty(
-            name="First Count", default=8, min=1, max=200,
+            name="First Count", default=10, min=1, max=200,
             description="Number of slices in the first direction")
         count_b: IntProperty(
-            name="Second Count", default=8, min=1, max=200,
+            name="Second Count", default=10, min=1, max=200,
             description="Number of slices in the second direction")
         radial_count: IntProperty(
             name="Fins", default=8, min=2, max=64,
@@ -538,7 +538,7 @@ if _IN_BLENDER:
             name="Rings", default=4, min=1, max=64,
             description="Number of rings the fins slot into")
         rib_count: IntProperty(
-            name="Ribs", default=12, min=2, max=200,
+            name="Ribs", default=100, min=2, max=1000,
             description="Number of ribs along the curve")
 
         slice_gap: FloatProperty(

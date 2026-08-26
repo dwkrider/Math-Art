@@ -57,11 +57,11 @@ class Settings:
         self.axis = 'Z'                 # one axis: unidirectional
         self.axis_a = 'X'               # two axes: bidirectional
         self.axis_b = 'Y'
-        self.count_a = 8
-        self.count_b = 8
+        self.count_a = 10
+        self.count_b = 10
         self.radial_count = 8
         self.ring_count = 4
-        self.rib_count = 12
+        self.rib_count = 100
         self.curve = None               # list of 3-D points, for RIBS
         self.slice_gap = 0.0            # space left between slices
         self.use_dowels = True
