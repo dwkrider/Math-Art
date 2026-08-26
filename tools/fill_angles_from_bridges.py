@@ -58,6 +58,7 @@ def nests(path=MD):
         if not m:
             continue
         out[c[0]] = dict(n=int(m.group(1)),
+                         group=c[4], symmetry=c[5],
                          angles=parse_angles(c[6]),
                          solids=[int(x) for x in re.findall(r'\b(\d{2})\b', c[1])])
     return out

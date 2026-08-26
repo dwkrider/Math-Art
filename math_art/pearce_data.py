@@ -34,6 +34,7 @@ SOLIDS = (
         number=1, key='DECATRIHEDRON',
         name='Decatrihedron',
         net='SRS', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
         verts=(
             (7, 13, 11), (5, 11, 15), (5, 13, 13), (7, 13, 19), (7, 11, 17),
             (11, 15, 13), (13, 11, 15), (13, 13, 13), (11, 9, 15), (9, 15, 11),
@@ -44,9 +45,25 @@ SOLIDS = (
         ),
     ),
     dict(
+        number=6, key='WURTZITE_TRIHEDRON',
+        name='Wurtzite trihedron',
+        net='WURTZITE', match='FULL',
+        lattice='HEX',
+        basis=((1.0, 0.0, 0.0), (-0.5, 0.8660254037844386, 0.0), (0.0, 0.0, 1.632993161855452)),
+        divisor=24.0,
+        verts=(
+            (16, 8, 12), (16, 8, 21), (40, 8, 12), (32, 16, 9), (40, 8, 21),
+            (32, 16, 24), (40, 32, 12), (40, 32, 21),
+        ),
+        faces=(
+            (3, 2, 4, 5, 1, 0), (0, 1, 5, 7, 6, 3), (2, 3, 6, 7, 5, 4),
+        ),
+    ),
+    dict(
         number=11, key='DIAMOND_TETRAHEDRON',
         name='Diamond tetrahedron',
         net='DIAMOND', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
         verts=(
             (6, 6, 2), (6, 2, 6), (2, 6, 6), (4, 4, 8), (6, 6, 10),
             (4, 8, 4), (6, 10, 6), (8, 4, 4), (10, 6, 6), (8, 8, 8),
@@ -60,6 +77,7 @@ SOLIDS = (
         number=12, key='BCC_TETRAHEDRON',
         name='bcc tetrahedron',
         net='BCC', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
         verts=(
             (4, 4, 4), (0, 0, 8), (4, 4, 12), (0, 8, 8), (8, 0, 8),
             (8, 8, 8),
@@ -73,6 +91,7 @@ SOLIDS = (
         number=13, key='FCC_TETRAGONAL_TETRAHEDRON',
         name='fcc tetragonal tetrahedron',
         net='FCC', match='CORE',
+        lattice='CUBIC8', basis=None, divisor=8.0,
         verts=(
             (4, 4, 0), (4, 0, 4), (0, 4, 4), (4, 4, 8), (4, 8, 4),
             (8, 4, 4),
@@ -86,6 +105,7 @@ SOLIDS = (
         number=14, key='FCC_ORTHORHOMBIC_TETRAHEDRON',
         name='fcc orthorhombic tetrahedron',
         net='FCC', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
         verts=(
             (4, 4, 0), (0, 4, 4), (4, 4, 8), (0, 8, 0), (4, 8, 4),
             (0, 8, 8),
@@ -96,9 +116,27 @@ SOLIDS = (
         ),
     ),
     dict(
+        number=25, key='WURTZITE_PENTAHEDRON',
+        name='Wurtzite pentahedron',
+        net='WURTZITE', match='FULL',
+        lattice='HEX',
+        basis=((1.0, 0.0, 0.0), (-0.5, 0.8660254037844386, 0.0), (0.0, 0.0, 1.632993161855452)),
+        divisor=24.0,
+        verts=(
+            (16, 8, 12), (8, 16, 9), (16, 8, 21), (8, 16, 24), (16, 32, 12),
+            (16, 32, 21), (32, 16, 9), (32, 16, 24), (40, 32, 12), (32, 40, 9),
+            (40, 32, 21), (32, 40, 24),
+        ),
+        faces=(
+            (2, 3, 5, 4, 1, 0), (0, 1, 4, 9, 8, 6), (6, 8, 10, 7, 2, 0),
+            (7, 10, 11, 5, 3, 2), (4, 5, 11, 10, 8, 9),
+        ),
+    ),
+    dict(
         number=30, key='TRUNCATED_TETRAGONAL_TETRAHEDRON',
         name='Truncated tetragonal tetrahedron',
         net='MJT', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
         verts=(
             (2, 6, 8), (4, 4, 8), (6, 6, 8), (2, 8, 6), (4, 8, 4),
             (6, 8, 6), (2, 8, 10), (2, 10, 8), (4, 8, 12), (4, 12, 8),
@@ -122,7 +160,6 @@ UNRESOLVED = (
     (3, 'Trirectangular trihedron', 'no geometry found by the search'),
     (4, 'Digonal trihedron (enantiomorphic)', 'not orientable'),
     (5, 'Trigonal trihedron', "face inventory {(4, 'MIRROR', None): 3} != {(4, 'MIRROR', '111'): 3}"),
-    (6, 'Wurtzite trihedron', 'face angles ("109d28\'", "109d28\'", "70d32\'", "70d32\'", "70d32\'", "70d32\'") match no face of the row'),
     (7, 'Delta trihedron', 'no geometry found by the search'),
     (8, 'bcc trihedron', "face inventory {(4, 'MIRROR', None): 3} != {(4, 'MIRROR', '110'): 3}"),
     (9, 'Rectangular trihedron (enantiomorphic)', 'not orientable'),
@@ -137,7 +174,6 @@ UNRESOLVED = (
     (22, 'Hemisaddle digonal disphenoid', 'no geometry found by the search'),
     (23, 'Double delta tetrahedron', 'no geometry found by the search'),
     (24, 'Trigonal pentahedron', 'no geometry found by the search'),
-    (25, 'Wurtzite pentahedron', 'no geometry found by the search'),
     (26, 'Digonal pentahedron', 'no geometry found by the search'),
     (27, 'Triangular hexahedron', 'no geometry found by the search'),
     (28, 'Cubical saddle hexahedron', 'no geometry found by the search'),
@@ -197,6 +233,25 @@ def _register_nets():
 
 
 _register_nets()
+
+
+def points(solid):
+    """A solid's vertices in CARTESIAN space.
+
+    Cubic solids are stored in integer eighths, which are Cartesian up
+    to a uniform scale nothing downstream depends on.  Hexagonal solids
+    are stored in integer twenty-fourths of the hexagonal cell and must
+    be mapped through their basis -- reading those coordinates as if
+    they were Cartesian gives a sheared, wrong solid.
+    """
+    try:
+        from . import pearce_net as _pn
+    except Exception:
+        import pearce_net as _pn
+    if solid.get('basis') is None:
+        return [tuple(float(x) for x in p) for p in solid['verts']]
+    return _pn.cartesian(solid['verts'], solid['basis'],
+                         solid.get('divisor', 1.0))
 
 
 def by_key(key):
@@ -265,17 +320,22 @@ def _selftest():
     for s in SOLIDS:
         r = rows[s['number']]
         V, F = s['verts'], s['faces']
+        X = points(s)
+        cubic = s.get('basis') is None
         tag = "#%d %s" % (s['number'], s['name'])
         # 1. exact integer closure of every circuit
         chk("%s: circuits close (exact)" % tag,
             all(pnet.closes([V[i] for i in f]) for f in F))
-        # 2. every edge is a Universal Node branch
-        try:
-            bt = pnet.branch_totals(V, F)
-            good = True
-        except Exception:
-            bt, good = None, False
-        chk("%s: every edge is a branch" % tag, good)
+        # 2. every edge is a Universal Node branch.  Only meaningful on
+        #    the cubic grid: <100>/<110>/<111> name cubic directions.
+        bt = None
+        if cubic:
+            try:
+                bt = pnet.branch_totals(V, F)
+                good = True
+            except Exception:
+                good = False
+            chk("%s: every edge is a branch" % tag, good)
         # 3. the row's checksum, column by column
         v, e, f_, chi = pnet.euler(V, F)
         chk("%s: V/E/F match the row" % tag,
@@ -291,18 +351,21 @@ def _selftest():
         hist, _ = pnet.valence_histogram(F)
         chk("%s: node valences match" % tag, hist == want,
             "%r vs %r" % (hist, want))
-        chk("%s: branch classes match" % tag,
-            bt == dict(r['branches']), "%r vs %r" % (bt, dict(r['branches'])))
+        if cubic:
+            chk("%s: branch classes match" % tag,
+                bt == dict(r['branches']),
+                "%r vs %r" % (bt, dict(r['branches'])))
         # 4. face inventory: size, own symmetry, plane direction
         got = {}
         for cyc in F:
-            loop = [V[i] for i in cyc]
+            loop = [X[i] for i in cyc]
             k = (len(cyc), pnet.face_symmetry_label(loop),
-                 pnet.face_plane_class(loop))
+                 pnet.face_plane_class(loop) if cubic else None)
             got[k] = got.get(k, 0) + 1
         wantf = {}
         for fd in r['faces']:
-            k = (fd['n'], fd['symmetry'], fd['plane'])
+            k = (fd['n'], fd['symmetry'],
+                 fd['plane'] if cubic else None)
             wantf[k] = wantf.get(k, 0) + fd['count']
         chk("%s: face inventory matches" % tag, got == wantf,
             "" if got == wantf else "%r vs %r" % (got, wantf))
@@ -310,14 +373,14 @@ def _selftest():
         legal = set(pnet.TABULATED)
         allang = set()
         for cyc in F:
-            for a in pnet.circuit_angles([V[i] for i in cyc]):
+            for a in pnet.circuit_angles([X[i] for i in cyc]):
                 allang.add(pnet.angle_label(a))
         chk("%s: angles are Universal Node angles" % tag,
             allang <= legal, " ".join(sorted(allang - legal)))
         # and that each face's angles are the row's, not merely legal
         bad = []
         for cyc in F:
-            loop = [V[i] for i in cyc]
+            loop = [X[i] for i in cyc]
             ga = tuple(sorted(pnet.angle_label(a)
                               for a in pnet.circuit_angles(loop)))
             ok = False
@@ -335,9 +398,9 @@ def _selftest():
         chk("%s: face angles match the row" % tag, not bad,
             "%s" % (bad[:1],))
         # 6. symmetry axes
-        pts = [V[i] for i in range(len(V))]
+        pts = [X[i] for i in range(len(X))]
         ax = pnet.axis_counts(pts)
-        if s['match'] == 'FULL':
+        if s['match'] == 'FULL' and cubic:
             chk("%s: symmetry axes match" % tag, ax == tuple(r['axes']),
                 "%r vs %r" % (ax, tuple(r['axes'])))
         # 7. the collapse gate -- topology can pass while the solid is flat
@@ -349,7 +412,8 @@ def _selftest():
             "aspect %.3f" % (float(ext.min()) / float(ext.max())))
         # 8. closed and consistently orientable
         chk("%s: closed surface" % tag, pnet.is_closed_surface(F))
-        chk("%s: orientable" % tag, pnet.orientation_consistent(F))
+        chk("%s: orientable" % tag,
+            pnet.orientation_consistent(pnet.orient_faces(X, F)))
 
     print("RESULT:", "OK" if ok else "BAD")
     if not ok:

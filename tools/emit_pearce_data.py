@@ -65,7 +65,14 @@ def fmt_tuple(t, per=6, indent=8):
     return (",\n" + pad).join(lines)
 
 
-def validate(num, V, F, kind):
+def _cart(V, basis):
+    """Lattice coords -> Cartesian, for whichever lattice the solid is in."""
+    if basis is None:
+        return [tuple(float(x) for x in p) for p in V]
+    return pn.cartesian(V, pn.HEX_BASIS, pn.HEX_DIVISOR)
+
+
+def validate(num, V, F, kind, basis=None):
     """The acceptance gate, applied BEFORE emitting.
 
     The resolver's match test only compares counts; this checks the
@@ -74,7 +81,11 @@ def validate(num, V, F, kind):
     that the complex is orientable.  Entries that satisfy the resolver
     but fail here must not ship."""
     r = BY_NUM[num]
+    X = _cart(V, basis)
     try:
+        # closure stays EXACT integer arithmetic in either lattice --
+        # the hexagonal coordinates are integer twenty-fourths of the
+        # cell, chosen precisely so this check does not go floating
         if not all(pn.closes([V[i] for i in f]) for f in F):
             return "a circuit does not close"
         v, e, f_, chi = pn.euler(V, F)
@@ -92,7 +103,7 @@ def validate(num, V, F, kind):
             return "not orientable"
         legal = set(pn.TABULATED)
         for cyc in F:
-            for a in pn.circuit_angles([V[i] for i in cyc]):
+            for a in pn.circuit_angles([X[i] for i in cyc]):
                 if pn.angle_label(a) not in legal:
                     return ("corner %s is not a Universal Node angle"
                             % pn.angle_label(a))
@@ -104,7 +115,7 @@ def validate(num, V, F, kind):
         # entirely.  Entry 6 shipped that way: hexagons of 2x109d28' +
         # 4x70d32' against a row that says all six corners are 109d28'.
         for cyc in F:
-            loop = [V[i] for i in cyc]
+            loop = [X[i] for i in cyc]
             got_ang = tuple(sorted(pn.angle_label(a)
                                    for a in pn.circuit_angles(loop)))
             ok = False
@@ -126,17 +137,22 @@ def validate(num, V, F, kind):
 
         got = {}
         for cyc in F:
-            loop = [V[i] for i in cyc]
-            k = (len(cyc), pn.face_symmetry_label(loop),
-                 pn.face_plane_class(loop))
+            loop = [X[i] for i in cyc]
+            # Face-plane direction is a CUBIC notion -- it names a
+            # <100>/<110>/<111> normal -- so it is not asserted for a
+            # solid living in the hexagonal lattice.  Its faces are
+            # still checked on size, symmetry and angles.
+            plane = pn.face_plane_class(loop) if basis is None else None
+            k = (len(cyc), pn.face_symmetry_label(loop), plane)
             got[k] = got.get(k, 0) + 1
         want = {}
         for fd in r['faces']:
-            k = (fd['n'], fd['symmetry'], fd['plane'])
+            k = (fd['n'], fd['symmetry'],
+                 fd['plane'] if basis is None else None)
             want[k] = want.get(k, 0) + fd['count']
         if got != want:
             return "face inventory %r != %r" % (got, want)
-        if kind == 'FULL':
+        if kind == 'FULL' and basis is None:
             pts = [V[i] for i in range(len(V))]
             if pn.axis_counts(pts) != tuple(r['axes']):
                 return "axes %r != %r" % (pn.axis_counts(pts),
@@ -146,10 +162,27 @@ def validate(num, V, F, kind):
     return None
 
 
+#: Solids that live in a NON-CUBIC lattice, keyed by entry number.
+#: The wurtzite pair (entries 6 and 25) cannot be expressed in the cubic
+#: grid: a single cell can be, since its branches are tetrahedral, but
+#: its geometry is only right in the hexagonal lattice -- the cubic
+#: embedding of entry 6 has hexagons of 2x109d28' + 4x70d32' where the
+#: row says all six corners are 109d28'.
+import os as _os
+HEXFILE = "hex_solids.pkl"
+hex_solids = {}
+if _os.path.exists(HEXFILE):
+    with open(HEXFILE, "rb") as _fh:
+        hex_solids = pickle.load(_fh)
+for _n, (_V, _F) in hex_solids.items():
+    resolved[_n] = ('FULL', 'WURTZITE', _V, _F)
+print("hex solids offered: %s" % sorted(hex_solids))
+
 rejected = {}
 for _num in sorted(resolved):
     _kind, _net, _V, _F = resolved[_num]
-    _why = validate(_num, _V, _F, _kind)
+    _basis = pn.HEX_BASIS if _num in hex_solids else None
+    _why = validate(_num, _V, _F, _kind, _basis)
     if _why:
         rejected[_num] = _why
         del resolved[_num]
@@ -165,6 +198,8 @@ for _n, _why in sorted(rejected.items()):
 extra_nets = {}
 for _num in sorted(resolved):
     _net = resolved[_num][1]
+    if _num in hex_solids:
+        continue                       # not a cubic net at all
     if not isinstance(_net, str) or _net in pn.NETS:
         continue
     try:
@@ -187,10 +222,24 @@ for num in nums:
     kind, net, V, F = resolved[num]
     r = BY_NUM[num]
     key = key_for(r['name'], num)
+    # Orient every circuit outward IN CARTESIAN SPACE.  Newell normals
+    # of a hexagonal solid's lattice coordinates point nowhere useful,
+    # so orienting on the raw integers leaves the shell inconsistent.
+    _basis_here = pn.HEX_BASIS if num in hex_solids else None
+    F = pn.orient_faces(_cart(V, _basis_here), F)
     out.append("    dict(\n")
     out.append("        number=%d, key=%r,\n" % (num, key))
     out.append("        name=%r,\n" % r['name'])
     out.append("        net=%r, match=%r,\n" % (net, kind))
+    # The lattice the vertices are expressed in.  A hexagonal solid's
+    # coordinates are integer twenty-fourths of the hexagonal cell and
+    # are meaningless read as Cartesian, so the basis travels with them.
+    if num in hex_solids:
+        out.append("        lattice='HEX',\n")
+        out.append("        basis=%r,\n" % (pn.HEX_BASIS,))
+        out.append("        divisor=%r,\n" % (pn.HEX_DIVISOR,))
+    else:
+        out.append("        lattice='CUBIC8', basis=None, divisor=8.0,\n")
     out.append("        verts=(\n            %s,\n        ),\n"
                % fmt_tuple(V, per=5, indent=12))
     out.append("        faces=(\n            %s,\n        ),\n"
@@ -236,6 +285,25 @@ out.append('''def _register_nets():
 
 
 _register_nets()
+
+
+def points(solid):
+    """A solid's vertices in CARTESIAN space.
+
+    Cubic solids are stored in integer eighths, which are Cartesian up
+    to a uniform scale nothing downstream depends on.  Hexagonal solids
+    are stored in integer twenty-fourths of the hexagonal cell and must
+    be mapped through their basis -- reading those coordinates as if
+    they were Cartesian gives a sheared, wrong solid.
+    """
+    try:
+        from . import pearce_net as _pn
+    except Exception:
+        import pearce_net as _pn
+    if solid.get('basis') is None:
+        return [tuple(float(x) for x in p) for p in solid['verts']]
+    return _pn.cartesian(solid['verts'], solid['basis'],
+                         solid.get('divisor', 1.0))
 
 
 def by_key(key):
@@ -304,17 +372,22 @@ def _selftest():
     for s in SOLIDS:
         r = rows[s['number']]
         V, F = s['verts'], s['faces']
+        X = points(s)
+        cubic = s.get('basis') is None
         tag = "#%d %s" % (s['number'], s['name'])
         # 1. exact integer closure of every circuit
         chk("%s: circuits close (exact)" % tag,
             all(pnet.closes([V[i] for i in f]) for f in F))
-        # 2. every edge is a Universal Node branch
-        try:
-            bt = pnet.branch_totals(V, F)
-            good = True
-        except Exception:
-            bt, good = None, False
-        chk("%s: every edge is a branch" % tag, good)
+        # 2. every edge is a Universal Node branch.  Only meaningful on
+        #    the cubic grid: <100>/<110>/<111> name cubic directions.
+        bt = None
+        if cubic:
+            try:
+                bt = pnet.branch_totals(V, F)
+                good = True
+            except Exception:
+                good = False
+            chk("%s: every edge is a branch" % tag, good)
         # 3. the row's checksum, column by column
         v, e, f_, chi = pnet.euler(V, F)
         chk("%s: V/E/F match the row" % tag,
@@ -330,18 +403,21 @@ def _selftest():
         hist, _ = pnet.valence_histogram(F)
         chk("%s: node valences match" % tag, hist == want,
             "%r vs %r" % (hist, want))
-        chk("%s: branch classes match" % tag,
-            bt == dict(r['branches']), "%r vs %r" % (bt, dict(r['branches'])))
+        if cubic:
+            chk("%s: branch classes match" % tag,
+                bt == dict(r['branches']),
+                "%r vs %r" % (bt, dict(r['branches'])))
         # 4. face inventory: size, own symmetry, plane direction
         got = {}
         for cyc in F:
-            loop = [V[i] for i in cyc]
+            loop = [X[i] for i in cyc]
             k = (len(cyc), pnet.face_symmetry_label(loop),
-                 pnet.face_plane_class(loop))
+                 pnet.face_plane_class(loop) if cubic else None)
             got[k] = got.get(k, 0) + 1
         wantf = {}
         for fd in r['faces']:
-            k = (fd['n'], fd['symmetry'], fd['plane'])
+            k = (fd['n'], fd['symmetry'],
+                 fd['plane'] if cubic else None)
             wantf[k] = wantf.get(k, 0) + fd['count']
         chk("%s: face inventory matches" % tag, got == wantf,
             "" if got == wantf else "%r vs %r" % (got, wantf))
@@ -349,14 +425,14 @@ def _selftest():
         legal = set(pnet.TABULATED)
         allang = set()
         for cyc in F:
-            for a in pnet.circuit_angles([V[i] for i in cyc]):
+            for a in pnet.circuit_angles([X[i] for i in cyc]):
                 allang.add(pnet.angle_label(a))
         chk("%s: angles are Universal Node angles" % tag,
             allang <= legal, " ".join(sorted(allang - legal)))
         # and that each face's angles are the row's, not merely legal
         bad = []
         for cyc in F:
-            loop = [V[i] for i in cyc]
+            loop = [X[i] for i in cyc]
             ga = tuple(sorted(pnet.angle_label(a)
                               for a in pnet.circuit_angles(loop)))
             ok = False
@@ -374,9 +450,9 @@ def _selftest():
         chk("%s: face angles match the row" % tag, not bad,
             "%s" % (bad[:1],))
         # 6. symmetry axes
-        pts = [V[i] for i in range(len(V))]
+        pts = [X[i] for i in range(len(X))]
         ax = pnet.axis_counts(pts)
-        if s['match'] == 'FULL':
+        if s['match'] == 'FULL' and cubic:
             chk("%s: symmetry axes match" % tag, ax == tuple(r['axes']),
                 "%r vs %r" % (ax, tuple(r['axes'])))
         # 7. the collapse gate -- topology can pass while the solid is flat
@@ -388,7 +464,8 @@ def _selftest():
             "aspect %.3f" % (float(ext.min()) / float(ext.max())))
         # 8. closed and consistently orientable
         chk("%s: closed surface" % tag, pnet.is_closed_surface(F))
-        chk("%s: orientable" % tag, pnet.orientation_consistent(F))
+        chk("%s: orientable" % tag,
+            pnet.orientation_consistent(pnet.orient_faces(X, F)))
 
     print("RESULT:", "OK" if ok else "BAD")
     if not ok:

@@ -386,6 +386,29 @@ if _IN_BLENDER:
             verts, faces, mats = sm.spidronise(
                 loop, float(self.nest_step), float(self.nest_twist),
                 int(self.rings), cap=self.cap_center)
+            # spidronise emits (annulus, corner, two triangles) in that
+            # order, so ring and arm indices come straight from the
+            # triangle index -- the same colourings the Full Figure
+            # offers, on the same footing.
+            m = len(loop)
+            per_ring = 2 * m
+            npal = len(pc.PALETTE_RGBA)
+            ring_of, arm_of = [], []
+            for t in range(len(faces)):
+                if mats[t] == 2:                 # centre cap
+                    ring_of.append(int(self.rings))
+                    arm_of.append(t % m)
+                else:
+                    ring_of.append(t // per_ring)
+                    arm_of.append((t % per_ring) // 2)
+            if self.color_by == 'ARM':
+                ncol = max(2, min(int(self.colors), npal))
+                mats = [arm_of[t] % ncol for t in range(len(faces))]
+            elif self.color_by == 'RING':
+                mats = [ring_of[t] % npal for t in range(len(faces))]
+            elif self.color_by == 'UNIFORM':
+                mats = [0] * len(faces)
+            # SHAPE keeps spidronise's own 0/1/2 labelling
             obj = pc.build_object(context, "Spidron Nest %s" % code,
                                   [tuple(v) for v in verts],
                                   [tuple(f) for f in faces], list(mats),
@@ -467,6 +490,9 @@ if _IN_BLENDER:
                 lay.prop(self, 'nest_step')
                 lay.prop(self, 'nest_twist')
                 lay.prop(self, 'cap_center')
+                lay.prop(self, 'color_by')
+                if self.color_by == 'ARM':
+                    lay.prop(self, 'colors')
                 return
             lay.prop(self, 'arm_parts')
             # the arm kind matters in EVERY layout: in the full figure
