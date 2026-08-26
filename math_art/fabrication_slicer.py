@@ -206,38 +206,87 @@ if _IN_BLENDER:
         context.scene.collection.children.link(coll)
         return coll
 
-    def _plate_mesh(name, part, plane, thickness):
-        """A part extruded to material thickness, in its own plane."""
-        u, v, n = plane.u, plane.v, plane.normal
-        d = plane.offset
-        half = 0.5 * thickness
-        rings = [part.outer] + part.holes
-        verts, faces = [], []
-        for ring in rings:
-            base = len(verts)
-            m = len(ring)
-            for s in (-half, half):
-                for x, y in ring:
-                    verts.append(tuple(
-                        ((d + s) * n[k] + x * u[k] + y * v[k]) * MM
-                        for k in range(3)))
-            for i in range(m):
-                j = (i + 1) % m
-                faces.append([base + i, base + j,
-                              base + m + j, base + m + i])
+    def _plate_mesh(name, part, plane, thickness, place):
+        """A part as a closed SOLID plate of the given thickness.
+
+        The caps are filled with `triangle_fill`, which takes the
+        outline and its holes as separate loops and leaves the holes
+        open -- a dowel hole or a torus slice's middle stays a hole
+        instead of being paved over, which a plain n-gon cap cannot
+        express.  `solidify` then gives the shell.  (Building the walls
+        by hand and leaving the ends open, as this first did, produces
+        a tube -- not a solid at all.)
+
+        The fill is then REPAIRED before solidifying, because on a
+        slice carrying a thin slot notch it occasionally leaves stray
+        edges with no face on them, and here and there a duplicated
+        overlapping triangle.  Solidifying that gives a plate that
+        looks right from outside and is not manifold.  Welding
+        coincident vertices, dropping degenerate faces and deleting
+        the leftover wire edges costs nothing and makes the result
+        solid; `_plate_is_solid` re-checks it afterwards rather than
+        assuming the repair worked.
+
+        Work happens in a local frame with the plate flat in z, so the
+        fill sees a genuinely planar outline; `place` maps the finished
+        local point into the world.
+        """
+        import bmesh
+        bm = bmesh.new()
+        edges = []
+        for ring in [part.outer] + part.holes:
+            vs = [bm.verts.new((x, y, 0.0)) for x, y in ring]
+            for i in range(len(vs)):
+                try:
+                    edges.append(bm.edges.new((vs[i], vs[(i + 1) % len(vs)])))
+                except ValueError:        # duplicate edge: skip it
+                    pass
+        bmesh.ops.triangle_fill(bm, edges=edges, use_beauty=False,
+                                use_dissolve=False)
+
+        span = max((abs(c) for v in bm.verts for c in (v.co.x, v.co.y)),
+                   default=1.0)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts[:],
+                                 dist=max(1e-9, span * 1e-9))
+        bmesh.ops.dissolve_degenerate(bm, dist=max(1e-9, span * 1e-9),
+                                      edges=bm.edges[:])
+        stray = [e for e in bm.edges if not e.link_faces]
+        if stray:
+            bmesh.ops.delete(bm, geom=stray, context='EDGES')
+        loose = [v for v in bm.verts if not v.link_edges]
+        if loose:
+            bmesh.ops.delete(bm, geom=loose, context='VERTS')
+
+        if bm.faces:
+            bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=thickness)
+        bm.normal_update()
+
+        # verify rather than assume: a plate whose repair did not take
+        # is still emitted (it is a preview, and a wrong-looking plate
+        # beats a missing one) but it gets counted and reported
+        solid = bool(bm.faces) and all(
+            len(e.link_faces) == 2 for e in bm.edges)
+
+        # centre the plate on its own plane, whichever way solidify went
+        zs = [v.co.z for v in bm.verts]
+        shift = -0.5 * (min(zs) + max(zs)) if zs else 0.0
+        for vert in bm.verts:
+            vert.co = place(vert.co.x, vert.co.y, vert.co.z + shift)
+
         me = bpy.data.meshes.new(name)
-        me.from_pydata(verts, [], faces)
+        bm.to_mesh(me)
+        bm.free()
         me.validate(clean_customdata=True)
         me.update()
-        return me
+        return me, solid
 
-    def _sheet_mesh(name, sheet, dy):
+    def _sheet_mesh(name, sheet, place):
         """One sheet's paths as an edge-only mesh, for looking at."""
         verts, edges = [], []
         for e in sheet.ordered():
             base = len(verts)
             for x, y in e.points:
-                verts.append((x * MM, (y + dy) * MM, 0.0))
+                verts.append(place(x, y))
             for i in range(len(e.points) - 1):
                 edges.append((base + i, base + i + 1))
             if e.closed and len(e.points) > 2:
@@ -378,6 +427,12 @@ if _IN_BLENDER:
             name="Shell Thickness", default=0.05, min=0.001, max=10.0,
             description="Thickness given to an open surface, in the "
                         "object's own units")
+        match_size: BoolProperty(
+            name="Match Object Size", default=True,
+            description="Build the previewed slices at the size of the "
+                        "object they came from, so the two can be "
+                        "compared directly. Turn off to see them at "
+                        "the real millimetre size they will be cut at")
         preview: BoolProperty(
             name="Assembled Preview", default=True,
             description="Build the assembled 3-D model as well as the "
@@ -436,34 +491,81 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
 
+            # --- where the two results go, relative to the original ---
+            # The point of building both is comparing them against the
+            # object they came from, so the slices sit directly ABOVE it
+            # and the sheets directly BELOW it, both centred on it, and
+            # by default the slices are reconstructed at the object's
+            # OWN size rather than at the millimetre size they will be
+            # cut at.  One scale factor drives both, so a part on the
+            # sheet is the same size as that part in the stack.
+            xs = [p[0] for p in verts]
+            ys = [p[1] for p in verts]
+            zs = [p[2] for p in verts]
+            cx = 0.5 * (min(xs) + max(xs))
+            cy = 0.5 * (min(ys) + max(ys))
+            z_lo, z_hi = min(zs), max(zs)
+            extent = max(max(xs) - min(xs), max(ys) - min(ys),
+                         z_hi - z_lo) or 1.0
+            applied = report['scale']
+            k = (1.0 / applied) if self.match_size else MM
+            gap = 0.08 * extent
+            half_h = 0.5 * k * applied * (z_hi - z_lo)
+
             layout = _collection(context, f"{obj.name} Layout")
-            dy = 0.0
-            for sheet in drawing.sheets:
+            sheets = drawing.sheets
+            pad = 0.05 * drawing.sheet_height
+            total = (len(sheets) * drawing.sheet_height
+                     + max(0, len(sheets) - 1) * pad)
+            sheet_z = z_lo - gap
+            for i, sheet in enumerate(sheets):
+                # stack the sheets in -Y, the whole set centred on the
+                # object and its top edge just under it
+                dy = total * 0.5 - i * (sheet.height + pad) - sheet.height
+                dx = -0.5 * sheet.width
+
+                def place(x, y, dx=dx, dy=dy):
+                    return (cx + k * (x + dx), cy + k * (y + dy), sheet_z)
+
                 me = _sheet_mesh(f"{obj.name} sheet {sheet.index + 1}",
-                                 sheet, dy)
+                                 sheet, place)
                 sob = bpy.data.objects.new(me.name, me)
                 layout.objects.link(sob)
-                dy += sheet.height + 20.0
             layout[DRAWING_KEY] = drawing_to_json(drawing)
 
+            unsolid = 0
             if self.preview:
                 prev = _collection(context, f"{obj.name} Slices")
+                base_z = z_hi + gap + half_h
                 for fam in families:
                     for plane in fam.planes:
+                        u, v, n = plane.u, plane.v, plane.normal
+                        d = plane.offset
+                        push = self.explode * d
+
+                        def place(x, y, z, u=u, v=v, n=n, d=d, push=push):
+                            t = d + z + push
+                            return (cx + k * (t * n[0] + x * u[0]
+                                              + y * v[0]),
+                                    cy + k * (t * n[1] + x * u[1]
+                                              + y * v[1]),
+                                    base_z + k * (t * n[2] + x * u[2]
+                                                  + y * v[2]))
+
                         for part in plane.parts:
-                            me = _plate_mesh(
+                            me, solid = _plate_mesh(
                                 f"{obj.name} {part.label}", part, plane,
-                                self.thickness)
-                            pob = bpy.data.objects.new(me.name, me)
-                            if self.explode:
-                                n = plane.normal
-                                pob.location = tuple(
-                                    n[k] * plane.offset * self.explode * MM
-                                    for k in range(3))
-                            prev.objects.link(pob)
+                                self.thickness, place)
+                            if not solid:
+                                unsolid += 1
+                            prev.objects.link(
+                                bpy.data.objects.new(me.name, me))
 
             summary = _build.summarise(report)
-            level = 'WARNING' if (report['nest'].get('oversize')
+            if unsolid:
+                summary += f"; {unsolid} preview plates are not solid"
+            level = 'WARNING' if (unsolid
+                                  or report['nest'].get('oversize')
                                   or report.get('faults')
                                   or report['cut'].get('failed')
                                   or (report.get('interlock') or {}).get(
@@ -536,6 +638,7 @@ if _IN_BLENDER:
                 box.prop(self, 'shell_thickness')
             box.prop(self, 'preview')
             if self.preview:
+                box.prop(self, 'match_size')
                 box.prop(self, 'explode')
 
     # -------------------------------------------------------------- #

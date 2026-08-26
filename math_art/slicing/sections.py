@@ -319,7 +319,14 @@ def layer_offsets(lo, hi, thickness):
     span = hi - lo
     if thickness <= 0.0 or span <= 0.0:
         return []
-    count = max(1, int(math.floor(span / thickness + 1e-9)))
+    # Round to the nearest whole layer rather than truncating.  An
+    # object whose height is a hair under a whole number of layers --
+    # which is the normal case once a bounding box has been through a
+    # scale factor -- would otherwise lose an ENTIRE layer to floating
+    # point, shortening the stack by a full sheet thickness.  Rounding
+    # can overshoot the true height by at most half a layer, which is
+    # a partial slice you would cut anyway.
+    count = max(1, int(round(span / thickness)))
     start = lo + 0.5 * (span - count * thickness)
     return [start + thickness * (k + 0.5) for k in range(count)]
 

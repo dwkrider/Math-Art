@@ -101,8 +101,17 @@ def nest(parts, sheet_width, sheet_height, margin=3.0, kerf=0.0,
 
     prepared = []
     for part in parts:
-        kerf_compensate(part, kerf)
+        # Kerf compensation is applied to the PLACED COPY below, not to
+        # the part itself.  The compensated outline is a machine
+        # instruction -- the path to drive the beam along so that what
+        # falls out is the true part -- and it is not the shape of the
+        # finished piece.  Mutating the part here would hand that cut
+        # path to the 3-D preview as well, which would then show the
+        # wrong outline; and on a wiggly section a miter offset can
+        # pinch, so the preview would show self-intersecting plates.
         w, h = part.size()
+        w += kerf
+        h += kerf
         if w > usable_w or h > usable_h:
             part.fail('oversize',
                       f"{w:.1f} x {h:.1f} mm does not fit "
@@ -128,7 +137,9 @@ def nest(parts, sheet_width, sheet_height, margin=3.0, kerf=0.0,
             cx, cy, row_h = margin, margin, 0.0
 
         x0, y0, _, _ = part.bounds()
-        placed = part.translated(cx - x0, cy - y0)
+        placed = part.translated(cx - x0 + 0.5 * kerf,
+                                 cy - y0 + 0.5 * kerf)
+        kerf_compensate(placed, kerf)
         sheet = d.sheet(sheet_i)
 
         if label_height > 0.0:
