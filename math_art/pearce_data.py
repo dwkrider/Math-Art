@@ -43,6 +43,7 @@ SOLIDS = (
         faces=(
             (0, 2, 1, 4, 3, 11, 13, 12, 5, 9), (9, 5, 7, 6, 8, 10, 4, 1, 2, 0), (3, 4, 10, 8, 6, 7, 5, 12, 13, 11),
         ),
+        packs=True, has_unit=True, fills=True,
     ),
     dict(
         number=6, key='WURTZITE_TRIHEDRON',
@@ -58,6 +59,7 @@ SOLIDS = (
         faces=(
             (3, 2, 4, 5, 1, 0), (0, 1, 5, 7, 6, 3), (2, 3, 6, 7, 5, 4),
         ),
+        packs=False, has_unit=False, fills=False,
     ),
     dict(
         number=11, key='DIAMOND_TETRAHEDRON',
@@ -72,6 +74,7 @@ SOLIDS = (
             (7, 1, 3, 2, 5, 0), (0, 5, 6, 9, 8, 7), (7, 8, 9, 4, 3, 1),
             (2, 3, 4, 9, 6, 5),
         ),
+        packs=True, has_unit=True, fills=True,
     ),
     dict(
         number=12, key='BCC_TETRAHEDRON',
@@ -86,6 +89,7 @@ SOLIDS = (
             (0, 1, 2, 3), (4, 2, 1, 0), (0, 3, 2, 5),
             (5, 2, 4, 0),
         ),
+        packs=True, has_unit=True, fills=True,
     ),
     dict(
         number=13, key='FCC_TETRAGONAL_TETRAHEDRON',
@@ -100,6 +104,7 @@ SOLIDS = (
             (5, 1, 2, 0), (0, 2, 4, 5), (5, 3, 2, 1),
             (2, 3, 5, 4),
         ),
+        packs=False, has_unit=False, fills=False,
     ),
     dict(
         number=14, key='FCC_ORTHORHOMBIC_TETRAHEDRON',
@@ -114,6 +119,7 @@ SOLIDS = (
             (4, 2, 1, 0), (0, 1, 3, 4), (1, 2, 4, 5),
             (5, 4, 3, 1),
         ),
+        packs=True, has_unit=True, fills=True,
     ),
     dict(
         number=25, key='WURTZITE_PENTAHEDRON',
@@ -131,6 +137,7 @@ SOLIDS = (
             (2, 3, 5, 4, 1, 0), (0, 1, 4, 9, 8, 6), (6, 8, 10, 7, 2, 0),
             (7, 10, 11, 5, 3, 2), (4, 5, 11, 10, 8, 9),
         ),
+        packs=False, has_unit=False, fills=False,
     ),
     dict(
         number=30, key='TRUNCATED_TETRAGONAL_TETRAHEDRON',
@@ -146,6 +153,7 @@ SOLIDS = (
             (3, 4, 5, 2, 1, 0), (0, 1, 2, 10, 8, 6), (6, 7, 3, 0),
             (2, 5, 11, 10), (7, 9, 11, 5, 4, 3), (8, 10, 11, 9, 7, 6),
         ),
+        packs=False, has_unit=True, fills=False,
     ),
 )
 

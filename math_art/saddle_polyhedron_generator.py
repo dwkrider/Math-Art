@@ -552,6 +552,32 @@ if _IN_BLENDER:
                 node.inputs[0].default_value = color
         return mat
 
+    def _layout_items(self, context):
+        """Only the layouts the chosen solid can actually produce.
+
+        Whether a solid packs is measured once at data-emit time and
+        stored on the record, because a packing search is far too slow
+        to run from an enum callback.  Offering a layout that cannot
+        work is worse than not offering it: entry 30's orbit fills 3.75
+        times the block -- cells interpenetrating -- and shown as
+        "space filling" it is just a tangle."""
+        items = [('SINGLE', "One solid", "A single saddle polyhedron")]
+        try:
+            s = pdata.by_key(self.solid)
+        except Exception:
+            s = None
+        if s is not None and s.get('has_unit'):
+            items.append(('UNIT', "Repeat unit",
+                          "Two cells sharing a face -- the smallest "
+                          "piece of the packing that obeys the winding "
+                          "rule"))
+        if s is not None and s.get('packs'):
+            items.append(('BLOCK', "Space filling",
+                          "Fill a block of unit cells with this solid's "
+                          "packing"))
+        return items
+
+
     def _family_items(self, context):
         out = []
         for fam in pdata.families():
@@ -611,16 +637,9 @@ if _IN_BLENDER:
             max=radians(60.0), subtype='ANGLE',
             description="Rotation between spidron annuli")
         layout_kind: EnumProperty(
-            name="Layout",
-            items=[('SINGLE', "One solid",
-                    "A single saddle polyhedron"),
-                   ('UNIT', "Repeat unit",
-                    "Two cells sharing a face -- the smallest piece of "
-                    "the packing that obeys the winding rule"),
-                   ('BLOCK', "Space filling",
-                    "Fill a block of unit cells with the packing this "
-                    "solid belongs to")],
-            default='SINGLE')
+            name="Layout", items=_layout_items,
+            description="What to build. Repeat unit and Space filling "
+                        "appear only for solids that actually have them")
         nx: IntProperty(name="Cells across", default=1, min=1, max=6,
                         description="Unit cells along X")
         ny: IntProperty(name="Cells deep", default=1, min=1, max=6,
@@ -799,18 +818,27 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, "No verified saddle polyhedra")
                 return {'CANCELLED'}
             key = self.solid if self.solid != 'NONE' else None
-            if self.layout_kind in ('BLOCK', 'UNIT') and self.separate:
+            lay = self.layout_kind
+            if lay in ('BLOCK', 'UNIT'):
+                sol = pdata.by_key(key) if key else pdata.SOLIDS[0]
+                if ((lay == 'BLOCK' and not sol.get('packs'))
+                        or (lay == 'UNIT' and not sol.get('has_unit'))):
+                    # switching solids can leave a layout selected that
+                    # the new one cannot do; build the single solid
+                    # rather than fail
+                    lay = 'SINGLE'
+            if lay in ('BLOCK', 'UNIT') and self.separate:
                 return self._execute_separate(context, key)
             try:
                 tw, clamped = (clamp_twist(
                     key or '', self.twist, self.scale,
-                    self.layout_kind in ('BLOCK', 'UNIT'))
+                    lay in ('BLOCK', 'UNIT'))
                     if self.limit_twist else (self.twist, False))
                 V, T, fid, info = build(
                     key=key, face_style=self.face_style,
                     density=self.density, smoothness=self.smoothness,
                     rings=self.rings, scale=self.scale, twist=tw,
-                    layout=self.layout_kind, nx=self.nx, ny=self.ny,
+                    layout=lay, nx=self.nx, ny=self.ny,
                     nz=self.nz, gap=self.gap,
                     colour_by=self.colour_by, mirror=self.mirror)
             except Exception as exc:

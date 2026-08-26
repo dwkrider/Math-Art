@@ -214,6 +214,11 @@ for _num in sorted(resolved):
         print("dropping #%d: net %s is not shippable" % (_num, _net))
         del resolved[_num]
 print("nets shipped with the data: %s" % sorted(extra_nets))
+# register them NOW so the packing probe below can actually run; without
+# this the probe raises on the missing net and the capability flags fall
+# back to False by accident rather than by measurement
+for _k, _v in extra_nets.items():
+    pn.NETS.setdefault(_k, _v)
 
 out = [HEAD]
 out.append("SOLIDS = (\n")
@@ -244,6 +249,29 @@ for num in nums:
                % fmt_tuple(V, per=5, indent=12))
     out.append("        faces=(\n            %s,\n        ),\n"
                % fmt_tuple(F, per=3, indent=12))
+    # Which layouts this solid can actually offer, measured ONCE here --
+    # a packing search is far too slow to run from a UI enum callback.
+    #
+    # `packs` means the packing genuinely FILLS: ratio 1 with no face
+    # used by more than two cells.  Merely producing several cells is
+    # not enough -- entry 30's orbit comes out at 3.75x the block, which
+    # is cells interpenetrating, and offering that as "space filling"
+    # shows a tangle.
+    try:
+        import pearce_tiling as _pt
+        _X = _cart(V, _basis_here)
+        _cps, _rep = _pt.pack(_X, F, net, 1, 1, 1,
+                              lattice=('HEX' if num in hex_solids
+                                       else 'CUBIC8'))
+        _fills = bool(_rep['fills'])
+        _packs = bool(_fills and _rep['overused_faces'] == 0
+                      and _rep['copies'] > 1)
+        _unit = bool(_rep['shared_faces'] > 0)
+    except Exception as _e:
+        print("  #%d: packing probe failed: %s" % (num, _e))
+        _packs = _unit = _fills = False
+    out.append("        packs=%r, has_unit=%r, fills=%r,\n"
+               % (_packs, _unit, _fills))
     out.append("    ),\n")
 out.append(")\n\n")
 
