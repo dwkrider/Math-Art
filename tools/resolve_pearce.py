@@ -171,6 +171,40 @@ NETS = ([('NBO', 3, 3), ('SRS', 3, 5), ('DIAMOND', 2, 3), ('BCC', 2, 3),
          ('FCC', 2, 2), ('SC', 2, 2)]
         + [(n, 2, 2) for n in _added])
 
+def net_classes(name, n):
+    """Which branch classes a net actually supplies.
+
+    Table 8.1 states the branch classes of every solid, and a solid's
+    edges ARE net edges -- so a net that cannot supply a row's classes
+    can never contain that solid, and searching it is wasted work.
+    This is the filter that makes the sweep affordable: without it every
+    row is tried against every net at every class/modulus combination,
+    which measured ~7 minutes per row and never finished the table."""
+    Vi, idx, adj = pn.net_chunk(name, n)
+    full = max((len(a) for a in adj.values()), default=0)
+    out = set()
+    for p in Vi:
+        if len(adj[p]) != full:
+            continue
+        for q in adj[p]:
+            c = pn.branch_class(tuple(q[i] - p[i] for i in range(3)))
+            if c:
+                out.add(c)
+        if out:
+            break
+    return out
+
+
+NET_CLASSES = {}
+for _n, _b, _r in NETS:
+    try:
+        NET_CLASSES[_n] = net_classes(_n, _b)
+    except Exception:
+        NET_CLASSES[_n] = set()
+print("net branch classes: %s"
+      % {k: sorted(v) for k, v in sorted(NET_CLASSES.items())})
+
+
 chunks = {}
 for net, n, rad in NETS:
     Vi, idx, adj = pn.net_chunk(net, n)
@@ -207,9 +241,18 @@ for r in pt.TABLE:
         print("#%-3d %-40s SKIP (too large: F=%d, max n=%d)"
               % (num, r['name'], r['faces_total'], max(want)), flush=True)
         continue
+    _t0 = time.time()
     rs = row_sig(r)
     hit = None
-    for net, n, rad in NETS:
+    need = {c for c in ('100', '110', '111') if r['branches'].get(c, 0)}
+    # nets that can supply this row's classes, closest match first
+    usable = [(net, n, rad) for net, n, rad in NETS
+              if need <= NET_CLASSES.get(net, set())]
+    usable.sort(key=lambda t: len(NET_CLASSES.get(t[0], set()) - need))
+    if not usable:
+        print("#%-3d %-40s -- (no net supplies %s)"
+              % (num, r['name'], sorted(need)), flush=True)
+    for net, n, rad in usable:
         try:
             pool = set()
             for L in want:
@@ -295,11 +338,12 @@ for r in pt.TABLE:
 
     if hit:
         resolved[num] = hit
-        print("#%-3d %-40s %s via %s (V=%d F=%d)"
-              % (num, r['name'], hit[0], hit[1], len(hit[2]), len(hit[3])),
-              flush=True)
+        print("#%-3d %-40s %s via %s (V=%d F=%d)  %.0fs"
+              % (num, r['name'], hit[0], hit[1], len(hit[2]), len(hit[3]),
+                 time.time() - _t0), flush=True)
     else:
-        print("#%-3d %-40s --" % (num, r['name']), flush=True)
+        print("#%-3d %-40s --  %.0fs"
+              % (num, r['name'], time.time() - _t0), flush=True)
     with open("resolved.pkl", "wb") as _fh:
         pickle.dump(resolved, _fh)
 
