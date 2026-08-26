@@ -552,6 +552,17 @@ if _IN_BLENDER:
                 node.inputs[0].default_value = color
         return mat
 
+    def _on_family(self, context):
+        """Move to a solid of the newly chosen group.
+
+        A dynamic enum keeps whatever index it had, so switching group
+        otherwise leaves the previous group's solid selected -- and the
+        Solid list then shows an entry that is not in it."""
+        here = pdata.in_family(self.family)
+        if here and self.solid not in {s['key'] for s in here}:
+            self.solid = here[0]['key']
+
+
     def _layout_items(self, context):
         """Only the layouts the chosen solid can actually produce.
 
@@ -599,7 +610,7 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(
-            name="Group", items=_family_items,
+            name="Group", items=_family_items, update=_on_family,
             description="Pearce groups his table by number of faces")
         solid: EnumProperty(
             name="Solid", items=_solid_items,

@@ -264,9 +264,21 @@ for num in nums:
                               lattice=('HEX' if num in hex_solids
                                        else 'CUBIC8'))
         _fills = bool(_rep['fills'])
+        # Volume accounting is NOT sufficient: overlapping cells with
+        # compensating gaps sum to exactly the block.  Entries 14 and 43
+        # passed a ratio-1.0 check while visibly interpenetrating, so the
+        # packing is voxel-tested for double coverage before it is
+        # offered.
+        _dbl = _pt.double_covered(_cps, F) if len(_cps) > 1 else 0.0
         _packs = bool(_fills and _rep['overused_faces'] == 0
-                      and _rep['copies'] > 1)
-        _unit = bool(_rep['shared_faces'] > 0)
+                      and _rep['copies'] > 1 and _dbl <= 0.005)
+        _pair = _cps[:2] if len(_cps) >= 2 else []
+        _unit = bool(_rep['shared_faces'] > 0
+                     and (not _pair
+                          or _pt.double_covered(_pair, F) <= 0.005))
+        if _dbl > 0.005:
+            print("  #%d: packing double-covers %.1f%% -- not offered"
+                  % (num, 100.0 * _dbl))
     except Exception as _e:
         print("  #%d: packing probe failed: %s" % (num, _e))
         _packs = _unit = _fills = False

@@ -407,6 +407,36 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06, lattice=None):
     return copies, report
 
 
+def double_covered(copies, faces, samples=3000, seed=3):
+    """Fraction of the packing's volume covered by MORE THAN ONE cell.
+
+    The decisive overlap test, and the only one that has proved
+    trustworthy here.  Volume accounting is necessary but not
+    sufficient: overlapping cells with compensating gaps sum to exactly
+    the block volume, which is how entries 14 and 43 passed a ratio-1.0
+    check while visibly interpenetrating.  Constructed "interior"
+    sample points are worse still -- for a strongly non-convex saddle
+    cell they can lie outside it, reporting overlaps that are not there
+    (they flagged the decatrihedron, which is clean).
+
+    Random points classified by ray casting have neither weakness: a
+    point inside two closed surfaces is inside both, full stop.
+    """
+    if len(copies) < 2:
+        return 0.0
+    rng = np.random.default_rng(seed)
+    tris = [_cell_triangles(p, faces) for p in copies]
+    allp = np.concatenate([np.asarray(p, float) for p in copies])
+    lo, hi = allp.min(axis=0), allp.max(axis=0)
+    Q = rng.uniform(lo, hi, size=(samples, 3))
+    hits = np.zeros(samples, int)
+    for t in tris:
+        for i, q in enumerate(Q):
+            if point_in_cell(q, t):
+                hits[i] += 1
+    return float((hits > 1).sum()) / samples
+
+
 def pack_multi(cells, nets, nx=1, ny=1, nz=1, tol=0.06, lattices=None):
     """A packing built from SEVERAL cell types.
 
