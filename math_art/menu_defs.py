@@ -265,6 +265,7 @@ STYLES = Menu(
            "Voronoi Openwork (Experimental)", builtin=True),
         _e("object.organic_wireframe_add", 'MOD_WIREFRAME', builtin=True),
         _e("object.strahler_add", 'MOD_SIMPLIFY', builtin=True),
+        _e("object.fabrication_slice", 'MOD_BUILD', builtin=True),
     ])
 
 

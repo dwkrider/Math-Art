@@ -36,6 +36,7 @@ _MODULE_NAMES = [
     'tangle_generator',
     'symmetric_sculpture_generator',
     'leonardo_style',
+    'fabrication_slicer',
     'sponge_generator',
     'mandelbulb_generator',
     'snowflake_generator',
