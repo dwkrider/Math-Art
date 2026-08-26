@@ -407,6 +407,106 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06, lattice=None):
     return copies, report
 
 
+def pack_multi(cells, nets, nx=1, ny=1, nz=1, tol=0.06, lattices=None):
+    """A packing built from SEVERAL cell types.
+
+    Pearce's Table 8.2 lists 42 space-filling systems, and most of them
+    are combinations: a solid that will not fill space alone often fills
+    it beside a partner.  The wurtzite cells are the clearest case --
+    measured, 2 small + 1 mid + 1 large close the hexagonal cell exactly,
+    and so do 3 small + 3 mid -- and no single-cell orbit can express
+    that.
+
+    `cells` is a list of (verts, faces); each type contributes its own
+    orbit, and the packing is grown face-to-face across types from a
+    seed.  Returns (placements, report) where a placement is
+    (type index, vertex list).
+    """
+    lattices = lattices or [None] * len(cells)
+    orbits = []
+    for i, (V, F) in enumerate(cells):
+        if lattices[i] not in (None, 'CUBIC8'):
+            orbits.append([])          # no cubic orbit for this one
+            continue
+        orbits.append(cell_orbit(V, F, nets[i], nx, ny, nz))
+
+    placed = []                        # (type, pts)
+    keys = []                          # face keys per placement
+    for ti, orb in enumerate(orbits):
+        for pts in orb:
+            placed.append((ti, pts))
+            keys.append(_face_keys(pts, cells[ti][1]))
+
+    if not placed:
+        return [], dict(copies=0, ratio=0.0, fills=False, types={},
+                        shared_faces=0, overused_faces=0, no_packing=True)
+
+    by_face = {}
+    for i, ks in enumerate(keys):
+        for k in ks:
+            by_face.setdefault(k, []).append(i)
+
+    block = float(8 * nx) * float(8 * ny) * float(8 * nz)
+    vols = [abs(cell_volume(V, F)) for V, F in cells]
+
+    # The whole placement set first.  If its volume does not exceed the
+    # block and no face is used by more than twice, it cannot contain an
+    # overlap and IS the packing -- exactly the argument single-cell
+    # pack() uses.  Growing face-to-face from a seed under-collects (it
+    # wedges), and for one cell type that disagreed with pack() by a
+    # cell, which is how this was caught.
+    all_idx = list(range(len(placed)))
+    cen_all = {}
+    for i in all_idx:
+        for k in keys[i]:
+            cen_all[k] = cen_all.get(k, 0) + 1
+    vol_all = sum(vols[placed[i][0]] for i in all_idx)
+    if (vol_all <= block + tol * block
+            and not any(v > 2 for v in cen_all.values())):
+        best = all_idx
+    else:
+        best = []
+    for seed in range(len(placed)) if not best else ():
+        taken = {seed}
+        used = {}
+        for k in keys[seed]:
+            used[k] = 1
+        frontier = [seed]
+        while frontier:
+            i = frontier.pop()
+            for k in keys[i]:
+                for j in by_face.get(k, ()):
+                    if j in taken:
+                        continue
+                    if any(used.get(kk, 0) >= 2 for kk in keys[j]):
+                        continue
+                    taken.add(j)
+                    for kk in keys[j]:
+                        used[kk] = used.get(kk, 0) + 1
+                    frontier.append(j)
+        vol = sum(vols[placed[i][0]] for i in taken)
+        if vol > block + tol * block:
+            continue                   # overlapping: cannot be a packing
+        if len(taken) > len(best):
+            best = sorted(taken)
+
+    sel = [placed[i] for i in best]
+    counts = {}
+    for ti, _pts in sel:
+        counts[ti] = counts.get(ti, 0) + 1
+    total = sum(vols[ti] for ti, _p in sel)
+    ratio = (total / block) if block else 0.0
+    census = {}
+    for i in best:
+        for k in keys[i]:
+            census[k] = census.get(k, 0) + 1
+    return sel, dict(copies=len(sel), ratio=ratio,
+                     fills=abs(ratio - 1.0) <= tol, types=counts,
+                     shared_faces=sum(1 for v in census.values() if v == 2),
+                     overused_faces=sum(1 for v in census.values() if v > 2),
+                     no_packing=False)
+
+
 def _selftest():
     ok = True
 
@@ -481,6 +581,27 @@ def _selftest():
               "shared=%d boundary=%d"
               % ("", rep['fills'], rep['copies'], rep['ratio'],
                  rep['shared_faces'], rep['boundary_faces']))
+
+    # --- multi-cell packing ---------------------------------------
+    print("  multi-cell:")
+    single = [s for s in pdata.SOLIDS
+              if s.get('packs') and s.get('lattice') != 'HEX']
+    if single:
+        s0 = single[0]
+        cells = [(pdata.points(s0), s0['faces'])]
+        sel, rep = pack_multi(cells, [s0['net']], 1, 1, 1)
+        one, rep1 = pack(pdata.points(s0), s0['faces'], s0['net'], 1, 1, 1,
+                         lattice=s0.get('lattice'))
+        # with ONE type the multi-cell engine must reproduce the
+        # single-cell packing exactly, or the two disagree about what a
+        # packing is
+        chk("one type reproduces the single-cell packing",
+            rep['copies'] == rep1['copies'] and rep['fills'] == rep1['fills'],
+            "%d vs %d cells" % (rep['copies'], rep1['copies']))
+        chk("  no face used by more than two cells",
+            rep['overused_faces'] == 0)
+    else:
+        chk("a filling solid exists to test against", False)
 
     print("RESULT:", "OK" if ok else "BAD")
     if not ok:

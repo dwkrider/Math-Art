@@ -155,6 +155,75 @@ SOLIDS = (
         ),
         packs=False, has_unit=True, fills=False,
     ),
+    dict(
+        number=32, key='AUGMENTED_UNIVERSAL_HEXAHEDRON',
+        name='Augmented universal hexahedron',
+        net='REO', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (0, 0, 4), (0, 0, 12), (0, 4, 8), (4, 0, 8), (0, 8, 4),
+            (0, 8, 12), (4, 8, 8), (8, 0, 4), (8, 0, 12), (8, 4, 8),
+            (8, 8, 4), (8, 8, 12),
+        ),
+        faces=(
+            (3, 1, 2, 0), (0, 2, 4, 6, 10, 9, 7, 3), (3, 8, 9, 11, 6, 5, 2, 1),
+            (5, 6, 4, 2), (3, 7, 9, 8), (11, 9, 10, 6),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=33, key='BIOCTAGONAL_HEXAHEDRON',
+        name='Bioctagonal hexahedron',
+        net='FCC', match='CORE',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (4, 0, 4), (0, 4, 4), (0, 0, 8), (4, 0, 12), (0, 4, 12),
+            (4, 8, 4), (0, 8, 8), (4, 8, 12), (8, 4, 4), (8, 0, 8),
+            (8, 4, 12), (8, 8, 8),
+        ),
+        faces=(
+            (0, 2, 1, 6, 5, 11, 8, 9), (9, 3, 2, 0), (1, 2, 4, 6),
+            (2, 3, 9, 10, 11, 7, 6, 4), (5, 6, 7, 11), (11, 10, 9, 8),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=43, key='TETRAHEDRAL_DECAHEDRON',
+        name='Tetrahedral decahedron',
+        net='FCC', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (4, 4, 0), (4, 0, 4), (0, 4, 4), (4, 4, 8), (4, 8, 4),
+            (0, 8, 8), (4, 12, 8), (4, 8, 12), (8, 4, 4), (8, 0, 8),
+            (12, 4, 8), (8, 4, 12), (8, 8, 0), (12, 8, 4), (8, 12, 4),
+            (8, 8, 8),
+        ),
+        faces=(
+            (8, 1, 3, 2, 4, 0), (0, 4, 12, 8), (8, 9, 3, 1),
+            (2, 3, 5, 4), (7, 15, 6, 4, 5, 3), (11, 15, 7, 3),
+            (3, 9, 8, 10, 15, 11), (4, 6, 15, 14), (14, 15, 13, 8, 12, 4),
+            (13, 15, 10, 8),
+        ),
+        packs=True, has_unit=True, fills=True,
+    ),
+    dict(
+        number=44, key='SADDLE_DODECAHEDRON',
+        name='Saddle dodecahedron',
+        net='FCC', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (4, 4, 0), (4, 4, 8), (4, 12, 0), (4, 8, 4), (4, 12, 8),
+            (12, 4, 0), (8, 4, 4), (12, 4, 8), (8, 8, 0), (12, 12, 0),
+            (12, 8, 4), (8, 12, 4), (8, 8, 8), (12, 12, 8),
+        ),
+        faces=(
+            (6, 1, 3, 0), (0, 3, 2, 8), (8, 5, 6, 0),
+            (12, 4, 3, 1), (1, 6, 7, 12), (2, 3, 4, 11),
+            (11, 9, 8, 2), (12, 13, 11, 4), (10, 7, 6, 5),
+            (5, 8, 9, 10), (7, 10, 13, 12), (11, 13, 10, 9),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
 )
 
 #: Rows of Table 8.1 with no verified geometry, each with the
@@ -187,10 +256,8 @@ UNRESOLVED = (
     (28, 'Cubical saddle hexahedron', 'no geometry found by the search'),
     (29, 'Saddle cube', 'no geometry found by the search'),
     (31, 'Universal hexahedron', 'no geometry found by the search'),
-    (32, 'Augmented universal hexahedron', 'no geometry found by the search'),
-    (33, 'Bioctagonal hexahedron', 'no geometry found by the search'),
     (34, 'Bidodecagonal hexahedron', 'no geometry found by the search'),
-    (35, 'Tetragonal saddle hexahedron', 'no geometry found by the search'),
+    (35, 'Tetragonal saddle hexahedron', 'not orientable'),
     (36, 'Fissioned tetragonal saddle hexahedron', 'no geometry found by the search'),
     (37, 'Tetragonal octagonal hexahedron', 'no geometry found by the search'),
     (38, 'Trigonal hexahedron', 'no geometry found by the search'),
@@ -198,8 +265,6 @@ UNRESOLVED = (
     (40, 'bcc octahedron', 'no geometry found by the search'),
     (41, 'fcc saddle octahedron', 'no geometry found by the search'),
     (42, 'Tetragonal pentagonal octahedron', 'no geometry found by the search'),
-    (43, 'Tetrahedral decahedron', 'no geometry found by the search'),
-    (44, 'Saddle dodecahedron', 'no geometry found by the search'),
     (45, 'Blunted saddle dodecahedron', 'no geometry found by the search'),
     (46, 'Truncated tetrahedral decahedron', 'no geometry found by the search'),
     (47, 'bcc saddle cuboctahedron', 'no geometry found by the search'),
@@ -226,6 +291,12 @@ EXTRA_NETS = {
         ((-2, -2, 0), (-2, 0, -2), (-2, 0, 2), (-2, 2, 0), (0, -2, -2),
          (0, -2, 2), (0, 2, -2), (0, 2, 2), (2, -2, 0), (2, 0, -2),
          (2, 0, 2), (2, 2, 0)),
+    ),
+    'REO': (
+        ((0, 0, 4), (0, 4, 0), (4, 0, 0)),
+        ((-4, -4, 0), (-4, 0, -4), (-4, 0, 4), (-4, 4, 0), (0, -4, -4),
+         (0, -4, 4), (0, 4, -4), (0, 4, 4), (4, -4, 0), (4, 0, -4),
+         (4, 0, 4), (4, 4, 0)),
     ),
 }
 
