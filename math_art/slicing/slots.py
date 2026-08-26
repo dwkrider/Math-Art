@@ -242,7 +242,7 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
     crossings = []
     report = {'joints': 0, 'spans': 0, 'parallel': 0,
               'disagreement': 0, 'unassemblable': 0, 'short': 0,
-              'degenerate': 0, 'no_rim': 0}
+              'degenerate': 0, 'no_rim': 0, 'clearance': 0}
 
     for pa in fam_a.planes:
         for pb in fam_b.planes:
@@ -300,14 +300,18 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
             if not shared:
                 continue
 
-            if len(shared) > 1 and not flexible:
-                cr.errors.append(
-                    ('unassemblable',
-                     f"{len(shared)} separate spans on one crossing line: "
-                     f"the pieces cannot slide together through solid "
-                     f"material"))
-                report['unassemblable'] += 1
-                continue
+            # More than one span on a line cannot be HALF-LAPPED: the
+            # pieces engage by sliding, and the second tongue would
+            # have to pass through solid material to reach its slot.
+            # But refusing outright is not a resolution -- both plates
+            # then keep full thickness and still occupy the same
+            # space, which is precisely the crossing that looked like
+            # two pieces passing through one another.  So such a
+            # crossing is cut as a CLEARANCE instead: one piece gets a
+            # full-depth notch and the other passes through it intact.
+            # No capture, but buildable, and counted separately so the
+            # difference is visible.
+            lap = flexible or len(shared) <= 1
 
             oa, da = to_frame(pa, point, w)
             ob, db = to_frame(pb, point, w)
@@ -353,28 +357,55 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
                 reach_a_lo = reaches(lo_a, t0, a_near)
                 reach_b_hi = reaches(hi_b, t1, b_far)
                 reach_b_lo = reaches(lo_b, t0, b_near)
-                if reach_a_hi and reach_b_lo:
-                    a_rim, b_rim = t1, t0
-                elif reach_a_lo and reach_b_hi:
-                    a_rim, b_rim = t0, t1
-                else:
-                    cr.errors.append(
-                        ('no_rim',
-                         "the slot would open onto an edge the other "
-                         "piece cannot slide to: there is material "
-                         "beyond it on the same line"))
-                    report['no_rim'] += 1
+                mid = 0.5 * (t0 + t1)
+                if lap and reach_a_hi and reach_b_lo:
+                    part_a.slots.append(
+                        slot_polygon(oa, da, t1, mid, half, flare,
+                                     flare_angle, overshoot))
+                    part_b.slots.append(
+                        slot_polygon(ob, db, t0, mid, half, flare,
+                                     flare_angle, overshoot))
+                    cr.spans.append((t0, t1))
+                    report['spans'] += 1
+                    continue
+                if lap and reach_a_lo and reach_b_hi:
+                    part_a.slots.append(
+                        slot_polygon(oa, da, t0, mid, half, flare,
+                                     flare_angle, overshoot))
+                    part_b.slots.append(
+                        slot_polygon(ob, db, t1, mid, half, flare,
+                                     flare_angle, overshoot))
+                    cr.spans.append((t0, t1))
+                    report['spans'] += 1
                     continue
 
-                mid = 0.5 * (t0 + t1)
-                part_a.slots.append(
-                    slot_polygon(oa, da, a_rim, mid, half, flare,
-                                 flare_angle, overshoot))
-                part_b.slots.append(
-                    slot_polygon(ob, db, b_rim, mid, half, flare,
+                # No half-lap available.  Clear the way instead: cut
+                # the WHOLE span out of one piece so the other passes
+                # through.  Prefer to notch whichever has more material
+                # to spare.
+                opts = []
+                if reach_a_hi:
+                    opts.append((part_a.area(), part_a, oa, da, t1, t0))
+                if reach_a_lo:
+                    opts.append((part_a.area(), part_a, oa, da, t0, t1))
+                if reach_b_hi:
+                    opts.append((part_b.area(), part_b, ob, db, t1, t0))
+                if reach_b_lo:
+                    opts.append((part_b.area(), part_b, ob, db, t0, t1))
+                if not opts:
+                    cr.errors.append(
+                        ('no_rim',
+                         "neither piece has an edge this crossing can be "
+                         "cut from, so the two cannot be kept out of "
+                         "each other's way"))
+                    report['no_rim'] += 1
+                    continue
+                _area, part, org, dr, rim, far = max(opts, key=lambda o: o[0])
+                part.slots.append(
+                    slot_polygon(org, dr, rim, far, half, flare,
                                  flare_angle, overshoot))
                 cr.spans.append((t0, t1))
-                report['spans'] += 1
+                report['clearance'] += 1
 
     return crossings, report
 
@@ -550,8 +581,16 @@ def _selftest():
                     [_parts.Part(bar_t, [], 'W', 0, 0, 0.0)])
     _, rep3 = plan_interlock(Family('U', [pu]), Family('W', [pw]),
                              thickness=0.05, flexible=False)
-    assert rep3['unassemblable'] == 1, \
-        f"two spans on one line must be refused for rigid stock: {rep3}"
+    # Two spans on one line cannot be half-lapped in rigid stock -- the
+    # second tongue would have to pass through solid material to reach
+    # its slot -- so each span is CLEARED instead: one piece notched
+    # right through, the other passing intact.  Refusing outright is
+    # not a resolution: both plates then keep full thickness and still
+    # occupy the same space, which is the crossing that looked like two
+    # pieces passing through one another.
+    assert rep3['spans'] == 0, f"no half-lap in rigid stock: {rep3}"
+    assert rep3['clearance'] == 2, \
+        f"both spans must be cleared instead: {rep3}"
     for p in list(pu.parts) + list(pw.parts):
         p.slots = []
     _, rep4 = plan_interlock(Family('U', [pu]), Family('W', [pw]),
@@ -575,8 +614,11 @@ def _selftest():
                                     (1.5, -1.5)]]], 'K', 0, 0, 0.0)])
     _, rep_h = plan_interlock(Family('H', [ph]), Family('K', [pk]),
                               thickness=0.05, flexible=False)
-    assert rep_h['spans'] == 0,         f"a hollow shell cannot be slid together rigidly: {rep_h}"
-    assert rep_h['unassemblable'] or rep_h['no_rim'], rep_h
+    assert rep_h['spans'] == 0, \
+        f"a hollow shell cannot be half-lapped rigidly: {rep_h}"
+    assert rep_h['clearance'] or rep_h['no_rim'], (
+        "and it must still be resolved somehow -- cleared, or reported "
+        f"as uncuttable -- never left overlapping: {rep_h}")
 
     # --- labels carry family, slice and assembly order ------------
     n = label_parts([fa, fb])

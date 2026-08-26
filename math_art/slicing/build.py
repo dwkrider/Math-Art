@@ -538,6 +538,9 @@ def summarise(report):
     il = report.get('interlock') or {}
     if il.get('spans'):
         out.append(f"{il['spans']} joints")
+    if il.get('clearance'):
+        out.append(f"{il['clearance']} crossings cleared rather than "
+                   f"jointed (one piece notched through, no capture)")
     for key, text in (('unassemblable', 'unassemblable crossings'),
                       ('short', 'spans thinner than the stock'),
                       ('disagreement', 'crossings the two families '
