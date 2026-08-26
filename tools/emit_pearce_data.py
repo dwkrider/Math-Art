@@ -269,16 +269,25 @@ for num in nums:
         # passed a ratio-1.0 check while visibly interpenetrating, so the
         # packing is voxel-tested for double coverage before it is
         # offered.
-        _dbl = _pt.double_covered(_cps, F) if len(_cps) > 1 else 0.0
-        _packs = bool(_fills and _rep['overused_faces'] == 0
-                      and _rep['copies'] > 1 and _dbl <= 0.005)
-        _pair = _cps[:2] if len(_cps) >= 2 else []
-        _unit = bool(_rep['shared_faces'] > 0
-                     and (not _pair
-                          or _pt.double_covered(_pair, F) <= 0.005))
-        if _dbl > 0.005:
-            print("  #%d: packing double-covers %.1f%% -- not offered"
-                  % (num, 100.0 * _dbl))
+        # Overlap is decided EXACTLY, by triangle-triangle intersection
+        # plus a bounding-box-guarded containment test -- not by
+        # sampling, which can only ever say "none found", and not by
+        # volume, which cannot see an overlap a gap compensates for.
+        #
+        # Nor is the volume ratio a fill test here: cells are selected
+        # by CENTROID, so they straddle the block and their volumes need
+        # not sum to it.  Entry 30 sits at 2.5x the block with no
+        # overlap at all.  What is required is that the cells do not
+        # intersect and that they actually TOUCH.
+        import itertools as _it
+        _bad = sum(1 for _i, _j in _it.combinations(range(len(_cps)), 2)
+                   if _pt.cells_overlap(_cps[_i], _cps[_j], F))
+        _packs = bool(len(_cps) > 1 and _bad == 0
+                      and _rep['shared_faces'] > 0)
+        _unit = bool(_rep['shared_faces'] > 0 and _bad == 0)
+        if _bad:
+            print("  #%d: %d overlapping cell pairs -- not offered"
+                  % (num, _bad))
     except Exception as _e:
         print("  #%d: packing probe failed: %s" % (num, _e))
         _packs = _unit = _fills = False

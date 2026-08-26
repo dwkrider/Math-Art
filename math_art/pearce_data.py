@@ -119,7 +119,7 @@ SOLIDS = (
             (4, 2, 1, 0), (0, 1, 3, 4), (1, 2, 4, 5),
             (5, 4, 3, 1),
         ),
-        packs=False, has_unit=True, fills=True,
+        packs=True, has_unit=True, fills=True,
     ),
     dict(
         number=25, key='WURTZITE_PENTAHEDRON',
@@ -153,7 +153,7 @@ SOLIDS = (
             (3, 4, 5, 2, 1, 0), (0, 1, 2, 10, 8, 6), (6, 7, 3, 0),
             (2, 5, 11, 10), (7, 9, 11, 5, 4, 3), (8, 10, 11, 9, 7, 6),
         ),
-        packs=False, has_unit=False, fills=False,
+        packs=True, has_unit=True, fills=False,
     ),
     dict(
         number=32, key='AUGMENTED_UNIVERSAL_HEXAHEDRON',
@@ -185,7 +185,7 @@ SOLIDS = (
             (0, 2, 1, 6, 5, 11, 8, 9), (9, 3, 2, 0), (1, 2, 4, 6),
             (2, 3, 9, 10, 11, 7, 6, 4), (5, 6, 7, 11), (11, 10, 9, 8),
         ),
-        packs=False, has_unit=False, fills=False,
+        packs=False, has_unit=False, fills=True,
     ),
     dict(
         number=43, key='TETRAHEDRAL_DECAHEDRON',
@@ -204,7 +204,7 @@ SOLIDS = (
             (3, 9, 8, 10, 15, 11), (4, 6, 15, 14), (14, 15, 13, 8, 12, 4),
             (13, 15, 10, 8),
         ),
-        packs=False, has_unit=False, fills=True,
+        packs=True, has_unit=True, fills=True,
     ),
     dict(
         number=44, key='SADDLE_DODECAHEDRON',

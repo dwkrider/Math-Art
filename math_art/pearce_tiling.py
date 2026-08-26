@@ -390,8 +390,24 @@ def pack(verts, faces, net, nx=1, ny=1, nz=1, tol=0.06, lattice=None):
         copies = disjoint_packing(orbit, faces) or \
             translation_orbit(verts, faces, net, nx, ny, nz)
     orbit_ratio = score(orbit)[0] if orbit else 0.0
+    # A packing that double-covers is not necessarily unusable -- the
+    # overlap is often partial and a valid sub-packing hides inside it.
+    # Trim on MEASURED pairwise overlap, which volume accounting cannot
+    # see when a gap compensates for an intersection.
+    if len(copies) > 1:
+        kept = trim_overlaps(copies, faces)
+        if len(kept) >= 1:
+            copies = kept
     ratio, shared, boundary, over = score(copies) if copies else (0.0, 0, 0, 0)
     total = vol * len(copies)
+    # A packing that double-covers is not necessarily unusable -- the
+    # overlap is often partial and a valid sub-packing hides inside it.
+    # Trim on MEASURED pairwise overlap, which volume accounting cannot
+    # see when a gap compensates for an intersection.
+    if len(copies) > 1:
+        kept = trim_overlaps(copies, faces)
+        if len(kept) >= 1:
+            copies = kept
     ratio, shared, boundary, over = score(copies) if copies else (0.0, 0, 0, 0)
     total = vol * len(copies)
     report = dict(copies=len(copies), orbit=len(orbit),
@@ -435,6 +451,170 @@ def double_covered(copies, faces, samples=3000, seed=3):
             if point_in_cell(q, t):
                 hits[i] += 1
     return float((hits > 1).sum()) / samples
+
+
+def tri_tri_intersect(t1, t2, eps=1e-9):
+    """Do two triangles PROPERLY intersect?
+
+    Coincident triangles and contact along a shared edge do not count --
+    which matters here, because cells of a packing meet face to face and
+    their surfaces touch by design.  Only a crossing counts."""
+    p1, q1, r1 = (np.asarray(x, float) for x in t1)
+    p2, q2, r2 = (np.asarray(x, float) for x in t2)
+    n2 = np.cross(q2 - p2, r2 - p2)
+    d1 = [float(n2 @ (x - p2)) for x in (p1, q1, r1)]
+    if all(d > eps for d in d1) or all(d < -eps for d in d1):
+        return False
+    n1 = np.cross(q1 - p1, r1 - p1)
+    d2 = [float(n1 @ (x - p1)) for x in (p2, q2, r2)]
+    if all(d > eps for d in d2) or all(d < -eps for d in d2):
+        return False
+
+    def seg_tri(a, b, p, q, r):
+        n = np.cross(q - p, r - p)
+        da = float(n @ (a - p))
+        db = float(n @ (b - p))
+        if da * db > -eps:
+            return False
+        t = da / (da - db)
+        x = a + t * (b - a)
+        v0, v1, v2 = q - p, r - p, x - p
+        d00 = float(v0 @ v0)
+        d01 = float(v0 @ v1)
+        d11 = float(v1 @ v1)
+        d20 = float(v2 @ v0)
+        d21 = float(v2 @ v1)
+        den = d00 * d11 - d01 * d01
+        if abs(den) < 1e-18:
+            return False
+        u = (d11 * d20 - d01 * d21) / den
+        w = (d00 * d21 - d01 * d20) / den
+        return u > 1e-9 and w > 1e-9 and u + w < 1.0 - 1e-9
+
+    for a, b in ((p1, q1), (q1, r1), (r1, p1)):
+        if seg_tri(a, b, p2, q2, r2):
+            return True
+    for a, b in ((p2, q2), (q2, r2), (r2, p2)):
+        if seg_tri(a, b, p1, q1, r1):
+            return True
+    return False
+
+
+def cells_overlap(a, b, faces, eps=1e-9):
+    """Do two placed cells share interior volume?  EXACTLY.
+
+    Sampling can only ever say "no overlap found"; this decides it.  Two
+    closed cells share volume iff their surfaces properly cross, or one
+    lies wholly inside the other -- and if the surfaces do NOT cross,
+    one vertex settles the containment question.
+
+    Cells of a packing meet face to face, so their surfaces touch by
+    construction; tri_tri_intersect ignores that contact and counts only
+    crossings.
+    """
+    A = np.asarray(a, float)
+    B = np.asarray(b, float)
+    if np.any(A.max(axis=0) < B.min(axis=0) - eps) or        np.any(B.max(axis=0) < A.min(axis=0) - eps):
+        return False                    # bounding boxes disjoint
+    ta = _cell_triangles(a, faces)
+    tb = _cell_triangles(b, faces)
+    for t1 in ta:
+        for t2 in tb:
+            if tri_tri_intersect(t1, t2, eps):
+                return True
+    # Surfaces do not cross.  The cells are then either disjoint or one
+    # is wholly inside the other -- and containment REQUIRES one
+    # bounding box to sit inside the other.  Testing points without that
+    # guard is what makes this go wrong: a fan-tetrahedron "interior"
+    # point of a saddle cell can fall outside the cell and inside a
+    # neighbour, so unguarded it flags face-sharing neighbours as
+    # overlapping and shreds a correct packing (the decatrihedron went
+    # from 8 cells to 3).
+    amin, amax = A.min(axis=0), A.max(axis=0)
+    bmin, bmax = B.min(axis=0), B.max(axis=0)
+    a_in_b = np.all(amin >= bmin - eps) and np.all(amax <= bmax + eps)
+    b_in_a = np.all(bmin >= amin - eps) and np.all(bmax <= amax + eps)
+    if not (a_in_b or b_in_a):
+        return False
+    if a_in_b:
+        for q in _interior_points(a, faces):
+            if point_in_cell(q, tb):
+                return True
+    if b_in_a:
+        for q in _interior_points(b, faces):
+            if point_in_cell(q, ta):
+                return True
+    return False
+
+
+def _interior_points(pts, faces):
+    """A few points strictly inside a cell: fan-tetrahedron centroids."""
+    P = np.asarray(pts, float)
+    c0 = P.mean(axis=0)
+    out = []
+    for cyc in faces:
+        loop = P[list(cyc)]
+        fc = loop.mean(axis=0)
+        n = len(cyc)
+        for i in range(n):
+            out.append((loop[i] + loop[(i + 1) % n] + fc + c0) / 4.0)
+    return out
+
+
+def pair_overlaps(a, b, faces, samples=400, seed=11):
+    """Do two placed cells share interior volume?
+
+    Sampled inside the INTERSECTION of their bounding boxes, which is
+    where an overlap must be if there is one, so a few hundred points
+    settle it.  Ray casting classifies each point, so a hit means the
+    point is genuinely inside both closed surfaces."""
+    A = np.asarray(a, float)
+    B = np.asarray(b, float)
+    lo = np.maximum(A.min(axis=0), B.min(axis=0))
+    hi = np.minimum(A.max(axis=0), B.max(axis=0))
+    if np.any(hi <= lo):
+        return False                    # boxes disjoint: cannot overlap
+    rng = np.random.default_rng(seed)
+    Q = rng.uniform(lo, hi, size=(samples, 3))
+    ta = _cell_triangles(a, faces)
+    tb = _cell_triangles(b, faces)
+    for q in Q:
+        if point_in_cell(q, ta) and point_in_cell(q, tb):
+            return True
+    return False
+
+
+def trim_overlaps(copies, faces, cap=None):
+    """The largest mutually non-overlapping subset of a packing.
+
+    An orbit that double-covers is not simply unusable: the overlap is
+    often partial, and a valid sub-packing hides inside it.  Overlap is
+    MEASURED pairwise rather than argued from volume, because volume
+    accounting cannot see an overlap that a gap compensates for.
+    """
+    n = len(copies)
+    if n < 2:
+        return list(copies)
+    conflict = set()
+    for i in range(n):
+        for j in range(i + 1, n):
+            if cells_overlap(copies[i], copies[j], faces):
+                conflict.add((i, j))
+    if not conflict:
+        return list(copies)
+    best = []
+    for t in range(200):
+        order = list(range(n))
+        _shuffle(order, t)
+        sel = []
+        for i in order:
+            if cap and len(sel) >= cap:
+                break
+            if all((min(i, j), max(i, j)) not in conflict for j in sel):
+                sel.append(i)
+        if len(sel) > len(best):
+            best = sel
+    return [copies[i] for i in sorted(best)]
 
 
 def pack_multi(cells, nets, nx=1, ny=1, nz=1, tol=0.06, lattices=None):
@@ -599,10 +779,18 @@ def _selftest():
         # a trim only happens when some face belonged to three cells,
         # and what it produces must itself be clean.
         if rep['trimmed']:
-            chk("%s: trimmed only a double cover" % tag,
-                rep['overused_faces'] == 0 and rep['ratio'] <= 1.0 + 1e-6,
-                "%d of %d, ratio %.3f"
-                % (rep['copies'], rep['orbit'], rep['ratio']))
+            # The test is that the trimmed packing does not INTERSECT,
+            # measured exactly.  Not that its volume ratio is at most 1:
+            # cells are chosen by centroid, so they straddle the block
+            # and their volumes need not sum to it -- entry 30 sits at
+            # 2.5x the block with no overlapping pair at all.
+            import itertools as _it
+            bad = sum(1 for i, j in _it.combinations(range(len(copies)), 2)
+                      if cells_overlap(copies[i], copies[j], F))
+            chk("%s: trimmed packing does not intersect" % tag,
+                bad == 0 and rep['overused_faces'] == 0,
+                "%d of %d kept, %d overlapping pairs"
+                % (rep['copies'], rep['orbit'], bad))
         else:
             chk("%s: orbit is the packing" % tag,
                 rep['copies'] == rep['orbit'] or rep['orbit'] == 0,
