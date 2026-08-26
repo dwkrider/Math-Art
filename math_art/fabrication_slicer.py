@@ -110,6 +110,9 @@ DRAWING_KEY = 'math_art_slice_drawing'
 # grey out with a knot selected.
 MESHABLE = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}
 
+# sentinel for "run along the sliced object's own centreline"
+SELF_CURVE = '__SELF__'
+
 AXIS_ITEMS = [('X', "X", "Slice along the X axis"),
               ('Y', "Y", "Slice along the Y axis"),
               ('Z', "Z", "Slice along the Z axis")]
@@ -216,6 +219,8 @@ if _IN_BLENDER:
         failing that any curve that happens to be selected, which is
         how this worked before there was a field for it.
         """
+        if named in ('', SELF_CURVE):
+            named = None
         pts = _spline_points(bpy.data.objects.get(named) if named else None)
         if pts:
             return pts
@@ -419,6 +424,26 @@ if _IN_BLENDER:
     #  the slicing operator                                          #
     # -------------------------------------------------------------- #
 
+    # Blender's prop_search cannot filter a collection by type, so the
+    # curve picker is a dynamic enum instead -- it listed every object
+    # in the file, meshes included, which is a list of mostly wrong
+    # answers.  The items list is cached module-side because Blender
+    # keeps only borrowed pointers to the strings it is handed.
+    _CURVE_ITEMS = []
+
+    def _curve_items(self, context):
+        # NOT an empty identifier: Blender silently drops enum items
+        # with one, so "Self" vanished from the list and could not be
+        # passed to the operator either.
+        items = [(SELF_CURVE, "Self",
+                  "The sliced object's own centreline")]
+        for obj in bpy.data.objects:
+            if obj.type == 'CURVE':
+                items.append((obj.name, obj.name, "Run the ribs along "
+                                                  f"{obj.name}"))
+        _CURVE_ITEMS[:] = items
+        return _CURVE_ITEMS
+
     class OBJECT_OT_fabrication_slice(bpy.types.Operator):
         """Slice the active mesh into flat parts for laser cutting.
 
@@ -434,11 +459,12 @@ if _IN_BLENDER:
                         "turned into geometry works, so a curve with a "
                         "bevel -- a knot, say -- slices as the tube it "
                         "draws")
-        curve_object: StringProperty(
+        curve_object: EnumProperty(
             name="Curve",
-            description="The curve the ribs run along. Leave it empty "
-                        "to use the sliced object itself, when that is "
-                        "a curve")
+            items=_curve_items,
+            description="The curve the ribs run along. Only curve "
+                        "objects are listed; pick Self to run along "
+                        "the sliced object's own centreline")
         technique: EnumProperty(
             name="Technique",
             items=[
@@ -791,7 +817,7 @@ if _IN_BLENDER:
                 box.prop(self, 'ring_count')
             elif self.technique == 'RIBS':
                 box.prop(self, 'rib_count')
-                box.prop_search(self, 'curve_object', bpy.data, 'objects')
+                box.prop(self, 'curve_object')
 
             if self.technique != 'STACKED':
                 box = lay.box()

@@ -245,10 +245,17 @@ def build(verts, faces, settings, name='slices'):
                                             n, offs)
         families.append(fam)
         report['faults'] += faults
-        if st.use_dowels:
+        if st.use_dowels and st.dowels > 0:
             pts, _drilled = place_dowels(fam, st.dowels, st.dowel_diameter,
                                          st.dowel_spacing)
             report['dowels'] = len(pts)
+            # A dowel has to pass through EVERY slice, so a shape whose
+            # slices wander -- a knot, where one layer's material is
+            # nowhere near the next one's -- may have no such position
+            # at all.  Say so: silently drilling nothing looks exactly
+            # like the feature being broken.
+            if len(pts) < st.dowels:
+                report['dowels_short'] = (st.dowels, len(pts))
 
     elif st.technique == 'INTERLOCKED':
         if st.axis_a.upper() == st.axis_b.upper():
@@ -310,7 +317,7 @@ def build(verts, faces, settings, name='slices'):
         C = (C - (np.asarray(verts).min(axis=0)
                   + np.asarray(verts).max(axis=0)) * 0.5) * applied
         idx = np.linspace(0, len(C) - 1, max(2, st.rib_count))
-        spec = []
+        spec, anchors = [], []
         for k, f in enumerate(idx):
             i = int(round(f))
             j = min(len(C) - 1, i + 1) if i + 1 < len(C) else i - 1
@@ -321,18 +328,75 @@ def build(verts, faces, settings, name='slices'):
             u, v, nn = sections.plane_frame(t)
             spec.append((tuple(nn), float(np.dot(C[i], nn)),
                          tuple(u), tuple(v)))
+            anchors.append((C[i], u, v, nn))
         ribs, faults = _family_from_planes('C', V, faces, spec)
-        families.append(ribs)
         report['faults'] += faults
 
-        n = _axis_vec(st.axis)
-        a = float(np.dot(lo, n))
-        b = float(np.dot(hi, n))
-        spine, faults = _family_from_parallel('S', V, faces, n,
-                                              sections.spread_offsets(
-                                                  min(a, b), max(a, b), 1))
-        families.append(spine)
-        report['faults'] += faults
+        # Decide FIRST whether there is a flat spine to slot into,
+        # because that decides whether the ribs get threading holes.
+        # A flat spine only exists if the curve is flat, so fit a plane
+        # to it and measure.  A plane curve gets a real spine; a knot
+        # does not, and saying so is better than emitting a "spine"
+        # that is a section through the whole tangle and slots to
+        # nothing.
+        mid = C.mean(axis=0)
+        _uu, _ss, vt = np.linalg.svd(C - mid, full_matrices=False)
+        normal = vt[2] if vt.shape[0] > 2 else None
+        extent = float(np.linalg.norm(C.max(axis=0) - C.min(axis=0))) or 1.0
+        flat = (normal is not None
+                and float(np.abs((C - mid) @ normal).max()) < 0.02 * extent)
+
+        # A rib is the LOCAL cross section, not everything the plane
+        # happens to cut.  A plane perpendicular to a knot's centreline
+        # slices every other strand it passes through as well, so
+        # keeping the whole section gives each rib a fistful of debris
+        # from the far side of the knot.  Keep only the piece the curve
+        # actually threads: the part containing the spine point, or the
+        # nearest one when the nudge leaves it just outside.
+        kept_ribs = 0
+        for plane, (P, u, v, nn) in zip(ribs.planes, anchors):
+            rel = P - plane.offset * np.asarray(plane.normal)
+            here = (float(rel @ np.asarray(u)), float(rel @ np.asarray(v)))
+            inside = [q for q in plane.parts
+                      if pc.point_in_polygon(here, q.outer)
+                      and not any(pc.point_in_polygon(here, h)
+                                  for h in q.holes)]
+            if not inside and plane.parts:
+                inside = [min(plane.parts,
+                              key=lambda q: pc.polygon_distance(here,
+                                                                q.outer))]
+            for q in inside:
+                q.index = 0
+            plane.parts = inside[:1]
+            kept_ribs += len(plane.parts)
+
+            # Thread the rib onto a rod: a small hole where the curve
+            # passes through it.  Only when there is NO flat spine --
+            # the hole sits exactly where a spine would cross, so
+            # drilling it as well would split that joint in two and the
+            # rib could not be slotted on at all.  Threading and
+            # slotting are alternatives, not companions.
+            if (not flat and st.use_dowels and st.dowel_diameter > 0.0
+                    and plane.parts):
+                q = plane.parts[0]
+                r = 0.5 * st.dowel_diameter
+                clear = pc.polygon_distance(here, q.outer)
+                if pc.point_in_polygon(here, q.outer) and clear > r * 1.5:
+                    q.holes.append(pc.as_cw(
+                        pc.arc_points(here[0], here[1], r,
+                                      0.0, 2.0 * math.pi, 16)[:-1]))
+                    report['dowels'] += 1
+        report['ribs'] = kept_ribs
+        families.append(ribs)
+
+        if flat:
+            spine, faults = _family_from_parallel(
+                'S', V, faces, tuple(normal), [float(mid @ normal)])
+            families.append(spine)
+            report['faults'] += faults
+            report['spine'] = 'plane'
+        else:
+            report['spine'] = 'wire'
 
     else:
         raise ValueError(f"unknown technique {st.technique!r}")
@@ -351,6 +415,16 @@ def build(verts, faces, settings, name='slices'):
                 report['spacing_conflicts'].append((fam.name, len(bad)))
 
     all_parts = [p for fam in families for p in fam.all_parts()]
+    # Count the pieces nothing holds BEFORE the slots are consumed.
+    # A part with no joint is not a part of the model: it falls out.
+    # This is the failure that made a radial slicing of a knot look
+    # like a heap of loose blades, and it deserves to be reported
+    # rather than left for the assembler to discover.
+    if len(families) >= 2:
+        loose = [p for p in all_parts if not p.slots]
+        report['unconnected'] = len(loose)
+        for p in loose:
+            p.fail('unconnected', "no joint holds this piece")
     report['cut'] = _slots.cut_slots(all_parts, 0.5 * st.tool_diameter)
 
     drawing, nrep = _layout.nest(
@@ -392,6 +466,17 @@ def summarise(report):
         out.append(f"{len(report['faults'])} unusable layers")
     if report.get('spacing_conflicts'):
         out.append("slice spacing is tighter than the slot is wide")
+    if report.get('unconnected'):
+        out.append(f"{report['unconnected']} pieces nothing holds "
+                   f"(no joint reaches them)")
+    if report.get('dowels_short'):
+        want, got = report['dowels_short']
+        out.append(f"only {got} of {want} dowels fit: a dowel must pass "
+                   f"through every slice, and this shape leaves nowhere "
+                   f"that does")
+    if report.get('spine') == 'wire':
+        out.append("the curve is not flat, so there is no spine to slot "
+                   "into: thread the ribs on a rod through their holes")
     return "; ".join(out)
 
 

@@ -311,6 +311,10 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
 
             oa, da = to_frame(pa, point, w)
             ob, db = to_frame(pb, point, w)
+            # how far each piece's own material reaches along the line;
+            # only these extremes can be slid onto
+            a_near, a_far = iva[0][0], iva[-1][1]
+            b_near, b_far = ivb[0][0], ivb[-1][1]
 
             for (t0, t1, part_a, part_b,
                  lo_a, hi_a, lo_b, hi_b) in shared:
@@ -321,22 +325,44 @@ def plan_interlock(fam_a, fam_b, thickness, clearance=0.0, flare=0.0,
                     report['short'] += 1
                     continue
 
-                # Each piece must be cut inward from ITS OWN rim, and
-                # the two must take opposite ends or they overlap
-                # instead of interlocking.  For untrimmed sections both
-                # arrangements are available and the first is taken, so
-                # the familiar rule -- A from the +w end, B from the -w
-                # end -- is what happens in the ordinary case.
-                if hi_a and lo_b:
+                # Each piece must be cut inward from ITS OWN rim, the
+                # two must take opposite ends, and -- the part that is
+                # easy to miss -- that rim has to be one the piece can
+                # actually REACH ALONG THIS LINE.  The pieces assemble
+                # by sliding together, so a slot opening onto an
+                # interior edge is a slot the other piece can never
+                # travel to: it would have to pass through the
+                # material lying beyond it.  Being on a rim is
+                # necessary, being on the FIRST or LAST rim the line
+                # meets is what makes it buildable.
+                #
+                # For two ordinary sections of a solid the outermost
+                # ends are the only ends, so the familiar rule -- A
+                # from the +w end, B from the -w end -- is unchanged.
+                # Flexible stock is exempt, as it is from the
+                # multi-span rule above and for the same reason: card
+                # bends around whatever is in the way during assembly,
+                # which is how Hart's ten-slit pentagrams go together.
+                # Plywood does not.
+                def reaches(on_rim, t, extreme):
+                    if not on_rim:
+                        return False
+                    return flexible or abs(t - extreme) <= tol
+
+                reach_a_hi = reaches(hi_a, t1, a_far)
+                reach_a_lo = reaches(lo_a, t0, a_near)
+                reach_b_hi = reaches(hi_b, t1, b_far)
+                reach_b_lo = reaches(lo_b, t0, b_near)
+                if reach_a_hi and reach_b_lo:
                     a_rim, b_rim = t1, t0
-                elif lo_a and hi_b:
+                elif reach_a_lo and reach_b_hi:
                     a_rim, b_rim = t0, t1
                 else:
                     cr.errors.append(
                         ('no_rim',
-                         "neither piece has an edge at an end of the "
-                         "shared span, so the slot would be a closed "
-                         "slit in the middle of the part"))
+                         "the slot would open onto an edge the other "
+                         "piece cannot slide to: there is material "
+                         "beyond it on the same line"))
                     report['no_rim'] += 1
                     continue
 
@@ -532,6 +558,25 @@ def _selftest():
                              thickness=0.05, flexible=True)
     assert rep4['spans'] == 2, \
         f"flexible stock accepts both spans: {rep4}"
+
+    # --- a slot must open onto a rim the other piece can REACH ----
+    # A bar with a slab beyond it: the shared span's far end is a rim,
+    # but there is more of the same piece past it on the same line, so
+    # nothing could ever slide into that slot.
+    outer_ring = [(-2.0, -2.0), (2.0, -2.0), (2.0, 2.0), (-2.0, 2.0)]
+    shell = _parts.Part(outer_ring,
+                        [[(-1.5, -1.5), (-1.5, 1.5), (1.5, 1.5),
+                          (1.5, -1.5)]], 'H', 0, 0, 0.0)
+    ph = SlicePlane((1, 0, 0), 0.0, (0, 1, 0), (0, 0, 1), 0, [shell])
+    pk = SlicePlane((0, 1, 0), 0.0, (0, 0, 1), (1, 0, 0), 0,
+                    [_parts.Part([(b, a) for a, b in outer_ring],
+                                 [[(b, a) for a, b in
+                                   [(-1.5, -1.5), (-1.5, 1.5), (1.5, 1.5),
+                                    (1.5, -1.5)]]], 'K', 0, 0, 0.0)])
+    _, rep_h = plan_interlock(Family('H', [ph]), Family('K', [pk]),
+                              thickness=0.05, flexible=False)
+    assert rep_h['spans'] == 0,         f"a hollow shell cannot be slid together rigidly: {rep_h}"
+    assert rep_h['unassemblable'] or rep_h['no_rim'], rep_h
 
     # --- labels carry family, slice and assembly order ------------
     n = label_parts([fa, fb])
