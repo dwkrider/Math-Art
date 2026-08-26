@@ -278,7 +278,8 @@ if _IN_BLENDER:
                                           sn.NESTS[c][1]),
                  "Angles: %s" % ", ".join(
                      "%g" % a for a in sn.NESTS[c][3]))
-                for c in sn.CODES],
+                for c in sn.verified_codes()],
+            default=13,
             description="Which catalogued nest to build")
         nest_step: FloatProperty(
             name="Nest step", default=0.5774, min=0.05, max=0.95,
@@ -377,7 +378,7 @@ if _IN_BLENDER:
             from the published angle sequence as a circuit of Universal
             Node branches."""
             code = self.nest
-            pts = sn.boundary(code)
+            pts = sn.oriented(code)
             if pts is None:
                 self.report({'ERROR'}, "cannot construct nest %s" % code)
                 return {'CANCELLED'}

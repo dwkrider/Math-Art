@@ -88,6 +88,21 @@ NESTS = {
 
 CODES = tuple(sorted(NESTS, key=lambda c: (int(c[1:-1]), c)))
 
+#: Codes whose reconstruction reproduces the PUBLISHED symmetry.  The
+#: angle sequence plus closure admits many circuits, and the group and
+#: symmetry columns narrow them but do not always single one out: for
+#: these eight the search returns a polygon with the right corners and
+#: the WRONG symmetry, so it is not the published nest and is not
+#: offered.  Reconstructing them needs more than the boundary spec --
+#: most likely taking the face straight off the saddle polyhedron that
+#: carries it.
+UNVERIFIED = ('n4i', 'n6a', 'n6f', 'n6g', 'n6h', 'n6i',
+              'n12a', 'n12b', 'n12c')
+
+#: the paper's Symmetry column, in this module's labels
+_SYM_LABEL = {'6-fold': '6F', '4-fold': '4F', '3-fold': '3F',
+              '2-fold': '2F', 'mirror': 'MIRROR', 'none': 'NONE'}
+
 _CACHE = {}
 
 
@@ -95,6 +110,18 @@ def _is_planar(pts, tol=1e-9):
     P = np.asarray(pts, float)
     return float(np.linalg.svd(P - P.mean(axis=0),
                                compute_uv=False)[2]) < tol
+
+
+def flatness(pts):
+    """Out-of-plane extent relative to in-plane size: 0 is planar.
+
+    The angle sequence and closure do not pin a nest's DEPTH -- several
+    circuits share one sequence and differ only in how far they buckle
+    out of plane.  The published figures show shallow nests, so among
+    valid solutions the flattest is the one meant."""
+    P = np.asarray(pts, float)
+    sv = np.linalg.svd(P - P.mean(axis=0), compute_uv=False)
+    return float(sv[2] / sv[0]) if sv[0] > 1e-12 else 0.0
 
 
 def _is_equilateral(pts, tol=1e-9):
@@ -116,7 +143,7 @@ def _points(edges):
     return pts
 
 
-def boundary(code, tol=0.02):
+def boundary(code, tol=0.02, cap=48):
     """The nest's boundary polygon, as integer eighth-coordinates.
 
     Searched as a closed circuit of Universal Node branches matching the
@@ -135,43 +162,102 @@ def boundary(code, tol=0.02):
                + [[a, b] for i, a in enumerate(kinds) for b in kinds[i + 1:]]
                + [kinds])
 
+    want_sym = _SYM_LABEL.get(_sym)
+    found = []
+
     def walk(edges):
+        if len(found) >= cap:
+            return
         k = len(edges)
         if k == n:
             if [sum(e[i] for e in edges) for i in range(3)] != [0, 0, 0]:
-                return None
+                return
             if abs(_corner(edges[-1], edges[0]) - angles[0]) > tol:
-                return None
+                return
             pts = _points(edges)
             flat = _is_planar(pts)
             if (group == 'flat') != flat:
-                return None
+                return
             if group == 'regular' and not _is_equilateral(pts):
-                return None
-            return pts
+                return
+            found.append(pts)
+            return
         for v in vecs:
             if k and abs(_corner(edges[-1], v) - angles[k]) > tol:
                 continue
-            got = walk(edges + [v])
-            if got:
-                return got
-        return None
+            walk(edges + [v])
 
     for ladder in ladders:
         vecs = pnet.branch_vectors(ladder)
+        found = []
         for v0 in vecs:
-            got = walk([v0])
-            if got:
-                _CACHE[code] = tuple(got)
-                return _CACHE[code]
+            walk([v0])
+            if len(found) >= cap:
+                break
+        if found:
+            # The published SYMMETRY column is the strongest constraint,
+            # but it costs an SVD per candidate -- so it is applied to
+            # the COLLECTED set, not inside the walk.  Testing it in the
+            # walk made the search unfinishable.
+            if want_sym is not None:
+                keep = [q for q in found
+                        if pnet.face_symmetry_label(q) == want_sym]
+                if keep:
+                    found = keep
+            # shallowest of what survives: the published nests are nearly
+            # flat, and a deeper circuit with the same angles is a valid
+            # but unintended realisation
+            best = min(found, key=flatness)
+            _CACHE[code] = tuple(best)
+            return _CACHE[code]
     _CACHE[code] = None
     return None
+
+
+def oriented(code, size=2.0):
+    """The nest's boundary in Cartesian space, LYING IN THE XY PLANE.
+
+    A nest is nearly flat, so it should read that way: the boundary is
+    rotated to put its best-fit plane in XY, centred on the origin and
+    scaled to `size`.  Without this the circuit comes out in whatever
+    orientation the lattice walk produced -- geometrically identical,
+    but tipped at an arbitrary angle so a shallow nest looks like a
+    steep one.
+    """
+    pts = boundary(code)
+    if pts is None:
+        return None
+    P = np.asarray(pts, float)
+    P = P - P.mean(axis=0)
+    # smallest singular direction is the plane normal
+    _u, _s, vt = np.linalg.svd(P, full_matrices=True)
+    nz = vt[2]
+    zax = np.array([0.0, 0.0, 1.0])
+    v = np.cross(nz, zax)
+    c = float(nz @ zax)
+    if np.linalg.norm(v) < 1e-12:
+        R = np.eye(3) if c > 0 else np.diag([1.0, -1.0, -1.0])
+    else:
+        K = np.array([[0.0, -v[2], v[1]],
+                      [v[2], 0.0, -v[0]],
+                      [-v[1], v[0], 0.0]])
+        R = np.eye(3) + K + K @ K * (1.0 / (1.0 + c))
+    Q = (R @ P.T).T
+    ext = float(np.abs(Q[:, :2]).max())
+    if ext > 1e-12:
+        Q = Q * (0.5 * size / ext)
+    return [tuple(q) for q in Q]
 
 
 def info(code):
     n, group, sym, angles = NESTS[code]
     return dict(code=code, n=n, group=group, symmetry=sym,
                 angles=tuple(angles), flat=(group == 'flat'))
+
+
+def verified_codes():
+    """Nest codes whose reconstruction matches the published symmetry."""
+    return tuple(c for c in CODES if c not in UNVERIFIED)
 
 
 def _selftest():
@@ -224,6 +310,21 @@ def _selftest():
                 chk("  %s edge %d is a branch" % (code, k), False, str(v))
                 break
     chk("all 34 constructed", built == 34, "%d" % built)
+
+    # every OFFERED nest must reproduce the published symmetry -- that
+    # is what makes it the published nest and not merely a polygon with
+    # the same corners
+    wrong = []
+    for code in verified_codes():
+        pts = boundary(code)
+        want = _SYM_LABEL.get(NESTS[code][2])
+        if pts is None or (want and
+                           pnet.face_symmetry_label(pts) != want):
+            wrong.append(code)
+    chk("every offered nest has the published symmetry", not wrong,
+        " ".join(wrong))
+    chk("25 offered, 9 held back", len(verified_codes()) == 25,
+        "%d offered" % len(verified_codes()))
 
     # the decatrihedron's face is n10a, and it is NOT the planar decagon
     pts = boundary('n10a')

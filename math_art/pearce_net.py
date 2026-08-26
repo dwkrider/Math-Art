@@ -642,6 +642,42 @@ def kinds_for_row(branches):
     return out
 
 
+#: The wurtzite / lonsdaleite lattice, as a basis of row vectors in
+#: units of the hexagonal a-axis.  Coordinates in this lattice are
+#: integer TWENTY-FOURTHS of the cell, in which lonsdaleite's four sites
+#: -- (1/3,2/3,0), (2/3,1/3,1/2), (1/3,2/3,3/8), (2/3,1/3,7/8) -- are
+#: all integral, so closure stays exact integer arithmetic.
+#:
+#: This lattice is NOT a sublattice of the cubic grid the rest of the
+#: module uses.  A single wurtzite CELL is expressible in cubic
+#: coordinates -- its branches are tetrahedral, which <111> supplies --
+#: but its PACKING needs the hexagonal ABAB stacking, which is why
+#: entry 6 built in the cubic net and then would not tile.
+_HEX_C = sqrt(8.0 / 3.0)
+HEX_BASIS = ((1.0, 0.0, 0.0),
+             (-0.5, sqrt(3.0) / 2.0, 0.0),
+             (0.0, 0.0, _HEX_C))
+HEX_DIVISOR = 24.0
+
+#: the cubic convention: integer eighths, axis-aligned
+CUBIC_BASIS = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+CUBIC_DIVISOR = 8.0
+
+
+def cartesian(pts, basis=None, divisor=None):
+    """Lattice coordinates -> Cartesian.
+
+    With no basis this is the cubic convention and the points come back
+    unchanged (the eighth-grid IS Cartesian up to a uniform scale, which
+    nothing downstream depends on).  With a basis the integer
+    coordinates are combinations of its rows."""
+    if basis is None:
+        return [tuple(float(x) for x in p) for p in pts]
+    B = np.asarray(basis, float)
+    d = float(divisor if divisor is not None else 1.0)
+    return [tuple(np.asarray(p, float) @ B / d) for p in pts]
+
+
 def net_chunk(name, n=3):
     """A net over an n^3 block of cells: (verts, index, adjacency).
 
