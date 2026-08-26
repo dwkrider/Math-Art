@@ -107,7 +107,7 @@ TABLE = (
          branches={'100': 0, '110': 15, '111': 0}, branches_total=15,
          faces_total=3,
          faces=(dict(count=3, n=10, kind='', symmetry='2F',
-                     angles=("120d",), plane='110'),),
+                     angles=('120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d'), plane='110'),),
          figure='8.27'),
 
     dict(number=2, name="Universal trihedron (enantiomorphic)",
@@ -138,7 +138,7 @@ TABLE = (
          branches={'100': 2, '110': 0, '111': 3}, branches_total=5,
          faces_total=3,
          faces=(dict(count=1, n=4, kind='ENANTIO', symmetry='2F',
-                     angles=("54d44'",), plane='110'),
+                     angles=("54d44'", "54d44'", "54d44'", "54d44'"), plane='110'),
                 dict(count=2, n=3, kind='', symmetry='MIRROR',
                      angles=("54d44'", "70d32'", "54d44'"), plane='110')),
          figure='8.30'),
@@ -158,7 +158,7 @@ TABLE = (
          branches={'100': 0, '110': 0, '111': 9}, branches_total=9,
          faces_total=3,
          faces=(dict(count=3, n=6, kind='', symmetry='2F',
-                     angles=("109d28'",), plane='110'),),
+                     angles=("109d28'", "109d28'", "109d28'", "109d28'", "109d28'", "109d28'"), plane='110'),),
          figure='8.32'),
 
     dict(number=7, name="Delta trihedron",
@@ -231,7 +231,7 @@ TABLE = (
          branches={'100': 0, '110': 0, '111': 12}, branches_total=12,
          faces_total=4,
          faces=(dict(count=4, n=6, kind='REGULAR', symmetry='3F',
-                     angles=("109d28'",), plane='111'),),
+                     angles=("109d28'", "109d28'", "109d28'", "109d28'", "109d28'", "109d28'"), plane='111'),),
          figure='8.35'),
 
     dict(number=12, name="bcc tetrahedron",
@@ -240,7 +240,7 @@ TABLE = (
          branches={'100': 0, '110': 0, '111': 8}, branches_total=8,
          faces_total=4,
          faces=(dict(count=4, n=4, kind='REGULAR', symmetry='2F',
-                     angles=("70d32'",), plane='100'),),
+                     angles=("70d32'", "70d32'", "70d32'", "70d32'"), plane='100'),),
          figure='8.36'),
 
     dict(number=13, name="fcc tetragonal tetrahedron",
@@ -296,7 +296,7 @@ TABLE = (
                      angles=("90d", "120d", "120d", "90d", "120d", "120d"),
                      plane='110'),
                 dict(count=2, n=8, kind='', symmetry='2F',
-                     angles=("120d",), plane='100')),
+                     angles=('120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d'), plane='100')),
          figure='8.41'),
 
     dict(number=18, name="Digonal hemisaddle tetrahedron",
@@ -308,7 +308,7 @@ TABLE = (
                      angles=("90d", "90d", "180d", "90d", "90d"),
                      plane='110'),
                 dict(count=2, n=6, kind='', symmetry='MIRROR',
-                     angles=("90d",), plane='110')),
+                     angles=('90d', '90d', '90d', '90d', '90d', '90d'), plane='110')),
          figure=None),
 
     dict(number=19, name="Wurtzite nodal tetrahedron",
@@ -339,7 +339,7 @@ TABLE = (
          branches={'100': 6, '110': 4, '111': 0}, branches_total=10,
          faces_total=4,
          faces=(dict(count=4, n=5, kind='', symmetry='MIRROR',
-                     angles=("90d",), plane='110'),),
+                     angles=('90d', '90d', '90d', '90d', '90d'), plane='110'),),
          figure=None),
 
     dict(number=22, name="Hemisaddle digonal disphenoid",
@@ -414,9 +414,9 @@ TABLE = (
          branches={'100': 6, '110': 0, '111': 6}, branches_total=12,
          faces_total=6,
          faces=(dict(count=3, n=4, kind='RIGHT', symmetry='2F',
-                     angles=("54d44'",), plane='110'),
+                     angles=("54d44'", "54d44'", "54d44'", "54d44'"), plane='110'),
                 dict(count=3, n=4, kind='LEFT', symmetry='2F',
-                     angles=("54d44'",), plane='110')),
+                     angles=("54d44'", "54d44'", "54d44'", "54d44'"), plane='110')),
          figure='8.46'),
 
     dict(number=28, name="Cubical saddle hexahedron",
@@ -447,7 +447,7 @@ TABLE = (
          branches={'100': 0, '110': 16, '111': 0}, branches_total=16,
          faces_total=6,
          faces=(dict(count=2, n=4, kind='REGULAR', symmetry='4F',
-                     angles=("90d",), plane='100'),   # printed "square"
+                     angles=('90d', '90d', '90d', '90d'), plane='100'),   # printed "square"
                 dict(count=4, n=6, kind='', symmetry='2F',
                      angles=("90d", "120d", "120d", "90d", "120d", "120d"),
                      plane='110')),
@@ -459,8 +459,7 @@ TABLE = (
          branches={'100': 0, '110': 24, '111': 0}, branches_total=24,
          faces_total=6,
          faces=(dict(count=2, n=12, kind='', symmetry='4F',
-                     angles=("90d", "120d", "120d", "90d", "120d", "120d",
-                             "90d"),
+                     angles=('90d', '120d', '120d', '90d', '120d', '120d', '90d', '120d', '120d', '90d', '120d', '120d'),
                      angles_truncated=True, plane='100'),
                 dict(count=4, n=6, kind='', symmetry='2F',
                      angles=("90d", "120d", "120d", "90d", "120d", "120d"),
@@ -473,7 +472,7 @@ TABLE = (
          branches={'100': 0, '110': 16, '111': 0}, branches_total=16,
          faces_total=6,
          faces=(dict(count=2, n=8, kind='', symmetry='4F',
-                     angles=("90d", "90d", "60d", "90d"),
+                     angles=('60d', '90d', '60d', '90d', '60d', '90d', '60d', '90d'),
                      angles_truncated=True, plane='100'),
                 dict(count=4, n=4, kind='', symmetry='2F',
                      angles=("60d", "90d", "60d", "90d"), plane='110')),
@@ -485,9 +484,9 @@ TABLE = (
          branches={'100': 0, '110': 16, '111': 0}, branches_total=16,
          faces_total=6,
          faces=(dict(count=2, n=8, kind='', symmetry='4F',
-                     angles=("60d", "90d", "60d", "90d"), plane='100'),
+                     angles=('60d', '90d', '60d', '90d', '60d', '90d', '60d', '90d'), plane='100'),
                 dict(count=4, n=4, kind='REGULAR', symmetry='4F',
-                     angles=("90d",), plane='100')),  # printed "square"
+                     angles=('90d', '90d', '90d', '90d'), plane='100')),  # printed "square"
          figure='8.52'),
 
     dict(number=34, name="Bidodecagonal hexahedron",
@@ -496,11 +495,10 @@ TABLE = (
          branches={'100': 0, '110': 20, '111': 0}, branches_total=20,
          faces_total=6,
          faces=(dict(count=2, n=12, kind='', symmetry='4F',
-                     angles=("90d", "120d", "120d", "90d", "120d", "120d",
-                             "90d"),
+                     angles=('90d', '120d', '120d', '90d', '120d', '120d', '90d', '120d', '120d', '90d', '120d', '120d'),
                      angles_truncated=True, plane='100'),
                 dict(count=4, n=4, kind='REGULAR', symmetry='4F',
-                     angles=("90d",), plane='100')),  # printed "square"
+                     angles=('90d', '90d', '90d', '90d'), plane='100')),  # printed "square"
          figure='8.53'),
 
     dict(number=35, name="Tetragonal saddle hexahedron",
@@ -509,10 +507,10 @@ TABLE = (
          branches={'100': 0, '110': 0, '111': 16}, branches_total=16,
          faces_total=6,
          faces=(dict(count=2, n=8, kind='', symmetry='4F',
-                     angles=("109d28'", "70d32'", "109d28'", "70d32'"),
+                     angles=("70d32'", "109d28'", "70d32'", "109d28'", "70d32'", "109d28'", "70d32'", "109d28'"),
                      plane='100'),
                 dict(count=4, n=4, kind='REGULAR', symmetry='2F',
-                     angles=("70d32'",), plane='100')),
+                     angles=("70d32'", "70d32'", "70d32'", "70d32'"), plane='100')),
          figure='8.54'),
 
     dict(number=36, name="Fissioned tetragonal saddle hexahedron",
@@ -521,11 +519,10 @@ TABLE = (
          branches={'100': 0, '110': 4, '111': 16}, branches_total=20,
          faces_total=6,
          faces=(dict(count=2, n=12, kind='', symmetry='4F',
-                     angles=("70d32'", "144d44'", "144d44'", "70d32'",
-                             "144d44'"),
+                     angles=("70d32'", "144d44'", "144d44'", "70d32'", "144d44'", "144d44'", "70d32'", "144d44'", "144d44'", "70d32'", "144d44'", "144d44'"),
                      angles_truncated=True, plane='100'),
                 dict(count=4, n=4, kind='REGULAR', symmetry='2F',
-                     angles=("70d32'",), plane='100')),
+                     angles=("70d32'", "70d32'", "70d32'", "70d32'"), plane='100')),
          figure=None),
 
     dict(number=37, name="Tetragonal octagonal hexahedron",
@@ -571,7 +568,7 @@ TABLE = (
          branches={'100': 24, '110': 0, '111': 0}, branches_total=24,
          faces_total=8,
          faces=(dict(count=8, n=6, kind='REGULAR', symmetry='3F',
-                     angles=("90d",), plane='111'),),
+                     angles=('90d', '90d', '90d', '90d', '90d', '90d'), plane='111'),),
          figure='8.55'),
 
     dict(number=41, name="fcc saddle octahedron",
@@ -580,7 +577,7 @@ TABLE = (
          branches={'100': 8, '110': 16, '111': 0}, branches_total=24,
          faces_total=8,
          faces=(dict(count=8, n=6, kind='', symmetry='MIRROR',
-                     angles=("90d",), plane='110'),),
+                     angles=('90d', '90d', '90d', '90d', '90d', '90d'), plane='110'),),
          figure=None),
 
     dict(number=42, name="Tetragonal pentagonal octahedron",
@@ -589,7 +586,7 @@ TABLE = (
          branches={'100': 12, '110': 8, '111': 0}, branches_total=20,
          faces_total=8,
          faces=(dict(count=8, n=5, kind='', symmetry='MIRROR',
-                     angles=("90d",), plane='110'),),
+                     angles=('90d', '90d', '90d', '90d', '90d'), plane='110'),),
          figure=None),
 
     dict(number=43, name="Tetrahedral decahedron",
@@ -598,9 +595,9 @@ TABLE = (
          branches={'100': 0, '110': 24, '111': 0}, branches_total=24,
          faces_total=10,
          faces=(dict(count=4, n=6, kind='REGULAR', symmetry='3F',
-                     angles=("60d",), plane='111'),
+                     angles=('60d', '60d', '60d', '60d', '60d', '60d'), plane='111'),
                 dict(count=6, n=4, kind='REGULAR', symmetry='2F',
-                     angles=("60d",), plane='100')),
+                     angles=('60d', '60d', '60d', '60d'), plane='100')),
          figure='8.56'),
 
     dict(number=44, name="Saddle dodecahedron",
@@ -619,7 +616,7 @@ TABLE = (
          branches={'100': 0, '110': 24, '111': 24}, branches_total=48,
          faces_total=12,
          faces=(dict(count=12, n=8, kind='', symmetry='2F',
-                     angles=("90d", "144d44'", "109d28'", "144d44'", "90d"),
+                     angles=('90d', "144d44'", "109d28'", "144d44'", '90d', "144d44'", "109d28'", "144d44'"),
                      angles_truncated=True, plane='110'),),
          figure=None),
 
@@ -629,11 +626,11 @@ TABLE = (
          branches={'100': 0, '110': 60, '111': 0}, branches_total=60,
          faces_total=14,
          faces=(dict(count=4, n=6, kind='REGULAR', symmetry='6F',
-                     angles=("120d",), plane='111'),
+                     angles=('120d', '120d', '120d', '120d', '120d', '120d'), plane='111'),
                 dict(count=4, n=12, kind='', symmetry='3F',
-                     angles=("120d",), plane='111'),
+                     angles=('120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d'), plane='111'),
                 dict(count=6, n=8, kind='', symmetry='2F',
-                     angles=("120d",), plane='100')),
+                     angles=('120d', '120d', '120d', '120d', '120d', '120d', '120d', '120d'), plane='100')),
          figure='8.58'),
 
     dict(number=47, name="bcc saddle cuboctahedron",
@@ -642,9 +639,9 @@ TABLE = (
          branches={'100': 0, '110': 0, '111': 48}, branches_total=48,
          faces_total=14,
          faces=(dict(count=6, n=8, kind='', symmetry='4F',
-                     angles=("109d28'", "70d32'"), plane='100'),
+                     angles=("70d32'", "109d28'", "70d32'", "109d28'", "70d32'", "109d28'", "70d32'", "109d28'"), plane='100'),
                 dict(count=8, n=6, kind='REGULAR', symmetry='3F',
-                     angles=("109d28'",), plane='111')),
+                     angles=("109d28'", "109d28'", "109d28'", "109d28'", "109d28'", "109d28'"), plane='111')),
          figure='8.59'),
 
     dict(number=48, name="Fissioned bcc saddle cuboctahedron",
@@ -666,10 +663,10 @@ TABLE = (
          branches={'100': 0, '110': 48, '111': 0}, branches_total=48,
          faces_total=14,
          faces=(dict(count=6, n=8, kind='', symmetry='4F',
-                     angles=("60d", "90d"),
+                     angles=('60d', '90d', '60d', '90d', '60d', '90d', '60d', '90d'),
                      angles_truncated=True, plane='100'),
                 dict(count=8, n=6, kind='REGULAR', symmetry='3F',
-                     angles=("60d",), plane='111')),
+                     angles=('60d', '60d', '60d', '60d', '60d', '60d'), plane='111')),
          figure='8.60'),
 
     dict(number=50, name="Truncated fcc saddle cuboctahedron",
@@ -690,7 +687,7 @@ TABLE = (
          branches={'100': 0, '110': 48, '111': 0}, branches_total=48,
          faces_total=18,
          faces=(dict(count=6, n=8, kind='', symmetry='4F',
-                     angles=("60d", "90d", "60d", "90d"),
+                     angles=('60d', '90d', '60d', '90d', '60d', '90d', '60d', '90d'),
                      angles_truncated=True, plane='100'),
                 dict(count=12, n=4, kind='', symmetry='2F',
                      angles=("60d", "90d", "60d", "90d"), plane='110')),
@@ -702,9 +699,9 @@ TABLE = (
          branches={'100': 0, '110': 48, '111': 0}, branches_total=48,
          faces_total=20,
          faces=(dict(count=8, n=3, kind='REGULAR', symmetry='3F',
-                     angles=("60d",), plane='111'),  # printed "triangle"
+                     angles=('60d', '60d', '60d'), plane='111'),  # printed "triangle"
                 dict(count=12, n=6, kind='', symmetry='2F',
-                     angles=("90d", "120d", "120d", "90d"), plane='110')),
+                     angles=('90d', '120d', '120d', '90d', '120d', '120d'), plane='110')),
          figure='8.63'),
 
     dict(number=53, name="Universal cuboctadodecahedron",
@@ -713,7 +710,7 @@ TABLE = (
          branches={'100': 0, '110': 96, '111': 0}, branches_total=96,
          faces_total=26,
          faces=(dict(count=6, n=12, kind='', symmetry='4F',
-                     angles=("120d", "90d", "120d", "120d", "90d"),
+                     angles=('90d', '120d', '120d', '90d', '120d', '120d', '90d', '120d', '120d', '90d', '120d', '120d'),
                      angles_truncated=True, plane='100'),
                 dict(count=8, n=6, kind='REGULAR', symmetry='6F',
                      angles=("120d",), plane='111'),  # printed "hexagon"
