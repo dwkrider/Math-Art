@@ -9,7 +9,7 @@ all agree.  Writes resolved.pkl for tools/emit_pearce_data.py.
 Run from this directory; it is a data-derivation tool, not part of the
 shipped extension.
 """
-import sys, pickle, collections, time, json
+import sys, os, pickle, collections, time, json
 MA = r"C:\Users\dkrid\Projects\2026_07_21_Math_Art\.claude\worktrees\spidrons\math_art"
 sys.path.insert(0, MA)
 import pearce_net as pn
@@ -203,6 +203,15 @@ def core_match(cs, rs):
             and cs['branches'] == rs['branches'] and csz == rsz)
 
 
+#: Wall-clock ceiling per row.  Without one a single row can absorb the
+#: entire sweep: the node budget caps each grow_exact CALL, but a row
+#: makes that call once per seed circuit per class/modulus combination,
+#: so the per-row cost is unbounded.  One row burned five hours and the
+#: sweep advanced by nothing.  A deadline trades completeness on the
+#: hardest rows for progress across all of them -- and a row that times
+#: out is reported as such, not silently as "not found".
+ROW_SECONDS = 240
+
 MAX_NGON = 12
 MAX_FACES = 26
 MIXED_RADIUS = 2
@@ -283,7 +292,22 @@ def rings_for(net, L):
     return ringcache[k]
 
 
+# RESUME.  Successive runs otherwise redo every row from scratch, which
+# is most of the budget: a multi-class row costs 100-840s, so a sweep
+# that restarts spends its whole allowance re-finding what it already
+# had.  Load previous results and skip anything already matched at FULL
+# strength (a CORE match is still worth retrying for a FULL one).
 resolved = {}
+if os.path.exists("resolved.pkl"):
+    try:
+        with open("resolved.pkl", "rb") as _fh:
+            resolved = pickle.load(_fh)
+        print("resuming with %d rows already resolved (%d FULL)"
+              % (len(resolved),
+                 sum(1 for v in resolved.values() if v[0] == 'FULL')))
+    except Exception as _exc:
+        print("could not resume: %s" % _exc)
+
 t_start = time.time()
 
 
@@ -312,7 +336,10 @@ for r in sorted(pt.TABLE, key=_row_cost):
         print("#%-3d %-40s SKIP (too large: F=%d, max n=%d)"
               % (num, r['name'], r['faces_total'], max(want)), flush=True)
         continue
+    if resolved.get(num, (None,))[0] == 'FULL':
+        continue                        # already have the best answer
     _t0 = time.time()
+    _deadline = _t0 + ROW_SECONDS
     rs = row_sig(r)
     hit = None
     need = {c for c in ('100', '110', '111') if r['branches'].get(c, 0)}
@@ -365,6 +392,8 @@ for r in sorted(pt.TABLE, key=_row_cost):
         # Universal Net restricted to exactly the classes this row uses
         # -- which is what keeps it searchable.
         for kinds in pn.kinds_for_row(dict(r['branches'])):
+            if time.time() > _deadline:
+                break
             try:
                 Vi, idx, adj = pn.mixed_net(kinds, n=2)
             except Exception:
@@ -390,6 +419,8 @@ for r in sorted(pt.TABLE, key=_row_cost):
             if not pool:
                 continue
             for s_ in sorted(pool):
+                if time.time() > _deadline:
+                    break
                 if len(s_) not in want:
                     continue
                 for g in grow_exact(pool, r['faces_total'], s_, want,
@@ -418,8 +449,10 @@ for r in sorted(pt.TABLE, key=_row_cost):
               % (num, r['name'], hit[0], hit[1], len(hit[2]), len(hit[3]),
                  time.time() - _t0), flush=True)
     else:
-        print("#%-3d %-40s --  %.0fs"
-              % (num, r['name'], time.time() - _t0), flush=True)
+        _out = time.time() > _deadline
+        print("#%-3d %-40s %s  %.0fs"
+              % (num, r['name'], "TIMEOUT" if _out else "--",
+                 time.time() - _t0), flush=True)
     with open("resolved.pkl", "wb") as _fh:
         pickle.dump(resolved, _fh)
 
