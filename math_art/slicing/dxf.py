@@ -33,6 +33,10 @@
 
 from .drawing import LAYER_ORDER, LAYER_STYLE
 
+# DXF is a CRLF format.  Named, not spelled out inline:
+# an escaped literal has been mangled once already.
+_CRLF = chr(13) + chr(10)
+
 INSUNITS_MM = 4          # $INSUNITS code for millimetres
 MEASUREMENT_METRIC = 1
 
@@ -172,6 +176,25 @@ def write(drawing, path, include_frame=True):
     return [path]
 
 
+def write_sheets(drawing, path_for_sheet, include_frame=True):
+    """One DXF per sheet, each with PLAIN operation layer names.
+
+    The alternative to the single layered file, and it exists because
+    some CAM software copes badly with a drawing carrying many layers.
+    Splitting the job into a file per sheet means each one needs only
+    CUT, HOLE and ENGRAVE -- no per-sheet prefixes, because the file
+    itself is the sheet.
+    """
+    written = []
+    for sheet in drawing.sheets:
+        path = path_for_sheet(sheet.index)
+        with open(path, 'w', encoding='ascii',
+                  newline=_CRLF) as fh:
+            fh.write(sheet_dxf(sheet, include_frame))
+        written.append(path)
+    return written
+
+
 def parse_groups(text):
     """(code, value) pairs -- a minimal reader, for the checks below."""
     lines = text.splitlines()
@@ -292,6 +315,12 @@ def _selftest():
     assert max(xs) <= 100.0 + 1e-9, (
         "sheets stack at a common origin -- an isolated sheet has to sit "
         f"at 0,0 ready to cut, not offset by its place in the job: {max(xs)}")
+
+    # ... and the file-per-sheet alternative uses plain names in
+    # every file, because there the file IS the sheet
+    solo_layers = {v for c, v in parse_groups(sheet_dxf(two.sheets[1]))
+                   if c == 8}
+    assert solo_layers == {'CUT', 'SHEET'},         f"a per-sheet file needs no per-sheet prefix: {sorted(solo_layers)}"
 
     # a single-sheet job keeps the plain names
     one = Drawing('t', 100.0, 60.0)

@@ -963,10 +963,23 @@ if _IN_BLENDER:
                         "the operation carried as stroke colour")
         write_dxf: BoolProperty(
             name="DXF", default=True,
-            description="Write ONE DXF R12 file for the whole job, "
-                        "sheets tiled side by side, with a named layer "
-                        "per operation. One drawing unit is one "
+            description="Write DXF R12. One drawing unit is one "
                         "millimetre")
+        dxf_mode: EnumProperty(
+            name="DXF Layout",
+            items=[
+                ('LAYERS', "One File, Layer per Sheet",
+                 "A single DXF holding every sheet, each on its own "
+                 "layers (S01_CUT, S02_CUT ...) and all at a common "
+                 "origin, so a sheet can be isolated and cut on its own"),
+                ('FILES', "One File per Sheet",
+                 "A separate DXF for each sheet, using plain CUT and "
+                 "ENGRAVE layer names. Use this for software that "
+                 "copes badly with many layers in one drawing"),
+            ],
+            default='LAYERS',
+            description="Whether the DXF is one layered file or one "
+                        "file per sheet")
         include_frame: BoolProperty(
             name="Sheet Outline", default=True,
             description="Include a non-cutting rectangle showing the "
@@ -990,13 +1003,13 @@ if _IN_BLENDER:
             if self.write_svg:
                 written += _svg.write(
                     drawing, lambda i: f"{stem}_{i + 1:02d}.svg")
-            if self.write_dxf:
-                # ONE DXF for the whole job.  DXF has no page, so a
-                # single file means a single drawing: the sheets tiled
-                # side by side, sharing one set of named operation
-                # layers that can be switched or re-powered in one go.
+            if self.write_dxf and self.dxf_mode == 'LAYERS':
                 written += _dxf.write(drawing, f"{stem}.dxf",
                                       self.include_frame)
+            elif self.write_dxf:
+                written += _dxf.write_sheets(
+                    drawing, lambda i: f"{stem}_{i + 1:02d}.dxf",
+                    self.include_frame)
             if not written:
                 self.report({'ERROR'}, "Nothing to write: pick SVG, DXF "
                                        "or both.")
