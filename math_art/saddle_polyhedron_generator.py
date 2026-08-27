@@ -753,6 +753,16 @@ if _IN_BLENDER:
                         "toward its centre without reaching it, so "
                         "without this every face has a hole and the "
                         "solid is not a closed surface")
+        crease_edges: BoolProperty(
+            name="Crease branches", default=True,
+            description="Hold the branch edges hard under Subdivide. "
+                        "ON keeps the polyhedron's corners crisp and "
+                        "lets cells of a packing keep meeting exactly, "
+                        "because a full crease stops the smoothing "
+                        "crossing the edge. Turn OFF to round the "
+                        "corners as well -- the solid then reads as one "
+                        "smooth blob and neighbouring cells no longer "
+                        "match along their shared faces")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=0.5,
             description="Give the saddle surface material depth with a "
@@ -806,6 +816,8 @@ if _IN_BLENDER:
                 L.prop(self, "limit_twist")
             L.prop(self, "smooth")
             L.prop(self, "subdivide")
+            if self.subdivide or self.smooth:
+                L.prop(self, "crease_edges")
             L.prop(self, "thickness")
 
         def _execute_separate(self, context, key):
@@ -863,7 +875,8 @@ if _IN_BLENDER:
                                             [True] * len(me.polygons))
                 me.update()
                 if self.smooth and self.face_style != 'NET':
-                    _sc.mark_sharp(me, face_boundary_edges(CT, cfid))
+                    if self.crease_edges:
+                        _sc.mark_sharp(me, face_boundary_edges(CT, cfid))
                 obj = bpy.data.objects.new(me.name, me)
                 obj.location = tuple(float(x) for x in origin)
                 coll.objects.link(obj)
@@ -961,7 +974,7 @@ if _IN_BLENDER:
                     # different saddle faces meet
                     # crease on the per-FACE grouping, which in a
                     # packing is not the same as the colour grouping
-                    ncrease = _sc.mark_sharp(
+                    ncrease = 0 if not self.crease_edges else _sc.mark_sharp(
                         me, face_boundary_edges(
                             T, info.get('crease_id') or fid))
 
