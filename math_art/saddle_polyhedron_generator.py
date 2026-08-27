@@ -684,9 +684,12 @@ if _IN_BLENDER:
             name="Nest step", default=0.60, min=0.05, max=0.95,
             description="Shrink factor between spidron annuli")
         twist: FloatProperty(
-            name="Nest twist", default=0.0, min=radians(-60.0),
+            name="Nest twist", default=radians(14.0), min=radians(-60.0),
             max=radians(60.0), subtype='ANGLE',
-            description="Rotation between spidron annuli")
+            description="Rotation between spidron annuli. The default "
+                        "sits just inside the measured intersection-free "
+                        "bound for a decatrihedron packing (14.18 "
+                        "degrees at ring scale 0.60)")
         layout_kind: EnumProperty(
             name="Layout", items=_layout_items,
             description="What to build. Repeat unit and Space filling "
