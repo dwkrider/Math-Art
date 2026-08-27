@@ -122,6 +122,39 @@ SOLIDS = (
         packs=False, has_unit=False, fills=True,
     ),
     dict(
+        number=17, key='TRUNCATED_ORTHORHOMBIC_TETRAHEDRON',
+        name='Truncated orthorhombic tetrahedron',
+        net=(('110', 'FULL'),), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (8, 8, 4), (8, 4, 8), (4, 0, 8), (0, 0, 4), (4, 0, 0),
+            (8, 4, 0), (-4, 4, 4), (-4, 8, 0), (0, 12, 0), (4, 12, 4),
+            (0, 12, 8), (-4, 8, 8),
+        ),
+        faces=(
+            (0, 1, 2, 3, 4, 5), (5, 4, 3, 6, 7, 8, 9, 0), (6, 3, 2, 1, 0, 9, 10, 11),
+            (11, 10, 9, 8, 7, 6),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=19, key='WURTZITE_NODAL_TETRAHEDRON',
+        name='Wurtzite nodal tetrahedron',
+        net='WURTZITE', match='FULL',
+        lattice='HEX',
+        basis=((1.0, 0.0, 0.0), (-0.5, 0.8660254037844386, 0.0), (0.0, 0.0, 1.632993161855452)),
+        divisor=24.0,
+        verts=(
+            (32, 16, 0), (32, 40, 0), (8, 40, 0), (-16, 16, 0), (-16, -8, 0),
+            (8, -8, 0), (32, 16, 9), (8, 40, 9), (-16, -8, 9), (8, 16, 9),
+        ),
+        faces=(
+            (5, 4, 3, 2, 1, 0), (0, 1, 2, 7, 9, 6), (2, 3, 4, 8, 9, 7),
+            (4, 5, 0, 6, 9, 8),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
         number=25, key='WURTZITE_PENTAHEDRON',
         name='Wurtzite pentahedron',
         net='WURTZITE', match='FULL',
@@ -137,7 +170,7 @@ SOLIDS = (
             (2, 3, 5, 4, 1, 0), (0, 1, 4, 9, 8, 6), (6, 8, 10, 7, 2, 0),
             (7, 10, 11, 5, 3, 2), (4, 5, 11, 10, 8, 9),
         ),
-        packs=False, has_unit=False, fills=False,
+        packs=True, has_unit=True, fills=False,
     ),
     dict(
         number=27, key='TRIANGULAR_HEXAHEDRON',
@@ -155,6 +188,38 @@ SOLIDS = (
         packs=True, has_unit=True, fills=False,
     ),
     dict(
+        number=28, key='CUBICAL_SADDLE_HEXAHEDRON',
+        name='Cubical saddle hexahedron',
+        net='SHE-D', match='CORE',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (0, 0, 0), (0, 0, 4), (0, 4, 0), (0, 4, 4), (4, 0, 0),
+            (4, 0, 4), (4, 4, 0), (4, 4, 4),
+        ),
+        faces=(
+            (0, 1, 7, 3), (5, 7, 1, 0), (3, 7, 2, 0),
+            (0, 2, 7, 6), (0, 4, 7, 5), (6, 7, 4, 0),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=29, key='SADDLE_CUBE',
+        name='Saddle cube',
+        net=(('111', 'FULL'),), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (4, 4, 12), (4, 12, 4), (4, 12, 20), (4, 20, 12), (8, 8, 8),
+            (8, 8, 16), (8, 16, 8), (8, 16, 16), (12, 4, 4), (12, 4, 20),
+            (12, 20, 4), (12, 20, 20), (16, 8, 8), (16, 8, 16), (16, 16, 8),
+            (16, 16, 16), (20, 4, 12), (20, 12, 4), (20, 12, 20), (20, 20, 12),
+        ),
+        faces=(
+            (5, 2, 7, 3, 6, 1, 4, 0), (0, 4, 8, 12, 16, 13, 9, 5), (6, 10, 14, 17, 12, 8, 4, 1),
+            (2, 5, 9, 13, 18, 15, 11, 7), (7, 11, 15, 19, 14, 10, 6, 3), (17, 14, 19, 15, 18, 13, 16, 12),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
         number=30, key='TRUNCATED_TETRAGONAL_TETRAHEDRON',
         name='Truncated tetragonal tetrahedron',
         net='MJT', match='FULL',
@@ -169,6 +234,23 @@ SOLIDS = (
             (2, 5, 11, 10), (7, 9, 11, 5, 4, 3), (8, 10, 11, 9, 7, 6),
         ),
         packs=False, has_unit=True, fills=False,
+    ),
+    dict(
+        number=31, key='UNIVERSAL_HEXAHEDRON',
+        name='Universal hexahedron',
+        net=(('110', 'FULL'),), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (4, -4, 8), (0, -4, 12), (-4, 0, 12), (-4, 4, 8), (-4, 0, 4),
+            (0, -4, 4), (-4, 8, 4), (0, 12, 4), (4, 12, 8), (8, 12, 4),
+            (12, 8, 4), (12, 4, 8), (12, 0, 4), (8, -4, 4), (8, -4, 12),
+            (12, 0, 12), (12, 8, 12), (8, 12, 12), (0, 12, 12), (-4, 8, 12),
+        ),
+        faces=(
+            (0, 1, 2, 3, 4, 5), (5, 4, 3, 6, 7, 8, 9, 10, 11, 12, 13, 0), (0, 14, 15, 11, 16, 17, 8, 18, 19, 3, 2, 1),
+            (19, 18, 8, 7, 6, 3), (0, 13, 12, 11, 15, 14), (17, 16, 11, 10, 9, 8),
+        ),
+        packs=False, has_unit=False, fills=False,
     ),
     dict(
         number=32, key='AUGMENTED_UNIVERSAL_HEXAHEDRON',
@@ -203,6 +285,23 @@ SOLIDS = (
         packs=False, has_unit=False, fills=True,
     ),
     dict(
+        number=34, key='BIDODECAGONAL_HEXAHEDRON',
+        name='Bidodecagonal hexahedron',
+        net=(('110', 'FULL'), ('110', 'HALF')), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (6, 8, 24), (6, 12, 20), (6, 12, 28), (6, 16, 24), (8, 6, 24),
+            (8, 18, 24), (12, 6, 20), (12, 6, 28), (12, 18, 20), (12, 18, 28),
+            (16, 6, 24), (16, 18, 24), (18, 8, 24), (18, 12, 20), (18, 12, 28),
+            (18, 16, 24),
+        ),
+        faces=(
+            (2, 3, 1, 0), (0, 1, 3, 5, 8, 11, 15, 13, 12, 10, 6, 4), (4, 7, 10, 12, 14, 15, 11, 9, 5, 3, 2, 0),
+            (4, 6, 10, 7), (9, 11, 8, 5), (12, 13, 15, 14),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
         number=35, key='TETRAGONAL_SADDLE_HEXAHEDRON',
         name='Tetragonal saddle hexahedron',
         net=(('111', 'FULL'),), match='FULL',
@@ -215,6 +314,23 @@ SOLIDS = (
         faces=(
             (0, 2, 1, 3), (3, 6, 9, 10, 8, 4, 2, 0), (1, 2, 5, 8, 11, 9, 7, 3),
             (2, 4, 8, 5), (7, 9, 6, 3), (8, 10, 9, 11),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=37, key='TETRAGONAL_OCTAGONAL_HEXAHEDRON',
+        name='Tetragonal octagonal hexahedron',
+        net=(('110', 'FULL'), ('111', 'FULL')), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (0, 12, 24), (4, 12, 20), (4, 12, 28), (8, 8, 16), (8, 8, 32),
+            (8, 16, 16), (8, 16, 32), (12, 0, 24), (12, 4, 20), (12, 4, 28),
+            (12, 20, 20), (12, 20, 28), (12, 24, 24), (16, 8, 16), (16, 8, 32),
+            (16, 16, 16), (16, 16, 32), (20, 12, 20), (20, 12, 28), (24, 12, 24),
+        ),
+        faces=(
+            (0, 1, 3, 8, 7, 9, 4, 2), (2, 6, 11, 12, 10, 5, 1, 0), (5, 10, 15, 17, 13, 8, 3, 1),
+            (2, 4, 9, 14, 18, 16, 11, 6), (7, 8, 13, 17, 19, 18, 14, 9), (10, 12, 11, 16, 18, 19, 17, 15),
         ),
         packs=False, has_unit=False, fills=False,
     ),
@@ -274,6 +390,55 @@ SOLIDS = (
         packs=False, has_unit=False, fills=False,
     ),
     dict(
+        number=45, key='BLUNTED_SADDLE_DODECAHEDRON',
+        name='Blunted saddle dodecahedron',
+        net=(('110', 'FULL'), ('111', 'FULL')), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (12, 20, 20), (12, 20, 28), (12, 24, 24), (12, 28, 20), (12, 28, 28),
+            (16, 16, 16), (16, 16, 32), (16, 32, 16), (16, 32, 32), (20, 12, 20),
+            (20, 12, 28), (20, 20, 12), (20, 20, 36), (20, 28, 12), (20, 28, 36),
+            (20, 36, 20), (20, 36, 28), (24, 12, 24), (24, 24, 12), (24, 24, 36),
+            (24, 36, 24), (28, 12, 20), (28, 12, 28), (28, 20, 12), (28, 20, 36),
+            (28, 28, 12), (28, 28, 36), (28, 36, 20), (28, 36, 28), (32, 16, 16),
+            (32, 16, 32), (32, 32, 16), (32, 32, 32), (36, 20, 20), (36, 20, 28),
+            (36, 24, 24), (36, 28, 20), (36, 28, 28),
+        ),
+        faces=(
+            (5, 9, 17, 10, 6, 1, 2, 0), (0, 2, 3, 7, 13, 18, 11, 5), (6, 12, 19, 14, 8, 4, 2, 1),
+            (4, 8, 16, 20, 15, 7, 3, 2), (11, 18, 23, 29, 21, 17, 9, 5), (6, 10, 17, 22, 30, 24, 19, 12),
+            (15, 20, 27, 31, 25, 18, 13, 7), (8, 14, 19, 26, 32, 28, 20, 16), (17, 21, 29, 33, 35, 34, 30, 22),
+            (25, 31, 36, 35, 33, 29, 23, 18), (19, 24, 30, 34, 35, 37, 32, 26), (28, 32, 37, 35, 36, 31, 27, 20),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=46, key='TRUNCATED_TETRAHEDRAL_DECAHEDRON',
+        name='Truncated tetrahedral decahedron',
+        net=(('110', 'FULL'),), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (4, 12, 20), (4, 16, 24), (4, 20, 12), (4, 24, 16), (8, 12, 16),
+            (8, 16, 12), (8, 20, 24), (8, 24, 20), (12, 4, 20), (12, 8, 16),
+            (12, 16, 8), (12, 16, 32), (12, 20, 4), (12, 20, 28), (12, 28, 20),
+            (12, 32, 16), (16, 4, 24), (16, 8, 12), (16, 12, 8), (16, 12, 32),
+            (16, 24, 4), (16, 24, 28), (16, 28, 24), (16, 32, 12), (20, 4, 12),
+            (20, 8, 24), (20, 12, 4), (20, 12, 28), (20, 24, 8), (20, 24, 32),
+            (20, 28, 12), (20, 32, 24), (24, 4, 16), (24, 8, 20), (24, 16, 4),
+            (24, 16, 28), (24, 20, 8), (24, 20, 32), (24, 28, 16), (24, 32, 20),
+            (28, 12, 20), (28, 16, 24), (28, 20, 12), (28, 24, 16), (32, 12, 16),
+            (32, 16, 12), (32, 20, 24), (32, 24, 20),
+        ),
+        faces=(
+            (0, 1, 6, 7, 3, 2, 5, 4), (4, 9, 8, 16, 25, 27, 19, 11, 13, 6, 1, 0), (2, 3, 7, 14, 15, 23, 30, 28, 20, 12, 10, 5),
+            (4, 5, 10, 18, 17, 9), (13, 21, 22, 14, 7, 6), (8, 9, 17, 24, 32, 33, 25, 16),
+            (10, 12, 20, 28, 36, 34, 26, 18), (19, 27, 35, 37, 29, 21, 13, 11), (22, 31, 39, 38, 30, 23, 15, 14),
+            (17, 18, 26, 34, 36, 42, 45, 44, 40, 33, 32, 24), (29, 37, 35, 41, 46, 47, 43, 38, 39, 31, 22, 21), (33, 40, 41, 35, 27, 25),
+            (28, 30, 38, 43, 42, 36), (44, 45, 42, 43, 47, 46, 41, 40),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
         number=47, key='BCC_SADDLE_CUBOCTAHEDRON',
         name='bcc saddle cuboctahedron',
         net=(('111', 'FULL'),), match='FULL',
@@ -294,6 +459,68 @@ SOLIDS = (
             (12, 18, 24, 29, 22, 16, 10, 5), (6, 11, 17, 23, 30, 25, 19, 13), (15, 19, 27, 31, 26, 18, 14, 7),
             (22, 29, 32, 28, 20, 16), (17, 21, 28, 33, 30, 23), (26, 31, 34, 29, 24, 18),
             (19, 25, 30, 35, 31, 27), (28, 32, 29, 34, 31, 35, 30, 33),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=48, key='FISSIONED_BCC_SADDLE_CUBOCTAHEDRON',
+        name='Fissioned bcc saddle cuboctahedron',
+        net=(('110', 'FULL'), ('111', 'FULL')), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (0, 4, 8), (0, 4, 16), (0, 8, 4), (0, 8, 20), (0, 16, 4),
+            (0, 16, 20), (0, 20, 8), (0, 20, 16), (4, 0, 8), (4, 0, 16),
+            (4, 8, 0), (4, 8, 12), (4, 8, 24), (4, 12, 8), (4, 12, 16),
+            (4, 16, 0), (4, 16, 12), (4, 16, 24), (4, 24, 8), (4, 24, 16),
+            (8, 0, 4), (8, 0, 20), (8, 4, 0), (8, 4, 12), (8, 4, 24),
+            (8, 12, 4), (8, 12, 20), (8, 20, 0), (8, 20, 12), (8, 20, 24),
+            (8, 24, 4), (8, 24, 20), (12, 4, 8), (12, 4, 16), (12, 8, 4),
+            (12, 8, 20), (12, 16, 4), (12, 16, 20), (12, 20, 8), (12, 20, 16),
+            (16, 0, 4), (16, 0, 20), (16, 4, 0), (16, 4, 12), (16, 4, 24),
+            (16, 12, 4), (16, 12, 20), (16, 20, 0), (16, 20, 12), (16, 20, 24),
+            (16, 24, 4), (16, 24, 20), (20, 0, 8), (20, 0, 16), (20, 8, 0),
+            (20, 8, 12), (20, 8, 24), (20, 12, 8), (20, 12, 16), (20, 16, 0),
+            (20, 16, 12), (20, 16, 24), (20, 24, 8), (20, 24, 16), (24, 4, 8),
+            (24, 4, 16), (24, 8, 4), (24, 8, 20), (24, 16, 4), (24, 16, 20),
+            (24, 20, 8), (24, 20, 16),
+        ),
+        faces=(
+            (11, 1, 3, 14, 5, 7, 16, 6, 4, 13, 2, 0), (0, 2, 13, 25, 10, 22, 34, 32, 20, 8, 23, 11), (11, 23, 9, 21, 33, 35, 24, 12, 26, 14, 3, 1),
+            (4, 6, 16, 28, 18, 30, 38, 36, 27, 15, 25, 13), (14, 26, 17, 29, 37, 39, 31, 19, 28, 16, 7, 5), (8, 20, 32, 40, 52, 43, 53, 41, 33, 21, 9, 23),
+            (25, 15, 27, 36, 47, 59, 45, 54, 42, 34, 22, 10), (12, 24, 35, 44, 56, 46, 61, 49, 37, 29, 17, 26), (18, 28, 19, 31, 39, 51, 63, 48, 62, 50, 38, 30),
+            (32, 34, 42, 54, 45, 57, 66, 64, 55, 43, 52, 40), (41, 53, 43, 55, 65, 67, 58, 46, 56, 44, 35, 33), (36, 38, 50, 62, 48, 60, 70, 68, 57, 45, 59, 47),
+            (49, 61, 46, 58, 69, 71, 60, 48, 63, 51, 39, 37), (55, 64, 66, 57, 68, 70, 60, 71, 69, 58, 67, 65),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
+        number=50, key='TRUNCATED_FCC_SADDLE_CUBOCTAHEDRON',
+        name='Truncated fcc saddle cuboctahedron',
+        net=(('110', 'FULL'), ('110', 'HALF')), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (0, 6, 8), (0, 6, 16), (0, 8, 6), (0, 8, 18), (0, 16, 6),
+            (0, 16, 18), (0, 18, 8), (0, 18, 16), (4, 6, 12), (4, 12, 6),
+            (4, 12, 18), (4, 18, 12), (6, 0, 8), (6, 0, 16), (6, 4, 12),
+            (6, 8, 0), (6, 8, 24), (6, 12, 4), (6, 12, 20), (6, 16, 0),
+            (6, 16, 24), (6, 20, 12), (6, 24, 8), (6, 24, 16), (8, 0, 6),
+            (8, 0, 18), (8, 6, 0), (8, 6, 24), (8, 18, 0), (8, 18, 24),
+            (8, 24, 6), (8, 24, 18), (12, 4, 6), (12, 4, 18), (12, 6, 4),
+            (12, 6, 20), (12, 18, 4), (12, 18, 20), (12, 20, 6), (12, 20, 18),
+            (16, 0, 6), (16, 0, 18), (16, 6, 0), (16, 6, 24), (16, 18, 0),
+            (16, 18, 24), (16, 24, 6), (16, 24, 18), (18, 0, 8), (18, 0, 16),
+            (18, 4, 12), (18, 8, 0), (18, 8, 24), (18, 12, 4), (18, 12, 20),
+            (18, 16, 0), (18, 16, 24), (18, 20, 12), (18, 24, 8), (18, 24, 16),
+            (20, 6, 12), (20, 12, 6), (20, 12, 18), (20, 18, 12), (24, 6, 8),
+            (24, 6, 16), (24, 8, 6), (24, 8, 18), (24, 16, 6), (24, 16, 18),
+            (24, 18, 8), (24, 18, 16),
+        ),
+        faces=(
+            (8, 1, 3, 10, 5, 7, 11, 6, 4, 9, 2, 0), (0, 2, 9, 17, 15, 26, 34, 32, 24, 12, 14, 8), (8, 14, 13, 25, 33, 35, 27, 16, 18, 10, 3, 1),
+            (4, 6, 11, 21, 22, 30, 38, 36, 28, 19, 17, 9), (10, 18, 20, 29, 37, 39, 31, 23, 21, 11, 7, 5), (24, 32, 40, 48, 50, 49, 41, 33, 25, 13, 14, 12),
+            (15, 17, 19, 28, 36, 44, 55, 53, 51, 42, 34, 26), (27, 35, 43, 52, 54, 56, 45, 37, 29, 20, 18, 16), (23, 31, 39, 47, 59, 57, 58, 46, 38, 30, 22, 21),
+            (32, 34, 42, 51, 53, 61, 66, 64, 60, 50, 48, 40), (41, 49, 50, 60, 65, 67, 62, 54, 52, 43, 35, 33), (36, 38, 46, 58, 57, 63, 70, 68, 61, 53, 55, 44),
+            (45, 56, 54, 62, 69, 71, 63, 57, 59, 47, 39, 37), (60, 64, 66, 61, 68, 70, 63, 71, 69, 62, 67, 65),
         ),
         packs=False, has_unit=False, fills=False,
     ),
@@ -321,6 +548,30 @@ SOLIDS = (
         ),
         packs=False, has_unit=False, fills=False,
     ),
+    dict(
+        number=52, key='TRUNCATED_SADDLE_DODECAHEDRON',
+        name='Truncated saddle dodecahedron',
+        net='XAE', match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (4, 6, 6), (4, 6, 10), (4, 8, 8), (4, 10, 6), (4, 10, 10),
+            (6, 4, 6), (6, 4, 10), (6, 6, 4), (6, 6, 12), (6, 10, 4),
+            (6, 10, 12), (6, 12, 6), (6, 12, 10), (8, 4, 8), (8, 8, 4),
+            (8, 8, 12), (8, 12, 8), (10, 4, 6), (10, 4, 10), (10, 6, 4),
+            (10, 6, 12), (10, 10, 4), (10, 10, 12), (10, 12, 6), (10, 12, 10),
+            (12, 6, 6), (12, 6, 10), (12, 8, 8), (12, 10, 6), (12, 10, 10),
+        ),
+        faces=(
+            (5, 13, 6, 1, 2, 0), (0, 2, 3, 9, 14, 7), (7, 5, 0),
+            (8, 15, 10, 4, 2, 1), (1, 6, 8), (4, 12, 16, 11, 3, 2),
+            (11, 9, 3), (4, 10, 12), (5, 7, 14, 19, 17, 13),
+            (13, 18, 20, 15, 8, 6), (9, 11, 16, 23, 21, 14), (15, 22, 24, 16, 12, 10),
+            (13, 17, 25, 27, 26, 18), (21, 28, 27, 25, 19, 14), (15, 20, 26, 27, 29, 22),
+            (24, 29, 27, 28, 23, 16), (17, 19, 25), (26, 20, 18),
+            (21, 23, 28), (29, 24, 22),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
 )
 
 #: Rows of Table 8.1 with no verified geometry, each with the
@@ -340,31 +591,19 @@ UNRESOLVED = (
     (10, 'Double rectangular trihedron', 'no geometry found by the search'),
     (15, 'Universal tetrahedron', 'no geometry found by the search'),
     (16, 'Digonal tetrahedron', 'no geometry found by the search'),
-    (17, 'Truncated orthorhombic tetrahedron', 'no geometry found by the search'),
     (18, 'Digonal hemisaddle tetrahedron', 'no geometry found by the search'),
-    (19, 'Wurtzite nodal tetrahedron', 'no geometry found by the search'),
     (20, 'bcc orthorhombic tetrahedron', 'no geometry found by the search'),
     (21, 'Rectangular orthorhombic tetrahedron', 'no geometry found by the search'),
     (22, 'Hemisaddle digonal disphenoid', 'no geometry found by the search'),
     (23, 'Double delta tetrahedron', 'no geometry found by the search'),
     (24, 'Trigonal pentahedron', 'no geometry found by the search'),
     (26, 'Digonal pentahedron', 'no geometry found by the search'),
-    (28, 'Cubical saddle hexahedron', 'no geometry found by the search'),
-    (29, 'Saddle cube', 'no geometry found by the search'),
-    (31, 'Universal hexahedron', 'no geometry found by the search'),
-    (34, 'Bidodecagonal hexahedron', 'no geometry found by the search'),
-    (36, 'Fissioned tetragonal saddle hexahedron', 'no geometry found by the search'),
-    (37, 'Tetragonal octagonal hexahedron', 'no geometry found by the search'),
+    (36, 'Fissioned tetragonal saddle hexahedron', 'face angles ("70d32\'", "70d32\'", "70d32\'", "70d32\'", \'90d\', \'90d\', \'90d\', \'90d\', \'90d\', \'90d\', \'90d\', \'90d\') match no face of the row'),
     (38, 'Trigonal hexahedron', 'no geometry found by the search'),
     (39, 'Trapezoidal trigonal hexahedron', 'no geometry found by the search'),
     (41, 'fcc saddle octahedron', 'no geometry found by the search'),
     (42, 'Tetragonal pentagonal octahedron', 'no geometry found by the search'),
-    (45, 'Blunted saddle dodecahedron', 'no geometry found by the search'),
-    (46, 'Truncated tetrahedral decahedron', "face inventory {(8, '2F', '100'): 6, (12, '3F', '111'): 4, (6, '3F', '111'): 4} != {(6, '6F', '111'): 4, (12, '3F', '111'): 4, (8, '2F', '100'): 6}"),
-    (48, 'Fissioned bcc saddle cuboctahedron', 'no geometry found by the search'),
     (49, 'fcc saddle cuboctahedron', 'no geometry found by the search'),
-    (50, 'Truncated fcc saddle cuboctahedron', 'no geometry found by the search'),
-    (52, 'Truncated saddle dodecahedron', 'no geometry found by the search'),
     (53, 'Universal cuboctadodecahedron', 'no geometry found by the search'),
 )
 
@@ -479,6 +718,90 @@ EXTRA_NETS = {
                            (2, -2, 0),
                            (2, 0, -2))},
     ),
+    'SHE-D': (
+        ((0, 0, 0), (0, 0, 4), (0, 4, 0), (0, 4, 4), (4, 0, 0),
+         (4, 0, 4), (4, 4, 0), (4, 4, 4)),
+        {   (0, 0, 0): (   (-4, -4, 0),
+                           (-4, 0, -4),
+                           (-4, 0, 0),
+                           (-4, 0, 4),
+                           (-4, 4, 0),
+                           (0, -4, -4),
+                           (0, -4, 0),
+                           (0, -4, 4),
+                           (0, 0, -4),
+                           (0, 0, 4),
+                           (0, 4, -4),
+                           (0, 4, 0),
+                           (0, 4, 4),
+                           (4, -4, 0),
+                           (4, 0, -4),
+                           (4, 0, 0),
+                           (4, 0, 4),
+                           (4, 4, 0)),
+            (0, 0, 4): (   (-4, -4, 0),
+                           (-4, 4, 0),
+                           (0, 0, -4),
+                           (0, 0, 4),
+                           (4, -4, 0),
+                           (4, 4, 0)),
+            (0, 4, 0): (   (-4, 0, -4),
+                           (-4, 0, 4),
+                           (0, -4, 0),
+                           (0, 4, 0),
+                           (4, 0, -4),
+                           (4, 0, 4)),
+            (0, 4, 4): (   (-4, 0, 0),
+                           (0, -4, -4),
+                           (0, -4, 4),
+                           (0, 4, -4),
+                           (0, 4, 4),
+                           (4, 0, 0)),
+            (4, 0, 0): (   (-4, 0, 0),
+                           (0, -4, -4),
+                           (0, -4, 4),
+                           (0, 4, -4),
+                           (0, 4, 4),
+                           (4, 0, 0)),
+            (4, 0, 4): (   (-4, 0, -4),
+                           (-4, 0, 4),
+                           (0, -4, 0),
+                           (0, 4, 0),
+                           (4, 0, -4),
+                           (4, 0, 4)),
+            (4, 4, 0): (   (-4, -4, 0),
+                           (-4, 4, 0),
+                           (0, 0, -4),
+                           (0, 0, 4),
+                           (4, -4, 0),
+                           (4, 4, 0)),
+            (4, 4, 4): (   (-4, -4, 0),
+                           (-4, 0, -4),
+                           (-4, 0, 0),
+                           (-4, 0, 4),
+                           (-4, 4, 0),
+                           (0, -4, -4),
+                           (0, -4, 0),
+                           (0, -4, 4),
+                           (0, 0, -4),
+                           (0, 0, 4),
+                           (0, 4, -4),
+                           (0, 4, 0),
+                           (0, 4, 4),
+                           (4, -4, 0),
+                           (4, 0, -4),
+                           (4, 0, 0),
+                           (4, 0, 4),
+                           (4, 4, 0))},
+    ),
+    'XAE': (
+        ((0, 0, 4), (0, 4, 0), (2, 2, 4), (2, 4, 2), (2, 4, 6),
+         (2, 6, 4), (4, 0, 0), (4, 2, 2), (4, 2, 6), (4, 6, 2),
+         (4, 6, 6), (6, 2, 4), (6, 4, 2), (6, 4, 6), (6, 6, 4)),
+        ((-2, -2, 0), (-2, 0, -2), (-2, 0, 2), (-2, 2, 0), (0, -2, -2),
+         (0, -2, 2), (0, 2, -2), (0, 2, 2), (2, -2, 0), (2, 0, -2),
+         (2, 0, 2), (2, 2, 0)),
+    ),
 }
 
 
@@ -581,21 +904,20 @@ def _selftest():
         r = rows[s['number']]
         V, F = s['verts'], s['faces']
         X = points(s)
-        cubic = s.get('basis') is None
+        lat = 'CUBIC8' if s.get('basis') is None else s['lattice']
         tag = "#%d %s" % (s['number'], s['name'])
         # 1. exact integer closure of every circuit
         chk("%s: circuits close (exact)" % tag,
             all(pnet.closes([V[i] for i in f]) for f in F))
-        # 2. every edge is a Universal Node branch.  Only meaningful on
-        #    the cubic grid: <100>/<110>/<111> name cubic directions.
-        bt = None
-        if cubic:
-            try:
-                bt = pnet.branch_totals(V, F)
-                good = True
-            except Exception:
-                good = False
-            chk("%s: every edge is a branch" % tag, good)
+        # 2. every edge is a branch of the solid's OWN lattice -- the
+        #    cubic Universal Node classes, or the hexagonal system of
+        #    pearce_net section 6b.  No lattice is exempt.
+        try:
+            bt = pnet.branch_totals(V, F, lattice=lat)
+            good = True
+        except Exception:
+            bt, good = None, False
+        chk("%s: every edge is a branch" % tag, good)
         # 3. the row's checksum, column by column
         v, e, f_, chi = pnet.euler(V, F)
         chk("%s: V/E/F match the row" % tag,
@@ -611,21 +933,20 @@ def _selftest():
         hist, _ = pnet.valence_histogram(F)
         chk("%s: node valences match" % tag, hist == want,
             "%r vs %r" % (hist, want))
-        if cubic:
-            chk("%s: branch classes match" % tag,
-                bt == dict(r['branches']),
-                "%r vs %r" % (bt, dict(r['branches'])))
-        # 4. face inventory: size, own symmetry, plane direction
+        chk("%s: branch classes match" % tag,
+            bt == dict(r['branches']),
+            "%r vs %r" % (bt, dict(r['branches'])))
+        # 4. face inventory: size, own symmetry, plane direction --
+        #    the plane checked in the solid's own lattice frame
         got = {}
         for cyc in F:
             loop = [X[i] for i in cyc]
             k = (len(cyc), pnet.face_symmetry_label(loop),
-                 pnet.face_plane_class(loop) if cubic else None)
+                 pnet.face_plane_class(loop, lattice=lat))
             got[k] = got.get(k, 0) + 1
         wantf = {}
         for fd in r['faces']:
-            k = (fd['n'], fd['symmetry'],
-                 fd['plane'] if cubic else None)
+            k = (fd['n'], fd['symmetry'], fd['plane'])
             wantf[k] = wantf.get(k, 0) + fd['count']
         chk("%s: face inventory matches" % tag, got == wantf,
             "" if got == wantf else "%r vs %r" % (got, wantf))
@@ -657,10 +978,11 @@ def _selftest():
                 bad.append(ga)
         chk("%s: face angles match the row" % tag, not bad,
             "%s" % (bad[:1],))
-        # 6. symmetry axes
+        # 6. symmetry axes, in the solid's own lattice frame -- no
+        #    longer skipped for hexagonal solids
         pts = [X[i] for i in range(len(X))]
-        ax = pnet.axis_counts(pts)
-        if s['match'] == 'FULL' and cubic:
+        ax = pnet.axis_counts(pts, lattice=lat)
+        if s['match'] == 'FULL':
             chk("%s: symmetry axes match" % tag, ax == tuple(r['axes']),
                 "%r vs %r" % (ax, tuple(r['axes'])))
         # 7. the collapse gate -- topology can pass while the solid is flat

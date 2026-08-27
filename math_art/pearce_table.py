@@ -43,6 +43,37 @@
 #   total is printed as 15 and the handshake forces exactly 15, so the
 #   stray 3 is ignored (it appears to be a mis-set duplicate of the second
 #   face's plane-direction count).
+# - Entry 19 (Wurtzite nodal tetrahedron): the book prints the three
+#   saddle hexagons as "mirror" with plane direction [111].  Both cells
+#   contradict the book's own prose and the measurable geometry:
+#   * Chapter 8 (p. 107, "Wurtzite and Carborundum") says "Wurtzite has
+#     a [nodal] tetrahedron bounded by one plane regular hexagon and
+#     three saddle hexagons WITH 2-FOLD SYMMETRY", and reserves the
+#     mirror-only hexagons for the CARBORUNDUM nodal tetrahedra
+#     described in the next sentence -- which "cannot be accommodated
+#     by the Universal Node connector" and are therefore not in this
+#     table at all.  The 'mirror' cell is that neighbouring
+#     description bleeding into the tabulated row.
+#   * Exhaustive enumeration of closed 4-hexagon complexes over the
+#     row's branch classes -- every 90d/120d-cornered hexagon circuit
+#     within a generous region, on both the hexagonal lattice and the
+#     cubic grid -- yields exactly one solid family matching every
+#     other column, and its three saddle faces have a proper 2-fold
+#     (plus a mirror, so the printed word is not false of the face,
+#     merely not the table's own labelling convention: entry 25's
+#     boat hexagons carry the same C2v symmetry and are printed
+#     "2-fold").  No mirror-only realization exists.
+#   * The same enumeration shows those three faces' normals lie along
+#     NO lattice direction; the printed [111] is the nodal-polyhedron
+#     convention (each face named for the branch it surrounds -- cf.
+#     the ch. 8 description of the universal-network nodal polyhedra,
+#     "hexagons in the [110] directions"), not a measurable normal.
+#     The regular hexagon's [111] normal (the c-axis) is real and is
+#     checked; the saddle faces are recorded plane=None, which the
+#     gate asserts (the normal must match NO lattice direction).
+#   Repaired to symmetry='2F', plane=None for the three saddle
+#   hexagons.  Book self-contradiction, resolved in favour of prose +
+#   measurement.
 # - Entry 45 (Blunted saddle dodecahedron): the Marker digest garbled this
 #   node row, but the book itself is complete -- the primary column holds
 #   two stacked rows (z=4 x6 and z=3 x8) with secondary z=2 x24, total 38.
@@ -316,11 +347,15 @@ TABLE = (
          primary=((3, 4),), secondary=((2, 6),), nodes_total=10,
          branches={'100': 0, '110': 9, '111': 3}, branches_total=12,
          faces_total=4,
+         # Saddle hexagons repaired from the printed "mirror"/[111] to
+         # 2F/None -- the book's own ch. 8 prose says 2-fold, and the
+         # printed plane is the nodal-polyhedron naming convention,
+         # not a measurable normal.  See the header note for entry 19.
          faces=(dict(count=1, n=6, kind='REGULAR', symmetry='6F',
                      angles=("120d",), plane='111'),
-                dict(count=3, n=6, kind='', symmetry='MIRROR',
+                dict(count=3, n=6, kind='', symmetry='2F',
                      angles=("90d", "90d", "120d", "90d", "90d", "120d"),
-                     plane='111')),
+                     plane=None)),
          figure=None),
 
     dict(number=20, name="bcc orthorhombic tetrahedron",

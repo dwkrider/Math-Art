@@ -14,12 +14,31 @@ with open("resolved.pkl", "rb") as fh:
 # is strictly stronger (FULL over CORE); the gate below re-validates
 # every entry either way, so the merge decides provenance, not truth.
 import os as _os_merge
+
+#: Every candidate seen for an entry, from any source.  The merge picks
+#: a preferred one, but preference is not truth: if the gate rejects the
+#: preferred candidate, the alternatives are tried before the entry is
+#: given up.  Entry 36 was lost exactly this way -- a tiling candidate
+#: outranked a derived one that PASSED, and the gate then rejected the
+#: tiling candidate on its angles.
+_candidates = {}
+
+
+def _remember(num, rec):
+    _candidates.setdefault(num, [])
+    if rec not in _candidates[num]:
+        _candidates[num].append(rec)
+
+
 if _os_merge.path.exists("tiles_resolved.pkl"):
     with open("tiles_resolved.pkl", "rb") as fh:
         _tiles = pickle.load(fh)
     _took = []
     for _num, _rec in sorted(_tiles.items()):
         _kind, _net, _V, _F = _rec[0], _rec[1], _rec[2], _rec[3]
+        # remember BEFORE the precedence test: a candidate that loses
+        # the merge must still be available if the winner fails the gate
+        _remember(_num, (_kind, _net, list(_V), list(_F)))
         _cur = resolved.get(_num)
         if _cur is not None and not (_cur[0] == 'CORE' and _kind == 'FULL'):
             continue
@@ -39,6 +58,9 @@ if _os_merge.path.exists("derived.pkl"):
     _took = []
     for _num, _rec in sorted(_drv.items()):
         _kind, _net, _V, _F = _rec[0], _rec[1], _rec[2], _rec[3]
+        # remember BEFORE the precedence test: a candidate that loses
+        # the merge must still be available if the winner fails the gate
+        _remember(_num, (_kind, _net, list(_V), list(_F)))
         _cur = resolved.get(_num)
         if _cur is not None and not (_cur[0] == 'CORE' and _kind == 'FULL'):
             continue
@@ -115,11 +137,18 @@ def validate(num, V, F, kind, basis=None):
 
     The resolver's match test only compares counts; this checks the
     geometry itself -- that every corner is a Universal Node angle,
-    that each face's plane direction is the one the table names, and
-    that the complex is orientable.  Entries that satisfy the resolver
-    but fail here must not ship."""
+    that every edge is a branch of the solid's OWN lattice with the
+    class totals the row prints, that each face's plane direction is
+    the one the table names, and that the complex is orientable.
+    Entries that satisfy the resolver but fail here must not ship.
+
+    A non-cubic solid is held to the SAME standard as a cubic one:
+    branch classes, plane directions and symmetry axes are all checked
+    against the hexagonal lattice's own direction system
+    (pearce_net section 6b) instead of being skipped."""
     r = BY_NUM[num]
     X = _cart(V, basis)
+    lat = 'CUBIC8' if basis is None else 'HEX'
     try:
         # closure stays EXACT integer arithmetic in either lattice --
         # the hexagonal coordinates are integer twenty-fourths of the
@@ -139,6 +168,16 @@ def validate(num, V, F, kind, basis=None):
             return "not a closed surface"
         if not pn.orientation_consistent(pn.orient_faces(V, F)):
             return "not orientable"
+        # every edge is a branch of the solid's lattice, and the class
+        # totals match the row's branch columns.  This used to be
+        # asserted only downstream and only for cubic solids; it is
+        # part of the gate now, for both lattices.
+        try:
+            bt = pn.branch_totals(V, F, lattice=lat)
+        except ValueError as exc:
+            return "edge is not a %s branch: %s" % (lat, exc)
+        if bt != dict(r['branches']):
+            return "branch classes %r != %r" % (bt, dict(r['branches']))
         legal = set(pn.TABULATED)
         for cyc in F:
             for a in pn.circuit_angles([X[i] for i in cyc]):
@@ -176,25 +215,29 @@ def validate(num, V, F, kind, basis=None):
         got = {}
         for cyc in F:
             loop = [X[i] for i in cyc]
-            # Face-plane direction is a CUBIC notion -- it names a
-            # <100>/<110>/<111> normal -- so it is not asserted for a
-            # solid living in the hexagonal lattice.  Its faces are
-            # still checked on size, symmetry and angles.
-            plane = pn.face_plane_class(loop) if basis is None else None
+            # Face-plane direction, asserted for BOTH lattices: the
+            # hexagonal lattice has its own plane-direction classes
+            # (pearce_net.HEX_PLANES), derived from the wurtzite net
+            # and verified against the rows that ship.  A face whose
+            # normal is along no lattice direction classifies as None
+            # and must match a row that says so.
+            plane = pn.face_plane_class(loop, lattice=lat)
             k = (len(cyc), pn.face_symmetry_label(loop), plane)
             got[k] = got.get(k, 0) + 1
         want = {}
         for fd in r['faces']:
-            k = (fd['n'], fd['symmetry'],
-                 fd['plane'] if basis is None else None)
+            k = (fd['n'], fd['symmetry'], fd['plane'])
             want[k] = want.get(k, 0) + fd['count']
         if got != want:
             return "face inventory %r != %r" % (got, want)
-        if kind == 'FULL' and basis is None:
-            pts = [V[i] for i in range(len(V))]
-            if pn.axis_counts(pts) != tuple(r['axes']):
-                return "axes %r != %r" % (pn.axis_counts(pts),
-                                          tuple(r['axes']))
+        if kind == 'FULL':
+            # symmetry axes, in the solid's own lattice frame -- the
+            # 13 cubic axes or the 7 hexagonal ones.  No longer skipped
+            # for hexagonal solids.
+            pts = [X[i] for i in range(len(X))]
+            ax = pn.axis_counts(pts, lattice=lat)
+            if ax != tuple(r['axes']):
+                return "axes %r != %r" % (ax, tuple(r['axes']))
     except Exception as exc:
         return "gate raised: %s" % exc
     return None
@@ -221,6 +264,19 @@ for _num in sorted(resolved):
     _kind, _net, _V, _F = resolved[_num]
     _basis = pn.HEX_BASIS if _num in hex_solids else None
     _why = validate(_num, _V, _F, _kind, _basis)
+    if _why:
+        # try every other candidate for this entry before giving up
+        for _alt in _candidates.get(_num, []):
+            if _alt[2] == _V and _alt[3] == _F:
+                continue
+            _aw = validate(_num, _alt[2], _alt[3], _alt[0], _basis)
+            if _aw is None:
+                resolved[_num] = _alt
+                _V, _F, _kind = _alt[2], _alt[3], _alt[0]
+                _why = None
+                print("  #%d: preferred candidate rejected, an "
+                      "alternative passes" % _num)
+                break
     if _why:
         rejected[_num] = _why
         del resolved[_num]
@@ -493,21 +549,20 @@ def _selftest():
         r = rows[s['number']]
         V, F = s['verts'], s['faces']
         X = points(s)
-        cubic = s.get('basis') is None
+        lat = 'CUBIC8' if s.get('basis') is None else s['lattice']
         tag = "#%d %s" % (s['number'], s['name'])
         # 1. exact integer closure of every circuit
         chk("%s: circuits close (exact)" % tag,
             all(pnet.closes([V[i] for i in f]) for f in F))
-        # 2. every edge is a Universal Node branch.  Only meaningful on
-        #    the cubic grid: <100>/<110>/<111> name cubic directions.
-        bt = None
-        if cubic:
-            try:
-                bt = pnet.branch_totals(V, F)
-                good = True
-            except Exception:
-                good = False
-            chk("%s: every edge is a branch" % tag, good)
+        # 2. every edge is a branch of the solid's OWN lattice -- the
+        #    cubic Universal Node classes, or the hexagonal system of
+        #    pearce_net section 6b.  No lattice is exempt.
+        try:
+            bt = pnet.branch_totals(V, F, lattice=lat)
+            good = True
+        except Exception:
+            bt, good = None, False
+        chk("%s: every edge is a branch" % tag, good)
         # 3. the row's checksum, column by column
         v, e, f_, chi = pnet.euler(V, F)
         chk("%s: V/E/F match the row" % tag,
@@ -523,21 +578,20 @@ def _selftest():
         hist, _ = pnet.valence_histogram(F)
         chk("%s: node valences match" % tag, hist == want,
             "%r vs %r" % (hist, want))
-        if cubic:
-            chk("%s: branch classes match" % tag,
-                bt == dict(r['branches']),
-                "%r vs %r" % (bt, dict(r['branches'])))
-        # 4. face inventory: size, own symmetry, plane direction
+        chk("%s: branch classes match" % tag,
+            bt == dict(r['branches']),
+            "%r vs %r" % (bt, dict(r['branches'])))
+        # 4. face inventory: size, own symmetry, plane direction --
+        #    the plane checked in the solid's own lattice frame
         got = {}
         for cyc in F:
             loop = [X[i] for i in cyc]
             k = (len(cyc), pnet.face_symmetry_label(loop),
-                 pnet.face_plane_class(loop) if cubic else None)
+                 pnet.face_plane_class(loop, lattice=lat))
             got[k] = got.get(k, 0) + 1
         wantf = {}
         for fd in r['faces']:
-            k = (fd['n'], fd['symmetry'],
-                 fd['plane'] if cubic else None)
+            k = (fd['n'], fd['symmetry'], fd['plane'])
             wantf[k] = wantf.get(k, 0) + fd['count']
         chk("%s: face inventory matches" % tag, got == wantf,
             "" if got == wantf else "%r vs %r" % (got, wantf))
@@ -569,10 +623,11 @@ def _selftest():
                 bad.append(ga)
         chk("%s: face angles match the row" % tag, not bad,
             "%s" % (bad[:1],))
-        # 6. symmetry axes
+        # 6. symmetry axes, in the solid's own lattice frame -- no
+        #    longer skipped for hexagonal solids
         pts = [X[i] for i in range(len(X))]
-        ax = pnet.axis_counts(pts)
-        if s['match'] == 'FULL' and cubic:
+        ax = pnet.axis_counts(pts, lattice=lat)
+        if s['match'] == 'FULL':
             chk("%s: symmetry axes match" % tag, ax == tuple(r['axes']),
                 "%r vs %r" % (ax, tuple(r['axes'])))
         # 7. the collapse gate -- topology can pass while the solid is flat

@@ -107,20 +107,33 @@ def primitive(v):
     return tuple(x // g for x in v)
 
 
-def branch_class(v):
-    """'100', '110' or '111' -- or None if v is not a branch."""
-    return CLASS_OF.get(primitive(v))
+def branch_class(v, lattice=None):
+    """'100', '110' or '111' -- or None if v is not a branch.
+
+    `lattice` selects the branch system: None/'CUBIC8' is the cubic
+    Universal Node (class from the primitive direction, any modulus);
+    'HEX' is the hexagonal system of section 6b, where membership is
+    exact (class AND modulus must both be legal) -- deliberately
+    stricter, because the hexagonal classes are not closed under
+    integer scaling."""
+    if lattice in (None, 'CUBIC8'):
+        return CLASS_OF.get(primitive(v))
+    if lattice == 'HEX':
+        return hex_branch_class(v)
+    raise ValueError("unknown lattice %r" % (lattice,))
 
 
-def is_branch(v):
-    return branch_class(v) is not None
+def is_branch(v, lattice=None):
+    return branch_class(v, lattice) is not None
 
 
-def branch_kind(v):
-    """(class, 'FULL'|'HALF') for a branch in eighth-coordinates.
+def branch_kind(v, lattice=None):
+    """(class, 'FULL'|'HALF') for a branch in lattice coordinates.
 
     Raises if the vector is not a Universal Node branch at one of the
     two supplied moduli."""
+    if lattice == 'HEX':
+        return hex_branch_kind(v)
     c = branch_class(v)
     if c is None:
         raise ValueError("not a branch direction: %r" % (v,))
@@ -163,11 +176,30 @@ def angle_label(deg):
     return "%dd%02d'" % (d, m) if m else "%dd" % d
 
 
-def angle_set():
-    """Every distinct angle between two of the 26 branch directions."""
+def angle_set(lattice=None):
+    """Every distinct angle between two branch directions of a lattice.
+
+    With no argument this is the cubic Universal Node's angle system --
+    the 12 angles of the theorem in the header.  'HEX' computes the
+    same inventory for the hexagonal branch directions (in Cartesian,
+    through the basis), which is how a non-cubic lattice states its own
+    legal angles."""
+    if lattice in (None, 'CUBIC8'):
+        dirs = DIRECTIONS
+        tocart = list
+    elif lattice == 'HEX':
+        dirs = sorted({primitive(v) for v in _HEX_BOND}
+                      | {primitive(v) for v in _HEX_SECOND}
+                      | {primitive(v) for v in _HEX_SUMS})
+        B = np.asarray(HEX_BASIS, float)
+
+        def tocart(v):
+            return tuple(np.asarray(v, float) @ B)
+    else:
+        raise ValueError("unknown lattice %r" % (lattice,))
     seen = {}
-    for u, v in combinations(DIRECTIONS, 2):
-        a = included_angle(u, v)
+    for u, v in combinations(dirs, 2):
+        a = included_angle(tocart(u), tocart(v))
         seen.setdefault(angle_label(a), a)
     return dict(sorted(seen.items(), key=lambda kv: kv[1]))
 
@@ -254,19 +286,29 @@ def newell_normal(loop):
     return nz / ln
 
 
-def face_plane_class(loop, tol=1e-6):
+def face_plane_class(loop, tol=1e-6, lattice=None):
     """Which branch class the circuit's normal points along.
 
     Pearce's "Face Plane Directions" column: a face is assigned to
     [100], [110] or [111] according to the direction of its plane's
     normal.  Returns the class string, or None if the normal is not
-    along a branch direction."""
+    along a branch direction.  `loop` is in CARTESIAN coordinates
+    (identical to lattice coordinates on the cubic grid); 'HEX'
+    classifies against the hexagonal plane-direction families of
+    section 6b."""
     nz = newell_normal(loop)
-    for v in DIRECTIONS:
-        u = np.asarray(v, float)
+    if lattice in (None, 'CUBIC8'):
+        cand = [(np.asarray(v, float), CLASS_OF[v]) for v in DIRECTIONS]
+    elif lattice == 'HEX':
+        B = np.asarray(HEX_BASIS, float)
+        cand = [(np.asarray(d, float) @ B, cls)
+                for cls, S in HEX_PLANES.items() for d in S]
+    else:
+        raise ValueError("unknown lattice %r" % (lattice,))
+    for u, cls in cand:
         u = u / float(np.linalg.norm(u))
         if float(np.abs(np.abs(u @ nz) - 1.0)) < tol:
-            return CLASS_OF[v]
+            return cls
     return None
 
 
@@ -332,12 +374,15 @@ def valence_histogram(faces):
     return hist, deg
 
 
-def branch_totals(verts, faces):
-    """Count the solid's distinct edges by branch class."""
+def branch_totals(verts, faces, lattice=None):
+    """Count the solid's distinct edges by branch class.
+
+    `verts` are LATTICE coordinates (eighths on the cubic grid,
+    twenty-fourths on the hexagonal one)."""
     tot = {c: 0 for c in CLASSES}
     for a, b in edge_counts(faces):
         v = tuple(verts[b][k] - verts[a][k] for k in range(3))
-        c = branch_class(v)
+        c = branch_class(v, lattice)
         if c is None:
             raise ValueError("edge %r-%r is not a branch: %r" % (a, b, v))
         tot[c] += 1
@@ -372,10 +417,58 @@ def polygon_symmetries(loop):
 
     Rigid maps carrying the vertex cycle onto itself.  Migrated from
     the triamond space-filler, where it established that the n10a
-    decagon is equilateral and equiangular yet has only 222 symmetry."""
+    decagon is equilateral and equiangular yet has only 222 symmetry.
+
+    PLANAR polygons are classified in TWO dimensions -- rotations
+    about the normal and mirror lines in the plane -- because the 3-D
+    Kabsch fit is rank-deficient for a coplanar point set: with a zero
+    singular value the rotation is undetermined in the null direction,
+    so det(R) comes out arbitrary and a proper rotation can be returned
+    as its composition with reflection in the polygon's own plane.
+    That mislabelled the planar regular hexagon 2F (it is 6F) while the
+    planar square happened to come back 4F, which is what made the bug
+    easy to miss.  The 2-D reading is also Pearce's: his symmetry
+    column describes a planar face as a plane figure (n-fold about the
+    normal, mirror LINES), not by its accidental 3-space C2 axes."""
     P = np.asarray(loop, float)
     m = len(P)
     Q = P - P.mean(axis=0)
+    _U0, S0, Vt0 = np.linalg.svd(Q, full_matrices=False)
+    scale = max(1.0, float(S0[0]))
+    if float(S0[-1]) < 1e-9 * scale:
+        # ---- planar: classify in the plane ----------------------
+        if float(S0[1]) < 1e-9 * scale:
+            return 1, 0, [1]            # degenerate (collinear)
+        nrm = Vt0[-1]
+        e1 = Vt0[0]
+        e2 = np.cross(nrm, e1)
+        uv = np.stack([Q @ e1, Q @ e2], axis=1)
+        prop = impr = 0
+        orders = []
+        for s in range(m):
+            for rev in (False, True):
+                perm = [(s + (-k if rev else k)) % m for k in range(m)]
+                B = uv[perm]
+                H = uv.T @ B
+                U, _S, Vt = np.linalg.svd(H)
+                hit = False
+                for sign in (1.0, -1.0):
+                    R = Vt.T @ np.diag([1.0, sign]) @ U.T
+                    if np.abs((R @ uv.T).T - B).max() < 1e-9:
+                        hit = True
+                        break
+                if not hit:
+                    continue
+                if np.linalg.det(R) > 0:
+                    prop += 1
+                    k, M = 1, R
+                    while np.abs(M - np.eye(2)).max() > 1e-9:
+                        M = M @ R
+                        k += 1
+                    orders.append(k)
+                else:
+                    impr += 1
+        return prop, impr, orders
     prop = impr = 0
     orders = []
     for s in range(m):
@@ -442,13 +535,24 @@ def _octahedral_rotations():
     return mats
 
 
-def rotation_symmetries(points, tol=1e-6):
-    """Proper rotations of the cubic group fixing this point cloud.
+def _lattice_rotations(lattice=None):
+    """Proper point-group rotations of a lattice, as Cartesian matrices."""
+    if lattice in (None, 'CUBIC8'):
+        return _octahedral_rotations()
+    if lattice == 'HEX':
+        return [R for _M, R in hex_point_ops(improper=False)]
+    raise ValueError("unknown lattice %r" % (lattice,))
 
-    The cloud must already be centred on the solid's centroid."""
+
+def rotation_symmetries(points, tol=1e-6, lattice=None):
+    """Proper rotations of the lattice's point group fixing this cloud.
+
+    The cloud is in CARTESIAN coordinates and must already be centred
+    on the solid's centroid."""
     P = np.asarray(points, float)
     P = P - P.mean(axis=0)
-    return [R for R in _octahedral_rotations() if cloud_match(P, P, R, tol)]
+    return [R for R in _lattice_rotations(lattice)
+            if cloud_match(P, P, R, tol)]
 
 
 def _rotation_order(R):
@@ -481,24 +585,33 @@ def axis_rotation(axis, k):
             + (1.0 - np.cos(th)) * (K @ K))
 
 
-def axis_counts(points, tol=1e-6):
+def axis_counts(points, tol=1e-6, lattice=None):
     """(n2, n3, n4, n6): Pearce's symmetry-axis column.
 
     Counts AXES, not group elements, and reports each axis at its
     HIGHEST order -- a 4-fold axis also carries a 2-fold rotation but
-    is counted once, as 4-fold.  Tested directly against the 13 axes of
-    the cubic system rather than by classifying rotation matrices,
-    because a 3-fold rotation and its square are two matrices about one
-    axis and eigenvector round-off makes them look like two distinct
-    axes (which is exactly what an earlier revision did, reporting 6
-    three-fold axes for the tetrahedral diamond cell instead of 4).
+    is counted once, as 4-fold.  Tested directly against the lattice's
+    axis inventory (the 13 cubic axes, or the 7 hexagonal ones) rather
+    than by classifying rotation matrices, because a 3-fold rotation
+    and its square are two matrices about one axis and eigenvector
+    round-off makes them look like two distinct axes (which is exactly
+    what an earlier revision did, reporting 6 three-fold axes for the
+    tetrahedral diamond cell instead of 4).
 
     No axis can be 6-fold inside the cubic group; a "6-fold" in Table
-    8.1 always refers to a FACE's own symmetry, never the solid's."""
+    8.1 always refers to a FACE's own symmetry, never a cubic solid's.
+    On the hexagonal lattice the c-axis genuinely can be 6-fold.
+    `points` are CARTESIAN."""
     P = np.asarray(points, float)
     P = P - P.mean(axis=0)
+    if lattice in (None, 'CUBIC8'):
+        axes = CUBIC_AXES
+    elif lattice == 'HEX':
+        axes = HEX_AXES
+    else:
+        raise ValueError("unknown lattice %r" % (lattice,))
     n = {2: 0, 3: 0, 4: 0, 6: 0}
-    for ax in CUBIC_AXES:
+    for ax in axes:
         best = 1
         for k in (6, 4, 3, 2):
             if cloud_match(P, P, axis_rotation(ax, k), tol):
@@ -509,12 +622,15 @@ def axis_counts(points, tol=1e-6):
     return n[2], n[3], n[4], n[6]
 
 
-def is_chiral(points, tol=1e-6):
-    """Does the cloud admit NO improper isometry of the cubic group?"""
+def is_chiral(points, tol=1e-6, lattice=None):
+    """Does the cloud admit NO improper isometry of its point group?
+
+    Both the cubic and hexagonal holohedries contain the inversion, so
+    the improper half is exactly {-R} over the proper rotations."""
     P = np.asarray(points, float)
     P = P - P.mean(axis=0)
-    for R in _octahedral_rotations():
-        if cloud_match(P, P, -R, tol):
+    for R in _lattice_rotations(lattice):
+        if cloud_match(P, P, -np.asarray(R), tol):
             return False
     return True
 
@@ -663,6 +779,13 @@ HEX_DIVISOR = 24.0
 CUBIC_BASIS = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
 CUBIC_DIVISOR = 8.0
 
+#: the lattices this kernel understands, by the tag stored on each
+#: solid record.  `basis=None` means "the integer grid IS Cartesian".
+LATTICES = {
+    'CUBIC8': (None, CUBIC_DIVISOR),
+    'HEX': (HEX_BASIS, HEX_DIVISOR),
+}
+
 
 def cartesian(pts, basis=None, divisor=None):
     """Lattice coordinates -> Cartesian.
@@ -676,6 +799,242 @@ def cartesian(pts, basis=None, divisor=None):
     B = np.asarray(basis, float)
     d = float(divisor if divisor is not None else 1.0)
     return [tuple(np.asarray(p, float) @ B / d) for p in pts]
+
+
+def lattice_cartesian(pts, lattice=None):
+    """Lattice coordinates -> Cartesian, by lattice tag."""
+    basis, divisor = LATTICES[lattice or 'CUBIC8']
+    return cartesian(pts, basis, divisor)
+
+
+# --------------------------------------------------------------------
+# 6b.  The hexagonal lattice as a first-class citizen
+# --------------------------------------------------------------------
+#
+# The Universal Node is cubic, but not every solid of Table 8.1 lives
+# on the cubic grid: the wurtzite family (entries 6, 19, 25) needs the
+# hexagonal ABAB stacking of lonsdaleite.  This section gives the
+# hexagonal lattice the same first-class machinery the cubic grid has:
+# its own branch classes with exact integer membership tests, its own
+# face-plane direction classes, its own symmetry axes, and its own
+# integer point group -- so a hexagonal solid is verified as strictly
+# as a cubic one, not waved through with the checks skipped.
+#
+# BRANCH CLASSES, DERIVED FROM THE NET.  Locally, every wurtzite site
+# is a perfect tetrahedral (diamond-like) environment, so the cubic
+# class names transfer through the local frame:
+#
+#   '111'  <->  the FIRST-neighbour (bond) vectors, exactly the role
+#               half-<111> plays in the diamond net.  In twenty-fourths
+#               the bond is (0,0,+-9) or the (16,8,3) family; length
+#               sqrt(3/8) a.
+#   '110'  <->  the SECOND-neighbour vectors (compositions of two
+#               bonds across a bond), the role of full-<110> in
+#               diamond.  Length a; the in-plane a-vectors (24,0,0)
+#               and the out-of-plane (16,8,12) family.
+#   '100'  <->  sums of two bonds AT one site, the role of half-<100>
+#               (in cubic eighths, (2,2,2)+(2,-2,-2) = (4,0,0)).
+#               Length a/sqrt(2).
+#
+# The length ratios reproduce the cubic moduli exactly (second/bond =
+# sqrt(8/3) = full-110 / half-111), which is the check that this
+# assignment is the right one and not merely a naming convention.
+# Each class also exists at half and double modulus, mirroring the
+# cubic FULL/HALF system.
+#
+# FACE-PLANE CLASSES.  Pearce's "Face Plane Directions" column names
+# the direction of a face's normal.  For the hexagonal solids the
+# measured Newell normals land on three direction families, and each
+# is the image of a cubic class under the local tetrahedral frames of
+# the two stacking layers (the union over both frames is larger than
+# one cubic frame's class -- the 60 degree layer rotation doubles some
+# families):
+#
+#   '111'  the bond directions (the c-axis and the oblique bonds);
+#   '110'  the second-neighbour directions PLUS the six in-plane
+#          mid-directions (1,2,0)-family -- differences of oblique
+#          bonds from the two layers, which is where the boat-ring
+#          normals of entries 6 and 25 measurably point;
+#   '100'  the same-site bond-sum directions.
+#
+# A normal along none of these classifies as None, and a row that
+# prints a plane class for such a face fails the gate -- the honest
+# outcome, not a skip.
+
+#: lonsdaleite sites, integer twenty-fourths of the hexagonal cell
+WURTZITE_BASE24 = ((8, 16, 0), (16, 8, 12), (8, 16, 9), (16, 8, 21))
+
+
+def _hex_tables():
+    """Neighbour offsets of the lonsdaleite net, exact integers.
+
+    Returns (first, second, sums): per-site bond offsets, the union of
+    second-neighbour offsets, and the union of same-site bond-pair
+    sums.  Derived from the sites, not hand-typed, and verified in the
+    self-test."""
+    B = np.asarray(HEX_BASIS, float)
+
+    def cart24(p):
+        return np.asarray(p, float) @ B / HEX_DIVISOR
+
+    span = range(-1, 2)
+    sites = sorted({(b[0] + 24 * i, b[1] + 24 * j, b[2] + 24 * k)
+                    for b in WURTZITE_BASE24
+                    for i in span for j in span for k in span})
+    bond2 = 3.0 / 8.0                   # (3c/8)^2 with a = 1
+    first = {}
+    second = set()
+    for p in WURTZITE_BASE24:
+        cp = cart24(p)
+        f = []
+        for q in sites:
+            if q == p:
+                continue
+            d = cart24(q) - cp
+            L2 = float(d @ d)
+            off = (q[0] - p[0], q[1] - p[1], q[2] - p[2])
+            if abs(L2 - bond2) < 1e-9:
+                f.append(off)
+            elif abs(L2 - 1.0) < 1e-9:
+                second.add(off)
+        first[p] = tuple(sorted(f))
+    sums = set()
+    for f in first.values():
+        for i in range(len(f)):
+            for j in range(len(f)):
+                if i == j:
+                    continue
+                s = tuple(f[i][k] + f[j][k] for k in range(3))
+                if s != (0, 0, 0):
+                    sums.add(s)
+    return first, tuple(sorted(second)), tuple(sorted(sums))
+
+
+_WZ_FIRST, _HEX_SECOND, _HEX_SUMS = _hex_tables()
+_HEX_BOND = tuple(sorted({v for f in _WZ_FIRST.values() for v in f}))
+
+#: in-plane mid-directions: differences of oblique bonds from the two
+#: stacking layers, primitive form.  Perpendicular to the a-axes.
+_HEX_MID = ((1, 2, 0), (2, 1, 0), (1, -1, 0),
+            (-1, -2, 0), (-2, -1, 0), (-1, 1, 0))
+
+
+def _scaled(vecs, num, den=1):
+    out = []
+    for v in vecs:
+        w = tuple(x * num for x in v)
+        if den != 1:
+            if any(x % den for x in w):
+                raise ValueError("non-integral scaled branch %r" % (v,))
+            w = tuple(x // den for x in w)
+        out.append(w)
+    return frozenset(out)
+
+
+#: hexagonal branch vectors by (class, modulus), exact integer sets
+HEX_BRANCHES = {
+    ('111', 'HALF'): _scaled(_HEX_BOND, 1),
+    ('111', 'FULL'): _scaled(_HEX_BOND, 2),
+    ('110', 'FULL'): _scaled(_HEX_SECOND, 1),
+    ('110', 'HALF'): _scaled(_HEX_SECOND, 1, 2),
+    ('100', 'HALF'): _scaled(_HEX_SUMS, 1),
+    ('100', 'FULL'): _scaled(_HEX_SUMS, 2),
+}
+
+#: hexagonal face-plane direction classes, primitive integer vectors
+HEX_PLANES = {
+    '111': frozenset(primitive(v) for v in _HEX_BOND),
+    '110': frozenset(primitive(v) for v in _HEX_SECOND) |
+           frozenset(_HEX_MID),
+    '100': frozenset(primitive(v) for v in _HEX_SUMS),
+}
+
+
+def hex_branch_kind(v):
+    """(class, 'FULL'|'HALF') of a hexagonal branch vector, or raise."""
+    v = tuple(int(round(x)) for x in v)
+    for (cls, mod), S in HEX_BRANCHES.items():
+        if v in S:
+            return cls, mod
+    raise ValueError("not a hexagonal branch: %r" % (v,))
+
+
+def hex_branch_class(v):
+    """'100', '110' or '111' -- or None if v is not a hex branch."""
+    try:
+        return hex_branch_kind(v)[0]
+    except ValueError:
+        return None
+
+
+def hex_net_sites(n):
+    """Wurtzite net sites over an n^3 block of hexagonal cells."""
+    S = set()
+    for i in range(n):
+        for j in range(n):
+            for k in range(n):
+                for b in WURTZITE_BASE24:
+                    S.add((b[0] + 24 * i, b[1] + 24 * j, b[2] + 24 * k))
+    return S
+
+
+_HEXOPS = None
+
+
+def hex_point_ops(improper=True):
+    """Integer point operations of the hexagonal holohedry (6/mmm).
+
+    Row-vector convention: a lattice point p maps to p @ M, and the
+    Cartesian action R = B^-1 M B is orthogonal (asserted).  Twelve
+    proper rotations, twenty-four with the improper half.  Closed from
+    the 6-fold about c, an in-plane 2-fold, and the inversion --
+    cross-checked in tools against the Hall-symbol space-group engine.
+    """
+    global _HEXOPS
+    if _HEXOPS is None:
+        M6 = np.array([[1, 1, 0], [-1, 0, 0], [0, 0, 1]])
+        M2 = np.array([[1, 0, 0], [-1, -1, 0], [0, 0, -1]])
+        gens = [M6, M2, -np.eye(3, dtype=int)]
+        ops = {tuple(np.eye(3, dtype=int).ravel())}
+        frontier = [np.eye(3, dtype=int)]
+        while frontier:
+            nxt = []
+            for A in frontier:
+                for G in gens:
+                    C = A @ G
+                    key = tuple(int(x) for x in C.ravel())
+                    if key not in ops:
+                        ops.add(key)
+                        nxt.append(C)
+            frontier = nxt
+        B = np.asarray(HEX_BASIS, float)
+        Binv = np.linalg.inv(B)
+        out = []
+        for key in sorted(ops):
+            M = np.array(key).reshape(3, 3)
+            R = Binv @ (M.astype(float) @ B)
+            if np.abs(R @ R.T - np.eye(3)).max() > 1e-9:
+                raise AssertionError("hex op %r is not orthogonal" % (key,))
+            out.append((M, R, float(np.linalg.det(R))))
+        _HEXOPS = out
+    if improper:
+        return [(M, R) for M, R, d in _HEXOPS]
+    return [(M, R) for M, R, d in _HEXOPS if d > 0]
+
+
+def _hex_axes():
+    """The 7 rotation axes of the hexagonal system, Cartesian.
+
+    The c-axis (up to 6-fold) and six in-plane 2-fold axes: the three
+    a-directions and the three mid-directions between them -- the
+    hexagonal counterpart of the 13 cubic axes."""
+    s3 = sqrt(3.0) / 2.0
+    return ((0.0, 0.0, 1.0),
+            (1.0, 0.0, 0.0), (-0.5, s3, 0.0), (0.5, s3, 0.0),
+            (0.0, 1.0, 0.0), (s3, 0.5, 0.0), (s3, -0.5, 0.0))
+
+
+HEX_AXES = _hex_axes()
 
 
 def net_chunk(name, n=3):
@@ -1033,6 +1392,23 @@ def _selftest():
             axis_counts(pts) == (3, 4, 0, 0), "%r" % (axis_counts(pts),))
         chk("  achiral", not is_chiral(pts))
 
+    # --- the symmetry labeller on PLANAR polygons --------------------
+    # The 3-D Kabsch fit is rank-deficient for coplanar points, and an
+    # earlier revision returned the planar regular hexagon as 2F while
+    # the square happened to come back 4F.  Pin both directions.
+    from math import cos, sin, pi
+    hexa = [(cos(k * pi / 3.0), sin(k * pi / 3.0), 0.0) for k in range(6)]
+    chk("planar regular hexagon is 6F",
+        face_symmetry_label(hexa) == '6F', face_symmetry_label(hexa))
+    sq = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
+          (-1.0, 0.0, 0.0), (0.0, -1.0, 0.0)]
+    chk("planar square is 4F", face_symmetry_label(sq) == '4F',
+        face_symmetry_label(sq))
+    pent = [(0.0, 2.0, 0.0), (1.0, 1.0, 0.0), (1.0, -1.0, 0.0),
+            (-1.0, -1.0, 0.0), (-1.0, 1.0, 0.0)]
+    chk("planar mirror-only pentagon is MIRROR",
+        face_symmetry_label(pent) == 'MIRROR', face_symmetry_label(pent))
+
     # --- the bcc tetrahedron, entry 12 -------------------------------
     cell = find_cell('BCC', 4, 4, n=2)
     chk("bcc tetrahedron found", cell is not None)
@@ -1054,6 +1430,78 @@ def _selftest():
         pts = [V[i] for i in range(len(V))]
         chk("  axes (4 x 2-fold, 1 x 4-fold) = tetragonal",
             axis_counts(pts) == (4, 0, 1, 0), "%r" % (axis_counts(pts),))
+
+    # --- the hexagonal lattice ---------------------------------------
+    print("pearce_net: the hexagonal (wurtzite) lattice")
+    chk("14 bond offsets, 18 second-neighbour, sums non-empty",
+        len(_HEX_BOND) == 14 and len(_HEX_SECOND) == 18
+        and len(_HEX_SUMS) > 0,
+        "%d/%d/%d" % (len(_HEX_BOND), len(_HEX_SECOND), len(_HEX_SUMS)))
+    B = np.asarray(HEX_BASIS, float)
+    lb = sorted({round(float(np.linalg.norm(
+        np.asarray(v, float) @ B / HEX_DIVISOR)), 9) for v in _HEX_BOND})
+    ls = sorted({round(float(np.linalg.norm(
+        np.asarray(v, float) @ B / HEX_DIVISOR)), 9) for v in _HEX_SECOND})
+    chk("bond length sqrt(3/8) a, second-neighbour length a",
+        lb == [round(sqrt(3.0 / 8.0), 9)] and ls == [1.0],
+        "%r %r" % (lb, ls))
+    chk("second/bond ratio = full-110/half-111 = sqrt(8/3)",
+        abs(ls[0] / lb[0] - sqrt(8.0 / 3.0)) < 1e-8)
+    lsum = sorted({round(float(np.linalg.norm(
+        np.asarray(v, float) @ B / HEX_DIVISOR)), 9) for v in _HEX_SUMS})
+    chk("bond-sum length a/sqrt(2) (the half-100 analogue)",
+        lsum == [round(1.0 / sqrt(2.0), 9)], "%r" % (lsum,))
+    # class membership is exact and disjoint
+    allsets = list(HEX_BRANCHES.items())
+    disjoint = True
+    for i in range(len(allsets)):
+        for j in range(i + 1, len(allsets)):
+            if allsets[i][1] & allsets[j][1]:
+                disjoint = False
+    chk("hex branch sets pairwise disjoint", disjoint)
+    chk("bond classifies as half-111",
+        branch_kind((0, 0, 9), lattice='HEX') == ('111', 'HALF')
+        and branch_kind((16, 8, 3), lattice='HEX') == ('111', 'HALF'))
+    chk("a-vector classifies as full-110",
+        branch_kind((24, 0, 0), lattice='HEX') == ('110', 'FULL')
+        and branch_kind((8, -8, 12), lattice='HEX') == ('110', 'FULL'))
+    chk("half a-vector classifies as half-110",
+        branch_kind((12, 0, 0), lattice='HEX') == ('110', 'HALF'))
+    chk("a non-branch is rejected",
+        branch_class((16, 8, 0), lattice='HEX') is None
+        and branch_class((0, 0, 6), lattice='HEX') is None)
+    # the point group
+    ops = hex_point_ops()
+    chk("hexagonal point group has 24 ops, 12 proper",
+        len(ops) == 24 and len(hex_point_ops(improper=False)) == 12)
+    # the wurtzite net: every site 4-connected at the bond length with
+    # tetrahedral angles -- lonsdaleite, not a near-miss
+    sites = hex_net_sites(3)
+    mid = (8 + 24, 16 + 24, 9 + 24)
+    nb = [q for q in sites
+          if abs(float(np.linalg.norm(
+              (np.asarray(q, float) - np.asarray(mid, float)) @ B
+              / HEX_DIVISOR)) - sqrt(3.0 / 8.0)) < 1e-9]
+    chk("interior wurtzite site has 4 bonds", len(nb) == 4)
+    angs = set()
+    cm = np.asarray(mid, float) @ B / HEX_DIVISOR
+    for i in range(4):
+        for j in range(i + 1, 4):
+            u = np.asarray(nb[i], float) @ B / HEX_DIVISOR - cm
+            w = np.asarray(nb[j], float) @ B / HEX_DIVISOR - cm
+            angs.add(angle_label(included_angle(u, w)))
+    chk("all bond angles are 109d28'", angs == {"109d28'"}, "%r" % (angs,))
+    # the hexagonal lattice states its own angles; every angle a
+    # wurtzite-family row prints is among them, and the cubic theorem
+    # above is untouched because angle_set() defaults to cubic
+    HS = angle_set('HEX')
+    chk("hex angle set contains the printed wurtzite angles",
+        all(a in HS for a in ("90d", "109d28'", "120d")),
+        " ".join(sorted(HS)))
+    # plane classes: the boat-hexagon normal (a mid direction) is [110],
+    # the c-axis is [111]
+    chk("mid direction classifies as a [110] plane",
+        (1, 2, 0) in HEX_PLANES['110'] and (0, 0, 1) in HEX_PLANES['111'])
 
     print("RESULT:", "OK" if ok else "BAD")
     if not ok:
