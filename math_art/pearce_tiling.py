@@ -617,6 +617,65 @@ def trim_overlaps(copies, faces, cap=None):
     return [copies[i] for i in sorted(best)]
 
 
+def surfaces_intersect(copies, faces, density=2, iters=12, limit=1):
+    """Do the packing's BUILT surfaces intersect?
+
+    The decisive test, because it is the geometry the user is shown.
+    `cells_overlap` reasons about the cell as a solid, fanning each skew
+    face from its centroid -- but the generator spans that same boundary
+    with a relaxed minimal surface, and two DIFFERENT surfaces on one
+    boundary enclose different regions.  Cells whose fan-triangulated
+    forms are disjoint can therefore have rendered surfaces that cross,
+    which is exactly what entries 14 and 27 did.
+
+    Bounding boxes are checked first, so only genuinely nearby pairs
+    cost anything.
+    """
+    try:
+        from . import pearce_surface as _ps
+    except Exception:
+        import pearce_surface as _ps
+    meshes = []
+    for pts in copies:
+        V, T, fid = _ps.solid_surface(pts, faces, density=density,
+                                      iters=iters, relax=iters > 0)
+        V = np.asarray(V, float)
+        fkey = [tuple(sorted(tuple(pts[i]) for i in cyc)) for cyc in faces]
+        meshes.append((V, T, fid, fkey, V.min(axis=0), V.max(axis=0)))
+    bad = 0
+    for i in range(len(meshes)):
+        Vi, Ti, fi, ki, loi, hii = meshes[i]
+        for j in range(i + 1, len(meshes)):
+            Vj, Tj, fj, kj, loj, hij = meshes[j]
+            if np.any(hii < loj - 1e-9) or np.any(hij < loi - 1e-9):
+                continue
+            # Skip the face the two cells SHARE.  Each cell relaxes that
+            # boundary independently, so the two copies of it wiggle
+            # across each other -- a false positive that flags every
+            # correct packing, including Pearce's own decatrihedron.
+            shared = set(ki) & set(kj)
+            si = {n for n, k in enumerate(ki) if k in shared}
+            sj = {n for n, k in enumerate(kj) if k in shared}
+            hit = False
+            for ti, (a, b, c) in enumerate(Ti):
+                if fi[ti] in si:
+                    continue
+                t1 = (Vi[a], Vi[b], Vi[c])
+                for tj, (d, e, f) in enumerate(Tj):
+                    if fj[tj] in sj:
+                        continue
+                    if tri_tri_intersect(t1, (Vj[d], Vj[e], Vj[f])):
+                        hit = True
+                        break
+                if hit:
+                    break
+            if hit:
+                bad += 1
+                if bad >= limit:
+                    return bad
+    return bad
+
+
 def pack_multi(cells, nets, nx=1, ny=1, nz=1, tol=0.06, lattices=None):
     """A packing built from SEVERAL cell types.
 

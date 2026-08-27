@@ -305,9 +305,30 @@ for num in nums:
         import itertools as _it
         _bad = sum(1 for _i, _j in _it.combinations(range(len(_cps)), 2)
                    if _pt.cells_overlap(_cps[_i], _cps[_j], F))
-        _packs = bool(len(_cps) > 1 and _bad == 0
+        # And test the SURFACES that actually get built, not just the
+        # cell as a solid.  cells_overlap fans each skew face from its
+        # centroid; the generator spans the same boundary with a relaxed
+        # minimal surface, and two different surfaces on one boundary
+        # enclose different regions -- entry 14's rendered cells cross
+        # while its fan-triangulated ones do not.  The face the two
+        # cells SHARE is excluded, because each relaxes it independently
+        # and the two copies wiggle across each other, which would
+        # otherwise flag every correct packing.
+        _sbad = _pt.surfaces_intersect(_cps, F, limit=1) if len(_cps) > 1 else 0
+        _pair = _pt.disjoint_packing(_cps, F)[:2] if len(_cps) > 1 else []
+        try:
+            import saddle_polyhedron_generator as _g
+            _pair = _g._face_pair(_cps, F) or _pair
+        except Exception:
+            pass
+        _ubad = (_pt.surfaces_intersect(_pair, F, limit=1)
+                 if len(_pair) == 2 else 0)
+        _packs = bool(len(_cps) > 1 and _bad == 0 and _sbad == 0
                       and _rep['shared_faces'] > 0)
-        _unit = bool(_rep['shared_faces'] > 0 and _bad == 0)
+        _unit = bool(_rep['shared_faces'] > 0 and _bad == 0 and _ubad == 0)
+        if _sbad or _ubad:
+            print("  #%d: built surfaces intersect (block=%s unit=%s)"
+                  % (num, bool(_sbad), bool(_ubad)))
         if _bad:
             print("  #%d: %d overlapping cell pairs -- not offered"
                   % (num, _bad))
