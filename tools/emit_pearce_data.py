@@ -8,6 +8,25 @@ import pearce_table as pt
 with open("resolved.pkl", "rb") as fh:
     resolved = pickle.load(fh)
 
+# Merge the NATURAL-TILING results (tools/tile_pearce.py): solids found
+# as tiles of RCSR nets' natural tilings rather than by circuit search.
+# Precedence: an existing entry keeps its place unless the tile result
+# is strictly stronger (FULL over CORE); the gate below re-validates
+# every entry either way, so the merge decides provenance, not truth.
+import os as _os_merge
+if _os_merge.path.exists("tiles_resolved.pkl"):
+    with open("tiles_resolved.pkl", "rb") as fh:
+        _tiles = pickle.load(fh)
+    _took = []
+    for _num, _rec in sorted(_tiles.items()):
+        _kind, _net, _V, _F = _rec[0], _rec[1], _rec[2], _rec[3]
+        _cur = resolved.get(_num)
+        if _cur is not None and not (_cur[0] == 'CORE' and _kind == 'FULL'):
+            continue
+        resolved[_num] = (_kind, _net, list(_V), list(_F))
+        _took.append(_num)
+    print("tiling results merged: %s" % _took)
+
 BY_NUM = {r['number']: r for r in pt.TABLE}
 
 
