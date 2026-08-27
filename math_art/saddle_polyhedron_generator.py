@@ -570,6 +570,23 @@ except Exception:
 
 if _IN_BLENDER:
 
+    def _finish_object(obj, subdivide, thickness):
+        """Subdivision and solidify, in that order.
+
+        Order matters: subdividing AFTER solidify would smooth the
+        shell's new inner wall and rim as well, rounding the thickness
+        away.  Both are left as live modifiers so they stay adjustable.
+        """
+        if subdivide:
+            m = obj.modifiers.new("Subdivision", 'SUBSURF')
+            m.levels = int(subdivide)
+            m.render_levels = int(subdivide)
+        if thickness > 0.0:
+            m = obj.modifiers.new("Solidify", 'SOLIDIFY')
+            m.thickness = float(thickness)
+            m.offset = 0.0
+        return obj
+
     def _cell_material(name, color):
         """A shaded material for one cell.
 
@@ -736,6 +753,18 @@ if _IN_BLENDER:
                         "toward its centre without reaching it, so "
                         "without this every face has a hole and the "
                         "solid is not a closed surface")
+        thickness: FloatProperty(
+            name="Thickness", default=0.0, min=0.0, max=0.5,
+            description="Give the saddle surface material depth with a "
+                        "Solidify modifier, which is what makes it "
+                        "printable; zero leaves it a zero-thickness "
+                        "shell")
+        subdivide: IntProperty(
+            name="Subdivide", default=0, min=0, max=3,
+            description="Subdivision Surface levels. The branches carry "
+                        "full edge creases, so they stay put and cells "
+                        "of a packing keep meeting exactly; only the "
+                        "faces get smoother")
         smooth: BoolProperty(
             name="Smooth shading", default=True,
             description="Shade smooth, with creases along the branches")
@@ -776,6 +805,8 @@ if _IN_BLENDER:
                 L.prop(self, "cap_center")
                 L.prop(self, "limit_twist")
             L.prop(self, "smooth")
+            L.prop(self, "subdivide")
+            L.prop(self, "thickness")
 
         def _execute_separate(self, context, key):
             """One object per cell, grouped in their own collection."""
@@ -836,6 +867,7 @@ if _IN_BLENDER:
                 obj = bpy.data.objects.new(me.name, me)
                 obj.location = tuple(float(x) for x in origin)
                 coll.objects.link(obj)
+                _finish_object(obj, self.subdivide, self.thickness)
                 pieces.append(obj)
                 made += 1
 
@@ -932,6 +964,8 @@ if _IN_BLENDER:
                     ncrease = _sc.mark_sharp(
                         me, face_boundary_edges(
                             T, info.get('crease_id') or fid))
+
+            _finish_object(obj, self.subdivide, self.thickness)
 
             msg = ("Table 8.1 #%d %s: %d faces"
                    % (solid['number'], solid['name'], info['faces']))
