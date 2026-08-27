@@ -209,8 +209,13 @@ def true_nest_faces(solid):
             for f in solid['faces']]
 
 
-def spidron_faces(solid, rings, scale, twist):
-    """Spidron nests on every face, with a true/generalised split."""
+def spidron_faces(solid, rings, scale, twist, cap=True):
+    """Spidron nests on every face, with a true/generalised split.
+
+    `cap` closes the small polygon the annuli leave at each face's
+    centre.  A nest converges on its centre without ever reaching it, so
+    an uncapped nest leaves a hole in every face and the solid is not a
+    closed surface -- fine as a drawing, wrong as a polyhedron."""
     V = pdata.points(solid)
     flags = true_nest_faces(solid)
     P = np.asarray(V, float)
@@ -222,7 +227,8 @@ def spidron_faces(solid, rings, scale, twist):
         mid = loop.mean(axis=0)
         if float(nz @ (mid - centre)) < 0:
             loop = loop[::-1]
-        pts, polys, _mats = sm.spidronise(loop, scale, twist, rings)
+        pts, polys, _mats = sm.spidronise(loop, scale, twist, rings,
+                                          cap=cap)
         base = len(verts)
         verts.extend([tuple(p) for p in pts])
         for t in polys:
@@ -235,7 +241,37 @@ def spidron_faces(solid, rings, scale, twist):
                 tris.append((base + a, base + c, base + d))
                 face_id.append(fi)
                 face_id.append(fi)
-    return np.asarray(verts, float), tris, face_id, flags
+    # Weld across faces.  Each face's nest is built with its own vertex
+    # list, so the vertices along a shared polyhedron edge are
+    # DUPLICATED and the faces never join -- capping the centres closes
+    # each nest's hole but leaves the solid open along every branch.
+    # The boundary points come from the same solid vertices, so they are
+    # geometrically identical and merging by position is exact.
+    V = np.asarray(verts, float)
+    key = {}
+    remap = np.empty(len(V), dtype=int)
+    out = []
+    for i, p in enumerate(V):
+        k = (round(float(p[0]), 6), round(float(p[1]), 6),
+             round(float(p[2]), 6))
+        j = key.get(k)
+        if j is None:
+            j = len(out)
+            key[k] = j
+            out.append(p)
+        remap[i] = j
+    # Filter triangles and their labels TOGETHER.  Welding can collapse
+    # a sliver to a degenerate triangle, and dropping those from `tris`
+    # while truncating `face_id` separately would misalign every label
+    # after the first removal -- colours and creases would silently
+    # belong to the wrong faces.
+    kept_t, kept_f = [], []
+    for t, f in zip(tris, face_id):
+        rt = tuple(int(remap[i]) for i in t)
+        if len(set(rt)) == 3:
+            kept_t.append(rt)
+            kept_f.append(f)
+    return np.asarray(out, float), kept_t, kept_f, flags
 
 
 # --------------------------------------------------------------------
@@ -244,7 +280,8 @@ def spidron_faces(solid, rings, scale, twist):
 
 def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
           rings=5, scale=0.60, twist=0.0, layout='SINGLE',
-          nx=1, ny=1, nz=1, gap=1.0, colour_by='CELL', mirror=False):
+          nx=1, ny=1, nz=1, gap=1.0, colour_by='CELL', mirror=False,
+          cap=True):
     """layout: SINGLE, UNIT (two cells sharing a face) or BLOCK."""
     """Geometry for one saddle polyhedron, or a block of the packing.
 
@@ -254,7 +291,8 @@ def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
     if layout in ('BLOCK', 'UNIT'):
         return _build_block(solid, face_style, density, smoothness,
                             rings, scale, twist, nx, ny, nz, gap,
-                            colour_by, mirror, unit=(layout == 'UNIT'))
+                            colour_by, mirror, unit=(layout == 'UNIT'),
+                            cap=cap)
 
     # CARTESIAN, always.  A hexagonal solid's vertices are integer
     # twenty-fourths of its own cell; read as Cartesian they give a
@@ -263,7 +301,7 @@ def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
     V0, F0 = pdata.points(solid), solid['faces']
 
     if face_style == 'SPIDRON':
-        V, T, fid, flags = spidron_faces(solid, rings, scale, twist)
+        V, T, fid, flags = spidron_faces(solid, rings, scale, twist, cap)
         info = dict(true_nests=sum(1 for x in flags if x),
                     generalised=sum(1 for x in flags if not x),
                     faces=len(F0))
@@ -333,11 +371,11 @@ def form_colours(copies, faces):
 
 
 def _cell_geometry(V0, F0, face_style, density, smoothness, rings,
-                   scale, twist):
+                   scale, twist, cap=True):
     """One cell's mesh, in its own coordinates (no fitting)."""
     if face_style == 'SPIDRON':
         cell = dict(verts=V0, faces=F0)
-        V, T, fid, flags = spidron_faces(cell, rings, scale, twist)
+        V, T, fid, flags = spidron_faces(cell, rings, scale, twist, cap)
         return V, T, fid, flags
     if face_style == 'NET':
         V, T, fid = _net_mesh(V0, F0)
@@ -356,7 +394,7 @@ def pnet_flags(V0, F0):
 
 def _build_block(solid, face_style, density, smoothness, rings, scale,
                  twist, nx, ny, nz, gap, colour_by='CELL', mirror=False,
-                 unit=False):
+                 unit=False, cap=True):
     """A block of the space filling: every cell of the packing.
 
     The packing is verified, not assumed -- `pearce_tiling.pack`
@@ -390,7 +428,8 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
         # packing close.
         t = -twist if forms[ci] else twist
         CV, CT, cfid, _flags = _cell_geometry(
-            pts, F0, face_style, density, smoothness, rings, scale, t)
+            pts, F0, face_style, density, smoothness, rings, scale, t,
+            cap=cap)
         CV = np.asarray(CV, float)
         if gap < 1.0:
             c = CV.mean(axis=0)
@@ -428,7 +467,7 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
 
 def build_cells(key=None, face_style='MINIMAL', density=3, smoothness=25,
                 rings=5, scale=0.60, twist=0.0, nx=1, ny=1, nz=1,
-                gap=1.0):
+                gap=1.0, cap=True):
     """The packing as SEPARATE cells, still in register with each other.
 
     Returns (cells, info) where each cell is (verts, tris, face_id).
@@ -444,7 +483,8 @@ def build_cells(key=None, face_style='MINIMAL', density=3, smoothness=25,
     raw = []
     for pts in copies:
         CV, CT, cfid, _flags = _cell_geometry(
-            pts, F0, face_style, density, smoothness, rings, scale, twist)
+            pts, F0, face_style, density, smoothness, rings, scale, twist,
+            cap=cap)
         CV = np.asarray(CV, float)
         if gap < 1.0:
             c = CV.mean(axis=0)
@@ -686,6 +726,13 @@ if _IN_BLENDER:
             name="Shrink", default=1.0, min=0.5, max=1.0,
             description="Shrink each cell about its own centre so the "
                         "packing reads as separate solids")
+        cap_center: BoolProperty(
+            name="Fill centres", default=True,
+            description="Close the small polygon each spidron nest "
+                        "leaves at the centre of a face. A nest spirals "
+                        "toward its centre without reaching it, so "
+                        "without this every face has a hole and the "
+                        "solid is not a closed surface")
         smooth: BoolProperty(
             name="Smooth shading", default=True,
             description="Shade smooth, with creases along the branches")
@@ -723,6 +770,7 @@ if _IN_BLENDER:
                 L.prop(self, "rings")
                 L.prop(self, "scale")
                 L.prop(self, "twist")
+                L.prop(self, "cap_center")
                 L.prop(self, "limit_twist")
             L.prop(self, "smooth")
 
@@ -733,7 +781,8 @@ if _IN_BLENDER:
                     key=key, face_style=self.face_style,
                     density=self.density, smoothness=self.smoothness,
                     rings=self.rings, scale=self.scale, twist=self.twist,
-                    nx=self.nx, ny=self.ny, nz=self.nz, gap=self.gap)
+                    nx=self.nx, ny=self.ny, nz=self.nz, gap=self.gap,
+                    cap=self.cap_center)
             except Exception as exc:
                 self.report({'ERROR'}, "Build failed: %s" % exc)
                 return {'CANCELLED'}
@@ -851,7 +900,8 @@ if _IN_BLENDER:
                     rings=self.rings, scale=self.scale, twist=tw,
                     layout=lay, nx=self.nx, ny=self.ny,
                     nz=self.nz, gap=self.gap,
-                    colour_by=self.colour_by, mirror=self.mirror)
+                    colour_by=self.colour_by, mirror=self.mirror,
+                    cap=self.cap_center)
             except Exception as exc:
                 self.report({'ERROR'}, "Build failed: %s" % exc)
                 return {'CANCELLED'}
