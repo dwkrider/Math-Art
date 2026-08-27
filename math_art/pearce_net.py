@@ -681,7 +681,12 @@ def cartesian(pts, basis=None, divisor=None):
 def net_chunk(name, n=3):
     """A net over an n^3 block of cells: (verts, index, adjacency).
 
-    Coordinates are integer eighths of the conventional cell edge."""
+    Coordinates are integer eighths of the conventional cell edge.
+    A NETS entry's neighbour part is either one GLOBAL offset tuple
+    applied at every site (the classical nets, where membership in the
+    vertex set does the per-site selection), or a dict mapping each
+    base site to ITS offsets -- needed by nets where a global list
+    would create edges between sites that are not bonded."""
     base, nbr = NETS[name]
     Vi = []
     for off in product(range(n), repeat=3):
@@ -689,8 +694,14 @@ def net_chunk(name, n=3):
             Vi.append((b[0] + 8 * off[0], b[1] + 8 * off[1],
                        b[2] + 8 * off[2]))
     idx = {p: i for i, p in enumerate(Vi)}
-    adj = {p: [q for q in ((p[0] + d[0], p[1] + d[1], p[2] + d[2])
-                           for d in nbr) if q in idx] for p in Vi}
+    if isinstance(nbr, dict):
+        adj = {p: [q for q in
+                   ((p[0] + d[0], p[1] + d[1], p[2] + d[2])
+                    for d in nbr[(p[0] % 8, p[1] % 8, p[2] % 8)])
+                   if q in idx] for p in Vi}
+    else:
+        adj = {p: [q for q in ((p[0] + d[0], p[1] + d[1], p[2] + d[2])
+                               for d in nbr) if q in idx] for p in Vi}
     return Vi, idx, adj
 
 

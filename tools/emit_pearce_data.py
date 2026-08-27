@@ -206,7 +206,11 @@ for _num in sorted(resolved):
         import rcsr_nets as _rc
         for _nm, _base, _nbrs, _info in _rc.survey_full(verbose=False):
             if _nm.upper() == _net:
-                extra_nets[_net] = (tuple(_base), tuple(_nbrs))
+                # neighbours are either one global offset tuple or a
+                # per-site dict -- both pass through unchanged
+                extra_nets[_net] = (tuple(_base),
+                                    _nbrs if isinstance(_nbrs, dict)
+                                    else tuple(_nbrs))
                 break
     except Exception as _e:
         print("cannot ship net %s: %s" % (_net, _e))
@@ -318,9 +322,17 @@ out.append("#: shipped solid depends on has to travel WITH the data.\n")
 out.append("EXTRA_NETS = {\n")
 for _nm in sorted(extra_nets):
     _b, _nb = extra_nets[_nm]
-    out.append("    %r: (\n        (%s),\n        (%s),\n    ),\n"
-               % (_nm, fmt_tuple(_b, per=5, indent=9),
-                  fmt_tuple(_nb, per=5, indent=9)))
+    if isinstance(_nb, dict):
+        # per-site adjacency: emit the dict literal as-is
+        import pprint
+        _nbtxt = pprint.pformat(_nb, indent=4, width=70)
+        _nbtxt = "\n        ".join(_nbtxt.splitlines())
+        out.append("    %r: (\n        (%s),\n        %s,\n    ),\n"
+                   % (_nm, fmt_tuple(_b, per=5, indent=9), _nbtxt))
+    else:
+        out.append("    %r: (\n        (%s),\n        (%s),\n    ),\n"
+                   % (_nm, fmt_tuple(_b, per=5, indent=9),
+                      fmt_tuple(_nb, per=5, indent=9)))
 out.append("}\n\n\n")
 
 out.append('''def _register_nets():
