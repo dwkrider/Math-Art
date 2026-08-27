@@ -570,17 +570,16 @@ except Exception:
 
 if _IN_BLENDER:
 
-    def _finish_object(obj, subdivide, thickness):
-        """Subdivision and solidify, in that order.
+    def _finish_object(obj, thickness):
+        """Give the shell material depth, as a live modifier.
 
-        Order matters: subdividing AFTER solidify would smooth the
-        shell's new inner wall and rim as well, rounding the thickness
-        away.  Both are left as live modifiers so they stay adjustable.
+        No subdivision is added here.  Add a Subdivision Surface
+        modifier yourself if you want one -- it reads the branch edge
+        creases this operator sets, so it will hold the corners unless
+        `Crease branches` is off.  It belongs BEFORE any Solidify in the
+        stack: the other way round smooths the shell's new inner wall
+        and rim and rounds the thickness away.
         """
-        if subdivide:
-            m = obj.modifiers.new("Subdivision", 'SUBSURF')
-            m.levels = int(subdivide)
-            m.render_levels = int(subdivide)
         if thickness > 0.0:
             m = obj.modifiers.new("Solidify", 'SOLIDIFY')
             m.thickness = float(thickness)
@@ -755,26 +754,19 @@ if _IN_BLENDER:
                         "solid is not a closed surface")
         crease_edges: BoolProperty(
             name="Crease branches", default=True,
-            description="Hold the branch edges hard under Subdivide. "
-                        "ON keeps the polyhedron's corners crisp and "
-                        "lets cells of a packing keep meeting exactly, "
-                        "because a full crease stops the smoothing "
-                        "crossing the edge. Turn OFF to round the "
-                        "corners as well -- the solid then reads as one "
-                        "smooth blob and neighbouring cells no longer "
-                        "match along their shared faces")
+            description="Mark the branch edges sharp and creased. ON "
+                        "keeps the corners crisp, and a Subdivision "
+                        "Surface modifier you add will hold them -- so "
+                        "cells of a packing keep meeting exactly. OFF "
+                        "lets such a modifier round the corners too, "
+                        "which suits a single smooth solid but stops "
+                        "neighbouring cells matching")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=0.5,
             description="Give the saddle surface material depth with a "
                         "Solidify modifier, which is what makes it "
                         "printable; zero leaves it a zero-thickness "
                         "shell")
-        subdivide: IntProperty(
-            name="Subdivide", default=0, min=0, max=3,
-            description="Subdivision Surface levels. The branches carry "
-                        "full edge creases, so they stay put and cells "
-                        "of a packing keep meeting exactly; only the "
-                        "faces get smoother")
         smooth: BoolProperty(
             name="Smooth shading", default=True,
             description="Shade smooth, with creases along the branches")
@@ -815,8 +807,7 @@ if _IN_BLENDER:
                 L.prop(self, "cap_center")
                 L.prop(self, "limit_twist")
             L.prop(self, "smooth")
-            L.prop(self, "subdivide")
-            if self.subdivide or self.smooth:
+            if self.smooth:
                 L.prop(self, "crease_edges")
             L.prop(self, "thickness")
 
@@ -880,7 +871,7 @@ if _IN_BLENDER:
                 obj = bpy.data.objects.new(me.name, me)
                 obj.location = tuple(float(x) for x in origin)
                 coll.objects.link(obj)
-                _finish_object(obj, self.subdivide, self.thickness)
+                _finish_object(obj, self.thickness)
                 pieces.append(obj)
                 made += 1
 
@@ -978,7 +969,7 @@ if _IN_BLENDER:
                         me, face_boundary_edges(
                             T, info.get('crease_id') or fid))
 
-            _finish_object(obj, self.subdivide, self.thickness)
+            _finish_object(obj, self.thickness)
 
             msg = ("Table 8.1 #%d %s: %d faces"
                    % (solid['number'], solid['name'], info['faces']))
