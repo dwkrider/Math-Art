@@ -27,6 +27,25 @@ if _os_merge.path.exists("tiles_resolved.pkl"):
         _took.append(_num)
     print("tiling results merged: %s" % _took)
 
+# Merge the CONSTRUCTIVE-DERIVATION results (tools/derive_pearce.py):
+# solids built by truncation / fission / blunting of already-verified
+# solids (math_art/pearce_derive.py), per the parent entries Pearce
+# names in ch. 23 and in the rows' own names.  Lowest precedence: a
+# solid found directly (search or tiling) keeps its place; the gate
+# below re-validates every entry either way.
+if _os_merge.path.exists("derived.pkl"):
+    with open("derived.pkl", "rb") as fh:
+        _drv = pickle.load(fh)
+    _took = []
+    for _num, _rec in sorted(_drv.items()):
+        _kind, _net, _V, _F = _rec[0], _rec[1], _rec[2], _rec[3]
+        _cur = resolved.get(_num)
+        if _cur is not None and not (_cur[0] == 'CORE' and _kind == 'FULL'):
+            continue
+        resolved[_num] = (_kind, _net, list(_V), list(_F))
+        _took.append(_num)
+    print("derivation results merged: %s" % _took)
+
 BY_NUM = {r['number']: r for r in pt.TABLE}
 
 
