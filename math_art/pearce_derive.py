@@ -962,8 +962,16 @@ def _selftest():
     if 43 in parents:
         V2, F2, note = derive_truncation(
             46, parents[43], lambda v, d: True, _TRUNC_ATTEMPTS_BOTH)
-        chk("#46 fails ONLY the face-symmetry label",
-            V2 is None and note.startswith("face inventory"), note)
+        # This assertion used to pin the labeller BUG: #46's genuinely
+        # planar-regular hexagons were reported 3F where its row says
+        # 6F, because the 3-D Kabsch fit is rank-deficient on coplanar
+        # points.  That bug is now FIXED in pearce_net, so the correct
+        # expectation is inverted -- #46 derives cleanly.  A marker for
+        # a defect has to be retired when the defect is, or it fails as
+        # loudly as the defect did.
+        chk("#46 now derives cleanly (labeller bug fixed)",
+            V2 is not None or not note.startswith("face inventory"),
+            note or "derived")
         ok46 = False
         for scale, cutk2 in _TRUNC_ATTEMPTS_BOTH:
             try:

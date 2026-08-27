@@ -318,6 +318,23 @@ SOLIDS = (
         packs=False, has_unit=False, fills=False,
     ),
     dict(
+        number=36, key='FISSIONED_TETRAGONAL_SADDLE_HEXAHEDRON',
+        name='Fissioned tetragonal saddle hexahedron',
+        net=(('110', 'HALF'), ('111', 'FULL')), match='FULL',
+        lattice='CUBIC8', basis=None, divisor=8.0,
+        verts=(
+            (2, 12, 20), (6, 8, 24), (2, 12, 28), (6, 16, 24), (8, 18, 24),
+            (12, 22, 20), (16, 18, 24), (18, 16, 24), (22, 12, 20), (18, 8, 24),
+            (16, 6, 24), (12, 2, 20), (8, 6, 24), (12, 2, 28), (22, 12, 28),
+            (12, 22, 28),
+        ),
+        faces=(
+            (0, 1, 2, 3), (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 0), (2, 1, 12, 13, 10, 9, 14, 7, 6, 15, 4, 3),
+            (12, 11, 10, 13), (15, 6, 5, 4), (9, 8, 7, 14),
+        ),
+        packs=False, has_unit=False, fills=False,
+    ),
+    dict(
         number=37, key='TETRAGONAL_OCTAGONAL_HEXAHEDRON',
         name='Tetragonal octagonal hexahedron',
         net=(('110', 'FULL'), ('111', 'FULL')), match='FULL',
@@ -598,7 +615,6 @@ UNRESOLVED = (
     (23, 'Double delta tetrahedron', 'no geometry found by the search'),
     (24, 'Trigonal pentahedron', 'no geometry found by the search'),
     (26, 'Digonal pentahedron', 'no geometry found by the search'),
-    (36, 'Fissioned tetragonal saddle hexahedron', 'face angles ("70d32\'", "70d32\'", "70d32\'", "70d32\'", \'90d\', \'90d\', \'90d\', \'90d\', \'90d\', \'90d\', \'90d\', \'90d\') match no face of the row'),
     (38, 'Trigonal hexahedron', 'no geometry found by the search'),
     (39, 'Trapezoidal trigonal hexahedron', 'no geometry found by the search'),
     (41, 'fcc saddle octahedron', 'no geometry found by the search'),

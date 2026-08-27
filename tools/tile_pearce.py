@@ -63,6 +63,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 import pearce_net as pn
 import pearce_table as pt
+import net_rings
 import rcsr_nets
 import spacegroups as sg
 
@@ -97,6 +98,15 @@ def parse_3dall_sigs(path=rcsr_nets.DALL):
 def sig_units(sig):
     """The distinct tile symbols of a published signature string."""
     return set(re.findall(r'\[[^\]]*\]', sig or ""))
+
+
+def sig_face_sizes(sig):
+    """Every face size any tile of a published signature uses."""
+    sizes = set()
+    for unit in sig_units(sig):
+        for part in unit.strip("[]").split("."):
+            sizes.add(int(part.split("^")[0]))
+    return sizes
 
 
 def _symbol(counts):
@@ -230,16 +240,24 @@ def build_net24(rec):
 
 # --------------------------------------------------------- face orbit
 
-def _seed_shift(seeds, sites, edgeset):
-    """An origin shift landing every seed on the net, or None.
+def _seed_shifts(seeds, sites, edgeset):
+    """Every origin shift landing every seed on the net, in order.
 
     The 3dt file and the cgd sometimes use different origin settings
     of the same space group, so the seed coordinates can miss the site
     set by a constant offset.  Candidate shifts are the differences
-    between a site and the first seed vertex; a shift is accepted only
-    if every shifted seed vertex is a site and every seed edge is a
-    net edge.  A wrong-but-consistent shift is caught later by the
-    signature guard."""
+    between a site and the first seed vertex; a shift fits when every
+    shifted seed vertex is a site and every seed edge is a net edge.
+
+    ALL fitting shifts are returned, not just the first: a shift can
+    fit locally yet not be a symmetry of the net, in which case the
+    face orbit it seeds contains rings that are not tiling faces (ocu:
+    the first-fit shift mapped V1 sites onto V2 positions of that
+    bipartite net and over-generated 72 faces per cell where the
+    tiling has 48).  The caller runs the extraction per shift and lets
+    the signature guard pick the one reproducing the published tiling
+    -- the guard is the arbiter of correctness, the fit test only of
+    plausibility.  The zero shift is tried first when it fits."""
     def fits(t):
         for f in seeds:
             n = len(f)
@@ -253,11 +271,13 @@ def _seed_shift(seeds, sites, edgeset):
                     return False
         return True
     v0 = seeds[0][0]
+    out = []
     for anchor in sorted(sites):
         t = tuple((anchor[i] - v0[i]) % GRID for i in range(3))
         if fits(t):
-            return t
-    return None
+            out.append(t)
+    out.sort(key=lambda t: t != (0, 0, 0))
+    return out
 
 
 def face_orbit(seeds, gops):
@@ -302,8 +322,18 @@ def extract_cells(faces):
     `faces` is a list of vertex-coordinate rings.  Around each edge the
     incident faces are sorted by angle; the wedge between angular
     neighbours belongs to exactly one tile, which glues (face, side)
-    pairs together.  Union-find over those pairs yields the tiles."""
-    normals = [pn.newell_normal(f) for f in faces]
+    pairs together.  Union-find over those pairs yields the tiles.
+
+    The SIDE label of a face at an edge is combinatorial, not
+    geometric: in the fan-spanning model the local surface at the edge
+    is the triangle (ring predecessor, ring successor, centroid), whose
+    orientation is the ring's, so the side facing increasing theta is
+    +1 exactly when the ring traverses the sorted edge (a, b) from a to
+    b.  An earlier revision derived the side from the face's GLOBAL
+    Newell normal, which for strongly skew rings (ocu's quads, nfa's
+    hexagons) disagrees with the local orientation at some edges --
+    that flipped side labels there and glued tiles to their own
+    outsides, silently losing whole tile types."""
     cents = [tuple(sum(v[i] for v in f) / len(f) for i in range(3))
              for f in faces]
     by_edge = collections.defaultdict(list)
@@ -311,8 +341,10 @@ def extract_cells(faces):
         n = len(f)
         for k in range(n):
             a, b = f[k], f[(k + 1) % n]
-            e = (a, b) if a < b else (b, a)
-            by_edge[e].append(fi)
+            if a < b:
+                by_edge[(a, b)].append((fi, 1))
+            else:
+                by_edge[(b, a)].append((fi, -1))
 
     parent = {}
 
@@ -335,7 +367,7 @@ def extract_cells(faces):
         mid = tuple((a[i] + b[i]) / 2.0 for i in range(3))
         ref = None
         entries = []
-        for fi in inc:
+        for fi, s in inc:
             w = _sub(cents[fi], mid)
             w = tuple(w[i] - _dot(w, u) * u[i] for i in range(3))
             if _dot(w, w) < 1e-12:
@@ -349,13 +381,16 @@ def extract_cells(faces):
                 w = _sub(tuple(sum(q[i] for q in nb) / len(nb)
                                for i in range(3)), mid)
                 w = tuple(w[i] - _dot(w, u) * u[i] for i in range(3))
+            if _dot(w, w) < 1e-12:
+                # even the ring neighbours sit on the edge axis: the
+                # face is collinear at this edge -- degenerate input
+                # (seen on re-embedded nets), not a tiling
+                raise ValueError("degenerate edge fan")
             w = _unit(w)
             if ref is None:
                 ref = w
                 ref2 = _unit(_cross(u, ref))
             theta = atan2(_dot(w, ref2), _dot(w, ref))
-            tdir = _cross(u, w)         # direction of increasing theta
-            s = 1 if _dot(normals[fi], tdir) > 0 else -1
             entries.append((theta, fi, s))
         entries.sort()
         k = len(entries)
@@ -456,15 +491,8 @@ def core_match(cs, rs):
 
 # ------------------------------------------------------------------ main
 
-def tiles_of(name, net, seeds, published_units):
-    """All distinct tile types (in 24ths), or (None, why)."""
-    sites, edgeset, _step, gops = net
-    shift = _seed_shift(seeds, sites, edgeset)
-    if shift is None:
-        return None, "no origin shift lands the seeds on the net"
-    if shift != (0, 0, 0):
-        seeds = [[tuple(v[i] + shift[i] for i in range(3)) for v in f]
-                 for f in seeds]
+def _tiles_at_shift(seeds, gops, published_units):
+    """One extraction pass for one origin shift: (tiles, note)."""
     reps = face_orbit(seeds, gops)
     blocks = 3
     lim = blocks * GRID
@@ -479,7 +507,10 @@ def tiles_of(name, net, seeds, published_units):
                                           for f in faces))]
     if len(faces) > MAX_FACES:
         return None, "chunk too large (%d faces)" % len(faces)
-    cells = extract_cells(faces)
+    try:
+        cells = extract_cells(faces)
+    except ValueError as exc:
+        return None, str(exc)
     out = {}
     for members in cells:
         got = compact_cell(faces, members)
@@ -496,6 +527,103 @@ def tiles_of(name, net, seeds, published_units):
                       % (sorted(got_units), sorted(published_units)))
     return tiles, "%d reps, %d ops, %d faces" % (len(reps), len(gops),
                                                  len(faces))
+
+
+def _edge_coverage(seed, gops):
+    """The net edges covered by one seed's face orbit.
+
+    A tiling CARRIES the net as its 1-skeleton, so a face set missing
+    an edge orbit cannot be the natural tiling no matter what cells it
+    closes into.  Coverage is computed once per seed: the orbit of a
+    union of seeds is the union of their orbits, so a subset's
+    coverage is just the union of the per-seed sets."""
+    covered = set()
+    for f in face_orbit([seed], gops):
+        n = len(f)
+        for k in range(n):
+            v, w = f[k], f[(k + 1) % n]
+            d = tuple(w[i] - v[i] for i in range(3))
+            covered.add((tuple(c % GRID for c in v), d))
+            covered.add((tuple(c % GRID for c in w),
+                         tuple(-c for c in d)))
+    return covered
+
+
+MAX_ATTEMPTS = 64    # extraction passes per net across shifts and subsets
+MAX_SUBSETS = 20000  # subset candidates examined (coverage checks) per net
+
+
+def tiles_of(name, net, seeds, published_units, origin_free=False):
+    """All distinct tile types (in 24ths), or (None, why).
+
+    Every fitting origin shift is tried until one reproduces the
+    published tiling signature; the guard selects among shifts as well
+    as rejecting bad extractions outright.  If the full seed set fails
+    at every shift, PROPER SUBSETS of the seed faces are tried too
+    (largest first): a 3dt input file can carry a ring orbit the
+    natural tiling does not use as a face -- ocu's file holds two
+    quadrilateral orbits, of which the natural tiling ([4^24] + [4^4],
+    ONE face orbit per 3dall) uses only one; the other alone tiles the
+    same net by [4^12] cells.  A subset is only admissible when its
+    face orbit still covers every edge of the net, and the signature
+    guard remains the arbiter of which subset is the natural tiling.
+
+    `origin_free` seeds (net_rings strong-ring representatives) are
+    already in the net's own coordinates, so no shift search: rule (c)
+    of Blatov et al. lets a strong ring be a non-face, which the
+    subset walk explores the same way."""
+    sites, edgeset, _step, gops = net
+    if origin_free:
+        shifts = [(0, 0, 0)]
+    else:
+        shifts = _seed_shifts(seeds, sites, edgeset)
+        if not shifts:
+            return None, "no origin shift lands the seeds on the net"
+
+    def subset_iter():
+        # lazily, largest first -- materializing every combination of
+        # a large ring-orbit set is a memory bomb, and the walk is
+        # capped anyway
+        yield tuple(range(len(seeds)))
+        if len(seeds) > 1:
+            for size in range(len(seeds) - 1, 0, -1):
+                for c in itertools.combinations(range(len(seeds)), size):
+                    yield c
+
+    last = None
+    attempts = 0
+    for shift in shifts:
+        moved_all = [[tuple(v[i] + shift[i] for i in range(3)) for v in f]
+                     for f in seeds]
+        covs = None
+        walked = 0
+        for pick in subset_iter():
+            walked += 1
+            if walked > MAX_SUBSETS:
+                return None, (last or "") + " [subset cap %d hit]" % (
+                    MAX_SUBSETS)
+            if len(pick) < len(seeds):
+                if covs is None:
+                    covs = [_edge_coverage(f, gops) for f in moved_all]
+                covered = set()
+                for j in pick:
+                    covered |= covs[j]
+                if not edgeset <= covered:
+                    continue
+            if attempts >= MAX_ATTEMPTS:
+                return None, (last or "") + " [attempt cap %d hit]" % (
+                    MAX_ATTEMPTS)
+            attempts += 1
+            moved = [moved_all[j] for j in pick]
+            tiles, note = _tiles_at_shift(moved, gops, published_units)
+            if tiles is not None:
+                if shift != (0, 0, 0):
+                    note += ", shift %s" % (shift,)
+                if len(pick) < len(seeds):
+                    note += ", seeds %s of %d" % (list(pick), len(seeds))
+                return tiles, note
+            last = note
+    return None, last
 
 
 def reduce_tile(V, F):
@@ -521,6 +649,111 @@ def reduce_tile(V, F):
     return V
 
 
+def match_tiles(name, tiles, rows, sigs, want_units, hits, per_row,
+                unmatched, reembedded=False):
+    """Match a net's extracted tiles against Table 8.1 rows.
+
+    A tile from a RE-EMBEDDED net must not ship under its RCSR name:
+    the emitter rebuilds named nets from the catalogue's published
+    embedding, which for these nets fails the grid gates -- exactly why
+    they were re-embedded.  Such tiles ride the MIXED-net form (the
+    branch kinds of their own edges) that the resolver's stage 2
+    already emits, so the existing plumbing ships them unchanged."""
+    for V24, F in tiles:
+        V = reduce_tile(V24, F)
+        if V is None:
+            print("         tile %s: edges not Universal Node branches"
+                  % tile_symbol(F))
+            continue
+        try:
+            F2 = pn.orient_faces(V, F)
+            cs = cell_sig(V, F2)
+        except Exception as exc:
+            print("         tile %s: signature failed (%s)"
+                  % (tile_symbol(F), exc))
+            continue
+        best = None
+        for num, rs in sigs.items():
+            if full_match(cs, rs):
+                best = ('FULL', num)
+                break
+            if core_match(cs, rs) and best is None:
+                best = ('CORE', num)
+        if best is None:
+            sym = tile_symbol(F2)
+            unmatched[sym] += 1
+            for num in want_units.get(sym, ()):
+                rs = sigs[num]
+                diffs = [k for k in ('V', 'E', 'F', 'hist', 'branches',
+                                     'faces', 'axes') if cs[k] != rs[k]]
+                print("         tile %s V=%d E=%d vs #%d %s: differs "
+                      "in %s" % (sym, cs['V'], cs['E'], num,
+                                 rows[num]['name'], ",".join(diffs)))
+                if diffs and diffs[0] in ('hist', 'branches'):
+                    print("           cell %s=%r row %s=%r"
+                          % (diffs[0], cs[diffs[0]],
+                             diffs[0], rs[diffs[0]]))
+            continue
+        kind, num = best
+        # eighth-grid tiles ride their RCSR net (through the alias
+        # table where the hand-built NETS already has it); genuine
+        # 24th-grid tiles -- and every re-embedded net's tiles -- ride
+        # the MIXED-net kinds of their own edges, the form the
+        # resolver's stage 2 already emits.
+        if not reembedded and all(all(c % 3 == 0 for c in v) for v in V24):
+            key = name.upper()
+            netid = rcsr_nets.ALIASES.get(key, key)
+        else:
+            kinds = set()
+            for cyc in F2:
+                n = len(cyc)
+                for k in range(n):
+                    d = tuple(V[cyc[(k + 1) % n]][i] - V[cyc[k]][i]
+                              for i in range(3))
+                    kinds.add(pn.branch_kind(d))
+            netid = tuple(sorted(kinds))
+        print("         tile %s V=%d: #%d %s (%s) via %s"
+              % (tile_symbol(F2), cs['V'], num, rows[num]['name'],
+                 kind, netid))
+        per_row[num].append((kind, name))
+        old = hits.get(num)
+        if old is None or (old[0] == 'CORE' and kind == 'FULL'):
+            hits[num] = (kind, netid, V, F2)
+
+
+#: rows already carried by shipped solids -- re-embedding effort is
+#: spent only on nets that could serve a row NOT in this set (a
+#: re-derivation of a shipped row teaches nothing at reembed prices)
+SHIPPED_ROWS = frozenset({1, 6, 11, 12, 13, 14, 25, 27, 30, 32, 33,
+                          35, 40, 43, 44, 47, 51})
+
+
+def alt_nets(rec, cap=4):
+    """Re-embedded builds of a net whose published embedding fails.
+
+    Returns (list of (net, tag), note) for the inequivalent same-group
+    on-grid embeddings that pass the full build gate
+    (tools/reembed.py), at most `cap` of them."""
+    import reembed
+    try:
+        gops = sg.ops(rec["group"])
+    except KeyError:
+        return [], "group not in Hall table"
+    try:
+        found, note = reembed.embeddings(rec, gops)
+    except Exception as exc:
+        return [], "embeddings raised: %s" % exc
+    outs = []
+    for k, assign in enumerate(found):
+        nr = reembed.reembedded_rec(rec, gops, assign)
+        net, _why = build_net24(nr)
+        if net is not None:
+            outs.append((net, "emb%d" % k))
+            if len(outs) >= cap:
+                break
+    return outs, note
+
+
 def main():
     rows = {r['number']: r for r in pt.TABLE}
     sigs = {n: row_sig(r) for n, r in rows.items()}
@@ -542,7 +775,7 @@ def main():
         hit_rows = sorted({n for u in units for n in want_units.get(u, ())})
         if not hit_rows:
             continue
-        if name not in have_seeds or name not in recs:
+        if name not in recs:
             continue
         if not rcsr_nets.is_cubic(recs[name]):
             continue
@@ -554,16 +787,65 @@ def main():
     per_row = collections.defaultdict(list)
     unmatched = collections.Counter()
     fails = collections.Counter()
+    reemb_hits = []
+    reemb_stats = collections.Counter()
     for name, hit_rows, units in cands:
         net, why = build_net24(recs[name])
         if net is None:
-            fails[why.split(" (")[0].split(" has ")[0]] += 1
+            # the published embedding cannot carry Universal Node
+            # geometry; measure whether ANOTHER same-group embedding
+            # can (tools/reembed.py) before giving the net up.  Only
+            # worth the search when the net could serve an OPEN row.
+            handled = False
+            if any(n not in SHIPPED_ROWS for n in hit_rows):
+                alts, anote = alt_nets(recs[name])
+                budget_hit = "BUDGET HIT" in anote
+                if not alts:
+                    reemb_stats["budget hit" if budget_hit
+                                else "no on-grid embedding"] += 1
+                for anet, tag in alts:
+                    rseeds, rnote = net_rings.ring_seeds(
+                        anet, sig_face_sizes(published[name]))
+                    if rseeds is None:
+                        reemb_stats["embedding ok, rings failed"] += 1
+                        continue
+                    rtiles, rnote2 = tiles_of(name, anet, rseeds, units,
+                                              origin_free=True)
+                    if rtiles is None:
+                        reemb_stats["embedding ok, guard failed"] += 1
+                        continue
+                    print("%-8s rows %s REEMBEDDED %s: rings(%s): %s -> "
+                          "%d tile type(s)" % (name, hit_rows, tag, rnote,
+                                               rnote2, len(rtiles)))
+                    match_tiles(name, rtiles, rows, sigs, want_units,
+                                hits, per_row, unmatched, reembedded=True)
+                    reemb_hits.append((name, tag))
+                    reemb_stats["embedding tiled"] += 1
+                    handled = True
+            if not handled:
+                fails[why.split(" (")[0].split(" has ")[0]] += 1
             continue
-        seeds = seed_faces(zf, name)
-        if seeds is None:
-            fails["seeds not on the 1/24 grid"] += 1
-            continue
-        tiles, note = tiles_of(name, net, seeds, units)
+        # 3dt seed faces when the net has a usable file; otherwise --
+        # and whenever the file path fails (wrong setting, extra ring
+        # orbits, guard mismatch) -- fall back to the net's own strong
+        # rings (net_rings), which need no file and no origin search.
+        tiles = note = None
+        seeds = seed_faces(zf, name) if name in have_seeds else None
+        if seeds is not None:
+            tiles, note = tiles_of(name, net, seeds, units)
+        if tiles is None:
+            rseeds, rnote = net_rings.ring_seeds(
+                net, sig_face_sizes(published[name]))
+            if rseeds is None:
+                note = "%s; rings: %s" % (note or "no 3dt seeds", rnote)
+            else:
+                rtiles, rnote2 = tiles_of(name, net, rseeds, units,
+                                          origin_free=True)
+                if rtiles is not None:
+                    tiles, note = rtiles, "rings(%s): %s" % (rnote, rnote2)
+                else:
+                    note = "%s; rings: %s" % (note or "no 3dt seeds",
+                                              rnote2)
         if tiles is None:
             fails[note.split(":")[0]] += 1
             print("%-8s FAIL %s" % (name, note))
@@ -571,65 +853,8 @@ def main():
         step = net[2]
         print("%-8s rows %s (step %d): %s -> %d tile type(s)"
               % (name, hit_rows, step, note, len(tiles)))
-        for V24, F in tiles:
-            V = reduce_tile(V24, F)
-            if V is None:
-                print("         tile %s: edges not Universal Node branches"
-                      % tile_symbol(F))
-                continue
-            try:
-                F2 = pn.orient_faces(V, F)
-                cs = cell_sig(V, F2)
-            except Exception as exc:
-                print("         tile %s: signature failed (%s)"
-                      % (tile_symbol(F), exc))
-                continue
-            best = None
-            for num, rs in sigs.items():
-                if full_match(cs, rs):
-                    best = ('FULL', num)
-                    break
-                if core_match(cs, rs) and best is None:
-                    best = ('CORE', num)
-            if best is None:
-                sym = tile_symbol(F2)
-                unmatched[sym] += 1
-                for num in want_units.get(sym, ()):
-                    rs = sigs[num]
-                    diffs = [k for k in ('V', 'E', 'F', 'hist', 'branches',
-                                         'faces', 'axes') if cs[k] != rs[k]]
-                    print("         tile %s V=%d E=%d vs #%d %s: differs "
-                          "in %s" % (sym, cs['V'], cs['E'], num,
-                                     rows[num]['name'], ",".join(diffs)))
-                    if diffs and diffs[0] in ('hist', 'branches'):
-                        print("           cell %s=%r row %s=%r"
-                              % (diffs[0], cs[diffs[0]],
-                                 diffs[0], rs[diffs[0]]))
-                continue
-            kind, num = best
-            # eighth-grid tiles ride their RCSR net (through the alias
-            # table where the hand-built NETS already has it); genuine
-            # 24th-grid tiles ride the MIXED-net kinds of their own
-            # edges, the form the resolver's stage 2 already emits.
-            if all(all(c % 3 == 0 for c in v) for v in V24):
-                key = name.upper()
-                netid = rcsr_nets.ALIASES.get(key, key)
-            else:
-                kinds = set()
-                for cyc in F2:
-                    n = len(cyc)
-                    for k in range(n):
-                        d = tuple(V[cyc[(k + 1) % n]][i] - V[cyc[k]][i]
-                                  for i in range(3))
-                        kinds.add(pn.branch_kind(d))
-                netid = tuple(sorted(kinds))
-            print("         tile %s V=%d: #%d %s (%s) via %s"
-                  % (tile_symbol(F2), cs['V'], num, rows[num]['name'],
-                     kind, netid))
-            per_row[num].append((kind, name))
-            old = hits.get(num)
-            if old is None or (old[0] == 'CORE' and kind == 'FULL'):
-                hits[num] = (kind, netid, V, F2)
+        match_tiles(name, tiles, rows, sigs, want_units, hits,
+                    per_row, unmatched)
 
     with open(os.path.join(HERE, "tiles_resolved.pkl"), "wb") as fh:
         pickle.dump(hits, fh)
@@ -639,6 +864,8 @@ def main():
     print("per-row sources: %s" % {n: v for n, v in sorted(per_row.items())})
     print("tile symbols matching no row: %s" % dict(unmatched))
     print("net failures: %s" % dict(fails))
+    print("re-embedded nets that tiled: %s" % reemb_hits)
+    print("re-embedding outcomes: %s" % dict(reemb_stats))
     print("wrote tiles_resolved.pkl")
 
 
