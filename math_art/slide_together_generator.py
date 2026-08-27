@@ -864,6 +864,21 @@ try:
 except ImportError:
     _IN_BLENDER = False
 
+# A slide-together is ALREADY a set of flat slitted polygons -- every
+# panel is a part waiting to be cut -- so it needs no slicing at all,
+# only the nesting and export half of the fabrication pipeline.  Shared
+# with Slice for Fabrication, so one SVG/DXF path serves both.
+try:
+    from .slicing import panels as _fab
+except ImportError:                       # headless / flat import
+    try:
+        from slicing import panels as _fab
+    except ImportError:
+        _fab = None
+
+# the same key the slicer writes, so the same exporter finds it
+DRAWING_KEY = 'math_art_slice_drawing'
+
 
 if _IN_BLENDER:
 
@@ -909,6 +924,28 @@ if _IN_BLENDER:
             description="One object per panel instead of a single mesh")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
                              description="Overall size of the result")
+
+        cut_layout: BoolProperty(
+            name="Cut Layout", default=True,
+            description="Nest the panels onto sheets ready for a laser "
+                        "cutter, and keep the layout on the object so "
+                        "it can be exported to SVG or DXF")
+        cut_size: FloatProperty(
+            name="Model Size", default=200.0, min=1.0, max=5000.0,
+            description="Longest dimension of the finished model, in "
+                        "millimetres. Every panel is scaled by the same "
+                        "factor, so they still fit one another")
+        cut_sheet_width: FloatProperty(
+            name="Sheet Width", default=600.0, min=10.0, max=5000.0,
+            description="Width of the stock sheet, in millimetres")
+        cut_sheet_height: FloatProperty(
+            name="Sheet Height", default=400.0, min=10.0, max=5000.0,
+            description="Height of the stock sheet, in millimetres")
+        cut_kerf: FloatProperty(
+            name="Kerf", default=0.15, min=0.0, max=3.0,
+            description="Width of material the beam burns away, in "
+                        "millimetres. The outlines are offset by half "
+                        "of it so the cut panels come out to size")
 
         def execute(self, context):
             try:
@@ -976,7 +1013,26 @@ if _IN_BLENDER:
                     md.thickness = self.thickness
                     md.offset = 0.0
             context.view_layer.objects.active = made[0]
-            self.report({'INFO'}, f"{len(panels)} panels")
+
+            note = ""
+            if self.cut_layout and _fab is not None:
+                try:
+                    from . import fabrication_slicer as _fs
+                except ImportError:
+                    import fabrication_slicer as _fs
+                drawing, rep = _fab.panel_layout(
+                    panels, self.cut_size, self.cut_sheet_width,
+                    self.cut_sheet_height, 5.0, self.cut_kerf, 4.0,
+                    "Slide-Together")
+                # kept on the OBJECT, which is where the exporter looks
+                # and what survives a rebuild
+                made[0][DRAWING_KEY] = _fs.drawing_to_json(drawing)
+                note = (f"; cut layout {rep['placed']} panels on "
+                        f"{rep['sheets']} sheet(s)")
+                if rep['oversize']:
+                    note += f", {rep['oversize']} too big for the sheet"
+
+            self.report({'INFO'}, f"{len(panels)} panels{note}")
             return {'FINISHED'}
 
         def _panel_object(self, context, P, nv, name, mat):
@@ -1001,6 +1057,21 @@ if _IN_BLENDER:
             lay.prop(self, 'colors')
             lay.prop(self, 'separate')
             lay.prop(self, 'scale')
+
+            # A slide-together is already a set of flat slitted
+            # polygons, so it needs no slicing to be cuttable -- only
+            # nesting and export, which it borrows wholesale from the
+            # slicer.
+            box = lay.box()
+            box.label(text="Fabrication")
+            box.prop(self, 'cut_layout')
+            if self.cut_layout:
+                box.prop(self, 'cut_size')
+                box.prop(self, 'cut_sheet_width')
+                box.prop(self, 'cut_sheet_height')
+                box.prop(self, 'cut_kerf')
+                box.operator("object.fabrication_slice_export",
+                             text="Export SVG / DXF", icon='EXPORT')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.slide_together_add", icon='MOD_BOOLEAN')
