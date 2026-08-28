@@ -74,6 +74,119 @@ def _invoke(op, kwargs):
     getattr(getattr(bpy.ops, mod), fn)(**kwargs)
 
 
+#: The icon look, which is the docs studio look with ONE change.
+#:
+#: The tone curve and the rim scale live in subjects.py, because
+#: aim_rig is the call every render path makes and setting them there
+#: is what stops hero figures, gallery variants and icons drifting
+#: apart.  The reasoning for both is recorded beside them.
+#:
+#: What differs here is the exposure, and only the exposure.  An icon
+#: is cropped to 64 px, where a shallow gradient has far fewer pixels
+#: to read across than the same gradient has in a 720 px figure, so it
+#: wants to sit lower on the curve: -2.5 against the figures' -2.0.
+#: Measured on the tetrahedral decahedron, saturation 0.43 against the
+#: 0.36 of the Standard/-3.5 look this replaced; on a geodesic sphere,
+#: luminance spread 0.20 against 0.16, with the range no longer
+#: crushed up against white.
+#:
+#: Re-measure with tools/icon_lighting_sweep.py before changing this,
+#: and judge exposure on a BALL, not a star -- a spiky solid
+#: self-shadows and looks fine two stops too bright.
+VIEW_TRANSFORM = subjects.STUDIO_VIEW_TRANSFORM
+VIEW_TRANSFORM_FALLBACK = ('AgX', 'Standard')
+EXPOSURE = -2.5
+
+#: Per-operator exceptions, for subjects that are not lit by the studio
+#: rig at all.  `exposure` replaces EXPOSURE; `world` multiplies the
+#: strength of every background shader in the world the subject brought.
+#:
+#: The two gemstones are the case.  subjects._env_gem_studio hides the
+#: docs lights entirely and installs the add-on's own Gem Studio -- a
+#: sky world plus a small key and fill -- because a faceted stone has
+#: no appearance of its own, only what it refracts.  EXPOSURE was
+#: measured on diffuse plastic under the studio rig, so applying it
+#: here just underexposed a different rig by two stops: the cabochon
+#: baked at mean luminance 0.14, a near-black lozenge in the menu.
+#:
+#: Raising the SKY rather than the exposure is what fixes a stone,
+#: because most of its light arrives through the world, and it lifts
+#: the shadowed body without flattening the facets the way more key
+#: light would.  At -1.5 with the sky at x3 the cabochon reaches 0.42
+#: and the faceted stone 0.72.  x6 lifts the cabochon further but
+#: costs the faceted stone its facets (saturation 0.19, p95 0.97 --
+#: it goes pale and the edges stop reading), so x3 is the ceiling.
+LOOK_OVERRIDES = {
+    "mesh.gem_add": dict(exposure=-1.5, world=3.0),
+    "mesh.gem_cabochon_add": dict(exposure=-1.5, world=3.0),
+}
+
+
+def _boost_world(scene, factor):
+    """Scale every background shader in the current world.
+
+    The base strength is remembered on the world datablock the first
+    time it is touched, so re-applying the boost to a world that
+    survives between bakes sets it rather than compounding it.
+    """
+    w = scene.world
+    if w is None or not w.use_nodes:
+        return
+    for node in w.node_tree.nodes:
+        inp = node.inputs.get("Strength") if node.inputs else None
+        if inp is None:
+            continue
+        key = "_icon_base_strength_%s" % node.name
+        base = w.get(key)
+        if base is None:
+            base = float(inp.default_value)
+            w[key] = base
+        inp.default_value = base * factor
+
+
+def _icon_look(scene, plan=False, op=None):
+    """Colour management and light ratios for an icon, not a figure.
+
+    Call this AFTER `subjects.aim_rig`, never only before it.  aim_rig
+    re-points the rig per subject and, in doing so, restores each
+    light's energy from the snapshot `capture_rig` took and sets the
+    view transform and exposure itself -- so anything configured in
+    `_setup` alone is silently overwritten on every bake.  That is what
+    made the earlier colour-management fix look like it had no effect
+    on the menu icons: it never reached them.
+
+    Restoring-then-scaling is also why the rim multiply here is safe to
+    run once per bake: aim_rig has just reset the energy to the
+    captured full value, so the scale never compounds.
+
+    Plan views are left alone.  They are flat coloured tilings shot
+    head-on, and subjects.aim_rig already dims the rig to a quarter and
+    kills the specular lobe for them -- a separate, working fix for a
+    different problem.
+    """
+    if plan:
+        return
+    over = LOOK_OVERRIDES.get(op, {})
+    vs = scene.view_settings
+    subjects._set_view_transform(scene, VIEW_TRANSFORM,
+                                 *VIEW_TRANSFORM_FALLBACK)
+    vs.exposure = over.get("exposure", EXPOSURE)
+    # Set the rim energies ABSOLUTELY, from the strengths capture_rig
+    # recorded, rather than multiplying what is there.  aim_rig has
+    # usually applied the same scale already, and a second multiply
+    # would compound it to 0.12; bake_solid_icons never calls aim_rig
+    # at all, so it needs the scale applied here.  Deriving both from
+    # the captured base makes this correct either way, and idempotent.
+    for name, base in getattr(subjects, "_LIGHT_ENERGY", {}).items():
+        if not name.startswith("Rim Light"):
+            continue
+        ob = bpy.data.objects.get(name)
+        if ob is not None:
+            ob.data.energy = base * subjects.STUDIO_RIM_SCALE
+    if "world" in over:
+        _boost_world(scene, over["world"])
+
+
 def _setup():
     """Studio rig, tuned for a small icon on a transparent background."""
     rd.setup_studio()
@@ -88,6 +201,7 @@ def _setup():
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = 'PNG'
     scene.render.image_settings.color_mode = 'RGBA'
+    _icon_look(scene)
     scene.cycles.samples = SAMPLES
     scene.render.resolution_x = RES * SUPERSAMPLE
     scene.render.resolution_y = RES * SUPERSAMPLE
@@ -169,7 +283,11 @@ def bake(op):
 
 def _bake(op):
     rd.clear_sculpts()
-    subjects.aim_rig(op in subjects.PLAN_VIEW)
+    plan = op in subjects.PLAN_VIEW
+    subjects.aim_rig(plan)
+    # aim_rig has just overwritten the view transform, the exposure and
+    # every light's energy; put the icon look back on top of it.
+    _icon_look(bpy.context.scene, plan, op)
     # Operators that transform a selection need something to act on;
     # the setup builds it, and it is dropped once consumed so only the
     # generated surface is framed and rendered.

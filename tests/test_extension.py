@@ -597,8 +597,11 @@ OPS = [
     ("slide-together squares", lambda: bpy.ops.mesh.slide_together_add()),
     ("slide-together pentagrams", lambda: bpy.ops.mesh.slide_together_add(
         model='PG12')),
+    # the compound enum is narrowed by the family it belongs to, so a
+    # scripted call names both -- there is no "all families" entry to
+    # fall back on
     ("harman compound", lambda: bpy.ops.mesh.polyhedron_compound_add(
-        compound='H_5CUBES')),
+        family='AXES', compound='H_5CUBES')),
     ("twelve-faced pyritohedron", lambda: bpy.ops.mesh.twelve_faced_add()),
     ("twelve-faced tetartoid", lambda: bpy.ops.mesh.twelve_faced_add(
         solid='TETARTOID')),
