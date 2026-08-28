@@ -519,7 +519,12 @@ class StellationEngine(object):
         shells.sort(key=lambda d: (d['power'], d['radius']))
         rot_orbs = [frozenset(o) for o in rot]
         for k, sh in enumerate(shells):
-            sh['hands'] = [o for o in rot_orbs if o & sh['cells']]
+            # Sorted by their smallest sign-vector, so which enantiomorph
+            # is hand 0 is a property of the arrangement and not of the
+            # order a dict happened to iterate in.  Codes naming a hand
+            # ('f1a') must mean the same solid on every run.
+            sh['hands'] = sorted((o for o in rot_orbs if o & sh['cells']),
+                                 key=min)
             sh['chiral'] = len(sh['hands']) == 2
             sh['label'] = 'a' if (sh['power'] == 0 and sh['size'] == 1) \
                 else 's%02d' % k
@@ -527,6 +532,32 @@ class StellationEngine(object):
         self.rot_orbits = rot_orbs
         self.labels = [sh['label'] for sh in shells]
         self.shell_by_label = {sh['label']: sh for sh in shells}
+
+        # Classical names, where the seed has any.  The generic labels stay
+        # canonical -- stored codes and presets are written in them -- and
+        # the classical ones are an accepted INPUT spelling plus what the UI
+        # displays.  Keyed on (power, size) rather than on position, because
+        # the two orderings disagree: Du Val's e1 is the 20-cell shell at
+        # power 4 and e2 the 60-cell one, while this engine sorts that power
+        # by radius and gets them the other way round.  Same for f1/f2.
+        self.classical = {}
+        if self.name == 'icosahedron':
+            seen = {}
+            for sh in shells:
+                key = (sh['power'], sh['size'])
+                if key in seen:
+                    raise RuntimeError(
+                        'cannot apply classical labels to %s: shells %r and '
+                        '%r share (power, size) = %r, so the naming would be '
+                        'arbitrary' % (self.name, seen[key], sh['label'], key))
+                seen[key] = sh['label']
+                cl = _DUVAL_BY_POWER_SIZE.get(key)
+                if cl is not None:
+                    sh['classical'] = cl
+                    self.classical[cl] = sh['label']
+            self.classical['a'] = 'a'
+        for sh in shells:
+            sh.setdefault('classical', None)
 
     # ---- support ---------------------------------------------------------
     def support(self):
@@ -608,12 +639,44 @@ class StellationEngine(object):
                 if item in ('all', 'final'):
                     filled |= set(self.cells.keys())
                 else:
-                    filled |= self.shell_by_label[item]['cells']
+                    filled |= self.cells_of_token(item)
             elif _is_cell(item):
                 filled.add(item)
             else:
                 filled |= set(item)
         return filled
+
+    def cells_of_token(self, token):
+        """Cells named by one code token.
+
+        Accepted, in this order: a canonical shell label ('s07'); a
+        classical label where the seed has one ('f1'); either of those with
+        a trailing 'a'/'b' naming ONE HAND of a chiral shell ('f1a').
+
+        Exact labels are tried before the hand suffix is peeled, so 'b' is
+        Du Val's shell b and never hand-b of a shell called ''.
+        """
+        sh = self.shell_by_label.get(token)
+        if sh is None and token in self.classical:
+            sh = self.shell_by_label[self.classical[token]]
+        if sh is not None:
+            return set(sh['cells'])
+
+        if len(token) > 1 and token[-1] in 'ab':
+            base, hand = token[:-1], 'ab'.index(token[-1])
+            sh = self.shell_by_label.get(base)
+            if sh is None and base in self.classical:
+                sh = self.shell_by_label[self.classical[base]]
+            if sh is not None:
+                if not sh['chiral']:
+                    raise KeyError(
+                        'shell %r is not chiral, so %r names nothing; it has '
+                        'a single hand' % (base, token))
+                return set(sh['hands'][hand])
+
+        known = list(self.labels) + sorted(self.classical)
+        raise KeyError('unknown shell %r for seed %r; known: %s'
+                       % (token, self.name, ' '.join(known)))
 
     # ---- boundary surface of a union of cells ----------------------------
     def build(self, cell_code, scale=True):
@@ -746,6 +809,101 @@ _DUVAL_BY_POWER_SIZE = {
     (4, 20): 'e1', (4, 60): 'e2', (5, 120): 'f1', (5, 12): 'f2',
     (6, 30): 'g1', (6, 60): 'g2', (7, 60): 'g3',
 }
+
+DUVAL_LABELS = ['a', 'b', 'c', 'd', 'e1', 'e2', 'f1', 'f2', 'g1', 'g2', 'g3']
+
+# Du Val's capitals abbreviate a run of shells outward from the core.
+_DUVAL_CAP = {
+    'A': ['a'],
+    'B': ['a', 'b'],
+    'C': ['a', 'b', 'c'],
+    'D': ['a', 'b', 'c', 'd'],
+    'E': ['a', 'b', 'c', 'd', 'e1', 'e2'],
+    'F': ['a', 'b', 'c', 'd', 'e1', 'e2', 'f1', 'f2'],
+    # great icosahedron: 12 outer vertices at the icosahedron shell
+    'G': ['a', 'b', 'c', 'd', 'e1', 'e2', 'f1', 'f2', 'g1', 'g2'],
+    # final stellation / echidnahedron: every cell
+    'H': ['a', 'b', 'c', 'd', 'e1', 'e2', 'f1', 'f2', 'g1', 'g2', 'g3'],
+}
+
+
+def expand_duval(code):
+    """Expand a Du Val string like 'De1f1g1' or 'Ef1' into a shell list."""
+    shells = []
+    i = 0
+    if code and code[0].isupper():
+        shells += _DUVAL_CAP[code[0]]
+        i = 1
+    while i < len(code):
+        ch = code[i]
+        if ch.isalpha():
+            tok = ch
+            if i + 1 < len(code) and code[i + 1].isdigit():
+                tok += code[i + 1]
+                i += 1
+            shells.append(tok)
+        i += 1
+    out = []
+    for s in shells:
+        if s in DUVAL_LABELS and s not in out:
+            out.append(s)
+    return out
+
+
+# Crennell index 1..59 -> Du Val cell string (the standard published
+# cross-reference).  1..32 are reflexible; 33..59 are chiral, and are the
+# same cell sets with only ONE HAND of the chiral shell f1 kept.
+_CRENNELL_STR = {
+    1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E', 6: 'F', 7: 'G', 8: 'H',
+    9: 'e1', 10: 'f1', 11: 'g1', 12: 'e1f1', 13: 'e1f1g1', 14: 'f1g1',
+    15: 'e2', 16: 'f2', 17: 'g2', 18: 'e2f2', 19: 'e2f2g2', 20: 'f2g2',
+    21: 'De1', 22: 'Ef1', 23: 'Fg1', 24: 'De1f1', 25: 'De1f1g1',
+    26: 'Ef1g1', 27: 'De2', 28: 'Ef2', 29: 'Fg2', 30: 'De2f2',
+    31: 'De2f2g2', 32: 'Ef2g2',
+    33: 'f1', 34: 'e1f1', 35: 'De1f1', 36: 'f1g1', 37: 'e1f1g1',
+    38: 'De1f1g1', 39: 'f1g2', 40: 'e1f1g2', 41: 'De1f1g2', 42: 'f1f2g2',
+    43: 'e1f1f2g2', 44: 'De1f1f2g2', 45: 'e2f1', 46: 'De2f1', 47: 'Ef1',
+    48: 'e2f1g1', 49: 'De2f1g1', 50: 'Ef1g1', 51: 'e2f1f2', 52: 'De2f1f2',
+    53: 'Ef1f2', 54: 'e2f1f2g1', 55: 'De2f1f2g1', 56: 'Ef1f2g1',
+    57: 'e2f1f2g2', 58: 'De2f1f2g2', 59: 'Ef1f2g2',
+}
+
+CRENNELL = {k: expand_duval(v) for k, v in _CRENNELL_STR.items()}
+CRENNELL_REFLEXIBLE = frozenset(range(1, 33))
+CRENNELL_CHIRAL = frozenset(range(33, 60))
+
+
+def crennell_code(k, hand=0):
+    """Cell code for Crennell index k of the icosahedron.
+
+    Reflexible indices (1..32) are a plain list of Du Val labels.  Chiral
+    ones (33..59) keep a single hand of f1, spelled 'f1a' / 'f1b'; which
+    hand is which is fixed by the canonical ordering in `_orbits`, and the
+    two are mirror images, so either is a genuine member of the pair.
+    """
+    if k not in CRENNELL:
+        raise KeyError('Crennell index %r is not in 1..59' % (k,))
+    code = list(CRENNELL[k])
+    if k in CRENNELL_CHIRAL and 'f1' in code:
+        code = [c for c in code if c != 'f1'] + ['f1' + 'ab'[hand]]
+    return code
+
+
+def crennell_title(k):
+    """Human label for Crennell index k: the Du Val string, plus the
+    common name where the figure has one."""
+    named = {1: 'Icosahedron', 2: 'First stellation (small triambic)',
+             3: 'Compound of five octahedra', 4: 'Third stellation',
+             6: 'Second stellation', 7: 'Great icosahedron',
+             8: 'Final stellation (echidnahedron)',
+             22: 'Compound of ten tetrahedra',
+             26: 'Excavated dodecahedron',
+             30: 'Great triambic icosahedron',
+             47: 'Compound of five tetrahedra'}
+    s = '%d. %s' % (k, _CRENNELL_STR[k])
+    if k in named:
+        s += ' -- ' + named[k]
+    return s
 
 
 # --------------------------------------------------------------------------

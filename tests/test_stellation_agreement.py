@@ -92,12 +92,9 @@ def signature(V, F):
             tuple(sorted(len(f) for f in F)))
 
 
-def general_code(engine, dumap, k):
-    """The general engine's cell code for Crennell index k.
-
-    Chiral indices (33..59) keep a single hand of the one chiral shell,
-    exactly as `stellation_engine.crennell_cells` does.
-    """
+def mapped_code(engine, dumap, k):
+    """Crennell k translated through the (power, size) map -- the
+    independent route, built from stellation_engine's own tables."""
     duval = se.CRENNELL[k]
     code = [dumap[L] for L in duval]
     if k in se.CRENNELL_CHIRAL:
@@ -132,18 +129,31 @@ def main():
     print('chiral shell %s splits into hands of %s -- OK'
           % (dumap['f1'], [len(h) for h in hands]))
 
+    # The Du Val strings must agree between the modules before the codes
+    # built from them can mean anything.
+    assert se._CRENNELL_STR == gs._CRENNELL_STR, \
+        'the two modules carry different Crennell tables'
+
     bad = []
     for k in range(1, 60):
         v1, f1 = se.build(se.crennell_cells(k))
-        v2, f2 = engine.build(general_code(engine, dumap, k))
-        s1, s2 = signature(v1, f1), signature(v2, f2)
-        if s1 != s2:
-            bad.append((k, s1, s2))
+        s1 = signature(v1, f1)
+
+        # Two independent routes into the general engine: the (power, size)
+        # map derived here, and the module's own classical vocabulary.
+        # Both must land on the same solid as stellation_engine.
+        for route, code in (('mapped', mapped_code(engine, dumap, k)),
+                            ('crennell_code', gs.crennell_code(k))):
+            v2, f2 = engine.build(code)
+            s2 = signature(v2, f2)
+            if s1 != s2:
+                bad.append((k, route, s1, s2))
 
     print()
-    for k, s1, s2 in bad:
+    for k, route, s1, s2 in bad:
         kind = 'chiral' if k in se.CRENNELL_CHIRAL else 'reflexible'
-        print('BAD  Crennell %2d (%s, %r)' % (k, kind, se._CRENNELL_STR[k]))
+        print('BAD  Crennell %2d (%s, %r) via %s'
+              % (k, kind, se._CRENNELL_STR[k], route))
         print('       stellation_engine: V=%d F=%d' % (s1[0], s1[1]))
         print('       general_stellation: V=%d F=%d' % (s2[0], s2[1]))
         print('       radii agree: %s   face sizes agree: %s'
