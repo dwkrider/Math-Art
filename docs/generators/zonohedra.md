@@ -57,6 +57,7 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/zonohedra__RANDOM.png" width="200"><br><sub>Random Star</sub></td>
+<td align="center"><img src="../images/variants/zonohedra__ROSETTE.png" width="200"><br><sub>Rhombic Rose</sub></td>
 </tr>
 </table>
 

@@ -56,7 +56,13 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    class MESH_OT_waterman_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_waterman_add(bpy.types.Operator,
+                               _net_style.NetStyleProps):
         """Add a Waterman polyhedron (hull of FCC points within
         radius sqrt(2*root))"""
         bl_idname = "mesh.waterman_add"
@@ -82,7 +88,8 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
-                    "segment per face")],
+                    "segment per face"),
+            _net_style.net_enum_item()],
             default='SOLID',
             description="Finish for the polyhedron: solid, Leonardo "
                         "panels, struts, ball-and-stick, wireframe, or "
@@ -141,10 +148,13 @@ if _IN_BLENDER:
             bm.to_mesh(me)
             bm.free()
             me.update()
-            if self.style == 'FACETS':
+            if self.style in ('FACETS', 'NET'):
                 Vf = [tuple(v.co) for v in me.vertices]
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
+                if self.style == 'NET':
+                    return _net_style.emit_net_from_operator(
+                        self, context, Vf, Ff, f"Waterman W{self.root}")
                 try:
                     from .styles import facet_style
                 except ImportError:
@@ -199,6 +209,8 @@ if _IN_BLENDER:
             if self.style == 'BALLSTICK':
                 lay.prop(self, 'strut_radius')
                 lay.prop(self, 'node_radius')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

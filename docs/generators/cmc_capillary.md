@@ -10,7 +10,7 @@ None of these is drawn from a formula — the surface is relaxed under the same 
 
 ### Using it
 
-1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ CMC Capillary Surface*.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ CMC Capillary Surface*.
 2. **Pick the Surface.** *Liquid Bridge* spans two coaxial rings; *Sessile Drop* rests on a floor; *Film on Sphere* and *Film on Column* sling a soap film between a fixed ring and a curved support. The panel then shows only the controls that apply to the chosen mode.
 3. **Set the mode's shape knobs.**
    - **Liquid Bridge** — **Volume Factor** is the main dial (as a fraction of the enclosing cylinder's volume: $1$ = cylinder, $\approx 0.809$ = catenoid, more = barrel-shaped unduloid, less = necked nodoid arc), and **Half-Height / Radius** sets the ring aspect (the Goldschmidt limit $0.6627$ is where no catenoid can span the rings any more).

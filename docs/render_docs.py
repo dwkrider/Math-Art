@@ -369,9 +369,9 @@ def scene_stereographic():
     world.node_tree.nodes.get("Background").inputs["Color"] \
         .default_value = (0.0, 0.0, 0.0, 1)
     # perforated sphere: south pole at origin, north pole at (0,0,2R);
-    # a hyperbolic {7,3} tiling projects to a Poincare-disc pattern
-    bpy.ops.mesh.stereographic_add(pattern='TILING', tile_p=7,
-                                   tile_q=3, radius=1.0)
+    # a square grid on the sphere projects to a clean square grid on the
+    # plane -- the defining property of the stereographic projection.
+    bpy.ops.mesh.stereographic_add(pattern='GRID', radius=1.0)
     sph = bpy.context.active_object
     plastic = bpy.data.materials.new("Sphere Plastic")
     plastic.use_nodes = True
@@ -386,12 +386,12 @@ def scene_stereographic():
     pm = bpy.data.materials.new("Catch Plane")
     pm.use_nodes = True
     pb = pm.node_tree.nodes.get("Principled BSDF")
-    pb.inputs["Base Color"].default_value = (0.85, 0.85, 0.87, 1)
+    pb.inputs["Base Color"].default_value = (0.5, 0.5, 0.52, 1)
     pb.inputs["Roughness"].default_value = 0.7
     plane.data.materials.append(pm)
     # bright point light just inside the north pole -> sharp shadow
     la = bpy.data.lights.new("Projector", 'POINT')
-    la.energy = 6000
+    la.energy = 2600
     la.shadow_soft_size = 0.01
     lo = bpy.data.objects.new("Projector", la)
     lo.location = (0.0, 0.0, 1.9)
@@ -424,7 +424,7 @@ def scene_stereographic():
           .properties["view_transform"].enum_items]
     if "AgX" in vt:
         scene.view_settings.view_transform = "AgX"
-    scene.view_settings.exposure = 1.5
+    scene.view_settings.exposure = -0.3
     render("stereographic")
 
 

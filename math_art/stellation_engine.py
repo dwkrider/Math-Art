@@ -912,7 +912,13 @@ if _IN_BLENDER:
 
     _ITEMS = _crennell_items()
 
-    class MESH_OT_icosahedron_stellation_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_icosahedron_stellation_add(bpy.types.Operator,
+                                             _net_style.NetStyleProps):
         """Add a stellation of the icosahedron -- any of the 59 (Coxeter/
         Du Val/Flather/Petrie, "The Fifty-Nine Icosahedra"), by Crennell
         index, or a custom set of Du Val cell shells"""
@@ -950,7 +956,8 @@ if _IN_BLENDER:
                     "Edges as solid cylindrical struts and vertices "
                     "as small spheres (ball-and-stick model)"),
                    ('WIREFRAME', "Wireframe",
-                    "Mesh edges only, displayed as a wireframe")],
+                    "Mesh edges only, displayed as a wireframe"),
+            _net_style.net_enum_item()],
             default='SOLID',
             description="How to render the stellation: solid faces, open "
                         "Leonardo panels, struts, ball-and-stick or "
@@ -990,6 +997,11 @@ if _IN_BLENDER:
             else:
                 label = "Stellation %s" % _FAMOUS.get(
                     int(self.solid), _CRENNELL_STR[int(self.solid)])
+            if self.style == 'NET':
+                return _net_style.emit_net_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], label)
             me = bpy.data.meshes.new(label)
             me.from_pydata([tuple(c * self.scale for c in v) for v in V],
                            [], [list(f) for f in F])
@@ -1033,6 +1045,8 @@ if _IN_BLENDER:
                 col.label(text="Du Val shells (inner -> outer):")
                 for lb in _ALL_LABELS:
                     col.prop(self, 'sh_' + lb)
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')

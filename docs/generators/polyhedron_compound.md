@@ -42,8 +42,8 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/polyhedron_compound__STELLA.png" width="200"><br><sub>Stella Octangula (2 Tetrahedra)</sub></td>
 <td align="center"><img src="../images/variants/polyhedron_compound__5TETRA.png" width="200"><br><sub>Compound of 5 Tetrahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__STELLA.png" width="200"><br><sub>Stella Octangula (2 Tetrahedra)</sub></td>
 <td align="center"><img src="../images/variants/polyhedron_compound__10TETRA.png" width="200"><br><sub>Compound of 10 Tetrahedra</sub></td>
 </tr>
 <tr>
