@@ -1196,7 +1196,7 @@ def stage_geodesic(limit=None, freqs=(2, 3, 4)):
                 "orientation": "inherited from the %s base, centred at the centroid"
                                % base_name.lower(),
                 "construction": {"generator": "math_art.geodesic_generator",
-                                 "operator_id": "mesh.geodesic_sphere_add",
+                                 "operator_id": "mesh.geodesic_add",
                                  "conway_from": None, "wythoff_from": None},
                 "coordinates": ("derived: class-I subdivision of the %s at "
                                 "frequency %d, projected onto the circumsphere"
@@ -1342,7 +1342,7 @@ def stage_compound(limit=None):
             "genus": None,
             "orientation": "as produced by the compound construction, centred at the centroid",
             "construction": {"generator": "math_art.compound_generator",
-                             "operator_id": "mesh.compound_add",
+                             "operator_id": "mesh.polyhedron_compound_add",
                              "conway_from": None, "wythoff_from": None},
             "coordinates": ("derived: orbit of the component solid under the "
                             "compound's rotation group, via "

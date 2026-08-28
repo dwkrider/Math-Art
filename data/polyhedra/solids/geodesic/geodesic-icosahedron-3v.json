@@ -2744,7 +2744,7 @@
   "space_filling": null,
   "construction": {
     "generator": "math_art.geodesic_generator",
-    "operator_id": "mesh.geodesic_sphere_add",
+    "operator_id": "mesh.geodesic_add",
     "conway_from": null,
     "wythoff_from": null
   },

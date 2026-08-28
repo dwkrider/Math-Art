@@ -1195,7 +1195,7 @@
   "space_filling": null,
   "construction": {
     "generator": "math_art.compound_generator",
-    "operator_id": "mesh.compound_add",
+    "operator_id": "mesh.polyhedron_compound_add",
     "conway_from": null,
     "wythoff_from": null
   },

@@ -19,6 +19,8 @@
 #                  from the geometry match the stored numbers, and each stored
 #                  `exact` string evaluates to its own `value`
 #   genus        - chi = 2 - 2g for orientable records
+#   operators    - `construction.operator_id` names an operator that is
+#                  actually registered somewhere in `math_art/`
 #
 # Star faces are handled: planarity and the edge pairing are computed on the
 # true winding cycle, so a {5/2} pentagram validates as a single face.
@@ -494,6 +496,42 @@ def check_duals(records, errors):
                              dv, dc["edges"], dc["faces"]))
 
 
+def check_operators(records, errors, warnings):
+    """`construction.operator_id` must name an operator that exists.
+
+    The field is the record's only pointer back to the add-on: it is what
+    tells a reader -- or the companion website -- which generator builds
+    this solid.  Nothing else validates it, so a rename in `math_art/`
+    leaves the whole database quietly pointing at an operator that is no
+    longer registered.  That is exactly what happened to the compound and
+    geodesic records, which named `mesh.compound_add` and
+    `mesh.geodesic_sphere_add` long after the operators had become
+    `mesh.polyhedron_compound_add` and `mesh.geodesic_add`.
+
+    Scanning for `bl_idname` textually keeps this runnable without Blender,
+    which is the whole point of the validator.
+    """
+    pkg = os.path.join(os.path.dirname(ROOT), "..", "math_art")
+    pkg = os.path.normpath(pkg)
+    if not os.path.isdir(pkg):
+        warnings.append("math_art/ not found -- operator ids not checked")
+        return
+    known = set()
+    for dirpath, _dirs, files in os.walk(pkg):
+        for fn in files:
+            if not fn.endswith(".py"):
+                continue
+            with open(os.path.join(dirpath, fn), encoding="utf-8",
+                      errors="replace") as fh:
+                known.update(re.findall(r'bl_idname\s*=\s*"([\w.]+)"',
+                                        fh.read()))
+    for r in records:
+        op = (r.get("construction") or {}).get("operator_id")
+        if op and op not in known:
+            errors.append("%s: construction.operator_id %r is not a "
+                          "registered operator" % (r["slug"], op))
+
+
 def main():
     index_path = os.path.join(ROOT, "index.json")
     if not os.path.exists(index_path):
@@ -558,6 +596,7 @@ def main():
                              entry["path"]))
         seen_slug[entry["slug"]] = entry["path"]
     check_duals(records, errors)
+    check_operators(records, errors, warnings)
 
     for w in warnings:
         print("WARN  %s" % w)
