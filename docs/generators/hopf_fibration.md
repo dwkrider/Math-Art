@@ -54,13 +54,21 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/hopf_fibration__GREATCIRCLE.png" width="200"><br><sub>Greatcircle</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/hopf_fibration__FIBONACCI.png" width="200"><br><sub>Fibonacci</sub></td>
-<td align="center"><img src="../images/variants/hopf_fibration__TETRA.png" width="200"><br><sub>Tetra</sub></td>
-<td align="center"><img src="../images/variants/hopf_fibration__OCTA.png" width="200"><br><sub>Octa</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__CAP.png" width="200"><br><sub>Cap</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__LOXODROME.png" width="200"><br><sub>Loxodrome</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__CURL.png" width="200"><br><sub>Curl</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/hopf_fibration__FIBONACCI.png" width="200"><br><sub>Fibonacci</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__RANDOM.png" width="200"><br><sub>Random</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__TETRA.png" width="200"><br><sub>Tetra</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/hopf_fibration__OCTA.png" width="200"><br><sub>Octa</sub></td>
 <td align="center"><img src="../images/variants/hopf_fibration__CUBE.png" width="200"><br><sub>Cube</sub></td>
 <td align="center"><img src="../images/variants/hopf_fibration__ICOSA.png" width="200"><br><sub>Icosa</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/hopf_fibration__DODECA.png" width="200"><br><sub>Dodeca</sub></td>
 </tr>
 </table>

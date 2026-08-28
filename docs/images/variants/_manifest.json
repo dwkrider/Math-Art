@@ -21,6 +21,22 @@
    "Astroidal Ellipsoid"
   ],
   [
+   "BOUGUER",
+   "Bouguer Dome"
+  ],
+  [
+   "PENDANT_DROP",
+   "Hanging Drop of Water"
+  ],
+  [
+   "NEILOID",
+   "Neiloid"
+  ],
+  [
+   "SCHWARZ_LANTERN",
+   "Schwarz's Lantern"
+  ],
+  [
    "GABRIEL",
    "Gabriel's Horn"
   ],
@@ -1156,6 +1172,21 @@
    "Encyclopedia Surfaces"
   ],
   [
+   "HENRICI",
+   "Henrici Cubic",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "CUSHION",
+   "Bouligand's Pillow",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "CASSINI_3D",
+   "Cassinian Surface (3 poles)",
+   "Encyclopedia Surfaces"
+  ],
+  [
    "CASSINI",
    "Cassini Surface",
    "Encyclopedia Surfaces"
@@ -1199,21 +1230,6 @@
    "OCT_CUBE_MEDIANS",
    "Cube-Median Quartic",
    "Goursat (Octahedral)"
-  ],
-  [
-   "OCT_TRIANGLES",
-   "Cuboctahedral Triangle Quartic",
-   "Goursat (Octahedral)"
-  ],
-  [
-   "TET_TITEICA",
-   "Titeica Cubic (k' = 0)",
-   "Goursat (Tetrahedral)"
-  ],
-  [
-   "TET_FOUR_SHEETS",
-   "Tetrahedral Cubic (k < 0)",
-   "Goursat (Tetrahedral)"
   ]
  ],
  "topological": [
@@ -1244,6 +1260,10 @@
   [
    "BOY",
    "Boy's Surface"
+  ],
+  [
+   "MORIN",
+   "Morin's Surface"
   ],
   [
    "NONORIENT",
@@ -1933,6 +1953,10 @@
   [
    "RANDOM",
    "Random Star"
+  ],
+  [
+   "ROSETTE",
+   "Rhombic Rose"
   ]
  ],
  "polytope4d": [
@@ -2421,6 +2445,18 @@
   [
    "WHIMSY",
    "Whimsy"
+  ],
+  [
+   "SOLAR_FLAIR",
+   "Solar Flair"
+  ],
+  [
+   "DRAGONFLIES",
+   "Dragonflies"
+  ],
+  [
+   "EDDY",
+   "Eddy"
   ]
  ],
  "oloid": [
@@ -2831,6 +2867,18 @@
   [
    "CORKSCREW",
    "Corkscrew"
+  ],
+  [
+   "HELICONE",
+   "Helico-Conical Surface"
+  ],
+  [
+   "EGG_BOX",
+   "Egg Box"
+  ],
+  [
+   "SINE_TORUS",
+   "Sine Torus"
   ]
  ],
  "sponge": [
@@ -3375,8 +3423,24 @@
    "Greatcircle"
   ],
   [
+   "CAP",
+   "Cap"
+  ],
+  [
+   "LOXODROME",
+   "Loxodrome"
+  ],
+  [
+   "CURL",
+   "Curl"
+  ],
+  [
    "FIBONACCI",
    "Fibonacci"
+  ],
+  [
+   "RANDOM",
+   "Random"
   ],
   [
    "TETRA",
@@ -5562,6 +5626,14 @@
   [
    "HEX2",
    "Hexagon Type 2"
+  ],
+  [
+   "DURER",
+   "Durer's Tiling"
+  ],
+  [
+   "DURER5",
+   "Durer Pentagons (1525)"
   ]
  ],
  "monostatic_body": [
@@ -5638,6 +5710,22 @@
   [
    "PSEUDO_GRCO",
    "Pseudo Great Rhombicuboctahedron"
+  ],
+  [
+   "BREHM_BOY",
+   "Brehm's Boy Surface (9 vertices)"
+  ],
+  [
+   "BRICARD",
+   "Bricard's Flexible Octahedron"
+  ],
+  [
+   "STEFFEN",
+   "Steffen's Flexible Polyhedron"
+  ],
+  [
+   "TRIACONTAHEXA",
+   "Tetragonal Triacontahexahedron"
   ],
   [
    "KLEIN",
@@ -5830,13 +5918,13 @@
  ],
  "polyhedron_compound": [
   [
-   "STELLA",
-   "Stella Octangula (2 Tetrahedra)",
+   "5TETRA",
+   "Compound of 5 Tetrahedra",
    "CLASSICAL"
   ],
   [
-   "5TETRA",
-   "Compound of 5 Tetrahedra",
+   "STELLA",
+   "Stella Octangula (2 Tetrahedra)",
    "CLASSICAL"
   ],
   [
@@ -6506,6 +6594,30 @@
   [
    "TRICYLINDER",
    "Tricylinder"
+  ],
+  [
+   "CUBE4",
+   "Four Cube Diagonals"
+  ],
+  [
+   "CUBOCT6",
+   "Six Cuboctahedral Axes"
+  ],
+  [
+   "ICOSA6",
+   "Six Icosahedral Axes"
+  ],
+  [
+   "DODECA10",
+   "Ten Dodecahedral Axes"
+  ],
+  [
+   "TRUNCOCT12",
+   "Twelve Truncated-Octahedral Axes"
+  ],
+  [
+   "EQUIDOMOID",
+   "Equidomoid (Archimedes' Dome)"
   ]
  ],
  "supershape": [

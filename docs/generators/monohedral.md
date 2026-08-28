@@ -53,6 +53,8 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/monohedral__HEX2.png" width="200"><br><sub>Hexagon Type 2</sub></td>
+<td align="center"><img src="../images/variants/monohedral__DURER.png" width="200"><br><sub>Durer's Tiling</sub></td>
+<td align="center"><img src="../images/variants/monohedral__DURER5.png" width="200"><br><sub>Durer Pentagons (1525)</sub></td>
 </tr>
 </table>
 

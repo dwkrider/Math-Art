@@ -68,14 +68,20 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/notable_polyhedron__SELF_DUAL_16.png" width="200"><br><sub>Self-Dual 16-Hedron</sub></td>
 <td align="center"><img src="../images/variants/notable_polyhedron__PSEUDO_GRCO.png" width="200"><br><sub>Pseudo Great Rhombicuboctahedron</sub></td>
-<td align="center"><img src="../images/variants/notable_polyhedron__KLEIN.png" width="200"><br><sub>Klein Regular Map {3,7} (genus 3)</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__BREHM_BOY.png" width="200"><br><sub>Brehm's Boy Surface (9 vertices)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__BRICARD.png" width="200"><br><sub>Bricard's Flexible Octahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__STEFFEN.png" width="200"><br><sub>Steffen's Flexible Polyhedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__TRIACONTAHEXA.png" width="200"><br><sub>Tetragonal Triacontahexahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__KLEIN.png" width="200"><br><sub>Klein Regular Map {3,7} (genus 3)</sub></td>
 <td align="center"><img src="../images/variants/notable_polyhedron__MAP64.png" width="200"><br><sub>Regular Map {6,4} (genus 6)</sub></td>
 <td align="center"><img src="../images/variants/notable_polyhedron__MAP46.png" width="200"><br><sub>Regular Map {4,6} (genus 6)</sub></td>
-<td align="center"><img src="../images/variants/notable_polyhedron__HEPTDODEC_A.png" width="200"><br><sub>Heptagonal Dodecahedron A (genus 2)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__HEPTDODEC_A.png" width="200"><br><sub>Heptagonal Dodecahedron A (genus 2)</sub></td>
 <td align="center"><img src="../images/variants/notable_polyhedron__HEPTDODEC_C.png" width="200"><br><sub>Heptagonal Dodecahedron C (genus 2)</sub></td>
 </tr>
 </table>

@@ -53,16 +53,24 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/curiosity_surface__BOHEMIAN.png" width="200"><br><sub>Bohemian Dome</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__ASTROIDAL.png" width="200"><br><sub>Astroidal Ellipsoid</sub></td>
-<td align="center"><img src="../images/variants/curiosity_surface__GABRIEL.png" width="200"><br><sub>Gabriel's Horn</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__BOUGUER.png" width="200"><br><sub>Bouguer Dome</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/curiosity_surface__PENDANT_DROP.png" width="200"><br><sub>Hanging Drop of Water</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__NEILOID.png" width="200"><br><sub>Neiloid</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__SCHWARZ_LANTERN.png" width="200"><br><sub>Schwarz's Lantern</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/curiosity_surface__GABRIEL.png" width="200"><br><sub>Gabriel's Horn</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_RING.png" width="200"><br><sub>Dupin Cyclide (ring)</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_HORN.png" width="200"><br><sub>Dupin Cyclide (horn)</sub></td>
-<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_SPINDLE.png" width="200"><br><sub>Dupin Cyclide (spindle)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_SPINDLE.png" width="200"><br><sub>Dupin Cyclide (spindle)</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__TANNERY_PEAR.png" width="200"><br><sub>Tannery's Pear</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__TANNERY_HOURGLASS.png" width="200"><br><sub>Tannery's Hourglass</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/curiosity_surface__ZOLL.png" width="200"><br><sub>Zoll's Surface</sub></td>
 </tr>
 </table>
