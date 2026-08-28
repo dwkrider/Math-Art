@@ -37,15 +37,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 159.32536726997895,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {},
@@ -69,14 +60,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "A. I. Bobenko, 'Surfaces in terms of 2 by 2 matrices: old and new integrable cases', in Harmonic Maps and Integrable Systems (1994) -- Sym's formula for pseudospherical surfaces from sine-Gordon solutions."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "known from the sine-Gordon breather solution",
   "tradition": [
@@ -95,29 +79,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6144,
-      "edges": 12128,
-      "faces": 5985,
-      "euler_characteristic": 1,
-      "angle_defect_total": 4.653191,
-      "area": 4.138327,
-      "volume": 0.416874,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 5050,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.689922,
-        1.006042,
-        2.0
-      ],
-      "aspect_ratio": 0.344961
-    }
   }
 }

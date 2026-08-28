@@ -59,13 +59,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "F. Minding, 'Wie sich entscheiden lasst, ob zwei gegebene krumme Flachen auf einander abwickelbar sind oder nicht', J. reine angew. Math. 19 (1839)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "specimens": [
     {
@@ -99,29 +93,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6144,
-      "edges": 12192,
-      "faces": 6048,
-      "euler_characteristic": 0,
-      "angle_defect_total": 6.286546,
-      "area": 7.043304,
-      "volume": 1.085099,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 5186,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.83384,
-        1.83384,
-        2.0
-      ],
-      "aspect_ratio": 0.91692
-    }
   }
 }

@@ -60,13 +60,7 @@
       "Bernd Kawohl & Christof Weber, \"Meissner's Mysterious Bodies\", Math. Intelligencer 33 (2011), no. 3, 94-101.",
       "T. Bonnesen & W. Fenchel, \"Theorie der konvexen Koerper\", Springer 1934 (the minimal-volume conjecture).",
       "Wikipedia, \"Surface of constant width\" and \"Reuleaux triangle\"."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "specimens": [
     {
@@ -87,29 +81,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3127,
-      "edges": 8399,
-      "faces": 5274,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.566354,
-      "area": 11.892711,
-      "volume": 3.373014,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 1906,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.999545,
-        1.999975,
-        1.999478
-      ],
-      "aspect_ratio": 0.999752
-    }
   }
 }

@@ -58,13 +58,7 @@
         "agrees": true,
         "detail": "'Sarti's degree-12 surface with mu_R = 600' -- confirms the recorded 600 nodes from two independent compilations."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Alessandra Sarti",
   "year": 2001,

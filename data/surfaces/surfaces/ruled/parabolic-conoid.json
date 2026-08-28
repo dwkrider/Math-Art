@@ -48,13 +48,7 @@
         "agrees": true,
         "detail": "page title 'Parabolic conoid' vs record name 'Parabolic Conoid'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "architectural",

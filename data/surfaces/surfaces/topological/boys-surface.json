@@ -80,13 +80,7 @@
         "agrees": true,
         "detail": "record year 1901, page says 1902"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Werner Boy",
   "year": 1901,
@@ -111,29 +105,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4561,
-      "edges": 9168,
-      "faces": 4608,
-      "euler_characteristic": 1,
-      "angle_defect_total": 27.853432,
-      "area": 17.379635,
-      "volume": 3.65437,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 207,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.996455,
-        1.873195
-      ],
-      "aspect_ratio": 0.936597
-    }
   }
 }

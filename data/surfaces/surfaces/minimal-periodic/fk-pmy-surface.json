@@ -32,15 +32,6 @@
     "condition": "minimal",
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 1.0912276043490095,
-        "resolution": 120,
-        "tolerance": 1.3094736,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -74,14 +65,7 @@
       "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
       "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
       "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]"
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -94,29 +78,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 57890,
-      "edges": 171132,
-      "faces": 113208,
-      "euler_characteristic": -34,
-      "angle_defect_total": -247.741786,
-      "area": 20.610173,
-      "volume": 1e-06,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 51779,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

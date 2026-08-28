@@ -15,7 +15,8 @@
     "mode": "implicit",
     "fidelity": "exact",
     "polynomial": null,
-    "note": "A degree-7 surface with 16 triple points, rendered by Labs from Endrass's surf script; the Endrass-Persson-Stevens paper on surfaces with triple points is the page's reference."
+    "note": "A one-parameter family of S_4-symmetric septics; the general element carries sixteen ordinary triple points. Imposing the symmetry is what reduces the problem enough to solve (paper, Theorem 5.1).",
+    "degree": 7
   },
   "curvature": {
     "condition": "none",
@@ -23,16 +24,18 @@
   },
   "topology": {},
   "symmetry": {
-    "kind": "none",
-    "periodicity_rank": 0
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "Td",
+    "order": 24,
+    "verified_by": "curated"
   },
   "embedding": {
     "quality": "singular",
     "singularities": [
       {
-        "type": "triple point",
-        "count": 16,
-        "note": "Triple points, a heavier singularity than a node; per the page and the Endrass-Persson-Stevens paper it cites."
+        "type": "ordinary triple point",
+        "count": 16
       }
     ]
   },
@@ -46,15 +49,8 @@
   "provenance": {
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "O. Labs, 'Advent calendar 2002, No. 14', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch040_no_14.md).",
-      "S. Endrass, U. Persson, J. Stevens, 'Surfaces with Triple Points', arXiv:math.AG/0010163 (linked from the page as the reference)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+      "S. Endrass, U. Persson and J. Stevens, 'Surfaces with triple points', arXiv:math/0010163v1 [math.AG] (2000), section 5 and Theorem 5.1 -- 'A septic with 16 ordinary triple points'."
+    ]
   },
   "tradition": [
     "classical"
@@ -62,7 +58,13 @@
   "ids": {
     "algsurf": "ch040_no_14"
   },
-  "named_after": "Points, Triple",
+  "discovered_by": "Stephan Endrass, Ulf Persson and Jan Stevens",
+  "year": 2000,
+  "notes": {
+    "caveats": [
+      "ATTRIBUTION: the citing website gives only the arXiv number, and the authors are easily misread as van Straten, who is thanked in the acknowledgements for joining the search but is not an author."
+    ]
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

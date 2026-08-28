@@ -48,13 +48,7 @@
     "sources": [
       "O. Labs, 'Advent calendar 2002, No. 1', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch025_no_01.md).",
       "Cover image of the SuSE Linux 8.1 distribution, per the page (Labs made the SuSE cover surfaces from version 7.1 on)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

@@ -48,13 +48,7 @@
         "agrees": true,
         "detail": "page title 'Tractroid 2' vs record name 'Second Tractroid'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "alternate_names": [
     "Tractroid 2"

@@ -78,13 +78,7 @@
         "agrees": true,
         "detail": "'a translation invariant surface with one periodic Enneper end and one annular flat end. ... It is not embedded'; total curvature -4pi in the quotient."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -97,29 +91,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3712,
-      "edges": 7302,
-      "faces": 3591,
-      "euler_characteristic": 1,
-      "angle_defect_total": -3.712876,
-      "area": 3.599169,
-      "volume": 0.267797,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 3425,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.306046,
-        2.0,
-        1.653955
-      ],
-      "aspect_ratio": 0.653023
-    }
   }
 }

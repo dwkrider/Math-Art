@@ -42,16 +42,7 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": [],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 0.9999544244108627,
-        "resolution": 160,
-        "tolerance": 0.002,
-        "passed": null
-      }
-    ]
+    "also_satisfies": []
   },
   "topology": {
     "compact": false,
@@ -83,14 +74,7 @@
         "agrees": true,
         "detail": "page title 'Two-sheeted hyperboloid' vs record name 'Hyperboloid of Two Sheets'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_radius"

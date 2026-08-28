@@ -42,9 +42,9 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
 from surfdb import (algsurf, charts, curation, ferreol,  # noqa: E402
-                    invariants,
-                    mapping, nodal, polynomial, published, references,
-                    registry, sources, tail, views, vmm, wedata)
+                    invariants, mapping, nodal, papers, polynomial,
+                    published, references, registry, sources, tail,
+                    views, vmm, wedata)
 
 OUT = os.path.join(ROOT, "data", "surfaces")
 SCHEMA_VERSION = "0.1.0"
@@ -818,6 +818,7 @@ class Builder:
             # independently published invariants, for the drive stage to
             # compare the generator against
             deep_merge(rec, published.invariants_for(slug))
+            deep_merge(rec, papers.invariants_for(slug))
             for table in (ferreol.ids(), vmm.ids(), algsurf.ids()):
                 extra = table.get(slug)
                 if extra:
@@ -1485,6 +1486,7 @@ MISSING.update(tail.records())
 MISSING.update(ferreol.records())
 MISSING.update(vmm.records())
 MISSING.update(algsurf.records())
+MISSING.update(papers.records())
 
 
 def main():

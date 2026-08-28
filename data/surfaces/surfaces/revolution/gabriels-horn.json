@@ -58,13 +58,7 @@
         "agrees": false,
         "detail": "record year 1643, page says 1641 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "alternate_names": [
     "Torricelli's trumpet"
@@ -87,29 +81,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 13920,
-      "edges": 27744,
-      "faces": 13824,
-      "euler_characteristic": 0,
-      "angle_defect_total": -4.265746,
-      "area": 1.914367,
-      "volume": 0.004641,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 426,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        0.8,
-        0.8
-      ],
-      "aspect_ratio": 0.4
-    }
   }
 }

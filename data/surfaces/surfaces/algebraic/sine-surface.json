@@ -54,13 +54,7 @@
         "agrees": true,
         "detail": "record year 1997, page says 1997"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "year": 1997,
   "tradition": [

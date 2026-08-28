@@ -63,13 +63,7 @@
         "agrees": true,
         "detail": "'an embedded, translation invariant minimal surface asymptotic to the helicoid that has genus 1 in the quotient' (helicoidal ends)."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -82,29 +76,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 12657,
-      "edges": 25166,
-      "faces": 12508,
-      "euler_characteristic": -1,
-      "angle_defect_total": -19.660695,
-      "area": 5.982597,
-      "volume": 0.000308,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 10887,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.887672,
-        2.0,
-        1.096052
-      ],
-      "aspect_ratio": 0.548026
-    }
   }
 }

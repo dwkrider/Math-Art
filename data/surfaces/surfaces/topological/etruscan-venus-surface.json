@@ -44,13 +44,7 @@
     "sources": [
       "C. H. Sequin, topological sculpture pages, University of California, Berkeley.",
       "The Geometry Center Topological Zoo, University of Minnesota."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "sculptural"

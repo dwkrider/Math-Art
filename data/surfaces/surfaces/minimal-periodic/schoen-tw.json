@@ -47,13 +47,7 @@
     "sources": [
       "The 3DXM Consortium, 'A Schoen TW Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch037_schoen_tw.md).",
       "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"

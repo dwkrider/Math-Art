@@ -1,0 +1,69 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "sextic-with-9-triple-points",
+  "name": "Sextic with 9 Triple Points",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "degree": 6,
+    "note": "A sextic in P^3 carrying nine ordinary triple points. The paper's search began by looking for a sextic with ELEVEN triple points, which would have been very interesting; eleven turns out to be a priori impossible, and nine is what exists."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "ordinary triple point",
+        "count": 9
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built. The paper classifies these rather than displaying one equation, and no equation is invented here.",
+      "resume": "S. Endrass, U. Persson and J. Stevens, 'Surfaces with triple points', arXiv:math/0010163 (2000), sections 3-4; converted at research/papers/algebraic-surfaces/endrass-persson-stevens-2000-surfaces-triple-points/."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "S. Endrass, U. Persson and J. Stevens, 'Surfaces with triple points', arXiv:math/0010163v1 [math.AG] (2000), 37 pp."
+    ]
+  },
+  "discovered_by": "Stephan Endrass, Ulf Persson and Jan Stevens",
+  "year": 2000,
+  "tradition": [
+    "classical"
+  ],
+  "notes": {
+    "caveats": [
+      "An ordinary TRIPLE point is not a node. Triple points are not simple singularities in Du Val's sense: allowing them changes the surface's invariants and can drop its Kodaira dimension, whereas rational double points change nothing about the conditions of adjunction. That is why they are typed separately here.",
+      "Eleven triple points on a sextic are proved impossible in the same paper -- a negative result worth recording alongside the positive one."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -53,13 +53,7 @@
     "sources": [
       "O. Labs, 'Advent calendar 2002, No. 18', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch038_no_18.md).",
       "G. Humbert, 'Sur une surface du sixieme ordre liee aux fonctions abeliennes de genre 3', J. de Mathem., 2e serie, t. III (1896); collected papers vol. 2, p. 269-296 (the page's reference).  Description and equation communicated to O. Labs by W. Barth."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

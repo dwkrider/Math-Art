@@ -69,13 +69,7 @@
         "agrees": true,
         "detail": "'The surfaces on this page are translation invariant of genus 2 and have the coordinate planes as symmetry planes'; 8 Scherk (annular) ends per the page title."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -89,29 +83,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 64192,
-      "edges": 128710,
-      "faces": 64512,
-      "euler_characteristic": -6,
-      "angle_defect_total": -40.564551,
-      "area": 3.311073,
-      "volume": 0.042161,
-      "components": 1,
-      "boundary_loops": 4,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 51697,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        0.543205,
-        1.342405
-      ],
-      "aspect_ratio": 0.271603
-    }
   }
 }

@@ -48,13 +48,7 @@
       "The 3DXM Consortium, 'Skew 4-noid', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch014_skew_4noid.md).",
       "M. Weber, '4-Noids with Two Symmetry Planes', minimalsurfaces.blog (local mirror: minsurf/book/.../ch173_4_noids_with_two_symmetry_planes.md).",
       "H. Karcher, 'Construction of minimal surfaces', Surveys in Geometry, Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256, Bonn (1989) 1-96 (the 'Tokyo notes' the mirrored pages cite for their formulas). (pages 30ff)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

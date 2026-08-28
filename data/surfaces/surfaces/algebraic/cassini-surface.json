@@ -60,13 +60,7 @@
         "agrees": true,
         "detail": "page title 'Cassini surface' vs record name 'Cassini Surface'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -83,29 +77,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 128216,
-      "edges": 382982,
-      "faces": 254768,
-      "euler_characteristic": 2,
-      "angle_defect_total": 3.933629,
-      "area": 7.905613,
-      "volume": 0.411454,
-      "components": 2,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 115099,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.617182,
-        2.0
-      ],
-      "aspect_ratio": 0.808591
-    }
   }
 }

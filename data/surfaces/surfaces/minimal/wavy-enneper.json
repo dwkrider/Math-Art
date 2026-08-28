@@ -46,13 +46,7 @@
     "sources": [
       "The 3DXM Consortium, 'Wavy Enneper Surface', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch010_wavy_enneper.md).",
       "H. Karcher, 'Construction of minimal surfaces', Surveys in Geometry, Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256, Bonn (1989) 1-96 (the 'Tokyo notes' the mirrored pages cite for their formulas)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

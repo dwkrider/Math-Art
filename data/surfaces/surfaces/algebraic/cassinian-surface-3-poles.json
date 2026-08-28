@@ -60,13 +60,7 @@
         "agrees": true,
         "detail": "page title 'Cassinian surface' vs record name 'Cassinian Surface (3 poles)'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -85,29 +79,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 46558,
-      "edges": 139668,
-      "faces": 93112,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.566548,
-      "area": 7.541062,
-      "volume": 1.591969,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 33797,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.84341,
-        2.0,
-        0.915629
-      ],
-      "aspect_ratio": 0.457815
-    }
   }
 }

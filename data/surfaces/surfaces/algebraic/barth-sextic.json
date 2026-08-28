@@ -25,16 +25,7 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": [],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 254.46131284500598,
-        "resolution": 160,
-        "tolerance": 0.002,
-        "passed": null
-      }
-    ]
+    "also_satisfies": []
   },
   "topology": {},
   "symmetry": {
@@ -84,15 +75,7 @@
         "agrees": false,
         "detail": "record year 1996, page says 1994 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "symmetry_invariant": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -116,29 +99,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 81412,
-      "edges": 243177,
-      "faces": 161817,
-      "euler_characteristic": 52,
-      "angle_defect_total": 282.742807,
-      "area": 5.617187,
-      "volume": 0.148493,
-      "components": 40,
-      "boundary_loops": 20,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 72859,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

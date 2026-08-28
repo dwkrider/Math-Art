@@ -69,13 +69,7 @@
         "agrees": true,
         "detail": "The tilted-ends member of the 3-parameter KMR family (genus 1, four parallel annular ends in the quotient); 'the surfaces resemble a doubly periodic version of Riemann's singly periodic surface.'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -86,29 +80,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 16721,
-      "edges": 33106,
-      "faces": 16384,
-      "euler_characteristic": -1,
-      "angle_defect_total": -13.393482,
-      "area": 8.32409,
-      "volume": 0.0,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 11586,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.918001,
-        1.817064
-      ],
-      "aspect_ratio": 0.908532
-    }
   }
 }

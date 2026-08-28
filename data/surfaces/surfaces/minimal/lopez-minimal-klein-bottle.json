@@ -79,13 +79,7 @@
         "agrees": true,
         "detail": "'It has a single Enneper end and total curvature -8pi ... the only minimal Klein bottle of total curvature -8pi.'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -99,29 +93,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 36671,
-      "edges": 73152,
-      "faces": 36480,
-      "euler_characteristic": -1,
-      "angle_defect_total": -8.141678,
-      "area": 4.38517,
-      "volume": 0.000418,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 18287,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.339387,
-        2.0,
-        1.068109
-      ],
-      "aspect_ratio": 0.534054
-    }
   }
 }

@@ -51,13 +51,7 @@
         "agrees": true,
         "detail": "page title 'Helico-conical surface' vs record name 'Helico-Conical Surface'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1278_helicoconique_2"
@@ -67,29 +61,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 18432,
-      "edges": 36576,
-      "faces": 18145,
-      "euler_characteristic": 1,
-      "angle_defect_total": 2.418467,
-      "area": 3.337436,
-      "volume": 2.5e-05,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 200,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.000111,
-        0.766331,
-        2.0
-      ],
-      "aspect_ratio": 0.383166
-    }
   }
 }

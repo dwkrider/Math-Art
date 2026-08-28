@@ -32,15 +32,6 @@
     "condition": "minimal",
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 0.5103468454280482,
-        "resolution": 120,
-        "tolerance": 0.6124164,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -80,14 +71,7 @@
         "agrees": true,
         "detail": "'[Schoen's] I-WP surface from 1970 is a triply periodic minimal surface of genus 4. ... After identifying opposite faces of a cubical cell the surface has genus 7, but half of such a cell already constitutes a translational fundamental domain, bringing the genus down to 4' -- the stored 4 is per translational fundamental domain, NOT per conventional cubic cell.  Also A. Schoen, schoengeometry.com (mirror schoen ch006): 'a fourth surface (I-WP) of genus 4'."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -103,29 +87,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 40188,
-      "edges": 119202,
-      "faces": 79008,
-      "euler_characteristic": -6,
-      "angle_defect_total": -71.955122,
-      "area": 14.225618,
-      "volume": 1.314339,
-      "components": 1,
-      "boundary_loops": 8,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 36210,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

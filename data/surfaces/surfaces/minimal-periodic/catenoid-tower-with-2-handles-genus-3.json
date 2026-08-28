@@ -64,13 +64,7 @@
         "agrees": true,
         "detail": "'The quotient surfaces of this 1-parameter family have genus 3, and the period problem becomes 2-dimensional.'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -83,29 +77,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 36258,
-      "edges": 72707,
-      "faces": 36443,
-      "euler_characteristic": -6,
-      "angle_defect_total": -28.011417,
-      "area": 7.383877,
-      "volume": 0.219317,
-      "components": 1,
-      "boundary_loops": 6,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 34474,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.581766,
-        1.183359,
-        2.0
-      ],
-      "aspect_ratio": 0.59168
-    }
   }
 }

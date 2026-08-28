@@ -51,13 +51,7 @@
         "agrees": true,
         "detail": "page title 'Sine torus' vs record name 'Sine Torus'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1351_toredeklein_2"
@@ -67,29 +61,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 27648,
-      "edges": 55296,
-      "faces": 27648,
-      "euler_characteristic": 0,
-      "angle_defect_total": 1.421169,
-      "area": 7.158399,
-      "volume": 0.0,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 14355,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        0.62069
-      ],
-      "aspect_ratio": 0.310345
-    }
   }
 }

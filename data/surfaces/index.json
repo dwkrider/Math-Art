@@ -81,7 +81,7 @@
     "swept",
     "topological"
   ],
-  "count": 423,
+  "count": 425,
   "implemented_count": 298,
   "entries": [
     {
@@ -7009,6 +7009,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "kuehnel-octic-128-nodes",
+      "name": "Kuehnel Octic (128 nodes)",
+      "path": "surfaces/algebraic/kuehnel-octic-128-nodes.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "kuen-surface",
       "name": "Kuen Surface",
       "path": "surfaces/constant-curvature/kuen-surface.json",
@@ -11036,10 +11068,10 @@
       "ends": 0,
       "embedding": "singular",
       "symmetry": {
-        "kind": "none",
-        "symbol": null,
+        "kind": "point",
+        "symbol": "Td",
         "ita_number": null,
-        "order": null
+        "order": 24
       },
       "implemented": false,
       "operator_ids": [],
@@ -11111,6 +11143,38 @@
       "operator_ids": [
         "mesh.algebraic_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "sextic-with-9-triple-points",
+      "name": "Sextic with 9 Triple Points",
+      "path": "surfaces/algebraic/sextic-with-9-triple-points.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {

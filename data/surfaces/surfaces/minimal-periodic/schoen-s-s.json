@@ -48,13 +48,7 @@
       "The 3DXM Consortium, 'A Schoen S-S Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch035_schoen_ss.md).",
       "M. Weber, 'Schoen S'-S''', minimalsurfaces.blog (local mirror: minsurf/book/.../ch287_schoen_s_s.md).",
       "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"

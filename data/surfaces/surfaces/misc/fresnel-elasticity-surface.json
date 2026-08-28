@@ -52,13 +52,7 @@
         "agrees": true,
         "detail": "page title 'Elasticity surface' vs record name 'Fresnel Elasticity Surface'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1262_elasticite_2"
@@ -71,29 +65,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4514,
-      "edges": 9120,
-      "faces": 4608,
-      "euler_characteristic": 2,
-      "angle_defect_total": 13.277877,
-      "area": 8.168043,
-      "volume": 2.039741,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 3923,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.153909,
-        1.5,
-        2.0
-      ],
-      "aspect_ratio": 0.576955
-    }
   }
 }

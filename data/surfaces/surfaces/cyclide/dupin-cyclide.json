@@ -78,13 +78,7 @@
         "agrees": true,
         "detail": "record year 1822, page says 1822"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "specimens": [
     {
@@ -142,29 +136,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4608,
-      "edges": 9216,
-      "faces": 4608,
-      "euler_characteristic": 0,
-      "angle_defect_total": 19.30127,
-      "area": 8.273283,
-      "volume": 2.022977,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 2001,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.499562,
-        1.662391
-      ],
-      "aspect_ratio": 0.749781
-    }
   }
 }

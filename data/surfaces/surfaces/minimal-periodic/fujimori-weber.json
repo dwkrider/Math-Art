@@ -47,13 +47,7 @@
     "sources": [
       "The 3DXM Consortium, 'Fujimori-Weber', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch038_fujimori_weber.md).",
       "S. Fujimori and M. Weber, 'Triply periodic minimal surfaces bounded by vertical symmetry planes', Manuscripta Math. 129 (2009) 29-53."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"

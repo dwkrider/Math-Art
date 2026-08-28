@@ -32,15 +32,6 @@
     "condition": "minimal",
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 0.5977227026241899,
-        "resolution": 120,
-        "tolerance": 0.7172676,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -80,14 +71,7 @@
         "agrees": true,
         "detail": "'[The] FR-D surface extends handles towards the faces of a rhombic dodecahedron (or, the edges of a cube) and hence has genus 6.'  A. H. Schoen, NASA TN D-5541 (1970)."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -103,29 +87,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 54074,
-      "edges": 160476,
-      "faces": 106368,
-      "euler_characteristic": -34,
-      "angle_defect_total": -247.988742,
-      "area": 19.476406,
-      "volume": 0.792106,
-      "components": 1,
-      "boundary_loops": 14,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 48396,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

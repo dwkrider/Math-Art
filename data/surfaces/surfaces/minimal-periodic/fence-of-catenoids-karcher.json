@@ -62,13 +62,7 @@
         "agrees": true,
         "detail": "Karcher's Fence of Catenoids (Tokyo notes).  'Every complete, properly immersed minimal surface with two catenoidal ends is the catenoid' explains why the non-periodic handle version cannot close up.  The page states no quotient invariants."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -83,29 +77,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 21841,
-      "edges": 43649,
-      "faces": 21806,
-      "euler_characteristic": -2,
-      "angle_defect_total": -25.113241,
-      "area": 3.4943,
-      "volume": 0.000653,
-      "components": 1,
-      "boundary_loops": 4,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 19443,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.092086,
-        2.0,
-        0.050243
-      ],
-      "aspect_ratio": 0.025122
-    }
   }
 }

@@ -36,16 +36,7 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": [],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 1.999999620487492,
-        "resolution": 160,
-        "tolerance": 0.002,
-        "passed": null
-      }
-    ]
+    "also_satisfies": []
   },
   "topology": {
     "compact": false,
@@ -77,14 +68,7 @@
         "agrees": true,
         "detail": "page title 'Elliptic paraboloid' vs record name 'Elliptic Paraboloid'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_radius"

@@ -69,13 +69,7 @@
         "agrees": true,
         "detail": "'This 1-parameter family is a simple example of a 6-ended Scherk surface of genus 1 with Costa saddles' -- ends are annular Scherk-type in the quotient."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -89,29 +83,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 65565,
-      "edges": 131363,
-      "faces": 65805,
-      "euler_characteristic": 7,
-      "angle_defect_total": -165.385038,
-      "area": 2.821463,
-      "volume": 0.052883,
-      "components": 1,
-      "boundary_loops": 48,
-      "manifold": false,
-      "nonmanifold_edges": 147,
-      "nonmanifold_vertices": 62642,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.400282,
-        0.524443,
-        2.0
-      ],
-      "aspect_ratio": 0.262221
-    }
   }
 }

@@ -64,13 +64,7 @@
         "agrees": true,
         "detail": "'Like his other examples, this surface has genus 3 when divided by its translational symmetries.'  H. A. Schwarz, Gesammelte Mathematische Abhandlungen (1890)."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -87,29 +81,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 117340,
-      "edges": 233792,
-      "faces": 116424,
-      "euler_characteristic": -28,
-      "angle_defect_total": -16.045487,
-      "area": 6.494524,
-      "volume": 0.747035,
-      "components": 1,
-      "boundary_loops": 28,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 92708,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.970533,
-        2.0,
-        1.306631
-      ],
-      "aspect_ratio": 0.653315
-    }
   }
 }

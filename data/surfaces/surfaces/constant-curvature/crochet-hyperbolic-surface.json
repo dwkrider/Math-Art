@@ -46,42 +46,12 @@
       "Self-similar buckling / distributed branch points of constant- negative-curvature elastic sheets: John A. Gemmer, E. Sharon,",
       "S. C. Venkataramani et al., \"Distributed branch points and the shape of elastic surfaces with constant negative curvature\", arXiv:2006.14461.",
       "Hilbert's theorem (no complete C^2 isometric immersion of H^2 in R^3): D. Hilbert, Trans. AMS 2, 1901, pp. 87-99."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 985,
-      "edges": 2778,
-      "faces": 1794,
-      "euler_characteristic": 1,
-      "angle_defect_total": -19.110697,
-      "area": 4.141843,
-      "volume": 0.026358,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 864,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.979014,
-        0.250422
-      ],
-      "aspect_ratio": 0.125211
-    }
   }
 }

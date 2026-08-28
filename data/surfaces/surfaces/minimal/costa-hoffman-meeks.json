@@ -71,13 +71,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "D. Hoffman and W. H. Meeks III, 'Embedded minimal surfaces of finite topology', Ann. of Math. 131 (1990)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -130,29 +124,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 29361,
-      "edges": 58590,
-      "faces": 29226,
-      "euler_characteristic": -3,
-      "angle_defect_total": 3.294566,
-      "area": 5.470131,
-      "volume": 0.00925,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 19695,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.085023
-      ],
-      "aspect_ratio": 0.542512
-    }
   }
 }
