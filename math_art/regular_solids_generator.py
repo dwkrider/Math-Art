@@ -32,8 +32,10 @@
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
 # stella octangula, dodecahedron the small stellated dodecahedron),
-# Solid / Leonardo (da Vinci) / Wireframe styles, and coloring by
-# face size (sharing the Conway generator's palette).
+# Solid / Leonardo (da Vinci) / Wireframe styles, a papercraft net
+# (the shell edge-unfolded flat, with fold lines, glue tabs and a Fold
+# slider that folds it back up -- see `styles/net_style.py`), and
+# coloring by face size (sharing the Conway generator's palette).
 #
 # References:
 # - Platonic solids: Euclid, "Elements" Book XIII (construction
@@ -45,6 +47,10 @@
 #   Poinsot, "Memoire sur les polygones et les polyedres" (1810).
 # - Johnson solids: Norman W. Johnson (1966); completeness proved by
 #   Victor Zalgaller (1969).
+# - Polyhedral nets: Albrecht Duerer, "Underweysung der Messung mit dem
+#   Zirckel und Richtscheyt" (Nuremberg, 1525), which introduced the
+#   unfolded-and-folded-up presentation the Papercraft Net style
+#   builds.
 
 bl_info = {
     "name": "Regular Solids",
@@ -1848,6 +1854,10 @@ try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
                            BoolProperty)
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -1923,7 +1933,8 @@ if _IN_BLENDER:
         if ids and self.solid not in ids:
             self.solid = ids[0]
 
-    class MESH_OT_regular_solid_add(bpy.types.Operator):
+    class MESH_OT_regular_solid_add(bpy.types.Operator,
+                                    _net_style.NetStyleProps):
         """Add a regular / semiregular / star / Johnson solid,
         organised by family, with stellation, styles and coloring"""
         bl_idname = "mesh.regular_solid_add"
@@ -1981,7 +1992,8 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split the shell into one thick plate per face, "
-                    "padded apart and optionally exploded outward")],
+                    "padded apart and optionally exploded outward"),
+                   _net_style.net_enum_item()],
             default='SOLID',
             description="How the solid is rendered as geometry")
         facet_depth: FloatProperty(
@@ -2031,7 +2043,8 @@ if _IN_BLENDER:
             name="Explode", default=0.1, min=0.0, max=5.0,
             description="Move each piece / face segment outward along "
                         "its centroid direction so the split is "
-                        "visible")
+                        "visible; for a Papercraft Net, the gap left "
+                        "between separate pieces of the net")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0,
                              description="Overall size; fits the result into "
@@ -2110,6 +2123,11 @@ if _IN_BLENDER:
                         and (self.family, sid) in CHIRAL):
                     V, F = mirror_solid(V, F)
                 return self._emit_facets(context, V, F, label)
+            if self.style == 'NET':
+                if (self.handedness == 'LEFT'
+                        and (self.family, sid) in CHIRAL):
+                    V, F = mirror_solid(V, F)
+                return self._emit_net(context, V, F, label)
             if self.pieces > 1:
                 assign, valid = split_congruent(V, F, self.pieces)
                 if assign is None:
@@ -2226,6 +2244,19 @@ if _IN_BLENDER:
                    else ""))
             return {'FINISHED'}
 
+        def _emit_net(self, context, V, F, label):
+            hint = None
+            if self.family == 'KEPLER':
+                hint = ("the star faces cross one another instead of "
+                        "meeting edge to edge. Of the Kepler-Poinsot "
+                        "solids only the Great Dodecahedron unfolds")
+            return _net_style.emit_net_from_operator(
+                self, context, V, F, label,
+                gap=max(0.02, self.explode) * self.scale,
+                material_fn=(self._material_for
+                             if self.coloring == 'SIDES' else None),
+                hint=hint)
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
@@ -2261,8 +2292,11 @@ if _IN_BLENDER:
                 lay.prop(self, 'padding')
                 lay.prop(self, 'explode')
                 lay.prop(self, 'separate_facets')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
+                lay.prop(self, 'explode', text="Piece Spacing")
             lay.prop(self, 'coloring')
-            if self.style != 'FACETS':
+            if self.style not in ('FACETS', 'NET'):
                 lay.prop(self, 'pieces')
                 if self.pieces > 1:
                     lay.prop(self, 'explode')

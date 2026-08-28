@@ -23,10 +23,10 @@ except ImportError:
 
 try:
     from . import clone
-    from .build import AUTO_LIMIT_SECONDS, choose_root, is_building
+    from .build import choose_root, is_building
 except ImportError:                     # flat import outside the package
     import clone
-    from build import AUTO_LIMIT_SECONDS, choose_root, is_building
+    from build import choose_root, is_building
 
 
 if _IN_BLENDER:
@@ -53,11 +53,15 @@ if _IN_BLENDER:
         except ImportError:
             from build import _record_members
         _record_members(root, [o for o in made if o is not root])
-        # Auto Update is offered on the strength of what this generator
-        # actually cost on this machine, not a guess: a build that takes
-        # two seconds is a button, a build that takes twenty
-        # milliseconds is a slider.
-        settings.autobuild = seconds < AUTO_LIMIT_SECONDS
+        # Auto Update is on for every generator.  It used to be granted
+        # only to builds that measured faster than AUTO_LIMIT_SECONDS on
+        # this machine, on the reasoning that a two-second build is a
+        # button and a twenty-millisecond one is a slider -- but that
+        # left it off for most of the interesting generators, which is
+        # exactly where live feedback is worth the wait.  The toggle in
+        # the panel still turns it off per object when a build is slow
+        # enough to be in the way.
+        settings.autobuild = True
         try:
             from .build import record_build
         except ImportError:

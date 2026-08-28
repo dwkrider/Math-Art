@@ -16,6 +16,10 @@ not beside a particular seed family.
                     dual, whose edges become struts and whose faces are
                     dropped -- a sparse Voronoi-like openwork net.  A
                     live modifier stack rather than built geometry.
+    net_style       the shell cut along a spanning tree and unfolded
+                    flat into a papercraft net, with mountain/valley
+                    fold lines, glue tabs and matching edge numbers, and
+                    a fold parameter that rigidly folds it back up.
 
 Unlike the engine packages (`ifs`, `knots`, `minsurf`, `patterns`,
 `polyhedra`, `seifert`), these touch `bpy`: they build objects, not just

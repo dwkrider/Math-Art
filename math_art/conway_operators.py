@@ -171,7 +171,13 @@ if _IN_BLENDER:
         ('ccO', "Twice-Chamfered Octahedron (ccO)", ""),
     ]
 
-    class MESH_OT_conway_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_conway_add(bpy.types.Operator,
+                             _net_style.NetStyleProps):
         """Build a polyhedron from Conway notation (e.g. dkC, taD, k3sT).
         Seeds: T C O D I, Pn, An, Yn; ops: d a k g c r t j e o b m s n z"""
         bl_idname = "mesh.conway_add"
@@ -240,7 +246,8 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
-                    "segment per face")],
+                    "segment per face"),
+            _net_style.net_enum_item()],
             default='SOLID',
             description="How the polyhedron is built and displayed")
         border: FloatProperty(
@@ -319,6 +326,13 @@ if _IN_BLENDER:
             elif self.post == 'CANON':
                 V = canonicalize_best(V, F, hart_iters=self.iterations)
             V, F = orient_outward(V, [list(f) for f in F])
+            if self.style == 'NET':
+                return _net_style.emit_net_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], f"Conway {self.notation}",
+                    material_fn=self._material_for
+                    if self.coloring == 'SIDES' else None)
             if self.style == 'FACETS':
                 try:
                     from .styles import facet_style
@@ -430,6 +444,8 @@ if _IN_BLENDER:
             if self.style == 'BALLSTICK':
                 lay.prop(self, 'strut_radius')
                 lay.prop(self, 'node_radius')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

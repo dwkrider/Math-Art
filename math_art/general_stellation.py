@@ -1889,7 +1889,13 @@ if _IN_BLENDER:
         if ids and self.stellation not in ids:
             self.stellation = ids[0]
 
-    class MESH_OT_general_stellation_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_general_stellation_add(bpy.types.Operator,
+                                         _net_style.NetStyleProps):
         """Add a stellation of a seed polyhedron (icosahedron, dodecahedron,
         cuboctahedron, or rhombic triacontahedron) -- built from the bounded
         cells of the seed's face-plane arrangement, grouped into symmetry
@@ -1916,7 +1922,8 @@ if _IN_BLENDER:
                     "Edges as solid cylindrical struts and vertices "
                     "as small spheres (ball-and-stick model)"),
                    ('WIREFRAME', "Wireframe",
-                    "Mesh edges only, displayed as a wireframe")],
+                    "Mesh edges only, displayed as a wireframe"),
+            _net_style.net_enum_item()],
             default='SOLID')
         border: FloatProperty(name="Border", default=0.06, min=0.005, max=1.0,
                               description="Leonardo face frame width")
@@ -1940,6 +1947,11 @@ if _IN_BLENDER:
             V, F = build_named(seed, key)
             title = next((t for k, t, c, n in named_presets(seed)
                           if k == key), key)
+            if self.style == 'NET':
+                return _net_style.emit_net_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], title)
             me = bpy.data.meshes.new(title)
             me.from_pydata([tuple(c * self.scale for c in v) for v in V],
                            [], [list(f) for f in F])
@@ -1979,6 +1991,8 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'seed')
             lay.prop(self, 'stellation')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
