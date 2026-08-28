@@ -15,7 +15,17 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "gauss_map": "t*(z*z + 3.0)/(z*z - 1.0)",
+    "height_differential": "(z*z + 3.0)/(z*z - 1.0)",
+    "parameters": [
+      {
+        "name": "t",
+        "domain": "see the generator",
+        "default": 0.2,
+        "integer": false
+      }
+    ],
+    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
   },
   "curvature": {
     "condition": "minimal",

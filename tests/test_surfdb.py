@@ -29,7 +29,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 MODULES = ("expr", "views", "mapping", "polynomial", "registry", "curation",
-           "invariants", "references", "sources", "tail", "crosscheck")
+           "invariants", "references", "sources", "tail", "crosscheck",
+           "charts", "weierstrass", "wedata")
 
 
 def main():
@@ -43,6 +44,9 @@ def main():
             continue
         try:
             fn()
+            extra = getattr(mod, "_selftest_parametric", None) or                 getattr(mod, "_selftest_complex", None)
+            if extra is not None:
+                extra()
         except Exception as exc:                      # noqa: BLE001
             failed.append((name, exc))
             print("FAIL surfdb.%s: %s" % (name, exc))

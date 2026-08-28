@@ -278,3 +278,119 @@ def _selftest():
     assert not ok, "an exact form with no value is a drift waiting to happen"
 
     print("RESULT: OK  (surfdb.expr)")
+
+
+# ---------------------------------------------------------------------------
+# COMPLEX evaluation, for Weierstrass data.
+#
+# The Weierstrass-Enneper representation gives a minimal surface from a
+# pair of holomorphic functions on a domain in C: the Gauss map g(z) and
+# the height differential dh.  Storing them means the language has to
+# evaluate over the complex plane, with `z` as the variable and `i` as
+# the imaginary unit.
+#
+# This is a separate entry point rather than a flag on `evaluate`,
+# because the real evaluator must keep rejecting complex results: a
+# measure object whose `exact` string quietly evaluated to 3+4j and
+# compared equal to its float `value` would be a silent corruption of
+# every scalar in the database.
+# ---------------------------------------------------------------------------
+
+import cmath as _cmath
+
+CFUNCTIONS = {
+    "sqrt": _cmath.sqrt, "exp": _cmath.exp, "log": _cmath.log,
+    "sin": _cmath.sin, "cos": _cmath.cos, "tan": _cmath.tan,
+    "sinh": _cmath.sinh, "cosh": _cmath.cosh, "tanh": _cmath.tanh,
+    "asin": _cmath.asin, "acos": _cmath.acos, "atan": _cmath.atan,
+    "abs": abs,
+}
+
+CCONSTANTS = dict(CONSTANTS)
+CCONSTANTS["i"] = 1j
+
+
+def _ceval(node, env):
+    if isinstance(node, ast.Expression):
+        return _ceval(node.body, env)
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, (int, float)):
+            return complex(node.value)
+        raise ExprError("only numeric literals are allowed")
+    if isinstance(node, ast.Name):
+        if node.id in env:
+            return complex(env[node.id])
+        raise ExprError("unknown name %r in a complex expression" % node.id)
+    if isinstance(node, ast.UnaryOp):
+        v = _ceval(node.operand, env)
+        return -v if isinstance(node.op, ast.USub) else +v
+    if isinstance(node, ast.BinOp):
+        a = _ceval(node.left, env)
+        b = _ceval(node.right, env)
+        if isinstance(node.op, ast.Add):
+            return a + b
+        if isinstance(node.op, ast.Sub):
+            return a - b
+        if isinstance(node.op, ast.Mult):
+            return a * b
+        if isinstance(node.op, ast.Div):
+            if b == 0:
+                raise ExprError("division by zero")
+            return a / b
+        if isinstance(node.op, ast.Pow):
+            try:
+                return a ** b
+            except (ValueError, OverflowError, ZeroDivisionError) as exc:
+                raise ExprError("bad power: %s" % exc)
+        raise ExprError("unsupported operator %s" % type(node.op).__name__)
+    if isinstance(node, ast.Call):
+        name = node.func.id
+        args = [_ceval(a, env) for a in node.args]
+        fn = CFUNCTIONS.get(name)
+        if fn is None:
+            raise ExprError("%r has no complex form" % name)
+        if len(args) != 1:
+            raise ExprError("%s takes 1 argument" % name)
+        try:
+            return complex(fn(args[0]))
+        except (ValueError, OverflowError, ZeroDivisionError) as exc:
+            raise ExprError("%s: %s" % (name, exc))
+    raise ExprError("unsupported node %s" % type(node).__name__)
+
+
+def evaluate_complex(text, params=None):
+    """Evaluate an expression over C. `z` and `i` are in scope."""
+    env = dict(CCONSTANTS)
+    if params:
+        env.update(params)
+    return _ceval(parse(text), env)
+
+
+def _selftest_complex():
+    """Complex evaluation; raises on failure."""
+    assert abs(evaluate_complex("z**2", {"z": 2 + 1j}) - (3 + 4j)) < 1e-12
+    assert abs(evaluate_complex("i*i") + 1) < 1e-12
+    assert abs(evaluate_complex("exp(i*pi)") + 1) < 1e-12, "Euler's identity"
+    assert abs(evaluate_complex("2.0*z**k", {"z": 1 + 1j, "k": 3})
+               - 2.0 * (1 + 1j) ** 3) < 1e-12
+
+    # sqrt must take the COMPLEX branch, not raise as the real one does
+    assert abs(evaluate_complex("sqrt(z)", {"z": -1}) - 1j) < 1e-12
+    try:
+        evaluate("sqrt(x)", {"x": -1.0})
+    except ExprError:
+        pass
+    else:
+        raise AssertionError("the REAL evaluator must still reject sqrt(-1); "
+                             "silently returning a complex number would "
+                             "corrupt every measure object in the database")
+
+    # unknown names still raise
+    try:
+        evaluate_complex("w + 1")
+    except ExprError:
+        pass
+    else:
+        raise AssertionError("unknown name must raise")
+
+    print("RESULT: OK  (surfdb.expr complex)")

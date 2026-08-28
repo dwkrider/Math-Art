@@ -162,20 +162,28 @@ python tools/surfdb_validate.py --coverage # the gap ledger
 python tools/surfdb_validate.py --stale    # records older than their generator
 ```
 
-Beyond the structural checks, it does three things a polyhedron database
+Beyond the structural checks, it does four things a polyhedron database
 cannot, because a surface's defining property is a *predicate*:
 
-- **The curvature condition, measured.** *H* and *K* are computed directly from
-  the derivatives of *F* on the level set, with points Newton-projected onto
-  the surface first. A minimal surface must measure *H* ≈ 0, a pseudospherical
-  one *K* ≈ −1, a developable *K* ≈ 0. The self-test confirms Scherk's surface
-  passes and a 15 %-perturbed version fails.
+- **The curvature condition, measured — from an implicit *F* or from a
+  parametric chart.** For a level set, *H* and *K* come from the derivatives of
+  *F* with points Newton-projected onto the surface; for a chart r(u,v) they
+  come from the fundamental forms. Both matter, because the *conditions* and
+  the *implicit polynomials* are almost disjoint sets: most algebraic surfaces
+  satisfy no condition at all, while every minimal, CMC and constant-curvature
+  record is parametric or Weierstrass. Adding the chart path took the number of
+  proved conditions from 7 to 24. The self-tests confirm Scherk's surface
+  measures minimal and a 15 %-perturbed one does not, and likewise for the
+  catenoid, helicoid, pseudosphere and cylinder.
 - **The symmetry group, proved symbolically.** For an implicit surface the
   claimed group's generators are substituted into the polynomial and it must be
   unchanged — exact, and stronger than detecting symmetry from a point cloud.
-- **Total curvature quantised.** For a complete minimal surface of finite total
-  curvature, ∫*K* d*A* is an integer multiple of 4π. A wrong Gauss map fails
-  immediately.
+- **Total curvature quantised, and cross-checked against the Gauss map.** For a
+  complete minimal surface of finite total curvature, ∫*K* d*A* is an integer
+  multiple of 4π — and it equals −4π·deg(*g*), where the degree is the winding
+  number of the stored Gauss map. Where a record carries both a *g* and a
+  stated total curvature they were put there for different reasons, so their
+  agreement is a real cross-check rather than a restatement.
 
 **The counts are reported honestly.** `--slow` prints how many conditions were
 actually proved (7) and how many groups (17), because "0 errors" over 320

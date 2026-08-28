@@ -18,12 +18,32 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.oloid_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "(1 - v)*sin(u)",
+    "y": "(1 - v)*(-1/2 - cos(u)) + v*(1/2 - cos(u)/(1 + cos(u)))",
+    "z": "v*sqrt(1 + 2*cos(u))/(1 + cos(u))",
+    "u_range": [
+      "-1.8",
+      "1.8"
+    ],
+    "v_range": [
+      "0",
+      "1"
+    ],
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "flat",
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 3.3856252448757482,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -57,6 +77,7 @@
       "expressions_parse": true,
       "exact_values_match": true,
       "generated_fields_match": true,
+      "curvature_condition": true,
       "tolerance": 0.002
     }
   },

@@ -14,7 +14,17 @@
     "mode": "parametric",
     "fidelity": "exact",
     "exactness": "elementary",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "(sqrt(2)/2)*(cosh(u)*cos(v) + sinh(u)*sin(v))",
+    "y": "(sqrt(2)/2)*(cosh(u)*sin(v) - sinh(u)*cos(v))",
+    "z": "(sqrt(2)/2)*(u + v)",
+    "u_range": [
+      "-1.2",
+      "1.2"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ]
   },
   "curvature": {
     "condition": "minimal",
@@ -25,6 +35,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.7042797648772304e-08,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -60,6 +79,7 @@
       "expressions_parse": true,
       "exact_values_match": true,
       "generated_fields_match": true,
+      "curvature_condition": true,
       "tolerance": 0.002
     }
   },

@@ -420,3 +420,207 @@ def _selftest():
     assert r is not None and r > 1e-3, "x^6+y^6+z^6 is octahedral, not Ih"
 
     print("RESULT: OK  (surfdb.invariants)")
+
+
+# ---------------------------------------------------------------------------
+# PARAMETRIC surfaces: curvature from the fundamental forms.
+#
+# The implicit machinery above covers 105 records and reaches only 7 of
+# them with a gated curvature condition, because most algebraic surfaces
+# satisfy no condition at all.  The conditions live somewhere else: 25
+# parametric records and 101 Weierstrass ones claim `minimal`, `flat` or
+# constant K, and none of them could be checked, because the only
+# curvature path took an implicit F.
+#
+# For a chart r(u, v) the classical route needs no level set:
+#
+#     E = r_u . r_u      F = r_u . r_v      G = r_v . r_v
+#     n = (r_u x r_v) / |r_u x r_v|
+#     L = r_uu . n       M = r_uv . n       N = r_vv . n
+#
+#     H = (E N - 2 F M + G L) / (2 (E G - F^2))
+#     K = (L N - M^2) / (E G - F^2)
+#
+# Derivatives are finite differences on the stored expressions, as in the
+# implicit case: accurate to about 1e-6, far more than enough to separate
+# H = 0 from H != 0, which is the distinction the facet turns on.
+#
+# Degenerate points are DISCARDED, not measured: where E G - F^2 vanishes
+# the chart is singular (a pole of a sphere, the tip of a cone) and
+# curvature there is a property of the parametrisation rather than of the
+# surface.
+# ---------------------------------------------------------------------------
+
+
+def _chart(xs, ys, zs, params):
+    env = dict(params or {})
+
+    def r(u, v):
+        env["u"], env["v"] = u, v
+        return (expr.evaluate(xs, env), expr.evaluate(ys, env),
+                expr.evaluate(zs, env))
+    return r
+
+
+def _sub(a, b):
+    return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+
+def _dot(a, b):
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def _cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0])
+
+
+def _scale(a, s):
+    return (a[0] * s, a[1] * s, a[2] * s)
+
+
+def parametric_curvatures(r, u, v, h=1e-4):
+    """(H, K) of the chart `r` at (u, v), or (None, None) if degenerate."""
+    ru = _scale(_sub(r(u + h, v), r(u - h, v)), 0.5 / h)
+    rv = _scale(_sub(r(u, v + h), r(u, v - h)), 0.5 / h)
+
+    p0 = r(u, v)
+    ruu = _scale(_sub(_sub(r(u + h, v), _scale(p0, 2.0)), _scale(r(u - h, v), -1.0)),
+                 1.0 / (h * h))
+    rvv = _scale(_sub(_sub(r(u, v + h), _scale(p0, 2.0)), _scale(r(u, v - h), -1.0)),
+                 1.0 / (h * h))
+    ruv = _scale(_sub(_sub(r(u + h, v + h), r(u + h, v - h)),
+                      _sub(r(u - h, v + h), r(u - h, v - h))),
+                 0.25 / (h * h))
+
+    E, F, G = _dot(ru, ru), _dot(ru, rv), _dot(rv, rv)
+    det = E * G - F * F
+    nrm = _cross(ru, rv)
+    nlen = math.sqrt(_dot(nrm, nrm))
+    if det <= 1e-12 or nlen <= 1e-9:
+        return None, None                    # singular point of the CHART
+    n = _scale(nrm, 1.0 / nlen)
+
+    L, M, N = _dot(ruu, n), _dot(ruv, n), _dot(rvv, n)
+    H = (E * N - 2.0 * F * M + G * L) / (2.0 * det)
+    K = (L * N - M * M) / det
+    return H, K
+
+
+def sample_parametric_curvature(xs, ys, zs, u_range, v_range, params=None,
+                                n=180, seed=20260828, margin=0.04):
+    """Measure H and K over a chart. Same shape of result as the implicit
+    sampler, so `check_condition` serves both.
+
+    `margin` keeps the sample clear of the parameter rectangle's edges,
+    where a chart is most often singular -- the poles of a sphere, the
+    rim of a Minding surface -- and where a finite difference would in
+    any case reach outside the stated domain.
+    """
+    import random
+    rng = random.Random(seed)
+    env = dict(params or {})
+    try:
+        u0 = expr.evaluate(u_range[0], env)
+        u1 = expr.evaluate(u_range[1], env)
+        v0 = expr.evaluate(v_range[0], env)
+        v1 = expr.evaluate(v_range[1], env)
+    except (expr.ExprError, TypeError, IndexError):
+        return None
+    if not all(math.isfinite(t) for t in (u0, u1, v0, v1)):
+        return None
+
+    du, dv = (u1 - u0), (v1 - v0)
+    u0, u1 = u0 + margin * du, u1 - margin * du
+    v0, v1 = v0 + margin * dv, v1 - margin * dv
+
+    try:
+        r = _chart(xs, ys, zs, params)
+    except expr.ExprError:
+        return None
+
+    Hs, Ks = [], []
+    tries = 0
+    while len(Hs) < n and tries < n * 20:
+        tries += 1
+        u = rng.uniform(u0, u1)
+        v = rng.uniform(v0, v1)
+        try:
+            H, K = parametric_curvatures(r, u, v)
+        except (expr.ExprError, ValueError, OverflowError, ZeroDivisionError):
+            continue
+        if H is None or not math.isfinite(H) or not math.isfinite(K):
+            continue
+        Hs.append(H)
+        Ks.append(K)
+    if len(Hs) < 12:
+        return None
+    return {
+        "samples": len(Hs),
+        "max_abs_H": max(abs(t) for t in Hs),
+        "mean_H": sum(Hs) / len(Hs),
+        "max_abs_K": max(abs(t) for t in Ks),
+        "mean_K": sum(Ks) / len(Ks),
+        "max_K_dev_from_1": max(abs(abs(t) - 1.0) for t in Ks),
+    }
+
+
+def _selftest_parametric():
+    """Chart-based curvature, on surfaces whose answers are known exactly."""
+    # unit sphere: K = +1, H = -+1, NOT minimal
+    st = sample_parametric_curvature(
+        "sin(u)*cos(v)", "sin(u)*sin(v)", "cos(u)",
+        ("0", "pi"), ("0", "2*pi"))
+    assert st is not None
+    assert st["max_K_dev_from_1"] < 1e-3, st
+    ok, d = check_condition("k-const-positive", st)
+    assert ok, d
+    ok, _ = check_condition("minimal", st)
+    assert not ok, "the sphere is not minimal"
+
+    # catenoid: MINIMAL, and the classical test of the parametric path
+    st = sample_parametric_curvature(
+        "cosh(v)*cos(u)", "cosh(v)*sin(u)", "v",
+        ("0", "2*pi"), ("-1.5", "1.5"))
+    ok, d = check_condition("minimal", st)
+    assert ok, "the catenoid must measure as minimal: %s" % d
+
+    # helicoid: minimal too
+    st = sample_parametric_curvature(
+        "v*cos(u)", "v*sin(u)", "u",
+        ("0", "2*pi"), ("-1.5", "1.5"))
+    ok, d = check_condition("minimal", st)
+    assert ok, "the helicoid must measure as minimal: %s" % d
+
+    # ...and a near-miss must FAIL, or the test proves nothing
+    st = sample_parametric_curvature(
+        "cosh(1.25*v)*cos(u)", "cosh(v)*sin(u)", "v",
+        ("0", "2*pi"), ("-1.5", "1.5"))
+    ok, _ = check_condition("minimal", st)
+    assert not ok, "a perturbed catenoid must not pass as minimal"
+
+    # circular cylinder: FLAT (K = 0) but not minimal
+    st = sample_parametric_curvature("cos(u)", "sin(u)", "v",
+                                     ("0", "2*pi"), ("-1", "1"))
+    ok, d = check_condition("flat", st)
+    assert ok, d
+    ok, _ = check_condition("minimal", st)
+    assert not ok
+
+    # pseudosphere (tractricoid): K = -1 everywhere
+    st = sample_parametric_curvature(
+        "cos(u)/cosh(v)", "sin(u)/cosh(v)", "v - tanh(v)",
+        ("0", "2*pi"), ("0.15", "3.0"))
+    ok, d = check_condition("k-const-negative", st)
+    assert ok, "the pseudosphere must measure K = -1: %s" % d
+
+    # a chart with a genuine singular point must not crash: the sphere's
+    # poles are excluded by the margin, but ask for a degenerate point
+    # directly and it must report None rather than a number
+    r = _chart("sin(u)*cos(v)", "sin(u)*sin(v)", "cos(u)", {})
+    H, K = parametric_curvatures(r, 0.0, 0.0)
+    assert H is None and K is None, \
+        "curvature at a chart singularity must be None, got %r" % ((H, K),)
+
+    print("RESULT: OK  (surfdb.invariants parametric)")

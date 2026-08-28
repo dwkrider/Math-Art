@@ -17,7 +17,19 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.hyperbolic_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "cos(u)/cosh(v)",
+    "y": "sin(u)/cosh(v)",
+    "z": "v - tanh(v)",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0.1",
+      "3.0"
+    ],
+    "periodic_u": true,
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "k-const-negative",
@@ -28,6 +40,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.338595247927204,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -80,6 +101,7 @@
       "expressions_parse": true,
       "exact_values_match": true,
       "generated_fields_match": true,
+      "curvature_condition": true,
       "tolerance": 0.002
     }
   },

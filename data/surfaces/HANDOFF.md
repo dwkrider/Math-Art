@@ -7,6 +7,9 @@ Single entry point for anyone (human or agent) picking this up. Read this, then
 
 **363 records, 298 implemented, 0 validator errors, 8 warnings.**
 
+Defining data: 105 implicit polynomials, 20 parametric charts, 15 Weierstrass
+pairs — every one verified, none taken on trust.
+
 ```sh
 python tools/surfdb_build.py            # rebuild everything, ~40 s, no Blender
 python tools/surfdb_validate.py         # the gate, ~4 s
@@ -96,6 +99,17 @@ empty scene.
   group is C3v about the body diagonal.
 - **`ast` node whitelisting alone does not secure the expression language.**
   Function names and literal types must be checked at parse time too.
+- **`inspect.getsource` on a lambda returns only its FIRST LINE.** Eight of the
+  fifteen Weierstrass pairs were transcribed that way and were truncated
+  fragments -- plausible rational functions of the right shape and the wrong
+  value. Read multi-line lambdas out of the file by line range instead.
+- **Measuring H on Weierstrass data is tautological.** The representation makes
+  any holomorphic (g, dh) minimal, so H = 0 tests the integrator and says
+  nothing about the record. Check the DATA against the shipped callables, and
+  cross-check deg(g) against the recorded total curvature.
+- **A chart can be right and still fail its condition.** Dini's surface has
+  K = -1/(a^2 + b^2); with radius 1 and twist 0.2 it measures -0.962. The chart
+  was correct and the NORMALISATION was wrong.
 - **Dynamic enums report no items.** Several operators build their surface list
   with an `items=` callback, so introspection sees nothing until a context
   supplies it — and the selector is filtered by another enum whose vocabulary
@@ -146,13 +160,18 @@ strand.
 
 Database work that remains, none of it blocking:
 
-- **Defining data is stored for 105 of 363 records.** The rest are
-  `weierstrass` or `parametric` rows built by dedicated functions with no
-  extractable closed form; each says so explicitly. Curating them by hand — and
-  verifying each against the shipped builder, as the implicit block already is
-  — would lift the curvature check beyond its current 7 records and the
-  symmetry check beyond 17. Both counts are *reported* by `--slow` so the
-  number is never mistaken for "everything was proved".
+- **Defining data is stored for 134 of 363 records** — 105 implicit
+  polynomials, 20 parametric charts, 15 Weierstrass pairs. The curvature check
+  now proves 24 conditions (was 7) and one total-curvature/Gauss-degree
+  cross-check. All counts are *reported* by `--slow` so the number is never
+  mistaken for "everything was proved".
+
+  The remaining ~229 are genuinely not expressible: the multi-soliton and
+  Minding families need elliptic quadratures or a Painlevé III ODE, D-forms and
+  Plateau spans are numerical relaxations, and most of the Weierstrass zoo is
+  built by dedicated functions whose `g`/`dh` are not separable. Each says so
+  explicitly. Only 15 of the 63 zoo rows expose `g` and `dh` as callables at
+  all, and all 15 are stored and verified.
 - **`discovered_by`/`named_after` is on 109 records and external IDs on 135.**
   Both are "where known" rather than gaps, but the Weierstrass zoo would repay
   a pass: its row labels name Karcher, Wohlgemuth, Wei, Callahan-Hoffman-Meeks

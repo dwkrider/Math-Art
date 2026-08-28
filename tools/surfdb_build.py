@@ -41,8 +41,8 @@ sys.path.insert(0, HERE)
 # outside Blender.
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
-from surfdb import (curation, mapping, polynomial, references,  # noqa: E402
-                    registry, sources, tail, views)
+from surfdb import (charts, curation, mapping, polynomial,  # noqa: E402
+                    references, registry, sources, tail, views, wedata)
 
 OUT = os.path.join(ROOT, "data", "surfaces")
 SCHEMA_VERSION = "0.1.0"
@@ -784,6 +784,8 @@ class Builder:
     def finish(self):
         for slug, rec in self.records.items():
             self._named_after(rec)
+            self._attach_chart(slug, rec)
+            self._attach_we(slug, rec)
             self._resolve_ids(slug, rec)
             self._definition_note(rec)
         for rec in self.records.values():
@@ -825,6 +827,78 @@ class Builder:
                 ids["mathcurve"] = got
         if not ids:
             rec.pop("ids", None)
+
+    def _attach_chart(self, slug, rec):
+        """Store the parametric chart, where one is verified for this slug.
+
+        Only gated records get charts (see tools/surfdb/charts.py): the
+        chart is checked against the curvature condition its record
+        claims, so a record with no condition would have nothing to catch
+        a transcription error and keeps its explicit null note instead.
+        """
+        ch = charts.chart_for(slug)
+        if not ch:
+            return
+        d = rec["definition"]
+        if d.get("mode") != "parametric" or d.get("polynomial"):
+            return
+        d["x"], d["y"], d["z"] = ch["x"], ch["y"], ch["z"]
+        d["u_range"] = list(ch["u_range"])
+        d["v_range"] = list(ch["v_range"])
+        if ch.get("periodic_u"):
+            d["periodic_u"] = True
+        if ch.get("periodic_v"):
+            d["periodic_v"] = True
+        d.pop("note", None)
+        d.setdefault("exactness", "elementary")
+
+    def _attach_we(self, slug, rec):
+        """Store the Weierstrass pair, verified against the zoo row.
+
+        Where the record's primary definition is already a parametric
+        chart (the classical rows), the pair becomes an ALTERNATE
+        definition -- the same surface by another construction, which is
+        exactly what that list is for.
+        """
+        ent = wedata.data_for(slug)
+        if not ent:
+            return
+        try:
+            from minsurf import zoo as _zoo
+            spec = _zoo.WE_SURFACES[wedata.ZOO_KEY[slug]]
+            p = spec["p_from"](3, 1.0)
+            ok, details = wedata.verify(slug, spec, p)
+            if not ok:
+                self.problems.append(
+                    "Weierstrass data for %s disagrees with the shipped row: "
+                    "%s" % (slug, "; ".join(details)))
+                return
+            defaults = wedata.defaults_for(slug, p)
+        except Exception as exc:                      # noqa: BLE001
+            self.problems.append("cannot verify WE data for %s: %s"
+                                 % (slug, exc))
+            return
+        block = {
+            "mode": "weierstrass", "fidelity": "exact",
+            "exactness": "numerical-integral",
+            "gauss_map": ent["g"], "height_differential": ent["dh"],
+            "parameters": [
+                {"name": n, "domain": "see the generator", "default": v,
+                 "integer": isinstance(v, int)}
+                for n, v in sorted(defaults.items())],
+            "note": "Verified against math_art/minsurf/zoo.py by sampling "
+                    "both over the complex plane; g exactly, dh up to the "
+                    "constant multiple that merely scales the surface.",
+        }
+        d = rec["definition"]
+        if d.get("mode") == "weierstrass" and not d.get("gauss_map"):
+            d.update(block)
+            d.pop("note", None)
+            d["note"] = block["note"]
+        elif d.get("mode") != "weierstrass":
+            alts = rec.setdefault("alternate_definitions", [])
+            if not any(a.get("gauss_map") for a in alts):
+                alts.append(block)
 
     def _definition_note(self, rec):
         """No silent blanks: say when the defining datum is not stored.

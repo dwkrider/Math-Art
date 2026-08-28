@@ -36,7 +36,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
-from surfdb import curation, expr, invariants, mapping, views  # noqa: E402,F401
+from surfdb import (curation, expr, invariants, mapping,  # noqa: E402,F401
+                    views, weierstrass)
 
 DB = os.path.join(ROOT, "data", "surfaces")
 
@@ -62,6 +63,7 @@ class Report:
         self.slow_seen = 0
         self.slow_curv = 0
         self.slow_sym = 0
+        self.slow_deg = 0
 
     def err(self, slug, msg):
         self.errors.append("%s: %s" % (slug, msg))
@@ -310,21 +312,78 @@ def check_total_curvature(slug, rec, rep):
                 % (tc["value"], q))
 
 
+def check_gauss_degree(slug, rec, rep):
+    """Total curvature against the degree of the stored Gauss map.
+
+    For a complete minimal surface of finite total curvature the total
+    curvature is -4*pi*deg(g), and the degree is the winding number of g
+    about the origin. Where a record carries BOTH a stored g and a stated
+    total curvature, the two were put there for different reasons and
+    must agree -- which makes this a genuine cross-check rather than a
+    restatement.
+    """
+    curv = rec.get("curvature") or {}
+    topo = rec.get("topology") or {}
+    tc = curv.get("total_curvature")
+    if curv.get("condition") != "minimal" or not topo.get(
+            "finite_total_curvature"):
+        return None
+    if not tc or tc.get("value") is None:
+        return None
+    for d in definitions(rec):
+        g = d.get("gauss_map")
+        if not g:
+            continue
+        # parameters may be declared on the primary definition or on the
+        # alternate that actually carries g; merge both
+        env = {}
+        for other in definitions(rec):
+            env.update(param_env(rec, other))
+        try:
+            deg = weierstrass.gauss_degree(g, env)
+        except Exception:                             # noqa: BLE001
+            return None
+        if deg is None:
+            return None
+        want = weierstrass.total_curvature_from_degree(deg)
+        if abs(want - tc["value"]) > 1e-6:
+            rep.err(slug, "total curvature %.6g disagrees with the stored "
+                          "Gauss map: deg(g) = %d implies %.6g"
+                    % (tc["value"], deg, want))
+            return False
+        return True
+    return None
+
+
 def check_curvature_numeric(slug, rec, rep):
     """Measure the defining property off the level set, per definition."""
     results = []
     for i, d in enumerate(definitions(rec)):
-        poly = d.get("polynomial")
-        if d.get("mode") != "implicit" or not poly:
-            continue
         env = param_env(rec, d)
-        clip = d.get("clip") or {}
-        extent = clip.get("radius") or 1.6
-        extent = float(min(max(extent, 0.6), 2.5))
-        try:
-            stats = invariants.sample_curvature(poly, env, extent=extent)
-        except Exception as exc:                     # noqa: BLE001
-            rep.warn(slug, "curvature sampling raised: %s" % exc)
+        poly = d.get("polynomial")
+        mode = d.get("mode")
+        stats = None
+        if mode == "implicit" and poly:
+            clip = d.get("clip") or {}
+            extent = clip.get("radius") or 1.6
+            extent = float(min(max(extent, 0.6), 2.5))
+            try:
+                stats = invariants.sample_curvature(poly, env, extent=extent)
+            except Exception as exc:                 # noqa: BLE001
+                rep.warn(slug, "curvature sampling raised: %s" % exc)
+                continue
+        elif mode == "parametric" and d.get("x") and d.get("u_range"):
+            # The conditions mostly live OFF the implicit records: 25
+            # parametric rows and every Weierstrass row claim minimal,
+            # flat or constant K, and none of them could be checked while
+            # the only curvature path took an implicit F.
+            try:
+                stats = invariants.sample_parametric_curvature(
+                    d["x"], d["y"], d["z"], d["u_range"], d["v_range"], env)
+            except Exception as exc:                 # noqa: BLE001
+                rep.warn(slug, "chart curvature sampling raised: %s" % exc)
+                continue
+        else:
             continue
         cond = rec["curvature"].get("condition")
         # An approximation is held to its OWN residual, not to the exact
@@ -513,6 +572,8 @@ def main():
         if args.slow:
             measured = check_curvature_numeric(slug, rec, rep)
             sym_ok = check_symmetry_symbolic(slug, rec, rep)
+            deg_ok = check_gauss_degree(slug, rec, rep)
+            rep.slow_deg += 1 if deg_ok else 0
             # Count what was actually PROVED. Without this, "0 errors"
             # reads as "everything checked out" when it may mean "almost
             # nothing was checkable" -- a distinction the reader is
@@ -543,6 +604,7 @@ def main():
     if args.slow:
         print("  curvature conditions PROVED numerically: %d" % rep.slow_curv)
         print("  symmetry groups PROVED symbolically:     %d" % rep.slow_sym)
+        print("  total curvature vs Gauss-map degree:     %d" % rep.slow_deg)
         print("  (the rest carry no stored polynomial, or no condition and no "
               "group to test -- an honest count, not a silent pass)")
     if rep.warnings:

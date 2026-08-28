@@ -16,7 +16,10 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "gauss_map": "z",
+    "height_differential": "2.0*z*(1.0 - z**(-4))",
+    "parameters": [],
+    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
   },
   "curvature": {
     "condition": "minimal",

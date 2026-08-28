@@ -15,7 +15,29 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "gauss_map": "rho*z**(n - 1)/(z**n - a**n)",
+    "height_differential": "z**(n - 1)*(z**n - a**n)/(z**n - 1.0)**2",
+    "parameters": [
+      {
+        "name": "a",
+        "domain": "see the generator",
+        "default": 1.3399999999999999,
+        "integer": false
+      },
+      {
+        "name": "n",
+        "domain": "see the generator",
+        "default": 5,
+        "integer": true
+      },
+      {
+        "name": "rho",
+        "domain": "see the generator",
+        "default": 4.396141409214451,
+        "integer": false
+      }
+    ],
+    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
   },
   "curvature": {
     "condition": "minimal",
