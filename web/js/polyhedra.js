@@ -9,6 +9,7 @@ const $ = (sel) => document.querySelector(sel);
 
 const STYLE_LABELS = {
   solid: 'Solid',
+  leonardo: 'Leonardo',
   wireframe: 'Wireframe',
   'ball-and-stick': 'Ball and stick',
 };

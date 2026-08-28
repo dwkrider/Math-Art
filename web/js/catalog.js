@@ -9,8 +9,8 @@
 // from the same record the viewer draws, so the grid stays cheap and the
 // tile always matches the model it opens.
 
-import { familyCounts, symmetryCounts, filterEntries, SORTS, thumbUrl }
-  from './data.js';
+import { familyCounts, symmetryCounts, filterEntries, SORTS, thumbUrl,
+         FAMILY_ORDER } from './data.js';
 
 const $ = (tag, cls, text) => {
   const el = document.createElement(tag);
@@ -18,16 +18,6 @@ const $ = (tag, cls, text) => {
   if (text !== undefined) el.textContent = text;
   return el;
 };
-
-// Families worth offering as a filter, in a reading order that puts the
-// classical groups first. The database carries 31 tags and they overlap
-// on purpose, so this is a presentation order, not a partition.
-const PRIMARY_FAMILIES = [
-  'platonic', 'archimedean', 'catalan', 'kepler-poinsot', 'johnson',
-  'uniform', 'uniform-dual', 'prism-family', 'dipyramid', 'compound',
-  'zonohedron', 'geodesic', 'biscribed', 'toroid', 'deltahedron',
-  'stellation', 'hemipolyhedron', 'star', 'chiral', 'space-filling',
-];
 
 export class Catalog {
   constructor(host, entries, onSelect) {
@@ -42,6 +32,12 @@ export class Catalog {
   }
 
   build() {
+    // Search and facets sit in a fixed header and only the tile grid
+    // scrolls. Putting them in the same scroll box hid them the moment
+    // the grid was scrolled -- including on load, since revealing the
+    // selected tile scrolls the box -- so the filters were invisible
+    // until the window was resized.
+    const head = $('div', 'catalog-head');
     const controls = $('div', 'catalog-controls');
 
     const search = $('input', 'search');
@@ -83,19 +79,20 @@ export class Catalog {
     });
     controls.append(convexSel);
 
-    this.host.append(controls);
+    head.append(controls);
 
-    // -- family facet
+    // -- family facet, in the generators' own vocabulary. Because it is a
+    // partition, these counts sum to the whole database.
     const famCounts = familyCounts(this.entries);
     const fams = $('div', 'facet');
     fams.append($('h3', null, 'Family'));
     const famList = $('div', 'chips');
-    for (const f of PRIMARY_FAMILIES) {
+    for (const f of FAMILY_ORDER) {
       const n = famCounts.get(f);
       if (!n) continue;
       const chip = $('button', 'chip');
       chip.type = 'button';
-      chip.append($('span', null, f.replace(/-/g, ' ')));
+      chip.append($('span', null, f));
       chip.append($('span', 'chip-count', String(n)));
       chip.addEventListener('click', () => {
         const i = this.query.families.indexOf(f);
@@ -107,7 +104,7 @@ export class Catalog {
       famList.append(chip);
     }
     fams.append(famList);
-    this.host.append(fams);
+    head.append(fams);
 
     // -- symmetry facet
     const symCounts = [...symmetryCounts(this.entries)]
@@ -130,10 +127,11 @@ export class Catalog {
       symList.append(chip);
     }
     syms.append(symList);
-    this.host.append(syms);
+    head.append(syms);
 
     this.status = $('p', 'catalog-status');
-    this.host.append(this.status);
+    head.append(this.status);
+    this.host.append(head);
 
     this.grid = $('div', 'grid');
     this.host.append(this.grid);

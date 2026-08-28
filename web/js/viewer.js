@@ -6,10 +6,10 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
-import { buildSurface, buildEdges, buildBallAndStick, boundingRadius }
-  from './geometry.js';
+import { buildSurface, buildEdges, buildBallAndStick, buildLeonardo,
+         boundingRadius } from './geometry.js';
 
-export const STYLES = ['solid', 'wireframe', 'ball-and-stick'];
+export const STYLES = ['solid', 'leonardo', 'wireframe', 'ball-and-stick'];
 
 export class Viewer {
   constructor(canvas) {
@@ -111,6 +111,12 @@ export class Viewer {
         side: THREE.DoubleSide,
       }));
       this.group.add(mesh);
+    } else if (this.style === 'leonardo') {
+      const g = buildLeonardo(rec, { coloring: this.coloring });
+      this.group.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+        vertexColors: true, roughness: 0.5, metalness: 0.0,
+        side: THREE.DoubleSide, flatShading: true,
+      })));
     } else if (this.style === 'wireframe') {
       const g = buildEdges(rec);
       this.group.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({

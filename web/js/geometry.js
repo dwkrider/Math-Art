@@ -217,6 +217,121 @@ function mergeGeometries(indexedParts) {
   return g;
 }
 
+/**
+ * Leonardo style: every face becomes a solid panel with a polygonal
+ * opening, joined to its neighbours along the original edges -- the
+ * open-faced models Leonardo da Vinci drew for Luca Pacioli's
+ * "De divina proportione" (1509).
+ *
+ * The frame width is ABSOLUTE, not a fraction of the face. That is the
+ * whole design point, and math_art/leonardo_style.py records why: scaling
+ * every face by one common factor makes the frame proportional to the
+ * face, so on a solid with faces of different sizes -- a truncated
+ * icosahedron, or anything Conway has operated on -- the big faces get
+ * fat frames and the small ones thin, and the model looks unmade rather
+ * than designed. For a frame of width w each face is inset by its own
+ * factor (r - w) / r, with r that face's inradius.
+ *
+ * The add-on recovers r from area and corner count, exact for a regular
+ * n-gon. Here r is the mean distance from the centroid to the edge lines,
+ * which agrees with that for regular faces and, unlike the area formula,
+ * stays meaningful on the star faces -- a pentagram's shoelace area is
+ * not its filled area, so the area route would hand back a nonsense
+ * inradius for 117 of these solids.
+ */
+export function buildLeonardo(rec, opts = {}) {
+  const V = rec.geometry.vertices;
+  const el = edgeLength(rec);
+  const w = (opts.border ?? 0.16) * el;       // frame width, absolute
+  const t = (opts.thickness ?? 0.05) * el;    // panel thickness
+
+  const pos = [];
+  const nrm = [];
+  const col = [];
+  const { compOf, count } = faceComponents(rec.geometry.faces);
+  const byComponent = count > 1;
+  const mode = opts.coloring || 'auto';
+  const tmp = new THREE.Color();
+
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+  const crossV = (a, b) => [a[1] * b[2] - a[2] * b[1],
+                            a[2] * b[0] - a[0] * b[2],
+                            a[0] * b[1] - a[1] * b[0]];
+
+  function quad(a, b, c, d) {
+    const n = crossV(sub(b, a), sub(d, a));
+    const L = Math.hypot(n[0], n[1], n[2]) || 1;
+    const u = [n[0] / L, n[1] / L, n[2] / L];
+    for (const v of [a, b, c, a, c, d]) {
+      pos.push(v[0], v[1], v[2]);
+      nrm.push(u[0], u[1], u[2]);
+      col.push(tmp.r, tmp.g, tmp.b);
+    }
+  }
+
+  rec.geometry.faces.forEach((f, fi) => {
+    const P = f.map((i) => V[i]);
+    const n = P.length;
+    const c = [0, 1, 2].map((k) => P.reduce((s, p) => s + p[k], 0) / n);
+    const frame = planeBasisOf(P);
+    if (!frame) return;
+
+    // Inradius as the mean distance from the centroid to each edge line.
+    let r = 0;
+    for (let i = 0; i < n; i++) {
+      const a = P[i], b = P[(i + 1) % n];
+      const ab = sub(b, a);
+      const L = Math.hypot(ab[0], ab[1], ab[2]) || 1;
+      const ac = sub(c, a);
+      const x = crossV(ab, ac);
+      r += Math.hypot(x[0], x[1], x[2]) / L;
+    }
+    r /= n;
+    // A frame wider than the face would invert the opening; clamp so the
+    // panel degenerates to a nearly solid face instead of turning inside
+    // out. Small faces on a mixed solid legitimately hit this.
+    const s = Math.min(0.92, Math.max(0.08, (r - w) / (r || 1)));
+
+    let hex = PLAIN;
+    if (mode !== 'none') {
+      hex = byComponent
+        ? COMPOUND_PALETTE[compOf[fi] % COMPOUND_PALETTE.length]
+        : (FACE_PALETTE[n] ?? PLAIN);
+    }
+    tmp.setHex(hex);
+
+    const off = mul(frame.n, t / 2);
+    const outerF = P.map((p) => add(p, off));
+    const outerB = P.map((p) => sub(p, off));
+    const inner = P.map((p) => add(c, mul(sub(p, c), s)));
+    const innerF = inner.map((p) => add(p, off));
+    const innerB = inner.map((p) => sub(p, off));
+
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      quad(outerF[i], outerF[j], innerF[j], innerF[i]);   // front frame
+      quad(innerB[i], innerB[j], outerB[j], outerB[i]);   // back frame
+      quad(outerB[i], outerB[j], outerF[j], outerF[i]);   // outer rim
+      quad(innerF[i], innerF[j], innerB[j], innerB[i]);   // opening wall
+    }
+  });
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  return g;
+}
+
+// Newell normal + centroid for a face, reusing the tessellator's frame so
+// the panel's "up" is the same direction the solid style shades against.
+function planeBasisOf(pts) {
+  const { normal } = tessellateFace(pts);
+  return normal ? { n: normal } : null;
+}
+
 /** Radius of the smallest origin-centred sphere containing the solid. */
 export function boundingRadius(rec) {
   let r = 0;

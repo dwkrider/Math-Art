@@ -52,20 +52,61 @@ export function thumbUrl(slug) {
 // platonic AND zonohedron AND space-filling), so families are treated
 // as a set-membership filter rather than a partition.
 
-export const FAMILY_ORDER = [
-  'platonic', 'archimedean', 'catalan', 'kepler-poinsot', 'regular',
-  'quasiregular', 'uniform', 'uniform-dual', 'johnson', 'deltahedron',
-  'prism', 'antiprism', 'prism-family', 'dipyramid', 'zonohedron',
-  'permutohedron', 'goldberg', 'fullerene', 'geodesic', 'biscribed',
-  'biscribed-dual', 'compound', 'stellation', 'toroid', 'genus-1',
-  'hemipolyhedron', 'star', 'chiral', 'chiral-family', 'convex',
-  'space-filling',
+/**
+ * The family taxonomy, in the vocabulary the Blender generators use.
+ *
+ * The database tags a solid with every family it belongs to -- a cube is
+ * uniform AND platonic AND zonohedron AND space-filling AND prism -- which
+ * is correct but makes a poor filter: the counts overlap, they do not sum
+ * to anything, and "which family is this?" has no single answer.
+ *
+ * The add-on's Family enums answer it. `regular_solids_generator.FAMILIES`
+ * is a partition -- one solid, one family -- and the other polyhedron
+ * operators extend the same vocabulary. So the list below is a PRECEDENCE:
+ * the first rule that matches wins, and the order is from most specific
+ * (the five Platonic solids) to most general (anything else uniform).
+ * Every one of the 448 lands in exactly one family, so the counts sum.
+ *
+ * Precedence matters where the tags genuinely overlap: a pentagrammic
+ * prism is both `prism-family` and `uniform`, and belongs under prisms;
+ * the biscribed forms are also uniform, and belong under biscribed.
+ */
+const FAMILY_RULES = [
+  ['Platonic', (e) => e.families.includes('platonic')],
+  ['Kepler–Poinsot', (e) => e.families.includes('kepler-poinsot')],
+  ['Archimedean', (e) => e.families.includes('archimedean')],
+  ['Catalan', (e) => e.families.includes('catalan')],
+  ['Johnson', (e) => e.families.includes('johnson')],
+  ['Compounds', (e) => e.families.includes('compound')],
+  ['Biscribed', (e) => e.families.includes('biscribed')
+                    || e.families.includes('biscribed-dual')],
+  ['Geodesic', (e) => e.families.includes('geodesic')],
+  ['Toroids', (e) => e.families.includes('toroid')],
+  ['Zonohedra', (e) => e.families.includes('zonohedron')],
+  ['Dipyramids & Trapezohedra', (e) => e.families.includes('dipyramid')],
+  ['Prisms & Antiprisms', (e) => e.families.includes('prism-family')
+                              || e.families.includes('prism')
+                              || e.families.includes('antiprism')],
+  ['Uniform Duals', (e) => e.families.includes('uniform-dual')],
+  ['Uniform', (e) => e.families.includes('uniform')],
+  ['Stellations', (e) => e.families.includes('stellation')],
 ];
+
+export const FAMILY_ORDER = FAMILY_RULES.map(([name]) => name);
+
+/** The one family this solid belongs to. */
+export function primaryFamily(entry) {
+  for (const [name, test] of FAMILY_RULES) {
+    if (test(entry)) return name;
+  }
+  return 'Other';
+}
 
 export function familyCounts(entries) {
   const counts = new Map();
   for (const e of entries) {
-    for (const f of e.families) counts.set(f, (counts.get(f) || 0) + 1);
+    const f = primaryFamily(e);
+    counts.set(f, (counts.get(f) || 0) + 1);
   }
   return counts;
 }
@@ -93,7 +134,7 @@ export function filterEntries(entries, q) {
   const fams = q.families || [];
   const syms = q.symmetries || [];
   return entries.filter((e) => {
-    if (fams.length && !fams.some((f) => e.families.includes(f))) return false;
+    if (fams.length && !fams.includes(primaryFamily(e))) return false;
     if (syms.length && !syms.includes(e.symmetry?.schoenflies)) return false;
     if (q.convex === 'convex' && !e.convex) return false;
     if (q.convex === 'nonconvex' && e.convex) return false;

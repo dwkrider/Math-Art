@@ -176,9 +176,12 @@ a { color: var(--accent); }
 
 /* --------------------------------------------------- module layout */
 
+/* Viewer on the left, catalogue on the right. The viewer is the subject
+ * of the page, so it takes the position the eye lands on first and the
+ * flexible column; the catalogue is the index beside it. */
 .module-layout {
   display: grid;
-  grid-template-columns: minmax(20rem, 27rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 27rem);
   gap: 1.5rem;
   align-items: start;
   padding: 1.5rem;
@@ -188,7 +191,11 @@ a { color: var(--accent); }
 
 @media (max-width: 62rem) {
   .module-layout { grid-template-columns: 1fr; }
-  .catalog { position: static !important; max-height: none !important; }
+  .catalog {
+    position: static !important;
+    max-height: none !important;
+  }
+  .catalog .grid { overflow: visible; }
 }
 
 /* -------------------------------------------------------- catalog */
@@ -196,12 +203,28 @@ a { color: var(--accent); }
 .catalog {
   position: sticky;
   top: 1rem;
+  /* The panel itself does not scroll -- see .catalog-head / .grid below. */
   max-height: calc(100vh - 2rem);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   background: var(--bg-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1rem;
+}
+
+/* Search and facets are pinned; only the tile grid scrolls. When the two
+ * shared one scroll box, scrolling to the selected tile -- which happens
+ * on load -- carried the filters off the top of the panel, so they were
+ * invisible until the window was resized. */
+.catalog-head { flex: none; }
+
+.catalog .grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.15rem;
 }
 
 .catalog-controls {
@@ -497,11 +520,14 @@ figcaption {
 .deflist dt { color: var(--ink-faint); }
 .deflist dd { margin: 0; font-family: var(--mono); font-size: 0.85rem; }
 
+/* Metrics use the same label/value columns as the definition lists above
+ * them, so the values line up down the panel instead of drifting to the
+ * right edge at a width set by whatever the longest label happens to be. */
 .metric {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr;
+  gap: 0.2rem 1rem;
   align-items: baseline;
-  gap: 1rem;
   padding: 0.24rem 0;
   border-bottom: 1px solid var(--line-soft);
   font-size: 0.9rem;
@@ -509,7 +535,7 @@ figcaption {
 
 .metric:last-child { border-bottom: none; }
 .metric-label { color: var(--ink-faint); }
-.metric-value { text-align: right; font-family: var(--mono); }
+.metric-value { text-align: left; font-family: var(--mono); }
 
 /* The exact form is the true statement; the decimal is a measurement
  * of it, so it reads quieter. */

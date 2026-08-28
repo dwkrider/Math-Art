@@ -223,24 +223,4 @@ export function renderDetail(rec, host, onNavigate) {
     if (links.childNodes.length) sec.append(links);
     host.append(sec);
   }
-
-  // -- how this record was made
-  const con = rec.construction || {};
-  const prov = rec.provenance || {};
-  const sec = section('Construction');
-  const cons = defList([
-    ['Generator', con.generator],
-    ['Operator', con.operator_id],
-    ['Conway', con.conway_from],
-    ['Wythoff', con.wythoff_from?.symbol],
-  ]);
-  if (cons) sec.append(cons);
-  if (prov.coordinates) sec.append($('p', 'provenance', prov.coordinates));
-  if (prov.sources?.length) {
-    const ul = $('ul', 'sources');
-    for (const src of prov.sources) ul.append($('li', null, src));
-    sec.append($('h4', null, 'Sources'));
-    sec.append(ul);
-  }
-  host.append(sec);
 }
