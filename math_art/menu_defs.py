@@ -291,6 +291,10 @@ ALL_MENUS = MENU_ORDER + (STYLES,)
 # and no doc page, which is exactly what happened to this entry.
 ROOT_ENTRIES = (
     _e("object.symmetric_sculpture_add", 'MOD_MIRROR'),
+    # Drawn at the top level rather than filed under Styles: it is not
+    # a finish applied to a shape, it is what you reach for once the
+    # shape is finished and you want it in your hands.
+    _e("object.fabrication_slice", 'MOD_BUILD', builtin=True),
 )
 
 

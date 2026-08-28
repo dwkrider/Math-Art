@@ -56,6 +56,19 @@ OPT_OUT = frozenset({
 OPT_OUT_PREFIXES = ('relief.', 'scherk.')
 
 
+# Operators that ARE live-editable despite defining a `poll`.
+#
+# The poll rule exists because an operator that transforms the
+# selection cannot be re-run later -- its input is gone.  That does not
+# hold for one which names its input in a PROPERTY: Slice for
+# Fabrication records the object it sliced, so a rebuild has everything
+# it needs and re-running it is completely defined.  Anything added
+# here must be able to say the same.
+OPT_IN = frozenset({
+    'object.fabrication_slice',
+})
+
+
 def _defines_poll(cls):
     """True if the add-on's own code gives this operator a `poll`.
 
@@ -94,6 +107,8 @@ def is_generator(cls):
         return False
     if hasattr(cls, 'filename_ext'):
         return False
+    if idname in OPT_IN:
+        return True
     return not _defines_poll(cls)
 
 

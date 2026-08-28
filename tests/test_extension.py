@@ -46,6 +46,11 @@ PANEL_ONLY = {
     # each builds a lighting/camera rig around an existing gem, not a mesh.
     "mesh.gem_aset_rig_add": "per-stone selector on the gem, not a menu add",
     "mesh.gem_studio_add": "per-stone selector on the gem, not a menu add",
+    # Writes the sliced layout to SVG/DXF through a file dialog. An Add
+    # menu lists things you can add; this adds nothing and needs a
+    # layout to already exist, so it is reached from the slicer's own
+    # redo panel instead.
+    "object.fabrication_slice_export": "file export, not a menu add",
 }
 
 
