@@ -88,6 +88,18 @@ def _setup():
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = 'PNG'
     scene.render.image_settings.color_mode = 'RGBA'
+    # COLOUR MANAGEMENT, and this is what stops icons washing out.  The
+    # docs rig shoots AgX at -0.5 exposure, which is right for a figure
+    # on a page but leaves an icon nearly white: measured on the
+    # decatrihedron, AgX/-0.5 renders at saturation 0.095 against a
+    # palette whose colours are (0.85, 0.30, 0.24) and friends.  The
+    # lights simply drive every channel to clipping, and as
+    # render_docs.matte_subjects already notes, exposure and light
+    # energy cannot fix a ratio -- but they CAN stop the clipping that
+    # destroys it.  Standard at -3.5 measures 0.33 to 0.38, three to
+    # four times the saturation, while staying bright.
+    scene.view_settings.view_transform = 'Standard'
+    scene.view_settings.exposure = -3.5
     scene.cycles.samples = SAMPLES
     scene.render.resolution_x = RES * SUPERSAMPLE
     scene.render.resolution_y = RES * SUPERSAMPLE

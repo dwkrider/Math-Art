@@ -18,6 +18,7 @@ goes to `math_art/icons/solids/<KEY>.png`, which ships inside the
 extension zip.
 """
 
+import math
 import os
 import sys
 
@@ -43,11 +44,13 @@ OUT_DIR = os.path.join(ROOT, "math_art", "icons", "solids")
 #: which defeats the point of a gallery.
 RES = 128
 
-#: A solid is a closed saddle shell; the plan view of several is a flat
-#: silhouette (the diamond tetrahedron reads as a hexagon straight down
-#: its 3-fold axis), so everything is shot from the same three-quarter
-#: angle the doc figures use.
-ORIENT = (0.95, 0.0, 0.5)
+#: A solid is a closed saddle shell, and the plan view of several is a
+#: flat silhouette -- the diamond tetrahedron reads as a plain hexagon
+#: straight down its 3-fold axis.  This angle was chosen by MEASURING
+#: how many distinct face tones each candidate leaves visible, averaged
+#: over the decatrihedron and the saddle dodecahedron; it wins because
+#: it puts the camera off every symmetry axis at once.
+ORIENT = (math.radians(75), math.radians(10), math.radians(20))
 
 
 def _build(key):

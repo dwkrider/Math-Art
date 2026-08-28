@@ -74,8 +74,9 @@ PARAMS = {
     # the solid that reads unmistakably as a saddle polyhedron at icon
     # size.  Relaxed to the minimal surface, which is Pearce's own
     # definition of the face.
-    "mesh.saddle_polyhedron_add": dict(family='TETRAHEDRA',
-                                       solid='DIAMOND_TETRAHEDRON',
+    # No `family` here: the group selector is gone and the solid is
+    # picked from a single gallery, so passing one is a hard error.
+    "mesh.saddle_polyhedron_add": dict(solid='DIAMOND_TETRAHEDRON',
                                        face_style='MINIMAL',
                                        density=4, smoothness=40),
     # -- solids ---------------------------------------------------
@@ -237,7 +238,7 @@ ORIENT = {
     # flat hexagonal silhouette -- the one view that hides the saddle
     # curvature the generator exists to show.  Tip it off the axis so
     # two faces turn toward the camera.
-    "mesh.saddle_polyhedron_add": (0.95, 0.0, 0.5),
+    "mesh.saddle_polyhedron_add": (1.309, 0.175, 0.349),
     # A tetrahedron sitting face-on reads as a flat triangle; a sixth
     # of a turn puts an edge toward the camera and it reads as a solid.
     "mesh.regular_solid_add": (0.0, 0.0, 0.62),
