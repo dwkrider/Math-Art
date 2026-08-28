@@ -54,6 +54,13 @@ NEEDS_SELECTION = {
     "object.fabrication_slice",
 }
 
+# Surfaces with genuinely zero thickness, exempt from the collapse
+# detector because flatness is their defining property rather than a
+# build failure.
+EXPECT_FLAT = {
+    "plane",
+}
+
 
 sys.path.insert(0, HERE)
 try:
@@ -503,8 +510,12 @@ def compare(rec, meas, info=None):
         bad.append("the two-sheeted hyperboloid must have 2 components, "
                    "mesh has %d" % meas["components"])
 
-    # the repo's own collapse detector
-    if meas["aspect_ratio"] < 0.02:
+    # The repo's own collapse detector, which catches a surface that
+    # SHOULD occupy three dimensions and came out flat -- a failure that
+    # passes every topological check. It must not fire on a surface that
+    # is legitimately planar: the plane has aspect ratio 0 because it is
+    # a plane, and it is the only surface that is both minimal and flat.
+    if rec["slug"] not in EXPECT_FLAT and meas["aspect_ratio"] < 0.02:
         bad.append("aspect ratio %.4g -- the surface came out essentially "
                    "flat, which passes every topological check"
                    % meas["aspect_ratio"])

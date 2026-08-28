@@ -8,8 +8,8 @@
     "complete-finite-total-curvature",
     "def-implicit",
     "embedded",
+    "implemented",
     "minimal",
-    "not-implemented",
     "quadric",
     "tradition-classical"
   ],
@@ -54,9 +54,11 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "No math_art operator builds this quadric. Blender's own primitives are not math_art constructions and are not counted as coverage.",
-      "resume": "A quadric generator would be a small module: one implicit family with a signature (+/-,+/-,+/-) selector."
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "PLANE",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {

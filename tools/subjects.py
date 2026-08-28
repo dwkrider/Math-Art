@@ -133,6 +133,9 @@ PARAMS = {
     # The spindle -- a lemon with a conical tip at each pole -- is the
     # one that reads as "constant curvature, not a sphere".
     "mesh.spherical_surface_add": dict(preset='SPINDLE'),
+    # the bare default is an ellipsoid, which reads as a squashed
+    # sphere; the one-sheeted hyperboloid says "quadric" at a glance
+    "mesh.quadric_add": dict(kind='HYPERBOLOID_ONE'),
     "mesh.waterman_add": dict(root=20),
     "mesh.spiked_polyhedron_add": dict(preset='MODERN'),
     "mesh.woven_polyhedron_add": dict(solid='ICOSA'),

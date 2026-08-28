@@ -51,6 +51,16 @@
 # - Ulrich Pinkall, "Hopf tori in S^3", Invent. Math. 81 (1985),
 #   379-386 (the Hopf torus over a curve on S^2, and the theorem that
 #   it is Willmore exactly over an elastic curve).
+# - Luigi Bianchi (1894): classification of the flat surfaces immersed
+#   in S^3; the case with one family of asymptotic lines a great circle
+#   is exactly the Hopf tori.  Modern treatment in M. Spivak, "A
+#   Comprehensive Introduction to Differential Geometry", vol. IV,
+#   p. 139ff.
+# - Hermann Karcher, "Bianchi-Pinkall Flat Tori in S^3", 3D-XplorMath /
+#   Virtual Math Museum documentation,
+#   https://virtualmathmuseum.org/docs/bianchi_pinkall_flat_tori.pdf
+#   (the alpha(v) = aa + bb sin(2 ee v) profile family built by the
+#   Bianchi-Pinkall preset).
 # - Joel Langer and David A. Singer, "The total squared curvature of
 #   closed curves", J. Differential Geom. 20 (1984), 1-22 (closed
 #   elasticae on S^2 in closed form, and their monodromy).
@@ -828,6 +838,23 @@ def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc,
         # (2, lobes) winding: colatitude modulated as longitude winds
         beta = np.clip(b0 + amp * np.cos(lobes * s), 0.06, pi - 0.06)
         lam = 2.0 * s
+    elif preset == 'BIANCHI_PINKALL':
+        # The 3D-XplorMath Bianchi-Pinkall profile.  On the Hopf-quotient
+        # sphere the pair (alpha, 2v) are polar coordinates, and 3DXM
+        # takes alpha(v) = aa + bb sin(2 ee v); in curve terms that is
+        # colatitude beta = 2 alpha swinging sinusoidally about its mean
+        # b0 = 2 aa while the longitude s = 2v runs once round.  alpha
+        # is clipped inside (0, pi/2) because the Hopf lift degenerates
+        # at BOTH ends of the axis: beta = 0 leaves the fibre phase
+        # undefined (the quads shear into slivers), beta = pi runs the
+        # fibre through the projection pole (the torus escapes toward
+        # infinity) -- an untreated case of exactly this shipped once
+        # (projected radius 849, aspect 0.006), so the clearance is
+        # load-bearing, and the self-test gates on it.
+        alpha = np.clip(0.5 * b0 + 0.5 * amp * np.sin(lobes * s),
+                        0.05, 0.5 * pi - 0.05)
+        beta = 2.0 * alpha
+        lam = s
     elif preset == 'BAND':
         # OPEN arc of a meridian -> Hopf band (an annulus whose two
         # boundary fibres form a Hopf link). Endpoints included.
@@ -1742,6 +1769,13 @@ if _IN_BLENDER:
                     "closed curve -> m-fold symmetric Hopf torus"),
                    ('ELLIPSE', "Ellipse", "squashed loop"),
                    ('TREFOIL', "Trefoil-like", "doubly-wound curve"),
+                   ('BIANCHI_PINKALL', "Bianchi-Pinkall Flat Torus",
+                    "the 3D-XplorMath Bianchi-Pinkall family: the "
+                    "colatitude swings sinusoidally about its mean as "
+                    "the longitude runs once round, giving an n-lobed "
+                    "torus that is intrinsically FLAT in S^3 (Bianchi "
+                    "1894, Pinkall 1985); at mean colatitude 90 deg "
+                    "these are Pinkall's rhombic tori"),
                    ('ELASTICA', "Elastica (Willmore)", "closed "
                     "elastic curve on S^2 -> a WILLMORE torus: a "
                     "critical point of the Willmore energy"),
@@ -1874,6 +1908,8 @@ if _IN_BLENDER:
             elif self.preset == 'CONSTRAINED':
                 name = (f"Constrained Willmore Torus "
                         f"({self.cw_lobes}-{self.cw_winding})")
+            elif self.preset == 'BIANCHI_PINKALL':
+                name = f"Bianchi-Pinkall Flat Torus ({self.lobes})"
             else:
                 name = f"Hopf Torus ({self.preset.title()})"
             me = bpy.data.meshes.new(name)
@@ -1930,9 +1966,10 @@ if _IN_BLENDER:
                 if not 0.0 < ratio < ELASTICA_RATIO_MAX:
                     lay.label(text="m/n must be < 0.5858 (2-sqrt 2)",
                               icon='ERROR')
-            if self.preset in ('WAVY', 'TREFOIL'):
+            if self.preset in ('WAVY', 'TREFOIL', 'BIANCHI_PINKALL'):
                 lay.prop(self, 'lobes')
-            if self.preset in ('WAVY', 'TREFOIL', 'BAND'):
+            if self.preset in ('WAVY', 'TREFOIL', 'BIANCHI_PINKALL',
+                               'BAND'):
                 lay.prop(self, 'amp')
             if self.preset == 'ELLIPSE':
                 lay.prop(self, 'ecc')
@@ -1963,6 +2000,45 @@ if _IN_BLENDER:
             bpy.types.VIEW3D_MT_curve_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_hopf_torus_add)
         bpy.utils.unregister_class(CURVE_OT_hopf_fibration_add)
+
+
+def _grid_gauss_curvature(P, wrap_u=False, wrap_v=False):
+    """Intrinsic (Gaussian) curvature of a quad-grid immersion by angle
+    defect, in any ambient dimension (P is an (nu, nv, d) array, d = 3
+    or 4).  Each grid quad is split along its (i, j) -> (i+1, j+1)
+    diagonal and at every interior vertex
+
+        K = (2 pi - sum of the six incident triangle angles)
+            / (one third of the incident triangle area)
+
+    -- the polyhedral Gauss-Bonnet quotient.  It uses only edge lengths,
+    so it is INTRINSIC: applied to a torus lifted to S^3 in R^4 it
+    measures the S^3 metric's curvature, which for a Hopf torus must
+    vanish under refinement even though the ambient embedding curves.
+    Wrapped directions treat the grid as periodic; open directions lose
+    their boundary row.  Returns the grid of interior K values."""
+    import numpy as np
+    P = np.asarray(P, dtype=float)
+    su = slice(None) if wrap_u else slice(1, -1)
+    sv = slice(None) if wrap_v else slice(1, -1)
+
+    def nb(di, dj):
+        return np.roll(np.roll(P, -di, axis=0), -dj, axis=1)
+
+    fan = [(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)]
+    ang = 0.0
+    area = 0.0
+    for k in range(6):
+        d1 = (nb(*fan[k]) - P)[su, sv]
+        d2 = (nb(*fan[(k + 1) % 6]) - P)[su, sv]
+        l1 = np.linalg.norm(d1, axis=-1)
+        l2 = np.linalg.norm(d2, axis=-1)
+        dot = np.einsum('ijk,ijk->ij', d1, d2)
+        ang = ang + np.arccos(np.clip(dot / np.maximum(l1 * l2, 1e-300),
+                                      -1.0, 1.0))
+        area = area + 0.5 * np.sqrt(
+            np.maximum((l1 * l2) ** 2 - dot ** 2, 0.0))
+    return (2.0 * pi - ang) / np.maximum(area / 3.0, 1e-300)
 
 
 def _selftest():
@@ -2327,6 +2403,86 @@ def _selftest():
     ok_all = ok_all and prim_ok and pal_ok
     print(f"primitives {'OK' if prim_ok else 'BAD'}; "
           f"palettes {'OK' if pal_ok else 'BAD'}")
+
+    # 14) Bianchi-Pinkall preset.  The DEFINING property (Bianchi 1894;
+    #     Pinkall 1985, Prop. 1): the Hopf torus is intrinsically FLAT
+    #     in S^3 -- K = 0 -- measured on the lifted R^4 mesh by the
+    #     angle-defect quotient, which is intrinsic and so sees the S^3
+    #     metric rather than the projection's.  The discrete K carries
+    #     O(h^2) truncation, so the gate is that it VANISHES UNDER
+    #     REFINEMENT; the round unit sphere (K = 1) is the control that
+    #     the detector is live.  And because the beta = 0 / beta = pi
+    #     degeneracies of the lift once shipped a projected torus of
+    #     radius 849 and aspect 0.006 (BACKLOG, willmore-tori), the
+    #     projected mesh must also come out bounded and genuinely
+    #     three-dimensional, even at hostile parameter settings.
+    def _lift_grid(gam, M):
+        psi = np.linspace(0.0, 2.0 * pi, M, endpoint=False)
+        cp, sp = np.cos(psi), np.sin(psi)
+        L4 = np.empty((len(gam), M, 4))
+        for i, gpt in enumerate(gam):
+            gx, gy, gz = gpt
+            beta = math.acos(max(-1.0, min(1.0, gz)))
+            lam = math.atan2(gy, gx)
+            cb, sb = math.cos(beta / 2.0), math.sin(beta / 2.0)
+            z0r, z0i = cb * math.cos(lam), cb * math.sin(lam)
+            L4[i] = np.stack([cp * z0r - sp * z0i, sp * z0r + cp * z0i,
+                              cp * sb, sp * sb], axis=1)
+        return L4
+
+    kflat = {}
+    for N, M in ((96, 32), (192, 64)):
+        gbp = gamma_curve('BIANCHI_PINKALL', N, 90.0, 3, 35.0, 0.0)
+        kflat[N] = float(np.abs(_grid_gauss_curvature(
+            _lift_grid(gbp, M), wrap_u=True, wrap_v=True)).max())
+    # control: the round unit sphere, embedded in R^4 and turned through
+    # a generic SO(4) rotation so the detector's d = 4 path is the one
+    # exercised, must read K = 1
+    th_c = np.linspace(0.4, pi - 0.4, 48)
+    ph_c = np.linspace(0.0, 2.0 * pi, 96, endpoint=False)
+    SP = np.stack([np.outer(np.sin(th_c), np.cos(ph_c)),
+                   np.outer(np.sin(th_c), np.sin(ph_c)),
+                   np.outer(np.cos(th_c), np.ones_like(ph_c)),
+                   np.zeros((len(th_c), len(ph_c)))], axis=-1)
+    SP = SP @ _so4(0.5, -0.9, 0.3).T
+    sph_dev = float(np.abs(_grid_gauss_curvature(
+        SP, wrap_u=False, wrap_v=True) - 1.0).max())
+    # The lifted quad mesh comes out flat to MACHINE PRECISION (~1e-12),
+    # not merely to O(h^2): every ring is a congruent great circle
+    # carried into the next by an isometry of R^4, so the polyhedral
+    # metric itself is developable -- the discrete mirror of Pinkall's
+    # flatness.  The gate at 1e-8 sits five orders above roundoff and
+    # five below the sphere control, which shows the same detector
+    # resolves K to ~1e-3 at this resolution.
+    ok = max(kflat.values()) < 1e-8 and sph_dev < 0.02
+    ok_all = ok_all and ok
+    print(f"bianchi-pinkall flat: max|K| {kflat[96]:.2e} (N=96), "
+          f"{kflat[192]:.2e} (N=192) vs sphere control |K-1| max "
+          f"{sph_dev:.2e} {'OK' if ok else 'BAD'}")
+
+    gbp = gamma_curve('BIANCHI_PINKALL', 240, 90.0, 3, 35.0, 0.0)
+    raw = stereographic(_lift_grid(gbp, 64).reshape(-1, 4))
+    raw_max = float(np.linalg.norm(raw, axis=1).max())
+    Vbp, Fbp, _ = build_hopf_torus(gbp, 64)
+    Vbp = np.asarray(Vbp)
+    ext = Vbp.max(0) - Vbp.min(0)
+    aspect = float(ext.min() / ext.max())
+    # hostile settings: colat 170 deg + amplitude 80 deg would swing the
+    # curve far past the south pole; the alpha clip must hold it clear
+    ghost = np.asarray(gamma_curve('BIANCHI_PINKALL', 240, 170.0, 5,
+                                   80.0, 0.0))
+    colat_max = float(np.degrees(np.arccos(
+        np.clip(ghost[:, 2], -1.0, 1.0))).max())
+    raw2 = stereographic(_lift_grid([tuple(p) for p in ghost],
+                                    48).reshape(-1, 4))
+    raw2_max = float(np.linalg.norm(raw2, axis=1).max())
+    ok = (np.isfinite(Vbp).all() and len(Vbp) == 240 * 64
+          and len(Fbp) == 240 * 64 and raw_max < 12.0 and aspect > 0.2
+          and colat_max < 175.0 and raw2_max < 45.0)
+    ok_all = ok_all and ok
+    print(f"bianchi-pinkall projection: raw radius {raw_max:.2f}, "
+          f"aspect {aspect:.3f}; hostile colat max {colat_max:.1f} deg "
+          f"raw radius {raw2_max:.1f} {'OK' if ok else 'BAD'}")
 
     assert ok_all
     print("hopf fibration standalone tests passed")

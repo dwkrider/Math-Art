@@ -41,6 +41,12 @@
 #     after one turn), and k = 1/2 with equal radii a CROSS-CAP, the
 #     closing of the hole dropping the genus by one.  El-Milick built
 #     that model in 1947 and called it a one-sided cyclide.
+#   SPHERICAL_HELICOID -- the helicoidal surfaces of constant Gaussian
+#     curvature K = +1: a unit-speed geodesic meridian, found by the
+#     Killing/Jacobi-field reduction |J(s)| = a cos(s), carried by a
+#     screw motion.  Every member except the round sphere ends on
+#     singular rims, since the only complete K = +1 surface is the
+#     sphere.
 #
 # The ROTOID motion added to the Darboux family carries the curve along
 # a helical SPINE instead of about a fixed axis, turning it as it goes:
@@ -75,6 +81,14 @@
 #   surfaces. See A. Gray, E. Abbena, S. Salamon, "Modern
 #   Differential Geometry of Curves and Surfaces with Mathematica"
 #   (3rd ed., 2006), and J. Meier's gallery (3d-meier.de).
+# - Spherical helicoid: Matthias Weber, "The Spherical Helicoids",
+#   3D-XplorMath / Virtual Math Museum documentation,
+#   https://virtualmathmuseum.org/docs/spherical_helicoid.pdf -- the
+#   helicoidal surfaces of constant Gaussian curvature K = +1, reduced
+#   via the Killing/Jacobi-field argument |J(s)| = a cos(s) to a
+#   first-order ODE for the meridian.  The surface appears as an
+#   exercise in L. P. Eisenhart, "A Treatise on the Differential
+#   Geometry of Curves and Surfaces" (Ginn, 1909).
 
 bl_info = {
     "name": "Swept Surfaces",
@@ -360,6 +374,123 @@ def build_sine_torus(major=1.0, minor=0.4, k=0.5, res_u=192, res_v=64):
     return verts, faces
 
 
+def _cumtrapz(f, x):
+    """Cumulative trapezoid integral of samples f over grid x, zero at
+    the first node."""
+    return np.concatenate([[0.0],
+                           np.cumsum(0.5 * (f[1:] + f[:-1])
+                                     * np.diff(x))])
+
+
+def build_spherical_helicoid(a=0.85, h=0.25, turns=1.0,
+                             res_s=96, res_t=192):
+    """(verts, faces): the spherical helicoid -- a helicoidal surface of
+    constant Gaussian curvature K = +1.
+
+    The meridian gamma is a unit-speed geodesic of the surface, found by
+    the Killing-field reduction (Weber's 3DXM note): along a geodesic
+    crossing the screw field X = (-y, x, h) at right angles, X restricts
+    to a Jacobi field J with |J|'' = -K |J|, so K = +1 forces
+
+        |J(s)| = sqrt(r(s)^2 + h^2) = a cos(s) ,
+        r(s)^2 = a^2 cos(s)^2 - h^2 .
+
+    Writing gamma = (r cos th, r sin th, z), unit speed and
+    orthogonality to X reduce the geodesic to two quadratures,
+
+        th'(s) = -h sqrt(1 - r'(s)^2) / (r(s) a cos(s)) ,
+        z'(s)  =  sqrt(1 - r'(s)^2) sqrt(1 - h^2/(a cos(s))^2) ,
+
+    integrated over the maximal band |s| <= s*, where |r'(s*)| = 1:
+
+        sin^2(s*) = ((a^2 + 1) - sqrt((a^2 - 1)^2 + 4 h^2)) / (2 a^2) .
+
+    At s* the surface has a singular edge -- necessarily, since the only
+    COMPLETE surface of constant K = +1 is the round sphere.  The screw
+    motion then sweeps the meridian through `turns` revolutions:
+
+        F(s, t) = RotZ(t) gamma(s) + (0, 0, h t) .
+
+    h = 0 gives the K = +1 surfaces of revolution (a = 1 the unit
+    sphere, a < 1 the spindles, a > 1 the bulge/barrel types); h is
+    clamped below a so the waist r(0)^2 = a^2 - h^2 stays positive."""
+    ns = max(8, int(res_s))
+    nt = max(8, int(res_t))
+    a = max(1e-3, float(a))
+    h = min(max(0.0, float(h)), 0.98 * a)
+    x = (((a * a + 1.0)
+          - math.sqrt((a * a - 1.0) ** 2 + 4.0 * h * h))
+         / (2.0 * a * a))
+    s_star = math.asin(math.sqrt(min(1.0, max(0.0, x))))
+    s = np.linspace(-s_star, s_star, ns + 1)
+    J = a * np.cos(s)                       # = sqrt(r^2 + h^2) > 0
+    r2 = np.maximum(J * J - h * h, 0.0)
+    r = np.sqrt(r2)
+    # r'^2 = a^4 sin^2 cos^2 / r^2, with the analytic h = 0 limit
+    # a^2 sin^2(s) taken where r underflows (the spindle cone points)
+    num = (a * a * np.sin(s) * np.cos(s)) ** 2
+    rp2 = np.where(r2 > 1e-12, num / np.maximum(r2, 1e-300),
+                   (a * np.sin(s)) ** 2)
+    w = np.sqrt(np.maximum(1.0 - rp2, 0.0))     # sqrt(1 - r'^2)
+    q = np.sqrt(np.maximum(
+        1.0 - (h / np.maximum(J, 1e-300)) ** 2, 0.0))   # r / |J|
+    zp = w * q
+    thp = np.where(r * J > 1e-12, -h * w / np.maximum(r * J, 1e-300),
+                   0.0)
+    z = _cumtrapz(zp, s)
+    z -= z[ns // 2]                          # equator at height zero
+    th = _cumtrapz(thp, s)
+    g1, g2 = r * np.cos(th), r * np.sin(th)
+    t = np.linspace(0.0, _TWO_PI * turns, nt + 1)
+    ct, st = np.cos(t), np.sin(t)
+    X = g1[None, :] * ct[:, None] - g2[None, :] * st[:, None]
+    Y = g1[None, :] * st[:, None] + g2[None, :] * ct[:, None]
+    Z = z[None, :] + h * t[:, None]
+    verts = [(X[i, j], Y[i, j], Z[i, j])
+             for i in range(nt + 1) for j in range(ns + 1)]
+    faces = []
+    for i in range(nt):
+        for j in range(ns):
+            p = i * (ns + 1) + j
+            faces.append([p, p + ns + 1, p + ns + 2, p + 1])
+    return verts, faces
+
+
+def _grid_gauss_curvature(P, wrap_u=False, wrap_v=False):
+    """Intrinsic (Gaussian) curvature of a quad-grid immersion by angle
+    defect.  P is an (nu, nv, 3) array; each quad is split along its
+    (i, j) -> (i+1, j+1) diagonal, and at every interior vertex
+
+        K = (2 pi - sum of the six incident triangle angles)
+            / (one third of the incident triangle area)
+
+    -- the polyhedral Gauss-Bonnet quotient, which uses only edge
+    lengths and is therefore intrinsic.  Wrapped directions treat the
+    grid as periodic; open directions lose their boundary row.  Returns
+    the grid of interior K values."""
+    P = np.asarray(P, dtype=float)
+    su = slice(None) if wrap_u else slice(1, -1)
+    sv = slice(None) if wrap_v else slice(1, -1)
+
+    def nb(di, dj):
+        return np.roll(np.roll(P, -di, axis=0), -dj, axis=1)
+
+    fan = [(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)]
+    ang = 0.0
+    area = 0.0
+    for k in range(6):
+        d1 = (nb(*fan[k]) - P)[su, sv]
+        d2 = (nb(*fan[(k + 1) % 6]) - P)[su, sv]
+        l1 = np.linalg.norm(d1, axis=-1)
+        l2 = np.linalg.norm(d2, axis=-1)
+        dot = np.einsum('ijk,ijk->ij', d1, d2)
+        ang = ang + np.arccos(np.clip(dot / np.maximum(l1 * l2, 1e-300),
+                                      -1.0, 1.0))
+        area = area + 0.5 * np.sqrt(
+            np.maximum((l1 * l2) ** 2 - dot ** 2, 0.0))
+    return (2.0 * math.pi - ang) / np.maximum(area / 3.0, 1e-300)
+
+
 _SURFACES = [
     ('DARBOUX', "Darboux Surface",
      "A rigid curve swept by a motion. Translation, revolution and "
@@ -384,6 +515,12 @@ _SURFACES = [
      "A torus whose tube breathes: z = b sin(v) cos(k u). Integer k "
      "gives a torus, half-odd-integer k a Klein bottle, and k = 1/2 "
      "with equal radii a cross-cap"),
+    ('SPHERICAL_HELICOID', "Spherical Helicoid",
+     "Helicoidal surface of constant Gaussian curvature K = +1: a "
+     "geodesic meridian carried by a screw motion. With no rise it is "
+     "a K = +1 surface of revolution (the round sphere at bulge 1, a "
+     "spindle below it); every member but the sphere ends on singular "
+     "rims"),
 ]
 
 
@@ -470,10 +607,11 @@ if _IN_BLENDER:
                         "per revolution (Darboux only)")
         turns: FloatProperty(
             name="Turns", default=1.0, min=0.05, max=12.0,
-            description="How far the motion runs, in revolutions. A "
-                        "whole number closes the sweep and welds the "
-                        "seam; anything else leaves it open (Darboux "
-                        "only)")
+            description="How far the motion runs, in revolutions. For "
+                        "the Darboux surface a whole number closes the "
+                        "sweep and welds the seam; anything else "
+                        "leaves it open (Darboux, helico-conical and "
+                        "spherical helicoid)")
         tau: FloatProperty(
             name="Torsion", default=2.5, min=0.0, max=20.0,
             description="Torsion tau of the hyperbolic "
@@ -514,6 +652,19 @@ if _IN_BLENDER:
                         "tube back inside out and give a KLEIN BOTTLE, "
                         "and k = 1/2 with the two radii equal closes "
                         "the hole into a CROSS-CAP (sine torus only)")
+        sph_a: FloatProperty(
+            name="Meridian Bulge", default=0.85, min=0.3, max=3.0,
+            description="Family parameter a of the K = +1 helicoid: "
+                        "with no rise, 1 is the round sphere, smaller "
+                        "values pinch it toward a spindle and larger "
+                        "ones bulge it into a barrel ending on "
+                        "singular rims (spherical helicoid only)")
+        sph_h: FloatProperty(
+            name="Screw Rise", default=0.25, min=0.0, max=2.0,
+            description="Rise h per radian of turn; 0 gives a K = +1 "
+                        "surface of revolution.  Clamped below the "
+                        "bulge so the meridian exists (spherical "
+                        "helicoid only)")
         cork_a: FloatProperty(
             name="Sphere Radius", default=0.5, min=0.01,
             max=10.0,
@@ -571,6 +722,11 @@ if _IN_BLENDER:
                     self.path_radius, self.curve_size, self.sine_k,
                     3 * self.resolution, self.resolution)
                 name = "Sine Torus"
+            elif self.surface == 'SPHERICAL_HELICOID':
+                verts, faces = build_spherical_helicoid(
+                    self.sph_a, self.sph_h, self.turns,
+                    self.resolution, 2 * self.resolution)
+                name = "Spherical Helicoid"
             else:
                 verts, faces = build_corkscrew(
                     self.cork_a, self.cork_b, self.resolution)
@@ -639,6 +795,8 @@ if _IN_BLENDER:
                 keys = ('aspect', 'wavelength', 'extent')
             elif self.surface == 'SINE_TORUS':
                 keys = ('path_radius', 'curve_size', 'sine_k')
+            elif self.surface == 'SPHERICAL_HELICOID':
+                keys = ('sph_a', 'sph_h', 'turns')
             else:
                 keys = ('cork_a', 'cork_b')
             for k in keys + ('resolution', 'smooth',
@@ -767,5 +925,51 @@ def _selftest():
     print("sine torus: k = 0 and 1 give a torus (k = 0 exactly, tube "
           "radius constant to 1e-12), k = 1/2 and 3/2 a Klein bottle, "
           "and k = 1/2 with a = b a cross-cap")
+
+    # ---- spherical helicoid: K = +1 is the defining property ----------
+    # The Killing/Jacobi reduction guarantees constant curvature only if
+    # the quadratures are right, so K is measured on the BUILT mesh with
+    # the intrinsic angle-defect quotient.  The columns nearest the
+    # singular rims (|r'| -> 1) are excluded: the sqrt integrand's
+    # derivative blows up there, so the trapezoid error concentrates in
+    # those columns -- discretisation, not geometry.
+    ns, nt = 96, 256
+    V, F = build_spherical_helicoid(a=0.85, h=0.25, turns=1.0,
+                                    res_s=ns, res_t=nt)
+    assert all(all(math.isfinite(c) for c in v) for v in V)
+    assert all(0 <= i < len(V) for f in F for i in f)
+    P = np.asarray(V).reshape(nt + 1, ns + 1, 3)
+    K = _grid_gauss_curvature(P)               # open in both directions
+    trim = max(1, (ns - 1) // 10)
+    kerr = float(np.abs(K[:, trim:-trim] - 1.0).max())
+    assert kerr < 0.02, kerr
+    # under refinement the deviation must shrink (it is O(h^2) error,
+    # not a real departure from K = 1)
+    V2, _ = build_spherical_helicoid(a=0.85, h=0.25, turns=1.0,
+                                     res_s=2 * ns, res_t=2 * nt)
+    P2 = np.asarray(V2).reshape(2 * nt + 1, 2 * ns + 1, 3)
+    K2 = _grid_gauss_curvature(P2)
+    kerr2 = float(np.abs(K2[:, 2 * trim:-2 * trim] - 1.0).max())
+    assert kerr2 < 0.6 * kerr, (kerr, kerr2)
+    # a = 1, h = 0 must be the round unit sphere -- an exact target
+    Vs, _ = build_spherical_helicoid(a=1.0, h=0.0, turns=1.0,
+                                     res_s=128, res_t=128)
+    sph_dev = float(np.abs(np.linalg.norm(np.asarray(Vs), axis=1)
+                           - 1.0).max())
+    assert sph_dev < 1e-3, sph_dev
+    # and the analytic band edge really is where |r'| = 1
+    a_, h_ = 0.85, 0.25
+    x_ = (((a_ * a_ + 1.0)
+           - math.sqrt((a_ * a_ - 1.0) ** 2 + 4.0 * h_ * h_))
+          / (2.0 * a_ * a_))
+    ss = math.asin(math.sqrt(x_))
+    rp2_edge = ((a_ * a_ * math.sin(ss) * math.cos(ss)) ** 2
+                / (a_ * a_ * math.cos(ss) ** 2 - h_ * h_))
+    assert abs(rp2_edge - 1.0) < 1e-9, rp2_edge
+    print(f"spherical helicoid: interior max|K-1| = {kerr:.2e} -> "
+          f"{kerr2:.2e} under refinement (angle defect; K = +1 is the "
+          f"defining property), a=1 h=0 lies on the unit sphere to "
+          f"{sph_dev:.1e}, rim exactly at |r'| = 1 "
+          f"({abs(rp2_edge - 1.0):.1e})")
 
     print("helical standalone tests passed")

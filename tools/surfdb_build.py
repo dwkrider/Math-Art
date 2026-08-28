@@ -714,16 +714,24 @@ class Builder:
                 "sources": spec.get("sources", ["Classical."]),
             }
             deep_merge(rec, spec.get("extra", {}))
-            if not rec["construction"]:
+            # P1 of the implementation plan: math_art/quadric_generator.py
+            # builds all thirteen from their exact charts. Three of them
+            # ALSO ship as ruled surfaces or as a Delaunay member, so those
+            # records carry two construction entries -- being reachable two
+            # ways is a fact about the surface, not a duplication.
+            kind = QUADRIC_KIND.get(slug)
+            if kind:
+                self.add_construction(rec, {
+                    "generator": "math_art.quadric_generator",
+                    "operator_id": "mesh.quadric_add",
+                    "key": kind, "definition_index": 0,
+                    "implemented": True,
+                })
+            elif not rec["construction"]:
                 rec["construction"] = [{
                     "implemented": False,
-                    "blocked_by": "No math_art operator builds this quadric. "
-                                  "Blender's own primitives are not math_art "
-                                  "constructions and are not counted as "
-                                  "coverage.",
-                    "resume": "A quadric generator would be a small module: "
-                              "one implicit family with a signature "
-                              "(+/-,+/-,+/-) selector.",
+                    "blocked_by": "No math_art operator builds this quadric.",
+                    "resume": "Add it to math_art/quadric_generator.py.",
                 }]
             self.report.append(("quadric", slug, "emit", slug))
 
@@ -1087,6 +1095,23 @@ class Builder:
 
 
 BUILD_DATE = "2026-08-28"
+
+# Record slug -> the enum key on mesh.quadric_add.
+QUADRIC_KIND = {
+    "sphere": "SPHERE",
+    "spheroid": "SPHEROID",
+    "ellipsoid": "ELLIPSOID",
+    "elliptic-paraboloid": "ELLIPTIC_PARABOLOID",
+    "hyperbolic-paraboloid": "HYPERBOLIC_PARABOLOID",
+    "hyperboloid-one-sheet": "HYPERBOLOID_ONE",
+    "hyperboloid-two-sheets": "HYPERBOLOID_TWO",
+    "elliptic-cone": "ELLIPTIC_CONE",
+    "circular-cylinder": "CIRCULAR_CYLINDER",
+    "elliptic-cylinder": "ELLIPTIC_CYLINDER",
+    "hyperbolic-cylinder": "HYPERBOLIC_CYLINDER",
+    "parabolic-cylinder": "PARABOLIC_CYLINDER",
+    "plane": "PLANE",
+}
 
 
 # The thirteen classical quadrics, at unit radius.  Nine non-degenerate

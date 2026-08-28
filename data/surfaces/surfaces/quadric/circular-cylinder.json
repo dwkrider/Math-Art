@@ -52,6 +52,13 @@
       "key": "CYLINDER",
       "definition_index": 0,
       "implemented": true
+    },
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "CIRCULAR_CYLINDER",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {

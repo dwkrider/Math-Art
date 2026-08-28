@@ -82,7 +82,7 @@
     "topological"
   ],
   "count": 425,
-  "implemented_count": 298,
+  "implemented_count": 308,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -2197,7 +2197,8 @@
       },
       "implemented": true,
       "operator_ids": [
-        "mesh.delaunay_surface_add"
+        "mesh.delaunay_surface_add",
+        "mesh.quadric_add"
       ],
       "specimen_count": 0
     },
@@ -3978,7 +3979,7 @@
         "closed-orientable",
         "def-implicit",
         "embedded",
-        "not-implemented",
+        "implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -3997,8 +3998,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -4010,8 +4013,8 @@
         "aperiodic",
         "def-implicit",
         "flat",
+        "implemented",
         "noncompact",
-        "not-implemented",
         "quadric",
         "singular",
         "tradition-classical"
@@ -4031,8 +4034,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -4045,8 +4050,8 @@
         "def-implicit",
         "embedded",
         "flat",
+        "implemented",
         "noncompact",
-        "not-implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -4065,8 +4070,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -4078,8 +4085,8 @@
         "aperiodic",
         "def-implicit",
         "embedded",
+        "implemented",
         "noncompact",
-        "not-implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -4098,8 +4105,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -6058,8 +6067,8 @@
         "def-implicit",
         "embedded",
         "flat",
+        "implemented",
         "noncompact",
-        "not-implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -6078,8 +6087,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -6196,8 +6207,8 @@
         "aperiodic",
         "def-implicit",
         "embedded",
+        "implemented",
         "noncompact",
-        "not-implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -6216,8 +6227,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8686,8 +8699,8 @@
         "def-implicit",
         "embedded",
         "flat",
+        "implemented",
         "noncompact",
-        "not-implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -8706,8 +8719,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8989,8 +9004,8 @@
         "complete-finite-total-curvature",
         "def-implicit",
         "embedded",
+        "implemented",
         "minimal",
-        "not-implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -9009,8 +9024,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11593,8 +11610,8 @@
         "closed-orientable",
         "def-implicit",
         "embedded",
+        "implemented",
         "k-const-positive",
-        "not-implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -11613,8 +11630,10 @@
         "ita_number": null,
         "order": "infinite"
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11794,7 +11813,7 @@
         "closed-orientable",
         "def-implicit",
         "embedded",
-        "not-implemented",
+        "implemented",
         "quadric",
         "tradition-classical"
       ],
@@ -11813,8 +11832,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 3
     },
     {

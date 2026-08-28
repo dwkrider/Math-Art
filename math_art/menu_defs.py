@@ -85,6 +85,10 @@ SURFACES = Menu(
         # separate operator because "Hyperbolic Surface" is the
         # wrong label to show a user for a sphere.
         _e("mesh.spherical_surface_add", 'MESH_UVSPHERE'),
+        # The degree-2 surfaces, from their exact charts. Three of
+        # them also ship as ruled surfaces; being reachable two
+        # ways is a fact about the surface, not a duplication.
+        _e("mesh.quadric_add", 'MESH_UVSPHERE'),
         # One constant-mean-curvature generator: Delaunay surfaces and
         # their roulettes, bubbletons grafted onto them, Wente's closed
         # torus, and the elastic tori of the spherical space form.
