@@ -15,7 +15,8 @@
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "exactness": "numerical-integral"
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -54,6 +55,23 @@
     "sources": [
       "H. F. Scherk, 'Bemerkungen uber die kleinste Flache innerhalb gegebener Grenzen', J. reine angew. Math. 13 (1835)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1335_scherk_2",
+        "agrees": true,
+        "detail": "page title 'Scherk surface' vs record name \"Scherk's Doubly Periodic Surface\""
+      },
+      {
+        "source": "mathcurve:ch1335_scherk_2",
+        "agrees": true,
+        "detail": "record year 1835, page says 1834"
+      },
+      {
+        "source": "mathcurve:ch1335_scherk_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'minimal'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -80,5 +98,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3721,
+      "edges": 7320,
+      "faces": 3600,
+      "euler_characteristic": 1,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.370607,
+        1.370607,
+        2.0
+      ],
+      "aspect_ratio": 0.685303
+    }
   }
 }

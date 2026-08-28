@@ -13,7 +13,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.dform_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "flat",
@@ -41,7 +42,12 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "T. Wills, \"D-Forms: 3D Forms from Two 2D Sheets,\" Bridges 2006, pp. 503-510.",
+      "J. Sharp, \"D-Forms and Developable Surfaces,\" Bridges 2005, pp. 121-128; \"D-Forms\" (Tarquin, 2009) -- also the source of the anti-D-form.",
+      "R. R. Orduno, N. Winard, S. Bierwagen, D. Shell, N. Kalantar,",
+      "A. Borhani, E. Akleman, \"A Mathematical Approach to Obtain Isoperimetric Shapes for D-Form Construction,\" Bridges 2016, pp. 277-284.",
+      "E. Demaine, J. O'Rourke, \"Geometric Folding Algorithms\" (Cambridge, 2007), ch. 25 -- Alexandrov gluings.",
+      "H. Pottmann, J. Wallner, \"Computational Line Geometry\" (Springer, 2001) -- poses the D-form shape question."
     ],
     "verified": {
       "expressions_parse": true,
@@ -55,5 +61,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 794,
+      "edges": 2376,
+      "faces": 1584,
+      "euler_characteristic": 2,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.916809,
+        1.263356
+      ],
+      "aspect_ratio": 0.631678
+    }
   }
 }

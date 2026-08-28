@@ -67,6 +67,23 @@
     "sources": [
       "H. A. Schwarz, Gesammelte Mathematische Abhandlungen (1890)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1336_schwarz_2",
+        "agrees": true,
+        "detail": "page title 'Schwarz surface' vs record name 'Schwarz D Surface'"
+      },
+      {
+        "source": "mathcurve:ch1336_schwarz_2",
+        "agrees": true,
+        "detail": "record year 1865, page says 1864"
+      },
+      {
+        "source": "mathcurve:ch1336_schwarz_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'minimal'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -83,9 +100,9 @@
     "same_surface_as": [
       {
         "slug": "fischer-koch-cy",
-        "confidence": "suspected",
-        "check": "as above",
-        "source": "Brakke, ibid., for C(Y) and the D surface."
+        "confidence": "refuted",
+        "check": "Measured: chi over a common one-cell block at resolution 64 is -15 for C(Y) against -10 for D.",
+        "source": "Brakke, ibid., for C(Y) and the D surface; the shipped row follows von Schnering & Nesper (1991)."
       }
     ]
   },
@@ -114,5 +131,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 40286,
+      "edges": 119688,
+      "faces": 79392,
+      "euler_characteristic": -10,
+      "components": 1,
+      "boundary_loops": 5,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

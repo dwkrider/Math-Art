@@ -12,7 +12,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.scherk_collins_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -38,7 +39,8 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "H. F. Scherk, \"Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen\", J. reine angew. Math. (Crelle) 13, 1835",
+      "- the singly-periodic saddle-tower minimal surface. Sculptural form after the collaboration of sculptor Brent Collins and Carlo H. Sequin (see the Leonardo and I3D papers above)."
     ],
     "verified": {
       "expressions_parse": true,
@@ -47,10 +49,30 @@
       "tolerance": 0.002
     }
   },
+  "named_after": "Collins, Scherk",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 7360,
+      "edges": 14720,
+      "faces": 7360,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.913047,
+        0.913055,
+        2.0
+      ],
+      "aspect_ratio": 0.456524
+    }
   }
 }

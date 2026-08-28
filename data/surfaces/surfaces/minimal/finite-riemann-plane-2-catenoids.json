@@ -14,7 +14,8 @@
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "exactness": "numerical-integral"
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -51,7 +52,7 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
     "verified": {
       "expressions_parse": true,
@@ -68,5 +69,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 10573,
+      "edges": 20957,
+      "faces": 10384,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.925106,
+        2.0,
+        1.605468
+      ],
+      "aspect_ratio": 0.802734
+    }
   }
 }

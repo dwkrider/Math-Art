@@ -73,6 +73,13 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1320_plan_2",
+        "agrees": true,
+        "detail": "page title 'Plane' vs record name 'Plane'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

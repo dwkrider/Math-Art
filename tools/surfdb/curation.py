@@ -467,6 +467,10 @@ FACTS = {
     },
 
     "gyroid": {
+        # The registry row is keyed 'G' and labelled "G surface"; the
+        # literature name is the Gyroid, and the cross-check flagged the
+        # mismatch against Ferreol's chapter title.
+        "name": "Gyroid",
         "discovered_by": "Alan H. Schoen", "year": 1970,
         "primary_family": "minimal-periodic",
         "tradition": ["classical", "crystallographic"],
@@ -842,6 +846,15 @@ FACTS = {
         "provenance": {"sources": [
             "F. Klein, 'Ueber Riemann's Theorie der algebraischen Functionen "
             "und ihrer Integrale' (1882)."]},
+        "notes": {"known_issue":
+                  "FOUND BY THE DRIVE STAGE. The shipped mesh has the right "
+                  "Euler characteristic (chi = 0, as the module header "
+                  "claims) but is NOT closed: 96 edges bound only one face, "
+                  "forming 2 open loops. The combinatorial identification "
+                  "closes one direction of the parameter grid and leaves the "
+                  "other seamed. chi being correct anyway is a coincidence -- "
+                  "an open cylinder also has chi = 0 -- which is exactly why "
+                  "an Euler check alone would not have caught this."},
         "notes": {"caveats": [
             "Cannot be embedded in R^3 -- any realisation here self-"
             "intersects. It embeds in R^4. The self-intersection is a property "
@@ -1316,7 +1329,10 @@ FACTS = {
         "name": "Schwarz's Lantern",
         "discovered_by": "Hermann Amandus Schwarz", "year": 1880,
         "primary_family": "discrete", "tradition": ["classical"],
-        "ids": {"mathcurve": "ch1340_sinus_2"},
+        # No mathcurve id: the mirror has no Schwarz-lantern chapter, and
+        # ch1340_sinus_2 -- which an earlier revision pointed at -- is
+        # Ferreol's SINE SURFACE. The cross-check caught it by comparing
+        # the page title against the record name.
         "curvature": {"condition": "none"},
         "topology": {"compact": True, "orientable": True, "genus": 0,
                      "boundary_components": 2},
@@ -1451,3 +1467,81 @@ def _selftest():
 
     print("RESULT: OK  (surfdb.curation, %d curated slugs, %d candidate "
           "polynomials)" % (len(FACTS), len(POLYNOMIAL)))
+
+
+# ---------------------------------------------------------------------------
+# The join to data/polyhedra/: which polyhedron each surface is the smooth
+# or continuous counterpart of.
+#
+# Only edges that RESOLVE are listed.  The most interesting join in the
+# whole design does NOT resolve and is recorded as a known limitation
+# rather than forced: the Petrie-Coxeter apeirohedra (mucube,
+# muoctahedron, mutetrahedron) are the polygonal ancestors of the
+# triply-periodic minimal surfaces -- research/taxonomy.md says so
+# directly -- but data/polyhedra/ catalogues FINITE polyhedra only, so
+# `mucube` is not a slug there and pointing at it would produce a
+# dangling reference. See data/surfaces/README.md.
+# ---------------------------------------------------------------------------
+
+POLYHEDRAL_ANALOGUE = {
+    # Goursat level sets: the smooth surface carrying a regular solid's
+    # symmetry, in the literal sense that the family is DEFINED as the
+    # polynomials invariant under that solid's group.
+    "rounded-dodecahedron": "dodecahedron",
+    "rounded-icosahedron": "icosahedron",
+    "rounded-tetrahedron-0-lt-k-lt-4": "tetrahedron",
+    "tetrahedral-cubic-k-eq-0": "tetrahedron",
+    "tetrahedral-cubic-k-lt-0": "tetrahedron",
+    "tetrahedral-cubic-k-gt-4": "tetrahedron",
+    "triconic-tetrahedral-quartic": "tetrahedron",
+    "cube-diagonal-quartic": "cube",
+    "cube-edge-quartic": "cube",
+    "cube-median-quartic": "cube",
+    "octahedron-edge-quartic": "octahedron",
+    "cuboctahedral-quartic": "cuboctahedron",
+    "cuboctahedral-triangle-quartic": "cuboctahedron",
+    "quartic-with-12-cuboctahedral-nodes": "cuboctahedron",
+    "icosidodecahedral-pentagon-sextic": "icosidodecahedron",
+    "icosidodecahedral-triangle-sextic": "icosidodecahedron",
+    "six-icosidodecahedral-planes": "icosidodecahedron",
+    "barth-sextic-icosahedral-frame": "icosahedron",
+
+    # Record-nodal surfaces whose node arrangement carries the solid's
+    # symmetry.
+    "barth-sextic": "icosahedron",
+    "barth-decic": "icosahedron",
+    "cayley-nodal-cubic": "tetrahedron",
+    "kummer-quartic": "tetrahedron",
+    "clebsch-diagonal-cubic": "tetrahedron",
+    "sarti-dodecic": "icosahedron",
+
+    # Schwarz's lantern is a POLYHEDRON inscribed in a cylinder -- the
+    # counterexample that cost the subject its first definition of surface
+    # area. Its polyhedral nature is the whole point, so the analogue runs
+    # the other way from the rest of this table.
+    "schwarz-lantern": "hexagonal-prism",
+
+    # Steinmetz solids are boolean intersections of cylinders on a
+    # polyhedron's axis set; the family record names the simplest.
+    "steinmetz-solid": "cube",
+}
+
+
+def polyhedral_analogue(slug):
+    """The `data/polyhedra` slug this surface is the counterpart of."""
+    return POLYHEDRAL_ANALOGUE.get(slug)
+
+
+# Two records carry a `known_issue` written from what the drive stage
+# actually observed rather than from reading the code. Both are findings
+# ABOUT math_art, which is the point of driving the generators at all.
+FACTS["scherkt-surface"] = {
+    "notes": {"known_issue":
+              "FOUND BY THE DRIVE STAGE. 'SCHERKT' is a row in "
+              "math_art/minsurf/tpms.py's TPMS registry and builds fine "
+              "through minsurf.build_tpms, but NO operator offers it: "
+              "mesh.periodic_minimal_add's surface enum omits it under "
+              "every one of its five periodicity settings (SINGLY, DOUBLY, "
+              "TRIPLY, EXACT, EXACT_FAMILY). The surface is reachable from "
+              "the engine and not from the user interface."},
+}

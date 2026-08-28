@@ -12,7 +12,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -38,7 +39,19 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "D. von Seggern, \"CRC Standard Curves and Surfaces\" (1993), p. 304 -- Fresnel's elasticity surface.",
+      "A. Robin (2004), plotted after M. Trott, \"The Mathematica GuideBook for Graphics\" (2004), p. 103 -- the paper bag surface.",
+      "O. Knill (2017); M. A. Villarino and J. C. Varilly (2024) -- the trihyperboloid and its volume ln 256.",
+      "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
+      "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
+      "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1202_astroidal_2",
+        "agrees": true,
+        "detail": "page title 'Astroidal ellipsoid' vs record name 'Astroidal Ellipsoid'"
+      }
     ],
     "verified": {
       "expressions_parse": true,
@@ -47,10 +60,32 @@
       "tolerance": 0.002
     }
   },
+  "ids": {
+    "mathcurve": "ch1202_astroidal_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4704,
+      "edges": 9312,
+      "faces": 4608,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.0,
+        1.5,
+        2.0
+      ],
+      "aspect_ratio": 0.5
+    }
   }
 }

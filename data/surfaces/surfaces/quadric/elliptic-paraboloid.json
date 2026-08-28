@@ -71,6 +71,13 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1263_paraboloidelliptic_2",
+        "agrees": true,
+        "detail": "page title 'Elliptic paraboloid' vs record name 'Elliptic Paraboloid'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

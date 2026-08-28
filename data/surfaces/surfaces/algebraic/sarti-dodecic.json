@@ -64,6 +64,9 @@
   "tradition": [
     "classical"
   ],
+  "relations": {
+    "polyhedral_analogue": "icosahedron"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

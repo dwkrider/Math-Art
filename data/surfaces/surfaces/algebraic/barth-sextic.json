@@ -72,6 +72,18 @@
     "sources": [
       "W. Barth, 'Two projective surfaces with many nodes admitting the symmetries of the icosahedron', J. Algebraic Geometry 5 (1996)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1209_barth_2",
+        "agrees": true,
+        "detail": "page title 'Barth sextic' vs record name 'Barth Sextic'"
+      },
+      {
+        "source": "mathcurve:ch1209_barth_2",
+        "agrees": false,
+        "detail": "record year 1996, page says 1994 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -93,10 +105,32 @@
     "mathworld": "BarthSextic",
     "mathcurve": "ch1209_barth_2"
   },
+  "relations": {
+    "polyhedral_analogue": "icosahedron"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 81412,
+      "edges": 243177,
+      "faces": 161817,
+      "euler_characteristic": 52,
+      "components": 40,
+      "boundary_loops": 20,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

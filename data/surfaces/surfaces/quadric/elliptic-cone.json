@@ -80,6 +80,18 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1235_coneelliptique_2",
+        "agrees": true,
+        "detail": "page title 'Elliptic cone' vs record name 'Elliptic Cone'"
+      },
+      {
+        "source": "mathcurve:ch1235_coneelliptique_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'flat'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

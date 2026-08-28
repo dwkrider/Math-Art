@@ -57,7 +57,9 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
     ],
     "verified": {
       "expressions_parse": true,
@@ -77,5 +79,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 54074,
+      "edges": 160476,
+      "faces": 106368,
+      "euler_characteristic": -34,
+      "components": 1,
+      "boundary_loops": 14,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

@@ -56,6 +56,8 @@
   "provenance": {
     "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
     "sources": [
+      "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien.  https://homepage.univie.ac.at/herwig.hauser/bildergalerie/",
+      "S. Amethyst, 3D-printed renderings of the same gallery, https://silviana.org/gallery/hauser/",
       "H. Hauser, 'Bildergalerie algebraischer Flaechen', Universitaet Wien."
     ],
     "verified": {
@@ -80,5 +82,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 70756,
+      "edges": 212262,
+      "faces": 141508,
+      "euler_characteristic": 2,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.15462,
+        1.15462,
+        2.0
+      ],
+      "aspect_ratio": 0.57731
+    }
   }
 }

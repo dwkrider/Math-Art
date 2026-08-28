@@ -14,7 +14,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -52,6 +53,13 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "Classical."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1291_tore_2",
+        "agrees": true,
+        "detail": "page title 'Torus' vs record name 'Torus'"
+      }
     ],
     "verified": {
       "expressions_parse": true,

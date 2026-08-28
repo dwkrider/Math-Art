@@ -60,6 +60,18 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1250_cylindreparabolic_2",
+        "agrees": true,
+        "detail": "page title 'Parabolic cylinder' vs record name 'Parabolic Cylinder'"
+      },
+      {
+        "source": "mathcurve:ch1250_cylindreparabolic_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'flat'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

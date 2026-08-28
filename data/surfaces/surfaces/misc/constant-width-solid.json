@@ -12,7 +12,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.constant_width_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -55,7 +56,10 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "Ernst Meissner & Friedrich Schilling, \"Drei Gipsmodelle von Flaechen konstanter Breite\", Z. Math. Phys. 60 (1912), 92-94.",
+      "Bernd Kawohl & Christof Weber, \"Meissner's Mysterious Bodies\", Math. Intelligencer 33 (2011), no. 3, 94-101.",
+      "T. Bonnesen & W. Fenchel, \"Theorie der konvexen Koerper\", Springer 1934 (the minimal-volume conjecture).",
+      "Wikipedia, \"Surface of constant width\" and \"Reuleaux triangle\"."
     ],
     "verified": {
       "expressions_parse": true,
@@ -80,5 +84,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3127,
+      "edges": 8399,
+      "faces": 5274,
+      "euler_characteristic": 2,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.999545,
+        1.999975,
+        1.999478
+      ],
+      "aspect_ratio": 0.999752
+    }
   }
 }

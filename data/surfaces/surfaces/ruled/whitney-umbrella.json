@@ -75,6 +75,13 @@
     "sources": [
       "H. Whitney, 'The general type of singularity of a set of 2n-1 smooth functions of n variables', Duke Math. J. 10 (1943)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1355_whitney_2",
+        "agrees": true,
+        "detail": "page title \"Whitney's umbrella\" vs record name 'Whitney Umbrella'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -106,5 +113,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3456,
+      "edges": 6144,
+      "faces": 2880,
+      "euler_characteristic": 192,
+      "components": 98,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

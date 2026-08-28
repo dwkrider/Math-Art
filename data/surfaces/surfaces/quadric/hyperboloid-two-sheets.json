@@ -77,6 +77,13 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1287_hyperboloid2_2",
+        "agrees": true,
+        "detail": "page title 'Two-sheeted hyperboloid' vs record name 'Hyperboloid of Two Sheets'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

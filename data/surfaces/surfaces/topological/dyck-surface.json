@@ -18,7 +18,8 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null
+    "polynomial": null,
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -51,6 +52,18 @@
     "sources": [
       "W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1260_dyck_2",
+        "agrees": true,
+        "detail": "page title \"Dyck's surface\" vs record name \"Dyck's Surface\""
+      },
+      {
+        "source": "mathcurve:ch1260_dyck_2",
+        "agrees": true,
+        "detail": "record year 1888, page says 1888"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -67,6 +80,9 @@
     "classical",
     "physical-model"
   ],
+  "ids": {
+    "mathcurve": "ch1260_dyck_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

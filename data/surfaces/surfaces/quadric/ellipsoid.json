@@ -81,6 +81,13 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1207_ellipsoid_2",
+        "agrees": true,
+        "detail": "page title 'Ellipsoid' vs record name 'Ellipsoid'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

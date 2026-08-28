@@ -56,7 +56,18 @@
   "provenance": {
     "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 4.44e-16).",
     "sources": [
+      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com -- the chapters \"parapluie de Cartan\", \"surface de Cassini\", \"surface de Titeica\".  A converted copy of the whole encyclopedia is in research/books/ mathcurve_encyclopedie_formes_mathematiques/.",
+      "H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own umbrella x^2 = y^2 z, already in the Hauser block above.",
+      "G. D. Cassini, the ovals of 1680; the surface is the classical three-dimensional generalisation of them.",
+      "G. Titeica, \"Sur une nouvelle classe de surfaces\", Rend. Circ. Mat. Palermo 25 (1908) 180-187 -- the affine spheres of 1907.",
       "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1218_cartan_2",
+        "agrees": true,
+        "detail": "page title \"Cartan's umbrella\" vs record name \"Cartan's Umbrella\""
+      }
     ],
     "verified": {
       "expressions_parse": true,
@@ -72,10 +83,33 @@
   "tradition": [
     "gallery"
   ],
+  "named_after": "Cartan",
+  "ids": {
+    "mathcurve": "ch1218_cartan_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 66889,
+      "edges": 199456,
+      "faces": 132626,
+      "euler_characteristic": 59,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

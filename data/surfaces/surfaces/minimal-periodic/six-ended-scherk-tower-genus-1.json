@@ -15,7 +15,8 @@
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "exactness": "numerical-integral"
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -52,7 +53,8 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "H. Karcher, Manuscripta Math. 62 (1988); H. F. Scherk (1835);",
+      "K. Li thesis lineage (6/8-ended towers); L. daSilva, V. Ramos Batista (2009); M. Weber, https://minimalsurfaces.blog/ notebooks Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb, Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb (research/msblog_harvest/singly_periodic.json).  Full scholarly details in the weierstrass sscherk block header."
     ],
     "verified": {
       "expressions_parse": true,
@@ -64,10 +66,30 @@
   "tradition": [
     "classical"
   ],
+  "named_after": "Scherk",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 66462,
+      "edges": 133611,
+      "faces": 67060,
+      "euler_characteristic": -89,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.272634,
+        0.468924,
+        2.0
+      ],
+      "aspect_ratio": 0.234462
+    }
   }
 }

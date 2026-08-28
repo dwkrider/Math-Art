@@ -12,7 +12,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.steinmetz_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -95,7 +96,11 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "Archimedes, \"The Method of Mechanical Theorems\" (c. 250 BC); T. L. Heath (ed.), \"The Works of Archimedes\", Cambridge, 1897.",
+      "M. Moore, \"Symmetrical Intersections of Right Circular Cylinders\", The Mathematical Gazette 58 (1974), 181-185.",
+      "K. Brecher, \"Rolloids\", Bridges 2023 Conference Proceedings, 345-352 (the bicylinder as a straight-line roller; local copy at research/bridges/2023/bridges2023-345/).",
+      "The n-cylinder axis sets and their patch counts: Robert Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), \"polyedres cylindriques\".  Four of its five patch counts are reproduced exactly here; for the twelve truncated-octahedral axes the count is 216 rather than the published 240, since that axis set is in special position (two of the eleven cross-product directions coincide).",
+      "Equidomoid: studied by Archimedes, and named by Leopold Hugo between 1867 and 1875; Emile Fourrey, \"Recreations geometriques\", 319-326."
     ],
     "verified": {
       "expressions_parse": true,
@@ -130,10 +135,32 @@
       "label": "equidomoid"
     }
   ],
+  "relations": {
+    "polyhedral_analogue": "cube"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 33530,
+      "edges": 67304,
+      "faces": 33776,
+      "euler_characteristic": 2,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.102924,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 0.951057
+    }
   }
 }

@@ -245,21 +245,47 @@ ALIAS = {
 # ---------------------------------------------------------------------------
 
 SUSPECTED_SAME = [
+    # SETTLED 2026-08-28 by measurement, which is what this mechanism is
+    # for: the claim was recorded rather than guessed, then checked.
+    #
+    # Meshing each nodal level set over a common one-cell block at
+    # resolution 64 and counting V - E + F gives
+    #
+    #     Schwarz P   chi =   -4          Fischer-Koch C(S)  chi = -128
+    #     Schwarz D   chi =  -10          Fischer-Koch C(Y)  chi =  -15
+    #
+    # Euler characteristic scales roughly linearly with the number of
+    # cells in the block, so even allowing for the fact that C(S)'s nodal
+    # function has half the period of P's -- its leading terms are
+    # cos 2x, cos 2y, cos 2z -- an eight-fold cell count would predict
+    # chi near -32, not -128. A factor of four beyond that is not a cell
+    # convention; the surfaces differ.
+    #
+    # The claim is therefore REFUTED for what this repo ships. The likely
+    # explanation is that Brakke indexes the Fischer-Koch family
+    # differently from the sources the shipped rows follow (Koch & Fischer
+    # 1988 for C(S), von Schnering & Nesper 1991 for C(Y)); the remark may
+    # be true of surfaces those names denote elsewhere. That caveat is
+    # recorded rather than resolved, because resolving it would mean
+    # transcribing Brakke's own definitions.
     {
         "a": "fischer-koch-cs", "b": "schwarz-p",
-        "confidence": "suspected",
-        "check": "compare the two as embedded surfaces in one cubic cell: "
-                 "equal space group, equal genus per cell, and a Hausdorff "
-                 "distance below the mesh resolution would settle it",
+        "confidence": "refuted",
+        "check": "Measured: chi over a common one-cell block at resolution "
+                 "64 is -128 for C(S) against -4 for P. Not the same "
+                 "surface, and not explainable by the half-period cell.",
         "source": "K. Brakke's Surface Evolver periodic-surface collection "
                   "lists Fischer-Koch C(S) as 'later recognised as the P "
-                  "surface'. The repo ships them as separate rows.",
+                  "surface'; the shipped row follows Koch & Fischer (1988) "
+                  "and does not agree with that identification.",
     },
     {
         "a": "fischer-koch-cy", "b": "schwarz-d",
-        "confidence": "suspected",
-        "check": "as above",
-        "source": "Brakke, ibid., for C(Y) and the D surface.",
+        "confidence": "refuted",
+        "check": "Measured: chi over a common one-cell block at resolution "
+                 "64 is -15 for C(Y) against -10 for D.",
+        "source": "Brakke, ibid., for C(Y) and the D surface; the shipped "
+                  "row follows von Schnering & Nesper (1991).",
     },
     {
         "a": "bjorling-twisted-band", "b": "meeks-mobius-strip",

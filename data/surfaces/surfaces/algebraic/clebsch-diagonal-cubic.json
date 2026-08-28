@@ -72,6 +72,18 @@
       "A. Clebsch, 'Ueber die Flachen vierter Ordnung, welche eine Doppelcurve zweiten Grades besitzen', J. reine angew. Math. 69 (1868); the diagonal surface.",
       "A. Cayley and G. Salmon (1849) for the 27 lines on a cubic."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1231_clebsch_2",
+        "agrees": true,
+        "detail": "page title 'Clebsch surface' vs record name 'Clebsch Diagonal Cubic'"
+      },
+      {
+        "source": "mathcurve:ch1231_clebsch_2",
+        "agrees": true,
+        "detail": "record year 1871, page says 1871"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -99,10 +111,32 @@
       "The unique smooth cubic surface on which all 27 lines are REAL. Its ten Eckardt points are where three of the lines meet."
     ]
   },
+  "relations": {
+    "polyhedral_analogue": "tetrahedron"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 103801,
+      "edges": 309528,
+      "faces": 205722,
+      "euler_characteristic": -5,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

@@ -14,7 +14,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.spherical_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "k-const-positive",
@@ -100,5 +101,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6240,
+      "edges": 12384,
+      "faces": 6144,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.649127
+      ],
+      "aspect_ratio": 0.324564
+    }
   }
 }

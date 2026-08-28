@@ -15,7 +15,8 @@
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null
+    "polynomial": null,
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -56,6 +57,7 @@
   "tradition": [
     "crystallographic"
   ],
+  "named_after": "Schoen",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

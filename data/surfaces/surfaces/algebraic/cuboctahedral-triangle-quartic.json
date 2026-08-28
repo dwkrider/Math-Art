@@ -94,6 +94,10 @@
   "provenance": {
     "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 8.88e-16).",
     "sources": [
+      "A. Cayley, \"A Memoir on Cubic Surfaces\", Phil. Trans. 159, 1869.",
+      "A. Clebsch, \"Ueber die Flachen vierter Ordnung...\", Journal fur die reine und angewandte Mathematik 69, 1868 -- the diagonal surface.",
+      "W. Barth, \"Two projective surfaces with many nodes admitting the symmetries of the icosahedron\", J. Algebraic Geometry 5, 1996.",
+      "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien -- the named gallery surfaces in the _HAUSER block below.",
       "E. Goursat, 'Etude des surfaces qui admettent tous les plans de symetrie d'un polyedre regulier', Ann. Sci. ENS 3e serie 4 (1887)."
     ],
     "verified": {
@@ -111,10 +115,32 @@
   "tradition": [
     "classical"
   ],
+  "relations": {
+    "polyhedral_analogue": "cuboctahedron"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 131288,
+      "edges": 391572,
+      "faces": 260280,
+      "euler_characteristic": -4,
+      "components": 8,
+      "boundary_loops": 14,
+      "manifold": false,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

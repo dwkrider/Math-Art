@@ -12,7 +12,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "cmc",
@@ -43,6 +44,18 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "C. Delaunay, 'Sur la surface de revolution dont la courbure moyenne est constante', J. Math. Pures Appl. 6 (1841)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1252_delaunay_4",
+        "agrees": true,
+        "detail": "page title 'Delaunay surface' vs record name 'Delaunay Surface'"
+      },
+      {
+        "source": "mathcurve:ch1252_delaunay_4",
+        "agrees": true,
+        "detail": "record year 1841, page says 1841"
+      }
     ],
     "verified": {
       "expressions_parse": true,

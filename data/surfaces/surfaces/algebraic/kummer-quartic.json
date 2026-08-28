@@ -72,6 +72,18 @@
     "sources": [
       "E. E. Kummer, 'Uber die Flachen vierten Grades mit sechzehn singularen Punkten', Monatsber. Akad. Wiss. Berlin (1864)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1294_kummer_2",
+        "agrees": true,
+        "detail": "page title 'Kummer surface' vs record name 'Kummer Quartic'"
+      },
+      {
+        "source": "mathcurve:ch1294_kummer_2",
+        "agrees": true,
+        "detail": "record year 1864, page says 1864"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -97,10 +109,32 @@
       "Sixteen nodes is the maximum for a quartic. The Kummer surface is a K3 surface -- the named specimen this database records, as opposed to the K3 CLASS, which is not a renderable object."
     ]
   },
+  "relations": {
+    "polyhedral_analogue": "tetrahedron"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 122992,
+      "edges": 366248,
+      "faces": 243260,
+      "euler_characteristic": 4,
+      "components": 5,
+      "boundary_loops": 6,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.985756,
+        1.985756,
+        2.0
+      ],
+      "aspect_ratio": 0.992878
+    }
   }
 }

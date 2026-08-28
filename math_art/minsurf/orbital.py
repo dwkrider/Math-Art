@@ -7,6 +7,15 @@
 # The hydrogen-like wavefunctions psi_nlm, contoured at a fixed
 # probability density.  The angular part is a spherical harmonic and
 # the radial part an associated Laguerre polynomial.
+#
+# References:
+# - E. Schroedinger, "Quantisierung als Eigenwertproblem", Annalen der
+#   Physik 384 (1926) -- the wave equation whose bound states these are.
+# - The closed form psi_nlm = R_nl(r) Y_lm(theta, phi), with R_nl an
+#   associated Laguerre polynomial and Y_lm a spherical harmonic, is
+#   standard; see L. Pauling and E. B. Wilson, "Introduction to Quantum
+#   Mechanics" (1935), chapter V, for the derivation and the tabulated
+#   low-n forms.
 
 import math
 import re

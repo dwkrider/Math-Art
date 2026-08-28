@@ -74,6 +74,18 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1249_cylindrehyperbolic_2",
+        "agrees": true,
+        "detail": "page title 'Hyperbolic cylinder' vs record name 'Hyperbolic Cylinder'"
+      },
+      {
+        "source": "mathcurve:ch1249_cylindrehyperbolic_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'flat'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

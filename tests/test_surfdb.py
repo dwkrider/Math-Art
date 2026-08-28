@@ -29,7 +29,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 MODULES = ("expr", "views", "mapping", "polynomial", "registry", "curation",
-           "invariants")
+           "invariants", "references", "sources", "tail", "crosscheck")
 
 
 def main():

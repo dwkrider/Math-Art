@@ -68,6 +68,18 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1230_cylindrederevolution_2",
+        "agrees": true,
+        "detail": "page title 'Cylinder of revolution' vs record name 'Circular Cylinder'"
+      },
+      {
+        "source": "mathcurve:ch1230_cylindrederevolution_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'flat'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -99,5 +111,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12800,
+      "edges": 25536,
+      "faces": 12736,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.6,
+        1.6,
+        2.0
+      ],
+      "aspect_ratio": 0.8
+    }
   }
 }

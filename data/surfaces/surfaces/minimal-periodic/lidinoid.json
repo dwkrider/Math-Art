@@ -87,5 +87,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 2205,
+      "edges": 4316,
+      "faces": 2112,
+      "euler_characteristic": 1,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.153167,
+        2.0,
+        1.216181
+      ],
+      "aspect_ratio": 0.576584
+    }
   }
 }

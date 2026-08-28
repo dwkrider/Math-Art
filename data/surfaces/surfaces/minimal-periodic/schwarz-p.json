@@ -70,6 +70,23 @@
     "sources": [
       "H. A. Schwarz, Gesammelte Mathematische Abhandlungen, Springer (1890) -- the P and D surfaces."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1336_schwarz_2",
+        "agrees": true,
+        "detail": "page title 'Schwarz surface' vs record name 'Schwarz P Surface'"
+      },
+      {
+        "source": "mathcurve:ch1336_schwarz_2",
+        "agrees": true,
+        "detail": "record year 1865, page says 1864"
+      },
+      {
+        "source": "mathcurve:ch1336_schwarz_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'minimal'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -86,9 +103,9 @@
     "same_surface_as": [
       {
         "slug": "fischer-koch-cs",
-        "confidence": "suspected",
-        "check": "compare the two as embedded surfaces in one cubic cell: equal space group, equal genus per cell, and a Hausdorff distance below the mesh resolution would settle it",
-        "source": "K. Brakke's Surface Evolver periodic-surface collection lists Fischer-Koch C(S) as 'later recognised as the P surface'. The repo ships them as separate rows."
+        "confidence": "refuted",
+        "check": "Measured: chi over a common one-cell block at resolution 64 is -128 for C(S) against -4 for P. Not the same surface, and not explainable by the half-period cell.",
+        "source": "K. Brakke's Surface Evolver periodic-surface collection lists Fischer-Koch C(S) as 'later recognised as the P surface'; the shipped row follows Koch & Fischer (1988) and does not agree with that identification."
       }
     ]
   },
@@ -115,5 +132,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 26834,
+      "edges": 79518,
+      "faces": 52680,
+      "euler_characteristic": -4,
+      "components": 1,
+      "boundary_loops": 6,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

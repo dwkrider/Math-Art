@@ -48,6 +48,8 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "3DXM Consortium, \"Functions with compact levels in 3D-XplorMath\", virtualmathmuseum.org/docs/ImplicitCompact.pdf -- the formulas and the default parameters used here.  A converted copy is in research/papers/algebraic-surfaces/vmm-implicit-surfaces-compact/.",
+      "H. Karcher and R. Palais, 3D-XplorMath / Virtual Math Museum surface gallery, virtualmathmuseum.org/Surface/.",
       "3DXM Virtual Math Museum, implicit-surfaces gallery."
     ],
     "verified": {
@@ -68,5 +70,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 66716,
+      "edges": 200172,
+      "faces": 133448,
+      "euler_characteristic": -8,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.372177
+      ],
+      "aspect_ratio": 0.186089
+    }
   }
 }

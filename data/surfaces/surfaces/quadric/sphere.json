@@ -91,6 +91,13 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1257_sphere_2",
+        "agrees": true,
+        "detail": "page title 'Sphere' vs record name 'Sphere'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

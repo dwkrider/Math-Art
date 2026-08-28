@@ -58,7 +58,12 @@ def _is_key(text):
 
 
 def top_level_table(source, var):
-    """(key, label) pairs from a top-level `var = [...]` or `var = {...}`.
+    """(key, label, line) triples from a top-level `var = [...]`/`{...}`.
+
+    The LINE NUMBER matters: several modules carry more than one
+    `References:` block, one per family section, and a row is cited from
+    the nearest block above it (tools/surfdb/references.py).  Without the
+    line, every row in an 11,000-line module would inherit the header.
 
     Handles both the list-of-tuples and dict-of-tuples shapes, and does
     NOT evaluate the values -- several tables hold function references.
@@ -77,7 +82,7 @@ def top_level_table(source, var):
                 if isinstance(item, (ast.Tuple, ast.List)):
                     ss = _strings(item)
                     if len(ss) >= 2 and _is_key(ss[0]):
-                        out.append((ss[0], ss[1]))
+                        out.append((ss[0], ss[1], item.lineno))
         elif isinstance(val, ast.Dict):
             for k, v in zip(val.keys, val.values):
                 if not (isinstance(k, ast.Constant) and isinstance(k.value, str)):
@@ -88,7 +93,7 @@ def top_level_table(source, var):
                     label = ss[0] if ss else None
                 elif isinstance(v, ast.Constant) and isinstance(v.value, str):
                     label = v.value
-                out.append((k.value, label or k.value))
+                out.append((k.value, label or k.value, k.lineno))
         return out
     return []
 
@@ -110,7 +115,22 @@ def inline_enum_items(source):
         if len(ss) >= 2 and _is_key(ss[0]) and not _is_key(ss[1]):
             if ss[0] not in seen:
                 seen.add(ss[0])
-                out.append((ss[0], ss[1]))
+                out.append((ss[0], ss[1], node.lineno))
+    return out
+
+
+def dict_key_lines(source, pattern):
+    """key -> line number, for dict literals keyed by an ALL-CAPS string.
+
+    Used for math_art/minsurf/zoo.py, whose rows are written both as
+    entries of one big dict and as later `WE_SURFACES['KEY'] = {...}`
+    assignments; both forms are matched.
+    """
+    out = {}
+    for n, line in enumerate(source.splitlines(), 1):
+        m = re.match(pattern, line)
+        if m and m.group(1) not in out:
+            out[m.group(1)] = n
     return out
 
 
@@ -131,15 +151,15 @@ def read_rows(root, dotted, tables=(), inline=False, only=None, exclude=()):
     rows = []
     seen = set()
     for var in tables:
-        for key, label in top_level_table(source, var):
+        for key, label, line in top_level_table(source, var):
             if key not in seen:
                 seen.add(key)
-                rows.append((key, label))
+                rows.append((key, label, line))
     if inline:
-        for key, label in inline_enum_items(source):
+        for key, label, line in inline_enum_items(source):
             if key not in seen:
                 seen.add(key)
-                rows.append((key, label))
+                rows.append((key, label, line))
     if only is not None:
         rows = [r for r in rows if r[0] in only]
     if exclude:
@@ -165,15 +185,15 @@ def draw():
         ('GABRIEL', "Gabriel's Horn", "finite volume, infinite area"),
     ])
 '''
-    got = top_level_table(src, "PRESET_ITEMS")
+    got = [(k, l) for k, l, _n in top_level_table(src, "PRESET_ITEMS")]
     assert got == [("KLEIN", "Klein Bottle"), ("BOY", "Boy's Surface")], got
 
     # a dict whose values hold FUNCTION REFERENCES must still yield its
     # labels -- literal_eval would raise here, which is why it is not used
-    got = top_level_table(src, "PRESETS")
+    got = [(k, l) for k, l, _n in top_level_table(src, "PRESETS")]
     assert got == [("PSEUDOSPHERE", "Pseudosphere"), ("DINI", "Dini Surface")], got
 
-    got = inline_enum_items(src)
+    got = [(k, l) for k, l, _n in inline_enum_items(src)]
     keys = [k for k, _ in got]
     assert "CYCLIDE_RING" in keys and "GABRIEL" in keys, got
     # the key/label test must not mistake a label for a key

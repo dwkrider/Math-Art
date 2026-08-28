@@ -22,7 +22,12 @@ data/surfaces/
 Family folders are for humans; `slug` is unique across the **whole** database,
 and `index.json` is the only thing that resolves a slug to a path.
 
-**320 records, 298 implemented, 0 validator errors.**
+**363 records, 298 implemented, 0 validator errors.**
+
+Every record carries a real citation; 65 are independently cross-checked
+against the local Ferréol mirror; and 296 of the 298 implemented records have
+been built by *running their actual operator* and comparing the resulting mesh
+against what the record claims.
 
 ## Why a surface database is not a polyhedron database
 
@@ -131,10 +136,10 @@ surface family is presented as one object with a handedness rather than as two
 catalogued solids. There is one `gyroid` record.
 
 **Suspected identities are recorded, not guessed.** `relations.same_surface_as`
-carries the claim with a `confidence` and the check that would decide it.
-Fischer–Koch C(S) and C(Y) were "later recognised as the P surface and the D
-surface" (Brakke) and the repo ships them as separate rows — so they carry
-`confidence: "suspected"` and stay two records until someone checks.
+carries the claim with a `confidence` and the check that would decide it — and
+then someone runs the check. Fischer–Koch C(S) and C(Y) were "later recognised
+as the P surface and the D surface" (Brakke); measuring χ settled it as
+**refuted**, and the entries say so with the numbers. See "Settled" below.
 
 ## The row → record mapping
 
@@ -301,27 +306,26 @@ which is precisely what let `research/missing-surfaces-catalog.md` go stale.
 `--coverage` is the gap ledger, and it is **computed**, not curated:
 
 ```
-COVERAGE  320 records, 298 implemented, 22 not (93%)
+COVERAGE  363 records, 298 implemented, 65 not (82%)
 ```
 
-| family | total | implemented |
-|---|---|---|
-| algebraic | 112 | 111 |
-| minimal-periodic | 64 | 63 |
-| minimal | 46 | 46 |
-| topological | 17 | 14 |
-| quadric | 13 | 3 |
-| constant-curvature | 10 | 9 |
-| cmc | 8 | 7 |
-| swept | 8 | 7 |
-| revolution | 7 | 6 |
-| misc | 7 | 7 |
-| discrete | 4 | 4 |
-| physical | 4 | 4 |
-| derived | 3 | 1 |
-| spectral | 3 | 3 |
-| cyclide | 2 | 1 |
-| ruled | 12 | 12 |
+**That figure went DOWN from 93% when the tail was added, and that is the
+point.** Before it, one placeholder record (`schoen-batwing`) stood in for
+roughly eighteen second-tier triply-periodic minimal surfaces, and Weber's
+(p,q,r) series — about forty more — had no record at all. The surfaces were
+always missing; only the records were. A ledger that under-counts what is
+absent is not a ledger, and an honest 82% is worth more than a flattering 93%.
+
+| family | total | impl. | | family | total | impl. |
+|---|---|---|---|---|---|---|
+| algebraic | 126 | 111 | | ruled | 12 | 12 |
+| minimal-periodic | 89 | 63 | | constant-curvature | 10 | 9 |
+| minimal | 46 | 46 | | cmc | 8 | 7 |
+| topological | 21 | 14 | | swept | 8 | 7 |
+| quadric | 13 | 3 | | misc | 7 | 7 |
+| revolution | 7 | 6 | | discrete | 4 | 4 |
+| physical | 4 | 4 | | spectral | 3 | 3 |
+| derived | 3 | 1 | | cyclide | 2 | 1 |
 
 **The quadrics are the honest surprise.** Ten of thirteen are *not*
 implemented: only the hyperboloid of one sheet and the hyperbolic paraboloid
@@ -330,17 +334,129 @@ family's member. An "ellipsoid" exists only as a superellipsoid special case,
 which is a different family. Blender's own primitives are not `math_art`
 constructions and are not counted as coverage.
 
-The remaining gaps: Sarti's dodecic (blocked, with the reason in code),
-multi-soliton pseudospherical surfaces, Bianchi–Pinkall flat tori, the
-spherical helicoid, Schoen's second-tier TPMS, the Darboux cyclide, the Klein
-quartic, and the derived-surface transforms (canal, focal).
-
 This replaces `research/missing-surfaces-catalog.md`, which listed 19 headline
 gaps of which **13 had silently closed** — cyclides, the Hauser block, all
 three record nodal surfaces, Zindler, Sievert, K = +1 revolution,
 non-orientable genus-*k*, Morin, and Schwarz H/CLP (shipped as exact
 Weierstrass rather than the nodal form the file said was blocked). A computed
 field cannot go stale.
+
+## Provenance
+
+Every record states **how** its definition was obtained and **what** the
+validator confirmed. Beyond that:
+
+| | coverage |
+|---|---|
+| a real citation (no placeholders) | **363 / 363** |
+| harvested from a module's own `References:` block | 311 |
+| `discovered_by` or `named_after` | 109 |
+| an external ID that resolves | 135 |
+| independently cross-checked | 65 |
+
+Citations are **harvested, not retyped.** CLAUDE.md already requires every
+generator module to credit the mathematics it implements; those blocks are
+kept current by whoever writes the generator, and `docs/scaffold_pages.py`
+already lifts them onto the doc pages. Retyping is how a citation goes subtly
+wrong and then looks authoritative, so `tools/surfdb/references.py` reads them
+instead — taking the **nearest** block to each row, because `weierstrass.py`
+carries fifteen of them and `zoo.py` eight, one per family section, and taking
+only the header would attribute Karcher's saddle towers to the entire zoo.
+
+Three modules had no extractable block and gained one:
+`curiosity_surface_generator`, `oloid_generator` and `minsurf/orbital`. In
+every case the citations already existed in the header prose — von Seggern,
+Robin and Trott, Knill, Dupin, Tannery, Zoll, Schwarz, Bouguer, Neile,
+Dirnböck and Stachel, Schrödinger — and were reformatted into the block form
+CLAUDE.md asks for. Nothing was invented, and those modules are now compliant.
+
+## Cross-checking
+
+`python tools/surfdb_crosscheck.py` compares records against the local Ferréol
+mirror (181 surface chapters). It is kept **separate from the build**, as
+`data/polyhedra` keeps its own crosscheck stage separate, so more sources can
+be cached and the verification re-run without rebuilding any geometry.
+
+**106 agreements, 4 disagreements.** The disagreements are recorded, not
+reconciled — all four are discovery years where Ferréol and the record's cited
+source differ (the catenoid: 1740 against Euler's 1744; Cayley's cubic 1850
+against 1869; Gabriel's horn 1641 against 1643; Barth's sextic 1994 against
+1996). `data/polyhedra` records two disagreements against McCooey rather than
+forcing them to agree; this is the same standard.
+
+Silence is never confirmation. A page that does not discuss curvature produces
+no entry rather than an agreement, and a single passing mention of another
+surface's property is not a contradiction — Ferréol's helicoid chapter says
+"developable" once, about the *developable helicoid*, a different surface.
+
+The cross-check also caught two wrong IDs of this database's own:
+`schwarz-lantern` pointed at `ch1340_sinus_2`, which is Ferréol's **Sine
+surface** (the mirror has no lantern chapter at all), and `genus-g-surface`
+pointed at a chapter *defining* genus rather than describing an object. Both
+were removed — a wrong cross-reference is worse than an absent one, because it
+sends a reader to the wrong page and looks authoritative doing it.
+
+## Driving the generators
+
+`blender --background --python tools/surfdb_drive.py -- --write` runs each
+implemented record's operator and compares the mesh with the record. Before
+it, `implemented: true` meant "the module file exists on disk" — not a check
+at all.
+
+**328 invocations across 298 records: 327 agreed.** This is the analogue of
+polydb's crosscheck, the stage that found twelve wrong Johnson solids, and it
+earned its place immediately by finding four things:
+
+1. **It caught a flaw in itself first.** The first version never passed the
+   record's enum key, so every record on a multi-surface operator drove that
+   operator's *default*: Boy's surface, the Klein bottle and the genus-g
+   surface were all silently measured as the same shape, and the resulting
+   "agreement" meant nothing. Selecting the right surface needs more than
+   introspection — several of these enums are built by a callback and report
+   no items until a context supplies them, and the selector is filtered by
+   another enum whose vocabulary differs from the registry's (`periodicity` is
+   `TRIPLY` where the registry family says `TPMS`).
+2. **A fabricated operator ID, in this database.** `pearce-saddle-surface`
+   named `mesh.pearce_surface_add`, which does not exist:
+   `math_art/pearce_surface.py` is a library used by the saddle-polyhedron
+   generator, not a generator itself.
+3. **The Klein bottle mesh is not closed.** It has the right Euler
+   characteristic — χ = 0, as the module header claims — but 96 edges bound
+   only one face, forming two open loops: the combinatorial identification
+   closes one direction of the parameter grid and seams the other. χ being
+   right anyway is a coincidence, since an open cylinder also has χ = 0, which
+   is precisely why an Euler check alone would not have caught it.
+4. **`SCHERKT` is unreachable from the interface.** It is a row in the TPMS
+   registry and builds fine through `minsurf.build_tpms`, but
+   `mesh.periodic_minimal_add` omits it from the surface list under all five
+   of its periodicity settings.
+
+Both findings about the code are recorded as `notes.known_issue` on the
+records concerned. Boundary components are compared only for **compact**
+surfaces: a complete one is necessarily rendered as a truncated patch, so its
+mesh has rims the mathematical surface does not, and comparing those failed
+correct records until it was fixed.
+
+## Settled: Fischer–Koch C(S) and C(Y)
+
+Brakke lists Fischer–Koch C(S) and C(Y) as "later recognised as the P surface
+/ the D surface", while this repo ships them as separate rows. The records
+carried `same_surface_as` with `confidence: "suspected"` and the check that
+would decide it. That check has now been run.
+
+Meshing each nodal level set over a common one-cell block at resolution 64 and
+counting V − E + F gives **χ = −128 for C(S) against −4 for Schwarz P**, and
+**−15 for C(Y) against −10 for D**. χ scales roughly with the number of cells
+in the block, so even allowing for C(S)'s nodal function having half the period
+of P's — its leading terms are cos 2x, cos 2y, cos 2z — an eight-fold cell
+count would predict χ near −32, not −128.
+
+**Refuted**, and recorded as such. The likely explanation is that Brakke
+indexes the Fischer–Koch family differently from the sources the shipped rows
+follow (Koch & Fischer 1988 for C(S), von Schnering & Nesper 1991 for C(Y)), so
+the remark may well be true of surfaces those names denote elsewhere. That
+caveat is recorded rather than resolved, because resolving it would mean
+transcribing Brakke's own definitions.
 
 ## Local sources
 

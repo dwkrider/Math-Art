@@ -74,6 +74,18 @@
     "sources": [
       "Classical."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1248_cylindreelliptique_2",
+        "agrees": true,
+        "detail": "page title 'Elliptic cylinder' vs record name 'Elliptic Cylinder'"
+      },
+      {
+        "source": "mathcurve:ch1248_cylindreelliptique_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'flat'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,

@@ -15,7 +15,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -65,6 +66,18 @@
     "sources": [
       "C. Dupin, Applications de geometrie et de mechanique (1822).",
       "J. Schrott and B. Odehnal, 'Ortho-circles of Dupin cyclides', J. Geometry and Graphics 10 (2006)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1245_cyclidededupin_2",
+        "agrees": true,
+        "detail": "page title 'Dupin cyclide' vs record name 'Dupin Cyclide'"
+      },
+      {
+        "source": "mathcurve:ch1245_cyclidededupin_2",
+        "agrees": true,
+        "detail": "record year 1822, page says 1822"
+      }
     ],
     "verified": {
       "expressions_parse": true,
@@ -128,5 +141,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4608,
+      "edges": 9216,
+      "faces": 4608,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.499562,
+        1.662391
+      ],
+      "aspect_ratio": 0.749781
+    }
   }
 }

@@ -14,7 +14,8 @@
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "exactness": "numerical-integral"
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -51,7 +52,10 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block."
     ],
     "verified": {
       "expressions_parse": true,
@@ -68,5 +72,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 14570,
+      "edges": 28434,
+      "faces": 13863,
+      "euler_characteristic": -1,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.986299,
+        2.0,
+        1.733591
+      ],
+      "aspect_ratio": 0.866796
+    }
   }
 }

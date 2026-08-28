@@ -57,7 +57,12 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "H. G. von Schnering and R. Nesper, \"Nodal surfaces of Fourier series: fundamental invariants of structured matter\",",
+      "Z. Phys. B Condensed Matter 83 (1991) 407-412. doi:10.1007/BF01313411  [C(D), C(Y), +-Y, C(+-Y), S nodal forms]",
+      "H. G. von Schnering, M. Oehme, G. Rudolf, \"Three-dimensional periodic nodal surfaces which envelope the threefold and fourfold cubic rod packings\", Acta Chem. Scand. 45 (1991) 873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]",
+      "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
+      "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
+      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]"
     ],
     "verified": {
       "expressions_parse": true,
@@ -77,5 +82,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 51762,
+      "edges": 152700,
+      "faces": 100920,
+      "euler_characteristic": -18,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

@@ -15,7 +15,8 @@
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "exactness": "numerical-integral"
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -78,6 +79,23 @@
       "C. J. Costa, 'Example of a complete minimal immersion in R^3 of genus one and three embedded ends', Bol. Soc. Bras. Mat. 15 (1984).",
       "D. Hoffman and W. H. Meeks III, 'A complete embedded minimal surface in R^3 with genus one and three ends', J. Diff. Geom. 21 (1985) -- the proof that Costa's example is embedded."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1242_costa_2",
+        "agrees": true,
+        "detail": "page title \"Costa's surface\" vs record name \"Costa's Surface\""
+      },
+      {
+        "source": "mathcurve:ch1242_costa_2",
+        "agrees": true,
+        "detail": "record year 1982, page says 1982"
+      },
+      {
+        "source": "mathcurve:ch1242_costa_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'minimal'"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -112,5 +130,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3289,
+      "edges": 6468,
+      "faces": 3176,
+      "euler_characteristic": -3,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.231716
+      ],
+      "aspect_ratio": 0.615858
+    }
   }
 }

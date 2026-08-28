@@ -14,7 +14,8 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "exactness": "elementary"
+    "exactness": "elementary",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -51,7 +52,12 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "E. Catalan (1855), H. F. Scherk (1835), H. W. Richmond (1904).",
+      "The catalog follows Matthias Weber's repository of minimal surfaces, https://minimalsurfaces.blog/ , and his lecture notes \"Classical Minimal Surfaces in Euclidean Space by Examples\" (Indiana University) -- gratefully credited.  Specific sources:",
+      "L. P. Jorge & W. H. Meeks III (1983) k-noids; C. J. Costa (1982),",
+      "D. Hoffman & W. H. Meeks III (1985+) Costa-Hoffman-Meeks; H. Karcher (1988) saddle towers (\"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62);",
+      "W. H. Meeks III (1981) the minimal Mobius strip (\"The classification of complete minimal surfaces in R3 with total curvature greater than -8pi\", Duke Math. J. 48);",
+      "B. Riemann (1867) the singly periodic minimal example foliated by circles; H. A. Schwarz (1890) the Bjorling formula;"
     ],
     "verified": {
       "expressions_parse": true,
@@ -63,10 +69,30 @@
   "tradition": [
     "classical"
   ],
+  "named_after": "Catalan",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6889,
+      "edges": 13612,
+      "faces": 6724,
+      "euler_characteristic": 1,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.561706,
+        0.804684
+      ],
+      "aspect_ratio": 0.280853
+    }
   }
 }

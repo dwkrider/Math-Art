@@ -48,7 +48,18 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com -- the chapters \"parapluie de Cartan\", \"surface de Cassini\", \"surface de Titeica\".  A converted copy of the whole encyclopedia is in research/books/ mathcurve_encyclopedie_formes_mathematiques/.",
+      "H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own umbrella x^2 = y^2 z, already in the Hauser block above.",
+      "G. D. Cassini, the ovals of 1680; the surface is the classical three-dimensional generalisation of them.",
+      "G. Titeica, \"Sur une nouvelle classe de surfaces\", Rend. Circ. Mat. Palermo 25 (1908) 180-187 -- the affine spheres of 1907.",
       "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1363_henrici_2",
+        "agrees": true,
+        "detail": "page title 'Surface de Henrici' vs record name 'Henrici Cubic'"
+      }
     ],
     "verified": {
       "expressions_parse": true,
@@ -63,10 +74,32 @@
   "tradition": [
     "gallery"
   ],
+  "ids": {
+    "mathcurve": "ch1363_henrici_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 119101,
+      "edges": 355872,
+      "faces": 236772,
+      "euler_characteristic": 1,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

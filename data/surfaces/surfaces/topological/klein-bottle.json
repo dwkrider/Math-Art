@@ -17,7 +17,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.topological_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -54,6 +55,18 @@
     "sources": [
       "F. Klein, 'Ueber Riemann's Theorie der algebraischen Functionen und ihrer Integrale' (1882)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1215_klein_4",
+        "agrees": true,
+        "detail": "page title 'Klein bottle' vs record name 'Klein Bottle'"
+      },
+      {
+        "source": "mathcurve:ch1215_klein_4",
+        "agrees": true,
+        "detail": "record year 1882, page says 1882"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -82,5 +95,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4656,
+      "edges": 9264,
+      "faces": 4608,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.587754,
+        2.0,
+        0.697371
+      ],
+      "aspect_ratio": 0.348685
+    }
   }
 }

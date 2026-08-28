@@ -18,7 +18,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.topological_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -60,6 +61,18 @@
       "F. Apery, Models of the Real Projective Plane (1987) -- the explicit parametrisation.",
       "R. Bryant and R. Kusner, for the Willmore-minimising immersion."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1216_boy_2",
+        "agrees": true,
+        "detail": "page title \"Boy's surface\" vs record name \"Boy's Surface\""
+      },
+      {
+        "source": "mathcurve:ch1216_boy_2",
+        "agrees": true,
+        "detail": "record year 1901, page says 1902"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -89,5 +102,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4561,
+      "edges": 9168,
+      "faces": 4608,
+      "euler_characteristic": 1,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.996455,
+        1.873195
+      ],
+      "aspect_ratio": 0.936597
+    }
   }
 }

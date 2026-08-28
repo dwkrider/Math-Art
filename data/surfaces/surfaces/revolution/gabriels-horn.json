@@ -14,7 +14,8 @@
   ],
   "definition": {
     "mode": "parametric",
-    "fidelity": "exact"
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -46,6 +47,18 @@
     "sources": [
       "E. Torricelli, De solido hyperbolico acuto (1643)."
     ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1269_gabriel_2",
+        "agrees": true,
+        "detail": "page title \"Gabriel's horn\" vs record name \"Gabriel's Horn\""
+      },
+      {
+        "source": "mathcurve:ch1269_gabriel_2",
+        "agrees": false,
+        "detail": "record year 1643, page says 1641 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
+      }
+    ],
     "verified": {
       "expressions_parse": true,
       "exact_values_match": true,
@@ -74,5 +87,24 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 13920,
+      "edges": 27744,
+      "faces": 13824,
+      "euler_characteristic": 0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.8,
+        0.8
+      ],
+      "aspect_ratio": 0.4
+    }
   }
 }

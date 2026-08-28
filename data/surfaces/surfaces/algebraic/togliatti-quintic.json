@@ -48,7 +48,10 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "A. Cayley, \"A Memoir on Cubic Surfaces\", Phil. Trans. 159, 1869.",
+      "A. Clebsch, \"Ueber die Flachen vierter Ordnung...\", Journal fur die reine und angewandte Mathematik 69, 1868 -- the diagonal surface.",
+      "W. Barth, \"Two projective surfaces with many nodes admitting the symmetries of the icosahedron\", J. Algebraic Geometry 5, 1996.",
+      "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien -- the named gallery surfaces in the _HAUSER block below."
     ],
     "verified": {
       "expressions_parse": true,
@@ -68,5 +71,24 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 137325,
+      "edges": 409094,
+      "faces": 271789,
+      "euler_characteristic": 20,
+      "components": 15,
+      "boundary_loops": 10,
+      "manifold": true,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.962917,
+        2.0,
+        1.53515
+      ],
+      "aspect_ratio": 0.767575
+    }
   }
 }

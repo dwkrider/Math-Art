@@ -41,7 +41,8 @@ sys.path.insert(0, HERE)
 # outside Blender.
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
-from surfdb import curation, mapping, polynomial, registry, views  # noqa: E402
+from surfdb import (curation, mapping, polynomial, references,  # noqa: E402
+                    registry, sources, tail, views)
 
 OUT = os.path.join(ROOT, "data", "surfaces")
 SCHEMA_VERSION = "0.1.0"
@@ -201,6 +202,27 @@ class Builder:
             specs.append({"label": label})
         return rec
 
+    # -- citations -------------------------------------------------------
+
+    def cite(self, rec, module_rel, line_no, label):
+        """Attach the vetted References block nearest to a row.
+
+        CLAUDE.md already requires every generator module to credit the
+        mathematics it implements, and those blocks are kept current by
+        whoever writes the generator.  Reading them beats retyping them:
+        a retyped citation goes subtly wrong and then looks authoritative.
+        The NEAREST block is used, because weierstrass.py carries 15 and
+        zoo.py 8 -- one per family section.
+        """
+        path = os.path.join(ROOT, "math_art", *module_rel.split(".")) + ".py"
+        got = references.for_row(path, line_no or 1, label)
+        if not got:
+            return
+        srcs = rec["provenance"].setdefault("sources", [])
+        for r in got:
+            if r not in srcs:
+                srcs.append(r)
+
     # -- dispositions ----------------------------------------------------
 
     def place(self, source, key, label, family, construction):
@@ -268,6 +290,10 @@ class Builder:
 
     def stage_algebraic(self):
         from surfaces import algebraic as A
+        alg_lines = registry.dict_key_lines(
+            open(os.path.join(ROOT, "math_art", "surfaces", "algebraic.py"),
+                 encoding="utf-8").read(),
+            r"^\s*\('([A-Z0-9_]+)',")
         for key, fam_key in sorted(A.SURFACE_FAMILY.items()):
             entry = A.PRESETS.get(key)
             if entry is None:
@@ -280,6 +306,7 @@ class Builder:
                  "family": fam_key, "key": key,
                  "definition_index": 0, "implemented": True})
             rec = self.records[slug]
+            self.cite(rec, "surfaces.algebraic", alg_lines.get(key), label)
             dfn = rec["definition"]
             dfn["mode"] = "implicit"
             dfn["fidelity"] = "exact"
@@ -435,6 +462,13 @@ class Builder:
 
     def stage_minimal(self):
         import minsurf
+        zoo_src = open(os.path.join(ROOT, "math_art", "minsurf", "zoo.py"),
+                       encoding="utf-8").read()
+        zoo_lines = registry.dict_key_lines(
+            zoo_src, r"^(?:    '|WE_SURFACES\[')([A-Z0-9_]+)'")
+        par_lines = registry.dict_key_lines(
+            open(os.path.join(ROOT, "math_art", "minsurf", "parametric.py"),
+                 encoding="utf-8").read(), r"^\s*'([A-Z0-9_]+)':")
         fam_family = {
             "CLASSICAL": "minimal", "BJORLING": "minimal", "SPHERES": "minimal",
             "TORI": "minimal", "HIGHER": "minimal", "NONORIENT": "minimal",
@@ -454,6 +488,10 @@ class Builder:
                  "family": fam_key, "key": key,
                  "definition_index": 0, "implemented": True})
             rec = self.records[slug]
+            if key in zoo_lines:
+                self.cite(rec, "minsurf.zoo", zoo_lines[key], label)
+            else:
+                self.cite(rec, "minsurf.parametric", par_lines.get(key), label)
             rec["curvature"]["condition"] = "minimal"
             rec["curvature"].setdefault(
                 "mean", {"exact": "0", "value": 0.0, "source": "classical"})
@@ -485,6 +523,9 @@ class Builder:
 
     def stage_tpms(self):
         import minsurf
+        tpms_lines = registry.dict_key_lines(
+            open(os.path.join(ROOT, "math_art", "minsurf", "tpms.py"),
+                 encoding="utf-8").read(), r"^\s*'([A-Z0-9_]+)':")
         for key in sorted(minsurf.TPMS):
             label = "%s surface" % key.replace("_", " ").title()
             slug = self.place(
@@ -494,6 +535,7 @@ class Builder:
                  "family": "TPMS", "key": key,
                  "definition_index": None, "implemented": True})
             rec = self.records[slug]
+            self.cite(rec, "minsurf.tpms", tpms_lines.get(key), label)
             rec["curvature"]["condition"] = "minimal"
             rec["symmetry"].update(kind="space", periodicity_rank=3)
             rec["topology"].update(complete=True, compact=False,
@@ -527,6 +569,7 @@ class Builder:
                  "family": "TPMS_EXACT", "key": key,
                  "definition_index": 0, "implemented": True})
             rec = self.records[slug]
+            self.cite(rec, "minsurf.tpms", tpms_lines.get(key), label)
             rec["curvature"]["condition"] = "minimal"
             rec["symmetry"].update(kind="space", periodicity_rank=3)
             rec["topology"].update(complete=True, compact=False)
@@ -573,13 +616,14 @@ class Builder:
                     "no rows extracted from %s -- its table shape may have "
                     "changed; the build will not silently emit nothing" % path)
                 continue
-            for key, label in rows:
+            for key, label, line in rows:
                 slug = self.place(
                     src, key, label, family,
                     {"generator": "math_art.%s" % module,
                      "operator_id": op, "key": key,
                      "definition_index": 0, "implemented": True})
                 rec = self.records[slug]
+                self.cite(rec, module, line, label)
                 if src in ("hyperbolic",):
                     rec["curvature"]["condition"] = "k-const-negative"
                 elif src == "spherical":
@@ -680,7 +724,9 @@ class Builder:
                 "blocked_by": None if exists else
                 "module %s not found in this tree" % module,
             })
-            if not exists:
+            if exists:
+                self.cite(rec, module, 1, name)
+            else:
                 self.problems.append(
                     "SINGLETONS names %s but %s does not exist" % (op, path))
             self.report.append(("singleton", slug, "emit", slug))
@@ -719,6 +765,9 @@ class Builder:
     def curate(self):
         for slug, rec in self.records.items():
             deep_merge(rec, curation.facts_for(slug))
+            poly = curation.polyhedral_analogue(slug)
+            if poly:
+                rec.setdefault("relations", {})["polyhedral_analogue"] = poly
 
         # suspected-identity edges, both directions
         for ent in mapping.SUSPECTED_SAME:
@@ -733,6 +782,10 @@ class Builder:
                                     "source": ent["source"]})
 
     def finish(self):
+        for slug, rec in self.records.items():
+            self._named_after(rec)
+            self._resolve_ids(slug, rec)
+            self._definition_note(rec)
         for rec in self.records.values():
             if not rec["provenance"].get("sources"):
                 rec["provenance"]["sources"] = [
@@ -742,6 +795,61 @@ class Builder:
             if rec.get("tradition"):
                 rec["tradition"] = sorted(set(rec["tradition"]))
             views.apply_all(rec)
+
+    def _named_after(self, rec):
+        """Whose name the surface carries.
+
+        Set only when a surname in the LABEL also appears in one of the
+        record's citations -- two independent confirmations. `named_after`
+        rather than `discovered_by` deliberately: "Wei Doubly Periodic" is
+        certainly named for Wei, but asserting Wei DISCOVERED it is a
+        stronger claim than the label supports, and the database does not
+        make claims it cannot back.
+        """
+        if rec.get("named_after") or rec.get("discovered_by"):
+            return
+        names = references.surnames(rec.get("name", ""))
+        if not names:
+            return
+        cited = " ".join((rec.get("provenance") or {}).get("sources") or [])
+        hit = sorted(n for n in names if n in cited)
+        if hit:
+            rec["named_after"] = ", ".join(hit)
+
+    def _resolve_ids(self, slug, rec):
+        """Cross-reference IDs that RESOLVE against the local mirrors."""
+        ids = rec.setdefault("ids", {})
+        if not ids.get("mathcurve"):
+            got = sources.mathcurve_id(slug, rec.get("name", ""))
+            if got:
+                ids["mathcurve"] = got
+        if not ids:
+            rec.pop("ids", None)
+
+    def _definition_note(self, rec):
+        """No silent blanks: say when the defining datum is not stored.
+
+        A record whose definition carries neither a polynomial, a chart,
+        Weierstrass data nor a level function is not thereby WRONG -- most
+        of the Weierstrass zoo is built by a dedicated function with no
+        extractable closed form. But an empty definition block reads like
+        an oversight, so it states the situation and names what IS
+        authoritative.
+        """
+        for d in [rec["definition"]] + list(rec.get("alternate_definitions") or []):
+            has = any(d.get(k) for k in
+                      ("polynomial", "x", "gauss_map", "level_function",
+                       "profile_curve", "energy", "operation",
+                       "construction_rule"))
+            if has or d.get("note"):
+                continue
+            gen = next((c.get("generator") for c in rec.get("construction") or []
+                        if c.get("generator")), None)
+            d["note"] = (
+                "No closed form is stored for this surface. It is defined by "
+                "its shipped implementation" + (" in %s" % gen if gen else "")
+                + ", which is authoritative; an unverified transcription "
+                "would silently define a different surface.")
 
     def write(self):
         written = 0
@@ -1036,8 +1144,13 @@ SINGLETONS = [
     ("minimal-polyhedron", "Minimal Polyhedron", "discrete",
      "minimal_polyhedron_generator", "mesh.minimal_surface_polyhedron_add",
      "minimal"),
+    # NOTE: math_art/pearce_surface.py is a LIBRARY -- it defines no
+    # operator. An earlier revision listed "mesh.pearce_surface_add",
+    # which does not exist; the drive stage caught it by trying to call
+    # it. Pearce's saddle surfaces are reached through the saddle
+    # polyhedron generator, which is where the record points.
     ("pearce-saddle-surface", "Pearce Saddle Surface", "discrete",
-     "pearce_surface", "mesh.pearce_surface_add", "none"),
+     "pearce_surface", "mesh.saddle_polyhedron_add", "none"),
 ]
 
 
@@ -1210,6 +1323,9 @@ MISSING = {
                   "tradition": ["classical", "architectural"]},
     },
 }
+
+
+MISSING.update(tail.records())
 
 
 def main():

@@ -16,6 +16,16 @@
 # ruled strips between two perpendicular circles after Kit Wallace's
 # "ruled Mobius strip" experiments (kitwallace.tumblr.com/post/
 # 85762927079), including his true one-edged Mobius surface.
+#
+# References:
+# - P. Schatz, the oloid (1929); see "Rhythmusforschung und Technik"
+#   (1975) for his own account of the invertible cube it came from.
+# - H. Dirnboeck and H. Stachel, "The Development of the Oloid",
+#   J. Geometry and Graphics 1 (1997) 105-118 -- the exact ruling used
+#   here, and the result that every ruling has length sqrt(3).
+# - K. Wallace, "ruled Mobius strip" experiments,
+#   kitwallace.tumblr.com/post/85762927079 -- the two-circle roller and
+#   the one-edged ruled surface.
 
 bl_info = {
     "name": "Oloid & Ruled Surfaces",
