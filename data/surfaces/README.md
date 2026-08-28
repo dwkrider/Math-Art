@@ -50,13 +50,22 @@ A mesh is a rendering at a chosen resolution; the record carries a reproducible
 recipe (`mesh_recipe`) and *measured* invariants instead. This is the same
 argument by which `data/polyhedra` omits nets, one level up.
 
-**3. Fidelity is a separate axis from exactness.** A definition can be
-*evaluated* exactly, by numerical integral, or through a solved parameter —
-and, orthogonally, it either **is** the surface or **approximates** it. The 23
-nodal TPMS are approximations: `sin x cos y + sin y cos z + sin z cos x = 0`
-defines a surface that is **not** the gyroid, and whose mean curvature is wrong
-at the percent level. Recording `fidelity` is what lets the validator hold the
-exact rows to 10⁻⁸ while holding the nodal rows to their own published residual.
+**3. Fidelity is a separate axis from exactness, and it is MEASURED.** A
+definition can be *evaluated* exactly, by numerical integral, or through a
+solved parameter — and, orthogonally, it either **is** the surface or
+**approximates** it. `sin x cos y + sin y cos z + sin z cos x = 0` defines a
+surface that is **not** the gyroid; measured, its mean curvature reaches
+0.032 where a minimal surface has 0.
+
+Fidelity is not asserted but observed: each nodal level function is sampled and
+the residual stored, and the spread is far wider than "a good fit" suggests —
+the gyroid manages 0.032 and Schwarz D 0.058, while `CD` reaches **2.49** and
+Fischer–Koch C(S) 1.98, which is order-unity error, not percent-level. Two
+consequences fall straight out. The validator can hold exact rows to 10⁻⁸ while
+holding each approximation to *its own* number. And one row turns out not to be
+an approximation at all: `SCHERKT` measures max|H| = 0, because
+`sin z − sinh x sinh y` is Scherk's second surface **exactly**, and it is now
+recorded as exact despite sitting in the nodal table.
 
 **4. Symmetry needs five kinds of group, not one.** Point groups for bounded
 surfaces, continuous groups for surfaces of revolution, rod groups for

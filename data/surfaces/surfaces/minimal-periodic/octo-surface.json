@@ -19,10 +19,11 @@
     "approximates": null,
     "scale": "unit_cell",
     "lattice": "cubic",
+    "level": 0.0,
     "residual": {
       "max_abs_mean_curvature": null,
       "measured_at_resolution": null,
-      "note": "The nodal level set is a truncated Fourier fit, NOT the minimal surface: its mean curvature is wrong at the percent level. Measured by tools/surfdb_validate.py."
+      "note": "No level function is stored for this row, so the cost of the approximation has not been measured."
     },
     "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself."
   },

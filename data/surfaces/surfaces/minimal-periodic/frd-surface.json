@@ -19,17 +19,28 @@
     "approximates": null,
     "scale": "unit_cell",
     "lattice": "cubic",
+    "level": 0.0,
     "residual": {
-      "max_abs_mean_curvature": null,
-      "measured_at_resolution": null,
-      "note": "The nodal level set is a truncated Fourier fit, NOT the minimal surface: its mean curvature is wrong at the percent level. Measured by tools/surfdb_validate.py."
+      "max_abs_mean_curvature": 0.597723,
+      "measured_at_resolution": 120,
+      "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
     },
-    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself."
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
+    "level_function": "(4 * cos(x) * cos(y) * cos(z) - (cos(2 * x) * cos(2 * y) + cos(2 * y) * cos(2 * z) + cos(2 * z) * cos(2 * x)))"
   },
   "curvature": {
     "condition": "minimal",
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.5977227026241899,
+        "resolution": 120,
+        "tolerance": 0.7172676,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -65,6 +76,7 @@
       "expressions_parse": true,
       "exact_values_match": true,
       "generated_fields_match": true,
+      "curvature_condition": true,
       "tolerance": 0.002
     }
   },

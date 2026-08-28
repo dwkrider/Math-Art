@@ -41,8 +41,9 @@ sys.path.insert(0, HERE)
 # outside Blender.
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
-from surfdb import (charts, curation, mapping, polynomial,  # noqa: E402
-                    references, registry, sources, tail, views, wedata)
+from surfdb import (charts, curation, invariants, mapping,  # noqa: E402
+                    nodal, polynomial, references, registry, sources,
+                    tail, views, wedata)
 
 OUT = os.path.join(ROOT, "data", "surfaces")
 SCHEMA_VERSION = "0.1.0"
@@ -521,11 +522,70 @@ class Builder:
                 rec["topology"]["one_sided"] = True
             rec.setdefault("tradition", []).append("classical")
 
+    EXACT_TOL = 1e-6
+
+    def _nodal_block(self, key, level_fns, oracle):
+        """The nodal definition for a TPMS row, with its fidelity MEASURED.
+
+        Fidelity is not asserted here, it is observed. Every TPMS row was
+        previously stamped `approximation` on the assumption that a nodal
+        level set approximates its minimal surface -- true for most of
+        them, and false for SCHERKT, whose level function
+        sin(z) - sinh(x)*sinh(y) is Scherk's second surface EXACTLY and
+        measures max|H| = 0. Measuring instead of assuming is also what
+        finally gives the two-tier tolerance real numbers: before this,
+        every residual was null and the approximations were ungated.
+        """
+        text = level_fns.get(key)
+        block = {
+            "mode": "nodal", "fidelity": "approximation",
+            "approximates": 0, "scale": "unit_cell", "lattice": "cubic",
+            "level": 0.0,
+            "residual": {"max_abs_mean_curvature": None,
+                         "measured_at_resolution": None,
+                         "note": "No level function is stored for this row, "
+                                 "so the cost of the approximation has not "
+                                 "been measured."},
+            "note": "Standard nodal approximation as shipped in "
+                    "math_art/minsurf/tpms.py.",
+        }
+        if not text:
+            return block
+        ok, detail = nodal.verify(text, oracle)
+        if not ok:
+            self.problems.append(
+                "nodal level function for %s disagrees with the shipped "
+                "implementation: %s" % (key, detail))
+            return block
+        block["level_function"] = text
+        st = invariants.sample_curvature(text, extent=3.2, n=120)
+        if st is None:
+            return block
+        h = st["max_abs_H"]
+        block["residual"] = {
+            "max_abs_mean_curvature": round(h, 6),
+            "measured_at_resolution": st["samples"],
+            "note": ("Measured: the level set's mean curvature over %d "
+                     "on-surface samples. A nodal fit is a truncated Fourier "
+                     "series, not the minimal surface." % st["samples"]),
+        }
+        if h <= self.EXACT_TOL:
+            # not an approximation at all
+            block["fidelity"] = "exact"
+            block["exactness"] = "elementary"
+            block.pop("approximates", None)
+            block["residual"]["note"] = (
+                "Measured max|H| = %.2g, i.e. minimal to numerical precision: "
+                "this level function defines the surface EXACTLY and is not "
+                "an approximation, despite sitting in the nodal table." % h)
+        return block
+
     def stage_tpms(self):
         import minsurf
         tpms_lines = registry.dict_key_lines(
             open(os.path.join(ROOT, "math_art", "minsurf", "tpms.py"),
                  encoding="utf-8").read(), r"^\s*'([A-Z0-9_]+)':")
+        level_fns = nodal.extract(minsurf.TPMS)
         for key in sorted(minsurf.TPMS):
             label = "%s surface" % key.replace("_", " ").title()
             slug = self.place(
@@ -543,22 +603,10 @@ class Builder:
             rec["metrics"] = dict(rec.get("metrics") or {},
                                   normalization="unit_cell")
             rec.setdefault("tradition", []).append("crystallographic")
-            # THE nodal block: an approximation, not the surface.
-            nodal = {
-                "mode": "nodal", "fidelity": "approximation",
-                "approximates": 0, "scale": "unit_cell",
-                "lattice": "cubic",
-                "residual": {
-                    "max_abs_mean_curvature": None,
-                    "measured_at_resolution": None,
-                    "note": "The nodal level set is a truncated Fourier fit, "
-                            "NOT the minimal surface: its mean curvature is "
-                            "wrong at the percent level. Measured by "
-                            "tools/surfdb_validate.py."},
-                "note": "Standard nodal approximation as shipped in "
-                        "math_art/minsurf/tpms.py.",
-            }
-            self._attach_nodal(rec, nodal)
+            # The nodal block, with its fidelity MEASURED rather than
+            # assumed -- see _nodal_block.
+            self._attach_nodal(rec, self._nodal_block(
+                key, level_fns, minsurf.TPMS[key][1]))
 
         for key in sorted(minsurf.TPMS_EXACT):
             label = "%s (exact)" % key
@@ -596,11 +644,12 @@ class Builder:
                 alts.append(nodal)
         else:
             nodal = dict(nodal)
-            nodal["approximates"] = None
-            nodal["note"] = (
-                nodal["note"] + " No exact definition is stored for this "
-                "surface, so this approximation is all the record has; "
-                "`approximates` is null rather than pointing at itself.")
+            if nodal.get("fidelity") == "approximation":
+                nodal["approximates"] = None
+                nodal["note"] = (
+                    nodal["note"] + " No exact definition is stored for this "
+                    "surface, so this approximation is all the record has; "
+                    "`approximates` is null rather than pointing at itself.")
             rec["definition"] = nodal
 
     def stage_flat(self, only_stage=None):

@@ -8840,7 +8840,6 @@
       "primary_family": "minimal-periodic",
       "families": [
         "def-nodal",
-        "has-approximation",
         "immersed",
         "implemented",
         "minimal",
@@ -8849,7 +8848,7 @@
         "triply-periodic"
       ],
       "definition_mode": "nodal",
-      "has_approximation": true,
+      "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,

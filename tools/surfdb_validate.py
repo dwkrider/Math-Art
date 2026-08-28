@@ -363,7 +363,16 @@ def check_curvature_numeric(slug, rec, rep):
         poly = d.get("polynomial")
         mode = d.get("mode")
         stats = None
-        if mode == "implicit" and poly:
+        # A nodal level function IS an implicit level set; the mode
+        # names where it came from, not how it is evaluated.
+        if mode == "nodal" and d.get("level_function"):
+            try:
+                stats = invariants.sample_curvature(
+                    d["level_function"], env, extent=3.2, n=120)
+            except Exception as exc:                 # noqa: BLE001
+                rep.warn(slug, "nodal curvature sampling raised: %s" % exc)
+                continue
+        elif mode == "implicit" and poly:
             clip = d.get("clip") or {}
             extent = clip.get("radius") or 1.6
             extent = float(min(max(extent, 0.6), 2.5))
@@ -391,8 +400,13 @@ def check_curvature_numeric(slug, rec, rep):
         # gated as if they were.
         tol = 2e-3
         if d.get("fidelity") == "approximation":
-            tol = ((d.get("residual") or {}).get("max_abs_mean_curvature")
-                   or 1e9)
+            stored = (d.get("residual") or {}).get("max_abs_mean_curvature")
+            # Held to its OWN measured residual, with a 20% margin for
+            # sampling scatter. Before the residuals were measured this
+            # fell back to 1e9, which meant the approximations were not
+            # gated at all -- the two-tier design existed and checked
+            # nothing.
+            tol = (stored * 1.2) if stored else 1e9
         verdict, detail = invariants.check_condition(cond, stats, tol=tol)
         if verdict is False:
             rep.err(slug, "definition[%d] claims %r but measures %s"

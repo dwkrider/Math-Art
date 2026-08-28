@@ -8,7 +8,7 @@ Single entry point for anyone (human or agent) picking this up. Read this, then
 **363 records, 298 implemented, 0 validator errors, 8 warnings.**
 
 Defining data: 105 implicit polynomials, 20 parametric charts, 15 Weierstrass
-pairs — every one verified, none taken on trust.
+pairs, 20 nodal level functions — every one verified, none taken on trust.
 
 ```sh
 python tools/surfdb_build.py            # rebuild everything, ~40 s, no Blender
@@ -64,9 +64,15 @@ empty scene.
   `curvature.also_satisfies`, `topology.class` and `fabrication` are
   *generated* and the validator regenerates and compares. Do not hand-edit them.
 - **Meshes are not stored.** A recipe plus measured invariants.
-- **`fidelity` is separate from `exactness`.** The nodal TPMS are
-  `approximation`s gated at their own residual. Do not "fix" this by gating
-  everything at one tolerance — that either fails all 23 or blinds the exact rows.
+- **`fidelity` is separate from `exactness`, and it is MEASURED, not asserted.**
+  Each nodal level function is sampled at build time and its residual stored;
+  the validator then gates each approximation at its own number (with a 20%
+  margin). Do not "fix" this by gating everything at one tolerance — that either
+  fails all 23 or blinds the exact rows. The residuals span 0.032 (gyroid) to
+  2.49 (CD), so a single tolerance cannot serve them.
+- **SCHERKT is EXACT, not an approximation.** It measures max|H| = 0 because
+  `sin z - sinh x sinh y` is Scherk's second surface exactly. It was stamped
+  `approximation` only because every TPMS row was, and measuring corrected it.
 - **One record per surface, one per family.** Alternate constructions go in
   `alternate_definitions`; regimes go in `specimens`; promotion needs its own
   name, literature *and* symmetry group.
@@ -160,10 +166,10 @@ strand.
 
 Database work that remains, none of it blocking:
 
-- **Defining data is stored for 134 of 363 records** — 105 implicit
-  polynomials, 20 parametric charts, 15 Weierstrass pairs. The curvature check
-  now proves 24 conditions (was 7) and one total-curvature/Gauss-degree
-  cross-check. All counts are *reported* by `--slow` so the number is never
+- **Defining data is stored for 154 of 363 records** — 105 implicit
+  polynomials, 20 parametric charts, 15 Weierstrass pairs, 20 nodal level
+  functions. The curvature check now proves 44 conditions (was 7) and one
+  total-curvature/Gauss-degree cross-check. All counts are *reported* by `--slow` so the number is never
   mistaken for "everything was proved".
 
   The remaining ~229 are genuinely not expressible: the multi-soliton and
