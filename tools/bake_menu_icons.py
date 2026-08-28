@@ -74,6 +74,91 @@ def _invoke(op, kwargs):
     getattr(getattr(bpy.ops, mod), fn)(**kwargs)
 
 
+#: The icon look, which is NOT the docs look, and the reasoning is worth
+#: keeping because two earlier attempts fixed one half and broke the
+#: other.  An icon fails in two different ways depending on its subject:
+#:
+#: * Coloured subjects wash out.  AgX at -0.5 -- right for a figure on a
+#:   page -- drives every channel to clipping, and the saddle palette,
+#:   whose colours are (0.85, 0.30, 0.24) and friends, measured 0.21
+#:   mean saturation.
+#: * White subjects go flat.  render_docs' rig runs TWO rim lights at
+#:   750 W each against a 320 W key.  A rim is meant to draw an edge; at
+#:   more than twice the key it wraps round and fills the shadow side,
+#:   and a white plastic subject keeps no gradient to read the form by.
+#:
+#: Exposure alone cannot serve both, because it scales the whole rig
+#: together: pulling it down to Standard/-3.5 lifted saturation to 0.36
+#: and left white subjects a flat grey (0.156 luminance spread).  Two
+#: independent changes are needed, one per failure.
+#:
+#: The tone curve does the colour half.  Khronos PBR Neutral exists to
+#: roll highlights off WITHOUT the desaturation and hue shift a filmic
+#: curve introduces, which is exactly the complaint; it beat every AgX
+#: and Standard variant on saturation and on shading at once.  The rim
+#: scale does the shading half, bringing the rims back under the key
+#: where three-point practice puts them.
+#:
+#: The EXPOSURE is set by the convex subjects, and this is the part a
+#: sweep on one spiky solid gets wrong.  A star self-shadows, so it
+#: shows a wide luminance range under any rig and reads fine at -1.0.
+#: A convex white solid inside a five-light surround does not: measured
+#: at -1.0, the geodesic sphere renders with mean luminance 0.875 and a
+#: 5th-to-95th-percentile range of 0.48 to 0.98, so its shading is real
+#: (spread 0.157) but squeezed into the top eighth of the scale where
+#: the eye cannot see it.  Nothing is clipped -- it is simply all white.
+#: Dropping to -2.5 puts that same sphere at mean 0.62 over a 0.23-0.83
+#: range, and the facets appear.  Judge exposure on a BALL, not a star.
+#:
+#: Measured against Standard/-3.5, on the tetrahedral decahedron:
+#: saturation 0.43 vs 0.36; on the geodesic sphere, luminance spread
+#: 0.20 vs 0.16 with the range no longer crushed against white.
+#: Re-measure with tools/icon_lighting_sweep.py before changing these.
+VIEW_TRANSFORM = 'Khronos PBR Neutral'
+VIEW_TRANSFORM_FALLBACK = ('AgX', 'Standard')
+EXPOSURE = -2.5
+RIM_SCALE = 0.35
+
+
+def _icon_look(scene, plan=False):
+    """Colour management and light ratios for an icon, not a figure.
+
+    Call this AFTER `subjects.aim_rig`, never only before it.  aim_rig
+    re-points the rig per subject and, in doing so, restores each
+    light's energy from the snapshot `capture_rig` took and sets the
+    view transform and exposure itself -- so anything configured in
+    `_setup` alone is silently overwritten on every bake.  That is what
+    made the earlier colour-management fix look like it had no effect
+    on the menu icons: it never reached them.
+
+    Restoring-then-scaling is also why the rim multiply here is safe to
+    run once per bake: aim_rig has just reset the energy to the
+    captured full value, so the scale never compounds.
+
+    Plan views are left alone.  They are flat coloured tilings shot
+    head-on, and subjects.aim_rig already dims the rig to a quarter and
+    kills the specular lobe for them -- a separate, working fix for a
+    different problem.
+    """
+    if plan:
+        return
+    vs = scene.view_settings
+    for name in (VIEW_TRANSFORM,) + VIEW_TRANSFORM_FALLBACK:
+        # `view_transform` is a DYNAMIC enum -- its items come from the
+        # loaded OCIO config at runtime, so bl_rna reports none of them
+        # and the only way to test a name is to assign it and look.
+        try:
+            vs.view_transform = name
+        except TypeError:
+            continue
+        if vs.view_transform == name:
+            break
+    vs.exposure = EXPOSURE
+    for obj in bpy.data.objects:
+        if obj.type == 'LIGHT' and obj.name.startswith("Rim Light"):
+            obj.data.energy *= RIM_SCALE
+
+
 def _setup():
     """Studio rig, tuned for a small icon on a transparent background."""
     rd.setup_studio()
@@ -88,18 +173,7 @@ def _setup():
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = 'PNG'
     scene.render.image_settings.color_mode = 'RGBA'
-    # COLOUR MANAGEMENT, and this is what stops icons washing out.  The
-    # docs rig shoots AgX at -0.5 exposure, which is right for a figure
-    # on a page but leaves an icon nearly white: measured on the
-    # decatrihedron, AgX/-0.5 renders at saturation 0.095 against a
-    # palette whose colours are (0.85, 0.30, 0.24) and friends.  The
-    # lights simply drive every channel to clipping, and as
-    # render_docs.matte_subjects already notes, exposure and light
-    # energy cannot fix a ratio -- but they CAN stop the clipping that
-    # destroys it.  Standard at -3.5 measures 0.33 to 0.38, three to
-    # four times the saturation, while staying bright.
-    scene.view_settings.view_transform = 'Standard'
-    scene.view_settings.exposure = -3.5
+    _icon_look(scene)
     scene.cycles.samples = SAMPLES
     scene.render.resolution_x = RES * SUPERSAMPLE
     scene.render.resolution_y = RES * SUPERSAMPLE
@@ -181,7 +255,11 @@ def bake(op):
 
 def _bake(op):
     rd.clear_sculpts()
-    subjects.aim_rig(op in subjects.PLAN_VIEW)
+    plan = op in subjects.PLAN_VIEW
+    subjects.aim_rig(plan)
+    # aim_rig has just overwritten the view transform, the exposure and
+    # every light's energy; put the icon look back on top of it.
+    _icon_look(bpy.context.scene, plan)
     # Operators that transform a selection need something to act on;
     # the setup builds it, and it is dropped once consumed so only the
     # generated surface is framed and rendered.
