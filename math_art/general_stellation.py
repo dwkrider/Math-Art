@@ -674,7 +674,16 @@ class StellationEngine(object):
                         'a single hand' % (base, token))
                 return set(sh['hands'][hand])
 
-        known = list(self.labels) + sorted(self.classical)
+        # Name each shell once, by its classical name where it has one --
+        # listing 'a' twice because it is both canonical and classical helps
+        # nobody find their typo.  Classical names are listed in their own
+        # order, not this engine's: it sorts each power by radius and so
+        # would print 'e2 e1 f2 f1', which reads as a mistake to anyone who
+        # knows the notation.
+        if self.classical:
+            known = [lb for lb in DUVAL_LABELS if lb in self.classical]
+        else:
+            known = [sh['classical'] or sh['label'] for sh in self.shells]
         raise KeyError('unknown shell %r for seed %r; known: %s'
                        % (token, self.name, ' '.join(known)))
 
@@ -2017,13 +2026,35 @@ def _self_test():
 
 
 # --------------------------------------------------------------------------
-# Blender operator -- Seed + Stellation dropdowns.  The named-preset enum is
-# static (no arrangement enumeration to populate the UI); the ~1s cell
-# enumeration for a seed runs lazily on the first build and is cached.
+# Blender operator -- the ONE stellation generator.
+#
+# This operator is the merge of what used to be two: "Icosahedron Stellation"
+# (the fifty-nine, out of stellation_engine.py) and "General Stellation" (all
+# seven seeds, out of this module).  They overlapped on the icosahedron with
+# different engines and different notation, which meant two of everything --
+# two doc pages, two icons, two places to add any new feature -- for one idea.
+#
+# The merge keeps this module's ENGINE (only it handles non-isohedral seeds,
+# where a face plane's distance from the centre varies) and the icosahedron
+# operator's IDENTITY and UI (only it had the Crennell index and the shell
+# toggles).  Keeping `mesh.icosahedron_stellation_add` as the bl_idname, with
+# `solid`'s item ids and default unchanged and `seed` defaulting to the
+# icosahedron, means a .blend built with the old operator reopens and
+# rebuilds identically.  `mesh.general_stellation_add` survives as a
+# deprecated shim so its objects stay live-editable too.
+#
+# Shell toggles are a fixed bank of properties drawn with per-seed labels:
+# Blender fixes the property set at class-definition time, but `text=`
+# overrides the label at draw time, so one bank serves seeds with 4 shells
+# and seeds with 29.  The first eleven keep their classical names (`sh_e1`,
+# `sh_f1`, ...) so stored settings from the old operator still land on the
+# shell they named.  Past the end of the bank the Cell Code field is the
+# escape hatch -- the bank is a UI limit, not a limit on what can be built.
 # --------------------------------------------------------------------------
 try:
     import bpy
-    from bpy.props import EnumProperty, FloatProperty
+    from bpy.props import (EnumProperty, FloatProperty, BoolProperty,
+                           StringProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -2033,8 +2064,62 @@ if _IN_BLENDER:
 
     _SEED_ITEMS = [(s, s.replace('_', ' ').title(), "") for s in SEEDS]
     _PRESET_CACHE = {}
+    _ENGINE_CACHE = {}
 
-    def _stell_items(self, context):
+    # The toggle bank.  The first eleven carry Du Val's names, which is what
+    # the icosahedron operator called them before the merge; the rest are
+    # positional.  29 covers every seed shipped -- the rhombic
+    # triacontahedron is the widest, at 29 shells.
+    _SLOT_PROPS = (['sh_' + lb for lb in DUVAL_LABELS]
+                   + ['sh_%02d' % i for i in range(11, 29)])
+
+    _FAMOUS = {
+        1: "Icosahedron", 2: "First stellation (small triambic)",
+        3: "Compound of 5 octahedra", 4: "Third stellation",
+        6: "Second stellation", 7: "Great icosahedron",
+        8: "Final stellation (echidnahedron)",
+        22: "Compound of 10 tetrahedra", 26: "Excavated dodecahedron",
+        30: "Medial triambic icosahedron",
+        47: "Compound of 5 tetrahedra (chiral)",
+    }
+
+    def _crennell_items():
+        items = []
+        for k in range(1, 60):
+            nm = _FAMOUS.get(k, "Du Val %s" % _CRENNELL_STR[k])
+            kind = "reflexible" if k in CRENNELL_REFLEXIBLE else "chiral"
+            items.append((str(k), "%2d. %s" % (k, nm),
+                          "Du Val %s (%s)" % (_CRENNELL_STR[k], kind)))
+        items.append(('CUSTOM', "Custom (shell toggles)",
+                      "Choose Du Val shells a..g3 by hand"))
+        return items
+
+    # Static, so `default='8'` still works and the item ids ('1'..'59',
+    # 'CUSTOM') are exactly the ones already stored in users' files.
+    _ITEMS = _crennell_items()
+
+    def _engine_for(seed):
+        """Cached engine for a seed.  Enumerating the arrangement costs
+        about a second, so it happens once, lazily, and never during a draw
+        that does not need shell labels."""
+        if seed not in _ENGINE_CACHE:
+            _ENGINE_CACHE[seed] = stellations_of(seed)
+        return _ENGINE_CACHE[seed]
+
+    def _slot_labels(seed):
+        """Shell labels for the toggle bank, in the order drawn.
+
+        The icosahedron is drawn in Du Val's order (a b c d e1 e2 f1 f2 g1
+        g2 g3), which is NOT this engine's internal order: it sorts each
+        power by radius and so puts e2 before e1, and f2 before f1.  Slot i
+        has to mean the shell whose name is printed on it.
+        """
+        eng = _engine_for(seed)
+        if seed == 'icosahedron':
+            return list(DUVAL_LABELS)
+        return list(eng.labels)
+
+    def _preset_items(self, context):
         seed = self.seed or SEEDS[0]
         if seed not in _PRESET_CACHE:
             _PRESET_CACHE[seed] = [(k, title, note)
@@ -2043,32 +2128,101 @@ if _IN_BLENDER:
         return _PRESET_CACHE[seed]
 
     def _seed_update(self, context):
-        ids = [it[0] for it in _stell_items(self, context)]
-        if ids and self.stellation not in ids:
-            self.stellation = ids[0]
+        ids = [it[0] for it in _preset_items(self, context)]
+        if ids and self.preset not in ids:
+            self.preset = ids[0]
 
     try:
         from .styles import net_style as _net_style
     except ImportError:
         from styles import net_style as _net_style
 
-    class MESH_OT_general_stellation_add(bpy.types.Operator,
-                                         _net_style.NetStyleProps):
-        """Add a stellation of a seed polyhedron (icosahedron, dodecahedron,
-        cuboctahedron, or rhombic triacontahedron) -- built from the bounded
-        cells of the seed's face-plane arrangement, grouped into symmetry
-        shells"""
-        bl_idname = "mesh.general_stellation_add"
-        bl_label = "General Stellation"
+    class MESH_OT_icosahedron_stellation_add(bpy.types.Operator,
+                                             _net_style.NetStyleProps):
+        """Add a stellation of a seed polyhedron -- the solid whose faces lie
+        in the seed's own face planes.  Any of the 59 icosahedra (Coxeter/
+        Du Val/Flather/Petrie) by Crennell index, a named stellation of
+        another seed, or a cell set chosen by hand"""
+        bl_idname = "mesh.icosahedron_stellation_add"
+        bl_label = "Stellation"
         bl_options = {'REGISTER', 'UNDO'}
 
-        seed: EnumProperty(name="Seed", items=_SEED_ITEMS,
-                           update=_seed_update,
-                           description="Base polyhedron whose face-plane "
-                                       "arrangement is stellated")
-        stellation: EnumProperty(name="Stellation", items=_stell_items,
-                                 description="Which named stellation of the "
-                                             "seed to build")
+        seed: EnumProperty(
+            name="Seed", items=_SEED_ITEMS, default='icosahedron',
+            update=_seed_update,
+            description="Base polyhedron whose face-plane arrangement is "
+                        "stellated. Its own symmetry decides which cells are "
+                        "interchangeable, and so what counts as a shell")
+        mode: EnumProperty(
+            name="Select by",
+            items=[('PRESET', "Named",
+                    "Pick a published stellation by name"),
+                   ('CUSTOM', "Shells",
+                    "Switch individual cell shells on and off"),
+                   ('CODE', "Cell code",
+                    "Type a shell code, e.g. Du Val 'a b c d e1' -- the "
+                    "notation the literature uses")],
+            default='PRESET',
+            description="How to choose which cells are solid")
+        solid: EnumProperty(
+            name="Stellation", items=_ITEMS, default='8',
+            description="Which stellation to build, by Crennell index 1-59, "
+                        "or Custom to pick Du Val shells by hand")
+        preset: EnumProperty(
+            name="Stellation", items=_preset_items,
+            description="Which named stellation of the seed to build")
+
+        _SH_DESC = ("Fill this cell shell when building a custom stellation "
+                    "(inner shell first)")
+        sh_a: BoolProperty(name="a (core)", default=True, description=_SH_DESC)
+        sh_b: BoolProperty(name="b", default=True, description=_SH_DESC)
+        sh_c: BoolProperty(name="c", default=False, description=_SH_DESC)
+        sh_d: BoolProperty(name="d", default=False, description=_SH_DESC)
+        sh_e1: BoolProperty(name="e1", default=False, description=_SH_DESC)
+        sh_e2: BoolProperty(name="e2", default=False, description=_SH_DESC)
+        sh_f1: BoolProperty(name="f1 (chiral)", default=False,
+                            description=_SH_DESC)
+        sh_f2: BoolProperty(name="f2", default=False, description=_SH_DESC)
+        sh_g1: BoolProperty(name="g1", default=False, description=_SH_DESC)
+        sh_g2: BoolProperty(name="g2", default=False, description=_SH_DESC)
+        sh_g3: BoolProperty(name="g3 (outer)", default=False,
+                            description=_SH_DESC)
+        sh_11: BoolProperty(name="11", default=False, description=_SH_DESC)
+        sh_12: BoolProperty(name="12", default=False, description=_SH_DESC)
+        sh_13: BoolProperty(name="13", default=False, description=_SH_DESC)
+        sh_14: BoolProperty(name="14", default=False, description=_SH_DESC)
+        sh_15: BoolProperty(name="15", default=False, description=_SH_DESC)
+        sh_16: BoolProperty(name="16", default=False, description=_SH_DESC)
+        sh_17: BoolProperty(name="17", default=False, description=_SH_DESC)
+        sh_18: BoolProperty(name="18", default=False, description=_SH_DESC)
+        sh_19: BoolProperty(name="19", default=False, description=_SH_DESC)
+        sh_20: BoolProperty(name="20", default=False, description=_SH_DESC)
+        sh_21: BoolProperty(name="21", default=False, description=_SH_DESC)
+        sh_22: BoolProperty(name="22", default=False, description=_SH_DESC)
+        sh_23: BoolProperty(name="23", default=False, description=_SH_DESC)
+        sh_24: BoolProperty(name="24", default=False, description=_SH_DESC)
+        sh_25: BoolProperty(name="25", default=False, description=_SH_DESC)
+        sh_26: BoolProperty(name="26", default=False, description=_SH_DESC)
+        sh_27: BoolProperty(name="27", default=False, description=_SH_DESC)
+        sh_28: BoolProperty(name="28", default=False, description=_SH_DESC)
+
+        hand: EnumProperty(
+            name="Chirality",
+            items=[('BOTH', "Both hands",
+                    "Fill the whole shell, giving a reflexible solid"),
+                   ('A', "One hand", "Keep one enantiomorph only"),
+                   ('B', "Other hand", "Keep the mirror enantiomorph")],
+            default='BOTH',
+            description="A chiral shell splits into a mirror-image pair of "
+                        "half-shells. Keeping one gives a chiral stellation "
+                        "-- this is what separates Crennell 33-59 from their "
+                        "reflexible namesakes")
+        cell_code: StringProperty(
+            name="Cell Code", default="a b c d e1",
+            description="Shell labels separated by spaces. Du Val names work "
+                        "for the icosahedron; add 'a' or 'b' to a chiral "
+                        "shell to keep one hand, e.g. 'f1a'")
+
         style: EnumProperty(
             name="Style",
             description="How the stellation is rendered",
@@ -2081,7 +2235,7 @@ if _IN_BLENDER:
                     "as small spheres (ball-and-stick model)"),
                    ('WIREFRAME', "Wireframe",
                     "Mesh edges only, displayed as a wireframe"),
-            _net_style.net_enum_item()],
+                   _net_style.net_enum_item()],
             default='SOLID')
         border: FloatProperty(name="Border", default=0.06, min=0.005, max=1.0,
                               description="Leonardo face frame width")
@@ -2092,27 +2246,98 @@ if _IN_BLENDER:
             description="Ball-and-stick edge cylinder radius")
         node_radius: FloatProperty(
             name="Node Radius", default=0.035, min=0.0, max=0.5,
-            description="Ball-and-stick vertex sphere radius "
-                        "(0 = no nodes)")
+            description="Ball-and-stick vertex sphere radius (0 = no nodes)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
                              description="Overall size of the result")
 
+        # ---- resolving the cell code -------------------------------------
+        def _effective_mode(self):
+            """`solid == 'CUSTOM'` is how the pre-merge operator spelled
+            shell mode, so a file saved that way still opens on shells."""
+            if (self.mode == 'PRESET' and self.seed == 'icosahedron'
+                    and self.solid == 'CUSTOM'):
+                return 'CUSTOM'
+            return self.mode
+
+        def _shell_of(self, eng, token):
+            sh = eng.shell_by_label.get(token)
+            if sh is None and token in eng.classical:
+                sh = eng.shell_by_label[eng.classical[token]]
+            return sh
+
+        def _apply_hand(self, eng, code):
+            """Replace any chiral shell in `code` with one of its hands."""
+            if self.hand == 'BOTH':
+                return code
+            idx = 0 if self.hand == 'A' else 1
+            out = []
+            for tok in code:
+                sh = self._shell_of(eng, tok) if isinstance(tok, str) else None
+                if sh is not None and sh['chiral']:
+                    out.append(sh['hands'][idx])
+                else:
+                    out.append(tok)
+            return out
+
+        def _resolve(self, context):
+            """-> (cell_code, title).  Raises ValueError/KeyError whose
+            message is meant to be shown to the user."""
+            seed = self.seed or SEEDS[0]
+            eng = _engine_for(seed)
+            mode = self._effective_mode()
+
+            if mode == 'CODE':
+                toks = self.cell_code.replace(',', ' ').split()
+                if not toks:
+                    raise ValueError("the cell code is empty")
+                for t in toks:
+                    eng.cells_of_token(t)       # validates; raises KeyError
+                return self._apply_hand(eng, toks), 'Stellation'
+
+            if mode == 'CUSTOM':
+                labels = _slot_labels(seed)
+                on = [lb for lb, pr in zip(labels, _SLOT_PROPS)
+                      if getattr(self, pr)]
+                if not on:
+                    raise ValueError("no cell shells are switched on")
+                return self._apply_hand(eng, on), 'Stellation'
+
+            if seed == 'icosahedron':
+                k = int(self.solid)
+                return (crennell_code(k, hand=(1 if self.hand == 'B' else 0)),
+                        crennell_title(k))
+
+            ids = [it[0] for it in _preset_items(self, context)]
+            key = self.preset if self.preset in ids \
+                else (ids[0] if ids else 'core')
+            code = next((c for kk, t, c, n in named_presets(seed)
+                         if kk == key), ['a'])
+            title = next((t for kk, t, c, n in named_presets(seed)
+                          if kk == key), key)
+            return expand_code(eng, code), title
+
         def execute(self, context):
             seed = self.seed or SEEDS[0]
-            ids = [it[0] for it in _stell_items(self, context)]
-            key = self.stellation if self.stellation in ids \
-                else (ids[0] if ids else 'core')
-            V, F = build_named(seed, key)
-            title = next((t for k, t, c, n in named_presets(seed)
-                          if k == key), key)
+            try:
+                eng = _engine_for(seed)
+                code, title = self._resolve(context)
+                V, F = eng.build(code)
+            except (ValueError, KeyError) as exc:
+                self.report({'ERROR'}, str(exc).strip("'"))
+                return {'CANCELLED'}
+            if not F:
+                self.report({'ERROR'},
+                            "that cell set encloses nothing -- switch on at "
+                            "least one shell that reaches the surface")
+                return {'CANCELLED'}
+
+            Vs = [tuple(c * self.scale for c in v) for v in V]
+            Fl = [list(f) for f in F]
             if self.style == 'NET':
                 return _net_style.emit_net_from_operator(
-                    self, context,
-                    [tuple(c * self.scale for c in v) for v in V],
-                    [list(f) for f in F], title)
+                    self, context, Vs, Fl, title)
             me = bpy.data.meshes.new(title)
-            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
-                           [], [list(f) for f in F])
+            me.from_pydata(Vs, [], Fl)
             me.validate(clean_customdata=True)
             me.update()
             obj = bpy.data.objects.new(title, me)
@@ -2141,14 +2366,51 @@ if _IN_BLENDER:
                                        self.node_radius)
             elif self.style == 'WIREFRAME':
                 obj.display_type = 'WIRE'
-            self.report({'INFO'}, "%s: V=%d F=%d" % (title, len(V), len(F)))
+
+            # Say which of how many: 59 is a property of the icosahedron
+            # PLUS Miller's rules, not a universal constant, so the number
+            # only means anything next to the thing it counts.
+            if seed == 'icosahedron' and self._effective_mode() == 'PRESET':
+                self.report({'INFO'}, "%s (%s of 59): V=%d F=%d"
+                            % (title, self.solid, len(V), len(F)))
+            else:
+                self.report({'INFO'}, "%s [%s]: V=%d F=%d"
+                            % (title, seed.replace('_', ' '), len(V), len(F)))
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'seed')
-            lay.prop(self, 'stellation')
+            lay.prop(self, 'mode')
+            mode = self._effective_mode()
+
+            if mode == 'PRESET':
+                lay.prop(self, 'solid' if self.seed == 'icosahedron'
+                         else 'preset')
+            elif mode == 'CUSTOM':
+                labels = _slot_labels(self.seed)
+                box = lay.box()
+                box.use_property_split = False
+                box.label(text="Cell shells (inner -> outer):")
+                grid = box.grid_flow(row_major=True, columns=4,
+                                     even_columns=True, align=True)
+                for lb, pr in zip(labels, _SLOT_PROPS):
+                    grid.prop(self, pr, text=lb)
+                if len(labels) > len(_SLOT_PROPS):
+                    box.label(text="%d more shells -- use Cell code"
+                                   % (len(labels) - len(_SLOT_PROPS)),
+                              icon='INFO')
+            else:
+                lay.prop(self, 'cell_code')
+
+            # Only offered once the arrangement is known to have a chiral
+            # shell; drawing it always would promise a choice most seeds
+            # cannot honour.
+            eng = _ENGINE_CACHE.get(self.seed)
+            if eng is not None and any(sh['chiral'] for sh in eng.shells):
+                lay.prop(self, 'hand')
+
             if self.style == 'NET':
                 _net_style.draw_net_props(lay, self)
             lay.prop(self, 'style')
@@ -2161,13 +2423,34 @@ if _IN_BLENDER:
                 lay.prop(self, 'node_radius')
             lay.prop(self, 'scale')
 
+    class MESH_OT_general_stellation_add(bpy.types.Operator):
+        """Deprecated: use Stellation.  Kept registered so objects built with
+        the pre-merge General Stellation operator stay live-editable; it
+        forwards to the merged operator.  Remove after one release"""
+        bl_idname = "mesh.general_stellation_add"
+        bl_label = "General Stellation (deprecated)"
+        bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+        seed: EnumProperty(name="Seed", items=_SEED_ITEMS, default=SEEDS[0],
+                           description="Base polyhedron to stellate")
+        stellation: EnumProperty(name="Stellation", items=_preset_items,
+                                 description="Which named stellation")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the result")
+
+        def execute(self, context):
+            return bpy.ops.mesh.icosahedron_stellation_add(
+                seed=self.seed, mode='PRESET', preset=self.stellation,
+                scale=self.scale)
+
     def _menu_func(self, context):
-        self.layout.operator("mesh.general_stellation_add",
+        self.layout.operator("mesh.icosahedron_stellation_add",
                              icon='MESH_ICOSPHERE')
 
     ADD_MENU = True
 
     def register():
+        bpy.utils.register_class(MESH_OT_icosahedron_stellation_add)
         bpy.utils.register_class(MESH_OT_general_stellation_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
@@ -2176,3 +2459,4 @@ if _IN_BLENDER:
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_general_stellation_add)
+        bpy.utils.unregister_class(MESH_OT_icosahedron_stellation_add)

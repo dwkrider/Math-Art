@@ -34,6 +34,11 @@ print("[menu] VIEW3D_MT_math_art_add registered OK")
 # is missing whenever someone gets round to it.
 # --------------------------------------------------------------------
 PANEL_ONLY = {
+    # Superseded by mesh.icosahedron_stellation_add, which merged the two
+    # stellation generators behind a seed selector. Kept registered for one
+    # release so objects built with it stay live-editable, and deliberately
+    # kept OUT of the menu so only the merged operator is offered.
+    "mesh.general_stellation_add": "deprecated; forwards to Stellation",
     # Reached from the minimal-surface toolkit's own N-panel, which is
     # where its parameters live; a bare Add-menu entry would have no
     # surface to act on.

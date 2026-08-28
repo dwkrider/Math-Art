@@ -867,208 +867,24 @@ def _self_test():
     print("=" * 74)
     return ok_all
 
-
 # --------------------------------------------------------------------------
-# 8.  Blender operator (the UI enum is built from the STATIC Crennell table,
-#     so registering the add-on does not trigger the cell enumeration; the
-#     ~2 s enumeration happens on the first stellation actually built)
+# 8.  No Blender operator lives here any more.
+#
+# This module used to register `mesh.icosahedron_stellation_add`.  That
+# operator now lives in `general_stellation.py`, which merged it with the
+# general-seed one: same bl_idname, same property names, a `seed` enum added
+# in front.  Only the general engine copes with seeds whose face planes sit
+# at differing distances from the centre, so it had to be the survivor.
+#
+# What remains here is the ICOSAHEDRON ENGINE, deliberately kept rather than
+# deleted, for two reasons.  It is an INDEPENDENT implementation of the same
+# cell enumeration -- a different algorithm, standard library only, no numpy
+# -- and `tests/test_stellation_agreement.py` builds all fifty-nine both
+# ways and compares them.  Deleting it would not remove a redundancy, it
+# would remove the only external check either engine has.  And being
+# dependency-free, its `_self_test()` runs in a bare interpreter, which the
+# numpy-based engine cannot.
+#
+# It is therefore no longer in `_MODULE_NAMES`: it registers nothing, and
+# the add-on has no reason to import it at start-up.
 # --------------------------------------------------------------------------
-_FAMOUS = {
-    1: "Icosahedron",
-    2: "First stellation (triakis / small triambic)",
-    3: "Compound of 5 octahedra",
-    4: "Third stellation",
-    6: "Second stellation",
-    7: "Great icosahedron",
-    8: "Final stellation (echidnahedron)",
-    22: "Compound of 10 tetrahedra",
-    26: "Excavated dodecahedron",
-    30: "Medial triambic icosahedron",
-    47: "Compound of 5 tetrahedra (chiral)",
-}
-
-
-def _crennell_items():
-    items = []
-    for k in range(1, 60):
-        nm = _FAMOUS.get(k, "Du Val %s" % _CRENNELL_STR[k])
-        kind = "reflexible" if k <= 32 else "chiral"
-        items.append((str(k), "%2d. %s" % (k, nm),
-                      "Du Val %s (%s)" % (_CRENNELL_STR[k], kind)))
-    items.append(('CUSTOM', "Custom (shell toggles)",
-                  "Choose Du Val shells a..g3 by hand"))
-    return items
-
-
-try:
-    import bpy
-    from bpy.props import EnumProperty, FloatProperty, BoolProperty
-    _IN_BLENDER = True
-except ImportError:
-    _IN_BLENDER = False
-
-
-if _IN_BLENDER:
-
-    _ITEMS = _crennell_items()
-
-    try:
-        from .styles import net_style as _net_style
-    except ImportError:
-        from styles import net_style as _net_style
-
-    class MESH_OT_icosahedron_stellation_add(bpy.types.Operator,
-                                             _net_style.NetStyleProps):
-        """Add a stellation of the icosahedron -- any of the 59 (Coxeter/
-        Du Val/Flather/Petrie, "The Fifty-Nine Icosahedra"), by Crennell
-        index, or a custom set of Du Val cell shells"""
-        bl_idname = "mesh.icosahedron_stellation_add"
-        bl_label = "Icosahedron Stellation"
-        bl_options = {'REGISTER', 'UNDO'}
-
-        solid: EnumProperty(
-            name="Stellation", items=_ITEMS, default='8',
-            description="Which stellation to build, by Crennell index 1-59, "
-                        "or Custom to pick Du Val shells by hand")
-        # custom Du Val shell toggles (used when solid == 'CUSTOM')
-        _SH_DESC = ("Fill this Du Val cell shell when building a custom "
-                    "stellation (inner shell a to outer shell g3)")
-        sh_a: BoolProperty(name="a (core)", default=True, description=_SH_DESC)
-        sh_b: BoolProperty(name="b", default=True, description=_SH_DESC)
-        sh_c: BoolProperty(name="c", default=False, description=_SH_DESC)
-        sh_d: BoolProperty(name="d", default=False, description=_SH_DESC)
-        sh_e1: BoolProperty(name="e1", default=False, description=_SH_DESC)
-        sh_e2: BoolProperty(name="e2", default=False, description=_SH_DESC)
-        sh_f1: BoolProperty(name="f1 (chiral)", default=False,
-                            description=_SH_DESC)
-        sh_f2: BoolProperty(name="f2", default=False, description=_SH_DESC)
-        sh_g1: BoolProperty(name="g1", default=False, description=_SH_DESC)
-        sh_g2: BoolProperty(name="g2", default=False, description=_SH_DESC)
-        sh_g3: BoolProperty(name="g3 (outer)", default=False,
-                            description=_SH_DESC)
-        style: EnumProperty(
-            name="Style",
-            items=[('SOLID', "Solid", ""),
-                   ('LEONARDO', "Leonardo (da Vinci)",
-                    "Open-faced panels via the shared Leonardo modifier"),
-                   ('WIRE', "Struts", "Wireframe modifier"),
-                   ('BALLSTICK', "Ball and Stick",
-                    "Edges as solid cylindrical struts and vertices "
-                    "as small spheres (ball-and-stick model)"),
-                   ('WIREFRAME', "Wireframe",
-                    "Mesh edges only, displayed as a wireframe"),
-            _net_style.net_enum_item()],
-            default='SOLID',
-            description="How to render the stellation: solid faces, open "
-                        "Leonardo panels, struts, ball-and-stick or "
-                        "wireframe")
-        border: FloatProperty(name="Border", default=0.06, min=0.005, max=1.0,
-                              description="Leonardo face frame width")
-        thickness: FloatProperty(name="Thickness", default=0.05, min=0.001,
-                                 max=1.0, description="Panel/strut thickness")
-        strut_radius: FloatProperty(
-            name="Strut Radius", default=0.02, min=0.001, max=0.5,
-            description="Ball-and-stick edge cylinder radius")
-        node_radius: FloatProperty(
-            name="Node Radius", default=0.035, min=0.0, max=0.5,
-            description="Ball-and-stick vertex sphere radius "
-                        "(0 = no nodes)")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
-                             description="Uniform scale of the finished solid")
-
-        def _code(self):
-            if self.solid == 'CUSTOM':
-                return [lb for lb in _ALL_LABELS
-                        if getattr(self, 'sh_' + lb)]
-            return crennell_cells(int(self.solid))
-
-        def execute(self, context):
-            code = self._code()
-            if not code:
-                self.report({'ERROR'}, "no shells selected")
-                return {'CANCELLED'}
-            V, F = build(code)
-            if not F:
-                self.report({'ERROR'}, "empty stellation")
-                return {'CANCELLED'}
-            if self.solid == 'CUSTOM':
-                label = "Stellation " + "".join(
-                    lb for lb in _ALL_LABELS if getattr(self, 'sh_' + lb))
-            else:
-                label = "Stellation %s" % _FAMOUS.get(
-                    int(self.solid), _CRENNELL_STR[int(self.solid)])
-            if self.style == 'NET':
-                return _net_style.emit_net_from_operator(
-                    self, context,
-                    [tuple(c * self.scale for c in v) for v in V],
-                    [list(f) for f in F], label)
-            me = bpy.data.meshes.new(label)
-            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
-                           [], [list(f) for f in F])
-            me.validate(clean_customdata=True)
-            me.update()
-            obj = bpy.data.objects.new(label, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            if self.style == 'LEONARDO':
-                try:
-                    from . import leonardo_style
-                except ImportError:
-                    import leonardo_style
-                leonardo_style.add_modifier(obj, self.border, self.thickness)
-            elif self.style == 'WIRE':
-                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
-                mod.thickness = self.thickness
-                mod.use_even_offset = False
-            elif self.style == 'BALLSTICK':
-                try:
-                    from .styles import ball_and_stick
-                except ImportError:
-                    from styles import ball_and_stick
-                ball_and_stick.rebuild(obj, self.strut_radius,
-                                       self.node_radius)
-            elif self.style == 'WIREFRAME':
-                obj.display_type = 'WIRE'
-            self.report({'INFO'}, "%s: V=%d F=%d" % (label, len(V), len(F)))
-            return {'FINISHED'}
-
-        def draw(self, context):
-            lay = self.layout
-            lay.use_property_split = True
-            lay.prop(self, 'solid')
-            if self.solid == 'CUSTOM':
-                col = lay.column(align=True)
-                col.label(text="Du Val shells (inner -> outer):")
-                for lb in _ALL_LABELS:
-                    col.prop(self, 'sh_' + lb)
-            if self.style == 'NET':
-                _net_style.draw_net_props(lay, self)
-            lay.prop(self, 'style')
-            if self.style == 'LEONARDO':
-                lay.prop(self, 'border')
-            if self.style in ('LEONARDO', 'WIRE'):
-                lay.prop(self, 'thickness')
-            if self.style == 'BALLSTICK':
-                lay.prop(self, 'strut_radius')
-                lay.prop(self, 'node_radius')
-            lay.prop(self, 'scale')
-
-    def _menu_func(self, context):
-        self.layout.operator("mesh.icosahedron_stellation_add",
-                             icon='MESH_ICOSPHERE')
-
-    ADD_MENU = True
-
-    def register():
-        bpy.utils.register_class(MESH_OT_icosahedron_stellation_add)
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
-
-    def unregister():
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_icosahedron_stellation_add)
