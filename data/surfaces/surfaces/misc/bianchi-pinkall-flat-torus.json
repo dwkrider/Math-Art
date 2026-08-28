@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "bianchi-pinkall-flat-torus",
+  "name": "Bianchi-Pinkall Flat Torus",
+  "primary_family": "misc",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "misc"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.hopf_fibration_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hopf_fibration_generator",
+      "operator_id": "mesh.hopf_torus_add",
+      "key": "BIANCHI_PINKALL",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+    ]
+  },
+  "ids": {
+    "vmm": "ch072_bianchi_pinkall_tori"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

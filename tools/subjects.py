@@ -429,6 +429,11 @@ VARIANT_SELECTOR = {
     "mesh.curiosity_surface_add": "surface",
     "mesh.helical_surface_add": "surface",
     "mesh.hyperbolic_surface_add": "preset",
+    # All thirteen degree-2 surfaces are distinct objects, so the whole
+    # enum is the gallery -- including the plane, whose thumbnail is a
+    # flat square. Dull, but it is a real quadric and the classification
+    # is the point of the page.
+    "mesh.quadric_add": "kind",
     "mesh.delaunay_surface_add": "mode",
     "mesh.bryant_surface_add": "mode",
     "mesh.squeeze_add": "seed",

@@ -761,6 +761,31 @@ class Builder:
                 }]
             self.report.append(("curated", slug, "emit", slug))
 
+    def stage_presets(self):
+        """Presets added to operators that are not FLAT_SOURCES.
+
+        `mesh.hopf_torus_add` lives in a module with two operators, so
+        reading its enums wholesale would emit rows for both; naming the
+        one preset is safer than teaching the reader to disambiguate.
+        """
+        for slug, (module, op, key, name) in IMPLEMENTED_PRESET.items():
+            path = os.path.join(ROOT, "math_art", *module.split(".")) + ".py"
+            src = ""
+            if os.path.exists(path):
+                with open(path, encoding="utf-8", errors="replace") as fh:
+                    src = fh.read()
+            if key not in src:
+                self.problems.append(
+                    "IMPLEMENTED_PRESET claims %s has key %r, which is not in "
+                    "the module source" % (op, key))
+                continue
+            rec = self.get(slug, name, "misc")
+            self.add_construction(rec, {
+                "generator": "math_art." + module, "operator_id": op,
+                "key": key, "definition_index": 0, "implemented": True,
+            })
+            self.report.append(("preset", slug, "emit", slug))
+
     def stage_singletons(self):
         """Operators that build one surface and so expose no enum rows.
 
@@ -797,6 +822,16 @@ class Builder:
         far more useful than a markdown list that goes stale.
         """
         for slug, spec in MISSING.items():
+            # A MISSING entry is a CLAIM that nothing builds this surface.
+            # If an earlier stage found an operator that does, the operator
+            # wins and the claim is stale -- silently overwriting a working
+            # construction with `implemented: false` would make the ledger
+            # lie in the one direction it must never lie.
+            existing = self.records.get(slug)
+            if existing and any(c.get("implemented")
+                                for c in existing.get("construction") or []):
+                self.report.append(("missing", slug, "superseded", slug))
+                continue
             rec = self.get(slug, spec["name"], spec.get("family", "algebraic"))
             rec["name"] = spec["name"]
             rec["primary_family"] = spec.get("family", "algebraic")
@@ -1097,6 +1132,15 @@ class Builder:
 BUILD_DATE = "2026-08-28"
 
 # Record slug -> the enum key on mesh.quadric_add.
+# Surfaces implemented as a PRESET on an operator whose module is not a
+# FLAT_SOURCE.  slug -> (module, operator id, enum key, name)
+IMPLEMENTED_PRESET = {
+    "bianchi-pinkall-flat-torus": (
+        "hopf_fibration_generator", "mesh.hopf_torus_add",
+        "BIANCHI_PINKALL", "Bianchi-Pinkall Flat Torus"),
+}
+
+
 QUADRIC_KIND = {
     "sphere": "SPHERE",
     "spheroid": "SPHEROID",
@@ -1540,6 +1584,8 @@ def main():
             b.stage_flat(only_stage=stage)
     if run("quadric"):
         b.stage_quadric()
+    if run("presets"):
+        b.stage_presets()
     if run("singletons"):
         b.stage_singletons()
     if run("curated"):

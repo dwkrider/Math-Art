@@ -21,7 +21,6 @@
     "def-implicit",
     "def-nodal",
     "def-parametric",
-    "def-swept",
     "def-variational",
     "def-weierstrass",
     "derived",
@@ -82,7 +81,7 @@
     "topological"
   ],
   "count": 425,
-  "implemented_count": 308,
+  "implemented_count": 310,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -429,36 +428,34 @@
     {
       "slug": "bianchi-pinkall-flat-torus",
       "name": "Bianchi-Pinkall Flat Torus",
-      "path": "surfaces/topological/bianchi-pinkall-flat-torus.json",
-      "primary_family": "topological",
+      "path": "surfaces/misc/bianchi-pinkall-flat-torus.json",
+      "primary_family": "misc",
       "families": [
         "aperiodic",
-        "closed",
-        "closed-orientable",
-        "def-derived",
-        "embedded",
-        "flat",
-        "not-implemented",
-        "topological",
-        "tradition-classical"
+        "def-parametric",
+        "immersed",
+        "implemented",
+        "misc"
       ],
-      "definition_mode": "derived",
+      "definition_mode": "parametric",
       "has_approximation": false,
-      "curvature_condition": "flat",
+      "curvature_condition": "none",
       "periodicity_rank": 0,
-      "genus": 1,
+      "genus": null,
       "genus_per_cell": null,
-      "orientable": true,
+      "orientable": null,
       "ends": 0,
-      "embedding": "embedded",
+      "embedding": "immersed",
       "symmetry": {
         "kind": "none",
         "symbol": null,
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.hopf_torus_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11743,13 +11740,12 @@
       "primary_family": "swept",
       "families": [
         "aperiodic",
-        "def-swept",
+        "def-parametric",
         "immersed",
-        "not-implemented",
-        "swept",
-        "tradition-gallery"
+        "implemented",
+        "swept"
       ],
-      "definition_mode": "swept",
+      "definition_mode": "parametric",
       "has_approximation": false,
       "curvature_condition": "none",
       "periodicity_rank": 0,
@@ -11764,8 +11760,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.helical_surface_add"
+      ],
       "specimen_count": 0
     },
     {
