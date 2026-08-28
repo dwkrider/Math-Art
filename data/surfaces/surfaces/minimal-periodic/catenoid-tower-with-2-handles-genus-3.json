@@ -31,7 +31,8 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 3
   },
   "symmetry": {
     "kind": "rod",
@@ -57,39 +58,24 @@
       "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
       "C. J. Costa (1984); D. Hoffman, W. H. Meeks III (1985); M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks (research/msblog_harvest/singly_periodic.json)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch163)",
+        "agrees": true,
+        "detail": "'The quotient surfaces of this 1-parameter family have genus 3, and the period problem becomes 2-dimensional.'"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch163_translation_invariant_catenoid_with_two_handles"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 36258,
-      "edges": 72707,
-      "faces": 36443,
-      "euler_characteristic": -6,
-      "components": 1,
-      "boundary_loops": 6,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.581766,
-        1.183359,
-        2.0
-      ],
-      "aspect_ratio": 0.59168
-    }
   }
 }

@@ -52,13 +52,7 @@
         "agrees": true,
         "detail": "page title 'Astroidal ellipsoid' vs record name 'Astroidal Ellipsoid'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1202_astroidal_2"
@@ -68,24 +62,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4704,
-      "edges": 9312,
-      "faces": 4608,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.0,
-        1.5,
-        2.0
-      ],
-      "aspect_ratio": 0.5
-    }
   }
 }

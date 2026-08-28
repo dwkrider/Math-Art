@@ -62,13 +62,7 @@
       "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
       "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
       "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\")."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -79,24 +73,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 15372,
-      "edges": 30707,
-      "faces": 15336,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.891095,
-        1.891042,
-        2.0
-      ],
-      "aspect_ratio": 0.945521
-    }
   }
 }

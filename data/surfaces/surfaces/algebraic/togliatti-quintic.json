@@ -7,8 +7,9 @@
     "algebraic",
     "aperiodic",
     "def-implicit",
-    "immersed",
     "implemented",
+    "record-holder",
+    "singular",
     "tradition-classical"
   ],
   "definition": {
@@ -33,7 +34,16 @@
     "periodicity_rank": 0
   },
   "embedding": {
-    "quality": "immersed"
+    "quality": "singular",
+    "is_record": true,
+    "record_for": "maximum nodes, degree 5",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 31,
+        "note": "IMAGINARY (imaginary.org, local mirror ch934): 'Eugenio Giuseppe Togliatti proved in 1937, that there is a surface of degree 5 - a Quintic - with exactly 31 singularities, which was world record at that time.'  Breske-Labs-van Straten (2005), mu(5) table: upper and lower bounds both 31, so the count is exact (optimality is Beauville's)."
+      }
+    ]
   },
   "construction": [
     {
@@ -53,12 +63,13 @@
       "W. Barth, \"Two projective surfaces with many nodes admitting the symmetries of the icosahedron\", J. Algebraic Geometry 5, 1996.",
       "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien -- the named gallery surfaces in the _HAUSER block below."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "IMAGINARY, imaginary.org (mirror ch934); Breske-Labs-van Straten (2005)",
+        "agrees": true,
+        "detail": "'Togliatti proved in 1937, that there is a surface of degree 5 - a Quintic - with exactly 31 singularities, which was world record at that time'; mu(5) = 31 is exact (both bounds) in the Breske-Labs-van Straten table."
+      }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -71,24 +82,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 137325,
-      "edges": 409094,
-      "faces": 271789,
-      "euler_characteristic": 20,
-      "components": 15,
-      "boundary_loops": 10,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.962917,
-        2.0,
-        1.53515
-      ],
-      "aspect_ratio": 0.767575
-    }
   }
 }

@@ -31,7 +31,18 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 1,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 2
+      },
+      {
+        "type": "catenoidal",
+        "count": 2
+      }
+    ]
   },
   "symmetry": {
     "kind": "rod",
@@ -57,40 +68,25 @@
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988) 83-114;",
       "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;"
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch171)",
+        "agrees": true,
+        "detail": "'It has genus 1 in the quotient, two annular and two catenoidal ends.'"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch171_translation_invariant_costa_i"
+  },
   "named_after": "Costa",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 20464,
-      "edges": 41050,
-      "faces": 20583,
-      "euler_characteristic": -3,
-      "components": 1,
-      "boundary_loops": 7,
-      "manifold": false,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.579107,
-        2.0,
-        1.055578
-      ],
-      "aspect_ratio": 0.527789
-    }
   }
 }

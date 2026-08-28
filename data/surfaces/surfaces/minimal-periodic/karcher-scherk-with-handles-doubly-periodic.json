@@ -56,39 +56,25 @@
       "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
       "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "M. Weber, M. Wolf, 'Handle Addition for doubly-periodic Scherk Surfaces' (minsurf ch032/ch047)",
+        "agrees": true,
+        "detail": "Genus-one member: page title 'The Doubly Periodic Karcher-Scherk Surface of Genus One' (annular ends); higher-genus members of genus 2, 3, 4 are shown at ch032.  No single genus is asserted because the shipped row carries members of different genus."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch028_scherk_w_handle",
+    "msblog": "ch032_doubly_periodic_karcher_scherk_surfaces_of_highe"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 33399,
-      "edges": 66172,
-      "faces": 32768,
-      "euler_characteristic": -5,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.271428
-      ],
-      "aspect_ratio": 0.635714
-    }
   }
 }

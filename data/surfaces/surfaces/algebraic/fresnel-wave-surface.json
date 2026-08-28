@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "fresnel-wave-surface",
+  "name": "Fresnel's Wave Surface",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "not-implemented",
+    "tradition-classical",
+    "tradition-physical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The quartic locus of light-wavefront propagation in a biaxial anisotropic crystal: two sheets, with four conical points that gave conical refraction.  Distinct from Fresnel's ELASTICITY surface, which is already implemented."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The defining equation is deliberately NOT transcribed here: an unverified coefficient does not error, it silently defines a different surface, and the numerical oracle that guards the shipped algebraic block cannot guard a surface with no implementation to check against.",
+      "resume": "Transcribe the Cartesian equation from the cited mirror chapter into math_art/surfaces/algebraic.py; the build's oracle check then confirms it against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Fresnel's wave surface\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1201_ondes_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1201_ondes_2.md).",
+      "A. Fresnel (1821), per the chapter; the chapter also points to Jules Richard's thesis and [Loria 3d p. 197]."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1201_ondes_2",
+        "agrees": true,
+        "detail": "page title \"Fresnel's wave surface\" vs record name \"Fresnel's Wave Surface\""
+      },
+      {
+        "source": "mathcurve:ch1201_ondes_2",
+        "agrees": true,
+        "detail": "record year 1821, page says 1821"
+      }
+    ]
+  },
+  "discovered_by": "Augustin Fresnel",
+  "year": 1821,
+  "tradition": [
+    "classical",
+    "physical"
+  ],
+  "ids": {
+    "mathcurve": "ch1201_ondes_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

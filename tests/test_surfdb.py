@@ -30,7 +30,8 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 MODULES = ("expr", "views", "mapping", "polynomial", "registry", "curation",
            "invariants", "references", "sources", "tail", "crosscheck",
-           "charts", "weierstrass", "wedata", "nodal")
+           "charts", "weierstrass", "wedata", "nodal",
+           "ferreol", "vmm", "published", "algsurf")
 
 
 def main():

@@ -265,6 +265,27 @@ GENERATORS = {
                        ("-x", "-y", "-z")],
               "full": False},
 
+    # Tetrahedral in the EDGE frame: 2-fold axes on the coordinate axes
+    # and the tetrahedron's face normals along (+-sqrt2, 0, -1) and
+    # (0, +-sqrt2, 1), which is how math_art/surfaces/algebraic.py writes
+    # Kummer's four tangent planes.
+    #
+    # Same group as "Td", different orientation -- and the distinction is
+    # not academic: Kummer's quartic fails the standard-frame test
+    # completely (the coordinate 3-cycle is not one of its symmetries)
+    # while being perfectly tetrahedral here. Its 3-fold axes lie along
+    # the face normals, and the four normals have pairwise dot product
+    # -1/3, so the tetrahedron is regular. Reporting it as asymmetric was
+    # a frame error, not a finding.
+    "Td_edge": {"gens": [("-x", "y", "z"),
+                         ("x", "-y", "z"),
+                         ("y", "x", "-z"),
+                         # 120 degrees about (sqrt2, 0, 1)/sqrt3
+                         ("x/2 - y/2 + z/sqrt(2)",
+                          "x/2 - y/2 - z/sqrt(2)",
+                          "x/sqrt(2) + y/sqrt(2)")],
+                "full": False},
+
     # C3v with the 3-fold axis on the BODY DIAGONAL (1,1,1) -- the
     # symmetry a polynomial symmetric in x, y, z actually has. Distinct
     # from C3v about the z axis, which is what a naive reading assumes.

@@ -27,7 +27,9 @@
   "topology": {
     "complete": true,
     "compact": false,
-    "orientable": true
+    "orientable": true,
+    "genus_per_cell": 5,
+    "euler_characteristic_per_cell": -8
   },
   "symmetry": {
     "kind": "space",
@@ -49,12 +51,13 @@
       "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA Technical Note TN D-5541 (1970), together with his later listings of the second-tier surfaces.",
       "K. Brakke, the Surface Evolver periodic minimal-surface collection (kenbrakke.com/evolver), where several of these are figured."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch285, Schoen I6)",
+        "agrees": true,
+        "detail": "'It extends triply periodically to a surface of genus 5.'"
+      }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -62,6 +65,9 @@
   "tradition": [
     "crystallographic"
   ],
+  "ids": {
+    "msblog": "ch285_schoen_i6"
+  },
   "named_after": "Schoen",
   "fabrication": {
     "developable": false,

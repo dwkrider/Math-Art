@@ -27,7 +27,9 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus_per_cell": 3,
+    "euler_characteristic_per_cell": -4
   },
   "symmetry": {
     "kind": "space",
@@ -56,12 +58,13 @@
       "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
       "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]"
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch297, Schwarz CLP)",
+        "agrees": true,
+        "detail": "Genus 3 per translational quotient; 'the conjugate surfaces are also triply periodic and of genus 3.'"
+      }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -69,29 +72,13 @@
   "tradition": [
     "crystallographic"
   ],
+  "ids": {
+    "msblog": "ch297_schwarz_clp_surfaces"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2441,
-      "edges": 4787,
-      "faces": 2339,
-      "euler_characteristic": -7,
-      "components": 1,
-      "boundary_loops": 8,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.687779,
-        1.412462,
-        2.0
-      ],
-      "aspect_ratio": 0.706231
-    }
   }
 }

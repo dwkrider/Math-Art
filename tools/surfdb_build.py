@@ -41,9 +41,10 @@ sys.path.insert(0, HERE)
 # outside Blender.
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
-from surfdb import (charts, curation, invariants, mapping,  # noqa: E402
-                    nodal, polynomial, references, registry, sources,
-                    tail, views, wedata)
+from surfdb import (algsurf, charts, curation, ferreol,  # noqa: E402
+                    invariants,
+                    mapping, nodal, polynomial, published, references,
+                    registry, sources, tail, views, vmm, wedata)
 
 OUT = os.path.join(ROOT, "data", "surfaces")
 SCHEMA_VERSION = "0.1.0"
@@ -814,6 +815,15 @@ class Builder:
     def curate(self):
         for slug, rec in self.records.items():
             deep_merge(rec, curation.facts_for(slug))
+            # independently published invariants, for the drive stage to
+            # compare the generator against
+            deep_merge(rec, published.invariants_for(slug))
+            for table in (ferreol.ids(), vmm.ids(), algsurf.ids()):
+                extra = table.get(slug)
+                if extra:
+                    got = rec.setdefault("ids", {})
+                    for k, v in extra.items():
+                        got.setdefault(k, v)
             poly = curation.polyhedral_analogue(slug)
             if poly:
                 rec.setdefault("relations", {})["polyhedral_analogue"] = poly
@@ -1449,6 +1459,9 @@ MISSING = {
 
 
 MISSING.update(tail.records())
+MISSING.update(ferreol.records())
+MISSING.update(vmm.records())
+MISSING.update(algsurf.records())
 
 
 def main():

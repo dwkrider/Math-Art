@@ -48,37 +48,12 @@
       "J. Plateau, \"Statique experimentale et theorique des liquides soumis aux seules forces moleculaires\" (1873).",
       "R. Finn, \"Equilibrium Capillary Surfaces\", Grundlehren der mathematischen Wissenschaften 284, Springer (1986) -- sessile drops and capillary theory.",
       "P.-G. de Gennes, F. Brochard-Wyart, D. Quere, \"Capillarity and Wetting Phenomena\" (Springer, 2004) -- capillary length, Bond number, and the gravity-flattened puddle thickness h = 2 l_c sin(theta/2)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 816,
-      "edges": 2352,
-      "faces": 1536,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.999875,
-        0.902976
-      ],
-      "aspect_ratio": 0.451488
-    }
   }
 }

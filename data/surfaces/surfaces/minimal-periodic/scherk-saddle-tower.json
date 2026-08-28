@@ -31,7 +31,8 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 0
   },
   "symmetry": {
     "kind": "rod",
@@ -54,43 +55,24 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "H. F. Scherk, J. reine angew. Math. 13 (1835) -- the singly periodic surface.",
-      "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) -- the saddle towers."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+      "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) -- the saddle towers.",
+      "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) 83-114 -- 'translation invariant minimal surface with genus 0 in the quotient' (as quoted at minsurf ch140).",
+      "J. Perez, M. Traizet, 'The classification of singly periodic minimal surfaces with genus zero and Scherk type ends', Trans. Amer. Math. Soc. 359 (2007) 965-990."
+    ]
   },
   "tradition": [
     "classical"
   ],
   "discovered_by": "Heinrich Ferdinand Scherk; the k-wing family is due to Hermann Karcher",
   "year": 1835,
+  "ids": {
+    "vmm": "ch015_saddle_tower",
+    "msblog": "ch137_scherks_singly_periodic_surface"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 9216,
-      "edges": 18336,
-      "faces": 9120,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.368545
-      ],
-      "aspect_ratio": 0.684272
-    }
   }
 }

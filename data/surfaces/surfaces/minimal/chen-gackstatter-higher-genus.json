@@ -54,39 +54,24 @@
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch058) + K. Sato, Tohoku Math. J. 48 (1996) 229-246; M. Weber, M. Wolf; E. Thayer, Experiment. Math. 4 (1995)",
+        "agrees": true,
+        "detail": "Published family law for the drive stage: 'The Chen-Gackstatter surface of genus g has finite total curvature -4pi(g+1), the largest possible value for its genus', with 'one Enneper end of winding number 3' -- per-specimen total curvature must follow -4pi(g+1)."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch058_higher_genus_chen_gackstatter_surfaces"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 117473,
-      "edges": 235332,
-      "faces": 117856,
-      "euler_characteristic": -3,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.551744,
-        1.551744,
-        2.0
-      ],
-      "aspect_ratio": 0.775872
-    }
   }
 }

@@ -31,7 +31,14 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 2,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 8
+      }
+    ]
   },
   "symmetry": {
     "kind": "rod",
@@ -56,40 +63,25 @@
       "K. Li thesis lineage (6/8-ended towers); L. daSilva, V. Ramos Batista (2009); M. Weber, https://minimalsurfaces.blog/ notebooks Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb, Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb (research/msblog_harvest/singly_periodic.json).  Full scholarly details in the weierstrass sscherk block header.",
       "H. Karcher, Manuscripta Math. 62 (1988); H. F. Scherk (1835);"
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "M. F. da Silva, V. Ramos Batista, 'Scherk Saddle Towers of Genus Two in R^3' (minsurf ch131)",
+        "agrees": true,
+        "detail": "'This translation invariant surface ... features 8 annular ends and has genus 2.'  NOT the same surface as Lubeck-Batista (doubly periodic, genus 3, four annular ends -- minsurf ch038)."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch131_dasilva_batista_surface"
+  },
   "named_after": "Batista",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 67462,
-      "edges": 135819,
-      "faces": 68351,
-      "euler_characteristic": -6,
-      "components": 1,
-      "boundary_loops": 4,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.143475,
-        1.543072
-      ],
-      "aspect_ratio": 0.571738
-    }
   }
 }

@@ -38,15 +38,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 2.5247286752553864,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {},
@@ -82,14 +73,7 @@
         "agrees": true,
         "detail": "record year 1886, page says 1886"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Heinrich Sievert",
   "year": 1886,
@@ -99,7 +83,8 @@
   ],
   "ids": {
     "mathworld": "SievertsSurface",
-    "mathcurve": "ch1339_sievert_2"
+    "mathcurve": "ch1339_sievert_2",
+    "vmm": "ch061_sievert_enneper"
   },
   "notes": {
     "caveats": [
@@ -111,24 +96,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6240,
-      "edges": 12319,
-      "faces": 6080,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.554169,
-        1.818939
-      ],
-      "aspect_ratio": 0.777084
-    }
   }
 }

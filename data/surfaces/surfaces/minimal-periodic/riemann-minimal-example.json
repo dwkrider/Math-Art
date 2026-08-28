@@ -55,14 +55,27 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "B. Riemann, 'Uber die Flache vom kleinsten Inhalt bei gegebener Begrenzung', Abh. Konigl. Ges. Wiss. Gottingen 13 (1867), posthumous."
+      "B. Riemann, 'Uber die Flache vom kleinsten Inhalt bei gegebener Begrenzung', Abh. Konigl. Ges. Wiss. Gottingen 13 (1867), posthumous.",
+      "B. Riemann, 'Ueber die Flaeche vom kleinsten Inhalt bei gegebener Begrenzung', Abh. Koenigl. Ges. Wiss. Goettingen 13 (1867) 3-52.",
+      "W. H. Meeks III, J. Perez, A. Ros, 'Properly embedded minimal planar domains', Ann. of Math. 181 (2015) 473-546 -- any properly embedded minimal surface of genus 0 is the plane, catenoid, helicoid, or a Riemann example."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1223_catenoidgauche_2",
+        "agrees": false,
+        "detail": "page title 'Skew catenoid' vs record name \"Riemann's Minimal Example\" -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+      },
+      {
+        "source": "mathcurve:ch1223_catenoidgauche_2",
+        "agrees": false,
+        "detail": "record year 1867, page says 1860 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
+      },
+      {
+        "source": "mathcurve:ch1223_catenoidgauche_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'minimal'"
+      }
+    ]
   },
   "tradition": [
     "classical"
@@ -74,29 +87,15 @@
       "Foliated by circles and lines in parallel planes; Meeks, Perez and Ros later proved it is the only such properly embedded singly periodic example of genus zero."
     ]
   },
+  "ids": {
+    "mathcurve": "ch1223_catenoidgauche_2",
+    "vmm": "ch008_riemann",
+    "msblog": "ch135_riemanns_singly_periodic_surface"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 7522,
-      "edges": 14849,
-      "faces": 7326,
-      "euler_characteristic": -1,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.59541,
-        1.665906,
-        2.0
-      ],
-      "aspect_ratio": 0.797705
-    }
   }
 }

@@ -43,7 +43,14 @@
   },
   "embedding": {
     "quality": "immersed",
-    "self_intersecting": true
+    "self_intersecting": true,
+    "singularities": [
+      {
+        "type": "triple point",
+        "count": 1,
+        "note": "Self-intersection triple point of the immersion (not a surface singularity).  mathcurve.com, Boy surface (mirror ch1216): the three tangents at the triple point are pairwise orthogonal; the self-intersection curve meets itself at the single triple point."
+      }
+    ]
   },
   "construction": [
     {
@@ -59,7 +66,8 @@
     "sources": [
       "W. Boy, 'Uber die Curvatura integra und die Topologie geschlossener Flachen', Math. Ann. 57 (1903).",
       "F. Apery, Models of the Real Projective Plane (1987) -- the explicit parametrisation.",
-      "R. Bryant and R. Kusner, for the Willmore-minimising immersion."
+      "R. Bryant and R. Kusner, for the Willmore-minimising immersion.",
+      "mathcurve.com, Boy surface (mirror ch1216): single triple point with pairwise-orthogonal tangents; self-intersection curve of three loops through it."
     ],
     "cross_checked": [
       {
@@ -72,13 +80,7 @@
         "agrees": true,
         "detail": "record year 1901, page says 1902"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Werner Boy",
   "year": 1901,
@@ -90,7 +92,8 @@
   "ids": {
     "mathworld": "BoySurface",
     "mathcurve": "ch1216_boy_2",
-    "wikipedia": "Boy's surface"
+    "wikipedia": "Boy's surface",
+    "vmm": "ch044_boys_apery"
   },
   "notes": {
     "caveats": [
@@ -102,24 +105,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4561,
-      "edges": 9168,
-      "faces": 4608,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.996455,
-        1.873195
-      ],
-      "aspect_ratio": 0.936597
-    }
   }
 }

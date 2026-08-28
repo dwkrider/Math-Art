@@ -56,40 +56,26 @@
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
       "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch170); R. Schoen's two-ends theorem",
+        "agrees": true,
+        "detail": "Karcher's Fence of Catenoids (Tokyo notes).  'Every complete, properly immersed minimal surface with two catenoidal ends is the catenoid' explains why the non-periodic handle version cannot close up.  The page states no quotient invariants."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch023_catenoid_fence",
+    "msblog": "ch170_translation_invariant_catenoid"
+  },
   "named_after": "Karcher",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 21841,
-      "edges": 43649,
-      "faces": 21806,
-      "euler_characteristic": -2,
-      "components": 1,
-      "boundary_loops": 4,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.092086,
-        2.0,
-        0.050243
-      ],
-      "aspect_ratio": 0.025122
-    }
   }
 }

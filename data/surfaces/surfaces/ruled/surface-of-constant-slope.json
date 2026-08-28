@@ -52,13 +52,7 @@
         "agrees": true,
         "detail": "page title 'Surface of constant slope' vs record name 'Surface of Constant Slope'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1193_talus_2"
@@ -68,24 +62,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2688,
-      "edges": 4976,
-      "faces": 2388,
-      "euler_characteristic": 100,
-      "components": 50,
-      "boundary_loops": 0,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.894758,
-        2.0,
-        0.424197
-      ],
-      "aspect_ratio": 0.212098
-    }
   }
 }

@@ -40,15 +40,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 4.338595247927204,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -78,7 +69,8 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "E. Beltrami, 'Saggio di interpretazione della geometria non-euclidea', Giornale di Matematiche 6 (1868)."
+      "E. Beltrami, 'Saggio di interpretazione della geometria non-euclidea', Giornale di Matematiche 6 (1868).",
+      "mathcurve.com, pseudosphere (mirror ch1210): 'Volume: 2/3 pi a^3; area: 4 pi a^2' -- the classical Huygens values."
     ],
     "cross_checked": [
       {
@@ -96,14 +88,7 @@
         "agrees": true,
         "detail": "page independently describes this as 'k-const-negative'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "alternate_names": [
     "Tractricoid",
@@ -118,10 +103,23 @@
   "ids": {
     "mathworld": "Pseudosphere",
     "mathcurve": "ch1210_pseudosphere_2",
-    "wikipedia": "Pseudosphere"
+    "wikipedia": "Pseudosphere",
+    "vmm": "ch050_pseudosphere"
   },
   "metrics": {
-    "normalization": "unit_scale_parameter"
+    "normalization": "unit_scale_parameter",
+    "area": {
+      "exact": "4*pi",
+      "value": 12.566370614359172,
+      "source": "classical",
+      "note": "Complete two-horned pseudosphere (full tractrix revolved), scale parameter a = 1: area 4*pi*a^2, equal to the sphere of the same radius (classical, Huygens 1693; mathcurve pseudosphere page, mirror ch1210: 'area: 4pi a^2').  A single tractroid horn has half this, 2*pi."
+    },
+    "volume_enclosed": {
+      "exact": "2*pi/3",
+      "value": 2.0943951023931953,
+      "source": "classical",
+      "note": "Both horns, a = 1: (2/3)*pi*a^3, half the ball of the same radius (mathcurve mirror ch1210: 'Volume: 2/3 pi a^3').  One horn encloses pi/3."
+    }
   },
   "notes": {
     "caveats": [
@@ -133,24 +131,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6144,
-      "edges": 12192,
-      "faces": 6048,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.995067,
-        1.995067,
-        2.0
-      ],
-      "aspect_ratio": 0.997534
-    }
   }
 }

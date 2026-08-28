@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "catenoid-field",
+  "name": "Catenoid Field",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Doubly periodic field of half-catenoids growing alternately up and down: parametrized by a twice-punctured rectangular torus with Gauss map g(z) = c*Je(z), Je a Jacobi-type elliptic function with two simple poles and zeros.  Weber's repository page 'Doubly Periodic Catenoids' (mirror ch025) describes a closely related doubly periodic catenoid arrangement; whether it is the same family has NOT been established here, so that page is deliberately not cross-referenced."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
+      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'Catenoid Field', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch025_catenoid_field.md).",
+      "H. Karcher, 'Construction of minimal surfaces', Surveys in Geometry, Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256, Bonn (1989) 1-96 (the 'Tokyo notes' the mirrored pages cite for their formulas)."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch025_catenoid_field"
+  },
+  "named_after": "Field",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

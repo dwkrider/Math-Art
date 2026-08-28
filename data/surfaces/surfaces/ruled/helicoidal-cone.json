@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "helicoidal-cone",
+  "name": "Helicoidal Cone",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "ruled",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The cone joining a fixed apex to a circular helix: rulings (a u cos v, a u sin v, b u v).  NOTE: the mirror file's H1 reads \"Elliptic cone\" -- a conversion artifact; the page body is headed HELICOIDAL CONE and describes this surface, so the identity flag crosscheck records against this id is a defect of the mirror's title line, not of the id."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  math_art's HELICAL_CONE (the compound helical cone / Solomonic column, a fluted conical envelope) is a different surface despite the similar name.",
+      "resume": "math_art/ruled_surface_generator.py already carries the cone and conoid machinery (build_conoid and the CONOID variant table); add a row and take the parametrization from the cited mirror chapter."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Helicoidal cone (Cone helicoidal)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1064_conehelicoidal (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1064_conehelicoidal.md)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1064_conehelicoidal",
+        "agrees": true,
+        "detail": "page title 'Elliptic cone' vs record name 'Helicoidal Cone'"
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1064_conehelicoidal"
+  },
+  "named_after": "Helicoidal",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

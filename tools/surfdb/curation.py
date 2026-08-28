@@ -1054,8 +1054,17 @@ FACTS = {
         "embedding": {"quality": "singular", "is_record": True,
                       "record_for": "maximum nodes, degree 4",
                       "singularities": [{"type": "node (A1)", "count": 16}]},
+        # Tetrahedral, but in the EDGE frame: math_art writes the four
+        # tangent planes as 1 -+ z -+ sqrt2 x and 1 + z +- sqrt2 y, whose
+        # normals point along (+-sqrt2, 0, -1) and (0, +-sqrt2, 1). Those
+        # four normals have pairwise dot product -1/3, so the tetrahedron
+        # is regular -- but its 3-fold axes are the normals themselves,
+        # not the coordinate diagonals, so the standard-frame Td
+        # generators do not apply. The mesh-symmetry check reported this
+        # surface as asymmetric until the frame was named.
         "symmetry": {"kind": "point", "periodicity_rank": 0,
-                     "schoenflies": "Td", "verified_by": "curated"},
+                     "schoenflies": "Td", "generator_set": "Td_edge",
+                     "order": 24, "verified_by": "symbolic"},
         "provenance": {"sources": [
             "E. E. Kummer, 'Uber die Flachen vierten Grades mit sechzehn "
             "singularen Punkten', Monatsber. Akad. Wiss. Berlin (1864)."]},

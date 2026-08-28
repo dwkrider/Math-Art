@@ -31,7 +31,14 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 1,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 6
+      }
+    ]
   },
   "symmetry": {
     "kind": "rod",
@@ -56,40 +63,25 @@
       "H. Karcher, Manuscripta Math. 62 (1988); H. F. Scherk (1835);",
       "K. Li thesis lineage (6/8-ended towers); L. daSilva, V. Ramos Batista (2009); M. Weber, https://minimalsurfaces.blog/ notebooks Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb, Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb (research/msblog_harvest/singly_periodic.json).  Full scholarly details in the weierstrass sscherk block header."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch126); K. Li, PhD thesis, Bloomington 2012",
+        "agrees": true,
+        "detail": "'a 1-parameter subfamily (with some symmetry) of 6-ended surfaces of genus 1' with annular Scherk ends."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch126_6_ended_scherk_g1"
+  },
   "named_after": "Scherk",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 66462,
-      "edges": 133611,
-      "faces": 67060,
-      "euler_characteristic": -89,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": false,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.272634,
-        0.468924,
-        2.0
-      ],
-      "aspect_ratio": 0.234462
-    }
   }
 }

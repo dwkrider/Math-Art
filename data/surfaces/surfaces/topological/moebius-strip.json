@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "moebius-strip",
+  "name": "Moebius Strip",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "compact-with-boundary",
+    "def-parametric",
+    "immersed",
+    "non-orientable",
+    "not-implemented",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The classical one-sided band (Moebius and Listing, 1858): a strip closed up after a half twist, here as the standard ruled parametrization the VMM exhibit prints.  The twist sign gives the two chiralities; per house convention that is one record with a handedness, not two."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "boundary_components": 1,
+    "class": "compact-with-boundary"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built as its own generator: the database holds the minimal Meeks Moebius strip, the Sudanese band in S3, a Bjorling twisted band and a solid twisted strip, but the plain ruled Moebius band -- the canonical one-sided surface -- has no record or operator of its own.",
+      "resume": "One ruled-band chart (the standard half-twist parametrization on the VMM page) in math_art/topological_surface_generator.py alongside its existing non-orientable surfaces."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'Moebius Strip', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch043_moebius_strip.md)."
+    ]
+  },
+  "ids": {
+    "vmm": "ch043_moebius_strip"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Moebius, Strip",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": true
+  }
+}

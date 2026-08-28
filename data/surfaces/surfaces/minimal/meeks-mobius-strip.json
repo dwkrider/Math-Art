@@ -25,6 +25,12 @@
       "value": 0.0,
       "source": "classical"
     },
+    "total_curvature": {
+      "exact": "-6*pi",
+      "value": -18.84955592153876,
+      "source": "classical",
+      "note": "W. H. Meeks III, 'The classification of complete minimal surfaces in R^3 with total curvature greater than -8pi', Duke Math. J. 48 (1981) 523-535 -- the complete minimal Moebius strip with total curvature -6pi; unique up to rigid motion by J. L. Barbosa and A. G. Colares (1986)."
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -57,12 +63,13 @@
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "W. H. Meeks III, Duke Math. J. 48 (1981) 523-535",
+        "agrees": true,
+        "detail": "The complete minimal Moebius strip with total curvature -6pi; by the same classification every complete minimal surface with total curvature > -8pi is the plane, catenoid, Enneper surface or this Moebius strip.  Uniqueness: Barbosa-Colares 1986."
+      }
+    ]
   },
   "tradition": [
     "classical"
@@ -82,24 +89,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 14745,
-      "edges": 29325,
-      "faces": 14580,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.936937,
-        1.10937
-      ],
-      "aspect_ratio": 0.554685
-    }
   }
 }

@@ -76,40 +76,26 @@
       "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
       "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\")."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295 (minsurf ch065)",
+        "agrees": true,
+        "detail": "'immersed minimal spheres with an even number 2n of planar ends. If n is odd ... an immersion of the projective plane with n planar ends.'"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch019_inverted_boy",
+    "msblog": "ch065_kusners_spheres_with_planar_ends"
+  },
   "named_after": "Kusner",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 20272,
-      "edges": 40419,
-      "faces": 20145,
-      "euler_characteristic": -2,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.938055,
-        2.0,
-        1.615659
-      ],
-      "aspect_ratio": 0.807829
-    }
   }
 }

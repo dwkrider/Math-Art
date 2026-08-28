@@ -51,13 +51,7 @@
         "agrees": true,
         "detail": "page title 'Sea-shell' vs record name 'Seashell'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1337_coquillage_2"
@@ -67,24 +61,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 9217,
-      "edges": 18432,
-      "faces": 9216,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.697863,
-        1.499726,
-        2.0
-      ],
-      "aspect_ratio": 0.749863
-    }
   }
 }

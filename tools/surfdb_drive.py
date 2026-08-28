@@ -29,6 +29,7 @@
 # as source rather than imported.
 
 import json
+import math
 import os
 import sys
 
@@ -52,6 +53,167 @@ NEEDS_SELECTION = {
     "object.minimal_span",
     "object.fabrication_slice",
 }
+
+
+sys.path.insert(0, HERE)
+try:
+    from surfdb import expr as _expr
+    from surfdb import invariants as _inv
+except ImportError:                                   # pragma: no cover
+    _expr = _inv = None
+
+
+# ---------------------------------------------------------------------------
+# Independent checks: things measured from the MESH and compared against
+# values that did not come from the mesh.
+#
+# The rest of this toolchain checks the generators against themselves --
+# a stored equation is verified against the shipped implementation -- so
+# it is excellent at catching transcription errors in the database and
+# structurally incapable of catching a bug in the generator. These three
+# are the ones that can:
+#
+#   Gauss-Bonnet     sum of angle defects must be 2*pi*chi on a closed
+#                    mesh. Purely internal, but it fails on exactly the
+#                    kind of broken topology a bad build produces.
+#   symmetry         apply the record's claimed group generators to the
+#                    built vertices and measure how far the set moves.
+#                    A generator can produce the right topology with the
+#                    wrong symmetry, and nothing else here would notice.
+#   published values genus per cell, node counts, area -- compared with
+#                    numbers taken from the literature, never from our
+#                    own build (tools/surfdb/published.py).
+# ---------------------------------------------------------------------------
+
+
+def angle_defect_total(bm):
+    """Sum of 2*pi minus the incident face angles, over interior vertices.
+
+    By Gauss-Bonnet this equals 2*pi*chi for a closed surface, so it is a
+    discrete total curvature that needs no smooth data.
+    """
+    total = 0.0
+    for v in bm.verts:
+        if any(len(e.link_faces) < 2 for e in v.link_edges):
+            continue                                 # boundary vertex
+        ang = 0.0
+        for f in v.link_faces:
+            vs = [lv.vert for lv in f.loops]
+            try:
+                k = vs.index(v)
+            except ValueError:
+                continue
+            a = vs[k - 1].co - v.co
+            b = vs[(k + 1) % len(vs)].co - v.co
+            la, lb = a.length, b.length
+            if la < 1e-12 or lb < 1e-12:
+                continue
+            c = max(-1.0, min(1.0, a.dot(b) / (la * lb)))
+            ang += math.acos(c)
+        total += 2.0 * math.pi - ang
+    return total
+
+
+def mesh_area_volume(bm):
+    """(area, signed enclosed volume) by fan triangulation."""
+    area = 0.0
+    vol = 0.0
+    for f in bm.faces:
+        vs = [lv.vert.co for lv in f.loops]
+        for k in range(1, len(vs) - 1):
+            a, b, c = vs[0], vs[k], vs[k + 1]
+            area += (b - a).cross(c - a).length * 0.5
+            vol += a.dot(b.cross(c)) / 6.0
+    return area, abs(vol)
+
+
+def _grid_key(p, cell):
+    return (int(math.floor(p[0] / cell)), int(math.floor(p[1] / cell)),
+            int(math.floor(p[2] / cell)))
+
+
+def symmetry_residual(verts, gens, params, samples=400, seed=20260828):
+    """How far the claimed symmetry moves the built vertex set.
+
+    Each generator is applied to a sample of vertices and the image is
+    matched to its nearest stored vertex through a spatial hash; the
+    reported residual is the worst such distance, relative to the
+    bounding-box diagonal. A correct build returns ~0.
+    """
+    import random
+    if not verts or not gens:
+        return None
+    # RECENTRE FIRST, ON THE BOUNDING-BOX MIDPOINT.
+    #
+    # Every generator's output is fitted into a 2x2x2 box for display, and
+    # that fit both scales and TRANSLATES. A point group acts about the
+    # surface's own centre, so testing it on un-centred vertices rotates
+    # the object about the wrong point and reports a symmetric surface as
+    # asymmetric.
+    #
+    # The midpoint, NOT the centroid. The fit centres the BOUNDING BOX, so
+    # the box midpoint is where the defining equation's origin ended up;
+    # the vertex centroid is somewhere else entirely, because marching
+    # tetrahedra do not distribute vertices evenly over a surface. Using
+    # the centroid passed the 3-fold test (the centroid happens to lie on
+    # the (1,1,1) axis) and failed the mirrors, which is exactly the
+    # signature of rotating about a point displaced along the axis.
+    mx = (max(v[0] for v in verts) + min(v[0] for v in verts)) / 2.0
+    my = (max(v[1] for v in verts) + min(v[1] for v in verts)) / 2.0
+    mz = (max(v[2] for v in verts) + min(v[2] for v in verts)) / 2.0
+    verts = [(v[0] - mx, v[1] - my, v[2] - mz) for v in verts]
+
+    xs = [v[0] for v in verts]
+    ys = [v[1] for v in verts]
+    zs = [v[2] for v in verts]
+    diag = math.sqrt((max(xs) - min(xs)) ** 2 + (max(ys) - min(ys)) ** 2
+                     + (max(zs) - min(zs)) ** 2)
+    if diag < 1e-9:
+        return None
+    cell = max(diag / 60.0, 1e-6)
+    buckets = {}
+    for v in verts:
+        buckets.setdefault(_grid_key(v, cell), []).append(v)
+
+    rng = random.Random(seed)
+    pick = verts if len(verts) <= samples else rng.sample(verts, samples)
+    worst = 0.0
+    for gx, gy, gz in gens:
+        for v in pick:
+            env = dict(params or {})
+            env.update({"x": v[0], "y": v[1], "z": v[2]})
+            try:
+                q = (_expr.evaluate(gx, env), _expr.evaluate(gy, env),
+                     _expr.evaluate(gz, env))
+            except Exception:                         # noqa: BLE001
+                return None
+            # Search outward until a neighbour is found. A fixed 3x3x3
+            # probe returns "not found" whenever the mesh is coarser than
+            # one cell, and reporting that as a maximal residual turns a
+            # sparse mesh into a false asymmetry -- which is exactly what
+            # it did before this. Give up only after the shell exceeds a
+            # quarter of the object.
+            k0 = _grid_key(q, cell)
+            best = None
+            rad = 1
+            while best is None and rad <= 15:
+                for dx in range(-rad, rad + 1):
+                    for dy in range(-rad, rad + 1):
+                        for dz in range(-rad, rad + 1):
+                            if max(abs(dx), abs(dy), abs(dz)) != rad and rad > 1:
+                                continue
+                            for w in buckets.get((k0[0] + dx, k0[1] + dy,
+                                                  k0[2] + dz), ()):
+                                d = math.sqrt((w[0] - q[0]) ** 2
+                                              + (w[1] - q[1]) ** 2
+                                              + (w[2] - q[2]) ** 2)
+                                if best is None or d < best:
+                                    best = d
+                rad += 1
+            if best is None:
+                return None                  # cannot decide; not a failure
+            worst = max(worst, best / diag)
+    return worst
 
 
 def argv_after_dashdash():
@@ -82,6 +244,40 @@ def measure(obj):
         V, E, F = len(bm.verts), len(bm.edges), len(bm.faces)
         boundary = [e for e in bm.edges if len(e.link_faces) == 1]
         nonmanifold = [e for e in bm.edges if len(e.link_faces) > 2]
+
+        # NON-MANIFOLD VERTICES. The usual edge test -- no edge shared by
+        # more than two faces -- misses a "bowtie": two cones meeting at a
+        # single point. Every edge there is perfectly manifold and the
+        # vertex link is two cycles instead of one, so the surface is not
+        # a manifold and Gauss-Bonnet does not hold. Detected by walking
+        # the face fan around each vertex and checking it closes in ONE
+        # loop.
+        bowtie = 0
+        for v in bm.verts:
+            fs = list(v.link_faces)
+            if len(fs) < 3:
+                continue
+            adj = {}
+            for f in fs:
+                es = [e for e in f.edges if v in e.verts]
+                if len(es) == 2:
+                    adj.setdefault(id(es[0]), []).append(f)
+                    adj.setdefault(id(es[1]), []).append(f)
+            seen = set()
+            stack = [fs[0]]
+            while stack:
+                cur = stack.pop()
+                if id(cur) in seen:
+                    continue
+                seen.add(id(cur))
+                for e in cur.edges:
+                    if v not in e.verts:
+                        continue
+                    for nf in adj.get(id(e), ()):
+                        if id(nf) not in seen:
+                            stack.append(nf)
+            if len(seen) != len(fs):
+                bowtie += 1
 
         # boundary loops: connected components of the boundary edge graph
         loops = 0
@@ -128,12 +324,22 @@ def measure(obj):
         ext = sorted(x for x in bb)
         aspect = (ext[0] / ext[2]) if ext[2] > 1e-12 else 0.0
 
+        area, vol = mesh_area_volume(bm)
+        defect = angle_defect_total(bm)
+        verts = [tuple(v.co) for v in bm.verts]
+
         return {
             "vertices": V, "edges": E, "faces": F,
             "euler_characteristic": V - E + F,
+            "angle_defect_total": round(defect, 6),
+            "area": round(area, 6),
+            "volume": round(vol, 6),
+            "_verts": verts,
             "components": comps,
             "boundary_loops": loops,
-            "manifold": not nonmanifold,
+            "manifold": not nonmanifold and not bowtie,
+            "nonmanifold_edges": len(nonmanifold),
+            "nonmanifold_vertices": bowtie,
             "orientable": None,          # Blender meshes carry no global sign
             "one_sided": None,
             "bounding_box": [round(v, 6) for v in bb],
@@ -262,9 +468,15 @@ def run_op(op_id, params, key=None, family=None):
                   % (key, op_id, last or "no enum property accepted it"))
 
 
-def compare(rec, meas):
-    """Record claims vs measured mesh. Returns a list of disagreements."""
+def compare(rec, meas, info=None):
+    """Record claims vs measured mesh. Returns a list of disagreements.
+
+    `info` collects observations that are NOT failures -- notably scale
+    mismatches explained by the display fit.
+    """
     bad = []
+    if info is None:
+        info = []
     topo = rec.get("topology") or {}
 
     chi = topo.get("euler_characteristic")
@@ -296,6 +508,95 @@ def compare(rec, meas):
         bad.append("aspect ratio %.4g -- the surface came out essentially "
                    "flat, which passes every topological check"
                    % meas["aspect_ratio"])
+
+    # --- Gauss-Bonnet -----------------------------------------------------
+    # On a CLOSED mesh the angle defects must sum to 2*pi*chi. This needs
+    # no external data and fails on exactly the broken topology a bad
+    # build produces -- a seam that did not weld, a duplicated strip.
+    if meas["boundary_loops"] == 0 and meas["manifold"]             and meas["components"] == 1:
+        want = 2.0 * math.pi * meas["euler_characteristic"]
+        got = meas["angle_defect_total"]
+        # A closed manifold satisfies this EXACTLY, so the tolerance is
+        # only for accumulated floating point. Where it fails, the mesh is
+        # not the closed manifold it appears to be.
+        if abs(got - want) > max(2e-2, 1e-3 * abs(want)):
+            bad.append("Gauss-Bonnet violated: angle defects sum to %.6g but "
+                       "2*pi*chi = %.6g (chi = %d)%s"
+                       % (got, want, meas["euler_characteristic"],
+                          "" if not meas["nonmanifold_vertices"] else
+                          " -- and the mesh has %d non-manifold (bowtie) "
+                          "vertices, which the edge test does not see"
+                          % meas["nonmanifold_vertices"]))
+
+    # --- published invariants --------------------------------------------
+    # These are the ones that can catch a GENERATOR bug, because the value
+    # came from the literature and not from this build.
+    topo = rec.get("topology") or {}
+    gpc = topo.get("genus_per_cell")
+    if isinstance(gpc, int) and meas["boundary_loops"] == 0             and meas["manifold"] and meas["components"] == 1:
+        got_g = (2 - meas["euler_characteristic"]) / 2.0
+        if abs(got_g - gpc) > 0.51:
+            bad.append("published genus per cell is %d but the built cell "
+                       "measures %.1f (chi = %d)"
+                       % (gpc, got_g, meas["euler_characteristic"]))
+
+    # Metrics must be compared SCALE-INVARIANTLY. Every generator's output
+    # is fitted into a 2x2x2 box, so a raw area is off by the square of a
+    # scale factor the record knows nothing about: the oloid and the
+    # pseudosphere both read "55% out" against a published area of 4*pi,
+    # and both implied the SAME ~0.667 factor -- a normalisation
+    # mismatch, not a geometry error. README.md says it directly: the
+    # 2x2x2 fit is a DISPLAY transform and never a storage normalisation.
+    #
+    # So the comparison uses the isoperimetric quotient 36*pi*V^2/A^3,
+    # which is dimensionless and therefore immune to the fit. Where only
+    # one of area and volume is published there is nothing scale-free to
+    # form, and the implied scale factor is reported for information
+    # rather than counted as a failure.
+    metrics = rec.get("metrics") or {}
+    pa = (metrics.get("area") or {}).get("value")
+    pv = (metrics.get("volume_enclosed") or {}).get("value")
+    closed = meas["boundary_loops"] == 0 and meas["manifold"]
+    if pa and pv and closed and meas["area"] > 0 and meas["volume"] > 0:
+        want = 36.0 * math.pi * (pv ** 2) / (pa ** 3)
+        got = 36.0 * math.pi * (meas["volume"] ** 2) / (meas["area"] ** 3)
+        if want > 0 and abs(got - want) / want > 0.05:
+            bad.append("published isoperimetric quotient is %.5g but the "
+                       "build measures %.5g -- a scale-free disagreement, so "
+                       "not a normalisation artefact" % (want, got))
+    elif pa and meas["area"] > 0:
+        implied = math.sqrt(meas["area"] / pa)
+        if abs(implied - 1.0) > 0.02:
+            info.append("published area %.6g vs measured %.6g, implying a "
+                        "uniform scale of %.4f -- consistent with the 2x2x2 "
+                        "display fit, not compared" % (pa, meas["area"], implied))
+
+    # --- symmetry, on the built mesh --------------------------------------
+    # A generator can produce the right topology with the WRONG symmetry,
+    # and nothing else in this toolchain would notice.
+    sym = rec.get("symmetry") or {}
+    group = sym.get("generator_set") or sym.get("schoenflies")
+    if _inv is not None and group in getattr(_inv, "GENERATORS", {}):
+        entry = _inv.GENERATORS[group]
+        r = symmetry_residual(meas.get("_verts") or [], entry["gens"],
+                              {"phi": (1 + math.sqrt(5)) / 2})
+        if r is not None and r > 0.02:
+            # Six of the first eight failures from this check were FRAME
+            # errors, not asymmetries: Kummer is tetrahedral about its
+            # tangent-plane normals rather than the coordinate diagonals,
+            # and the Goursat dodecahedral rows put a 5-fold axis on z.
+            # So a failure here is reported as UNRESOLVED unless the
+            # record's frame has been pinned with `generator_set`, which
+            # is the field that says somebody checked.
+            pinned = bool((rec.get("symmetry") or {}).get("generator_set"))
+            msg = ("claims symmetry %s but the built mesh moves by %.3g of "
+                   "its diagonal under the group's generators" % (group, r))
+            if pinned:
+                bad.append(msg)
+            else:
+                info.append(msg + " -- UNRESOLVED: the record does not pin "
+                            "its frame with `generator_set`, and a wrong "
+                            "frame looks exactly like a wrong surface")
     return bad
 
 
@@ -357,7 +658,8 @@ def main():
             measured_any = meas
         if write and measured_any is not None:
             recipe = rec.setdefault("mesh_recipe", {})
-            recipe["measured"] = measured_any
+            recipe["measured"] = {k: v for k, v in measured_any.items()
+                                  if not k.startswith("_")}
             with open(paths[slug], "w", encoding="utf-8") as fh:
                 json.dump(rec, fh, indent=2, ensure_ascii=False)
                 fh.write("\n")

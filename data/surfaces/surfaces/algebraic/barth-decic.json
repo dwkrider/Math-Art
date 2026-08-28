@@ -60,14 +60,9 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "W. Barth, J. Algebraic Geometry 5 (1996) -- same work as the sextic."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+      "W. Barth, J. Algebraic Geometry 5 (1996) -- same work as the sextic.",
+      "Breske-Labs-van Straten (2005) and J. Garcia-Escudero (arXiv:1107.3401, 2011): Barth's 345-nodal decic -- independent confirmations of the 345."
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -88,24 +83,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 302324,
-      "edges": 899028,
-      "faces": 596766,
-      "euler_characteristic": 62,
-      "components": 61,
-      "boundary_loops": 60,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

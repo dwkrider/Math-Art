@@ -57,14 +57,26 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "L. P. Jorge and W. H. Meeks III, 'The topology of complete minimal surfaces of finite total Gaussian curvature', Topology 22 (1983)."
+      "L. P. Jorge and W. H. Meeks III, 'The topology of complete minimal surfaces of finite total Gaussian curvature', Topology 22 (1983).",
+      "L. P. Jorge, W. H. Meeks III, 'The topology of complete minimal surfaces of finite total Gaussian curvature', Topology 22 (1983) 203-221; M. Weber (mirror: minsurf ch222): 'A k-Noid is a minimal surface with k catenoidal ends.'"
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1309_trinoide_2",
+        "agrees": false,
+        "detail": "page title 'Trinoid' vs record name 'Jorge-Meeks k-noid' -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+      },
+      {
+        "source": "mathcurve:ch1309_trinoide_2",
+        "agrees": true,
+        "detail": "record year 1983, page says 1983"
+      },
+      {
+        "source": "mathcurve:ch1309_trinoide_2",
+        "agrees": true,
+        "detail": "page independently describes this as 'minimal'"
+      }
+    ]
   },
   "tradition": [
     "classical"
@@ -97,29 +109,14 @@
       "k catenoidal ends in symmetric position; k = 2 degenerates to the catenoid. Which k give EMBEDDED surfaces is not asserted here."
     ]
   },
+  "ids": {
+    "mathcurve": "ch1309_trinoide_2",
+    "msblog": "ch222_jorge_meeks_k_noids"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 11735,
-      "edges": 23221,
-      "faces": 11487,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.65783,
-        2.0,
-        1.209715
-      ],
-      "aspect_ratio": 0.604857
-    }
   }
 }

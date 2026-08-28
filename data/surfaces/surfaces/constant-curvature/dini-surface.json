@@ -37,15 +37,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 275.44997460083187,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {},
@@ -87,14 +78,7 @@
         "agrees": true,
         "detail": "page independently describes this as 'k-const-negative'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Ulisse Dini",
   "year": 1865,
@@ -103,7 +87,8 @@
   ],
   "ids": {
     "mathworld": "DinisSurface",
-    "mathcurve": "ch1255_dini_2"
+    "mathcurve": "ch1255_dini_2",
+    "vmm": "ch053_dini"
   },
   "notes": {
     "caveats": [
@@ -115,24 +100,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6144,
-      "edges": 12128,
-      "faces": 5985,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.389935,
-        0.389988,
-        2.0
-      ],
-      "aspect_ratio": 0.194968
-    }
   }
 }

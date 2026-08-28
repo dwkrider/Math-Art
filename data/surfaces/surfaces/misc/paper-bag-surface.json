@@ -45,37 +45,12 @@
       "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
       "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
       "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4704,
-      "edges": 9312,
-      "faces": 4608,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.809717,
-        1.692104,
-        2.0
-      ],
-      "aspect_ratio": 0.404858
-    }
   }
 }

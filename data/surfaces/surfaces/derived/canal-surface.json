@@ -41,16 +41,20 @@
     "sources": [
       "G. Monge; see R. Ferreol, mathcurve, 'surface canal'."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1217_tube_2",
+        "agrees": false,
+        "detail": "page title 'Tube' vs record name 'Canal Surface' -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "mathcurve": "ch1217_tube_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

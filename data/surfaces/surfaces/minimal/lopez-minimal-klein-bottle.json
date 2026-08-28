@@ -25,6 +25,12 @@
       "value": 0.0,
       "source": "classical"
     },
+    "total_curvature": {
+      "exact": "-8*pi",
+      "value": -25.132741228718345,
+      "source": "classical",
+      "note": "F. Lopez, 'A Complete Minimal Klein Bottle in R^3', Duke Math. J. 71 (1993) 23-30.  M. Weber (minsurf ch063): 'It has a single Enneper end and total curvature -8pi. Lopez proved later that it is the only minimal Klein bottle of total curvature -8pi.'"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -33,7 +39,14 @@
     "complete": true,
     "compact": false,
     "orientable": false,
-    "one_sided": true
+    "one_sided": true,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 1,
+        "embedded": false
+      }
+    ]
   },
   "symmetry": {
     "kind": "none",
@@ -60,40 +73,25 @@
       "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
       "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\")."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "F. Lopez, Duke Math. J. 71 (1993) 23-30 (minsurf ch063)",
+        "agrees": true,
+        "detail": "'It has a single Enneper end and total curvature -8pi ... the only minimal Klein bottle of total curvature -8pi.'"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch063_f_lopez_1_ended_klein_bottle"
+  },
   "named_after": "Lopez",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 36671,
-      "edges": 73152,
-      "faces": 36480,
-      "euler_characteristic": -1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.339387,
-        2.0,
-        1.068109
-      ],
-      "aspect_ratio": 0.534054
-    }
   }
 }

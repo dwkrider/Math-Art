@@ -46,13 +46,7 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "M. Weber, https://minimalsurfaces.blog/ and the archive formerly at indiana.edu/~minimal/archive/ (the site is dead; 280 surface folders were recovered from the Wayback CDX index)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -60,6 +54,9 @@
   "tradition": [
     "crystallographic"
   ],
+  "ids": {
+    "msblog": "ch279_rpd_deformation"
+  },
   "named_after": "Weber",
   "fabrication": {
     "developable": false,

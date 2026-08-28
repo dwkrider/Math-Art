@@ -52,12 +52,13 @@
     "sources": [
       "A. Sarti, J. Algebra 246 (2001)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "A. Sarti, 'Pencils of symmetric surfaces in P^3', J. Algebra 246 (2001); Breske-Labs-van Straten (2005) mu(12) >= 600; J. Garcia-Escudero (arXiv:1107.3401, 2011)",
+        "agrees": true,
+        "detail": "'Sarti's degree-12 surface with mu_R = 600' -- confirms the recorded 600 nodes from two independent compilations."
+      }
+    ]
   },
   "discovered_by": "Alessandra Sarti",
   "year": 2001,

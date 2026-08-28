@@ -31,7 +31,18 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 1,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 2
+      },
+      {
+        "type": "enneper",
+        "count": 2
+      }
+    ]
   },
   "symmetry": {
     "kind": "rod",
@@ -58,39 +69,24 @@
       "M. Weber, https://minimalsurfaces.blog/ -- notebooks \"Fischer-Koch Translational\", \"Fischer-Koch-Freese\" (after R. Freese), \"Singly Periodic Torus with One Catenoid and Two Annular Ends\", \"Translation Invariant Torus with Two Enneper and Two Annular Ends\" (research/msblog_harvest/singly_periodic.json);",
       "B. C. Carlson, Numer. Algorithms 10 (1995) 13-26 (R_F)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf posts ch413)",
+        "agrees": true,
+        "detail": "'a translation invariant surface with two parallel annular ends and two periodic Enneper ends. The quotient surface has genus 1.'"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch413_translation_invariant_torus_with_2_enneper_and_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 12256,
-      "edges": 24180,
-      "faces": 11924,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.982252,
-        2.0,
-        1.510782
-      ],
-      "aspect_ratio": 0.491126
-    }
   }
 }

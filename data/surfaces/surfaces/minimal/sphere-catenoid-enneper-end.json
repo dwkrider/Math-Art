@@ -34,13 +34,30 @@
       "value": 0.0,
       "source": "classical"
     },
+    "total_curvature": {
+      "exact": "-8*pi",
+      "value": -25.132741228718345,
+      "source": "classical",
+      "note": "M. Weber (minsurf ch195): 'These are complete minimal surfaces of finite total curvature -8pi and were completely classified by Francisco Lopez.'  F. Lopez, Trans. Amer. Math. Soc. 334 (1992) 49-73."
+    },
     "also_satisfies": [
       "weingarten"
     ]
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "catenoidal",
+        "count": 1
+      },
+      {
+        "type": "enneper",
+        "count": 1
+      }
+    ]
   },
   "symmetry": {
     "kind": "none",
@@ -64,39 +81,25 @@
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "F. Lopez, Trans. Amer. Math. Soc. 334 (1992) 49-73 (minsurf ch195)",
+        "agrees": true,
+        "detail": "'Complete minimal surfaces of finite total curvature -8pi', one catenoidal + one Enneper end on a sphere."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch012_catenoid_enneper",
+    "msblog": "ch195_sphere_with_one_catenoid_and_one_enneper_end"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 11903,
-      "edges": 23647,
-      "faces": 11744,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.238626,
-        1.659904
-      ],
-      "aspect_ratio": 0.619313
-    }
   }
 }

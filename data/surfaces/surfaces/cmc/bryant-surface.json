@@ -46,13 +46,7 @@
       "Robert L. Bryant, \"Surfaces of mean curvature one in hyperbolic space\", Asterisque 154-155 (1987), 321-347.  Theorem A (the representation f = F (conj F)^T), Theorem B (the polynomial data on C), Example 1 (Enneper's cousin, p. 341), Example 2 (the catenoid cousins, pp. 341-342).",
       "A. I. Bobenko, T. V. Pavlyukevich, B. A. Springborn, \"Hyperbolic constant mean curvature one surfaces: spinor representation and trinoids in hypergeometric functions\", Math. Z. 245 (2003), 63-91; arXiv:math/0206021 -- the spinor form of the same representation and the explicit trinoids the TRINOID mode implements (see math_art/trinoid.py for the construction, gates and details).",
       "M. Umehara and K. Yamada, \"Complete surfaces of constant mean curvature 1 in the hyperbolic 3-space\", Ann. of Math. 137 (1993), 611-638 -- the global theory these examples opened up."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "named_after": "Bryant",
   "fabrication": {
@@ -60,24 +54,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 9216,
-      "edges": 18336,
-      "faces": 9120,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.107856,
-        1.107856,
-        2.0
-      ],
-      "aspect_ratio": 0.553928
-    }
   }
 }

@@ -27,7 +27,9 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus_per_cell": 3,
+    "euler_characteristic_per_cell": -4
   },
   "symmetry": {
     "kind": "space",
@@ -53,12 +55,13 @@
       "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
       "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "A. G. Weyhaupt, Pacific J. Math. 235 (2008) 137-171",
+        "agrees": true,
+        "detail": "'The gyroid and Lidinoid are triply periodic minimal surfaces of genus three ... the unique embedded members of the associate families of the Schwarz P and H surfaces.'  S. Lidin, S. Larsson, J. Chem. Soc. Faraday Trans. 86 (1990)."
+      }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -71,24 +74,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2205,
-      "edges": 4316,
-      "faces": 2112,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.153167,
-        2.0,
-        1.216181
-      ],
-      "aspect_ratio": 0.576584
-    }
   }
 }

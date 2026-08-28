@@ -33,7 +33,15 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 2,
+        "embedded": false
+      }
+    ]
   },
   "symmetry": {
     "kind": "none",
@@ -57,39 +65,25 @@
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch176, Double Enneper)",
+        "agrees": true,
+        "detail": "'We have a sphere with two Enneper ends' (Karcher's Tokyo Notes); not embedded."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch009_double_enneper",
+    "msblog": "ch176_double_enneper"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 7985,
-      "edges": 15892,
-      "faces": 7906,
-      "euler_characteristic": -1,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.561973,
-        1.44001,
-        2.0
-      ],
-      "aspect_ratio": 0.720005
-    }
   }
 }

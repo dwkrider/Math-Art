@@ -56,13 +56,7 @@
         "agrees": true,
         "detail": "page title 'One-sheeted hyperboloid' vs record name 'Hyperboloid of One Sheet'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "architectural",
@@ -70,7 +64,8 @@
   ],
   "ids": {
     "mathworld": "One-SheetedHyperboloid",
-    "mathcurve": "ch1286_hyperboloid1_2"
+    "mathcurve": "ch1286_hyperboloid1_2",
+    "vmm": "ch067_hyperboloid1"
   },
   "notes": {
     "caveats": [
@@ -82,24 +77,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3456,
-      "edges": 6144,
-      "faces": 2880,
-      "euler_characteristic": 192,
-      "components": 98,
-      "boundary_loops": 0,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

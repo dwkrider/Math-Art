@@ -59,13 +59,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "F. Minding, 'Wie sich entscheiden lasst, ob zwei gegebene krumme Flachen auf einander abwickelbar sind oder nicht', J. reine angew. Math. 19 (1839)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "specimens": [
     {
@@ -91,29 +85,13 @@
       "Minding classified the K = -1 surfaces of revolution into three types: the pseudosphere (tractricoid), the bulge and the spindle. The meridian quadrature converges only like h^(3/2) at the rim, where z' = sqrt(1 - f'^2) vanishes like a square root."
     ]
   },
+  "ids": {
+    "vmm": "ch052_hyperbolic_k1_sor"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6144,
-      "edges": 12192,
-      "faces": 6048,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.83384,
-        1.83384,
-        2.0
-      ],
-      "aspect_ratio": 0.91692
-    }
   }
 }

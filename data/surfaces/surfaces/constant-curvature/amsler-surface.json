@@ -49,13 +49,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "M.-H. Amsler, 'Des surfaces a courbure negative constante dans l'espace a trois dimensions et de leurs singularites', Math. Ann. 130 (1955)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Marc-Henri Amsler",
   "year": 1955,
@@ -72,24 +66,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6144,
-      "edges": 12128,
-      "faces": 5985,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.999564,
-        1.153713
-      ],
-      "aspect_ratio": 0.576857
-    }
   }
 }

@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "schoen-tw",
+  "name": "Schoen TW Family Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "A hexagonal triply periodic minimal surface family that 3DXM exhibits as 'A Schoen TW Family', attributed by the museum to Alan Schoen."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.  The exhibit gives images only, and which entry of Schoen's NASA catalogue 'TW' denotes has NOT been identified here -- resolving that naming is part of the remaining work.",
+      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'A Schoen TW Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch037_schoen_tw.md).",
+      "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970)."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "ids": {
+    "vmm": "ch037_schoen_tw"
+  },
+  "named_after": "Schoen",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

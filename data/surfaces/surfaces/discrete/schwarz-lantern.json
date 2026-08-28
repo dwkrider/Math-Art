@@ -49,13 +49,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "H. A. Schwarz, 'Sur une definition erronee de l'aire d'une surface courbe', Gesammelte Mathematische Abhandlungen (1890)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Hermann Amandus Schwarz",
   "year": 1880,
@@ -75,24 +69,5 @@
     "printable_watertight": true,
     "requires_thickening": true,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 300,
-      "edges": 876,
-      "faces": 576,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

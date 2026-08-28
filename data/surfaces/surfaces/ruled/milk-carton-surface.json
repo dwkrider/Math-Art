@@ -52,13 +52,7 @@
         "agrees": true,
         "detail": "page title 'Milk carton' vs record name 'Milk Carton'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1300_berlingot_2"
@@ -68,24 +62,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2688,
-      "edges": 4976,
-      "faces": 2388,
-      "euler_characteristic": 100,
-      "components": 50,
-      "boundary_loops": 0,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.99586,
-        1.99586,
-        2.0
-      ],
-      "aspect_ratio": 0.99793
-    }
   }
 }

@@ -28,7 +28,8 @@
     "total_curvature": {
       "exact": "-8*pi",
       "value": -25.132741228718345,
-      "source": "classical"
+      "source": "classical",
+      "note": "M. Weber (minsurf ch058): 'The Chen-Gackstatter surface of genus g has finite total curvature -4pi(g+1), the largest possible value for its genus'; g = 1 here."
     },
     "also_satisfies": [
       "weingarten"
@@ -70,43 +71,23 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "C. C. Chen and F. Gackstatter, 'Elliptische und hyperelliptische Funktionen und vollstandige Minimalflachen vom Enneperschen Typ', Math. Ann. 259 (1982)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+      "C. C. Chen and F. Gackstatter, 'Elliptische und hyperelliptische Funktionen und vollstandige Minimalflachen vom Enneperschen Typ', Math. Ann. 259 (1982).",
+      "C. C. Chen, F. Gackstatter, Math. Ann. 259 (1982) 359-369; M. Weber (mirror: minsurf ch058): total curvature -4pi(g+1) for the genus-g member, 'the largest possible value for its genus'."
+    ]
   },
   "tradition": [
     "classical"
   ],
   "discovered_by": "Chi Cheng Chen and Fritz Gackstatter",
   "year": 1982,
+  "ids": {
+    "vmm": "ch021_chen_gackstatter",
+    "msblog": "ch234_chen_gackstatter_surface"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3227,
-      "edges": 6388,
-      "faces": 3160,
-      "euler_characteristic": -1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.490832,
-        1.490832,
-        2.0
-      ],
-      "aspect_ratio": 0.745416
-    }
   }
 }

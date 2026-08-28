@@ -31,7 +31,14 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 4
+      }
+    ]
   },
   "symmetry": {
     "kind": "layer",
@@ -53,7 +60,9 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "H. F. Scherk, 'Bemerkungen uber die kleinste Flache innerhalb gegebener Grenzen', J. reine angew. Math. 13 (1835)."
+      "H. F. Scherk, 'Bemerkungen uber die kleinste Flache innerhalb gegebener Grenzen', J. reine angew. Math. 13 (1835).",
+      "H. F. Scherk, 'Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen', J. Reine Angew. Math. 13 (1835) 185-208.",
+      "H. Lazard-Holly, W. H. Meeks III, 'Classification of doubly-periodic minimal surfaces of genus zero', Invent. Math. 143 (2001) 1-27; M. Weber (mirror: minsurf ch046): 'The quotient surface by its translational symmetries is a 4-punctured sphere.'"
     ],
     "cross_checked": [
       {
@@ -71,13 +80,7 @@
         "agrees": true,
         "detail": "page independently describes this as 'minimal'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -86,7 +89,9 @@
   "year": 1835,
   "ids": {
     "mathworld": "ScherksMinimalSurfaces",
-    "mathcurve": "ch1335_scherk_2"
+    "mathcurve": "ch1335_scherk_2",
+    "vmm": "ch004_scherk",
+    "msblog": "ch046_scherks_doubly_periodic_surface"
   },
   "notes": {
     "caveats": [
@@ -98,24 +103,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3721,
-      "edges": 7320,
-      "faces": 3600,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.370607,
-        1.370607,
-        2.0
-      ],
-      "aspect_ratio": 0.685303
-    }
   }
 }

@@ -48,13 +48,7 @@
     "sources": [
       "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA Technical Note TN D-5541 (1970), together with his later listings of the second-tier surfaces.",
       "K. Brakke, the Surface Evolver periodic minimal-surface collection (kenbrakke.com/evolver), where several of these are figured."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -62,6 +56,9 @@
   "tradition": [
     "crystallographic"
   ],
+  "ids": {
+    "msblog": "ch286_schoen_r2"
+  },
   "named_after": "Schoen",
   "fabrication": {
     "developable": false,

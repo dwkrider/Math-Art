@@ -6,7 +6,7 @@
   "families": [
     "def-weierstrass",
     "doubly-periodic",
-    "immersed",
+    "embedded",
     "implemented",
     "minimal",
     "minimal-periodic",
@@ -31,14 +31,21 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 2,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 4
+      }
+    ]
   },
   "symmetry": {
     "kind": "layer",
     "periodicity_rank": 2
   },
   "embedding": {
-    "quality": "immersed"
+    "quality": "embedded"
   },
   "construction": [
     {
@@ -56,39 +63,24 @@
       "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
       "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "F. Wei, Invent. Math. 109 (1992) 113-136 (minsurf ch052)",
+        "agrees": true,
+        "detail": "'It was the first genus 2 embedded doubly periodic minimal surface, adding a handle to one of the Karcher-Meeks-Rosenberg examples'; 4-ended (parallel annular ends inherited from KMR)."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch052_weis_doubly_periodic_surface_of_genus_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 33794,
-      "edges": 67076,
-      "faces": 33280,
-      "euler_characteristic": -2,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.713032,
-        2.0,
-        1.907142
-      ],
-      "aspect_ratio": 0.356516
-    }
   }
 }

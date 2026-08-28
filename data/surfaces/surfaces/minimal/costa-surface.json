@@ -29,7 +29,7 @@
       "exact": "-12*pi",
       "value": -37.69911184307752,
       "source": "classical",
-      "note": "degree-3 Gauss map"
+      "note": "degree-3 Gauss map; C. J. Costa, 'Classification of complete minimal surfaces in R^3 with total curvature 12pi', Invent. Math. 105 (1991) 273-303 -- the value is in the paper's own title (sign convention: integral of K dA = -12pi)."
     },
     "also_satisfies": [
       "weingarten"
@@ -77,7 +77,8 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "C. J. Costa, 'Example of a complete minimal immersion in R^3 of genus one and three embedded ends', Bol. Soc. Bras. Mat. 15 (1984).",
-      "D. Hoffman and W. H. Meeks III, 'A complete embedded minimal surface in R^3 with genus one and three ends', J. Diff. Geom. 21 (1985) -- the proof that Costa's example is embedded."
+      "D. Hoffman and W. H. Meeks III, 'A complete embedded minimal surface in R^3 with genus one and three ends', J. Diff. Geom. 21 (1985) -- the proof that Costa's example is embedded.",
+      "C. J. Costa, 'Classification of complete minimal surfaces in R^3 with total curvature 12pi', Invent. Math. 105 (1991) 273-303 -- independent confirmation of the recorded -12pi."
     ],
     "cross_checked": [
       {
@@ -95,13 +96,7 @@
         "agrees": true,
         "detail": "page independently describes this as 'minimal'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -112,7 +107,8 @@
     "mathworld": "CostaMinimalSurface",
     "mathcurve": "ch1242_costa_2",
     "vmm": "Costa",
-    "wikipedia": "Costa's minimal surface"
+    "wikipedia": "Costa's minimal surface",
+    "msblog": "ch243_the_costa_surface"
   },
   "relations": {
     "generalizes": [],
@@ -130,24 +126,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3289,
-      "edges": 6468,
-      "faces": 3176,
-      "euler_characteristic": -3,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.231716
-      ],
-      "aspect_ratio": 0.615858
-    }
   }
 }

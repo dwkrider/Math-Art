@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "deco-tetrahedron",
+  "name": "Deco-Tetrahedron",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "closed",
+    "def-implicit",
+    "immersed",
+    "not-implemented",
+    "tradition-gallery"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Level set of the squared-distance function from the four circles through the vertex triples of a regular tetrahedron's faces -- the tetrahedral sibling of the shipped Deco-Cube (distance from the cube's six face-inscribed circles)."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The level function (squared distance from the four face circumcircles of a regular tetrahedron) is deliberately NOT transcribed: the shipped deco-cube's circle-distance construction is guarded by a numerical oracle, and this variant has no implementation to check a transcription against.",
+      "resume": "Implement beside DECO_CUBE in math_art/surfaces/algebraic.py -- same distance-from-circles machinery with the four tetrahedral face circumcircles -- and let the build's oracle verify any stored form."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'Deco-Tetahedron', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch091_deco_tetahedron.md)."
+    ]
+  },
+  "ids": {
+    "vmm": "ch091_deco_tetahedron"
+  },
+  "tradition": [
+    "gallery"
+  ],
+  "named_after": "Deco",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

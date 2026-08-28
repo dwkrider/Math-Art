@@ -31,7 +31,8 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 2
   },
   "symmetry": {
     "kind": "rod",
@@ -57,39 +58,24 @@
       "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
       "C. J. Costa (1984); D. Hoffman, W. H. Meeks III (1985); M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks (research/msblog_harvest/singly_periodic.json)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch162)",
+        "agrees": true,
+        "detail": "'Here we add a simple handle to [the fence of catenoids], increasing the genus of the quotient surface to 2.'"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch162_translation_invariant_catenoid_with_a_handle"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 33297,
-      "edges": 66576,
-      "faces": 33275,
-      "euler_characteristic": -4,
-      "components": 1,
-      "boundary_loops": 5,
-      "manifold": false,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.27281,
-        1.902789,
-        2.0
-      ],
-      "aspect_ratio": 0.636405
-    }
   }
 }

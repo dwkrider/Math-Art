@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "mobius-surface",
+  "name": "Möbius Surface",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-parametric",
+    "not-implemented",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The rotoidal algebraic model of the Mobius strip: a segment carried around a circle at half the rotation rate sweeps a cubic surface that contains the classic half-twist band.  Ferreol keeps it as its own chapter, separate from the Mobius-strip chapter; the strip's other concrete models already carry records (twisted-strip, meeks-mobius-strip, sudanese-mobius-band, bjorling-twisted-band)."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The defining equation is deliberately NOT transcribed here: an unverified coefficient does not error, it silently defines a different surface, and the numerical oracle that guards the shipped algebraic block cannot guard a surface with no implementation to check against.",
+      "resume": "Transcribe the Cartesian equation from the cited mirror chapter into math_art/surfaces/algebraic.py; the build's oracle check then confirms it against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Mobius surface\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1302_mobiussurface_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1302_mobiussurface_2.md)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1302_mobiussurface_2",
+        "agrees": true,
+        "detail": "page title 'Möbius surface' vs record name 'Möbius Surface'"
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1302_mobiussurface_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

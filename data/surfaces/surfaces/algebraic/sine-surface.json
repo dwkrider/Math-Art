@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "sine-surface",
+  "name": "Sine Surface",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-parametric",
+    "not-implemented",
+    "self-intersecting",
+    "tradition-classical",
+    "tradition-gallery"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The surface (sin u, sin v, sin(u+v)): a sextic that is a union of ellipses in three ways, with pinch points where the sheets meet.  NOT the surface Ferreol's lantern-hunting almost mislabeled: the note in sources.py records that this chapter is not Schwarz's lantern."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The defining equation is deliberately NOT transcribed here: an unverified coefficient does not error, it silently defines a different surface, and the numerical oracle that guards the shipped algebraic block cannot guard a surface with no implementation to check against.",
+      "resume": "Transcribe the Cartesian equation from the cited mirror chapter into math_art/surfaces/algebraic.py; the build's oracle check then confirms it against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Sine surface\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1340_sinus_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1340_sinus_2.md).",
+      "A. Gray, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\", 2nd ed., CRC Press (1997) -- the chapter credits Gray with the name."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1340_sinus_2",
+        "agrees": true,
+        "detail": "page title 'Sine surface' vs record name 'Sine Surface'"
+      },
+      {
+        "source": "mathcurve:ch1340_sinus_2",
+        "agrees": true,
+        "detail": "record year 1997, page says 1997"
+      }
+    ]
+  },
+  "year": 1997,
+  "tradition": [
+    "classical",
+    "gallery"
+  ],
+  "ids": {
+    "mathcurve": "ch1340_sinus_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

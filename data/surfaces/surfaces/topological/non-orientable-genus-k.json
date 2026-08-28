@@ -52,13 +52,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "The classification theorem of closed surfaces; W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888) for N_3."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -106,24 +100,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 1655,
-      "edges": 3408,
-      "faces": 1752,
-      "euler_characteristic": -1,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.870639,
-        1.839972
-      ],
-      "aspect_ratio": 0.919986
-    }
   }
 }

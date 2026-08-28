@@ -52,15 +52,10 @@
         "agrees": true,
         "detail": "page title 'Steiner surface' vs record name 'Steiner Surface (Veronese shadow)'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
+    "vmm": "ch046_steiner",
     "mathcurve": "ch1342_steiner_2"
   },
   "fabrication": {
@@ -68,24 +63,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4465,
-      "edges": 8976,
-      "faces": 4512,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.999686,
-        1.999686,
-        2.0
-      ],
-      "aspect_ratio": 0.999843
-    }
   }
 }

@@ -71,13 +71,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "D. Hoffman and W. H. Meeks III, 'Embedded minimal surfaces of finite topology', Ann. of Math. 131 (1990)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -122,29 +116,13 @@
       "costa-surface"
     ]
   },
+  "ids": {
+    "vmm": "ch029_costa_h_m"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 29361,
-      "edges": 58590,
-      "faces": 29226,
-      "euler_characteristic": -3,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.085023
-      ],
-      "aspect_ratio": 0.542512
-    }
   }
 }

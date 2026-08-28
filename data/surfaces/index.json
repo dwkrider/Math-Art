@@ -22,6 +22,7 @@
     "def-nodal",
     "def-parametric",
     "def-swept",
+    "def-variational",
     "def-weierstrass",
     "derived",
     "discrete",
@@ -58,6 +59,7 @@
     "tradition-physical-model",
     "tradition-sculptural",
     "triply-periodic",
+    "weingarten",
     "willmore",
     "with-boundary"
   ],
@@ -79,7 +81,7 @@
     "swept",
     "topological"
   ],
-  "count": 363,
+  "count": 410,
   "implemented_count": 298,
   "entries": [
     {
@@ -100,10 +102,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 2,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -905,6 +907,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "breiner-kleene-surface",
+      "name": "Breiner-Kleene Surface",
+      "path": "surfaces/minimal/breiner-kleene-surface.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "bretzel2",
       "name": "Bretzel2",
       "path": "surfaces/algebraic/bretzel2.json",
@@ -1181,7 +1215,7 @@
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
-        "immersed",
+        "embedded",
         "implemented",
         "minimal",
         "minimal-periodic",
@@ -1192,11 +1226,11 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 3,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
+      "ends": 2,
+      "embedding": "embedded",
       "symmetry": {
         "kind": "rod",
         "symbol": null,
@@ -1619,6 +1653,39 @@
       "specimen_count": 0
     },
     {
+      "slug": "catenoid-field",
+      "name": "Catenoid Field",
+      "path": "surfaces/minimal-periodic/catenoid-field.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "doubly-periodic",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 2,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "layer",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "catenoid-helicoid-associate-family",
       "name": "Catenoid-Helicoid Associate Family",
       "path": "surfaces/minimal/catenoid-helicoid-associate-family.json",
@@ -1669,7 +1736,7 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 3,
       "genus_per_cell": null,
       "orientable": null,
       "ends": 0,
@@ -1704,7 +1771,7 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 2,
       "genus_per_cell": null,
       "orientable": null,
       "ends": 0,
@@ -1719,6 +1786,38 @@
       "operator_ids": [
         "mesh.periodic_minimal_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "catenoid-with-handle",
+      "name": "Catenoid with Handle",
+      "path": "surfaces/minimal/catenoid-with-handle.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -2140,6 +2239,40 @@
       "specimen_count": 0
     },
     {
+      "slug": "clifford-torus",
+      "name": "Clifford Torus",
+      "path": "surfaces/topological/clifford-torus.json",
+      "primary_family": "topological",
+      "families": [
+        "aperiodic",
+        "closed",
+        "closed-orientable",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "topological",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": 1,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "clp-exact",
       "name": "CLP (exact)",
       "path": "surfaces/minimal-periodic/clp-exact.json",
@@ -2158,7 +2291,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 3,
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
@@ -2193,7 +2326,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 4,
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
@@ -2207,6 +2340,38 @@
       "operator_ids": [
         "mesh.periodic_minimal_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "coil",
+      "name": "Coil",
+      "path": "surfaces/swept/coil.json",
+      "primary_family": "swept",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "swept",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -2274,6 +2439,38 @@
       "operator_ids": [
         "mesh.ruled_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "cone-of-revolution",
+      "name": "Cone of Revolution",
+      "path": "surfaces/quadric/cone-of-revolution.json",
+      "primary_family": "quadric",
+      "families": [
+        "aperiodic",
+        "def-implicit",
+        "immersed",
+        "not-implemented",
+        "quadric",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -2378,6 +2575,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "costa-hoffman-karcher-meeks-tori",
+      "name": "Costa-Hoffman-Karcher-Meeks Tori",
+      "path": "surfaces/minimal/costa-hoffman-karcher-meeks-tori.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "costa-hoffman-meeks",
       "name": "Costa-Hoffman-Meeks Surface",
       "path": "surfaces/minimal/costa-hoffman-meeks.json",
@@ -2430,10 +2659,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 6,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -2499,10 +2728,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 0,
-      "genus": null,
+      "genus": 2,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 4,
       "embedding": "immersed",
       "symmetry": {
         "kind": "none",
@@ -3009,10 +3238,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 2,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 8,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -3092,6 +3321,39 @@
       "operator_ids": [
         "mesh.algebraic_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "deco-tetrahedron",
+      "name": "Deco-Tetrahedron",
+      "path": "surfaces/algebraic/deco-tetrahedron.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "closed",
+        "def-implicit",
+        "immersed",
+        "not-implemented",
+        "tradition-gallery"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -3189,6 +3451,38 @@
       "operator_ids": [
         "mesh.algebraic_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "dihedralized-wohlgemuth-with-handle",
+      "name": "Dihedralized Wohlgemuth with Handle",
+      "path": "surfaces/minimal/dihedralized-wohlgemuth-with-handle.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -3311,10 +3605,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 0,
-      "genus": null,
+      "genus": 0,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 2,
       "embedding": "immersed",
       "symmetry": {
         "kind": "none",
@@ -3589,10 +3883,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 2,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 8,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -4469,6 +4763,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "four-noid-two-symmetry-planes",
+      "name": "4-Noid with Two Symmetry Planes",
+      "path": "surfaces/minimal/four-noid-two-symmetry-planes.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "frd-surface",
       "name": "Frd surface",
       "path": "surfaces/minimal-periodic/frd-surface.json",
@@ -4488,7 +4814,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 6,
       "orientable": true,
       "ends": 0,
       "embedding": "immersed",
@@ -4571,6 +4897,72 @@
       "operator_ids": [
         "mesh.curiosity_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "fresnel-wave-surface",
+      "name": "Fresnel's Wave Surface",
+      "path": "surfaces/algebraic/fresnel-wave-surface.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "immersed",
+        "not-implemented",
+        "tradition-classical",
+        "tradition-physical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "fujimori-weber",
+      "name": "Fujimori-Weber Surface",
+      "path": "surfaces/minimal-periodic/fujimori-weber.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -4871,7 +5263,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 3,
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
@@ -4885,6 +5277,72 @@
       "operator_ids": [
         "mesh.periodic_minimal_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "hackman-surfaces",
+      "name": "Hackman Surface (toroidal 1-noid)",
+      "path": "surfaces/minimal-periodic/hackman-surfaces.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "singly-periodic",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 1,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "rod",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "half-twisted-scherk",
+      "name": "Half-Twisted Scherk Surface",
+      "path": "surfaces/minimal-periodic/half-twisted-scherk.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "singly-periodic",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 1,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "rod",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -5063,7 +5521,7 @@
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
-        "immersed",
+        "embedded",
         "implemented",
         "minimal",
         "minimal-periodic",
@@ -5074,11 +5532,11 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
       "ends": 0,
-      "embedding": "immersed",
+      "embedding": "embedded",
       "symmetry": {
         "kind": "rod",
         "symbol": null,
@@ -5089,6 +5547,38 @@
       "operator_ids": [
         "mesh.periodic_minimal_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "helicoidal-cone",
+      "name": "Helicoidal Cone",
+      "path": "surfaces/ruled/helicoidal-cone.json",
+      "primary_family": "ruled",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "ruled",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -5109,7 +5599,7 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 0,
       "genus_per_cell": null,
       "orientable": null,
       "ends": 0,
@@ -5217,7 +5707,7 @@
       "genus": null,
       "genus_per_cell": null,
       "orientable": false,
-      "ends": 0,
+      "ends": 1,
       "embedding": "self-intersecting",
       "symmetry": {
         "kind": "none",
@@ -5364,6 +5854,38 @@
       "operator_ids": [
         "mesh.hopf_torus_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "horgan-surface",
+      "name": "Horgan Surface",
+      "path": "surfaces/minimal/horgan-surface.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -5691,7 +6213,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 4,
       "orientable": true,
       "ends": 0,
       "embedding": "immersed",
@@ -5880,17 +6402,49 @@
       "specimen_count": 3
     },
     {
-      "slug": "karcher-meeks-rosenberg-doubly-periodic",
-      "name": "Karcher-Meeks-Rosenberg (doubly periodic)",
-      "path": "surfaces/minimal-periodic/karcher-meeks-rosenberg-doubly-periodic.json",
+      "slug": "kapouleas-surfaces",
+      "name": "Kapouleas Surface",
+      "path": "surfaces/minimal/kapouleas-surfaces.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-variational",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "variational",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "karcher-jd-saddle-tower",
+      "name": "Karcher JD Saddle Tower",
+      "path": "surfaces/minimal-periodic/karcher-jd-saddle-tower.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "doubly-periodic",
         "immersed",
-        "implemented",
         "minimal",
         "minimal-periodic",
+        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -5902,6 +6456,72 @@
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
+      "symmetry": {
+        "kind": "layer",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "karcher-je-saddle-tower",
+      "name": "Karcher JE Saddle Tower",
+      "path": "surfaces/minimal-periodic/karcher-je-saddle-tower.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "doubly-periodic",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 2,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "layer",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "karcher-meeks-rosenberg-doubly-periodic",
+      "name": "Karcher-Meeks-Rosenberg (doubly periodic)",
+      "path": "surfaces/minimal-periodic/karcher-meeks-rosenberg-doubly-periodic.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "doubly-periodic",
+        "embedded",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 2,
+      "genus": 1,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 4,
+      "embedding": "embedded",
       "symmetry": {
         "kind": "layer",
         "symbol": null,
@@ -5932,10 +6552,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 2,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 4,
       "embedding": "immersed",
       "symmetry": {
         "kind": "layer",
@@ -6324,7 +6944,7 @@
         "kind": "point",
         "symbol": "Td",
         "ita_number": null,
-        "order": null
+        "order": 24
       },
       "implemented": true,
       "operator_ids": [
@@ -6365,6 +6985,38 @@
       "operator_ids": [
         "mesh.parametric_minimal_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "kusner-sphere-2n-planar-ends",
+      "name": "Kusner Sphere (2n planar ends)",
+      "path": "surfaces/minimal/kusner-sphere-2n-planar-ends.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -6457,7 +7109,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 3,
       "orientable": true,
       "ends": 0,
       "embedding": "embedded",
@@ -6492,7 +7144,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 3,
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
@@ -6543,6 +7195,40 @@
       "specimen_count": 0
     },
     {
+      "slug": "lopez-martin-slab-surface",
+      "name": "Lopez-Martin Slab Surface",
+      "path": "surfaces/minimal-periodic/lopez-martin-slab-surface.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "non-orientable",
+        "not-implemented",
+        "singly-periodic",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 1,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": false,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "rod",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "lopez-minimal-klein-bottle",
       "name": "Lopez Minimal Klein Bottle",
       "path": "surfaces/minimal/lopez-minimal-klein-bottle.json",
@@ -6563,7 +7249,7 @@
       "genus": null,
       "genus_per_cell": null,
       "orientable": false,
-      "ends": 0,
+      "ends": 1,
       "embedding": "immersed",
       "symmetry": {
         "kind": "none",
@@ -6636,6 +7322,39 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "lubeck-batista-surface",
+      "name": "Lubeck-Batista Surface",
+      "path": "surfaces/minimal-periodic/lubeck-batista-surface.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "doubly-periodic",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 2,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "layer",
         "symbol": null,
         "ita_number": null,
         "order": null
@@ -6901,6 +7620,73 @@
       "genus": null,
       "genus_per_cell": null,
       "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "mobius-surface",
+      "name": "Möbius Surface",
+      "path": "surfaces/algebraic/mobius-surface.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-parametric",
+        "not-implemented",
+        "self-intersecting",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "self-intersecting",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "moebius-strip",
+      "name": "Moebius Strip",
+      "path": "surfaces/topological/moebius-strip.json",
+      "primary_family": "topological",
+      "families": [
+        "aperiodic",
+        "closed",
+        "compact-with-boundary",
+        "def-parametric",
+        "immersed",
+        "non-orientable",
+        "not-implemented",
+        "topological",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": false,
       "ends": 0,
       "embedding": "immersed",
       "symmetry": {
@@ -7391,6 +8177,40 @@
       "specimen_count": 0
     },
     {
+      "slug": "norm-one-family",
+      "name": "Norm One Family",
+      "path": "surfaces/misc/norm-one-family.json",
+      "primary_family": "misc",
+      "families": [
+        "aperiodic",
+        "closed",
+        "closed-orientable",
+        "def-implicit",
+        "immersed",
+        "misc",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "octahedron-edge-quartic",
       "name": "Octahedron-Edge Quartic",
       "path": "surfaces/algebraic/octahedron-edge-quartic.json",
@@ -7600,6 +8420,39 @@
       "specimen_count": 0
     },
     {
+      "slug": "parabolic-conoid",
+      "name": "Parabolic Conoid",
+      "path": "surfaces/ruled/parabolic-conoid.json",
+      "primary_family": "ruled",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "ruled",
+        "tradition-architectural",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "parabolic-cylinder",
       "name": "Parabolic Cylinder",
       "path": "surfaces/quadric/parabolic-cylinder.json",
@@ -7623,6 +8476,38 @@
       "orientable": true,
       "ends": 0,
       "embedding": "embedded",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "paraboloid-of-revolution",
+      "name": "Paraboloid of Revolution",
+      "path": "surfaces/quadric/paraboloid-of-revolution.json",
+      "primary_family": "quadric",
+      "families": [
+        "aperiodic",
+        "def-implicit",
+        "immersed",
+        "not-implemented",
+        "quadric",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
       "symmetry": {
         "kind": "none",
         "symbol": null,
@@ -7719,7 +8604,7 @@
       "genus": null,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 2,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -7896,6 +8781,39 @@
       "embedding": "embedded",
       "symmetry": {
         "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "plane-with-catenoids",
+      "name": "Plane with Catenoids (doubly periodic)",
+      "path": "surfaces/minimal-periodic/plane-with-catenoids.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "doubly-periodic",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 2,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "layer",
         "symbol": null,
         "ita_number": null,
         "order": null
@@ -8214,6 +9132,70 @@
       "specimen_count": 0
     },
     {
+      "slug": "revolution-of-the-catenary",
+      "name": "Revolution of the Catenary",
+      "path": "surfaces/revolution/revolution-of-the-catenary.json",
+      "primary_family": "revolution",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "revolution",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "revolution-of-the-sinusoid",
+      "name": "Revolution of the Sinusoid",
+      "path": "surfaces/revolution/revolution-of-the-sinusoid.json",
+      "primary_family": "revolution",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "revolution",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "richmond-generalized-g-eq-z-k",
       "name": "Richmond (generalized, g = z^k)",
       "path": "surfaces/minimal/richmond-generalized-g-eq-z-k.json",
@@ -8424,6 +9406,39 @@
       "specimen_count": 0
     },
     {
+      "slug": "rotation-surface-with-proportional-curvatures",
+      "name": "Rotation Surface with Proportional Curvatures",
+      "path": "surfaces/revolution/rotation-surface-with-proportional-curvatures.json",
+      "primary_family": "revolution",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "revolution",
+        "tradition-classical",
+        "weingarten"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "weingarten",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "rounded-dodecahedron",
       "name": "Rounded Dodecahedron",
       "path": "surfaces/algebraic/rounded-dodecahedron.json",
@@ -8611,7 +9626,7 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 0,
       "genus_per_cell": null,
       "orientable": null,
       "ends": 0,
@@ -8746,10 +9761,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 2,
-      "genus": null,
+      "genus": 0,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 4,
       "embedding": "embedded",
       "symmetry": {
         "kind": "layer",
@@ -8816,7 +9831,7 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 0,
       "genus_per_cell": null,
       "orientable": null,
       "ends": 0,
@@ -8831,6 +9846,39 @@
       "operator_ids": [
         "mesh.periodic_minimal_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "scherks-fourth-surface",
+      "name": "Scherk's Fourth Surface",
+      "path": "surfaces/minimal-periodic/scherks-fourth-surface.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-implicit",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "singly-periodic",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 1,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "rod",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -8936,6 +9984,39 @@
       "specimen_count": 0
     },
     {
+      "slug": "schoen-c-h",
+      "name": "Schoen C(H) Surface",
+      "path": "surfaces/minimal-periodic/schoen-c-h.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "schoen-frd-r",
       "name": "Schoen F-RD(r) Surface",
       "path": "surfaces/minimal-periodic/schoen-frd-r.json",
@@ -8954,7 +10035,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 5,
       "orientable": true,
       "ends": 0,
       "embedding": "immersed",
@@ -8989,6 +10070,39 @@
       "genus": null,
       "genus_per_cell": null,
       "orientable": true,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "schoen-h-t",
+      "name": "Schoen H'-T Surface",
+      "path": "surfaces/minimal-periodic/schoen-h-t.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
       "ends": 0,
       "embedding": "immersed",
       "symmetry": {
@@ -9053,7 +10167,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 5,
       "orientable": true,
       "ends": 0,
       "embedding": "immersed",
@@ -9332,6 +10446,72 @@
       "specimen_count": 0
     },
     {
+      "slug": "schoen-s-s",
+      "name": "Schoen S'-S'' Surface",
+      "path": "surfaces/minimal-periodic/schoen-s-s.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "schoen-tw",
+      "name": "Schoen TW Family Surface",
+      "path": "surfaces/minimal-periodic/schoen-tw.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "schwarz-d",
       "name": "Schwarz D Surface",
       "path": "surfaces/minimal-periodic/schwarz-d.json",
@@ -9511,6 +10691,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "second-tractroid",
+      "name": "Second Tractroid",
+      "path": "surfaces/revolution/second-tractroid.json",
+      "primary_family": "revolution",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "revolution",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "seepferdchen",
       "name": "Seepferdchen",
       "path": "surfaces/algebraic/seepferdchen.json",
@@ -9682,6 +10894,72 @@
       "specimen_count": 0
     },
     {
+      "slug": "simoes-batista-surface",
+      "name": "Simoes-Batista Surface",
+      "path": "surfaces/minimal-periodic/simoes-batista-surface.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "sine-surface",
+      "name": "Sine Surface",
+      "path": "surfaces/algebraic/sine-surface.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-parametric",
+        "not-implemented",
+        "self-intersecting",
+        "tradition-classical",
+        "tradition-gallery"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "self-intersecting",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "sine-torus",
       "name": "Sine Torus",
       "path": "surfaces/swept/sine-torus.json",
@@ -9715,6 +10993,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "sinusoidal-cone",
+      "name": "Sinusoidal Cone",
+      "path": "surfaces/ruled/sinusoidal-cone.json",
+      "primary_family": "ruled",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "ruled",
+        "tradition-classical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "six-ended-scherk-tower",
       "name": "Six-Ended Scherk Tower",
       "path": "surfaces/minimal-periodic/six-ended-scherk-tower.json",
@@ -9732,10 +11042,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 0,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 6,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -9767,10 +11077,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 6,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -9886,6 +11196,39 @@
       "specimen_count": 0
     },
     {
+      "slug": "solid-of-maximal-attraction",
+      "name": "Solid of Maximal Attraction",
+      "path": "surfaces/revolution/solid-of-maximal-attraction.json",
+      "primary_family": "revolution",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "immersed",
+        "not-implemented",
+        "revolution",
+        "tradition-classical",
+        "tradition-physical"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "solitude",
       "name": "Solitude",
       "path": "surfaces/algebraic/solitude.json",
@@ -9971,10 +11314,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 0,
-      "genus": null,
+      "genus": 0,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 2,
       "embedding": "immersed",
       "symmetry": {
         "kind": "none",
@@ -10389,6 +11732,39 @@
       "operator_ids": [
         "mesh.algebraic_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "stessmann-surface",
+      "name": "Stessmann Surface",
+      "path": "surfaces/minimal-periodic/stessmann-surface.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "self-intersecting",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "self-intersecting",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -11213,8 +12589,9 @@
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "immersed",
         "implemented",
+        "record-holder",
+        "singular",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -11225,7 +12602,7 @@
       "genus_per_cell": null,
       "orientable": null,
       "ends": 0,
-      "embedding": "immersed",
+      "embedding": "singular",
       "symmetry": {
         "kind": "none",
         "symbol": null,
@@ -11262,6 +12639,39 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "toroidal-karcher-scherk",
+      "name": "Toroidal Karcher-Scherk Surface",
+      "path": "surfaces/minimal-periodic/toroidal-karcher-scherk.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "singly-periodic",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 1,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "rod",
         "symbol": null,
         "ita_number": null,
         "order": null
@@ -11321,10 +12731,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 4,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -11356,10 +12766,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 3,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -11391,10 +12801,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 4,
       "embedding": "immersed",
       "symmetry": {
         "kind": "rod",
@@ -11548,6 +12958,39 @@
       "slug": "triply-periodic-costa",
       "name": "Triply Periodic Costa Surface",
       "path": "surfaces/minimal-periodic/triply-periodic-costa.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": 4,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "triply-periodic-horgan",
+      "name": "Triply Periodic Horgan Surface",
+      "path": "surfaces/minimal-periodic/triply-periodic-horgan.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
@@ -11783,6 +13226,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "wavy-enneper",
+      "name": "Wavy Enneper",
+      "path": "surfaces/minimal/wavy-enneper.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "weber-bc2",
       "name": "Weber BC2 Surface",
       "path": "surfaces/minimal-periodic/weber-bc2.json",
@@ -12014,6 +13489,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "weber-wolf-genus-3-5-ends",
+      "name": "Weber-Wolf Surface (genus 3, 5 ends)",
+      "path": "surfaces/minimal/weber-wolf-genus-3-5-ends.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "wedeln",
       "name": "Wedeln",
       "path": "surfaces/algebraic/wedeln.json",
@@ -12055,7 +13562,7 @@
       "families": [
         "def-weierstrass",
         "doubly-periodic",
-        "immersed",
+        "embedded",
         "implemented",
         "minimal",
         "minimal-periodic",
@@ -12065,11 +13572,11 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 2,
-      "genus": null,
+      "genus": 2,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
+      "ends": 4,
+      "embedding": "embedded",
       "symmetry": {
         "kind": "layer",
         "symbol": null,
@@ -12115,6 +13622,39 @@
       "operator_ids": [
         "mesh.periodic_minimal_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "wei-triply-periodic-genus-4",
+      "name": "Wei Triply Periodic Surface (genus 4)",
+      "path": "surfaces/minimal-periodic/wei-triply-periodic-genus-4.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -12307,10 +13847,10 @@
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 0,
-      "genus": null,
+      "genus": 3,
       "genus_per_cell": null,
       "orientable": null,
-      "ends": 0,
+      "ends": 4,
       "embedding": "immersed",
       "symmetry": {
         "kind": "none",

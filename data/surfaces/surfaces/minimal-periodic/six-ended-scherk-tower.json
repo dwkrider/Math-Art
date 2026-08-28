@@ -31,7 +31,14 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 6
+      }
+    ]
   },
   "symmetry": {
     "kind": "rod",
@@ -56,40 +63,25 @@
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
       "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch125, 6-ended Scherk g=0)",
+        "agrees": true,
+        "detail": "'The embedded singly periodic Scherk surfaces of genus 0' with six annular ends; embedded examples shown for end angles 30 and 89 degrees, 'increasing the angle to 90 and higher creates non-embedded surfaces'."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch125_6_ended_scherk_g0"
+  },
   "named_after": "Scherk",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 23982,
-      "edges": 47990,
-      "faces": 24007,
-      "euler_characteristic": -1,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.372145,
-        1.554206
-      ],
-      "aspect_ratio": 0.686072
-    }
   }
 }

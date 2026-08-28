@@ -41,16 +41,20 @@
     "sources": [
       "mathcurve, 'surface focale'."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1267_focale_2",
+        "agrees": true,
+        "detail": "page title 'Focal' vs record name 'Focal Surface'"
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "mathcurve": "ch1267_focale_2"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

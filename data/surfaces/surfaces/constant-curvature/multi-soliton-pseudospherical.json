@@ -47,17 +47,14 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "A. I. Bobenko, in Harmonic Maps and Integrable Systems (1994)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch056_two_soliton"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

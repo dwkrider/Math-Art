@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "revolution-of-the-catenary",
+  "name": "Revolution of the Catenary",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "revolution",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Revolution of the catenary about its AXIS of symmetry (z = a cosh(rho / a)) -- the companion to the catenoid, which rotates the catenary about its base and already resolves ch1198.  Not minimal."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.",
+      "resume": "A meridian-profile surface-of-revolution row; the radial builders in math_art/curiosity_surface_generator.py (build_radial, build_fresnel) are the pattern to follow, and the parametrization is in the cited mirror chapter."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Revolution of the catenary (Alysseid)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1366_alysseid_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1366_alysseid_2.md)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mathcurve:ch1366_alysseid_2",
+        "agrees": true,
+        "detail": "page title 'Revolution of the catenary' vs record name 'Revolution of the Catenary'"
+      }
+    ]
+  },
+  "alternate_names": [
+    "Alysseid"
+  ],
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1366_alysseid_2"
+  },
+  "named_after": "Revolution",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

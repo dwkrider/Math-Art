@@ -25,13 +25,29 @@
       "value": 0.0,
       "source": "classical"
     },
+    "total_curvature": {
+      "exact": "-4*pi",
+      "value": -12.566370614359172,
+      "source": "classical",
+      "note": "Per translational quotient.  M. Weber (minsurf ch134): 'The surface belongs to the class of translation invariant complete minimal surfaces which have total curvature -4pi in the quotient.'  D. Freese, M. Weber, J. Geom. 108 (2017) 743-762."
+    },
     "also_satisfies": [
       "weingarten"
     ]
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 1
+      },
+      {
+        "type": "annular",
+        "count": 1
+      }
+    ]
   },
   "symmetry": {
     "kind": "rod",
@@ -56,39 +72,24 @@
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
       "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "D. Freese, M. Weber, J. Geom. 108 (2017) 743-762 (minsurf ch134)",
+        "agrees": true,
+        "detail": "'a translation invariant surface with one periodic Enneper end and one annular flat end. ... It is not embedded'; total curvature -4pi in the quotient."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch134_periodic_enneper_surface"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3712,
-      "edges": 7302,
-      "faces": 3591,
-      "euler_characteristic": 1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.306046,
-        2.0,
-        1.653955
-      ],
-      "aspect_ratio": 0.653023
-    }
   }
 }

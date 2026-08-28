@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "norm-one-family",
+  "name": "Norm One Family",
+  "primary_family": "misc",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-implicit",
+    "immersed",
+    "misc",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The unit spheres of the p-norms on R3 (the equal-exponent Lame / superellipsoid family): |x|^p + |y|^p + |z|^p = 1, octahedron at p = 1, sphere at p = 2, cube as p -> infinity, convex for p >= 1.",
+    "parameters": [
+      {
+        "name": "p",
+        "domain": "(0, inf)",
+        "default": 4,
+        "note": "norm exponent"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built: the supershape record covers the Gielis superformula, which is a different family; the plain p-norm unit spheres have no record or operator.",
+      "resume": "A one-parameter implicit |x|^p + |y|^p + |z|^p = 1 in math_art/surfaces/ (marching-cubes route used by the algebraic block); p is real, so it is not an algebraic family record."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'Norm One Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch080_norm_one_family.md)."
+    ]
+  },
+  "ids": {
+    "vmm": "ch080_norm_one_family"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Norm",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

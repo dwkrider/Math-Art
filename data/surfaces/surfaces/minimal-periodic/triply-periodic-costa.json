@@ -5,7 +5,7 @@
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
-    "immersed",
+    "embedded",
     "minimal",
     "minimal-periodic",
     "not-implemented",
@@ -26,14 +26,16 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus_per_cell": 4,
+    "euler_characteristic_per_cell": -6
   },
   "symmetry": {
     "kind": "space",
     "periodicity_rank": 3
   },
   "embedding": {
-    "quality": "immersed"
+    "quality": "embedded"
   },
   "construction": [
     {
@@ -47,12 +49,13 @@
     "sources": [
       "M. Weber, https://minimalsurfaces.blog/ and the archive formerly at indiana.edu/~minimal/archive/ (the site is dead; 280 surface folders were recovered from the Wayback CDX index)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch333, triply periodic Costa-Scherk)",
+        "agrees": true,
+        "detail": "'A 1-parameter family of embedded triply periodic minimal surfaces of genus 4 with horizontal straight lines and vertical symmetry planes.'  D. Freese, M. Weber, A. T. Yerger, R. Yol, 'Two New Embedded Triply Periodic Minimal Surfaces of Genus 4' (arXiv)."
+      }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -60,6 +63,9 @@
   "tradition": [
     "crystallographic"
   ],
+  "ids": {
+    "msblog": "ch259_box_symmetry_type_4"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

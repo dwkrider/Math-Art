@@ -52,13 +52,7 @@
     "sources": [
       "H. C. Wente, 'Counterexample to a conjecture of H. Hopf', Pacific J. Math. 121 (1986).",
       "R. Walter, 'Explicit examples to the H-problem of Heinz Hopf', Geom. Dedicata 23 (1987) -- the elementary parametrisation used here (supplement 6.B')."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Henry C. Wente",
   "year": 1986,
@@ -75,24 +69,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 12800,
-      "edges": 25600,
-      "faces": 12800,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.999968,
-        1.098116,
-        2.0
-      ],
-      "aspect_ratio": 0.549058
-    }
   }
 }

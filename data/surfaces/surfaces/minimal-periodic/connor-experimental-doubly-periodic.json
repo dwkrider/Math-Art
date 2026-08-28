@@ -56,39 +56,24 @@
       "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
       "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "P. Connor, PhD thesis 2009 (minsurf ch016/ch023)",
+        "agrees": true,
+        "detail": "Numerically established doubly periodic surfaces: the experimental genus-3 series (pages 78-85) and an asymmetric genus-2 surface.  'All this has only been established only numerically.'  No single genus is asserted because the shipped row carries members of different genus."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch023_connors_experimental_surfaces_of_genus_3"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 18829,
-      "edges": 37264,
-      "faces": 18432,
-      "euler_characteristic": -3,
-      "components": 1,
-      "boundary_loops": 5,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.101806,
-        1.078392,
-        2.0
-      ],
-      "aspect_ratio": 0.539196
-    }
   }
 }

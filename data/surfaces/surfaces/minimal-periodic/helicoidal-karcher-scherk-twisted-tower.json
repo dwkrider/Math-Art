@@ -31,7 +31,8 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus": 0
   },
   "symmetry": {
     "kind": "rod",
@@ -56,40 +57,26 @@
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
       "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "H. Karcher, Manuscripta Math. 62 (1988) (minsurf ch132)",
+        "agrees": true,
+        "detail": "Screw-motion invariant Karcher-Scherk surfaces: 'multivalued on the 2k-punctured quotient spheres' -- genus 0 in the quotient with 2k ends; twist limit 1/k."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch016_twisted_scherk",
+    "msblog": "ch132_helicoidal_karcher_scherk_surfaces"
+  },
   "named_after": "Helicoidal, Karcher, Scherk",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 14382,
-      "edges": 28695,
-      "faces": 14312,
-      "euler_characteristic": -1,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.994619,
-        2.0,
-        1.318212
-      ],
-      "aspect_ratio": 0.659106
-    }
   }
 }

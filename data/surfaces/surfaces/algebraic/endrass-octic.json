@@ -57,14 +57,9 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "S. Endrass, 'A projective surface of degree eight with 168 nodes', J. Algebraic Geom. 6 (1997)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+      "S. Endrass, 'A projective surface of degree eight with 168 nodes', J. Algebraic Geom. 6 (1997).",
+      "S. Endrass, 'A projective surface of degree eight with 168 nodes' (1995; converted copy in research/papers/algebraic-surfaces/) and Breske-Labs-van Straten (2005) mu(8) >= 168 -- independent confirmations of the 168."
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -87,24 +82,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 185608,
-      "edges": 555386,
-      "faces": 369606,
-      "euler_characteristic": -172,
-      "components": 58,
-      "boundary_loops": 32,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.805487
-      ],
-      "aspect_ratio": 0.902744
-    }
   }
 }

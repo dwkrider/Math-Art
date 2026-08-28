@@ -44,7 +44,9 @@
     "kind": "point",
     "periodicity_rank": 0,
     "schoenflies": "Td",
-    "verified_by": "curated"
+    "generator_set": "Td_edge",
+    "order": 24,
+    "verified_by": "symbolic"
   },
   "embedding": {
     "quality": "singular",
@@ -70,7 +72,8 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "E. E. Kummer, 'Uber die Flachen vierten Grades mit sechzehn singularen Punkten', Monatsber. Akad. Wiss. Berlin (1864)."
+      "E. E. Kummer, 'Uber die Flachen vierten Grades mit sechzehn singularen Punkten', Monatsber. Akad. Wiss. Berlin (1864).",
+      "mathcurve.com, Kummer surface (mirror ch1294): 16 ordinary singular points at the tetrahedral vertices; Breske-Labs-van Straten (2005) mu(4) = 16 (exact) -- independent node-count oracle."
     ],
     "cross_checked": [
       {
@@ -83,13 +86,7 @@
         "agrees": true,
         "detail": "record year 1864, page says 1864"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -102,7 +99,8 @@
   "year": 1864,
   "ids": {
     "mathworld": "KummerSurface",
-    "mathcurve": "ch1294_kummer_2"
+    "mathcurve": "ch1294_kummer_2",
+    "vmm": "ch083_kummer"
   },
   "notes": {
     "caveats": [
@@ -117,24 +115,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 122992,
-      "edges": 366248,
-      "faces": 243260,
-      "euler_characteristic": 4,
-      "components": 5,
-      "boundary_loops": 6,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.985756,
-        1.985756,
-        2.0
-      ],
-      "aspect_ratio": 0.992878
-    }
   }
 }

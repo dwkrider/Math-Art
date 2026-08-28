@@ -57,40 +57,25 @@
       "C. J. Costa (1984); D. Hoffman, W. H. Meeks III (1985); M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks (research/msblog_harvest/singly_periodic.json).",
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988) 83-114;"
     ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf posts ch372, higher-genus CHM)",
+        "agrees": false,
+        "detail": "UNRESOLVED between three statements, so no genus is asserted here: (a) the page's convention 'denote by CHM_r,s a translation invariant surface with 2r ends of genus s+1 in the quotient' makes CHM-(1,2) genus 3 with 2 ends; (b) the shipped implementation (math_art/minsurf/zoo.py) measures quotient genus 4 with 2 planar ends (chi = -8); (c) Invent. Math. 96 (1989) covers only the dihedral family M_k (genus 2k+1), of which CHM-(1,2) is not a member.  Note the same page convention gives CHM-(1,1) genus 2, which contradicts the 1989 paper's genus 3 for M_1 -- so the blog's genus convention appears shifted by one, and the record's name '(genus 4)' agrees with the measurement.  Flagged for resolution against Weber's 'CHM 1999' manuscript."
+      }
+    ]
   },
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "msblog": "ch372_callahan_hoffman_meeks_surfaces_of_higher_genus"
+  },
   "named_after": "Callahan, Hoffman, Meeks",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 37271,
-      "edges": 75138,
-      "faces": 37784,
-      "euler_characteristic": -83,
-      "components": 1,
-      "boundary_loops": 16,
-      "manifold": false,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.10413
-      ],
-      "aspect_ratio": 0.552065
-    }
   }
 }

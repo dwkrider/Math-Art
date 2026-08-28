@@ -66,13 +66,7 @@
         "agrees": true,
         "detail": "record year 1882, page says 1882"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Felix Klein",
   "year": 1882,
@@ -83,7 +77,8 @@
   "ids": {
     "mathworld": "KleinBottle",
     "mathcurve": "ch1215_klein_4",
-    "wikipedia": "Klein bottle"
+    "wikipedia": "Klein bottle",
+    "vmm": "ch049_klein_bottle"
   },
   "notes": {
     "caveats": [
@@ -95,24 +90,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4656,
-      "edges": 9264,
-      "faces": 4608,
-      "euler_characteristic": 0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": true,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.587754,
-        2.0,
-        0.697371
-      ],
-      "aspect_ratio": 0.348685
-    }
   }
 }

@@ -60,20 +60,15 @@
         "agrees": true,
         "detail": "page title 'Torus' vs record name 'Torus'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
   ],
   "ids": {
     "mathworld": "Torus",
-    "mathcurve": "ch1291_tore_2"
+    "mathcurve": "ch1291_tore_2",
+    "vmm": "ch070_torus"
   },
   "metrics": {
     "normalization": "unit_radius"
