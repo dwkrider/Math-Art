@@ -93,6 +93,7 @@ SURFACES = Menu(
         _e("mesh.bryant_surface_add", 'MESH_UVSPHERE'),
         _e("mesh.crochet_add", 'MOD_CLOTH'),
         _e("mesh.willmore_add", 'MESH_TORUS', "Willmore Surface"),
+        _e("mesh.cmc_capillary_add", 'MATFLUID'),
     ])
 
 POLYHEDRA = Menu(
@@ -254,7 +255,6 @@ ODDS = Menu(
         _e("mesh.orbifold_sphere_add", 'MOD_MIRROR'),
         _e("mesh.bubble_cluster_add", 'SPHERE'),
         _e("mesh.relaxed_bubble_add", 'META_BALL'),
-        _e("mesh.cmc_capillary_add", 'MATFLUID'),
     ])
 
 # Styles restyle whatever is already selected rather than adding a

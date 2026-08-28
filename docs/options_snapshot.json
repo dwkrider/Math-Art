@@ -160,11 +160,28 @@
    "Wind Q",
    "Colat Min",
    "Colat Max",
+   "Turns",
+   "Seed",
+   "Curl Lobes",
+   "Curl Amplitude",
+   "Chirality",
    "Output",
    "Tube Radius",
    "Bevel Resolution",
    "Tube Sides",
+   "Surface Opacity",
+   "Beads / Fibre",
+   "Bead Radius",
+   "Markers / Fibre",
+   "Marker Size",
    "Colour by Base Point",
+   "Palette",
+   "Mono Colour",
+   "Sphere Rotation",
+   "S3 Flow",
+   "Keep Axis Fibres",
+   "Control Sphere",
+   "Sphere Size",
    "Scale"
   ]
  },
@@ -502,6 +519,12 @@
  "mesh.biscribed_solid_add": {
   "label": "Biscribed Solid",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Solid",
    "Coloring",
    "Style",
@@ -554,6 +577,12 @@
  "mesh.canonical_polyhedron_add": {
   "label": "Canonical Polyhedron",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Family",
    "Solid",
    "Style",
@@ -639,6 +668,12 @@
  "mesh.conway_add": {
   "label": "Conway Polyhedron",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Example",
    "Notation",
    "Geometry",
@@ -696,6 +731,15 @@
    "Crimp Coefficient",
    "Swept Circle",
    "Horn Length",
+   "Scale a",
+   "Base Radius",
+   "Capillary Length",
+   "Apex Height",
+   "Profile Length",
+   "Base Height",
+   "Sectors",
+   "Bands",
+   "Cap the Ends",
    "Ring Radius",
    "Tube Radius",
    "Inversion Centre",
@@ -892,6 +936,12 @@
  "mesh.general_stellation_add": {
   "label": "General Stellation",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Seed",
    "Stellation",
    "Style",
@@ -947,6 +997,9 @@
    "Tube Aspect",
    "Height",
    "Opening",
+   "Profile Power",
+   "Wavelength",
+   "Modulation k",
    "Sphere Radius",
    "Twist Rise",
    "Resolution",
@@ -974,6 +1027,9 @@
    "Branch",
    "Phase",
    "High Wrap",
+   "SO(4) x1x2",
+   "SO(4) x3x4",
+   "SO(4) x1x3",
    "Shade Smooth",
    "Scale"
   ]
@@ -1026,6 +1082,11 @@
    "Model",
    "Depth",
    "Max Group Elements",
+   "Spidron Fill",
+   "Spidron Rings",
+   "Spidron Color",
+   "Cap Centres",
+   "Checkerboard",
    "Color By",
    "Hide Off-Parity Tiles",
    "Margin",
@@ -1040,6 +1101,12 @@
  "mesh.icosahedron_stellation_add": {
   "label": "Icosahedron Stellation",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Stellation",
    "a (core)",
    "b",
@@ -1410,7 +1477,10 @@
    "Margin",
    "Relief Height",
    "Trim Boundary",
-   "Separate Tiles"
+   "Separate Tiles",
+   "Layout",
+   "Order",
+   "Wallpaper Group"
   ]
  },
  "mesh.monostatic_body_add": {
@@ -1449,7 +1519,15 @@
  "mesh.notable_polyhedron_add": {
   "label": "Notable Polyhedron",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Solid",
+   "Flex",
+   "Flex",
    "Style",
    "Border",
    "Thickness",
@@ -1683,7 +1761,15 @@
  "mesh.polyhedral_torus_add": {
   "label": "Polyhedral Torus",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Pattern",
+   "Ring Sides",
+   "Ring Separation",
    "Segments",
    "Cross-section Sides",
    "Antiprism Ring",
@@ -1760,6 +1846,11 @@
   "label": "4D Polytope",
   "options": [
    "Polytope",
+   "Form",
+   "Base",
+   "Fourth-Axis Extent",
+   "Symmetry",
+   "Ringed Nodes",
    "Edges",
    "Projection Distance",
    "Rotate XW",
@@ -1813,6 +1904,12 @@
  "mesh.regular_solid_add": {
   "label": "Regular Solid",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Family",
    "Solid",
    "Sides",
@@ -2139,6 +2236,30 @@
    "Scale"
   ]
  },
+ "mesh.saddle_polyhedron_add": {
+  "label": "Saddle Polyhedron",
+  "options": [
+   "Solid",
+   "Faces",
+   "Edge divisions",
+   "Relax steps",
+   "Nest rings",
+   "Nest step",
+   "Nest twist",
+   "Layout",
+   "Cells across",
+   "Cells deep",
+   "Cells high",
+   "Colour",
+   "Mirror",
+   "Limit twist",
+   "Separate objects",
+   "Shrink",
+   "Fill centres",
+   "Crease branches",
+   "Smooth shading"
+  ]
+ },
  "mesh.scherk_collins_add": {
   "label": "Scherk-Collins Sculpture",
   "options": [
@@ -2198,7 +2319,12 @@
    "Thickness",
    "Colours",
    "Separate Panels",
-   "Scale"
+   "Scale",
+   "Cut Layout",
+   "Model Size",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf"
   ]
  },
  "mesh.snowflake_add": {
@@ -2290,6 +2416,63 @@
    "Side Curve"
   ]
  },
+ "mesh.spidron_ball_add": {
+  "label": "Spidroball",
+  "options": [
+   "Solid",
+   "Rings",
+   "Ring Scale",
+   "Twist Style",
+   "Twist",
+   "Relief",
+   "Chirality",
+   "Relief Style",
+   "Color",
+   "Smooth Shading",
+   "Sharp Creases",
+   "Colors",
+   "Open Centres"
+  ]
+ },
+ "mesh.spidron_nest_add": {
+  "label": "Spidron Nest",
+  "options": [
+   "Boundary",
+   "Fold",
+   "Allow Crossing",
+   "Rings",
+   "Cap Centre",
+   "Ring Scale",
+   "Twist",
+   "Mode",
+   "Columns",
+   "Rows",
+   "Thickness"
+  ]
+ },
+ "mesh.spidron_rosette_add": {
+  "label": "Spidron Rosette",
+  "options": [
+   "Layout",
+   "Nest",
+   "Nest step",
+   "Nest twist",
+   "Cap centre",
+   "Arm",
+   "Arm Parts",
+   "Corners",
+   "Rings",
+   "Winding",
+   "Motif",
+   "Columns",
+   "Rows",
+   "Color",
+   "Colors",
+   "Margin",
+   "Height",
+   "Separate Tiles"
+  ]
+ },
  "mesh.spiked_polyhedron_add": {
   "label": "Spiked & Hyperbolic",
   "options": [
@@ -2364,7 +2547,10 @@
   "label": "Steinmetz Solid",
   "options": [
    "Shape",
+   "Order",
    "Radius",
+   "Smooth Shading",
+   "Crease Angle",
    "Sharp Edges",
    "Segments"
   ]
@@ -2432,6 +2618,12 @@
  "mesh.symmetrohedron_add": {
   "label": "Symmetrohedron",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Symmetry",
    "Axis-1 Multiplier",
    "Axis-2 Multiplier",
@@ -2491,6 +2683,8 @@
    "Surface",
    "Resolution U",
    "Resolution V",
+   "Order",
+   "Pinch",
    "Projection Angle",
    "Genus",
    "Cross-Caps k",
@@ -2508,7 +2702,14 @@
  "mesh.toroidal_polyhedron_add": {
   "label": "Toroidal Polyhedron",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Solid",
+   "Style",
    "Scale"
   ]
  },
@@ -2649,6 +2850,12 @@
  "mesh.waterman_add": {
   "label": "Waterman Polyhedron",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Root",
    "Style",
    "Border",
@@ -2759,6 +2966,12 @@
  "mesh.zonohedron_add": {
   "label": "Zonohedron",
   "options": [
+   "Fold",
+   "Unfolding",
+   "Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
    "Star",
    "Vectors",
    "Spiral Width",
@@ -2786,6 +2999,43 @@
    "Invert",
    "Positive",
    "Negative"
+  ]
+ },
+ "object.fabrication_slice": {
+  "label": "Slice for Fabrication",
+  "options": [
+   "Object",
+   "Curve",
+   "Technique",
+   "Model Size",
+   "Material Thickness",
+   "Kerf",
+   "Joint Clearance",
+   "Flexible Material",
+   "Axis",
+   "First Axis",
+   "Second Axis",
+   "First Count",
+   "Second Count",
+   "Fins",
+   "Rings",
+   "Ribs",
+   "Slice Spacing",
+   "Dowels",
+   "Dowel Spacing",
+   "Dowel Count",
+   "Dowel Diameter",
+   "Notch Factor",
+   "Notch Angle",
+   "Tool Diameter",
+   "Sheet Width",
+   "Sheet Height",
+   "Margin",
+   "Label Size",
+   "Close Open Surfaces",
+   "Shell Thickness",
+   "Assembled Preview",
+   "Explode"
   ]
  },
  "object.leonardo_add": {
@@ -2841,7 +3091,19 @@
    "Guide Extent",
    "Guide Rings",
    "Lift Sculpture Clear of Motif",
+   "Mitre the Part",
+   "Show Stellation Wedges",
+   "Mark Stellation Points",
+   "Stellation Level",
+   "Label the Bevels",
    "Build Machinable Part",
+   "Mark Crossings",
+   "Mirror Motif",
+   "Label Crossings",
+   "Mark Collisions",
+   "Mark Radii",
+   "Show Spikes",
+   "Mark From",
    "Show Defining Polyhedron",
    "Translucent Copies",
    "Motif Object"

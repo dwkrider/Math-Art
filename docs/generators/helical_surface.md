@@ -67,6 +67,11 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/helical_surface__CORKSCREW.png" width="200"><br><sub>Corkscrew</sub></td>
+<td align="center"><img src="../images/variants/helical_surface__HELICONE.png" width="200"><br><sub>Helico-Conical Surface</sub></td>
+<td align="center"><img src="../images/variants/helical_surface__EGG_BOX.png" width="200"><br><sub>Egg Box</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/helical_surface__SINE_TORUS.png" width="200"><br><sub>Sine Torus</sub></td>
 </tr>
 </table>
 

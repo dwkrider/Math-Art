@@ -80,6 +80,9 @@ PARAMS = {
                                        face_style='MINIMAL',
                                        density=4, smoothness=40),
     # -- solids ---------------------------------------------------
+    # Escher's Solid (the stellated rhombic dodecahedron of "Waterfall")
+    # is the most recognisable of the notable polyhedra.
+    "mesh.notable_polyhedron_add": dict(solid='ESCHER'),
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
     # docs previously shot a snub cube here, which is Archimedean
@@ -166,7 +169,7 @@ PARAMS = {
     "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G',
                                       cells=2),
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
-    "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
+    "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE', seed='ICOSA'),
     "mesh.algebraic_surface_add": dict(preset='CLEBSCH'),
     "mesh.curiosity_surface_add": dict(surface='FRESNEL'),
     "mesh.ruled_surface_add": dict(mode='HYPERBOLOID', output='RODS',
@@ -445,6 +448,7 @@ VARIANT_SELECTOR = {
     "mesh.conway_add": "example",
     "mesh.polytwister_add": "shape",
     "mesh.toroidal_polyhedron_add": "solid",
+    "mesh.saddle_polyhedron_add": "solid",
     "mesh.notable_polyhedron_add": "solid",
     "mesh.biscribed_solid_add": "solid",
     "mesh.icosahedron_stellation_add": "solid",
@@ -1343,6 +1347,15 @@ if _IN_BLENDER:
         "mesh.polyhedron_compound_add": _groups_compound,
     }
 
+    # Flat (single-level) galleries whose selector is a DYNAMIC enum, so
+    # _static_enum_items reads nothing off the RNA type.  The resolver
+    # calls the module's items callback with a shim, exactly like the
+    # two-level GROUP_RESOLVER above.
+    SELECTOR_RESOLVER = {
+        "mesh.saddle_polyhedron_add": lambda: _pairs(
+            _mod("saddle_polyhedron_generator")._solid_items(_Shim(), None)),
+    }
+
     def _static_enum_items(op, prop):
         """(id, label) pairs for a plain static EnumProperty."""
         mod, _, fn = op.partition('.')
@@ -1401,7 +1414,9 @@ if _IN_BLENDER:
                                 labels.get(gid, gid)))
         elif op in VARIANT_SELECTOR:
             prop = VARIANT_SELECTOR[op]
-            for vid, label in _static_enum_items(op, prop):
+            items = (SELECTOR_RESOLVER[op]() if op in SELECTOR_RESOLVER
+                     else _static_enum_items(op, prop))
+            for vid, label in items:
                 if vid in skip:
                     continue
                 out.append((vid, label, dict(common, **{prop: vid}), None))

@@ -38,6 +38,16 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/steinmetz__BICYLINDER.png" width="200"><br><sub>Bicylinder (Steinmetz)</sub></td>
 <td align="center"><img src="../images/variants/steinmetz__TRICYLINDER.png" width="200"><br><sub>Tricylinder</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__CUBE4.png" width="200"><br><sub>Four Cube Diagonals</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/steinmetz__CUBOCT6.png" width="200"><br><sub>Six Cuboctahedral Axes</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__ICOSA6.png" width="200"><br><sub>Six Icosahedral Axes</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__DODECA10.png" width="200"><br><sub>Ten Dodecahedral Axes</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/steinmetz__TRUNCOCT12.png" width="200"><br><sub>Twelve Truncated-Octahedral Axes</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__EQUIDOMOID.png" width="200"><br><sub>Equidomoid (Archimedes' Dome)</sub></td>
 </tr>
 </table>
 

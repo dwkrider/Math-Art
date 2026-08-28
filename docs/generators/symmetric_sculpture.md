@@ -55,6 +55,11 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/symmetric_sculpture__KRULL.png" width="200"><br><sub>Krull</sub></td>
 <td align="center"><img src="../images/variants/symmetric_sculpture__WHIMSY.png" width="200"><br><sub>Whimsy</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/symmetric_sculpture__SOLAR_FLAIR.png" width="200"><br><sub>Solar Flair</sub></td>
+<td align="center"><img src="../images/variants/symmetric_sculpture__DRAGONFLIES.png" width="200"><br><sub>Dragonflies</sub></td>
+<td align="center"><img src="../images/variants/symmetric_sculpture__EDDY.png" width="200"><br><sub>Eddy</sub></td>
+</tr>
 </table>
 
 ## How it works

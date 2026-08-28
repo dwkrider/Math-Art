@@ -216,6 +216,11 @@ Renders of each selectable option:
 <table>
 <tr>
 <td align="center"><img src="../images/variants/algebraic__CARTAN.png" width="200"><br><sub>Cartan's Umbrella</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HENRICI.png" width="200"><br><sub>Henrici Cubic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CUSHION.png" width="200"><br><sub>Bouligand's Pillow</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CASSINI_3D.png" width="200"><br><sub>Cassinian Surface (3 poles)</sub></td>
 <td align="center"><img src="../images/variants/algebraic__CASSINI.png" width="200"><br><sub>Cassini Surface</sub></td>
 <td align="center"><img src="../images/variants/algebraic__CASSINI_REV.png" width="200"><br><sub>Cassini Surface of Revolution</sub></td>
 </tr>
@@ -236,18 +241,6 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/algebraic__OCT_CUBE_DIAGONALS.png" width="200"><br><sub>Cube-Diagonal Quartic</sub></td>
 <td align="center"><img src="../images/variants/algebraic__OCT_CUBE_EDGES.png" width="200"><br><sub>Cube-Edge Quartic</sub></td>
 <td align="center"><img src="../images/variants/algebraic__OCT_CUBE_MEDIANS.png" width="200"><br><sub>Cube-Median Quartic</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="../images/variants/algebraic__OCT_TRIANGLES.png" width="200"><br><sub>Cuboctahedral Triangle Quartic</sub></td>
-</tr>
-</table>
-
-### Goursat (Tetrahedral)
-
-<table>
-<tr>
-<td align="center"><img src="../images/variants/algebraic__TET_TITEICA.png" width="200"><br><sub>Titeica Cubic (k' = 0)</sub></td>
-<td align="center"><img src="../images/variants/algebraic__TET_FOUR_SHEETS.png" width="200"><br><sub>Tetrahedral Cubic (k < 0)</sub></td>
 </tr>
 </table>
 
