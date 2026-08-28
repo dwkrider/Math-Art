@@ -67,6 +67,10 @@ a { color: var(--accent); }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
   gap: 1.25rem;
+  /* Each card takes its natural height. Without this the live module,
+   * which carries a 320 px image, stretches every placeholder in its row
+   * to match and they read as half-empty boxes. */
+  align-items: start;
 }
 
 .module-card {

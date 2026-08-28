@@ -1,0 +1,81 @@
+# Publish the companion site (web/) to GitHub Pages.
+#
+# The site has no build step: it is plain ES modules with an import map
+# and a vendored copy of three.js, so "building" is really just staging.
+# The one piece of assembly is the database.
+#
+# web/js/data.js asks for `../data/polyhedra/...` relative to itself,
+# which resolves to `web/data/polyhedra/`. That directory is NOT in git
+# -- the database lives at the repository's own `data/polyhedra/` and is
+# copied into place here. Locally, web/serve.py routes the same URL to
+# the same directory instead of copying. Either way a page requests one
+# URL and gets one answer, in development and in production alike, and
+# the database is never duplicated in the repository.
+#
+# Checkout must pull LFS: the 448 catalogue thumbnails in web/thumbs/ are
+# LFS objects, and without them every tile in the grid is a pointer file.
+
+name: Deploy companion site
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'web/**'
+      - 'data/polyhedra/**'
+      - 'tests/test_web.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it midway; a
+# half-published site is worse than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Gate the site
+        run: python tests/test_web.py
+
+      - name: Stage the database
+        run: |
+          mkdir -p web/data
+          cp -r data/polyhedra web/data/polyhedra
+
+      - name: Check the staged tree
+        run: |
+          test -f web/data/polyhedra/index.json
+          echo "thumbnails: $(ls web/thumbs/*.png | wc -l)"
+          echo "records:    $(find web/data/polyhedra/solids -name '*.json' | wc -l)"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
