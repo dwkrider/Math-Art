@@ -108,7 +108,7 @@
       "boundary_loops": 1,
       "manifold": false,
       "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 55445,
+      "nonmanifold_vertices": 49161,
       "orientable": null,
       "one_sided": null,
       "bounding_box": [

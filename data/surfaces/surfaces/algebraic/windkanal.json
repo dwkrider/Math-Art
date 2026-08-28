@@ -82,5 +82,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 55166,
+      "edges": 163038,
+      "faces": 107876,
+      "euler_characteristic": 4,
+      "angle_defect_total": -0.36912,
+      "area": 3.352631,
+      "volume": 1.352488,
+      "components": 4,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 49926,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }
