@@ -27,7 +27,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.610644870134553,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {
     "compact": true,
@@ -74,7 +83,15 @@
         "agrees": true,
         "detail": "record year 1871, page says 1871"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "symmetry_invariant": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -107,5 +124,29 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 103801,
+      "edges": 309528,
+      "faces": 205722,
+      "euler_characteristic": -5,
+      "angle_defect_total": -45.257152,
+      "area": 7.441797,
+      "volume": 0.036986,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 92425,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

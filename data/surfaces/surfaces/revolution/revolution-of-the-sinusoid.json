@@ -52,7 +52,13 @@
         "agrees": true,
         "detail": "record year 2012, page says 2012"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "year": 2012,
   "tradition": [

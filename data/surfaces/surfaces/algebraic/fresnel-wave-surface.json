@@ -54,7 +54,13 @@
         "agrees": true,
         "detail": "record year 1821, page says 1821"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Augustin Fresnel",
   "year": 1821,

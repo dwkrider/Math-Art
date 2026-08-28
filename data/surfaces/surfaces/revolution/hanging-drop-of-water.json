@@ -52,7 +52,13 @@
         "agrees": true,
         "detail": "page title 'Hanging drop of water' vs record name 'Hanging Drop of Water'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1258_gouttedeau_2"
@@ -62,5 +68,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4513,
+      "edges": 9024,
+      "faces": 4513,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.56636,
+      "area": 9.02554,
+      "volume": 1.927633,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 186,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.862449
+      ],
+      "aspect_ratio": 0.431225
+    }
   }
 }

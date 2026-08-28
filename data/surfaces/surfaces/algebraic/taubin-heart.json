@@ -24,7 +24,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 26431.02516939434,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {},
   "symmetry": {
@@ -51,7 +60,14 @@
       "A. Clebsch, \"Ueber die Flachen vierter Ordnung...\", Journal fur die reine und angewandte Mathematik 69, 1868 -- the diagonal surface.",
       "W. Barth, \"Two projective surfaces with many nodes admitting the symmetries of the icosahedron\", J. Algebraic Geometry 5, 1996.",
       "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien -- the named gallery surfaces in the _HAUSER block below."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -64,5 +80,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 82425,
+      "edges": 247269,
+      "faces": 164846,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.56263,
+      "area": 8.990704,
+      "volume": 2.263466,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 70699,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.188288,
+        1.964233
+      ],
+      "aspect_ratio": 0.594144
+    }
   }
 }

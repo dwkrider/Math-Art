@@ -87,7 +87,13 @@
         "agrees": true,
         "detail": "'Complete minimal surfaces of finite total curvature -8pi', one catenoidal + one Enneper end on a sphere."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -101,5 +107,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 11903,
+      "edges": 23647,
+      "faces": 11744,
+      "euler_characteristic": 0,
+      "angle_defect_total": 15.112152,
+      "area": 6.096727,
+      "volume": 0.121302,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 11528,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.238626,
+        1.659904
+      ],
+      "aspect_ratio": 0.619313
+    }
   }
 }

@@ -50,7 +50,13 @@
     "sources": [
       "O. Zoll, 'Uber Flachen mit Scharen geschlossener geodatischer Linien', Math. Ann. 57 (1903).",
       "J. Tannery (1892) for the earlier, non-smooth example."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Otto Zoll",
   "year": 1903,

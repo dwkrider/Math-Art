@@ -60,7 +60,13 @@
         "agrees": true,
         "detail": "page title 'Cushion' vs record name \"Bouligand's Pillow\""
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -79,5 +85,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 114826,
+      "edges": 342784,
+      "faces": 227960,
+      "euler_characteristic": 2,
+      "angle_defect_total": -6.58108,
+      "area": 7.128112,
+      "volume": 0.288498,
+      "components": 3,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 104214,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.378765
+      ],
+      "aspect_ratio": 0.689383
+    }
   }
 }

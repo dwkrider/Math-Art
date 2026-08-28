@@ -54,7 +54,13 @@
         "agrees": true,
         "detail": "record year 1750, page says 1750"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "year": 1750,
   "tradition": [

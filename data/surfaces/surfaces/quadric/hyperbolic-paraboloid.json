@@ -54,7 +54,13 @@
         "agrees": true,
         "detail": "page title 'Hyperbolic paraboloid' vs record name 'Hyperbolic Paraboloid'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "architectural",
@@ -70,5 +76,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 1744,
+      "edges": 3096,
+      "faces": 1450,
+      "euler_characteristic": 98,
+      "angle_defect_total": 615.755424,
+      "area": 13.031509,
+      "volume": 0.117048,
+      "components": 50,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 364,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.999998,
+        2.0,
+        1.99991
+      ],
+      "aspect_ratio": 0.999955
+    }
   }
 }

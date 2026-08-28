@@ -35,7 +35,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.8806253250524415,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {
     "compact": false,
@@ -70,7 +79,14 @@
         "agrees": true,
         "detail": "page title 'Monkey saddle' vs record name 'Monkey Saddle (n-fold)'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -97,5 +113,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 67761,
+      "edges": 201713,
+      "faces": 133953,
+      "euler_characteristic": 1,
+      "angle_defect_total": -7.659851,
+      "area": 4.181698,
+      "volume": 2.6e-05,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 57742,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.766667,
+        2.0,
+        1.133333
+      ],
+      "aspect_ratio": 0.566667
+    }
   }
 }

@@ -60,7 +60,13 @@
         "agrees": true,
         "detail": "Published family law for the drive stage: 'The Chen-Gackstatter surface of genus g has finite total curvature -4pi(g+1), the largest possible value for its genus', with 'one Enneper end of winding number 3' -- per-specimen total curvature must follow -4pi(g+1)."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -73,5 +79,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 117473,
+      "edges": 235332,
+      "faces": 117856,
+      "euler_characteristic": -3,
+      "angle_defect_total": -20.832405,
+      "area": 6.438058,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 64912,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.551744,
+        1.551744,
+        2.0
+      ],
+      "aspect_ratio": 0.775872
+    }
   }
 }

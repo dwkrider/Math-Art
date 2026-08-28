@@ -52,7 +52,13 @@
         "agrees": true,
         "detail": "page title 'Neiloid' vs record name 'Neiloid'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1308_neiloide_2"
@@ -62,5 +68,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4608,
+      "edges": 9120,
+      "faces": 4514,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.5664,
+      "area": 7.150014,
+      "volume": 0.783637,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 598,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.8
+      ],
+      "aspect_ratio": 0.4
+    }
   }
 }

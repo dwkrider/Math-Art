@@ -73,7 +73,13 @@
         "agrees": true,
         "detail": "'a 4-ended embedded minimal surface of genus 2 ... It has two catenoidal and two planar ends' (CSSCFF); NOTE 'an embeddedness proof is still lacking' per the same page."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -86,5 +92,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 23394,
+      "edges": 46600,
+      "faces": 23200,
+      "euler_characteristic": -6,
+      "angle_defect_total": -1.147628,
+      "area": 8.122699,
+      "volume": 0.316617,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 20222,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.808564,
+        1.473596
+      ],
+      "aspect_ratio": 0.736798
+    }
   }
 }

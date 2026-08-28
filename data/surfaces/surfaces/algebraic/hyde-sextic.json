@@ -53,7 +53,13 @@
     "sources": [
       "O. Labs, 'Advent calendar 2002, No. 17', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch029_no_17.md).",
       "Hyde, Ann. of Math., 2nd series, vol. 2 (1901), and Ann. of Math. 4 (1888) (the page's references for the screw-theory construction); description and equation communicated to O. Labs by W. Barth."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

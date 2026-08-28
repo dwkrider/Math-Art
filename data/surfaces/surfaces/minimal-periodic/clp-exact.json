@@ -64,7 +64,13 @@
         "agrees": true,
         "detail": "Genus 3 per translational quotient; 'the conjugate surfaces are also triply periodic and of genus 3.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -80,5 +86,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 2441,
+      "edges": 4787,
+      "faces": 2339,
+      "euler_characteristic": -7,
+      "angle_defect_total": -0.374167,
+      "area": 4.325433,
+      "volume": 0.028413,
+      "components": 1,
+      "boundary_loops": 8,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 1677,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.687779,
+        1.412462,
+        2.0
+      ],
+      "aspect_ratio": 0.706231
+    }
   }
 }

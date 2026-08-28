@@ -46,7 +46,13 @@
     "sources": [
       "M. Weber, 'Kapouleas Surfaces', minimalsurfaces.blog (local mirror: minsurf/book/.../ch387_kapouleas_surfaces.md).",
       "N. Kapouleas, 'Complete embedded minimal surfaces of finite total curvature', J. Differential Geom. 47 (1997) 95-169."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

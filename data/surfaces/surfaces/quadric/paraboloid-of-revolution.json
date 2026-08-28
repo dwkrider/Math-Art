@@ -47,7 +47,13 @@
         "agrees": true,
         "detail": "page title 'Paraboloid of revolution' vs record name 'Paraboloid of Revolution'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Circular paraboloid"

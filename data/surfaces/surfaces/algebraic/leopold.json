@@ -24,7 +24,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 2.467734734632407,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {},
   "symmetry": {
@@ -50,7 +59,14 @@
       "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien.  https://homepage.univie.ac.at/herwig.hauser/bildergalerie/",
       "S. Amethyst, 3D-printed renderings of the same gallery, https://silviana.org/gallery/hauser/",
       "H. Hauser, 'Bildergalerie algebraischer Flaechen', Universitaet Wien."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -66,5 +82,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 70756,
+      "edges": 212262,
+      "faces": 141508,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.5658,
+      "area": 6.330017,
+      "volume": 1.39308,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 57672,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.15462,
+        1.15462,
+        2.0
+      ],
+      "aspect_ratio": 0.57731
+    }
   }
 }

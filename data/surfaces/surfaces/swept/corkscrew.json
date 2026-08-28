@@ -44,12 +44,42 @@
       "Rotoid, helico-conical surface, egg box and sine torus: R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"rotoide\", \"surface helicoconique\", \"boite a oeufs\" and \"tore sinusoidal\".",
       "Sine torus at k = 1/2: Maurice El-Milick (1947), who called it a one-sided cyclide; his model is in the Institut Henri Poincare collection.",
       "The helicoid is a classical minimal and ruled surface (J. B. C. Meusnier, 1776); the hyperbolic helicoid, conical seashell and twisted-sphere forms here are standard parametric surfaces. See A. Gray, E. Abbena, S. Salamon, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\" (3rd ed., 2006), and J. Meier's gallery (3d-meier.de)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 9312,
+      "edges": 18528,
+      "faces": 9216,
+      "euler_characteristic": 0,
+      "angle_defect_total": 18.164135,
+      "area": 3.852301,
+      "volume": 0.000176,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 200,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.693252,
+        0.693252,
+        2.0
+      ],
+      "aspect_ratio": 0.346626
+    }
   }
 }

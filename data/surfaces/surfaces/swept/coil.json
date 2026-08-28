@@ -47,7 +47,13 @@
         "agrees": true,
         "detail": "page title 'Coild' vs record name 'Coil'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Helical tube",

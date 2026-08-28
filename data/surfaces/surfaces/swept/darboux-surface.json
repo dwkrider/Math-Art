@@ -51,7 +51,13 @@
         "agrees": true,
         "detail": "page title 'Darboux surface' vs record name 'Darboux Surface'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1251_darboux_2"
@@ -62,5 +68,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 18432,
+      "edges": 36864,
+      "faces": 18432,
+      "euler_characteristic": 0,
+      "angle_defect_total": 3.247268,
+      "area": 8.179085,
+      "volume": 1.194704,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 6505,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.62069
+      ],
+      "aspect_ratio": 0.310345
+    }
   }
 }

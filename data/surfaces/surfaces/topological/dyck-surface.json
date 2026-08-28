@@ -63,7 +63,13 @@
         "agrees": true,
         "detail": "record year 1888, page says 1888"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Walther von Dyck",
   "year": 1888,

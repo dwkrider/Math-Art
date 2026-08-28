@@ -52,7 +52,13 @@
         "agrees": true,
         "detail": "page title 'Seifert surface' vs record name 'Seifert Surface'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1338_seifert_2"
@@ -62,5 +68,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 9263,
+      "edges": 18240,
+      "faces": 8976,
+      "euler_characteristic": -1,
+      "angle_defect_total": -0.29156,
+      "area": 5.666254,
+      "volume": 0.021148,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 6456,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.908218,
+        2.0,
+        1.052891
+      ],
+      "aspect_ratio": 0.526446
+    }
   }
 }

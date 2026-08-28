@@ -56,7 +56,13 @@
         "agrees": true,
         "detail": "record year 1841, page says 1841"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Charles-Eugene Delaunay",
   "year": 1841,

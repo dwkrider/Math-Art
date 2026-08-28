@@ -47,7 +47,13 @@
       "The 3DXM Consortium, 'Kusner Surface', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch020_kusner_ds.md).",
       "M. Weber, 'Kusner's Spheres with Planar Ends', minimalsurfaces.blog (local mirror: minsurf/book/.../ch065_kusners_spheres_with_planar_ends.md).",
       "R. Kusner, 'Conformal geometry and complete minimal surfaces', Bull. Amer. Math. Soc. 17 (1987) 291-295."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

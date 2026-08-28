@@ -47,7 +47,13 @@
       "M. Weber, 'Translation Invariant Catenoid (which documents the failed inward-handle construction)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch170_translation_invariant_catenoid.md).",
       "M. Weber, 'Non-Existent Surfaces (section index)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch061_non_existent_surfaces.md).",
       "R. Schoen, 'Uniqueness, symmetry, and embeddedness of minimal surfaces', J. Differential Geom. 18 (1983) 791-809."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

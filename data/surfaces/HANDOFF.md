@@ -5,10 +5,12 @@ Single entry point for anyone (human or agent) picking this up. Read this, then
 
 ## State
 
-**363 records, 298 implemented, 0 validator errors, 8 warnings.**
+**423 records, 298 implemented, 0 validator errors, 8 warnings.**
 
 Defining data: 105 implicit polynomials, 20 parametric charts, 15 Weierstrass
 pairs, 20 nodal level functions — every one verified, none taken on trust.
+421 external IDs across 8 sources, all resolving against local mirrors.
+146 records independently cross-checked (150 agreements, 7 disagreements).
 
 ```sh
 python tools/surfdb_build.py            # rebuild everything, ~40 s, no Blender
@@ -121,9 +123,50 @@ empty scene.
   supplies it — and the selector is filtered by another enum whose vocabulary
   differs from the registry's (`periodicity` is `TRIPLY` where the registry
   family says `TPMS`). The drive stage tries filter/target combinations.
+- **Raw AREA cannot be compared at all.** Every output is fitted into a 2x2x2
+  box, so the oloid and the pseudosphere both read "55% out" against a
+  published area of 4*pi -- and both implied the SAME 0.667 scale. Compare the
+  dimensionless isoperimetric quotient instead.
+- **Symmetry is tested about the BOUNDING-BOX midpoint, not the centroid.**
+  The fit centres the box; marching tetrahedra do not distribute vertices
+  evenly. Centroid-centring passes the 3-fold test and fails the mirrors --
+  the signature of rotating about a point displaced along the axis.
+- **A fixed 3x3x3 neighbour probe turns a coarse mesh into a false asymmetry.**
+  Expand the search outward instead of reporting "not found" as a maximal
+  residual.
+- **Kummer's quartic is tetrahedral about its TANGENT-PLANE NORMALS**,
+  (+-sqrt2, 0, -1) and (0, +-sqrt2, 1) -- pairwise dot product -1/3, so a
+  regular tetrahedron, but in a frame where the coordinate 3-cycle is not a
+  symmetry. Frame errors look exactly like asymmetries; pin the frame with
+  `symmetry.generator_set`.
 - **Boundary components are comparable only for COMPACT surfaces.** A complete
   one is rendered as a truncated patch, so its mesh has rims the surface does
   not; comparing them failed correct records.
+
+## What the drive stage can and cannot catch
+
+Worth understanding before trusting a result. Most of this toolchain checks
+the generators against *themselves* — a stored equation is verified against the
+shipped implementation — so it is excellent at catching transcription errors in
+the database and **structurally incapable of catching a bug in the generator**.
+Only two things are genuinely independent: the invariants in
+`tools/surfdb/published.py`, taken from the literature, and the drive stage,
+which measures the built mesh.
+
+The drive stage's checks, in descending order of how much they can prove:
+
+1. **Published invariants** — genus per cell, node counts, isoperimetric
+   quotient. Independent, and the only checks that can convict a generator.
+2. **Gauss-Bonnet** — angle defects must sum to 2*pi*chi on a closed mesh.
+   Internal, but it fails on exactly the broken topology a bad build makes.
+3. **Topology** — chi, components, boundary loops against the record.
+4. **Symmetry on the mesh** — powerful in principle, and the least reliable in
+   practice: six of its first eight failures were FRAME errors rather than
+   asymmetries. An unpinned failure is reported UNRESOLVED, not as a bug.
+
+**Four false positives were found and fixed in these checks, and each looked
+exactly like a generator bug.** They are recorded in the traps list below
+because anyone extending this will hit the same class of error.
 
 ## What this database found in math_art
 

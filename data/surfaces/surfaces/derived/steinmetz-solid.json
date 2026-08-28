@@ -101,7 +101,13 @@
       "K. Brecher, \"Rolloids\", Bridges 2023 Conference Proceedings, 345-352 (the bicylinder as a straight-line roller; local copy at research/bridges/2023/bridges2023-345/).",
       "The n-cylinder axis sets and their patch counts: Robert Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), \"polyedres cylindriques\".  Four of its five patch counts are reproduced exactly here; for the twelve truncated-octahedral axes the count is 216 rather than the published 240, since that axis set is in special position (two of the eleven cross-product directions coincide).",
       "Equidomoid: studied by Archimedes, and named by Leopold Hugo between 1867 and 1875; Emile Fourrey, \"Recreations geometriques\", 319-326."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "specimens": [
     {
@@ -137,5 +143,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 33530,
+      "edges": 67304,
+      "faces": 33776,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.928335,
+      "area": 12.995784,
+      "volume": 4.331599,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 21408,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.102924,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 0.951057
+    }
   }
 }

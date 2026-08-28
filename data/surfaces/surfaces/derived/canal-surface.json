@@ -47,7 +47,13 @@
         "agrees": true,
         "detail": "page title 'Tube' vs record name 'Canal Surface'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

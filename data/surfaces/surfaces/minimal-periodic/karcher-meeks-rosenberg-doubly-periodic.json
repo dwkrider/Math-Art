@@ -69,7 +69,13 @@
         "agrees": true,
         "detail": "'complete, embedded doubly periodic minimal surfaces with two top and two bottom parallel annular ends in the quotient'; Perez-Rodriguez-Traizet: 'the only embedded doubly periodic minimal surfaces with parallel ends of genus one.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -83,5 +89,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 33280,
+      "edges": 66048,
+      "faces": 32768,
+      "euler_characteristic": 0,
+      "angle_defect_total": -11.402253,
+      "area": 8.978674,
+      "volume": 0.115673,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 29569,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.876849,
+        2.0,
+        1.907142
+      ],
+      "aspect_ratio": 0.938424
+    }
   }
 }

@@ -48,7 +48,13 @@
       "W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and",
       "W. H. Meeks III (1983).",
       "Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "fabrication": {
     "developable": false,

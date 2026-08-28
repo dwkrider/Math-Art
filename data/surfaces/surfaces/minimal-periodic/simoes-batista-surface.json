@@ -47,7 +47,13 @@
     "sources": [
       "M. Weber, 'The Simoes-Batista Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch408_the_simoes_batista_surface.md).",
       "P. Simoes and V. Ramos Batista, arXiv:0806.3088 (2008), the paper the mirrored page links."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

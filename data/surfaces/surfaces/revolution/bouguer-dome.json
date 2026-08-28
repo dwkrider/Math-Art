@@ -52,7 +52,13 @@
         "agrees": true,
         "detail": "page title 'Dôme de Bouguer' vs record name 'Bouguer Dome'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1360_bouguer_2"
@@ -65,5 +71,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4513,
+      "edges": 9024,
+      "faces": 4513,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.566387,
+      "area": 7.209446,
+      "volume": 0.932437,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 690,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.479278
+      ],
+      "aspect_ratio": 0.239639
+    }
   }
 }

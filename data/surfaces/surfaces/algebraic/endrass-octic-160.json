@@ -50,7 +50,13 @@
       "O. Labs, 'Advent calendar 2002, No. 19 ('Besides constructing the octics with 168 nodes, St. Endrass found this 160-nodal octic with dihedral symmetry, which is not so well-known')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch043_no_19.md).",
       "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

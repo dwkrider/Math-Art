@@ -55,7 +55,13 @@
     "sources": [
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
       "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -69,5 +75,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 10903,
+      "edges": 21712,
+      "faces": 10808,
+      "euler_characteristic": -1,
+      "angle_defect_total": 46.71086,
+      "area": 0.569843,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 10219,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.150045,
+        0.223681,
+        2.0
+      ],
+      "aspect_ratio": 0.075022
+    }
   }
 }

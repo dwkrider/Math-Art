@@ -22,12 +22,12 @@ data/surfaces/
 Family folders are for humans; `slug` is unique across the **whole** database,
 and `index.json` is the only thing that resolves a slug to a path.
 
-**363 records, 298 implemented, 0 validator errors.**
+**423 records, 298 implemented, 0 validator errors.**
 
-Every record carries a real citation; 65 are independently cross-checked
-against the local Ferréol mirror; and 296 of the 298 implemented records have
-been built by *running their actual operator* and comparing the resulting mesh
-against what the record claims.
+Every record carries a real citation; **146 are independently cross-checked**
+against the local mirrors; 421 external IDs resolve offline; and the 298
+implemented records are built by *running their actual operator* and comparing
+the resulting mesh against what the record claims.
 
 ## Why a surface database is not a polyhedron database
 
@@ -323,10 +323,10 @@ which is precisely what let `research/missing-surfaces-catalog.md` go stale.
 `--coverage` is the gap ledger, and it is **computed**, not curated:
 
 ```
-COVERAGE  363 records, 298 implemented, 65 not (82%)
+COVERAGE  423 records, 298 implemented, 125 not (70%)
 ```
 
-**That figure went DOWN from 93% when the tail was added, and that is the
+**That figure has fallen from 93% to 70% as the corpus grew, and that is the
 point.** Before it, one placeholder record (`schoen-batwing`) stood in for
 roughly eighteen second-tier triply-periodic minimal surfaces, and Weber's
 (p,q,r) series — about forty more — had no record at all. The surfaces were
@@ -365,11 +365,14 @@ validator confirmed. Beyond that:
 
 | | coverage |
 |---|---|
-| a real citation (no placeholders) | **363 / 363** |
+| a real citation (no placeholders) | **423 / 423** |
 | harvested from a module's own `References:` block | 311 |
-| `discovered_by` or `named_after` | 109 |
-| an external ID that resolves | 135 |
-| independently cross-checked | 65 |
+| an external ID that resolves | 421 across 8 sources |
+| independently cross-checked | 146 |
+
+External IDs by source: `msblog` 102 · `mathcurve` 98 · `vmm` 80 · `hauser` 63
+· `mathworld` 46 · `algsurf` 20 · `wikipedia` 9 · `epinet` 3. Every one
+resolves against a mirror held locally, so a reader can open the page.
 
 Citations are **harvested, not retyped.** CLAUDE.md already requires every
 generator module to credit the mathematics it implements; those blocks are
@@ -394,11 +397,12 @@ mirror (181 surface chapters). It is kept **separate from the build**, as
 `data/polyhedra` keeps its own crosscheck stage separate, so more sources can
 be cached and the verification re-run without rebuilding any geometry.
 
-**106 agreements, 4 disagreements.** The disagreements are recorded, not
+**150 agreements, 7 disagreements.** The disagreements are recorded, not
 reconciled — all four are discovery years where Ferréol and the record's cited
 source differ (the catenoid: 1740 against Euler's 1744; Cayley's cubic 1850
 against 1869; Gabriel's horn 1641 against 1643; Barth's sextic 1994 against
-1996). `data/polyhedra` records two disagreements against McCooey rather than
+1996; the oloid 1933 against Schatz's 1929; Riemann's example 1860 against
+1867; the associate family 1834 against Bonnet's 1853). `data/polyhedra` records two disagreements against McCooey rather than
 forcing them to agree; this is the same standard.
 
 Silence is never confirmation. A page that does not discuss curvature produces
@@ -474,6 +478,37 @@ follow (Koch & Fischer 1988 for C(S), von Schnering & Nesper 1991 for C(Y)), so
 the remark may well be true of surfaces those names denote elsewhere. That
 caveat is recorded rather than resolved, because resolving it would mean
 transcribing Brakke's own definitions.
+
+## The corpus, and where it came from
+
+The corpus is bounded by four mirrored sources, each systematically diffed
+against the database rather than sampled:
+
+| source | held locally | outcome |
+|---|---|---|
+| Ferréol's *Encyclopédie* | 181 surface chapters | 98 IDs, 14 new records, **84 chapters skipped with a stated reason each** |
+| 3DXM Virtual Math Museum | 94 surface pages | 80 IDs, 15 new records |
+| Weber's minimal-surface repository | 335 repository pages + 84 posts | 102 IDs, 18 new records |
+| Labs's *Algebraic Surface Homepage* | 53 chapters (a Wayback rescue) | 20 IDs, 13 new records |
+
+**The skip ledgers matter as much as the additions.** Ferréol's 84 skipped
+chapters are not a backlog: they are index pages, concept pages (Betti number,
+umbilic, pinch point), *method* pages for derived surfaces, classification
+classes, function-parameterised families with no canonical member, objects that
+do not live in ℝ³ — and eight whose surface is already implemented here as a
+mode or a specimen, where an `implemented: false` record would have misstated
+the ledger. Every skip names its reason.
+
+**Three records say a surface does not exist.** From Weber's section on failed
+constructions: Horgan's surface and the catenoid with a handle are *proved*
+not to exist (the latter via R. Schoen 1983), while a dihedralised Wohlgemuth
+with a handle is only *believed* not to, on numerical evidence. The wording
+distinguishes the two, because "proved impossible" and "nobody has managed it"
+are different facts and a ledger that conflates them is misleading.
+
+**Singularity types are distinguished.** Labs's sextic carries **35 cusps**,
+not nodes, and `embedding.singularities` types each entry — so it sits beside
+the record-nodal family without being confused for it.
 
 ## Local sources
 

@@ -47,7 +47,13 @@
         "agrees": true,
         "detail": "page title 'Cone of revolution' vs record name 'Cone of Revolution'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Right circular cone"

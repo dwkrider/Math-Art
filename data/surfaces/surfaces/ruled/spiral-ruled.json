@@ -45,12 +45,42 @@
       "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
       "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
       "Milk carton: H. M. Cundy & A. P. Rollett, \"Mathematical Models\" (1951), 185-188."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 2688,
+      "edges": 4976,
+      "faces": 2388,
+      "euler_characteristic": 100,
+      "angle_defect_total": 628.31853,
+      "area": 0.865086,
+      "volume": 0.001038,
+      "components": 50,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 707,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.884741,
+        0.265576
+      ],
+      "aspect_ratio": 0.132788
+    }
   }
 }

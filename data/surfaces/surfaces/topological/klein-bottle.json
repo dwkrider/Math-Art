@@ -66,7 +66,13 @@
         "agrees": true,
         "detail": "record year 1882, page says 1882"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Felix Klein",
   "year": 1882,
@@ -90,5 +96,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4656,
+      "edges": 9264,
+      "faces": 4608,
+      "euler_characteristic": 0,
+      "angle_defect_total": 0.276999,
+      "area": 5.465779,
+      "volume": 0.540743,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 194,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.587754,
+        2.0,
+        0.697371
+      ],
+      "aspect_ratio": 0.348685
+    }
   }
 }

@@ -82,7 +82,13 @@
         "agrees": true,
         "detail": "'immersed minimal spheres with an even number 2n of planar ends. If n is odd ... an immersion of the projective plane with n planar ends.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -97,5 +103,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 20272,
+      "edges": 40419,
+      "faces": 20145,
+      "euler_characteristic": -2,
+      "angle_defect_total": 7.06687,
+      "area": 9.092715,
+      "volume": 0.004424,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 18619,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.938055,
+        2.0,
+        1.615659
+      ],
+      "aspect_ratio": 0.807829
+    }
   }
 }

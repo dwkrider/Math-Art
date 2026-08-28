@@ -47,7 +47,13 @@
         "agrees": true,
         "detail": "page title 'Sinusoidal cone' vs record name 'Sinusoidal Cone'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

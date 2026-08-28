@@ -58,7 +58,13 @@
       "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) -- the saddle towers.",
       "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) 83-114 -- 'translation invariant minimal surface with genus 0 in the quotient' (as quoted at minsurf ch140).",
       "J. Perez, M. Traizet, 'The classification of singly periodic minimal surfaces with genus zero and Scherk type ends', Trans. Amer. Math. Soc. 359 (2007) 965-990."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -74,5 +80,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 9216,
+      "edges": 18336,
+      "faces": 9120,
+      "euler_characteristic": 0,
+      "angle_defect_total": 25.720834,
+      "area": 7.805712,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 198,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.368545
+      ],
+      "aspect_ratio": 0.684272
+    }
   }
 }

@@ -69,7 +69,13 @@
         "agrees": true,
         "detail": "The complete minimal Moebius strip with total curvature -6pi; by the same classification every complete minimal surface with total curvature > -8pi is the plane, catenoid, Enneper surface or this Moebius strip.  Uniqueness: Barbosa-Colares 1986."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -89,5 +95,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 14745,
+      "edges": 29325,
+      "faces": 14580,
+      "euler_characteristic": 0,
+      "angle_defect_total": 10.980234,
+      "area": 8.866581,
+      "volume": 0.000343,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 12864,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.936937,
+        1.10937
+      ],
+      "aspect_ratio": 0.554685
+    }
   }
 }

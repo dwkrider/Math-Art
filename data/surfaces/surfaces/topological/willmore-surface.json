@@ -53,7 +53,13 @@
         "agrees": true,
         "detail": "page title \"Willmore's torus\" vs record name 'Willmore Surface'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1358_willmore_2"

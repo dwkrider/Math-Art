@@ -85,7 +85,13 @@
         "agrees": true,
         "detail": "'This symmetrization of the Finite Riemann minimal surface has one planar end and 2n catenoidal ends'; 'By the Lopez-Ros theorem, they can never be embedded.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -99,5 +105,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 13216,
+      "edges": 26140,
+      "faces": 12923,
+      "euler_characteristic": -1,
+      "angle_defect_total": 13.228827,
+      "area": 7.761028,
+      "volume": 0.052102,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 6938,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.991682,
+        1.356581
+      ],
+      "aspect_ratio": 0.678291
+    }
   }
 }

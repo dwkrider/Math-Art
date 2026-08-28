@@ -51,7 +51,13 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "U. Pinkall, 'Hopf tori in S^3', Invent. Math. 81 (1985)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Luigi Bianchi; Ulrich Pinkall",
   "year": 1985,

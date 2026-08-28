@@ -55,7 +55,13 @@
     "sources": [
       "A. H. Schoen, NASA TN D-5541 (1970).",
       "O. Bonnet (1853) for the associate family in general."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -133,5 +139,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 26834,
+      "edges": 79518,
+      "faces": 52680,
+      "euler_characteristic": -4,
+      "angle_defect_total": -22.958046,
+      "area": 9.414342,
+      "volume": 2.524041,
+      "components": 1,
+      "boundary_loops": 6,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 23987,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

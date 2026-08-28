@@ -61,7 +61,13 @@
         "agrees": true,
         "detail": "'The Lopez-Ros deformation tilts the ends of the doubly periodic Scherk surface ... the surfaces are no longer embedded' -- confirms the record's non-embedded-by-design claim."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -75,5 +81,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3721,
+      "edges": 7320,
+      "faces": 3600,
+      "euler_characteristic": 1,
+      "angle_defect_total": -7.970181,
+      "area": 4.429371,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 3458,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.180445,
+        1.180445,
+        2.0
+      ],
+      "aspect_ratio": 0.590222
+    }
   }
 }

@@ -47,7 +47,13 @@
     "sources": [
       "M. Weber, 'Toroidal Karcher-Scherk Surfaces', minimalsurfaces.blog (local mirror: minsurf/book/.../ch157_toroidal_karcher_scherk_surfaces.md).",
       "H. Karcher, 'Construction of minimal surfaces', Surveys in Geometry, Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256, Bonn (1989) 1-96 (the 'Tokyo notes' the mirrored pages cite for their formulas)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

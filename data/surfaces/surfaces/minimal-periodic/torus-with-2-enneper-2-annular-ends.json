@@ -75,7 +75,13 @@
         "agrees": true,
         "detail": "'a translation invariant surface with two parallel annular ends and two periodic Enneper ends. The quotient surface has genus 1.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -88,5 +94,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12256,
+      "edges": 24180,
+      "faces": 11924,
+      "euler_characteristic": 0,
+      "angle_defect_total": -4.15568,
+      "area": 3.288374,
+      "volume": 0.620159,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 9646,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.982252,
+        2.0,
+        1.510782
+      ],
+      "aspect_ratio": 0.491126
+    }
   }
 }

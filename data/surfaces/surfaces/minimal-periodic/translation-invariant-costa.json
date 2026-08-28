@@ -74,7 +74,13 @@
         "agrees": true,
         "detail": "'It has genus 1 in the quotient, two annular and two catenoidal ends.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -88,5 +94,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 20464,
+      "edges": 41050,
+      "faces": 20583,
+      "euler_characteristic": -3,
+      "angle_defect_total": -33.985193,
+      "area": 5.895488,
+      "volume": 0.02074,
+      "components": 1,
+      "boundary_loops": 7,
+      "manifold": false,
+      "nonmanifold_edges": 10,
+      "nonmanifold_vertices": 16904,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.579107,
+        2.0,
+        1.055578
+      ],
+      "aspect_ratio": 0.527789
+    }
   }
 }

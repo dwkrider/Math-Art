@@ -47,7 +47,13 @@
         "agrees": true,
         "detail": "page title 'Revolution of the catenary' vs record name 'Revolution of the Catenary'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Alysseid"

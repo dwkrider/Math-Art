@@ -24,7 +24,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 168.46202271715396,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {},
   "symmetry": {
@@ -50,7 +59,14 @@
       "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien.  https://homepage.univie.ac.at/herwig.hauser/bildergalerie/",
       "S. Amethyst, 3D-printed renderings of the same gallery, https://silviana.org/gallery/hauser/",
       "H. Hauser, 'Bildergalerie algebraischer Flaechen', Universitaet Wien."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
