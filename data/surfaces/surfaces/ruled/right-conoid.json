@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "right-conoid",
+  "name": "Right Conoid",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "implemented",
+    "ruled",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "varies"
+  },
+  "construction": [
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "PLUCKER",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "PLUCKER"
+    },
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "NFOLD",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "NFOLD"
+    },
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "WALLIS",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "WALLIS"
+    },
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "ZINDLER",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "ZINDLER"
+    },
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "CONOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "J. Plucker, Neue Geometrie des Raumes (1868) -- the cylindroid.",
+      "J. Wallis, for the conical edge.",
+      "K. Zindler, for the conoid z(x^2 - y^2) = 2axy."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "specimens": [
+    {
+      "label": "Plucker's cylindroid",
+      "embedding": {
+        "quality": "self-intersecting"
+      }
+    },
+    {
+      "label": "n-fold conoid",
+      "embedding": {
+        "quality": "self-intersecting"
+      }
+    },
+    {
+      "label": "Wallis' conical edge",
+      "embedding": {
+        "quality": "self-intersecting"
+      }
+    },
+    {
+      "label": "Zindler's conoid",
+      "embedding": {
+        "quality": "self-intersecting"
+      }
+    }
+  ],
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "RightConoid",
+    "mathcurve": "ch1239_conoid_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

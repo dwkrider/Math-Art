@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "bianchi-pinkall-flat-torus",
+  "name": "Bianchi-Pinkall Flat Torus",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-derived",
+    "embedded",
+    "flat",
+    "not-implemented",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "derived",
+    "fidelity": "exact",
+    "polynomial": null
+  },
+  "curvature": {
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "genus": 1,
+    "compact": true,
+    "orientable": true,
+    "euler_characteristic": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built. The Hopf lift of a spherical curve already ships (mesh.hopf_torus_add), so this is a curve-family change rather than new machinery.",
+      "resume": "U. Pinkall, 'Hopf tori in S^3', Invent. Math. 81 (1985). Heed the willmore-tori lesson in BACKLOG.md: the Hopf lift degenerates at BOTH beta = 0 and beta = pi, and an untreated case collapsed to aspect 0.006."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "U. Pinkall, 'Hopf tori in S^3', Invent. Math. 81 (1985)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Luigi Bianchi; Ulrich Pinkall",
+  "year": 1985,
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

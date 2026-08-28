@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "nodoid",
+  "name": "Nodoid",
+  "primary_family": "cmc",
+  "families": [
+    "cmc",
+    "def-parametric",
+    "implemented",
+    "self-intersecting",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "cmc",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "orientable": true,
+    "compact": false,
+    "complete": true
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "NODOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "C. Delaunay, J. Math. Pures Appl. 6 (1841) -- the roulette of a hyperbola."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "relations": {
+    "member_of": "delaunay-surface"
+  },
+  "discovered_by": "Charles-Eugene Delaunay",
+  "year": 1841,
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

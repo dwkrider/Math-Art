@@ -1,0 +1,56 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "darboux-surface",
+  "name": "Darboux Surface",
+  "primary_family": "swept",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "swept"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.helical_surface_generator",
+      "operator_id": "mesh.helical_surface_add",
+      "key": "DARBOUX",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

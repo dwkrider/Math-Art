@@ -1,0 +1,97 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "pseudosphere",
+  "name": "Pseudosphere",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "k-const-negative",
+    "tradition-classical",
+    "tradition-physical-model",
+    "with-boundary"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "gaussian": {
+      "exact": "-1",
+      "value": -1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "orientable": true,
+    "compact": false,
+    "complete": false,
+    "boundary_components": 1,
+    "class": "with-boundary"
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 0,
+    "continuous": "SO(2) about the axis"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hyperbolic_surface_generator",
+      "operator_id": "mesh.hyperbolic_surface_add",
+      "key": "PSEUDOSPHERE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "E. Beltrami, 'Saggio di interpretazione della geometria non-euclidea', Giornale di Matematiche 6 (1868)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "alternate_names": [
+    "Tractricoid",
+    "Beltrami's pseudosphere"
+  ],
+  "discovered_by": "Eugenio Beltrami",
+  "year": 1868,
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "ids": {
+    "mathworld": "Pseudosphere",
+    "mathcurve": "ch1210_pseudosphere_2",
+    "wikipedia": "Pseudosphere"
+  },
+  "metrics": {
+    "normalization": "unit_scale_parameter"
+  },
+  "notes": {
+    "caveats": [
+      "A local model of the hyperbolic plane, not a global one: Hilbert (1901) proved no complete surface of constant negative curvature can be immersed in R^3, so the pseudosphere necessarily has an edge."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

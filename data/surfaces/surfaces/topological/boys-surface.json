@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "boys-surface",
+  "name": "Boy's Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "non-orientable",
+    "topological",
+    "tradition-classical",
+    "tradition-physical-model",
+    "tradition-sculptural"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "euler_characteristic": 1,
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "boundary_components": 0,
+    "non_orientable_genus": 1,
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "C3v",
+    "orbifold": "*33",
+    "order": 6
+  },
+  "embedding": {
+    "quality": "immersed",
+    "self_intersecting": true
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "BOY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "W. Boy, 'Uber die Curvatura integra und die Topologie geschlossener Flachen', Math. Ann. 57 (1903).",
+      "F. Apery, Models of the Real Projective Plane (1987) -- the explicit parametrisation.",
+      "R. Bryant and R. Kusner, for the Willmore-minimising immersion."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Werner Boy",
+  "year": 1901,
+  "tradition": [
+    "classical",
+    "physical-model",
+    "sculptural"
+  ],
+  "ids": {
+    "mathworld": "BoySurface",
+    "mathcurve": "ch1216_boy_2",
+    "wikipedia": "Boy's surface"
+  },
+  "notes": {
+    "caveats": [
+      "An immersion of the real projective plane with NO branch points -- which is what makes it remarkable; Boy found it against Hilbert's expectation that none existed."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": true
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "henneberg-surface",
+  "name": "Henneberg",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "non-orientable",
+    "noncompact",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": false,
+    "compact": false,
+    "orientable": false,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting",
+    "branch_points": 2
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "HENNEBERG",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "L. Henneberg, 'Uber salche Minimalflachen, welche eine vorgeschriebene ebene Curve zur geodatischen Linie haben' (1875)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Lebrecht Henneberg",
+  "year": 1875,
+  "ids": {
+    "mathworld": "HennebergsMinimalSurface",
+    "mathcurve": "ch1284_henneberg_2"
+  },
+  "notes": {
+    "caveats": [
+      "The classical example of a NON-ORIENTABLE minimal surface; it is a minimal immersion of the projective plane minus a point, and carries two branch points."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

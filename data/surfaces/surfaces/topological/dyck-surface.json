@@ -1,0 +1,76 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "dyck-surface",
+  "name": "Dyck's Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "immersed",
+    "non-orientable",
+    "not-implemented",
+    "topological",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "non_orientable_genus": 3,
+    "euler_characteristic": -1,
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not a separate generator BY DESIGN: it is the k = 3 case of the shipped non-orientable genus-k row, which subsumes it. This record exists so the name resolves.",
+      "resume": "Build it from mesh.topological_surface_add with preset NONORIENT and k = 3."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Walther von Dyck",
+  "year": 1888,
+  "relations": {
+    "member_of": "non-orientable-genus-k"
+  },
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": true
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "catenoid",
+  "name": "Catenoid",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "minimal",
+    "tradition-classical",
+    "tradition-physical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "total_curvature": {
+      "exact": "-4*pi",
+      "value": -12.566370614359172,
+      "source": "classical",
+      "note": "degree-1 Gauss map"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true,
+    "one_sided": false,
+    "boundary_components": 0,
+    "euler_characteristic": 0,
+    "finite_total_curvature": true,
+    "ends": [
+      {
+        "type": "catenoidal",
+        "count": 2,
+        "embedded": true
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 0,
+    "continuous": "SO(2) about the axis, plus reflection in the waist plane",
+    "point_residual": {
+      "schoenflies": "D_inf_h"
+    },
+    "order": "infinite",
+    "chiral": false,
+    "verified_by": "curated"
+  },
+  "embedding": {
+    "quality": "embedded",
+    "self_intersecting": false
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "CATENOID",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "CATENOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "L. Euler, Methodus inveniendi lineas curvas maximi minimive proprietate gaudentes (1744) -- the catenary of revolution as the minimal surface of revolution.",
+      "J. B. Meusnier, 'Memoire sur la courbure des surfaces', Memoires des savans etrangers 10 (1785, read 1776) -- identified the catenoid and helicoid as minimal."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical",
+    "physical"
+  ],
+  "discovered_by": "Leonhard Euler; shown minimal by Jean Baptiste Meusnier",
+  "year": 1744,
+  "alternate_names": [
+    "Catenoid of revolution"
+  ],
+  "ids": {
+    "mathworld": "Catenoid",
+    "mathcurve": "ch1198_catenoid_2",
+    "vmm": "Catenoid",
+    "wikipedia": "Catenoid"
+  },
+  "metrics": {
+    "normalization": "unit_waist"
+  },
+  "relations": {
+    "conjugate": "helicoid",
+    "associate_family": "catenoid-helicoid-associate-family",
+    "associate_angle_degrees": 0.0,
+    "limit_of": [
+      "delaunay-surface"
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

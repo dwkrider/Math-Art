@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "breather-surface",
+  "name": "Breather Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "implemented",
+    "k-const-negative",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "gaussian": {
+      "exact": "-1",
+      "value": -1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hyperbolic_surface_generator",
+      "operator_id": "mesh.hyperbolic_surface_add",
+      "key": "BREATHER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "A. I. Bobenko, 'Surfaces in terms of 2 by 2 matrices: old and new integrable cases', in Harmonic Maps and Integrable Systems (1994) -- Sym's formula for pseudospherical surfaces from sine-Gordon solutions."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "known from the sine-Gordon breather solution",
+  "tradition": [
+    "classical"
+  ],
+  "notes": {
+    "caveats": [
+      "A soliton/antisoliton bound state of the sine-Gordon equation, rendered as a K = -1 surface. Melko-Sterling 1993 does NOT contain a closed-form breather parametrisation, despite being widely cited for one -- 'breather' there classifies branch points of the spectral curve."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "spherical-helicoid",
+  "name": "Spherical Helicoid",
+  "primary_family": "swept",
+  "families": [
+    "aperiodic",
+    "def-swept",
+    "immersed",
+    "not-implemented",
+    "swept",
+    "tradition-gallery"
+  ],
+  "definition": {
+    "mode": "swept",
+    "fidelity": "exact",
+    "polynomial": null
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.",
+      "resume": "3DXM Virtual Math Museum. Slots into math_art/helical_surface_generator.py beside Corkscrew, Hyperbolic Helicoid and Seashell."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "3DXM Virtual Math Museum, Surfaces gallery."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "gallery"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

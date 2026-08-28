@@ -1,0 +1,111 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "helicoid",
+  "name": "Helicoid",
+  "primary_family": "minimal",
+  "families": [
+    "chiral",
+    "complete-infinite-total-curvature",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "minimal",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true,
+    "boundary_components": 0,
+    "finite_total_curvature": false,
+    "ends": [
+      {
+        "type": "helicoidal",
+        "count": 1,
+        "embedded": true
+      }
+    ],
+    "class": "complete-infinite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 1,
+    "continuous": "one-parameter screw motion about the axis",
+    "order": "infinite",
+    "chiral": true,
+    "verified_by": "curated"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "HELICOID",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "HELICOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "J. B. Meusnier, 'Memoire sur la courbure des surfaces', Memoires des savans etrangers 10 (1785, read 1776).",
+      "E. Catalan, 'Sur les surfaces reglees dont l'aire est un minimum', J. Math. Pures Appl. 7 (1842) -- the helicoid is the only ruled minimal surface besides the plane."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Jean Baptiste Meusnier",
+  "year": 1776,
+  "ids": {
+    "mathworld": "Helicoid",
+    "mathcurve": "ch1279_helicoid_2",
+    "vmm": "Helicoid",
+    "wikipedia": "Helicoid"
+  },
+  "relations": {
+    "conjugate": "catenoid",
+    "associate_family": "catenoid-helicoid-associate-family",
+    "associate_angle_degrees": 90.0
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

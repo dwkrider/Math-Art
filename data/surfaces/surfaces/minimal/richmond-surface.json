@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "richmond-surface",
+  "name": "Richmond",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true,
+    "finite_total_curvature": true,
+    "ends": [
+      {
+        "type": "planar",
+        "count": 1,
+        "embedded": true
+      },
+      {
+        "type": "enneper",
+        "count": 1,
+        "order": 1,
+        "embedded": false
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "RICHMOND",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. W. Richmond, 'On the simplest algebraic minimal curves, and the derived real minimal surfaces', Proc. Cambridge Phil. Soc. 19 (1904)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Herbert William Richmond",
+  "year": 1904,
+  "ids": {
+    "mathcurve": "ch1329_richmond_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

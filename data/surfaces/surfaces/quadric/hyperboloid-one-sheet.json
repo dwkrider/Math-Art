@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hyperboloid-one-sheet",
+  "name": "Hyperboloid of One Sheet",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "tradition-architectural",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "genus": 0,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 0,
+    "continuous": "SO(2) about the axis"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "HYPERBOLOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Classical; one of the two doubly ruled quadrics."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "architectural",
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "One-SheetedHyperboloid",
+    "mathcurve": "ch1286_hyperboloid1_2"
+  },
+  "notes": {
+    "caveats": [
+      "DOUBLY ruled: two distinct families of straight lines lie on it, which is what makes cooling towers and Shukhov's lattice towers buildable from straight members."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

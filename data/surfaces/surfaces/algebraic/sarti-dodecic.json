@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "sarti-dodecic",
+  "name": "Sarti Dodecic",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "record-holder",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "degree": 12,
+    "exactness": "elementary",
+    "note": "Invariant under the reflection group of the 600-cell."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "is_record": true,
+    "record_for": "maximum known nodes, degree 12",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 600
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "The pencil's singular members are fixed by a condition not reconstructible from the shipped symmetric-function machinery; see math_art/surfaces/algebraic.py:680-693, where the omission is documented in code.",
+      "resume": "A. Sarti, 'Pencils of symmetric surfaces in P_3', J. Algebra 246 (2001); research/papers/algebraic-surfaces/sarti-2001-pencils-symmetric-surfaces/"
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "A. Sarti, J. Algebra 246 (2001)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Alessandra Sarti",
+  "year": 2001,
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

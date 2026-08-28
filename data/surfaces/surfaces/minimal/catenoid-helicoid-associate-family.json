@@ -1,0 +1,112 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "catenoid-helicoid-associate-family",
+  "name": "Catenoid-Helicoid Associate Family",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "varies"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "CATHEL",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "O. Bonnet, 'Memoire sur la theorie generale des surfaces', J. Ecole Polytechnique 19 (1853) -- the associate family.",
+      "H. A. Schwarz, Gesammelte Mathematische Abhandlungen (1890)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Ossian Bonnet",
+  "year": 1853,
+  "specimens": [
+    {
+      "label": "catenoid (theta = 0)",
+      "parameters": {
+        "theta_degrees": 0
+      },
+      "slug": "catenoid",
+      "embedding": {
+        "quality": "embedded"
+      }
+    },
+    {
+      "label": "helicoid (theta = 90)",
+      "parameters": {
+        "theta_degrees": 90
+      },
+      "slug": "helicoid",
+      "embedding": {
+        "quality": "embedded"
+      }
+    },
+    {
+      "label": "intermediate associate",
+      "parameters": {
+        "theta_degrees": 45
+      },
+      "embedding": {
+        "quality": "immersed"
+      }
+    }
+  ],
+  "notes": {
+    "caveats": [
+      "The members are ISOMETRIC but not congruent, and only theta = 0 and theta = 90 are embedded; the intermediates self-intersect."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "schwarz-p",
+  "name": "Schwarz P Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "complete-infinite-total-curvature",
+    "def-nodal",
+    "embedded",
+    "has-approximation",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "approximation",
+    "approximates": null,
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "residual": {
+      "max_abs_mean_curvature": null,
+      "measured_at_resolution": null,
+      "note": "The nodal level set is a truncated Fourier fit, NOT the minimal surface: its mean curvature is wrong at the percent level. Measured by tools/surfdb_validate.py."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true,
+    "genus_per_cell": 3,
+    "euler_characteristic_per_cell": -4,
+    "finite_total_curvature": false,
+    "class": "complete-infinite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3,
+    "hermann_mauguin": "Im-3m",
+    "ita_number": 229,
+    "lattice": "primitive cubic",
+    "chiral": false,
+    "verified_by": "curated"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "P",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. A. Schwarz, Gesammelte Mathematische Abhandlungen, Springer (1890) -- the P and D surfaces."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "relations": {
+    "member_of": "pgd-associate-family",
+    "associate_family": "pgd-associate-family",
+    "associate_angle_degrees": 0.0,
+    "conjugate": "schwarz-d",
+    "dual_labyrinth_graph": "pcu",
+    "same_surface_as": [
+      {
+        "slug": "fischer-koch-cs",
+        "confidence": "suspected",
+        "check": "compare the two as embedded surfaces in one cubic cell: equal space group, equal genus per cell, and a Hausdorff distance below the mesh resolution would settle it",
+        "source": "K. Brakke's Surface Evolver periodic-surface collection lists Fischer-Koch C(S) as 'later recognised as the P surface'. The repo ships them as separate rows."
+      }
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical",
+    "crystallographic"
+  ],
+  "alternate_names": [
+    "Primitive surface",
+    "Schwarz primitive surface"
+  ],
+  "discovered_by": "Hermann Amandus Schwarz",
+  "year": 1865,
+  "ids": {
+    "mathworld": "SchwarzsMinimalSurface",
+    "mathcurve": "ch1336_schwarz_2",
+    "epinet": "pcu"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

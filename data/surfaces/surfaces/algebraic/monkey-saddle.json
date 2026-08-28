@@ -1,0 +1,105 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "monkey-saddle",
+  "name": "Monkey Saddle (n-fold)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "embedded",
+    "implemented",
+    "noncompact",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 1.0
+    },
+    "polynomial": "x**3 - 3*x*y**2 - z",
+    "parameters": [
+      {
+        "name": "fold",
+        "symbol": "Folds",
+        "domain": "[2, 8]",
+        "default": 3,
+        "integer": true,
+        "note": "Saddle fold count: 2 is the ordinary saddle, 3 the monkey saddle, higher the n-fold saddles"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.8806253250524415,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "CLASSICAL",
+      "key": "MONKEY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x -1 over 240 points (worst 4.44e-16).",
+    "sources": [
+      "The standard example of a degenerate critical point of higher order; z = x^3 - 3xy^2 is the real part of z^3."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "MonkeySaddle",
+    "wikipedia": "Monkey saddle"
+  },
+  "notes": {
+    "caveats": [
+      "Named for having three descending regions -- two for the legs and one for the tail."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

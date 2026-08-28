@@ -1,0 +1,112 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "elliptic-cone",
+  "name": "Elliptic Cone",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "flat",
+    "noncompact",
+    "not-implemented",
+    "quadric",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2/a**2 + y**2/b**2 - z**2",
+    "parameters": [
+      {
+        "name": "a",
+        "symbol": "a",
+        "domain": "(0, inf)",
+        "default": 1.0
+      },
+      {
+        "name": "b",
+        "symbol": "b",
+        "domain": "(0, inf)",
+        "default": 1.0
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 15.967921070660946,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "conical point",
+        "count": 1
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "No math_art operator builds this quadric. Blender's own primitives are not math_art constructions and are not counted as coverage.",
+      "resume": "A quadric generator would be a small module: one implicit family with a signature (+/-,+/-,+/-) selector."
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "EllipticCone",
+    "mathcurve": "ch1235_coneelliptique_2"
+  },
+  "notes": {
+    "caveats": [
+      "Developable away from the apex, and ruled; the apex is the one point where it is not a smooth surface."
+    ]
+  },
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

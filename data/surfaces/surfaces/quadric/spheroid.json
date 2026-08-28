@@ -1,0 +1,116 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "spheroid",
+  "name": "Spheroid",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-implicit",
+    "embedded",
+    "not-implemented",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2 + y**2 + z**2/c**2 - 1",
+    "parameters": [
+      {
+        "name": "c",
+        "symbol": "c",
+        "domain": "(0, inf)",
+        "default": 2.0,
+        "note": "polar semi-axis; c > 1 prolate, c < 1 oblate, c = 1 the sphere"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 1.190387731551701,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {
+    "genus": 0,
+    "euler_characteristic": 2,
+    "orientable": true,
+    "compact": true,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "No math_art operator builds this quadric. Blender's own primitives are not math_art constructions and are not counted as coverage.",
+      "resume": "A quadric generator would be a small module: one implicit family with a signature (+/-,+/-,+/-) selector."
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "alternate_names": [
+    "Ellipsoid of revolution"
+  ],
+  "specimens": [
+    {
+      "label": "prolate spheroid",
+      "parameters": {
+        "c": 2.0
+      }
+    },
+    {
+      "label": "oblate spheroid",
+      "parameters": {
+        "c": 0.5
+      }
+    },
+    {
+      "label": "sphere",
+      "parameters": {
+        "c": 1.0
+      },
+      "slug": "sphere"
+    }
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

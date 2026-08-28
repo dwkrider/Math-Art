@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "zoll-surface",
+  "name": "Zoll's Surface",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "revolution",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "genus": 0,
+    "euler_characteristic": 2,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "ZOLL",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "O. Zoll, 'Uber Flachen mit Scharen geschlossener geodatischer Linien', Math. Ann. 57 (1903).",
+      "J. Tannery (1892) for the earlier, non-smooth example."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Otto Zoll",
+  "year": 1903,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "ZollSurface"
+  },
+  "notes": {
+    "caveats": [
+      "Smooth, not the round sphere, and yet EVERY geodesic closes up with the same length -- which for a long time the sphere was believed to be the only surface to do."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

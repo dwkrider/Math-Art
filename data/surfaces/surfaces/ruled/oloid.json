@@ -1,0 +1,83 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "oloid",
+  "name": "Oloid",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "embedded",
+    "flat",
+    "implemented",
+    "ruled",
+    "tradition-classical",
+    "tradition-sculptural"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "genus": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.oloid_generator",
+      "operator_id": "mesh.oloid_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "P. Schatz, Rhythmusforschung und Technik (1975); the oloid dates from his 1929 work on the invertible cube."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Paul Schatz",
+  "year": 1929,
+  "tradition": [
+    "classical",
+    "sculptural"
+  ],
+  "ids": {
+    "mathworld": "Oloid",
+    "wikipedia": "Oloid"
+  },
+  "notes": {
+    "caveats": [
+      "The convex hull of two perpendicular circles each passing through the other's centre. DEVELOPABLE -- it can be unrolled flat -- which is why it is filed under `ruled` rather than `misc`, and it rolls with its whole surface touching the ground."
+    ]
+  },
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

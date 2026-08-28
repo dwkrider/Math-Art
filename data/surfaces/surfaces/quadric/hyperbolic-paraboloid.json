@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hyperbolic-paraboloid",
+  "name": "Hyperbolic Paraboloid",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "tradition-architectural",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "HYPAR",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Classical; the second doubly ruled quadric. Felix Candela's shell structures are the architectural realisation."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "architectural",
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "HyperbolicParaboloid",
+    "mathcurve": "ch1285_paraboloidhyperbolic_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

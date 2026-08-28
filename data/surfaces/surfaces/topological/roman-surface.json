@@ -1,0 +1,104 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "roman-surface",
+  "name": "Roman Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "implemented",
+    "non-orientable",
+    "singular",
+    "topological",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "euler_characteristic": 1,
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "non_orientable_genus": 1,
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "Td",
+    "orbifold": "*332",
+    "order": 24
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "double line",
+        "count": 3
+      },
+      {
+        "type": "pinch point",
+        "count": 6
+      },
+      {
+        "type": "triple point",
+        "count": 1
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "ROMAN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "J. Steiner, discovered in Rome in 1844; published posthumously by K. Weierstrass (1863)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "alternate_names": [
+    "Steiner surface",
+    "Steiner's Roman surface"
+  ],
+  "discovered_by": "Jakob Steiner",
+  "year": 1844,
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "ids": {
+    "mathworld": "RomanSurface",
+    "mathcurve": "ch1331_romaine_2"
+  },
+  "notes": {
+    "caveats": [
+      "A quartic mapping of the projective plane with three double lines meeting at a triple point -- unlike Boy's surface it is NOT an immersion, because of the six pinch points."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

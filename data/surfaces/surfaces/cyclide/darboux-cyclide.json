@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "darboux-cyclide",
+  "name": "Darboux Cyclide",
+  "primary_family": "cyclide",
+  "families": [
+    "aperiodic",
+    "cyclide",
+    "def-implicit",
+    "immersed",
+    "not-implemented",
+    "tradition-architectural",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "degree": 4
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built. Best done as a quartic level set, which puts it in the algebraic machinery rather than the parametric cyclide module.",
+      "resume": "G. Darboux. Prominent in modern architectural geometry as a surface carrying several families of circles."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "G. Darboux, Principes de geometrie analytique (1917)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Gaston Darboux",
+  "relations": {
+    "generalizes": [
+      "dupin-cyclide"
+    ]
+  },
+  "tradition": [
+    "architectural",
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "meeks-mobius-strip",
+  "name": "Meeks Mobius Strip",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "non-orientable",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": false,
+    "one_sided": true
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "NONORIENT",
+      "key": "MEEKS_MOBIUS",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "relations": {
+    "same_surface_as": [
+      {
+        "slug": "bjorling-twisted-band",
+        "confidence": "suspected",
+        "check": "the Bjorling surface of a circle with a uniformly rotating normal is a minimal Mobius band; whether it is congruent to Meeks' is not asserted by either row's label, so it is not merged. Compare total curvature (Meeks' is -6*pi) and the boundary-curve knot type.",
+        "source": "row labels in math_art/minsurf/zoo.py: 'Bjorling: Twisted Band (Mobius)' and 'Meeks Mobius Strip'."
+      }
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

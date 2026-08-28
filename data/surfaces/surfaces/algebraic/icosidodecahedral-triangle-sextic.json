@@ -1,0 +1,128 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "icosidodecahedral-triangle-sextic",
+  "name": "Icosidodecahedral Triangle Sextic",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 1.8
+    },
+    "polynomial": "(z**6 - 5*(x**2 + y**2)*z**4 + 5*(x**2 + y**2)**2*z**2 - 2*(x**4 - 10*x**2*y**2 + 5*y**4)*x*z) + 0.0*(x**2 + y**2 + z**2)**3 + 1.0*(x**2 + y**2 + z**2)**2 + -2.0*(x**2 + y**2 + z**2) + 1.0",
+    "parameters": [
+      {
+        "name": "k0",
+        "symbol": "k",
+        "domain": "[-40, 40]",
+        "default": 0.0,
+        "integer": false,
+        "note": "Coefficient k of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "k1",
+        "symbol": "k'",
+        "domain": "[-40, 40]",
+        "default": 1.0,
+        "integer": false,
+        "note": "Coefficient k' of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "k2",
+        "symbol": "k''",
+        "domain": "[-100, 100]",
+        "default": -2.0,
+        "integer": false,
+        "note": "Coefficient k'' of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "k3",
+        "symbol": "k'''",
+        "domain": "[-200, 200]",
+        "default": 1.0,
+        "integer": false,
+        "note": "Coefficient k''' of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "size",
+        "symbol": "Size",
+        "domain": "[0.05, 10]",
+        "default": 1.0,
+        "integer": false,
+        "note": "The length a the coefficients are measured against. It rescales the surface inside the clip ball rather than the finished object, so it changes how much is shown"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 42.57443122869248,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "Ih",
+    "order": 120,
+    "orbifold": "*532",
+    "chiral": false,
+    "generator_set": "Ih_z5"
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "GOURSAT_DODEC",
+      "key": "DODEC_TRIANGLES",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 2.13e-14).",
+    "sources": [
+      "E. Goursat, 'Etude des surfaces qui admettent tous les plans de symetrie d'un polyedre regulier', Ann. Sci. ENS 3e serie 4 (1887)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

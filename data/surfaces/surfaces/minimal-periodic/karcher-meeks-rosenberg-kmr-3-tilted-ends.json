@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "karcher-meeks-rosenberg-kmr-3-tilted-ends",
+  "name": "Karcher-Meeks-Rosenberg (KMR-3, tilted ends)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "KMR3_DOUBLY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

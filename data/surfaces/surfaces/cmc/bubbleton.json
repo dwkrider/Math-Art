@@ -1,0 +1,157 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "bubbleton",
+  "name": "Bubbleton",
+  "primary_family": "cmc",
+  "families": [
+    "aperiodic",
+    "cmc",
+    "def-parametric",
+    "immersed",
+    "implemented"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "BUBBLETON",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "CYL2",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CYL2"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "CYL3",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CYL3"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "CYL5",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CYL5"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "UND2",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "UND2"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "UND3",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "UND3"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "NOD2",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "NOD2"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "TWIST",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TWIST"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "DOUBLE_UND",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "DOUBLE_UND"
+    },
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "SPLASH",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "SPLASH"
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "specimens": [
+    {
+      "label": "cylinder, 2 lobes"
+    },
+    {
+      "label": "cylinder, 3 lobes"
+    },
+    {
+      "label": "cylinder, 5 lobes"
+    },
+    {
+      "label": "unduloid, 2 lobes"
+    },
+    {
+      "label": "unduloid, 3 lobes"
+    },
+    {
+      "label": "nodoid, 2 lobes"
+    },
+    {
+      "label": "twizzler (3 lobes, 2 covers)"
+    },
+    {
+      "label": "double bubbleton on an unduloid"
+    },
+    {
+      "label": "colliding bubbles (2 and 3)"
+    }
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

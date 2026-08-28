@@ -1,0 +1,98 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "elliptic-paraboloid",
+  "name": "Elliptic Paraboloid",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "embedded",
+    "noncompact",
+    "not-implemented",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2/a**2 + y**2/b**2 - z",
+    "parameters": [
+      {
+        "name": "a",
+        "symbol": "a",
+        "domain": "(0, inf)",
+        "default": 1.0
+      },
+      {
+        "name": "b",
+        "symbol": "b",
+        "domain": "(0, inf)",
+        "default": 1.0
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 1.999999620487492,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "No math_art operator builds this quadric. Blender's own primitives are not math_art constructions and are not counted as coverage.",
+      "resume": "A quadric generator would be a small module: one implicit family with a signature (+/-,+/-,+/-) selector."
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "EllipticParaboloid",
+    "mathcurve": "ch1263_paraboloidelliptic_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

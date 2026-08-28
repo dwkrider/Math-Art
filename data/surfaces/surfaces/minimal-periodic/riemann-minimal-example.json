@@ -1,0 +1,82 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "riemann-minimal-example",
+  "name": "Riemann's Minimal Example",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "embedded",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "RIEMANN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "B. Riemann, 'Uber die Flache vom kleinsten Inhalt bei gegebener Begrenzung', Abh. Konigl. Ges. Wiss. Gottingen 13 (1867), posthumous."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Bernhard Riemann",
+  "year": 1867,
+  "notes": {
+    "caveats": [
+      "Foliated by circles and lines in parallel planes; Meeks, Perez and Ros later proved it is the only such properly embedded singly periodic example of genus zero."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "k-positive-revolution",
+  "name": "Constant Positive Curvature Surface of Revolution",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "k-const-positive",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "k-const-positive",
+    "gaussian": {
+      "exact": "1",
+      "value": 1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.spherical_surface_generator",
+      "operator_id": "mesh.spherical_surface_add",
+      "key": "SPHERE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "SPHERE"
+    },
+    {
+      "generator": "math_art.spherical_surface_generator",
+      "operator_id": "mesh.spherical_surface_add",
+      "key": "SPINDLE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "SPINDLE"
+    },
+    {
+      "generator": "math_art.spherical_surface_generator",
+      "operator_id": "mesh.spherical_surface_add",
+      "key": "BULGE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "BULGE"
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "F. Minding, J. reine angew. Math. 19 (1839) -- the K = +1 classification, mirroring the K = -1 one."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "specimens": [
+    {
+      "label": "sphere (the closed member)",
+      "slug": "sphere"
+    },
+    {
+      "label": "spindle"
+    },
+    {
+      "label": "bulge"
+    }
+  ],
+  "discovered_by": "Ferdinand Minding",
+  "year": 1839,
+  "tradition": [
+    "classical"
+  ],
+  "notes": {
+    "caveats": [
+      "Only the sphere is closed and smooth; the spindle has two conical points and the bulge has an edge."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

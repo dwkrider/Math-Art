@@ -1,0 +1,56 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherk-collins-sculpture",
+  "name": "Scherk-Collins Sculpture",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "minimal"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.scherk_collins_generator",
+      "operator_id": "mesh.scherk_collins_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

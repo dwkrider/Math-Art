@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "cross-cap",
+  "name": "Cross-Cap",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "implemented",
+    "non-orientable",
+    "singular",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "euler_characteristic": 1,
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "non_orientable_genus": 1,
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "pinch point",
+        "count": 2
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "CROSSCAP",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "D. Hilbert and S. Cohn-Vossen, Anschauliche Geometrie (1932) -- Geometry and the Imagination, the standard exposition."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Cross-Cap"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

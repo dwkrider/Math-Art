@@ -1,0 +1,108 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "clebsch-diagonal-cubic",
+  "name": "Clebsch Diagonal Cubic",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-implicit",
+    "embedded",
+    "implemented",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 3.0
+    },
+    "polynomial": "81*(x**3 + y**3 + z**3) - 189*(x**2*y + x**2*z + y**2*x + y**2*z + z**2*x + z**2*y) + 54*x*y*z + 126*(x*y + x*z + y*z) - 9*(x**2 + y**2 + z**2) - 9*(x + y + z) + 1"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.610644870134553,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "C3v",
+    "generator_set": "C3v_diag",
+    "order": 6,
+    "orbifold": "*33",
+    "verified_by": "symbolic"
+  },
+  "embedding": {
+    "quality": "embedded",
+    "singularities": []
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "CLASSICAL",
+      "key": "CLEBSCH",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 2.27e-13).",
+    "sources": [
+      "A. Clebsch, 'Ueber die Flachen vierter Ordnung, welche eine Doppelcurve zweiten Grades besitzen', J. reine angew. Math. 69 (1868); the diagonal surface.",
+      "A. Cayley and G. Salmon (1849) for the 27 lines on a cubic."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "symmetry_invariant": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "discovered_by": "Alfred Clebsch",
+  "year": 1871,
+  "ids": {
+    "mathworld": "ClebschDiagonalCubic",
+    "mathcurve": "ch1231_clebsch_2"
+  },
+  "notes": {
+    "caveats": [
+      "The unique smooth cubic surface on which all 27 lines are REAL. Its ten Eckardt points are where three of the lines meet."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

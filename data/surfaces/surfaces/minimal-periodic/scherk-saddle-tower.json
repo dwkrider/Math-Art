@@ -1,0 +1,76 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherk-saddle-tower",
+  "name": "Scherk Saddle Tower",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "embedded",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SCHERK_TOWER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. F. Scherk, J. reine angew. Math. 13 (1835) -- the singly periodic surface.",
+      "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) -- the saddle towers."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Heinrich Ferdinand Scherk; the k-wing family is due to Hermann Karcher",
+  "year": 1835,
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

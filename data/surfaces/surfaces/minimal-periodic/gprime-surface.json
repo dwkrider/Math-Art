@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "gprime-surface",
+  "name": "Gprime surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-nodal",
+    "has-approximation",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "approximation",
+    "approximates": null,
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "residual": {
+      "max_abs_mean_curvature": null,
+      "measured_at_resolution": null,
+      "note": "The nodal level set is a truncated Fourier fit, NOT the minimal surface: its mean curvature is wrong at the percent level. Measured by tools/surfdb_validate.py."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "GPRIME",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}
