@@ -46,6 +46,63 @@ A **saddle polyhedron** is a solid bounded not by flat faces but by **saddle pol
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__DECATRIHEDRON.png" width="200"><br><sub>1. Decatrihedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__WURTZITE_TRIHEDRON.png" width="200"><br><sub>6. Wurtzite trihedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__DIAMOND_TETRAHEDRON.png" width="200"><br><sub>11. Diamond tetrahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__BCC_TETRAHEDRON.png" width="200"><br><sub>12. bcc tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__FCC_TETRAGONAL_TETRAHEDRON.png" width="200"><br><sub>13. fcc tetragonal tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__FCC_ORTHORHOMBIC_TETRAHEDRON.png" width="200"><br><sub>14. fcc orthorhombic tetrahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TRUNCATED_ORTHORHOMBIC_TETRAHEDRON.png" width="200"><br><sub>17. Truncated orthorhombic tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__WURTZITE_NODAL_TETRAHEDRON.png" width="200"><br><sub>19. Wurtzite nodal tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__WURTZITE_PENTAHEDRON.png" width="200"><br><sub>25. Wurtzite pentahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TRIANGULAR_HEXAHEDRON.png" width="200"><br><sub>27. Triangular hexahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__CUBICAL_SADDLE_HEXAHEDRON.png" width="200"><br><sub>28. Cubical saddle hexahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__SADDLE_CUBE.png" width="200"><br><sub>29. Saddle cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TRUNCATED_TETRAGONAL_TETRAHEDRON.png" width="200"><br><sub>30. Truncated tetragonal tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__UNIVERSAL_HEXAHEDRON.png" width="200"><br><sub>31. Universal hexahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__AUGMENTED_UNIVERSAL_HEXAHEDRON.png" width="200"><br><sub>32. Augmented universal hexahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__BIOCTAGONAL_HEXAHEDRON.png" width="200"><br><sub>33. Bioctagonal hexahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__BIDODECAGONAL_HEXAHEDRON.png" width="200"><br><sub>34. Bidodecagonal hexahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TETRAGONAL_SADDLE_HEXAHEDRON.png" width="200"><br><sub>35. Tetragonal saddle hexahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__FISSIONED_TETRAGONAL_SADDLE_HEXAHEDRON.png" width="200"><br><sub>36. Fissioned tetragonal saddle hexahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TETRAGONAL_OCTAGONAL_HEXAHEDRON.png" width="200"><br><sub>37. Tetragonal octagonal hexahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__BCC_OCTAHEDRON.png" width="200"><br><sub>40. bcc octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TETRAHEDRAL_DECAHEDRON.png" width="200"><br><sub>43. Tetrahedral decahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__SADDLE_DODECAHEDRON.png" width="200"><br><sub>44. Saddle dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__BLUNTED_SADDLE_DODECAHEDRON.png" width="200"><br><sub>45. Blunted saddle dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TRUNCATED_TETRAHEDRAL_DECAHEDRON.png" width="200"><br><sub>46. Truncated tetrahedral decahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__BCC_SADDLE_CUBOCTAHEDRON.png" width="200"><br><sub>47. bcc saddle cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__FISSIONED_BCC_SADDLE_CUBOCTAHEDRON.png" width="200"><br><sub>48. Fissioned bcc saddle cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TRUNCATED_FCC_SADDLE_CUBOCTAHEDRON.png" width="200"><br><sub>50. Truncated fcc saddle cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__SADDLE_CUBE_DODECAHEDRON.png" width="200"><br><sub>51. Saddle cube dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/saddle_polyhedron__TRUNCATED_SADDLE_DODECAHEDRON.png" width="200"><br><sub>52. Truncated saddle dodecahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Bend a loop of wire into a wavy, non-flat ring and dip it in soapy water: the film that spans it is not flat — it dips on one side and rises on the other into a *saddle*. Now imagine welding several such loops edge to edge into a closed cage. You get a solid whose "faces" are all gentle saddles instead of flat polygons — a saddle polyhedron. Peter Pearce's discovery is that a whole family of these, fifty-three of them, can be built from one simple connector whose arms only ever point in a fixed set of directions, like the struts of a climbing frame. And because the arms are so regular, many of the cages stack together to fill space completely, the way cubes do but far more interestingly. Everything below makes that picture exact: which directions the arms take, how the code *finds* Pearce's solids rather than copying coordinates he never printed, and how each saddle face is computed.

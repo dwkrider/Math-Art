@@ -7661,5 +7661,127 @@
    "A7",
    "Heptagonal Antiprism"
   ]
+ ],
+ "saddle_polyhedron": [
+  [
+   "DECATRIHEDRON",
+   "1. Decatrihedron"
+  ],
+  [
+   "WURTZITE_TRIHEDRON",
+   "6. Wurtzite trihedron"
+  ],
+  [
+   "DIAMOND_TETRAHEDRON",
+   "11. Diamond tetrahedron"
+  ],
+  [
+   "BCC_TETRAHEDRON",
+   "12. bcc tetrahedron"
+  ],
+  [
+   "FCC_TETRAGONAL_TETRAHEDRON",
+   "13. fcc tetragonal tetrahedron"
+  ],
+  [
+   "FCC_ORTHORHOMBIC_TETRAHEDRON",
+   "14. fcc orthorhombic tetrahedron"
+  ],
+  [
+   "TRUNCATED_ORTHORHOMBIC_TETRAHEDRON",
+   "17. Truncated orthorhombic tetrahedron"
+  ],
+  [
+   "WURTZITE_NODAL_TETRAHEDRON",
+   "19. Wurtzite nodal tetrahedron"
+  ],
+  [
+   "WURTZITE_PENTAHEDRON",
+   "25. Wurtzite pentahedron"
+  ],
+  [
+   "TRIANGULAR_HEXAHEDRON",
+   "27. Triangular hexahedron"
+  ],
+  [
+   "CUBICAL_SADDLE_HEXAHEDRON",
+   "28. Cubical saddle hexahedron"
+  ],
+  [
+   "SADDLE_CUBE",
+   "29. Saddle cube"
+  ],
+  [
+   "TRUNCATED_TETRAGONAL_TETRAHEDRON",
+   "30. Truncated tetragonal tetrahedron"
+  ],
+  [
+   "UNIVERSAL_HEXAHEDRON",
+   "31. Universal hexahedron"
+  ],
+  [
+   "AUGMENTED_UNIVERSAL_HEXAHEDRON",
+   "32. Augmented universal hexahedron"
+  ],
+  [
+   "BIOCTAGONAL_HEXAHEDRON",
+   "33. Bioctagonal hexahedron"
+  ],
+  [
+   "BIDODECAGONAL_HEXAHEDRON",
+   "34. Bidodecagonal hexahedron"
+  ],
+  [
+   "TETRAGONAL_SADDLE_HEXAHEDRON",
+   "35. Tetragonal saddle hexahedron"
+  ],
+  [
+   "FISSIONED_TETRAGONAL_SADDLE_HEXAHEDRON",
+   "36. Fissioned tetragonal saddle hexahedron"
+  ],
+  [
+   "TETRAGONAL_OCTAGONAL_HEXAHEDRON",
+   "37. Tetragonal octagonal hexahedron"
+  ],
+  [
+   "BCC_OCTAHEDRON",
+   "40. bcc octahedron"
+  ],
+  [
+   "TETRAHEDRAL_DECAHEDRON",
+   "43. Tetrahedral decahedron"
+  ],
+  [
+   "SADDLE_DODECAHEDRON",
+   "44. Saddle dodecahedron"
+  ],
+  [
+   "BLUNTED_SADDLE_DODECAHEDRON",
+   "45. Blunted saddle dodecahedron"
+  ],
+  [
+   "TRUNCATED_TETRAHEDRAL_DECAHEDRON",
+   "46. Truncated tetrahedral decahedron"
+  ],
+  [
+   "BCC_SADDLE_CUBOCTAHEDRON",
+   "47. bcc saddle cuboctahedron"
+  ],
+  [
+   "FISSIONED_BCC_SADDLE_CUBOCTAHEDRON",
+   "48. Fissioned bcc saddle cuboctahedron"
+  ],
+  [
+   "TRUNCATED_FCC_SADDLE_CUBOCTAHEDRON",
+   "50. Truncated fcc saddle cuboctahedron"
+  ],
+  [
+   "SADDLE_CUBE_DODECAHEDRON",
+   "51. Saddle cube dodecahedron"
+  ],
+  [
+   "TRUNCATED_SADDLE_DODECAHEDRON",
+   "52. Truncated saddle dodecahedron"
+  ]
  ]
 }

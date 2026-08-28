@@ -369,9 +369,9 @@ def scene_stereographic():
     world.node_tree.nodes.get("Background").inputs["Color"] \
         .default_value = (0.0, 0.0, 0.0, 1)
     # perforated sphere: south pole at origin, north pole at (0,0,2R);
-    # a hyperbolic {7,3} tiling projects to a Poincare-disc pattern
-    bpy.ops.mesh.stereographic_add(pattern='TILING', tile_p=7,
-                                   tile_q=3, radius=1.0)
+    # a square grid on the sphere projects to a clean square grid on the
+    # plane -- the defining property of the stereographic projection.
+    bpy.ops.mesh.stereographic_add(pattern='GRID', radius=1.0)
     sph = bpy.context.active_object
     plastic = bpy.data.materials.new("Sphere Plastic")
     plastic.use_nodes = True
@@ -424,7 +424,7 @@ def scene_stereographic():
           .properties["view_transform"].enum_items]
     if "AgX" in vt:
         scene.view_settings.view_transform = "AgX"
-    scene.view_settings.exposure = 1.5
+    scene.view_settings.exposure = 0.4
     render("stereographic")
 
 

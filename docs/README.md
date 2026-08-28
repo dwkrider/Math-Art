@@ -23,7 +23,7 @@ shown with a consistent studio render (regenerate them with
 | [<img src="images/invariant_manifold.png" width="240">](generators/invariant_manifold.md)<br>**[Invariant Manifold](generators/invariant_manifold.md)** | [<img src="images/supershape.png" width="240">](generators/supershape.md)<br>**[Supershape](generators/supershape.md)** | [<img src="images/spherical_harmonic.png" width="240">](generators/spherical_harmonic.md)<br>**[Spherical Harmonic](generators/spherical_harmonic.md)** |
 | [<img src="images/orbital.png" width="240">](generators/orbital.md)<br>**[Atomic & Molecular Orbital](generators/orbital.md)** | [<img src="images/hyperbolic_surface.png" width="240">](generators/hyperbolic_surface.md)<br>**[Hyperbolic Surface](generators/hyperbolic_surface.md)** | [<img src="images/spherical_surface.png" width="240">](generators/spherical_surface.md)<br>**[Spherical Surface](generators/spherical_surface.md)** |
 | [<img src="images/delaunay_surface.png" width="240">](generators/delaunay_surface.md)<br>**[Delaunay Surface](generators/delaunay_surface.md)** | [<img src="images/bryant_surface.png" width="240">](generators/bryant_surface.md)<br>**[Bryant Surface](generators/bryant_surface.md)** | [<img src="images/crochet.png" width="240">](generators/crochet.md)<br>**[Crochet/Coral](generators/crochet.md)** |
-| [<img src="images/willmore.png" width="240">](generators/willmore.md)<br>**[Willmore Surface](generators/willmore.md)** |  |  |
+| [<img src="images/willmore.png" width="240">](generators/willmore.md)<br>**[Willmore Surface](generators/willmore.md)** | [<img src="images/cmc_capillary.png" width="240">](generators/cmc_capillary.md)<br>**[CMC Capillary Surface](generators/cmc_capillary.md)** |  |
 
 ## Polyhedra
 
@@ -103,7 +103,6 @@ shown with a consistent studio render (regenerate them with
 | [<img src="images/gem.png" width="240">](generators/gem.md)<br>**[Faceted Gemstone](generators/gem.md)** | [<img src="images/gem_cabochon.png" width="240">](generators/gem_cabochon.md)<br>**[Cabochon Gemstone](generators/gem_cabochon.md)** | [<img src="images/koman.png" width="240">](generators/koman.md)<br>**[Koman Developable](generators/koman.md)** |
 | [<img src="images/platonic_twist.png" width="240">](generators/platonic_twist.md)<br>**[Platonic Twist](generators/platonic_twist.md)** | [<img src="images/twisted_torus.png" width="240">](generators/twisted_torus.md)<br>**[Twisted Torus](generators/twisted_torus.md)** | [<img src="images/stereographic.png" width="240">](generators/stereographic.md)<br>**[Stereographic Projection Sphere](generators/stereographic.md)** |
 | [<img src="images/orbifold_sphere.png" width="240">](generators/orbifold_sphere.md)<br>**[Orbifold Symmetry Sphere](generators/orbifold_sphere.md)** | [<img src="images/bubble_cluster.png" width="240">](generators/bubble_cluster.md)<br>**[Bubble Cluster](generators/bubble_cluster.md)** | [<img src="images/relaxed_bubble.png" width="240">](generators/relaxed_bubble.md)<br>**[Optimized Bubble](generators/relaxed_bubble.md)** |
-| [<img src="images/cmc_capillary.png" width="240">](generators/cmc_capillary.md)<br>**[CMC Capillary Surface](generators/cmc_capillary.md)** |  |  |
 
 ## Styles
 
