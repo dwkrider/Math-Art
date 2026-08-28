@@ -570,22 +570,6 @@ except Exception:
 
 if _IN_BLENDER:
 
-    def _finish_object(obj, thickness):
-        """Give the shell material depth, as a live modifier.
-
-        No subdivision is added here.  Add a Subdivision Surface
-        modifier yourself if you want one -- it reads the branch edge
-        creases this operator sets, so it will hold the corners unless
-        `Crease branches` is off.  It belongs BEFORE any Solidify in the
-        stack: the other way round smooths the shell's new inner wall
-        and rim and rounds the thickness away.
-        """
-        if thickness > 0.0:
-            m = obj.modifiers.new("Solidify", 'SOLIDIFY')
-            m.thickness = float(thickness)
-            m.offset = 0.0
-        return obj
-
     def _cell_material(name, color):
         """A shaded material for one cell.
 
@@ -761,12 +745,6 @@ if _IN_BLENDER:
                         "lets such a modifier round the corners too, "
                         "which suits a single smooth solid but stops "
                         "neighbouring cells matching")
-        thickness: FloatProperty(
-            name="Thickness", default=0.0, min=0.0, max=0.5,
-            description="Give the saddle surface material depth with a "
-                        "Solidify modifier, which is what makes it "
-                        "printable; zero leaves it a zero-thickness "
-                        "shell")
         smooth: BoolProperty(
             name="Smooth shading", default=True,
             description="Shade smooth, with creases along the branches")
@@ -809,7 +787,6 @@ if _IN_BLENDER:
             L.prop(self, "smooth")
             if self.smooth:
                 L.prop(self, "crease_edges")
-            L.prop(self, "thickness")
 
         def _execute_separate(self, context, key):
             """One object per cell, grouped in their own collection."""
@@ -871,7 +848,6 @@ if _IN_BLENDER:
                 obj = bpy.data.objects.new(me.name, me)
                 obj.location = tuple(float(x) for x in origin)
                 coll.objects.link(obj)
-                _finish_object(obj, self.thickness)
                 pieces.append(obj)
                 made += 1
 
@@ -968,8 +944,6 @@ if _IN_BLENDER:
                     ncrease = 0 if not self.crease_edges else _sc.mark_sharp(
                         me, face_boundary_edges(
                             T, info.get('crease_id') or fid))
-
-            _finish_object(obj, self.thickness)
 
             msg = ("Table 8.1 #%d %s: %d faces"
                    % (solid['number'], solid['name'], info['faces']))
