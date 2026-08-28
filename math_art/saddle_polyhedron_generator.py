@@ -570,6 +570,37 @@ except Exception:
 
 if _IN_BLENDER:
 
+    import os as _os
+
+    _SOLID_ICON_DIR = _os.path.join(_os.path.dirname(__file__),
+                                    "icons", "solids")
+    _solid_previews = None
+    #: The enum items must be kept alive in a module global.  Blender
+    #: does not own the strings a dynamic enum callback returns, and
+    #: rebuilding them each call is the classic way to get garbled
+    #: labels or a crash.
+    _solid_items_cache = []
+
+    def _load_solid_icons():
+        """One preview per solid, for the gallery selector."""
+        global _solid_previews
+        if _solid_previews is not None:
+            return
+        try:
+            import bpy.utils.previews
+            _solid_previews = bpy.utils.previews.new()
+        except Exception:
+            _solid_previews = None
+            return
+        for solid in pdata.SOLIDS:
+            path = _os.path.join(_SOLID_ICON_DIR, "%s.png" % solid['key'])
+            if not _os.path.exists(path):
+                continue
+            try:
+                _solid_previews.load(solid['key'], path, 'IMAGE')
+            except Exception:
+                pass                 # a missing icon is non-fatal
+
     def _cell_material(name, color):
         """A shaded material for one cell.
 
@@ -591,17 +622,6 @@ if _IN_BLENDER:
             if node:
                 node.inputs[0].default_value = color
         return mat
-
-    def _on_family(self, context):
-        """Move to a solid of the newly chosen group.
-
-        A dynamic enum keeps whatever index it had, so switching group
-        otherwise leaves the previous group's solid selected -- and the
-        Solid list then shows an entry that is not in it."""
-        here = pdata.in_family(self.family)
-        if here and self.solid not in {s['key'] for s in here}:
-            self.solid = here[0]['key']
-
 
     def _layout_items(self, context):
         """Only the layouts the chosen solid can actually produce.
@@ -629,19 +649,25 @@ if _IN_BLENDER:
         return items
 
 
-    def _family_items(self, context):
-        out = []
-        for fam in pdata.families():
-            out.append((fam, FAMILY_LABELS.get(fam, fam.title()),
-                        "Saddle polyhedra with this many faces"))
-        return out or [('NONE', "None", "")]
-
     def _solid_items(self, context):
+        """Every verified solid, with a thumbnail.
+
+        One flat list rather than a group selector plus a list: thirty
+        entries with names like "Truncated tetragonal tetrahedron" and
+        "Tetragonal saddle hexahedron" are not tellable apart by name,
+        and grouping them by face count only hides half of them behind a
+        second control."""
+        _load_solid_icons()
         out = []
-        for s in pdata.in_family(self.family):
+        for i, s in enumerate(pdata.SOLIDS):
+            icon = 0
+            if _solid_previews is not None and s['key'] in _solid_previews:
+                icon = _solid_previews[s['key']].icon_id
             out.append((s['key'], "%d. %s" % (s['number'], s['name']),
-                        "Table 8.1 entry %d" % s['number']))
-        return out or [('NONE', "None", "")]
+                        "Table 8.1 entry %d -- %s"
+                        % (s['number'], s['name']), icon, i))
+        _solid_items_cache[:] = out
+        return out or [('NONE', "None", "", 0, 0)]
 
     class MESH_OT_saddle_polyhedron_add(bpy.types.Operator):
         """Add one of Pearce's saddle polyhedra"""
@@ -649,9 +675,6 @@ if _IN_BLENDER:
         bl_label = "Saddle Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        family: EnumProperty(
-            name="Group", items=_family_items, update=_on_family,
-            description="Pearce groups his table by number of faces")
         solid: EnumProperty(
             name="Solid", items=_solid_items,
             description="Which saddle polyhedron of Table 8.1 to build")
@@ -760,8 +783,9 @@ if _IN_BLENDER:
             # inside the widget, so the numeric fields sit out of line
             # with the enums above them.
             L.use_property_split = True
-            L.prop(self, "family")
-            L.prop(self, "solid")
+            # a gallery, not a list: the solids are told apart by shape
+            L.template_icon_view(self, "solid", show_labels=True,
+                                 scale=6.0, scale_popup=6.0)
             L.prop(self, "face_style")
             L.prop(self, "layout_kind")
             if self.layout_kind in ('BLOCK', 'UNIT'):
@@ -983,6 +1007,13 @@ if _IN_BLENDER:
             bpy.utils.register_class(c)
 
     def unregister():
+        global _solid_previews
+        if _solid_previews is not None:
+            try:
+                bpy.utils.previews.remove(_solid_previews)
+            except Exception:
+                pass
+            _solid_previews = None
         for c in reversed(_CLASSES):
             bpy.utils.unregister_class(c)
 
