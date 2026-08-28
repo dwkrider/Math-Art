@@ -928,7 +928,49 @@ if _IN_BLENDER:
     # tripled while the panel still reads as lit rather than murky.
     PLAN_EXPOSURE = -3.5
     PLAN_LIGHT_SCALE = 0.25
-    STUDIO_EXPOSURE = -0.5
+
+    # The 3/4 studio look.  Khronos PBR Neutral is a tone curve built to
+    # roll highlights off WITHOUT the desaturation and hue shift a
+    # filmic curve introduces, which is exactly what was wanted here:
+    # under AgX the subjects clipped, and the saddle palette -- colours
+    # like (0.85, 0.30, 0.24) -- measured 0.21 mean saturation against
+    # 0.43 under this curve.
+    #
+    # The exposure is set by the CONVEX subjects, and judging it on a
+    # spiky one is the trap.  A star self-shadows, so it shows a wide
+    # luminance range under any rig; a convex white solid inside a
+    # five-light surround does not.  At -0.5 the geodesic sphere renders
+    # at mean luminance 0.92 across a 0.58-0.99 range: its shading is
+    # present but crushed against white, with nothing clipped -- it is
+    # simply all bright.  At -2.0 the same sphere sits at mean 0.75
+    # across 0.31-0.96 and the facets appear.  Judge it on a ball.
+    #
+    # Menu icons go two thirds of a stop darker still (see
+    # tools/bake_menu_icons.py), because they are cropped to 64 px where
+    # a shallow gradient has far fewer pixels to read across.
+    STUDIO_EXPOSURE = -2.0
+    STUDIO_VIEW_TRANSFORM = "Khronos PBR Neutral"
+    STUDIO_RIM_SCALE = 0.35
+
+    def _set_view_transform(scene, *names):
+        """Set the first view transform this Blender actually offers.
+
+        `view_transform` is a DYNAMIC enum: its items come from the
+        loaded OCIO config at runtime, so `bl_rna` reports NONE of them
+        and testing membership that way rejects every name, including
+        the ones in use.  (That silently disabled the transform choice
+        here for as long as it has been written that way.)  Assigning
+        and reading back is the only reliable probe.
+        """
+        vs = scene.view_settings
+        for name in names:
+            try:
+                vs.view_transform = name
+            except TypeError:
+                continue
+            if vs.view_transform == name:
+                return name
+        return vs.view_transform
 
     # Focal lengths, solved rather than chosen.  Subjects are
     # normalised into a 2 m cube, so the guarantee the frame has to
@@ -1014,17 +1056,32 @@ if _IN_BLENDER:
             if base is not None:
                 ob.data.energy = base * (PLAN_LIGHT_SCALE if plan else 1.0)
 
-        # AgX rolls highlights towards white, which is right for a full
-        # page figure and wrong for a flat, coloured subject that has to
-        # stay legible by colour.
+        # Colour management, and for the 3/4 view the light ratio with
+        # it.  Both are set HERE because aim_rig is the one call every
+        # render path makes -- hero figures, gallery variants and menu
+        # icons alike -- so this is the only place they cannot drift
+        # apart.  Anything a caller sets beforehand is overwritten by
+        # this function; a caller wanting to differ has to act after it.
         scene = bpy.context.scene
-        vt = [v.name for v in bpy.types.ColorManagedViewSettings.bl_rna
-              .properties["view_transform"].enum_items]
-        want = "Standard" if plan else ("AgX" if "AgX" in vt else "Standard")
-        if want in vt:
-            scene.view_settings.view_transform = want
+        want = "Standard" if plan else STUDIO_VIEW_TRANSFORM
+        _set_view_transform(scene, want, "AgX", "Standard")
         scene.view_settings.exposure = (PLAN_EXPOSURE if plan
                                         else STUDIO_EXPOSURE)
+        if not plan:
+            # Rim light is meant to draw an EDGE.  The rig builds two of
+            # them at 750 W against a 320 W key, so at full strength
+            # their wrap light reaches round into the shadow side and
+            # fills it -- and a white subject, which is most of them,
+            # then has no gradient left to read its form by.  Measured
+            # on a geodesic sphere, the facets simply disappear.  This
+            # brings them back under the key, where three-point practice
+            # puts them.  Plan views keep their own treatment above.
+            for name, _pose in _LIGHT_POSE.items():
+                if not name.startswith("Rim Light"):
+                    continue
+                ob = bpy.data.objects.get(name)
+                if ob is not None:
+                    ob.data.energy *= STUDIO_RIM_SCALE
 
     def pose_subjects(op, objects):
         """Apply the canonical pose for `op` to `objects`, if any."""
