@@ -76,7 +76,16 @@ PARAMS = {
     # definition of the face.
     # No `family` here: the group selector is gone and the solid is
     # picked from a single gallery, so passing one is a hard error.
-    "mesh.saddle_polyhedron_add": dict(solid='DIAMOND_TETRAHEDRON',
+    # The diamond tetrahedron is the SIMPLEST saddle polyhedron, which
+    # made it the obvious pick and the wrong one: it has four faces, so
+    # from any 3/4 view two of them face away and the remaining pair
+    # reads as a folded sheet rather than a closed solid -- flat enough
+    # that it looks like the collapsed-solid bug, though its principal
+    # extents are a perfectly healthy 1.000.  Nothing about the picture
+    # says "saddle polyhedron".  The tetrahedral decahedron keeps ten
+    # faces around the same symmetry, so its silhouette stays closed
+    # from every direction and the saddle curvature is legible.
+    "mesh.saddle_polyhedron_add": dict(solid='TETRAHEDRAL_DECAHEDRON',
                                        face_style='MINIMAL',
                                        density=4, smoothness=40),
     # -- solids ---------------------------------------------------
