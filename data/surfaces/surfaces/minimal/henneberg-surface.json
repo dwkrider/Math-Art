@@ -110,6 +110,9 @@
       "The classical example of a NON-ORIENTABLE minimal surface; it is a minimal immersion of the projective plane minus a point, and carries two branch points."
     ]
   },
+  "alternate_names": [
+    "Henneberg's surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

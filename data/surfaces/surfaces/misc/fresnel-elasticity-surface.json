@@ -57,6 +57,9 @@
   "ids": {
     "mathcurve": "ch1262_elasticite_2"
   },
+  "alternate_names": [
+    "Elasticity surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

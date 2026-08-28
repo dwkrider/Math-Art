@@ -44,8 +44,8 @@
     "cross_checked": [
       {
         "source": "mathcurve:ch1217_tube_2",
-        "agrees": false,
-        "detail": "page title 'Tube' vs record name 'Canal Surface' -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+        "agrees": true,
+        "detail": "page title 'Tube' vs record name 'Canal Surface'"
       }
     ]
   },
@@ -55,6 +55,9 @@
   "ids": {
     "mathcurve": "ch1217_tube_2"
   },
+  "alternate_names": [
+    "Tube"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

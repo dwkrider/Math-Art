@@ -878,12 +878,35 @@ class Builder:
             rec["named_after"] = ", ".join(hit)
 
     def _resolve_ids(self, slug, rec):
-        """Cross-reference IDs that RESOLVE against the local mirrors."""
+        """Cross-reference IDs that RESOLVE against the local mirrors.
+
+        Where a mirror files a surface under a DIFFERENT name, that name
+        is recorded as an alternate rather than discarded: Ferreol calls
+        the canal surface "Tube", Riemann's minimal example "Skew
+        catenoid", the Jorge-Meeks k-noid "Trinoid" and the genus-g
+        surface "n-holed torus". Those are real alternate names -- and
+        capturing them is better than suppressing the cross-check's
+        identity test, which flagged all seven as possible wrong ids.
+        """
         ids = rec.setdefault("ids", {})
         if not ids.get("mathcurve"):
             got = sources.mathcurve_id(slug, rec.get("name", ""))
             if got:
                 ids["mathcurve"] = got
+        stem = ids.get("mathcurve")
+        if stem:
+            try:
+                from surfdb import crosscheck as _cc
+                text = _cc.read_page(stem, 3000)
+                import re as _re
+                m = _re.search(r"^#\s+(.+)$", text or "", _re.M)
+                title = (m.group(1).strip() if m else "")
+            except Exception:                         # noqa: BLE001
+                title = ""
+            if title and title.lower() != (rec.get("name") or "").lower():
+                alts = rec.setdefault("alternate_names", [])
+                if title not in alts:
+                    alts.append(title)
         if not ids:
             rec.pop("ids", None)
 

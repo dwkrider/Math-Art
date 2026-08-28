@@ -91,6 +91,9 @@
     "mathworld": "BoursMinimalSurface",
     "mathcurve": "ch1214_bour_2"
   },
+  "alternate_names": [
+    "Bour surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

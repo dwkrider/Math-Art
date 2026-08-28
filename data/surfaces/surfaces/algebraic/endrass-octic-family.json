@@ -1,0 +1,120 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "endrass-octic-family",
+  "name": "Endrass Octic Family (D8 x Z2)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Endrass's 5-parameter family of octics with D8 x Z2 symmetry, combining two constructions of B. Segre: a product of eight planes (four symmetric plane-pair factors) minus the square of a degree-4 form in x^2+y^2, z and w, with complex parameters a, b, c, d, e.  The named members are promoted to their own records (see specimens).",
+    "parameters": [
+      {
+        "name": "a",
+        "domain": "complex"
+      },
+      {
+        "name": "b",
+        "domain": "complex"
+      },
+      {
+        "name": "c",
+        "domain": "complex"
+      },
+      {
+        "name": "d",
+        "domain": "complex"
+      },
+      {
+        "name": "e",
+        "domain": "complex"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": null,
+        "note": "Varies over the family: 112 for the generic member, 120/128/136 for one generic parameter (c/b/d resp.), 160, 165 and 168 at special values.  The construction page adds that every multiple of 4 from 112 to 152 seems attainable, while 156- and 164-nodal members do not seem to exist in this family."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "O. Labs, 'St. Endrass's Construction of D8 x Z2-symmetric Octics (the full 5-parameter equation)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch007_endroctconstr.md).",
+      "O. Labs, '120-/128-/136-nodal D8 x Z2-symmetric Octics', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch010_stephan120128136.md).",
+      "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch007_endroctconstr"
+  },
+  "specimens": [
+    {
+      "label": "generic member",
+      "note": "112 nodes, at the pairwise intersections of the plane pairs with the doubled quartic."
+    },
+    {
+      "label": "generic c",
+      "note": "120 nodes."
+    },
+    {
+      "label": "generic b",
+      "note": "128 nodes."
+    },
+    {
+      "label": "generic d",
+      "note": "136 nodes."
+    },
+    {
+      "label": "Endrass 160-nodal octic",
+      "slug": "endrass-octic-160"
+    },
+    {
+      "label": "van Straten 165-nodal octic",
+      "slug": "van-straten-octic"
+    },
+    {
+      "label": "Endrass 168-nodal octic (the record)",
+      "slug": "endrass-octic"
+    }
+  ],
+  "named_after": "Endrass, Octic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

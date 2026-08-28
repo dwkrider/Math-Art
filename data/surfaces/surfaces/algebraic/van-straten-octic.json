@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "van-straten-octic",
+  "name": "Van Straten Octic (165 nodes)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Member of Endrass's 5-parameter D8 x Z2 octic family (see endrass-octic-family) found by D. van Straten: the parameters are those of Endrass's 160-nodal octic except b = 1.  The site notes its earlier publication venue as 'the printout on his office door'."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 165,
+        "note": "Per the mirrored duco165 page and the octics survey list ('165: D. van Straten (1995?)'); the highest known nodal octic count below Endrass's 168."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "O. Labs, 'Van Straten's D8 x Z2-symmetric Octic with 165 Nodes', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch008_duco165.md).",
+      "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch008_duco165"
+  },
+  "named_after": "Octic, Straten, Van",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -72,6 +72,9 @@
       "DOUBLY ruled: two distinct families of straight lines lie on it, which is what makes cooling towers and Shukhov's lattice towers buildable from straight members."
     ]
   },
+  "alternate_names": [
+    "One-sheeted hyperboloid"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

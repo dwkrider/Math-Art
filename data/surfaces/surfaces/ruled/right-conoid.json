@@ -117,6 +117,9 @@
     "mathcurve": "ch1239_conoid_2",
     "vmm": "ch077_right_conoid"
   },
+  "alternate_names": [
+    "Conoid"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

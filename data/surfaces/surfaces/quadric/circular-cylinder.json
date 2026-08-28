@@ -90,6 +90,9 @@
       "Both flat (K = 0, so developable) and CMC (H = 1/2r), which is why it sits in the Delaunay family. The curvature facet records `flat` as the stronger condition."
     ]
   },
+  "alternate_names": [
+    "Cylinder of revolution"
+  ],
   "fabrication": {
     "developable": true,
     "printable_watertight": false,

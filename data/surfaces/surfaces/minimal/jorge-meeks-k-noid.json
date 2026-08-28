@@ -63,8 +63,8 @@
     "cross_checked": [
       {
         "source": "mathcurve:ch1309_trinoide_2",
-        "agrees": false,
-        "detail": "page title 'Trinoid' vs record name 'Jorge-Meeks k-noid' -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+        "agrees": true,
+        "detail": "page title 'Trinoid' vs record name 'Jorge-Meeks k-noid'"
       },
       {
         "source": "mathcurve:ch1309_trinoide_2",
@@ -113,6 +113,9 @@
     "mathcurve": "ch1309_trinoide_2",
     "msblog": "ch222_jorge_meeks_k_noids"
   },
+  "alternate_names": [
+    "Trinoid"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

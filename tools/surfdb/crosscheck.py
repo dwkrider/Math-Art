@@ -84,11 +84,19 @@ def check(rec, text):
     stem = (rec.get("ids") or {}).get("mathcurve")
 
     # identity
+    # Compare against the record's name AND its alternate names. A mirror
+    # legitimately files a surface under another name -- Ferreol's "Tube"
+    # is the canal surface, his "Skew catenoid" is Riemann's minimal
+    # example -- and treating that as a wrong id would reject seven
+    # correct cross-references.
     title = _title(text)
-    name_words = set(_norm(rec.get("name", "")).split())
     title_words = set(_norm(title).split())
-    common = name_words & title_words
-    strong = bool(common - {"surface", "the", "of", "a"})
+    strong = False
+    for cand in [rec.get("name", "")] + list(rec.get("alternate_names") or []):
+        common = set(_norm(cand).split()) & title_words
+        if common - {"surface", "the", "of", "a", "s"}:
+            strong = True
+            break
     out.append({
         "source": "mathcurve:%s" % stem,
         "agrees": bool(strong),

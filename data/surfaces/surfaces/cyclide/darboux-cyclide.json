@@ -64,6 +64,9 @@
   "ids": {
     "mathcurve": "ch1194_cyclid_2"
   },
+  "alternate_names": [
+    "Cyclide"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

@@ -58,6 +58,9 @@
   "ids": {
     "mathcurve": "ch1358_willmore_2"
   },
+  "alternate_names": [
+    "Willmore's torus"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

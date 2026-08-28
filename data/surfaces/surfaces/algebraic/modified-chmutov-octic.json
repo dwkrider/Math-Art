@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "modified-chmutov-octic",
+  "name": "Modified Chmutov Octic (144 real nodes)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The j = 1, d = 8, n = 3 member of a series of degree-d hypersurfaces in P^n modifying Chmutov's: the sum over the coordinates of the (j+1)-th powers of the Chebyshev polynomials T_{d/2} (critical values +1/-1) set equal to 1, giving real A_j singularities."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 144,
+        "note": "All 144 nodes are REAL -- the point of the modification: Chmutov's original octic has 154 nodes, but complex ones."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "O. Labs, 'Advent calendar 2002, No. 6 (with the defining Chebyshev form)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch026_no_06.md).",
+      "O. Labs, 'Octics (listing it as '144: (2002?), modified Chmutov surface')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "V. I. Arnold et al., Singularities of Differentiable Maps, Vol. II, Birkhaeuser (1988), p. 419 (cited by the page for Chmutov's original series)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch026_no_06"
+  },
+  "named_after": "Chmutov, Octic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

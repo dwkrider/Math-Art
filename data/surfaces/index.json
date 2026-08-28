@@ -81,7 +81,7 @@
     "swept",
     "topological"
   ],
-  "count": 410,
+  "count": 423,
   "implemented_count": 298,
   "entries": [
     {
@@ -4138,6 +4138,70 @@
       "specimen_count": 0
     },
     {
+      "slug": "endrass-octic-160",
+      "name": "Endrass Octic (160 nodes)",
+      "path": "surfaces/algebraic/endrass-octic-160.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "endrass-octic-family",
+      "name": "Endrass Octic Family (D8 x Z2)",
+      "path": "surfaces/algebraic/endrass-octic-family.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 7
+    },
+    {
       "slug": "enneper-ended-k-noid",
       "name": "Enneper-ended k-noid",
       "path": "surfaces/minimal/enneper-ended-k-noid.json",
@@ -5889,6 +5953,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "humbert-sextic",
+      "name": "Humbert Sextic",
+      "path": "surfaces/algebraic/humbert-sextic.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "hunts-surface",
       "name": "Hunt's Surface",
       "path": "surfaces/algebraic/hunts-surface.json",
@@ -5910,6 +6006,38 @@
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "hyde-sextic",
+      "name": "Hyde Sextic",
+      "path": "surfaces/algebraic/hyde-sextic.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
       "symmetry": {
         "kind": "none",
         "symbol": null,
@@ -7055,6 +7183,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "labs-sextic-35-cusps",
+      "name": "Labs Sextic (35 cusps)",
+      "path": "surfaces/algebraic/labs-sextic-35-cusps.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "leopold",
       "name": "Leopold",
       "path": "surfaces/algebraic/leopold.json",
@@ -7654,6 +7814,38 @@
       "orientable": null,
       "ends": 0,
       "embedding": "self-intersecting",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "modified-chmutov-octic",
+      "name": "Modified Chmutov Octic (144 real nodes)",
+      "path": "surfaces/algebraic/modified-chmutov-octic.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
       "symmetry": {
         "kind": "none",
         "symbol": null,
@@ -10757,6 +10949,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "segre-quartic-64-lines",
+      "name": "Segre Quartic (64 lines)",
+      "path": "surfaces/algebraic/segre-quartic-64-lines.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "embedded",
+        "not-implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "seifert-surface",
       "name": "Seifert Surface",
       "path": "surfaces/topological/seifert-surface.json",
@@ -10787,6 +11011,38 @@
       "operator_ids": [
         "mesh.seifert_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "septic-with-16-triple-points",
+      "name": "Septic with 16 Triple Points",
+      "path": "surfaces/algebraic/septic-with-16-triple-points.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -11635,6 +11891,38 @@
       "specimen_count": 0
     },
     {
+      "slug": "stagnaro-enriques-quintic",
+      "name": "Stagnaro Enriques Quintic (4 tacnodes)",
+      "path": "surfaces/algebraic/stagnaro-enriques-quintic.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
       "slug": "steiner-surface",
       "name": "Steiner Surface (Veronese shadow)",
       "path": "surfaces/topological/steiner-surface.json",
@@ -11932,6 +12220,70 @@
       "operator_ids": [
         "mesh.ruled_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "surface-with-132-a5-singularities",
+      "name": "Surface with 132 A5 Singularities",
+      "path": "surfaces/algebraic/surface-with-132-a5-singularities.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "swallowtail",
+      "name": "Swallowtail",
+      "path": "surfaces/algebraic/swallowtail.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -13189,6 +13541,70 @@
       "operator_ids": [
         "mesh.delaunay_surface_add"
       ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "van-straten-dihedral-series",
+      "name": "Van Straten Dihedral Series",
+      "path": "surfaces/algebraic/van-straten-dihedral-series.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 2
+    },
+    {
+      "slug": "van-straten-octic",
+      "name": "Van Straten Octic (165 nodes)",
+      "path": "surfaces/algebraic/van-straten-octic.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "not-implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {

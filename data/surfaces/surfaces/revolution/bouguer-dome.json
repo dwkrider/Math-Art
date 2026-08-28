@@ -57,6 +57,9 @@
   "ids": {
     "mathcurve": "ch1360_bouguer_2"
   },
+  "alternate_names": [
+    "Dôme de Bouguer"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

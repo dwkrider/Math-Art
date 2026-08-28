@@ -62,8 +62,8 @@
     "cross_checked": [
       {
         "source": "mathcurve:ch1223_catenoidgauche_2",
-        "agrees": false,
-        "detail": "page title 'Skew catenoid' vs record name \"Riemann's Minimal Example\" -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+        "agrees": true,
+        "detail": "page title 'Skew catenoid' vs record name \"Riemann's Minimal Example\""
       },
       {
         "source": "mathcurve:ch1223_catenoidgauche_2",
@@ -92,6 +92,9 @@
     "vmm": "ch008_riemann",
     "msblog": "ch135_riemanns_singly_periodic_surface"
   },
+  "alternate_names": [
+    "Skew catenoid"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

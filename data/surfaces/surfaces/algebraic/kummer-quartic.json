@@ -100,7 +100,8 @@
   "ids": {
     "mathworld": "KummerSurface",
     "mathcurve": "ch1294_kummer_2",
-    "vmm": "ch083_kummer"
+    "vmm": "ch083_kummer",
+    "algsurf": "ch039_no_03"
   },
   "notes": {
     "caveats": [
@@ -110,6 +111,9 @@
   "relations": {
     "polyhedral_analogue": "tetrahedron"
   },
+  "alternate_names": [
+    "Kummer surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

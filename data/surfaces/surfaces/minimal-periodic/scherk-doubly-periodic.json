@@ -98,6 +98,9 @@
       "The first minimal surfaces found after the catenoid and helicoid. The doubly periodic one is the graph of z = log(cos y / cos x)."
     ]
   },
+  "alternate_names": [
+    "Scherk surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

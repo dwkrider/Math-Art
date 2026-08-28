@@ -71,6 +71,9 @@
   "ids": {
     "mathcurve": "ch1220_casinienne3d_2"
   },
+  "alternate_names": [
+    "Cassinian surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

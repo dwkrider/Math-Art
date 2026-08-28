@@ -54,8 +54,8 @@
     "cross_checked": [
       {
         "source": "mathcurve:ch1261_tn_4",
-        "agrees": false,
-        "detail": "page title 'n-holed torus' vs record name 'Genus-g Surface' -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+        "agrees": true,
+        "detail": "page title 'n-holed torus' vs record name 'Genus-g Surface'"
       }
     ]
   },
@@ -109,6 +109,9 @@
   "ids": {
     "mathcurve": "ch1261_tn_4"
   },
+  "alternate_names": [
+    "n-holed torus"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": true,

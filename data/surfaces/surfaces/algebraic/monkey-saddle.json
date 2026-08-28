@@ -89,6 +89,9 @@
       "Named for having three descending regions -- two for the legs and one for the tail."
     ]
   },
+  "alternate_names": [
+    "Monkey saddle"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

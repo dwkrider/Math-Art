@@ -57,6 +57,9 @@
   "ids": {
     "mathcurve": "ch1226_cubique_reglee_2"
   },
+  "alternate_names": [
+    "Ruled cubic"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

@@ -92,6 +92,9 @@
       "Disconnected: two sheets. The only quadric in this table whose real locus has two components, which is why a component count is worth measuring rather than assuming."
     ]
   },
+  "alternate_names": [
+    "Two-sheeted hyperboloid"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

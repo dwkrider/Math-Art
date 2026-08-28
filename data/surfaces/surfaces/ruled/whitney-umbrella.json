@@ -93,6 +93,9 @@
       "The canonical pinch-point singularity, and the reason it appears twice in math_art: once parametrically as a ruled surface and once implicitly as x^2 - y^2 z = 0 in the Hauser gallery."
     ]
   },
+  "alternate_names": [
+    "Whitney's umbrella"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

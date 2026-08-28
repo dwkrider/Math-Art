@@ -95,6 +95,9 @@
       "The helicoidal (twisted) pseudosphere: applying a screw motion to the tractrix gives a whole one-parameter family of K = -1 surfaces, of which the pseudosphere is the untwisted member."
     ]
   },
+  "alternate_names": [
+    "Dini's surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

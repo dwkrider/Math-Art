@@ -69,8 +69,8 @@
     "cross_checked": [
       {
         "source": "mathcurve:ch1282_helicoidminimal_2",
-        "agrees": false,
-        "detail": "page title 'Minimal helicoid' vs record name 'Catenoid-Helicoid Associate Family' -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+        "agrees": true,
+        "detail": "page title 'Minimal helicoid' vs record name 'Catenoid-Helicoid Associate Family'"
       },
       {
         "source": "mathcurve:ch1282_helicoidminimal_2",
@@ -129,6 +129,9 @@
     "mathcurve": "ch1282_helicoidminimal_2",
     "vmm": "ch003_helicoid_catenoid"
   },
+  "alternate_names": [
+    "Minimal helicoid"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

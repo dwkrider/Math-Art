@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "endrass-octic-160",
+  "name": "Endrass Octic (160 nodes)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Endrass's second D8 x Z2 octic: parameter values in his 5-parameter family (b = 4 and four derived expressions in b and sqrt(2), printed on the mirrored page) giving exactly 160 nodes.  Distinct from, and found alongside, his 168-nodal record surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 160,
+        "note": "Per the mirrored stephan160 page; the octics survey also lists independent 160-nodal octics by Gallarati (1957) and -- doubted by van Straten -- Kreis (1956)."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "O. Labs, 'St. Endrass's 160-nodal D8 x Z2-symmetric Octic (with the explicit parameter values)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch009_stephan160.md).",
+      "O. Labs, 'Advent calendar 2002, No. 19 ('Besides constructing the octics with 168 nodes, St. Endrass found this 160-nodal octic with dihedral symmetry, which is not so well-known')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch043_no_19.md).",
+      "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch009_stephan160"
+  },
+  "named_after": "Endrass, Octic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -65,6 +65,9 @@
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "algsurf": "ch020_no_05"
+  },
   "relations": {
     "polyhedral_analogue": "icosahedron"
   },

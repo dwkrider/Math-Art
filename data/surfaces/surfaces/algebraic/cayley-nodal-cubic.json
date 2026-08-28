@@ -98,6 +98,9 @@
   "relations": {
     "polyhedral_analogue": "tetrahedron"
   },
+  "alternate_names": [
+    "Cayley surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

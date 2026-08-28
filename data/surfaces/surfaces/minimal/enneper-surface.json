@@ -136,6 +136,9 @@
       "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
     }
   ],
+  "alternate_names": [
+    "Enneper surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

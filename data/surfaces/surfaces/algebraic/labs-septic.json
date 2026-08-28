@@ -70,7 +70,8 @@
   "discovered_by": "Oliver Labs",
   "year": 2004,
   "ids": {
-    "mathworld": "LabsSeptic"
+    "mathworld": "LabsSeptic",
+    "algsurf": "ch002_sept99nodes_constr"
   },
   "notes": {
     "caveats": [

@@ -55,6 +55,9 @@
   "ids": {
     "mathcurve": "ch1267_focale_2"
   },
+  "alternate_names": [
+    "Focal"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

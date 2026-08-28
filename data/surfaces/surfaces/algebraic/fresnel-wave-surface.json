@@ -63,7 +63,8 @@
     "physical"
   ],
   "ids": {
-    "mathcurve": "ch1201_ondes_2"
+    "mathcurve": "ch1201_ondes_2",
+    "algsurf": "ch041_no_10"
   },
   "fabrication": {
     "developable": false,

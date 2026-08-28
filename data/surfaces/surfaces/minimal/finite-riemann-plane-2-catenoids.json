@@ -84,6 +84,9 @@
     "mathcurve": "ch1330_weber_2",
     "msblog": "ch190_finite_riemann"
   },
+  "alternate_names": [
+    "Riemann finite minimal surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

@@ -58,6 +58,9 @@
     "vmm": "ch046_steiner",
     "mathcurve": "ch1342_steiner_2"
   },
+  "alternate_names": [
+    "Steiner surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

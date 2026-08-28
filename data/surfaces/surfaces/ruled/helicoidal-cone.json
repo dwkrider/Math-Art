@@ -56,6 +56,9 @@
     "mathcurve": "ch1064_conehelicoidal"
   },
   "named_after": "Helicoidal",
+  "alternate_names": [
+    "Elliptic cone"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

@@ -105,6 +105,9 @@
     "mathcurve": "ch1329_richmond_2",
     "vmm": "ch011_planar_enneper"
   },
+  "alternate_names": [
+    "Richmond surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

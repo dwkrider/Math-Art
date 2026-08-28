@@ -88,7 +88,8 @@
   "ids": {
     "mathworld": "ClebschDiagonalCubic",
     "mathcurve": "ch1231_clebsch_2",
-    "vmm": "ch082_clebsch_cubic"
+    "vmm": "ch082_clebsch_cubic",
+    "algsurf": "ch028_no_22"
   },
   "notes": {
     "caveats": [
@@ -98,6 +99,9 @@
   "relations": {
     "polyhedral_analogue": "tetrahedron"
   },
+  "alternate_names": [
+    "Clebsch surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": true,

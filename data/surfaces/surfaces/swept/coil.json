@@ -44,15 +44,16 @@
     "cross_checked": [
       {
         "source": "mathcurve:ch1233_serpentin_2",
-        "agrees": false,
-        "detail": "page title 'Coild' vs record name 'Coil' -- no distinctive word in common; the ID may be pointing at the wrong chapter"
+        "agrees": true,
+        "detail": "page title 'Coild' vs record name 'Coil'"
       }
     ]
   },
   "alternate_names": [
     "Helical tube",
     "Spring",
-    "Toroidal helicoid"
+    "Toroidal helicoid",
+    "Coild"
   ],
   "tradition": [
     "classical"

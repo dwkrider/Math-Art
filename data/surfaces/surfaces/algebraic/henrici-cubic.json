@@ -71,6 +71,9 @@
   "ids": {
     "mathcurve": "ch1363_henrici_2"
   },
+  "alternate_names": [
+    "Surface de Henrici"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

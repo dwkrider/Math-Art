@@ -1,0 +1,92 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "van-straten-dihedral-series",
+  "name": "Van Straten Dihedral Series",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Van Straten's modification of Chmutov's nodal series: replace the folding polynomial by the regular d-gon polynomial R_d(x,y), giving the D_d-symmetric surface R_d(x,y) + lambda*(T_d(z)+1) = 0 with lambda the critical value of R_d and T_d the Chebyshev polynomial with critical values 0 and 1.  Trades some of Chmutov's (partly complex) nodes for fewer, ALL REAL ones.",
+    "parameters": [
+      {
+        "name": "d",
+        "domain": "integers >= 3",
+        "integer": true,
+        "note": "degree, and the dihedral symmetry order D_d"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": null,
+        "note": "Varies with the degree d; the page leaves the general count open ('has exactly ??? nodes').  All nodes are real."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "O. Labs, 'Van Straten's Construction of D_d-symmetric Surfaces of Degree d with many Nodes', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch011_vstrconstr.md).",
+      "O. Labs, 'Advent calendar 2002, No. 7 (the septic member)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch022_no_07.md).",
+      "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "S. Chmutov, J. Algebraic Geom. 1 (1992) 191-196 (the construction being modified; cited by the mirrored pages)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch011_vstrconstr"
+  },
+  "specimens": [
+    {
+      "label": "d = 7 (septic)",
+      "parameters": {
+        "d": 7
+      },
+      "note": "84 nodes per the construction page; the advent-calendar rendering of the same construction says 81 real A1 singularities.  The site-internal discrepancy is preserved here, not resolved."
+    },
+    {
+      "label": "d = 8 (octic)",
+      "parameters": {
+        "d": 8
+      },
+      "note": "124 nodes; the octics survey lists it as '124: D. v. Straten, a modification of Chmutov's construction'."
+    }
+  ],
+  "named_after": "Straten, Van",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}
