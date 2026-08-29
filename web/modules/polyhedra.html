@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polyhedra — Math Art</title>
+<meta name="description" content="Browse 471 polyhedra — Platonic, Archimedean, Catalan, Kepler–Poinsot, Johnson, uniform stars, duals, compounds and the notable one-off solids — rendered live in the browser from exact geometry.">
+<link rel="stylesheet" href="../css/site.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>◈</text></svg>">
+<script type="importmap">
+{
+  "imports": {
+    "three": "../vendor/three/three.module.js",
+    "three/addons/": "../vendor/three/"
+  }
+}
+</script>
+</head>
+<body class="module-page">
+
+<header class="site-head">
+  <a class="brand" href="../index.html">Math&nbsp;Art</a>
+  <nav><a href="../index.html">Modules</a></nav>
+</header>
+
+<div class="module-intro">
+  <h1>Polyhedra</h1>
+  <p>
+    Every solid here is drawn in your browser from its exact coordinates —
+    nothing is a pre-rendered picture. Pick one from the catalogue to turn
+    it over, switch how it is drawn, and read what is known about it.
+  </p>
+</div>
+
+<main class="module-layout">
+
+  <div class="workspace workspace-sticky">
+    <figure class="stage-wrap">
+      <canvas id="stage" aria-label="Interactive 3-D view"></canvas>
+      <div class="stage-bar">
+        <div id="style-bar" class="segmented" role="group" aria-label="Drawing style"></div>
+        <label class="switch">
+          <input type="checkbox" id="color-toggle" checked>
+          <span>Colour</span>
+        </label>
+        <button type="button" id="reset-view" class="ghost">Reset view</button>
+      </div>
+      <figcaption id="stage-caption"></figcaption>
+    </figure>
+
+    <div id="detail" class="detail"></div>
+  </div>
+
+  <aside id="catalog" class="catalog" aria-label="Catalogue of solids"></aside>
+
+</main>
+
+<footer class="site-foot">
+  <p>
+    Geometry, symmetry and metrics come from the project's polyhedron
+    database. All computation happens locally in your browser.
+  </p>
+</footer>
+
+<script type="module" src="../js/polyhedra.js"></script>
+</body>
+</html>

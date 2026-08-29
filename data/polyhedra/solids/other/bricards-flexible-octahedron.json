@@ -1,0 +1,457 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "bricards-flexible-octahedron",
+  "name": "Bricard's Flexible Octahedron",
+  "alternate_names": [],
+  "families": [
+    "notable"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": null,
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": "Bricard octahedron",
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": null,
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "C2v",
+    "orbifold": "*22",
+    "coxeter": "[2]",
+    "hermann_mauguin": "2mm",
+    "order": 4,
+    "rotation_group": "C2",
+    "rotation_order": 2,
+    "chiral": false,
+    "transitivity": {
+      "vertex": false,
+      "edge": false,
+      "face": false
+    },
+    "orbits": {
+      "vertices": 3,
+      "edges": 4,
+      "faces": 2
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 6,
+      "edges": 12,
+      "faces": 8
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 8,
+        "regular": false
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": null,
+    "convex": false,
+    "self_dual": false,
+    "dual": null,
+    "coincident_vertices": 0,
+    "vertex_density": [
+      0,
+      1,
+      0
+    ],
+    "convex_hull": {
+      "is_self": false,
+      "slug": null,
+      "counts": {
+        "vertices": 6,
+        "edges": 11,
+        "faces": 7
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "circumradius_1",
+    "edge_length": null,
+    "edge_lengths_uniform": false,
+    "circumradius": null,
+    "midradius": null,
+    "inradius": null,
+    "surface_area": null,
+    "volume": null,
+    "isoperimetric_quotient": null,
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos(3*sqrt(6)/8)",
+        "degrees": 23.28373172110505,
+        "radians": 0.40637778068432917
+      },
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos(1/2)",
+        "degrees": 59.99999999999993,
+        "radians": 1.0471975511965965
+      },
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos(0)",
+        "degrees": 89.99999999999991,
+        "radians": 1.570796326794895
+      },
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos(-sqrt(6)/4)",
+        "degrees": 127.76124390703508,
+        "radians": 2.2298543626213063
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 154.6670613869715,
+        "radians": 2.69944946558684,
+        "exact": "acos((-3-8*sqrt(6))/25)",
+        "source": "pslq"
+      },
+      {
+        "vertex_orbit": 1,
+        "degrees": 154.6670613869715,
+        "radians": 2.69944946558684,
+        "exact": "acos((-3-8*sqrt(6))/25)",
+        "source": "pslq"
+      },
+      {
+        "vertex_orbit": 2,
+        "degrees": 50.66587722605694,
+        "radians": 0.884286376005905,
+        "exact": null
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 0.2891567857703612
+      },
+      {
+        "vertex_orbit": 1,
+        "steradians": 0.7945172960545184
+      },
+      {
+        "vertex_orbit": 2,
+        "steradians": 0.0
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": null,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    },
+    "measures_note": "Area and volume are omitted: the faces self-intersect, so both depend on a convention (net area vs. density-weighted vs. outer solid region). Record them only alongside an explicit convention field."
+  },
+  "geometry": {
+    "length_unit": "circumradius_1",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the construction, centred at the centroid",
+    "constants": {
+      "C0": {
+        "exact": "sqrt(13)/13",
+        "value": 0.277350098112615,
+        "source": "pslq"
+      },
+      "C1": {
+        "exact": "sqrt(39)/13",
+        "value": 0.480384461415261,
+        "source": "pslq"
+      },
+      "C2": {
+        "exact": "2*sqrt(13)/13",
+        "value": 0.554700196225229,
+        "source": "pslq"
+      },
+      "C3": {
+        "exact": "sqrt(156)/13",
+        "value": 0.960768922830523,
+        "source": "pslq"
+      }
+    },
+    "vertices": [
+      [
+        0.960768922830523,
+        -0.277350098112615,
+        0.0
+      ],
+      [
+        0.480384461415261,
+        0.554700196225229,
+        0.0
+      ],
+      [
+        -0.960768922830523,
+        -0.277350098112615,
+        0.0
+      ],
+      [
+        -0.480384461415261,
+        0.554700196225229,
+        0.0
+      ],
+      [
+        0.0,
+        -0.277350098112615,
+        0.480384461415261
+      ],
+      [
+        0.0,
+        -0.277350098112615,
+        -0.480384461415261
+      ]
+    ],
+    "vertices_exact": [
+      [
+        "C3",
+        "-C0",
+        "0"
+      ],
+      [
+        "C1",
+        "C2",
+        "0"
+      ],
+      [
+        "-C3",
+        "-C0",
+        "0"
+      ],
+      [
+        "-C1",
+        "C2",
+        "0"
+      ],
+      [
+        "0",
+        "-C0",
+        "C1"
+      ],
+      [
+        "0",
+        "-C0",
+        "-C1"
+      ]
+    ],
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 3,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 53.13010235415602,
+            "radians": 0.927295218001613,
+            "count": 1,
+            "exact": "acos(3/5)",
+            "source": "pslq"
+          },
+          {
+            "degrees": 63.434948822921996,
+            "radians": 1.1071487177940902,
+            "count": 2,
+            "exact": "acos(sqrt(5)/5)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 1,
+        "sides": 3,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 39.231520483592256,
+            "radians": 0.6847192030022828,
+            "count": 2,
+            "exact": "acos(sqrt(15)/5)",
+            "source": "pslq"
+          },
+          {
+            "degrees": 101.53695903281549,
+            "radians": 1.7721542475852274,
+            "count": 1,
+            "exact": "acos(-1/5)",
+            "source": "pslq"
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        0,
+        1,
+        4
+      ],
+      [
+        0,
+        5,
+        1
+      ],
+      [
+        0,
+        4,
+        3
+      ],
+      [
+        0,
+        3,
+        5
+      ],
+      [
+        2,
+        4,
+        1
+      ],
+      [
+        2,
+        1,
+        5
+      ],
+      [
+        2,
+        3,
+        4
+      ],
+      [
+        2,
+        5,
+        3
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        6,
+        7
+      ],
+      [
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        4,
+        5
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        11
+      ],
+      [
+        1,
+        4,
+        5,
+        7
+      ],
+      [
+        2,
+        3,
+        8,
+        10
+      ],
+      [
+        6,
+        9
+      ]
+    ]
+  },
+  "compound": null,
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.other_polyhedra_generator",
+    "operator_id": "mesh.notable_polyhedron_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: via math_art.other_polyhedra_generator",
+    "sources": [
+      "Raoul Bricard, \"Memoire sur la theorie de l'octaedre articule\", J. Math. Pures Appl. 3 (1897), 113-148; vertex coordinates from E. D. Demaine & J. O'Rourke, \"Geometric Folding Algorithms\" (2007), Table 23.1.",
+      "Augustin-Louis Cauchy (1813), the rigidity of convex polyhedra.",
+      "Robert Connelly, \"A flexible sphere\", Math. Intelligencer 1 (1978), 130-131; and \"Flexing surfaces\", in D. A. Klarner (ed.), \"The Mathematical Gardner\", Wadsworth (1981), 79-89.",
+      "R. Connelly, I. Sabitov & A. Walz, \"The bellows conjecture\", Beitraege zur Algebra und Geometrie 38 (1997), 1-10 -- the volume of a flexing polyhedron is constant."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}
