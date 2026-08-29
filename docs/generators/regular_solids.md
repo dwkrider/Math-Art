@@ -23,6 +23,12 @@ A complete *Add Regular Solid*, organised by family: the five **Platonic** solid
 
 | Option | Default | Description |
 | --- | --- | --- |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
 | Family | Platonic | Family of solids to choose from. Platonic, Archimedean, Catalan, Kepler-Poinsot, Prisms & Antiprisms, Johnson, Archimedean-Catalan Hulls, Propellor Solids, and 5 more. |
 | Solid |  | Which solid within the chosen family to build |
 | Sides | 6 | Prism / antiprism base sides Range 3-32. |
@@ -30,7 +36,7 @@ A complete *Add Regular Solid*, organised by family: the five **Platonic** solid
 | Canonical Iterations | 250 | Number of Hart canonicalization passes Range 5-3000. |
 | Handedness | Right-Handed | Which of the two mirror forms of this chiral solid to build. Right-Handed, Left-Handed. |
 | Stellated | Off | Replace each face with a pyramid to the intersection of its neighbours' planes (octahedron gives the stella octangula, dodecahedron the small stellated dodecahedron) |
-| Style | Solid | How the solid is rendered as geometry. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Style | Solid | How the solid is rendered as geometry. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
 | Depth | 0.15 | How far each face is extruded inward (Face Segments style) Range 0.01-2. |
 | Bevel Gap | 0 | Shift the mitre bevels inward to open a gap between neighbouring segments (0 = flush) Range 0-0.5. |
 | Separate Meshes | Off | Output each face segment as its own mesh object (Face Segments style) |
@@ -40,7 +46,7 @@ A complete *Add Regular Solid*, organised by family: the five **Platonic** solid
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
 | Coloring | By Face Size | How the faces are coloured. By Face Size, None. |
 | Congruent Pieces | 1 | Split the shell into this many congruent, connected pieces (rotated copies of one another; each is a separate object for printing and reassembly). 1 = single object Range 1-60. |
-| Explode | 0.1 | Move each piece / face segment outward along its centroid direction so the split is visible Range 0-5. |
+| Explode | 0.1 | Move each piece / face segment outward along its centroid direction so the split is visible; for a Papercraft Net, the gap left between separate pieces of the net Range 0-5. |
 | Scale | 1 | Overall size; fits the result into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->

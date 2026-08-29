@@ -22,6 +22,12 @@ Build a polyhedron by applying a string of **Conway/Hart operators** to a seed s
 
 | Option | Default | Description |
 | --- | --- | --- |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
 | Example | Truncated Icosahedron (tI) | Ready-made notation string; sets Notation when chosen. Custom, Truncated Icosahedron (tI), Snub Cube (sC), Rhombicosidodecahedron (eD), Bevelled Tetrahedron (bT), Pentagonal Hexecontahedron (gD), Chamfered Cube (cC), Propellor Cube (pC), and 5 more. |
 | Notation | `tI` | Operators then seed, applied right to left |
 | Geometry | Canonical | Geometry post-processing applied after the operator string. Canonical, Biscribed, Spherized, Raw. |
@@ -29,7 +35,7 @@ Build a polyhedron by applying a string of **Conway/Hart operators** to a seed s
 | Kis Height | 0.25 | How far the kis operator raises each face apex Range -1-2. |
 | Coloring | Colored (by face sides) | How faces are assigned materials. Colored (by face sides), None. |
 | Spherical UV Map | On | Smooth equirectangular UVs projected from the centre (seam-corrected per face) |
-| Style | Solid | How the polyhedron is built and displayed. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Style | Solid | How the polyhedron is built and displayed. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
 | Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

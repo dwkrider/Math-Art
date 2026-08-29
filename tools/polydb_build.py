@@ -33,6 +33,7 @@ from polydb import curation as CU            # noqa: E402
 from polydb import exact as EX               # noqa: E402
 from polydb import harel as HAREL            # noqa: E402
 from polydb import measure as ME             # noqa: E402
+from polydb import notable as NB             # noqa: E402
 from polydb import refine as RF              # noqa: E402
 from polydb import symmetry as SY            # noqa: E402
 
@@ -1078,8 +1079,44 @@ def stage_toroid(limit=None):
     return out
 
 
+def stage_notable(limit=None):
+    """The named one-off polyhedra: Duerer, Jessen, Schonhardt, Klein, ...
+
+    This was the one polyhedron operator with no records in the database, so
+    every solid it makes was missing from anything reading it. See
+    tools/polydb/notable.py for the reference mapping and the planarity
+    repair.
+    """
+    import other_polyhedra_generator as OP
+
+    refs = NB.references(ROOT)
+    out = []
+    for kind, label, _desc in OP.ITEMS[:limit]:
+        name = (OP.GALLERY.get(kind) or {}).get("name") or label
+        try:
+            V, F = OP.build(kind)
+        except Exception as exc:                            # noqa: BLE001
+            print("  FAIL %-26s %r" % (kind, exc))
+            continue
+        V = [tuple(float(c) for c in v) for v in V]
+        F = [[int(i) for i in f] for f in F]
+        before = RF.planarity(V, F)
+        if before > 1e-12:
+            V = NB.planarize(V, F)
+            print("  planarised %-24s %.2e -> %.2e"
+                  % (kind, before, RF.planarity(V, F)))
+        meta = NB.meta_for(kind, name, refs)
+        meta["slug"] = slugify(name)
+        try:
+            out.append(assemble(V, F, meta))
+        except Exception as exc:                            # noqa: BLE001
+            print("  FAIL %-26s assemble: %r" % (kind, exc))
+    return out
+
+
 ZONOHEDRA = [
-    ("CUBE", "Cube"),
+    # No cube here: the uniform stage already emits it, and a second pass
+    # over the same solid only competes for the slug.
     ("RHOMBIC_DODECA", "Rhombic Dodecahedron"),
     ("TRIACONTA", "Rhombic Triacontahedron"),
     ("ENNEACONTA", "Rhombic Enneacontahedron"),
@@ -1196,7 +1233,7 @@ def stage_geodesic(limit=None, freqs=(2, 3, 4)):
                 "orientation": "inherited from the %s base, centred at the centroid"
                                % base_name.lower(),
                 "construction": {"generator": "math_art.geodesic_generator",
-                                 "operator_id": "mesh.geodesic_sphere_add",
+                                 "operator_id": "mesh.geodesic_add",
                                  "conway_from": None, "wythoff_from": None},
                 "coordinates": ("derived: class-I subdivision of the %s at "
                                 "frequency %d, projected onto the circumsphere"
@@ -1342,7 +1379,7 @@ def stage_compound(limit=None):
             "genus": None,
             "orientation": "as produced by the compound construction, centred at the centroid",
             "construction": {"generator": "math_art.compound_generator",
-                             "operator_id": "mesh.compound_add",
+                             "operator_id": "mesh.polyhedron_compound_add",
                              "conway_from": None, "wythoff_from": None},
             "coordinates": ("derived: orbit of the component solid under the "
                             "compound's rotation group, via "
@@ -1679,6 +1716,7 @@ STAGES["biscribed"] = stage_biscribed
 STAGES["toroid"] = stage_toroid
 STAGES["zonohedron"] = stage_zonohedron
 STAGES["geodesic"] = stage_geodesic
+STAGES["notable"] = stage_notable
 STAGES["compound"] = stage_compound
 STAGES["crosscheck"] = stage_crosscheck
 STAGES["link"] = stage_link
@@ -1780,7 +1818,7 @@ def main(argv):
         i += 1
     names = args or ["uniform", "dual", "johnson", "prism",
                      "starprism", "biscribed", "toroid", "zonohedron",
-                     "geodesic", "compound", "link"]
+                     "geodesic", "compound", "notable", "link"]
     total = 0
     for n in names:
         if n not in STAGES:

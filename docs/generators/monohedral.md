@@ -25,7 +25,7 @@ The pentagon count is the interesting one. Reinhardt found the first 5 in 1918, 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | Triangle | Which single-prototile tiling to build. Triangle, Quadrilateral, Pentagon Type 1, Pentagon Type 2, Pentagon Type 5, Hexagon Type 1, Hexagon Type 2. |
+| Tiling | Triangle | Which single-prototile tiling to build. Triangle, Quadrilateral, Pentagon Type 1, Pentagon Type 2, Pentagon Type 5, Hexagon Type 1, Hexagon Type 2, Durer's Tiling, and 1 more. |
 | Cells X | 5 | Number of unit cells along X Range 1-40. |
 | Cells Y | 5 | Number of unit cells along Y Range 1-40. |
 | Color By | By Tile Type | How tile materials are assigned. By Sides, By Tile Type, Uniform. |
@@ -33,6 +33,9 @@ The pentagon count is the interesting one. Reinhardt found the first 5 in 1918, 
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the patch to a clean rectangle, removing the ragged edge and stray boundary tiles |
 | Separate Tiles | Off | Output each tile as its own mesh object (parented to an empty) |
+| Layout | Radial (Durer) | How the tiles are repeated (the two Durer tilings only). Periodic, Radial (Durer). |
+| Order | 5 | Rotational order n; the prototile has two angles of 360/n degrees.  Durer drew n = 5 (Durer's tiling only) Range 3-16. |
+| Wallpaper Group | pmm | Which periodic arrangement of the pentagon and rhombus to build (Durer pentagons, periodic layout only). pmm, p2. |
 
 <!-- /options -->
 

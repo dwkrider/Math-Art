@@ -1,0 +1,1089 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "associahedron",
+  "name": "Associahedron (3D, K5)",
+  "alternate_names": [],
+  "families": [
+    "notable"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": null,
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": "Associahedron",
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": null,
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "C1",
+    "orbifold": "11",
+    "coxeter": "[]+",
+    "hermann_mauguin": "1",
+    "order": 1,
+    "rotation_group": "C1",
+    "rotation_order": 1,
+    "chiral": true,
+    "transitivity": {
+      "vertex": false,
+      "edge": false,
+      "face": false
+    },
+    "orbits": {
+      "vertices": 14,
+      "edges": 21,
+      "faces": 9
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 14,
+      "edges": 21,
+      "faces": 9
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{4}",
+        "sides": 4,
+        "count": 3,
+        "regular": false
+      },
+      {
+        "schlafli": "{5}",
+        "sides": 5,
+        "count": 6,
+        "regular": false
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": null,
+    "convex": false,
+    "self_dual": false,
+    "dual": null,
+    "coincident_vertices": 0,
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": false,
+      "slug": null,
+      "counts": {
+        "vertices": 14,
+        "edges": 21,
+        "faces": 9
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "circumradius_1",
+    "edge_length": null,
+    "edge_lengths_uniform": false,
+    "circumradius": null,
+    "midradius": null,
+    "inradius": null,
+    "surface_area": null,
+    "volume": null,
+    "isoperimetric_quotient": null,
+    "dihedral_angles": [
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 54.73560994238051,
+        "radians": 0.9553166115818836
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 54.73561187092964,
+        "radians": 0.9553166452414157
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26437045773407,
+        "radians": 2.186275699925376
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26437272753759,
+        "radians": 2.1862757395409207
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26437860125728,
+        "radians": 2.1862758420566686
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26438086013273,
+        "radians": 2.1862758814814827
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.2643829568003,
+        "radians": 2.186275918075235
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26438749114396,
+        "radians": 2.1862759972144614
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26439070246344,
+        "radians": 2.1862760532625596
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26439885068564,
+        "radians": 2.186276195475865
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26441095035621,
+        "radians": 2.186276406654955
+      },
+      {
+        "between": [
+          "{4}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 125.26441849494395,
+        "radians": 2.186276538332852
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 70.52877560799173,
+        "radians": 1.2309593517597213
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 70.52877890687552,
+        "radians": 1.230959409336105
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 70.52878692229379,
+        "radians": 1.2309595492315446
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 109.47121040247798,
+        "radians": 1.9106330576667077
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 109.47121625620785,
+        "radians": 1.9106331598335673
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 109.47121855946689,
+        "radians": 1.910633200033021
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 109.47121885576388,
+        "radians": 1.910633205204379
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 109.47122145709815,
+        "radians": 1.9106332506062271
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 109.47123907986864,
+        "radians": 1.9106335581815954
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 30.000013770229472,
+        "radians": 0.5235990159341419,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 1,
+        "degrees": 29.999988411476266,
+        "radians": 0.5235985733404043,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 2,
+        "degrees": 59.999979587601906,
+        "radians": 1.0471971949330428,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 3,
+        "degrees": 29.999993402135505,
+        "radians": 0.5235986604438398,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 4,
+        "degrees": 29.999980750584076,
+        "radians": 0.5235984396326119,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 5,
+        "degrees": 90.00003698419842,
+        "radians": 1.57079697229093,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 6,
+        "degrees": 89.99994884886424,
+        "radians": 1.5707954340391614,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 7,
+        "degrees": 90.0000109149957,
+        "radians": 1.5707965172975094,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 8,
+        "degrees": 90.00000507646857,
+        "radians": 1.5707964153959875,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 9,
+        "degrees": 30.000015282232194,
+        "radians": 0.5235990423235677,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 10,
+        "degrees": 30.000004860533707,
+        "radians": 0.5235988604306154,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 11,
+        "degrees": 60.00001507297629,
+        "radians": 1.047197814269662,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 12,
+        "degrees": 30.000006037927214,
+        "radians": 0.5235988809800087,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 13,
+        "degrees": 30.00000099977644,
+        "radians": 0.5235987930476895,
+        "exact": null
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 3.1415921696152376
+      },
+      {
+        "vertex_orbit": 1,
+        "steradians": 3.1415930534237178
+      },
+      {
+        "vertex_orbit": 2,
+        "steradians": 1.9106336590278117
+      },
+      {
+        "vertex_orbit": 3,
+        "steradians": 3.141592885153675
+      },
+      {
+        "vertex_orbit": 4,
+        "steradians": 3.141593506722486
+      },
+      {
+        "vertex_orbit": 5,
+        "steradians": 1.2309591009137812
+      },
+      {
+        "vertex_orbit": 6,
+        "steradians": 1.2309598817435314
+      },
+      {
+        "vertex_orbit": 7,
+        "steradians": 1.2309593492796487
+      },
+      {
+        "vertex_orbit": 8,
+        "steradians": 1.2309593645433246
+      },
+      {
+        "vertex_orbit": 9,
+        "steradians": 3.1415920250991816
+      },
+      {
+        "vertex_orbit": 10,
+        "steradians": 3.141592441261357
+      },
+      {
+        "vertex_orbit": 11,
+        "steradians": 1.9106329558697446
+      },
+      {
+        "vertex_orbit": 12,
+        "steradians": 3.1415924015621983
+      },
+      {
+        "vertex_orbit": 13,
+        "steradians": 3.1415925969202934
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": null,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    },
+    "measures_note": "Area and volume are omitted: the faces self-intersect, so both depend on a convention (net area vs. density-weighted vs. outer solid region). Record them only alongside an explicit convention field."
+  },
+  "geometry": {
+    "length_unit": "circumradius_1",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the construction, centred at the centroid",
+    "constants": {},
+    "vertices": [
+      [
+        0.171498577483833,
+        0.297044282276878,
+        0.420084024379451
+      ],
+      [
+        0.171498674024521,
+        0.49507366887079,
+        0.140027972602501
+      ],
+      [
+        0.514495633611353,
+        -0.297044237402537,
+        0.420084031072245
+      ],
+      [
+        0.342997136377167,
+        0.396058989487894,
+        -0.140027952557769
+      ],
+      [
+        0.514495664886989,
+        0.09901473293891,
+        -0.140027954957544
+      ],
+      [
+        -0.857492911924861,
+        0.297044297612754,
+        0.42008402880182
+      ],
+      [
+        -0.857492818337166,
+        0.495073698522249,
+        0.140027956779888
+      ],
+      [
+        0.171498583330708,
+        -0.891132767776666,
+        0.42008404071323
+      ],
+      [
+        -0.171498647619995,
+        -0.891132767341703,
+        0.420084042187276
+      ],
+      [
+        0.171498638895817,
+        0.2970442658585,
+        -0.420084036096484
+      ],
+      [
+        0.34299716982167,
+        3.1940069e-08,
+        -0.420084019535527
+      ],
+      [
+        -0.514495721229516,
+        0.297044276437687,
+        -0.420084072633736
+      ],
+      [
+        0.171498636437409,
+        -0.297044242909861,
+        -0.420084021243375
+      ],
+      [
+        -0.171498615757929,
+        -0.297044228514963,
+        -0.420084039511977
+      ]
+    ],
+    "vertices_exact": null,
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 5,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 59.999999048934406,
+            "radians": 1.0471975345973716,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99997754347787,
+            "radians": 2.0943947104529457,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99998869076566,
+            "radians": 2.0943949050098203,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999993296896,
+            "radians": 2.094395101223283,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00003478385312,
+            "radians": 2.094395709485959,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 1,
+        "sides": 4,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 89.99998465864833,
+            "radians": 1.5707960590377983,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 89.99998554599212,
+            "radians": 1.570796074524869,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 90.00001396072557,
+            "radians": 1.5707965704555236,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 90.000015834634,
+            "radians": 1.5707966031613958,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 2,
+        "sides": 5,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 60.00000218372908,
+            "radians": 1.0471975893098602,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999105553452,
+            "radians": 2.094394946282823,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999285165863,
+            "radians": 2.0943949776311026,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999703500465,
+            "radians": 2.0943950506442643,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00001687407313,
+            "radians": 2.0943953969013296,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 3,
+        "sides": 5,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 60.00000420385538,
+            "radians": 1.0471976245677155,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99998550002658,
+            "radians": 2.094394849320918,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999125867852,
+            "radians": 2.0943949498283545,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999349382645,
+            "radians": 2.094394988839045,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00002554361309,
+            "radians": 2.0943955482133467,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 4,
+        "sides": 5,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 59.99999491331189,
+            "radians": 1.047197462417142,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.9999819152954,
+            "radians": 2.0943947867555557,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00000393001841,
+            "radians": 2.0943951709849564,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00000448939058,
+            "radians": 2.0943951807478425,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00001475198376,
+            "radians": 2.094395359863883,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 5,
+        "sides": 4,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 89.99999236348577,
+            "radians": 1.5707961935125798,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 89.99999931468821,
+            "radians": 1.5707963148339494,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 90.00000375736282,
+            "radians": 1.5707963923732489,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 90.00000456446323,
+            "radians": 1.5707964064598083,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 6,
+        "sides": 5,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 59.999999821751736,
+            "radians": 1.0471975480855786,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99997617342417,
+            "radians": 2.0943946865409977,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99998849870911,
+            "radians": 2.094394901657801,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00000251956017,
+            "radians": 2.094395146367816,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.00003298655483,
+            "radians": 2.094395678117186,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 7,
+        "sides": 4,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 89.99999789416138,
+            "radians": 1.5707962900410792,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 89.99999806677506,
+            "radians": 1.5707962930537562,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 90.00000092290568,
+            "radians": 1.5707963429026395,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 90.00000311615788,
+            "radians": 1.5707963811821117,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      },
+      {
+        "face_orbit": 8,
+        "sides": 5,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 60.00000293448818,
+            "radians": 1.0471976024130782,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.9999891091487,
+            "radians": 2.094394912311982,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999546037839,
+            "radians": 2.0943950231618516,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 119.99999858650203,
+            "radians": 2.094395077723002,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 120.0000139094827,
+            "radians": 2.094395345159466,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        4,
+        3,
+        1,
+        0,
+        2
+      ],
+      [
+        5,
+        0,
+        1,
+        6
+      ],
+      [
+        8,
+        7,
+        2,
+        0,
+        5
+      ],
+      [
+        11,
+        6,
+        1,
+        3,
+        9
+      ],
+      [
+        10,
+        4,
+        2,
+        7,
+        12
+      ],
+      [
+        10,
+        9,
+        3,
+        4
+      ],
+      [
+        8,
+        5,
+        6,
+        11,
+        13
+      ],
+      [
+        7,
+        8,
+        13,
+        12
+      ],
+      [
+        11,
+        9,
+        10,
+        12,
+        13
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0
+      ],
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ],
+      [
+        6
+      ],
+      [
+        7
+      ],
+      [
+        8
+      ]
+    ],
+    "polygon_type": {
+      "4": [
+        1,
+        5,
+        7
+      ],
+      "5": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        8
+      ]
+    }
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0
+      ],
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ],
+      [
+        6
+      ],
+      [
+        7
+      ],
+      [
+        8
+      ],
+      [
+        9
+      ],
+      [
+        10
+      ],
+      [
+        11
+      ],
+      [
+        12
+      ],
+      [
+        13
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0
+      ],
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ],
+      [
+        6
+      ],
+      [
+        7
+      ],
+      [
+        8
+      ],
+      [
+        9
+      ],
+      [
+        10
+      ],
+      [
+        11
+      ],
+      [
+        12
+      ],
+      [
+        13
+      ],
+      [
+        14
+      ],
+      [
+        15
+      ],
+      [
+        16
+      ],
+      [
+        17
+      ],
+      [
+        18
+      ],
+      [
+        19
+      ],
+      [
+        20
+      ]
+    ]
+  },
+  "compound": null,
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.other_polyhedra_generator",
+    "operator_id": "mesh.notable_polyhedron_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: via math_art.other_polyhedra_generator",
+    "sources": [
+      "J. D. Stasheff, \"Homotopy associativity of H-spaces\", Trans. AMS 108 (1963); J.-L. Loday, \"Realization of the Stasheff polytope\", Arch. Math. 83 (2004) -- the associahedron realization used here."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

@@ -22,6 +22,12 @@ A **symmetrohedron** (Craig Kaplan and George Hart) is built by pinning regular 
 
 | Option | Default | Description |
 | --- | --- | --- |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
 | Symmetry | Icosahedral (5,3,2) | Symmetry group whose rotation axes carry the polygons. Icosahedral (5,3,2), Octahedral (4,3,2), Tetrahedral (3,3,2). |
 | Axis-1 Multiplier | 1 | Polygon = multiplier x axis order sides (0 = no polygon on this class) Range 0-4. |
 | Axis-2 Multiplier | 1 | Polygon on the second axis class = multiplier x axis order sides (0 = none) Range 0-4. |
@@ -33,7 +39,7 @@ A **symmetrohedron** (Craig Kaplan and George Hart) is built by pinning regular 
 | Axis-2 Phase | 0 | Rotation of the second-class polygons about their axis, in degrees Range -90-90. |
 | Axis-3 Phase | 0 | Rotation of the third-class polygons about their axis, in degrees Range -90-90. |
 | Coloring | By Face Size | Assign a material per face size, or leave unpainted. By Face Size, None. |
-| Style | Solid | How the hull is rendered: solid, open panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Style | Solid | How the hull is rendered: solid, open panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
 | Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

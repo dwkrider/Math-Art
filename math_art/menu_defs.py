@@ -110,8 +110,11 @@ POLYHEDRA = Menu(
         _e("mesh.polyhedral_torus_add", 'MESH_TORUS'),
         _e("mesh.notable_polyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.canonical_polyhedron_add", 'MESH_ICOSPHERE'),
+        # One entry: the icosahedron's fifty-nine and the other seeds'
+        # stellations are one construction with a seed selector, so they
+        # are one operator.  (mesh.general_stellation_add still exists as
+        # a deprecated shim, deliberately absent from the menu.)
         _e("mesh.icosahedron_stellation_add", 'MESH_ICOSPHERE'),
-        _e("mesh.general_stellation_add", 'MESH_ICOSPHERE'),
         _e("mesh.noble_faceting_add", 'MESH_ICOSPHERE'),
         _e("mesh.star_prism_add", 'MESH_CYLINDER'),
         _e("mesh.conway_add", 'MESH_ICOSPHERE'),

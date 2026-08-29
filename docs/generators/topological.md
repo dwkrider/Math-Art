@@ -22,9 +22,11 @@ The classic **topology menagerie**: Klein bottles, the two $\mathbb{RP}^2$ immer
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Klein Bottle | Which topological surface to build. Klein Bottle, Klein Bottle (Figure-8), Sudanese Mobius Band, Cross-Cap, Roman Surface, Steiner Surface (Veronese shadow), Boy's Surface, Non-Orientable Genus-k, and 2 more. |
+| Surface | Klein Bottle | Which topological surface to build. Klein Bottle, Klein Bottle (Figure-8), Sudanese Mobius Band, Cross-Cap, Roman Surface, Steiner Surface (Veronese shadow), Boy's Surface, Morin's Surface, and 3 more. |
 | Resolution U | 96 | Samples along u (around); for the genus surface, implicit grid density Range 8-512. |
 | Resolution V | 48 | Samples along v (across / radial) Range 4-512. |
+| Order | 2 | Order n of Apery's family, and the surface's rotational symmetry.  EVEN n gives an immersed sphere -- 2 is Morin's own surface -- and ODD n an immersed projective plane, 3 being Boy's (Morin's surface only) Range 2-12. |
+| Pinch | 1 | Apery's k.  It only enters the denominator sqrt2 - k sin 2u sin nv, so it deepens the surface's lobes without touching any of its symmetries; 0 flattens it to a round shape (Morin's surface only) Range 0-1.35. |
 | Projection Angle | 0 | Direction, in degrees, from which the Veronese surface's four-dimensional embedding is projected into 3-space: 0 gives Steiner's Roman surface, 90 the cross-cap, and every angle between gives another Steiner surface Range -180-180. |
 | Genus | 2 | Number of handles (verified for 1-5) Range 1-5. |
 | Cross-Caps k | 3 | Number of cross-caps: N_k has Euler characteristic 2 - k. 1 = projective plane, 2 = Klein bottle, 3 = Dyck's surface Range 1-8. |

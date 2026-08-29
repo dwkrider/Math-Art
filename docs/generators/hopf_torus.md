@@ -42,6 +42,9 @@ These are the surfaces Ulrich Pinkall used in 1985 to construct Willmore tori of
 | Branch | Upper (gentler) | Which root of the shape equation to use: the gentler or the curlier curve. Upper (gentler), Lower (curlier). |
 | Phase | 0.5 | Phase x0 as a fraction of the imaginary half-period; 0.5 is lambda = 0, off-centre sweeps genuinely constrained curves Range 0.02-0.98. |
 | High Wrap | Off | Use the high-wrap branch m = 2n + w |
+| SO(4) x1x2 | 0 | Rotate the (x1,x2) plane of S^3 before projecting -- morphs the torus (ring/horn/spindle, Dupin cyclides) Range -180-180. |
+| SO(4) x3x4 | 0 | Rotate the (x3,x4) plane of S^3 before projecting Range -180-180. |
+| SO(4) x1x3 | 0 | Rotate the (x1,x3) plane of S^3 before projecting Range -180-180. |
 | Shade Smooth | On | Smooth-shade the torus surface |
 | Scale | 1 | Overall size of the torus Range 0.01-100. |
 

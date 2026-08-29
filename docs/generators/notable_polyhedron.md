@@ -26,8 +26,16 @@ The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into t
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Final Stellation of Icosahedron | Which notable polyhedron to build. Final Stellation of Icosahedron, Schonhardt Polyhedron, Jessen's Orthogonal Icosahedron, Durer's Solid, Bilinski Dodecahedron, Escher's Solid, Tetrated Dodecahedron, 132-Pentagon Polyhedron, and 11 more. |
-| Style | Solid | How the polyhedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
+| Solid | Final Stellation of Icosahedron | Which notable polyhedron to build. Final Stellation of Icosahedron, Schonhardt Polyhedron, Jessen's Orthogonal Icosahedron, Durer's Solid, Bilinski Dodecahedron, Escher's Solid, Tetrated Dodecahedron, 132-Pentagon Polyhedron, and 15 more. |
+| Flex | 0 | Position along the one-parameter motion, as the shift in the driving diagonal.  Every face stays congruent to itself and every edge keeps its length; only the shape changes (Bricard's flexible octahedron only) Range -1.6-0.3. |
+| Flex | 0 | Position along the one-parameter motion, as the angle through which the two crinkles swing about the axis joining their tips.  Every edge keeps its integer length and the polyhedron stays free of self-intersections over the whole range, whose ends are where faces would first collide (Steffen's flexible polyhedron only) Range -0.235-0.235. |
+| Style | Solid | How the polyhedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
 | Border | 0.06 | Leonardo face frame width, the same on every face Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

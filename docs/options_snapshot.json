@@ -521,7 +521,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -579,7 +579,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -670,7 +670,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -933,25 +933,6 @@
    "Viewing Rig"
   ]
  },
- "mesh.general_stellation_add": {
-  "label": "General Stellation",
-  "options": [
-   "Fold",
-   "Unfolding",
-   "Seed",
-   "Glue Tabs",
-   "Tab Size",
-   "Edge Numbers",
-   "Seed",
-   "Stellation",
-   "Style",
-   "Border",
-   "Thickness",
-   "Strut Radius",
-   "Node Radius",
-   "Scale"
-  ]
- },
  "mesh.geodesic_add": {
   "label": "Geodesic Sphere / Dome",
   "options": [
@@ -1099,14 +1080,17 @@
   ]
  },
  "mesh.icosahedron_stellation_add": {
-  "label": "Icosahedron Stellation",
+  "label": "Stellation",
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
+   "Seed",
+   "Select by",
+   "Stellation",
    "Stellation",
    "a (core)",
    "b",
@@ -1119,6 +1103,26 @@
    "g1",
    "g2",
    "g3 (outer)",
+   "Shell 11",
+   "Shell 12",
+   "Shell 13",
+   "Shell 14",
+   "Shell 15",
+   "Shell 16",
+   "Shell 17",
+   "Shell 18",
+   "Shell 19",
+   "Shell 20",
+   "Shell 21",
+   "Shell 22",
+   "Shell 23",
+   "Shell 24",
+   "Shell 25",
+   "Shell 26",
+   "Shell 27",
+   "Shell 28",
+   "Chirality",
+   "Cell Code",
    "Style",
    "Border",
    "Thickness",
@@ -1521,7 +1525,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -1763,7 +1767,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -1906,7 +1910,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -2620,7 +2624,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -2704,7 +2708,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -2852,7 +2856,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
@@ -2968,7 +2972,7 @@
   "options": [
    "Fold",
    "Unfolding",
-   "Seed",
+   "Net Seed",
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",

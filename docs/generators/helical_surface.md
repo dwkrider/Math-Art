@@ -30,7 +30,7 @@ Each is built by a pure-Python parametrization; seams where a parameter wraps ar
 | Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
 | Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
 | Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
-| Surface | Hyperbolic Helicoid | Which swept surface to build. Darboux Surface, Hyperbolic Helicoid, Seashell, Corkscrew. |
+| Surface | Hyperbolic Helicoid | Which swept surface to build. Darboux Surface, Hyperbolic Helicoid, Seashell, Corkscrew, Helico-Conical Surface, Egg Box, Sine Torus. |
 | Motion | General Darboux Motion | How the rigid curve is carried through space (Darboux surface only). General Darboux Motion, Translation, Revolution, Helicoidal. |
 | Generatrix | Circle | The rigid curve that is swept (Darboux only). Circle, Ellipse, Gerono Lemniscate, Astroid, Segment. |
 | Curve Size | 0.45 | Size of the swept curve (Darboux only) Range 0.02-5. |
@@ -46,6 +46,9 @@ Each is built by a pure-Python parametrization; seams where a parameter wraps ar
 | Tube Aspect | 1 | Vertical stretch of the tube cross-section (a) Range 0-2. |
 | Height | 4 | Total rise of the shell from mouth to apex (b) Range 0-10. |
 | Opening | 0.37 | Offset radius that keeps the shell mouth open (c) Range 0-2. |
+| Profile Power | 2 | Generatrix z = 1 - \|u\|^p; 2 is the parabola of the source's figure and higher powers flatten it (helico-conical surface only) Range 1-8. |
+| Wavelength | 1 | b in sin(x/b): the spacing of the bumps (egg box only) Range 0.05-10. |
+| Modulation k | 0.5 | k in z = b sin(v) cos(k u).  Whole numbers give a torus; halves of odd numbers bring the tube back inside out and give a KLEIN BOTTLE, and k = 1/2 with the two radii equal closes the hole into a CROSS-CAP (sine torus only) Range 0-4. |
 | Sphere Radius | 0.5 | Radius a of the twisted sphere Range 0.01-10. |
 | Twist Rise | 0.3 | Axial rise b per radian of twist Range 0-5. |
 | Resolution | 96 | Segments along each parametric direction Range 8-512. |

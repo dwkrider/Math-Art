@@ -76,7 +76,16 @@ PARAMS = {
     # definition of the face.
     # No `family` here: the group selector is gone and the solid is
     # picked from a single gallery, so passing one is a hard error.
-    "mesh.saddle_polyhedron_add": dict(solid='DIAMOND_TETRAHEDRON',
+    # The diamond tetrahedron is the SIMPLEST saddle polyhedron, which
+    # made it the obvious pick and the wrong one: it has four faces, so
+    # from any 3/4 view two of them face away and the remaining pair
+    # reads as a folded sheet rather than a closed solid -- flat enough
+    # that it looks like the collapsed-solid bug, though its principal
+    # extents are a perfectly healthy 1.000.  Nothing about the picture
+    # says "saddle polyhedron".  The tetrahedral decahedron keeps ten
+    # faces around the same symmetry, so its silhouette stays closed
+    # from every direction and the saddle curvature is legible.
+    "mesh.saddle_polyhedron_add": dict(solid='TETRAHEDRAL_DECAHEDRON',
                                        face_style='MINIMAL',
                                        density=4, smoothness=40),
     # -- solids ---------------------------------------------------
@@ -466,8 +475,13 @@ VARIANT_SELECTOR = {
     "mesh.saddle_polyhedron_add": "solid",
     "mesh.notable_polyhedron_add": "solid",
     "mesh.biscribed_solid_add": "solid",
+    # Stellation's variants are its 59 Crennell figures, not its seven
+    # seeds: `solid` is the selector that changes the shape most, and the
+    # 59 are a closed historical list (see VARIANT_MAX below).  The seeds
+    # other than the icosahedron are reached through `preset` and are not
+    # enumerated here.  (The former mesh.general_stellation_add entry went
+    # when that operator was merged into this one.)
     "mesh.icosahedron_stellation_add": "solid",
-    "mesh.general_stellation_add": "seed",
     "mesh.noble_faceting_add": "seed",
     "mesh.star_prism_add": "form",
     "mesh.polyhedral_torus_add": "tiling",

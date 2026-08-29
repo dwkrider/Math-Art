@@ -24,3 +24,8 @@ icon_contact_sheet.html
 
 # Local agent handoff notes, never published
 data/polyhedra/HANDOFF.md
+
+# Companion site: the Pages workflow copies data/polyhedra into web/data
+# at deploy time, and web/serve.py routes to it directly for local dev.
+# Either way the copy is derived, never committed.
+web/data/

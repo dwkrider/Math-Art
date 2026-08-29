@@ -58,7 +58,7 @@ two opposite-handed families of rods cross to weave the same surface.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Stick Hyperboloid | Which ruled-surface family to build. Stick Hyperboloid, Compound Helical Cone, Spiral Ruled, Conoid, Tangent Developable, Helicoid, Twisted Strip, Hyperbolic Paraboloid, and 1 more. |
+| Surface | Stick Hyperboloid | Which ruled-surface family to build. Stick Hyperboloid, Compound Helical Cone, Spiral Ruled, Conoid, Tangent Developable, Helicoid, Twisted Strip, Hyperbolic Paraboloid, and 6 more. |
 | Conoid | Plucker Cylindroid | Which right conoid to build (Conoid mode). Plucker Cylindroid, n-Fold Conoid, Wallis Conical Edge, Zindler Conoid, Whitney Umbrella. |
 | Radius | 1 | Radius of the base circle or helix the rulings spring from Range 0.01-20. |
 | Half Height | 1 | Half the axial height (rings sit at +-this) Range 0.05-20. |
@@ -109,7 +109,7 @@ two opposite-handed families of rods cross to weave the same surface.
 | Ruling Extent | 1 | Half-length of the rulings / patch extent Range 0.05-8. |
 | Resolution U | 120 | Samples around the surface, along the base curve Range 6-800. |
 | Resolution V | 20 | Samples across the rulings Range 1-200. |
-| Output | Surface | Build the filled surface, or its straight rulings as solid rods or bare curves. Surface, Rulings as Rods, Bare Curves. |
+| Output | Automatic | Build the filled surface, or its straight rulings as solid rods or bare curves.  The compound helical cone is not straight-ruled, so for that one these draw its arrises -- the helical ridges of its flutes. Automatic, Surface, Rulings as Rods, Bare Curves. |
 | Rod Count | 48 | Number of rulings drawn in rods or bare-curves output Range 3-400. |
 | Rod Radius | 0.02 | Radius of each rod in rods output Range 0.002-0.3. |
 | Include Boundary Curves | On | Add the directrix / rail curves the rulings are strung between (the two torus knots, the hyperboloid's end circles, etc.) to the rods / bare-curves output |

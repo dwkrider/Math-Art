@@ -467,25 +467,52 @@ def _build_block(solid, face_style, density, smoothness, rings, scale,
 
 def build_cells(key=None, face_style='MINIMAL', density=3, smoothness=25,
                 rings=5, scale=0.60, twist=0.0, nx=1, ny=1, nz=1,
-                gap=1.0, cap=True):
+                gap=1.0, cap=True, unit=False, mirror=False):
     """The packing as SEPARATE cells, still in register with each other.
 
     Returns (cells, info) where each cell is (verts, tris, face_id).
     One transform is computed for the whole block and applied to every
     cell, so the pieces stay assembled -- fitting each cell to the unit
     cube individually would scale them differently and scatter the
-    packing."""
+    packing.
+
+    This must build the SAME packing as `_build_block`, only cut into
+    separate meshes.  It previously did not, in two ways, and both were
+    visible on the decatrihedron with spidron faces: it ignored `unit`,
+    so "Repeat unit" plus "Separate objects" returned the whole block
+    instead of the two-cell pair; and it passed the same `twist` to
+    every cell, so every nest wound the same way and the cells could no
+    longer meet without overlapping.  See the winding note below."""
     solid = pdata.by_key(key) if key else pdata.SOLIDS[0]
     V0, F0 = pdata.points(solid), solid['faces']
     copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz,
                              lattice=solid.get('lattice'))
+    if unit:
+        copies = _face_pair(copies, F0) or copies[:1]
+        # the report must describe what was BUILT, not the packing the
+        # unit was taken from
+        rep = dict(rep, copies=len(copies), fills=False, unit=True)
+    forms = form_colours(copies, F0)
 
     raw = []
-    for pts in copies:
+    for ci, pts in enumerate(copies):
+        # The two forms wind their nests opposite ways: a rotation of
+        # +t about a face's OUTWARD normal is a rotation of -t about
+        # the inward one, so the two cells meeting at a shared face
+        # build the SAME surface.  That is Pearce's clockwise-meets-
+        # counter-clockwise matching rule, and it is what lets the
+        # decorated cells interlock instead of overlapping -- so it has
+        # to be applied here exactly as `_build_block` applies it, not
+        # only on the merged path.
+        t = -twist if forms[ci] else twist
         CV, CT, cfid, _flags = _cell_geometry(
-            pts, F0, face_style, density, smoothness, rings, scale, twist,
+            pts, F0, face_style, density, smoothness, rings, scale, t,
             cap=cap)
         CV = np.asarray(CV, float)
+        if mirror:
+            # the enantiomorphic packing; mirror in the COMMON frame,
+            # before the shared fit below, so the cells stay assembled
+            CV = CV * np.array([-1.0, 1.0, 1.0])
         if gap < 1.0:
             c = CV.mean(axis=0)
             CV = c + (CV - c) * gap
@@ -820,7 +847,9 @@ if _IN_BLENDER:
                     density=self.density, smoothness=self.smoothness,
                     rings=self.rings, scale=self.scale, twist=self.twist,
                     nx=self.nx, ny=self.ny, nz=self.nz, gap=self.gap,
-                    cap=self.cap_center)
+                    cap=self.cap_center,
+                    unit=(self.layout_kind == 'UNIT'),
+                    mirror=self.mirror)
             except Exception as exc:
                 self.report({'ERROR'}, "Build failed: %s" % exc)
                 return {'CANCELLED'}
@@ -1125,6 +1154,48 @@ def _selftest():
         chk("  same triangle count as the merged block",
             sum(len(c[1]) for c in cells) == len(merged_t),
             "%d vs %d" % (sum(len(c[1]) for c in cells), len(merged_t)))
+
+    # --- separate cells match the merged build EXACTLY ------------
+    # "Separate objects" must be the merged build cut into pieces, not
+    # a second, subtly different build.  Two things made it one: it
+    # ignored `unit`, so "Repeat unit" plus "Separate objects" returned
+    # the whole block; and it twisted every cell the same way, so the
+    # nests all wound alike and the cells could not interlock.
+    #
+    # Neither showed up above, because these checks ran on the DEFAULT
+    # minimal faces at zero twist -- where the winding is invisible,
+    # since -0 == +0.  So this exercises the case that broke: spidron
+    # faces, a non-zero twist, and the repeat unit.
+    print("  separate cells vs merged, spidron faces at non-zero twist:")
+
+    def _pointset(P):
+        P = np.asarray(P, float)
+        P = P - 0.5 * (P.min(axis=0) + P.max(axis=0))
+        span = float((P.max(axis=0) - P.min(axis=0)).max())
+        return set(map(tuple, np.round(P / max(span, 1e-12), 5)))
+
+    for s in pdata.SOLIDS:
+        if not s.get('has_unit'):
+            continue
+        tag = "#%d %s" % (s['number'], s['name'])
+        for tw in (0.0, 0.35):
+            V, _t, _f, _i = _build_block(
+                s, 'SPIDRON', 2, 4, 3, 0.60, tw, 1, 1, 1, 1.0,
+                colour_by='CELL', mirror=False, unit=True, cap=True)
+            cells, _info = build_cells(
+                key=s['key'], face_style='SPIDRON', density=2,
+                smoothness=4, rings=3, scale=0.60, twist=tw, unit=True)
+            chk("%s: repeat unit is two cells (twist %.2f)" % (tag, tw),
+                len(cells) == 2, "%d" % len(cells))
+            if not cells:
+                continue
+            merged = _pointset(V)
+            split = _pointset(np.concatenate(
+                [np.asarray(c[0], float) for c in cells], axis=0))
+            chk("  same point set as the merged unit (twist %.2f)" % tw,
+                merged == split,
+                "%d merged, %d split, %d common"
+                % (len(merged), len(split), len(merged & split)))
 
     print("RESULT:", "OK" if ok else "BAD")
     if not ok:

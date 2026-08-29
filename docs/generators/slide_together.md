@@ -34,6 +34,11 @@ Hart described seven — 20 triangles, 30 squares, 12 pentagons, 12 decagons, 20
 | Colours | On | Colour the panels in rotation, the way the paper models are made |
 | Separate Panels | Off | One object per panel instead of a single mesh |
 | Scale | 1 | Overall size of the result Range 0.01-100. |
+| Cut Layout | On | Nest the panels onto sheets ready for a laser cutter, and keep the layout on the object so it can be exported to SVG or DXF |
+| Model Size | 200 | Longest dimension of the finished model, in millimetres. Every panel is scaled by the same factor, so they still fit one another Range 1-5000. |
+| Sheet Width | 600 | Width of the stock sheet, in millimetres Range 10-5000. |
+| Sheet Height | 400 | Height of the stock sheet, in millimetres Range 10-5000. |
+| Kerf | 0.15 | Width of material the beam burns away, in millimetres. The outlines are offset by half of it so the cut panels come out to size Range 0-3. |
 
 <!-- /options -->
 

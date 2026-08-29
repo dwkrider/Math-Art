@@ -24,7 +24,14 @@ The **Császár polyhedron** has 7 vertices, 21 edges and 14 triangles, and **no
 
 | Option | Default | Description |
 | --- | --- | --- |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
 | Solid | Csaszar Polyhedron | Which toroidal (genus-1) polyhedron to build. Csaszar Polyhedron, Szilassi Polyhedron, Regular-Faced Toroid, Knotted Dodecahedron, Borromean Rings, Heptagonal Iris Toroid, Octagonal Iris Toroid. |
+| Style | Solid | How the polyhedron is rendered as geometry. Solid, Papercraft Net. |
 | Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
