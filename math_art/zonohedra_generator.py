@@ -42,8 +42,8 @@
 #
 # NOTE on the pitch convention: this operator's Pitch has always been
 # measured from the AXIS, while every published formula measures from the
-# horizontal.  The Angle From dial says which one the number means, and
-# the report prints both.
+# horizontal.  The Angle From dial says which one the number means, so the
+# presets below can be written the way their sources state them.
 #
 # References:
 # - Zonohedra / zonotopes: E. S. Fedorov (1885); M. Senechal and R. V.
@@ -706,11 +706,6 @@ if _IN_BLENDER:
         color: EnumProperty(
             name="Colour By", items=COLORINGS, default='NONE',
             description="What the face colours mean")
-        report_table: BoolProperty(
-            name="Write Report", default=False,
-            description="Write the face angles, dihedral angles and "
-                        "dimensions to a text block, which is what a "
-                        "physical build needs")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
                              description="Overall size multiplier")
 
@@ -905,38 +900,6 @@ if _IN_BLENDER:
             return _fc.materials_for(sel, "Zonohedron")
 
         # ------------------------------------------------------------------
-        # report
-        # ------------------------------------------------------------------
-
-        def _write_report(self, theta):
-            n = self.n
-            lines = ["Polar zonohedron PZ(%d, %.4f deg from horizontal)"
-                     % (n, theta),
-                     "  pitch from axis      %.4f deg" % (90.0 - theta),
-                     "  faces %d   edges %d   vertices %d"
-                     % (n * (n - 1), 2 * n * (n - 1), n * (n - 1) + 2),
-                     "  distinct rhombi      %d" % _pz.distinct_shapes(n),
-                     "  height (unit ribs)   %.6f" % _pz.height(n, theta),
-                     "  max radius           %.6f" % _pz.max_radius(n, theta),
-                     "",
-                     "  level   faces   face angle     dihedral",
-                     "  -----   -----   ----------   ----------"]
-            for m in range(1, n):
-                lines.append("  %5d   %5d   %10.5f   %10.5f"
-                             % (m, n, _pz.face_angle(n, theta, m),
-                                _pz.dihedral(n, theta, m, self.ellipticity)))
-            lines += ["",
-                      "Face angles are the rhombus corner nearest the pole;",
-                      "dihedrals are the angle between face normals, so 0",
-                      "means parallel.  Bevel a panel edge to half its",
-                      "dihedral for a flush wooden joint."]
-            name = "Zonohedron Report"
-            txt = bpy.data.texts.get(name) or bpy.data.texts.new(name)
-            txt.clear()
-            txt.write("\n".join(lines))
-            return name
-
-        # ------------------------------------------------------------------
         # execute
         # ------------------------------------------------------------------
 
@@ -979,9 +942,6 @@ if _IN_BLENDER:
             mats, midx = self._colors(V, F, keys)
             obj = _shell.apply(self, context, V, F, name,
                                materials=mats, material_index=midx)
-            if self.report_table and self.kind in _POLAR_KINDS:
-                note += " -- report in text block '%s'" % \
-                    self._write_report(self._theta())
             self.report({'INFO'}, note)
             return {'FINISHED'}
 
@@ -1127,14 +1087,17 @@ if _IN_BLENDER:
                 lay.prop(self, 'separate')
             else:
                 lay.prop(self, 'opening')
-                lay.prop(self, 'style')
                 if self.style == 'NET':
+                    # NET is this operator's own addition to the shared
+                    # style enum, so shell.draw_style knows nothing about
+                    # its properties -- but it DOES draw the enum itself,
+                    # so the dial is drawn here once and only its
+                    # sub-properties are delegated.
+                    lay.prop(self, 'style')
                     _net_style.draw_net_props(lay, self)
                 else:
                     _shell.draw_style(self, lay)
             lay.prop(self, 'color')
-            if polar:
-                lay.prop(self, 'report_table')
             lay.prop(self, 'scale')
 
     def _mesh_from(name, V, F):
