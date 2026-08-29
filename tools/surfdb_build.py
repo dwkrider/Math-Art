@@ -45,7 +45,12 @@ sys.path.insert(0, os.path.join(ROOT, "math_art"))
 from surfdb import (algsurf, charts, curation, ferreol,  # noqa: E402
                     invariants, mapping, nodal, papers, polynomial,
                     published, references, registry, sources, tail,
-                    views, vmm, wedata)
+                    views, vmm, wedata, weextract)
+
+try:
+    from surfdb import parcharts                          # noqa: E402
+except ImportError:                                       # module not written yet
+    parcharts = None
 
 OUT = os.path.join(ROOT, "data", "surfaces")
 SCHEMA_VERSION = "0.1.0"
@@ -999,69 +1004,270 @@ class Builder:
         if not ids:
             rec.pop("ids", None)
 
+    @staticmethod
+    def _chart_block(ch, note=None):
+        block = {"x": ch["x"], "y": ch["y"], "z": ch["z"],
+                 "u_range": list(ch["u_range"]),
+                 "v_range": list(ch["v_range"])}
+        if ch.get("periodic_u"):
+            block["periodic_u"] = True
+        if ch.get("periodic_v"):
+            block["periodic_v"] = True
+        if note or ch.get("note"):
+            block["note"] = note or ch.get("note")
+        return block
+
     def _attach_chart(self, slug, rec):
         """Store the parametric chart, where one is verified for this slug.
 
-        Only gated records get charts (see tools/surfdb/charts.py): the
-        chart is checked against the curvature condition its record
-        claims, so a record with no condition would have nothing to catch
-        a transcription error and keeps its explicit null note instead.
+        Two sources, two different gates:
+
+        * tools/surfdb/charts.py -- condition-gated: the chart must
+          measure the curvature condition its record claims (H = 0,
+          K = +-1, K = 0), so only gated records can carry one.
+        * tools/surfdb/parcharts.py -- oracle-gated: the chart is
+          reproduced pointwise against the shipped builder (which
+          imports headlessly), verified HERE at build time, so it works
+          for records with no curvature condition too.  A chart that
+          fails its oracle is reported and dropped, never stored.
+
+        A chart for a record whose primary definition is Weierstrass
+        (the merged Catalan/Bjorling row) becomes an ALTERNATE
+        definition rather than being silently discarded.
         """
+        d = rec["definition"]
         ch = charts.chart_for(slug)
+        provenance = None
+        if ch:
+            provenance = (
+                "Chart as curated in tools/surfdb/charts.py, verified "
+                "numerically against the curvature condition the record "
+                "claims (measured over the chart by the validator and the "
+                "charts self-test).")
+        elif parcharts is not None:
+            ch = parcharts.chart_for(slug)
+            if ch:
+                try:
+                    ok, detail = parcharts.verify(slug)
+                except Exception as exc:                  # noqa: BLE001
+                    ok, detail = False, "verify raised: %s" % exc
+                if not ok:
+                    self.problems.append(
+                        "parametric chart for %s fails its oracle: %s"
+                        % (slug, detail))
+                    return
+                provenance = (
+                    "Chart reproduced numerically against the shipped "
+                    "implementation: %s." % detail)
+            elif (d.get("mode") == "parametric" and not d.get("x")
+                    and not d.get("polynomial") and not d.get("note")):
+                why = parcharts.reason_for(slug)
+                if why:
+                    d["note"] = (
+                        "No chart is stored: %s. The shipped implementation "
+                        "is authoritative; an unverified transcription would "
+                        "silently define a different surface." % why)
         if not ch:
             return
-        d = rec["definition"]
-        if d.get("mode") != "parametric" or d.get("polynomial"):
-            return
-        d["x"], d["y"], d["z"] = ch["x"], ch["y"], ch["z"]
-        d["u_range"] = list(ch["u_range"])
-        d["v_range"] = list(ch["v_range"])
-        if ch.get("periodic_u"):
-            d["periodic_u"] = True
-        if ch.get("periodic_v"):
-            d["periodic_v"] = True
-        d.pop("note", None)
-        d.setdefault("exactness", "elementary")
+        if d.get("mode") == "parametric" and not d.get("polynomial"):
+            block = self._chart_block(ch)
+            d.update(block)
+            if "note" not in block:
+                d.pop("note", None)
+            d.setdefault("exactness", "elementary")
+            if provenance:
+                rec["provenance"]["definition"] = provenance
+        elif not d.get("x"):
+            # the same surface by another construction: an alternate
+            alts = rec.setdefault("alternate_definitions", [])
+            if not any(a.get("x") for a in alts):
+                block = self._chart_block(ch)
+                block.update(mode="parametric", fidelity="exact",
+                             exactness="elementary")
+                alts.append(block)
+
+    def _zoo_key_for(self, rec):
+        """The engine key a record was built from, if any.
+
+        Covers the zoo/parametric registries AND the exact-TPMS rows
+        (tpms.py), whose keys the extractor also dispositions.
+        """
+        for c in rec.get("construction") or []:
+            if (c.get("generator") == "math_art.minsurf.parametric"
+                    and c.get("key")):
+                return c["key"]
+            if (c.get("generator") == "math_art.minsurf.tpms"
+                    and c.get("family") == "TPMS_EXACT" and c.get("key")):
+                return c["key"]
+        return None
 
     def _attach_we(self, slug, rec):
         """Store the Weierstrass pair, verified against the zoo row.
+
+        Two oracle-gated sources, in order:
+
+        1. The AST extractor (tools/surfdb/weextract.py), which re-reads
+           zoo.py FRESH on every build and verifies each emitted pair
+           against the shipped callables -- so the stored data follows
+           the engine as it changes instead of rotting behind it (the
+           hand table lost three rows to exactly that drift).
+        2. The curated table (tools/surfdb/wedata.py) as fallback, which
+           still self-verifies against the zoo before it is trusted.
+
+        Rows the extractor cannot express (dedicated meshers, elliptic
+        immersions) contribute their honest REASON to the definition
+        note, plus the domain/puncture metadata that IS extractable.
 
         Where the record's primary definition is already a parametric
         chart (the classical rows), the pair becomes an ALTERNATE
         definition -- the same surface by another construction, which is
         exactly what that list is for.
         """
-        ent = wedata.data_for(slug)
-        if not ent:
-            return
-        try:
-            from minsurf import zoo as _zoo
-            spec = _zoo.WE_SURFACES[wedata.ZOO_KEY[slug]]
-            p = spec["p_from"](3, 1.0)
-            ok, details = wedata.verify(slug, spec, p)
-            if not ok:
-                self.problems.append(
-                    "Weierstrass data for %s disagrees with the shipped row: "
-                    "%s" % (slug, "; ".join(details)))
-                return
-            defaults = wedata.defaults_for(slug, p)
-        except Exception as exc:                      # noqa: BLE001
-            self.problems.append("cannot verify WE data for %s: %s"
-                                 % (slug, exc))
-            return
-        block = {
-            "mode": "weierstrass", "fidelity": "exact",
-            "exactness": "numerical-integral",
-            "gauss_map": ent["g"], "height_differential": ent["dh"],
-            "parameters": [
-                {"name": n, "domain": "see the generator", "default": v,
-                 "integer": isinstance(v, int)}
-                for n, v in sorted(defaults.items())],
-            "note": "Verified against math_art/minsurf/zoo.py by sampling "
-                    "both over the complex plane; g exactly, dh up to the "
-                    "constant multiple that merely scales the surface.",
-        }
         d = rec["definition"]
+        key = self._zoo_key_for(rec) or wedata.ZOO_KEY.get(slug)
+        fams = {c.get("family") for c in rec.get("construction") or []}
+        if not key:
+            if "TPMS_EXACT" in fams and d.get("mode") == "weierstrass" \
+                    and not d.get("gauss_map") and not d.get("note"):
+                d["note"] = (
+                    "No (g, dh) pair is stored: the exact data live on a "
+                    "genus-3 branched cover (the hyperelliptic square/"
+                    "hexagonal curve) integrated by math_art/minsurf/"
+                    "weierstrass.pgd_build and hexagonal.py; g and dh are "
+                    "algebraic on that cover, not single-valued elementary "
+                    "expressions on a plane domain, so there is nothing the "
+                    "exact language can store without lying about the "
+                    "Riemann surface underneath.")
+            return
+        block = None
+        reason = None
+        got = {}
+        try:
+            got = weextract.extract_all().get(key) or {}
+        except Exception as exc:                      # noqa: BLE001
+            self.problems.append("weextract failed on %s: %s" % (key, exc))
+        if got.get("bj"):
+            # A Bjorling row's defining datum is its SEED, not a (g, dh)
+            # pair: store the verified curve/normal in the definition,
+            # which is what actually specifies the surface.
+            bj = got["bj"]
+            if d.get("mode") == "weierstrass" and not d.get("gauss_map"):
+                nrm = ("the Frenet principal normal of the curve"
+                       if bj["normal"] == "frenet"
+                       else "n(t) = (%s)" % ", ".join(bj["normal"]))
+                d["note"] = (
+                    "Bjorling's problem: the unique minimal surface through "
+                    "a given real-analytic strip. The defining seed, "
+                    "reproduced numerically against the shipped row "
+                    "(math_art/minsurf/zoo.py, %s): c(t) = (%s), with "
+                    "normal %s, t in [%s, %s]. The Weierstrass data is the "
+                    "holomorphic extension of the seed, computed "
+                    "numerically by the engine -- the seed, not a (g, dh) "
+                    "pair, is what specifies this surface."
+                    % (key, ", ".join(bj["curve"]), nrm,
+                       bj["t_range"][0], bj["t_range"][1]))
+                if bj.get("params"):
+                    d.setdefault("parameters", [
+                        {"name": n, "domain": "see the generator's p_from",
+                         "default": v, "integer": isinstance(v, int)}
+                        for n, v in sorted(bj["params"].items())])
+                rec["provenance"]["definition"] = (
+                    "Bjorling seed reproduced numerically against the "
+                    "shipped implementation (math_art/minsurf/zoo.py, row "
+                    "%s): %s." % (key, got.get("detail", "")))
+            return
+        if got.get("g"):
+            params = dict(got["params"])
+            # curated member overrides (e.g. the classical k = 1 Enneper,
+            # which is the member the record's other facts describe)
+            params.update(wedata.PARAM_DEFAULT.get(slug, {}))
+            block = {
+                "mode": "weierstrass", "fidelity": "exact",
+                "exactness": "numerical-integral",
+                "gauss_map": got["g"], "height_differential": got["dh"],
+                "parameters": [
+                    {"name": n, "domain": "see the generator's p_from",
+                     "default": v, "integer": isinstance(v, int)}
+                    for n, v in sorted(params.items())],
+                "note": "Extracted from the shipped row's source by AST "
+                        "(complete multi-line lambdas, %s) and reproduced "
+                        "numerically against the shipped callables over "
+                        "the complex plane, exactly -- no scalar slack."
+                        % got.get("derived", "g/dh"),
+            }
+            if got.get("note_extra"):
+                block["note"] += " " + got["note_extra"]
+            if key == "PGD":
+                block["associate_angle_degrees"] = 0.0
+            rec["provenance"]["definition"] = (
+                "Weierstrass data reproduced numerically against the shipped "
+                "implementation (math_art/minsurf/zoo.py, row %s) by sampling "
+                "g and dh over rings in the complex plane at the row's "
+                "default parameters: %s." % (key, got.get("detail", "")))
+        else:
+            reason = got.get("reason")
+
+        if block is None:
+            ent = wedata.data_for(slug)
+            if ent:
+                try:
+                    from minsurf import zoo as _zoo
+                    spec = _zoo.WE_SURFACES[wedata.ZOO_KEY[slug]]
+                    p = spec["p_from"](3, 1.0)
+                    ok, details = wedata.verify(slug, spec, p)
+                    if ok:
+                        defaults = wedata.defaults_for(slug, p)
+                        block = {
+                            "mode": "weierstrass", "fidelity": "exact",
+                            "exactness": "numerical-integral",
+                            "gauss_map": ent["g"],
+                            "height_differential": ent["dh"],
+                            "parameters": [
+                                {"name": n, "domain": "see the generator",
+                                 "default": v,
+                                 "integer": isinstance(v, int)}
+                                for n, v in sorted(defaults.items())],
+                            "note": "Verified against math_art/minsurf/"
+                                    "zoo.py by sampling both over the "
+                                    "complex plane; g exactly, dh up to "
+                                    "the constant multiple that merely "
+                                    "scales the surface.",
+                        }
+                        rec["provenance"]["definition"] = (
+                            "Weierstrass data reproduced numerically against "
+                            "the shipped implementation (math_art/minsurf/"
+                            "zoo.py, row %s): %s."
+                            % (wedata.ZOO_KEY[slug], "; ".join(details)))
+                    else:
+                        self.problems.append(
+                            "Weierstrass data for %s disagrees with the "
+                            "shipped row: %s" % (slug, "; ".join(details)))
+                except Exception as exc:              # noqa: BLE001
+                    self.problems.append("cannot verify WE data for %s: %s"
+                                         % (slug, exc))
+
+        # domain / punctures are extractable even where the pair is not --
+        # for a Weierstrass surface they are part of what renders it
+        if d.get("mode") == "weierstrass":
+            if got.get("domain") and not d.get("domain"):
+                d["domain"] = got["domain"]
+            if got.get("punctures") and not d.get("punctures"):
+                d["punctures"] = got["punctures"]
+
+        if block is None:
+            if reason and d.get("mode") == "weierstrass" \
+                    and not d.get("gauss_map") and not d.get("note"):
+                d["note"] = (
+                    "No (g, dh) pair is stored: %s. The shipped "
+                    "implementation is authoritative; an unverified "
+                    "transcription would silently define a different "
+                    "surface." % reason)
+            return
+
+        if got.get("domain"):
+            block.setdefault("domain", got["domain"])
+        if got.get("punctures"):
+            block.setdefault("punctures", got["punctures"])
         if d.get("mode") == "weierstrass" and not d.get("gauss_map"):
             d.update(block)
             d.pop("note", None)
@@ -1090,11 +1296,25 @@ class Builder:
                 continue
             gen = next((c.get("generator") for c in rec.get("construction") or []
                         if c.get("generator")), None)
-            d["note"] = (
-                "No closed form is stored for this surface. It is defined by "
-                "its shipped implementation" + (" in %s" % gen if gen else "")
-                + ", which is authoritative; an unverified transcription "
-                "would silently define a different surface.")
+            impl = any(c.get("implemented")
+                       for c in rec.get("construction") or [])
+            if not impl:
+                # There is no shipped implementation to defer to, and
+                # claiming one would make the ledger lie: the record's
+                # whole point is that the surface is ABSENT.
+                d["note"] = (
+                    "No closed form is stored: the surface is not "
+                    "implemented in math_art, so there is no shipped "
+                    "code to verify a transcription against, and an "
+                    "unverified formula from the literature would be "
+                    "worse than a null. See construction.blocked_by.")
+            else:
+                d["note"] = (
+                    "No closed form is stored for this surface. It is "
+                    "defined by its shipped implementation"
+                    + (" in %s" % gen if gen else "")
+                    + ", which is authoritative; an unverified transcription "
+                    "would silently define a different surface.")
 
     def write(self):
         written = 0

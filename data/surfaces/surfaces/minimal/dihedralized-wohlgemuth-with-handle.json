@@ -47,13 +47,7 @@
       "M. Weber, 'Wohlgemuth's Second Surface (which documents the failed dihedralization)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch418_wohlgemuths_second_surface.md).",
       "M. Weber, 'Non-Existent Surfaces (section index)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch061_non_existent_surfaces.md).",
       "M. Wohlgemuth, 'Minimal surfaces of higher genus with finite total curvature', Arch. Rational Mech. Anal. 137 (1997) 1-25 (the existing k = 2 surface)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

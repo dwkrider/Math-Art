@@ -71,13 +71,7 @@
         "agrees": true,
         "detail": "'Togliatti proved in 1937, that there is a surface of degree 5 - a Quintic - with exactly 31 singularities, which was world record at that time'; mu(5) = 31 is exact (both bounds) in the Breske-Labs-van Straten table."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -90,29 +84,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 137325,
-      "edges": 409094,
-      "faces": 271789,
-      "euler_characteristic": 20,
-      "angle_defect_total": 94.191424,
-      "area": 8.491125,
-      "volume": 0.355771,
-      "components": 15,
-      "boundary_loops": 10,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 122238,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.962917,
-        2.0,
-        1.53515
-      ],
-      "aspect_ratio": 0.767575
-    }
   }
 }

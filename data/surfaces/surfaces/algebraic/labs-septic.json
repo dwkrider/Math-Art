@@ -59,13 +59,7 @@
     "sources": [
       "O. Labs, 'A Septic with 99 real Nodes', Rend. Sem. Mat. Univ. Padova 116 (2006).",
       "O. Labs, 'A septic with 99 real nodes' (2004; converted copy in research/papers/algebraic-surfaces/) and Breske-Labs-van Straten (2005) mu(7) >= 99 -- independent confirmations of the 99."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -89,29 +83,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 222974,
-      "edges": 664243,
-      "faces": 441182,
-      "euler_characteristic": -87,
-      "angle_defect_total": -595.298697,
-      "area": 14.023447,
-      "volume": 0.097291,
-      "components": 12,
-      "boundary_loops": 15,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 196691,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.984471,
-        2.0,
-        1.351472
-      ],
-      "aspect_ratio": 0.675736
-    }
   }
 }

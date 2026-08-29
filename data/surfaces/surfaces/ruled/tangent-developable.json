@@ -13,7 +13,19 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.ruled_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "cos(u) - v*sin(u)",
+    "y": "sin(u) + v*cos(u)",
+    "z": "0.4*(u + v)",
+    "u_range": [
+      "0",
+      "4*pi"
+    ],
+    "v_range": [
+      "0.04",
+      "1"
+    ],
+    "note": "tangent developable of the unit helix of pitch 0.4 over 2 turns (operator defaults); v starts at the 0.04 edge gap off the cuspidal edge of regression (the helix itself)",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -37,7 +49,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.1% of oracle beyond tol (tol floor 2.5 x 0.04382).",
     "sources": [
       "G. W. Hart, \"Curved, yet Straight: Stick Hyperboloids,\" Bridges 2023 Conference Proceedings, pp. 251-258.",
       "E. Jannasch & J. Macnab, \"The Compound Helical Cone as Kinematic Trace,\" Bridges 2023 Conference Proceedings, pp. 15-22.",
@@ -45,13 +57,7 @@
       "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
       "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
       "Milk carton: H. M. Cundy & A. P. Rollett, \"Mathematical Models\" (1951), 185-188."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1254_devellopabledestangentes_2"
@@ -61,29 +67,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2688,
-      "edges": 4976,
-      "faces": 2388,
-      "euler_characteristic": 100,
-      "angle_defect_total": 628.318527,
-      "area": 1.362216,
-      "volume": 0.004568,
-      "components": 50,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 472,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.052932,
-        1.052261,
-        2.0
-      ],
-      "aspect_ratio": 0.52613
-    }
   }
 }

@@ -18,7 +18,20 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.topological_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "(-2.0/15.0)*cos(u)*(3*cos(v) - 30*sin(u) + 90*cos(u)**4*sin(u) - 60*cos(u)**6*sin(u) + 5*cos(u)*cos(v)*sin(u))",
+    "y": "(-1.0/15.0)*sin(u)*(3*cos(v) - 3*cos(u)**2*cos(v) - 48*cos(u)**4*cos(v) + 48*cos(u)**6*cos(v) - 60*sin(u) + 5*cos(u)*cos(v)*sin(u) - 5*cos(u)**3*cos(v)*sin(u) - 80*cos(u)**5*cos(v)*sin(u) + 80*cos(u)**7*cos(v)*sin(u))",
+    "z": "(2.0/15.0)*sin(v)*(3 + 5*cos(u)*sin(u))",
+    "u_range": [
+      "0",
+      "pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "the standard bottle-shaped closed-form immersion; the u = pi rim meets the u = 0 rim under v -> pi - v",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -51,16 +64,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.80 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.02822).",
     "sources": [
       "F. Klein, 'Ueber Riemann's Theorie der algebraischen Functionen und ihrer Integrale' (1882)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Felix Klein",
   "year": 1882,
@@ -84,29 +91,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4656,
-      "edges": 9264,
-      "faces": 4608,
-      "euler_characteristic": 0,
-      "angle_defect_total": 0.276999,
-      "area": 5.465779,
-      "volume": 0.540743,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 194,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.587754,
-        2.0,
-        0.697371
-      ],
-      "aspect_ratio": 0.348685
-    }
   }
 }

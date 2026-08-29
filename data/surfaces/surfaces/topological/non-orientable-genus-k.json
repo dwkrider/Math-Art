@@ -17,7 +17,7 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.topological_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No chart is stored: built by mesh surgery -- cut k disks from a sphere and weld each boundary circle to itself antipodally; exact topologically, but there is no formula to store. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -52,13 +52,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "The classification theorem of closed surfaces; W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888) for N_3."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -106,29 +100,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 1655,
-      "edges": 3408,
-      "faces": 1752,
-      "euler_characteristic": -1,
-      "angle_defect_total": 75.112985,
-      "area": 12.040019,
-      "volume": 2.948138,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 525,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.870639,
-        1.839972
-      ],
-      "aspect_ratio": 0.919986
-    }
   }
 }

@@ -56,13 +56,7 @@
       "A. Gray, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\", 2nd ed., CRC Press (1997) -- named the sine surface.",
       "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve).",
       "R. Ferreol, \"Mobius surface\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1302_mobiussurface_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1302_mobiussurface_2.md)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -81,29 +75,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 133545,
-      "edges": 398768,
-      "faces": 265222,
-      "euler_characteristic": -1,
-      "angle_defect_total": -27.825936,
-      "area": 9.789542,
-      "volume": 0.000122,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": false,
-      "nonmanifold_edges": 2,
-      "nonmanifold_vertices": 118385,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

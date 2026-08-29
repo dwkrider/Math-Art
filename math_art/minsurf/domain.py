@@ -95,7 +95,7 @@ def _inliers(pts):
     keep = d <= np.percentile(d, 90.0)
     return pts[keep] if keep.any() else pts
 
-def _smooth_boundary(V, quads, iters=10, lam=0.5):
+def _smooth_boundary(V, quads, iters=10, lam=0.5, protect=None):
     """Relax open mesh-boundary loops in place, removing the grid
     staircase left on an end-rim cut from an axis-aligned grid, without
     disturbing interior vertices.
@@ -132,19 +132,49 @@ def _smooth_boundary(V, quads, iters=10, lam=0.5):
             nbr[b].append(a)
             bnd.add(a)
             bnd.add(b)
-    # keep only vertices with exactly two boundary neighbours (clean loops)
-    loop = [v for v in bnd if len(nbr[v]) == 2]
+    # keep only vertices with exactly two boundary neighbours (clean
+    # loops); `protect` (bool per vertex) exempts rims that were placed
+    # analytically -- e.g. bell mouths snapped onto exact conformal
+    # circles -- which smoothing could only displace off the surface
+    loop = [v for v in bnd if len(nbr[v]) == 2
+            and (protect is None or not protect[v])]
     if not loop:
         return V
     V = V.copy()
     idx = np.array(loop)
     n0 = np.array([nbr[v][0] for v in loop])
     n1 = np.array([nbr[v][1] for v in loop])
+    # Displacement cap: the staircase zigzag the smoother exists to remove
+    # has sub-edge amplitude, but on a steeply flaring rim (a puncture
+    # mouth on an Enneper end) the Taubin pair can still translate a loop
+    # vertex FARTHER than its gap to the next mesh ring, dragging the rim
+    # through its neighbours and folding the adjacent (often huge) quads
+    # inside out.  Clamp each vertex's NET displacement to a fraction of
+    # its shortest incident mesh edge: zigzag removal survives untouched,
+    # ring-crossing translations become impossible.
+    minlen = np.full(len(V), np.inf)
+    for q in quads:
+        for k in range(len(q)):
+            a, b = q[k], q[(k + 1) % len(q)]
+            d = float(np.linalg.norm(V[a] - V[b]))
+            if d < minlen[a]:
+                minlen[a] = d
+            if d < minlen[b]:
+                minlen[b] = d
+    V0 = V[idx].copy()
     for _ in range(iters):
         target = 0.5 * (V[n0] + V[n1])
         V[idx] += lam * (target - V[idx])       # smoothing step
         target = 0.5 * (V[n0] + V[n1])
         V[idx] -= lam * (target - V[idx])       # anti-shrink step
+    disp = V[idx] - V0
+    dn = np.linalg.norm(disp, axis=1)
+    cap = 0.45 * minlen[idx]
+    over = dn > cap
+    if np.any(over):
+        scl = np.ones(len(idx))
+        scl[over] = cap[over] / dn[over]
+        V[idx] = V0 + disp * scl[:, None]
     return V
 
 

@@ -127,8 +127,29 @@ if _IN_BLENDER:
 
     def _new_object(context, name, verts, faces, smooth=True):
         me = bpy.data.meshes.new(name)
-        me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
-                       [tuple(int(i) for i in f) for f in faces])
+        F = np.asarray(faces)
+        if F.ndim == 2 and F.shape[1] == 3 and F.dtype.kind in 'iu':
+            # all-triangle numpy fast path: foreach_set builds the mesh
+            # in bulk.  from_pydata converts every vertex and face
+            # through a Python tuple, which at the triangle counts the
+            # adaptive extractor produces (millions) took longer than
+            # extracting the surface itself.
+            V = np.ascontiguousarray(np.asarray(verts, dtype=np.float64))
+            me.vertices.add(len(V))
+            me.vertices.foreach_set('co', V.ravel())
+            me.loops.add(F.size)
+            me.loops.foreach_set('vertex_index',
+                                 np.ascontiguousarray(F, dtype=np.int32)
+                                 .ravel())
+            me.polygons.add(len(F))
+            me.polygons.foreach_set(
+                'loop_start', np.arange(0, F.size, 3, dtype=np.int32))
+            me.polygons.foreach_set(
+                'loop_total', np.full(len(F), 3, dtype=np.int32))
+            me.update(calc_edges=True)
+        else:
+            me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
+                           [tuple(int(i) for i in f) for f in faces])
         me.validate(clean_customdata=True)
         me.polygons.foreach_set('use_smooth',
                                 [smooth] * len(me.polygons))
@@ -238,11 +259,20 @@ if _IN_BLENDER:
         resolution: IntProperty(
             name="Resolution", default=FAMILY_RESOLUTION_DEFAULT,
             min=16, max=256,
-            description="Sample grid resolution per axis. Algebraic "
-                        "surfaces need more of it than the periodic "
-                        "ones: their interest is usually a cusp, a "
-                        "self-intersection or a double point, and a "
-                        "coarse grid rounds exactly those away")
+            description="Base sample grid per axis -- it decides what "
+                        "the extractor FINDS, so thin sheets or small "
+                        "components need it raised. How finely the "
+                        "surface is then meshed is Refinement's job: "
+                        "cells near the surface are subdivided that "
+                        "many times beyond this grid")
+        refine: IntProperty(
+            name="Refinement", default=1, min=0, max=3,
+            description="Extra subdivision rounds applied only to the "
+                        "cells the surface passes near, each doubling "
+                        "the effective resolution there at a cost that "
+                        "grows with surface area, not volume. Nodes "
+                        "and cusps sharpen accordingly; triangle "
+                        "count roughly quadruples per step")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Overall size of the result")
@@ -381,7 +411,7 @@ if _IN_BLENDER:
             verts, tris = build_algebraic(
                 key, self.resolution, mu=self.mu,
                 clip=self.clip, scale=self.scale, fold=self.fold,
-                **extra)
+                refine=self.refine, **extra)
             if len(tris) == 0:
                 self.report({'ERROR'}, "Empty level set")
                 return {'CANCELLED'}
@@ -416,6 +446,7 @@ if _IN_BLENDER:
                 row.enabled = False
                 row.label(text=eq)
             lay.prop(self, 'resolution')
+            lay.prop(self, 'refine')
             # exactly the parameters this preset declares, under the
             # names its own family gives them
             for attr, lab, _k, _d, _lo, _hi, _dsc in preset_params(

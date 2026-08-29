@@ -52,13 +52,7 @@
       "T. Nordstrand, \"Weird Cube\" and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).",
       "G. Peano's 1899 counterexample; cf. the MathWorld page's history of the criterion it defeated.",
       "E. W. Weisstein, MathWorld, topic 'Algebraic Surfaces' -- the enumeration this absence was measured against."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -72,29 +66,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 85304,
-      "edges": 254879,
-      "faces": 169578,
-      "euler_characteristic": 3,
-      "angle_defect_total": 12.868463,
-      "area": 5.216779,
-      "volume": 0.386007,
-      "components": 2,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 76197,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.73675
-      ],
-      "aspect_ratio": 0.868375
-    }
   }
 }

@@ -38,15 +38,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 100.05733036061379,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {},
@@ -67,17 +58,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
     "sources": [
       "T. Kuen, 'Ueber Flachen von constantem Krummungsmass', Sitzungsber. Bayer. Akad. Wiss. (1884)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Theodor Kuen",
   "year": 1884,
@@ -100,29 +84,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 6144,
-      "edges": 12128,
-      "faces": 5985,
-      "euler_characteristic": 1,
-      "angle_defect_total": 16.924929,
-      "area": 8.742217,
-      "volume": 0.936028,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 5063,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.40822,
-        1.926133
-      ],
-      "aspect_ratio": 0.70411
-    }
   }
 }

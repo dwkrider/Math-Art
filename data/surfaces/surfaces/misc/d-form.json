@@ -14,7 +14,7 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.dform_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No chart is stored: the developable is determined by numerically rolling and joining the two ellipse boundaries; no closed-form parametrisation is known. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "flat",
@@ -48,42 +48,12 @@
       "A. Borhani, E. Akleman, \"A Mathematical Approach to Obtain Isoperimetric Shapes for D-Form Construction,\" Bridges 2016, pp. 277-284.",
       "E. Demaine, J. O'Rourke, \"Geometric Folding Algorithms\" (Cambridge, 2007), ch. 25 -- Alexandrov gluings.",
       "H. Pottmann, J. Wallner, \"Computational Line Geometry\" (Springer, 2001) -- poses the D-form shape question."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": true,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 794,
-      "edges": 2376,
-      "faces": 1584,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.56637,
-      "area": 9.656123,
-      "volume": 2.005318,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 728,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.916809,
-        1.263356
-      ],
-      "aspect_ratio": 0.631678
-    }
   }
 }

@@ -15,7 +15,20 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "u",
+    "y": "cos(v)/u",
+    "z": "sin(v)/u",
+    "u_range": [
+      "1",
+      "6"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "y = 1/x revolved about the x-axis, cut at the operator's default length 6; finite volume, divergent lateral area",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -43,16 +56,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.79 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.01845).",
     "sources": [
       "E. Torricelli, De solido hyperbolico acuto (1643)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "alternate_names": [
     "Torricelli's trumpet"
@@ -75,29 +82,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 13920,
-      "edges": 27744,
-      "faces": 13824,
-      "euler_characteristic": 0,
-      "angle_defect_total": -4.265746,
-      "area": 1.914367,
-      "volume": 0.004641,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 296,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        0.8,
-        0.8
-      ],
-      "aspect_ratio": 0.4
-    }
   }
 }

@@ -38,15 +38,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 9.052459786790534e-09,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -94,18 +85,11 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
     "sources": [
       "J. B. Meusnier, 'Memoire sur la courbure des surfaces', Memoires des savans etrangers 10 (1785, read 1776).",
       "E. Catalan, 'Sur les surfaces reglees dont l'aire est un minimum', J. Math. Pures Appl. 7 (1842) -- the helicoid is the only ruled minimal surface besides the plane."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -129,29 +113,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2688,
-      "edges": 4976,
-      "faces": 2388,
-      "euler_characteristic": 100,
-      "angle_defect_total": 628.318531,
-      "area": 1.165463,
-      "volume": 0.003516,
-      "components": 50,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 472,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.672835,
-        0.673066,
-        2.0
-      ],
-      "aspect_ratio": 0.336417
-    }
   }
 }

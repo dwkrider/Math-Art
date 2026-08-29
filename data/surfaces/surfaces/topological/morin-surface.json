@@ -17,7 +17,20 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.topological_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "cos(u)*(2*cos(u) + sqrt(2)*sin(u))*cos(v)/(sqrt(2) - sin(2*u)*sin(2*v))",
+    "y": "cos(u)*(2*cos(u) - sqrt(2)*sin(u))*sin(v)/(sqrt(2) - sin(2*u)*sin(2*v))",
+    "z": "cos(u)**2/(sqrt(2) - sin(2*u)*sin(2*v))",
+    "u_range": [
+      "-pi/2",
+      "pi/2"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "Apery order n = 2 (Morin's own halfway model, an immersed sphere) and pinch k = 1 fixed to the operator defaults; u = +-pi/2 collapse to the triple point",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -47,16 +60,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.64 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.04064).",
     "sources": [
       "B. Morin's halfway model for the sphere eversion; see G. Francis, A Topological Picturebook (1987)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Bernard Morin",
   "year": 1978,
@@ -77,29 +84,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4514,
-      "edges": 9120,
-      "faces": 4608,
-      "euler_characteristic": 2,
-      "angle_defect_total": 33.735207,
-      "area": 3.902367,
-      "volume": 0.000189,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 272,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        0.440402
-      ],
-      "aspect_ratio": 0.220201
-    }
   }
 }

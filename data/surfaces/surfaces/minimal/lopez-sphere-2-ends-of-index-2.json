@@ -15,23 +15,24 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "gauss_map": "B*(z*z + i*c*z + 1.0)/z",
-    "height_differential": "i*B*(z*z + i*c*z + 1.0)/(z*z)",
+    "domain": "annulus 0.375 < |z| < 2.66667",
+    "gauss_map": "B*(1.0 + z**2 + 1.0*i*z*c)/z",
+    "height_differential": "1.0*B*(i + i*z**2 - z*c)/z**2",
     "parameters": [
       {
         "name": "B",
-        "domain": "see the generator",
+        "domain": "see the generator's p_from",
         "default": 0.8137884587711595,
         "integer": false
       },
       {
         "name": "c",
-        "domain": "see the generator",
+        "domain": "see the generator's p_from",
         "default": 0.7,
         "integer": false
       }
     ],
-    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
   },
   "curvature": {
     "condition": "minimal",
@@ -66,16 +67,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row M3_LOPEZ) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 4.97e-16); dh: matches over 144 complex samples (worst 9.93e-16).",
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -89,29 +84,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 9364,
-      "edges": 18594,
-      "faces": 9230,
-      "euler_characteristic": 0,
-      "angle_defect_total": 4.395312,
-      "area": 6.920865,
-      "volume": 0.0,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 8815,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.082719,
-        1.915483,
-        2.0
-      ],
-      "aspect_ratio": 0.541359
-    }
   }
 }

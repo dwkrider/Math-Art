@@ -15,29 +15,35 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "gauss_map": "rho*z**(n - 1)/(z**n - a**n)",
-    "height_differential": "z**(n - 1)*(z**n - a**n)/(z**n - 1.0)**2",
+    "domain": "disk |z| < 1.59167",
+    "punctures": [
+      "z = 1 (radius 0.145)",
+      "z = -0.5+0.866025i (radius 0.145)",
+      "z = -0.5-0.866025i (radius 0.145)"
+    ],
+    "gauss_map": "rho*z**(-1 + n)/(z**n - a**n)",
+    "height_differential": "z**(-1 + n)*(z**n - a**n)/(-1.0 + z**n)**2",
     "parameters": [
       {
         "name": "a",
-        "domain": "see the generator",
-        "default": 1.3399999999999999,
+        "domain": "see the generator's p_from",
+        "default": 1.7,
         "integer": false
       },
       {
         "name": "n",
-        "domain": "see the generator",
-        "default": 5,
+        "domain": "see the generator's p_from",
+        "default": 3,
         "integer": true
       },
       {
         "name": "rho",
-        "domain": "see the generator",
-        "default": 4.396141409214451,
+        "domain": "see the generator's p_from",
+        "default": 5.201016150715165,
         "integer": false
       }
     ],
-    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
   },
   "curvature": {
     "condition": "minimal",
@@ -72,16 +78,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row M3_PYR) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 0).",
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -94,29 +94,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 13275,
-      "edges": 26237,
-      "faces": 12963,
-      "euler_characteristic": 1,
-      "angle_defect_total": -6.528186,
-      "area": 4.29974,
-      "volume": 0.351081,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 12459,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.836044,
-        2.0,
-        1.102461
-      ],
-      "aspect_ratio": 0.551231
-    }
   }
 }

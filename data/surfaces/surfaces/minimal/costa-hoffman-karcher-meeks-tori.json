@@ -48,13 +48,7 @@
       "D. Hoffman and W. H. Meeks III, 'Properties of properly embedded minimal surfaces of finite topology', Bull. Amer. Math. Soc. 17 (1987) 296-300.",
       "C. J. Costa, 'Classification of complete minimal surfaces in R3 with total curvature 12pi', Invent. Math. 105 (1991) 273-303.",
       "D. Hoffman and H. Karcher, 'Complete embedded minimal surfaces of finite total curvature', Geometry V, Encyclopaedia Math. Sci. 90, Springer (1997) 5-93."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

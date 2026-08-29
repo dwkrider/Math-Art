@@ -16,7 +16,11 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "domain": "annulus 0.47619 < |z| < 2.1",
+    "gauss_map": "1.0*z**2*(1 + z)/(-1 + z)",
+    "height_differential": "1.0*i - 1.0*i/z**2",
+    "parameters": [],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, phi triple (dh = phi3, g = phi3/(phi1 - i*phi2), a Weierstrass-representation identity)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
   },
   "curvature": {
     "condition": "minimal",
@@ -59,7 +63,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row MEEKS_MOBIUS) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 1.06e-12); dh: matches over 144 complex samples (worst 9.93e-16).",
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
@@ -69,13 +73,7 @@
         "agrees": true,
         "detail": "The complete minimal Moebius strip with total curvature -6pi; by the same classification every complete minimal surface with total curvature > -8pi is the plane, catenoid, Enneper surface or this Moebius strip.  Uniqueness: Barbosa-Colares 1986."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -95,29 +93,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 14745,
-      "edges": 29325,
-      "faces": 14580,
-      "euler_characteristic": 0,
-      "angle_defect_total": 10.980234,
-      "area": 8.866581,
-      "volume": 0.000343,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 12864,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.936937,
-        1.10937
-      ],
-      "aspect_ratio": 0.554685
-    }
   }
 }

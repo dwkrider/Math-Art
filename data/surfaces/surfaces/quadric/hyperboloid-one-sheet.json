@@ -16,7 +16,20 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.ruled_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "(1 - v)*cos(u) + v*cos(u + 2*pi/3)",
+    "y": "(1 - v)*sin(u) + v*sin(u + 2*pi/3)",
+    "z": "2*v - 1",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "1"
+    ],
+    "periodic_u": true,
+    "note": "the stick hyperboloid: straight rulings between two unit circles at z = -1 and z = +1, the top rotated by the operator's default 120-degree twist (waist radius cos 60 = 1/2)",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -46,16 +59,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.04328).",
     "sources": [
       "Classical; one of the two doubly ruled quadrics."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "architectural",
@@ -79,29 +86,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3456,
-      "edges": 6144,
-      "faces": 2880,
-      "euler_characteristic": 192,
-      "angle_defect_total": 1206.37159,
-      "area": 31.583242,
-      "volume": 0.284177,
-      "components": 98,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 722,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

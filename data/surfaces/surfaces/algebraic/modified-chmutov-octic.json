@@ -62,13 +62,7 @@
       "O. Labs, 'Advent calendar 2002, No. 6 (with the defining Chebyshev form)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch026_no_06.md).",
       "O. Labs, 'Octics (listing it as '144: (2002?), modified Chmutov surface')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "V. I. Arnold et al., Singularities of Differentiable Maps, Vol. II, Birkhaeuser (1988), p. 419 (cited by the page for Chmutov's original series)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -85,29 +79,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 426980,
-      "edges": 1280700,
-      "faces": 853800,
-      "euler_characteristic": 80,
-      "angle_defect_total": 502.642315,
-      "area": 32.110453,
-      "volume": 1.781247,
-      "components": 40,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 352488,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

@@ -16,7 +16,7 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No (g, dh) pair is stored: the shipped row is built by the dedicated mesher we.sptail_hks_mesh (a torus/branched-cover or multi-patch assembly); no elementary (g, dh) pair on a plane domain is stored in the code. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -63,13 +63,7 @@
         "agrees": true,
         "detail": "Screw-motion invariant Karcher-Scherk surfaces: 'multivalued on the 2k-punctured quotient spheres' -- genus 0 in the quotient with 2k ends; twist limit 1/k."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -84,29 +78,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 14382,
-      "edges": 28695,
-      "faces": 14312,
-      "euler_characteristic": -1,
-      "angle_defect_total": -20.016092,
-      "area": 4.953926,
-      "volume": 0.000177,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 2,
-      "nonmanifold_vertices": 13494,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.994619,
-        2.0,
-        1.318212
-      ],
-      "aspect_ratio": 0.659106
-    }
   }
 }

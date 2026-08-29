@@ -76,13 +76,7 @@
       "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve).",
       "R. Ferreol, \"Fresnel's wave surface\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1201_ondes_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1201_ondes_2.md).",
       "A. Fresnel (1821), per the chapter; the chapter also points to Jules Richard's thesis and [Loria 3d p. 197]."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -105,29 +99,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 243434,
-      "edges": 730338,
-      "faces": 486892,
-      "euler_characteristic": -12,
-      "angle_defect_total": -75.402655,
-      "area": 17.228772,
-      "volume": 1.639834,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 203817,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.999786,
-        2.0,
-        1.600378
-      ],
-      "aspect_ratio": 0.800189
-    }
   }
 }

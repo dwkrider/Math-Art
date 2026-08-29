@@ -48,13 +48,7 @@
       "The 3DXM Consortium, 'A Schoen HT Hexagonal Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch036_schoen_ht_hex.md).",
       "M. Weber, 'Schoen H'-T', minimalsurfaces.blog (local mirror: minsurf/book/.../ch283_schoen_h_t.md).",
       "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"

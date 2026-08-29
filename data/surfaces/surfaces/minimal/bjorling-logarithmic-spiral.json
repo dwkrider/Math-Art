@@ -15,7 +15,7 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "domain": "disk",
-    "note": "Bjorling's problem: the minimal surface through a given curve with a given normal along it.",
+    "note": "Bjorling's problem: the unique minimal surface through a given real-analytic strip. The defining seed, reproduced numerically against the shipped row (math_art/minsurf/zoo.py, BJ_LOG_SPIRAL): c(t) = (0.25*cos(t)*exp(0.15*t), 0.25*exp(0.15*t)*sin(t), 0), with normal the Frenet principal normal of the curve, t in [0, 12.56637061]. The Weierstrass data is the holomorphic extension of the seed, computed numerically by the engine -- the seed, not a (g, dh) pair, is what specifies this surface.",
     "exactness": "numerical-integral"
   },
   "curvature": {
@@ -51,16 +51,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Bjorling seed reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row BJ_LOG_SPIRAL): seed reproduced against the shipped callables over 200 samples (worst 0).",
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -73,29 +67,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 9856,
-      "edges": 19507,
-      "faces": 9652,
-      "euler_characteristic": 1,
-      "angle_defect_total": 11.63105,
-      "area": 4.36968,
-      "volume": 0.911552,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 9449,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.603633,
-        1.083713
-      ],
-      "aspect_ratio": 0.541856
-    }
   }
 }

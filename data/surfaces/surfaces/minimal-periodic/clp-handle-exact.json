@@ -17,7 +17,7 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No (g, dh) pair is stored: the Gauss map is a product of powers of Jacobi theta functions on the hexagonal/square torus, continued along an unwrapped branch (math_art/minsurf/hexagonal.py); theta functions are outside the exact expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -64,13 +64,7 @@
         "agrees": true,
         "detail": "'This gives a 1-parameter family of triply periodic surfaces of genus 4.'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -86,29 +80,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2205,
-      "edges": 4316,
-      "faces": 2112,
-      "euler_characteristic": 1,
-      "angle_defect_total": 4.309349,
-      "area": 2.039984,
-      "volume": 0.017708,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 1549,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        0.4577,
-        1.107292
-      ],
-      "aspect_ratio": 0.22885
-    }
   }
 }

@@ -16,7 +16,21 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "1.9 + ((1 + 0.45*cos(v))*cos(u) - 1.9)*2.56/(((1 + 0.45*cos(v))*cos(u) - 1.9)**2 + ((1 + 0.45*cos(v))*sin(u))**2 + (0.45*sin(v))**2)",
+    "y": "(1 + 0.45*cos(v))*sin(u)*2.56/(((1 + 0.45*cos(v))*cos(u) - 1.9)**2 + ((1 + 0.45*cos(v))*sin(u))**2 + (0.45*sin(v))**2)",
+    "z": "0.45*sin(v)*2.56/(((1 + 0.45*cos(v))*cos(u) - 1.9)**2 + ((1 + 0.45*cos(v))*sin(u))**2 + (0.45*sin(v))**2)",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "note": "the record's default variant, the RING cyclide: the ring torus R = 1, r = 0.45 inverted in the sphere of radius 1.6 about (1.9, 0, 0) -- all operator defaults.  Inversion carries the torus's circular curvature lines to circles, which is the property that defines a Dupin cyclide",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -62,17 +76,11 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.30 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.02719).",
     "sources": [
       "C. Dupin, Applications de geometrie et de mechanique (1822).",
       "J. Schrott and B. Odehnal, 'Ortho-circles of Dupin cyclides', J. Geometry and Graphics 10 (2006)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "specimens": [
     {
@@ -130,29 +138,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4608,
-      "edges": 9216,
-      "faces": 4608,
-      "euler_characteristic": 0,
-      "angle_defect_total": 19.30127,
-      "area": 8.273283,
-      "volume": 2.022977,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 2475,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.499562,
-        1.662391
-      ],
-      "aspect_ratio": 0.749781
-    }
   }
 }

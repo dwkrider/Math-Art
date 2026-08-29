@@ -32,15 +32,6 @@
     "condition": "minimal",
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 0.9821971170959807,
-        "resolution": 120,
-        "tolerance": 1.1786364,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -71,14 +62,7 @@
       "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
       "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
       "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -91,29 +75,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 58792,
-      "edges": 173736,
-      "faces": 114912,
-      "euler_characteristic": -32,
-      "angle_defect_total": -196.198856,
-      "area": 20.497337,
-      "volume": 1.455535,
-      "components": 1,
-      "boundary_loops": 24,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 52751,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

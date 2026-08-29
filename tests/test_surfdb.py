@@ -30,15 +30,31 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 MODULES = ("expr", "views", "mapping", "polynomial", "registry", "curation",
            "invariants", "references", "sources", "tail", "crosscheck",
-           "charts", "weierstrass", "wedata", "nodal",
-           "ferreol", "vmm", "published", "algsurf", "papers")
+           "charts", "weierstrass", "wedata", "weextract",
+           "nodal", "ferreol", "vmm", "published", "algsurf", "papers")
+
+# NOT listed above: `parcharts`, the parametric-chart extractor. The name
+# was added here before the module was written, so the suite failed on a
+# module that has never existed -- a gate that reports a failure nobody
+# can act on trains people to ignore it. `surfdb_build` already imports
+# it defensively (`except ImportError: parcharts = None`) and simply
+# skips chart extraction when it is absent, so its absence is a missing
+# FEATURE, not a broken build. Add it back in the same commit that adds
+# the module, not before.
 
 
 def main():
     import importlib
     failed = []
     for name in MODULES:
-        mod = importlib.import_module("surfdb." + name)
+        try:
+            mod = importlib.import_module("surfdb." + name)
+        except Exception as exc:                      # noqa: BLE001
+            # a listed module that cannot even import is a FAILURE of that
+            # module, not a reason to abort the whole run unreported
+            failed.append((name, exc))
+            print("FAIL surfdb.%s (import): %s" % (name, exc))
+            continue
         fn = getattr(mod, "_selftest", None)
         if fn is None:
             print("SKIP surfdb.%s (no _selftest)" % name)

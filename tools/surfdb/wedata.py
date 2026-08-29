@@ -27,6 +27,19 @@ Only the 16 zoo rows exposing `g` and `dh` as callables can be checked
 this way; the rest of the Weierstrass zoo is built by dedicated functions
 with no extractable pair, and those records keep their explicit "no
 closed form is stored" note.
+
+SUPERSEDED (mostly) by tools/surfdb/weextract.py, which does the
+line-range-safe read this header asks for MECHANICALLY: it pulls every
+row's complete g/dh/phi expression trees with `ast.parse`, emits them in
+the exact language and verifies them against the shipped callables on
+every build.  The build consults the extractor first and falls back to
+this table only where extraction fails; the table's remaining unique
+value is the curated PARAM_DEFAULT overrides below.  The `double-enneper`
+row was REMOVED from this table after the zoo generalized that surface
+under it (two Enneper ends of order n, twisted by zeta) -- the hand
+transcription silently described a surface the engine no longer builds,
+which is this table's known failure mode and the reason the extractor
+exists.
 """
 
 # slug -> {g, dh, params: the names taken from the row's p_from(...)}
@@ -36,9 +49,6 @@ WE = {
     },
     "richmond-generalized-g-eq-z-k": {
         "g": "z**k", "dh": "1", "params": ("k",),
-    },
-    "double-enneper": {
-        "g": "z", "dh": "z*z - 1.0 + 1.0/(z*z)", "params": (),
     },
     "jeeners-flower": {
         "g": "z", "dh": "2.0*z**(n + 1)", "params": ("n",),
@@ -102,7 +112,6 @@ WE = {
 ZOO_KEY = {
     "enneper-surface": "ENNEPER",
     "richmond-generalized-g-eq-z-k": "RICHMOND_K",
-    "double-enneper": "DOUBLE_ENNEPER",
     "jeeners-flower": "JEENER",
     "henneberg-one-sided": "HENNEBERG_RP2",
     "sphere-catenoid-enneper-end": "M3_CATENN",

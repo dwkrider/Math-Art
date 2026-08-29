@@ -16,7 +16,12 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "domain": "torus (tau = 0.916667i)",
+    "punctures": [
+      "(u, v) = (0, 0), radius 0.17",
+      "(u, v) = (0.5, 0.5), radius 0.17"
+    ],
+    "note": "No (g, dh) pair is stored: the shipped immersion is a closed form in Weierstrass elliptic functions (zeta, wp) on a rectangular torus (math_art/minsurf/zoo.py, _riemann_X) -- outside the elementary expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -58,13 +63,7 @@
       "B. Riemann, 'Uber die Flache vom kleinsten Inhalt bei gegebener Begrenzung', Abh. Konigl. Ges. Wiss. Gottingen 13 (1867), posthumous.",
       "B. Riemann, 'Ueber die Flaeche vom kleinsten Inhalt bei gegebener Begrenzung', Abh. Koenigl. Ges. Wiss. Goettingen 13 (1867) 3-52.",
       "W. H. Meeks III, J. Perez, A. Ros, 'Properly embedded minimal planar domains', Ann. of Math. 181 (2015) 473-546 -- any properly embedded minimal surface of genus 0 is the plane, catenoid, helicoid, or a Riemann example."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -89,29 +88,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 7522,
-      "edges": 14849,
-      "faces": 7326,
-      "euler_characteristic": -1,
-      "angle_defect_total": -10.607409,
-      "area": 5.374468,
-      "volume": 0.0,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 3173,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.59541,
-        1.665906,
-        2.0
-      ],
-      "aspect_ratio": 0.797705
-    }
   }
 }

@@ -17,7 +17,21 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.hopf_fibration_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "cos((pi/4 + (17.5*pi/180)*sin(3*u)))*cos(u + v)/(1 - sin((pi/4 + (17.5*pi/180)*sin(3*u)))*sin(v))",
+    "y": "cos((pi/4 + (17.5*pi/180)*sin(3*u)))*sin(u + v)/(1 - sin((pi/4 + (17.5*pi/180)*sin(3*u)))*sin(v))",
+    "z": "sin((pi/4 + (17.5*pi/180)*sin(3*u)))*cos(v)/(1 - sin((pi/4 + (17.5*pi/180)*sin(3*u)))*sin(v))",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "note": "the 3D-XplorMath Bianchi-Pinkall profile at the operator defaults: alpha(u) = pi/4 + (17.5 deg) sin 3u, colatitude beta = 2 alpha, lifted along the Hopf fibres and stereographically projected.  Flat in the induced metric because Hopf tori over curves of constant enclosed area are; same builder normalisation (and fit) as hopf-torus",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "flat",
@@ -49,16 +63,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.52 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.007408).",
     "sources": [
       "U. Pinkall, 'Hopf tori in S^3', Invent. Math. 81 (1985)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Luigi Bianchi; Ulrich Pinkall",
   "year": 1985,
@@ -73,29 +81,5 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 12800,
-      "edges": 25600,
-      "faces": 12800,
-      "euler_characteristic": 0,
-      "angle_defect_total": 31.768738,
-      "area": 10.455994,
-      "volume": 1.406819,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 462,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.015594,
-        2.19352,
-        1.157206
-      ],
-      "aspect_ratio": 0.527557
-    }
   }
 }

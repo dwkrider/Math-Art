@@ -63,13 +63,7 @@
       "O. Labs, 'Advent calendar 2002, No. 19 ('Besides constructing the octics with 168 nodes, St. Endrass found this 160-nodal octic with dihedral symmetry, which is not so well-known')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch043_no_19.md).",
       "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -86,29 +80,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 176232,
-      "edges": 528882,
-      "faces": 351706,
-      "euler_characteristic": -944,
-      "angle_defect_total": -5651.322713,
-      "area": 18.04325,
-      "volume": 0.115062,
-      "components": 174,
-      "boundary_loops": 64,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 157626,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.758519,
-        1.758519,
-        2.0
-      ],
-      "aspect_ratio": 0.879259
-    }
   }
 }

@@ -17,7 +17,7 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No (g, dh) pair is stored: the Gauss map is a product of powers of Jacobi theta functions on the hexagonal/square torus, continued along an unwrapped branch (math_art/minsurf/hexagonal.py); theta functions are outside the exact expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -61,13 +61,7 @@
         "agrees": true,
         "detail": "'The gyroid and Lidinoid are triply periodic minimal surfaces of genus three ... the unique embedded members of the associate families of the Schwarz P and H surfaces.'  S. Lidin, S. Larsson, J. Chem. Soc. Faraday Trans. 86 (1990)."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -80,29 +74,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2205,
-      "edges": 4316,
-      "faces": 2112,
-      "euler_characteristic": 1,
-      "angle_defect_total": 6.977056,
-      "area": 1.824264,
-      "volume": 0.008813,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 1469,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.153167,
-        2.0,
-        1.216181
-      ],
-      "aspect_ratio": 0.576584
-    }
   }
 }

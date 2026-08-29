@@ -66,16 +66,7 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": [],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 3.8403670222446418,
-        "resolution": 160,
-        "tolerance": 0.002,
-        "passed": null
-      }
-    ]
+    "also_satisfies": []
   },
   "topology": {},
   "symmetry": {
@@ -110,14 +101,7 @@
       "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- also the source of the five-parameter D8 x Z2 octic family; the 160- and 165-nodal parameter values are published on O. Labs's Algebraic Surface",
       "Homepage, algebraicsurface.net (octics pages).",
       "E. Goursat, 'Etude des surfaces qui admettent tous les plans de symetrie d'un polyedre regulier', Ann. Sci. ENS 3e serie 4 (1887)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -133,29 +117,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 78266,
-      "edges": 234792,
-      "faces": 156528,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.565114,
-      "area": 11.4522,
-      "volume": 3.323689,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 70875,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.934459,
-        1.717196
-      ],
-      "aspect_ratio": 0.858598
-    }
   }
 }

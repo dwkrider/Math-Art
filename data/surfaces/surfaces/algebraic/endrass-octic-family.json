@@ -85,13 +85,7 @@
       "O. Labs, '120-/128-/136-nodal D8 x Z2-symmetric Octics', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch010_stephan120128136.md).",
       "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -138,29 +132,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 185604,
-      "edges": 555376,
-      "faces": 369600,
-      "euler_characteristic": -172,
-      "angle_defect_total": -961.237479,
-      "area": 17.077823,
-      "volume": 0.375789,
-      "components": 58,
-      "boundary_loops": 34,
-      "manifold": false,
-      "nonmanifold_edges": 2,
-      "nonmanifold_vertices": 163816,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.805487
-      ],
-      "aspect_ratio": 0.902744
-    }
   }
 }

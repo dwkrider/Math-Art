@@ -14,7 +14,7 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minimal_polyhedron_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No chart is stored: faces are pierced and Laplacian-relaxed into membranes over the edge frame; the surface exists only as the relaxed mesh. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -46,42 +46,12 @@
       "Discrete membrane relaxation: U. Pinkall and K. Polthier, \"Computing Discrete Minimal Surfaces and Their Conjugates\", Experimental Mathematics 2(1), 1993, pp. 15-36.",
       "Laplacian mesh smoothing: M. Desbrun, M. Meyer, P. Schroder, A. Barr, \"Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow\", SIGGRAPH 1999.",
       "Quad-split topology: E. Catmull and J. Clark, \"Recursively generated B-spline surfaces on arbitrary topological meshes\", Computer-Aided Design 10(6), 1978."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 332,
-      "edges": 624,
-      "faces": 288,
-      "euler_characteristic": -4,
-      "angle_defect_total": 12.566371,
-      "area": 12.76365,
-      "volume": 4.25455,
-      "components": 1,
-      "boundary_loops": 6,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 60,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.08,
-        2.08,
-        2.08
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

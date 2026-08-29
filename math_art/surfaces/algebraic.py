@@ -9,7 +9,10 @@
 # -- the classical surfaces, each the zero set of one polynomial and
 # each famous for the singularities it achieves.  Contoured by marching
 # tetrahedra, which cannot produce the ambiguous cases marching cubes
-# can.
+# can -- via `surfaces.adaptive_iso`, which concentrates the samples
+# near the level set and pins every vertex onto F = 0 by bisection
+# (see that module's header for why a uniform grid with linear
+# interpolation was not good enough for these surfaces' nodes).
 #
 # References:
 # - A. Cayley, "A Memoir on Cubic Surfaces", Phil. Trans. 159, 1869.
@@ -56,22 +59,6 @@ _PHI = (1.0 + math.sqrt(5.0)) / 2.0          # golden ratio
 
 
 _SQRT2 = math.sqrt(2.0)
-
-
-def _toolkit():
-    """The sibling `minsurf` engine package supplies marching_tets.
-    Relative import when installed as part of the Math Art package,
-    absolute when this file runs standalone next to the toolkit."""
-    # two dots: `minsurf` is a sibling of this PACKAGE, not a member of
-    # it.  A single dot resolves to `surfaces.minsurf`, which does not
-    # exist -- and the flat fallback then hides the mistake anywhere
-    # `math_art/` is on sys.path, which is true of the headless test
-    # runner and false inside Blender.
-    try:
-        from .. import minsurf as mst
-    except ImportError:
-        import minsurf as mst
-    return mst
 
 
 def _f_clebsch(x, y, z, mu):
@@ -1670,11 +1657,31 @@ def boundary_loops(verts, tris, smooth=2):
     return rim_curve.boundary_loops(verts, tris, smooth=smooth)
 
 
-@_geom_cache.memoise(version=1)
+def _adaptive():
+    """The sibling adaptive extractor.  Relative import when installed
+    as part of the Math Art package, flat when this file runs
+    standalone next to it (the same shape as _goursat above)."""
+    try:
+        from . import adaptive_iso
+    except ImportError:                  # flat import outside the package
+        import adaptive_iso
+    return adaptive_iso
+
+
+@_geom_cache.memoise(version=2)
 def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3,
-                    **params):
+                    refine=1, **params):
     """Mesh the zero level set of a preset. Returns (verts, tris).
-    marching_tets simply leaves the level set open where it crosses
+
+    `res` is the BASE sample grid, deciding what gets FOUND; `refine`
+    doublings of the cells near the level set (adaptive_iso.contour)
+    then decide how finely it is meshed, at a cost proportional to
+    surface area rather than volume, and every vertex is pinned onto
+    F = 0 by bisection along its lattice edge.  `refine=0` still
+    differs from the pre-adaptive extractor in that one way -- exact
+    vertices instead of linear interpolation.
+
+    The extractor simply leaves the level set open where it crosses
     the sample box, which for the BOX presets is exactly the wanted
     clip. BALL presets sample the bounding cube of the ball and then
     cull triangles whose centroid falls outside it -- an open, even
@@ -1693,9 +1700,9 @@ def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3,
         field = lambda X, Y, Z: fn(X, Y, Z, mu, **params)
     else:
         field = lambda X, Y, Z: fn(X, Y, Z, mu)
-    mst = _toolkit()
-    verts, tris = mst.marching_tets(
-        field, (-r, -r, -r), (r, r, r), (res, res, res))
+    verts, tris = _adaptive().contour(
+        field, (-r, -r, -r), (r, r, r), (res, res, res),
+        depth=max(0, int(refine)))
     if shape == 'BALL' and len(tris):
         cen = verts[tris].mean(axis=1)
         keep = np.einsum('ij,ij->i', cen, cen) <= r * r

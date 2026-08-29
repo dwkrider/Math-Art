@@ -49,15 +49,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 1.0000000185737343,
-        "resolution": 160,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -92,14 +83,7 @@
     "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
     "sources": [
       "Classical."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_radius",
@@ -135,34 +119,29 @@
       "Simultaneously the K = +1 model, the CMC model, the Willmore minimiser and the isoperimetric extremum; the curvature facet records the strongest condition only (k-const-positive), with the rest in also_satisfies."
     ]
   },
+  "alternate_definitions": [
+    {
+      "x": "sin(u)*cos(v)",
+      "y": "sin(u)*sin(v)",
+      "z": "cos(u)",
+      "u_range": [
+        "0",
+        "pi"
+      ],
+      "v_range": [
+        "0",
+        "2*pi"
+      ],
+      "periodic_v": true,
+      "mode": "parametric",
+      "fidelity": "exact",
+      "exactness": "elementary"
+    }
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 3026,
-      "edges": 6096,
-      "faces": 3072,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.566382,
-      "area": 12.544661,
-      "volume": 4.174322,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 136,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

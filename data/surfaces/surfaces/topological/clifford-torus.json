@@ -49,13 +49,7 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "The 3DXM Consortium, 'Clifford Torus', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch048_clifford_torus.md)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "vmm": "ch048_clifford_torus"

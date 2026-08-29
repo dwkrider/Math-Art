@@ -96,11 +96,23 @@ def _chm_phi(z, p):
 
 def _chm_seed(p, z0):
     """Analytic integral of phi over the first spine cell 0 -> z0
-    (the integrand ~ z^-(k/(k+1)) at the branch point)."""
+    (the integrand ~ z^-(k/(k+1)) at the branch point).
+
+    Signs, from the local expansion on the upper half plane: near z = 0
+    the branch _chm_w gives w ~ z^(k/(k+1)) e^(i pi/(k+1)) and
+    d = z^2 - 1 ~ -1, so phi1 ~ +c^2/(2w), phi2 ~ -i c^2/(2w),
+    phi3 ~ -c; integrating 0 -> z0 gives exactly (+I1, -i I1, -c z0).
+    (The first component once shipped as -I1: that rigidly translated
+    the whole fundamental patch off the dihedral axis by 2 Re I1, so
+    the seam snap in tile_dihedral had to yank every seam column onto
+    its symmetry plane by ~10x the local grid step -- a fold strip down
+    every copy seam -- and pushed ring 1 off the pinned center vertex,
+    turning the branch-point fan inside out.  Verified against direct
+    quadrature of phi for k = 1, 2, 3.)"""
     k, c = p['k'], p['c']
     I1 = (c * c / 2) * np.exp(-1j * math.pi / (k + 1)) * (k + 1) \
         * z0 ** (1.0 / (k + 1))
-    return (-I1, -1j * I1, -c * z0)
+    return (I1, -1j * I1, -c * z0)
 
 
 # ==========================================================================
@@ -476,6 +488,72 @@ def _enc_phi(z, p):
     return (0.5 * (1.0 / g - g) * dh, 0.5j * (1.0 / g + g) * dh, dh)
 
 
+# Twisted higher-order double Enneper (Karcher's Tokyo-notes double Enneper,
+# "mildly generalized" per Weber): two Enneper ends of order n at z = 0 and
+# z = infinity, rotated against each other by the phase of the complex
+# parameter zeta and pushed apart by its modulus (the "catenoidal neck"
+# stretch -- dh carries an exact 1/z residue, a catenoid neck between the
+# two ends).  Weierstrass data (Weber, Higher_Twisted_Enneper.nb):
+#     G  = z^(n-1) (z^n - zeta^n) / (zeta^n (z^n - 1/zeta^n))
+#     dh = zeta^n (z^n - zeta^n)(z^n - 1/zeta^n) / (-(1 + zeta^2n) z^(n+1))
+# All examples use the twist arg(zeta) = pi/(2n), which is exactly what
+# closes the period problem "to make some room" between the ends.  phi is
+# a Laurent polynomial, so the immersion has the closed form below (no
+# quadrature -- exact at any resolution, any domain reach).  n >= 2 keeps
+# every antiderivative power nonzero (n = 1 needs log terms in x/y).
+
+def _dblenn_phi(z, p):
+    """phi-stack in the pole/zero-free product form: g's zero ring
+    (|z| = |zeta|) and pole ring (|z| = 1/|zeta|) both cancel against
+    dh's zeros, so the products below are regular on the whole annulus."""
+    n, zeta = p['n'], p['zeta']
+    zn = z ** n
+    D = -(1.0 + zeta ** (2 * n))
+    dh_over_g = (zeta ** n * zn - 1.0) ** 2 / (D * z ** (2 * n))
+    g_dh = (zn - zeta ** n) ** 2 / (D * z * z)
+    dh = (zn - zeta ** n) * (zeta ** n * zn - 1.0) / (D * z ** (n + 1))
+    return (0.5 * (dh_over_g - g_dh),
+            0.5j * (dh_over_g + g_dh), dh)
+
+
+def _dblenn_X(z, p, theta=0.0):
+    """Closed-form immersion: termwise antiderivative of _dblenn_phi
+    (Laurent polynomials; the only log is Re log z = ln|z| in the height,
+    the catenoid neck -- single-valued).  Verified against the g/dh data
+    by finite differences and by loop closure around |z| = 1."""
+    n, zeta = p['n'], p['zeta']
+    D = -(1.0 + zeta ** (2 * n))
+    zn = z ** n
+    A = (zeta ** (2 * n) * z + 2.0 * zeta ** n * z ** (1 - n) / (n - 1)
+         - z ** (1 - 2 * n) / (2 * n - 1))
+    B = (z ** (2 * n - 1) / (2 * n - 1)
+         - 2.0 * zeta ** n * z ** (n - 1) / (n - 1)
+         - zeta ** (2 * n) / z)
+    rot = np.exp(1j * theta)
+    return (np.real(rot * 0.5 * (A - B) / D),
+            np.real(rot * 0.5j * (A + B) / D),
+            np.real(rot * (zeta ** n * (zn - 1.0 / zn) / (n * D)))
+            + math.cos(theta) * np.log(np.abs(z)))
+
+
+def _dblenn_p(order, radius):
+    """(n, zeta, rmax) from the operator sliders.  n is the end order;
+    the radius slider drives |zeta| (the neck stretch), scaled so the
+    default 1.2 lands on Weber's pictured member for each n (n = 2 ->
+    zeta = 3 e^{i pi/4}, the classic twisted double Enneper).  rmax
+    balances the two dominant wing terms |zeta|^2n rmax / |D| and
+    rmax^(2n-1) / ((2n-1)|D|) so neck and wings frame like the
+    notebook's rmax = 6..13 examples."""
+    n = int(max(2, min(order, 8)))
+    r_n = min(1.5 * n, 9.0)                      # Weber's r per n
+    stretch = min(max(r_n * radius / 1.2, 1.3), 14.0)
+    rmax = 0.8 * ((2 * n - 1) * stretch ** (2 * n)) ** (1.0 / (2 * n - 2))
+    rmax = min(max(rmax, 4.0), 16.0)
+    return {'n': n,
+            'zeta': stretch * np.exp(1j * math.pi / (2 * n)),
+            'rmax': rmax}
+
+
 WE_SURFACES = {
     # --- ports of the former bespoke toolkit builders ---------------------
     'KNOID': {
@@ -484,13 +562,18 @@ WE_SURFACES = {
         'phi': _knoid_phi,
         'domain': ('disk', 0.0, lambda p: p['r_out']),
         'p_from': lambda order, radius: {
-            'n': int(max(3, min(order, 12))), 'r_out': _r_reach(radius)},
+            'n': int(max(3, min(order, 12))), 'r_out': _r_reach(radius),
+            'reach': _end_reach(radius)},
         'count': "Ends (n)",
-        'clip': True,
-        # the catenoid ends flare out at the n-th roots of unity; a denser
-        # grid lets the object-space end trim + boundary relaxation leave a
-        # clean rounded rim instead of the coarse ragged one a sparse grid
-        # tore.  Rebalanced for the 64 res baseline (was 2.2 at 48).
+        # the n catenoid ends sit at the n-th roots of unity INSIDE the
+        # domain; each is masked on a conformal circle (bell mouth) and
+        # its principal part is integrated exactly, so the bells flare
+        # like the Jorge-Meeks pictures instead of being amputated by
+        # the old object-space percentile trim
+        'ends': lambda p: [(np.exp(2j * math.pi * j / p['n']),
+                            0.35 * math.sin(math.pi / p['n']) / p['reach'])
+                           for j in range(p['n'])],
+        'clip': False,
         'res_boost': (1.8, 1.8),
         'cycles': lambda p: [(np.exp(2j * math.pi * j / p['n']), 0.18)
                              for j in range(p['n'])],
@@ -629,21 +712,36 @@ WE_SURFACES = {
         'test_order': 2,
     },
     'DOUBLE_ENNEPER': {
-        # two Enneper ends (z = 0 and z = infinity) joined in the
-        # middle; period closure at the a = -1 coefficient (residue
-        # calc in the zoo tests): g = z, dh = (z^2 - 1 + z^-2) dz
+        # Twisted double Enneper (Karcher / Weber): two Enneper ends of
+        # order n at z = 0 and z = infinity, rotated against each other
+        # by arg(zeta) = pi/(2n) (which closes the period problem) and
+        # stretched apart along a catenoidal neck by |zeta| (dh has an
+        # exact 1/z residue).  Weber's Higher_Twisted_Enneper.nb; the
+        # order slider is n, the radius slider the neck stretch |zeta|
+        # (default = Weber's pictured member per n, e.g. n = 2,
+        # zeta = 3 e^{i pi/4}).  Closed-form immersion, log-graded
+        # annulus 1/rmax..rmax exactly like the notebook's ExpNRange.
         'label': "Double Enneper",
         'family': 'SPHERES',
-        'g': lambda z, p: z,
-        'dh': lambda z, p: z * z - 1.0 + 1.0 / (z * z),
-        'domain': ('disk', lambda p: 1.0 / p['r1'], lambda p: p['r1']),
-        'p_from': lambda order, radius: {
-            'r1': 1.8 + 0.8 * min(max(radius / 1.2, 0.0), 2.0)},
-        'clip': True,
-        'radial_grade': 'both',      # Enneper ends at r_in and r_out
-        'res_boost': (1.4, 1.9),     # rebalanced for the 64 res baseline
+        'g': lambda z, p: z ** (p['n'] - 1)
+        * (z ** p['n'] - p['zeta'] ** p['n'])
+        / (p['zeta'] ** p['n'] * (z ** p['n'] - 1.0 / p['zeta'] ** p['n'])),
+        'dh': lambda z, p: p['zeta'] ** p['n']
+        * (z ** p['n'] - p['zeta'] ** p['n'])
+        * (z ** p['n'] - 1.0 / p['zeta'] ** p['n'])
+        / (-(1.0 + p['zeta'] ** (2 * p['n'])) * z ** (p['n'] + 1)),
+        'phi': _dblenn_phi,
+        'Xexact': _dblenn_X,
+        'domain': ('disk', lambda p: 1.0 / p['rmax'], lambda p: p['rmax']),
+        'p_from': _dblenn_p,
+        'count': "Symmetry (n)",
+        'clip': False,               # full conformal wings, notebook-style
+        'radial_grade': 'log',       # ExpNRange: equal relative steps
+        # the two end flowers gain ~2n leaves; angular sampling follows n
+        'res_boost': lambda order: (
+            1.6, 1.7 * min(1.0 + 0.35 * (max(2, min(order, 8)) - 2), 2.2)),
         'cycles': lambda p: [(0.0, 1.0)],
-        'test_order': 1,
+        'test_order': 2,
     },
     'MEEKS_MOBIUS': {
         # Meeks' complete minimal Mobius strip (Duke Math. J. 1981):
@@ -722,13 +820,18 @@ WE_SURFACES = {
         'phi': _ennk_phi,                        # for the period-closure gate
         'Xexact': _ennk_X,                       # exact immersion (log+rat'l)
         'domain': ('disk', 0.0, 0.985),
-        'p_from': lambda order, radius: {'n': int(max(3, min(order, 7)))},
+        'p_from': lambda order, radius: {
+            'n': int(max(3, min(order, 7))),
+            'reach': min(max(radius / 1.2, 0.75), 1.6)},
         'solve': _ennk_solve,
         'count': "Ends (n)",
-        # end punctures give clean flaring-wing rims; grow eps with n so the
-        # tighter high-n wings stay tear-free
+        # end punctures give clean flaring-wing rims; grow eps with n so
+        # the tighter high-n wings stay tear-free.  The radius slider
+        # shrinks the punctures (reach), so the wings flare further;
+        # clip_punctures snaps the rim onto the mask circle.
         'mask_punctures': lambda p: [
-            (r, 0.14 + 0.02 * p['n']) for r in p['_rho']],
+            (r, (0.14 + 0.02 * p['n']) / p['reach']) for r in p['_rho']],
+        'clip_punctures': True,
         'radial_grade': 'rim',                   # cluster nodes near the ends
         'clip': False,
         # dense rims, smooth flaring wings; rebalanced for the 64 res
@@ -779,14 +882,21 @@ WE_SURFACES = {
         'domain': ('disk', 0.0, lambda p: p['r1']),
         'p_from': lambda order, radius: (lambda n: {
             'n': n, 'a': _m3_pyr_a(n), 'rho': _m3_pyr_rho(_m3_pyr_a(n), n),
+            'reach': _end_reach(radius),
             'r1': 1.3 + 0.35 * min(max(radius / 1.2, 0.0), 1.4)})(
-                int(max(3, min(order + 2, 8)))),
-        'radial_grade': 'rim', 'clip': True,
+                int(max(3, min(order, 8)))),
+        # the n slanted catenoid ends sit at the n-th roots of unity
+        # (masked bells); the axial end at z = infinity is cut by the
+        # domain rim r1 (still driven by the radius slider)
+        'ends': lambda p: [(np.exp(2j * math.pi * j / p['n']),
+                            0.35 * math.sin(math.pi / p['n']) / p['reach'])
+                           for j in range(p['n'])],
+        'clip': False,
         'res_boost': (1.9, 1.9),
         'count': "Pyramid order (n)",
         'cycles': lambda p: [(np.exp(2j * math.pi * j / p['n']), 0.12)
                              for j in range(p['n'])],
-        'test_order': 1,                         # order 1 -> n = 3
+        'test_order': 3,                         # n = 3
     },
     'M3_PRISM': {
         # Prismatic k-noid: 2*nn ends in prism symmetry, one ring at |z| = b
@@ -808,13 +918,16 @@ WE_SURFACES = {
         'domain': ('disk', 0.0, lambda p: p['r1']),
         'p_from': lambda order, radius: (lambda nn: (lambda b: {
             'nn': nn, 'b': b, 'a': _m3_prism_a(nn, b),
-            'r1': 1.0 / b + 0.3})(_m3_prism_b(nn)))(
-                int(max(3, min(order + 2, 7)))),
-        'radial_grade': 'rim', 'clip': True,
+            'r1': 1.55 / b, 'reach': _end_reach(radius)})(
+                _m3_prism_b(nn)))(
+                int(max(3, min(order, 7)))),
+        'ends': lambda p: _ring_ends(p['nn'], p['b'], 0.35, 0.0,
+                                     p['reach']),
+        'clip': False,
         'res_boost': (1.9, 1.9),
         'count': "Prism order (nn)",
         'cycles': lambda p: _m3_ring_cyc(p['nn'], p['b'], p['a'], 0.0),
-        'test_order': 2,                         # order 2 -> nn = 4 (cube)
+        'test_order': 4,                         # nn = 4 (the cube k-noid)
     },
     'M3_BIPYR': {
         # Bipyramidal k-noid: m equatorial catenoid ends at the m-th roots of
@@ -832,24 +945,42 @@ WE_SURFACES = {
         * (p['s'] ** p['m'] * z ** p['m'] - 1.0)
         / ((z ** p['m'] - 1.0) ** 2 * z),
         'domain': ('disk', lambda p: p['r0'], lambda p: p['r1']),
-        'p_from': lambda order, radius: (lambda m: {
-            'm': m, 's': _m3_bipyr_s(m), 'r0': 0.34,
-            'r1': 2.9})(int(max(3, min(order + 2, 7)))),
-        'radial_grade': 'both', 'clip': True,
+        # the annulus is inversion-symmetric (r1 ~ 1/r0), matching the
+        # z -> 1/z symmetry that swaps the two axial ends, so both apex
+        # bells flare equally; the radius slider widens it both ways
+        'p_from': lambda order, radius: (lambda m, reach: {
+            'm': m, 's': _m3_bipyr_s(m), 'reach': reach,
+            'r0': 0.34 / reach, 'r1': 2.9 * reach})(
+                int(max(3, min(order, 7))), _end_reach(radius)),
+        # m equatorial catenoid ends on |z| = 1 (masked bells); the two
+        # axial ends live at z = 0 / infinity, cut by the annulus rims
+        # (the z = 0 entry has eps 0 -- principal-part subtraction and
+        # inner-rim node grading only; None marks z = infinity for
+        # outer-rim grading)
+        'ends': lambda p: [(np.exp(2j * math.pi * j / p['m']),
+                            0.35 * math.sin(math.pi / p['m']) / p['reach'])
+                           for j in range(p['m'])]
+        + [(0.0, 0.0), (None, 0.0)],
+        'clip': False,
         'res_boost': (1.9, 1.9),
         'count': "Bipyramid order (m)",
         'cycles': lambda p: [(0.0, 0.12)]
         + [(np.exp(2j * math.pi * j / p['m']), 0.14) for j in range(p['m'])],
-        'test_order': 1,                         # order 1 -> m = 3
+        'test_order': 3,                         # m = 3
     },
     'M3_ANTI5': {
         # Antiprismatic k-noid: 2*nn ends in antiprism symmetry -- one ring
         # at |z| = b and a HALF-STEP-rotated ring at |z| = 1/b (phase pi/nn).
         # g = rho z^{nn-1}(z^nn + a^-nn)/(z^nn - a^nn), dh as below.  Unlike
         # the prism, the period problem here is only closed-form for nn = 2,3
-        # and needs a numeric NSolve for higher nn; only the harvested
-        # nn = 5, b = 0.2 constants (a, rho) are shipped -- a single verified
-        # member (the general family is deferred; see the TODO note).
+        # and needs a numeric NSolve for higher nn; this row ships exactly
+        # Weber's harvested nn = 5, b = 0.2 member (the "Alternating
+        # 10-Noid" of the notebook), so it takes NO order slider
+        # ('no_order'); the general family is ANTIPRISM_KNOID below.
+        # z = 0 and z = infinity are REGULAR points (the body's two axial
+        # centres), so the domain is a full disk and only the 2*nn end
+        # punctures are masked ('ends'); the radius slider sets how far
+        # the bells reach before the conformal-circle cut.
         'label': "Antiprismatic k-noid (nn=5)",
         'family': 'SPHERES',
         'g': lambda z, p: p['rho'] * z ** (p['nn'] - 1)
@@ -860,11 +991,14 @@ WE_SURFACES = {
         * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
         / ((z ** p['nn'] - p['b'] ** p['nn']) ** 2
            * (z ** p['nn'] + 1.0 / p['b'] ** p['nn']) ** 2),
-        'domain': ('disk', lambda p: 0.5 * p['b'], lambda p: 1.6 / p['b']),
+        'domain': ('disk', 0.0, lambda p: 1.6 / p['b']),
         'p_from': lambda order, radius: {
             'nn': 5, 'b': 0.2, 'a': 0.2748767946679093,
-            'rho': 0.0015692436842339352},
-        'radial_grade': 'both', 'clip': True,
+            'rho': 0.0015692436842339352, 'reach': _end_reach(radius)},
+        'ends': lambda p: _ring_ends(p['nn'], p['b'], 0.35,
+                                     math.pi / p['nn'], p['reach']),
+        'no_order': True,
+        'clip': False,
         'res_boost': (2.0, 2.0),
         'cycles': lambda p: _m3_ring_cyc(p['nn'], p['b'], p['a'],
                                          math.pi / p['nn']),
@@ -921,8 +1055,13 @@ WE_SURFACES = {
         'dh': lambda z, p: (z * z + 3.0) / (z * z - 1.0),
         'domain': ('disk', 0.0, lambda p: p['r1']),
         'p_from': lambda order, radius: {
-            't': 0.2, 'r1': 1.35 + 0.4 * min(max(radius / 1.2, 0.0), 1.4)},
-        'radial_grade': 'rim', 'clip': True,
+            't': 0.2, 'reach': _end_reach(radius),
+            'r1': 1.35 + 0.4 * min(max(radius / 1.2, 0.0), 1.4)},
+        # the two catenoid ends at z = +-1 (masked bells); the higher
+        # end toward infinity is cut by the domain rim r1
+        'ends': lambda p: [(1.0, 0.16 / p['reach']),
+                           (-1.0, 0.16 / p['reach'])],
+        'clip': False,
         'res_boost': (1.7, 1.7),
         'cycles': lambda p: [(1.0, 0.15), (-1.0, 0.15)],
         'test_order': 1,
@@ -969,25 +1108,28 @@ WE_SURFACES = {
         # Enneper with n catenoids (decorated Enneper): genus 0, one Enneper
         # end at infinity + n catenoidal ends at the n-th roots of unity.
         # Closed-form period solution (Lopez-Ros factor 1, neck b =
-        # (2 - a^n)^(1/n)); the free shape parameter a is fixed to 1.05, a
-        # value that keeps the ends balanced and tear-free.  n is capped at
-        # 3: at n >= 4 the single Enneper end flares fast enough that the
-        # object-space end clip shears one wing into a thin sail at the
-        # default resolution, so the count stops where the mesh stays clean.
+        # (2 - a^n)^(1/n)); the free growth parameter a is set to 1.1, the
+        # notebook's pictured "extrovert" member (a < 1 would be the
+        # introvert branch, catenoids pointing inward -- not yet exposed).
+        # The catenoid bells are cut by per-end masks ('ends'), matching
+        # the notebook's exponential approach to the punctures; n runs to
+        # the notebook's shown n = 4.
         'label': "Enneper with n Catenoids",
         'family': 'SPHERES',
         'phi': _enc_phi,
         'domain': ('disk', 0.0, lambda p: p['r1']),
         'p_from': lambda order, radius: (lambda n: {
-            'n': n, 'a': 1.05, 'b': _enc_b(n, 1.05),
+            'n': n, 'a': 1.1, 'b': _enc_b(n, 1.1),
+            'reach': _end_reach(radius),
             'r1': 1.3 + 0.25 * min(max(radius / 1.2 - 1.0, 0.0), 2.0)})(
-                int(max(2, min(order, 3)))),
+                int(max(2, min(order, 4)))),
         'count': "Catenoids (n)",
-        # the catenoid ends sit on |z| = 1; puncture + rim-graded sampling
-        # give clean neck rims, the Enneper end flares to the disk edge
-        'mask_punctures': lambda p: [(r, 0.16) for r in _enc_roots(p['n'])],
-        'clip': True,
-        'radial_grade': 'rim',
+        # the n catenoid ends sit at the n-th roots of unity INSIDE the
+        # domain (masked bells, radius slider = reach); the Enneper end
+        # flares to the disk edge and is cut by the rim
+        'ends': lambda p: [(r, 0.012 / p['reach'])
+                           for r in _enc_roots(p['n'])],
+        'clip': False,
         'res_boost': (1.9, 2.1),
         'cycles': lambda p: [(r, 0.1) for r in _enc_roots(p['n'])],
         'test_order': 2,             # order 2 -> n = 2
@@ -1107,6 +1249,43 @@ def _m3_lopez_p(order, radius):
     c = min(0.35 * (order - 1), 1.35)
     return {'c': c, 'B': 1.0 / math.sqrt(2.0 - c * c),
             'r1': 3.2 * min(max(radius / 1.2, 0.5), 1.6)}
+
+
+def _end_reach(radius):
+    """Map the operator's radius slider to the end-reach factor: bigger
+    radius shrinks the parameter-space end masks, so the catenoid bells
+    reach further before they are cut (same convention as the saddle
+    tower's wing punctures).
+
+    Scale: at the DEFAULT radius (1.2) the reach is 2.5, cutting each
+    bell at ~e^-2 of the half-gap between ring neighbours (mask =
+    0.35/2.5 = 0.14 x half-gap); the slider's soft max (4) reaches
+    ~e^-3.4.  Weber's notebooks treat exactly this as the user's "size
+    of end" knob and render at e^-3 ... e^-15 of the end; the previous
+    mapping (radius/1.2) cut at e^-1 by default, which is why the bells
+    barely began to flare until the slider hit ~3.  The lower clamp
+    keeps a small slider from swallowing a whole ring sector; there is
+    no upper clamp -- the engine floors every mask at ~1.5 local grid
+    spacings, so an extreme reach saturates gracefully at what the mesh
+    resolution can carry (raise the resolution to let the bells develop
+    further) instead of walking the domain onto the pole."""
+    return max(radius / 0.48, 0.7)
+
+
+def _ring_ends(nn, b, frac, twist=0.0, reach=1.0):
+    """End-puncture list for the two rings of catenoid ends at |z| = b
+    and |z| = 1/b (the outer ring phase-shifted by `twist`: pi/nn for
+    the antiprism, 0 for the prism).  Each end's mask radius is `frac`
+    times half the gap to its ring neighbours, divided by `reach`
+    (the radius slider), so the bells never overlap and grow with the
+    slider."""
+    s = math.sin(math.pi / nn)
+    out = []
+    for Rr, ph in ((b, 0.0), (1.0 / b, twist)):
+        e = frac * Rr * s / reach
+        out += [(Rr * np.exp(1j * (TAU * j / nn + ph)), e)
+                for j in range(nn)]
+    return out
 
 
 def _m3_ring_cyc(nn, b, a, twist=0.0):
@@ -1272,7 +1451,8 @@ for _k, _s in BJORLING.items():
 
 
 def register(PARAMETRIC=None, MESH_PARAM=None, COUNT_PARAM=None,
-             ANGLE_PARAM=None, STOREY_PARAM=None):
+             ANGLE_PARAM=None, STOREY_PARAM=None, ORDERLESS=None,
+             ORDER_RANGE=None):
     """Wire every catalog row into the toolkit's registries.  Called
     (with the registry dicts) from minimal_surface_toolkit at import
     time; a bare register() call -- e.g. from the extension loader -- is
@@ -1290,6 +1470,10 @@ def register(PARAMETRIC=None, MESH_PARAM=None, COUNT_PARAM=None,
             ANGLE_PARAM.add(key)
         if STOREY_PARAM is not None and spec.get('storeys_label'):
             STOREY_PARAM[key] = spec['storeys_label']
+        if ORDERLESS is not None and spec.get('no_order'):
+            ORDERLESS.add(key)
+        if ORDER_RANGE is not None and spec.get('order_range'):
+            ORDER_RANGE[key] = tuple(spec['order_range'])
     for key, spec in BJORLING.items():
         b = we.make_bjorling_entry(key, spec)
         PARAMETRIC[key] = (spec['label'], b)
@@ -1992,13 +2176,33 @@ WE_SURFACES['SYMM_FRIEM'] = {
     * (z ** (2 * p['m']) - p['a'] ** (2 * p['m']))
     / (z ** (2 * p['m']) - 1.0) ** 2,
     'domain': ('disk', 0.0, lambda p: p['r1']),
+    # a = 0.997: the notebook's pictured regime is a = 0.995..0.999
+    # (thin catenoid necks close to the unit circle); the old 0.9 was a
+    # visually different regime with fat merged necks
     'p_from': lambda order, radius: (lambda m: {
-        'm': m, 'a': 0.9, 'rho': _symtail_friem_rho(m, 0.9),
+        'm': m, 'a': 0.997, 'rho': _symtail_friem_rho(m, 0.997),
+        'reach': _end_reach(radius),
         'r1': 1.35 + 0.4 * min(max(radius / 1.2, 0.0), 1.4)})(
             int(max(2, min(order, 6)))),
     'count': "Symmetry (m)",
-    'radial_grade': 'rim', 'clip': True,
+    # the 2m catenoid ends at the 2m-th roots of unity (masked bells);
+    # the planar end at z = infinity is cut by the domain rim.  In the
+    # a ~ 1 regime the neck scale is tiny (the g-pole ring at |z| = a
+    # sits ~1e-3 from each end), so the masks must be SMALL or they cut
+    # the trumpets off before they flare; the engine floors eps at the
+    # local grid spacing.
+    'ends': lambda p: [(np.exp(1j * math.pi * j / p['m']),
+                        min(0.012, 0.2 * math.sin(math.pi / (2 * p['m'])))
+                        / p['reach'])
+                       for j in range(2 * p['m'])],
+    'clip': False,
     'res_boost': (1.9, 1.9),
+    # metric axes OFF: in the a ~ 1 regime the conformal factor's mass
+    # sits in 1e-3-scale neck bands, below what the metric marginals'
+    # fine grid + percentile cap can localize -- measured, they LOSE to
+    # the exact-ring Cauchy-bump grading here (flips 0 -> 13, spurious
+    # boundary loops).  The bump grading knows the ring radius exactly.
+    'metric_axes': False,
     'cycles': lambda p: [(np.exp(1j * math.pi * j / p['m']), 0.04)
                          for j in range(2 * p['m'])]
     + [(p['a'] * np.exp(1j * math.pi * j / p['m']), 0.03)
@@ -2046,32 +2250,80 @@ WE_SURFACES['KNOID_ENN_ENDS'] = {
     'dh': lambda z, p: (1.0 - (z ** p['k'] + z ** (-p['k']))
                         / (p['R'] ** p['k'] + p['R'] ** (-p['k'])))
     / (z * (z ** p['k'] + z ** (-p['k']) - 2.0) ** 2),
-    # ENNK-style domain: stop just INSIDE the unit circle where the k
-    # ends live, and cut each end with a puncture-mask disk -- the
-    # order-four Enneper flares then read as clean winding wings
-    # instead of the untrimmable blade an outside-reaching domain
-    # produces.  The radius slider squeezes the ends via the mask size.
-    'domain': ('disk', 0.0, 0.985),
-    'p_from': lambda order, radius: {
-        'k': int(max(3, min(order, 7))), 'R': 2.0,
-        'eps': 0.16 / min(max(radius / 1.2, 0.7), 1.6)},
+    # KNOID-style domain: the k order-four ends sit ON the unit circle
+    # and the domain reaches past them (same _r_reach mapping as the
+    # Jorge-Meeks row), so each end mask is a closed interior loop and
+    # the winding flare develops on BOTH sides of |z| = 1 -- the
+    # surface's z -> 1/z symmetry (g -> 1/g, dh -> -dh) means Weber's
+    # notebook completes its inside-the-circle wedge chart with an
+    # object-space mirror at the end waist, and the outside half of
+    # our disk IS that mirror half.  The old inside-only domain
+    # ('disk', 0, 0.985) + mask_punctures drew half of every wing and
+    # dropped whole grid quads along the cut circle (rim zigzag ~0.37
+    # of an edge, edge CV ~0.6, the user-visible torn wings); the
+    # 'ends' path cuts each mouth on the exact conformal circle
+    # instead, with the order-FOUR principal parts subtracted from
+    # the quadrature ('end_pole_order': 4 -- catenoid rows only need
+    # the default 2).  R = 1.1 sits in the notebook's pictured range
+    # (its examples use R = 0.9..1.2; the old 2.0 was outside every
+    # published example and over-squeezed the ends).
+    'domain': ('disk', 0.0, lambda p: p['r_out']),
+    # eps: the old default cut (0.16 at radius 1.2) kept -- it is the
+    # shipped wing scale -- but capped at 0.35 x the half-gap between
+    # ring neighbours so the masks never overlap and the rim
+    # boundary-layer bands stay disjoint (the k = 12 notebook example
+    # needs the cap; the old hard 7-end limit came from eps ignoring
+    # k entirely).
+    #
+    # R and eps are coupled: g has k poles on |z| = 1/R and k zeros on
+    # |z| = R, each pair flanking an end at distance ~R - 1 -- regular
+    # points, but the Gauss map is vertical there and the surface
+    # curves violently, so they must sit INSIDE the end masks or the
+    # rim cells fold (measured: 363 flipped edges at k = 12 with
+    # R = 1.1, eps = 0.091, the rings exactly on the rim).  So R - 1
+    # shrinks with the eps cap (Weber does the same: his k = 3 example
+    # uses R = 1.2, k = 5 R = 1.1, k = 12 R = 1.03) and eps is floored
+    # above the ring distance.  For k <= 8 this leaves the shipped
+    # R = 1.1 untouched.
+    'p_from': lambda order, radius: (lambda k, sq: (lambda rk: {
+        'k': k, 'R': rk,
+        'eps': max(min(0.16 / sq, 0.35 * math.sin(math.pi / k)),
+                   1.2 * (rk - 1.0)),
+        'r_out': _r_reach(radius)})(
+            1.0 + min(0.1, 0.75 * min(0.16,
+                                      0.35 * math.sin(math.pi / k)))))(
+            int(max(3, min(order, 12))),
+            min(max(radius / 1.2, 0.7), 1.6)),
     'count': "Ends (k)",
-    'mask_punctures': lambda p: [
-        (np.exp(2j * math.pi * j / p['k']), p['eps'])
-        for j in range(p['k'])],
-    'radial_grade': 'rim', 'clip': False,
-    'res_boost': (2.0, 2.4),
+    # k < 3 is not this family: the notebook ("k - Noid with Enneper
+    # Ends") builds k = 3..12, and the k-fold dihedral end placement
+    # is what closes the periods.  The slider snaps to this range in
+    # the UI instead of silently substituting k = 3.
+    'order_range': (3, 12),
+    'ends': lambda p: [(np.exp(2j * math.pi * j / p['k']), p['eps'])
+                       for j in range(p['k'])],
+    'end_pole_order': 4,
+    'clip': False,
+    # above k = 7 the twelve-and-more wing gaps starve the fixed
+    # angular budget (the sharp inter-wing saddles at |z| ~ R fold:
+    # 30 flipped edges at k = 12 with nv_mult 2.4); grow nv with the
+    # extra ends, capped
+    'res_boost': lambda order: (
+        2.0, 2.4 * min(1.0 + 0.16 * max(min(order, 12) - 7, 0), 1.6)),
     'cycles': lambda p: [(np.exp(2j * math.pi * j / p['k']), 0.1)
                          for j in range(p['k'])] + [(0.0, 0.3)],
     'test_order': 3,
 }
 SURFACE_FAMILY['KNOID_ENN_ENDS'] = 'SPHERES'
 
-_SYMTAIL_AP_B = {3: 0.60, 4: 0.55, 5: 0.45, 6: 0.42, 7: 0.40}
+_SYMTAIL_AP_B = {3: 0.60, 4: 0.55, 5: 0.45, 6: 0.42, 7: 0.40,
+                 8: 0.38, 9: 0.37, 10: 0.36}
 # per-order outer reach: how far past the |z| = 1/b end ring the domain
-# extends before the object-space clip trims -- tuned so the trimmed
-# mesh stays ONE component at every order (gated below)
-_SYMTAIL_AP_ROUT = {3: 1.6, 4: 1.4, 5: 1.4, 6: 1.25, 7: 1.25}
+# extends.  z = infinity is a regular point, so the outer rim is just a
+# small parameter hole around the body's top centre; the reach keeps it
+# small while the end-graded sampling keeps the extra rows cheap.
+_SYMTAIL_AP_ROUT = {3: 1.6, 4: 1.4, 5: 1.4, 6: 1.25, 7: 1.25,
+                    8: 1.2, 9: 1.2, 10: 1.15}
 
 WE_SURFACES['ANTIPRISM_KNOID'] = {
     # Antiprismatic k-noid, FULL family: 2*nn catenoid ends in antiprism
@@ -2080,7 +2332,10 @@ WE_SURFACES['ANTIPRISM_KNOID'] = {
     # closed form for general nn; we.symtail_antiprism_constants solves
     # the two-ring period problem numerically per (nn, b) -- at nn = 5,
     # b = 0.2 it reproduces Weber's harvested constants to 1e-9 (the
-    # M3_ANTI5 row keeps that exact member).
+    # M3_ANTI5 row keeps that exact member).  z = 0 and z = infinity are
+    # regular points, so the domain is a full disk (no spurious inner
+    # hole); the 2*nn end punctures are masked via 'ends' and the radius
+    # slider sets the bell reach.
     'label': "Antiprismatic k-noid (full family)",
     'family': 'SPHERES',
     'g': lambda z, p: p['rho'] * z ** (p['nn'] - 1)
@@ -2091,20 +2346,23 @@ WE_SURFACES['ANTIPRISM_KNOID'] = {
     * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
     / ((z ** p['nn'] - p['b'] ** p['nn']) ** 2
        * (z ** p['nn'] + 1.0 / p['b'] ** p['nn']) ** 2),
-    'domain': ('disk', lambda p: 0.5 * p['b'],
+    'domain': ('disk', 0.0,
                lambda p: _SYMTAIL_AP_ROUT[p['nn']] / p['b']),
     'p_from': lambda order, radius: (lambda nn: {
-        'nn': nn, 'b': _SYMTAIL_AP_B[nn]})(
-            int(max(3, min(order + 2, 7)))),
+        'nn': nn, 'b': _SYMTAIL_AP_B[nn],
+        'reach': _end_reach(radius)})(
+            int(max(3, min(order, 10)))),
     'solve': lambda p: dict(p, **dict(zip(('a', 'rho'),
                                           we.symtail_antiprism_constants(
                                               p['nn'], p['b'])))),
     'count': "Antiprism order (nn)",
-    'radial_grade': 'both', 'clip': True,
+    'ends': lambda p: _ring_ends(p['nn'], p['b'], 0.35,
+                                 math.pi / p['nn'], p['reach']),
+    'clip': False,
     'res_boost': (2.0, 2.0),
     'cycles': lambda p: _m3_ring_cyc(p['nn'], p['b'], p['a'],
                                      math.pi / p['nn']),
-    'test_order': 1,                             # order 1 -> nn = 3
+    'test_order': 3,                             # nn = 3
 }
 SURFACE_FAMILY['ANTIPRISM_KNOID'] = 'SPHERES'
 
@@ -3261,7 +3519,7 @@ def _selftest():
     ok &= good
     print(f"antiprism harvested check: a={ah:.12f} rho={rh:.6e} "
           f"err={e:.2e} {'OK' if good else 'FAIL'}")
-    for nn in (3, 4, 5, 6, 7):
+    for nn in sorted(_SYMTAIL_AP_B):
         try:
             aa, rr = we.symtail_antiprism_constants(nn, _SYMTAIL_AP_B[nn])
             print(f"antiprism nn={nn}: a={aa:.10f} rho={rr:.4e} OK")
@@ -3301,8 +3559,8 @@ def _selftest():
     # slider order (the object-space clip must not shear off islands)
     for skey, sords in (('SYMM_FRIEM', (2, 3, 4, 5, 6)),
                         ('SYMM_DBLENN', (2, 3, 4, 5, 6)),
-                        ('KNOID_ENN_ENDS', (3, 4, 5, 6, 7)),
-                        ('ANTIPRISM_KNOID', (1, 2, 3, 4, 5))):
+                        ('KNOID_ENN_ENDS', (3, 5, 7, 10, 12)),
+                        ('ANTIPRISM_KNOID', (3, 4, 5, 6, 7))):
         for so in sords:
             Vs2, Qs2 = tk.build_parametric(skey, 60, 60, so, 1.2, 1.0)
             parc2 = list(range(len(Vs2)))

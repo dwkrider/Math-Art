@@ -15,8 +15,16 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "domain": "disk",
-    "note": "Bjorling's problem: the minimal surface through a given curve with a given normal along it.",
-    "exactness": "numerical-integral"
+    "note": "Bjorling's problem: the unique minimal surface through a given real-analytic strip. The defining seed, reproduced numerically against the shipped row (math_art/minsurf/zoo.py, BJ_CIRCLE): c(t) = (cos(t), sin(t), 0), with normal n(t) = (cos(t)*cos(0.5*t*m), cos(0.5*t*m)*sin(t), sin(0.5*t*m)), t in [0, 6.283185307]. The Weierstrass data is the holomorphic extension of the seed, computed numerically by the engine -- the seed, not a (g, dh) pair, is what specifies this surface.",
+    "exactness": "numerical-integral",
+    "parameters": [
+      {
+        "name": "m",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      }
+    ]
   },
   "curvature": {
     "condition": "minimal",
@@ -51,16 +59,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Bjorling seed reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row BJ_CIRCLE): seed reproduced against the shipped callables over 200 samples (worst 0).",
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -80,29 +82,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 9789,
-      "edges": 19441,
-      "faces": 9652,
-      "euler_characteristic": 0,
-      "angle_defect_total": 0.071257,
-      "area": 2.70601,
-      "volume": 0.00518,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 9404,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.890025,
-        2.0,
-        0.532052
-      ],
-      "aspect_ratio": 0.266026
-    }
   }
 }

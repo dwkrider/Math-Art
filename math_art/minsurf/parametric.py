@@ -135,28 +135,86 @@ def _scherk_graph(nu, nv, order, radius, theta=0.0):
 # boundary), so it needs no clipping.
 
 
+def _costa_xyz(U, V):
+    """Costa immersion (Gray/Nylander closed form) at torus coordinates
+    (U, V); vectorized, poles at the three end punctures come out
+    non-finite and must be masked by the caller."""
+    L = _SQUARE
+    e1 = L.wp(0.5).real
+    z = U + 1j * V
+    with np.errstate(divide='ignore', invalid='ignore'):
+        ze, z1, z3 = L.zeta(z), L.zeta(z - 0.5), L.zeta(z - 0.5j)
+        P = L.wp(z)
+        a = math.pi / (2.0 * e1)
+        x = 0.5 * np.real(-ze + math.pi * U + a * (z1 - z3))
+        y = 0.5 * np.real(-1j * ze + math.pi * V
+                          - a * (1j * z1 - 1j * z3))
+        zc = (math.sqrt(2.0 * math.pi) / 4.0) * np.log(
+            np.abs((P - e1) / (P + e1)))
+    return x, y, zc
+
+
+def _wrap_half(d):
+    """Signed toroidal offset in (-1/2, 1/2]."""
+    return ((d + 0.5) % 1.0) - 0.5
+
+
 def _costa(nu, nv, order, radius, theta=0.0):
     """Costa's minimal surface -- genus 1, three ends, on the square torus.
     Gray/Nylander closed form (constant offsets dropped; re-centered by the
     mesher). Meshed periodically with the planar end (0,0) and the two
     catenoid ends (1/2,0), (0,1/2) removed. `order`/`theta` unused;
-    `radius` scales the end-rim disk size (smaller -> ends reach further)."""
-    L = _SQUARE
-    e1 = L.wp(0.5).real
+    `radius` scales the end-rim disk size (smaller -> ends reach further).
+
+    End rims are cut on the ANALYTIC parameter circles, not on the raw
+    grid staircase: every kept node bordering a puncture is pulled (in
+    parameter space, along its ray from the end) onto the exact circle
+    and the immersion re-evaluated there, so each rim lies on the true
+    surface along a smooth analytic curve.  This kills the old rims'
+    grid-staircase wobble outright -- the visible 12-lobe "ripple" of
+    the planar rim was purely the staircase cut sampled through the
+    flaring end's large cells (the analytic circle's image is round to
+    ~0.2%), and the catenoid rims land exactly on their flat (z-spread
+    ~0.002) closed-form cut curves.  Those catenoid cut curves are
+    genuinely ~25% oval in image radius at this depth: the end's 2-fold
+    deviation from its asymptotic catenoid decays like 1/r^2, and no
+    rounder on-surface cut exists here (the iso-z contour is MORE oval,
+    and the constant-image-radius curve trades the ovality for a large
+    height wave).  The presentation fix for that -- the same one the
+    Costa-Hoffman-Meeks assembly uses -- is the mesher's final
+    _circularize_outer snap, requested via spec['circularize_ends']."""
     U, V = _torus_grid(nu, nv)
-    z = U + 1j * V
-    ze, z1, z3 = L.zeta(z), L.zeta(z - 0.5), L.zeta(z - 0.5j)
-    P = L.wp(z)
-    a = math.pi / (2.0 * e1)
-    x = 0.5 * np.real(-ze + math.pi * U + a * (z1 - z3))
-    y = 0.5 * np.real(-1j * ze + math.pi * V - a * (1j * z1 - 1j * z3))
-    zc = (math.sqrt(2.0 * math.pi) / 4.0) * np.log(
-        np.abs((P - e1) / (P + e1)))
+    x, y, zc = _costa_xyz(U, V)
     s = max(radius / 1.2, 0.4)
-    mask = _puncture_mask(U, V, [(0.0, 0.0, 0.20 / s),      # planar end
-                                 (0.5, 0.0, 0.11 / s),      # catenoid end
-                                 (0.0, 0.5, 0.11 / s)])     # catenoid end
+    ends = [(0.0, 0.0, 0.20 / s),      # planar end
+            (0.5, 0.0, 0.11 / s),      # catenoid end
+            (0.0, 0.5, 0.11 / s)]      # catenoid end
+    mask = _puncture_mask(U, V, ends)
+    # rim snap: kept nodes with a masked 8-neighbour move onto the circle
+    inv = ~mask
+    nb = np.zeros_like(inv)
+    for di in (-1, 0, 1):
+        for dj in (-1, 0, 1):
+            nb |= np.roll(np.roll(inv, di, axis=0), dj, axis=1)
+    rim = mask & nb
+    if rim.any():
+        band = 2.5 / max(min(nu, nv), 1)
+        for cu, cv, rho0 in ends:
+            du = _wrap_half(U - cu)
+            dv = _wrap_half(V - cv)
+            d = np.hypot(du, dv)
+            sel = rim & (d <= rho0 + band) & (d > 0)
+            if not sel.any():
+                continue
+            f = rho0 / d[sel]
+            Us = cu + f * du[sel]
+            Vs = cv + f * dv[sel]
+            xs, ys, zs = _costa_xyz(Us, Vs)
+            x[sel], y[sel], zc[sel] = xs, ys, zs
     return x, y, zc, True, True, mask
+
+
+_costa.spec = {'circularize_ends': True}
 
 
 def _chen_gackstatter(nu, nv, order, radius, theta=0.0):
@@ -238,6 +296,18 @@ COUNT_PARAM = {}
 STOREY_PARAM = {}
 # surfaces that use the associate-family angle
 ANGLE_PARAM = {'CATHEL', 'PGD'}
+# surfaces that are a single fixed family member: the order/count slider
+# has no effect, so the operator hides it (a visible dead control reads
+# as a bug)
+ORDERLESS = set()
+# surfaces whose order/count slider only supports a sub-range of the
+# shared property: surface key -> (lo, hi) in SLIDER units.  The
+# operator snaps the slider into this range, so the control always
+# shows the value actually built -- a slider that silently substitutes
+# a different value is worse than one that is absent or correctly
+# bounded (the k-noid-with-Enneper-ends "Ends (k)" slider used to
+# build k = 3 for order 1, 2 and 3 without saying so)
+ORDER_RANGE = {}
 
 # Wire in the catalog (KNOID, COSTA_HM and the rest of the zoo): the
 # rows in zoo.py are built by the generic engine in weierstrass.py and
@@ -252,7 +322,7 @@ ANGLE_PARAM = {'CATHEL', 'PGD'}
 try:
     from . import zoo as _zoo
     _zoo.register(PARAMETRIC, MESH_PARAM, COUNT_PARAM, ANGLE_PARAM,
-                  STOREY_PARAM)
+                  STOREY_PARAM, ORDERLESS, ORDER_RANGE)
     SURFACE_FAMILY = _zoo.SURFACE_FAMILY
     FAMILIES = _zoo.FAMILIES
 except Exception as _e:                        # WIP catalog: skip
@@ -272,6 +342,10 @@ def _raw_grid(kind, nu, nv, order, radius, theta, copies=None):
     direction tiles the surface welded and in its true period scale."""
     b = PARAMETRIC[kind][1]
     spec = getattr(b, 'spec', None)
+    # stale-guard: the engine publishes per-build masks (the bell-mouth
+    # no-smooth zones) through a module global; clear it before every
+    # build so a non-disk builder can never inherit the previous one's
+    _we.LAST_PROTECT = None
     if (copies is not None and spec is not None and 'domain' in spec
             and spec['domain'][0] == 'torus'):
         spec2 = dict(spec, copies=int(max(1, copies)))
@@ -652,7 +726,10 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0,
     return G, wrap_u, wrap_v
 
 
-@_geom_cache.memoise(version=2)   # v2: non-shrinking boundary smoothing
+@_geom_cache.memoise(version=10)  # v10: COSTA_HM seed-sign fix (the
+                                  # fold strips down every copy seam);
+                                  # COSTA end rims cut on the analytic
+                                  # circles and circularized flat
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
                      with_uv=False, cells=(1, 1), equal_areas=False):
     """Mesh (V, quads) for `kind` -- see `_build_parametric` for the full
@@ -886,7 +963,24 @@ def _build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         V = V[used]
         UVg = UVg[used]
         quads = [tuple(int(remap[i]) for i in qd) for qd in quads]
-        V = _smooth_boundary(V, quads)   # smooth staircase/clip end rims
+        # smooth staircase/clip end rims -- EXCEPT the bell-mouth rims the
+        # engine cut on exact conformal circles (LAST_PROTECT): those are
+        # analytically placed, and smoothing them folds the adjacent
+        # steep-flare sliver quads inside out (measured on the k-noid
+        # family: every smoothing-induced flipped edge sat on a mouth ring)
+        prot = getattr(_we, 'LAST_PROTECT', None)
+        protv = None
+        if (prot is not None and prot.shape == (nu, nv)
+                and not equal_areas and len(used)):
+            protv = prot.reshape(-1)[used]
+        V = _smooth_boundary(V, quads, protect=protv)
+        # opt-in end-rim circularization (Costa): snap each end rim to a
+        # flat circle, the same presentation tile_dihedral gives the
+        # Costa-Hoffman-Meeks ends.  Only for surfaces whose spec asks:
+        # forcing a flat horizontal circle is right for planar/catenoid
+        # ends and wrong for almost everything else (e.g. Enneper rims).
+        if getattr(_b, 'spec', {}).get('circularize_ends'):
+            V = _circularize_outer(V, quads)
         ref = V
 
     # --- doubly periodic lattice array (in the true period scale, BEFORE
