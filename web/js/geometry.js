@@ -223,27 +223,47 @@ function mergeGeometries(indexedParts) {
  * open-faced models Leonardo da Vinci drew for Luca Pacioli's
  * "De divina proportione" (1509).
  *
- * The frame width is ABSOLUTE, not a fraction of the face. That is the
- * whole design point, and math_art/leonardo_style.py records why: scaling
- * every face by one common factor makes the frame proportional to the
- * face, so on a solid with faces of different sizes -- a truncated
- * icosahedron, or anything Conway has operated on -- the big faces get
- * fat frames and the small ones thin, and the model looks unmade rather
- * than designed. For a frame of width w each face is inset by its own
- * factor (r - w) / r, with r that face's inradius.
+ * This mirrors the add-on's Geometry Nodes group in
+ * math_art/leonardo_style.py, which is what the Regular Solid generator
+ * attaches for style='LEONARDO'. That implementation is the reference;
+ * the steps below are deliberately the same ones in the same order:
  *
- * The add-on recovers r from area and corner count, exact for a regular
- * n-gon. Here r is the mean distance from the centroid to the edge lines,
- * which agrees with that for regular faces and, unlike the area formula,
- * stays meaningful on the star faces -- a pentagram's shoelace area is
- * not its filled area, so the area route would hand back a nonsense
- * inradius for 117 of these solids.
+ *   1. per-face inradius r = sqrt(area / (n tan(pi/n))), recovered from
+ *      the face's area and corner count -- exact for a regular n-gon;
+ *   2. inset each face about its own centre by scale = max((r - w)/r, 0);
+ *   3. extrude the remaining frame OUTWARD along the face normal by the
+ *      thickness, so the original surface is the shell's inner face.
+ *
+ * The frame width w is ABSOLUTE, and that is the whole design point.
+ * leonardo_style.py records why: one common scale factor makes the frame
+ * proportional to the face, so on a solid with faces of different sizes
+ * -- a truncated icosahedron, or anything Conway has operated on -- the
+ * big faces get fat frames and the small ones thin, and the model looks
+ * unmade rather than designed.
+ *
+ * The clamp is a FLOOR ONLY, exactly as the node group's MAXIMUM against
+ * zero. Clamping the top as well silently restores the proportional
+ * behaviour: scale = 1 - w/r, so an upper bound of 0.92 pins every face
+ * with r > 12.5w and hands it a border of 0.08r, which is a fraction of
+ * the face again. A floor is all that is needed -- it lets an over-wide
+ * frame close the opening rather than turn the face inside out.
+ *
+ * Units follow the add-on too. There the solid is normalised into a 2 m
+ * cube before the modifier runs, so border 0.06 is 0.06 of that cube's
+ * half-extent; here the same fraction is taken against the record's own
+ * half-extent, which is what makes the default look the same.
  */
 export function buildLeonardo(rec, opts = {}) {
   const V = rec.geometry.vertices;
-  const el = edgeLength(rec);
-  const w = (opts.border ?? 0.16) * el;       // frame width, absolute
-  const t = (opts.thickness ?? 0.05) * el;    // panel thickness
+  // The add-on's units: the solid fitted so its bounding box spans a 2 m
+  // cube, i.e. the largest coordinate magnitude maps to 1.
+  let half = 0;
+  for (const v of V) {
+    half = Math.max(half, Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2]));
+  }
+  half = half || 1;
+  const w = (opts.border ?? 0.06) * half;      // frame width, absolute
+  const t = (opts.thickness ?? 0.05) * half;   // panel thickness
 
   const pos = [];
   const nrm = [];
@@ -278,21 +298,19 @@ export function buildLeonardo(rec, opts = {}) {
     const frame = planeBasisOf(P);
     if (!frame) return;
 
-    // Inradius as the mean distance from the centroid to each edge line.
-    let r = 0;
+    // Inradius from area and corner count, as the node group does:
+    // a regular n-gon of inradius r has area n r^2 tan(pi/n).
+    let area2 = [0, 0, 0];
     for (let i = 0; i < n; i++) {
-      const a = P[i], b = P[(i + 1) % n];
-      const ab = sub(b, a);
-      const L = Math.hypot(ab[0], ab[1], ab[2]) || 1;
-      const ac = sub(c, a);
-      const x = crossV(ab, ac);
-      r += Math.hypot(x[0], x[1], x[2]) / L;
+      const p = P[i], q = P[(i + 1) % n];
+      area2 = add(area2, crossV(sub(p, c), sub(q, c)));
     }
-    r /= n;
-    // A frame wider than the face would invert the opening; clamp so the
-    // panel degenerates to a nearly solid face instead of turning inside
-    // out. Small faces on a mixed solid legitimately hit this.
-    const s = Math.min(0.92, Math.max(0.08, (r - w) / (r || 1)));
+    const area = Math.hypot(area2[0], area2[1], area2[2]) / 2;
+    const r = Math.sqrt(area / (n * Math.tan(Math.PI / n))) || 0;
+    // Floor only, matching the node group's MAXIMUM against zero: an
+    // over-wide frame closes the opening instead of turning the face
+    // inside out. No upper bound -- see the note above.
+    const s = Math.max(0, (r - w) / (r || 1));
 
     let hex = PLAIN;
     if (mode !== 'none') {
@@ -302,18 +320,21 @@ export function buildLeonardo(rec, opts = {}) {
     }
     tmp.setHex(hex);
 
-    const off = mul(frame.n, t / 2);
+    // The frame is extruded OUTWARD by the full thickness, as the node
+    // group does with Offset Scale = Thickness: the original polyhedron
+    // surface stays the inner face of the shell rather than sitting
+    // halfway through it.
+    const off = mul(frame.n, t);
+    const outerB = P;                                   // original surface
     const outerF = P.map((p) => add(p, off));
-    const outerB = P.map((p) => sub(p, off));
-    const inner = P.map((p) => add(c, mul(sub(p, c), s)));
-    const innerF = inner.map((p) => add(p, off));
-    const innerB = inner.map((p) => sub(p, off));
+    const innerB = P.map((p) => add(c, mul(sub(p, c), s)));
+    const innerF = innerB.map((p) => add(p, off));
 
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
-      quad(outerF[i], outerF[j], innerF[j], innerF[i]);   // front frame
-      quad(innerB[i], innerB[j], outerB[j], outerB[i]);   // back frame
-      quad(outerB[i], outerB[j], outerF[j], outerF[i]);   // outer rim
+      quad(outerF[i], outerF[j], innerF[j], innerF[i]);   // outer frame
+      quad(innerB[i], innerB[j], outerB[j], outerB[i]);   // inner frame
+      quad(outerB[i], outerB[j], outerF[j], outerF[i]);   // rim
       quad(innerF[i], innerF[j], innerB[j], innerB[i]);   // opening wall
     }
   });

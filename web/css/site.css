@@ -65,11 +65,11 @@ a { color: var(--accent); }
   margin: 0 auto;
   padding: 1rem 1.5rem 4rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  /* Cards do not stretch to fill the row: the page lists only the modules
+   * that exist, so with one module a full-width card would read as a
+   * banner rather than as one of a set. */
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 22rem));
   gap: 1.25rem;
-  /* Each card takes its natural height. Without this the live module,
-   * which carries a 320 px image, stretches every placeholder in its row
-   * to match and they read as half-empty boxes. */
   align-items: start;
 }
 
@@ -119,9 +119,6 @@ a { color: var(--accent); }
   font-size: 0.92rem;
   color: var(--ink-dim);
 }
-
-.module-card.soon { opacity: 0.62; }
-.module-card.soon .module-count { color: var(--accent-dim); }
 
 /* --------------------------------------------------------- chrome */
 
