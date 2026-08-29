@@ -124,6 +124,16 @@ def pitch_of(theta, ref='AXIS'):
 def ribs(n, theta, ellipticity=1.0, length=1.0):
     """The n umbrella ribs, Hart eq. (1).
 
+    The azimuth runs the opposite way round from Hart's statement (note
+    the minus on Y).  That is a mirror image, and it is deliberate: the
+    generator's long-standing `polar_star` winds this way, and
+    `ifs/spacefill.py` builds its spirallohedra from it, so matching the
+    sign keeps one handedness across the whole add-on.  Nothing measured
+    here depends on the choice -- face angles, dihedrals, height, radius,
+    area and volume are all functions of the angle BETWEEN ribs -- and
+    only the chirality of the surface helices and of the spirallohedra
+    flips, which is a mirroring, not a different solid.
+
     `ellipticity` scales X only.  That is a linear map, so it keeps every
     face planar and every pair of opposite edges parallel -- the rhombi
     merely open into general parallelograms and the footprint becomes an
@@ -134,7 +144,7 @@ def ribs(n, theta, ellipticity=1.0, length=1.0):
     for k in range(n):
         a = 2.0 * pi * k / n
         out.append([length * ellipticity * cos(t) * cos(a),
-                    length * cos(t) * sin(a),
+                    -length * cos(t) * sin(a),
                     length * sin(t)])
     return out
 

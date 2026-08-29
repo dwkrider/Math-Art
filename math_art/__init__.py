@@ -20,6 +20,7 @@ _MODULE_NAMES = [
     'conway_operators',
     'zonohedra_generator',
     'zonish_generator',
+    'zonohedra_cluster_generator',
     'transpolyhedra_generator',
     'dodecahedra_generator',
     'slide_together_generator',
