@@ -1,0 +1,465 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "durers-solid",
+  "name": "Durer's Solid (Melencolia I)",
+  "alternate_names": [],
+  "families": [
+    "notable"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": null,
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": "D\u00fcrer graph",
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": null,
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "D3d",
+    "orbifold": "2*3",
+    "coxeter": "[2+,6]",
+    "hermann_mauguin": "-3m",
+    "order": 12,
+    "rotation_group": "D3",
+    "rotation_order": 6,
+    "chiral": false,
+    "transitivity": {
+      "vertex": false,
+      "edge": false,
+      "face": false
+    },
+    "orbits": {
+      "vertices": 2,
+      "edges": 3,
+      "faces": 2
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 12,
+      "edges": 18,
+      "faces": 8
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 2,
+        "regular": false
+      },
+      {
+        "schlafli": "{5}",
+        "sides": 5,
+        "count": 6,
+        "regular": false
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": null,
+    "convex": false,
+    "self_dual": false,
+    "dual": null,
+    "coincident_vertices": 0,
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": false,
+      "slug": null,
+      "counts": {
+        "vertices": 12,
+        "edges": 18,
+        "faces": 8
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "circumradius_1",
+    "edge_length": null,
+    "edge_lengths_uniform": false,
+    "circumradius": {
+      "value": 0.9999999999999999,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "midradius": null,
+    "inradius": [
+      {
+        "face": "{3}",
+        "exact": null,
+        "value": 0.839358044650672
+      },
+      {
+        "face": "{5}",
+        "exact": null,
+        "value": 0.5988072925709551
+      }
+    ],
+    "surface_area": null,
+    "volume": null,
+    "isoperimetric_quotient": null,
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 114.80110086322128,
+        "radians": 2.0036571949773156
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": "acos(sqrt(9-4*sqrt(5)))",
+        "degrees": 76.34541525404234,
+        "radians": 1.3324788649853418
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": null,
+        "degrees": 103.65458474605346,
+        "radians": 1.8091137886061233
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 47.99999999992017,
+        "radians": 0.8377580409558849,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 1,
+        "degrees": 72.00000000014549,
+        "radians": 1.2566370614384565,
+        "exact": null
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 2.1982006013514583
+      },
+      {
+        "vertex_orbit": 1,
+        "steradians": 1.8091137886012565
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": 0.9999999999999999,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    },
+    "measures_note": "Area and volume are omitted: the faces self-intersect, so both depend on a convention (net area vs. density-weighted vs. outer solid region). Record them only alongside an explicit convention field."
+  },
+  "geometry": {
+    "length_unit": "circumradius_1",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the construction, centred at the centroid",
+    "constants": {},
+    "vertices": [
+      [
+        0.0,
+        0.543578948156586,
+        -0.839358044650672
+      ],
+      [
+        -0.470753178066,
+        -0.271789474078293,
+        -0.839358044650672
+      ],
+      [
+        0.470753178066,
+        -0.271789474078293,
+        -0.839358044650672
+      ],
+      [
+        0.0,
+        0.879529213686092,
+        -0.47584489308253
+      ],
+      [
+        -0.761694642421537,
+        -0.439764606843046,
+        -0.47584489308253
+      ],
+      [
+        0.761694642421537,
+        -0.439764606843046,
+        -0.47584489308253
+      ],
+      [
+        0.0,
+        -0.879529213686092,
+        0.47584489308253
+      ],
+      [
+        0.761694642421537,
+        0.439764606843046,
+        0.47584489308253
+      ],
+      [
+        -0.761694642421537,
+        0.439764606843046,
+        0.47584489308253
+      ],
+      [
+        0.0,
+        -0.543578948156586,
+        0.839358044650672
+      ],
+      [
+        0.470753178066,
+        0.271789474078293,
+        0.839358044650672
+      ],
+      [
+        -0.470753178066,
+        0.271789474078293,
+        0.839358044650672
+      ]
+    ],
+    "vertices_exact": null,
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 3,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 60.00000000000147,
+            "radians": 1.0471975511966234,
+            "count": 3,
+            "exact": "acos(1/2)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 1,
+        "sides": 5,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 71.99999999998884,
+            "radians": 1.2566370614357225,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 107.99999999998514,
+            "radians": 1.8849555921536165,
+            "count": 2,
+            "exact": null
+          },
+          {
+            "degrees": 126.00000000001488,
+            "radians": 2.199114857513115,
+            "count": 2,
+            "exact": null
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        2,
+        1,
+        0
+      ],
+      [
+        9,
+        10,
+        11
+      ],
+      [
+        1,
+        4,
+        8,
+        3,
+        0
+      ],
+      [
+        9,
+        6,
+        5,
+        7,
+        10
+      ],
+      [
+        2,
+        5,
+        6,
+        4,
+        1
+      ],
+      [
+        10,
+        7,
+        3,
+        8,
+        11
+      ],
+      [
+        0,
+        3,
+        7,
+        5,
+        2
+      ],
+      [
+        11,
+        8,
+        4,
+        6,
+        9
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        0,
+        1
+      ],
+      "5": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "antipodal": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ]
+    ]
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        9,
+        10,
+        11
+      ],
+      [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        9,
+        10,
+        13,
+        14,
+        17
+      ],
+      [
+        7,
+        8,
+        11,
+        12,
+        15,
+        16
+      ]
+    ]
+  },
+  "compound": null,
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.other_polyhedra_generator",
+    "operator_id": "mesh.notable_polyhedron_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: via math_art.other_polyhedra_generator",
+    "sources": [
+      "A. Durer, \"Melencolia I\" (1514); analysis: see Weitzel, Schreiber."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

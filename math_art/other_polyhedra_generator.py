@@ -102,10 +102,22 @@ bl_info = {
 
 import math
 
-from .polyhedra import _highgenus_maps_data as _hgm
-from .polyhedra import canonical as _canon
-from .polyhedra import hull as _hull
-from .polyhedra import seeds as _seeds
+# Relative when imported as part of the package (how Blender loads the
+# extension), flat when the module is imported on its own -- which is how
+# tests/test_polyhedra.py and tools/polydb_build.py reach it, neither of
+# which has a package context. Without the fallback both fail at import
+# with "attempted relative import with no known parent package". This is
+# the same pattern the other generators use.
+try:
+    from .polyhedra import _highgenus_maps_data as _hgm
+    from .polyhedra import canonical as _canon
+    from .polyhedra import hull as _hull
+    from .polyhedra import seeds as _seeds
+except ImportError:                                   # flat import
+    from polyhedra import _highgenus_maps_data as _hgm
+    from polyhedra import canonical as _canon
+    from polyhedra import hull as _hull
+    from polyhedra import seeds as _seeds
 
 PHI = (1 + 5 ** 0.5) / 2
 _SQRT3 = math.sqrt(3.0)

@@ -77,6 +77,10 @@ const FAMILY_RULES = [
   ['Archimedean', (e) => e.families.includes('archimedean')],
   ['Catalan', (e) => e.families.includes('catalan')],
   ['Johnson', (e) => e.families.includes('johnson')],
+  // Ahead of the general families: these are famous individual solids --
+  // Duerer's, Jessen's, Schonhardt's, Klein's map -- and a reader looking
+  // for one is looking for it by name, not as "some non-convex polyhedron".
+  ['Notable', (e) => e.families.includes('notable')],
   ['Compounds', (e) => e.families.includes('compound')],
   ['Biscribed', (e) => e.families.includes('biscribed')
                     || e.families.includes('biscribed-dual')],

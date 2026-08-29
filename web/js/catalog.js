@@ -1,4 +1,4 @@
-// The catalogue: faceted browsing over all 448 solids.
+// The catalogue: faceted browsing over the whole database.
 //
 // Every facet is derived from index.json, so filtering and sorting the
 // whole database costs no further requests -- a record is fetched only
@@ -35,13 +35,13 @@ export class Catalog {
     // Search and facets go in a header that sticks to the top of the
     // viewport (see .catalog-head). The catalogue itself has no inner
     // scroll region -- the page scrolls it -- so without this the filters
-    // would simply leave the screen a few rows into 448 tiles.
+    // would simply leave the screen a few rows into the grid.
     const head = $('div', 'catalog-head');
     const controls = $('div', 'catalog-controls');
 
     const search = $('input', 'search');
     search.type = 'search';
-    search.placeholder = 'Search 448 solids…';
+    search.placeholder = `Search ${this.entries.length} solids…`;
     search.setAttribute('aria-label', 'Search solids by name');
     search.addEventListener('input', () => {
       this.query.text = search.value;
