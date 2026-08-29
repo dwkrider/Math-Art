@@ -24,6 +24,11 @@ The six **regular convex 4-polytopes** — the 5-cell, tesseract (8-cell), 16-ce
 | Option | Default | Description |
 | --- | --- | --- |
 | Polytope | Tesseract (8-cell) | Which of the six regular convex 4-polytopes to project into 3D. 5-cell, Tesseract (8-cell), 16-cell, 24-cell, 120-cell, 600-cell. |
+| Form | Regular | Build a regular polytope, a uniform one, or one of the two prismatic families. Regular, Uniform (semi-regular), Hyperprism, Hyperpyramid. |
+| Base | Cube | The 3-dimensional polyhedron the hyperprism or hyperpyramid is raised on. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
+| Fourth-Axis Extent | 1 | How far the second copy is translated, or how far the apex stands off, along the fourth axis Range 0.05-10. |
+| Symmetry | [5,3,3] -- 120-cell / 600-cell | Which rank-4 reflection group provides the mirrors (uniform only). [3,3,3] -- 5-cell, [4,3,3] -- tesseract / 16-cell, [3,4,3] -- 24-cell, [5,3,3] -- 120-cell / 600-cell. |
+| Ringed Nodes | 1000 | Which nodes of the Coxeter diagram are ringed. The generating point stands off a ringed mirror and lies on an unringed one, so the ringing picks out the polytope (uniform only). 0001, 0010, 0011, 0100, 0101, 0110, 0111, 1000, and 7 more. |
 | Edges | Curved (stereographic) | Straight 4D perspective edges, or great-circle arcs from stereographic projection. Curved (stereographic), Straight (perspective). |
 | Projection Distance | 1.05 | Eye distance along w for STRAIGHT edges (near 1 = Schlegel diagram; for the 5/16/600-cell a vertex sits at w=1, so rotate a little or back off the distance). Curved mode always uses the exact stereographic projection Range 1.001-10. |
 | Rotate XW | 0 | Rotation in the XW plane before projecting from 4D, in degrees Range -180-180. |

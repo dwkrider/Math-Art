@@ -933,25 +933,6 @@
    "Viewing Rig"
   ]
  },
- "mesh.general_stellation_add": {
-  "label": "General Stellation",
-  "options": [
-   "Fold",
-   "Unfolding",
-   "Seed",
-   "Glue Tabs",
-   "Tab Size",
-   "Edge Numbers",
-   "Seed",
-   "Stellation",
-   "Style",
-   "Border",
-   "Thickness",
-   "Strut Radius",
-   "Node Radius",
-   "Scale"
-  ]
- },
  "mesh.geodesic_add": {
   "label": "Geodesic Sphere / Dome",
   "options": [
@@ -1099,7 +1080,7 @@
   ]
  },
  "mesh.icosahedron_stellation_add": {
-  "label": "Icosahedron Stellation",
+  "label": "Stellation",
   "options": [
    "Fold",
    "Unfolding",
@@ -1107,6 +1088,9 @@
    "Glue Tabs",
    "Tab Size",
    "Edge Numbers",
+   "Seed",
+   "Select by",
+   "Stellation",
    "Stellation",
    "a (core)",
    "b",
@@ -1119,6 +1103,26 @@
    "g1",
    "g2",
    "g3 (outer)",
+   "11",
+   "12",
+   "13",
+   "14",
+   "15",
+   "16",
+   "17",
+   "18",
+   "19",
+   "20",
+   "21",
+   "22",
+   "23",
+   "24",
+   "25",
+   "26",
+   "27",
+   "28",
+   "Chirality",
+   "Cell Code",
    "Style",
    "Border",
    "Thickness",

@@ -33,6 +33,11 @@ Regular $\lbrace p,q\rbrace$ tilings of the hyperbolic plane -- $q$ regular $p$-
 | Model | Poincare Disk | Disk or curved 3D model the tiling is drawn in. Poincare Disk, Klein Disk, Hemisphere, Pseudosphere. |
 | Depth | 14 | Reflection word length explored Range 1-60. |
 | Max Group Elements | 8000 | Cap on triangle-group elements generated Range 10-40000. |
+| Spidron Fill | Off | Fill every tile with its spidron nest: a decreasing sequence of inscribed polygons whose annuli triangulate into spiral arms -- Kaplan's hyperbolic spidrons (flat disk models) |
+| Spidron Rings | 5 | How many nest rings each tile gets; the innermost polygon stays open. Distant tiny tiles automatically take fewer rings Range 1-12. |
+| Spidron Color | Arms | How the nest triangles are coloured -- Kaplan's point that different colourings bring out different geometric features. Arms, Rings, Uniform. |
+| Cap Centres | On | Close the small hole left at the centre of every tile. The nest never closes -- each ring is smaller than the last for ever -- so a finite build always leaves one open; turn this off for the open centres of Kaplan's pictures |
+| Checkerboard | Off | Flip the two-tone's phase on alternating tiles -- Kaplan's checkerboard variant. The flip is clean when the tiling is bipartite (even q); odd q leaves a frustration seam |
 | Color By | By Sides | How the tiles are colored. By Sides, By Tile Type, Parity (Alternating), Uniform. |
 | Hide Off-Parity Tiles | Off | In Parity color mode, omit the 'off' (second) parity class so only the 'on' tiles render, leaving a sparse alternating pattern |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles (flat models) Range 0-0.45. |

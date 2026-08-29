@@ -26,19 +26,36 @@ Its geometry is startlingly concrete: **any two distinct fibres are linked exact
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Base Points | Latitudes | Set of base points on S^2 whose fibres are drawn. Latitudes, Flower, Greatcircle, Fibonacci, Tetra, Octa, Cube, Icosa, and 1 more. |
-| Latitudes / Rings | 6 | Circles of latitude (LATITUDES), or the point budget for the Fibonacci sphere Range 1-48. |
-| Fibres | 24 | Fibres per latitude (LATITUDES), or the total number of fibres for FLOWER / GREATCIRCLE / FIBONACCI presets Range 1-200. |
-| Samples | 160 | Points per fibre Range 24-1024. |
+| Base Points | Latitudes | Set of base points on S^2 whose fibres are drawn. Latitudes, Flower, Greatcircle, Cap, Loxodrome, Curl, Fibonacci, Random, and 5 more. |
+| Latitudes / Rings | 6 | Circles of latitude (LATITUDES) Range 1-48. |
+| Fibres | 24 | Fibres per latitude (LATITUDES), or the total number of fibres for the other point sets Range 1-400. |
+| Samples | 160 | Points per fibre Range 12-1024. |
 | Wind P | 1 | Winding rate of the first phase; (P,Q) != (1,1) lays a (P,Q) torus knot/link on each fibre's Clifford torus Range 1-12. |
 | Wind Q | 1 | Winding rate of the second phase Range 1-12. |
-| Colat Min | 20 | Smallest colatitude (deg) for latitude / flower / great-circle presets Range 1-179. |
-| Colat Max | 160 | Largest colatitude (deg) Range 1-179. |
-| Output | Mesh Tube | Curve type, or a swept mesh tube, for the fibres. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Colat Min | 20 | Smallest colatitude (deg) of the base band Range 1-179. |
+| Colat Max | 160 | Largest colatitude (deg) of the base band Range 1-179. |
+| Turns | 5 | Longitude turns of the loxodrome spiral Range 0.5-40. |
+| Seed | 0 | Random seed for the RANDOM base set Range 0-9999. |
+| Curl Lobes | 5 | Petal count of the CURL rose ring Range 2-16. |
+| Curl Amplitude | 25 | Colatitude swing of the CURL rose (deg) Range 0-80. |
+| Chirality | Right | Which Villarceau ruling(s) to draw. Right, Left, Both. |
+| Output | Bezier Curve | How the fibres are realised. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube, Surface, Beads. |
 | Tube Radius | 0.02 | Curve bevel depth / tube radius Range 0-1. |
 | Bevel Resolution | 4 | Smoothness of the round bevel on curve output Range 1-16. |
-| Tube Sides | 8 | Number of sides around each swept tube (Mesh output) Range 3-32. |
-| Colour by Base Point | On | One material per fibre, hue from longitude and value from latitude of its base point |
+| Tube Sides | 8 | Sides around each swept tube Range 3-32. |
+| Surface Opacity | 0.55 | Opacity of the nested tori (Surface output); below 1 the tori read through each other (shows in Material Preview / Rendered) Range 0.05-1. |
+| Beads / Fibre | 48 | Spheres placed along each fibre (Beads output) Range 4-400. |
+| Bead Radius | 0.03 | Radius of each bead (Beads output) Range 0.001-0.5. |
+| Markers / Fibre | 0 | Cone glyphs riding each fibre, pointing along it (0 = none) -- the base-point markers Range 0-24. |
+| Marker Size | 0.05 | Size of the marker cones Range 0.005-0.5. |
+| Colour by Base Point | On | Colour each fibre from its base point on S^2 |
+| Palette | Rainbow | Colour aesthetic (all keyed to the base point). Rainbow, Pastel, Mono, Parameter. |
+| Mono Colour | 0.27, 0.86, 0.8 | Base hue for the Mono palette Range 0-1. |
+| Sphere Rotation | 0.3178, 0.2114, 0.1291 | Orientation of the base sphere S^2 (default is a gentle tilt keeping fibres off the axis); arrow-click steps are about 5 degrees |
+| S3 Flow | 0 | Left Clifford rotation of S^3 before projecting (deg) -- keyframe it to spin the whole family Range -360-360. |
+| Keep Axis Fibres | Off | Keep near-pole fibres as clipped open lines (the axis fibre) instead of dropping them |
+| Control Sphere | Off | Add a small S^2 beside the fibres with a dot per base point in its fibre's colour |
+| Sphere Size | 0.5 | Radius of the control sphere (scene units) Range 0.05-3. |
 | Scale | 1 | Overall size of the fibre set Range 0.01-100. |
 
 <!-- /options -->

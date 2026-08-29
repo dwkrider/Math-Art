@@ -21,7 +21,7 @@ Three classic surfaces from the geometry literature: Fresnel's **elasticity surf
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Fresnel Elasticity Surface | Which classic surface to build. Fresnel Elasticity Surface, Paper Bag Surface, Trihyperboloid, Bohemian Dome, Astroidal Ellipsoid, Gabriel's Horn, Dupin Cyclide (ring), Dupin Cyclide (horn), and 4 more. |
+| Surface | Fresnel Elasticity Surface | Which classic surface to build. Fresnel Elasticity Surface, Paper Bag Surface, Trihyperboloid, Bohemian Dome, Astroidal Ellipsoid, Bouguer Dome, Hanging Drop of Water, Neiloid, and 8 more. |
 | Semi-Axis A | 1 | Fresnel semi-axis along X Range 0.01-10. |
 | Semi-Axis B | 1.5 | Fresnel semi-axis along Y Range 0.01-10. |
 | Semi-Axis C | 2 | Fresnel semi-axis along Z Range 0.01-10. |
@@ -29,12 +29,21 @@ Three classic surfaces from the geometry literature: Fresnel's **elasticity surf
 | Crimp Coefficient | -1.26 | Coefficient b in y = (v + b u) sin u (-1.26 in the classic plot) Range -10-10. |
 | Swept Circle | 0.7 | Radius c of the moving circle (Bohemian dome only) Range 0.01-10. |
 | Horn Length | 6 | Upper limit L of x in y = 1/x; the enclosed volume tends to pi as L grows while the lateral area diverges (Gabriel's horn only) Range 1.2-200. |
+| Scale a | 1 | The a in Bouguer's a^2 y'' = x sqrt(1 + y'^2), and the a in the neiloid's a rho^2 = z^3 Range 0.05-10. |
+| Base Radius | 1.6 | How far out the dome's profile runs (Bouguer dome only) Range 0.2-6. |
+| Capillary Length | 1 | The a in 2H = z / a^2: large a is a nearly spherical drop, small a a long pendant one (hanging drop only) Range 0.1-6. |
+| Apex Height | 1 | Height of the drop's lowest point above the zero-curvature plane (hanging drop only) Range 0.05-6. |
+| Profile Length | 2.2 | How far the profile is integrated along its own arc before the neck is cut (hanging drop only) Range 0.3-8. |
+| Base Height | 0.2 | Where the trunk is cut off below; the tip at z = 0 is a cusp (neiloid only) Range 0.01-0.95. |
+| Sectors | 12 | Columns around the cylinder; the spikes get blunter as this rises (Schwarz's lantern only) Range 3-256. |
+| Bands | 12 | Bands up the cylinder.  Raising this alone multiplies the spikes without blunting them, so the area grows without bound -- try bands near the cube of the sectors (Schwarz's lantern only) Range 1-4096. |
+| Cap the Ends | Off | Add the top and bottom polygons, which close the lantern into a polyhedron (Schwarz's lantern only) |
 | Ring Radius | 1 | Radius R of the torus centre circle (Dupin cyclides only) Range 0.05-10. |
 | Tube Radius | 0.45 | Tube radius r of the torus; the ring / horn / spindle type overrides it where the type fixes the ratio (Dupin cyclides only) Range 0.01-10. |
 | Inversion Centre | 1.9 | Centre of inversion on the x-axis; it must not lie on the torus, or the image runs off to infinity (Dupin cyclides only) Range -10-10. |
 | Inversion Radius | 1.6 | Radius of the sphere of inversion (Dupin cyclides only) Range 0.05-10. |
 | Resolution | 48 | Rings across the surface (twice as many segments around) Range 6-256. |
-| Smooth Shading | On | Shade the surface smooth |
+| Smooth Shading | On | Shade the surface smooth. Ignored for Schwarz's lantern, whose faces are flat and whose every edge is a fold |
 | Thickness | 0 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
 | Scale | 1 | Overall size of the result Range 0.01-100. |
 
