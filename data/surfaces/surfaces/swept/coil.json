@@ -1,0 +1,70 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "coil",
+  "name": "Coil",
+  "primary_family": "swept",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "swept",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The tube whose bore is a circular helix -- the spring or serpentine: h > 0 right-handed, h = 0 degenerates to the torus, h < 0 left-handed.  NOTE: the mirror file's H1 reads \"Coild\", a typo carried over from conversion; the page body is headed COIL."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built as a named surface.  The shipped Darboux sweep (helical_surface_generator, DARBOUX mode with helical motion of a circle) produces circled helicoids, but its generatrix rides in the meridian plane, not perpendicular to the motion, so the tube-around-a-helix proper has no operator.",
+      "resume": "A tube of constant radius swept along a circular helix; either extend the Darboux generatrix orientation or reuse the tube machinery; the parametrization is in the cited mirror chapter."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Coil (Serpentin)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1233_serpentin_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1233_serpentin_2.md)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "alternate_names": [
+    "Helical tube",
+    "Spring",
+    "Toroidal helicoid",
+    "Coild"
+  ],
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1233_serpentin_2"
+  },
+  "named_after": "Coil",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

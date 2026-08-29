@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "nordstrand-weird-surface",
+  "name": "Nordstrand's Weird Surface",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BOX",
+      "radius": 0.75
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nA degree-8 decorative surface from Nordstrand's gallery."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "MATHWORLD",
+      "key": "NORDSTRAND_WEIRD",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "E. W. Weisstein, \"Peano Surface\", \"Chair\", \"Crossed Trough\", \"Handkerchief Surface\", \"Hunt's Surface\", \"Kiss Surface\", \"Menn's Surface\", \"Miter Surface\", \"Nordstrand's Weird Surface\", \"Tooth Surface\", MathWorld -- A Wolfram Web Resource, mathworld.wolfram.com.",
+      "T. Nordstrand, \"Weird Cube\" and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).",
+      "G. Peano's 1899 counterexample; cf. the MathWorld page's history of the criterion it defeated.",
+      "E. W. Weisstein, MathWorld, topic 'Algebraic Surfaces' -- the enumeration this absence was measured against."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Nordstrand, Weird",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 175901,
+      "edges": 524904,
+      "faces": 349008,
+      "euler_characteristic": 5,
+      "angle_defect_total": -45.055079,
+      "area": 10.872694,
+      "volume": 0.033563,
+      "components": 5,
+      "boundary_loops": 8,
+      "manifold": false,
+      "nonmanifold_edges": 12,
+      "nonmanifold_vertices": 159227,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
+  }
+}

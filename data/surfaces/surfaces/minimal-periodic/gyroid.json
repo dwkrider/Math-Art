@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "gyroid",
+  "name": "Gyroid",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "chiral",
+    "def-nodal",
+    "embedded",
+    "has-approximation",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "approximation",
+    "approximates": null,
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "level": 0.0,
+    "residual": {
+      "max_abs_mean_curvature": 0.031658,
+      "measured_at_resolution": 120,
+      "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
+    "level_function": "(sin(x) * cos(y) + sin(y) * cos(z) + sin(z) * cos(x))"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.031657741431815455,
+        "resolution": 120,
+        "tolerance": 0.0379896,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true,
+    "genus_per_cell": 3,
+    "euler_characteristic_per_cell": -4
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3,
+    "hermann_mauguin": "Ia-3d",
+    "ita_number": 230,
+    "lattice": "body-centred cubic",
+    "chiral": true,
+    "verified_by": "curated"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "G",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970).",
+      "H. Karcher, 'The triply periodic minimal surfaces of Alan Schoen and their constant mean curvature companions', Manuscripta Math. 64 (1989) -- the first proof that the gyroid is embedded.",
+      "A. G. Weyhaupt, 'Deformations of the gyroid and Lidinoid minimal surfaces', Pacific J. Math. 235 (2008) 137-171: genus three, no straight lines or planar symmetry curves; the unique embedded member of the associate family of Schwarz P."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "relations": {
+    "member_of": "pgd-associate-family",
+    "associate_family": "pgd-associate-family",
+    "associate_angle_degrees": 38.014772,
+    "dual_labyrinth_graph": "srs"
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical",
+    "crystallographic"
+  ],
+  "discovered_by": "Alan H. Schoen",
+  "year": 1970,
+  "ids": {
+    "mathworld": "Gyroid",
+    "mathcurve": "ch1277_gyroide_2",
+    "epinet": "srs",
+    "wikipedia": "Gyroid",
+    "vmm": "ch033_gyroid",
+    "msblog": "ch271_gyroid"
+  },
+  "notes": {
+    "known_issue": "The exact chiral cell cannot currently be tiled watertight in the shipped build; recorded in research/minimal_surfaces_status.md.",
+    "caveats": [
+      "Contains no straight lines and no mirror symmetries, which is what makes it chiral and why Schoen found it last of the three associates."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 35242,
+      "edges": 104268,
+      "faces": 69024,
+      "euler_characteristic": -2,
+      "angle_defect_total": -42.234544,
+      "area": 12.376169,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 31727,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
+  }
+}

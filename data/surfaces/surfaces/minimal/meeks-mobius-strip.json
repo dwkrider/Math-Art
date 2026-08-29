@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "meeks-mobius-strip",
+  "name": "Meeks Mobius Strip",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "non-orientable",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "total_curvature": {
+      "exact": "-6*pi",
+      "value": -18.84955592153876,
+      "source": "classical",
+      "note": "W. H. Meeks III, 'The classification of complete minimal surfaces in R^3 with total curvature greater than -8pi', Duke Math. J. 48 (1981) 523-535 -- the complete minimal Moebius strip with total curvature -6pi; unique up to rigid motion by J. L. Barbosa and A. G. Colares (1986)."
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": false,
+    "one_sided": true
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "NONORIENT",
+      "key": "MEEKS_MOBIUS",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "cross_checked": [
+      {
+        "source": "W. H. Meeks III, Duke Math. J. 48 (1981) 523-535",
+        "agrees": true,
+        "detail": "The complete minimal Moebius strip with total curvature -6pi; by the same classification every complete minimal surface with total curvature > -8pi is the plane, catenoid, Enneper surface or this Moebius strip.  Uniqueness: Barbosa-Colares 1986."
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "relations": {
+    "same_surface_as": [
+      {
+        "slug": "bjorling-twisted-band",
+        "confidence": "suspected",
+        "check": "the Bjorling surface of a circle with a uniformly rotating normal is a minimal Mobius band; whether it is congruent to Meeks' is not asserted by either row's label, so it is not merged. Compare total curvature (Meeks' is -6*pi) and the boundary-curve knot type.",
+        "source": "row labels in math_art/minsurf/zoo.py: 'Bjorling: Twisted Band (Mobius)' and 'Meeks Mobius Strip'."
+      }
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 14745,
+      "edges": 29325,
+      "faces": 14580,
+      "euler_characteristic": 0,
+      "angle_defect_total": 10.980234,
+      "area": 8.866581,
+      "volume": 0.000343,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 12864,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.936937,
+        1.10937
+      ],
+      "aspect_ratio": 0.554685
+    }
+  }
+}

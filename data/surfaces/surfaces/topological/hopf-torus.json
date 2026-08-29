@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hopf-torus",
+  "name": "Hopf Torus",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "topological"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.hopf_fibration_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hopf_fibration_generator",
+      "operator_id": "mesh.hopf_torus_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Heinz Hopf, \"Ueber die Abbildungen der dreidimensionalen Sphaere auf die Kugelflaeche\", Math. Ann. 104 (1931), 637-665 (the fibration and its linking invariant).",
+      "D. W. Lyons, \"An Elementary Introduction to the Hopf Fibration\", Math. Mag. 76 (2003), 87-98.",
+      "N. Johnson, \"Visualization of the Hopf fibration\" (2011), https://nilesjohnson.net/hopf.html (the colour/latitude-torus rendering imitated here).",
+      "Y. Villarceau (1848): a torus of revolution carries two extra circles through each point, the \"Villarceau circles\" -- exactly the Hopf fibres of a stereographically projected Clifford torus.",
+      "Ulrich Pinkall, \"Hopf tori in S^3\", Invent. Math. 81 (1985), 379-386 (the Hopf torus over a curve on S^2, and the theorem that it is Willmore exactly over an elastic curve).",
+      "Luigi Bianchi (1894): classification of the flat surfaces immersed in S^3; the case with one family of asymptotic lines a great circle is exactly the Hopf tori.  Modern treatment in M. Spivak, \"A Comprehensive Introduction to Differential Geometry\", vol. IV, p. 139ff."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "ids": {
+    "vmm": "ch073_hopf_fibered"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12800,
+      "edges": 25600,
+      "faces": 12800,
+      "euler_characteristic": 0,
+      "angle_defect_total": 31.768738,
+      "area": 10.455994,
+      "volume": 1.406819,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 462,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.19352,
+        2.015594,
+        1.157206
+      ],
+      "aspect_ratio": 0.527557
+    }
+  }
+}

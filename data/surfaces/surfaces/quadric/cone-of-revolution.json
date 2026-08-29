@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "cone-of-revolution",
+  "name": "Cone of Revolution",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "not-implemented",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Revolution of a line secant to an axis about that axis; the special case of the elliptic cone (whose record already resolves ch1235) with circular cross-section."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built -- like most of the quadric family. Blender's own cone primitive is not a math_art construction and is not counted as coverage.",
+      "resume": "The quadric block is the database's biggest honest gap (10 of 13 quadrics unimplemented -- data/surfaces/README.md, Coverage); implement together with the other quadrics of revolution rather than piecemeal."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Cone of revolution\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1229_conederevolution_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1229_conederevolution_2.md)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "alternate_names": [
+    "Right circular cone"
+  ],
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1229_conederevolution_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

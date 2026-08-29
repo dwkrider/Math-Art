@@ -1,0 +1,139 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "elliptic-cone",
+  "name": "Elliptic Cone",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "flat",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2/a**2 + y**2/b**2 - z**2",
+    "parameters": [
+      {
+        "name": "a",
+        "symbol": "a",
+        "domain": "(0, inf)",
+        "default": 1.0
+      },
+      {
+        "name": "b",
+        "symbol": "b",
+        "domain": "(0, inf)",
+        "default": 1.0
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 15.967921070660946,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "conical point",
+        "count": 1
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "ELLIPTIC_CONE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002,
+      "node_count": true
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "EllipticCone",
+    "mathcurve": "ch1235_coneelliptique_2"
+  },
+  "notes": {
+    "caveats": [
+      "Developable away from the apex, and ruled; the apex is the one point where it is not a smooth surface."
+    ]
+  },
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3073,
+      "edges": 6144,
+      "faces": 3072,
+      "euler_characteristic": 1,
+      "angle_defect_total": 2.220127,
+      "area": 3.4764,
+      "volume": 0.365473,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 2668,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.4,
+        1.0
+      ],
+      "aspect_ratio": 0.5
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "alternating-fence-of-half-catenoids",
+  "name": "Alternating Fence of Half-Catenoids",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 1,
+    "ends": [
+      {
+        "type": "catenoidal",
+        "count": 2
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SP_ALT_FENCE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
+      "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf posts ch406)",
+        "agrees": true,
+        "detail": "'As a translation invariant surface, it has genus one and two catenoidal ends in the quotient.'"
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch018_catenoid_chain",
+    "msblog": "ch406_the_alternating_fence_of_half_catenoids"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 14165,
+      "edges": 28330,
+      "faces": 14164,
+      "euler_characteristic": -1,
+      "angle_defect_total": -18.166059,
+      "area": 6.665885,
+      "volume": 0.106871,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 13454,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.76718,
+        2.0,
+        1.05309
+      ],
+      "aspect_ratio": 0.526545
+    }
+  }
+}

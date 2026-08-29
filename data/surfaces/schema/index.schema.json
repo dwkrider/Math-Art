@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dwkrider/Math-Art/data/surfaces/schema/index.schema.json",
+  "title": "Surface database index",
+  "description": "Enumerates every record with enough of its classification to search the database without opening a file. `implemented_count` in the header is the coverage ledger's headline number: it is COMPUTED by introspecting the generator registries, which is why it cannot go stale the way a hand-written gap list does.",
+  "type": "object",
+  "required": ["schema_version", "count", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string" },
+    "database_version": { "type": "string" },
+    "updated": { "type": "string" },
+    "normalization_default": { "type": "string" },
+    "families": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Every distinct tag appearing in any record's generated `families` array."
+    },
+    "primary_families": { "type": "array", "items": { "type": "string" } },
+    "count": { "type": "integer", "minimum": 0 },
+    "implemented_count": { "type": "integer", "minimum": 0 },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slug", "name", "path", "primary_family"],
+        "additionalProperties": false,
+        "properties": {
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "primary_family": { "type": "string" },
+          "families": { "type": "array", "items": { "type": "string" } },
+          "definition_mode": { "type": "string" },
+          "has_approximation": { "type": "boolean" },
+          "curvature_condition": { "type": "string" },
+          "periodicity_rank": { "type": "integer", "minimum": 0, "maximum": 3 },
+          "genus": { "type": ["integer", "string", "null"] },
+          "genus_per_cell": { "type": ["integer", "null"] },
+          "orientable": { "type": ["boolean", "string", "null"] },
+          "ends": { "type": ["integer", "string", "null"] },
+          "embedding": { "type": ["string", "null"] },
+          "symmetry": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": { "type": "string" },
+              "symbol": { "type": ["string", "null"] },
+              "ita_number": { "type": ["integer", "null"] },
+              "order": { "type": ["integer", "string", "null"] }
+            }
+          },
+          "implemented": { "type": "boolean" },
+          "operator_ids": { "type": "array", "items": { "type": "string" } },
+          "specimen_count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

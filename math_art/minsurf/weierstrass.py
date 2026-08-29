@@ -36,6 +36,14 @@ from .elliptic import _SQUARE, _Lattice
 
 TAU = 2.0 * math.pi
 
+# How far the radial node grading is pushed toward its pure form.
+# 1.0 is the pure grading, whose spacing collapses to zero at the
+# clustered end and produces sliver quads with unstable normals; 0.0
+# is a plain linear grid with no clustering at all. 0.75 keeps most
+# of the clustering while bounding the worst gap ratio -- see the
+# blend in the disk grid builder.
+GRADE_BLEND = 0.75
+
 
 def _ev(x, p):
     """Evaluate a spec field: plain value or callable(p)."""
@@ -133,10 +141,31 @@ def _we_disk(spec, p, nu, nv, theta):
     # grid dense at r_in and r_out for two-ended annuli).
     grade = spec.get('radial_grade')
     s = np.linspace(0.0, 1.0, nu)
-    if grade == 'rim':
-        s = 1.0 - (1.0 - s) ** 2
-    elif grade == 'both':
-        s = 0.5 - 0.5 * np.cos(math.pi * s)
+    if grade in ('rim', 'both'):
+        if grade == 'rim':
+            g = 1.0 - (1.0 - s) ** 2
+        else:
+            g = 0.5 - 0.5 * np.cos(math.pi * s)
+        # BLEND with the linear grid rather than using the graded one
+        # neat.  Both curves have ZERO derivative at the clustered end,
+        # so the spacing between the last two rings collapses like
+        # 1/nu^2 while the angular spacing only falls like 1/nv: the
+        # outermost quads become slivers whose aspect ratio grows
+        # without bound as resolution rises.  The blend keeps the
+        # clustering (which is real: Enneper flares like r^(2k+1), and
+        # a linear grid leaves the rim a coarse polygon) but puts a
+        # floor under the spacing: the derivative at the clustered end
+        # is now at least 1 - GRADE_BLEND, so the gap ratio is bounded
+        # by a constant instead of growing with nu.
+        #
+        # NB the blend is an aspect-ratio bound, nothing more.  The
+        # folded-over "lip" once seen along Enneper's rim was NOT these
+        # slivers' fault: it was the boundary smoother's first-order
+        # shrink pulling the rim ring through its (tightly graded)
+        # neighbour ring -- fixed in domain._smooth_boundary, which is
+        # now a non-shrinking Taubin pair.  The tight last-ring gap
+        # merely made that pull easier to overshoot.
+        s = (1.0 - GRADE_BLEND) * s + GRADE_BLEND * g
     u = ra + (r1 - ra) * s
     R, TH = np.meshgrid(u, v, indexing='ij')
     z = R * np.exp(1j * TH)

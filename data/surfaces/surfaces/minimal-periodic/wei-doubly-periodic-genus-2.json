@@ -1,0 +1,116 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "wei-doubly-periodic-genus-2",
+  "name": "Wei Doubly Periodic (genus 2)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "embedded",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 2,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 4
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "WEI_DOUBLY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
+      "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
+    ],
+    "cross_checked": [
+      {
+        "source": "F. Wei, Invent. Math. 109 (1992) 113-136 (minsurf ch052)",
+        "agrees": true,
+        "detail": "'It was the first genus 2 embedded doubly periodic minimal surface, adding a handle to one of the Karcher-Meeks-Rosenberg examples'; 4-ended (parallel annular ends inherited from KMR)."
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch052_weis_doubly_periodic_surface_of_genus_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 33794,
+      "edges": 67076,
+      "faces": 33280,
+      "euler_characteristic": -2,
+      "angle_defect_total": -22.936502,
+      "area": 7.770808,
+      "volume": 0.229865,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 30019,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.713032,
+        2.0,
+        1.907142
+      ],
+      "aspect_ratio": 0.356516
+    }
+  }
+}

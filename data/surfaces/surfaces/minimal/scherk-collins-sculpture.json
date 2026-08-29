@@ -1,0 +1,83 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherk-collins-sculpture",
+  "name": "Scherk-Collins Sculpture",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "minimal"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.scherk_collins_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.scherk_collins_generator",
+      "operator_id": "mesh.scherk_collins_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. F. Scherk, \"Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen\", J. reine angew. Math. (Crelle) 13, 1835",
+      "- the singly-periodic saddle-tower minimal surface. Sculptural form after the collaboration of sculptor Brent Collins and Carlo H. Sequin (see the Leonardo and I3D papers above)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "named_after": "Collins, Scherk",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 7360,
+      "edges": 14720,
+      "faces": 7360,
+      "euler_characteristic": 0,
+      "angle_defect_total": 17.736154,
+      "area": 6.829998,
+      "volume": 0.143271,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 4957,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.913047,
+        0.913055,
+        2.0
+      ],
+      "aspect_ratio": 0.456524
+    }
+  }
+}

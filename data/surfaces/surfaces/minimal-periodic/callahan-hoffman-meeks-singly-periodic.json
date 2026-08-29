@@ -1,0 +1,122 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "callahan-hoffman-meeks-singly-periodic",
+  "name": "Callahan-Hoffman-Meeks (singly periodic)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "embedded",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 3,
+    "ends": [
+      {
+        "type": "planar",
+        "count": 2
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "CHM_PERIODIC",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
+      "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
+    ],
+    "cross_checked": [
+      {
+        "source": "M. Callahan, D. Hoffman, W. H. Meeks III, Invent. Math. 96 (1989) 459-505",
+        "agrees": true,
+        "detail": "Primary source: M_k/T has genus 2k+1 and two ends (planar); k = 1 gives quotient genus 3.  The recorded genus 3 follows the paper."
+      },
+      {
+        "source": "minimalsurfaces.blog (minsurf ch128)",
+        "agrees": false,
+        "detail": "DISAGREES with the primary source: the page says 'When divided by its translational symmetry, it has two planar ends and genus 2', but Invent. Math. 96 (1989) gives M_1/T genus 3 (2k+1, k=1), and the shipped implementation independently measures quotient genus 3 (chi = -6 with 2 ends).  The blog page appears to be off by one."
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch128_callahan_hoffman_meeks_surfaces"
+  },
+  "named_after": "Callahan, Hoffman, Meeks",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 56519,
+      "edges": 112833,
+      "faces": 56308,
+      "euler_characteristic": -6,
+      "angle_defect_total": -1115.456251,
+      "area": 7.114497,
+      "volume": 0.443966,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 352,
+      "nonmanifold_vertices": 46145,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.957617
+      ],
+      "aspect_ratio": 0.478808
+    }
+  }
+}

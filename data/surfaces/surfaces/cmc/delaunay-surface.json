@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "delaunay-surface",
+  "name": "Delaunay Surface",
+  "primary_family": "cmc",
+  "families": [
+    "cmc",
+    "def-parametric",
+    "not-implemented",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "cmc",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "orientable": true,
+    "compact": false,
+    "complete": true
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 1,
+    "continuous": "SO(2) about the axis; periodic along it"
+  },
+  "embedding": {
+    "quality": "varies"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "The family record. Its MEMBERS ship (mesh.delaunay_surface_add), so the family itself has no row of its own."
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "C. Delaunay, 'Sur la surface de revolution dont la courbure moyenne est constante', J. Math. Pures Appl. 6 (1841)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Charles-Eugene Delaunay",
+  "year": 1841,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1252_delaunay_4"
+  },
+  "metrics": {
+    "normalization": "unit_waist"
+  },
+  "specimens": [
+    {
+      "label": "sphere chain",
+      "slug": "sphere-chain",
+      "embedding": {
+        "quality": "immersed"
+      }
+    },
+    {
+      "label": "unduloid",
+      "slug": "unduloid",
+      "embedding": {
+        "quality": "embedded"
+      }
+    },
+    {
+      "label": "cylinder",
+      "slug": "circular-cylinder",
+      "embedding": {
+        "quality": "embedded"
+      }
+    },
+    {
+      "label": "nodoid",
+      "slug": "nodoid",
+      "embedding": {
+        "quality": "self-intersecting"
+      }
+    },
+    {
+      "label": "catenoid (H = 0)",
+      "slug": "catenoid",
+      "embedding": {
+        "quality": "embedded"
+      }
+    }
+  ],
+  "notes": {
+    "caveats": [
+      "Delaunay's theorem: the surfaces of revolution of constant mean curvature are exactly the plane, sphere, cylinder, catenoid, unduloid and nodoid -- and their profiles are the ROULETTES of the conics, which is why the family is one object."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

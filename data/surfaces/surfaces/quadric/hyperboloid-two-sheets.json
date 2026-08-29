@@ -1,0 +1,139 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hyperboloid-two-sheets",
+  "name": "Hyperboloid of Two Sheets",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "embedded",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2/a**2 + y**2/b**2 - z**2/c**2 + 1",
+    "parameters": [
+      {
+        "name": "a",
+        "symbol": "a",
+        "domain": "(0, inf)",
+        "default": 1.0
+      },
+      {
+        "name": "b",
+        "symbol": "b",
+        "domain": "(0, inf)",
+        "default": 1.0
+      },
+      {
+        "name": "c",
+        "symbol": "c",
+        "domain": "(0, inf)",
+        "default": 1.0
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.9999544244108627,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "HYPERBOLOID_TWO",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Two-SheetedHyperboloid",
+    "mathcurve": "ch1287_hyperboloid2_2",
+    "vmm": "ch068_hyperboloid2"
+  },
+  "notes": {
+    "caveats": [
+      "Disconnected: two sheets. The only quadric in this table whose real locus has two components, which is why a component count is worth measuring rather than assuming."
+    ]
+  },
+  "alternate_names": [
+    "Two-sheeted hyperboloid"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6146,
+      "edges": 12288,
+      "faces": 6144,
+      "euler_characteristic": 2,
+      "angle_defect_total": 1.301981,
+      "area": 4.766642,
+      "volume": 0.0,
+      "components": 2,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 5294,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.4,
+        1.199538
+      ],
+      "aspect_ratio": 0.599769
+    }
+  }
+}

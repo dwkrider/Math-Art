@@ -1,0 +1,131 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "kusner-projective-plane-p-planar-ends",
+  "name": "Kusner Projective Plane (p planar ends)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "non-orientable",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "gauss_map": "z**(p - 1)*(z**p - s)/(s*z**p + 1.0)",
+    "height_differential": "i*z**(p - 1)*(z**p - s)*(1.0 + s*z**p)/(z**(2*p) + 2.0*s*z**p/(p - 1) - 1.0)**2",
+    "parameters": [
+      {
+        "name": "p",
+        "domain": "see the generator",
+        "default": 7,
+        "integer": true
+      },
+      {
+        "name": "s",
+        "domain": "see the generator",
+        "default": 3.605551275463989,
+        "integer": false
+      }
+    ],
+    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": false,
+    "one_sided": true
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "NONORIENT",
+      "key": "KUSNER_RP2",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block.",
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\")."
+    ],
+    "cross_checked": [
+      {
+        "source": "R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295 (minsurf ch065)",
+        "agrees": true,
+        "detail": "'immersed minimal spheres with an even number 2n of planar ends. If n is odd ... an immersion of the projective plane with n planar ends.'"
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch019_inverted_boy",
+    "msblog": "ch065_kusners_spheres_with_planar_ends"
+  },
+  "named_after": "Kusner",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 20272,
+      "edges": 40419,
+      "faces": 20145,
+      "euler_characteristic": -2,
+      "angle_defect_total": 7.06687,
+      "area": 9.092715,
+      "volume": 0.004424,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 18619,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.938055,
+        2.0,
+        1.615659
+      ],
+      "aspect_ratio": 0.807829
+    }
+  }
+}

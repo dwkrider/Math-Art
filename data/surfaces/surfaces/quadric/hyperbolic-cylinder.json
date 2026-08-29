@@ -1,0 +1,127 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hyperbolic-cylinder",
+  "name": "Hyperbolic Cylinder",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "embedded",
+    "flat",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2/a**2 - y**2/b**2 - 1",
+    "parameters": [
+      {
+        "name": "a",
+        "symbol": "a",
+        "domain": "(0, inf)",
+        "default": 1.0
+      },
+      {
+        "name": "b",
+        "symbol": "b",
+        "domain": "(0, inf)",
+        "default": 1.0
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.4999969339252822,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "HYPERBOLIC_CYLINDER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "HyperbolicCylinder",
+    "mathcurve": "ch1249_cylindrehyperbolic_2"
+  },
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6370,
+      "edges": 12512,
+      "faces": 6144,
+      "euler_characteristic": 2,
+      "angle_defect_total": 0.0,
+      "area": 4.003635,
+      "volume": 0.0,
+      "components": 2,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 5115,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.167116,
+        1.325487
+      ],
+      "aspect_ratio": 0.583558
+    }
+  }
+}

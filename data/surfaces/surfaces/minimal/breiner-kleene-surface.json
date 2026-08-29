@@ -1,0 +1,70 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "breiner-kleene-surface",
+  "name": "Breiner-Kleene Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Embedded minimal surfaces invariant under a screw motion composed with a homothety: bent helicoids following a logarithmically spiraling helix, embedded in an invariant tube around it (Breiner-Kleene 2014)."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Breiner-Kleene Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch005_breiner_kleene_surface.md).",
+      "C. Breiner and S. Kleene, 'Logarithmically spiraling helicoids', arXiv:1404.6996 (2014)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch005_breiner_kleene_surface"
+  },
+  "named_after": "Breiner, Kleene",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

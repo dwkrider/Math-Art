@@ -1,0 +1,128 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "kuen-surface",
+  "name": "Kuen Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "implemented",
+    "k-const-negative",
+    "self-intersecting",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "2*(cos(u) + u*sin(u))*sin(v)/(1 + u**2*sin(v)**2)",
+    "y": "2*(sin(u) - u*cos(u))*sin(v)/(1 + u**2*sin(v)**2)",
+    "z": "log(tan(v/2)) + 2*cos(v)/(1 + u**2*sin(v)**2)",
+    "u_range": [
+      "-4.0",
+      "4.0"
+    ],
+    "v_range": [
+      "0.3",
+      "2.5"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "gaussian": {
+      "exact": "-1",
+      "value": -1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 100.05733036061379,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hyperbolic_surface_generator",
+      "operator_id": "mesh.hyperbolic_surface_add",
+      "key": "KUEN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "T. Kuen, 'Ueber Flachen von constantem Krummungsmass', Sitzungsber. Bayer. Akad. Wiss. (1884)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Theodor Kuen",
+  "year": 1884,
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "ids": {
+    "mathworld": "KuenSurface",
+    "mathcurve": "ch1293_kuen_2",
+    "vmm": "ch055_kuen"
+  },
+  "notes": {
+    "caveats": [
+      "A Backlund transform of the pseudosphere; a staple of the Gottingen plaster-model collection."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6144,
+      "edges": 12128,
+      "faces": 5985,
+      "euler_characteristic": 1,
+      "angle_defect_total": 16.924929,
+      "area": 8.742217,
+      "volume": 0.936028,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 5063,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.40822,
+        1.926133
+      ],
+      "aspect_ratio": 0.70411
+    }
+  }
+}

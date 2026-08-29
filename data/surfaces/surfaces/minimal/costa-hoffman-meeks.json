@@ -1,0 +1,158 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "costa-hoffman-meeks",
+  "name": "Costa-Hoffman-Meeks Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-weierstrass",
+    "embedded",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": "varies",
+    "orientable": true,
+    "finite_total_curvature": true,
+    "euler_characteristic": "varies",
+    "ends": [
+      {
+        "type": "planar",
+        "count": 1,
+        "embedded": true
+      },
+      {
+        "type": "catenoidal",
+        "count": 2,
+        "embedded": true
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "TORI",
+      "key": "COSTA_HM",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "D. Hoffman and W. H. Meeks III, 'Embedded minimal surfaces of finite topology', Ann. of Math. 131 (1990)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "David Hoffman and William Meeks III",
+  "year": 1990,
+  "specimens": [
+    {
+      "label": "genus 1 (Costa)",
+      "parameters": {
+        "k": 1
+      },
+      "slug": "costa-surface",
+      "topology": {
+        "genus": 1,
+        "euler_characteristic": -3
+      }
+    },
+    {
+      "label": "genus 2",
+      "parameters": {
+        "k": 2
+      },
+      "topology": {
+        "genus": 2,
+        "euler_characteristic": -5
+      }
+    },
+    {
+      "label": "genus 3",
+      "parameters": {
+        "k": 3
+      },
+      "topology": {
+        "genus": 3,
+        "euler_characteristic": -7
+      }
+    }
+  ],
+  "relations": {
+    "generalizes": [
+      "costa-surface"
+    ]
+  },
+  "ids": {
+    "vmm": "ch029_costa_h_m"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 29361,
+      "edges": 58590,
+      "faces": 29226,
+      "euler_characteristic": -3,
+      "angle_defect_total": 3.294566,
+      "area": 5.470131,
+      "volume": 0.00925,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 25673,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.085023
+      ],
+      "aspect_ratio": 0.542512
+    }
+  }
+}

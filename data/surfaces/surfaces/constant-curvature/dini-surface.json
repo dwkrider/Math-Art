@@ -1,0 +1,130 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "dini-surface",
+  "name": "Dini Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "constant-curvature",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "k-const-negative",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "sqrt(1 - 0.2**2)*cos(u)*sin(v)",
+    "y": "sqrt(1 - 0.2**2)*sin(u)*sin(v)",
+    "z": "sqrt(1 - 0.2**2)*(cos(v) + log(tan(v/2))) + 0.2*u",
+    "u_range": [
+      "0",
+      "4*pi"
+    ],
+    "v_range": [
+      "0.15",
+      "2.0"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "gaussian": {
+      "exact": "-1",
+      "value": -1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 275.44997460083187,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 1,
+    "continuous": "screw motion about the axis"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hyperbolic_surface_generator",
+      "operator_id": "mesh.hyperbolic_surface_add",
+      "key": "DINI",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "U. Dini, 'Sopra le funzioni di una variabile complessa' and the helicoidal surfaces of constant curvature (1865)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Ulisse Dini",
+  "year": 1865,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "DinisSurface",
+    "mathcurve": "ch1255_dini_2",
+    "vmm": "ch053_dini"
+  },
+  "notes": {
+    "caveats": [
+      "The helicoidal (twisted) pseudosphere: applying a screw motion to the tractrix gives a whole one-parameter family of K = -1 surfaces, of which the pseudosphere is the untwisted member."
+    ]
+  },
+  "alternate_names": [
+    "Dini's surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6144,
+      "edges": 12128,
+      "faces": 5985,
+      "euler_characteristic": 1,
+      "angle_defect_total": -32.922049,
+      "area": 1.375141,
+      "volume": 0.015743,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 5063,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.389935,
+        0.389988,
+        2.0
+      ],
+      "aspect_ratio": 0.194968
+    }
+  }
+}

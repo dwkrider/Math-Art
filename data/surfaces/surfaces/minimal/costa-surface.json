@@ -1,0 +1,143 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "costa-surface",
+  "name": "Costa's Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-weierstrass",
+    "embedded",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "total_curvature": {
+      "exact": "-12*pi",
+      "value": -37.69911184307752,
+      "source": "classical",
+      "note": "degree-3 Gauss map; C. J. Costa, 'Classification of complete minimal surfaces in R^3 with total curvature 12pi', Invent. Math. 105 (1991) 273-303 -- the value is in the paper's own title (sign convention: integral of K dA = -12pi)."
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 1,
+    "orientable": true,
+    "finite_total_curvature": true,
+    "euler_characteristic": -3,
+    "ends": [
+      {
+        "type": "planar",
+        "count": 1,
+        "embedded": true
+      },
+      {
+        "type": "catenoidal",
+        "count": 2,
+        "embedded": true
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "TORI",
+      "key": "COSTA",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "C. J. Costa, 'Example of a complete minimal immersion in R^3 of genus one and three embedded ends', Bol. Soc. Bras. Mat. 15 (1984).",
+      "D. Hoffman and W. H. Meeks III, 'A complete embedded minimal surface in R^3 with genus one and three ends', J. Diff. Geom. 21 (1985) -- the proof that Costa's example is embedded.",
+      "C. J. Costa, 'Classification of complete minimal surfaces in R^3 with total curvature 12pi', Invent. Math. 105 (1991) 273-303 -- independent confirmation of the recorded -12pi."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Celso Jose Costa; embeddedness proved by David Hoffman and William Meeks III",
+  "year": 1982,
+  "ids": {
+    "mathworld": "CostaMinimalSurface",
+    "mathcurve": "ch1242_costa_2",
+    "vmm": "Costa",
+    "wikipedia": "Costa's minimal surface",
+    "msblog": "ch243_the_costa_surface"
+  },
+  "relations": {
+    "generalizes": [],
+    "specialises": [
+      "costa-hoffman-meeks"
+    ]
+  },
+  "notes": {
+    "caveats": [
+      "The first new embedded complete minimal surface of finite total curvature found since the 19th century; it broke the long-held belief that the plane, catenoid and helicoid were the only ones."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3289,
+      "edges": 6468,
+      "faces": 3176,
+      "euler_characteristic": -3,
+      "angle_defect_total": -21.121852,
+      "area": 5.822573,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 1510,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.231716
+      ],
+      "aspect_ratio": 0.615858
+    }
+  }
+}

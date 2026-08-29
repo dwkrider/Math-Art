@@ -1,0 +1,105 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "fischer-koch-freese-twisted",
+  "name": "Fischer-Koch-Freese (twisted)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SP_FK_FREESE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "W. Fischer, E. Koch, \"Spanning minimal surfaces\", Phil. Trans. R. Soc. Lond. A 354 (1996) 2105-2142;",
+      "M. Weber, https://minimalsurfaces.blog/ -- notebooks \"Fischer-Koch Translational\", \"Fischer-Koch-Freese\" (after R. Freese), \"Singly Periodic Torus with One Catenoid and Two Annular Ends\", \"Translation Invariant Torus with Two Enneper and Two Annular Ends\" (research/msblog_harvest/singly_periodic.json);",
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
+      "B. C. Carlson, Numer. Algorithms 10 (1995) 13-26 (R_F)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch369_fischer_koch_freese_surfaces"
+  },
+  "named_after": "Fischer, Freese, Koch",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 28265,
+      "edges": 55868,
+      "faces": 27600,
+      "euler_characteristic": -3,
+      "angle_defect_total": -16.201461,
+      "area": 4.669409,
+      "volume": 0.000211,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 23499,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.898105,
+        2.0,
+        1.76739
+      ],
+      "aspect_ratio": 0.883695
+    }
+  }
+}

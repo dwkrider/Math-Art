@@ -1,0 +1,82 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "pearce-saddle-surface",
+  "name": "Pearce Saddle Surface",
+  "primary_family": "discrete",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "discrete",
+    "immersed",
+    "implemented"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.pearce_surface, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.pearce_surface",
+      "operator_id": "mesh.saddle_polyhedron_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Peter Pearce, \"Structure in Nature is a Strategy for Design\", The MIT Press, 1978, ch. 8 -- saddle polygons spanned by minimal surfaces, and the saddle polyhedra they bound.",
+      "Ulrich Pinkall & Konrad Polthier, \"Computing Discrete Minimal Surfaces and Their Conjugates\", Experimental Mathematics 2(1), 1993, pp. 15-36 -- the cotangent-Laplacian area minimisation used here through the project's `minsurf.plateau` module."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 407,
+      "edges": 1215,
+      "faces": 810,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.566374,
+      "area": 9.376063,
+      "volume": 0.999919,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 342,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "capillary-surface",
+  "name": "Capillary Surface",
+  "primary_family": "physical",
+  "families": [
+    "aperiodic",
+    "cmc",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "physical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.cmc_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "cmc",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.cmc_generator",
+      "operator_id": "mesh.cmc_capillary_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "C. E. Delaunay, \"Sur la surface de revolution dont la courbure moyenne est constante\", Journal de Mathematiques Pures et Appliquees 6 (1841), 309-314 -- the classification of CMC surfaces of revolution (unduloid, nodoid, catenoid, cylinder, sphere).",
+      "T. Young, \"An essay on the cohesion of fluids\", Philosophical Transactions of the Royal Society 95 (1805), 65-87 -- the contact-angle condition.",
+      "P. S. de Laplace, \"Traite de mecanique celeste\", Supplement au livre X (1806) -- the Young-Laplace pressure law.",
+      "J. Plateau, \"Statique experimentale et theorique des liquides soumis aux seules forces moleculaires\" (1873).",
+      "R. Finn, \"Equilibrium Capillary Surfaces\", Grundlehren der mathematischen Wissenschaften 284, Springer (1986) -- sessile drops and capillary theory.",
+      "P.-G. de Gennes, F. Brochard-Wyart, D. Quere, \"Capillarity and Wetting Phenomena\" (Springer, 2004) -- capillary length, Bond number, and the gravity-flattened puddle thickness h = 2 l_c sin(theta/2)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 816,
+      "edges": 2352,
+      "faces": 1536,
+      "euler_characteristic": 0,
+      "angle_defect_total": 4.904714,
+      "area": 5.648558,
+      "volume": 1.883573,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 808,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.999875,
+        0.902976
+      ],
+      "aspect_ratio": 0.451488
+    }
+  }
+}

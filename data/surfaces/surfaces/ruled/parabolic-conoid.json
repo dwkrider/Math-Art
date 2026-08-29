@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "parabolic-conoid",
+  "name": "Parabolic Conoid",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "ruled",
+    "tradition-architectural",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The conoid whose curved directrix is a parabola; the right case with the parabola's axis parallel to the directrix line degenerates to Whitney's umbrella (which has its own record).  Used in roof shells."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The shipped conoid modes (Plucker, n-fold, Wallis, Zindler, Whitney) do not include a parabolic directrix.",
+      "resume": "math_art/ruled_surface_generator.py already carries the cone and conoid machinery (build_conoid and the CONOID variant table); add a row and take the parametrization from the cited mirror chapter."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Parabolic conoid\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1240_conoide_parabolique_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1240_conoide_parabolique_2.md)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "architectural",
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1240_conoide_parabolique_2"
+  },
+  "named_after": "Parabolic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

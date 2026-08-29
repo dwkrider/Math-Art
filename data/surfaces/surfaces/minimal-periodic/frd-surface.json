@@ -1,0 +1,131 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "frd-surface",
+  "name": "Frd surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-nodal",
+    "has-approximation",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "approximation",
+    "approximates": null,
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "level": 0.0,
+    "residual": {
+      "max_abs_mean_curvature": 0.597723,
+      "measured_at_resolution": 120,
+      "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
+    "level_function": "(4 * cos(x) * cos(y) * cos(z) - (cos(2 * x) * cos(2 * y) + cos(2 * y) * cos(2 * z) + cos(2 * z) * cos(2 * x)))"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.5977227026241899,
+        "resolution": 120,
+        "tolerance": 0.7172676,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true,
+    "genus_per_cell": 6,
+    "euler_characteristic_per_cell": -10
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "FRD",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch281, Schoen F-RD)",
+        "agrees": true,
+        "detail": "'[The] FR-D surface extends handles towards the faces of a rhombic dodecahedron (or, the edges of a cube) and hence has genus 6.'  A. H. Schoen, NASA TN D-5541 (1970)."
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "ids": {
+    "msblog": "ch281_schoen_f_rd"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 54074,
+      "edges": 160476,
+      "faces": 106368,
+      "euler_characteristic": -34,
+      "angle_defect_total": -247.988742,
+      "area": 19.476406,
+      "volume": 0.792106,
+      "components": 1,
+      "boundary_loops": 14,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 48252,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
+  }
+}

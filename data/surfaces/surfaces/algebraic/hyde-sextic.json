@@ -1,0 +1,77 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hyde-sextic",
+  "name": "Hyde Sextic",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Hyde's 1901 sextic, touched by the axes of all screws reciprocal to three given screws (classical screw theory); singular along a cuspidal double curve and at 6 points."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "cuspidal double curve",
+        "count": null,
+        "note": "The surface is singular ALONG A CURVE, not merely at points."
+      },
+      {
+        "type": "singular point",
+        "count": 6,
+        "note": "Only 2 visible in the real picture, per the page."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "O. Labs, 'Advent calendar 2002, No. 17', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch029_no_17.md).",
+      "Hyde, Ann. of Math., 2nd series, vol. 2 (1901), and Ann. of Math. 4 (1888) (the page's references for the screw-theory construction); description and equation communicated to O. Labs by W. Barth."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch029_no_17"
+  },
+  "named_after": "Hyde",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

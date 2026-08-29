@@ -1,0 +1,158 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "dupin-cyclide",
+  "name": "Dupin Cyclide",
+  "primary_family": "cyclide",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "cyclide",
+    "def-parametric",
+    "implemented",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "genus": 1,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "varies"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "CYCLIDE_RING",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CYCLIDE_RING"
+    },
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "CYCLIDE_HORN",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CYCLIDE_HORN"
+    },
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "CYCLIDE_SPINDLE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CYCLIDE_SPINDLE"
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "C. Dupin, Applications de geometrie et de mechanique (1822).",
+      "J. Schrott and B. Odehnal, 'Ortho-circles of Dupin cyclides', J. Geometry and Graphics 10 (2006)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "specimens": [
+    {
+      "label": "ring",
+      "embedding": {
+        "quality": "embedded"
+      },
+      "topology": {
+        "genus": 1
+      }
+    },
+    {
+      "label": "horn",
+      "embedding": {
+        "quality": "singular"
+      },
+      "topology": {
+        "genus": 1
+      }
+    },
+    {
+      "label": "spindle",
+      "embedding": {
+        "quality": "self-intersecting"
+      },
+      "topology": {
+        "genus": 1
+      }
+    }
+  ],
+  "discovered_by": "Charles Dupin",
+  "year": 1822,
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "ids": {
+    "mathworld": "Cyclide",
+    "mathcurve": "ch1245_cyclidededupin_2",
+    "vmm": "ch071_cyclide"
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "relations": {
+    "inverse_of": "torus"
+  },
+  "notes": {
+    "caveats": [
+      "The classical surface all of whose curvature lines are CIRCLES. Obtained by inverting a torus, cylinder or cone in a sphere, which is why the three types are regimes of one formula rather than three surfaces."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4608,
+      "edges": 9216,
+      "faces": 4608,
+      "euler_characteristic": 0,
+      "angle_defect_total": 19.30127,
+      "area": 8.273283,
+      "volume": 2.022977,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 2475,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.499562,
+        1.662391
+      ],
+      "aspect_ratio": 0.749781
+    }
+  }
+}

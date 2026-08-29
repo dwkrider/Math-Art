@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "karcher-meeks-rosenberg-kmr-3-tilted-ends",
+  "name": "Karcher-Meeks-Rosenberg (KMR-3, tilted ends)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 1,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 4
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "KMR3_DOUBLY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
+      "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch035, KMR case 3)",
+        "agrees": true,
+        "detail": "The tilted-ends member of the 3-parameter KMR family (genus 1, four parallel annular ends in the quotient); 'the surfaces resemble a doubly periodic version of Riemann's singly periodic surface.'"
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Meeks",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 16721,
+      "edges": 33106,
+      "faces": 16384,
+      "euler_characteristic": -1,
+      "angle_defect_total": -13.393482,
+      "area": 8.32409,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 11586,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.918001,
+        1.817064
+      ],
+      "aspect_ratio": 0.908532
+    }
+  }
+}

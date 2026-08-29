@@ -1,0 +1,167 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "pgd-associate-family",
+  "name": "P-Gyroid-D Associate Family",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus_per_cell": 3,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3,
+    "hermann_mauguin": "varies",
+    "chiral": "varies"
+  },
+  "embedding": {
+    "quality": "varies"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "PGD",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "A. H. Schoen, NASA TN D-5541 (1970).",
+      "O. Bonnet (1853) for the associate family in general."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical",
+    "crystallographic"
+  ],
+  "discovered_by": "Hermann Amandus Schwarz (P, D); Alan H. Schoen (the gyroid member)",
+  "year": 1970,
+  "specimens": [
+    {
+      "label": "Schwarz P (theta = 0)",
+      "slug": "schwarz-p",
+      "parameters": {
+        "theta_degrees": 0.0
+      },
+      "embedding": {
+        "quality": "embedded"
+      },
+      "symmetry": {
+        "hermann_mauguin": "Im-3m",
+        "chiral": false
+      }
+    },
+    {
+      "label": "gyroid (theta = 38.0148)",
+      "slug": "gyroid",
+      "parameters": {
+        "theta_degrees": 38.014772
+      },
+      "embedding": {
+        "quality": "embedded"
+      },
+      "symmetry": {
+        "hermann_mauguin": "Ia-3d",
+        "chiral": true
+      }
+    },
+    {
+      "label": "Schwarz D (theta = 90)",
+      "slug": "schwarz-d",
+      "parameters": {
+        "theta_degrees": 90.0
+      },
+      "embedding": {
+        "quality": "embedded"
+      },
+      "symmetry": {
+        "hermann_mauguin": "Pn-3m",
+        "chiral": false
+      }
+    },
+    {
+      "label": "generic associate",
+      "parameters": {
+        "theta_degrees": 20.0
+      },
+      "embedding": {
+        "quality": "self-intersecting"
+      },
+      "symmetry": {
+        "hermann_mauguin": null,
+        "chiral": true
+      }
+    }
+  ],
+  "notes": {
+    "caveats": [
+      "The three named members are the only EMBEDDED ones; a generic associate angle self-intersects, which is why only three of a continuous family have names."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 26834,
+      "edges": 79518,
+      "faces": 52680,
+      "euler_characteristic": -4,
+      "angle_defect_total": -22.958046,
+      "area": 9.414342,
+      "volume": 2.524041,
+      "components": 1,
+      "boundary_loops": 6,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 23994,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
+  }
+}

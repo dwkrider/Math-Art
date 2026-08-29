@@ -1,0 +1,113 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "van-straten-octic",
+  "name": "Van Straten Octic (165 nodes)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 2.6
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nMember of Endrass's 5-parameter D8 x Z2 octic family (see endrass-octic-family) found by D. van Straten: the parameters are those of Endrass's 160-nodal octic except b = 1.  The site notes its earlier publication venue as 'the printout on his office door'."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 165,
+        "note": "Per the mirrored duco165 page and the octics survey list ('165: D. van Straten (1995?)'); the highest known nodal octic count below Endrass's 168."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "OCTIC",
+      "key": "VAN_STRATEN_165",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "S. Breske, O. Labs and D. van Straten, \"Real Line Arrangements and Surfaces with Many Real Nodes\", arXiv:math/0507234 (2005) -- why real nodes are the rendering-relevant count.",
+      "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- the family and the 112-node count of its generic member.",
+      "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.",
+      "V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's original series.",
+      "O. Labs, 'Van Straten's D8 x Z2-symmetric Octic with 165 Nodes', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch008_duco165.md).",
+      "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch008_duco165"
+  },
+  "named_after": "Octic, Straten, Van",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 186111,
+      "edges": 556932,
+      "faces": 370764,
+      "euler_characteristic": -57,
+      "angle_defect_total": -239.740716,
+      "area": 14.72111,
+      "volume": 0.451008,
+      "components": 58,
+      "boundary_loops": 36,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 163965,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.647107
+      ],
+      "aspect_ratio": 0.823554
+    }
+  }
+}

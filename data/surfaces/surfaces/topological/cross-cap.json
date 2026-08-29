@@ -1,0 +1,106 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "cross-cap",
+  "name": "Cross-Cap",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "implemented",
+    "non-orientable",
+    "singular",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.topological_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "euler_characteristic": 1,
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "non_orientable_genus": 1,
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "pinch point",
+        "count": 2
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "CROSSCAP",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "D. Hilbert and S. Cohn-Vossen, Anschauliche Geometrie (1932) -- Geometry and the Imagination, the standard exposition."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Cross-Cap",
+    "mathcurve": "ch1243_bonnetcroise_2",
+    "vmm": "ch042_cross_cap"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4465,
+      "edges": 8976,
+      "faces": 4512,
+      "euler_characteristic": 1,
+      "angle_defect_total": 13.092505,
+      "area": 12.499914,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 805,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.997903,
+        1.997903
+      ],
+      "aspect_ratio": 0.998951
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "supershape",
+  "name": "Supershape",
+  "primary_family": "spectral",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "spectral"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.supershape_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.supershape_generator",
+      "operator_id": "mesh.supershape_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Gielis, J. (2003). \"A generic geometric transformation that unifies a wide range of natural and abstract shapes.\" American Journal of Botany 90(3), 333-338. doi:10.3732/ajb.90.3.333 -- the paper that introduced the superformula.",
+      "Bourke, P. \"Supershapes / SuperFormula.\" https://paulbourke.net/geometry/supershape/ -- the 3D spherical product, shell and toroidal mappings this module follows.",
+      "Barr, A. H. (1981). \"Superquadrics and Angle-Preserving Transformations.\" IEEE Computer Graphics & Applications 1(1), 11-23 -- the superellipsoid (SUPERELLIPSOID mode)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 8066,
+      "edges": 16256,
+      "faces": 8192,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.56637,
+      "area": 7.655842,
+      "volume": 0.506424,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 2019,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.906128,
+        2.0,
+        0.657687
+      ],
+      "aspect_ratio": 0.328843
+    }
+  }
+}

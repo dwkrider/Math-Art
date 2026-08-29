@@ -124,6 +124,34 @@
 #    inversion construction and the ring / horn / spindle
 #    classification used here; a converted copy is in
 #    research/papers/classical-surfaces/.
+#
+# References:
+# - D. von Seggern, "CRC Standard Curves and Surfaces" (1993), p. 304 --
+#   Fresnel's elasticity surface.
+# - A. Robin (2004), plotted after M. Trott, "The Mathematica
+#   GuideBook for Graphics" (2004), p. 103 -- the paper bag surface.
+# - O. Knill (2017); M. A. Villarino and J. C. Varilly (2024) -- the
+#   trihyperboloid and its volume ln 256.
+# - C. Dupin, "Applications de Geometrie et de Mechanique", Paris 1822;
+#   B. Odehnal, "Ortho-Circles of Dupin Cyclides", J. Geometry Graphics
+#   10 (2006) 1-21 -- the inversion construction and the ring / horn /
+#   spindle classification.
+# - J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892)
+#   190; O. Zoll, "Ueber Flaechen mit Scharen geschlossener
+#   geodaetischer Linien", Math. Ann. 57 (1903) 108-133; A. L. Besse,
+#   "Manifolds all of whose Geodesics are Closed", Springer 1978.
+# - H. A. Schwarz, "Sur une definition erronee de l'aire d'une surface
+#   courbe", Gesammelte Mathematische Abhandlungen vol. 2, Springer 1890,
+#   309-311 -- the lantern counterexample and the name.
+# - P. Bouguer (1734), studied by C. Bossut (1778); see E. Benvenuto,
+#   "An Introduction to the History of Structural Mechanics", part II,
+#   344-348 -- the masonry dome.
+# - W. Neile (1637-1670) for the semicubical parabola whose revolution
+#   is the neiloid.
+# - R. Ferreol, "Encyclopedie des formes mathematiques remarquables"
+#   (mathcurve.com), chapters "dome de Bouguer", "goutte d'eau",
+#   "neiloide", "poire de Tannery" and "lampion de Schwarz" -- the
+#   parametrisations checked against.
 
 bl_info = {
     "name": "Miscellaneous Surfaces",

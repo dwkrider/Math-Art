@@ -1,0 +1,137 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "circular-cylinder",
+  "name": "Circular Cylinder",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "embedded",
+    "flat",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2 + y**2 - 1"
+  },
+  "curvature": {
+    "condition": "flat",
+    "gaussian": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.50000000870135,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "genus": 0,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "CYLINDER",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "CIRCULAR_CYLINDER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Cylinder",
+    "mathcurve": "ch1230_cylindrederevolution_2"
+  },
+  "relations": {
+    "member_of": "delaunay-surface"
+  },
+  "notes": {
+    "caveats": [
+      "Both flat (K = 0, so developable) and CMC (H = 1/2r), which is why it sits in the Delaunay family. The curvature facet records `flat` as the stronger condition."
+    ]
+  },
+  "alternate_names": [
+    "Cylinder of revolution"
+  ],
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3120,
+      "edges": 6192,
+      "faces": 3072,
+      "euler_characteristic": 0,
+      "angle_defect_total": 0.0,
+      "area": 10.4645,
+      "volume": 2.900582,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 2667,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.666667,
+        1.666667,
+        2.0
+      ],
+      "aspect_ratio": 0.833333
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "neovius-surface",
+  "name": "Neovius surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-nodal",
+    "embedded",
+    "has-approximation",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "approximation",
+    "approximates": null,
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "level": 0.0,
+    "residual": {
+      "max_abs_mean_curvature": 0.247228,
+      "measured_at_resolution": 120,
+      "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
+    "level_function": "(3 * (cos(x) + cos(y) + cos(z)) + 4 * cos(x) * cos(y) * cos(z))"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.24722840733225088,
+        "resolution": 120,
+        "tolerance": 0.2966736,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true,
+    "genus_per_cell": 9,
+    "euler_characteristic_per_cell": -16
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3,
+    "hermann_mauguin": "Im-3m",
+    "ita_number": 229,
+    "chiral": false,
+    "verified_by": "curated"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "NEOVIUS",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "E. R. Neovius, 'Bestimmung zweier speciellen periodischen Minimalflachen', Helsingfors (1883).",
+      "M. Weber, minimalsurfaces.blog, 'Neovius Surface' (mirror: minsurf ch275): the X-pieces 'extend to the edges of a cube, making it a genus 9 surface' -- independent genus-per-cell oracle."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical",
+    "crystallographic"
+  ],
+  "discovered_by": "Edvard Rudolf Neovius",
+  "year": 1883,
+  "ids": {
+    "mathcurve": "ch1307_neovius_2",
+    "vmm": "ch034_neovius",
+    "msblog": "ch275_neovius_surface"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 39518,
+      "edges": 117120,
+      "faces": 77592,
+      "euler_characteristic": -10,
+      "angle_defect_total": -91.692225,
+      "area": 14.119543,
+      "volume": 2.851468,
+      "components": 1,
+      "boundary_loops": 12,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 35781,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
+  }
+}

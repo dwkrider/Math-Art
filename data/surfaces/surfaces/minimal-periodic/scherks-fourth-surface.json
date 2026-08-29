@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherks-fourth-surface",
+  "name": "Scherk's Fourth Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-implicit",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "singly-periodic",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The least-cited of Scherk's 1835 surfaces, given implicitly as his equation 20: singly periodic with two annular and two helicoidal ends, and singular at the two points where the horizontal symmetry curve meets the straight line shared by the helicoidal ends.  Weber recovers its Enneper-Weierstrass representation via the Schwarz-Bjorling formula on the x = pi level symmetry curve."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "singular"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Scherk's Fourth Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch341_scherks_fourth_surface.md).",
+      "H. F. Scherk, 'Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen', J. Reine Angew. Math. 13 (1835) 185-208 (equation 20)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch341_scherks_fourth_surface"
+  },
+  "named_after": "Fourth, Scherk",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

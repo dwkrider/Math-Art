@@ -1,0 +1,131 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "iwp-surface",
+  "name": "Iwp surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-nodal",
+    "has-approximation",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "approximation",
+    "approximates": null,
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "level": 0.0,
+    "residual": {
+      "max_abs_mean_curvature": 0.510347,
+      "measured_at_resolution": 120,
+      "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
+    "level_function": "(2 * (cos(x) * cos(y) + cos(y) * cos(z) + cos(z) * cos(x)) - (cos(2 * x) + cos(2 * y) + cos(2 * z)))"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.5103468454280482,
+        "resolution": 120,
+        "tolerance": 0.6124164,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true,
+    "genus_per_cell": 4,
+    "euler_characteristic_per_cell": -6
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "IWP",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch284, Schoen I-WP)",
+        "agrees": true,
+        "detail": "'[Schoen's] I-WP surface from 1970 is a triply periodic minimal surface of genus 4. ... After identifying opposite faces of a cubical cell the surface has genus 7, but half of such a cell already constitutes a translational fundamental domain, bringing the genus down to 4' -- the stored 4 is per translational fundamental domain, NOT per conventional cubic cell.  Also A. Schoen, schoengeometry.com (mirror schoen ch006): 'a fourth surface (I-WP) of genus 4'."
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "ids": {
+    "msblog": "ch284_schoen_i_wp"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 40188,
+      "edges": 119202,
+      "faces": 79008,
+      "euler_characteristic": -6,
+      "angle_defect_total": -71.955122,
+      "area": 14.225618,
+      "volume": 1.314339,
+      "components": 1,
+      "boundary_loops": 8,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 36210,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
+  }
+}

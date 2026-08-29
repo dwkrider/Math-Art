@@ -1,0 +1,617 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dwkrider/Math-Art/data/surfaces/schema/surface.schema.json",
+  "title": "Surface record",
+  "description": "One surface: identity, cross-references, its DEFINING DATUM, curvature condition, topology, symmetry, embedding quality, metrics and relations. Unlike a polyhedron, a surface has no exact vertex table -- its identity is the polynomial, parametrisation, Weierstrass data, nodal level function or variational problem that defines it. Meshes are renderings and are NOT stored; a reproducible recipe plus MEASURED invariants is stored instead. Records are families: most carry free parameters, and distinguished members live in `specimens`.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "slug",
+    "name",
+    "primary_family",
+    "families",
+    "definition",
+    "curvature",
+    "topology",
+    "symmetry",
+    "embedding",
+    "construction",
+    "provenance"
+  ],
+  "additionalProperties": false,
+
+  "$defs": {
+    "measure": {
+      "type": ["object", "null"],
+      "description": "A scalar with an exact closed form. `exact` uses a small fixed language: integers, + - * / and unary minus, parentheses, sqrt() acos() asin() atan() sin() cos() tan() cosh() sinh() tanh() exp() log(), and the constants pi and phi. It must evaluate to `value`; tools/surfdb_validate.py enforces that.",
+      "required": ["value"],
+      "additionalProperties": false,
+      "properties": {
+        "exact": { "type": ["string", "null"] },
+        "value": { "type": ["number", "null"] },
+        "note": { "type": "string" },
+        "source": {
+          "type": "string",
+          "description": "'classical' (a published closed form), 'measured' (computed from a build at the stated resolution), or 'pslq' (recovered by integer-relation detection and verified by re-evaluation)."
+        }
+      }
+    },
+
+    "slugref": {
+      "type": ["string", "null"],
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Slug of another record. May name a surface not yet in the database; the validator only checks reciprocity when the target exists."
+    },
+
+    "varies": {
+      "description": "A field whose value differs across a parameterised family carries the literal string 'varies' at family level and its real value on every entry of `specimens`. The validator REQUIRES that a 'varies' field be resolved on every specimen, so 'varies' can never be used to avoid stating a value.",
+      "const": "varies"
+    },
+
+    "parameter": {
+      "type": "object",
+      "required": ["name", "domain"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "symbol": { "type": ["string", "null"] },
+        "domain": {
+          "type": "string",
+          "description": "Interval or set notation, e.g. '(0, inf)', '[0, 2*pi)', '{3, 4, 5, ...}'."
+        },
+        "default": { "type": ["number", "integer", "string", "null"] },
+        "integer": { "type": "boolean" },
+        "note": {
+          "type": "string",
+          "description": "What this parameter changes -- and where it DEGENERATES. Boundary degeneracies are real and have cost time in this repo: the Hopf lift collapses at beta = 0 and pi, the Minding meridian quadrature converges only like h^(3/2) at the rim."
+        }
+      }
+    },
+
+    "definition": {
+      "type": "object",
+      "description": "How the surface is specified. Discriminated on `mode`. This is the record's centre of gravity, in the place a polyhedron record would carry `geometry.vertices_exact`.",
+      "required": ["mode", "fidelity"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": ["implicit", "parametric", "weierstrass", "nodal",
+                   "variational", "swept", "derived", "discrete"],
+          "description": "Facet F1. Determines which of the per-mode fields below are required."
+        },
+        "fidelity": {
+          "enum": ["exact", "approximation"],
+          "description": "Whether this definition IS the surface or merely approximates it. Orthogonal to `exactness`. A nodal TPMS is an `approximation`: sin x cos y + sin y cos z + sin z cos x = 0 defines a surface that is NOT the gyroid -- it is a Fourier truncation whose mean curvature is wrong at the percent level. Recording this is what lets the validator hold exact definitions to 1e-8 while holding approximations to their own published residual."
+        },
+        "approximates": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "REQUIRED when fidelity is 'approximation'. Index into the record's definition list: 0 is the primary `definition`, 1..n are `alternate_definitions`. Points at the definition that IS authoritative."
+        },
+        "residual": {
+          "type": ["object", "null"],
+          "description": "REQUIRED when fidelity is 'approximation'. What the approximation actually costs, measured -- not asserted.",
+          "additionalProperties": false,
+          "properties": {
+            "max_abs_mean_curvature": { "type": ["number", "null"] },
+            "max_abs_gaussian_deviation": { "type": ["number", "null"] },
+            "hausdorff": { "type": ["number", "null"] },
+            "measured_at_resolution": { "type": ["integer", "null"] },
+            "note": { "type": "string" }
+          }
+        },
+        "exactness": {
+          "enum": ["elementary", "numerical-integral", "solved-parameter", "unknown"],
+          "description": "How the surface is EVALUATED, given exact data. 'elementary': closed form. 'numerical-integral': the Weierstrass zoo -- g and dh are exact, the surface is their integral. 'solved-parameter': a period condition pins a modulus as the root of a transcendental equation, so the value is a number plus a residual, not a radical. This is the analogue of polydb's `vertices_exact: null` for the snubs."
+        },
+        "solve_residual": { "type": ["number", "null"] },
+        "scale": {
+          "$ref": "#/$defs/scale",
+          "description": "The scale the stored expressions are written at."
+        },
+        "parameters": { "type": "array", "items": { "$ref": "#/$defs/parameter" } },
+        "note": { "type": "string" },
+
+        "polynomial": {
+          "type": ["string", "null"],
+          "description": "mode=implicit. F(x,y,z) whose real zero set is the surface, in the exact language. NULL where the equation exists but has deliberately not been transcribed -- a mistyped coefficient does not error, it silently produces a DIFFERENT surface with the wrong node count, so a null plus a `blocked_by` is strictly better than a guess."
+        },
+        "degree": { "type": ["integer", "null"], "minimum": 1 },
+        "clip": {
+          "type": ["object", "null"],
+          "description": "Many algebraic surfaces are unbounded; without a sensible clip they render as an uninformative slab.",
+          "additionalProperties": false,
+          "properties": {
+            "shape": { "enum": ["BALL", "BOX", "CYLINDER", null] },
+            "radius": { "type": ["number", "null"] },
+            "extent": { "type": ["array", "null"], "items": { "type": "number" } }
+          }
+        },
+
+        "x": { "type": ["string", "null"], "description": "mode=parametric." },
+        "y": { "type": ["string", "null"] },
+        "z": { "type": ["string", "null"] },
+        "u_range": { "type": ["array", "null"], "minItems": 2, "maxItems": 2, "items": { "type": "string" } },
+        "v_range": { "type": ["array", "null"], "minItems": 2, "maxItems": 2, "items": { "type": "string" } },
+        "periodic_u": { "type": "boolean" },
+        "periodic_v": { "type": "boolean" },
+
+        "gauss_map": { "type": ["string", "null"], "description": "mode=weierstrass. g(z)." },
+        "height_differential": { "type": ["string", "null"], "description": "dh." },
+        "domain": {
+          "type": ["string", "null"],
+          "description": "disk | rect | torus | half-plane | punctured-plane | punctured-torus | cyclic-cover"
+        },
+        "punctures": { "type": ["array", "null"], "items": { "type": "string" } },
+        "period_conditions": {
+          "type": ["array", "null"],
+          "items": { "type": "string" },
+          "description": "The residues/periods that must vanish for the surface to close up. The validator checks them: this is the sharpest test the Weierstrass block has."
+        },
+        "riemann_surface": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "genus": { "type": ["integer", "null"] },
+            "branch_points": { "type": ["array", "null"], "items": { "type": "string" } }
+          }
+        },
+        "associate_angle_degrees": {
+          "type": ["number", "null"],
+          "description": "Bonnet associate-family phase. 0 and 90 are the surface and its conjugate."
+        },
+
+        "level_function": { "type": ["string", "null"], "description": "mode=nodal." },
+        "level": { "type": ["number", "null"] },
+        "lattice": { "type": ["string", "null"] },
+        "cell": { "type": ["array", "null"], "items": { "type": "string" } },
+
+        "energy": { "type": ["string", "null"], "description": "mode=variational, e.g. 'area', 'willmore', 'tangent-point'." },
+        "constraints": { "type": ["array", "null"], "items": { "type": "string" } },
+        "boundary": { "type": ["string", "null"] },
+        "solver": { "type": ["string", "null"] },
+
+        "profile_curve": { "type": ["string", "null"], "description": "mode=swept." },
+        "motion": {
+          "enum": ["translation", "revolution", "helicoidal", "general-rigid", null],
+          "description": "A Darboux surface is the union of congruent copies of one curve. Translating gives a translation surface, revolving a surface of revolution, screwing a helicoid -- and a general rigid motion gives none of the three."
+        },
+        "axis": { "type": ["array", "null"], "minItems": 3, "maxItems": 3, "items": { "type": "number" } },
+
+        "operation": {
+          "enum": ["inversion", "associate", "conjugate", "offset", "canal", "pipe",
+                   "pedal", "focal", "caustic", "dual", "boolean-intersection",
+                   "boolean-union", "monge", "polar", null],
+          "description": "mode=derived."
+        },
+        "source": { "$ref": "#/$defs/slugref" },
+
+        "construction_rule": { "type": ["string", "null"], "description": "mode=discrete." }
+      }
+    },
+
+    "scale": {
+      "enum": ["published", "unit_cell", "unit_waist", "unit_radius",
+               "unit_scale_parameter", "unit_total_curvature"],
+      "description": "The closed scale vocabulary, shared by `definition.scale` and `metrics.normalization`. Left as free text this reintroduces exactly the ambiguity polydb solved with edge_length_1 / midradius_1. 'published' = the source's own coefficients, unaltered (algebraic surfaces). 'unit_cell' = lattice constant 1 (TPMS, periodic). 'unit_waist' = neck radius 1 (catenoid, Delaunay). 'unit_radius' = generating or circumscribing radius 1 (quadrics, cyclides, torus). 'unit_scale_parameter' = the family's single scale parameter set to 1. 'unit_total_curvature' = scaled so the integral of K is -4*pi. NOTE: the repo's 'fit a 2x2x2 box' is a DISPLAY transform applied downstream and is never a storage normalization."
+    }
+  },
+
+  "properties": {
+    "schema_version": { "type": "string" },
+
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Globally unique key across the whole database, regardless of which family folder the file sits in."
+    },
+    "name": { "type": "string" },
+    "alternate_names": { "type": "array", "items": { "type": "string" } },
+
+    "primary_family": {
+      "enum": ["minimal", "minimal-periodic", "cmc", "constant-curvature",
+               "algebraic", "quadric", "ruled", "revolution", "swept", "cyclide",
+               "topological", "spectral", "discrete", "derived", "physical", "misc"],
+      "description": "The folder. Filing convention only -- the FACETS carry the classification. Rule: file by the property the literature names it for, ties broken toward the more specific folder. Contested classics are pre-assigned in the README so the build does not relitigate them (the catenoid is `minimal` not `revolution`; the hyperboloid is `quadric` not `ruled`)."
+    },
+
+    "families": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "description": "GENERATED, not curated. Derived from the five facets plus primary_family and the topology block; tools/surfdb_validate.py regenerates and compares, so a hand-edited value is an error. Keys of index.json's `families` map."
+    },
+
+    "discovered_by": { "type": ["string", "null"] },
+    "year": { "type": ["integer", "string", "null"] },
+    "named_after": { "type": ["string", "null"] },
+
+    "ids": {
+      "type": "object",
+      "description": "Cross-references into the sources surveyed, so a record is auditable rather than another undocumented dump. Null where the surface is not in that source.",
+      "additionalProperties": { "type": ["string", "integer", "null"] },
+      "properties": {
+        "mathworld": { "type": ["string", "null"] },
+        "mathcurve": {
+          "type": ["string", "null"],
+          "description": "Chapter stem in the local Ferreol mirror, e.g. 'ch1245_cyclidededupin_2'. Resolves offline."
+        },
+        "vmm": { "type": ["string", "null"], "description": "3DXM Virtual Math Museum exhibit." },
+        "wikipedia": { "type": ["string", "null"] },
+        "hauser": { "type": ["string", "null"], "description": "Name in Hauser's Bildergalerie." },
+        "msblog": { "type": ["string", "null"], "description": "minimalsurfaces.blog entry." },
+        "weber_archive": { "type": ["string", "null"], "description": "Folder in the recovered indiana.edu/~minimal/archive/ tree." },
+        "epinet": { "type": ["string", "null"] },
+        "schilling": { "type": ["string", "null"], "description": "Gottingen / Schilling plaster-model catalogue number." },
+        "imaginary": { "type": ["string", "null"] },
+        "eom": { "type": ["string", "null"], "description": "Encyclopedia of Mathematics." },
+        "xahlee": { "type": ["string", "null"] }
+      }
+    },
+
+    "definition": { "$ref": "#/$defs/definition" },
+
+    "alternate_definitions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/definition" },
+      "description": "The SAME surface by another construction -- never a separate record. Catalan's minimal surface IS the Bjorling surface of a cycloid; the catenoid IS the theta=0 associate of the helicoid; a Dupin cyclide IS an inverted torus. Index 0 is the primary `definition`, so entries here are indices 1..n."
+    },
+
+    "curvature": {
+      "type": "object",
+      "required": ["condition"],
+      "additionalProperties": false,
+      "properties": {
+        "condition": {
+          "enum": ["minimal", "cmc", "cmc1-bryant", "k-const-negative",
+                   "k-const-positive", "flat", "willmore", "constrained-willmore",
+                   "weingarten", "none"],
+          "description": "Facet F2, the STRONGEST condition by the declared precedence: minimal > cmc > cmc1-bryant > k-const-negative > k-const-positive > flat > willmore > constrained-willmore > weingarten > none. Necessary because the values are not disjoint: every minimal, CMC, flat and constant-K surface IS a Weingarten surface."
+        },
+        "also_satisfies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "GENERATED from the precedence chain. The catenoid is `minimal` and also_satisfies ['weingarten']."
+        },
+        "mean": { "$ref": "#/$defs/measure" },
+        "gaussian": { "$ref": "#/$defs/measure" },
+        "total_curvature": {
+          "$ref": "#/$defs/measure",
+          "description": "The integral of K dA. For a complete minimal surface of finite total curvature this is -4*pi times the degree of the Gauss map -- an INTEGER multiple of 4*pi, which makes it a sharp validator target that catches a wrong Gauss map immediately."
+        },
+        "willmore_energy": { "$ref": "#/$defs/measure" },
+        "measured": {
+          "type": "array",
+          "description": "What the validator actually observed, PER DEFINITION. An approximation and an exact definition of the same surface produce different numbers, and reporting one figure for both is how a database becomes wrong.",
+          "items": {
+            "type": "object",
+            "required": ["definition_index"],
+            "additionalProperties": false,
+            "properties": {
+              "definition_index": { "type": "integer", "minimum": 0 },
+              "max_abs_mean_curvature": { "type": ["number", "null"] },
+              "max_abs_gaussian_deviation": { "type": ["number", "null"] },
+              "resolution": { "type": ["integer", "null"] },
+              "tolerance": { "type": ["number", "null"] },
+              "passed": { "type": ["boolean", "null"] }
+            }
+          }
+        }
+      }
+    },
+
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "euler_characteristic": { "type": ["integer", "string", "null"] },
+        "euler_characteristic_per_cell": { "type": ["integer", "null"] },
+        "genus": { "type": ["integer", "string", "null"], "description": "Orientable genus, or the literal 'varies'." },
+        "genus_per_cell": { "type": ["integer", "null"], "description": "For triply-periodic surfaces, the genus of the quotient by the lattice." },
+        "non_orientable_genus": { "type": ["integer", "string", "null"], "description": "The k of N_k, for non-orientable surfaces." },
+        "orientable": { "type": ["boolean", "string", "null"] },
+        "one_sided": { "type": ["boolean", "string", "null"], "description": "MEASURED, not asserted -- the minimal-surface self-tests already gate on this." },
+        "compact": { "type": ["boolean", "null"] },
+        "complete": { "type": ["boolean", "null"] },
+        "boundary_components": { "type": ["integer", "string", "null"] },
+        "finite_total_curvature": { "type": ["boolean", "null"] },
+        "punctures": { "type": ["integer", "null"] },
+        "ends": {
+          "type": "array",
+          "description": "How many ends, and of WHAT TYPE. The minimal-surface literature indexes almost entirely by (periodicity, genus, ends), so the type matters as much as the count.",
+          "items": {
+            "type": "object",
+            "required": ["type", "count"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "enum": ["planar", "catenoidal", "helicoidal", "enneper", "annular", "flat", "cylindrical"] },
+              "count": { "type": ["integer", "string"] },
+              "embedded": { "type": ["boolean", "null"] },
+              "order": { "type": ["integer", "null"], "description": "The k of an Enneper end of order k." }
+            }
+          }
+        },
+        "class": {
+          "type": ["string", "null"],
+          "description": "GENERATED: closed-orientable | closed-nonorientable | with-boundary | complete-finite-total-curvature | complete-infinite-total-curvature | compact-with-boundary | noncompact."
+        }
+      }
+    },
+
+    "symmetry": {
+      "type": "object",
+      "required": ["kind", "periodicity_rank"],
+      "additionalProperties": false,
+      "description": "Polyhedra have finite point groups and five notations cover them. Surfaces need five KINDS of group, because a triply-periodic minimal surface has a space group and a surface of revolution has a continuous one.",
+      "properties": {
+        "kind": { "enum": ["point", "continuous", "rod", "layer", "space", "none"] },
+        "periodicity_rank": {
+          "type": "integer", "minimum": 0, "maximum": 3,
+          "description": "Facet F3. 0 = bounded/aperiodic, 1 = singly periodic, 2 = doubly, 3 = triply. Determines which notation applies."
+        },
+        "schoenflies": { "type": ["string", "null"], "description": "kind=point. Field-for-field identical to polydb's block, so the two databases join on symmetry." },
+        "orbifold": { "type": ["string", "null"], "description": "Conway-Thurston signature of the AMBIENT group acting on R^3. Distinct from `intrinsic_orbifold`." },
+        "coxeter": { "type": ["string", "null"] },
+        "hermann_mauguin": { "type": ["string", "null"], "description": "kind=point (crystallographic) or kind=space (the space-group symbol, e.g. 'Ia-3d')." },
+        "ita_number": { "type": ["integer", "null"], "minimum": 1, "maximum": 230, "description": "International Tables number, for kind=space." },
+        "rod_group": { "type": ["string", "null"] },
+        "layer_group": { "type": ["string", "null"] },
+        "screw_pitch": { "type": ["number", "null"] },
+        "continuous": { "type": ["string", "null"], "description": "kind=continuous, in prose, e.g. 'SO(2) about z, plus reflection in z=0'." },
+        "point_residual": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "description": "The discrete part of a continuous group, where naming it helps."
+        },
+        "order": { "type": ["integer", "string", "null"], "description": "Order of the full group; null or 'infinite' for continuous and periodic kinds." },
+        "lattice": { "type": ["string", "null"] },
+        "chiral": { "type": ["boolean", "null"], "description": "True when the group contains no reflections. A chiral surface is ONE record with a handedness parameter, not two enantiomorph records -- the opposite default from polydb, because a surface family is presented as one object with a handedness rather than as two catalogued solids." },
+        "intrinsic_orbifold": {
+          "type": ["string", "null"],
+          "description": "The orbifold of the SURFACE ITSELF as a 2-manifold quotiented by its own symmetries -- a different object from `orbifold`, and the thing EPINET's hyperbolic reticulation of the P/D/G surfaces is about."
+        },
+        "generator_set": {
+          "type": ["string", "null"],
+          "description": "Which generator table tools/surfdb/invariants.py should substitute, when the Schoenflies symbol alone does not pin the group's ORIENTATION. C3v about the z axis and C3v about the body diagonal are the same abstract group and different coordinate substitutions; a polynomial symmetric in x, y, z has the second. Omit when the symbol is unambiguous."
+        },
+        "verified_by": {
+          "enum": ["symbolic", "symbolic-partial", "numeric", "curated", null],
+          "description": "'symbolic': the group generators were substituted into the polynomial or level function and it was unchanged -- exact, and cheaper and stronger than anything polydb can run. 'numeric': generators applied to a built mesh, Hausdorff residual measured. 'curated': taken from the literature, not recomputed."
+        },
+        "symmetry_residual": { "type": ["number", "null"] }
+      }
+    },
+
+    "embedding": {
+      "type": "object",
+      "required": ["quality"],
+      "additionalProperties": false,
+      "properties": {
+        "quality": {
+          "oneOf": [
+            { "enum": ["embedded", "immersed", "self-intersecting", "branched", "singular"] },
+            { "$ref": "#/$defs/varies" }
+          ],
+          "description": "Facet F4. Matters more than it looks: bubbletons are not embedded (Kilian-Schmitt 2010), Tilted Scherk is non-embedded BY DESIGN (the Lopez-Ros tilt), and Boy's surface is an immersion of RP^2 that provably cannot be embedded. Typed, this turns 'it looks broken' into 'it is provably not embeddable'."
+        },
+        "self_intersecting": { "type": ["boolean", "string", "null"] },
+        "branch_points": { "type": ["integer", "null"] },
+        "singularities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "type": "string", "description": "e.g. 'node (A1)', 'cusp', 'pinch point', 'cuspidal edge'." },
+              "count": { "type": ["integer", "null"] },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "is_record": { "type": ["boolean", "null"], "description": "True when the surface is extremal for some counted quantity -- typically the maximum number of nodes for its degree." },
+        "record_for": { "type": ["string", "null"] }
+      }
+    },
+
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "normalization": { "$ref": "#/$defs/scale" },
+        "fundamental_piece": { "type": ["string", "null"], "description": "Named, because a complete minimal surface has infinite area and a triply-periodic one has finite area only per cell." },
+        "area": { "$ref": "#/$defs/measure" },
+        "area_per_cell": { "$ref": "#/$defs/measure" },
+        "area_of_piece": { "$ref": "#/$defs/measure" },
+        "volume_enclosed": { "$ref": "#/$defs/measure" },
+        "isoperimetric_quotient": { "$ref": "#/$defs/measure" },
+        "bounding_box": { "type": ["array", "null"], "minItems": 3, "maxItems": 3, "items": { "type": "number" } },
+        "aspect_ratio": { "type": ["number", "null"], "description": "Smallest bbox extent over largest. The repo's own collapse detector: a surface can pass every topological check and still have come out flat." },
+        "cell": { "type": ["array", "null"], "items": { "type": ["number", "string"] } },
+        "lattice_constants": { "type": ["object", "null"], "additionalProperties": true },
+        "measures_note": { "type": "string", "description": "REQUIRED where area or volume is null: says why. Infinite, or convention-dependent, or clip-dependent." }
+      }
+    },
+
+    "mesh_recipe": {
+      "type": "object",
+      "description": "NOT a mesh. How to rebuild the surface, plus what was MEASURED from that build. Storing vertices would be storing one rendering at one resolution -- the same argument by which polydb omits nets.",
+      "additionalProperties": false,
+      "properties": {
+        "mesher": { "enum": ["parametric-grid", "marching-tets", "we-integrator", "solver", "discrete", null] },
+        "resolution": { "type": ["integer", "array", "null"], "items": { "type": "integer" } },
+        "clip": { "type": ["object", "null"], "additionalProperties": true },
+        "post": { "type": ["object", "null"], "additionalProperties": true },
+        "measured": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "vertices": { "type": ["integer", "null"] },
+            "edges": { "type": ["integer", "null"] },
+            "faces": { "type": ["integer", "null"] },
+            "euler_characteristic": { "type": ["integer", "null"] },
+            "components": { "type": ["integer", "null"] },
+            "boundary_loops": { "type": ["integer", "null"] },
+            "manifold": { "type": ["boolean", "null"] },
+            "orientable": { "type": ["boolean", "null"] },
+            "one_sided": { "type": ["boolean", "null"] },
+            "resolution": { "type": ["integer", "array", "null"], "items": { "type": "integer" } },
+            "tolerance": { "type": ["number", "null"] }
+          }
+        },
+        "checksum": { "type": ["string", "null"] }
+      }
+    },
+
+    "specimens": {
+      "type": "array",
+      "description": "Distinguished members of a parameterised family. Costa-Hoffman-Meeks is ONE record with a genus parameter, not four records. Every field the family marks 'varies' MUST be resolved here, on every entry.",
+      "items": {
+        "type": "object",
+        "required": ["label"],
+        "additionalProperties": true,
+        "properties": {
+          "label": { "type": "string" },
+          "parameters": { "type": "object", "additionalProperties": true },
+          "slug": { "$ref": "#/$defs/slugref", "description": "Set only where the specimen was PROMOTED to its own record -- when it has its own name, its own literature and its own symmetry group (Schwarz P, the gyroid and Schwarz D are three points of one Bonnet family and three separate records)." }
+        }
+      }
+    },
+
+    "relations": {
+      "type": "object",
+      "description": "The graph. Surfaces are far more related to one another than polyhedra are, and a large part of this database's value is the edges.",
+      "additionalProperties": false,
+      "properties": {
+        "conjugate": { "$ref": "#/$defs/slugref" },
+        "associate_family": { "$ref": "#/$defs/slugref" },
+        "associate_angle_degrees": { "type": ["number", "null"] },
+        "dual": { "$ref": "#/$defs/slugref" },
+        "dual_labyrinth_graph": { "type": ["string", "null"], "description": "For a TPMS, the net threading one labyrinth, e.g. 'srs' for the gyroid." },
+        "limit_of": { "type": "array", "items": { "$ref": "#/$defs/slugref" } },
+        "degenerates_to": { "type": "array", "items": { "$ref": "#/$defs/slugref" } },
+        "member_of": { "$ref": "#/$defs/slugref" },
+        "generalizes": { "type": "array", "items": { "$ref": "#/$defs/slugref" } },
+        "specialises": { "type": "array", "items": { "$ref": "#/$defs/slugref" } },
+        "inverse_of": { "$ref": "#/$defs/slugref" },
+        "discretisation_of": { "$ref": "#/$defs/slugref" },
+        "smoothing_of": { "$ref": "#/$defs/slugref" },
+        "polyhedral_analogue": {
+          "$ref": "#/$defs/slugref",
+          "description": "A slugref into data/polyhedra/. The mucube is the polygonal ancestor of Schwarz P; saddle polyhedra span the same skew polygons as minimal surfaces; Schwarz's lantern is the standing caution that a polyhedral approximation's area need not converge."
+        },
+        "chiral_partner": { "$ref": "#/$defs/slugref" },
+        "same_surface_as": {
+          "type": "array",
+          "description": "Suspected or confirmed identity with another record. Fischer-Koch C(S) and C(Y) were 'later recognised as the P surface and the D surface' (Brakke) and the repo ships them as separate rows -- so this field exists to record the claim WITH its confidence rather than forcing a silent merge or a silent duplicate.",
+          "items": {
+            "type": "object",
+            "required": ["slug", "confidence"],
+            "additionalProperties": false,
+            "properties": {
+              "slug": { "$ref": "#/$defs/slugref" },
+              "confidence": { "enum": ["confirmed", "suspected", "refuted"] },
+              "check": { "type": "string", "description": "The test that would decide it." },
+              "source": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "construction": {
+      "type": "array",
+      "description": "AN ARRAY: one entry per shipping path, because a surface can be reachable from more than one operator. Verified cases: the Whitney umbrella ships parametrically in ruled_surface_generator and implicitly as the Hauser row in surfaces/algebraic; the helicoid ships in minsurf and in ruled_surface_generator; the catenoid ships in minsurf and as delaunay_generator's H -> 0 member. A singular block would drop all but one, and the validator's drive-and-compare would then regression-test only one route.",
+      "items": {
+        "type": "object",
+        "required": ["implemented"],
+        "additionalProperties": false,
+        "properties": {
+          "generator": { "type": ["string", "null"], "description": "Module path, e.g. 'math_art.minsurf.parametric'." },
+          "operator_id": { "type": ["string", "null"] },
+          "family": { "type": ["string", "null"], "description": "The registry family key, e.g. 'CLASSICAL', 'TPMS'." },
+          "key": { "type": ["string", "null"], "description": "The registry row key, e.g. 'CATENOID'." },
+          "preset": { "type": ["string", "null"] },
+          "definition_index": { "type": ["integer", "null"], "minimum": 0, "description": "Which of the record's definitions this path realises. The nodal and exact TPMS paths for the gyroid point at different indices and are gated at different tolerances." },
+          "params": { "type": ["object", "null"], "additionalProperties": true },
+          "implemented": { "type": "boolean" },
+          "blocked_by": { "type": ["string", "null"], "description": "REQUIRED where implemented is false AND the absence is a known obstruction rather than simply unbuilt work." },
+          "resume": { "type": ["string", "null"] },
+          "known_issue": { "type": ["string", "null"], "description": "Shipped, but with a caveat. The exact gyroid cell cannot currently be tiled watertight; Schwarz D exact tiling is ~6% non-manifold. A database that omitted these would claim more than the code delivers." }
+        }
+      }
+    },
+
+    "fabrication": {
+      "type": ["object", "null"],
+      "description": "GENERATED except for the overrides. developable follows from curvature.condition == flat; printable_watertight from embedding.quality == embedded plus compactness; requires_thickening from one_sided or a non-empty boundary. Only `self_supporting` is curated -- it is the one claim in the design that nothing can check.",
+      "additionalProperties": false,
+      "properties": {
+        "developable": { "type": ["boolean", "null"] },
+        "printable_watertight": { "type": ["boolean", "null"] },
+        "requires_thickening": { "type": ["boolean", "null"] },
+        "sliceable": { "type": ["boolean", "null"] },
+        "self_supporting": { "type": ["boolean", "null"] }
+      }
+    },
+
+    "provenance": {
+      "type": "object",
+      "required": ["sources"],
+      "additionalProperties": false,
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Where this record's formula came from. The critical provenance field: a mistyped coefficient does not error, it silently yields a DIFFERENT surface. Records must be DERIVED and cross-checked, not transcribed -- Mathcurve, the Virtual Math Museum and Hauser's gallery are oracles whose compilations carry their own terms, and this repository is published publicly. Cite them; do not copy them."
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "Real mathematical attribution: the mathematician, the paper or book, the year."
+        },
+        "verified": {
+          "type": "object",
+          "description": "Claims recomputed by tools/surfdb_validate.py. Do NOT hand-set these to true.",
+          "additionalProperties": false,
+          "properties": {
+            "expressions_parse": { "type": "boolean" },
+            "exact_values_match": { "type": "boolean" },
+            "curvature_condition": { "type": "boolean" },
+            "symmetry_invariant": { "type": "boolean" },
+            "topology_consistent": { "type": "boolean" },
+            "total_curvature_quantised": { "type": "boolean" },
+            "node_count": { "type": "boolean" },
+            "relations_mutual": { "type": "boolean" },
+            "generated_fields_match": { "type": "boolean" },
+            "tolerance": { "type": "number" },
+            "resolution": { "type": ["integer", "array", "null"], "items": { "type": "integer" } }
+          }
+        },
+        "cross_checked": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "agrees"],
+            "additionalProperties": false,
+            "properties": {
+              "source": { "type": "string" },
+              "agrees": { "type": "boolean" },
+              "detail": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "known_issue": { "type": "string" },
+        "measures_note": { "type": "string" },
+        "caveats": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

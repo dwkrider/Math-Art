@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "helico-conical-surface",
+  "name": "Helico-Conical Surface",
+  "primary_family": "swept",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "swept"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.helical_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.helical_surface_generator",
+      "operator_id": "mesh.helical_surface_add",
+      "key": "HELICONE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "G. Darboux, \"Lecons sur la theorie generale des surfaces\", 1887-96",
+      "- the surfaces swept by a rigid curve.  The classification of the three special motions followed here is from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com, chapter \"surface de Darboux\"; a converted copy is in research/books/mathcurve_encyclopedie_formes_mathematiques/.",
+      "Rotoid, helico-conical surface, egg box and sine torus: R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"rotoide\", \"surface helicoconique\", \"boite a oeufs\" and \"tore sinusoidal\".",
+      "Sine torus at k = 1/2: Maurice El-Milick (1947), who called it a one-sided cyclide; his model is in the Institut Henri Poincare collection.",
+      "The helicoid is a classical minimal and ruled surface (J. B. C. Meusnier, 1776); the hyperbolic helicoid, conical seashell and twisted-sphere forms here are standard parametric surfaces. See A. Gray, E. Abbena, S. Salamon, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\" (3rd ed., 2006), and J. Meier's gallery (3d-meier.de).",
+      "Spherical helicoid: Matthias Weber, \"The Spherical Helicoids\", 3D-XplorMath / Virtual Math Museum documentation, https://virtualmathmuseum.org/docs/spherical_helicoid.pdf -- the helicoidal surfaces of constant Gaussian curvature K = +1, reduced via the Killing/Jacobi-field argument |J(s)| = a cos(s) to a first-order ODE for the meridian.  The surface appears as an exercise in L. P. Eisenhart, \"A Treatise on the Differential Geometry of Curves and Surfaces\" (Ginn, 1909)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "ids": {
+    "mathcurve": "ch1278_helicoconique_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 18432,
+      "edges": 36576,
+      "faces": 18145,
+      "euler_characteristic": 1,
+      "angle_defect_total": 2.418467,
+      "area": 3.337436,
+      "volume": 2.5e-05,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 200,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.000111,
+        0.766331,
+        2.0
+      ],
+      "aspect_ratio": 0.383166
+    }
+  }
+}

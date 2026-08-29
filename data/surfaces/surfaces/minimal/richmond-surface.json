@@ -1,0 +1,145 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "richmond-surface",
+  "name": "Richmond",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "-cos(v)/(2*u) - u**3*cos(3*v)/6",
+    "y": "sin(v)/(2*u) + u**3*sin(3*v)/6",
+    "z": "u*cos(v)",
+    "u_range": [
+      "0.3",
+      "1.25"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 3.877279505181668e-08,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true,
+    "finite_total_curvature": true,
+    "ends": [
+      {
+        "type": "planar",
+        "count": 1,
+        "embedded": true
+      },
+      {
+        "type": "enneper",
+        "count": 1,
+        "order": 1,
+        "embedded": false
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "RICHMOND",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. W. Richmond, 'On the simplest algebraic minimal curves, and the derived real minimal surfaces', Proc. Cambridge Phil. Soc. 19 (1904)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Herbert William Richmond",
+  "year": 1904,
+  "ids": {
+    "mathcurve": "ch1329_richmond_2",
+    "vmm": "ch011_planar_enneper"
+  },
+  "alternate_names": [
+    "Richmond surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 8012,
+      "edges": 15935,
+      "faces": 7923,
+      "euler_characteristic": 0,
+      "angle_defect_total": 17.71676,
+      "area": 4.441815,
+      "volume": 0.001089,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 7770,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.993223,
+        1.448195
+      ],
+      "aspect_ratio": 0.724097
+    }
+  }
+}

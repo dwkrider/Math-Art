@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "seifert-surface",
+  "name": "Seifert Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "topological"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.seifert_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.seifert_surface_generator",
+      "operator_id": "mesh.seifert_surface_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Seifert's algorithm and the genus of a knot: Herbert Seifert, \"Ueber das Geschlecht von Knoten\", Math. Ann. 110, 1934.",
+      "Stacked disk/band layout: J. J. van Wijk & A. M. Cohen, \"Visualization of Seifert Surfaces\", IEEE TVCG 12(4), 2006, 485-496.",
+      "Braid generators s_i after Emil Artin (braid groups B_n).",
+      "Non-orientable state surfaces: E. Kalfagianni, \"State surfaces of links\", arXiv:1804.05281, Lemma 2.2 (bipartite orientability criterion).",
+      "Implicit mean-curvature fairing: M. Desbrun, M. Meyer, P. Schroeder,",
+      "A. H. Barr, \"Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow\", SIGGRAPH 1999.  Cotangent weights: U. Pinkall & K. Polthier, \"Computing Discrete Minimal Surfaces and Their Conjugates\", Experiment. Math. 2(1), 1993."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "ids": {
+    "mathcurve": "ch1338_seifert_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 9263,
+      "edges": 18240,
+      "faces": 8976,
+      "euler_characteristic": -1,
+      "angle_defect_total": -0.29156,
+      "area": 5.666254,
+      "volume": 0.021148,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 6456,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.908218,
+        2.0,
+        1.052891
+      ],
+      "aspect_ratio": 0.526446
+    }
+  }
+}

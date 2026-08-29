@@ -1,0 +1,119 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "double-enneper",
+  "name": "Double Enneper",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "gauss_map": "z",
+    "height_differential": "z*z - 1.0 + 1.0/(z*z)",
+    "parameters": [],
+    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 2,
+        "embedded": false
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "DOUBLE_ENNEPER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch176, Double Enneper)",
+        "agrees": true,
+        "detail": "'We have a sphere with two Enneper ends' (Karcher's Tokyo Notes); not embedded."
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch009_double_enneper",
+    "msblog": "ch176_double_enneper"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 7985,
+      "edges": 15892,
+      "faces": 7906,
+      "euler_characteristic": -1,
+      "angle_defect_total": -327.077613,
+      "area": 9.512251,
+      "volume": 0.06206,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 60,
+      "nonmanifold_vertices": 7505,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.561973,
+        1.44001,
+        2.0
+      ],
+      "aspect_ratio": 0.720005
+    }
+  }
+}

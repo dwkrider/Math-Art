@@ -1,0 +1,134 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "lidinoid",
+  "name": "Lidinoid surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "chiral",
+    "def-nodal",
+    "embedded",
+    "has-approximation",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "approximation",
+    "approximates": null,
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "level": 0.0,
+    "residual": {
+      "max_abs_mean_curvature": 1.40708,
+      "measured_at_resolution": 120,
+      "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
+    "level_function": "(0.5 * (sin(2 * x) * cos(y) * sin(z) + sin(2 * y) * cos(z) * sin(x) + sin(2 * z) * cos(x) * sin(y) - cos(2 * x) * cos(2 * y) - cos(2 * y) * cos(2 * z) - cos(2 * z) * cos(2 * x)) + 0.15)"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 1.4070796351658954,
+        "resolution": 120,
+        "tolerance": 1.688496,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true,
+    "genus_per_cell": 3,
+    "euler_characteristic_per_cell": -4
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3,
+    "chiral": true,
+    "verified_by": "curated"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "LIDINOID",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "S. Lidin and S. Larsson, 'Bonnet transformation of infinite periodic minimal surfaces with hexagonal symmetry', J. Chem. Soc. Faraday Trans. 86 (1990).",
+      "A. G. Weyhaupt, 'Deformations of the gyroid and Lidinoid minimal surfaces', Pacific J. Math. 235 (2008) 137-171: 'The gyroid and Lidinoid are triply periodic minimal surfaces of genus three ... the unique embedded members of the associate families of the Schwarz P and H surfaces.'"
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "discovered_by": "Sven Lidin",
+  "year": 1990,
+  "notes": {
+    "caveats": [
+      "The hexagonal analogue of the gyroid: an associate of the H family, in the same way the gyroid is an associate of P and D."
+    ]
+  },
+  "ids": {
+    "vmm": "ch031_lidinoid",
+    "msblog": "ch274_lidinoid"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 2205,
+      "edges": 4316,
+      "faces": 2112,
+      "euler_characteristic": 1,
+      "angle_defect_total": 6.977056,
+      "area": 1.824264,
+      "volume": 0.008813,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 1469,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.153167,
+        2.0,
+        1.216181
+      ],
+      "aspect_ratio": 0.576584
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "kapouleas-surfaces",
+  "name": "Kapouleas Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-variational",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "variational",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Kapouleas' finite-total-curvature embedded minimal surfaces with arbitrarily many ends, built by desingularizing the circles of intersection of coaxial catenoids and planes with bent singly periodic Scherk surfaces."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.  The page notes all period problems here are solved numerically, with no simple existence proof for the rendered examples.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Kapouleas Surfaces', minimalsurfaces.blog (local mirror: minsurf/book/.../ch387_kapouleas_surfaces.md).",
+      "N. Kapouleas, 'Complete embedded minimal surfaces of finite total curvature', J. Differential Geom. 47 (1997) 95-169."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch387_kapouleas_surfaces"
+  },
+  "named_after": "Kapouleas",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

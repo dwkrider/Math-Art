@@ -142,6 +142,9 @@ PARAMS = {
     # The spindle -- a lemon with a conical tip at each pole -- is the
     # one that reads as "constant curvature, not a sphere".
     "mesh.spherical_surface_add": dict(preset='SPINDLE'),
+    # the bare default is an ellipsoid, which reads as a squashed
+    # sphere; the one-sheeted hyperboloid says "quadric" at a glance
+    "mesh.quadric_add": dict(kind='HYPERBOLOID_ONE'),
     "mesh.waterman_add": dict(root=20),
     "mesh.spiked_polyhedron_add": dict(preset='MODERN'),
     "mesh.woven_polyhedron_add": dict(solid='ICOSA'),
@@ -178,7 +181,14 @@ PARAMS = {
     "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G',
                                       cells=2),
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
-    "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE', seed='ICOSA'),
+    # Hand-picked hero: the dodecahedral seed dented inward to the full
+    # bulge depth, held on its whole edge frame. The icosahedron at the
+    # default depth of 0.5 barely dents and reads as a faceted ball;
+    # this reads as the cast membrane the generator is actually for.
+    # Drives the docs figure AND the menu icon, so both stay in step.
+    "mesh.minimal_surface_polyhedron_add": dict(
+        mode='SADDLE', seed='DODECA', depth=2.0, levels=3,
+        iterations=40, pin='EDGES', corner_soft=0.35, thickness=0.08),
     "mesh.algebraic_surface_add": dict(preset='CLEBSCH'),
     "mesh.curiosity_surface_add": dict(surface='FRESNEL'),
     "mesh.ruled_surface_add": dict(mode='HYPERBOLOID', output='RODS',
@@ -435,6 +445,11 @@ VARIANT_SELECTOR = {
     "mesh.curiosity_surface_add": "surface",
     "mesh.helical_surface_add": "surface",
     "mesh.hyperbolic_surface_add": "preset",
+    # All thirteen degree-2 surfaces are distinct objects, so the whole
+    # enum is the gallery -- including the plane, whose thumbnail is a
+    # flat square. Dull, but it is a real quadric and the classification
+    # is the point of the page.
+    "mesh.quadric_add": "kind",
     "mesh.delaunay_surface_add": "mode",
     "mesh.bryant_surface_add": "mode",
     "mesh.squeeze_add": "seed",
@@ -636,9 +651,25 @@ VARIANT_MAX = {
     "mesh.parametric_minimal_add": 96,
     "mesh.periodic_minimal_add": 96,
     "mesh.canonical_polyhedron_add": 96,
-    # 10 classical + 63 Hauser; the Hauser family is a named gallery
-    # and a partial one would misrepresent it.
-    "mesh.algebraic_surface_add": 96,
+    # 132 presets across ten named families: 10 classical, 63 Hauser,
+    # 4 record-nodal, 5 many-nodal octics, 7 named implicit, 11
+    # Encyclopedia, 10 MathWorld and 22 Goursat.  Every one of those is
+    # a named gallery whose point is completeness, which is the reason
+    # this entry exists at all.
+    #
+    # It was 96, which is now BELOW the preset count, and the shortfall
+    # did not thin the grid evenly -- the cap truncates in enumeration
+    # order, so it dropped whole families off the end: all 22 Goursat,
+    # all 10 MathWorld, and three of the Encyclopedia surfaces.  A
+    # gallery missing a scattering of members reads as a sample; one
+    # missing every Goursat surface reads as "this generator has no
+    # Goursat surfaces", which is false.
+    #
+    # The cost is real and belongs to the docs pass: this is 132 renders
+    # for one page, up from 96.  Lower it deliberately if that is too
+    # many -- the renderer prints what it dropped -- but do not leave it
+    # at a number that silently deletes families.
+    "mesh.algebraic_surface_add": 132,
 }
 
 # Galleries whose entries are combinations of properties rather than

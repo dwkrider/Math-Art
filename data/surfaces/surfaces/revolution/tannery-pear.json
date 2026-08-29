@@ -1,0 +1,131 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "tannery-pear",
+  "name": "Tannery's Pear",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "implemented",
+    "revolution",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "genus": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "conical point",
+        "count": 2
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TANNERY_PEAR",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TANNERY_PEAR"
+    },
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TANNERY_HOURGLASS",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TANNERY_HOURGLASS"
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "J. Tannery (1892); the surface of revolution of half a Gerono lemniscate."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "specimens": [
+    {
+      "label": "pear (half the figure eight)"
+    },
+    {
+      "label": "hourglass (the whole figure eight)"
+    }
+  ],
+  "discovered_by": "Jules Tannery",
+  "year": 1892,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1316_tannery_2"
+  },
+  "relations": {
+    "generalizes": [],
+    "specialises": [
+      "zoll-surface"
+    ]
+  },
+  "notes": {
+    "caveats": [
+      "All geodesics close, like Zoll's surface, but Tannery's is NOT smooth -- both tips are conical points, and repairing exactly that is what Zoll's surface achieves."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4514,
+      "edges": 9120,
+      "faces": 4608,
+      "euler_characteristic": 2,
+      "angle_defect_total": 619.932281,
+      "area": 1.567827,
+      "volume": 0.104309,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 1895,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.353553,
+        0.353553,
+        2.0
+      ],
+      "aspect_ratio": 0.176777
+    }
+  }
+}

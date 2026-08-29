@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "rotation-surface-with-proportional-curvatures",
+  "name": "Rotation Surface with Proportional Curvatures",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "revolution",
+    "tradition-classical",
+    "weingarten"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The surfaces of revolution whose principal curvatures are in a constant ratio k: meridian rho = a cos^k(t). k = 1 gives the sphere, k = -1 a minimal surface (catenoid); the four sign/size regimes of k give spindles, domes, trumpets and annular waists."
+  },
+  "curvature": {
+    "condition": "weingarten",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.",
+      "resume": "A meridian-profile surface-of-revolution row; the radial builders in math_art/curiosity_surface_generator.py (build_radial, build_fresnel) are the pattern to follow, and the parametrization is in the cited mirror chapter."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Rotation surface with proportional curvatures\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1365_revolpropor_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1365_revolpropor_2.md).",
+      "W. Kuhnel, \"Differential Geometry: Curves - Surfaces - Manifolds\", p. 95, where the family is worked (the chapter's own reference, dated 1999)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "year": 1999,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1365_revolpropor_2"
+  },
+  "named_after": "Rotation",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

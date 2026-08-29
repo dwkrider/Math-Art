@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "schoen-hybrid-1",
+  "name": "Schoen Hybrid-1 [P, F-RD] Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Tubes to alternating corners AND faces."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "No published nodal formula exists -- the Fisher et al. (2023) catalogue, which collects every known nodal fit, omits this family -- and no exact Weierstrass tiling has been built for it here.",
+      "resume": "Two routes, both already identified in research/minimal_surfaces_status.md: derive a Fourier fit by the vSN structure-factor method, or build an exact Weierstrass tiling. The second is the one that already worked -- Schwarz H, CLP and CLP-handle ship in TPMS_EXACT precisely that way, which is why the older catalogue still lists them as blocked -- and the hexagonal-cell machinery (tpms2_LATTICE, TPMS2_HEX_LATTICE) is already in place and exercised by the self-test, waiting for exactly this."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA Technical Note TN D-5541 (1970), together with his later listings of the second-tier surfaces.",
+      "K. Brakke, the Surface Evolver periodic minimal-surface collection (kenbrakke.com/evolver), where several of these are figured."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "named_after": "Schoen",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

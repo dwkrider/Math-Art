@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherk-doubly-periodic",
+  "name": "Scherk's Doubly Periodic Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "embedded",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 4
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "SCHERK1",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. F. Scherk, 'Bemerkungen uber die kleinste Flache innerhalb gegebener Grenzen', J. reine angew. Math. 13 (1835).",
+      "H. F. Scherk, 'Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen', J. Reine Angew. Math. 13 (1835) 185-208.",
+      "H. Lazard-Holly, W. H. Meeks III, 'Classification of doubly-periodic minimal surfaces of genus zero', Invent. Math. 143 (2001) 1-27; M. Weber (mirror: minsurf ch046): 'The quotient surface by its translational symmetries is a 4-punctured sphere.'"
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Heinrich Ferdinand Scherk",
+  "year": 1835,
+  "ids": {
+    "mathworld": "ScherksMinimalSurfaces",
+    "mathcurve": "ch1335_scherk_2",
+    "vmm": "ch004_scherk",
+    "msblog": "ch046_scherks_doubly_periodic_surface"
+  },
+  "notes": {
+    "caveats": [
+      "The first minimal surfaces found after the catenoid and helicoid. The doubly periodic one is the graph of z = log(cos y / cos x)."
+    ]
+  },
+  "alternate_names": [
+    "Scherk surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3721,
+      "edges": 7320,
+      "faces": 3600,
+      "euler_characteristic": 1,
+      "angle_defect_total": -5.471967,
+      "area": 5.079982,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 3458,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.370607,
+        1.370607,
+        2.0
+      ],
+      "aspect_ratio": 0.685303
+    }
+  }
+}

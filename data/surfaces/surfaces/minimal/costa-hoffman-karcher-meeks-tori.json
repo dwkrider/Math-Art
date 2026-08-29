@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "costa-hoffman-karcher-meeks-tori",
+  "name": "Costa-Hoffman-Karcher-Meeks Tori",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The 1-parameter family of embedded minimal tori obtained by deforming the Costa surface's planar middle end into a catenoidal end; by Costa's classification these are the ONLY embedded 3-ended minimal tori of finite total curvature.  Distinct from the genus-varying Costa-Hoffman-Meeks record, which fixes the planar middle end and raises the genus."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Costa-Hoffman-Karcher-Meeks Tori', minimalsurfaces.blog (local mirror: minsurf/book/.../ch241_hoffman_karcher_tori.md).",
+      "D. Hoffman and W. H. Meeks III, 'Properties of properly embedded minimal surfaces of finite topology', Bull. Amer. Math. Soc. 17 (1987) 296-300.",
+      "C. J. Costa, 'Classification of complete minimal surfaces in R3 with total curvature 12pi', Invent. Math. 105 (1991) 273-303.",
+      "D. Hoffman and H. Karcher, 'Complete embedded minimal surfaces of finite total curvature', Geometry V, Encyclopaedia Math. Sci. 90, Springer (1997) 5-93."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch241_hoffman_karcher_tori"
+  },
+  "named_after": "Costa, Hoffman, Karcher, Meeks, Tori",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

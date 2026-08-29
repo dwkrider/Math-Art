@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "second-tractroid",
+  "name": "Second Tractroid",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "revolution",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Revolution of the tractrix about the axis PERPENDICULAR to its asymptote -- the companion to the pseudosphere (revolution about the asymptote), which already resolves ch1210.  Unlike the pseudosphere it is not of constant curvature; its volume involves Catalan's constant."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.",
+      "resume": "A meridian-profile surface-of-revolution row; the radial builders in math_art/curiosity_surface_generator.py (build_radial, build_fresnel) are the pattern to follow, and the parametrization is in the cited mirror chapter."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Tractroid 2\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1352_tractroid_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1352_tractroid_2.md).",
+      "Proposed by Ludovic Schwob, per the chapter."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "alternate_names": [
+    "Tractroid 2"
+  ],
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1352_tractroid_2"
+  },
+  "named_after": "Tractroid",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "catenoid-with-handle",
+  "name": "Catenoid with Handle",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The attempted genus-1 catenoid: two catenoidal ends plus one handle.  Ruled out by Schoen's characterization of the catenoid."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "PROVED NOT TO EXIST -- not merely unbuilt.  A complete, properly immersed minimal surface with two catenoidal ends is the catenoid (R. Schoen), so the catenoid with an inward-grown handle necessarily leaves a gap; Weber files it under Non-Existent Surfaces.",
+      "resume": "Nothing to build as a finite surface.  Growing the handle outward instead yields the periodic fence of catenoids, which already has a record (fence-of-catenoids-karcher)."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Translation Invariant Catenoid (which documents the failed inward-handle construction)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch170_translation_invariant_catenoid.md).",
+      "M. Weber, 'Non-Existent Surfaces (section index)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch061_non_existent_surfaces.md).",
+      "R. Schoen, 'Uniqueness, symmetry, and embeddedness of minimal surfaces', J. Differential Geom. 18 (1983) 791-809."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch170_translation_invariant_catenoid"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

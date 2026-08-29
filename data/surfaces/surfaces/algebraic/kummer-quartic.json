@@ -1,0 +1,141 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "kummer-quartic",
+  "name": "Kummer Quartic",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "record-holder",
+    "singular",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 2.2
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.",
+    "parameters": [
+      {
+        "name": "mu",
+        "symbol": "Node Sharpness",
+        "domain": "[1.05, 2]",
+        "default": 1.3,
+        "integer": false,
+        "note": "Kummer quartic parameter; it moves the sixteen nodes"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "Td",
+    "generator_set": "Td_edge",
+    "order": 24,
+    "verified_by": "symbolic"
+  },
+  "embedding": {
+    "quality": "singular",
+    "is_record": true,
+    "record_for": "maximum nodes, degree 4",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 16
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "CLASSICAL",
+      "key": "KUMMER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "E. E. Kummer, 'Uber die Flachen vierten Grades mit sechzehn singularen Punkten', Monatsber. Akad. Wiss. Berlin (1864).",
+      "mathcurve.com, Kummer surface (mirror ch1294): 16 ordinary singular points at the tetrahedral vertices; Breske-Labs-van Straten (2005) mu(4) = 16 (exact) -- independent node-count oracle."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "discovered_by": "Ernst Eduard Kummer",
+  "year": 1864,
+  "ids": {
+    "mathworld": "KummerSurface",
+    "mathcurve": "ch1294_kummer_2",
+    "vmm": "ch083_kummer",
+    "algsurf": "ch039_no_03"
+  },
+  "notes": {
+    "caveats": [
+      "Sixteen nodes is the maximum for a quartic. The Kummer surface is a K3 surface -- the named specimen this database records, as opposed to the K3 CLASS, which is not a renderable object."
+    ]
+  },
+  "relations": {
+    "polyhedral_analogue": "tetrahedron"
+  },
+  "alternate_names": [
+    "Kummer surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 122992,
+      "edges": 366248,
+      "faces": 243260,
+      "euler_characteristic": 4,
+      "angle_defect_total": 8.157145,
+      "area": 8.266043,
+      "volume": 0.339942,
+      "components": 5,
+      "boundary_loops": 6,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 110208,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.985756,
+        1.985756,
+        2.0
+      ],
+      "aspect_ratio": 0.992878
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "bipyramidal-k-noid",
+  "name": "Bipyramidal k-noid",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "gauss_map": "(z**m - s**m)/(z*(s**m*z**m - 1.0))",
+    "height_differential": "(z**m - s**m)*(s**m*z**m - 1.0)/((z**m - 1.0)**2*z)",
+    "parameters": [
+      {
+        "name": "m",
+        "domain": "see the generator",
+        "default": 5,
+        "integer": true
+      },
+      {
+        "name": "s",
+        "domain": "see the generator",
+        "default": 0.85,
+        "integer": false
+      }
+    ],
+    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "M3_BIPYR",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch175_bipyramidal_k_noids"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 13388,
+      "edges": 26335,
+      "faces": 12947,
+      "euler_characteristic": 0,
+      "angle_defect_total": -1.925076,
+      "area": 5.474738,
+      "volume": 0.881017,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 12405,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.769453,
+        2.0,
+        1.305653
+      ],
+      "aspect_ratio": 0.652826
+    }
+  }
+}

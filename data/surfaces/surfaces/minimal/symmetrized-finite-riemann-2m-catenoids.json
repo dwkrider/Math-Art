@@ -1,0 +1,133 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "symmetrized-finite-riemann-2m-catenoids",
+  "name": "Symmetrized Finite Riemann (2m catenoids)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "gauss_map": "rho*z**(m - 1)/(z**(2*m) - a**(2*m))",
+    "height_differential": "z**(m - 1)*(z**(2*m) - a**(2*m))/(z**(2*m) - 1.0)**2",
+    "parameters": [
+      {
+        "name": "a",
+        "domain": "see the generator",
+        "default": 0.9,
+        "integer": false
+      },
+      {
+        "name": "m",
+        "domain": "see the generator",
+        "default": 3,
+        "integer": true
+      },
+      {
+        "name": "rho",
+        "domain": "see the generator",
+        "default": 2.1271977617501854,
+        "integer": false
+      }
+    ],
+    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "SYMM_FRIEM",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch228)",
+        "agrees": true,
+        "detail": "'This symmetrization of the Finite Riemann minimal surface has one planar end and 2n catenoidal ends'; 'By the Lopez-Ros theorem, they can never be embedded.'"
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch228_symmetrized_finite_riemann"
+  },
+  "named_after": "Riemann",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 13216,
+      "edges": 26140,
+      "faces": 12923,
+      "euler_characteristic": -1,
+      "angle_defect_total": 13.228827,
+      "area": 7.761028,
+      "volume": 0.052102,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 6938,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.991682,
+        1.356581
+      ],
+      "aspect_ratio": 0.678291
+    }
+  }
+}

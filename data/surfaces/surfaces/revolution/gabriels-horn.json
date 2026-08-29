@@ -1,0 +1,103 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "gabriels-horn",
+  "name": "Gabriel's Horn",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "noncompact",
+    "revolution",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "GABRIEL",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "E. Torricelli, De solido hyperbolico acuto (1643)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "alternate_names": [
+    "Torricelli's trumpet"
+  ],
+  "discovered_by": "Evangelista Torricelli",
+  "year": 1643,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "GabrielsHorn",
+    "mathcurve": "ch1269_gabriel_2"
+  },
+  "metrics": {
+    "area": null,
+    "measures_note": "Surface area is INFINITE while the enclosed volume is finite (pi) -- which is the whole point of the object, so a null with this note is the honest record."
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 13920,
+      "edges": 27744,
+      "faces": 13824,
+      "euler_characteristic": 0,
+      "angle_defect_total": -4.265746,
+      "area": 1.914367,
+      "volume": 0.004641,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 296,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.8,
+        0.8
+      ],
+      "aspect_ratio": 0.4
+    }
+  }
+}

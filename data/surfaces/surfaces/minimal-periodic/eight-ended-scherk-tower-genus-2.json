@@ -1,0 +1,117 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "eight-ended-scherk-tower-genus-2",
+  "name": "Eight-Ended Scherk Tower (genus 2)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 2,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 8
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SP_EIGHT_SCHERK_G2",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. Karcher, Manuscripta Math. 62 (1988); H. F. Scherk (1835);",
+      "K. Li thesis lineage (6/8-ended towers); L. daSilva, V. Ramos Batista (2009); M. Weber, https://minimalsurfaces.blog/ notebooks Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb, Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb (research/msblog_harvest/singly_periodic.json).  Full scholarly details in the weierstrass sscherk block header."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch127, 8-ended Scherk g=2)",
+        "agrees": true,
+        "detail": "'The surfaces on this page are translation invariant of genus 2 and have the coordinate planes as symmetry planes'; 8 Scherk (annular) ends per the page title."
+      }
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch127_8_ended_scherk_g2"
+  },
+  "named_after": "Scherk",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 64192,
+      "edges": 128710,
+      "faces": 64512,
+      "euler_characteristic": -6,
+      "angle_defect_total": -40.564551,
+      "area": 3.311073,
+      "volume": 0.042161,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 51697,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.543205,
+        1.342405
+      ],
+      "aspect_ratio": 0.271603
+    }
+  }
+}

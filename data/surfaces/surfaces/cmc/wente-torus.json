@@ -1,0 +1,103 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "wente-torus",
+  "name": "Wente Torus",
+  "primary_family": "cmc",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "cmc",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.delaunay_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "cmc",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "genus": 1,
+    "orientable": true,
+    "compact": true,
+    "euler_characteristic": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "WENTE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. C. Wente, 'Counterexample to a conjecture of H. Hopf', Pacific J. Math. 121 (1986).",
+      "R. Walter, 'Explicit examples to the H-problem of Heinz Hopf', Geom. Dedicata 23 (1987) -- the elementary parametrisation used here (supplement 6.B')."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Henry C. Wente",
+  "year": 1986,
+  "tradition": [
+    "classical"
+  ],
+  "notes": {
+    "caveats": [
+      "The counterexample to Hopf's conjecture that the only closed CMC surface is the round sphere. Immersed, not embedded -- Alexandrov had already proved no EMBEDDED counterexample can exist."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12800,
+      "edges": 25600,
+      "faces": 12800,
+      "euler_characteristic": 0,
+      "angle_defect_total": 8.5e-05,
+      "area": 29.773708,
+      "volume": 5.066169,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 453,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.999968,
+        1.098116,
+        2.0
+      ],
+      "aspect_ratio": 0.549058
+    }
+  }
+}

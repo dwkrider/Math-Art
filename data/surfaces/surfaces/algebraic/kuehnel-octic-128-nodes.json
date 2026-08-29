@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "kuehnel-octic-128-nodes",
+  "name": "Kuehnel Octic (128 nodes)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "degree": 8,
+    "note": "A nodal octic in P^3 with 128 ordinary double points, obtained by REVERSING the usual direction: rather than constructing the octic and deducing a threefold, Calabi-Yau threefolds are built as desingularised double covers of P^3 branched over the surface, and give rise to octics with a determined node count."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 128
+      }
+    ],
+    "is_record": false,
+    "record_for": null
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built. The construction is indirect -- the octic is obtained FROM a Calabi-Yau threefold rather than the other way round -- so there is no equation on the page to transcribe, and none is invented here.",
+      "resume": "M. Kuehnel, 'A note on octic hypersurfaces with many nodes', arXiv:math/0210440 (2002, rev. 2003); converted at research/papers/algebraic-surfaces/kuehnel-2002-octic-128-nodes/. The method builds Calabi-Yau threefolds as desingularised double covers of P^3 branched over the octic, using rank-2 bundles over P^3, and reads the node count off the resulting threefold."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed: the paper's construction is indirect and yields no single displayed equation.",
+    "sources": [
+      "M. Kuehnel, 'A note on octic hypersurfaces with many nodes', arXiv:math/0210440v3 [math.AG] (2002, revised 2003).",
+      "Cited from O. Labs, Algebraic Surface Homepage, octic pages."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Marco Kuehnel",
+  "year": 2002,
+  "tradition": [
+    "classical"
+  ],
+  "notes": {
+    "caveats": [
+      "NOT the same surface as the 128-node member of the Endrass octic family, which reaches the same count by a different construction. Equal node counts do not make equal surfaces.",
+      "Context from the paper: every node count up to 108 is realised by some octic, counts between 108 and 168 only partially, and Miyaoka's upper bound for an octic is 174.",
+      "ATTRIBUTION: the citing website gives only the arXiv number, and the author is easily misread as Endrass. It is Marco Kuehnel."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

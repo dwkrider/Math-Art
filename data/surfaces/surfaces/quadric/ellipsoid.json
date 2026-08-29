@@ -1,0 +1,135 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "ellipsoid",
+  "name": "Ellipsoid",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-implicit",
+    "embedded",
+    "implemented",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2/a**2 + y**2/b**2 + z**2/c**2 - 1",
+    "parameters": [
+      {
+        "name": "a",
+        "symbol": "a",
+        "domain": "(0, inf)",
+        "default": 1.0
+      },
+      {
+        "name": "b",
+        "symbol": "b",
+        "domain": "(0, inf)",
+        "default": 0.7
+      },
+      {
+        "name": "c",
+        "symbol": "c",
+        "domain": "(0, inf)",
+        "default": 0.4
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.14069160534543,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {
+    "genus": 0,
+    "euler_characteristic": 2,
+    "orientable": true,
+    "compact": true,
+    "boundary_components": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "ELLIPSOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Ellipsoid",
+    "mathcurve": "ch1207_ellipsoid_2",
+    "vmm": "ch064_ellipsoid"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3026,
+      "edges": 6096,
+      "faces": 3072,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.566371,
+      "area": 6.627457,
+      "volume": 1.461013,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 752,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.4,
+        1.0
+      ],
+      "aspect_ratio": 0.5
+    }
+  }
+}

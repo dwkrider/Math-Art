@@ -1,0 +1,110 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "daisy",
+  "name": "Daisy",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "implemented",
+    "tradition-gallery"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BOX",
+      "radius": 1.2
+    },
+    "polynomial": "((x**2-y**3)**2)-((z**2-y**2)**3)"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 69712.52346093391,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "HAUSER",
+      "key": "DAISY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
+    "sources": [
+      "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien.  https://homepage.univie.ac.at/herwig.hauser/bildergalerie/",
+      "S. Amethyst, 3D-printed renderings of the same gallery, https://silviana.org/gallery/hauser/",
+      "H. Hauser, 'Bildergalerie algebraischer Flaechen', Universitaet Wien."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "gallery"
+  ],
+  "ids": {
+    "hauser": "Daisy"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 136668,
+      "edges": 408194,
+      "faces": 271528,
+      "euler_characteristic": 2,
+      "angle_defect_total": 4.219944,
+      "area": 8.43305,
+      "volume": 0.24905,
+      "components": 2,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 123281,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.65823,
+        2.0
+      ],
+      "aspect_ratio": 0.829115
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "dihedralized-wohlgemuth-with-handle",
+  "name": "Dihedralized Wohlgemuth with Handle",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The attempted k >= 3 dihedral symmetrization of Wohlgemuth's genus-3 handle surface.  Its failure questions the folklore that a surface existing for some dihedral order k exists for all larger k."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "BELIEVED NOT TO EXIST on numerical evidence -- a weaker statement than a proof, and a stronger one than 'unbuilt'.  Weber reports that raising the dihedral symmetry of Wohlgemuth's second surface (genus 3) to k = 3 fails: at k = 2.999 the numerically solved periods do not appear to close, and for larger k the period problem could not be solved at all.  Weber files it under Non-Existent Surfaces.",
+      "resume": "A proof either way would settle it; the mirrored page poses the underlying free-boundary deformation question explicitly.  The existing k = 2 surface has its own record (wohlgemuth-second-surface-genus-3)."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Wohlgemuth's Second Surface (which documents the failed dihedralization)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch418_wohlgemuths_second_surface.md).",
+      "M. Weber, 'Non-Existent Surfaces (section index)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch061_non_existent_surfaces.md).",
+      "M. Wohlgemuth, 'Minimal surfaces of higher genus with finite total curvature', Arch. Rational Mech. Anal. 137 (1997) 1-25 (the existing k = 2 surface)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch418_wohlgemuths_second_surface"
+  },
+  "named_after": "Wohlgemuth",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

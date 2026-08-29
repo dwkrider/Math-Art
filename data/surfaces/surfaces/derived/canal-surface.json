@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "canal-surface",
+  "name": "Canal Surface",
+  "primary_family": "derived",
+  "families": [
+    "aperiodic",
+    "def-derived",
+    "derived",
+    "immersed",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "derived",
+    "fidelity": "exact",
+    "polynomial": null,
+    "operation": "canal"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built as a general transform. The constant-radius case (a pipe surface) already exists implicitly wherever the repo tubes a curve (math_art/knots/tube.py), so the new capability is the VARYING-radius envelope.",
+      "resume": "R. Ferreol, mathcurve, 'surface canal'. Part B4 of research/missing-surfaces-catalog.md recommends treating the derived-surface transforms as one design pass rather than seven entries."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "G. Monge; see R. Ferreol, mathcurve, 'surface canal'."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1217_tube_2"
+  },
+  "alternate_names": [
+    "Tube"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

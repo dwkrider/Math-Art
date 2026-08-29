@@ -1,0 +1,128 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "sieverts-surface",
+  "name": "Sievert's Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "implemented",
+    "k-const-positive",
+    "self-intersecting",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "(2*sqrt(2 + 2*sin(u)**2)*sin(v)/(2 - sin(v)**2*cos(u)**2))*cos(-u/sqrt(2) + atan(sqrt(2)*tan(u)))",
+    "y": "(2*sqrt(2 + 2*sin(u)**2)*sin(v)/(2 - sin(v)**2*cos(u)**2))*sin(-u/sqrt(2) + atan(sqrt(2)*tan(u)))",
+    "z": "log(tan(v/2)) + 4*cos(v)/(2 - sin(v)**2*cos(u)**2)",
+    "u_range": [
+      "-1.4",
+      "1.4"
+    ],
+    "v_range": [
+      "0.3",
+      "pi - 0.3"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "k-const-positive",
+    "gaussian": {
+      "exact": "1",
+      "value": 1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 2.5247286752553864,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.spherical_surface_generator",
+      "operator_id": "mesh.spherical_surface_add",
+      "key": "SIEVERT",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. Sievert, Uber die Zentralflachen der Enneperschen Flachen konstanten Krummungsmasses, dissertation, Tubingen (1886)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "Heinrich Sievert",
+  "year": 1886,
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "ids": {
+    "mathworld": "SievertsSurface",
+    "mathcurve": "ch1339_sievert_2",
+    "vmm": "ch061_sievert_enneper"
+  },
+  "notes": {
+    "caveats": [
+      "The K = +1 counterpart of Enneper's constant-curvature surfaces; unlike the sphere it is not closed."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6240,
+      "edges": 12319,
+      "faces": 6080,
+      "euler_characteristic": 1,
+      "angle_defect_total": 11.154875,
+      "area": 8.067885,
+      "volume": 2.381443,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 5137,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.554169,
+        1.818939
+      ],
+      "aspect_ratio": 0.777084
+    }
+  }
+}

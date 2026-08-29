@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "clifford-torus",
+  "name": "Clifford Torus",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The torus S1(1/sqrt(2)) x S1(1/sqrt(2)) in R4, lying in the unit 3-sphere; intrinsically flat there, and stereographic projection carries it to a torus of revolution in R3 (the VMM exhibit morphs the projection centre, including centres on the torus where the image becomes a plane with a handle).  The flatness lives in S3; the R3 image is not flat, so no curvature condition is claimed for the projected surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "genus": 1,
+    "orientable": true,
+    "compact": true,
+    "boundary_components": 0,
+    "euler_characteristic": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built: the Hopf-fibration generator renders Hopf tori and the Bianchi-Pinkall record covers the flat-torus family in S3, but the Clifford torus itself -- the square flat torus S1(1/sqrt(2)) x S1(1/sqrt(2)) in S3 -- has no record.",
+      "resume": "Stereographic projection of the explicit S3 chart; math_art/hopf_fibration_generator.py already carries the needed projection machinery."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'Clifford Torus', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch048_clifford_torus.md)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "ids": {
+    "vmm": "ch048_clifford_torus"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Clifford",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

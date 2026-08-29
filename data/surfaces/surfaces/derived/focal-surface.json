@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "focal-surface",
+  "name": "Focal Surface",
+  "primary_family": "derived",
+  "families": [
+    "aperiodic",
+    "def-derived",
+    "derived",
+    "immersed",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "derived",
+    "fidelity": "exact",
+    "polynomial": null,
+    "operation": "focal"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.",
+      "resume": "The locus of the principal centres of curvature. Flagged in research/missing-surfaces-catalog.md B4 as the highest-value member of the derived family, because it produces something visually unlike anything shipped, and it is a natural companion to math_art/curvature_color.py."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "mathcurve, 'surface focale'."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1267_focale_2"
+  },
+  "alternate_names": [
+    "Focal"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "spherical-harmonic-surface",
+  "name": "Spherical Harmonic Surface",
+  "primary_family": "spectral",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "spectral"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.spherical_harmonic_generator, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.spherical_harmonic_generator",
+      "operator_id": "mesh.spherical_harmonic_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Spherical harmonics: P. S. Laplace, \"Theorie des attractions des spheroides et de la figure des planetes\", Memoires de l'Academie royale des Sciences, 1785; A.-M. Legendre, \"Recherches sur l'attraction des spheroides homogenes\", Memoires de Mathematique et de Physique, 1785.",
+      "Real form, normalisation and the Condon-Shortley phase: E. U. Condon and G. H. Shortley, \"The Theory of Atomic Spectra\", Cambridge University Press, 1935.",
+      "The associated Legendre recurrences used here: M. Abramowitz and",
+      "I. A. Stegun, \"Handbook of Mathematical Functions\", Dover, 1965, chapter 8.",
+      "The eight-parameter sculptural family r = sin(m0 phi)^m1 + cos(m2 phi)^m3 + sin(m4 theta)^m5 + cos(m6 theta)^m7 is Paul Bourke's \"Spherical Harmonics\" form (February 1990), http://paulbourke.net/geometry/sphericalh/ .  The parameter sets offered as presets below are project-chosen, not his."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 32514,
+      "edges": 65280,
+      "faces": 32768,
+      "euler_characteristic": 2,
+      "angle_defect_total": 19.716413,
+      "area": 10.571014,
+      "volume": 2.722474,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 630,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.742216
+      ],
+      "aspect_ratio": 0.871108
+    }
+  }
+}

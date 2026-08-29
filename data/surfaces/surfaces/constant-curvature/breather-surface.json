@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "breather-surface",
+  "name": "Breather Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "implemented",
+    "k-const-negative",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "-u + 2*(1 - 0.4**2)*cosh(0.4*u)*sinh(0.4*u)/(0.4*((1 - 0.4**2)*cosh(0.4*u)**2 + 0.4**2*sin(sqrt(1 - 0.4**2)*v)**2))",
+    "y": "2*sqrt(1 - 0.4**2)*cosh(0.4*u)*(sqrt(1 - 0.4**2)*cos(sqrt(1 - 0.4**2)*v)*cos(v) + sin(sqrt(1 - 0.4**2)*v)*sin(v))/(0.4*((1 - 0.4**2)*cosh(0.4*u)**2 + 0.4**2*sin(sqrt(1 - 0.4**2)*v)**2))",
+    "z": "2*sqrt(1 - 0.4**2)*cosh(0.4*u)*(sqrt(1 - 0.4**2)*cos(sqrt(1 - 0.4**2)*v)*sin(v) - sin(sqrt(1 - 0.4**2)*v)*cos(v))/(0.4*((1 - 0.4**2)*cosh(0.4*u)**2 + 0.4**2*sin(sqrt(1 - 0.4**2)*v)**2))",
+    "u_range": [
+      "-4",
+      "4"
+    ],
+    "v_range": [
+      "-6",
+      "6"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "gaussian": {
+      "exact": "-1",
+      "value": -1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 159.32536726997895,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hyperbolic_surface_generator",
+      "operator_id": "mesh.hyperbolic_surface_add",
+      "key": "BREATHER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "A. I. Bobenko, 'Surfaces in terms of 2 by 2 matrices: old and new integrable cases', in Harmonic Maps and Integrable Systems (1994) -- Sym's formula for pseudospherical surfaces from sine-Gordon solutions."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
+  },
+  "discovered_by": "known from the sine-Gordon breather solution",
+  "tradition": [
+    "classical"
+  ],
+  "notes": {
+    "caveats": [
+      "A soliton/antisoliton bound state of the sine-Gordon equation, rendered as a K = -1 surface. Melko-Sterling 1993 does NOT contain a closed-form breather parametrisation, despite being widely cited for one -- 'breather' there classifies branch points of the spectral curve."
+    ]
+  },
+  "ids": {
+    "vmm": "ch054_breather"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6144,
+      "edges": 12128,
+      "faces": 5985,
+      "euler_characteristic": 1,
+      "angle_defect_total": 4.653191,
+      "area": 4.138327,
+      "volume": 0.416874,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 5063,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.689922,
+        1.006042,
+        2.0
+      ],
+      "aspect_ratio": 0.344961
+    }
+  }
+}
