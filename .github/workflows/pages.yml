@@ -1,0 +1,100 @@
+# Publish the companion site (web/) to GitHub Pages.
+#
+# The site has no build step: it is plain ES modules with an import map
+# and a vendored copy of three.js, so "building" is really just staging.
+# The one piece of assembly is the database.
+#
+# web/js/data.js asks for `../data/polyhedra/...` relative to itself,
+# which resolves to `web/data/polyhedra/`. That directory is NOT in git
+# -- the database lives at the repository's own `data/polyhedra/` and is
+# copied into place here. Locally, web/serve.py routes the same URL to
+# the same directory instead of copying. Either way a page requests one
+# URL and gets one answer, in development and in production alike, and
+# the database is never duplicated in the repository.
+#
+# Checkout must pull LFS: the 448 catalogue thumbnails in web/thumbs/ are
+# LFS objects, and without them every tile in the grid is a pointer file.
+
+name: Deploy companion site
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'web/**'
+      - 'data/polyhedra/**'
+      - 'tests/test_web.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it midway; a
+# half-published site is worse than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # LFS is fetched by hand, for ONE path. `lfs: true` on checkout pulls
+      # every object in the repository, and docs/images/ is ~180 MB of
+      # generator figures that this site never serves -- roughly 216 MB per
+      # deploy against a 1 GB/month bandwidth allowance, so five or six
+      # deploys would exhaust it. web/thumbs/ alone is ~36 MB.
+      #
+      # Without any pull the catalogue still "works" and every tile is a
+      # 130-byte pointer file, which is why the size check below is not
+      # decoration.
+      - name: Fetch the catalogue thumbnails
+        run: git lfs pull --include="web/thumbs/*"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Gate the site
+        run: python tests/test_web.py
+
+      - name: Stage the database
+        run: |
+          mkdir -p web/data
+          cp -r data/polyhedra web/data/polyhedra
+
+      - name: Check the staged tree
+        run: |
+          test -f web/data/polyhedra/index.json
+          echo "thumbnails: $(ls web/thumbs/*.png | wc -l)"
+          echo "records:    $(find web/data/polyhedra/solids -name '*.json' | wc -l)"
+          echo "payload:    $(du -sh web | cut -f1)"
+          # An unresolved LFS pointer is ~130 bytes and still deploys
+          # happily, so the failure would be a gallery of broken tiles
+          # rather than a red build. Catch it here instead.
+          small=$(find web/thumbs -name '*.png' -size -1k | wc -l)
+          if [ "$small" -ne 0 ]; then
+            echo "::error::$small thumbnail(s) are unresolved LFS pointers"
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

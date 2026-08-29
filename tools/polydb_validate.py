@@ -19,6 +19,10 @@
 #                  from the geometry match the stored numbers, and each stored
 #                  `exact` string evaluates to its own `value`
 #   genus        - chi = 2 - 2g for orientable records
+#   operators    - `construction.operator_id` names an operator that is
+#                  actually registered somewhere in `math_art/`
+#   symmetry     - the Schoenflies symbol is well formed and its axis
+#                  order is consistent with the stated group order
 #
 # Star faces are handled: planarity and the edge pairing are computed on the
 # true winding cycle, so a {5/2} pentagram validates as a single face.
@@ -494,6 +498,90 @@ def check_duals(records, errors):
                              dv, dc["edges"], dc["faces"]))
 
 
+_SCHOENFLIES = re.compile(
+    r"^(?:C1|Ci|Cs|[TOI]|Td|Th|Oh|Ih|[CDS](?:\d{1,3})[hvd]?)$")
+
+
+def check_symmetry_symbols(records, errors):
+    """Point-group symbols must be well formed, and agree with `order`.
+
+    Nothing else looks at these strings, so a classifier that emits a
+    malformed one is invisible: the record still validates geometrically
+    and the bad symbol simply propagates.  That is how 30 records came to
+    claim groups like "C298156827v" -- a near-identity matrix surviving
+    the classifier's identity test gave n = round(2*pi/ang) in the
+    hundreds of millions, which then flowed into the orbifold, Coxeter and
+    Hermann-Mauguin notations too.
+
+    The axis order is bounded here because `order` is computed
+    independently (it is just the size of the group) and so cannot come
+    from the same mistake: for a cyclic group |G| = n, and for the
+    dihedral and improper families |G| = 2n, so n can never exceed the
+    stated order.
+    """
+    for r in records:
+        y = r.get("symmetry") or {}
+        s = y.get("schoenflies")
+        order = y.get("order")
+        if not s:
+            continue
+        if not _SCHOENFLIES.match(s):
+            errors.append("%s: malformed Schoenflies symbol %r"
+                          % (r["slug"], s))
+            continue
+        digits = "".join(c for c in s if c.isdigit())
+        if digits and order and int(digits) > order:
+            errors.append("%s: Schoenflies %r has axis order %s, above the "
+                          "group order %s" % (r["slug"], s, digits, order))
+        # The derived notations concatenate axis orders without separators --
+        # D10h is orbifold "*2210", meaning *2.2.10 -- so their digit runs
+        # cannot be read as a single number and cannot be bounded by `order`.
+        # A run of six or more digits is still unambiguous corruption: the
+        # widest legitimate case in this database is a 32-gonal prism at
+        # "*2232", and even a 999-gon would reach only five.
+        for name in ("orbifold", "coxeter", "hermann_mauguin"):
+            v = y.get(name)
+            if v and re.search(r"\d{6,}", str(v)):
+                errors.append("%s: %s %r carries an implausible axis order"
+                              % (r["slug"], name, v))
+
+
+def check_operators(records, errors, warnings):
+    """`construction.operator_id` must name an operator that exists.
+
+    The field is the record's only pointer back to the add-on: it is what
+    tells a reader -- or the companion website -- which generator builds
+    this solid.  Nothing else validates it, so a rename in `math_art/`
+    leaves the whole database quietly pointing at an operator that is no
+    longer registered.  That is exactly what happened to the compound and
+    geodesic records, which named `mesh.compound_add` and
+    `mesh.geodesic_sphere_add` long after the operators had become
+    `mesh.polyhedron_compound_add` and `mesh.geodesic_add`.
+
+    Scanning for `bl_idname` textually keeps this runnable without Blender,
+    which is the whole point of the validator.
+    """
+    pkg = os.path.join(os.path.dirname(ROOT), "..", "math_art")
+    pkg = os.path.normpath(pkg)
+    if not os.path.isdir(pkg):
+        warnings.append("math_art/ not found -- operator ids not checked")
+        return
+    known = set()
+    for dirpath, _dirs, files in os.walk(pkg):
+        for fn in files:
+            if not fn.endswith(".py"):
+                continue
+            with open(os.path.join(dirpath, fn), encoding="utf-8",
+                      errors="replace") as fh:
+                known.update(re.findall(r'bl_idname\s*=\s*"([\w.]+)"',
+                                        fh.read()))
+    for r in records:
+        op = (r.get("construction") or {}).get("operator_id")
+        if op and op not in known:
+            errors.append("%s: construction.operator_id %r is not a "
+                          "registered operator" % (r["slug"], op))
+
+
 def main():
     index_path = os.path.join(ROOT, "index.json")
     if not os.path.exists(index_path):
@@ -558,6 +646,8 @@ def main():
                              entry["path"]))
         seen_slug[entry["slug"]] = entry["path"]
     check_duals(records, errors)
+    check_operators(records, errors, warnings)
+    check_symmetry_symbols(records, errors)
 
     for w in warnings:
         print("WARN  %s" % w)

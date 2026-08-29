@@ -361,7 +361,11 @@ if _IN_BLENDER:
         ('RHOMBIC_DODECA', "Rhombic Dodecahedron", "4 cube diagonals"),
         ('TRIACONTA', "Rhombic Triacontahedron", "6 icosahedral axes"),
         ('ENNEACONTA', "Rhombic Enneacontahedron", "10 dodecahedral axes"),
-        ('CUBE', "Cube", "3 orthogonal vectors"),
+        # The cube is a zonohedron -- three orthogonal generators, the
+        # simplest parallelohedron there is -- but offering it here only
+        # duplicates Add > Polyhedra > Regular Solid, which builds it
+        # exactly and with the whole Platonic family beside it. build()
+        # still accepts kind='CUBE' as the degenerate base case.
         ('RANDOM', "Random Star", "n random unit vectors"),
         ('OBJECT', "From Active Object",
          "Read the star off the selected mesh, the way Antiprism's zono "
