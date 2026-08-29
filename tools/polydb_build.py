@@ -1079,7 +1079,8 @@ def stage_toroid(limit=None):
 
 
 ZONOHEDRA = [
-    ("CUBE", "Cube"),
+    # No cube here: the uniform stage already emits it, and a second pass
+    # over the same solid only competes for the slug.
     ("RHOMBIC_DODECA", "Rhombic Dodecahedron"),
     ("TRIACONTA", "Rhombic Triacontahedron"),
     ("ENNEACONTA", "Rhombic Enneacontahedron"),
