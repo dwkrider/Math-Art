@@ -122,6 +122,9 @@ POLYHEDRA = Menu(
         # Zonohedrification, zonish polyhedra and the rhombohedral
         # dissections are one seed-plus-star construction, so one entry.
         _e("mesh.zonish_add", 'MESH_ICOSPHERE', "Zonohedrification"),
+        # One polar zonohedron per face of a seed, packed round its
+        # centre, and the solid that facets them.
+        _e("mesh.zonohedra_cluster_add", 'MESH_ICOSPHERE'),
         _e("mesh.transpolyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.twelve_faced_add", 'MESH_ICOSPHERE'),
         _e("mesh.slide_together_add", 'MOD_BOOLEAN'),
