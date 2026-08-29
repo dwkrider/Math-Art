@@ -29,7 +29,15 @@ The tiling wrap works because a torus *is* the plane modulo a lattice. A periodi
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Pattern | Polygon Ring | Whether to build a polygon-ring toroid or wrap a uniform tiling onto the torus. Polygon Ring, Uniform Tiling. |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
+| Pattern | Polygon Ring | Whether to build a polygon-ring toroid or wrap a uniform tiling onto the torus. Polygon Ring, Uniform Tiling, Flat Torus (Brehm). |
+| Ring Sides | 7 | Vertices in each of the two rings (the faces stop meeting one another at 7) Range 5-64. |
+| Ring Separation | 0 | Half the distance between the two rings (0 = auto, the value that makes the side faces square) Range 0-5. |
 | Segments | 12 | Sections around the major circle Range 3-64. |
 | Cross-section Sides | 4 | Number of sides of each polygon cross-section Range 3-32. |
 | Antiprism Ring | Off | Half-step twist between sections (triangular faces) instead of a prism ring (quads) |
@@ -38,7 +46,7 @@ The tiling wrap works because a torus *is* the plane modulo a lattice. A periodi
 | Cells Through | 6 | Tiling periods around the minor circle (tube) Range 2-48. |
 | Major Radius | 1 | Radius of the torus ring Range 0.1-10. |
 | Minor Radius | 0.4 | Radius of the torus tube Range 0.02-5. |
-| Style | Solid | How the torus surface is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Style | Solid | How the torus surface is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
 | Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

@@ -23,8 +23,11 @@ Two cylinders give the **bicylinder** — a shape bounded by two cylindrical lun
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Shape | Bicylinder (Steinmetz) | Intersect two cylinders (bicylinder) or three (tricylinder). Bicylinder (Steinmetz), Tricylinder. |
+| Shape | Bicylinder (Steinmetz) | Which set of cylinder axes to intersect. Bicylinder (Steinmetz), Tricylinder, Four Cube Diagonals, Six Cuboctahedral Axes, Six Icosahedral Axes, Ten Dodecahedral Axes, Twelve Truncated-Octahedral Axes, Equidomoid (Archimedes' Dome). |
+| Order | 5 | Number of coplanar cylinders, which is also the number of sides of the underlying prism (equidomoid only) Range 2-64. |
 | Radius | 1 | Common cylinder radius Range 0.05-100. |
+| Smooth Shading | On | Shade the cylinder patches smooth.  Turn it off to see the mesh faceting itself |
+| Crease Angle | 20 | Fold angle above which an edge counts as a ridge.  Ridges get shallower as cylinders are added -- a twelve-axis solid is nearly a sphere -- so a lower value is needed there than for a bicylinder Range 1-90. |
 | Sharp Edges | On | Mark the solid's fold curves sharp (and creased). Two cylinders meet along a pair of planar ellipse-like edges; three meet along twelve. The surface is smooth everywhere else, so shading straight across the fold rounds off the one feature that defines the shape |
 | Segments | 64 | Cylinder segments (mesh resolution) Range 8-512. |
 

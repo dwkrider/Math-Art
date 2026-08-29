@@ -24,9 +24,15 @@ Restoring that second property means deforming the solid until the face orbits a
 
 | Option | Default | Description |
 | --- | --- | --- |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
 | Solid | Biscribed Truncated Octahedron | Which biscribed solid (or its dual) to build. Biscribed Truncated Octahedron, Biscribed Truncated Icosahedron, Biscribed Truncated Cuboctahedron, Biscribed Truncated Icosidodecahedron, Biscribed Snub Cube, Biscribed Snub Dodecahedron, Biscribed Tetrakis Hexahedron, Biscribed Pentakis Dodecahedron, and 31 more. |
 | Coloring | By Face Size | Color faces by their number of sides, or leave them uncolored. By Face Size, None. |
-| Style | Solid | How the polyhedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Style | Solid | How the polyhedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
 | Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
