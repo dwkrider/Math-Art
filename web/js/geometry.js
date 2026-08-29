@@ -273,6 +273,29 @@ export function buildLeonardo(rec, opts = {}) {
   const mode = opts.coloring || 'auto';
   const tmp = new THREE.Color();
 
+  // Averaged VERTEX normals for the outer boundary.
+  //
+  // The node group extrudes the whole frame surface at once (Extrude Mesh
+  // with Individual off), so a vertex shared by several panels moves once,
+  // along the average of their normals, and the panels meet in a mitre.
+  // Extruding each face along its own normal instead moves that shared
+  // vertex to a different place per panel, and the frames pull apart into
+  // little separate slabs with a step at every edge.
+  const vnorm = rec.geometry.vertices.map(() => [0, 0, 0]);
+  for (const f of rec.geometry.faces) {
+    const { normal } = tessellateFace(f.map((i) => V[i]));
+    if (!normal) continue;
+    for (const i of f) {
+      vnorm[i][0] += normal[0];
+      vnorm[i][1] += normal[1];
+      vnorm[i][2] += normal[2];
+    }
+  }
+  for (const n of vnorm) {
+    const L = Math.hypot(n[0], n[1], n[2]);
+    if (L > 1e-12) { n[0] /= L; n[1] /= L; n[2] /= L; }
+  }
+
   const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
   const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
   const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
@@ -324,9 +347,14 @@ export function buildLeonardo(rec, opts = {}) {
     // group does with Offset Scale = Thickness: the original polyhedron
     // surface stays the inner face of the shell rather than sitting
     // halfway through it.
+    //
+    // The outer boundary moves along the shared VERTEX normal, so a vertex
+    // belonging to several panels lands in one place and the frames mitre
+    // into a continuous strut across each original edge. The opening's
+    // vertices are interior to this face and have only its normal.
     const off = mul(frame.n, t);
     const outerB = P;                                   // original surface
-    const outerF = P.map((p) => add(p, off));
+    const outerF = f.map((vi, k) => add(P[k], mul(vnorm[vi], t)));
     const innerB = P.map((p) => add(c, mul(sub(p, c), s)));
     const innerF = innerB.map((p) => add(p, off));
 
