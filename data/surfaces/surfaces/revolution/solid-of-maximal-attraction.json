@@ -42,13 +42,7 @@
     "sources": [
       "R. Ferreol, \"Solid of maximal attraction\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1205_attraction_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1205_attraction_2.md).",
       "The chapter credits the Marquis de Saint-Jacques (1750) and C. F. Gauss (1830)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "year": 1750,
   "tradition": [

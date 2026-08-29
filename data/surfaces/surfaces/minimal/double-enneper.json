@@ -15,10 +15,24 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "gauss_map": "z",
-    "height_differential": "z*z - 1.0 + 1.0/(z*z)",
-    "parameters": [],
-    "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+    "domain": "annulus 0.115112 < |z| < 8.68719",
+    "gauss_map": "z**(-1 + n)*(z**n - zeta**n)/(-1.0 + z**n*zeta**n)",
+    "height_differential": "-z**(-1 - n)*(-1.0 + (z*zeta)**n)*(z**n - zeta**n)/(1.0 + zeta**(2*n))",
+    "parameters": [
+      {
+        "name": "n",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      },
+      {
+        "name": "zeta",
+        "domain": "see the generator's p_from",
+        "default": "(3.247595264191645 + 1.8749999999999998*i)",
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
   },
   "curvature": {
     "condition": "minimal",
@@ -61,7 +75,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row DOUBLE_ENNEPER) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 9.49e-16); dh: matches over 144 complex samples (worst 1.34e-15).",
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
@@ -71,13 +85,7 @@
         "agrees": true,
         "detail": "'We have a sphere with two Enneper ends' (Karcher's Tokyo Notes); not embedded."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -91,29 +99,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 7985,
-      "edges": 15892,
-      "faces": 7906,
-      "euler_characteristic": -1,
-      "angle_defect_total": -327.077613,
-      "area": 9.512251,
-      "volume": 0.06206,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 60,
-      "nonmanifold_vertices": 7505,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.561973,
-        1.44001,
-        2.0
-      ],
-      "aspect_ratio": 0.720005
-    }
   }
 }

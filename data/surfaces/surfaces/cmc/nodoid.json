@@ -14,7 +14,7 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.delaunay_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No chart is stored: the Delaunay meridian is the roulette of a hyperbola focus, the same non-elementary quadrature as the unduloid. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "cmc",
@@ -47,13 +47,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "C. Delaunay, J. Math. Pures Appl. 6 (1841) -- the roulette of a hyperbola."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "relations": {
     "member_of": "delaunay-surface"
@@ -68,29 +62,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 51008,
-      "edges": 101952,
-      "faces": 50944,
-      "euler_characteristic": 0,
-      "angle_defect_total": 0.185442,
-      "area": 15.736008,
-      "volume": 3.899861,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 1596,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.702749,
-        1.702749,
-        2.0
-      ],
-      "aspect_ratio": 0.851375
-    }
   }
 }

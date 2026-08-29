@@ -16,7 +16,32 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "domain": "disk |z| < 1.72856",
+    "punctures": [
+      "z = 1 (radius 0.34)",
+      "z = 0.5+0.866025i (radius 0.34)",
+      "z = -0.5+0.866025i (radius 0.34)",
+      "z = -1 (radius 0.34)",
+      "z = -0.5-0.866025i (radius 0.34)",
+      "z = 0.5-0.866025i (radius 0.34)"
+    ],
+    "gauss_map": "1.0*(-z**(-1 + 3*k) + z**(-1 + k)*a**(2*k))/(-1 + z**(2*k)*a**(2*k))",
+    "height_differential": "1.0*i*z**(-1 + k)*(z**(2*k) - 1/a**(2*k))*(z**(2*k) - a**(2*k))/(-1.0 + z**(2*k))**3",
+    "parameters": [
+      {
+        "name": "a",
+        "domain": "see the generator's p_from",
+        "default": 0.75,
+        "integer": false
+      },
+      {
+        "name": "k",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, phi triple (dh = phi3, g = phi3/(phi1 - i*phi2), a Weierstrass-representation identity)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
   },
   "curvature": {
     "condition": "minimal",
@@ -51,17 +76,11 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row SP_SCHERK_ENNEPER) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 3.33e-16); dh: matches over 144 complex samples (worst 3.18e-14).",
     "sources": [
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
       "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -75,29 +94,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 10903,
-      "edges": 21712,
-      "faces": 10808,
-      "euler_characteristic": -1,
-      "angle_defect_total": 46.71086,
-      "area": 0.569843,
-      "volume": 0.0,
-      "components": 1,
-      "boundary_loops": 3,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 10215,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.150045,
-        0.223681,
-        2.0
-      ],
-      "aspect_ratio": 0.075022
-    }
   }
 }

@@ -16,7 +16,7 @@
     "mode": "parametric",
     "fidelity": "exact",
     "polynomial": null,
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula from the literature would be worse than a null. See construction.blocked_by."
   },
   "curvature": {
     "condition": "k-const-negative",
@@ -47,13 +47,7 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "A. I. Bobenko, in Harmonic Maps and Integrable Systems (1994)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

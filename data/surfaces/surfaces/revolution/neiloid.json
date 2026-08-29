@@ -13,7 +13,20 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "sqrt(u**3)*cos(v)",
+    "y": "sqrt(u**3)*sin(v)",
+    "z": "u",
+    "u_range": [
+      "0.2",
+      "1"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "rho^2 = z^3 (a = 1), the revolution of Neile's semicubical parabola, between the operator's default base cut z = 0.2 and z = 1; the cusp tip at z = 0 stays outside the range",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -37,7 +50,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.29 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.01275).",
     "sources": [
       "D. von Seggern, \"CRC Standard Curves and Surfaces\" (1993), p. 304 -- Fresnel's elasticity surface.",
       "A. Robin (2004), plotted after M. Trott, \"The Mathematica GuideBook for Graphics\" (2004), p. 103 -- the paper bag surface.",
@@ -45,13 +58,7 @@
       "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
       "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
       "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "ids": {
     "mathcurve": "ch1308_neiloide_2"
@@ -61,29 +68,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4608,
-      "edges": 9120,
-      "faces": 4514,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.5664,
-      "area": 7.150014,
-      "volume": 0.783637,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 92,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        0.8
-      ],
-      "aspect_ratio": 0.4
-    }
   }
 }

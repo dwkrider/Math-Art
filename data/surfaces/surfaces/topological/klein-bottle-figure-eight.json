@@ -13,7 +13,21 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.topological_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "(2 + cos(u/2)*sin(v) - sin(u/2)*sin(2*v))*cos(u)",
+    "y": "(2 + cos(u/2)*sin(v) - sin(u/2)*sin(2*v))*sin(u)",
+    "z": "sin(u/2)*sin(v) + cos(u/2)*sin(2*v)",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "note": "ring radius 2 fixed to the builder default.  The u seam closes with v reversed (the figure-8 makes a half-turn per revolution)",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -37,7 +51,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.33 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.09814).",
     "sources": [
       "Klein bottle: F. Klein (1882). Boy's surface: W. Boy, Math. Ann. 57 (1903), here via the R. Bryant - R. Kusner parametrization.",
       "Cross-cap and Roman surface: two immersions of RP^2 due to J. Steiner (Rome, 1844).",
@@ -45,42 +59,12 @@
       "Sudanese Mobius band: H. B. Lawson, \"Complete Minimal Surfaces in S^3\", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman and Daniel Asimov (cf. G. Francis, \"A Topological Picturebook\", Springer 1987).",
       "Morin's surface: Bernard Morin (1933-2018); B. Morin and J.-P. Petit on turning a sphere inside out.  Parametrization by Francois Apery, \"Models of the Real Projective Plane\" (Vieweg, 1987), p. 104; via",
       "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapter \"surface de Morin\"."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 4656,
-      "edges": 9264,
-      "faces": 4608,
-      "euler_characteristic": 0,
-      "angle_defect_total": 9.805067,
-      "area": 11.368096,
-      "volume": 0.002058,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 194,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.854351,
-        2.0,
-        0.767771
-      ],
-      "aspect_ratio": 0.383886
-    }
   }
 }

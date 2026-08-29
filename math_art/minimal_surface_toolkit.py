@@ -84,9 +84,11 @@ except ImportError:  # flat import outside the package
 from .minsurf.domain import _center_fit
 from .minsurf.elliptic import _SQUARE
 from .minsurf.parametric import (ANGLE_PARAM, COUNT_PARAM, FAMILIES,
-                                 MESH_PARAM, PARAMETRIC, PERIODIC_NO_ARRAY,
-                                 STOREY_PARAM, SURFACE_FAMILY, _periodic_dim,
-                                 build_parametric, build_parametric_grid)
+                                 MESH_PARAM, ORDERLESS, ORDER_RANGE,
+                                 PARAMETRIC, PERIODIC_NO_ARRAY,
+                                 STOREY_PARAM, SURFACE_FAMILY,
+                                 _periodic_dim, build_parametric,
+                                 build_parametric_grid)
 from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
                               _selfx_crossings, align_loops,
                               build_annulus_grid, build_disk_grid,
@@ -486,6 +488,21 @@ if _IN_BLENDER:
         return _PERIODIC_ITEMS.get(self.periodicity,
                                    _PERIODIC_ALL or _SURF_ITEMS_ALL)
 
+    def _snap_order(self, context):
+        """Snap the shared Order/Count slider into the current surface's
+        supported range (ORDER_RANGE).  The slider then always SHOWS the
+        value that gets built: dragging below the k-noid-with-Enneper-
+        ends' k = 3 snaps back to 3 instead of displaying 1 while
+        silently building 3 (a control that substitutes a different
+        value without saying so reads as a working control that does
+        nothing).  Writing through self[...] sets the stored id-property
+        without re-triggering this update."""
+        rng = ORDER_RANGE.get(self.surface)
+        if rng:
+            v = int(min(max(self.order, rng[0]), rng[1]))
+            if v != self.order:
+                self['order'] = v
+
     class MESH_OT_parametric_minimal_add(bpy.types.Operator):
         """Add a minimal surface from the Weierstrass-Enneper / Bjorling
         catalog. Pick a Family, then a Surface within it."""
@@ -537,6 +554,7 @@ if _IN_BLENDER:
         surface: EnumProperty(
             name="Surface",
             items=_surface_items,
+            update=_snap_order,
             description="The specific minimal surface to build, from the "
                         "chosen Family")
         style: EnumProperty(
@@ -579,16 +597,24 @@ if _IN_BLENDER:
             description="NURBS control grid size in V")
         order: IntProperty(
             name="Order / Count", default=1, min=1, max=12,
+            update=_snap_order,
             description="Enneper order; helicoid half-turns; Jorge-Meeks "
-                        "end count n (>= 3); ignored for the rest")
+                        "end count n (>= 3); ignored for the rest. "
+                        "Surfaces that only support a sub-range snap "
+                        "the slider into it")
         storeys: IntProperty(
             name="Storeys", default=3, min=1, max=8,
             description="Number of periodic fundamental domains to stack "
                         "(saddle tower); ignored for the rest")
         radius: FloatProperty(
-            name="Domain Radius", default=1.2, min=0.2, max=4.0,
-            description="Extent of the parameter domain (for the k-noid, "
-                        "how close the disk reaches its ends)")
+            name="Domain Radius", default=1.2, min=0.2, max=20.0,
+            soft_max=4.0,
+            description="Extent of the parameter domain (for the k-noid "
+                        "family, how close the domain reaches its ends -- "
+                        "bigger grows the bells).  The slider drags to 4; "
+                        "type larger values (up to 20) for extreme end "
+                        "reach, which saturates at what the resolution "
+                        "can carry")
         assoc_angle: FloatProperty(
             name="Associate Angle", default=0.0,
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
@@ -753,7 +779,8 @@ if _IN_BLENDER:
             lay.prop(self, 'equal_areas')
             if self.surface in COUNT_PARAM:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
-            elif self.surface not in ANGLE_PARAM:
+            elif (self.surface not in ANGLE_PARAM
+                  and self.surface not in ORDERLESS):
                 lay.prop(self, 'order')
             if self.surface in STOREY_PARAM:
                 lay.prop(self, 'storeys', text=STOREY_PARAM[self.surface])
@@ -903,6 +930,7 @@ if _IN_BLENDER:
         surface: EnumProperty(
             name="Surface",
             items=_periodic_surface_items,
+            update=_snap_order,
             description="The specific periodic surface to build, from the "
                         "chosen Periodicity")
         arrangement: EnumProperty(
@@ -964,8 +992,11 @@ if _IN_BLENDER:
             description="NURBS control grid size in V")
         order: IntProperty(
             name="Order / Count", default=1, min=1, max=12,
+            update=_snap_order,
             description="Period count / lattice modulus where the surface "
-                        "uses it (e.g. saddle-tower wing count)")
+                        "uses it (e.g. saddle-tower wing count). "
+                        "Surfaces that only support a sub-range snap "
+                        "the slider into it")
         # -- unified cell counts: one INDEPENDENT count per tiling
         # dimension, shown by periodicity (singly -> u only; doubly ->
         # u, v; triply -> u, v, w = x, y, z).  The array's dimensionality
@@ -989,8 +1020,12 @@ if _IN_BLENDER:
             description="Legacy uniform cell count (broadcasts to every "
                         "period axis); 0 = use the per-axis Cells controls")
         radius: FloatProperty(
-            name="Domain Radius", default=1.2, min=0.2, max=4.0,
-            description="Extent of the parameter domain")
+            name="Domain Radius", default=1.2, min=0.2, max=20.0,
+            soft_max=4.0,
+            description="Extent of the parameter domain (for the k-noid "
+                        "family, how close the domain reaches its ends).  "
+                        "The slider drags to 4; type larger values (up to "
+                        "20) for extreme end reach")
         assoc_angle: FloatProperty(
             name="Associate Angle", default=0.0,
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
@@ -1292,7 +1327,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'res_v')
             if self.surface in COUNT_PARAM:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
-            elif self.surface not in ANGLE_PARAM:
+            elif (self.surface not in ANGLE_PARAM
+                  and self.surface not in ORDERLESS):
                 lay.prop(self, 'order')
             # cell counts: one per tiling dimension (singly -> u; doubly ->
             # u, v).  NURBS output is a single control patch (no array).

@@ -43,15 +43,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 8.024297346588392e-09,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -88,18 +79,11 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row ENNEPER) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 0).",
     "sources": [
       "A. Enneper, 'Analytisch-geometrische Untersuchungen', Zeitschrift fur Mathematik und Physik 9 (1864).",
       "A. Enneper, 'Weitere Bemerkungen ueber asymptotische Linien', Nachr. Koenigl. Ges. Wiss. Goettingen 15 (1871); M. Weber (mirror: minsurf ch189): total curvature -4pi, single end of winding number 3, not embedded."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -127,12 +111,13 @@
       "parameters": [
         {
           "name": "k",
-          "domain": "see the generator",
+          "domain": "see the generator's p_from",
           "default": 1,
           "integer": true
         }
       ],
-      "note": "Verified against math_art/minsurf/zoo.py by sampling both over the complex plane; g exactly, dh up to the constant multiple that merely scales the surface."
+      "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack.",
+      "domain": "disk |z| < 1"
     }
   ],
   "alternate_names": [
@@ -143,29 +128,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 10464,
-      "edges": 20819,
-      "faces": 10355,
-      "euler_characteristic": 0,
-      "angle_defect_total": 24.355671,
-      "area": 7.286356,
-      "volume": 5.9e-05,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 10245,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.763715,
-        1.76445,
-        2.0
-      ],
-      "aspect_ratio": 0.881858
-    }
   }
 }

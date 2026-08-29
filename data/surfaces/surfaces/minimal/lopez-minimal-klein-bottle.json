@@ -16,7 +16,7 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No (g, dh) pair is stored: the shipped row is built by the dedicated mesher we.symtail_lopez_klein_mesh (a torus/branched-cover or multi-patch assembly); no elementary (g, dh) pair on a plane domain is stored in the code. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -79,13 +79,7 @@
         "agrees": true,
         "detail": "'It has a single Enneper end and total curvature -8pi ... the only minimal Klein bottle of total curvature -8pi.'"
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -99,29 +93,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 36671,
-      "edges": 73152,
-      "faces": 36480,
-      "euler_characteristic": -1,
-      "angle_defect_total": -8.141678,
-      "area": 4.38517,
-      "volume": 0.000418,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 18299,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.339387,
-        2.0,
-        1.068109
-      ],
-      "aspect_ratio": 0.534054
-    }
   }
 }

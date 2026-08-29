@@ -60,13 +60,7 @@
     "sources": [
       "D. van Straten's D8 x Z2-symmetric octic construction, as mirrored on O. Labs's Algebraic Surface Homepage (vstrconstr page), which prints the equation in full.",
       "The octics survey on the same site: Miyaoka's bound for an octic is 174 and the best known count is 168, which is the scale this 124 sits on."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -83,29 +77,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 148096,
-      "edges": 441530,
-      "faces": 293478,
-      "euler_characteristic": 44,
-      "angle_defect_total": 261.40789,
-      "area": 9.505027,
-      "volume": 0.216736,
-      "components": 26,
-      "boundary_loops": 8,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 131545,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        0.672884
-      ],
-      "aspect_ratio": 0.336442
-    }
   }
 }

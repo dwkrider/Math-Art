@@ -38,15 +38,6 @@
     },
     "also_satisfies": [
       "weingarten"
-    ],
-    "measured": [
-      {
-        "definition_index": 0,
-        "max_abs_mean_curvature": 3.877279505181668e-08,
-        "resolution": 180,
-        "tolerance": 0.002,
-        "passed": true
-      }
     ]
   },
   "topology": {
@@ -88,17 +79,10 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
     "sources": [
       "H. W. Richmond, 'On the simplest algebraic minimal curves, and the derived real minimal surfaces', Proc. Cambridge Phil. Soc. 19 (1904)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "curvature_condition": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -117,29 +101,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 8012,
-      "edges": 15935,
-      "faces": 7923,
-      "euler_characteristic": 0,
-      "angle_defect_total": 17.71676,
-      "area": 4.441815,
-      "volume": 0.001089,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 7770,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.993223,
-        1.448195
-      ],
-      "aspect_ratio": 0.724097
-    }
   }
 }

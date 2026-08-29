@@ -55,13 +55,7 @@
       "A. Fresnel (1821) -- the wave surface; the chapter \"Fresnel's wave surface\" prints the quartic and its four singular points.",
       "A. Gray, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\", 2nd ed., CRC Press (1997) -- named the sine surface.",
       "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -80,29 +74,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 46558,
-      "edges": 139668,
-      "faces": 93112,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.566548,
-      "area": 7.541062,
-      "volume": 1.591969,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 41300,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.84341,
-        2.0,
-        0.915629
-      ],
-      "aspect_ratio": 0.457815
-    }
   }
 }

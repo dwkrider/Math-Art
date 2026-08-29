@@ -16,7 +16,7 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "polynomial": null,
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula from the literature would be worse than a null. See construction.blocked_by."
   },
   "curvature": {
     "condition": "minimal",
@@ -55,13 +55,7 @@
         "agrees": true,
         "detail": "'A 1-parameter family of embedded triply periodic minimal surfaces of genus 4 with horizontal straight lines and vertical symmetry planes.'  D. Freese, M. Weber, A. T. Yerger, R. Yol, 'Two New Embedded Triply Periodic Minimal Surfaces of Genus 4' (arXiv)."
       }
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"

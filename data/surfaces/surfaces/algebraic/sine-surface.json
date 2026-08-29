@@ -58,13 +58,7 @@
       "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve).",
       "R. Ferreol, \"Sine surface\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1340_sinus_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1340_sinus_2.md).",
       "A. Gray, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\", 2nd ed., CRC Press (1997) -- the chapter credits Gray with the name."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -82,29 +76,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 381964,
-      "edges": 1147302,
-      "faces": 765048,
-      "euler_characteristic": -290,
-      "angle_defect_total": -3518.604465,
-      "area": 29.213664,
-      "volume": 3.050621,
-      "components": 2,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 270,
-      "nonmanifold_vertices": 337718,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

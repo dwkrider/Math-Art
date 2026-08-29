@@ -19,7 +19,7 @@
     "mode": "parametric",
     "fidelity": "exact",
     "polynomial": null,
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No chart is stored: the record has no implemented construction -- there is no shipped builder to verify a chart against, and this module stores no unverified formulas (the record's own construction block notes what is missing). The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
@@ -51,13 +51,7 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "discovered_by": "Walther von Dyck",
   "year": 1888,

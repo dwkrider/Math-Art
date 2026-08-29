@@ -13,7 +13,19 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.supershape_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "(abs(cos(5*u/4))**7 + abs(sin(5*u/4))**7)**(-0.5)*cos(u)*(abs(cos(5*v/4))**7 + abs(sin(5*v/4))**7)**(-0.5)*cos(v)",
+    "y": "(abs(cos(5*u/4))**7 + abs(sin(5*u/4))**7)**(-0.5)*sin(u)*(abs(cos(5*v/4))**7 + abs(sin(5*v/4))**7)**(-0.5)*cos(v)",
+    "z": "(abs(cos(5*v/4))**7 + abs(sin(5*v/4))**7)**(-0.5)*sin(v)",
+    "u_range": [
+      "-pi",
+      "pi"
+    ],
+    "v_range": [
+      "-pi/2",
+      "pi/2"
+    ],
+    "note": "spherical product of two Gielis superformulas at the operator's default preset STARFISH, (m, n1, n2, n3, a, b) = (5, 2, 7, 7, 1, 1) for both; the longitude seam closes because the superformula radius is even in its angle",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -37,47 +49,17 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.36 of tol, 0.1% of oracle beyond tol (tol floor 2.5 x 0.08894).",
     "sources": [
       "Gielis, J. (2003). \"A generic geometric transformation that unifies a wide range of natural and abstract shapes.\" American Journal of Botany 90(3), 333-338. doi:10.3732/ajb.90.3.333 -- the paper that introduced the superformula.",
       "Bourke, P. \"Supershapes / SuperFormula.\" https://paulbourke.net/geometry/supershape/ -- the 3D spherical product, shell and toroidal mappings this module follows.",
       "Barr, A. H. (1981). \"Superquadrics and Angle-Preserving Transformations.\" IEEE Computer Graphics & Applications 1(1), 11-23 -- the superellipsoid (SUPERELLIPSOID mode)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 8066,
-      "edges": 16256,
-      "faces": 8192,
-      "euler_characteristic": 2,
-      "angle_defect_total": 12.56637,
-      "area": 7.655842,
-      "volume": 0.506424,
-      "components": 1,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 2019,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        1.906128,
-        2.0,
-        0.657687
-      ],
-      "aspect_ratio": 0.328843
-    }
   }
 }

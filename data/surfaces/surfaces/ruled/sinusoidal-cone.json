@@ -40,13 +40,7 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "R. Ferreol, \"Sinusoidal cone\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1236_conesinusoidal_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1236_conesinusoidal_2.md)."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"

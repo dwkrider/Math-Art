@@ -110,6 +110,17 @@ CHARTS = {
         "u_range": ("0.2", "1.1"), "v_range": ("0", "2*pi"),
         "periodic_v": True,
     },
+    # Scherk's first (doubly periodic) surface, the graph
+    #     z = ln(cos u / cos v)
+    # over one checkerboard square |u|, |v| < pi/2 -- exactly the shipped
+    # builder (math_art/minsurf/parametric.py, _scherk_graph, which uses
+    # the window 0.47*pi).  The record's primary definition stays the
+    # Weierstrass block; this chart attaches as the alternate parametric
+    # definition, and the H = 0 gate verifies the transcription.
+    "scherk-doubly-periodic": {
+        "x": "u", "y": "v", "z": "log(cos(u)/cos(v))",
+        "u_range": ("-0.47*pi", "0.47*pi"), "v_range": ("-0.47*pi", "0.47*pi"),
+    },
     # Catenoid-helicoid associate (Bonnet) family, from the shipped _cathel
     # (math_art/minsurf/parametric.py):
     #     x = cos(t) cosh u cos v + sin(t) sinh u sin v
@@ -295,6 +306,7 @@ def _selftest():
         "richmond-surface": "minimal",
         "richmond-generalized-g-eq-z-k": "minimal",
         "jeeners-flower": "minimal",
+        "scherk-doubly-periodic": "minimal",
         "catenoid-helicoid-associate-family": "minimal",
         "pseudosphere": "k-const-negative", "dini-surface": "k-const-negative",
         "kuen-surface": "k-const-negative",

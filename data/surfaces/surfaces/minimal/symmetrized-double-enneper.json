@@ -15,7 +15,24 @@
     "mode": "weierstrass",
     "fidelity": "exact",
     "exactness": "numerical-integral",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.parametric, which is authoritative; an unverified transcription would silently define a different surface."
+    "domain": "annulus 0.413793 < |z| < 2.41667",
+    "gauss_map": "1.0*z**n*(R0*exp(0.5*pi*i/(1 + n)))**(2 + 2*n)*((R0*exp(0.5*pi*i/(1 + n)))**(1 + n) - z**(1 + n))/((1.0 + (R0*exp(0.5*pi*i/(1 + n)))**(2 + 2*n))*(-1.0 + z**(1 + n)*(R0*exp(0.5*pi*i/(1 + n)))**(1 + n)))",
+    "height_differential": "-z**(-2 - n)*(-1.0 + (z*R0*exp(0.5*pi*i/(1 + n)))**(1 + n))*(z**(1 + n) - (R0*exp(0.5*pi*i/(1 + n)))**(1 + n))/(1.0 + (R0*exp(0.5*pi*i/(1 + n)))**(2 + 2*n))",
+    "parameters": [
+      {
+        "name": "R0",
+        "domain": "see the generator's p_from",
+        "default": 5.0,
+        "integer": false
+      },
+      {
+        "name": "n",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, phi triple (dh = phi3, g = phi3/(phi1 - i*phi2), a Weierstrass-representation identity)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
   },
   "curvature": {
     "condition": "minimal",
@@ -50,19 +67,13 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row SYMM_DBLENN) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 1.9e-15); dh: matches over 144 complex samples (worst 1.83e-15).",
     "sources": [
       "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
       "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
       "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
       "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "tradition": [
     "classical"
@@ -75,29 +86,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 11750,
-      "edges": 23369,
-      "faces": 11619,
-      "euler_characteristic": 0,
-      "angle_defect_total": 3.804621,
-      "area": 6.582975,
-      "volume": 1.137353,
-      "components": 1,
-      "boundary_loops": 2,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 9969,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        1.988918,
-        1.266107
-      ],
-      "aspect_ratio": 0.633054
-    }
   }
 }

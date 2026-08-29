@@ -14,7 +14,7 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minimal_surface_toolkit, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No chart is stored: the soap film spanning a frame is computed by numerical relaxation (minimal_surface_toolkit); nothing closed-form to transcribe. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -48,13 +48,7 @@
       "W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and",
       "W. H. Meeks III (1983).",
       "Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "fabrication": {
     "developable": false,

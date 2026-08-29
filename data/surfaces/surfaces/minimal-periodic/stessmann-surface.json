@@ -47,13 +47,7 @@
     "sources": [
       "M. Weber, 'Stessmann's Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch330_stesmanns_surface.md).",
       "B. Stessmann, 'Periodische Minimalflaechen', Math. Z. 38 (1934) 417-442."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"

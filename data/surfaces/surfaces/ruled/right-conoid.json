@@ -13,7 +13,20 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.ruled_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "v*cos(u)",
+    "y": "v*sin(u)",
+    "z": "0.5*sin(2*u)",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "-1",
+      "1"
+    ],
+    "periodic_u": true,
+    "note": "the record's default variant, Plucker's conoid (cylindroid) h = 0.5 sin 2u with ruling half-length 1; the n-fold, Wallis, Zindler and Whitney variants share the operator but not this chart",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -69,18 +82,12 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.32 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.05981).",
     "sources": [
       "J. Plucker, Neue Geometrie des Raumes (1868) -- the cylindroid.",
       "J. Wallis, for the conical edge.",
       "K. Zindler, for the conoid z(x^2 - y^2) = 2axy."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "specimens": [
     {
@@ -124,29 +131,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2688,
-      "edges": 4992,
-      "faces": 2400,
-      "euler_characteristic": 96,
-      "angle_defect_total": 603.185796,
-      "area": 13.201533,
-      "volume": 0.118624,
-      "components": 50,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 726,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        1.019608
-      ],
-      "aspect_ratio": 0.509804
-    }
   }
 }

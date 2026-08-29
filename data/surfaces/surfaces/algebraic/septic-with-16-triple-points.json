@@ -69,13 +69,7 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "S. Endrass, U. Persson and J. Stevens, 'Surfaces with triple points', arXiv:math/0010163v1 [math.AG] (2000), section 5 and Theorem 5.1 -- 'A septic with 16 ordinary triple points'."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "published"
@@ -98,29 +92,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 194365,
-      "edges": 578067,
-      "faces": 384168,
-      "euler_characteristic": 466,
-      "angle_defect_total": 2874.467913,
-      "area": 9.74903,
-      "volume": 0.112902,
-      "components": 268,
-      "boundary_loops": 15,
-      "manifold": false,
-      "nonmanifold_edges": 15,
-      "nonmanifold_vertices": 173538,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        2.0,
-        2.0,
-        2.0
-      ],
-      "aspect_ratio": 1.0
-    }
   }
 }

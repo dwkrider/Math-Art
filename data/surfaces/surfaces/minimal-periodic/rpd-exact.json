@@ -17,7 +17,7 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No (g, dh) pair is stored: the Gauss map is a product of powers of Jacobi theta functions on the hexagonal/square torus, continued along an unwrapped branch (math_art/minsurf/hexagonal.py); theta functions are outside the exact expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -55,13 +55,7 @@
       "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
       "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
       "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]"
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -74,29 +68,5 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2009,
-      "edges": 3928,
-      "faces": 1920,
-      "euler_characteristic": 1,
-      "angle_defect_total": 5.850955,
-      "area": 1.69498,
-      "volume": 0.071537,
-      "components": 1,
-      "boundary_loops": 1,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 1160,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.929127,
-        2.0,
-        0.44795
-      ],
-      "aspect_ratio": 0.223975
-    }
   }
 }

@@ -13,7 +13,19 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.ruled_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "x": "2*v - 1",
+    "y": "u",
+    "z": "0.5*(2*v - 1)*sin(u)",
+    "u_range": [
+      "-pi",
+      "pi"
+    ],
+    "v_range": [
+      "0",
+      "1"
+    ],
+    "note": "Gaudi's sinusoidal conoid z = k x sin(y/a) with k = 0.5 and a = 1 (operator defaults), as the ruling between its two boundary sinusoids at x = -1 and x = +1",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -37,7 +49,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.29 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.06666).",
     "sources": [
       "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
       "G. W. Hart, \"Curved, yet Straight: Stick Hyperboloids,\" Bridges 2023 Conference Proceedings, pp. 251-258.",
@@ -45,13 +57,7 @@
       "F. A. Farris, \"Spiral Ruled Surfaces,\" Bridges 2022 Conference",
       "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
       "Milk carton: H. M. Cundy & A. P. Rollett, \"Mathematical Models\" (1951), 185-188."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "named_after": "Gaudi",
   "ids": {
@@ -62,29 +68,5 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
-  },
-  "mesh_recipe": {
-    "measured": {
-      "vertices": 2688,
-      "edges": 4976,
-      "faces": 2388,
-      "euler_characteristic": 100,
-      "angle_defect_total": 628.318532,
-      "area": 1.419503,
-      "volume": 0.004115,
-      "components": 50,
-      "boundary_loops": 0,
-      "manifold": false,
-      "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 708,
-      "orientable": null,
-      "one_sided": null,
-      "bounding_box": [
-        0.645244,
-        2.0,
-        0.32892
-      ],
-      "aspect_ratio": 0.16446
-    }
   }
 }

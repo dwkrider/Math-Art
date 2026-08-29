@@ -47,13 +47,7 @@
     "sources": [
       "M. Weber, 'Lubeck-Batista Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch038_lubeck_batista_surface.md).",
       "K. R. M. Lubeck and V. Ramos Batista, 'The doubly periodic Scherk-Costa surfaces', Journal of Mathematics Research 6 (2014) 77-90."
-    ],
-    "verified": {
-      "expressions_parse": true,
-      "exact_values_match": true,
-      "generated_fields_match": true,
-      "tolerance": 0.002
-    }
+    ]
   },
   "metrics": {
     "normalization": "unit_cell"
