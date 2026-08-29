@@ -53,9 +53,39 @@ Since both bodies are convex the sum is the hull of the pairwise vertex
 sums, and a zonotope has only n^2 - n + 2 vertices, so the point set stays
 small enough to hull directly.
 
+--------------------------------------------------------------------------
+Translation surfaces
+--------------------------------------------------------------------------
+A Minkowski sum of segments is always convex, which puts most of the
+parallelogram-faced surfaces out of reach.  Sweeping one polyline along
+another instead gives the grid A_i + B_j, whose every quad still has
+opposite edges parallel but which is free to be open, non-convex or
+toroidal -- rhombic tori, ribbons, and the spiral surfaces Antiprism's
+`zono -T` builds from a pair of ordered chains.
+
+--------------------------------------------------------------------------
+Zone lengths
+--------------------------------------------------------------------------
+Each zone carries its own length.  Stretching one widens its band of
+faces, shrinking it to zero deletes the zone, and mixing lengths turns the
+rhombi into general parallelograms -- the difference between an
+Archimedean and a non-Archimedean truncated octahedron.
+
 References:
 - Zonohedra: E. S. Fedorov (1885).  H. S. M. Coxeter, "Regular Polytopes",
   3rd ed., Dover, 1973, ch. 2.
+- Antiprism (Adrian Rossiter), the `zono` program and
+  `base/zonohedron.cc`: the star-extraction methods, the zonohedrified
+  seed, and the two-chain translation surface reimplemented here.
+- Russell Towle, "Rhombic Spirallohedra" (2003), and the bitten-zonogon
+  idea quoted in Michel Petitjean, "Spirallohedra and Space Filling. A
+  Tribute to Russell Towle", Symmetry: Culture and Science 19(1) (2008),
+  pp. 5-8.
+- Jean E. Taylor, "Zonohedra and Generalized Zonohedra", American
+  Mathematical Monthly 99(2) (1992), pp. 108-111 -- Fedorov's original
+  definition asks only that opposite edges of a face be PARALLEL, which
+  is wider than the centrally symmetric faces a Minkowski sum produces,
+  so this engine builds a proper subclass of the zonohedra.
 - Zonohedrification and zonish polyhedra: George W. Hart, "Zonohedrification",
   Mathematica Journal 7(3) (1999), 201-224; and the Virtual Polyhedra pages
   on zonohedrification and zonish polyhedra.
@@ -186,12 +216,93 @@ def edge_star(V, F, tol=1e-7):
     return dedupe_star(es, tol)
 
 
+def star_from(V, F, source='VERTS', centre=None, unit=True, tol=1e-7):
+    """One entry point for every way Antiprism's `zono` reads a star.
+
+    `source` matches its `-m` flag -- VERTS (`v`, centre to vertices),
+    PAIRS (`a`, all vertex-to-vertex), EDGES (`i`/`e`, the face sides) --
+    with FACES added for the seed's normals, which Hart uses too.
+    `centre` is `-c` and only bites on VERTS, where it decides what the
+    vectors are measured from; `unit` is `-u`.
+
+    Leaving `unit` off keeps the seed's own lengths, and that changes the
+    solid, not just its scale: the icosahedron's edge star gives the
+    Archimedean truncated octahedron at unit length and a non-Archimedean
+    one at true length.
+    """
+    if source == 'PAIRS':
+        st = all_pairs_star(V, tol)
+    elif source == 'EDGES':
+        st = edge_star(V, F, tol)
+    elif source == 'FACES':
+        st = normal_star(V, F, tol)
+    else:
+        c = centre or [0.0, 0.0, 0.0]
+        st = dedupe_star([_sub(v, c) for v in V], tol)
+    if unit:
+        st = [_unit(v) for v in st if _norm(v) > tol]
+    return st
+
+
+def all_pairs_star(V, tol=1e-7):
+    """Every vertex-to-vertex direction as a star -- Antiprism's `-m a`.
+
+    The widest star a seed can give: C(m, 2) segments before deduplication,
+    of which a symmetric solid collapses most.  The cube's 8 vertices give
+    28 pairs and only 7 zones; the icosahedron's 12 give 66 pairs and 15.
+    """
+    es = []
+    for i in range(len(V)):
+        for j in range(i + 1, len(V)):
+            d = _sub(V[j], V[i])
+            if _norm(d) > tol:
+                es.append(d)
+    return dedupe_star(es, tol)
+
+
 def polar_star(n, pitch=45.0):
-    """Equal-azimuth star at a common pitch -- the polar zonohedra."""
+    """Equal-azimuth star at a common pitch -- the polar zonohedra.
+
+    NOTE the convention: `pitch` is measured from the AXIS, so the ribs
+    lean out by `pitch` from vertical.  Every published formula for polar
+    zonohedra measures instead from the horizontal; `polyhedra/polar.py`
+    holds that convention and the conversion between them.
+    """
     p = math.radians(pitch)
     return [[math.sin(p) * math.cos(2 * math.pi * k / n),
              -math.sin(p) * math.sin(2 * math.pi * k / n),
              math.cos(p)] for k in range(n)]
+
+
+# --------------------------------------------------------------------------
+# zone lengths
+# --------------------------------------------------------------------------
+
+def weighted_star(star, profile='UNIFORM', spread=0.5, seed=0):
+    """Rescale each zone independently.
+
+    A zone's length is a free parameter of the zonohedron -- stretching one
+    stretches its band of faces, and shrinking it to zero deletes the zone
+    altogether, dropping the face count from n(n-1) to (n-1)(n-2).  Unequal
+    lengths break the rhombi into general parallelograms, which is exactly
+    the difference between Antiprism's `zono -m i ico` and `zono -m i -u
+    ico` (a non-Archimedean and an Archimedean truncated octahedron).
+    """
+    n = len(star)
+    if n == 0 or profile == 'UNIFORM':
+        return [list(v) for v in star]
+    if profile == 'RAMP':
+        w = [1.0 - spread + 2.0 * spread * (k / max(1, n - 1))
+             for k in range(n)]
+    elif profile == 'SINE':
+        w = [1.0 + spread * math.sin(2 * math.pi * k / n) for k in range(n)]
+    elif profile == 'RANDOM':
+        import random
+        rng = random.Random(seed)
+        w = [1.0 + spread * (2.0 * rng.random() - 1.0) for _ in range(n)]
+    else:
+        raise ValueError("unknown zone profile: %s" % profile)
+    return [_mul(v, max(0.0, x)) for v, x in zip(star, w)]
 
 
 # --------------------------------------------------------------------------
@@ -299,6 +410,131 @@ def rhombic_rosette(n):
             rhombi.append([vid(p) for p in quad])
             rings.append(j)
     return verts, rhombi, rings
+
+
+def bitten_rosette(n, bites=0, width=1, depth=1):
+    """A rhombic rose with wedges taken out of its rim.
+
+    Towle described "bitten zonogons": a regular 2n-gon tiled with rhombi
+    from which two or three regions are stripped away at the periphery,
+    leaving a non-convex rhomb-tiled polygon that still tiles the plane --
+    the two-dimensional shadow of his 3- and 4-armed spirallohedra.
+
+    What is implemented here is the general peripheral bite: `bites`
+    equally spaced wedges, each `width` rhombi wide at the rim and `depth`
+    rings deep, tapering inward by one place per ring so the bite is a
+    wedge rather than a slot.  It is NOT a claim to reproduce Towle's
+    particular space-filling 2-bite and 3-bite forms, whose exact regions
+    he did not publish in a source available here.
+
+    Returns (verts, rhombi, rings) with the bitten rhombi removed.
+    """
+    verts, rhombi, rings = rhombic_rosette(n)
+    if bites <= 0 or depth <= 0 or width <= 0:
+        return verts, rhombi, rings
+    outer = max(rings)
+    drop = set()
+    for b in range(int(bites)):
+        centre = (b * n) // int(bites)
+        for d in range(int(depth)):
+            j = outer - d
+            if j < 1:
+                break
+            half = max(0, (int(width) - d + 1) // 2)
+            for t in range(-half, half + 1):
+                drop.add((j, (centre + t) % n))
+    keep = [(f, j) for f, j in zip(rhombi, rings)]
+    out_f, out_r = [], []
+    for k, (f, j) in enumerate(keep):
+        if (j, k % n) in drop:
+            continue
+        out_f.append(f)
+        out_r.append(j)
+    return verts, out_f, out_r
+
+
+# --------------------------------------------------------------------------
+# translation surfaces: two chains instead of a star
+# --------------------------------------------------------------------------
+
+def translation_surface(chain_a, chain_b, loop_a=None, loop_b=None,
+                        tol=1e-7):
+    """The surface swept by translating one polyline along another.
+
+    Antiprism's `zono -T`.  With prefix sums A_i and B_j the surface is the
+    grid of points A_i + B_j, and the quad on (i, j) has edges A_{i+1}-A_i
+    and B_{j+1}-B_j -- so every face is a parallelogram, exactly as on a
+    zonohedron, but nothing forces the result to be convex or even closed.
+    That is the point: this is how the family reaches rhombic tori, open
+    ribbons, and the non-convex parallelogram surfaces a Minkowski sum can
+    never produce.
+
+    A chain whose vectors sum to zero closes into a loop; `loop_a` and
+    `loop_b` force that either way, and default to detecting it.  Both
+    looped gives a torus, neither an open patch, one of each a tube.
+
+    Returns (V, F).
+    """
+    def _prep(chain, forced):
+        vs = [[float(c) for c in v] for v in chain]
+        if not vs:
+            raise ValueError("a translation surface needs two chains")
+        s = [0.0, 0.0, 0.0]
+        for v in vs:
+            s = _add(s, v)
+        closed = _norm(s) < tol if forced is None else bool(forced)
+        pre = [[0.0, 0.0, 0.0]]
+        for v in vs:
+            pre.append(_add(pre[-1], v))
+        if closed:
+            pre.pop()                       # last point is the first again
+        return pre, closed
+
+    PA, la = _prep(chain_a, loop_a)
+    PB, lb = _prep(chain_b, loop_b)
+    R, C = len(PA), len(PB)
+    if R < 2 or C < 2:
+        raise ValueError("each chain needs at least two distinct points")
+
+    V = [_add(PA[i], PB[j]) for i in range(R) for j in range(C)]
+    F = []
+    for i in range(R if la else R - 1):
+        i2 = (i + 1) % R
+        for j in range(C if lb else C - 1):
+            j2 = (j + 1) % C
+            F.append([i * C + j, i * C + j2, i2 * C + j2, i2 * C + j])
+    return V, F
+
+
+def closed_polygon_chain(n, step=1, radius=1.0, tilt=0.0, phase=0.0):
+    """Edge vectors of a regular (star) polygon, as a closed chain.
+
+    `step` makes it a star polygon {n/step}; `tilt` lifts the polygon's
+    plane so a pair of chains can cross at an angle.  The vectors sum to
+    zero, so `translation_surface` closes the direction into a loop.
+    """
+    t = math.radians(tilt)
+    pts = []
+    for k in range(n):
+        a = 2 * math.pi * (k * step) / n + math.radians(phase)
+        x, y = radius * math.cos(a), radius * math.sin(a)
+        pts.append([x, y * math.cos(t), y * math.sin(t)])
+    return [_sub(pts[(k + 1) % n], pts[k]) for k in range(n)]
+
+
+def helix_chain(n, radius=1.0, rise=0.2, turns=1.0, phase=0.0):
+    """Edge vectors of a discrete helix, as an OPEN chain.
+
+    Paired with a closed polygon this sweeps a spiral tube; paired with
+    another helix it gives the two-chain surfaces Antiprism builds by
+    feeding `zono -T` a pair of translated polygons.
+    """
+    pts = []
+    for k in range(n + 1):
+        a = 2 * math.pi * turns * k / n + math.radians(phase)
+        pts.append([radius * math.cos(a), radius * math.sin(a),
+                    rise * k])
+    return [_sub(pts[k + 1], pts[k]) for k in range(n)]
 
 
 # --------------------------------------------------------------------------
@@ -652,6 +888,78 @@ def _selftest():
     assert len(pts) == 8 * (6 * 6 - 6 + 2), len(pts)
     reach = max(_norm(p) for p in pts)
     assert reach > max(_norm(p) for p in cub), reach
+
+    # --- star extraction -------------------------------------------------
+    # `-m a`: every vertex-to-vertex direction.  The cube's 28 pairs
+    # collapse to 13 zones -- 3 edge directions, 6 face diagonals and 4
+    # body diagonals -- which is the widest star a cube can give.
+    assert len(all_pairs_star(cub)) == 13, len(all_pairs_star(cub))
+    assert len(star_from(cub, None, 'PAIRS')) == 13
+    assert len(star_from(cub, None, 'VERTS')) == 4
+    # keeping true lengths is not just a rescale: it changes the solid.
+    # The cube's 12 edges give 3 zones either way, but the icosahedron's
+    # vertex star at true length is no longer a star of unit segments.
+    ico_true = star_from(ico, None, 'VERTS', unit=False)
+    assert len({round(_norm(v), 6) for v in ico_true}) == 1   # ico is
+    #                                       vertex-transitive, so still one
+    mixed = [[1.0, 0, 0], [0, 2.0, 0], [0, 0, 3.0]]
+    Vm, Fm = zonotope(mixed)
+    assert close(zonotope_volume(mixed), 6.0), zonotope_volume(mixed)
+
+    # --- zone lengths ----------------------------------------------------
+    st = polar_star(6, 50.0)
+    assert len(zonotope(weighted_star(st, 'UNIFORM'))[1]) == 30
+    # a zone shrunk away takes its whole band of faces with it
+    killed = weighted_star(st, 'UNIFORM')
+    killed[0] = [0.0, 0.0, 0.0]
+    live = [v for v in killed if _norm(v) > 1e-12]
+    assert len(zonotope(live)[1]) == 5 * 4, len(zonotope(live)[1])
+    # unequal lengths keep the faces centrally symmetric but stop them
+    # being rhombi
+    w = weighted_star(st, 'RAMP', 0.6)
+    Vw, Fw = zonotope(w)
+    lens = set()
+    for f in Fw:
+        for k in range(len(f)):
+            lens.add(round(_norm(_sub(Vw[f[(k + 1) % len(f)]], Vw[f[k]])), 6))
+    assert len(lens) > 1, lens
+    for f in Fw:                                  # still parallelograms
+        assert len(f) == 4
+        e1 = _sub(Vw[f[1]], Vw[f[0]])
+        e2 = _sub(Vw[f[2]], Vw[f[3]])
+        assert _norm(_sub(e1, e2)) < 1e-9
+
+    # --- translation surfaces --------------------------------------------
+    # closed x closed is a torus: chi = 0, and every face a parallelogram
+    a = closed_polygon_chain(10, 1, 1.0)
+    b = closed_polygon_chain(6, 1, 0.35, tilt=90.0)
+    V, F = translation_surface(a, b)
+    assert len(F) == 10 * 6, len(F)
+    E = set()
+    for f in F:
+        for k in range(4):
+            E.add((min(f[k], f[(k + 1) % 4]), max(f[k], f[(k + 1) % 4])))
+    assert len(V) - len(E) + len(F) == 0, (len(V), len(E), len(F))
+    for f in F:
+        e1 = _sub(V[f[1]], V[f[0]])
+        e2 = _sub(V[f[2]], V[f[3]])
+        assert _norm(_sub(e1, e2)) < 1e-9
+    # open x open is a disc: chi = 1
+    h = helix_chain(8, 1.0, 0.25, 1.0)
+    o = [[0.0, 0.0, 0.3]] * 4
+    V, F = translation_surface(h, o)
+    assert len(F) == 8 * 4, len(F)
+    E = set()
+    for f in F:
+        for k in range(4):
+            E.add((min(f[k], f[(k + 1) % 4]), max(f[k], f[(k + 1) % 4])))
+    assert len(V) - len(E) + len(F) == 1, (len(V), len(E), len(F))
+    # one of each is a tube: chi = 0 with a boundary
+    V, F = translation_surface(a, h)
+    assert len(F) == 10 * 8, len(F)
+    # forcing the flags overrides detection
+    V, F = translation_surface(a, b, loop_a=False)
+    assert len(F) == 10 * 6, len(F)          # 11 rows now, 10 face bands
 
     # --- rhombic rosette -----------------------------------------------
     # The counts are the published ones, but the decisive check is AREA:
