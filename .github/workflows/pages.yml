@@ -43,8 +43,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
+
+      # LFS is fetched by hand, for ONE path. `lfs: true` on checkout pulls
+      # every object in the repository, and docs/images/ is ~180 MB of
+      # generator figures that this site never serves -- roughly 216 MB per
+      # deploy against a 1 GB/month bandwidth allowance, so five or six
+      # deploys would exhaust it. web/thumbs/ alone is ~36 MB.
+      #
+      # Without any pull the catalogue still "works" and every tile is a
+      # 130-byte pointer file, which is why the size check below is not
+      # decoration.
+      - name: Fetch the catalogue thumbnails
+        run: git lfs pull --include="web/thumbs/*"
 
       - uses: actions/setup-python@v5
         with:
@@ -63,6 +73,15 @@ jobs:
           test -f web/data/polyhedra/index.json
           echo "thumbnails: $(ls web/thumbs/*.png | wc -l)"
           echo "records:    $(find web/data/polyhedra/solids -name '*.json' | wc -l)"
+          echo "payload:    $(du -sh web | cut -f1)"
+          # An unresolved LFS pointer is ~130 bytes and still deploys
+          # happily, so the failure would be a gallery of broken tiles
+          # rather than a red build. Catch it here instead.
+          small=$(find web/thumbs -name '*.png' -size -1k | wc -l)
+          if [ "$small" -ne 0 ]; then
+            echo "::error::$small thumbnail(s) are unresolved LFS pointers"
+            exit 1
+          fi
 
       - uses: actions/configure-pages@v5
 
