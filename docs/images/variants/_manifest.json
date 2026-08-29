@@ -7783,5 +7783,81 @@
    "TRUNCATED_SADDLE_DODECAHEDRON",
    "52. Truncated saddle dodecahedron"
   ]
+ ],
+ "quadric": [
+  [
+   "SPHERE",
+   "Sphere"
+  ],
+  [
+   "SPHEROID",
+   "Spheroid"
+  ],
+  [
+   "ELLIPSOID",
+   "Ellipsoid"
+  ],
+  [
+   "ELLIPTIC_PARABOLOID",
+   "Elliptic Paraboloid"
+  ],
+  [
+   "HYPERBOLIC_PARABOLOID",
+   "Hyperbolic Paraboloid"
+  ],
+  [
+   "HYPERBOLOID_ONE",
+   "Hyperboloid of One Sheet"
+  ],
+  [
+   "HYPERBOLOID_TWO",
+   "Hyperboloid of Two Sheets"
+  ],
+  [
+   "ELLIPTIC_CONE",
+   "Elliptic Cone"
+  ],
+  [
+   "CIRCULAR_CYLINDER",
+   "Circular Cylinder"
+  ],
+  [
+   "ELLIPTIC_CYLINDER",
+   "Elliptic Cylinder"
+  ],
+  [
+   "HYPERBOLIC_CYLINDER",
+   "Hyperbolic Cylinder"
+  ],
+  [
+   "PARABOLIC_CYLINDER",
+   "Parabolic Cylinder"
+  ],
+  [
+   "PLANE",
+   "Plane"
+  ]
+ ],
+ "zonohedra_clusters": [
+  [
+   "PLATONIC",
+   "Platonic"
+  ],
+  [
+   "ARCHIMEDEAN",
+   "Archimedean"
+  ],
+  [
+   "JOHNSON",
+   "Johnson"
+  ],
+  [
+   "PRISM",
+   "Prism"
+  ],
+  [
+   "ANTIPRISM",
+   "Antiprism"
+  ]
  ]
 }
