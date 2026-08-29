@@ -26,12 +26,12 @@
     "face_configuration": null
   },
   "symmetry": {
-    "schoenflies": "C298156827v",
-    "orbifold": "*298156827298156827",
-    "coxeter": "[298156827]",
-    "hermann_mauguin": "298156827mm",
+    "schoenflies": "Oh",
+    "orbifold": "*432",
+    "coxeter": "[3,4]",
+    "hermann_mauguin": "m-3m",
     "order": 48,
-    "rotation_group": "C298156827",
+    "rotation_group": "O",
     "rotation_order": 24,
     "chiral": false,
     "transitivity": {

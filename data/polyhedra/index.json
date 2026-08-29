@@ -430,8 +430,8 @@
         "faces": 720
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 120
       },
       "convex": false,
@@ -900,8 +900,8 @@
         "faces": 140
       },
       "symmetry": {
-        "schoenflies": "C298156827",
-        "orbifold": "298156827298156827",
+        "schoenflies": "I",
+        "orbifold": "532",
         "order": 60
       },
       "convex": true,
@@ -1383,8 +1383,8 @@
         "faces": 240
       },
       "symmetry": {
-        "schoenflies": "C210828714",
-        "orbifold": "210828714210828714",
+        "schoenflies": "I",
+        "orbifold": "532",
         "order": 60
       },
       "convex": true,
@@ -1546,8 +1546,8 @@
         "faces": 38
       },
       "symmetry": {
-        "schoenflies": "C298156827",
-        "orbifold": "298156827298156827",
+        "schoenflies": "I",
+        "orbifold": "532",
         "order": 24
       },
       "convex": true,
@@ -1569,8 +1569,8 @@
         "faces": 92
       },
       "symmetry": {
-        "schoenflies": "C298156827",
-        "orbifold": "298156827298156827",
+        "schoenflies": "I",
+        "orbifold": "532",
         "order": 60
       },
       "convex": true,
@@ -1731,8 +1731,8 @@
         "faces": 14
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 48
       },
       "convex": true,
@@ -1965,8 +1965,8 @@
         "faces": 20
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 48
       },
       "convex": false,
@@ -2050,8 +2050,8 @@
         "faces": 22
       },
       "symmetry": {
-        "schoenflies": "C210828714h",
-        "orbifold": "210828714*",
+        "schoenflies": "D10d",
+        "orbifold": "2*10",
         "order": 40
       },
       "convex": true,
@@ -2242,8 +2242,8 @@
         "faces": 60
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 120
       },
       "convex": true,
@@ -2441,8 +2441,8 @@
         "faces": 26
       },
       "symmetry": {
-        "schoenflies": "C210828714v",
-        "orbifold": "*210828714210828714",
+        "schoenflies": "D12d",
+        "orbifold": "2*12",
         "order": 48
       },
       "convex": true,
@@ -2638,8 +2638,8 @@
         "faces": 32
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 20
       },
       "convex": true,
@@ -2738,8 +2738,8 @@
         "faces": 42
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 20
       },
       "convex": true,
@@ -3877,8 +3877,8 @@
         "faces": 52
       },
       "symmetry": {
-        "schoenflies": "C210828714h",
-        "orbifold": "210828714*",
+        "schoenflies": "D10d",
+        "orbifold": "2*10",
         "order": 120
       },
       "convex": false,
@@ -3956,8 +3956,8 @@
         "faces": 60
       },
       "symmetry": {
-        "schoenflies": "C298156827",
-        "orbifold": "298156827298156827",
+        "schoenflies": "I",
+        "orbifold": "532",
         "order": 60
       },
       "convex": false,
@@ -4549,8 +4549,8 @@
         "faces": 42
       },
       "symmetry": {
-        "schoenflies": "C298156827",
-        "orbifold": "298156827298156827",
+        "schoenflies": "I",
+        "orbifold": "532",
         "order": 10
       },
       "convex": true,
@@ -4624,8 +4624,8 @@
         "faces": 47
       },
       "symmetry": {
-        "schoenflies": "C298156827",
-        "orbifold": "298156827298156827",
+        "schoenflies": "I",
+        "orbifold": "532",
         "order": 5
       },
       "convex": true,
@@ -4749,8 +4749,8 @@
         "faces": 26
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 8
       },
       "convex": true,
@@ -5254,8 +5254,8 @@
         "faces": 13
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 44
       },
       "convex": true,
@@ -5351,8 +5351,8 @@
         "faces": 9
       },
       "symmetry": {
-        "schoenflies": "C210828714v",
-        "orbifold": "*210828714210828714",
+        "schoenflies": "D12d",
+        "orbifold": "2*12",
         "order": 28
       },
       "convex": true,
@@ -5399,8 +5399,8 @@
         "faces": 16
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 28
       },
       "convex": false,
@@ -6560,8 +6560,8 @@
         "faces": 62
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 20
       },
       "convex": true,
@@ -6931,8 +6931,8 @@
         "faces": 17
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 10
       },
       "convex": true,
@@ -7077,8 +7077,8 @@
         "faces": 10
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 20
       },
       "convex": false,
@@ -8032,8 +8032,8 @@
         "faces": 32
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 48
       },
       "convex": false,
@@ -8076,8 +8076,8 @@
         "faces": 72
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 120
       },
       "convex": false,
@@ -8450,8 +8450,8 @@
         "faces": 70
       },
       "symmetry": {
-        "schoenflies": "C210828714v",
-        "orbifold": "*210828714210828714",
+        "schoenflies": "D12d",
+        "orbifold": "2*12",
         "order": 120
       },
       "convex": false,
@@ -9096,8 +9096,8 @@
         "faces": 44
       },
       "symmetry": {
-        "schoenflies": "C298156827v",
-        "orbifold": "*298156827298156827",
+        "schoenflies": "C4v",
+        "orbifold": "*44",
         "order": 120
       },
       "convex": false,
@@ -9214,8 +9214,8 @@
         "faces": 52
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 120
       },
       "convex": false,
@@ -10548,8 +10548,8 @@
         "faces": 26
       },
       "symmetry": {
-        "schoenflies": "C298156827h",
-        "orbifold": "298156827*",
+        "schoenflies": "Ih",
+        "orbifold": "*532",
         "order": 48
       },
       "convex": true,
@@ -10715,8 +10715,8 @@
         "faces": 62
       },
       "symmetry": {
-        "schoenflies": "C210828714v",
-        "orbifold": "*210828714210828714",
+        "schoenflies": "D12d",
+        "orbifold": "2*12",
         "order": 120
       },
       "convex": true,

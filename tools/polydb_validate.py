@@ -21,6 +21,8 @@
 #   genus        - chi = 2 - 2g for orientable records
 #   operators    - `construction.operator_id` names an operator that is
 #                  actually registered somewhere in `math_art/`
+#   symmetry     - the Schoenflies symbol is well formed and its axis
+#                  order is consistent with the stated group order
 #
 # Star faces are handled: planarity and the edge pairing are computed on the
 # true winding cycle, so a {5/2} pentagram validates as a single face.
@@ -496,6 +498,54 @@ def check_duals(records, errors):
                              dv, dc["edges"], dc["faces"]))
 
 
+_SCHOENFLIES = re.compile(
+    r"^(?:C1|Ci|Cs|[TOI]|Td|Th|Oh|Ih|[CDS](?:\d{1,3})[hvd]?)$")
+
+
+def check_symmetry_symbols(records, errors):
+    """Point-group symbols must be well formed, and agree with `order`.
+
+    Nothing else looks at these strings, so a classifier that emits a
+    malformed one is invisible: the record still validates geometrically
+    and the bad symbol simply propagates.  That is how 30 records came to
+    claim groups like "C298156827v" -- a near-identity matrix surviving
+    the classifier's identity test gave n = round(2*pi/ang) in the
+    hundreds of millions, which then flowed into the orbifold, Coxeter and
+    Hermann-Mauguin notations too.
+
+    The axis order is bounded here because `order` is computed
+    independently (it is just the size of the group) and so cannot come
+    from the same mistake: for a cyclic group |G| = n, and for the
+    dihedral and improper families |G| = 2n, so n can never exceed the
+    stated order.
+    """
+    for r in records:
+        y = r.get("symmetry") or {}
+        s = y.get("schoenflies")
+        order = y.get("order")
+        if not s:
+            continue
+        if not _SCHOENFLIES.match(s):
+            errors.append("%s: malformed Schoenflies symbol %r"
+                          % (r["slug"], s))
+            continue
+        digits = "".join(c for c in s if c.isdigit())
+        if digits and order and int(digits) > order:
+            errors.append("%s: Schoenflies %r has axis order %s, above the "
+                          "group order %s" % (r["slug"], s, digits, order))
+        # The derived notations concatenate axis orders without separators --
+        # D10h is orbifold "*2210", meaning *2.2.10 -- so their digit runs
+        # cannot be read as a single number and cannot be bounded by `order`.
+        # A run of six or more digits is still unambiguous corruption: the
+        # widest legitimate case in this database is a 32-gonal prism at
+        # "*2232", and even a 999-gon would reach only five.
+        for name in ("orbifold", "coxeter", "hermann_mauguin"):
+            v = y.get(name)
+            if v and re.search(r"\d{6,}", str(v)):
+                errors.append("%s: %s %r carries an implausible axis order"
+                              % (r["slug"], name, v))
+
+
 def check_operators(records, errors, warnings):
     """`construction.operator_id` must name an operator that exists.
 
@@ -597,6 +647,7 @@ def main():
         seen_slug[entry["slug"]] = entry["path"]
     check_duals(records, errors)
     check_operators(records, errors, warnings)
+    check_symmetry_symbols(records, errors)
 
     for w in warnings:
         print("WARN  %s" % w)

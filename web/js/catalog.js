@@ -9,8 +9,8 @@
 // from the same record the viewer draws, so the grid stays cheap and the
 // tile always matches the model it opens.
 
-import { familyCounts, symmetryCounts, filterEntries, SORTS, thumbUrl,
-         FAMILY_ORDER } from './data.js';
+import { familyCounts, filterEntries, SORTS, thumbUrl, FAMILY_ORDER }
+  from './data.js';
 
 const $ = (tag, cls, text) => {
   const el = document.createElement(tag);
@@ -24,7 +24,7 @@ export class Catalog {
     this.host = host;
     this.entries = entries;
     this.onSelect = onSelect;
-    this.query = { text: '', families: [], symmetries: [], convex: 'any' };
+    this.query = { text: '', families: [], convex: 'any' };
     this.sort = 'name';
     this.selected = null;
     this.build();
@@ -32,11 +32,10 @@ export class Catalog {
   }
 
   build() {
-    // Search and facets sit in a fixed header and only the tile grid
-    // scrolls. Putting them in the same scroll box hid them the moment
-    // the grid was scrolled -- including on load, since revealing the
-    // selected tile scrolls the box -- so the filters were invisible
-    // until the window was resized.
+    // Search and facets go in a header that sticks to the top of the
+    // viewport (see .catalog-head). The catalogue itself has no inner
+    // scroll region -- the page scrolls it -- so without this the filters
+    // would simply leave the screen a few rows into 448 tiles.
     const head = $('div', 'catalog-head');
     const controls = $('div', 'catalog-controls');
 
@@ -105,29 +104,6 @@ export class Catalog {
     }
     fams.append(famList);
     head.append(fams);
-
-    // -- symmetry facet
-    const symCounts = [...symmetryCounts(this.entries)]
-      .sort((a, b) => b[1] - a[1]);
-    const syms = $('div', 'facet');
-    syms.append($('h3', null, 'Symmetry group'));
-    const symList = $('div', 'chips');
-    for (const [g, n] of symCounts) {
-      const chip = $('button', 'chip');
-      chip.type = 'button';
-      chip.append($('span', null, g));
-      chip.append($('span', 'chip-count', String(n)));
-      chip.addEventListener('click', () => {
-        const i = this.query.symmetries.indexOf(g);
-        if (i >= 0) this.query.symmetries.splice(i, 1);
-        else this.query.symmetries.push(g);
-        chip.classList.toggle('on');
-        this.refresh();
-      });
-      symList.append(chip);
-    }
-    syms.append(symList);
-    head.append(syms);
 
     this.status = $('p', 'catalog-status');
     head.append(this.status);

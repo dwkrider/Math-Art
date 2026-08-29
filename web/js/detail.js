@@ -97,6 +97,14 @@ export function renderDetail(rec, host, onNavigate) {
   }
   host.append(counts);
 
+  // The stat sections flow in two columns where there is room. They are
+  // short, independent blocks of label/value pairs, so stacking them one
+  // per row wasted the panel's width and pushed the metrics far below the
+  // fold. `grid` rather than CSS `columns` so a section is never split
+  // down the middle across a column break.
+  const panels = $('div', 'panel-grid');
+  host.append(panels);
+
   // -- notation
   const n = rec.notation || {};
   const notation = defList([
@@ -110,7 +118,7 @@ export function renderDetail(rec, host, onNavigate) {
   if (notation) {
     const s = section('Notation');
     s.append(notation);
-    host.append(s);
+    panels.append(s);
   }
 
   // -- symmetry
@@ -130,7 +138,7 @@ export function renderDetail(rec, host, onNavigate) {
   if (sym) {
     const s = section('Symmetry');
     s.append(sym);
-    host.append(s);
+    panels.append(s);
   }
 
   // -- combinatorics
@@ -163,7 +171,7 @@ export function renderDetail(rec, host, onNavigate) {
       p.append(a);
       s.append(p);
     }
-    host.append(s);
+    panels.append(s);
   }
 
   // -- metrics
@@ -195,7 +203,7 @@ export function renderDetail(rec, host, onNavigate) {
     row.append(val);
     s.append(row);
   }
-  if (rows.length || (m.dihedral_angles || []).length) host.append(s);
+  if (rows.length || (m.dihedral_angles || []).length) panels.append(s);
 
   // -- catalogue numbers and outside references
   const ids = rec.ids || {};
@@ -221,6 +229,6 @@ export function renderDetail(rec, host, onNavigate) {
       links.append(a);
     }
     if (links.childNodes.length) sec.append(links);
-    host.append(sec);
+    panels.append(sec);
   }
 }

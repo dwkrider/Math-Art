@@ -120,7 +120,23 @@ def find_group(V, max_elements=240, nd=6, tol=TOL, F=None):
 
 
 def _axis_and_order(R):
-    """Rotation axis (unit, sign-normalised) and order n, for a proper R."""
+    """Rotation axis (unit, sign-normalised) and order n, for a proper R.
+
+    The identity has to be rejected by comparing the MATRIX, not by
+    thresholding the rotation angle at 1e-9.  Group elements arrive from a
+    numerical fit carrying error around 1e-6 -- the tolerance every other
+    comparison in this module uses -- so a matrix that is the identity to
+    within that fit still shows an angle near 1e-8, which clears a 1e-9
+    threshold and yields n = round(2*pi/ang) in the hundreds of millions.
+    That number then propagates into the Schoenflies symbol and every
+    notation derived from it, which is how 30 records in the database came
+    to claim symmetry groups like "C298156827v" (a hendecagonal prism,
+    correctly D11h) with matching junk in orbifold, Coxeter and
+    Hermann-Mauguin.  The stored `order` stayed right throughout, because
+    it is just len(G) and never passes through here.
+    """
+    if np.max(np.abs(R - np.eye(3))) < 1e-6:
+        return None, 1
     c = (np.trace(R) - 1.0) / 2.0
     ang = math.acos(max(-1.0, min(1.0, c)))
     if ang < 1e-9:

@@ -111,31 +111,19 @@ export function familyCounts(entries) {
   return counts;
 }
 
-export function symmetryCounts(entries) {
-  const counts = new Map();
-  for (const e of entries) {
-    const s = e.symmetry?.schoenflies;
-    if (s) counts.set(s, (counts.get(s) || 0) + 1);
-  }
-  return counts;
-}
-
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 /**
  * Filter the index by the current query state.
  *
- * `families` and `symmetries` are OR within a facet and AND across them,
- * which is the behaviour people expect from faceted search: ticking
- * "platonic" and "catalan" widens, ticking a symmetry as well narrows.
+ * Families are OR within the facet and AND against the other controls:
+ * ticking "Platonic" and "Catalan" widens, adding a convexity narrows.
  */
 export function filterEntries(entries, q) {
   const text = q.text ? norm(q.text) : '';
   const fams = q.families || [];
-  const syms = q.symmetries || [];
   return entries.filter((e) => {
     if (fams.length && !fams.includes(primaryFamily(e))) return false;
-    if (syms.length && !syms.includes(e.symmetry?.schoenflies)) return false;
     if (q.convex === 'convex' && !e.convex) return false;
     if (q.convex === 'nonconvex' && e.convex) return false;
     if (text) {

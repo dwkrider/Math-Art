@@ -176,55 +176,70 @@ a { color: var(--accent); }
 
 /* --------------------------------------------------- module layout */
 
-/* Viewer on the left, catalogue on the right. The viewer is the subject
- * of the page, so it takes the position the eye lands on first and the
- * flexible column; the catalogue is the index beside it. */
+/* Viewer left, catalogue right. The viewer column is CAPPED and the
+ * catalogue takes every additional pixel, so widening the window buys
+ * more of the catalogue rather than a bigger model -- the model is
+ * already legible at this size and the list is what benefits from room.
+ */
 .module-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 27rem);
+  grid-template-columns: minmax(19rem, 34rem) minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
   padding: 1.5rem;
-  max-width: 100rem;
+  max-width: 110rem;
   margin: 0 auto;
+}
+
+/* The viewer stays put while the page scrolls, so the model remains in
+ * view as the catalogue is browsed past it -- clicking a tile 300 solids
+ * down should not update something off-screen.
+ *
+ * It is bounded and scrolls internally rather than being sticky at its
+ * natural height: the detail panel is often taller than the viewport, and
+ * a sticky element taller than the viewport pins its top and puts its
+ * bottom permanently out of reach. */
+.workspace-sticky {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @media (max-width: 62rem) {
   .module-layout { grid-template-columns: 1fr; }
-  .catalog {
-    position: static !important;
-    max-height: none !important;
+  .workspace-sticky {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
-  .catalog .grid { overflow: visible; }
+  .catalog-head { position: static !important; }
 }
 
 /* -------------------------------------------------------- catalog */
 
+/* The catalogue has NO inner scroll region: it flows down the page, so
+ * the browser's own scrollbar is what moves through it. An inner scroll
+ * box meant the window scrollbar did nothing useful here and the list had
+ * to be scrolled in a second, smaller gesture. */
 .catalog {
-  position: sticky;
-  top: 1rem;
-  /* The panel itself does not scroll -- see .catalog-head / .grid below. */
-  max-height: calc(100vh - 2rem);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
   background: var(--bg-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1rem;
 }
 
-/* Search and facets are pinned; only the tile grid scrolls. When the two
- * shared one scroll box, scrolling to the selected tile -- which happens
- * on load -- carried the filters off the top of the panel, so they were
- * invisible until the window was resized. */
-.catalog-head { flex: none; }
-
-.catalog .grid {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 0.15rem;
+/* Search and facets stick to the top of the viewport as the page scrolls,
+ * so filtering stays reachable however far down the list you are. */
+.catalog-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-raised);
+  padding-bottom: 0.5rem;
+  margin: -0.25rem 0 0.25rem;
+  padding-top: 0.25rem;
 }
 
 .catalog-controls {
@@ -363,7 +378,10 @@ a { color: var(--accent); }
 #stage {
   display: block;
   width: 100%;
-  height: min(62vh, 34rem);
+  /* Square-ish in the narrower column, and short enough that the stage
+   * plus its controls leave room for some of the detail panel above the
+   * fold. */
+  height: min(46vh, 26rem);
   background:
     radial-gradient(ellipse at 50% 42%, #171b21 0%, #0a0c0f 72%);
   touch-action: none;
@@ -490,7 +508,17 @@ figcaption {
   color: var(--ink-faint);
 }
 
-.panel-section { margin-top: 1.5rem; }
+/* Stat sections in two columns wherever there is room. auto-fit collapses
+ * to one column in a narrow panel without a media query, so this tracks
+ * the panel's real width rather than the window's. */
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0 1.6rem;
+  align-items: start;
+}
+
+.panel-section { margin-top: 1.5rem; min-width: 0; }
 
 .panel-section h3 {
   font-size: 0.72rem;
@@ -509,12 +537,14 @@ figcaption {
   margin: 0.9rem 0 0.3rem;
 }
 
+/* Labels sized for the two-column panel grid: a wider minimum pushed the
+ * values off the end of a 13rem column. */
 .deflist {
   display: grid;
-  grid-template-columns: minmax(8rem, auto) 1fr;
-  gap: 0.2rem 1rem;
+  grid-template-columns: minmax(5.5rem, auto) 1fr;
+  gap: 0.2rem 0.8rem;
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .deflist dt { color: var(--ink-faint); }
@@ -525,12 +555,12 @@ figcaption {
  * right edge at a width set by whatever the longest label happens to be. */
 .metric {
   display: grid;
-  grid-template-columns: minmax(8rem, auto) 1fr;
-  gap: 0.2rem 1rem;
+  grid-template-columns: minmax(5.5rem, auto) 1fr;
+  gap: 0.2rem 0.8rem;
   align-items: baseline;
   padding: 0.24rem 0;
   border-bottom: 1px solid var(--line-soft);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .metric:last-child { border-bottom: none; }
