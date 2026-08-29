@@ -73,7 +73,11 @@ _MODULE_NAMES = [
     'compound_generator',
     'toroidal_polyhedron_generator',
     'biscribed_solids_generator',
-    'stellation_engine',
+    # NB no 'stellation_engine': it registers nothing since the merge (its
+    # operator moved into general_stellation, which owns both seeds and the
+    # 59).  The module stays in the package as the independent icosahedron
+    # implementation that tests/test_stellation_agreement.py checks the
+    # general engine against.
     'general_stellation',
     'other_polyhedra_generator',
     'noble_faceting_generator',

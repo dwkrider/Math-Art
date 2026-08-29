@@ -460,8 +460,13 @@ VARIANT_SELECTOR = {
     "mesh.saddle_polyhedron_add": "solid",
     "mesh.notable_polyhedron_add": "solid",
     "mesh.biscribed_solid_add": "solid",
+    # Stellation's variants are its 59 Crennell figures, not its seven
+    # seeds: `solid` is the selector that changes the shape most, and the
+    # 59 are a closed historical list (see VARIANT_MAX below).  The seeds
+    # other than the icosahedron are reached through `preset` and are not
+    # enumerated here.  (The former mesh.general_stellation_add entry went
+    # when that operator was merged into this one.)
     "mesh.icosahedron_stellation_add": "solid",
-    "mesh.general_stellation_add": "seed",
     "mesh.noble_faceting_add": "seed",
     "mesh.star_prism_add": "form",
     "mesh.polyhedral_torus_add": "tiling",
