@@ -46,7 +46,13 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "M. Weber, 'Catenoid-Scherk Limits -- aka Triply Periodic Horgan Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch263_catenoid_scherk.md)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

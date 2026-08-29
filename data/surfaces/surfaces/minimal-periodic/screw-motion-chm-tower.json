@@ -63,7 +63,13 @@
         "agrees": true,
         "detail": "'The translation invariant Callahan-Hoffman-Meeks Surfaces can be deformed into screw motion invariant surfaces' -- twist angle in (0, pi/2]; helicoidal parking-garage limit via the Traizet balance equation.  No quotient invariants are stated on the page."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -76,5 +82,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 19515,
+      "edges": 39137,
+      "faces": 19617,
+      "euler_characteristic": -5,
+      "angle_defect_total": -4.089636,
+      "area": 4.640713,
+      "volume": 4.1e-05,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 13948,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.40833,
+        0.675441
+      ],
+      "aspect_ratio": 0.337721
+    }
   }
 }

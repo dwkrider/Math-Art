@@ -237,7 +237,8 @@ def check_measure(measure, params=None, rel_tol=1e-9, abs_tol=1e-12):
 def _selftest():
     """Numeric self-test; raises on failure.
 
-    Run by tests/test_selftests.py.  No __main__ guard -- see CLAUDE.md.
+    Run by tests/test_selftests.py.  No __main__ guard: see the
+    project's contributor notes.
     """
     assert abs(evaluate("2 + 3 * 4") - 14.0) < 1e-12
     assert abs(evaluate("sqrt(2)") - math.sqrt(2)) < 1e-12

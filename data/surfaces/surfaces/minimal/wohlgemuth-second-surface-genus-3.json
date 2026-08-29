@@ -73,7 +73,13 @@
         "agrees": true,
         "detail": "'Wohlgemuth was able to add a handle to his 4-ended Costa-Wohlgemuth surface of genus 2, increasing the genus to 3'; end types inherited from CSSCFF (2 catenoidal + 2 planar)."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -86,5 +92,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 23592,
+      "edges": 47000,
+      "faces": 23400,
+      "euler_characteristic": -8,
+      "angle_defect_total": -12.950476,
+      "area": 8.92667,
+      "volume": 0.149443,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 18643,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.806418,
+        2.0,
+        1.471291
+      ],
+      "aspect_ratio": 0.735645
+    }
   }
 }

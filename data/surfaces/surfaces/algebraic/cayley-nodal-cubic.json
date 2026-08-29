@@ -26,7 +26,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 33.49550695074521,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {},
   "symmetry": {
@@ -63,18 +72,15 @@
       "A. Cayley, 'A Memoir on Cubic Surfaces', Phil. Trans. Roy. Soc. 159 (1869).",
       "Breske-Labs-van Straten, 'Real Line Arrangements and Surfaces with Many Real Nodes' (2005), mu(3) = 4 (exact) -- independent node-count oracle."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1225_cayley_2",
-        "agrees": true,
-        "detail": "page title 'Cayley surface' vs record name 'Cayley Nodal Cubic'"
-      },
-      {
-        "source": "mathcurve:ch1225_cayley_2",
-        "agrees": false,
-        "detail": "record year 1869, page says 1850 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "symmetry_invariant": true,
+      "tolerance": 0.002,
+      "node_count": true
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -106,5 +112,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 54628,
+      "edges": 162804,
+      "faces": 108180,
+      "euler_characteristic": 4,
+      "angle_defect_total": 9.957859,
+      "area": 5.604193,
+      "volume": 0.113992,
+      "components": 4,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 49263,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

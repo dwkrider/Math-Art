@@ -8,14 +8,20 @@
     "aperiodic",
     "def-implicit",
     "immersed",
-    "not-implemented",
+    "implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "implicit",
     "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 8.0
+    },
     "polynomial": null,
-    "note": "A decorative quartic."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nA decorative quartic."
   },
   "curvature": {
     "condition": "none",
@@ -31,24 +37,64 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built. The equation is deliberately NOT transcribed here: an unverified coefficient does not error, it silently defines a different surface, and the numerical oracle that guards the shipped algebraic block cannot guard a surface with no implementation to check against.",
-      "resume": "Transcribe from a primary source into math_art/surfaces/algebraic.py; the build's oracle check then confirms it against that implementation."
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "MATHWORLD",
+      "key": "CHAIR",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "E. W. Weisstein, \"Peano Surface\", \"Chair\", \"Crossed Trough\", \"Handkerchief Surface\", \"Hunt's Surface\", \"Kiss Surface\", \"Menn's Surface\", \"Miter Surface\", \"Nordstrand's Weird Surface\", \"Tooth Surface\", MathWorld -- A Wolfram Web Resource, mathworld.wolfram.com.",
+      "T. Nordstrand, \"Weird Cube\" and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).",
+      "G. Peano's 1899 counterexample; cf. the MathWorld page's history of the criterion it defeated.",
       "E. W. Weisstein, MathWorld, topic 'Algebraic Surfaces' -- the enumeration this absence was measured against."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
+  },
+  "metrics": {
+    "normalization": "published"
   },
   "tradition": [
     "classical"
   ],
+  "named_after": "Chair",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 63862,
+      "edges": 191598,
+      "faces": 127732,
+      "euler_characteristic": -4,
+      "angle_defect_total": -25.136074,
+      "area": 10.433717,
+      "volume": 1.105229,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 58458,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.986058,
+        1.986058,
+        2.0
+      ],
+      "aspect_ratio": 0.993029
+    }
   }
 }

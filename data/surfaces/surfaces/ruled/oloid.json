@@ -35,6 +35,15 @@
     "condition": "flat",
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 3.3856252448757482,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -65,23 +74,13 @@
       "P. Schatz, Rhythmusforschung und Technik (1975); the oloid dates from his 1929 work on the invertible cube.",
       "H. Dirnboeck, H. Stachel, 'The development of the oloid', J. Geom. Graphics 1 (1997) 105-118 -- area 4*pi*r^2."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1311_orthobicycle_2",
-        "agrees": true,
-        "detail": "page title 'Oloid' vs record name 'Oloid'"
-      },
-      {
-        "source": "mathcurve:ch1311_orthobicycle_2",
-        "agrees": false,
-        "detail": "record year 1929, page says 1933 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
-      },
-      {
-        "source": "mathcurve:ch1311_orthobicycle_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'flat'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Paul Schatz",
   "year": 1929,
@@ -114,5 +113,29 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 194,
+      "edges": 384,
+      "faces": 192,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.638913,
+      "area": 5.560134,
+      "volume": 0.899111,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 143,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.333333,
+        2.0,
+        1.333333
+      ],
+      "aspect_ratio": 0.666667
+    }
   }
 }

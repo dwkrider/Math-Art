@@ -43,7 +43,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.14069160534543,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {
     "genus": 0,
@@ -74,13 +83,13 @@
     "sources": [
       "Classical."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1207_ellipsoid_2",
-        "agrees": true,
-        "detail": "page title 'Ellipsoid' vs record name 'Ellipsoid'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_radius"
@@ -98,5 +107,29 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3026,
+      "edges": 6096,
+      "faces": 3072,
+      "euler_characteristic": 2,
+      "angle_defect_total": 12.566371,
+      "area": 6.627457,
+      "volume": 1.461013,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 752,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.4,
+        1.0
+      ],
+      "aspect_ratio": 0.5
+    }
   }
 }

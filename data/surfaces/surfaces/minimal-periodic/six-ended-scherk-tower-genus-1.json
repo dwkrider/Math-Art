@@ -69,7 +69,13 @@
         "agrees": true,
         "detail": "'a 1-parameter subfamily (with some symmetry) of 6-ended surfaces of genus 1' with annular Scherk ends."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -83,5 +89,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 66462,
+      "edges": 133611,
+      "faces": 67060,
+      "euler_characteristic": -89,
+      "angle_defect_total": -2447.540142,
+      "area": 2.457683,
+      "volume": 0.040498,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 259,
+      "nonmanifold_vertices": 54075,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.272634,
+        0.468924,
+        2.0
+      ],
+      "aspect_ratio": 0.234462
+    }
   }
 }

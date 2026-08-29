@@ -33,6 +33,15 @@
     "condition": "minimal",
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 1.4070796351658954,
+        "resolution": 120,
+        "tolerance": 1.688496,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -66,7 +75,14 @@
     "sources": [
       "S. Lidin and S. Larsson, 'Bonnet transformation of infinite periodic minimal surfaces with hexagonal symmetry', J. Chem. Soc. Faraday Trans. 86 (1990).",
       "A. G. Weyhaupt, 'Deformations of the gyroid and Lidinoid minimal surfaces', Pacific J. Math. 235 (2008) 137-171: 'The gyroid and Lidinoid are triply periodic minimal surfaces of genus three ... the unique embedded members of the associate families of the Schwarz P and H surfaces.'"
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -90,5 +106,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 2205,
+      "edges": 4316,
+      "faces": 2112,
+      "euler_characteristic": 1,
+      "angle_defect_total": 6.977056,
+      "area": 1.824264,
+      "volume": 0.008813,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 1469,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.153167,
+        2.0,
+        1.216181
+      ],
+      "aspect_ratio": 0.576584
+    }
   }
 }

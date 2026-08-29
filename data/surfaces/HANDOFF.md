@@ -180,7 +180,7 @@ Recorded as `notes.known_issue` on the records concerned.
 2. **`SCHERKT` is unreachable from the interface.** It is a TPMS registry row
    that builds fine through `minsurf.build_tpms`, but
    `mesh.periodic_minimal_add` omits it under all five periodicity settings.
-3. **Three modules lacked the `References:` block CLAUDE.md requires**
+3. **Three modules lacked the required `References:` block**
    (`curiosity_surface_generator`, `oloid_generator`, `minsurf/orbital`). Their
    citations existed in header prose and have been reformatted into the
    extractable block; nothing was invented.

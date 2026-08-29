@@ -57,7 +57,13 @@
         "agrees": true,
         "detail": "'This genus 5 surface can be interpreted as a twisted version of the oS deformation.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

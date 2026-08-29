@@ -57,23 +57,12 @@
       "E. Catalan, 'Memoire sur les surfaces dont les rayons de courbure en chaque point sont egaux et de signes contraires', C. R. Acad. Sci. Paris 41 (1855).",
       "E. Schwarz's Bjorling construction realises it from a cycloid."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1222_minimale_catalan_2",
-        "agrees": true,
-        "detail": "page title \"Catalan's minimal surface\" vs record name \"Catalan's Minimal Surface\""
-      },
-      {
-        "source": "mathcurve:ch1222_minimale_catalan_2",
-        "agrees": true,
-        "detail": "record year 1855, page says 1855"
-      },
-      {
-        "source": "mathcurve:ch1222_minimale_catalan_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'minimal'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -96,5 +85,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 9856,
+      "edges": 19507,
+      "faces": 9652,
+      "euler_characteristic": 1,
+      "angle_defect_total": -8.840393,
+      "area": 2.183387,
+      "volume": 0.159993,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 9421,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.568901,
+        0.807905
+      ],
+      "aspect_ratio": 0.28445
+    }
   }
 }

@@ -62,7 +62,13 @@
         "agrees": true,
         "detail": "Family law, genus varies by member: 'Traizet's method yields solutions for all types (1,n) of genus n'; the (2,3) member has genus 4.  No single genus is asserted because the shipped row carries members of different genus."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -75,5 +81,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 47724,
+      "edges": 94832,
+      "faces": 47104,
+      "euler_characteristic": -4,
+      "angle_defect_total": -27.597941,
+      "area": 5.233343,
+      "volume": 0.121677,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 42653,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.114717,
+        1.118012,
+        2.0
+      ],
+      "aspect_ratio": 0.557358
+    }
   }
 }

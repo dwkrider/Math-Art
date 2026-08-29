@@ -324,7 +324,8 @@ def fit(verts, size=1.0):
 
 try:
     import bpy
-    from bpy.props import EnumProperty, FloatProperty, IntProperty
+    from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
+                           IntProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -344,6 +345,43 @@ if _IN_BLENDER:
             items=[(k, lab, desc) for k, lab, desc in QUADRICS],
             default='ELLIPSOID',
             description="Which quadric to build")
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "The surface itself, as a "
+                                      "continuous sheet"),
+                   ('LATTICE', "Cell Lattice",
+                    "A sparse openwork net of struts along the cells "
+                    "of the surface's dual, as a live modifier stack")],
+            default='SOLID',
+            description="Build the surface as a solid sheet or as an "
+                        "openwork lattice of struts along its dual")
+        # Cell Lattice style -- the canonical names cell_lattice.PROPS
+        # declares, so styles.cell_lattice.apply_from picks them up.
+        # These must stay spelled exactly as PROPS spells them: a
+        # mismatch does not raise, it silently substitutes the PROPS
+        # default and the slider does nothing.
+        cell_size: FloatProperty(
+            name="Cell Size", default=0.12, min=0.005, max=1.0,
+            description="Fraction of the surface's triangles kept "
+                        "before taking the dual: lower leaves fewer, "
+                        "larger cells")
+        strut_thickness: FloatProperty(
+            name="Strut Thickness", default=0.03, min=0.001, max=1.0,
+            description="Thickness of the lattice struts, in the "
+                        "unscaled surface's units")
+        smoothing: IntProperty(
+            name="Smoothing", default=1, min=0, max=4,
+            description="Subdivision levels rounding the struts")
+        keep_boundaries: BoolProperty(
+            name="Keep Boundaries", default=True,
+            description="Keep the cut rim of an unbounded quadric "
+                        "intact when taking the dual; without it the "
+                        "boundary cells are eaten away")
+        even_thickness: BoolProperty(
+            name="Even Thickness", default=False,
+            description="Maintain strut width at sharp corners. Off by "
+                        "default: the correction grows without bound as "
+                        "a corner gets more acute")
         a: FloatProperty(
             name="Semi-axis a", default=1.0, min=0.05, max=10.0,
             description="First semi-axis; ignored by the sphere")
@@ -382,12 +420,49 @@ if _IN_BLENDER:
             context.collection.objects.link(obj)
             context.view_layer.objects.active = obj
             obj.select_set(True)
+
+            if self.style == 'LATTICE':
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.apply_from(obj, self, scale=self.size)
+                self.report(
+                    {'INFO'},
+                    "%s: %d verts, %d faces, %d component%s; cell "
+                    "lattice added as a live modifier stack"
+                    % (label, len(verts), len(faces), comps,
+                       "" if comps == 1 else "s"))
+                return {'FINISHED'}
+
             self.report(
                 {'INFO'},
                 "%s: %d verts, %d faces, %d component%s"
                 % (label, len(verts), len(faces), comps,
                    "" if comps == 1 else "s"))
             return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            # Every other generator in the add-on splits the label off
+            # into its own column; without this the float sliders draw
+            # their label INSIDE the widget and this one panel looks
+            # unlike the rest of the add-on.
+            lay.use_property_split = True
+            lay.prop(self, 'kind')
+            lay.prop(self, 'style')
+            for k in ('a', 'b', 'c', 'extent', 'segments_u', 'segments_v',
+                      'size'):
+                lay.prop(self, k)
+            # The lattice controls are shown only under the style that
+            # uses them: a control that silently does nothing is worse
+            # than one that is absent.
+            if self.style == 'LATTICE':
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.draw_props(lay, self)
 
     def _menu_func(self, context):
         self.layout.operator(MESH_OT_quadric_add.bl_idname,
@@ -468,5 +543,32 @@ def _selftest():
            for i in range(3)]
     assert all(abs(m) < 1e-12 for m in mid), mid
 
+    # The Cell Lattice style is applied by name: cell_lattice.apply_from
+    # reads the operator's properties using the names in its PROPS
+    # table, and any name the operator does not declare falls back to
+    # the PROPS default. That fallback is silent, so a misspelling here
+    # produces a slider that moves and changes nothing -- the same class
+    # of bug that shipped in the algebraic generator. Check the two
+    # spellings against each other, from source, so it stays headless.
+    import os
+    import re
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "styles", "cell_lattice.py"),
+              encoding="utf-8") as fh:
+        block = re.search(r"^PROPS\s*=\s*\((.*?)\)\s*$", fh.read(),
+                          re.S | re.M)
+    wanted = set(re.findall(r'\("(\w+)"', block.group(1))) if block else set()
+    assert wanted, "could not read cell_lattice.PROPS"
+    with open(os.path.abspath(__file__), encoding="utf-8") as fh:
+        declared = set(re.findall(
+            r"^\s{4,}(\w+)\s*:\s*(?:Float|Int|Bool|Enum)Property\b",
+            fh.read(), re.M))
+    missing = sorted(wanted - declared)
+    assert not missing, (
+        "the Cell Lattice style reads these property names, which this "
+        "operator does not declare, so they would silently take their "
+        "defaults: %s" % ", ".join(missing))
+
     print("RESULT: OK  (quadric_generator, %d surfaces, each checked "
-          "against its own implicit equation)" % len(QUADRICS))
+          "against its own implicit equation; %d Cell Lattice properties "
+          "match the shared style)" % (len(QUADRICS), len(wanted)))

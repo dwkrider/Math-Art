@@ -96,7 +96,8 @@ def linear_subdivide(V, F, origin=None):
 
 def build_form(V, F, levels=3, hole=0.55, pattern='ALL',
                iterations=40, pin='EDGES', smooth_lambda=0.5,
-               corner_soft=0.35, mode='HOLES', depth=0.5):
+               corner_soft=0.35, mode='HOLES', depth=0.5,
+               return_frame=False):
     """Membrane-relaxed form from seed polyhedron (V, F): HOLES
     mode pierces the faces near their centres, SADDLE mode leaves
     them closed and dents each face inward by a smooth membrane
@@ -164,6 +165,11 @@ def build_form(V, F, levels=3, hole=0.55, pattern='ALL',
     # frame -- the "cast in the mold" look) to 1 over a fraction
     # of the edge length
     weight = np.ones(len(P))
+    # Which output vertices sit ON the held seed edge frame. Only
+    # meaningful under pin='EDGES'; the caller uses it to crease those
+    # edges, so that the frame the membrane was cast against stays a
+    # crisp line under subdivision instead of being rounded away.
+    on_frame = np.zeros(len(P), bool)
     if pin != 'NONE' and n_corner:
         C = np.array(V0, float)
         edges = {frozenset((f[i], f[(i + 1) % len(f)]))
@@ -183,6 +189,13 @@ def build_form(V, F, levels=3, hole=0.55, pattern='ALL',
                 u = np.clip((P - A) @ AB / L2, 0.0, 1.0)
                 d = np.minimum(d, np.linalg.norm(
                     P - (A + u[:, None] * AB), axis=1))
+            # Subdividing a seed edge leaves its children exactly on
+            # that segment, so the frame vertices are the ones at
+            # distance zero. Compare against a tolerance scaled by the
+            # seed's own edge length rather than an absolute epsilon,
+            # so the test does not silently change meaning when the
+            # seed is scaled.
+            on_frame = d <= 1e-6 * elen
         weight = np.clip(d / max(soft, 1e-9), 0.0, 1.0)
 
     # uniform Laplacian relaxation, free boundaries
@@ -236,6 +249,8 @@ def build_form(V, F, levels=3, hole=0.55, pattern='ALL',
         for i, s in enumerate(nbl):
             Q[i] = P[s].mean(axis=0) if s else P[i]
         P = P + lam * (Q - P)
+    if return_frame:
+        return [tuple(p) for p in P], faces, [bool(b) for b in on_frame]
     return [tuple(p) for p in P], faces
 
 
@@ -267,7 +282,7 @@ if _IN_BLENDER:
                    ('ICOSA', "Icosahedron", ""),
                    ('ACTIVE', "Active Object",
                     "Pierce the active mesh object's faces")],
-            default='CUBE')
+            default='DODECA')
         mode: EnumProperty(
             name="Mode",
             description="Whether faces are pierced open or dented inward",
@@ -280,7 +295,7 @@ if _IN_BLENDER:
                     "hanging from its own rim (saddle ridges "
                     "along the edge frame; nothing anchored at "
                     "the centre)")],
-            default='HOLES')
+            default='SADDLE')
         depth: FloatProperty(
             name="Bulge Depth", default=0.5, min=0.0, max=2.0,
             description="Inward Bulge: how deep each face dents, "
@@ -324,6 +339,13 @@ if _IN_BLENDER:
                         "relaxation fades out toward the pinned "
                         "corners: small = sharp Carlberg points, "
                         "large = rounded tips")
+        crease: FloatProperty(
+            name="Edge Creases", default=1.0, min=0.0, max=1.0,
+            description="Crease the held edge frame, so it stays a "
+                        "crisp line under a Subdivision Surface "
+                        "modifier instead of being rounded away with "
+                        "the membrane. Only the frame is creased, and "
+                        "only when Hold is Edge Frame; 0 disables it")
         thickness: FloatProperty(
             name="Thickness", default=0.08, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
@@ -353,12 +375,19 @@ if _IN_BLENDER:
                 V, F = _seed(self.seed)
                 V = [tuple(c) for c in V]
                 name = f"Minimal Surface ({self.seed.title()})"
+            want_crease = self.pin == 'EDGES' and self.crease > 0.0
             try:
-                verts, faces = build_form(
+                built = build_form(
                     V, F, self.levels, self.hole, self.pattern,
                     self.iterations, self.pin,
                     corner_soft=self.corner_soft,
-                    mode=self.mode, depth=self.depth)
+                    mode=self.mode, depth=self.depth,
+                    return_frame=want_crease)
+                if want_crease:
+                    verts, faces, on_frame = built
+                else:
+                    verts, faces = built
+                    on_frame = None
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -377,6 +406,30 @@ if _IN_BLENDER:
                                     [self.smooth]
                                     * len(me.polygons))
             me.update()
+
+            # Crease the held edge frame. The membrane is cast against
+            # that frame, so it is the one part of the form that should
+            # read as a hard line; a Subdivision Surface modifier would
+            # otherwise round it off along with everything else and
+            # lose the cast-in-the-mould look the Hold setting exists
+            # to produce. Creases only bite under subdivision, so this
+            # is inert until the user adds that modifier -- which is
+            # why it is safe to leave on by default.
+            n_creased = 0
+            if on_frame is not None:
+                attr = (me.attributes.get("crease_edge")
+                        or me.attributes.new("crease_edge", 'FLOAT',
+                                             'EDGE'))
+                vals = []
+                for e in me.edges:
+                    a, b = e.vertices
+                    both = (a < len(on_frame) and b < len(on_frame)
+                            and on_frame[a] and on_frame[b])
+                    vals.append(self.crease if both else 0.0)
+                    n_creased += 1 if both else 0
+                attr.data.foreach_set("value", vals)
+                me.update()
+
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
@@ -391,7 +444,9 @@ if _IN_BLENDER:
             context.view_layer.objects.active = obj
             self.report({'INFO'},
                         f"{name}: V={len(me.vertices)} "
-                        f"F={len(me.polygons)}")
+                        f"F={len(me.polygons)}"
+                        + (f", {n_creased} frame edges creased"
+                           if n_creased else ""))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -409,6 +464,11 @@ if _IN_BLENDER:
             lay.prop(self, 'pin')
             if self.pin != 'NONE':
                 lay.prop(self, 'corner_soft')
+            # Creasing is defined against the held edge frame, so it is
+            # only meaningful under that Hold; offering it elsewhere
+            # would be a control that does nothing.
+            if self.pin == 'EDGES':
+                lay.prop(self, 'crease')
             lay.prop(self, 'thickness')
             lay.prop(self, 'smooth')
             lay.prop(self, 'scale')

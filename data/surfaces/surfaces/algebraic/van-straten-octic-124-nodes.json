@@ -1,14 +1,13 @@
 {
   "schema_version": "0.1.0",
-  "slug": "barth-decic",
-  "name": "Barth Decic (345 nodes)",
+  "slug": "van-straten-octic-124-nodes",
+  "name": "Van Straten Octic (124 nodes)",
   "primary_family": "algebraic",
   "families": [
     "algebraic",
     "aperiodic",
     "def-implicit",
     "implemented",
-    "record-holder",
     "singular",
     "tradition-classical"
   ],
@@ -19,10 +18,11 @@
     "scale": "published",
     "clip": {
       "shape": "BALL",
-      "radius": 2.6
+      "radius": 2.9
     },
     "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.",
+    "degree": 8
   },
   "curvature": {
     "condition": "none",
@@ -32,18 +32,16 @@
   "symmetry": {
     "kind": "point",
     "periodicity_rank": 0,
-    "schoenflies": "Ih",
-    "orbifold": "*532",
-    "order": 120
+    "schoenflies": "D8h",
+    "verified_by": "curated"
   },
   "embedding": {
     "quality": "singular",
-    "is_record": true,
-    "record_for": "maximum known nodes, degree 10",
     "singularities": [
       {
         "type": "node (A1)",
-        "count": 345
+        "count": 124,
+        "note": "Per the mirrored vstrconstr page.  Of these, 96 are REAL and affine, at closed-form octagon-trigonometric positions (rho in {tan(pi/8), 1, 1+sqrt(2), ...}); the remainder are complex or at infinity.  A finite numerical count is therefore expected to stop at 96, and that shortfall is consistent rather than a discrepancy."
       }
     ]
   },
@@ -51,8 +49,8 @@
     {
       "generator": "math_art.surfaces.algebraic",
       "operator_id": "mesh.algebraic_surface_add",
-      "family": "RECORD",
-      "key": "BARTH_DECIC",
+      "family": "OCTIC",
+      "key": "VAN_STRATEN_124",
       "definition_index": 0,
       "implemented": true
     }
@@ -60,8 +58,8 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "W. Barth, J. Algebraic Geometry 5 (1996) -- same work as the sextic.",
-      "Breske-Labs-van Straten (2005) and J. Garcia-Escudero (arXiv:1107.3401, 2011): Barth's 345-nodal decic -- independent confirmations of the 345."
+      "D. van Straten's D8 x Z2-symmetric octic construction, as mirrored on O. Labs's Algebraic Surface Homepage (vstrconstr page), which prints the equation in full.",
+      "The octics survey on the same site: Miyaoka's bound for an octic is 174 and the best known count is 168, which is the scale this 124 sits on."
     ],
     "verified": {
       "expressions_parse": true,
@@ -76,13 +74,9 @@
   "tradition": [
     "classical"
   ],
-  "discovered_by": "Wolf Barth",
-  "year": 1996,
-  "ids": {
-    "mathworld": "BarthDecic"
-  },
+  "discovered_by": "Duco van Straten",
   "relations": {
-    "polyhedral_analogue": "icosahedron"
+    "member_of": "van-straten-dihedral-series"
   },
   "fabrication": {
     "developable": false,
@@ -92,26 +86,26 @@
   },
   "mesh_recipe": {
     "measured": {
-      "vertices": 302324,
-      "edges": 899028,
-      "faces": 596766,
-      "euler_characteristic": 62,
-      "angle_defect_total": 325.585128,
-      "area": 18.881141,
-      "volume": 0.174287,
-      "components": 61,
-      "boundary_loops": 60,
+      "vertices": 148096,
+      "edges": 441530,
+      "faces": 293478,
+      "euler_characteristic": 44,
+      "angle_defect_total": 261.40789,
+      "area": 9.505027,
+      "volume": 0.216736,
+      "components": 26,
+      "boundary_loops": 8,
       "manifold": false,
       "nonmanifold_edges": 0,
-      "nonmanifold_vertices": 267545,
+      "nonmanifold_vertices": 131545,
       "orientable": null,
       "one_sided": null,
       "bounding_box": [
         2.0,
         2.0,
-        2.0
+        0.672884
       ],
-      "aspect_ratio": 1.0
+      "aspect_ratio": 0.336442
     }
   }
 }

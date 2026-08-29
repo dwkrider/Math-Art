@@ -74,6 +74,34 @@ MERGE = {
     # The hyperbolic helicoid appears in the swept family and as a named
     # helical surface; one surface.
     "ruled:TWIST_STRIP": "twisted-strip",
+
+    # --- surfaces the algebraic module has now BUILT that the curated
+    # tables already described as unbuilt ----------------------------------
+    #
+    # These five were curated from the Algebraic Surface Homepage and the
+    # Encyclopedia with `blocked_by: "equation deliberately NOT
+    # transcribed"`. The equations have since been transcribed from the
+    # primary sources and shipped, so the row and the curated record are
+    # the same surface and must be ONE record.
+    #
+    # Without these entries the build emits a second record per surface
+    # under a slightly different slug -- "modified-chmutov-octic-144-nodes"
+    # beside "modified-chmutov-octic" -- and the pair is worse than either
+    # alone: the curated half keeps its published node count and goes on
+    # claiming the surface is unbuilt, while the built half carries the
+    # verified polynomial and no node count, so neither record can be
+    # checked against the other and the coverage figure counts one surface
+    # twice. The published invariant and the implementation have to meet
+    # in a single record or the invariant cannot gate the implementation,
+    # which is the entire reason the counts are stored.
+    "algebraic:ENDRASS_160": "endrass-octic-160",
+    "algebraic:MOD_CHMUTOV": "modified-chmutov-octic",
+    "algebraic:VAN_STRATEN_165": "van-straten-octic",
+    "algebraic:MOBIUS_SURFACE": "mobius-surface",
+    "algebraic:NORDSTRAND_WEIRD": "nordstrand-weird-surface",
+    # VAN_STRATEN_124 is deliberately NOT here: the curated tables carry
+    # no 124-node record for it to merge into (only the open-ended
+    # "van-straten-dihedral-series"), so it is a genuinely new record.
 }
 
 # ---------------------------------------------------------------------------

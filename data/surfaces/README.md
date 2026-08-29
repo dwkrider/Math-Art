@@ -374,7 +374,8 @@ External IDs by source: `msblog` 102 · `mathcurve` 98 · `vmm` 80 · `hauser` 6
 · `mathworld` 46 · `algsurf` 20 · `wikipedia` 9 · `epinet` 3. Every one
 resolves against a mirror held locally, so a reader can open the page.
 
-Citations are **harvested, not retyped.** CLAUDE.md already requires every
+Citations are **harvested, not retyped.** The contributor notes already
+require every
 generator module to credit the mathematics it implements; those blocks are
 kept current by whoever writes the generator, and `docs/scaffold_pages.py`
 already lifts them onto the doc pages. Retyping is how a citation goes subtly
@@ -388,7 +389,7 @@ Three modules had no extractable block and gained one:
 every case the citations already existed in the header prose — von Seggern,
 Robin and Trott, Knill, Dupin, Tannery, Zoll, Schwarz, Bouguer, Neile,
 Dirnböck and Stachel, Schrödinger — and were reformatted into the block form
-CLAUDE.md asks for. Nothing was invented, and those modules are now compliant.
+the notes ask for. Nothing was invented, and those modules are now compliant.
 
 ## Cross-checking
 

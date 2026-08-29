@@ -652,7 +652,7 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0,
     return G, wrap_u, wrap_v
 
 
-@_geom_cache.memoise(version=1)
+@_geom_cache.memoise(version=2)   # v2: non-shrinking boundary smoothing
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
                      with_uv=False, cells=(1, 1), equal_areas=False):
     """Mesh (V, quads) for `kind` -- see `_build_parametric` for the full
@@ -863,14 +863,18 @@ def _build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         ref = None
     else:
         # grid disk/strip with no puncture mask and no radial clip (Enneper,
-        # Bour, Henneberg, Richmond, the associate disks...).  Historically
-        # this branch skipped _smooth_boundary, so the outer disk-edge ring
-        # (and any strip corner) kept the raw grid staircase.  A gentle
-        # boundary relaxation knocks that residual facet down; the denser
-        # sampling (res baseline + per-surface res_boost) does the heavy
-        # lifting, so a light pass is enough and leaves clean circular rims
-        # (catenoid/cathel) essentially untouched.
-        V = _smooth_boundary(V, quads, iters=5)
+        # Bour, Henneberg, Richmond, the associate disks...).  On this
+        # branch the boundary vertices are EXACT samples of the immersion
+        # along the domain edge -- there is no clip staircase to relax, so
+        # do NOT smooth here: any curve smoothing displaces a genuinely
+        # curved rim off the true surface by ~ curvature * spacing^2, and
+        # wherever the transverse mesh spacing is finer than that (the
+        # rim-graded Enneper disk, the tightly wound helicoid strip edge,
+        # Henneberg's inner ring) the boundary ring gets dragged through
+        # its neighbour ring, folding the outermost face ring inside out --
+        # one full ring of inverted normals, seen as a thin doubled "lip"
+        # along the rim.  Rim smoothness comes from sampling density (res
+        # baseline + per-surface res_boost), not from moving exact points.
         ref = _inliers(V) if clip else V
 
     if ref is None:

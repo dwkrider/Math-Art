@@ -35,6 +35,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.0,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -66,13 +75,13 @@
     "sources": [
       "Classical."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1320_plan_2",
-        "agrees": true,
-        "detail": "page title 'Plane' vs record name 'Plane'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_radius"
@@ -94,5 +103,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3185,
+      "edges": 6256,
+      "faces": 3072,
+      "euler_characteristic": 1,
+      "angle_defect_total": 0.0,
+      "area": 4.0,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 2557,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.0
+      ],
+      "aspect_ratio": 0.0
+    }
   }
 }

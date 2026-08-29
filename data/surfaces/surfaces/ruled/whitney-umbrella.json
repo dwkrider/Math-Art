@@ -24,7 +24,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 1632010.9090797289,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {},
   "symmetry": {
@@ -66,13 +75,13 @@
     "sources": [
       "H. Whitney, 'The general type of singularity of a set of 2n-1 smooth functions of n variables', Duke Math. J. 10 (1943)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1355_whitney_2",
-        "agrees": true,
-        "detail": "page title \"Whitney's umbrella\" vs record name 'Whitney Umbrella'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -101,5 +110,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3456,
+      "edges": 6144,
+      "faces": 2880,
+      "euler_characteristic": 192,
+      "angle_defect_total": 1206.37159,
+      "area": 31.583242,
+      "volume": 0.284177,
+      "components": 98,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 724,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

@@ -46,7 +46,13 @@
     "sources": [
       "M. Weber, 'Breiner-Kleene Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch005_breiner_kleene_surface.md).",
       "C. Breiner and S. Kleene, 'Logarithmically spiraling helicoids', arXiv:1404.6996 (2014)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

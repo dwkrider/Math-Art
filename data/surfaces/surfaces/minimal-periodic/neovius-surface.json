@@ -33,6 +33,15 @@
     "condition": "minimal",
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 0.24722840733225088,
+        "resolution": 120,
+        "tolerance": 0.2966736,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -69,23 +78,13 @@
       "E. R. Neovius, 'Bestimmung zweier speciellen periodischen Minimalflachen', Helsingfors (1883).",
       "M. Weber, minimalsurfaces.blog, 'Neovius Surface' (mirror: minsurf ch275): the X-pieces 'extend to the edges of a cube, making it a genus 9 surface' -- independent genus-per-cell oracle."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1307_neovius_2",
-        "agrees": true,
-        "detail": "page title 'Neovius surface' vs record name 'Neovius surface'"
-      },
-      {
-        "source": "mathcurve:ch1307_neovius_2",
-        "agrees": true,
-        "detail": "record year 1883, page says 1883"
-      },
-      {
-        "source": "mathcurve:ch1307_neovius_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'minimal'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"
@@ -106,5 +105,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 39518,
+      "edges": 117120,
+      "faces": 77592,
+      "euler_characteristic": -10,
+      "angle_defect_total": -91.692225,
+      "area": 14.119543,
+      "volume": 2.851468,
+      "components": 1,
+      "boundary_loops": 12,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 35781,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

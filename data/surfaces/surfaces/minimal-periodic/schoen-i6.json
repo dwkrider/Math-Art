@@ -57,7 +57,13 @@
         "agrees": true,
         "detail": "'It extends triply periodically to a surface of genus 5.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

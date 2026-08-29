@@ -46,13 +46,12 @@
       "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
       "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1213_boheme_2",
-        "agrees": true,
-        "detail": "page title 'Bohemian dome' vs record name 'Bohemian Dome'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1213_boheme_2"
@@ -62,5 +61,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4608,
+      "edges": 9216,
+      "faces": 4608,
+      "euler_characteristic": 0,
+      "angle_defect_total": -1.2e-05,
+      "area": 5.684251,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 4091,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.909091,
+        2.0,
+        0.636364
+      ],
+      "aspect_ratio": 0.318182
+    }
   }
 }

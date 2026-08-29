@@ -48,7 +48,13 @@
     "sources": [
       "O. Labs, 'Advent calendar 2002, No. 16', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch032_no_16.md).",
       "E. Stagnaro's construction; descriptions and equations communicated to O. Labs by W. Barth, per the page."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

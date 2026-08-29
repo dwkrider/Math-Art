@@ -70,13 +70,12 @@
     "sources": [
       "J. Steiner, discovered in Rome in 1844; published posthumously by K. Weierstrass (1863)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1331_romaine_2",
-        "agrees": true,
-        "detail": "page title 'Roman surface' vs record name 'Roman Surface'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Steiner surface",
@@ -102,5 +101,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4465,
+      "edges": 8976,
+      "faces": 4512,
+      "euler_characteristic": 1,
+      "angle_defect_total": 15.126423,
+      "area": 12.786616,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 723,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.999686,
+        1.999686,
+        2.0
+      ],
+      "aspect_ratio": 0.999843
+    }
   }
 }

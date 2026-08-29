@@ -279,6 +279,63 @@ if _IN_BLENDER:
                         "measured against; it changes how much of the "
                         "surface the clip ball shows, not the size of "
                         "the finished object")
+        # Slots for presets whose parameters do NOT fit the shared
+        # k0..k3 / size / mu / fold pool, because their builder takes
+        # them under its own keyword names.
+        #
+        # WHY THESE HAD TO BE ADDED.  `_sync_params` calls
+        # `setattr(op, attr, ...)` and `draw` calls `lay.prop(self,
+        # attr)` for every row a preset declares, so a `PRESET_PARAMS`
+        # attr that is not a registered property here is not a
+        # "parameter that falls back to its default" -- it is a preset
+        # that cannot be drawn and cannot be driven.  Four presets
+        # shipped in exactly that state (Endrass family, the septic
+        # with 16 triple points, the Fresnel wave surface, the Darboux
+        # cyclide); the module self-test missed it because it calls the
+        # builder directly and never goes through the operator, and the
+        # database's drive stage is what caught it.
+        #
+        # So the rule when adding a parameterised preset is: reuse a
+        # shared slot if the builder can take the parameter under that
+        # slot's name, and otherwise declare the slot HERE as well as in
+        # the table. Declaring it in only one of the two places is the
+        # bug.
+        a: FloatProperty(name="Coefficient a", default=0.0,
+                         min=-8.0, max=8.0, step=10,
+                         description="Family coefficient")
+        b: FloatProperty(name="Coefficient b", default=0.0,
+                         min=-8.0, max=8.0, step=10,
+                         description="Family coefficient")
+        c: FloatProperty(name="Coefficient c", default=0.0,
+                         min=-8.0, max=8.0, step=10,
+                         description="Family coefficient")
+        d: FloatProperty(name="Coefficient d", default=0.0,
+                         min=-8.0, max=8.0, step=10,
+                         description="Family coefficient")
+        e: FloatProperty(name="Coefficient e", default=0.0,
+                         min=-8.0, max=8.0, step=10,
+                         description="Family coefficient")
+        ratio: FloatProperty(name="Family Ratio", default=2.0,
+                             min=1.1, max=6.0,
+                             description="Pencil parameter")
+        axis_b: FloatProperty(name="Middle Semi-axis", default=1.2,
+                              min=1.02, max=1.48,
+                              description="Middle semi-axis")
+        axis_c: FloatProperty(name="Long Semi-axis", default=1.5,
+                              min=1.5, max=3.0,
+                              description="Long semi-axis")
+        skew: FloatProperty(name="Skew", default=0.9, min=-1.2, max=1.2,
+                            description="Cubic-term coefficient of x")
+        lean: FloatProperty(name="Lean", default=0.0, min=-1.2, max=1.2,
+                            description="Cubic-term coefficient of y")
+        rise: FloatProperty(name="Rise", default=0.0, min=-1.2, max=1.2,
+                            description="Cubic-term coefficient of z")
+        ring: FloatProperty(name="Ring Radius", default=1.0,
+                            min=0.4, max=1.2,
+                            description="Radius of the carrying circle")
+        tube: FloatProperty(name="Tube Radius", default=0.45,
+                            min=0.05, max=0.7,
+                            description="Radius of the tube")
         clip: FloatProperty(
             name="Clip Override", default=0.0, min=0.0, max=20.0,
             description="Clip ball radius / box half-extent; "
@@ -411,6 +468,36 @@ def _selftest():
     ok &= not bad
     print("algebraic_generator: %d presets mesh %s"
           % (len(PRESETS), 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # THIRD GATE: every parameter a preset declares must be a property
+    # the operator actually registers.
+    #
+    # `_sync_params` does setattr(op, attr, ...) and `draw` does
+    # lay.prop(self, attr), so a declared attr with no property behind
+    # it is not a parameter that quietly falls back to its default --
+    # it is a preset that cannot be drawn and cannot be driven from a
+    # script.  Four presets shipped that way and neither gate above saw
+    # it, because both call the builder directly and never go through
+    # the operator.  Read the property names out of this module's own
+    # source so the check runs headlessly, without bpy.
+    import os
+    import re
+    with open(os.path.abspath(__file__), encoding="utf-8") as _fh:
+        _src = _fh.read()
+    declared = set(re.findall(
+        r"^\s{4,}([A-Za-z_]\w*)\s*:\s*(?:Float|Int|Bool|Enum|String)"
+        r"Property\b", _src, re.M))
+    # the rim block registers its properties through helpers, and `mu`
+    # and `fold` are named arguments of the builder rather than slots
+    declared |= {"mu", "fold"}
+    missing = sorted(
+        "%s.%s" % (k, a)
+        for k in PRESETS
+        for a, _l, _t, _d, _lo, _hi, _ds in preset_params(k)
+        if a not in declared)
+    ok &= not missing
+    print("algebraic_generator: every declared parameter has a property "
+          "%s" % ('OK' if not missing else 'FAIL ' + ','.join(missing)))
 
     # exactly what `execute` builds and forwards, for every row that
     # declares anything -- including the shared-name drop

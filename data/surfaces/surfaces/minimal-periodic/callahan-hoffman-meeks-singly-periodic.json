@@ -74,7 +74,13 @@
         "agrees": false,
         "detail": "DISAGREES with the primary source: the page says 'When divided by its translational symmetry, it has two planar ends and genus 2', but Invent. Math. 96 (1989) gives M_1/T genus 3 (2k+1, k=1), and the shipped implementation independently measures quotient genus 3 (chi = -6 with 2 ends).  The blog page appears to be off by one."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -88,5 +94,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 56519,
+      "edges": 112833,
+      "faces": 56308,
+      "euler_characteristic": -6,
+      "angle_defect_total": -1115.456251,
+      "area": 7.114497,
+      "volume": 0.443966,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 352,
+      "nonmanifold_vertices": 46145,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.957617
+      ],
+      "aspect_ratio": 0.478808
+    }
   }
 }

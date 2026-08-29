@@ -47,7 +47,13 @@
     "sources": [
       "M. Weber, 'Scherk's Fourth Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch341_scherks_fourth_surface.md).",
       "H. F. Scherk, 'Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen', J. Reine Angew. Math. 13 (1835) 185-208 (equation 20)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

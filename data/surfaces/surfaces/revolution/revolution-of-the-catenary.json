@@ -41,13 +41,12 @@
     "sources": [
       "R. Ferreol, \"Revolution of the catenary (Alysseid)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1366_alysseid_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1366_alysseid_2.md)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1366_alysseid_2",
-        "agrees": true,
-        "detail": "page title 'Revolution of the catenary' vs record name 'Revolution of the Catenary'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Alysseid"

@@ -47,13 +47,12 @@
       "U. Seifert, K. Berndl, R. Lipowsky, \"Shape transformations of vesicles\", Physical Review A 44 (1991), 1182-1202 -- the discocyte/prolate/stomatocyte phase diagram at reduced volume < 1.",
       "C. Zhu, C. T. Lee, P. Rangamani, \"Mem3DG: Modeling membrane mechanochemical dynamics in 3D using discrete differential geometry\", Biophysical Reports 2(3), 100062 (2022)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1358_willmore_2",
-        "agrees": true,
-        "detail": "page title \"Willmore's torus\" vs record name 'Willmore Surface'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "mathcurve": "ch1358_willmore_2"
@@ -66,5 +65,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 1152,
+      "edges": 3456,
+      "faces": 2304,
+      "euler_characteristic": 0,
+      "angle_defect_total": 3e-06,
+      "area": 9.577349,
+      "volume": 1.980599,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 778,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.999632,
+        2.0,
+        0.833441
+      ],
+      "aspect_ratio": 0.41672
+    }
   }
 }

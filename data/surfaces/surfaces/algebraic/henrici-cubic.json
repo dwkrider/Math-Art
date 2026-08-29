@@ -52,15 +52,16 @@
       "H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own umbrella x^2 = y^2 z, already in the Hauser block above.",
       "G. D. Cassini, the ovals of 1680; the surface is the classical three-dimensional generalisation of them.",
       "G. Titeica, \"Sur une nouvelle classe de surfaces\", Rend. Circ. Mat. Palermo 25 (1908) 180-187 -- the affine spheres of 1907.",
+      "A. Fresnel (1821) -- the wave surface; the chapter \"Fresnel's wave surface\" prints the quartic and its four singular points.",
+      "A. Gray, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\", 2nd ed., CRC Press (1997) -- named the sine surface.",
       "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1363_henrici_2",
-        "agrees": true,
-        "detail": "page title 'Surface de Henrici' vs record name 'Henrici Cubic'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -79,5 +80,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 119101,
+      "edges": 355872,
+      "faces": 236772,
+      "euler_characteristic": 1,
+      "angle_defect_total": -1.875936,
+      "area": 6.822751,
+      "volume": 0.350225,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 105732,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

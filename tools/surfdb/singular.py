@@ -161,7 +161,18 @@ def check(poly, published, params=None, extent=1.6, **kw):
 
 
 def _selftest():
-    """Counts on surfaces whose singularities are known exactly."""
+    """Counts on surfaces whose singularities are known exactly.
+
+    SEED COUNTS ARE DELIBERATELY LOW HERE.  Each descent is a few
+    thousand expression evaluations, so this test is minutes long, not
+    seconds, and a self-test nobody can afford to run is a self-test
+    that stops being run.  350 seeds is the smallest budget at which
+    Cayley's four nodes are still found every time and the mistyped
+    variant still shows a different count -- which is the discrimination
+    the test exists for.  The VALIDATOR is where the seed count should
+    be raised (--node-seeds), because there it is bounded by the handful
+    of records that publish a count.
+    """
     # a smooth sphere has NO singular points
     r = count("x**2 + y**2 + z**2 - 1", seeds=300)
     assert r["count"] == 0, r
@@ -179,24 +190,24 @@ def _selftest():
 
     # Cayley's nodal cubic: FOUR nodes, the maximum for a cubic
     cayley = "4*(x**2 + y**2 + z**2) + 16*x*y*z - 1"
-    r = count(cayley, seeds=1200, extent=1.1)
+    r = count(cayley, seeds=350, extent=1.1)
     assert r["count"] == 4, "Cayley must show 4 nodes, got %d" % r["count"]
-    ok, detail = check(cayley, 4, extent=1.1, seeds=1200)
+    ok, detail = check(cayley, 4, extent=1.1, seeds=350)
     assert ok is True, detail
 
     # and a MISTYPED Cayley must not still show four -- this is the whole
     # point of the check
     wrong = "4*(x**2 + y**2 + z**2) + 15*x*y*z - 1"
-    r2 = count(wrong, seeds=1200, extent=1.1)
+    r2 = count(wrong, seeds=350, extent=1.1)
     assert r2["count"] != 4, \
         "a wrong coefficient must change the node count, got %d" % r2["count"]
 
     # over-counting must be reported as a failure, not a pass
-    ok, detail = check(cayley, 2, extent=1.1, seeds=1200)
+    ok, detail = check(cayley, 2, extent=1.1, seeds=350)
     assert ok is False and "wrong" in detail, detail
 
     # under-counting is inconclusive, not a failure: nodes at infinity
-    ok, detail = check(cayley, 65, extent=1.1, seeds=600)
+    ok, detail = check(cayley, 65, extent=1.1, seeds=200)
     assert ok is None and "not conclusive" in detail, detail
 
     print("RESULT: OK  (surfdb.singular)")

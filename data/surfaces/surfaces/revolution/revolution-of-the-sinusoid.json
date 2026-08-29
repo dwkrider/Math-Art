@@ -41,18 +41,12 @@
     "sources": [
       "R. Ferreol, \"Revolution of the sinusoid\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1328_revolsin_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1328_revolsin_2.md)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1328_revolsin_2",
-        "agrees": true,
-        "detail": "page title 'Revolution of the sinusoid' vs record name 'Revolution of the Sinusoid'"
-      },
-      {
-        "source": "mathcurve:ch1328_revolsin_2",
-        "agrees": true,
-        "detail": "record year 2012, page says 2012"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "year": 2012,
   "tradition": [

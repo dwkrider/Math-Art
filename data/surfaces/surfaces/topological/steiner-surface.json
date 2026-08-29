@@ -46,13 +46,12 @@
       "Morin's surface: Bernard Morin (1933-2018); B. Morin and J.-P. Petit on turning a sphere inside out.  Parametrization by Francois Apery, \"Models of the Real Projective Plane\" (Vieweg, 1987), p. 104; via",
       "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapter \"surface de Morin\"."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1342_steiner_2",
-        "agrees": true,
-        "detail": "page title 'Steiner surface' vs record name 'Steiner Surface (Veronese shadow)'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "vmm": "ch046_steiner",
@@ -66,5 +65,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4465,
+      "edges": 8976,
+      "faces": 4512,
+      "euler_characteristic": 1,
+      "angle_defect_total": 15.126423,
+      "area": 12.786616,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 700,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.999686,
+        1.999686,
+        2.0
+      ],
+      "aspect_ratio": 0.999843
+    }
   }
 }

@@ -64,18 +64,12 @@
     "sources": [
       "J. Tannery (1892); the surface of revolution of half a Gerono lemniscate."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1316_tannery_2",
-        "agrees": true,
-        "detail": "page title \"Tannery's pear\" vs record name \"Tannery's Pear\""
-      },
-      {
-        "source": "mathcurve:ch1316_tannery_2",
-        "agrees": true,
-        "detail": "record year 1892, page says 1892"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "specimens": [
     {
@@ -109,5 +103,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4514,
+      "edges": 9120,
+      "faces": 4608,
+      "euler_characteristic": 2,
+      "angle_defect_total": 619.932281,
+      "area": 1.567827,
+      "volume": 0.104309,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 1895,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.353553,
+        0.353553,
+        2.0
+      ],
+      "aspect_ratio": 0.176777
+    }
   }
 }

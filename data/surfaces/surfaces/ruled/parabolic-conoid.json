@@ -42,13 +42,12 @@
     "sources": [
       "R. Ferreol, \"Parabolic conoid\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1240_conoide_parabolique_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1240_conoide_parabolique_2.md)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1240_conoide_parabolique_2",
-        "agrees": true,
-        "detail": "page title 'Parabolic conoid' vs record name 'Parabolic Conoid'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "architectural",

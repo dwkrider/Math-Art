@@ -41,13 +41,12 @@
     "sources": [
       "R. Ferreol, \"Paraboloid of revolution\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1314_paraboloidrevolution_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1314_paraboloidrevolution_2.md)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1314_paraboloidrevolution_2",
-        "agrees": true,
-        "detail": "page title 'Paraboloid of revolution' vs record name 'Paraboloid of Revolution'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Circular paraboloid"

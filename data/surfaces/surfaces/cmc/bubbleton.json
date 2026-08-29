@@ -117,7 +117,13 @@
       "Nicholas J. Korevaar, Rob Kusner, Bruce Solomon, \"The structure of complete embedded surfaces with constant mean curvature\", J. Diff. Geom. 30 (1989), 465-503 -- Delaunay surfaces as the ends of every complete embedded CMC surface, which is why this family matters beyond its own good looks.",
       "Lynn Heller, \"Constrained Willmore tori and elastic curves in 2-dimensional space forms\", Comm. Anal. Geom. 22 (2014), no. 2; arXiv:1303.1445 -- the ELASTIC_TORUS mode: elastic curves in H^2 in Weierstrass closed form (Thm. 2), their closure (Thm. 4), and the CMC-in-S^3 classification of the revolved tori (Prop. 6).",
       "Joel Langer, David A. Singer, \"Curves in the hyperbolic plane and mean curvature of tori in 3-space\", Bull. London Math. Soc. 16 (1984), 531-534 -- a torus of revolution is Willmore-critical exactly when its profile curve is elastic in the hyperbolic plane."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "specimens": [
     {
@@ -153,5 +159,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 51008,
+      "edges": 101952,
+      "faces": 50944,
+      "euler_characteristic": 0,
+      "angle_defect_total": 0.09406,
+      "area": 2.678705,
+      "volume": 0.262515,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 1596,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.564142,
+        0.564142,
+        2.0
+      ],
+      "aspect_ratio": 0.282071
+    }
   }
 }

@@ -45,6 +45,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 3.481470794973843e-08,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -104,23 +113,13 @@
       "J. B. Meusnier, 'Memoire sur la courbure des surfaces', Memoires des savans etrangers 10 (1785, read 1776) -- identified the catenoid and helicoid as minimal.",
       "M. Weber, minimalsurfaces.blog (mirror: minsurf ch189, ch202, ch222): total curvature -4pi; 'the catenoid is a 2-Noid (in fact, the only one)'."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1198_catenoid_2",
-        "agrees": true,
-        "detail": "page title 'Catenoid' vs record name 'Catenoid'"
-      },
-      {
-        "source": "mathcurve:ch1198_catenoid_2",
-        "agrees": false,
-        "detail": "record year 1744, page says 1740 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
-      },
-      {
-        "source": "mathcurve:ch1198_catenoid_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'minimal'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical",
@@ -154,5 +153,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12800,
+      "edges": 25536,
+      "faces": 12736,
+      "euler_characteristic": 0,
+      "angle_defect_total": -12.516353,
+      "area": 6.400091,
+      "volume": 0.292415,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 402,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.548154
+      ],
+      "aspect_ratio": 0.274077
+    }
   }
 }

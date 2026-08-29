@@ -45,12 +45,42 @@
       "Sudanese Mobius band: H. B. Lawson, \"Complete Minimal Surfaces in S^3\", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman and Daniel Asimov (cf. G. Francis, \"A Topological Picturebook\", Springer 1987).",
       "Morin's surface: Bernard Morin (1933-2018); B. Morin and J.-P. Petit on turning a sphere inside out.  Parametrization by Francois Apery, \"Models of the Real Projective Plane\" (Vieweg, 1987), p. 104; via",
       "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapter \"surface de Morin\"."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4753,
+      "edges": 9360,
+      "faces": 4608,
+      "euler_characteristic": 1,
+      "angle_defect_total": 14.001793,
+      "area": 5.887507,
+      "volume": 1.076025,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 4464,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.317049,
+        1.269158,
+        2.0
+      ],
+      "aspect_ratio": 0.634579
+    }
   }
 }

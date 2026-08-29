@@ -47,7 +47,13 @@
     "sources": [
       "M. Weber, 'Hackman Surfaces', minimalsurfaces.blog (local mirror: minsurf/book/.../ch382_hackman_surfaces.md).",
       "M. Hackman, PhD thesis (as credited by the mirrored page for the construction and the classification remarks)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

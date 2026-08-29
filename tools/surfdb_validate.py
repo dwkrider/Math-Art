@@ -3,6 +3,7 @@
 #     python tools/surfdb_validate.py             # validate everything
 #     python tools/surfdb_validate.py --coverage  # the gap ledger
 #     python tools/surfdb_validate.py --slow      # + curvature and symmetry
+#     python tools/surfdb_validate.py --nodes     # + count the singular points
 #     python tools/surfdb_validate.py --stale     # records older than their generator
 #
 # data/polyhedra's validator is what raised it above a dump: it recomputes
@@ -17,6 +18,12 @@
 #   * Total curvature an integer multiple of 4*pi for a complete minimal
 #     surface of finite total curvature -- a sharp test that catches a
 #     wrong Gauss map immediately.
+#   * The number of singular points COUNTED numerically and compared with
+#     the published figure (--nodes). This is the only check that matters
+#     for the record-nodal family, whose entire interest is the count: a
+#     mistyped coefficient yields a smooth, plausible surface with a
+#     different count and nothing else here would notice. It is slow --
+#     tens of seconds per surface -- so it has its own flag.
 #   * Every generated field regenerated and compared, so a hand-edited
 #     `families` array is an error rather than silent drift.
 #   * Every 'varies' resolved on every specimen, so 'varies' can never be
@@ -37,7 +44,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 from surfdb import (curation, expr, invariants, mapping,  # noqa: E402,F401
-                    views, weierstrass)
+                    singular, views, weierstrass)
 
 DB = os.path.join(ROOT, "data", "surfaces")
 
@@ -64,6 +71,8 @@ class Report:
         self.slow_curv = 0
         self.slow_sym = 0
         self.slow_deg = 0
+        self.nodes_seen = 0
+        self.nodes_proved = 0
 
     def err(self, slug, msg):
         self.errors.append("%s: %s" % (slug, msg))
@@ -355,6 +364,68 @@ def check_gauss_degree(slug, rec, rep):
     return None
 
 
+# Singularity types that are NOT isolated points. A surface carrying one
+# of these has a singular CURVE, along which every point is singular, so
+# "how many singular points" has no finite answer and counting must be
+# refused rather than answered wrongly.
+NON_ISOLATED = ("curve", "line", "edge")
+
+# Distinct from None. None means "counted, but the count is consistent
+# without being conclusive"; NOT_APPLICABLE means "no count was attempted
+# at all". Collapsing the two would let a record that was never checked be
+# reported the same as one that was, which is the exact failure this
+# database is supposed to avoid.
+NOT_APPLICABLE = object()
+
+
+def check_singular_count(slug, rec, rep, seeds=900):
+    """Count the singular points off the polynomial, against the published
+    figure.
+
+    This is the check the record-nodal surfaces exist for. Their whole
+    interest is that they carry the largest known number of ordinary
+    double points for their degree; a mistyped coefficient does not raise,
+    does not look wrong, and produces a smooth plausible surface with a
+    DIFFERENT count. No other check in this file would see it.
+
+    The asymmetry matters and is preserved: counting MORE points than are
+    published is an error, because the transcription or the published
+    figure must be wrong. Counting FEWER is only a warning -- Barth's
+    sextic has 65 nodes of which 15 lie at infinity, so a finite count is
+    expected to fall short, and a node whose basin no random seed reached
+    would look the same.
+    """
+    sings = (rec.get("embedding") or {}).get("singularities") or []
+    if not sings:
+        return NOT_APPLICABLE
+    for s in sings:
+        t = (s.get("type") or "").lower()
+        if any(w in t for w in NON_ISOLATED):
+            return NOT_APPLICABLE
+        if s.get("count") is None:
+            return NOT_APPLICABLE
+    published = sum(s["count"] for s in sings)
+
+    for d in definitions(rec):
+        if d.get("mode") != "implicit" or not d.get("polynomial"):
+            continue
+        env = param_env(rec, d)
+        extent = float((d.get("clip") or {}).get("radius") or 1.6)
+        extent = min(max(extent, 0.6), 2.5)
+        try:
+            ok, detail = singular.check(d["polynomial"], published, env,
+                                        extent=extent, seeds=seeds)
+        except Exception as exc:                      # noqa: BLE001
+            rep.warn(slug, "singular-point count raised: %s" % exc)
+            return NOT_APPLICABLE
+        if ok is False:
+            rep.err(slug, "singular points: %s" % detail)
+        elif ok is None:
+            rep.warn(slug, "singular points: %s" % detail)
+        return ok
+    return NOT_APPLICABLE
+
+
 def check_curvature_numeric(slug, rec, rep):
     """Measure the defining property off the level set, per definition."""
     results = []
@@ -556,6 +627,13 @@ def main():
     ap.add_argument("--stale", action="store_true")
     ap.add_argument("--slow", action="store_true",
                     help="also measure curvature and prove symmetry")
+    ap.add_argument("--nodes", action="store_true",
+                    help="also COUNT the singular points and compare with "
+                         "the published figure (tens of seconds per surface)")
+    ap.add_argument("--node-seeds", type=int, default=900,
+                    help="random seeds per singular-point count (default 900); "
+                         "more seeds find more nodes and take proportionally "
+                         "longer")
     ap.add_argument("--write-verified", action="store_true",
                     help="record what passed into provenance.verified")
     args = ap.parse_args()
@@ -583,6 +661,8 @@ def main():
         check_specimen_slugs(slug, rec, rep, records)
         check_total_curvature(slug, rec, rep)
 
+        measured = sym_ok = None
+        node_ok = NOT_APPLICABLE
         if args.slow:
             measured = check_curvature_numeric(slug, rec, rep)
             sym_ok = check_symmetry_symbolic(slug, rec, rep)
@@ -596,8 +676,16 @@ def main():
                                  if m["passed"] is True)
             rep.slow_sym += 1 if sym_ok else 0
             rep.slow_seen += 1
-            if args.write_verified:
-                v = rec.setdefault("provenance", {}).setdefault("verified", {})
+        if args.nodes:
+            node_ok = check_singular_count(slug, rec, rep,
+                                           seeds=args.node_seeds)
+            if node_ok is not NOT_APPLICABLE:
+                rep.nodes_seen += 1
+                rep.nodes_proved += 1 if node_ok else 0
+
+        if args.write_verified and (args.slow or args.nodes):
+            v = rec.setdefault("provenance", {}).setdefault("verified", {})
+            if args.slow:
                 v["expressions_parse"] = True
                 v["exact_values_match"] = True
                 v["generated_fields_match"] = True
@@ -608,9 +696,17 @@ def main():
                 if sym_ok is not None:
                     v["symmetry_invariant"] = sym_ok
                 v["tolerance"] = 2e-3
-                with open(path, "w", encoding="utf-8") as fh:
-                    json.dump(rec, fh, indent=2, ensure_ascii=False)
-                    fh.write("\n")
+            # Only a CONFIRMED count is written. An inconclusive one
+            # leaves the field absent rather than false, because absent
+            # means "not established" while false would claim the record
+            # is wrong.
+            if node_ok is True:
+                v["node_count"] = True
+            elif node_ok is False:
+                v["node_count"] = False
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(rec, fh, indent=2, ensure_ascii=False)
+                fh.write("\n")
 
     check_index(records, rep)
 
@@ -621,6 +717,14 @@ def main():
         print("  total curvature vs Gauss-map degree:     %d" % rep.slow_deg)
         print("  (the rest carry no stored polynomial, or no condition and no "
               "group to test -- an honest count, not a silent pass)")
+    if args.nodes:
+        print("  singular-point counts attempted:          %d"
+              % rep.nodes_seen)
+        print("  ... of which the published figure was reproduced EXACTLY: %d"
+              % rep.nodes_proved)
+        print("  (the remainder fell short inside the clip, which is expected "
+              "when some singular points lie at infinity; only an OVER-count "
+              "is an error)")
     if rep.warnings:
         print("\nWARNINGS (%d):" % len(rep.warnings))
         for w in rep.warnings[:60]:

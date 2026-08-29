@@ -58,7 +58,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 3.9109275015535063,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {},
   "symmetry": {
@@ -89,8 +98,18 @@
       "A. Clebsch, \"Ueber die Flachen vierter Ordnung...\", Journal fur die reine und angewandte Mathematik 69, 1868 -- the diagonal surface.",
       "W. Barth, \"Two projective surfaces with many nodes admitting the symmetries of the icosahedron\", J. Algebraic Geometry 5, 1996.",
       "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien -- the named gallery surfaces in the _HAUSER block below.",
+      "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- also the source of the five-parameter D8 x Z2 octic family; the 160- and 165-nodal parameter values are published on O. Labs's Algebraic Surface",
+      "Homepage, algebraicsurface.net (octics pages).",
       "E. Goursat, 'Etude des surfaces qui admettent tous les plans de symetrie d'un polyedre regulier', Ann. Sci. ENS 3e serie 4 (1887)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "symmetry_invariant": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -106,5 +125,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 118226,
+      "edges": 351888,
+      "faces": 233658,
+      "euler_characteristic": -4,
+      "angle_defect_total": -50.841946,
+      "area": 9.261954,
+      "volume": 0.620253,
+      "components": 1,
+      "boundary_loops": 6,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 105145,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        2.0
+      ],
+      "aspect_ratio": 1.0
+    }
   }
 }

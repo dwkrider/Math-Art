@@ -57,7 +57,13 @@
       "M. Weber, https://minimalsurfaces.blog/ -- notebooks \"Fischer-Koch Translational\", \"Fischer-Koch-Freese\" (after R. Freese), \"Singly Periodic Torus with One Catenoid and Two Annular Ends\", \"Translation Invariant Torus with Two Enneper and Two Annular Ends\" (research/msblog_harvest/singly_periodic.json);",
       "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
       "B. C. Carlson, Numer. Algorithms 10 (1995) 13-26 (R_F)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -71,5 +77,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 28275,
+      "edges": 55878,
+      "faces": 27600,
+      "euler_characteristic": -3,
+      "angle_defect_total": -17.717061,
+      "area": 4.689426,
+      "volume": 0.000424,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 23469,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.735712,
+        2.0,
+        1.746103
+      ],
+      "aspect_ratio": 0.867856
+    }
   }
 }

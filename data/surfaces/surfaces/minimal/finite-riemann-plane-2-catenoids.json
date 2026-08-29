@@ -66,16 +66,17 @@
     ],
     "cross_checked": [
       {
-        "source": "mathcurve:ch1330_weber_2",
+        "source": "D. Hoffman, H. Karcher, 'Complete embedded minimal surfaces of finite total curvature' (1995) (minsurf ch190)",
         "agrees": true,
-        "detail": "page title 'Riemann finite minimal surface' vs record name 'Finite Riemann (plane + 2 catenoids)'"
-      },
-      {
-        "source": "mathcurve:ch1330_weber_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'minimal'"
+        "detail": "'These surfaces are never embedded. This is an illustration of the Lopez-Ros theorem which asserts that a complete, embedded minimal sphere of finite total curvature must be the plane or catenoid.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -92,5 +93,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 10573,
+      "edges": 20957,
+      "faces": 10384,
+      "euler_characteristic": 0,
+      "angle_defect_total": 7.967868,
+      "area": 4.358992,
+      "volume": 0.000978,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 9935,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.925106,
+        2.0,
+        1.605468
+      ],
+      "aspect_ratio": 0.802734
+    }
   }
 }

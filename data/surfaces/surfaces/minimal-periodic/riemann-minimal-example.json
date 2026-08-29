@@ -59,23 +59,12 @@
       "B. Riemann, 'Ueber die Flaeche vom kleinsten Inhalt bei gegebener Begrenzung', Abh. Koenigl. Ges. Wiss. Goettingen 13 (1867) 3-52.",
       "W. H. Meeks III, J. Perez, A. Ros, 'Properly embedded minimal planar domains', Ann. of Math. 181 (2015) 473-546 -- any properly embedded minimal surface of genus 0 is the plane, catenoid, helicoid, or a Riemann example."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1223_catenoidgauche_2",
-        "agrees": true,
-        "detail": "page title 'Skew catenoid' vs record name \"Riemann's Minimal Example\""
-      },
-      {
-        "source": "mathcurve:ch1223_catenoidgauche_2",
-        "agrees": false,
-        "detail": "record year 1867, page says 1860 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
-      },
-      {
-        "source": "mathcurve:ch1223_catenoidgauche_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'minimal'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -100,5 +89,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 7522,
+      "edges": 14849,
+      "faces": 7326,
+      "euler_characteristic": -1,
+      "angle_defect_total": -10.607409,
+      "area": 5.374468,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 3173,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.59541,
+        1.665906,
+        2.0
+      ],
+      "aspect_ratio": 0.797705
+    }
   }
 }

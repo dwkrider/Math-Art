@@ -71,7 +71,13 @@
         "agrees": true,
         "detail": "'We have a sphere with two Enneper ends' (Karcher's Tokyo Notes); not embedded."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -85,5 +91,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 7985,
+      "edges": 15892,
+      "faces": 7906,
+      "euler_characteristic": -1,
+      "angle_defect_total": -327.077613,
+      "area": 9.512251,
+      "volume": 0.06206,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 60,
+      "nonmanifold_vertices": 7505,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.561973,
+        1.44001,
+        2.0
+      ],
+      "aspect_ratio": 0.720005
+    }
   }
 }

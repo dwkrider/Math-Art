@@ -37,6 +37,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 2.782332609484393e-06,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -65,18 +74,13 @@
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1266_jeener_2",
-        "agrees": true,
-        "detail": "page title \"Jeener's flower\" vs record name \"Jeener's Flower\""
-      },
-      {
-        "source": "mathcurve:ch1266_jeener_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'minimal'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -107,5 +111,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 10704,
+      "edges": 21424,
+      "faces": 10726,
+      "euler_characteristic": 6,
+      "angle_defect_total": -216.64877,
+      "area": 14.224135,
+      "volume": 1.6e-05,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 61,
+      "nonmanifold_vertices": 10532,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.914959,
+        1.917918,
+        2.0
+      ],
+      "aspect_ratio": 0.957479
+    }
   }
 }

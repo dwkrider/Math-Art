@@ -35,6 +35,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.7042797648772304e-08,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -66,23 +75,13 @@
       "O. Bonnet, 'Memoire sur la theorie generale des surfaces', J. Ecole Polytechnique 19 (1853) -- the associate family.",
       "H. A. Schwarz, Gesammelte Mathematische Abhandlungen (1890)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1282_helicoidminimal_2",
-        "agrees": true,
-        "detail": "page title 'Minimal helicoid' vs record name 'Catenoid-Helicoid Associate Family'"
-      },
-      {
-        "source": "mathcurve:ch1282_helicoidminimal_2",
-        "agrees": false,
-        "detail": "record year 1853, page says 1834 -- recorded as a disagreement rather than reconciled; sources differ on when the surface was first studied"
-      },
-      {
-        "source": "mathcurve:ch1282_helicoidminimal_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'minimal'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -137,5 +136,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4034,
+      "edges": 8005,
+      "faces": 3971,
+      "euler_characteristic": 0,
+      "angle_defect_total": -9.749488,
+      "area": 7.505589,
+      "volume": 0.446884,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 69,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.996358,
+        1.3204
+      ],
+      "aspect_ratio": 0.6602
+    }
   }
 }

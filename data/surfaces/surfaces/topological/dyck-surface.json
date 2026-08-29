@@ -52,18 +52,12 @@
     "sources": [
       "W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1260_dyck_2",
-        "agrees": true,
-        "detail": "page title \"Dyck's surface\" vs record name \"Dyck's Surface\""
-      },
-      {
-        "source": "mathcurve:ch1260_dyck_2",
-        "agrees": true,
-        "detail": "record year 1888, page says 1888"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Walther von Dyck",
   "year": 1888,

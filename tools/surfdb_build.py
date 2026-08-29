@@ -28,6 +28,7 @@
 # nothing is trusted that has not been reproduced independently.
 
 import argparse
+import copy
 import inspect
 import json
 import os
@@ -99,6 +100,16 @@ FAMILY_OVERRIDE = {
     "curiosity:SCHWARZ_LANTERN": "discrete",
     "ruled:HYPERBOLOID": "quadric",
     "ruled:HYPAR": "quadric",
+    # The Darboux cyclide ships as a quartic level set, so it arrives
+    # from the algebraic registry -- but "cyclide" is the classification
+    # that says something, and it is where the curated record and the
+    # Dupin cyclide it generalises already live. Without this the record
+    # changes family directory when it gets built, which is also how it
+    # acquires a ghost: the writer creates the new path and nothing
+    # deletes the old one, so `cyclide/darboux-cyclide.json` would sit
+    # beside `algebraic/darboux-cyclide.json` still claiming the surface
+    # is unbuilt.
+    "algebraic:DARBOUX_CYCLIDE": "cyclide",
 }
 
 _slug_cache = {}
@@ -209,7 +220,8 @@ class Builder:
     def cite(self, rec, module_rel, line_no, label):
         """Attach the vetted References block nearest to a row.
 
-        CLAUDE.md already requires every generator module to credit the
+        The contributor notes already require every generator module to credit
+        the
         mathematics it implements, and those blocks are kept current by
         whoever writes the generator.  Reading them beats retyping them:
         a retyped citation goes subtly wrong and then looks authoritative.
@@ -830,6 +842,39 @@ class Builder:
             existing = self.records.get(slug)
             if existing and any(c.get("implemented")
                                 for c in existing.get("construction") or []):
+                # The CLAIM is stale. The facts attached to it are not,
+                # and dropping them is the more damaging mistake: the
+                # curated entry is where the PUBLISHED invariant lives --
+                # "165 ordinary double points", "35 cusps" -- and that
+                # number is the only independent oracle these surfaces
+                # have. Discard it when the surface gets built and the
+                # implementation can never be checked against the
+                # literature again; the record would carry a verified
+                # polynomial and nothing to verify it against, which is
+                # backwards, because the surface got built precisely
+                # because someone found the source.
+                #
+                # So: merge the facts, drop the claim. Never the
+                # `implemented: false` construction, never the "not
+                # transcribed" provenance, and never `polynomial: None`
+                # over a stored equation.
+                extra = copy.deepcopy(spec.get("extra", {}))
+                edfn = extra.get("definition")
+                if isinstance(edfn, dict):
+                    edfn.pop("polynomial", None)
+                    # keep BOTH notes: the built one says what this record
+                    # stores, the curated one describes the construction
+                    curated_note = edfn.pop("note", None)
+                    if curated_note:
+                        have = (existing.get("definition") or {}).get("note")
+                        edfn["note"] = ("%s\n\n%s" % (have, curated_note)
+                                        if have else curated_note)
+                deep_merge(existing, extra)
+                prov = existing.setdefault("provenance", {})
+                have_src = prov.setdefault("sources", [])
+                for s in spec.get("sources", []):
+                    if s not in have_src:
+                        have_src.append(s)
                 self.report.append(("missing", slug, "superseded", slug))
                 continue
             rec = self.get(slug, spec["name"], spec.get("family", "algebraic"))

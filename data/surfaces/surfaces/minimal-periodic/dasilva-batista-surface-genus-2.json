@@ -69,7 +69,13 @@
         "agrees": true,
         "detail": "'This translation invariant surface ... features 8 annular ends and has genus 2.'  NOT the same surface as Lubeck-Batista (doubly periodic, genus 3, four annular ends -- minsurf ch038)."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -83,5 +89,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 67462,
+      "edges": 135819,
+      "faces": 68351,
+      "euler_characteristic": -6,
+      "angle_defect_total": -46.596669,
+      "area": 9.492969,
+      "volume": 0.309327,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 64992,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.143475,
+        1.543072
+      ],
+      "aspect_ratio": 0.571738
+    }
   }
 }

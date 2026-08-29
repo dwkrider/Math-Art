@@ -50,7 +50,13 @@
     "sources": [
       "M. Kuehnel, 'A note on octic hypersurfaces with many nodes', arXiv:math/0210440v3 [math.AG] (2002, revised 2003).",
       "Cited from O. Labs, Algebraic Surface Homepage, octic pages."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Marco Kuehnel",
   "year": 2002,

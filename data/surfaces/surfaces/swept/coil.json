@@ -41,13 +41,12 @@
     "sources": [
       "R. Ferreol, \"Coil (Serpentin)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1233_serpentin_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1233_serpentin_2.md)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1233_serpentin_2",
-        "agrees": true,
-        "detail": "page title 'Coild' vs record name 'Coil'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Helical tube",

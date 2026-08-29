@@ -53,7 +53,13 @@
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
       "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -66,5 +72,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 15895,
+      "edges": 31714,
+      "faces": 15818,
+      "euler_characteristic": -1,
+      "angle_defect_total": 24.659749,
+      "area": 7.202799,
+      "volume": 0.113246,
+      "components": 1,
+      "boundary_loops": 3,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 15529,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.707711,
+        1.940054,
+        2.0
+      ],
+      "aspect_ratio": 0.853855
+    }
   }
 }

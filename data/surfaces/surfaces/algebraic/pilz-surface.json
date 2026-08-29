@@ -51,7 +51,13 @@
       "3DXM Consortium, \"Functions with compact levels in 3D-XplorMath\", virtualmathmuseum.org/docs/ImplicitCompact.pdf -- the formulas and the default parameters used here.  A converted copy is in research/papers/algebraic-surfaces/vmm-implicit-surfaces-compact/.",
       "H. Karcher and R. Palais, 3D-XplorMath / Virtual Math Museum surface gallery, virtualmathmuseum.org/Surface/.",
       "3DXM Virtual Math Museum, implicit-surfaces gallery."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "published"
@@ -67,5 +73,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 72634,
+      "edges": 217914,
+      "faces": 145276,
+      "euler_characteristic": -4,
+      "angle_defect_total": -25.130782,
+      "area": 12.316234,
+      "volume": 1.397591,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 63204,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.818005,
+        2.0,
+        1.866694
+      ],
+      "aspect_ratio": 0.909002
+    }
   }
 }

@@ -54,6 +54,19 @@ POLYNOMIAL = {
     # with the monkey saddle. Rejected by the oracle. Cartan's umbrella is
     # the cone over an Agnesi cubic: z(x^2 + y^2) = x^3.
     "cartans-umbrella": "z*(x**2 + y**2) - x**3",
+    # The general Darboux cyclide
+    #   (x^2+y^2+z^2)^2 + (x^2+y^2+z^2)(ax+by+cz) + P_2 = 0
+    # at the operator's default member: (a,b,c) = (0.9, 0, 0) and P_2
+    # derived from the ring (R, r) = (1, 0.45).  The ring is left in
+    # symbolically rather than folded into decimals so the derivation
+    # stays readable -- with a = 0 these coefficients ARE the torus,
+    # which is the identity the module's self-test gates on.
+    "darboux-cyclide":
+        "(x**2 + y**2 + z**2)**2"
+        " + (x**2 + y**2 + z**2)*(0.9*x)"
+        " + (2*(1.0**2 - 0.45**2) - 4*1.0**2)*(x**2 + y**2)"
+        " + 2*(1.0**2 - 0.45**2)*z**2"
+        " + (1.0**2 - 0.45**2)**2",
 }
 
 # ---------------------------------------------------------------------------

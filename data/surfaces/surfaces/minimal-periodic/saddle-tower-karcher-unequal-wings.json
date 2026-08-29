@@ -62,7 +62,13 @@
         "agrees": true,
         "detail": "'Hermann Karcher's Scherk Towers are translation invariant minimal surface with genus 0 in the quotient'; Perez-Traizet: 'the only singly periodic minimal surfaces of genus 0 with annular ends.'"
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -72,5 +78,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 11652,
+      "edges": 23092,
+      "faces": 11440,
+      "euler_characteristic": 0,
+      "angle_defect_total": 13.764551,
+      "area": 6.844502,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 8859,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        1.369244
+      ],
+      "aspect_ratio": 0.684622
+    }
   }
 }

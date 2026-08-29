@@ -51,13 +51,12 @@
     "sources": [
       "B. Morin's halfway model for the sphere eversion; see G. Francis, A Topological Picturebook (1987)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1306_morin_2",
-        "agrees": true,
-        "detail": "page title \"Morin's surface\" vs record name \"Morin's Surface\""
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Bernard Morin",
   "year": 1978,
@@ -78,5 +77,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4514,
+      "edges": 9120,
+      "faces": 4608,
+      "euler_characteristic": 2,
+      "angle_defect_total": 33.735207,
+      "area": 3.902367,
+      "volume": 0.000189,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 272,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        2.0,
+        0.440402
+      ],
+      "aspect_ratio": 0.220201
+    }
   }
 }

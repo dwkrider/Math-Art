@@ -96,10 +96,26 @@ def _inliers(pts):
     return pts[keep] if keep.any() else pts
 
 def _smooth_boundary(V, quads, iters=10, lam=0.5):
-    """Relax open mesh-boundary loops in place: each boundary vertex is
-    averaged toward its two boundary neighbours. Removes the grid
+    """Relax open mesh-boundary loops in place, removing the grid
     staircase left on an end-rim cut from an axis-aligned grid, without
-    disturbing interior vertices."""
+    disturbing interior vertices.
+
+    Each iteration is a Taubin lambda / -lambda pair: a Laplacian step
+    toward the two boundary neighbours' midpoint, then the same step
+    reversed.  Per pair the gain on a loop mode of frequency w = 1-cos(omega)
+    is (1 - lam*w)(1 + lam*w) = 1 - lam^2 w^2: the alternating staircase
+    zigzag (the Nyquist mode, w = 2, gain 0 at lam = 0.5) is annihilated
+    exactly as a plain Laplacian would, but the first-order SHRINK term of
+    the Laplacian cancels.  That shrink is not cosmetic: on a smoothly
+    curved rim every neighbour-chord midpoint lies on the concave side, so
+    a plain Laplacian translates the whole loop inward by the chord sagitta
+    (~ curvature * spacing^2 / 2) per step.  With rim-graded radial
+    sampling (Enneper et al.) that pull exceeds the last-ring gap, dragging
+    the boundary ring through its neighbour and folding the outermost face
+    ring inside out -- one full ring of inverted normals, seen as a thin
+    doubled "lip" along the rim.  The pair keeps smooth loops in place to
+    second order, so an analytically sampled rim is (correctly) a near
+    no-op while a clipped staircase rim still comes out clean."""
     if not quads:
         return V
     from collections import defaultdict
@@ -126,7 +142,9 @@ def _smooth_boundary(V, quads, iters=10, lam=0.5):
     n1 = np.array([nbr[v][1] for v in loop])
     for _ in range(iters):
         target = 0.5 * (V[n0] + V[n1])
-        V[idx] += lam * (target - V[idx])
+        V[idx] += lam * (target - V[idx])       # smoothing step
+        target = 0.5 * (V[n0] + V[n1])
+        V[idx] -= lam * (target - V[idx])       # anti-shrink step
     return V
 
 

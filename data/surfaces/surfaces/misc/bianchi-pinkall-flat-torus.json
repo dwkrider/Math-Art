@@ -5,10 +5,14 @@
   "primary_family": "misc",
   "families": [
     "aperiodic",
+    "closed",
+    "closed-orientable",
     "def-parametric",
-    "immersed",
+    "embedded",
+    "flat",
     "implemented",
-    "misc"
+    "misc",
+    "tradition-classical"
   ],
   "definition": {
     "mode": "parametric",
@@ -16,16 +20,24 @@
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.hopf_fibration_generator, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
-    "condition": "none",
-    "also_satisfies": []
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ]
   },
-  "topology": {},
+  "topology": {
+    "genus": 1,
+    "compact": true,
+    "orientable": true,
+    "euler_characteristic": 0,
+    "class": "closed-orientable"
+  },
   "symmetry": {
     "kind": "none",
     "periodicity_rank": 0
   },
   "embedding": {
-    "quality": "immersed"
+    "quality": "embedded"
   },
   "construction": [
     {
@@ -39,16 +51,51 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
-    ]
+      "U. Pinkall, 'Hopf tori in S^3', Invent. Math. 81 (1985)."
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
+  "discovered_by": "Luigi Bianchi; Ulrich Pinkall",
+  "year": 1985,
+  "tradition": [
+    "classical"
+  ],
   "ids": {
     "vmm": "ch072_bianchi_pinkall_tori"
   },
   "fabrication": {
-    "developable": false,
-    "printable_watertight": false,
+    "developable": true,
+    "printable_watertight": true,
     "requires_thickening": false,
-    "sliceable": false
+    "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12800,
+      "edges": 25600,
+      "faces": 12800,
+      "euler_characteristic": 0,
+      "angle_defect_total": 31.768738,
+      "area": 10.455994,
+      "volume": 1.406819,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 462,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.015594,
+        2.19352,
+        1.157206
+      ],
+      "aspect_ratio": 0.527557
+    }
   }
 }

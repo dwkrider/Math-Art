@@ -73,7 +73,13 @@
     "sources": [
       "C. C. Chen and F. Gackstatter, 'Elliptische und hyperelliptische Funktionen und vollstandige Minimalflachen vom Enneperschen Typ', Math. Ann. 259 (1982).",
       "C. C. Chen, F. Gackstatter, Math. Ann. 259 (1982) 359-369; M. Weber (mirror: minsurf ch058): total curvature -4pi(g+1) for the genus-g member, 'the largest possible value for its genus'."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -89,5 +95,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3227,
+      "edges": 6388,
+      "faces": 3160,
+      "euler_characteristic": -1,
+      "angle_defect_total": -16.953943,
+      "area": 6.081547,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 2780,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.490832,
+        1.490832,
+        2.0
+      ],
+      "aspect_ratio": 0.745416
+    }
   }
 }

@@ -45,7 +45,13 @@
       "Y. Villarceau (1848): a torus of revolution carries two extra circles through each point, the \"Villarceau circles\" -- exactly the Hopf fibres of a stereographically projected Clifford torus.",
       "Ulrich Pinkall, \"Hopf tori in S^3\", Invent. Math. 81 (1985), 379-386 (the Hopf torus over a curve on S^2, and the theorem that it is Willmore exactly over an elastic curve).",
       "Luigi Bianchi (1894): classification of the flat surfaces immersed in S^3; the case with one family of asymptotic lines a great circle is exactly the Hopf tori.  Modern treatment in M. Spivak, \"A Comprehensive Introduction to Differential Geometry\", vol. IV, p. 139ff."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "ids": {
     "vmm": "ch073_hopf_fibered"
@@ -55,5 +61,29 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12800,
+      "edges": 25600,
+      "faces": 12800,
+      "euler_characteristic": 0,
+      "angle_defect_total": 31.768738,
+      "area": 10.455994,
+      "volume": 1.406819,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 462,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.19352,
+        2.015594,
+        1.157206
+      ],
+      "aspect_ratio": 0.527557
+    }
   }
 }

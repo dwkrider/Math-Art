@@ -36,7 +36,16 @@
   },
   "curvature": {
     "condition": "none",
-    "also_satisfies": []
+    "also_satisfies": [],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 1.999999620487492,
+        "resolution": 160,
+        "tolerance": 0.002,
+        "passed": null
+      }
+    ]
   },
   "topology": {
     "compact": false,
@@ -64,13 +73,13 @@
     "sources": [
       "Classical."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1263_paraboloidelliptic_2",
-        "agrees": true,
-        "detail": "page title 'Elliptic paraboloid' vs record name 'Elliptic Paraboloid'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_radius"
@@ -88,5 +97,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 3073,
+      "edges": 6144,
+      "faces": 3072,
+      "euler_characteristic": 1,
+      "angle_defect_total": 4.16256,
+      "area": 4.905617,
+      "volume": 0.877029,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 2675,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.4,
+        1.2
+      ],
+      "aspect_ratio": 0.6
+    }
   }
 }

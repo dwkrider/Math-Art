@@ -40,6 +40,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 4.338595247927204,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -72,23 +81,13 @@
       "E. Beltrami, 'Saggio di interpretazione della geometria non-euclidea', Giornale di Matematiche 6 (1868).",
       "mathcurve.com, pseudosphere (mirror ch1210): 'Volume: 2/3 pi a^3; area: 4 pi a^2' -- the classical Huygens values."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1210_pseudosphere_2",
-        "agrees": true,
-        "detail": "page title 'Pseudosphere' vs record name 'Pseudosphere'"
-      },
-      {
-        "source": "mathcurve:ch1210_pseudosphere_2",
-        "agrees": true,
-        "detail": "record year 1868, page says 1868"
-      },
-      {
-        "source": "mathcurve:ch1210_pseudosphere_2",
-        "agrees": true,
-        "detail": "page independently describes this as 'k-const-negative'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "alternate_names": [
     "Tractricoid",
@@ -131,5 +130,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6144,
+      "edges": 12192,
+      "faces": 6048,
+      "euler_characteristic": 0,
+      "angle_defect_total": -5.64101,
+      "area": 5.629562,
+      "volume": 0.027789,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 5186,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.995067,
+        1.995067,
+        2.0
+      ],
+      "aspect_ratio": 0.997534
+    }
   }
 }

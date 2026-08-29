@@ -43,18 +43,12 @@
       "R. Ferreol, \"Rotation surface with proportional curvatures\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1365_revolpropor_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1365_revolpropor_2.md).",
       "W. Kuhnel, \"Differential Geometry: Curves - Surfaces - Manifolds\", p. 95, where the family is worked (the chapter's own reference, dated 1999)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1365_revolpropor_2",
-        "agrees": true,
-        "detail": "page title 'Rotation surface with proportional curvatures' vs record name 'Rotation Surface with Proportional Curvatures'"
-      },
-      {
-        "source": "mathcurve:ch1365_revolpropor_2",
-        "agrees": true,
-        "detail": "record year 1999, page says 1999"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "year": 1999,
   "tradition": [

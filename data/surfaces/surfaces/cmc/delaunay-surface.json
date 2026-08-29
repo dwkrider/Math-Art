@@ -45,18 +45,12 @@
     "sources": [
       "C. Delaunay, 'Sur la surface de revolution dont la courbure moyenne est constante', J. Math. Pures Appl. 6 (1841)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1252_delaunay_4",
-        "agrees": true,
-        "detail": "page title 'Delaunay surface' vs record name 'Delaunay Surface'"
-      },
-      {
-        "source": "mathcurve:ch1252_delaunay_4",
-        "agrees": true,
-        "detail": "record year 1841, page says 1841"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Charles-Eugene Delaunay",
   "year": 1841,

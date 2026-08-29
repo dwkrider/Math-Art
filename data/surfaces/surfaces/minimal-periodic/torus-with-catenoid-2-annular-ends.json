@@ -75,7 +75,13 @@
         "agrees": true,
         "detail": "One catenoidal and two annular ends per the page title ('Singly Periodic Surfaces with One Catenoid and Two Annular Ends'); genus 1 per the page's own resource naming ('Annular2Catenoidal1Genus1'); 'the limit of k-Noids of genus k for k to infinity'."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -88,5 +94,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 16724,
+      "edges": 33158,
+      "faces": 16432,
+      "euler_characteristic": -2,
+      "angle_defect_total": 1.007509,
+      "area": 5.770293,
+      "volume": 0.436101,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 15964,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.703896,
+        2.0,
+        1.289347
+      ],
+      "aspect_ratio": 0.644673
+    }
   }
 }

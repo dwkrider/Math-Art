@@ -41,13 +41,12 @@
     "sources": [
       "R. Ferreol, \"Helicoidal cone (Cone helicoidal)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1064_conehelicoidal (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1064_conehelicoidal.md)."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1064_conehelicoidal",
-        "agrees": true,
-        "detail": "page title 'Elliptic cone' vs record name 'Helicoidal Cone'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

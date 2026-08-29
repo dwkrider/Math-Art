@@ -69,7 +69,13 @@
         "agrees": true,
         "detail": "'It was the first genus 2 embedded doubly periodic minimal surface, adding a handle to one of the Karcher-Meeks-Rosenberg examples'; 4-ended (parallel annular ends inherited from KMR)."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -82,5 +88,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 33794,
+      "edges": 67076,
+      "faces": 33280,
+      "euler_characteristic": -2,
+      "angle_defect_total": -22.936502,
+      "area": 7.770808,
+      "volume": 0.229865,
+      "components": 1,
+      "boundary_loops": 2,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 30019,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        0.713032,
+        2.0,
+        1.907142
+      ],
+      "aspect_ratio": 0.356516
+    }
   }
 }

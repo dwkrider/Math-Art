@@ -47,7 +47,13 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "S. Endrass, U. Persson and J. Stevens, 'Surfaces with triple points', arXiv:math/0010163v1 [math.AG] (2000), 37 pp."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "discovered_by": "Stephan Endrass, Ulf Persson and Jan Stevens",
   "year": 2000,

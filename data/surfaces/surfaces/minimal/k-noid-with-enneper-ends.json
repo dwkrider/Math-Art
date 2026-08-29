@@ -72,7 +72,13 @@
       "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
       "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
       "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -85,5 +91,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 18443,
+      "edges": 36737,
+      "faces": 18295,
+      "euler_characteristic": 1,
+      "angle_defect_total": 20.318772,
+      "area": 9.667853,
+      "volume": 0.260812,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 17903,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.47477,
+        2.0,
+        1.597981
+      ],
+      "aspect_ratio": 0.737385
+    }
   }
 }

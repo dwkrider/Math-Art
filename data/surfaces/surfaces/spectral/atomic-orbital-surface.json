@@ -41,12 +41,42 @@
     "sources": [
       "E. Schroedinger, \"Quantisierung als Eigenwertproblem\", Annalen der Physik 384 (1926) -- the wave equation whose bound states these are.",
       "The closed form psi_nlm = R_nl(r) Y_lm(theta, phi), with R_nl an associated Laguerre polynomial and Y_lm a spherical harmonic, is standard; see L. Pauling and E. B. Wilson, \"Introduction to Quantum Mechanics\" (1935), chapter V, for the derivation and the tabulated low-n forms."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 84308,
+      "edges": 252912,
+      "faces": 168608,
+      "euler_characteristic": 4,
+      "angle_defect_total": 25.136562,
+      "area": 10.011877,
+      "volume": 2.031686,
+      "components": 2,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 73467,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        1.38492,
+        1.38492,
+        2.0
+      ],
+      "aspect_ratio": 0.69246
+    }
   }
 }

@@ -399,6 +399,40 @@ INVARIANTS = {
                              "and is not recorded here.",
         },
     },
+
+    # The one surface added by the algebraic transcription pass that had
+    # NO curated record to merge into, and so would otherwise have been
+    # the only member of the many-nodal octic family carrying an
+    # implementation and no published count to check it against.  The
+    # count is the only reason the surface is interesting, so a record
+    # without it is a record of nothing.
+    "van-straten-octic-124-nodes": {
+        "discovered_by": "Duco van Straten",
+        "embedding": {
+            "quality": "singular",
+            "singularities": [
+                {"type": "node (A1)", "count": 124,
+                 "note": "Per the mirrored vstrconstr page.  Of these, "
+                         "96 are REAL and affine, at closed-form "
+                         "octagon-trigonometric positions "
+                         "(rho in {tan(pi/8), 1, 1+sqrt(2), ...}); the "
+                         "remainder are complex or at infinity.  A "
+                         "finite numerical count is therefore expected "
+                         "to stop at 96, and that shortfall is "
+                         "consistent rather than a discrepancy."}]},
+        "symmetry": {"kind": "point", "periodicity_rank": 0,
+                     "schoenflies": "D8h", "verified_by": "curated"},
+        "definition": {"degree": 8},
+        "relations": {"member_of": "van-straten-dihedral-series"},
+        "provenance": {"sources": [
+            "D. van Straten's D8 x Z2-symmetric octic construction, as "
+            "mirrored on O. Labs's Algebraic Surface Homepage "
+            "(vstrconstr page), which prints the equation in full.",
+            "The octics survey on the same site: Miyaoka's bound for an "
+            "octic is 174 and the best known count is 168, which is the "
+            "scale this 124 sits on.",
+        ]},
+    },
 }
 
 

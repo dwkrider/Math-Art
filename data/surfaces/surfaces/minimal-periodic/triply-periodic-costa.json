@@ -55,7 +55,13 @@
         "agrees": true,
         "detail": "'A 1-parameter family of embedded triply periodic minimal surfaces of genus 4 with horizontal straight lines and vertical symmetry planes.'  D. Freese, M. Weber, A. T. Yerger, R. Yol, 'Two New Embedded Triply Periodic Minimal Surfaces of Genus 4' (arXiv)."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

@@ -47,7 +47,13 @@
       "M. Weber, 'The Horgan Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch062_the_horgan_surface.md).",
       "M. Weber, 'Non-Existent Surfaces (the section index that lists it as a failed construction)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch061_non_existent_surfaces.md).",
       "M. Weber, 'On the Horgan minimal non-surface', Calc. Var. Partial Differential Equations 7 (1998) 373-379."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"

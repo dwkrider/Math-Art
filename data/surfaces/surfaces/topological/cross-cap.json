@@ -58,13 +58,12 @@
     "sources": [
       "D. Hilbert and S. Cohn-Vossen, Anschauliche Geometrie (1932) -- Geometry and the Imagination, the standard exposition."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1243_bonnetcroise_2",
-        "agrees": true,
-        "detail": "page title 'Cross-cap' vs record name 'Cross-Cap'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -79,5 +78,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 4465,
+      "edges": 8976,
+      "faces": 4512,
+      "euler_characteristic": 1,
+      "angle_defect_total": 13.092505,
+      "area": 12.499914,
+      "volume": 0.0,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 805,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        1.997903,
+        1.997903
+      ],
+      "aspect_ratio": 0.998951
+    }
   }
 }

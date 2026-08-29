@@ -550,6 +550,44 @@ if _IN_BLENDER:
             name="Surface", items=_SURFACES,
             default='HYPERBOLIC_HELICOID',
             description="Which swept surface to build")
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "The surface itself, as a "
+                                      "continuous sheet"),
+                   ('LATTICE', "Cell Lattice",
+                    "A sparse openwork net of struts along the cells "
+                    "of the surface's dual, as a live modifier stack")],
+            default='SOLID',
+            description="Build the surface as a solid sheet or as an "
+                        "openwork lattice of struts along its dual")
+        # Cell Lattice style -- the canonical names cell_lattice.PROPS
+        # declares, so styles.cell_lattice.apply_from picks them up.
+        # These must stay spelled exactly as PROPS spells them: a
+        # mismatch does not raise, it silently substitutes the PROPS
+        # default and the slider does nothing.
+        cell_size: FloatProperty(
+            name="Cell Size", default=0.12, min=0.005, max=1.0,
+            description="Fraction of the surface's triangles kept "
+                        "before taking the dual: lower leaves fewer, "
+                        "larger cells")
+        strut_thickness: FloatProperty(
+            name="Strut Thickness", default=0.03, min=0.001, max=1.0,
+            description="Thickness of the lattice struts, in the "
+                        "unscaled surface's units")
+        smoothing: IntProperty(
+            name="Smoothing", default=1, min=0, max=4,
+            description="Subdivision levels rounding the struts")
+        keep_boundaries: BoolProperty(
+            name="Keep Boundaries", default=True,
+            description="Keep the rim of the swept sheet intact when "
+                        "taking the dual; without it the boundary "
+                        "cells are eaten away. Most swept surfaces are "
+                        "open sheets, so this matters here")
+        even_thickness: BoolProperty(
+            name="Even Thickness", default=False,
+            description="Maintain strut width at sharp corners. Off by "
+                        "default: the correction grows without bound as "
+                        "a corner gets more acute")
         motion: EnumProperty(
             name="Motion",
             items=[('GENERAL', "General Darboux Motion",
@@ -748,7 +786,19 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            if self.thickness > 0:
+            # Thickness and the cell lattice are ALTERNATIVES, not a
+            # stack. The lattice replaces the sheet with an openwork of
+            # struts that carry their own thickness, so solidifying
+            # first would thicken a surface that is about to be thrown
+            # away. The style wins, and Thickness is hidden under it
+            # rather than silently ignored -- see `draw`.
+            if self.style == 'LATTICE':
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.apply_from(obj, self, scale=self.scale)
+            elif self.thickness > 0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
                 mod.offset = 0.0
@@ -773,6 +823,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'surface')
+            lay.prop(self, 'style')
             if self.surface == 'DARBOUX':
                 keys = ('motion', 'generatrix', 'curve_size')
                 if self.generatrix == 'ELLIPSE':
@@ -799,9 +850,20 @@ if _IN_BLENDER:
                 keys = ('sph_a', 'sph_h', 'turns')
             else:
                 keys = ('cork_a', 'cork_b')
-            for k in keys + ('resolution', 'smooth',
-                             'thickness', 'scale'):
+            for k in keys + ('resolution', 'smooth'):
                 lay.prop(self, k)
+            if self.style == 'LATTICE':
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.draw_props(lay, self)
+            else:
+                # not offered under the lattice style: it would be
+                # ignored there, and a control that does nothing is
+                # worse than an absent one
+                lay.prop(self, 'thickness')
+            lay.prop(self, 'scale')
 
             _rim.draw_rim(lay, self)
     def _menu_func(self, context):

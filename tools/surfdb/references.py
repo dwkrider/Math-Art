@@ -1,6 +1,7 @@
 # Citations, harvested from the module headers that already carry them.
 #
-# CLAUDE.md requires every generator module in math_art/ to credit the
+# The contributor notes require every generator module in math_art/ to
+# credit the
 # mathematics it implements in a `References:` block -- the mathematician,
 # the paper or book, the year.  Those blocks are vetted, they are kept
 # current by whoever writes the generator, and `docs/scaffold_pages.py`

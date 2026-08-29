@@ -51,13 +51,12 @@
     "sources": [
       "The classification theorem of closed orientable surfaces."
     ],
-    "cross_checked": [
-      {
-        "source": "mathcurve:ch1261_tn_4",
-        "agrees": true,
-        "detail": "page title 'n-holed torus' vs record name 'Genus-g Surface'"
-      }
-    ]
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -117,5 +116,29 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 12382,
+      "edges": 37152,
+      "faces": 24768,
+      "euler_characteristic": -2,
+      "angle_defect_total": -12.567333,
+      "area": 3.347139,
+      "volume": 0.228499,
+      "components": 1,
+      "boundary_loops": 0,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 11013,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.863883,
+        0.341574
+      ],
+      "aspect_ratio": 0.170787
+    }
   }
 }

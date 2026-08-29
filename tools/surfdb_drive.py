@@ -15,7 +15,7 @@
 # describes will eventually describe code that no longer exists.
 #
 # TWO TRAPS, both already paid for once in this repo and both documented
-# in CLAUDE.md:
+# in the project's contributor notes:
 #
 #   * NEVER pass --factory-startup.  It disables extensions, so every
 #     Math Art operator appears unregistered and you conclude the whole

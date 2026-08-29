@@ -163,7 +163,77 @@ def _septic_sextic_records():
         "labs-sextic-35-cusps": {
             "name": "Labs Sextic (35 cusps)", "family": "algebraic",
             "mode": "implicit",
-            "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
+            # NOT the generic "equation not transcribed" block. This one is
+            # TERMINAL, and worth stating precisely, because it is the kind
+            # of obstruction that looks like a transcription failure and is
+            # not.
+            #
+            # s is NOT an auxiliary quantity -- it is a coefficient of the
+            # surface.  With f = p - q^3 and q = s(x^2+y^2) + t z^2 + u wz
+            # + v w^2, the sextic's coefficients are polynomials in s, so a
+            # non-real s propagates straight into them.  Eliminating t and u
+            # from the mirrored Singular script's ideal (a lex Groebner
+            # basis over sextic35cusps_all.sin lines 165-171) gives the
+            # paper's equation (3),
+            #
+            #     884736 s^6 - 8640 s^3 + 25 = 0,
+            #
+            # i.e. 2^15*3^3 s^6 - 2^6*3^3*5 s^3 + 5^2, a quadratic in s^3 of
+            # discriminant 8640^2 - 4*884736*25 = -13,824,000 < 0.  No real
+            # root, so no real s, so S_35 exists only over C.  Labs draws
+            # the same conclusion and extends it to the WHOLE four-parameter
+            # family, which closes the obvious escape route ("maybe some
+            # other member is real"):
+            #
+            #   "Note that the coefficients of the surface S_35 are not
+            #    real. In fact, the ideal sl_{f,3} does not contain any real
+            #    point, because equation (3) does not have any real root. In
+            #    particular, it is not possible to use the software surf to
+            #    draw an image of this sextic. This also holds for the more
+            #    general family f_{s,t,u,v} because of equation (2)."
+            #       -- arXiv:math/0502520, section 1, after Corollary 2.
+            #
+            # WHY THIS LOOKS WRONG AT FIRST, and is not.  Labs sextics ARE
+            # rendered all over the place, which makes "cannot be drawn"
+            # sound absurd.  Those pictures are of DIFFERENT surfaces: the
+            # same paper's Theorem 3 sextic (30 real cusps + 10 real nodes,
+            # its Figure 1), Labs's 99-node septic, and Barth's 65-node
+            # sextic.  None of them is S_35.  The contrast with the septic
+            # is the tell: there the analogous condition 7a^3 + 7a + 1 = 0
+            # HAS a real root (a = -0.14010685...) and every singularity is
+            # real, which is exactly why that one is everywhere and this one
+            # is nowhere.
+            #
+            # SCOPE, precisely.  What is proved is that no member OF THIS
+            # FAMILY with 35 cusps is real, and that 35 <= mu_A2(6) <= 37
+            # over C.  It is NOT proved that no real sextic with 35 cusps
+            # exists at all -- that is open.  Do not strengthen this.
+            "blocked_by":
+                "Not built, and not buildable by this add-on: the 35-cusp "
+                "member of the family has NON-REAL coefficients, so its real "
+                "solution set is not a surface (at most a curve) and there "
+                "is nothing to mesh.  The Singular script's elimination "
+                "gives the paper's equation (3), "
+                "884736*s^6 - 8640*s^3 + 25 = 0, for the parameter s that "
+                "enters the surface's own coefficients; it is a quadratic "
+                "in s^3 of discriminant "
+                "8640^2 - 4*884736*25 = -13824000 < 0 and so has no real "
+                "root.  Labs states the conclusion himself -- 'the "
+                "coefficients of the surface S_35 are not real ... it is "
+                "not possible to use the software surf to draw an image of "
+                "this sextic' -- and extends it to the whole four-parameter "
+                "family.  Terminal, not a missing transcription.  NOTE the "
+                "scope: no member OF THIS FAMILY with 35 cusps is real; "
+                "whether some other real sextic attains 35 cusps is open.",
+            "resume":
+                "Nothing to resume for the 35-cusp surface itself.  The "
+                "buildable substitute from the same paper is its Theorem 3 "
+                "sextic -- the one its Figure 1 actually shows -- which "
+                "carries 30 REAL cusps and 10 real nodes at "
+                "s0 = 5**(1/3)/12, t0 = 4*s0, u = 0 (its nodes lie at "
+                "infinity).  Source: O. Labs, 'A Sextic with 35 Cusps', "
+                "arXiv:math/0502520, Theorem 3; and the mirrored Singular "
+                "source sextic35cusps_all.sin in algsurf/book/data/.",
             "sources": [
                 _src("ch005_mainframe",
                      "Algebraic Surface Homepage (announcing 'A Sextic "

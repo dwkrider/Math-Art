@@ -47,7 +47,13 @@
     "sources": [
       "The 3DXM Consortium, 'Karcher JE Saddle Tower', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch026_karcher_je_st.md).",
       "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) 83-114."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

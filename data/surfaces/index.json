@@ -80,8 +80,8 @@
     "swept",
     "topological"
   ],
-  "count": 425,
-  "implemented_count": 310,
+  "count": 426,
+  "implemented_count": 330,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -432,20 +432,24 @@
       "primary_family": "misc",
       "families": [
         "aperiodic",
+        "closed",
+        "closed-orientable",
         "def-parametric",
-        "immersed",
+        "embedded",
+        "flat",
         "implemented",
-        "misc"
+        "misc",
+        "tradition-classical"
       ],
       "definition_mode": "parametric",
       "has_approximation": false,
-      "curvature_condition": "none",
+      "curvature_condition": "flat",
       "periodicity_rank": 0,
-      "genus": null,
+      "genus": 1,
       "genus_per_cell": null,
-      "orientable": null,
+      "orientable": true,
       "ends": 0,
-      "embedding": "immersed",
+      "embedding": "embedded",
       "symmetry": {
         "kind": "none",
         "symbol": null,
@@ -2001,7 +2005,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -2019,8 +2023,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -2858,7 +2864,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -2876,8 +2882,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -3162,7 +3170,7 @@
         "cyclide",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-architectural",
         "tradition-classical"
       ],
@@ -3181,8 +3189,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -4152,7 +4162,7 @@
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -4171,20 +4181,22 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
       "slug": "endrass-octic-family",
-      "name": "Endrass Octic Family (D8 x Z2)",
+      "name": "Endrass Octic Family",
       "path": "surfaces/algebraic/endrass-octic-family.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -4203,8 +4215,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 7
     },
     {
@@ -4971,7 +4985,7 @@
     },
     {
       "slug": "fresnel-wave-surface",
-      "name": "Fresnel's Wave Surface",
+      "name": "Fresnel Wave Surface",
       "path": "surfaces/algebraic/fresnel-wave-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -4979,7 +4993,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical",
         "tradition-physical"
       ],
@@ -4998,8 +5012,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -5425,7 +5441,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -5443,8 +5459,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -6000,7 +6018,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -6018,8 +6036,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -6786,7 +6806,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -6804,8 +6824,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7610,7 +7632,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -7628,8 +7650,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7812,7 +7836,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -7830,24 +7854,26 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
       "slug": "mobius-surface",
-      "name": "Möbius Surface",
+      "name": "Moebius Surface",
       "path": "surfaces/algebraic/mobius-surface.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
-        "def-parametric",
-        "not-implemented",
+        "def-implicit",
+        "implemented",
         "self-intersecting",
         "tradition-classical"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "implicit",
       "has_approximation": false,
       "curvature_condition": "none",
       "periodicity_rank": 0,
@@ -7862,20 +7888,22 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
       "slug": "modified-chmutov-octic",
-      "name": "Modified Chmutov Octic (144 real nodes)",
+      "name": "Modified Chmutov Octic (144 nodes)",
       "path": "surfaces/algebraic/modified-chmutov-octic.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -7894,8 +7922,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8388,7 +8418,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -8406,8 +8436,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8764,7 +8796,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -8782,8 +8814,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11068,7 +11102,7 @@
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -11087,8 +11121,10 @@
         "ita_number": null,
         "order": 24
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11268,13 +11304,13 @@
       "families": [
         "algebraic",
         "aperiodic",
-        "def-parametric",
-        "not-implemented",
+        "def-implicit",
+        "implemented",
         "self-intersecting",
         "tradition-classical",
         "tradition-gallery"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "implicit",
       "has_approximation": false,
       "curvature_condition": "none",
       "periodicity_rank": 0,
@@ -11289,8 +11325,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11743,7 +11781,8 @@
         "def-parametric",
         "immersed",
         "implemented",
-        "swept"
+        "swept",
+        "tradition-gallery"
       ],
       "definition_mode": "parametric",
       "has_approximation": false,
@@ -13060,7 +13099,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -13078,8 +13117,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13667,7 +13708,7 @@
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -13686,8 +13727,44 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "van-straten-octic-124-nodes",
+      "name": "Van Straten Octic (124 nodes)",
+      "path": "surfaces/algebraic/van-straten-octic-124-nodes.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "implemented",
+        "singular",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "singular",
+      "symmetry": {
+        "kind": "point",
+        "symbol": "D8h",
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {

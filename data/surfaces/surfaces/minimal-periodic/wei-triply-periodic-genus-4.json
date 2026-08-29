@@ -47,7 +47,13 @@
     "sources": [
       "M. Weber, 'Wei's Triply Periodic Surface of Genus 4', minimalsurfaces.blog (local mirror: minsurf/book/.../ch335_weis_triply_periodic_surface_of_genus_4.md).",
       "F. Wei, 'Some existence and uniqueness theorems for doubly periodic minimal surfaces', Invent. Math. 109 (1992) 113-136."
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "metrics": {
     "normalization": "unit_cell"

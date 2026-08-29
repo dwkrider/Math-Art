@@ -62,7 +62,13 @@
         "agrees": true,
         "detail": "M1+ has quotient genus 2 ('a surface of genus 2 they dub M1+, different from Fusheng Wei's genus 2 surface'); the M1+- member is 'a doubly periodic genus 3 surface with 4 parallel annular ends'.  No single genus is asserted because the shipped row carries both members."
       }
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -75,5 +81,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 35946,
+      "edges": 71276,
+      "faces": 35328,
+      "euler_characteristic": -2,
+      "angle_defect_total": -18.068739,
+      "area": 4.611838,
+      "volume": 0.13084,
+      "components": 1,
+      "boundary_loops": 4,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 31701,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.958889,
+        1.047865
+      ],
+      "aspect_ratio": 0.479444
+    }
   }
 }

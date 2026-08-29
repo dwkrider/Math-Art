@@ -36,6 +36,15 @@
     },
     "also_satisfies": [
       "weingarten"
+    ],
+    "measured": [
+      {
+        "definition_index": 0,
+        "max_abs_mean_curvature": 8.72684899965487e-06,
+        "resolution": 180,
+        "tolerance": 0.002,
+        "passed": true
+      }
     ]
   },
   "topology": {
@@ -68,7 +77,14 @@
       "D. Hoffman & W. H. Meeks III (1985+) Costa-Hoffman-Meeks; H. Karcher (1988) saddle towers (\"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62);",
       "W. H. Meeks III (1981) the minimal Mobius strip (\"The classification of complete minimal surfaces in R3 with total curvature greater than -8pi\", Duke Math. J. 48);",
       "B. Riemann (1867) the singly periodic minimal example foliated by circles; H. A. Schwarz (1890) the Bjorling formula;"
-    ]
+    ],
+    "verified": {
+      "expressions_parse": true,
+      "exact_values_match": true,
+      "generated_fields_match": true,
+      "curvature_condition": true,
+      "tolerance": 0.002
+    }
   },
   "tradition": [
     "classical"
@@ -79,5 +95,29 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "mesh_recipe": {
+    "measured": {
+      "vertices": 6889,
+      "edges": 13612,
+      "faces": 6724,
+      "euler_characteristic": 1,
+      "angle_defect_total": 14.949857,
+      "area": 2.159798,
+      "volume": 0.158271,
+      "components": 1,
+      "boundary_loops": 1,
+      "manifold": false,
+      "nonmanifold_edges": 0,
+      "nonmanifold_vertices": 6510,
+      "orientable": null,
+      "one_sided": null,
+      "bounding_box": [
+        2.0,
+        0.561706,
+        0.804684
+      ],
+      "aspect_ratio": 0.280853
+    }
   }
 }

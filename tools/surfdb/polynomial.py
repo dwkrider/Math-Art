@@ -9,7 +9,8 @@
 # That is not the exact language: `^` is not exponentiation, `y^2z^3` has
 # an implied multiplication, and there is a right-hand side.  Normalising
 # it is a transcription step, and transcription is exactly the operation
-# this database is most afraid of -- CLAUDE.md and the record schema both
+# this database is most afraid of -- the contributor notes and the
+# record schema both
 # say so, because a mistyped coefficient does not error, it silently
 # yields a DIFFERENT surface with the wrong node count.
 #
