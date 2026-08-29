@@ -1328,7 +1328,7 @@ if _IN_BLENDER:
             default='BFS',
             description="How the faces are unfolded into the plane")
         net_seed: IntProperty(
-            name="Seed", default=0, min=0,
+            name="Net Seed", default=0, min=0,
             description="Which set of unfoldings Best Of Many tries; "
                         "change it for a different net of the same "
                         "solid")

@@ -24,7 +24,7 @@ A **zonohedron** is a convex solid whose every face is centrally symmetric (a po
 | --- | --- | --- |
 | Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
 | Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
-| Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
 | Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
 | Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
 | Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |

@@ -1,6 +1,6 @@
-# Icosahedron Stellation
+# Stellation
 
-![Icosahedron Stellation](../images/icosahedron_stellation.png)
+![Stellation](../images/icosahedron_stellation.png)
 
 ## Overview
 
@@ -30,7 +30,7 @@ The number 59 is a convention, not a fact of nature — different rules give dif
 | --- | --- | --- |
 | Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
 | Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
-| Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
 | Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
 | Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
 | Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
@@ -49,24 +49,24 @@ The number 59 is a convention, not a fact of nature — different rules give dif
 | g1 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
 | g2 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
 | g3 (outer) | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 11 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 12 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 13 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 14 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 15 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 16 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 17 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 18 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 19 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 20 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 21 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 22 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 23 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 24 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 25 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 26 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 27 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
-| 28 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 11 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 12 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 13 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 14 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 15 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 16 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 17 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 18 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 19 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 20 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 21 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 22 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 23 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 24 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 25 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 26 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 27 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 28 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
 | Chirality | Both hands | A chiral shell splits into a mirror-image pair of half-shells. Keeping one gives a chiral stellation -- this is what separates Crennell 33-59 from their reflexible namesakes. Both hands, One hand, Other hand. |
 | Cell Code | `a b c d e1` | Shell labels separated by spaces. Du Val names work for the icosahedron; add 'a' or 'b' to a chiral shell to keep one hand, e.g. 'f1a' |
 | Style | Solid | How the stellation is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Papercraft Net. |
