@@ -107,6 +107,12 @@ PARAMS = {
     # which is the point; exploded it reads as debris at 64 px.
     "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
                             explode=0.0, color='BLOCK'),
+    # The dodecahedron's cluster is Webster's original -- twelve 5-fold
+    # units -- and exploding it a little is what makes the separate
+    # zonohedra legible at icon size; assembled, the cluster reads as one
+    # lumpy ball.  Coloured by unit order, as Webster draws them.
+    "mesh.zonohedra_cluster_add": dict(family='PLATONIC', platonic='DODECA',
+                                       explode=0.25, color='ORDER'),
     # Halfway is the whole point of the operator -- either end
     # is just a solid we already ship.  The cuboctahedron reads
     # clearly at icon size and its dual is the rhombic
@@ -409,6 +415,7 @@ SLUG_OVERRIDE = {
     "mesh.woven_polyhedron_add": "twisted_polyhedron",
     "mesh.poly_weave_add": "weave",
     "mesh.zonohedron_add": "zonohedra",
+    "mesh.zonohedra_cluster_add": "zonohedra_clusters",
     # The operator was renamed `tpms_add` -> `periodic_minimal_add`;
     # the page keeps the acronym everyone searches for, and keeps its
     # URL.  This override is what stops the two drifting apart again.
@@ -464,6 +471,10 @@ VARIANT_SELECTOR = {
     "mesh.dform_add": "mode",
     # -- polyhedra --
     "mesh.zonohedron_add": "kind",
+    # The seed family is the axis that changes the cluster; the
+    # individual solid within a family is a second axis the page
+    # describes in prose rather than multiplying the gallery by 19.
+    "mesh.zonohedra_cluster_add": "family",
     "mesh.polytope4d_add": "kind",
     "mesh.spiked_polyhedron_add": "preset",
     "mesh.hyperbolic_honeycomb_add": "preset",
@@ -622,6 +633,11 @@ VARIANT_SKIP = {
     # (A=50, B=310, C=-180).  It wants a hand-tuned VARIANT_EXTRA
     # entry from someone who knows the family, not a broken thumbnail.
     "mesh.spiral_tiling_add": {"POLY"},
+    # "From Active Object" reads its star off whatever mesh is selected,
+    # which in a headless render is nothing: the operator correctly
+    # refuses.  Same reason as GENERIC_SKIP_IDS' "ACTIVE", under this
+    # operator's own name for it.
+    "mesh.zonohedron_add": {"OBJECT"},
 }
 
 # Ids skipped in every gallery.  A "custom" entry is the operator
