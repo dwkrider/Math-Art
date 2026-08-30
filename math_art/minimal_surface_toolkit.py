@@ -606,6 +606,14 @@ if _IN_BLENDER:
             name="Storeys", default=3, min=1, max=8,
             description="Number of periodic fundamental domains to stack "
                         "(saddle tower); ignored for the rest")
+        reflect_depth: IntProperty(
+            name="Reflections", default=2, min=1, max=4,
+            description="How far to reflect the fundamental piece in "
+                        "its own boundary symmetry planes.  1 shows the "
+                        "bare piece; each step up adds another round of "
+                        "reflections, and the surface stops growing on "
+                        "its own once the orbit closes or stops "
+                        "verifying as a single clean sheet")
         radius: FloatProperty(
             name="Domain Radius", default=1.2, min=0.2, max=20.0,
             soft_max=4.0,
@@ -1148,9 +1156,16 @@ if _IN_BLENDER:
                 else:                                   # CUSTOM: exact morph
                     if surf == 'CLP':
                         _clp_params(self.clp_tau, self.clp_branch)
+                    # `cells` used to be meaningless for these rows --
+                    # they are grown from a fundamental piece rather than
+                    # arrayed on a lattice, so an X/Y/Z count had nothing
+                    # to act on.  It has something to act on now: the
+                    # rows that cannot close a full cell reflect their
+                    # piece in whichever boundary curves ARE symmetry
+                    # elements, as far as that stays one clean sheet.
                     verts, tris = build_tpms_exact(
-                        surf, cxyz, self.resolution, self.cell_size,
-                        self.assoc_angle,
+                        surf, self.reflect_depth, self.resolution,
+                        self.cell_size, self.assoc_angle,
                         arrangement=(self.arrangement
                                      if surf in TPMS_EXACT_ARRANGEMENTS
                                      else None))
@@ -1293,15 +1308,24 @@ if _IN_BLENDER:
                         lay.prop(self, 'clp_tau')
                         lay.prop(self, 'clp_branch')
                 if self.surface in TPMS_EXACT:
-                    # No cell counts here.  These are grown from a
-                    # fundamental piece by their own symmetry group, not
-                    # arrayed on a lattice, so an X/Y/Z count has
-                    # nothing to act on -- the Arrangement above is what
-                    # sets the size.  Level Offset and Cell Aspect go
-                    # too: both are properties of a NODAL field (the
-                    # constant c in F = c, and the c/a ratio of the
-                    # sampling cell) and neither exists for a surface
-                    # integrated from its Weierstrass data.
+                    # Still no X/Y/Z cell counts -- these are grown from
+                    # a fundamental piece by their own symmetry group
+                    # rather than arrayed on a lattice.  But Reflections
+                    # DOES act on them: most of these rows cannot close
+                    # a full unit cell, and shipping the bare
+                    # quadrilateral patch made them unrecognisable
+                    # against the published pictures.  Reflecting in the
+                    # boundary curves that do classify as symmetry
+                    # elements shows a real piece of the surface, and
+                    # the builder backs off by itself the moment the
+                    # orbit stops verifying.
+                    #
+                    # Level Offset and Cell Aspect stay hidden: both are
+                    # properties of a NODAL field (the constant c in
+                    # F = c, and the c/a ratio of the sampling cell) and
+                    # neither exists for a surface integrated from its
+                    # Weierstrass data.
+                    lay.prop(self, 'reflect_depth')
                     for k in ('resolution', 'cell_size', 'thickness',
                               'clip_sphere', 'clip_radius',
                               'shade_smooth'):

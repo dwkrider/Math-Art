@@ -17,6 +17,13 @@
 # k(s) = sqrt(a) cn(rs, p) -- so they are used by the Hopf-torus generator
 # to build Pinkall's Willmore tori.
 #
+# Carlson's symmetric integral R_F additionally accepts COMPLEX
+# arguments (principal square roots throughout; arguments must avoid the
+# negative real axis), and `elliptic_f` builds the incomplete integral
+# of the first kind F(phi | m) on it for complex phi and complex m --
+# which is what the toroidal Karcher-Scherk family needs to trim its
+# ends.
+#
 # References:
 #   Weierstrass P, P' and zeta via Jacobi theta functions: DLMF 23.6
 #   (elliptic functions) and DLMF 20.2 (the theta q-series).
@@ -26,6 +33,11 @@
 #   Functions" (1964), 16.4 (AGM scale) and 17.6 (complete integrals);
 #   DLMF 22.20(ii) and 19.8.  C. G. J. Jacobi, "Fundamenta nova theoriae
 #   functionum ellipticarum" (1829).
+#   Carlson symmetric integrals (complex R_F, incomplete F):
+#   B. C. Carlson, "Computing elliptic integrals by duplication",
+#   Numer. Math. 33 (1979), 1-16; B. C. Carlson, "Numerical computation
+#   of real or complex elliptic integrals", Numer. Algorithms 10 (1995),
+#   13-26; DLMF 19.36 (the duplication method).
 
 import math
 import numpy as np
@@ -154,13 +166,26 @@ _GL_X, _GL_W = _leggauss(48)
 # math_art/bubbleton_generator.py), so without the principal value the
 # nodoid half of the bubbleton family is unreachable.
 #
-# Reference: B. C. Carlson, "Numerical computation of real or complex
-# elliptic integrals", Numer. Algorithms 10 (1995), 13-26; duplication
-# algorithms as in Press et al., Numerical Recipes, Sect. 6.11.
+# `carlson_rf` below additionally accepts COMPLEX arguments (scalars or
+# ndarrays), which is what `elliptic_f` -- the incomplete first-kind
+# integral at complex amplitude and parameter -- is built on.  That pair
+# exists for the toroidal Karcher-Scherk family, whose end-trimming
+# needs F(phi, m) off the real axis.
+#
+# References:
+#   B. C. Carlson, "Computing elliptic integrals by duplication",
+#   Numer. Math. 33 (1979), 1-16 (the duplication algorithm and the
+#   fifth-order series in the symmetric deviations).
+#   B. C. Carlson, "Numerical computation of real or complex elliptic
+#   integrals", Numer. Algorithms 10 (1995), 13-26 (complex arguments,
+#   choice of square-root branch, error bounds).
+#   DLMF 19.36 (the duplication method in reference form); code layout
+#   of the real R_C/R_J duplications as in Press et al., Numerical
+#   Recipes, Sect. 6.11.
 
 _RC_ERRTOL = 1.2e-3
-_RF_ERRTOL = 8.0e-4
 _RJ_ERRTOL = 1.5e-3
+_RF_MAXITER = 100
 
 
 def carlson_rc(x, y):
@@ -185,23 +210,71 @@ def carlson_rc(x, y):
     return w * poly / math.sqrt(ave)
 
 
-def carlson_rf(x, y, z):
+def carlson_rf(x, y, z, rtol=1e-16):
     """Symmetric elliptic integral of the FIRST kind,
-    R_F = (1/2) int_0^inf dt / sqrt((t+x)(t+y)(t+z))."""
-    while True:
-        sx, sy, sz = math.sqrt(x), math.sqrt(y), math.sqrt(z)
-        alamb = sx * (sy + sz) + sy * sz
-        x = 0.25 * (x + alamb)
-        y = 0.25 * (y + alamb)
-        z = 0.25 * (z + alamb)
-        ave = (x + y + z) / 3.0
-        dx, dy, dz = (ave - x) / ave, (ave - y) / ave, (ave - z) / ave
-        if max(abs(dx), abs(dy), abs(dz)) <= _RF_ERRTOL:
+
+        R_F(x, y, z) = (1/2) int_0^inf dt / sqrt((t+x)(t+y)(t+z)),
+
+    for real or COMPLEX x, y, z -- scalars or ndarrays, broadcast
+    elementwise.  At most one argument may be zero, and none may lie on
+    the negative real axis.
+
+    Branch convention (the load-bearing choice): every square root taken
+    here -- the three roots inside each duplication step and the final
+    1/sqrt(mean) -- is the PRINCIPAL branch, cut along (-inf, 0), with
+    Re sqrt >= 0 (numpy sends a negative real with +0 imaginary part to
+    +i sqrt|.|).  Carlson (1995, Sect. 2) shows that for arguments in
+    the plane cut along the negative real axis this choice keeps the
+    duplication iterates in the cut plane and makes the algorithm
+    converge to the analytic continuation of the real integral -- the
+    principal branch of R_F, homogeneous of degree -1/2 with the
+    principal k**(-1/2).  Mixing branches between the three roots (or
+    using a root with Re < 0) lands on a different sheet, which is why
+    the rule is applied uniformly.  An argument exactly ON the cut is
+    ambiguous -- numpy's +0 imaginary part silently picks the upper
+    side -- so callers must keep arguments off it.
+
+    Algorithm (DLMF 19.36; Carlson 1979): repeatedly form
+    lambda = sqrt(x)sqrt(y) + sqrt(y)sqrt(z) + sqrt(z)sqrt(x) and
+    replace (x, y, z) by ((x+lambda)/4, (y+lambda)/4, (z+lambda)/4) --
+    the duplication theorem leaves R_F invariant while shrinking the
+    arguments' relative deviations from their mean by a factor of ~4
+    per step -- then finish with the fifth-order Taylor series in the
+    elementary symmetric functions e2, e3 of those deviations.  The
+    series truncation error is < eps**6 / (4 (1 - eps)) with eps the
+    largest deviation (Carlson 1995), so iterating until
+    eps <= (4 rtol)**(1/6) yields relative error ~rtol (default: full
+    double precision).  Real nonnegative inputs return plain floats or
+    float arrays; scalar inputs return a scalar."""
+    want_complex = (np.iscomplexobj(np.asarray(x))
+                    or np.iscomplexobj(np.asarray(y))
+                    or np.iscomplexobj(np.asarray(z)))
+    scalar = np.ndim(x) == 0 and np.ndim(y) == 0 and np.ndim(z) == 0
+    xt, yt, zt = np.broadcast_arrays(np.asarray(x, dtype=complex),
+                                     np.asarray(y, dtype=complex),
+                                     np.asarray(z, dtype=complex))
+    errtol = (4.0 * float(rtol)) ** (1.0 / 6.0)
+    for _ in range(_RF_MAXITER):
+        ave = (xt + yt + zt) / 3.0
+        dx = (ave - xt) / ave
+        dy = (ave - yt) / ave
+        dz = (ave - zt) / ave
+        if max(float(np.max(np.abs(dx))), float(np.max(np.abs(dy))),
+               float(np.max(np.abs(dz)))) <= errtol:
             break
+        sx, sy, sz = np.sqrt(xt), np.sqrt(yt), np.sqrt(zt)
+        lam = sx * sy + sy * sz + sz * sx
+        xt = 0.25 * (xt + lam)
+        yt = 0.25 * (yt + lam)
+        zt = 0.25 * (zt + lam)
     e2 = dx * dy - dz * dz
     e3 = dx * dy * dz
-    return (1.0 + (e2 / 24.0 - 0.1 - 3.0 * e3 / 44.0) * e2
-            + e3 / 14.0) / math.sqrt(ave)
+    res = np.asarray((1.0 + (e2 / 24.0 - 0.1 - 3.0 * e3 / 44.0) * e2
+                      + e3 / 14.0) / np.sqrt(ave))
+    if not want_complex and np.all(np.abs(res.imag)
+                                   <= 1e-10 * (1.0 + np.abs(res.real))):
+        res = res.real
+    return res.item() if scalar else res
 
 
 def carlson_rj(x, y, z, p):
@@ -342,6 +415,53 @@ def ellippi(n, phi, m, segments=None):
     f = 1.0 / ((1.0 - n * st2) * np.sqrt(1.0 - m * st2))
     w = _GL_W[None, :] * 0.5 / segments
     return ph * np.sum(f * w, axis=(-2, -1))
+
+
+def elliptic_f(phi, m):
+    """Incomplete elliptic integral of the FIRST kind,
+
+        F(phi | m) = int_0^phi dtheta / sqrt(1 - m sin^2 theta),
+
+    for real or COMPLEX amplitude phi and parameter m = k^2 -- scalars
+    or ndarrays, broadcast elementwise.  F(pi/2 | m) = K(m) = ellipk(m).
+
+    Evaluated through Carlson's symmetric form (DLMF 19.25.5),
+
+        F(phi | m) = sin(phi) R_F(cos^2 phi, 1 - m sin^2 phi, 1),
+
+    which represents the principal branch of F on the strip
+    |Re phi| <= pi/2.  A general amplitude is first folded into that
+    strip by the quasi-period relation F(phi + k pi | m) =
+    F(phi | m) + 2 k K(m) (DLMF 19.2.10), with the complete integral
+    K(m) = R_F(0, 1 - m, 1) taken from the same complex-capable code,
+    so long real amplitudes and complex m work together.
+
+    Branch caveats are inherited from `carlson_rf` (principal square
+    roots, arguments off the negative real axis): here that means
+    1 - m sin^2 phi must stay off (-inf, 0].  For real phi and real
+    m in [0, 1) it always does; a real m with m sin^2 phi > 1 lands
+    exactly on the cut and numpy's +0 imaginary part silently picks the
+    upper side, so pass such parameters explicitly complex if a
+    particular side is intended (the result is then returned complex).
+    Real inputs with real results come back as plain floats/arrays."""
+    want_complex = (np.iscomplexobj(np.asarray(phi))
+                    or np.iscomplexobj(np.asarray(m)))
+    scalar = np.ndim(phi) == 0 and np.ndim(m) == 0
+    ph = np.asarray(phi, dtype=complex)
+    mm = np.asarray(m, dtype=complex)
+    k = np.round(ph.real / math.pi)          # fold Re phi into +-pi/2
+    ph0 = ph - math.pi * k
+    s, c = np.sin(ph0), np.cos(ph0)
+    res = s * np.asarray(carlson_rf(c * c, 1.0 - mm * s * s, 1.0),
+                         dtype=complex)
+    if np.any(k != 0.0):
+        K = np.asarray(carlson_rf(0.0, 1.0 - mm, 1.0), dtype=complex)
+        res = res + (2.0 * k) * K
+    res = np.asarray(res)
+    if not want_complex and np.all(np.abs(res.imag)
+                                   <= 1e-10 * (1.0 + np.abs(res.real))):
+        res = res.real
+    return res.item() if scalar else res
 
 
 # ==========================================================================
@@ -664,6 +784,7 @@ def _selftest():
 
     ok &= _selftest_jacobi()
     ok &= _selftest_ellippi()
+    ok &= _selftest_carlson()
     ok &= _selftest_sigma()
     ok &= _selftest_hyp2f1()
 
@@ -870,6 +991,121 @@ def _selftest_ellippi():
     ok &= good
     print(f"ellippi: pi-fold consistency (n = 3.5 > 1) dev {dev:.1e} "
           f"{'OK' if good else 'FAIL'}")
+
+    return ok
+
+
+def _selftest_carlson():
+    """Complex-capable R_F and elliptic_f, against exact values, the
+    defining symmetries, the AGM complete integral, the Gauss-Legendre
+    first-kind path, and an independent quadrature of the defining
+    integral along complex amplitudes."""
+    ok = True
+
+    # 1) Normalisation: R_F(1,1,1) = 1 EXACTLY -- zero deviations mean
+    #    the series is 1 and sqrt(1) is exact, so == is fair here.
+    v = carlson_rf(1.0, 1.0, 1.0)
+    good = (v == 1.0)
+    ok &= good
+    print(f"carlson: R_F(1,1,1)={v!r} (exact 1.0) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # 2) R_F(x,x,x) = x^(-1/2) on the principal branch, real and complex.
+    worst = 0.0
+    for xv in (0.25, 2.0, 7.5, 0.3 + 0.4j, 2.0 - 1.0j, -1.0 + 2.0j):
+        worst = max(worst, abs(carlson_rf(xv, xv, xv)
+                               - 1.0 / np.sqrt(complex(xv))))
+    good = worst < 1e-14
+    ok &= good
+    print(f"carlson: R_F(x,x,x) vs x^-1/2 (real+complex) max dev "
+          f"{worst:.1e} {'OK' if good else 'FAIL'}")
+
+    # 3) Full permutation symmetry, including a zero argument.
+    worst = 0.0
+    for (a, b, c) in ((0.31 + 0.22j, 1.7, 2.3 - 0.6j),
+                      (0.0, 1.2 + 0.5j, 2.0)):
+        vals = [carlson_rf(*p) for p in
+                ((a, b, c), (a, c, b), (b, a, c),
+                 (b, c, a), (c, a, b), (c, b, a))]
+        worst = max(worst, max(abs(vv - vals[0]) for vv in vals))
+    good = worst < 1e-13
+    ok &= good
+    print(f"carlson: permutation symmetry max dev {worst:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # 4) Homogeneity R_F(kx,ky,kz) = R_F(x,y,z)/sqrt(k) -- valid on the
+    #    principal branches while the scaled arguments stay in the right
+    #    half plane, which these do.
+    x0, y0, z0 = 0.4 + 0.3j, 1.1, 2.2 - 0.7j
+    base = carlson_rf(x0, y0, z0)
+    worst = 0.0
+    for kv in (4.0, 0.5, 2.0 + 1.5j, 0.3 - 0.2j):
+        worst = max(worst, abs(carlson_rf(kv * x0, kv * y0, kv * z0)
+                               - base / np.sqrt(complex(kv))))
+    good = worst < 1e-13
+    ok &= good
+    print(f"carlson: homogeneity max dev {worst:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # 5) elliptic_f closes on the AGM: F(pi/2 | m) = K(m).
+    worst = 0.0
+    for m in (0.0, 0.25, 0.5, 0.75, 0.9, 0.95):
+        worst = max(worst, abs(elliptic_f(0.5 * math.pi, m) - ellipk(m)))
+    good = worst < 5e-14
+    ok &= good
+    print(f"carlson: F(pi/2|m) vs AGM K(m), m in [0,0.95], max dev "
+          f"{worst:.1e} {'OK' if good else 'FAIL'}")
+
+    # 6) Real path incl. the pi-fold, against the Gauss-Legendre
+    #    first-kind quadrature (n = 0 third kind) -- two independent
+    #    algorithms over amplitudes well past pi/2.
+    phi = np.linspace(-4.0, 4.0, 41)
+    worst = 0.0
+    for m in (0.2, 0.65):
+        worst = max(worst, float(np.max(np.abs(
+            elliptic_f(phi, m) - ellippi(0.0, phi, m)))))
+    good = worst < 1e-12
+    ok &= good
+    print(f"carlson: F(phi|m) vs Gauss-Legendre over phi in [-4,4] max "
+          f"dev {worst:.1e} {'OK' if good else 'FAIL'}")
+
+    # 7) The COMPLEX path: elliptic_f against a direct Gauss-Legendre
+    #    quadrature of the defining integral along the straight segment
+    #    from 0 to phi (theta = phi*t, t in [0,1]) -- fully independent
+    #    of the duplication.  The integrand is analytic near the path
+    #    for these (phi, m), so the quadrature reference is itself
+    #    converged to rounding (96- vs 160-node agreement is checked).
+    xg, wg = _leggauss(96)
+    x2, w2 = _leggauss(160)
+    worst, qconv = 0.0, 0.0
+    for phv, mv in ((0.7 + 0.4j, 0.35 + 0.20j),
+                    (1.1 - 0.3j, 0.60 - 0.25j),
+                    (0.4 + 0.9j, -0.50 + 0.30j),
+                    (2.2 + 0.3j, 0.30 + 0.10j)):   # Re > pi/2: pi-fold
+        def q(xn, wn):
+            t = 0.5 * (xn + 1.0)
+            f = 1.0 / np.sqrt(1.0 - mv * np.sin(phv * t) ** 2)
+            return phv * 0.5 * np.sum(wn * f)
+        ref, ref2 = q(xg, wg), q(x2, w2)
+        qconv = max(qconv, abs(ref - ref2) / abs(ref))
+        worst = max(worst, abs(elliptic_f(phv, mv) - ref) / abs(ref))
+    good = worst < 1e-12 and qconv < 1e-13
+    ok &= good
+    print(f"carlson: F(phi|m) complex vs independent quadrature, max "
+          f"rel {worst:.1e} (quadrature self-agreement {qconv:.1e}) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # 8) Vectorised elementwise path agrees with per-scalar calls.
+    ph_arr = np.array([0.7 + 0.4j, 1.1 - 0.3j, 0.4 + 0.9j, 2.2 + 0.3j])
+    m_arr = np.array([0.35 + 0.20j, 0.60 - 0.25j, -0.50 + 0.30j,
+                      0.30 + 0.10j])
+    vec = elliptic_f(ph_arr, m_arr)
+    worst = max(abs(vec[i] - elliptic_f(ph_arr[i], m_arr[i]))
+                for i in range(len(ph_arr)))
+    good = worst < 1e-13
+    ok &= good
+    print(f"carlson: elementwise array vs scalar calls max dev "
+          f"{worst:.1e} {'OK' if good else 'FAIL'}")
 
     return ok
 

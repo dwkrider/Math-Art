@@ -831,15 +831,34 @@ def ring_tile(V, quads, key, depth=2, tol=1e-7):
 def ring_tile_checked(V, quads, key, depth=2):
     """Tile, weld, and ACCEPT ONLY IF the result is a surface.
 
-    Same contract as `hexagonal._assembly_ok`, and for the same reason:
-    a wrong generator set produces coincident sheets, which are invisible
-    to a component count and to the eye until they render as stripes.
-    I-6 and I-8 fail this at depth 2 -- 1390 and 78 over-shared edges --
-    while R-2, R-3 and I-9 come through at exactly zero, so the check is
-    not decorative and the failures are not marginal.  A surface that
-    does not pass falls back to its single relaxed patch, which is
-    honest: one triangular catenoid IS a piece of the surface, whereas a
-    stack of overlapping copies is not.
+    The discriminator is DUPLICATE FACES, not over-shared edges, and the
+    difference is the whole point.  These contours are rosettes: the
+    boundary curve passes through the origin two or four times, so the
+    assembled surface genuinely has lines where four sheets meet, at the
+    origin and at every lattice translate of it.  Over-shared edges
+    THERE are real geometry -- the same situation as the even-k
+    Fischer-Koch surfaces, whose line self-intersection is a classical
+    property rather than a meshing defect.  Rejecting on over-shared
+    edges alone would therefore throw away correct tilings.
+
+    Coincident duplicate COPIES are the actual failure, and they are
+    what `hexagonal._assembly_ok` was written to catch after a stack of
+    overlapping patches once shipped rendering as leopard spots.  They
+    show up as faces sharing a centroid, which no component count and no
+    edge count notices.
+
+    Measured at depth 2, the two are cleanly separated:
+
+        R-2, R-3, I-9   0 over-shared, 0 duplicate      -> accepted
+        I-6          1390 over-shared, 368 duplicate    -> refused
+        I-8            78 over-shared,   0 duplicate    -> refused
+
+    I-6 fails on duplicates outright.  I-8 has none, but only 5% of its
+    over-shared edges lie near a pinch line, so they are not the rosette
+    self-touching either and its generator set is not yet right.  Both
+    fall back to the single relaxed patch, which is honest: one annulus
+    IS a piece of the surface, whereas a stack of overlapping copies is
+    not.
     """
     try:
         VT, QT, n = ring_tile(V, quads, key, depth=depth)
@@ -851,6 +870,15 @@ def ring_tile_checked(V, quads, key, depth=2):
     VT = np.asarray(VT, float)
     span = float(np.max(VT.max(0) - VT.min(0)))
     W, QQ = _weld_points(VT, QT, 1e-4 * max(span, 1e-12))
+
+    cent = {}
+    for f in QQ:
+        c = tuple(np.round(W[list(f)].mean(0), 6))
+        cent[c] = cent.get(c, 0) + 1
+    if any(v > 1 for v in cent.values()):
+        return np.asarray(V, float), [tuple(int(i) for i in q)
+                                      for q in quads], 1
+
     ec = {}
     for f in QQ:
         m = len(f)
@@ -858,9 +886,39 @@ def ring_tile_checked(V, quads, key, depth=2):
             a, b = f[t], f[(t + 1) % m]
             e = (a, b) if a < b else (b, a)
             ec[e] = ec.get(e, 0) + 1
-    if any(c > 2 for c in ec.values()):
+    # CONNECTEDNESS, for the same reason `hexagonal._assembly_ok` gained
+    # it: I-8's depth-1 orbit welds into THREE pieces (12288 + 6144 +
+    # 6144 vertices) while its single patch is one, and a surface that
+    # falls apart is wrong however clean its edges are.
+    nv = len(W)
+    parent = list(range(nv))
+
+    def _find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for f in QQ:
+        r0 = _find(int(f[0]))
+        for j in range(1, len(f)):
+            rj = _find(int(f[j]))
+            if rj != r0:
+                parent[rj] = r0
+    if len({_find(int(i)) for f in QQ for i in f}) > 1:
         return np.asarray(V, float), [tuple(int(i) for i in q)
                                       for q in quads], 1
+
+    over = [e for e, c in ec.items() if c > 2]
+    if over:
+        # tolerated only where they ARE the rosette's own pinch: within
+        # a tenth of a cell of a lattice node of the 2x2 translations
+        P = np.array([0.5 * (W[e[0]] + W[e[1]]) for e in over])
+        d = np.hypot(((P[:, 0] + 1.0) % 2.0) - 1.0,
+                     ((P[:, 1] + 1.0) % 2.0) - 1.0)
+        if not np.all(d < 0.10):
+            return np.asarray(V, float), [tuple(int(i) for i in q)
+                                          for q in quads], 1
     return W, QQ, n
 
 
