@@ -8,14 +8,28 @@
     "closed",
     "closed-orientable",
     "def-parametric",
-    "not-implemented",
+    "implemented",
     "revolution",
     "tradition-classical"
   ],
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula from the literature would be worse than a null. See construction.blocked_by."
+    "x": "(1 + 0.35*cos(v))*cos(u)",
+    "y": "(1 + 0.35*cos(v))*sin(u)",
+    "z": "0.35*sin(v)",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "note": "centre-circle radius 1 and tube radius 0.35 fixed to the operator defaults",
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -45,12 +59,15 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "No math_art operator adds a bare torus; it appears only as the base of derived generators. Blender's own primitive is not a math_art construction."
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TORUS",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.03435).",
     "sources": [
       "Classical."
     ]

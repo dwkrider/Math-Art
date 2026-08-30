@@ -59,7 +59,7 @@
       "V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's original series.",
       "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- the family and the 112-node count of its generic member.",
       "S. Breske, O. Labs and D. van Straten, \"Real Line Arrangements and Surfaces with Many Real Nodes\", arXiv:math/0507234 (2005) -- why real nodes are the rendering-relevant count.",
-      "O. Labs, 'Advent calendar 2002, No. 6 (with the defining Chebyshev form)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch026_no_06.md).",
+      "O. Labs, 'Advent calendar 2002, No. 6 (with the defining Chebyshev form)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch024_no_06.md).",
       "O. Labs, 'Octics (listing it as '144: (2002?), modified Chmutov surface')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "V. I. Arnold et al., Singularities of Differentiable Maps, Vol. II, Birkhaeuser (1988), p. 419 (cited by the page for Chmutov's original series)."
     ]
@@ -71,7 +71,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch026_no_06"
+    "algsurf": "ch024_no_06"
   },
   "named_after": "Chmutov, Octic",
   "fabrication": {

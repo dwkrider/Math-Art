@@ -54,8 +54,8 @@
   "provenance": {
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "O. Labs, 'Van Straten's Construction of D_d-symmetric Surfaces of Degree d with many Nodes', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch011_vstrconstr.md).",
-      "O. Labs, 'Advent calendar 2002, No. 7 (the septic member)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch022_no_07.md).",
+      "O. Labs, 'Van Straten's Construction of D_d-symmetric Surfaces of Degree d with many Nodes', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch009_vstrconstr.md).",
+      "O. Labs, 'Advent calendar 2002, No. 7 (the septic member)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch025_no_07.md).",
       "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "S. Chmutov, J. Algebraic Geom. 1 (1992) 191-196 (the construction being modified; cited by the mirrored pages)."
     ]
@@ -64,7 +64,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch011_vstrconstr"
+    "algsurf": "ch009_vstrconstr"
   },
   "specimens": [
     {

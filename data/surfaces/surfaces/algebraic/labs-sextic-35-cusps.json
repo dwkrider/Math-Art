@@ -46,7 +46,7 @@
   "provenance": {
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "O. Labs, 'Algebraic Surface Homepage (announcing 'A Sextic with 35 Cusps')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch005_mainframe.md).",
+      "O. Labs, 'Algebraic Surface Homepage (announcing 'A Sextic with 35 Cusps')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch018_mainframe.md).",
       "O. Labs, 'A Sextic with 35 Cusps', Singular proof script sextic35cusps_all.sin (local mirror: algsurf/book/data/), which computes the parameters and proves ('theorem 1') that the surface has exactly 35 cusps and no other singularities.  The script refers to an accompanying article for the family f_{s,t,u,v}."
     ]
   },
@@ -54,7 +54,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch005_mainframe"
+    "algsurf": "ch018_mainframe"
   },
   "named_after": "Labs, Sextic",
   "fabrication": {

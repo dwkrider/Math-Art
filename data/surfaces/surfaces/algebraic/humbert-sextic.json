@@ -51,7 +51,7 @@
   "provenance": {
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "O. Labs, 'Advent calendar 2002, No. 18', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch038_no_18.md).",
+      "O. Labs, 'Advent calendar 2002, No. 18', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch036_no_18.md).",
       "G. Humbert, 'Sur une surface du sixieme ordre liee aux fonctions abeliennes de genre 3', J. de Mathem., 2e serie, t. III (1896); collected papers vol. 2, p. 269-296 (the page's reference).  Description and equation communicated to O. Labs by W. Barth."
     ]
   },
@@ -59,7 +59,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch038_no_18"
+    "algsurf": "ch036_no_18"
   },
   "named_after": "Humbert",
   "fabrication": {

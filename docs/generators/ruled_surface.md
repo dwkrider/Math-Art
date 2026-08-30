@@ -137,6 +137,11 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/ruled_surface__WALLIS.png" width="200"><br><sub>Wallis Conical Edge</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__WHITNEY.png" width="200"><br><sub>Whitney Umbrella</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__PARABOLIC_CONOID.png" width="200"><br><sub>Parabolic Conoid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/ruled_surface__SINUSOIDAL_CONE.png" width="200"><br><sub>Sinusoidal Cone</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__HELICOIDAL_CONE.png" width="200"><br><sub>Helicoidal Cone</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__TANGENT_DEV.png" width="200"><br><sub>Tangent Developable</sub></td>
 </tr>
 <tr>

@@ -270,9 +270,11 @@ ORIENT = {
     # A tetrahedron sitting face-on reads as a flat triangle; a sixth
     # of a turn puts an edge toward the camera and it reads as a solid.
     "mesh.regular_solid_add": (0.0, 0.0, 0.62),
-    # The Klein bottle's default pose puts the handle behind the body,
-    # hiding the self-intersection -- the whole point of the surface.
-    "mesh.topological_surface_add": (0.0, 0.0, math.pi),
+    # Turn the Klein bottle (Franzoni's classical tube shape, upright
+    # with its directrix plane on X-Z) an eighth toward the camera so
+    # the neck's dive back through the bulb -- the whole point of the
+    # surface -- reads in silhouette instead of edge-on.
+    "mesh.topological_surface_add": (0.0, 0.0, math.pi / 4),
     # The IFS default is SIERP_TETRA, a Sierpinski *tetrahedron*: a
     # solid, not a plane figure, so it wants a turn rather than a plan
     # view (from overhead a tetrahedron simply squares off).
@@ -737,6 +739,12 @@ VARIANT_EXTRA = {
          dict(mode='CONOID', conoid_kind='WALLIS')),
         ("WHITNEY", "Whitney Umbrella",
          dict(mode='CONOID', conoid_kind='WHITNEY')),
+        ("PARABOLIC_CONOID", "Parabolic Conoid",
+         dict(mode='CONOID', conoid_kind='PARABOLIC_CONOID')),
+        ("SINUSOIDAL_CONE", "Sinusoidal Cone",
+         dict(mode='CONOID', conoid_kind='SINUSOIDAL_CONE')),
+        ("HELICOIDAL_CONE", "Helicoidal Cone",
+         dict(mode='CONOID', conoid_kind='HELICOIDAL_CONE')),
         ("TANGENT_DEV", "Tangent Developable", dict(mode='TANGENT_DEV')),
         ("HELICOID", "Helicoid", dict(mode='HELICOID')),
         ("TWIST_STRIP", "Twisted Strip (Mobius)",

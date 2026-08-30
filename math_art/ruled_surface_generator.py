@@ -32,7 +32,10 @@
 #     Plucker's conoid / cylindroid (h = c sin 2u), the n-fold
 #     generalization, the Wallis conical edge, Zindler's conoid
 #     (h = a tan 2u, the cubic ruled surface z(x^2-y^2) = 2axy) and
-#     the Whitney umbrella (a pinch-point ruled surface).
+#     the Whitney umbrella (a pinch-point ruled surface); plus the
+#     parabolic conoid (parabola directrix, a^2 z = x(b^2 - y^2)) and
+#     two ruled cones -- the sinusoidal cone z = k rho cos(n theta)
+#     and the helicoidal cone (apex joined to a circular helix).
 #   TANGENT_DEV   -- the tangent developable of a circular helix,
 #     T(u,v) = c(u) + v c'(u): a flat-unrollable (developable) surface
 #     whose edge of regression is the helix itself.
@@ -89,6 +92,12 @@
 #   form and the tangentoid-crown directrix used here.  A converted
 #   copy of the encyclopedia is in research/books/
 #   mathcurve_encyclopedie_formes_mathematiques/.
+# - Parabolic conoid (a2 z = x(b2 - y2), the roof-shell conoid with a
+#   parabola directrix), sinusoidal cone (cylindrical equation
+#   z = k rho cos(n theta), the cone over the sine-wave crown) and
+#   helicoidal cone (x = a u cos v, y = a u sin v, z = b u v, the cone
+#   joining an apex to a circular helix): R. Ferreol, ibid., chapters
+#   "conoide parabolique", "cone sinusoidal" and "cone helicoidal".
 # - S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms,"
 #   MIT Project MAC TR-41 (1967) -- the bilinear patch.
 # - Torus knots (p, q): classical; see e.g. C. C. Adams, "The Knot
@@ -668,14 +677,70 @@ def rulings_named_ruled(kind='GAUDI', amp=0.5, extent=1.0, folds=2,
     return [(tuple(A[i]), tuple(B[i])) for i in range(len(u))]
 
 
+def _cone_over(res_v, extent, cx, cy, cz, wrap=True):
+    """Mesh the cone with apex at the origin over the directrix
+    (cx, cy, cz)(v): a welded apex vertex, then rings scaled u/m out to
+    the directrix at u = extent.  Faces wind consistently, so an
+    orientation sweep sees a plain disk (wrap=False) or cone."""
+    n = len(cx)
+    verts = [(0.0, 0.0, 0.0)]
+    rows = []
+    m = max(2, int(res_v))
+    for j in range(1, m + 1):
+        u = extent * j / m
+        base = len(verts)
+        verts.extend(zip(u * cx, u * cy, u * cz))
+        rows.append(list(range(base, base + n)))
+    kmax = n if wrap else n - 1
+    faces = []
+    for i in range(kmax):
+        i1 = (i + 1) % n
+        faces.append((0, rows[0][i], rows[0][i1]))
+    for j in range(m - 1):
+        for i in range(kmax):
+            i1 = (i + 1) % n
+            faces.append((rows[j][i], rows[j + 1][i],
+                          rows[j + 1][i1], rows[j][i1]))
+    return verts, faces
+
+
 def build_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
-                 wallis_b=0.6, extent=1.0, res_u=120, res_v=16):
-    """Right conoids and the Whitney umbrella.
+                 wallis_b=0.6, extent=1.0, res_u=120, res_v=16,
+                 turns=2.0):
+    """Right conoids, ruled cones and the Whitney umbrella.
         PLUCKER  h = amp sin(2u)            (Plucker's cylindroid)
         NFOLD    h = amp sin(folds*u)       (n-leaved conoid)
         WALLIS   h = amp sqrt(a^2 - b^2 cos^2 u)   (Wallis conical edge)
         ZINDLER  h = amp tan(folds*u)       (Zindler's conoid)
-        WHITNEY  S = (u v, u, v^2)          (pinch-point umbrella)"""
+        WHITNEY  S = (u v, u, v^2)          (pinch-point umbrella)
+        PARABOLIC_CONOID  S = (v, u, amp v (1 - u^2)), the roof-shell
+                 conoid a^2 z = x(b^2 - y^2) with b = 1, amp = 1/a^2
+        SINUSOIDAL_CONE   the cone over (cos v, sin v, amp cos(folds v)):
+                 cylindrical equation z = amp rho cos(n theta)
+        HELICOIDAL_CONE   the cone over the helix (cos v, sin v, amp v),
+                 v running `turns` turns: S = (u cos v, u sin v, amp u v)
+    """
+    if kind == 'PARABOLIC_CONOID':
+        # right conoid with axis Oy: rulings parallel to the xz-plane
+        # joining the axis point (0, u, 0) to the parabola directrix
+        # (extent, u, amp extent (1 - u^2)) in the plane x = extent
+        u = np.linspace(-1.3, 1.3, res_u)
+        v = np.linspace(0.0, extent, res_v + 1)
+        P = np.empty((res_u, res_v + 1, 3))
+        for j, vv in enumerate(v):
+            P[:, j, 0] = vv
+            P[:, j, 1] = u
+            P[:, j, 2] = amp * vv * (1.0 - u * u)
+        return _mesh_grid(P)
+    if kind == 'SINUSOIDAL_CONE':
+        n = max(1, int(folds))
+        v = np.linspace(0.0, _TWO_PI, res_u, endpoint=False)
+        return _cone_over(res_v, extent,
+                          np.cos(v), np.sin(v), amp * np.cos(n * v))
+    if kind == 'HELICOIDAL_CONE':
+        v = np.linspace(0.0, _TWO_PI * max(0.25, turns), res_u)
+        return _cone_over(res_v, extent,
+                          np.cos(v), np.sin(v), amp * v, wrap=False)
     if kind == 'ZINDLER':
         # Zindler's conoid, z = a tan(n theta) -- cartesian
         # z(x^2 - y^2) = 2 a x y for the classical n = 2.  Its height is
@@ -738,7 +803,32 @@ def build_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
 
 
 def rulings_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
-                   wallis_b=0.6, extent=1.0, n=48):
+                   wallis_b=0.6, extent=1.0, n=48, turns=2.0):
+    if kind == 'PARABOLIC_CONOID':
+        segs = []
+        for i in range(n + 1):
+            y = -1.3 + 2.6 * i / n
+            segs.append(((0.0, y, 0.0),
+                         (extent, y, amp * extent * (1.0 - y * y))))
+        return segs
+    if kind == 'SINUSOIDAL_CONE':
+        m = max(1, int(folds))
+        segs = []
+        for i in range(n):
+            v = _TWO_PI * i / n
+            segs.append(((0.0, 0.0, 0.0),
+                         (extent * math.cos(v), extent * math.sin(v),
+                          extent * amp * math.cos(m * v))))
+        return segs
+    if kind == 'HELICOIDAL_CONE':
+        span = _TWO_PI * max(0.25, turns)
+        segs = []
+        for i in range(n + 1):
+            v = span * i / n
+            segs.append(((0.0, 0.0, 0.0),
+                         (extent * math.cos(v), extent * math.sin(v),
+                          extent * amp * v)))
+        return segs
     if kind == 'ZINDLER':
         # same height-first sampling as the surface, so the rods land on
         # the rulings the mesh actually shows
@@ -1067,6 +1157,20 @@ _CONOID_KINDS = [
      "z(x^2 - y^2) = 2 a x y, with Oz as its double line"),
     ('WHITNEY', "Whitney Umbrella",
      "S = (uv, u, v^2): a pinch-point ruled surface"),
+    ('PARABOLIC_CONOID', "Parabolic Conoid",
+     "The conoid whose curved directrix is a parabola: the roof-shell "
+     "surface a^2 z = x(b^2 - y^2), rulings joining the axis line to "
+     "the parabola.  When the parabola's axis is instead parallel to "
+     "the conoid's axis it degenerates to the Whitney umbrella"),
+    ('SINUSOIDAL_CONE', "Sinusoidal Cone",
+     "The cone with apex at the origin over the closed sine-wave "
+     "crown: cylindrical equation z = k rho cos(n theta).  Distinct "
+     "from Plucker's conoid z = a cos(n theta), whose rulings do not "
+     "pass through one point"),
+    ('HELICOIDAL_CONE', "Helicoidal Cone",
+     "The cone joining a fixed apex to a circular helix: rulings "
+     "(u cos v, u sin v, k u v).  A cone, not a helicoid -- every "
+     "ruling passes through the apex"),
 ]
 
 # modes that are genuinely straight-ruled -> rods available
@@ -1096,8 +1200,9 @@ def _build_surface(op):
     if m == 'CONOID':
         vf = build_conoid(op.conoid_kind, op.amp, op.folds,
                           op.wallis_a, op.wallis_b, op.v_extent,
-                          op.res_u, op.res_v)
-        return (*vf, "Conoid")
+                          op.res_u, op.res_v, turns=op.turns)
+        return (*vf, dict((i[0], i[1])
+                          for i in _CONOID_KINDS)[op.conoid_kind])
     if m in _NAMED_MODES:
         vf = build_named_ruled(m, op.amp, op.v_extent, op.folds,
                                op.wallis_a, op.wallis_b,
@@ -1152,7 +1257,8 @@ def _build_rulings(op, n=None):
                               op.petals, op.petal_amp, op.v_extent, n)
     if m == 'CONOID':
         return rulings_conoid(op.conoid_kind, op.amp, op.folds,
-                              op.wallis_a, op.wallis_b, op.v_extent, n)
+                              op.wallis_a, op.wallis_b, op.v_extent, n,
+                              turns=op.turns)
     if m in _NAMED_MODES:
         return rulings_named_ruled(m, op.amp, op.v_extent, op.folds,
                                    op.wallis_a, op.wallis_b, n)
@@ -1236,11 +1342,19 @@ def _boundary_loops(op):
         return []
     rail0 = [s[0] for s in segs]
     rail1 = [s[1] for s in segs]
+    if m == 'CONOID' and op.conoid_kind in ('SINUSOIDAL_CONE',
+                                            'HELICOIDAL_CONE'):
+        # every ruling starts at the apex, so rail0 is a single point;
+        # only the directrix (the sine-wave crown, or the helix, which
+        # is open) is a curve
+        return [(rail1, op.conoid_kind == 'SINUSOIDAL_CONE')]
     closed = (m in ('HYPERBOLOID', 'KNOT_SPAN', 'TWIST_STRIP')
               # Zindler's directrix has 2n separate branches running off
-              # to infinity, so its rails are open like Whitney's
+              # to infinity, so its rails are open like Whitney's --
+              # and the parabolic conoid's parabola is open too
               or (m == 'CONOID'
-                  and op.conoid_kind not in ('WHITNEY', 'ZINDLER')))
+                  and op.conoid_kind not in ('WHITNEY', 'ZINDLER',
+                                             'PARABOLIC_CONOID')))
     return [(rail0, closed), (rail1, closed)]
 
 
@@ -1637,10 +1751,13 @@ if _IN_BLENDER:
             elif m == 'CONOID':
                 lay.prop(self, 'conoid_kind')
                 keys = ('amp',)
-                if self.conoid_kind in ('NFOLD', 'ZINDLER'):
+                if self.conoid_kind in ('NFOLD', 'ZINDLER',
+                                        'SINUSOIDAL_CONE'):
                     keys += ('folds',)
                 elif self.conoid_kind == 'WALLIS':
                     keys += ('wallis_a', 'wallis_b')
+                elif self.conoid_kind == 'HELICOIDAL_CONE':
+                    keys += ('turns',)
                 keys += ('v_extent',)
             elif m == 'TANGENT_DEV':
                 keys = ('radius', 'pitch', 'turns', 'v_extent',
@@ -1716,6 +1833,13 @@ def _selftest():
                                          res_v=8)),
         ("whitney", lambda: build_conoid('WHITNEY', res_u=32,
                                          res_v=8)),
+        ("parabolic conoid", lambda: build_conoid('PARABOLIC_CONOID',
+                                                  res_u=48, res_v=8)),
+        ("sinusoidal cone", lambda: build_conoid('SINUSOIDAL_CONE',
+                                                 folds=3, res_u=48,
+                                                 res_v=8)),
+        ("helicoidal cone", lambda: build_conoid('HELICOIDAL_CONE',
+                                                 res_u=64, res_v=8)),
         ("tangent dev", lambda: build_tangent_developable(res_u=64,
                                                           res_v=8)),
         ("helicoid", lambda: build_helicoid(res_u=64, res_v=8)),
@@ -1785,6 +1909,46 @@ def _selftest():
     print("zindler conoid: z = a tan(n theta) holds for n = 1, 2, 3, "
           "xz = ay at n = 1, z(x^2-y^2) = 2axy at n = 2, height "
           "bounded  OK")
+
+    # the three Ferreol additions are defined by cartesian /
+    # cylindrical equations, so gate on those identities too:
+    #   parabolic conoid   a^2 z = x (b^2 - y^2)  (b = 1, amp = 1/a^2)
+    #   sinusoidal cone    z = k rho cos(n theta)
+    #   helicoidal cone    every ruling passes through the apex, and
+    #                      the directrix ring is the helix z = k theta
+    #                      (checked unwound, ring by ring)
+    amp_ = 0.5
+    verts, _f = build_conoid('PARABOLIC_CONOID', amp=amp_, extent=1.0,
+                             res_u=33, res_v=6)
+    V = np.asarray(verts, dtype=float)
+    resid = np.abs(V[:, 2] - amp_ * V[:, 0] * (1.0 - V[:, 1] ** 2))
+    assert np.max(resid) < 1e-12, float(np.max(resid))
+    for n_ in (1, 2, 3):
+        verts, _f = build_conoid('SINUSOIDAL_CONE', amp=amp_, folds=n_,
+                                 extent=1.0, res_u=48, res_v=6)
+        V = np.asarray(verts, dtype=float)
+        rho = np.hypot(V[:, 0], V[:, 1])
+        keep = rho > 1e-9
+        th = np.arctan2(V[keep, 1], V[keep, 0])
+        resid = np.abs(V[keep, 2]
+                       - amp_ * rho[keep] * np.cos(n_ * th))
+        assert np.max(resid) < 1e-9, (n_, float(np.max(resid)))
+        assert np.min(np.linalg.norm(V, axis=1)) < 1e-12  # apex is there
+    verts, _f = build_conoid('HELICOIDAL_CONE', amp=amp_, extent=1.0,
+                             res_u=48, res_v=6, turns=2.0)
+    V = np.asarray(verts, dtype=float)
+    assert np.min(np.linalg.norm(V, axis=1)) < 1e-12
+    rho = np.hypot(V[1:, 0], V[1:, 1])
+    # z / rho = amp * v with v the (unwound) helix parameter: recover v
+    # from z itself and confirm the angle matches it mod 2 pi
+    vpar = V[1:, 2] / (amp_ * np.maximum(rho, 1e-300))
+    ang = np.arctan2(V[1:, 1], V[1:, 0])
+    wrap = np.abs(((vpar - ang) + math.pi) % _TWO_PI - math.pi)
+    assert np.max(wrap) < 1e-6, float(np.max(wrap))
+    print("ferreol conoids: a^2 z = x(b^2 - y^2) on the parabolic "
+          "conoid, z = k rho cos(n theta) on the sinusoidal cone "
+          "(n = 1, 2, 3), apex + unwound helix on the helicoidal "
+          "cone  OK")
 
     # the waist radius of the stick hyperboloid must equal R cos(tw/2)
     R, tw = 1.0, 120.0

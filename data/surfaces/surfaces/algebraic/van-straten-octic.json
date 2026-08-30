@@ -59,7 +59,7 @@
       "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- the family and the 112-node count of its generic member.",
       "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.",
       "V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's original series.",
-      "O. Labs, 'Van Straten's D8 x Z2-symmetric Octic with 165 Nodes', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch008_duco165.md).",
+      "O. Labs, 'Van Straten's D8 x Z2-symmetric Octic with 165 Nodes', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch004_duco165.md).",
       "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
     ]
@@ -71,7 +71,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch008_duco165"
+    "algsurf": "ch004_duco165"
   },
   "named_after": "Octic, Straten, Van",
   "fabrication": {

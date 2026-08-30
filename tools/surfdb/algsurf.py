@@ -64,9 +64,34 @@ van-straten-dihedral-series record.
 
 import os
 
-ALGSURF_BOOK = "S:/data/math_art/references/websites/algsurf/book"
+ALGSURF_ROOT = "S:/data/math_art/references/websites/algsurf"
+ALGSURF_BOOK = os.path.join(ALGSURF_ROOT, "book")
 ALGSURF_PARTS = ("septics", "octics", "adcal", "series", "models", "other")
-SEXTIC35_SIN = os.path.join(ALGSURF_BOOK, "data", "sextic35cusps_all.sin")
+
+
+def _find_sextic35():
+    """Locate Labs's 35-cusp Singular proof script in the mirror.
+
+    Worth resolving rather than hardcoding: this one file is the whole
+    evidential basis for the `labs-sextic-35-cusps` record's TERMINAL
+    verdict -- its elimination is what gives 884736 s^6 - 8640 s^3 + 25,
+    whose negative discriminant proves the 35-cusp member is not real and
+    so can never be built. If the citation silently dangles, a future
+    reader has a strong claim resting on a file nobody can open.
+
+    A 2026-08 refresh of the mirror moved it out of `book/data/` (where
+    the converted chapters keep their attachments) into `_mirror/` (the
+    untouched site capture), so both are searched, newest layout first.
+    """
+    for rel in (("_mirror", "sextic35cusps_all.sin"),
+                ("book", "data", "sextic35cusps_all.sin")):
+        p = os.path.join(ALGSURF_ROOT, *rel)
+        if os.path.exists(p):
+            return p
+    return os.path.join(ALGSURF_ROOT, "_mirror", "sextic35cusps_all.sin")
+
+
+SEXTIC35_SIN = _find_sextic35()
 
 
 def _src(stem, title):
@@ -115,20 +140,20 @@ def _deep(*layers):
 #     (Rohn's E - Q^2 globalization, Barth-style symmetric planes, finite
 #     prime fields, the three Singular proof scripts).  ch001_septics is
 #     the overview stating 99 <= mu(7) <= 104.
-#   * endrass-octic -> ch007_endroctconstr: gives the full 5-parameter
+#   * endrass-octic -> ch005_endroctconstr: gives the full 5-parameter
 #     D8 x Z2 family and the parameter values for exactly 168 nodes.
 #     (Advent day 8 shows the same surface; one id slot, the construction
 #     page wins.)
-#   * barth-sextic -> ch024_no_02: "W. Barth's sextic with 65 nodes (the
+#   * barth-sextic -> ch020_no_02: "W. Barth's sextic with 65 nodes (the
 #     maximum for sextics) together with the planes and the sphere used
 #     to construct it" -- matches the record's 65-node count.
-#   * kummer-quartic -> ch039_no_03: "a quartic with 16 double points".
-#   * sarti-dodecic -> ch020_no_05: "A. Sarti's surface of degree 12 with
+#   * kummer-quartic -> ch021_no_03: "a quartic with 16 double points".
+#   * sarti-dodecic -> ch023_no_05: "A. Sarti's surface of degree 12 with
 #     600 nodes" -- matches the record's 600.
-#   * fresnel-wave-surface -> ch041_no_10: quartic derived from an
+#   * fresnel-wave-surface -> ch028_no_10: quartic derived from an
 #     ellipsoid; the page adds that of its 16 nodes only 12 are real
 #     (the record carries no singularity count, so nothing conflicts).
-#   * clebsch-diagonal-cubic -> ch028_no_22: "The Clebsch Cubic Surface
+#   * clebsch-diagonal-cubic -> ch040_no_22: "The Clebsch Cubic Surface
 #     containing 10 Eckardt points".
 #
 # Deliberately NOT attached: advent day 4 ("The cyclide - a surface of
@@ -140,12 +165,21 @@ def _deep(*layers):
 
 IDS = {
     "labs-septic": "ch002_sept99nodes_constr",
-    "endrass-octic": "ch007_endroctconstr",
-    "barth-sextic": "ch024_no_02",
-    "kummer-quartic": "ch039_no_03",
-    "sarti-dodecic": "ch020_no_05",
-    "fresnel-wave-surface": "ch041_no_10",
-    "clebsch-diagonal-cubic": "ch028_no_22",
+    # NOTE: the mirror RE-CHAPTERS WHOLESALE when algsurf is
+    # re-downloaded -- a 2026-08 refresh renumbered 20 of these 24
+    # ids at once (ch024_no_02 -> ch020_no_02, and so on).  Only the
+    # chNNN prefix moves; the slug after it is stable, which is what
+    # makes the drift recoverable AND safe: because the id carries
+    # the slug, a renumber fails `_selftest`'s resolve check loudly
+    # instead of silently pointing at a DIFFERENT surface.  To repair,
+    # re-resolve every id by its slug against the mirror rather than
+    # patching them one at a time.
+    "endrass-octic": "ch005_endroctconstr",
+    "barth-sextic": "ch020_no_02",
+    "kummer-quartic": "ch021_no_03",
+    "sarti-dodecic": "ch023_no_05",
+    "fresnel-wave-surface": "ch028_no_10",
+    "clebsch-diagonal-cubic": "ch040_no_22",
 }
 
 
@@ -235,7 +269,7 @@ def _septic_sextic_records():
                 "arXiv:math/0502520, Theorem 3; and the mirrored Singular "
                 "source sextic35cusps_all.sin in algsurf/book/data/.",
             "sources": [
-                _src("ch005_mainframe",
+                _src("ch018_mainframe",
                      "Algebraic Surface Homepage (announcing 'A Sextic "
                      "with 35 Cusps')"),
                 "O. Labs, 'A Sextic with 35 Cusps', Singular proof script "
@@ -245,7 +279,7 @@ def _septic_sextic_records():
                 "singularities.  The script refers to an accompanying "
                 "article for the family f_{s,t,u,v}."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch005_mainframe"},
+                "ids": {"algsurf": "ch018_mainframe"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -282,12 +316,12 @@ def _octic_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch008_duco165",
+                _src("ch004_duco165",
                      "Van Straten's D8 x Z2-symmetric Octic with 165 "
                      "Nodes"),
                 OCTICS_LIST, ENDRASS_THESIS],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch008_duco165"},
+                "ids": {"algsurf": "ch004_duco165"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -310,17 +344,17 @@ def _octic_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch009_stephan160",
+                _src("ch008_stephan160",
                      "St. Endrass's 160-nodal D8 x Z2-symmetric Octic "
                      "(with the explicit parameter values)"),
-                _src("ch043_no_19",
+                _src("ch037_no_19",
                      "Advent calendar 2002, No. 19 ('Besides constructing "
                      "the octics with 168 nodes, St. Endrass found this "
                      "160-nodal octic with dihedral symmetry, which is "
                      "not so well-known')"),
                 OCTICS_LIST, ENDRASS_THESIS],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch009_stephan160"},
+                "ids": {"algsurf": "ch008_stephan160"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -343,14 +377,14 @@ def _octic_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch007_endroctconstr",
+                _src("ch005_endroctconstr",
                      "St. Endrass's Construction of D8 x Z2-symmetric "
                      "Octics (the full 5-parameter equation)"),
-                _src("ch010_stephan120128136",
+                _src("ch007_stephan120128136",
                      "120-/128-/136-nodal D8 x Z2-symmetric Octics"),
                 OCTICS_LIST, ENDRASS_THESIS],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch007_endroctconstr"},
+                "ids": {"algsurf": "ch005_endroctconstr"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -400,17 +434,17 @@ def _octic_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch011_vstrconstr",
+                _src("ch009_vstrconstr",
                      "Van Straten's Construction of D_d-symmetric "
                      "Surfaces of Degree d with many Nodes"),
-                _src("ch022_no_07",
+                _src("ch025_no_07",
                      "Advent calendar 2002, No. 7 (the septic member)"),
                 OCTICS_LIST,
                 "S. Chmutov, J. Algebraic Geom. 1 (1992) 191-196 (the "
                 "construction being modified; cited by the mirrored "
                 "pages)."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch011_vstrconstr"},
+                "ids": {"algsurf": "ch009_vstrconstr"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -473,12 +507,12 @@ def _adcal_records():
                 "preserve."),
             "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch025_no_01", "Advent calendar 2002, No. 1"),
+                _src("ch019_no_01", "Advent calendar 2002, No. 1"),
                 "Cover image of the SuSE Linux 8.1 distribution, per the "
                 "page (Labs made the SuSE cover surfaces from version "
                 "7.1 on)."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch025_no_01"},
+                "ids": {"algsurf": "ch019_no_01"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -496,7 +530,7 @@ def _adcal_records():
             "family": "algebraic", "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch026_no_06", "Advent calendar 2002, No. 6 (with "
+                _src("ch024_no_06", "Advent calendar 2002, No. 6 (with "
                      "the defining Chebyshev form)"),
                 _src("ch006_octics",
                      "Octics (listing it as '144: (2002?), modified "
@@ -505,7 +539,7 @@ def _adcal_records():
                 "Maps, Vol. II, Birkhaeuser (1988), p. 419 (cited by the "
                 "page for Chmutov's original series)."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch026_no_06"},
+                "ids": {"algsurf": "ch024_no_06"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -532,9 +566,9 @@ def _adcal_records():
                 "rests on that established name."),
             "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch031_no_09", "Advent calendar 2002, No. 9")],
+                _src("ch027_no_09", "Advent calendar 2002, No. 9")],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch031_no_09"},
+                "ids": {"algsurf": "ch027_no_09"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -554,12 +588,12 @@ def _adcal_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch040_no_14", "Advent calendar 2002, No. 14"),
+                _src("ch032_no_14", "Advent calendar 2002, No. 14"),
                 "S. Endrass, U. Persson, J. Stevens, 'Surfaces with "
                 "Triple Points', arXiv:math.AG/0010163 (linked from the "
                 "page as the reference)."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch040_no_14"},
+                "ids": {"algsurf": "ch032_no_14"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -579,11 +613,11 @@ def _adcal_records():
             "family": "algebraic", "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch032_no_16", "Advent calendar 2002, No. 16"),
+                _src("ch034_no_16", "Advent calendar 2002, No. 16"),
                 "E. Stagnaro's construction; descriptions and equations "
                 "communicated to O. Labs by W. Barth, per the page."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch032_no_16"},
+                "ids": {"algsurf": "ch034_no_16"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -601,13 +635,13 @@ def _adcal_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch029_no_17", "Advent calendar 2002, No. 17"),
+                _src("ch035_no_17", "Advent calendar 2002, No. 17"),
                 "Hyde, Ann. of Math., 2nd series, vol. 2 (1901), and "
                 "Ann. of Math. 4 (1888) (the page's references for the "
                 "screw-theory construction); description and equation "
                 "communicated to O. Labs by W. Barth."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch029_no_17"},
+                "ids": {"algsurf": "ch035_no_17"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -628,14 +662,14 @@ def _adcal_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch038_no_18", "Advent calendar 2002, No. 18"),
+                _src("ch036_no_18", "Advent calendar 2002, No. 18"),
                 "G. Humbert, 'Sur une surface du sixieme ordre liee aux "
                 "fonctions abeliennes de genre 3', J. de Mathem., 2e "
                 "serie, t. III (1896); collected papers vol. 2, "
                 "p. 269-296 (the page's reference).  Description and "
                 "equation communicated to O. Labs by W. Barth."],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch038_no_18"},
+                "ids": {"algsurf": "ch036_no_18"},
                 "embedding": {
                     "quality": "singular",
                     "singularities": [
@@ -655,9 +689,9 @@ def _adcal_records():
             "mode": "implicit",
             "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
             "sources": [
-                _src("ch035_no_24", "Advent calendar 2002, No. 24")],
+                _src("ch042_no_24", "Advent calendar 2002, No. 24")],
             "extra": _deep(_ALG, {
-                "ids": {"algsurf": "ch035_no_24"},
+                "ids": {"algsurf": "ch042_no_24"},
                 "embedding": {"quality": "embedded"},
                 "definition": {"note":
                     "B. Segre proved a quartic surface can contain at "

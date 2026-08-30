@@ -41,6 +41,22 @@
    "Gabriel's Horn"
   ],
   [
+   "TORUS",
+   "Torus"
+  ],
+  [
+   "ALYSSEID",
+   "Revolution of the Catenary"
+  ],
+  [
+   "SINUSOID_REV",
+   "Revolution of the Sinusoid"
+  ],
+  [
+   "TRACTROID2",
+   "Second Tractroid"
+  ],
+  [
    "CYCLIDE_RING",
    "Dupin Cyclide (ring)"
   ],
@@ -1420,6 +1436,10 @@
   [
    "KLEIN8",
    "Klein Bottle (Figure-8)"
+  ],
+  [
+   "MOBIUS",
+   "Moebius Strip"
   ],
   [
    "SUDANESE",
@@ -3059,6 +3079,14 @@
   [
    "SINE_TORUS",
    "Sine Torus"
+  ],
+  [
+   "COIL",
+   "Coil"
+  ],
+  [
+   "SPHERICAL_HELICOID",
+   "Spherical Helicoid"
   ]
  ],
  "sponge": [
@@ -3311,6 +3339,18 @@
   [
    "WHITNEY",
    "Whitney Umbrella"
+  ],
+  [
+   "PARABOLIC_CONOID",
+   "Parabolic Conoid"
+  ],
+  [
+   "SINUSOIDAL_CONE",
+   "Sinusoidal Cone"
+  ],
+  [
+   "HELICOIDAL_CONE",
+   "Helicoidal Cone"
   ],
   [
    "TANGENT_DEV",

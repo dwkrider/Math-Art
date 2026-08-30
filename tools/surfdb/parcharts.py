@@ -127,6 +127,21 @@ _WAVY_AL = "(pi/4 + (17.5*pi/180)*cos(3*u))"     # WAVY beta/2
 _CYC_D2 = ("(((1 + 0.45*cos(v))*cos(u) - 1.9)**2"
            " + ((1 + 0.45*cos(v))*sin(u))**2 + (0.45*sin(v))**2)")
 
+# Franzoni's classical-shape Klein bottle, the operator's default
+# rendition: the tube Tube(t, v) = alpha(t) + r(t)(cos v J(T) + sin v k)
+# over the stretched dumbbell directrix alpha(t) = (5 sin t,
+# 2 sin^2 t cos t) with radius r(t) = 1/2 - (1/30)(2t - pi)
+# sqrt(2t(2 pi - 2t)) (arXiv:0909.5354, section 4).  The builder turns
+# the paper's (x, y, z) frame upright as (y, z, x), and these strings
+# are written in that final frame.
+_KL_R = "(1/2 - (1/30)*(2*u - pi)*sqrt(2*u*(2*pi - 2*u)))"
+_KL_L = "sqrt(25*cos(u)**2 + 4*sin(u)**2*(3*cos(u)**2 - 1)**2)"
+
+# Coil at the operator defaults: tube radius 0.45 about the helix
+# (cos v, sin v, 0.4 v), cross-section riding in the helix's normal
+# plane (Frenet N and B); sqrt(1.16) = |(  -sin v, cos v, 0.4)|.
+_COIL_Q = "sqrt(1.16)"
+
 # Supershape (Gielis superformula), operator default preset STARFISH:
 # both superformulas are (m, n1, n2, n3, a, b) = (5, 2, 7, 7, 1, 1).
 _SS_R1 = "(abs(cos(5*u/4))**7 + abs(sin(5*u/4))**7)**(-0.5)"
@@ -234,22 +249,25 @@ CHARTS = {
 
     # -- topology menagerie (math_art.minsurf.topology) ----------------
     "klein-bottle": {
-        "x": "(-2.0/15.0)*cos(u)*(3*cos(v) - 30*sin(u)"
-             " + 90*cos(u)**4*sin(u) - 60*cos(u)**6*sin(u)"
-             " + 5*cos(u)*cos(v)*sin(u))",
-        "y": "(-1.0/15.0)*sin(u)*(3*cos(v) - 3*cos(u)**2*cos(v)"
-             " - 48*cos(u)**4*cos(v) + 48*cos(u)**6*cos(v)"
-             " - 60*sin(u) + 5*cos(u)*cos(v)*sin(u)"
-             " - 5*cos(u)**3*cos(v)*sin(u)"
-             " - 80*cos(u)**5*cos(v)*sin(u)"
-             " + 80*cos(u)**7*cos(v)*sin(u))",
-        "z": "(2.0/15.0)*sin(v)*(3 + 5*cos(u)*sin(u))",
+        "x": "2*sin(u)**2*cos(u) + %s*cos(v)*5*cos(u)/%s"
+             % (_KL_R, _KL_L),
+        "y": "%s*sin(v)" % _KL_R,
+        "z": "5*sin(u) - %s*cos(v)*2*sin(u)*(3*cos(u)**2 - 1)/%s"
+             % (_KL_R, _KL_L),
         "u_range": ("0", "pi"), "v_range": ("0", "2*pi"),
         "periodic_v": True,
-        "note": "the standard bottle-shaped closed-form immersion; the "
-                "u = pi rim meets the u = 0 rim under v -> pi - v",
+        "note": "Franzoni's classical bottle shape, the operator's "
+                "default rendition: a tube of radius r(u) about the "
+                "stretched dumbbell directrix, upright with the long "
+                "axis on Oz.  The u = pi tube end meets the u = 0 end "
+                "in the same circle under v -> pi - v, and the mesh is "
+                "glued closed there.  The paper's shape numbers "
+                "(a, b, c, d) = (20, 8, 11/2, 2/5) are baked in at "
+                "their dumbbell scaling (5, 2, 1/2, 1/30); the older "
+                "polynomial immersion stays reachable as the "
+                "operator's POLYNOMIAL rendition",
         "oracle": {"module": "minsurf.topology",
-                   "make": lambda m: m.build_klein_bottle(96, 64)},
+                   "make": lambda m: m.build_klein_franzoni(96, 64)},
     },
     "klein-bottle-figure-eight": {
         "x": "(2 + cos(u/2)*sin(v) - sin(u/2)*sin(2*v))*cos(u)",
@@ -726,6 +744,157 @@ CHARTS = {
                        64),
                    "fit": "hopf97"},
     },
+    "clifford-torus": {
+        # beta = pi/2 (a GREAT circle): cos(beta/2) = sin(beta/2) =
+        # 1/sqrt(2), so the Bianchi-Pinkall lift specialises to the
+        # Clifford torus, stereographically projected from (0,0,0,1).
+        "x": "cos(u + v)/(sqrt(2) - sin(v))",
+        "y": "sin(u + v)/(sqrt(2) - sin(v))",
+        "z": "cos(v)/(sqrt(2) - sin(v))",
+        "u_range": ("0", "2*pi"), "v_range": ("0", "2*pi"),
+        "periodic_u": True, "periodic_v": True,
+        "note": "the CIRCLE preset at its default mean colatitude of "
+                "90 degrees, i.e. the Hopf preimage of a great circle "
+                "-- the Clifford torus S1(1/sqrt 2) x S1(1/sqrt 2) in "
+                "S^3 -- stereographically projected to a torus of "
+                "revolution; same builder normalisation (and fit) as "
+                "hopf-torus",
+        "oracle": {"module": "hopf_fibration_generator",
+                   "make": lambda m: m.build_hopf_torus(
+                       m.gamma_curve('CIRCLE', 240, 90.0, 3, 35.0, 0.0),
+                       64),
+                   "fit": "hopf97"},
+    },
+
+    # -- the plain Mobius band and the torus ---------------------------
+    "moebius-strip": {
+        "x": "(1 + v*cos(u/2))*cos(u)",
+        "y": "(1 + v*cos(u/2))*sin(u)",
+        "z": "v*sin(u/2)",
+        "u_range": ("0", "2*pi"), "v_range": ("-0.3", "0.3"),
+        "periodic_u": True,
+        "note": "ring radius 1 and strip width 0.6 fixed to the "
+                "operator defaults; the u seam closes with v reversed "
+                "(the half twist)",
+        "oracle": {"module": "minsurf.topology",
+                   "make": lambda m: m.build_mobius_band(96, 12)},
+    },
+    "torus": {
+        "x": "(1 + 0.35*cos(v))*cos(u)",
+        "y": "(1 + 0.35*cos(v))*sin(u)",
+        "z": "0.35*sin(v)",
+        "u_range": ("0", "2*pi"), "v_range": ("0", "2*pi"),
+        "periodic_u": True, "periodic_v": True,
+        "note": "centre-circle radius 1 and tube radius 0.35 fixed to "
+                "the operator defaults",
+        "oracle": {"module": "curiosity_surface_generator",
+                   "make": lambda m: m.build_torus(1.0, 0.35, 96, 64)},
+    },
+
+    # -- surfaces of revolution (curiosity_surface_generator) ----------
+    "revolution-of-the-catenary": {
+        "x": "u*cos(v)",
+        "y": "u*sin(v)",
+        "z": "cosh(u)",
+        "u_range": ("0", "1.6"), "v_range": ("0", "2*pi"),
+        "periodic_v": True,
+        "note": "the catenary z = a cosh(rho/a) revolved about its "
+                "axis of symmetry; a = 1 and base radius 1.6 fixed to "
+                "the operator defaults",
+        "oracle": {"module": "curiosity_surface_generator",
+                   "make": lambda m: m._revolve(
+                       m.alysseid_profile(1.0, 1.6, 96), 96)[:2]},
+    },
+    "revolution-of-the-sinusoid": {
+        "x": "cos(u)*cos(v)",
+        "y": "cos(u)*sin(v)",
+        "z": "u",
+        "u_range": ("-3*pi/2", "3*pi/2"), "v_range": ("0", "2*pi"),
+        "periodic_v": True,
+        "note": "x = a cos(z/b) about Oz with a = b = 1 and three "
+                "beads, the operator defaults; the signed radius only "
+                "shifts the revolution angle by pi, so the chart and "
+                "the welded-bead mesh cover the same point set",
+        "oracle": {"module": "curiosity_surface_generator",
+                   "make": lambda m: m._revolve(
+                       m.sinusoid_rev_profile(1.0, 3, 48), 96)[:2]},
+    },
+    "second-tractroid": {
+        "x": "(u - tanh(u))*cos(v)",
+        "y": "(u - tanh(u))*sin(v)",
+        "z": "1/cosh(u)",
+        "u_range": ("0", "3"), "v_range": ("0", "2*pi"),
+        "periodic_v": True,
+        "note": "the tractrix (a(t - tanh t), a sech t) revolved about "
+                "the axis PERPENDICULAR to its asymptote; a = 1 and "
+                "profile reach 3 fixed to the operator defaults",
+        "oracle": {"module": "curiosity_surface_generator",
+                   "make": lambda m: m._revolve(
+                       m.tractroid2_profile(1.0, 3.0, 120), 96)[:2]},
+    },
+
+    # -- ruled cones and conoids (ruled_surface_generator) -------------
+    "parabolic-conoid": {
+        "x": "v",
+        "y": "u",
+        "z": "0.5*v*(1 - u**2)",
+        "u_range": ("-1.3", "1.3"), "v_range": ("0", "1"),
+        "note": "the roof-shell conoid a^2 z = x(b^2 - y^2) with b = 1 "
+                "and amp = 1/a^2 = 0.5, ruling extent 1 -- the "
+                "operator defaults",
+        "oracle": {"module": "ruled_surface_generator",
+                   "make": lambda m: m.build_conoid(
+                       'PARABOLIC_CONOID', res_u=96, res_v=24)},
+    },
+    "sinusoidal-cone": {
+        "x": "u*cos(v)",
+        "y": "u*sin(v)",
+        "z": "0.5*u*cos(3*v)",
+        "u_range": ("0", "1"), "v_range": ("0", "2*pi"),
+        "periodic_v": True,
+        "note": "cylindrical equation z = k rho cos(n theta) with "
+                "k = 0.5 and n = 3, the operator defaults; the apex "
+                "u = 0 is welded to one vertex",
+        "oracle": {"module": "ruled_surface_generator",
+                   "make": lambda m: m.build_conoid(
+                       'SINUSOIDAL_CONE', folds=3, res_u=96,
+                       res_v=24)},
+    },
+    "helicoidal-cone": {
+        "x": "u*cos(v)",
+        "y": "u*sin(v)",
+        "z": "0.5*u*v",
+        "u_range": ("0", "1"), "v_range": ("0", "4*pi"),
+        "note": "the cone joining the origin to the helix (cos v, "
+                "sin v, 0.5 v), two turns -- k = amp = 0.5 and "
+                "turns = 2, the operator defaults",
+        "oracle": {"module": "ruled_surface_generator",
+                   "make": lambda m: m.build_conoid(
+                       'HELICOIDAL_CONE', res_u=96, res_v=24,
+                       turns=2.0)},
+    },
+
+    # -- the coil (helical_surface_generator's COIL row) ---------------
+    "coil": {
+        "x": "cos(v) - 0.45*cos(u)*cos(v) + 0.18*sin(u)*sin(v)/%s"
+             % _COIL_Q,
+        "y": "sin(v) - 0.45*cos(u)*sin(v) - 0.18*sin(u)*cos(v)/%s"
+             % _COIL_Q,
+        "z": "0.4*v + 0.45*sin(u)/%s" % _COIL_Q,
+        "u_range": ("0", "2*pi"), "v_range": ("0", "2*pi"),
+        "periodic_u": True,
+        "note": "tube radius 0.45 about the helix (cos v, sin v, "
+                "0.4 v), one turn, the cross-section circle riding in "
+                "the helix's Frenet normal plane -- the operator "
+                "defaults.  The builder fits its output to the 2 m "
+                "cube; verification applies the same fit",
+        "oracle": {"module": "surfaces.encyclopedia",
+                   "make": lambda m: m.build_darboux(
+                       motion='ROTOID', generatrix='CIRCLE', size=0.45,
+                       radius=1.0, pitch=0.4, tilt=0.0, turns=1.0,
+                       res_u=48, res_v=96),
+                   "fit": "fit2m"},
+    },
 }
 
 
@@ -873,12 +1042,12 @@ _NO_BUILDER = ("the record has no implemented construction -- there is "
                "no shipped builder to verify a chart against, and this "
                "module stores no unverified formulas (the record's own "
                "construction block notes what is missing)")
-for _slug in ("coil", "moebius-strip", "boys-planet", "dyck-surface",
+# (coil, moebius-strip, clifford-torus, the three Ferreol cones /
+# conoids and the three revolution surfaces graduated out of this list
+# when their builders shipped; each now carries a verified chart above.)
+for _slug in ("boys-planet", "dyck-surface",
               "etruscan-venus-surface", "ida-surface",
-              "nested-klein-bottles", "clifford-torus",
-              "parabolic-conoid", "sinusoidal-cone", "helicoidal-cone",
-              "second-tractroid", "revolution-of-the-catenary",
-              "revolution-of-the-sinusoid",
+              "nested-klein-bottles",
               "rotation-surface-with-proportional-curvatures",
               "solid-of-maximal-attraction"):
     REASONS[_slug] = _NO_BUILDER

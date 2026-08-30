@@ -81,8 +81,8 @@
       "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.",
       "S. Breske, O. Labs and D. van Straten, \"Real Line Arrangements and Surfaces with Many Real Nodes\", arXiv:math/0507234 (2005) -- why real nodes are the rendering-relevant count.",
       "V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's original series.",
-      "O. Labs, 'St. Endrass's Construction of D8 x Z2-symmetric Octics (the full 5-parameter equation)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch007_endroctconstr.md).",
-      "O. Labs, '120-/128-/136-nodal D8 x Z2-symmetric Octics', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch010_stephan120128136.md).",
+      "O. Labs, 'St. Endrass's Construction of D8 x Z2-symmetric Octics (the full 5-parameter equation)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch005_endroctconstr.md).",
+      "O. Labs, '120-/128-/136-nodal D8 x Z2-symmetric Octics', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch007_stephan120128136.md).",
       "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
     ]
@@ -94,7 +94,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch007_endroctconstr"
+    "algsurf": "ch005_endroctconstr"
   },
   "specimens": [
     {

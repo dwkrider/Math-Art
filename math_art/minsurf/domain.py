@@ -178,12 +178,47 @@ def _smooth_boundary(V, quads, iters=10, lam=0.5, protect=None):
     return V
 
 
-def _circularize_outer(V, quads, min_len=8):
+def _circularize_outer(V, quads, min_len=8, taper_rings=0,
+                       trim_sphere=None):
     """Snap each open boundary loop -- the planar end and the two catenoid
-    ends of a Costa / Costa-Hoffman-Meeks surface -- to a clean circle
-    about the vertical axis (constant XY radius, z kept), so every rim
-    reads as a circle instead of the few-percent staircase wobble the
-    radial end clip leaves behind.  Interior vertices are untouched."""
+    ends of a Costa-Hoffman-Meeks surface -- to a clean circle about the
+    loop's own center (constant radius, constant z, azimuths kept), so
+    every rim reads as a circle instead of the staircase wobble the end
+    clip leaves behind.
+
+    The circle is centered on the loop's xy mean, NOT on the raw origin:
+    a surface whose immersion carries a constant offset (Costa's closed
+    form does) would otherwise be snapped about the wrong axis, which
+    both distorts the rim and -- because _center_fit then re-centers on
+    the snapped bounding box -- drags the whole body off its own
+    symmetry axis.
+
+    `taper_rings` = 0 moves ONLY the boundary loop -- which parks the
+    whole correction in the single quad row behind the rim and was
+    measured to corrugate it (ring1 radius spread 13-69% against a
+    0-spread rim on Costa/CHM).  With `taper_rings` = K > 0 the rim
+    deviation field (delta-r, delta-z as a function of azimuth) is also
+    applied to the K rings of vertices behind the loop, azimuth-
+    interpolated and linearly tapered (ring k gets 1 - k/(K+1) of it),
+    raw beside the rim and azimuthally smoothed further out -- the same
+    boundary-layer accommodation the k-noid bell mouths use in
+    weierstrass.py, so the shear spreads at ~1/(K+1) of the correction
+    per quad row instead of all of it in one.
+
+    `trim_sphere` = (center, radius) names the object-space percentile
+    clip the caller used to trim runaway ends: a loop sitting AT that
+    radius is a presentational clip through a wavy end, not a puncture
+    mouth, and gets the radial rounding ONLY -- its z is left exactly
+    where the surface puts it.  Measured on COSTA_HM's outer disc, the
+    honest cut's z is a genuinely non-planar, perfectly smooth wave
+    (harmonics m = 2 and m = 6 of the dihedral symmetry, amplitudes
+    0.069/0.027, walk-zigzag rms 2e-4) that continues unchanged into
+    ring1/ring2 (z-spread 0.114/0.122) -- flattening the rim to
+    constant z parked that whole wave in the single quad row behind it
+    and read as the disc hooking up into a "brim" at the very edge.
+    A flat circle simply is not on the surface there; the honest wavy
+    rim is.  The remaining radial correction (a few percent) is tapered
+    inward like a mouth's."""
     if not quads:
         return V
     from collections import defaultdict
@@ -201,6 +236,7 @@ def _circularize_outer(V, quads, min_len=8):
     bnd = [v for v in nbr if len(nbr[v]) == 2]     # clean-loop vertices
     if not bnd:
         return V
+    bndall = set(nbr)                    # every boundary vertex
     seen = set()
     loops = []
     for v in bnd:
@@ -218,15 +254,92 @@ def _circularize_outer(V, quads, min_len=8):
                     stack.append(w)
         loops.append(comp)
     V = V.copy()
+    adj = None
+    if taper_rings > 0:                  # full vertex adjacency for rings
+        adj = defaultdict(set)
+        for q in quads:
+            L = len(q)
+            for k in range(L):
+                a, b = q[k], q[(k + 1) % L]
+                adj[a].add(b)
+                adj[b].add(a)
+    claimed = set()                      # band verts already treated
     for comp in loops:
         if len(comp) < min_len:
             continue                                # skip stray fragments
         idx = np.array(comp)
-        rmean = float(np.hypot(V[idx, 0], V[idx, 1]).mean())
-        ang = np.arctan2(V[idx, 1], V[idx, 0])
-        V[idx, 0] = rmean * np.cos(ang)
-        V[idx, 1] = rmean * np.sin(ang)
-        V[idx, 2] = float(V[idx, 2].mean())         # flat horizontal circle
+        cx = float(V[idx, 0].mean())
+        cy = float(V[idx, 1].mean())
+        rx, ry = V[idx, 0] - cx, V[idx, 1] - cy
+        r = np.hypot(rx, ry)
+        ang = np.arctan2(ry, rx)
+        rmean = float(r.mean())
+        zmean = float(V[idx, 2].mean())
+        is_trim = False
+        if trim_sphere is not None:
+            tc, tr = trim_sphere
+            is_trim = float(np.linalg.norm(V[idx] - tc, axis=1).mean()) \
+                > 0.9 * tr
+        dr = rmean - r                   # rim deviation field
+        if is_trim:
+            dz = np.zeros_like(dr)       # honest z: the rim rides the
+            #                              surface's own wave (see above)
+        else:
+            dz = zmean - V[idx, 2]
+            V[idx, 2] = zmean            # flat circle about the loop axis
+        V[idx, 0] = cx + rmean * np.cos(ang)
+        V[idx, 1] = cy + rmean * np.sin(ang)
+        if not taper_rings:
+            continue
+        # Azimuth-sorted deviation field, smoothed over a fixed ANGULAR
+        # window (box filter, half-width TAU/64).  A slot-count kernel
+        # is the wrong tool on a rim whose vertex spacing is strongly
+        # graded (a welded fan of graded arcs has rim edge CV ~ 1): in
+        # its dense stretches the raw field's staircase wiggle swings a
+        # full amplitude across a ~1e-3 rad gap, and a band vertex fed
+        # that gradient moves a whole cell against its neighbour --
+        # measured as flipped edges at ring depth 1-4 near the seam
+        # azimuths.  The angular window bounds the field's gradient by
+        # amplitude/window regardless of vertex density, so neighbour
+        # displacements can never diverge by more than a fraction of
+        # their gap, while in sparse stretches (window < one slot) it
+        # degrades to no smoothing at all.
+        o = np.argsort(ang)
+        xs, drs, dzs = ang[o], dr[o], dz[o]
+        xs = xs + np.arange(len(xs)) * 1e-9          # break ties
+        win = TAU / 64.0
+        x3 = np.concatenate([xs - TAU, xs, xs + TAU])
+        lo = np.searchsorted(x3, xs - win)
+        hi = np.searchsorted(x3, xs + win)
+
+        def _smooth(f):
+            c = np.concatenate([[0.0], np.cumsum(np.tile(f, 3))])
+            return (c[hi] - c[lo]) / np.maximum(hi - lo, 1)
+
+        drs_s, dzs_s = _smooth(drs), _smooth(dzs)
+        ring = set(comp)
+        taken = set(comp) | bndall
+        for k in range(1, taper_rings + 1):
+            nxt = set()
+            for u in ring:
+                nxt.update(w for w in adj[u]
+                           if w not in taken and w not in claimed)
+            if not nxt:
+                break
+            taken |= nxt
+            claimed |= nxt
+            ring = nxt
+            bi = np.array(sorted(nxt))
+            bx, by = V[bi, 0] - cx, V[bi, 1] - cy
+            br = np.hypot(bx, by)
+            baz = np.arctan2(by, bx)
+            dR = np.interp(baz, xs, drs_s, period=TAU)
+            dZ = np.interp(baz, xs, dzs_s, period=TAU)
+            w = 1.0 - k / (taper_rings + 1.0)
+            rn = br + w * dR
+            V[bi, 0] = cx + rn * np.cos(baz)
+            V[bi, 1] = cy + rn * np.sin(baz)
+            V[bi, 2] += w * dZ
     return V
 
 

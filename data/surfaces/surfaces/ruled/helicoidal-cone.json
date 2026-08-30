@@ -7,15 +7,26 @@
     "aperiodic",
     "def-parametric",
     "immersed",
-    "not-implemented",
+    "implemented",
     "ruled",
     "tradition-classical"
   ],
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "The cone joining a fixed apex to a circular helix: rulings (a u cos v, a u sin v, b u v).  NOTE: the mirror file's H1 reads \"Elliptic cone\" -- a conversion artifact; the page body is headed HELICOIDAL CONE and describes this surface, so the identity flag crosscheck records against this id is a defect of the mirror's title line, not of the id."
+    "note": "the cone joining the origin to the helix (cos v, sin v, 0.5 v), two turns -- k = amp = 0.5 and turns = 2, the operator defaults",
+    "x": "u*cos(v)",
+    "y": "u*sin(v)",
+    "z": "0.5*u*v",
+    "u_range": [
+      "0",
+      "1"
+    ],
+    "v_range": [
+      "0",
+      "4*pi"
+    ],
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -31,14 +42,22 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.  math_art's HELICAL_CONE (the compound helical cone / Solomonic column, a fluted conical envelope) is a different surface despite the similar name.",
-      "resume": "math_art/ruled_surface_generator.py already carries the cone and conoid machinery (build_conoid and the CONOID variant table); add a row and take the parametrization from the cited mirror chapter."
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "HELICOIDAL_CONE",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.70 of tol, 0.1% of oracle beyond tol (tol floor 2.5 x 0.06159).",
     "sources": [
+      "G. W. Hart, \"Curved, yet Straight: Stick Hyperboloids,\" Bridges 2023 Conference Proceedings, pp. 251-258.",
+      "E. Jannasch & J. Macnab, \"The Compound Helical Cone as Kinematic Trace,\" Bridges 2023 Conference Proceedings, pp. 15-22.",
+      "F. A. Farris, \"Spiral Ruled Surfaces,\" Bridges 2022 Conference",
+      "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
+      "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
+      "Milk carton: H. M. Cundy & A. P. Rollett, \"Mathematical Models\" (1951), 185-188.",
       "R. Ferreol, \"Helicoidal cone (Cone helicoidal)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1064_conehelicoidal (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1064_conehelicoidal.md)."
     ]
   },
@@ -50,7 +69,7 @@
   },
   "named_after": "Helicoidal",
   "alternate_names": [
-    "Elliptic cone"
+    "Cône elliptique"
   ],
   "fabrication": {
     "developable": false,
