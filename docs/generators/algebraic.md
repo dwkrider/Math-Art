@@ -191,6 +191,23 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/algebraic__ENDRASS.png" width="200"><br><sub>Endrass Octic (168 nodes)</sub></td>
 <td align="center"><img src="../images/variants/algebraic__BARTH_DECIC.png" width="200"><br><sub>Barth Decic (345 nodes)</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SEPTIC_TRIPLE.png" width="200"><br><sub>Septic with 16 Triple Points</sub></td>
+</tr>
+</table>
+
+### Many-Nodal Octics
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__ENDRASS_FAMILY.png" width="200"><br><sub>Endrass Octic Family</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ENDRASS_160.png" width="200"><br><sub>Endrass Octic (160 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VAN_STRATEN_165.png" width="200"><br><sub>Van Straten Octic (165 nodes)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VAN_STRATEN_124.png" width="200"><br><sub>Van Straten Octic (124 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MOD_CHMUTOV.png" width="200"><br><sub>Modified Chmutov Octic (144 nodes)</sub></td>
+</tr>
 </table>
 
 ### Named Implicit Surfaces
@@ -226,6 +243,35 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/algebraic__TITEICA.png" width="200"><br><sub>Titeica Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__FRESNEL.png" width="200"><br><sub>Fresnel Wave Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MOBIUS_SURFACE.png" width="200"><br><sub>Moebius Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SINE_SURFACE.png" width="200"><br><sub>Sine Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DARBOUX_CYCLIDE.png" width="200"><br><sub>Darboux Cyclide</sub></td>
+</tr>
+</table>
+
+### MathWorld Gallery
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__PEANO.png" width="200"><br><sub>Peano Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CHAIR.png" width="200"><br><sub>Chair Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CROSSED_TROUGH.png" width="200"><br><sub>Crossed Trough</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__HANDKERCHIEF.png" width="200"><br><sub>Handkerchief Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HUNT.png" width="200"><br><sub>Hunt's Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__KISS.png" width="200"><br><sub>Kiss Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__MENN.png" width="200"><br><sub>Menn's Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MITER.png" width="200"><br><sub>Miter Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__NORDSTRAND_WEIRD.png" width="200"><br><sub>Nordstrand's Weird Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TOOTH.png" width="200"><br><sub>Tooth Surface</sub></td>
 </tr>
 </table>
 
@@ -241,6 +287,46 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/algebraic__OCT_CUBE_DIAGONALS.png" width="200"><br><sub>Cube-Diagonal Quartic</sub></td>
 <td align="center"><img src="../images/variants/algebraic__OCT_CUBE_EDGES.png" width="200"><br><sub>Cube-Edge Quartic</sub></td>
 <td align="center"><img src="../images/variants/algebraic__OCT_CUBE_MEDIANS.png" width="200"><br><sub>Cube-Median Quartic</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCT_TRIANGLES.png" width="200"><br><sub>Cuboctahedral Triangle Quartic</sub></td>
+</tr>
+</table>
+
+### Goursat (Tetrahedral)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TET_TITEICA.png" width="200"><br><sub>Titeica Cubic (k' = 0)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_FOUR_SHEETS.png" width="200"><br><sub>Tetrahedral Cubic (k < 0)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_ISOLATED_POINT.png" width="200"><br><sub>Tetrahedral Cubic (k = 0)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TET_ROUNDED.png" width="200"><br><sub>Rounded Tetrahedron (0 < k < 4)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_CAYLEY.png" width="200"><br><sub>Cayley's Cubic (k = 4)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_BEYOND.png" width="200"><br><sub>Tetrahedral Cubic (k > 4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TET4_TRICONIC.png" width="200"><br><sub>Triconic Tetrahedral Quartic</sub></td>
+</tr>
+</table>
+
+### Goursat (Dodecahedral)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DODEC_PLANES.png" width="200"><br><sub>Six Icosidodecahedral Planes</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_ROUNDED.png" width="200"><br><sub>Rounded Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ICOSA_ROUNDED.png" width="200"><br><sub>Rounded Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DODEC_TRIANGLES.png" width="200"><br><sub>Icosidodecahedral Triangle Sextic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_PENTAGONS.png" width="200"><br><sub>Icosidodecahedral Pentagon Sextic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_BARTH.png" width="200"><br><sub>Barth Sextic (icosahedral frame)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DODEC_LINES_60.png" width="200"><br><sub>Sextic with 60 Lines</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_LINES_60B.png" width="200"><br><sub>Sextic with 60 Lines (second solution)</sub></td>
 </tr>
 </table>
 

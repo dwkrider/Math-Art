@@ -1132,6 +1132,36 @@
    "Record Nodal Surfaces"
   ],
   [
+   "SEPTIC_TRIPLE",
+   "Septic with 16 Triple Points",
+   "Record Nodal Surfaces"
+  ],
+  [
+   "ENDRASS_FAMILY",
+   "Endrass Octic Family",
+   "Many-Nodal Octics"
+  ],
+  [
+   "ENDRASS_160",
+   "Endrass Octic (160 nodes)",
+   "Many-Nodal Octics"
+  ],
+  [
+   "VAN_STRATEN_165",
+   "Van Straten Octic (165 nodes)",
+   "Many-Nodal Octics"
+  ],
+  [
+   "VAN_STRATEN_124",
+   "Van Straten Octic (124 nodes)",
+   "Many-Nodal Octics"
+  ],
+  [
+   "MOD_CHMUTOV",
+   "Modified Chmutov Octic (144 nodes)",
+   "Many-Nodal Octics"
+  ],
+  [
    "VMM_PRETZEL",
    "Pretzel",
    "Named Implicit Surfaces"
@@ -1202,6 +1232,76 @@
    "Encyclopedia Surfaces"
   ],
   [
+   "FRESNEL",
+   "Fresnel Wave Surface",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "MOBIUS_SURFACE",
+   "Moebius Surface",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "SINE_SURFACE",
+   "Sine Surface",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "DARBOUX_CYCLIDE",
+   "Darboux Cyclide",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "PEANO",
+   "Peano Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "CHAIR",
+   "Chair Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "CROSSED_TROUGH",
+   "Crossed Trough",
+   "MathWorld Gallery"
+  ],
+  [
+   "HANDKERCHIEF",
+   "Handkerchief Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "HUNT",
+   "Hunt's Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "KISS",
+   "Kiss Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "MENN",
+   "Menn's Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "MITER",
+   "Miter Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "NORDSTRAND_WEIRD",
+   "Nordstrand's Weird Surface",
+   "MathWorld Gallery"
+  ],
+  [
+   "TOOTH",
+   "Tooth Surface",
+   "MathWorld Gallery"
+  ],
+  [
    "OCT_CUBOCTA",
    "Cuboctahedral Quartic",
    "Goursat (Octahedral)"
@@ -1230,6 +1330,86 @@
    "OCT_CUBE_MEDIANS",
    "Cube-Median Quartic",
    "Goursat (Octahedral)"
+  ],
+  [
+   "OCT_TRIANGLES",
+   "Cuboctahedral Triangle Quartic",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "TET_TITEICA",
+   "Titeica Cubic (k' = 0)",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "TET_FOUR_SHEETS",
+   "Tetrahedral Cubic (k < 0)",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "TET_ISOLATED_POINT",
+   "Tetrahedral Cubic (k = 0)",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "TET_ROUNDED",
+   "Rounded Tetrahedron (0 < k < 4)",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "TET_CAYLEY",
+   "Cayley's Cubic (k = 4)",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "TET_BEYOND",
+   "Tetrahedral Cubic (k > 4)",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "TET4_TRICONIC",
+   "Triconic Tetrahedral Quartic",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "DODEC_PLANES",
+   "Six Icosidodecahedral Planes",
+   "Goursat (Dodecahedral)"
+  ],
+  [
+   "DODEC_ROUNDED",
+   "Rounded Dodecahedron",
+   "Goursat (Dodecahedral)"
+  ],
+  [
+   "ICOSA_ROUNDED",
+   "Rounded Icosahedron",
+   "Goursat (Dodecahedral)"
+  ],
+  [
+   "DODEC_TRIANGLES",
+   "Icosidodecahedral Triangle Sextic",
+   "Goursat (Dodecahedral)"
+  ],
+  [
+   "DODEC_PENTAGONS",
+   "Icosidodecahedral Pentagon Sextic",
+   "Goursat (Dodecahedral)"
+  ],
+  [
+   "DODEC_BARTH",
+   "Barth Sextic (icosahedral frame)",
+   "Goursat (Dodecahedral)"
+  ],
+  [
+   "DODEC_LINES_60",
+   "Sextic with 60 Lines",
+   "Goursat (Dodecahedral)"
+  ],
+  [
+   "DODEC_LINES_60B",
+   "Sextic with 60 Lines (second solution)",
+   "Goursat (Dodecahedral)"
   ]
  ],
  "topological": [
