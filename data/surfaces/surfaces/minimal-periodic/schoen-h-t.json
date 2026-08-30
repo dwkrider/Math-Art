@@ -17,7 +17,7 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "Schoen's hexagonal H'-T family from the 1970 NASA report, exhibited by 3DXM as a morphing hexagonal family with its fundamental region marked."
   },
   "curvature": {
     "condition": "minimal",
@@ -54,7 +54,10 @@
       "H. G. von Schnering, M. Oehme, G. Rudolf, \"Three-dimensional periodic nodal surfaces which envelope the threefold and fourfold cubic rod packings\", Acta Chem. Scand. 45 (1991) 873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]",
       "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
       "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
-      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]"
+      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]",
+      "The 3DXM Consortium, 'A Schoen HT Hexagonal Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch036_schoen_ht_hex.md).",
+      "M. Weber, 'Schoen H'-T', minimalsurfaces.blog (local mirror: minsurf/book/.../ch283_schoen_h_t.md).",
+      "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970)."
     ]
   },
   "metrics": {
@@ -63,6 +66,10 @@
   "tradition": [
     "crystallographic"
   ],
+  "ids": {
+    "vmm": "ch036_schoen_ht_hex",
+    "msblog": "ch283_schoen_h_t"
+  },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

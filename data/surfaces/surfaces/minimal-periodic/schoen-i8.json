@@ -17,7 +17,7 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "As I-6, with diagonals."
   },
   "curvature": {
     "condition": "minimal",
@@ -27,7 +27,8 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "orientable": true
   },
   "symmetry": {
     "kind": "space",
@@ -54,7 +55,9 @@
       "H. G. von Schnering, M. Oehme, G. Rudolf, \"Three-dimensional periodic nodal surfaces which envelope the threefold and fourfold cubic rod packings\", Acta Chem. Scand. 45 (1991) 873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]",
       "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
       "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
-      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]"
+      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA Technical Note TN D-5541 (1970), together with his later listings of the second-tier surfaces.",
+      "K. Brakke, the Surface Evolver periodic minimal-surface collection (kenbrakke.com/evolver), where several of these are figured."
     ]
   },
   "metrics": {

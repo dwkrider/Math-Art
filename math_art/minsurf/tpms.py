@@ -1084,6 +1084,31 @@ TPMS_EXACT = {
     'I9_RING': (_pl.RING_SURFACES['I9'][0] + " (relaxed)",
                 lambda cells, res, scale, theta:
                     _pl.ring_build('I9', cells, res, scale, theta)),
+    # Conjugate-Plateau rows.  These come by a THIRD route: solve a
+    # pinned Plateau problem, take its conjugate, then reflect in the
+    # planes the conjugate's boundary lands in (see the block above
+    # `CONJUGATE_SURFACES` in plateau).  It is the route Brakke's
+    # `*adj.fe` datafiles state, and unlike the exact Weierstrass rows it
+    # needs no theta-function data -- which is what makes it reach
+    # surfaces with no known closed form.
+    #
+    # The three hybrids are one contour separated by one constant, and
+    # Brakke's value for it is quoted to 17 digits in `plateau` because
+    # the period condition is what pins it.  Their patch areas come out
+    # 0.9645 / 0.9338 / 1.4064, so they are genuinely three surfaces and
+    # not one row entered three times.
+    'GW_CONJ': (_pl.CONJUGATE_SURFACES['GW']['name'] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.conjugate_build('GW', cells, res, scale, theta)),
+    'HT_HR_CONJ': (_pl.CONJUGATE_SURFACES['HT_HR']['name'] + " (relaxed)",
+                   lambda cells, res, scale, theta:
+                       _pl.conjugate_build('HT_HR', cells, res, scale, theta)),
+    'TR_HT_CONJ': (_pl.CONJUGATE_SURFACES['TR_HT']['name'] + " (relaxed)",
+                   lambda cells, res, scale, theta:
+                       _pl.conjugate_build('TR_HT', cells, res, scale, theta)),
+    'HR_TR_CONJ': (_pl.CONJUGATE_SURFACES['HR_TR']['name'] + " (relaxed)",
+                   lambda cells, res, scale, theta:
+                       _pl.conjugate_build('HR_TR', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;

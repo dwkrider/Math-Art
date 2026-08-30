@@ -248,6 +248,16 @@ ALIAS = {
     "tpms_exact:R3_RING": "schoen-riii",
     "tpms_exact:I8_RING": "schoen-i8",
     "tpms_exact:I9_RING": "schoen-i9",
+    # Conjugate-Plateau rows (Brakke's `*adj.fe`).  The three hybrids are
+    # matched to records by Brakke's catalogue page rather than by his
+    # datafile headers, which contradict it -- see the note above
+    # `CONJUGATE_SURFACES` in `math_art/minsurf/plateau.py`.  The genera
+    # the records already carry (8, 9, 10) are what the page's pairing
+    # predicts, which is the independent check on the match.
+    "tpms_exact:GW_CONJ": "schoen-gw",
+    "tpms_exact:HT_HR_CONJ": "schoen-hybrid-ht-h2r",
+    "tpms_exact:TR_HT_CONJ": "schoen-hybrid-tr-ht",
+    "tpms_exact:HR_TR_CONJ": "schoen-hybrid-h2r-tr",
     "tpms:LIDINOID": "lidinoid",
     "tpms:NEOVIUS": "neovius-surface",
     "tpms:FK_CS": "fischer-koch-cs",

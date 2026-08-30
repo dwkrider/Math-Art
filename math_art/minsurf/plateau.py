@@ -36,6 +36,7 @@ except ImportError:                      # flat (path-based) headless import
     from solver import collide as _scol
 
 TAU = 2.0 * math.pi
+SQRT3 = math.sqrt(3.0)
 
 
 # ==========================================================================
@@ -754,12 +755,13 @@ def adjoint_mesh(V, T, bangle=90.0):
     Two other reconstructions are wrong in ways that look plausible, and
     both were tried here first:
 
-      * the conforming least-squares surface `discrete_adjoint` returns.
-        Its area drifts FURTHER from the original as the mesh refines
-        (2.5300 / 2.0798 / 1.9025 against 2.5178 / 2.5146 / 2.5136).
-        Brakke calls the conforming version a "tweak" and never claims
-        it preserves area; his own is an incident-facet corner average,
-        not least squares.
+      * either conforming surface `discrete_adjoint` returns.  Those
+        converge to the right area under refinement but never hit it
+        exactly (corner mode: 2.5373 / 2.5196 / 2.5165 against 2.5179 /
+        2.5146 / 2.5136), because forcing one position per vertex is an
+        approximation and Brakke calls it a "tweak" for that reason.
+        Use them when a conforming mesh is REQUIRED -- reflection groups
+        need seams to weld -- and this one when area is being measured.
       * the medial triangles on P1, P2, P3 themselves.  Those ARE
         isometric, but a medial triangle has a QUARTER its parent's
         area, so they measure a quarter of the surface.
@@ -876,60 +878,110 @@ def _adjoint_edge_positions(V, T, bangle=90.0):
     return P, per
 
 
-def discrete_adjoint(V, T, bangle=90.0):
-    """Conjugate of a discrete minimal surface (Pinkall-Polthier).
+def discrete_adjoint(V, T, bangle=90.0, mode="corner"):
+    """Conjugate of a discrete minimal surface (Pinkall-Polthier), as a
+    CONFORMING mesh -- one position per vertex, same connectivity as the
+    input.
 
-    Returns new vertex positions.  `bangle` sweeps the associate family:
-    0 returns the original, 90 the conjugate.
+    `bangle` sweeps the associate family: 0 returns the original, 90 the
+    conjugate.  The honest conjugate is nonconforming (`adjoint_mesh`);
+    this is the conforming approximation to it, which is what a
+    reflection group needs, since reflecting a mesh whose triangles meet
+    only at edge midpoints leaves no seams to weld.
+
+    Two ways to get there, both implemented, `mode` selecting:
+
+    "corner" (default) -- Brakke's own, from `adjoint.cmd`.  The exact
+        nonconforming reconstruction gives every facet three corners
+        (see `adjoint_mesh`); assign each to its vertex and AVERAGE over
+        the incident facets.  Every averaged quantity is a genuine
+        vertex position, so nothing systematically shrinks.
+
+    "midpoint" -- least squares on (x_a + x_b)/2 = P_e, solved by CG.
+        Very nearly as good (2.5388 / 2.5203 / 2.5168 against corner's
+        2.5373 / 2.5196 / 2.5165, true areas 2.5179 / 2.5146 / 2.5136),
+        and kept because it is the independent check on "corner": two
+        different reconstructions agreeing to 6e-4 is worth more than
+        either alone.
+
+        Its history is a warning about blaming the model for the solver.
+        This mode was once measured DIVERGING under refinement -- 2.5300
+        / 2.0798 / 1.9025 -- and the midpoint operator was blamed, on the
+        plausible argument that it damps the mesh's high-frequency part.
+        The real cause was the 400 Jacobi sweeps then used to solve the
+        normal equations: they simply had not converged, and the finer
+        the mesh the further short they fell.  With CG the divergence is
+        gone entirely.
+
+    Note what is NOT an option: averaging the edge values P_e themselves.
+    At bangle 0 those are the original edge midpoints, so a vertex is not
+    their mean -- averaging pulls every vertex to its neighbourhood
+    centroid and costs 6% of the area and 31% of the edge lengths at the
+    one angle where the transform must be the identity.
     """
     V = np.asarray(V, dtype=float)
     T = np.asarray(T, dtype=np.int64)
     P, per = _adjoint_edge_positions(V, T, bangle)
     ne = len(P)
-    # NONCONFORMING -> CONFORMING, by least squares rather than by
-    # averaging.
-    #
-    # `P` holds one position per EDGE, and at bangle 0 those are exactly
-    # the original edge MIDPOINTS -- which is the check that the
-    # propagation above is right.  A vertex is therefore NOT the mean of
-    # its incident edge values: averaging midpoints pulls every vertex
-    # toward the centroid of its neighbourhood and shrinks the surface
-    # (measured: 6% area loss and 31% edge-length distortion at bangle 0,
-    # where the transform is supposed to be the identity).
-    #
-    # What the edge values actually assert is (x_a + x_b)/2 = P_e for
-    # every edge, an overdetermined linear system whose least-squares
-    # solution is the conforming surface.  Its normal equations are
+
+    if mode == "corner":
+        p1 = P[per[:, 0]]
+        p2 = P[per[:, 1]]
+        p3 = P[per[:, 2]]
+        # The corner-to-vertex assignment is forced by the midpoint
+        # identity in `adjoint_mesh`: the pair of corners averaging to P1
+        # must be the pair spanning the facet's first edge (v0, v1), and
+        # so on round the triangle.
+        acc = np.zeros((len(V), 3))
+        cnt = np.zeros(len(V))
+        for k, corner in enumerate((p1 - p2 + p3, p1 + p2 - p3,
+                                    -p1 + p2 + p3)):
+            np.add.at(acc, T[:, k], corner)
+            np.add.at(cnt, T[:, k], 1.0)
+        x = acc / np.maximum(cnt, 1.0)[:, None]
+        return x - x.mean(0) + V.mean(0)
+
+    if mode != "midpoint":
+        raise ValueError("discrete_adjoint: unknown mode %r" % (mode,))
+
+    # Least squares on (x_a + x_b)/2 = P_e.  Normal equations
     #     deg(v) x_v + sum_{w ~ v} x_w = 2 sum_{e in v} P_e,
-    # solved below by Jacobi iteration -- diagonally dominant, so it
-    # converges, and the system is singular only in the global
-    # translation, which is fixed at the end by recentring.
+    # singular only in the global translation, fixed by recentring.
     ends = np.empty((ne, 2), dtype=np.int64)
     for f in range(len(T)):
         for k in range(3):
             ends[int(per[f, k])] = (int(T[f, k]), int(T[f, (k + 1) % 3]))
     rhs = np.zeros((len(V), 3))
     deg = np.zeros(len(V))
-    for ei in range(ne):
-        a, b = ends[ei]
-        rhs[a] += 2.0 * P[ei]
-        rhs[b] += 2.0 * P[ei]
-        deg[a] += 1.0
-        deg[b] += 1.0
+    np.add.at(rhs, ends[:, 0], 2.0 * P)
+    np.add.at(rhs, ends[:, 1], 2.0 * P)
+    np.add.at(deg, ends[:, 0], 1.0)
+    np.add.at(deg, ends[:, 1], 1.0)
     deg = np.maximum(deg, 1.0)
+
+    def _AtA(X):
+        y = deg[:, None] * X
+        np.add.at(y, ends[:, 0], X[ends[:, 1]])
+        np.add.at(y, ends[:, 1], X[ends[:, 0]])
+        return y
+
     x = V - V.mean(0)
-    for _ in range(400):
-        nb = np.zeros((len(V), 3))
-        for ei in range(ne):
-            a, b = ends[ei]
-            nb[a] += x[b]
-            nb[b] += x[a]
-        xn = (rhs - nb) / deg[:, None]
-        if np.max(np.abs(xn - x)) < 1e-12:
-            x = xn
+    r = rhs - _AtA(x)
+    r -= r.mean(0)
+    d = r.copy()
+    rs = float(np.sum(r * r))
+    for _ in range(2000):
+        if rs <= 1e-24:
             break
-        x = xn
-    return x - x.mean(0)
+        Ad = _AtA(d)
+        Ad -= Ad.mean(0)
+        alpha = rs / max(float(np.sum(d * Ad)), 1e-300)
+        x += alpha * d
+        r -= alpha * Ad
+        rs_new = float(np.sum(r * r))
+        d = r + (rs_new / max(rs, 1e-300)) * d
+        rs = rs_new
+    return x - x.mean(0) + V.mean(0)
 
 
 # Schoen's ring-like surfaces (the R family), by relaxation
@@ -1281,6 +1333,307 @@ def ring_surface(key, m=120, rows=20, iters=150):
     return V, quads, mesh_area(V, T)
 
 
+# ---------------------------------------------------------------------------
+# Conjugate-Plateau surfaces (Ken Brakke's `*adj.fe` datafiles)
+#
+# Every one of Brakke's adjoint datafiles states the SAME problem, and it
+# is worth saying plainly because it looks like twenty problems:
+#
+#   1. a small fixed space polygon (4-8 corners) spanned by one face --
+#      an ordinary pinned-boundary Plateau problem, which `minimize_area`
+#      already solves;
+#   2. conjugate the result (Bonnet angle 90);
+#   3. each boundary arc of the CONJUGATE lies in a plane.  The plane's
+#      NORMAL is exact and comes from the surface's symmetry; only its
+#      offset is data, and Brakke reads that off the conjugate itself
+#      (`rhs1 := avg(edge ee where original==1, avg(ee.vertex,x))`);
+#   4. reflect in those planes to build the periodic surface.
+#
+# Revision 2 of the implementation plan said these needed "constraint
+# planes with free-sliding vertices".  That is half right, and the half
+# matters.  Step 1 needs nothing of the sort -- the polygon is entirely
+# fixed.  The constraint planes belong to step 3, where they are not
+# constraints imposed on a solve but a PROPERTY of the conjugate, then
+# measured.
+#
+# Two things learned by measuring, each of which cost a rebuild:
+#
+# * The conjugate's boundary is planar only to ~2e-3 (the discrete
+#   minimality defect), and reflected copies at that accuracy DO NOT
+#   WELD -- 9 vertices merged out of 14406, against ~120 when it is
+#   right.  So the boundary is PROJECTED onto its exact planes and the
+#   interior re-solved against it.  The projection moves points by
+#   ~2e-3 and costs 0.07% of the area.
+#
+# * Do NOT then let the boundary slide in those planes to re-minimize.
+#   That is the obvious next idea, and it destroys the surface: the
+#   free-boundary problem has no minimum, the sheet just shrinks along
+#   the planes, measured here from area 2.518 down to 0.676.  Brakke
+#   reaches a SADDLE (`hessian_seek`), not a minimum, and Evolver's own
+#   documentation warns about precisely this.  Until a saddle-point
+#   solver exists here, projection alone is the honest step.
+
+CONJUGATE_SURFACES = {
+    'GW': {
+        'name': "Schoen GW (graphite-wurtzite)",
+        # GW5adj.fe with length1 = 0.5.  Data supplied to Brakke by Alan
+        # Schoen, 2 May 2008.
+        'poly': [(0.0, 0.0, 0.0),
+                 (SQRT3, -1.0, 0.0),
+                 (SQRT3, -1.0, 0.5),
+                 (SQRT3 / 2.0, -1.5, 0.5),
+                 (SQRT3 / 2.0, 0.5, 0.5),
+                 (SQRT3 / 2.0, 0.5, 0.0)],
+        'normals': [(SQRT3, -1.0, 0.0), (0.0, 0.0, 1.0),
+                    (-SQRT3, -1.0, 0.0), (0.0, 1.0, 0.0),
+                    (0.0, 0.0, 1.0), (-SQRT3, -1.0, 0.0)],
+        # `rhs6 := rhs3` in the datafile.  Not taken on trust: measured
+        # independently here the two arcs give -0.14968 and -0.14965.
+        'same': {5: 2},
+    },
+}
+
+
+def _conj_alpha_poly(alpha):
+    """The hybrids' contour.  All three of Brakke's hybrid datafiles use
+    one shape with one parameter; only `alpha` and the constraints
+    differ."""
+    return [(0.0, 0.0, 0.0),
+            (-alpha, 0.0, 0.0),
+            (-alpha, 0.0, 1.0),
+            (-0.5, 0.0, 1.0),
+            (0.0, -SQRT3 / 2.0, 1.0),
+            (0.0, -SQRT3 / 2.0, 0.0)]
+
+
+# The hybrids (HRHTadj.fe, HTTRadj.fe, TRHTadj.fe): one contour, one set
+# of six constraints, the surfaces separated by `alpha` alone.  Brakke
+# quotes it to 17 digits because the period condition is what pins it --
+# these are NOT free parameters to round, and the values below are his,
+# read from the datafiles rather than reconstructed.
+#
+# WHICH FILE IS WHICH SURFACE: the datafile headers and Brakke's own
+# catalogue page disagree, and the page is followed here.  Two of the
+# three headers claim the SAME pair -- HTTRadj.fe says "H'-T T'-R'" and
+# TRHTadj.fe says "T'-R' H'-T" -- which cannot both be right for two
+# distinct surfaces, so at least one header is a copy-paste slip.
+# `evolver/examples/periodic/hybrids.html` instead assigns
+#
+#     H'-T | H"-R   genus  8   HRHTadj.fe
+#     T'-R' | H'-T  genus  9   HTTRadj.fe
+#     H"-R | T'-R'  genus 10   TRHTadj.fe
+#
+# and that list is self-consistent in a way the headers are not: taking
+# the constituents' own genera from the same page (H'-T 4, H"-R 5,
+# T'-R' 6), every hybrid comes out at g1 + g2 - 1.  The measured areas
+# agree with the ordering too -- alpha 0.0756 gives a 0.9338 patch and
+# alpha 0.7312 a 1.4064 one, the larger surface being the higher genus.
+# If a future reader finds evidence the headers are right after all, the
+# fix is to swap the last two names below and nothing else.
+for _k, _nm, _al in (
+        ('HT_HR', 'Schoen H\'-T | H"-R hybrid', 0.12126744808636576),
+        ('TR_HT', 'Schoen T\'-R\' | H\'-T hybrid', 0.07562891619932040),
+        ('HR_TR', 'Schoen H"-R | T\'-R\' hybrid', 0.73119569743699331)):
+    CONJUGATE_SURFACES[_k] = {
+        'name': _nm,
+        'poly': _conj_alpha_poly(_al),
+        'normals': [(1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (1.0, 0.0, 0.0),
+                    (0.5, -SQRT3 / 2.0, 0.0), (0.0, 0.0, 1.0),
+                    (0.0, 1.0, 0.0)],
+        'same': {2: 0},                       # rhs3 := rhs1
+    }
+del _k, _nm, _al
+
+
+def _conj_segment_ids(P, poly):
+    """Label each point by the contour segment it sits on."""
+    poly = np.asarray(poly, dtype=float)
+    n = len(poly)
+    best = np.full(len(P), np.inf)
+    sid = np.zeros(len(P), dtype=np.int64)
+    for k in range(n):
+        a = poly[k]
+        d = poly[(k + 1) % n] - a
+        t = np.clip(((P - a) @ d) / max(float(d @ d), 1e-300), 0.0, 1.0)
+        dist = np.linalg.norm(P - (a + t[:, None] * d), axis=1)
+        hit = dist < best
+        best = np.where(hit, dist, best)
+        sid = np.where(hit, k, sid)
+    return sid
+
+
+def conjugate_patch(key, m=120, rings=20, iters=400):
+    """Solve the Plateau problem, conjugate it, and land its boundary
+    exactly on the mirror planes.
+
+    Returns `(V, quads, planes)`, `planes` being the distinct mirrors as
+    `(unit normal, offset)` pairs.
+    """
+    spec = CONJUGATE_SURFACES[key]
+    poly = np.asarray(spec['poly'], dtype=float)
+    loop = resample_loop(np.vstack([poly, poly[:1]]), m)
+    V, quads, fixed = build_disk_grid(loop, rings)
+    V = np.asarray(V, dtype=float)
+    fixed = np.asarray(fixed, dtype=bool)
+    T = np.asarray(_quads_to_tris(quads))
+    V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
+                   dtype=float)
+
+    W = discrete_adjoint(V, T, bangle=90.0, mode="corner")
+
+    bnd = np.nonzero(fixed)[0]
+    sid = _conj_segment_ids(V[bnd], poly)
+    nrm = [np.asarray(v, float) / np.linalg.norm(np.asarray(v, float))
+           for v in spec['normals']]
+    off = []
+    for k in range(len(nrm)):
+        pts = W[bnd[sid == k]]
+        off.append(float((pts @ nrm[k]).mean()) if len(pts) else 0.0)
+    for a, b in spec.get('same', {}).items():
+        off[a] = off[b]
+
+    for k in range(len(nrm)):
+        idx = bnd[sid == k]
+        if not len(idx):
+            continue
+        W[idx] -= ((W[idx] @ nrm[k]) - off[k])[:, None] * nrm[k]
+    W = np.asarray(minimize_area(W.copy(), T, fixed,
+                                 outer_iters=max(1, iters // 2)),
+                   dtype=float)
+
+    planes = []
+    for n, c in zip(nrm, off):
+        dup = False
+        for n2, c2 in planes:
+            d = float(n @ n2)
+            if abs(d) > 1.0 - 1e-9 and abs(c - c2 * (1.0 if d > 0 else -1.0)) < 1e-9:
+                dup = True
+                break
+        if not dup:
+            planes.append((n, c))
+    return W, [tuple(f) for f in quads], planes
+
+
+def _reflection(n, c):
+    M = np.eye(4)
+    M[:3, :3] = np.eye(3) - 2.0 * np.outer(n, n)
+    M[:3, 3] = 2.0 * c * n
+    return M
+
+
+def conjugate_tile(V, quads, planes, depth=2, tol=1e-5):
+    """Reflect the patch in its mirror planes, breadth first.
+
+    Copies are deduplicated by IMAGE (the transformed centroid), not by
+    transform word: distinct words routinely place the patch identically,
+    and deduplicating on the word instead leaves the orbit full of exact
+    overlaps.
+    """
+    V = np.asarray(V, dtype=float)
+    gens = [_reflection(n, c) for n, c in planes]
+    ident = np.eye(4)
+    mats = [ident]
+    seen = {tuple(np.round(V.mean(0), 4))}
+    frontier = [ident]
+    for _ in range(max(int(depth), 0)):
+        nxt = []
+        for M in frontier:
+            for g in gens:
+                N = g @ M
+                img = V @ N[:3, :3].T + N[:3, 3]
+                k = tuple(np.round(img.mean(0), 4))
+                if k in seen:
+                    continue
+                seen.add(k)
+                nxt.append(N)
+                mats.append(N)
+        frontier = nxt
+        if not nxt:
+            break
+    pts = np.concatenate([V @ M[:3, :3].T + M[:3, 3] for M in mats])
+    nV = len(V)
+    faces = [tuple(i + j * nV for i in f)
+             for j in range(len(mats)) for f in quads]
+    W, wf = _weld_points(pts, faces, tol)
+    return W, wf, len(mats)
+
+
+def conjugate_tile_checked(V, quads, planes, depth=2):
+    """`conjugate_tile`, but only if the orbit verifies.
+
+    The gate is the R family's, and it is kept strict for the same
+    reason: an orbit that fails it is not a slightly-wrong surface, it is
+    a pile of coincident sheets that still renders as a plausible
+    picture.  Falling back to the bare patch is the correct answer, not a
+    consolation prize.
+    """
+    best = (np.asarray(V, dtype=float), list(quads), 1)
+    for d in range(1, max(int(depth), 0) + 1):
+        W, wf, n = conjugate_tile(V, quads, planes, depth=d)
+        if n <= 1:
+            break
+        if len(wf) != len({frozenset(f) for f in wf}):
+            break
+        ec = {}
+        for f in wf:
+            mm = len(f)
+            for t in range(mm):
+                x, y = f[t], f[(t + 1) % mm]
+                if x == y:
+                    continue
+                e = (x, y) if x < y else (y, x)
+                ec[e] = ec.get(e, 0) + 1
+        if any(v > 2 for v in ec.values()):
+            break
+        parent = list(range(len(W)))
+
+        def _find(i):
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+
+        for f in wf:
+            r0 = _find(f[0])
+            for v in f[1:]:
+                r1 = _find(v)
+                if r0 != r1:
+                    parent[r1] = r0
+        if len({_find(i) for i in range(len(W))}) != 1:
+            break
+        best = (W, wf, n)
+    return best
+
+
+def conjugate_surface(key, m=120, rings=20, iters=400, depth=2):
+    """Patch, orbit and patch area -- the headless entry point."""
+    V, quads, planes = conjugate_patch(key, m=m, rings=rings, iters=iters)
+    W, wf, n = conjugate_tile_checked(V, quads, planes, depth=depth)
+    T = np.asarray(_quads_to_tris(quads))
+    return W, wf, n, mesh_area(np.asarray(V, dtype=float), T)
+
+
+def conjugate_build(key, cells, res_per_cell, scale, theta):
+    """TPMS_EXACT-compatible wrapper: build, centre, and fit into the
+    2*scale cube the rest of the catalog uses."""
+    res = max(int(res_per_cell), 8)
+    m = max(24, 6 * res)
+    rings = max(6, res)
+    depth = max(1, int(cells)) if np.isscalar(cells) else 2
+    V, faces, _n, _a = conjugate_surface(key, m=m, rings=rings, depth=depth)
+    V = np.asarray(V, dtype=float)
+    if len(V):
+        V = V - 0.5 * (V.max(0) + V.min(0))
+        span = float(np.max(V.max(0) - V.min(0)))
+        if span > 1e-12:
+            V = V * (2.0 * scale / span)
+    if theta:
+        ct, st = math.cos(theta), math.sin(theta)
+        R = np.array([[ct, -st, 0.0], [st, ct, 0.0], [0.0, 0.0, 1.0]])
+        V = V @ R.T
+    return V, faces
+
+
 def _selftest():
     ok = True
 
@@ -1460,10 +1813,10 @@ def _selftest():
     # (P1+P2-P3, -P1+P2+P3, P1-P2+P3) is the Bonnet rotation of its
     # parent about the parent's own normal, hence congruent to it.
     #
-    # Two weaker reconstructions were measured first and both are wrong:
-    # the conforming least-squares surface drifts FURTHER off as the mesh
-    # refines, and the medial triangles are isometric but cover a quarter
-    # of the area.  Gate on the real thing.
+    # Two weaker reconstructions were measured first and neither is the
+    # conjugate: the conforming meshes only approach the right area under
+    # refinement, and the medial triangles are isometric but cover a
+    # quarter of it.  Gate on the real thing.
     #
     # The two Bonnet angles are gated differently ON PURPOSE:
     #
@@ -1510,6 +1863,37 @@ def _selftest():
         print("plateau: conjugate at %2.0fdeg -- per-facet congruence %.1e, "
               "total area ratio %.9f %s"
               % (ang, cong, rat, 'OK' if good else 'FAIL'))
+
+    # The conjugate-Plateau route, end to end: Plateau -> conjugate ->
+    # project onto the mirrors -> reflect.  Three things are gated, and
+    # the middle one is the whole point of the route.
+    #
+    #   * the patch area converges under refinement (it is a relaxation,
+    #     so area is the honest invariant -- see the R family above);
+    #   * the boundary lands EXACTLY on its mirror planes.  Not "nearly":
+    #     at the ~2e-3 the raw conjugate achieves, reflected copies do
+    #     not weld at all, so this is pass/fail rather than a tolerance;
+    #   * the orbit verifies, so `conjugate_tile_checked` returns more
+    #     than the bare patch.
+    for key in sorted(CONJUGATE_SURFACES):
+        areas = []
+        planes = quads = Vc = None
+        for mm, rr in ((72, 12), (96, 16)):
+            Vc, quads, planes = conjugate_patch(key, m=mm, rings=rr,
+                                                iters=250)
+            areas.append(mesh_area(Vc, np.asarray(_quads_to_tris(quads))))
+        drift = abs(areas[1] - areas[0]) / max(areas[1], 1e-30)
+        bnd = _boundary_vertices(np.asarray(_quads_to_tris(quads)))
+        offp = 0.0
+        for i in bnd:
+            offp = max(offp, min(abs(float(Vc[i] @ n) - c) for n, c in planes))
+        _W, _wf, ncopy = conjugate_tile_checked(Vc, quads, planes, depth=2)
+        good = drift < 0.01 and offp < 1e-9 and ncopy > 1 and areas[1] > 1e-6
+        ok &= good
+        print("plateau: conjugate %-6s area %.6f -> %.6f (drift %.3f%%), "
+              "on-plane %.0e, %d copies %s"
+              % (key, areas[0], areas[1], 100.0 * drift, offp, ncopy,
+                 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
