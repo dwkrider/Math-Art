@@ -4,7 +4,18 @@
 
 ## Overview
 
-Recursive clusters of Platonic solids, after the fractal-polyhedron construction on George W. Hart's pages: every generation places a scaled copy of the solid at each vertex, face centre or edge midpoint of the current copies. Vertex mode with child scale $\tfrac12$ on a tetrahedron, parents removed, is the classic Sierpinski tetrahedron; face mode grows spiky, coral-like clusters. Twist and per-child rotation sliders make the growth chiral, and each generation can be coloured separately.
+Recursive clusters of Platonic solids: each generation glues scaled copies of the solid onto the previous ones, growing a self-similar cluster.
+
+The construction follows the fractal-polyhedron pages of George W. Hart — a copy of the solid is placed at each vertex, face centre or edge midpoint of every current copy, then the process repeats. Vertex mode at child scale $\tfrac12$ on a tetrahedron, with parents removed, is the classic Sierpinski tetrahedron; face mode grows spiky, coral-like clusters. A separate **Crystal** engine grows the same solids face-to-face instead, after Haüy's and Fathauer's crystal constructions.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Fractal Polyhedron*.
+2. **Choose the engine.** Leave **Crystal** on *Off* for the anchor-cluster engine (the default), or pick a crystal preset to switch to face-to-face growth — the two engines expose different controls, so decide this first.
+3. **Anchor-cluster engine.** Pick the **Solid** (Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron) and the **Anchors** where children attach: *Vertices*, *Faces* or *Edges*. Then set the two main shape knobs — **Generations** (how many rounds of copying, 1–7) and **Child Scale** (how much smaller each child is, 0.1–0.9). **Spread** slides children out from their parent (1 seats them on the anchor, $>1$ throws them outward into spiky growth), and **Keep Parents** off discards all but the finest generation, which is what turns tetrahedron/vertex/$\tfrac12$ into a true Sierpinski gasket.
+4. **Chirality controls** (anchor engine only). **Push** shifts each child further along its anchor direction; **Twist** rotates each child about that direction, and **Child Rotate X/Y/Z** apply a fixed extra rotation — all cumulative across generations, so small angles wind the whole cluster into a chiral spiral.
+5. **Crystal engine.** A preset names a seed solid and a scale (e.g. *Cube s=1/2* → octahedral hull, *Icosahedron s=phi^-2* → Sierpinski-pentagon facets); **Custom** applies the face rule to the Solid and Child Scale you set above. Only **Generations** and **Keep Parents** still apply. Turn on **Hull Shell** to wrap the cluster in a translucent convex hull so the emerging crystal form reads clearly.
+6. **Output.** **Coloring** *Per Generation* gives each round its own material (view in Material Preview); *None* leaves it plain. **Scale** sizes the finished object, which is always recentred and fit to a 2 m cube. Each build reports its **copy count**; a request that would exceed 30 000 copies is refused with an error rather than left to explode, so drop Generations if you hit it.
 
 ## Options
 
@@ -13,21 +24,21 @@ Recursive clusters of Platonic solids, after the fractal-polyhedron construction
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Cube | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
-| Anchors | Vertices | Vertices, Faces, Edges. |
-| Generations | 3 | Range 1-7. |
-| Child Scale | 0.5 | Range 0.1-0.9. |
+| Solid | Cube | Platonic solid used as the repeating unit. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
+| Anchors | Vertices | Where each generation places its child copies on the parent solid. Vertices, Faces, Edges. |
+| Generations | 3 | Number of recursive levels to build Range 1-7. |
+| Child Scale | 0.5 | Size of each child copy relative to its parent Range 0.1-0.9. |
 | Spread | 1.27 | Distance multiplier from parent to children Range 0.5-3. |
 | Keep Parents | On | Keep every generation (off = only the last, e.g. the Sierpinski gasket) |
 | Push | 0 | Extra shift of each child along its anchor direction (in parent-size units) Range -1-2. |
 | Twist | 0 | Rotation of each child about its anchor direction (cumulative per generation) Range -180-180. |
-| Child Rotate X | 0 | Range -180-180. |
-| Child Rotate Y | 0 | Range -180-180. |
-| Child Rotate Z | 0 | Range -180-180. |
+| Child Rotate X | 0 | Extra rotation of each child about the X axis (cumulative per generation) Range -180-180. |
+| Child Rotate Y | 0 | Extra rotation of each child about the Y axis (cumulative per generation) Range -180-180. |
+| Child Rotate Z | 0 | Extra rotation of each child about the Z axis (cumulative per generation) Range -180-180. |
 | Crystal | Off | Haüy/Fathauer fractal-crystal growth: stack scaled copies face-to-face on every free face of the previous generation (after R.-J. Haüy 1784; R. Fathauer, Bridges 2008/2013). Off, Cube s=1/2 (Octahedron), Cube s=1/3 (Rhombic Dodecahedron), Haüy Octahedron (s=1), Dodecafoam (s=phi^-2), Dodecahedron s=1/2 (Icosahedron), Icosahedron s=phi^-2 (Sierpinski Pent), Hex Prism s=1/2 (Dipyramid), and 2 more. |
 | Hull Shell | Off | Add the convex hull of the cluster as a translucent shell so the crystal form reads clearly |
-| Coloring | Per Generation | Per Generation, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Generation | Whether to assign a material per generation or leave the mesh unmaterialed. Per Generation, None. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 
@@ -49,23 +60,33 @@ Renders of each selectable option:
 
 ## How it works
 
-**Seeds and anchors.** The five Platonic solids are generated at unit scale (the dodecahedron as the dual of the icosahedron — a vertex at each icosahedral face centroid, faces ordered around each icosahedral vertex). The chosen anchor mode gives the set of local points where children are attached:
+**In plain terms.** Take a single solid — a cube, say. Mark a handful of *attachment points* on it: its corners, or the centres of its faces, or the middles of its edges. Now glue a smaller cube onto each of those points. Every one of those small cubes has the same attachment points, so glue a still-smaller cube onto each of *those*, and keep going. After a few rounds you have a bushy cluster that looks the same whether you stand back or lean in close — the whole thing is a scaled copy of one of its own arms. That "same at every zoom" quality is what makes it a **fractal**. The knobs on this generator just change the four decisions in that recipe: which solid, which attachment points, how much smaller each child is, and how far out it sits.
+
+**Seeds and anchors.** The five Platonic solids are generated at unit scale (the dodecahedron as the dual of the icosahedron — a vertex at each icosahedral face centroid, faces ordered around each icosahedral vertex). The chosen anchor mode fixes the set of local attachment points — the "which points" of the plain-terms recipe:
 
 - **Vertices** — the seed's vertices,
 - **Edges** — the midpoints $\tfrac12(V_a+V_b)$ of its distinct edges,
 - **Faces** — the centroids $\tfrac1{|f|}\sum_{i\in f}V_i$ of its faces.
 
-**The iterated function system.** Each copy carries an origin $o$, a size $s$, an orientation matrix $R$ and a generation index. For every anchor $a$ (with unit direction $\hat a$) a child is created at
+Because these anchors sit at different distances from the centre, the mode alone changes the character of the growth: vertices point outward and give an open, spiky cluster, while face centres sit closer in and pack more tightly.
+
+**The iterated function system.** Each copy carries an origin $o$, a size $s$, an orientation matrix $R$ and a generation index — everything needed to place one solid in space. For every anchor $a$ (with unit direction $\hat a$) a child is created at
 
 $$o' = o + R\,a\,\cdot s\,\rho \;+\; R\,\hat a\,\cdot p\,s,\qquad s' = s\,\kappa,$$
 
-where $\rho$ is the **spread**, $p$ the radial **push**, and $\kappa$ the **child scale**. The orientation is updated cumulatively — first a **twist** of angle $\theta$ about the (world-space) anchor direction $R\hat a$, then a fixed Euler rotation $R_e$ from the three child-rotate angles:
+where $\rho$ is the **spread**, $p$ the radial **push**, and $\kappa$ the **child scale**. Read geometrically: $R\,a$ carries the anchor from the seed's own frame into the parent's placed frame, $\cdot s$ scales it to the parent's actual size, and $\rho$ then decides how far along that ray the child seats — $\rho=1$ lands it exactly on the anchor, $\rho>1$ pushes it clear of the parent so the arms separate rather than interpenetrate. The push term adds a further slide of $p\,s$ purely along the outward normal $R\hat a$, and $s'=s\kappa$ makes the child a fixed fraction of its parent, which is what guarantees each round is a shrunken copy of the last.
+
+The orientation is updated cumulatively — first a **twist** of angle $\theta$ about the (world-space) anchor direction $R\hat a$, then a fixed Euler rotation $R_e$ from the three child-rotate angles:
 
 $$R' = R_e\;\bigl(\text{Rot}(R\hat a,\theta)\,R\bigr).$$
 
-This is a self-affine IFS: the attractor is the fixed set of the family of contractions $\{x\mapsto o'+R'x\,s'\}$. With Keep Parents off, only the finest generation survives; vertex mode, $\kappa=\tfrac12$, spread $1$ on a tetrahedron reproduces the **Sierpinski tetrahedron**, since the four vertex-anchored half-scale maps are exactly its defining contractions. Keeping parents accumulates every generation into one dense cluster; face and edge modes with spread $>1$ throw children outward into spiky growths.
+Because $R'$ is passed down and multiplied again at every generation, a small twist compounds: generation $k$ carries $k$ turns' worth of it, so the cluster winds into a chiral spiral rather than a symmetric bush. Setting all these rotations to zero leaves $R'=R$ and the growth stays perfectly aligned.
 
-**Assembly.** Copies are expanded into mesh geometry — each generation's copies transformed by their $R$, $s$, $o$ — with a per-face `generation` integer attribute and an optional one-material-per-generation palette. The whole cluster is recentred on its bounding-box centre and fit to a 2 m cube before the final scale is applied. Copy counts are capped (30 000) to keep meshes tractable, so deep generations of high-anchor-count seeds raise an error rather than explode.
+This is a **self-affine iterated function system (IFS)**: writing each child placement as a map $x\mapsto o'+s'R'x$, the visible cluster is (an approximation to) the attractor — the one compact set carried onto itself by the whole family of these contraction maps, guaranteed to exist and be unique because every map shrinks distances by the factor $\kappa<1$ (Hutchinson's theorem). With Keep Parents off, only the finest generation survives, which is the attractor's own approximation; vertex mode, $\kappa=\tfrac12$, spread $1$ on a tetrahedron reproduces the **Sierpinski tetrahedron** exactly, since the four vertex-anchored half-scale maps *are* its four defining contractions. Keeping parents instead accumulates every generation into one dense cluster — the same maps, but every intermediate stage left in place — and face or edge modes with spread $>1$ throw children outward into the spiky, coral-like growths.
+
+**Assembly.** Copies are expanded into mesh geometry — each generation's copies transformed by their $R$, $s$, $o$ — with a per-face `generation` integer attribute that drives the optional one-material-per-generation palette, so the colours read the recursion depth directly. The whole cluster is recentred on its bounding-box centre and fit to a 2 m cube before the final scale is applied, so the object arrives centred at the origin regardless of how lopsidedly it grew. Copy counts are capped at 30 000 to keep meshes tractable: a deep generation count on a high-anchor seed (an icosahedron has twelve vertices, so twelve children each round) grows as $A^g$ and would overwhelm the mesh, so the operator raises an error rather than attempt it.
+
+**The crystal engine.** Turning **Crystal** on replaces the anchor rule with Haüy and Fathauer's face-growth rule: instead of placing children at points, each generation stacks $s$-scaled copies **face-to-face on every still-unoccupied face** of the previous generation. A copy is offset from its parent along the shared face normal by $a_f\,(s + s')$, where $a_f$ is the face's apothem (its plane's distance from the centre), so the two solids meet flush with no gap or overlap; a face already carrying the parent is skipped. Coincident copies are merged, so at $s=1$ the growth reproduces Haüy's classic layer-by-layer stack of equal blocks. As generations accumulate, the **convex hull** of the cluster approaches a definite crystal form — usually the dual of the seed — whose facets carry Sierpinski-like patterns set by how many faces meet at each hull vertex: three give Sierpinski triangles, five (at $s=\varphi^{-2}$) give Sierpinski pentagons. The optional Hull Shell draws that hull explicitly so the crystal silhouette is visible even before the pattern fills in.
 
 ## References
 

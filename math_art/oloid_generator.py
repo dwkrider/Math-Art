@@ -16,6 +16,16 @@
 # ruled strips between two perpendicular circles after Kit Wallace's
 # "ruled Mobius strip" experiments (kitwallace.tumblr.com/post/
 # 85762927079), including his true one-edged Mobius surface.
+#
+# References:
+# - P. Schatz, the oloid (1929); see "Rhythmusforschung und Technik"
+#   (1975) for his own account of the invertible cube it came from.
+# - H. Dirnboeck and H. Stachel, "The Development of the Oloid",
+#   J. Geometry and Graphics 1 (1997) 105-118 -- the exact ruling used
+#   here, and the result that every ruling has length sqrt(3).
+# - K. Wallace, "ruled Mobius strip" experiments,
+#   kitwallace.tumblr.com/post/85762927079 -- the two-circle roller and
+#   the one-edged ruled surface.
 
 bl_info = {
     "name": "Oloid & Ruled Surfaces",
@@ -81,6 +91,7 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Shape",
+            description="Which developable / ruled shape to build",
             items=[('OLOID', "Oloid",
                     "Convex hull of two perpendicular circles "
                     "through each other's centre (exact ruled "
@@ -103,7 +114,9 @@ if _IN_BLENDER:
                     "(rulings across a double-loop edge)")],
             default='OLOID')
         segments: IntProperty(name="Segments", default=96, min=12,
-                              max=512)
+                              max=512,
+                              description="Number of segments around the "
+                                          "circles")
         separation: FloatProperty(
             name="Separation", default=1.0, min=0.0, max=3.0,
             description="Distance between the circle centres "
@@ -121,7 +134,8 @@ if _IN_BLENDER:
                         "(wobbler); != 1 stretches them to ellipses "
                         "(ellipsoloid)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
         sharp_edges: BoolProperty(
             name="Sharp Circle Edges", default=True,
             description="Mark the two circular arcs sharp (and "

@@ -23,13 +23,23 @@
 # Star faces are rendered by fanning each {n/d} polygon from its centre,
 # so the star outline shows as a solid.
 #
+# One further object sits outside that set. Relaxing "two faces to an
+# edge" to "an even number" admits exactly one more uniform figure --
+# Skilling's great disnub dirhombidodecahedron, four faces deep along
+# half of its edges -- and it is built here from U75 by Hart's XOR with
+# the compound of twenty octahedra (see build_skilling).
+#
 # References:
 # - W. A. Wythoff, "A relation between the polytopes of the C600-family",
 #   Koninklijke Akademie van Wetenschappen te Amsterdam (1918).
 # - H. S. M. Coxeter, M. S. Longuet-Higgins, J. C. P. Miller, "Uniform
 #   polyhedra", Phil. Trans. Royal Soc. A 246 (1954), 401-450.
 # - S. P. Skilling, "The complete set of uniform polyhedra", Phil. Trans.
-#   Royal Soc. A 278 (1975) (completeness).
+#   Royal Soc. A 278 (1975) -- completeness, and the great disnub
+#   dirhombidodecahedron that the relaxed definition admits.
+# - George W. Hart, "Great Disnub Dirhombidodecahedron", Virtual Polyhedra
+#   (georgehart.com/virtual-polyhedra/), for the exclusive-OR construction
+#   used here.
 # - Zvi Har'El, "Uniform Solution for Uniform Polyhedra", Geometriae
 #   Dedicata 47 (1993), 57-110 (the construction algorithm followed here).
 # - Magnus Wenninger, "Polyhedron Models", Cambridge (1971).
@@ -43,7 +53,8 @@ bl_info = {
     "location": "View3D > Add > Mesh > Math Art > Polyhedra",
     "description": "All 75 uniform polyhedra (Wythoff construction): "
                    "convex, Kepler-Poinsot, hemipolyhedra and star "
-                   "uniforms, with duals and star prisms",
+                   "uniforms, with duals and star prisms; plus "
+                   "Skilling's figure",
     "category": "Add Mesh",
 }
 
@@ -389,6 +400,76 @@ def build_snub(u, scale=1.0):
     return V, faces
 
 
+# --------------------------------------------------------------------------
+# Skilling's figure -- the one beyond the seventy-five
+# --------------------------------------------------------------------------
+# Relax "exactly two faces meet at each edge" to "an even number do", and
+# Skilling's computer search found exactly ONE new uniform object: the
+# great disnub dirhombidodecahedron, with four faces along some edges.
+# It is therefore not one of the 75, and it is the only thing the wider
+# definition adds.
+#
+# Hart's construction is an exclusive-OR of the great dirhombicosi-
+# dodecahedron (U75) with the compound of twenty octahedra, and the
+# compound never has to be built separately: U75's own sixty vertices
+# already carry it.  They form thirty antipodal diameters, and the twenty
+# triples of MUTUALLY ORTHOGONAL diameters are exactly the twenty
+# octahedra -- each diameter lying in two of them.  Every one of U75's
+# forty triangles turns out to be one of the compound's 160, so the XOR
+# cancels them and leaves 120 triangles, which with U75's 60 squares and
+# 24 pentagrams gives 204 faces on 60 vertices and 240 edges.
+#
+# The four-faces-to-an-edge property is why this figure needs its own
+# check: a self-test asserting every edge is used exactly twice would
+# reject a correct build, so the assertion is EVEN multiplicity.
+
+def _skilling_octahedra(V, tol=1e-5):
+    """The twenty octahedra hiding in U75's vertex set, as index triples
+    of antipodal diameters."""
+    diam = []
+    taken = set()
+    for i, v in enumerate(V):
+        if i in taken:
+            continue
+        for j in range(i + 1, len(V)):
+            if j in taken:
+                continue
+            if all(abs(v[k] + V[j][k]) < tol for k in range(3)):
+                taken.add(i)
+                taken.add(j)
+                diam.append((i, j))
+                break
+    out = []
+    for a in range(len(diam)):
+        for b in range(a + 1, len(diam)):
+            for c in range(b + 1, len(diam)):
+                u, w, x = V[diam[a][0]], V[diam[b][0]], V[diam[c][0]]
+                if (abs(sum(u[k] * w[k] for k in range(3))) < tol
+                        and abs(sum(u[k] * x[k] for k in range(3))) < tol
+                        and abs(sum(w[k] * x[k] for k in range(3))) < tol):
+                    out.append((diam[a], diam[b], diam[c]))
+    return out
+
+
+def build_skilling(scale=1.0):
+    """The great disnub dirhombidodecahedron (Skilling's figure)."""
+    if _snub_data is None:
+        raise RuntimeError("snub coordinate data not available")
+    S = _snub_data.SNUBS[75]
+    V = [tuple(c * scale for c in v) for v in S["V"]]
+    tri = set()
+    for da, db, dc in _skilling_octahedra(S["V"]):
+        for ia in da:
+            for ib in db:
+                for ic in dc:
+                    tri.add(frozenset((ia, ib, ic)))
+    drop = {frozenset(f) for f in S["F"] if len(f) == 3}
+    faces = [(list(t), 1) for t in sorted(tri - drop, key=sorted)]
+    faces += [(list(f), _face_density(S["V"], f))
+              for f in S["F"] if len(f) != 3]
+    return V, faces
+
+
 def build_dual(V, faces, big=6.0):
     """Dual by polar reciprocation about the unit sphere: one dual vertex
     per face (its pole), one dual face per original vertex (the poles of
@@ -460,19 +541,30 @@ def build_dual(V, faces, big=6.0):
     return poles, out
 
 
-def valid_star_step(p, q):
-    """Coerce (p, q) to a valid star-polygon step: 1 <= q < p/2, coprime
-    with p ({p/q} and {p/(p-q)} are the same star, so q is folded into
-    range; a non-coprime q is nudged to the nearest coprime, falling back
-    to 1 = a convex prism)."""
+def valid_star_step(p, q, fold=True):
+    """Coerce (p, q) to a valid star-polygon step: coprime with p, and by
+    default folded to 1 <= q < p/2 because {p/q} and {p/(p-q)} are the same
+    star polygon.  A non-coprime q is nudged to the nearest coprime, falling
+    back to 1 = a convex prism.
+
+    Pass `fold=False` to keep a RETROGRADE step q > p/2.  The two describe the
+    same polygon but not the same antiprism: an antiprism's bases are rotated
+    relative to each other, so the retrograde form joins them the other way
+    round and is a distinct uniform solid -- {5/2} gives the pentagrammic
+    antiprism (density 2) and {5/3} the pentagrammic CROSSED antiprism
+    (density 3).  Har'El's Appendix II Table 4 lists both.  Folding is right
+    for prisms, dipyramids and trapezohedra, whose geometry depends only on
+    the base polygon.
+    """
     q = max(1, min(int(q), p - 1))
-    if q > p / 2:                        # {p/q} == {p/(p-q)}
+    if fold and q > p / 2:               # {p/q} == {p/(p-q)}
         q = p - q
     q = max(1, q)
     if math.gcd(p, q) != 1:
+        hi = p // 2 if fold else p - 1
         for delta in range(1, p):
             for cand in (q - delta, q + delta):
-                if 1 <= cand <= p // 2 and math.gcd(p, cand) == 1:
+                if 1 <= cand <= hi and math.gcd(p, cand) == 1:
                     return cand
         return 1
     return q
@@ -499,12 +591,64 @@ def build_star_prism(p, q, scale=1.0):
     return verts, faces
 
 
+def _crossed_antiprism(p, qb, scale=1.0):
+    """The crossed {p/(p-qb)} antiprism on a {p/qb} base, or None.
+
+    Unlike an ordinary antiprism the two bases are IN PHASE -- offset 0, not
+    pi/p -- and each base edge, which spans qb ring steps, is capped by an apex
+    on the OPPOSITE ring at the midpoint of that span.  That needs qb even, so
+    the midpoint lands on a ring position.  The height then follows from
+    "lateral edge = base edge"; if that has no real solution the form does not
+    exist and None is returned.
+
+    Derived from, and checked against, the component inside Skilling's
+    compounds 44 and 45: at unit edge that measures ring radius 0.525731,
+    half-height 0.393076 and circumradius 0.656431, which this reproduces.
+    """
+    if qb % 2 or qb < 2 or math.gcd(p, qb) != 1:
+        return None
+    m = qb // 2                                   # apex is qb/2 steps along
+    R = scale / (2.0 * math.sin(qb * math.pi / p))
+    base = 2.0 * R * math.sin(qb * math.pi / p)   # == scale, by construction
+    # horizontal chord from a base vertex to the apex, m steps away
+    chord = 2.0 * R * math.sin(m * math.pi / p)
+    v2 = base * base - chord * chord
+    if v2 <= 1e-15:
+        return None
+    h = math.sqrt(v2) / 2.0                       # half-height
+    top = [(R * math.cos(2 * math.pi * k / p),
+            R * math.sin(2 * math.pi * k / p), h) for k in range(p)]
+    bot = [(R * math.cos(2 * math.pi * k / p),
+            R * math.sin(2 * math.pi * k / p), -h) for k in range(p)]
+    verts = top + bot                             # T_k = k, B_k = p + k
+    faces = []
+    for k in range(p):
+        faces.append(([k, p + (k + m) % p, (k + qb) % p], 1))
+        faces.append(([p + k, (k + m) % p, p + (k + qb) % p], 1))
+    d = p - qb                                    # the retrograde density
+    faces.append(([(qb * k) % p for k in range(p)], d))
+    faces.append(([p + (qb * k) % p for k in range(p)][::-1], d))
+    return verts, faces
+
+
 def build_star_antiprism(p, q, scale=1.0):
     """Uniform {p/q} star antiprism: two star-polygon bases (bottom rotated by
     pi/p) joined by 2p lateral triangles.  The lateral-triangle apex is the
     perpendicular-bisector-plane vertex (equal lateral edges), and the height
     solves the uniform condition (lateral edge = base edge) when real, else
-    falls back to a valid crossed/retrograde form.  V=2p, E=4p, F=2p+2."""
+    falls back to a valid crossed/retrograde form.  V=2p, E=4p, F=2p+2.
+
+    A RETROGRADE step q > p/2 gives the CROSSED antiprism, a distinct uniform
+    solid -- {5/2} is the pentagrammic antiprism (density 2), {5/3} the
+    pentagrammic crossed antiprism (density 3); Har'El's Appendix II Table 4
+    lists both.  It is built by `_crossed_antiprism` below, because it is not a
+    member of this function's family: its two bases are IN PHASE rather than
+    rotated by pi/p.  Note that simply not folding q does not produce it -- it
+    would relabel the density while leaving the solid unchanged."""
+    if p > 2 and q > p / 2.0 and math.gcd(p, int(q)) == 1:
+        out = _crossed_antiprism(p, p - int(q), scale)
+        if out is not None:
+            return out
     q = valid_star_step(p, q)
     R = scale / (2.0 * math.sin(q * math.pi / p))
     if p % 2 == 1:                                   # apex shift s: 2s == q-1
@@ -633,10 +777,19 @@ def _expand_faces(verts, faces):
 
 # solids this build can construct: the non-snub Wythoff cases plus the
 # snub / special solids for which stored coordinates are available.
+# Skilling's figure is not one of the 75 (four faces meet at some of its
+# edges), so it sits outside UNIFORMS and is appended to BUILDABLE with
+# its own id and family.
+SKILLING_U = 76
+SKILLING_ROW = (SKILLING_U, "Great Disnub Dirhombidodecahedron",
+                "| 3/2 5/3 3 5/2", ["3/2", "5/3", "3", "5/2"], 60, 240, 204)
+
 _SNUB_U = set(_snub_data.SNUBS) if _snub_data else set()
 BUILDABLE = [row for row in UNIFORMS
              if row[0] in _SNUB_U
              or (not row[2].strip().startswith('|') and len(row[3]) == 3)]
+if _snub_data is not None:
+    BUILDABLE.append(SKILLING_ROW)
 
 
 # --- families (to organise the UI) --------------------------------------
@@ -651,6 +804,7 @@ _FAMILIES = [
     ('HEMI', "Hemipolyhedra"),
     ('STAR_O', "Star (Octahedral)"),
     ('STAR_I', "Star (Icosahedral)"),
+    ('SKILLING', "Skilling's Figure"),
 ]
 
 
@@ -664,6 +818,8 @@ def _symmetry(pqr):
 
 
 def _category(u, name, pqr):
+    if u == SKILLING_U:
+        return 'SKILLING'
     if 'hemi' in name.lower():
         return 'HEMI'
     if u in _KEPLER_POINSOT:
@@ -682,7 +838,9 @@ def _self_test():
     ok = 0
     bad = 0
     for (u, name, wy, pqr, Ve, Ee, Fe) in BUILDABLE:
-        if u in _SNUB_U:
+        if u == SKILLING_U:
+            V, F = build_skilling()
+        elif u in _SNUB_U:
             V, F = build_snub(u)
         else:
             V, F = build_uniform(wy, pqr)
@@ -808,8 +966,12 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(name="Family", items=_family_items,
-                             update=_family_update)
-        solid: EnumProperty(name="Solid", items=_solid_items)
+                             update=_family_update,
+                             description="Category of uniform polyhedron "
+                                         "to choose from")
+        solid: EnumProperty(name="Solid", items=_solid_items,
+                            description="Which uniform polyhedron to "
+                                        "build")
         dual: BoolProperty(
             name="Dual", default=False,
             description="Build the dual by polar reciprocation (the "
@@ -818,10 +980,13 @@ if _IN_BLENDER:
                         "truncated")
         coloring: EnumProperty(
             name="Coloring",
+            description="Whether to colour faces by their number of "
+                        "sides",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
         style: EnumProperty(
             name="Style",
+            description="How the polyhedron surface is rendered",
             items=[('SOLID', "Solid", "Plain closed polyhedron"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -837,7 +1002,7 @@ if _IN_BLENDER:
                     "segment per face (best on the convex uniforms)")],
             default='SOLID')
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
+            name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo face frame width")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.001, max=1.0,
@@ -861,7 +1026,9 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         def draw(self, context):
             lay = self.layout
@@ -893,7 +1060,9 @@ if _IN_BLENDER:
                        BUILDABLE[0])
             u, name, wy, pqr, Ve, Ee, Fe = row
             try:
-                if u in _SNUB_U:
+                if u == SKILLING_U:
+                    V, F = build_skilling()
+                elif u in _SNUB_U:
                     V, F = build_snub(u)
                 else:
                     V, F = build_uniform(wy, pqr)
@@ -969,15 +1138,24 @@ if _IN_BLENDER:
         bl_label = "Star Prism / Antiprism"
         bl_options = {'REGISTER', 'UNDO'}
 
-        form: EnumProperty(name="Form", items=_STAR_FORMS, default='PRISM')
-        sides: IntProperty(name="Sides (p)", default=5, min=3, max=32)
+        form: EnumProperty(name="Form", items=_STAR_FORMS, default='PRISM',
+                           description="Which star form to build: prism, "
+                                       "antiprism, dipyramid or "
+                                       "trapezohedron")
+        sides: IntProperty(name="Sides (p)", default=5, min=3, max=32,
+                           description="Number of points p of the star "
+                                       "polygon base")
         step: IntProperty(name="Step (q)", default=2, min=1, max=15,
                           description="Star density; {p/q}, coprime with p")
         coloring: EnumProperty(
             name="Coloring",
+            description="Whether to colour faces by their number of "
+                        "sides",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         def execute(self, context):
             q = valid_star_step(self.sides, self.step)

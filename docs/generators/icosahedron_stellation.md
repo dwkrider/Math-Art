@@ -1,14 +1,26 @@
-# Icosahedron Stellation
+# Stellation
+
+![Stellation](../images/icosahedron_stellation.png)
 
 ## Overview
 
-Add a stellation of the icosahedron -- any of the 59 (Coxeter/
-Du Val/Flather/Petrie, "The Fifty-Nine Icosahedra"), by Crennell
-index, or a custom set of Du Val cell shells.
+Add a stellation of a seed polyhedron — the solid whose faces all lie in the seed's own face planes. The icosahedron is the default seed and gives the famous 59 (Coxeter/Du Val/Flather/Petrie, "The Fifty-Nine Icosahedra"), selectable by Crennell index, by named preset, or by a custom set of Du Val cell shells. But the **Seed** selector also builds the stellations of six other polyhedra, and any result can be exported flat as a cut-and-fold papercraft net.
 
-To **stellate** a polyhedron is to extend its face planes until they meet again, and take the solid bounded by the new intersections. The icosahedron's twenty planes produce the most famous result in the subject: Coxeter, Du Val, Flather and Petrie's *The Fifty-Nine Icosahedra* (1938), which enumerated them under a specific set of rules about which combinations count as a legitimate stellation.
+To **stellate** a polyhedron is to extend its face planes until they meet again, and take the solid bounded by the new intersections. The icosahedron's twenty planes produce the most famous result in the subject: Coxeter, Du Val, Flather and Petrie's *The Fifty-Nine Icosahedra* (1938), which enumerated them under a specific set of rules about which combinations count as a legitimate stellation. The same construction runs on any convex seed — the dodecahedron yields the three Kepler–Poinsot star forms, the cuboctahedron the cube–octahedron compounds, the rhombic triacontahedron the compound of five cubes, and so on.
 
-The number is a convention, not a fact of nature — different rules give different counts — but the geometry is exact, and the family contains some of the best-known shapes in polyhedral art, from the great icosahedron to the spiky echidnahedron that ends the series.
+The number 59 is a convention, not a fact of nature — different rules give different counts — but the geometry is exact, and each seed's family contains some of the best-known shapes in polyhedral art, from the great icosahedron to the spiky echidnahedron that ends the icosahedron's series.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Stellation*.
+2. **Pick the Seed.** The **Seed** dropdown chooses which polyhedron's stellations you are exploring: **Icosahedron** (the default, and the famous 59), **Dodecahedron**, **Dodecahedron Tetrahedral** (the dodecahedron with its symmetry cut down to the tetrahedral subgroup, which is what unlocks the tetrahedral stellations), **Cuboctahedron**, **Rhombic Dodecahedron**, **Triakis Tetrahedron** and **Rhombic Triacontahedron**. Every control below is relative to the seed you pick.
+3. **Choose how to select the solid** with **Select by**: *Named* picks a published stellation from a per-seed list; *Shells* exposes the seed's individual cell shells as checkboxes; *Cell code* takes a typed shell code in the Du Val notation the literature uses (e.g. `a b c d e1`).
+   - Under **Named** the icosahedron lists all 59 in Crennell's order, with the famous members named — **1. Icosahedron** (the seed itself), **2. First stellation** (small triambic / triakis), **3. Compound of 5 octahedra**, **7. Great icosahedron**, **8. Final stellation (echidnahedron)** (the default, and the spikiest), **22. Compound of 10 tetrahedra**, **30. Medial triambic icosahedron** and **47. Compound of 5 tetrahedra** (a chiral one), with the rest labelled by their Du Val cell code; indices 1–32 are reflexible, 33–59 chiral. The other seeds show their own shorter preset lists (the dodecahedron's small/great/great-stellated forms, the cuboctahedron's Wenninger compounds, and so on).
+   - Under **Shells** a bank of checkboxes for the seed's cell shells (inner → outer) builds whatever union you switch on; an empty selection is rejected. A seed with more shells than the on-screen bank notes the overflow and points you to Cell code.
+   - When the chosen seed has a chiral shell, a **Chirality** control appears to pick one hand or keep both.
+4. **Choose the Style.** *Solid* is the plain closed polyhedron; *Leonardo (da Vinci)* opens each face into a frame (set **Border** for its width and **Thickness** for the panel depth); *Struts* thickens the edges (a Wireframe modifier at **Thickness**); *Ball and Stick* renders edges as cylinders (**Strut Radius**) and vertices as spheres (**Node Radius**, 0 = none); *Wireframe* shows bare edges. **Scale** sizes the result.
+5. **Or unfold it into a Net.** Setting the Style to *Papercraft Net* lays the solid out flat as a sheet you could cut out and fold up. **Unfolding** picks the layout strategy — *Breadth First* (fast, and symmetric solids come out symmetric) or *Best Of Many* (tries many unfoldings and keeps the one that needs the fewest pieces, with a **Seed** number choosing which attempt is kept). **Glue Tabs** adds a tab along one edge of every cut pair at **Tab Size** (a fraction of the edge it stands on); **Edge Numbers** prints a matching number beside each cut edge and its tab so the edges that join can be found; and the **Fold** slider folds the flat net back up into the finished solid, keeping every face rigid at any value between.
+6. **Read the report.** Each build prints its name, its seed and vertex/face counts (`V=… F=…`) in the status bar — for the icosahedron's named stellations it also reports which of 59, a quick check that, say, the echidnahedron really came out at 92 vertices and 180 faces.
 
 ## Options
 
@@ -16,24 +28,53 @@ The number is a convention, not a fact of nature — different rules give differ
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Stellation |  8. Final stellation (echidnahedron) | 1. Icosahedron,  2. First stellation (triakis / small triambic),  3. Compound of 5 octahedra,  4. Third stellation,  5. Du Val E,  6. Second stellation,  7. Great icosahedron,  8. Final stellation (echidnahedron), and 52 more. |
-| a (core) | On | -- |
-| b | On | -- |
-| c | Off | -- |
-| d | Off | -- |
-| e1 | Off | -- |
-| e2 | Off | -- |
-| f1 (chiral) | Off | -- |
-| f2 | Off | -- |
-| g1 | Off | -- |
-| g2 | Off | -- |
-| g3 (outer) | Off | -- |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
-| Border | 0.3 | Leonardo face frame width Range 0.02-0.95. |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
+| Seed | Icosahedron | Base polyhedron whose face-plane arrangement is stellated. Its own symmetry decides which cells are interchangeable, and so what counts as a shell. Icosahedron, Dodecahedron, Dodecahedron Tetrahedral, Cuboctahedron, Rhombic Dodecahedron, Triakis Tetrahedron, Rhombic Triacontahedron. |
+| Select by | Named | How to choose which cells are solid. Named, Shells, Cell code. |
+| Stellation |  8. Final stellation (echidnahedron) | Which stellation to build, by Crennell index 1-59, or Custom to pick Du Val shells by hand.  1. Icosahedron,  2. First stellation (small triambic),  3. Compound of 5 octahedra,  4. Third stellation,  5. Du Val E,  6. Second stellation,  7. Great icosahedron,  8. Final stellation (echidnahedron), and 52 more. |
+| Stellation |  | Which named stellation of the seed to build |
+| a (core) | On | Fill this cell shell when building a custom stellation (inner shell first) |
+| b | On | Fill this cell shell when building a custom stellation (inner shell first) |
+| c | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| d | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| e1 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| e2 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| f1 (chiral) | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| f2 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| g1 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| g2 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| g3 (outer) | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 11 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 12 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 13 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 14 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 15 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 16 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 17 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 18 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 19 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 20 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 21 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 22 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 23 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 24 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 25 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 26 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 27 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Shell 28 | Off | Fill this cell shell when building a custom stellation (inner shell first) |
+| Chirality | Both hands | A chiral shell splits into a mirror-image pair of half-shells. Keeping one gives a chiral stellation -- this is what separates Crennell 33-59 from their reflexible namesakes. Both hands, One hand, Other hand. |
+| Cell Code | `a b c d e1` | Shell labels separated by spaces. Du Val names work for the icosahedron; add 'a' or 'b' to a chiral shell to keep one hand, e.g. 'f1a' |
+| Style | Solid | How the stellation is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Papercraft Net. |
+| Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel/strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 
@@ -44,7 +85,7 @@ Renders of each selectable option:
 <table>
 <tr>
 <td align="center"><img src="../images/variants/icosahedron_stellation__1.png" width="200"><br><sub> 1. Icosahedron</sub></td>
-<td align="center"><img src="../images/variants/icosahedron_stellation__2.png" width="200"><br><sub> 2. First stellation (triakis / small triambic)</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__2.png" width="200"><br><sub> 2. First stellation (small triambic)</sub></td>
 <td align="center"><img src="../images/variants/icosahedron_stellation__3.png" width="200"><br><sub> 3. Compound of 5 octahedra</sub></td>
 </tr>
 <tr>
@@ -145,19 +186,19 @@ Renders of each selectable option:
 
 ## How it works
 
-These are computed from the plane arrangement, not stored as coordinate lists. The engine is pure Python — no numpy, no scipy — and proceeds in four steps.
+**In plain terms.** Take the flat faces of a polyhedron — say the twenty triangles of an icosahedron — and imagine each one as an infinite pane of glass rather than a bounded shape. The panes slice through each other and chop the space around the centre into a great many little sealed compartments, like the cells you'd get by cutting a block along all those planes. A *stellation* is just a choice of which compartments to fill in with solid material; whatever surface encloses the filled region is a new polyhedron. The spikes of the great icosahedron and the echidnahedron are simply compartments that sit far out along the directions where several panes cross. So the whole job is: find the compartments, group the ones that are copies of each other under the seed's symmetry, and let the user switch groups on and off. Nothing is stored as a list of coordinates — every shape is *derived* from the seed's face planes each time, in Python with numpy. Change the **Seed** and the same machinery runs on a different set of planes: the icosahedron's 59 are the famous case, not the only one.
 
-**1. The planes.** Build the twenty face planes of a unit-inradius icosahedron. Every stellation's faces lie in these planes; that is the definition, and nothing outside them can appear.
+**1. The planes.** Build the face planes of the chosen seed, each written $\mathbf{n}_i\cdot\mathbf{x}=d_i$ with a unit normal $\mathbf{n}_i$ and a per-plane distance $d_i$. For the icosahedron all twenty planes sit at the same distance and the normals point toward the vertices of the dual dodecahedron (built from $\varphi=\tfrac{1+\sqrt5}{2}$); but a general seed need not be so tidy — the cuboctahedron, for instance, has two different face-to-centre distances — which is exactly why the engine carries a distance per plane rather than assuming one. Every stellation's faces, by definition, lie in these planes and no others, so this list is the entire universe the construction can draw from, and getting the normals and distances exact is what makes every downstream number exact.
 
-**2. Enumerate the cells.** Twenty planes cut space into many regions. Each region is identified by its **sign vector** — which side of each plane it lies on — and the bounded ones are found by breadth-first search across shared faces, using a large bounding cube to decide boundedness. This is the expensive step and the one that makes the result a derivation rather than a transcription.
+**2. Enumerate the cells.** The planes cut space into many regions, and each region is labelled by its **sign vector** $s\in\lbrace+1,-1\rbrace^{m}$ over the $m$ planes — for every plane, which side of it the region lies on. The core cell is "inside all of them" ($s=(-1,\dots,-1)$); stepping across one plane flips one sign. The engine walks outward from the core by breadth-first search, flipping one sign at a time, keeping only the **bounded** regions — a large bounding cube catches the unbounded ones (any region touching the cube runs to infinity and is discarded) — and, for general seeds, confirming that each candidate cell is genuinely three-dimensional rather than a degenerate flat sliver. This search is the expensive step, and it is what makes the output a genuine derivation rather than a transcription: for the icosahedron it finds exactly **473 bounded cells**, the classical Du Val/Maeder count.
 
-**3. Sort into shells.** The bounded cells fall into concentric symmetry classes, Du Val's $a, b, c, \dots$ Cells are assigned to a shell by their **power** — how many face planes separate the cell from the core — so shells are determined combinatorially rather than by measuring distances, which would be fragile where cells are nearly equidistant.
+**3. Sort into shells.** Those cells are not all different — the seed's own symmetry group carries many of them onto each other, so they fall into concentric symmetry classes called **shells** (Du Val's $a, b, c, \dots, g_3$ for the icosahedron). The group is computed exactly from the seed's vertex set and made to act on cells by permuting the planes, so no cell is ever misassigned by a floating-point centroid lookup. For the icosahedron the eleven shells come out with sizes $1, 20, 30, 60, 20, 60, 120, 12, 30, 60, 60$, reproducing the published tally; one shell, $f_1$ (120 cells), is **chiral** — the proper rotation group splits it into two enantiomorphic hands of 60 cells each, and that single fact is the source of every chiral figure and of the **Chirality** control. Other seeds have their own shell counts, which is why some of them offer more shells than the on-screen checkbox bank and defer the rest to a typed cell code.
 
-**4. Choose and build.** A stellation is a declaration of which shells are solid. The engine takes the union of the chosen cells and extracts its **outward boundary**, discarding the internal faces where two solid cells meet. That boundary is the polyhedron.
+**4. Choose and build.** A stellation is now just a *declaration of which shells are solid*, whether you pick it by name, by shell checkboxes, or by typing its Du Val code. The engine takes the union of the chosen cells and extracts the **outward boundary** — it keeps a cell's face on a plane only when the neighbour across that plane is *empty*, discarding every interior face where two filled cells meet. What survives is a single watertight surface: the polyhedron. For the icosahedron, Crennell's indices 1–32 name unions of full shells and the chiral figures 33–59 replace the full $f_1$ shell with just one of its two hands, which is what makes them come out one-handed; the named presets of the other seeds are the analogous unions, verified against Wenninger, Cundy–Rollett and the Kepler–Poinsot stars.
 
-Because a stellation is just a subset of shells, the whole family is one enumeration with 59 selections applied to it — the well-known members like the great icosahedron and the final stellation are particular shell sets, not special cases in the code.
+Because a stellation is only a subset of shells, each seed's whole family is *one* enumeration with a set of selections laid over it — the great icosahedron ($a$ through $g_2$) and the final echidnahedron (all 473 cells, $a$ through $g_3$) are particular shell sets, not special cases anywhere in the code. Switching the seed simply re-runs the identical steps on a new arrangement of planes.
 
-For the same machinery generalised beyond the icosahedron, see [General Stellation](general_stellation.md).
+**Papercraft nets.** The *Papercraft Net* style takes the finished surface and unfolds it into the plane: it cuts enough edges to lay every face flat without overlap, marks the edges that remain as mountain or valley folds, and — optionally — adds numbered glue tabs so the cut edges can be matched up again. The **Fold** slider interpolates rigidly between the flat net and the closed solid, keeping every face undistorted along the way, so the same object doubles as a build sheet and as an animation of the model folding shut.
 
 ## References
 

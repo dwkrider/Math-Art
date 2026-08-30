@@ -3,7 +3,19 @@
 ![Bubble Cluster](../images/bubble_cluster.png)
 
 ## Overview
-A soap-bubble cluster with one bubble at every vertex of a seed mesh (the Platonic solids, or any mesh via Active Object). Radii are uniform or follow each point's mean distance to its neighbours. Where bubbles overlap, the interfaces obey soap-film physics (Young-Laplace): equal bubbles meet on a flat film, unequal ones on a curved film bulging into the larger, lower-pressure bubble, with natural triple junctions where three films meet. By default each bubble is emitted as its own closed mesh (its outer cap plus its films), and interior bubbles fully enclosed by films can also emit their flat-walled foam-cell polyhedron.
+
+A soap-bubble cluster built **constructively** — one bubble at every vertex of a seed mesh, with the shared walls drawn in closed form from soap-film physics.
+
+Where two bubbles overlap the interface obeys the **Young-Laplace** rule: equal bubbles meet on a flat film, unequal ones on a curved film that bulges into the larger, lower-pressure bubble, and where three films meet you get the **triple junctions** of real foam. Each bubble is emitted as its own closed solid by default, and interior bubbles fully caged by films can also emit their flat-walled foam-cell polyhedron.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Bubble Cluster*.
+2. **Pick the Seed.** The five Platonic solids (Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron) put a bubble at each of their vertices; **Active Object** instead reads the vertices *and edges* of the selected mesh, which is how you drive the cluster from an arbitrary shape or a lattice — and the only way to get **interior** bubbles surrounded on all sides.
+3. **Set the shape knobs.** **Radius Factor** is the main dial: each bubble's radius is that factor times the local neighbour spacing, and once it climbs past about $0.5$ neighbouring bubbles overlap enough to merge into a foam rather than sit apart. **Radii** chooses whether every bubble takes the *Same Radius* (the global mean spacing) or scales *From Neighbour Distance* (its own local spacing). **Subdivisions** sets how finely each sphere is tessellated.
+4. **Watch the interacting controls.** **Interior Films** only affects the single merged mesh — separate bubbles always carry their own walls so each stays closed. **Intersection Polyhedra** only produces anything for bubbles *fully enclosed* by films, which needs interior seed points (a lattice via Active Object); on a bare Platonic seed every bubble is on the outside and none qualifies.
+5. **Choose the output.** **Separate Bubble Meshes** (default) emits one closed, star-shaped solid per bubble, parented to an empty; turning it off gives a single merged cluster. **Color Bubbles** gives each its own material, and **Intersection Polyhedra** adds the flat-walled foam cells as extra meshes.
+6. **Read the report.** There is no numeric check here, but the operator *warns* when it cannot do what you asked — when Active Object is selected with no active mesh, or when Intersection Polyhedra is on but no bubble is fully enclosed, so the films close up around nothing.
 
 ## Options
 
@@ -12,16 +24,16 @@ A soap-bubble cluster with one bubble at every vertex of a seed mesh (the Platon
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Icosahedron | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Active Object. |
-| Radii | Same Radius | Same Radius, From Neighbour Distance. |
+| Seed | Icosahedron | Mesh whose points each carry one bubble. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Active Object. |
+| Radii | Same Radius | Give every bubble the same radius or scale each to its local spacing. Same Radius, From Neighbour Distance. |
 | Radius Factor | 0.62 | Bubble radius as a fraction of the mean neighbour distance (above 0.5 neighbouring bubbles merge) Range 0.1-2. |
 | Subdivisions | 2 | Icosphere subdivisions per bubble Range 1-5. |
 | Interior Films | On | Include the soap films between touching bubbles (merged mesh only; separate bubbles always carry their walls, keeping each one closed) |
 | Separate Bubble Meshes | On | One mesh object per bubble (its outer cap plus its films), parented to an empty |
 | Color Bubbles | Off | Give each bubble its own material color |
 | Intersection Polyhedra | Off | For every bubble fully enclosed by films, add its flat-walled cell polyhedron as a separate mesh (needs interior points, e.g. a lattice seed via Active Object) |
-| Smooth Shading | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smooth Shading | On | Shade the bubble surfaces smooth |
+| Scale | 1 | Overall size; fits the cluster into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 
@@ -43,7 +55,9 @@ Renders of each selectable option:
 
 ## How it works
 
-**Radii.** Each point's local scale is its mean edge length to its mesh neighbours (or, with no edges, its nearest-point distance). *Same Radius* uses the global mean; *From Neighbour Distance* uses the per-point value. The radius is `factor` times that scale -- above $0.62$-ish, neighbours overlap enough to merge.
+**In plain terms.** Blow a cluster of soap bubbles and press them together. Wherever two bubbles touch they share a single wall instead of keeping two. If the two bubbles are the same size that shared wall is flat, like a pane of glass between them; if one is bigger than the other the wall bows *into the bigger bubble*, because the small bubble is more tightly curved and so squeezes harder. Where three walls come together they always meet in a clean seam, and that seam is what you see criss-crossing a real head of foam. This generator does not simulate any of that — it *draws* it directly: it drops a sphere at every point of your seed shape, and for each touching pair it works out the exact wall the physics demands and slices the spheres along it. Everything below is the recipe for that wall.
+
+**Radii.** Each point's local scale is its mean edge length to its mesh neighbours (or, with no edges, its nearest-point distance). *Same Radius* uses the global mean; *From Neighbour Distance* uses the per-point value. The radius is `factor` times that scale -- above $0.5$-ish, neighbours overlap enough to merge, which is why the default $0.62$ already produces a joined foam rather than isolated balls.
 
 **Young-Laplace films.** Two spheres of radii $R_i,R_j$ with centres distance $d$ apart intersect in a circle at signed offset $a=(d^2+R_i^2-R_j^2)/(2d)$ from centre $i$ along the axis $\mathbf u$, of radius $\rho=\sqrt{R_i^2-a^2}$. The soap film through that circle depends on the pressures. By Laplace's law the pressure jump across a film of mean curvature $\kappa$ is $\Delta P=2\gamma\kappa$; mechanical equilibrium of the two spherical caps and the interface fixes the interface curvature as the **difference** of the bubble curvatures:
 $$\frac1r=\frac1{r_{\text{small}}}-\frac1{r_{\text{large}}}.$$

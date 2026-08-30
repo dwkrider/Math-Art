@@ -802,7 +802,8 @@ if _IN_BLENDER:
                     "Flat strapwork ribbon (woven or interlace-cut)"),
                    ('CURVE', "Centerline Curve",
                     "The woven centerline as a curve object")],
-            default='TUBE')
+            default='TUBE',
+            description="Geometry type for the strand")
         interlace_mode: EnumProperty(
             name="Interlace",
             items=[('WOVEN', "Woven (3D)",
@@ -810,7 +811,9 @@ if _IN_BLENDER:
                    ('FLAT', "Flat Knotwork",
                     "Cut the under-strand at each crossing (ribbon "
                     "output only; tubes always weave)")],
-            default='WOVEN')
+            default='WOVEN',
+            description="Weave the strand in 3D, or cut the "
+                        "under-strand for flat knotwork")
         weave_height: FloatProperty(
             name="Weave Height", default=0.09, min=0.0, max=0.5,
             description="Z amplitude of the weave at a root-level "
@@ -827,7 +830,9 @@ if _IN_BLENDER:
             items=[('LEVEL', "Substitution Level",
                     "A palette color per nesting depth"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='LEVEL')
+            default='LEVEL',
+            description="Assign a material per nesting level or one "
+                        "uniform material")
 
         def execute(self, context):
             if self.output == 'CURVE':

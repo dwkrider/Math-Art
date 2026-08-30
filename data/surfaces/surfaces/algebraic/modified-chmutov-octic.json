@@ -1,0 +1,83 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "modified-chmutov-octic",
+  "name": "Modified Chmutov Octic (144 nodes)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BOX",
+      "radius": 1.1
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nThe j = 1, d = 8, n = 3 member of a series of degree-d hypersurfaces in P^n modifying Chmutov's: the sum over the coordinates of the (j+1)-th powers of the Chebyshev polynomials T_{d/2} (critical values +1/-1) set equal to 1, giving real A_j singularities."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 144,
+        "note": "All 144 nodes are REAL -- the point of the modification: Chmutov's original octic has 154 nodes, but complex ones."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "OCTIC",
+      "key": "MOD_CHMUTOV",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.",
+      "V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's original series.",
+      "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- the family and the 112-node count of its generic member.",
+      "S. Breske, O. Labs and D. van Straten, \"Real Line Arrangements and Surfaces with Many Real Nodes\", arXiv:math/0507234 (2005) -- why real nodes are the rendering-relevant count.",
+      "O. Labs, 'Advent calendar 2002, No. 6 (with the defining Chebyshev form)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch024_no_06.md).",
+      "O. Labs, 'Octics (listing it as '144: (2002?), modified Chmutov surface')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "V. I. Arnold et al., Singularities of Differentiable Maps, Vol. II, Birkhaeuser (1988), p. 419 (cited by the page for Chmutov's original series)."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch024_no_06"
+  },
+  "named_after": "Chmutov, Octic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

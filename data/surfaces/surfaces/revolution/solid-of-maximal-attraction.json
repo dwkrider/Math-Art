@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "solid-of-maximal-attraction",
+  "name": "Solid of Maximal Attraction",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "revolution",
+    "tradition-classical",
+    "tradition-physical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "The shape of the homogeneous solid that maximises gravitational attraction at a boundary point: a surface of revolution with spherical equation r = a sqrt(sin(latitude))."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.",
+      "resume": "A meridian-profile surface-of-revolution row; the radial builders in math_art/curiosity_surface_generator.py (build_radial, build_fresnel) are the pattern to follow, and the parametrization is in the cited mirror chapter."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "R. Ferreol, \"Solid of maximal attraction\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1205_attraction_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1205_attraction_2.md).",
+      "The chapter credits the Marquis de Saint-Jacques (1750) and C. F. Gauss (1830)."
+    ]
+  },
+  "year": 1750,
+  "tradition": [
+    "classical",
+    "physical"
+  ],
+  "ids": {
+    "mathcurve": "ch1205_attraction_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

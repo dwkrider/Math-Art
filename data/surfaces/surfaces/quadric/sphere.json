@@ -1,0 +1,147 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "sphere",
+  "name": "Sphere",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-implicit",
+    "embedded",
+    "implemented",
+    "k-const-positive",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2 + y**2 + z**2 - 1"
+  },
+  "curvature": {
+    "condition": "k-const-positive",
+    "gaussian": {
+      "exact": "1",
+      "value": 1.0,
+      "source": "classical"
+    },
+    "mean": {
+      "exact": "1",
+      "value": 1.0,
+      "source": "classical",
+      "note": "at unit radius, with the inward normal"
+    },
+    "total_curvature": {
+      "exact": "4*pi",
+      "value": 12.566370614359172,
+      "source": "classical",
+      "note": "Gauss-Bonnet: 2*pi*chi"
+    },
+    "willmore_energy": {
+      "exact": "4*pi",
+      "value": 12.566370614359172,
+      "source": "classical",
+      "note": "the Willmore minimum"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "genus": 0,
+    "euler_characteristic": 2,
+    "orientable": true,
+    "one_sided": false,
+    "compact": true,
+    "boundary_components": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 0,
+    "continuous": "O(3) -- the full orthogonal group",
+    "order": "infinite",
+    "chiral": false
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "SPHERE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_radius",
+    "area": {
+      "exact": "4*pi",
+      "value": 12.566370614359172,
+      "source": "classical"
+    },
+    "volume_enclosed": {
+      "exact": "4*pi/3",
+      "value": 4.1887902047863905,
+      "source": "classical"
+    },
+    "isoperimetric_quotient": {
+      "exact": "1",
+      "value": 1.0,
+      "source": "classical"
+    }
+  },
+  "tradition": [
+    "classical"
+  ],
+  "alternate_names": [
+    "Unit sphere"
+  ],
+  "ids": {
+    "mathworld": "Sphere",
+    "mathcurve": "ch1257_sphere_2",
+    "vmm": "ch069_sphere"
+  },
+  "notes": {
+    "caveats": [
+      "Simultaneously the K = +1 model, the CMC model, the Willmore minimiser and the isoperimetric extremum; the curvature facet records the strongest condition only (k-const-positive), with the rest in also_satisfies."
+    ]
+  },
+  "alternate_definitions": [
+    {
+      "x": "sin(u)*cos(v)",
+      "y": "sin(u)*sin(v)",
+      "z": "cos(u)",
+      "u_range": [
+        "0",
+        "pi"
+      ],
+      "v_range": [
+        "0",
+        "2*pi"
+      ],
+      "periodic_v": true,
+      "mode": "parametric",
+      "fidelity": "exact",
+      "exactness": "elementary"
+    }
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

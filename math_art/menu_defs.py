@@ -81,6 +81,14 @@ SURFACES = Menu(
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),
         _e("mesh.orbital_add", 'META_BALL'),
         _e("mesh.hyperbolic_surface_add", 'MESH_CAPSULE'),
+        # the K = +1 half of Minding's classification; kept a
+        # separate operator because "Hyperbolic Surface" is the
+        # wrong label to show a user for a sphere.
+        _e("mesh.spherical_surface_add", 'MESH_UVSPHERE'),
+        # The degree-2 surfaces, from their exact charts. Three of
+        # them also ship as ruled surfaces; being reachable two
+        # ways is a fact about the surface, not a duplication.
+        _e("mesh.quadric_add", 'MESH_UVSPHERE'),
         # One constant-mean-curvature generator: Delaunay surfaces and
         # their roulettes, bubbletons grafted onto them, Wente's closed
         # torus, and the elastic tori of the spherical space form.
@@ -89,6 +97,7 @@ SURFACES = Menu(
         _e("mesh.bryant_surface_add", 'MESH_UVSPHERE'),
         _e("mesh.crochet_add", 'MOD_CLOTH'),
         _e("mesh.willmore_add", 'MESH_TORUS', "Willmore Surface"),
+        _e("mesh.cmc_capillary_add", 'MATFLUID'),
     ])
 
 POLYHEDRA = Menu(
@@ -101,17 +110,32 @@ POLYHEDRA = Menu(
         _e("mesh.polyhedral_torus_add", 'MESH_TORUS'),
         _e("mesh.notable_polyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.canonical_polyhedron_add", 'MESH_ICOSPHERE'),
+        # One entry: the icosahedron's fifty-nine and the other seeds'
+        # stellations are one construction with a seed selector, so they
+        # are one operator.  (mesh.general_stellation_add still exists as
+        # a deprecated shim, deliberately absent from the menu.)
         _e("mesh.icosahedron_stellation_add", 'MESH_ICOSPHERE'),
-        _e("mesh.general_stellation_add", 'MESH_ICOSPHERE'),
+        _e("mesh.noble_faceting_add", 'MESH_ICOSPHERE'),
         _e("mesh.star_prism_add", 'MESH_CYLINDER'),
         _e("mesh.conway_add", 'MESH_ICOSPHERE'),
         _e("mesh.zonohedron_add", 'MESH_UVSPHERE'),
+        # Zonohedrification, zonish polyhedra and the rhombohedral
+        # dissections are one seed-plus-star construction, so one entry.
+        _e("mesh.zonish_add", 'MESH_ICOSPHERE', "Zonohedrification"),
+        # One polar zonohedron per face of a seed, packed round its
+        # centre, and the solid that facets them.
+        _e("mesh.zonohedra_cluster_add", 'MESH_ICOSPHERE'),
+        _e("mesh.transpolyhedron_add", 'MESH_ICOSPHERE'),
+        _e("mesh.twelve_faced_add", 'MESH_ICOSPHERE'),
+        _e("mesh.slide_together_add", 'MOD_BOOLEAN'),
         _e("mesh.waterman_add", 'MESH_ICOSPHERE'),
         _e("mesh.symmetrohedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.polytope4d_add", 'MESH_CUBE'),
         _e("mesh.polytwister_add", 'MESH_TORUS'),
         _e("mesh.hyperbolic_honeycomb_add", 'META_BALL'),
         _e("mesh.spacefill_add", 'SNAP_VOLUME'),
+        _e("mesh.spidron_ball_add", 'MESH_ICOSPHERE'),
+        _e("mesh.saddle_polyhedron_add", 'MOD_MESHDEFORM'),
         _e("mesh.interlocking_add", 'MOD_BUILD'),
         _e("mesh.geodesic_add", 'MESH_UVSPHERE'),
         _e("mesh.spiked_polyhedron_add", 'LIGHT_SUN'),
@@ -192,6 +216,7 @@ PATTERNS = Menu(
         _e("mesh.modular_screen_add", 'MOD_WIREFRAME'),
         _e("mesh.relief_panel_add", 'MOD_DISPLACE'),
         _e("mesh.relief_solid_add", 'MATSPHERE'),
+        _e("mesh.spidron_nest_add", 'MOD_DISPLACE'),
         SEP,
         _e("mesh.tiling_add", 'MESH_GRID'),
         _e("mesh.kuniform_add", 'MESH_GRID'),
@@ -201,6 +226,7 @@ PATTERNS = Menu(
         _e("mesh.reptile_add", 'MESH_GRID'),
         _e("mesh.voderberg_add", 'FORCE_VORTEX'),
         _e("mesh.spiral_tiling_add", 'FORCE_VORTEX'),
+        _e("mesh.spidron_rosette_add", 'FORCE_VORTEX'),
         _e("mesh.islamic_pattern_add", 'SOLO_ON'),
         _e("mesh.celtic_knot_2d_add", 'MOD_LATTICE'),
         _e("mesh.over_under_screen_add", 'MESH_GRID'),
@@ -260,7 +286,6 @@ ODDS = Menu(
         _e("mesh.orbifold_sphere_add", 'MOD_MIRROR'),
         _e("mesh.bubble_cluster_add", 'SPHERE'),
         _e("mesh.relaxed_bubble_add", 'META_BALL'),
-        _e("mesh.cmc_capillary_add", 'MATFLUID'),
     ])
 
 # Styles restyle whatever is already selected rather than adding a
@@ -297,6 +322,10 @@ ALL_MENUS = MENU_ORDER + (STYLES,)
 # and no doc page, which is exactly what happened to this entry.
 ROOT_ENTRIES = (
     _e("object.symmetric_sculpture_add", 'MOD_MIRROR'),
+    # Drawn at the top level rather than filed under Styles: it is not
+    # a finish applied to a shape, it is what you reach for once the
+    # shape is finished and you want it in your hands.
+    _e("object.fabrication_slice", 'MOD_BUILD', builtin=True),
 )
 
 

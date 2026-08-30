@@ -4,7 +4,16 @@
 
 ## Overview
 
-Zonohedra are convex polyhedra whose faces are all centrally symmetric — the Minkowski sum of a set of line segments (a "vector star"). This generator builds them two ways: a robust general mode that takes the convex hull of all subset sums of a star (giving the rhombic dodecahedron, triacontahedron, enneacontahedron, cube, or a random star), and a direct port of Antiprism's `make_polar_zonohedron` for **polar zonohedra** and Russell Towle's **rhombic spirallohedra**. The preset `Rhombic Spirallohedron` reproduces `zono -P 12,4`.
+A **zonohedron** is a convex solid whose every face is centrally symmetric (a point-symmetric polygon) — the shape swept out when you add up a handful of line segments, the "star." This generator builds them two ways: a robust general mode that hulls all subset sums of a star (the rhombic dodecahedron, triacontahedron, enneacontahedron, cube, or a random star), and a direct port of Antiprism's `make_polar_zonohedron` for **polar zonohedra** and Russell Towle's **rhombic spirallohedra** (the default preset `Rhombic Spirallohedron` reproduces `zono -P 12,4`).
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Zonohedron*.
+2. **Pick the Star.** Three named rhombic solids come ready-made — **Rhombic Dodecahedron**, **Rhombic Triacontahedron**, **Rhombic Enneacontahedron** — along with the **Cube** and a **Random Star**; these go through the general subset-sum hull. **Polar Zonohedron** and **Rhombic Spirallohedron** (the default) instead use the direct Antiprism construction, which stays fast even for large stars.
+3. **Set the star's size.** For the polar and spiral modes, **Vectors** is the number $n$ of star segments and **Pitch** is their common tilt from the axis (a shallow pitch gives a tall spike, a steep one a flat disc); **Random Star** uses **Vectors** with a **Random Seed** (and is capped at 13 vectors, since the hull mode grows as $2^{n}$). The named rhombic stars ignore these — their vectors are fixed by the symmetry.
+4. **For the spiral, set Spiral Width.** Only **Rhombic Spirallohedron** shows **Spiral Width** $w$: it winds the rhombi up the solid in helical bands ($w = 4$ is Towle's `zono -P 12,4`). It must not be a multiple of the vector count, or the spiral degenerates and the build reports an error.
+5. **Choose the Style and output.** **Solid** is the plain closed solid; **Leonardo** opens each face into a framed panel; **Struts** / **Ball and Stick** / **Wireframe** give edge renderings; **Face Segments** splits the solid into one inward-extruded, beveled tile per face (with **Depth**, **Bevel Gap**, **Explode**, **Separate Meshes**). Whatever the star produces, the result is centred on the origin and fit to a 2 m cube (times **Scale**).
+6. **Read the report.** A normal build prints its vertex and face counts (`V=… F=…`); Face Segments prints how many segments it made.
 
 ## Options
 
@@ -13,13 +22,19 @@ Zonohedra are convex polyhedra whose faces are all centrally symmetric — the M
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Star | Rhombic Spirallohedron | Polar Zonohedron, Rhombic Spirallohedron, Rhombic Dodecahedron, Rhombic Triacontahedron, Rhombic Enneacontahedron, Cube, Random Star. |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
+| Star | Rhombic Spirallohedron | Vector star the zonohedron is built from. Polar Zonohedron, Rhombic Spirallohedron, Rhombic Dodecahedron, Rhombic Triacontahedron, Rhombic Enneacontahedron, Random Star, Rhombic Rose. |
 | Vectors | 12 | Number of star vectors (polar/spiral/random) Range 3-64. |
 | Spiral Width | 4 | Spirallohedron spiral width (zono -P n,w) Range 1-31. |
 | Pitch | 55 | Polar star pitch angle from the axis (degrees) Range 5-85. |
-| Random Seed | 1 | -- |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width (fraction of the face) Range 0.02-0.95. |
+| Random Seed | 1 | Seed for the random star vectors |
+| Style | Solid | How the zonohedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
+| Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -27,7 +42,7 @@ Zonohedra are convex polyhedra whose faces are all centrally symmetric — the M
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 
@@ -48,14 +63,17 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/zonohedra__RANDOM.png" width="200"><br><sub>Random Star</sub></td>
+<td align="center"><img src="../images/variants/zonohedra__ROSETTE.png" width="200"><br><sub>Rhombic Rose</sub></td>
 </tr>
 </table>
 
 ## How it works
 
-A **zonohedron** is the Minkowski sum of a star of line segments $\{\pm\tfrac12\mathbf v_i\}$. Equivalently it is the set of all vectors $\sum_i t_i \mathbf v_i$ with $t_i \in [0,1]$, and its extreme points are exactly the $2^{n}$ **subset sums** — each choice of "include $\mathbf v_i$ or not." Every face is a **zonogon** (a centrally symmetric polygon); when the star is in general position all faces are rhombi, one per pair of star vectors.
+**In plain terms.** Pick a few sticks pointing in different directions — call them the *star*. Lay the first stick down and it traces a segment. Now slide that whole segment along the second stick: it sweeps out a parallelogram. Slide the parallelogram along the third stick and it sweeps out a slanted box. Keep going, adding one stick at a time, and the growing blob is a **zonohedron**. Because every step slides a flat piece along a straight stick, every face you can see is a parallelogram-like tile that looks the same turned upside-down — *centrally symmetric* — and that single property is what defines the whole family.
 
-**General mode.** The generator forms all subset sums of the star and takes their **convex hull**. A limit-dissolve then merges the hull's coplanar triangles back into the zonohedron's true rhombi / zonogons. The built-in stars are:
+**The Minkowski sum.** Formally, that swept solid is the **Minkowski sum** of the star's segments $\lbrace\pm\tfrac12\mathbf v_i\rbrace$ — the set of all vectors $\sum_i t_i \mathbf v_i$ with each weight $t_i \in [0,1]$. Push every weight to one extreme, $t_i \in \lbrace0,1\rbrace$, and you land on one of the $2^{n}$ **subset sums**, one for each choice of "include $\mathbf v_i$ or not." The corners (vertices) of the solid are all found among those subset sums, so hulling the subset sums recovers the zonohedron exactly; the sums that fall inside are simply discarded. Every face is a **zonogon** (a centrally symmetric polygon), and when the star is in general position each face is a rhombus — one rhombus for every *pair* of star vectors, since a face is where the solid is "flat" in the plane those two vectors span.
+
+**General mode.** The generator forms all subset sums of the star and takes their **convex hull**. Because a hull returns a triangulated surface, a limit-dissolve then merges the coplanar triangles back into the zonohedron's true rhombi / zonogons, so a rhombus reads as one face rather than two triangles. The built-in stars are:
 
 - **Cube** — the three coordinate axes $\mathbf e_x, \mathbf e_y, \mathbf e_z$.
 - **Rhombic dodecahedron** — the four cube diagonals $(\pm1,\pm1,\pm1)$ (an even set), each normalized.
@@ -63,13 +81,13 @@ A **zonohedron** is the Minkowski sum of a star of line segments $\{\pm\tfrac12\
 - **Rhombic enneacontahedron** — the ten dodecahedral 3-fold axes.
 - **Random star** — $n$ Gaussian unit vectors (capped at 13 for the hull mode).
 
-**Polar zonohedra and spirallohedra.** A *polar* star places $n$ unit vectors at equal azimuth spacing around a common axis, all sharing one pitch angle $p$ from the axis:
+**Polar zonohedra and spirallohedra.** A *polar* star places $n$ unit vectors at equal azimuth spacing around a common axis, all leaning at one shared pitch angle $p$ from that axis:
 
 $$\mathbf v_k = \big(\sin p\,\cos\tfrac{2\pi k}{n},\; -\sin p\,\sin\tfrac{2\pi k}{n},\; \cos p\big),\qquad k = 0,\dots,n-1.$$
 
-Rather than hull the $2^n$ sums (astronomically many for large $n$), the port of Antiprism's `make_polar_zonohedron` builds the faces **directly**. It walks the rhombi in spiral chains: with $\gcd(n, \text{step})$ parts and a per-part period $P = n/\gcd$, it accumulates partial sums $A$ (down one spiral) and $B$ (across the spiral width) and emits each rhombic face as four indexed corners via a closed-form index map, closing the top and bottom apex points. With **spiral width 0** this produces the ordinary polar zonohedron; a **nonzero spiral width** $w$ produces a **rhombic spirallohedron** of that width — the family Russell Towle studied, in which the rhombi wind up the solid in helical bands. The width must not be a multiple of $n$ (that would degenerate the spiral).
+Geometrically the vectors form a cone: shallow pitch ($p$ small) makes a narrow cone and a tall spike of a solid, steep pitch a wide cone and a squat disc. Because the star is so regular, the resulting zonohedron is too, and hulling the $2^n$ subset sums (astronomically many once $n$ is large) would be wasteful. Instead the port of Antiprism's `make_polar_zonohedron` builds the faces **directly** from the known pattern. It walks the rhombi in spiral chains: splitting the star into $\gcd(n,\text{step})$ identical parts of period $P=n/\gcd$, it accumulates a running partial sum $A$ down one spiral and $B$ across the spiral's width, and emits each rhombus as its four corner indices through a closed-form index map, finally closing off the top and bottom apex vertices. With **spiral width 0** the chains stack straight and you get the ordinary polar zonohedron; a **nonzero width** $w$ offsets each chain sideways so the rhombi wind up the solid in $w$ helical bands — the **rhombic spirallohedron** family Russell Towle studied. The width must not be a multiple of $n$, which would collapse the spiral onto itself.
 
-Finally the mesh is welded (`remove_doubles`), its normals recalculated, and it is recentred on the origin and scaled to fit within a $2\times$ `Scale` cube regardless of what the star produced.
+Finally the mesh is welded (`remove_doubles`) and its normals recalculated, then it is recentred on the origin and scaled to fit within a $2\times$ `Scale` cube regardless of what the star produced.
 
 ## References
 

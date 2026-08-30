@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "bjorling-trefoil-ribbon",
+  "name": "Bjorling: Trefoil Ribbon",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "domain": "disk",
+    "note": "Bjorling's problem: the unique minimal surface through a given real-analytic strip. The defining seed, reproduced numerically against the shipped row (math_art/minsurf/zoo.py, BJ_TREFOIL): c(t) = ((1.0 + 0.5*cos(3.0*t))*cos(2.0*t), (1.0 + 0.5*cos(3.0*t))*sin(2.0*t), 0.5*sin(3.0*t)), with normal the Frenet principal normal of the curve, t in [0, 6.283185307]. The Weierstrass data is the holomorphic extension of the seed, computed numerically by the engine -- the seed, not a (g, dh) pair, is what specifies this surface.",
+    "exactness": "numerical-integral"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "BJORLING",
+      "key": "BJ_TREFOIL",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Bjorling seed reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row BJ_TREFOIL): seed reproduced against the shipped callables over 200 samples (worst 0).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

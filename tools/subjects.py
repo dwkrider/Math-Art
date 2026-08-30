@@ -25,13 +25,114 @@ dicts); the rig helpers at the bottom appear only when bpy is present.
 # should show what you get when you click the entry -- so only the ones
 # whose defaults under-sell them are listed.
 PARAMS = {
+    # A bare noble faceting is a self-intersecting wireframe-ish solid
+    # and reads as mush when shaded; the great dodecahedron -- faceting
+    # 1 of the icosahedral vertex set -- has big obvious pentagons and
+    # says "this is a polyhedron through someone else's vertices".
+    "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
+    # The compound of five tetrahedra is the operator's own default and
+    # the clearest advertisement for it: five interpenetrating solids
+    # whose separateness is obvious at icon size, where the stella
+    # octangula just reads as one spiky ball.
+    "mesh.polyhedron_compound_add": dict(family='CLASSICAL',
+                                         compound='5TETRA'),
+    # -- spidrons -------------------------------------------------
+    # The whole hexagonal subdivision coloured BY ARM: six spiral
+    # limbs meeting at the centre, which is the picture the word
+    # "spidron" means.  Six rings keep the outer triangles big enough
+    # to read at icon size (the deeper rings are invisible anyway),
+    # and no grout -- the margin would cut each arm into slivers where
+    # the solid arm is the subject.
+    "mesh.spidron_rosette_add": dict(layout_kind='FIGURE',
+                                     arm_parts=6, rings=6,
+                                     arm='SPIDRON', color_by='ARM'),
+    # Flat, the nest is just a hexagon of triangles -- the whole point
+    # is that it folds, so shoot it mid-fold where the crumple reads.
+    # (`import math` lives below these tables, so angles are literal
+    # radians here: 0.698132 rad = 40 deg, 0.383972 rad = 22 deg.)
+    "mesh.spidron_nest_add": dict(fold=0.698132, rings=7,
+                                  cap_center=True),
+    # The dodecahedron is Nylander's subject and the one the name
+    # "spidroball" refers to.  The operator defaults ARE his published
+    # ball (Advance twist, ring scale 2/3, 8 rings, relief 0.10557,
+    # uniform chirality).  The twist is an EXCESS on top of the node
+    # step: Nylander's own is +0.532 deg, and -0.261799 rad = -15 deg
+    # opens the arms out from that, which reads better at icon size
+    # and is the operator's default, so icon and defaults agree.
+    "mesh.spidron_ball_add": dict(seed='DODECA', rings=8,
+                                  scale_step=0.666667, twist=-0.261799,
+                                  relief=0.105573, chirality='CW',
+                                  twist_style='ADVANCE',
+                                  relief_style='WOVEN',
+                                  color_by='PAIR', colors=5),
+    # The two-cell repeat unit IS the subject: on a single decatrihedron
+    # the space-filling's CW-meets-CCW rule is invisible, and the pair
+    # of opposite-winding polyhedra (coloured by form) is the paper's
+    # own Figure 3.  A small gap keeps the two solids readable as two.
+    # Pearce's diamond tetrahedron is the famous one: four REGULAR
+    # skew hexagons, the interstitial domain of the diamond net, and
+    # the solid that reads unmistakably as a saddle polyhedron at icon
+    # size.  Relaxed to the minimal surface, which is Pearce's own
+    # definition of the face.
+    # No `family` here: the group selector is gone and the solid is
+    # picked from a single gallery, so passing one is a hard error.
+    # The diamond tetrahedron is the SIMPLEST saddle polyhedron, which
+    # made it the obvious pick and the wrong one: it has four faces, so
+    # from any 3/4 view two of them face away and the remaining pair
+    # reads as a folded sheet rather than a closed solid -- flat enough
+    # that it looks like the collapsed-solid bug, though its principal
+    # extents are a perfectly healthy 1.000.  Nothing about the picture
+    # says "saddle polyhedron".  The tetrahedral decahedron keeps ten
+    # faces around the same symmetry, so its silhouette stays closed
+    # from every direction and the saddle curvature is legible.
+    "mesh.saddle_polyhedron_add": dict(solid='TETRAHEDRAL_DECAHEDRON',
+                                       face_style='MINIMAL',
+                                       density=4, smoothness=40),
     # -- solids ---------------------------------------------------
+    # Escher's Solid (the stellated rhombic dodecahedron of "Waterfall")
+    # is the most recognisable of the notable polyhedra.
+    "mesh.notable_polyhedron_add": dict(solid='ESCHER'),
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
     # docs previously shot a snub cube here, which is Archimedean
     # rather than regular; the dodecahedron suits the operator's name
     # better in both places.)
     "mesh.regular_solid_add": dict(family='PLATONIC', solid='DODECA'),
+    # The bare default is a rhombic triacontahedron, which the zonohedra
+    # entry above already shows.  The dissection is what this operator
+    # adds that nothing else has: Kowalewski's twenty golden rhombohedra,
+    # colour-matched by zone triple.  Assembled rather than exploded --
+    # the blocks close up into the solid exactly, so the icon reads as a
+    # polyhedron whose faces are colour-coded by the block behind them,
+    # which is the point; exploded it reads as debris at 64 px.
+    "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
+                            explode=0.0, color='BLOCK'),
+    # The dodecahedron's cluster is Webster's original -- twelve 5-fold
+    # units -- and exploding it a little is what makes the separate
+    # zonohedra legible at icon size; assembled, the cluster reads as one
+    # lumpy ball.  Coloured by unit order, as Webster draws them.
+    "mesh.zonohedra_cluster_add": dict(family='PLATONIC', platonic='DODECA',
+                                       explode=0.25, color='ORDER'),
+    # Halfway is the whole point of the operator -- either end
+    # is just a solid we already ship.  The cuboctahedron reads
+    # clearly at icon size and its dual is the rhombic
+    # dodecahedron, so both families are recognisable.
+    "mesh.transpolyhedron_add": dict(seed='CO', blend=0.5),
+    # The pyritohedron at its default 1/phi IS the regular dodecahedron,
+    # which the regular-solid entry already shows.  Pulled off that
+    # value it becomes the pyrite crystal form, which is the point.
+    "mesh.twelve_faced_add": dict(solid='PYRITOHEDRON', shape=0.35),
+    # Thirty squares is the slide-together everyone recognises, and the
+    # colour rotation is how the paper models are actually made.
+    # The twenty triangles, not the thirty squares.  Once the squares
+    # were placed correctly on the rhombidodecadodecahedron they pack
+    # almost closed, and at 128 px the icon became a pale ball with no
+    # hint of what the generator does.  The triangle model keeps Hart's
+    # "prominent stars" open, so the panels and the interlocking stay
+    # legible.  Thickness is nudged up from the operator default of 0.01,
+    # which suits a printable template but vanishes at icon size.
+    "mesh.slide_together_add": dict(model='T20', colors=True,
+                                    thickness=0.03),
     # The uniform operator's whole point is what lies beyond the
     # Platonics, so it gets a Kepler-Poinsot star rather than another
     # convex solid that would duplicate the entry above.
@@ -42,6 +143,14 @@ PARAMS = {
     # ring polyhedron says "toroidal" instantly -- three rectangular
     # rings interlocked, with the holes plainly visible.
     "mesh.toroidal_polyhedron_add": dict(solid='BORROMEAN'),
+    # The K = +1 family defaults to the sphere, which at icon size is
+    # a plain ball and says nothing the UV-sphere primitive does not.
+    # The spindle -- a lemon with a conical tip at each pole -- is the
+    # one that reads as "constant curvature, not a sphere".
+    "mesh.spherical_surface_add": dict(preset='SPINDLE'),
+    # the bare default is an ellipsoid, which reads as a squashed
+    # sphere; the one-sheeted hyperboloid says "quadric" at a glance
+    "mesh.quadric_add": dict(kind='HYPERBOLOID_ONE'),
     "mesh.waterman_add": dict(root=20),
     "mesh.spiked_polyhedron_add": dict(preset='MODERN'),
     "mesh.woven_polyhedron_add": dict(solid='ICOSA'),
@@ -81,7 +190,14 @@ PARAMS = {
     "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G',
                                       cells=2),
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
-    "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
+    # Hand-picked hero: the dodecahedral seed dented inward to the full
+    # bulge depth, held on its whole edge frame. The icosahedron at the
+    # default depth of 0.5 barely dents and reads as a faceted ball;
+    # this reads as the cast membrane the generator is actually for.
+    # Drives the docs figure AND the menu icon, so both stay in step.
+    "mesh.minimal_surface_polyhedron_add": dict(
+        mode='SADDLE', seed='DODECA', depth=2.0, levels=3,
+        iterations=40, pin='EDGES', corner_soft=0.35, thickness=0.08),
     "mesh.algebraic_surface_add": dict(preset='CLEBSCH'),
     "mesh.curiosity_surface_add": dict(surface='FRESNEL'),
     "mesh.ruled_surface_add": dict(mode='HYPERBOLOID', output='RODS',
@@ -148,16 +264,27 @@ import math                                              # noqa: E402
 GYROID_POSE = (-0.1967, 0.1944, -1.8216)
 
 ORIENT = {
+    # The diamond tetrahedron's 3-fold axis is vertical by
+    # construction, and straight down it the four hexagons stack into a
+    # flat hexagonal silhouette -- the one view that hides the saddle
+    # curvature the generator exists to show.  Tip it off the axis so
+    # two faces turn toward the camera.
+    "mesh.saddle_polyhedron_add": (1.309, 0.175, 0.349),
     # A tetrahedron sitting face-on reads as a flat triangle; a sixth
     # of a turn puts an edge toward the camera and it reads as a solid.
     "mesh.regular_solid_add": (0.0, 0.0, 0.62),
-    # The Klein bottle's default pose puts the handle behind the body,
-    # hiding the self-intersection -- the whole point of the surface.
-    "mesh.topological_surface_add": (0.0, 0.0, math.pi),
+    # Turn the Klein bottle (Franzoni's classical tube shape, upright
+    # with its directrix plane on X-Z) an eighth toward the camera so
+    # the neck's dive back through the bulb -- the whole point of the
+    # surface -- reads in silhouette instead of edge-on.
+    "mesh.topological_surface_add": (0.0, 0.0, math.pi / 4),
     # The IFS default is SIERP_TETRA, a Sierpinski *tetrahedron*: a
     # solid, not a plane figure, so it wants a turn rather than a plan
     # view (from overhead a tetrahedron simply squares off).
     "mesh.ifs_add": (0.0, 0.0, math.pi / 8),
+    # The folded nest is a relief: straight down hides the fold and
+    # straight on hides the spiral, so tip it into a three-quarter view.
+    "mesh.spidron_nest_add": (0.9, 0.0, 0.4),
     # The spanned saddle is built on a circle in XY and one in XZ, and
     # the studio camera looks very nearly down the second circle's axis
     # -- straight on, the four lobes overlap into a featureless blob.
@@ -217,6 +344,7 @@ PLAN_VIEW = {
     "mesh.kuniform_add", "mesh.monohedral_add", "mesh.isohedral_add",
     "mesh.aperiodic_add", "mesh.reptile_add", "mesh.voderberg_add",
     "mesh.spiral_tiling_add", "mesh.fractal_tiling_add",
+    "mesh.spidron_rosette_add",
     "mesh.fractal_reptile_add", "mesh.islamic_pattern_add",
     "mesh.celtic_knot_2d_add",
     "mesh.knot_carpet_add", "mesh.hyperbolic_tiling_add",
@@ -292,6 +420,7 @@ SLUG_OVERRIDE = {
     "mesh.woven_polyhedron_add": "twisted_polyhedron",
     "mesh.poly_weave_add": "weave",
     "mesh.zonohedron_add": "zonohedra",
+    "mesh.zonohedra_cluster_add": "zonohedra_clusters",
     # The operator was renamed `tpms_add` -> `periodic_minimal_add`;
     # the page keeps the acronym everyone searches for, and keeps its
     # URL.  This override is what stops the two drifting apart again.
@@ -324,11 +453,15 @@ VARIANT_SELECTOR = {
     # -- surfaces --
     "mesh.scherk_collins_add": "preset",
     "mesh.seifert_surface_add": "preset",
-    "mesh.algebraic_surface_add": "preset",
     "mesh.topological_surface_add": "preset",
     "mesh.curiosity_surface_add": "surface",
     "mesh.helical_surface_add": "surface",
     "mesh.hyperbolic_surface_add": "preset",
+    # All thirteen degree-2 surfaces are distinct objects, so the whole
+    # enum is the gallery -- including the plane, whose thumbnail is a
+    # flat square. Dull, but it is a real quadric and the classification
+    # is the point of the page.
+    "mesh.quadric_add": "kind",
     "mesh.delaunay_surface_add": "mode",
     "mesh.bryant_surface_add": "mode",
     "mesh.squeeze_add": "seed",
@@ -343,6 +476,10 @@ VARIANT_SELECTOR = {
     "mesh.dform_add": "mode",
     # -- polyhedra --
     "mesh.zonohedron_add": "kind",
+    # The seed family is the axis that changes the cluster; the
+    # individual solid within a family is a second axis the page
+    # describes in prose rather than multiplying the gallery by 19.
+    "mesh.zonohedra_cluster_add": "family",
     "mesh.polytope4d_add": "kind",
     "mesh.spiked_polyhedron_add": "preset",
     "mesh.hyperbolic_honeycomb_add": "preset",
@@ -351,11 +488,17 @@ VARIANT_SELECTOR = {
     "mesh.conway_add": "example",
     "mesh.polytwister_add": "shape",
     "mesh.toroidal_polyhedron_add": "solid",
-    "mesh.polyhedron_compound_add": "compound",
+    "mesh.saddle_polyhedron_add": "solid",
     "mesh.notable_polyhedron_add": "solid",
     "mesh.biscribed_solid_add": "solid",
+    # Stellation's variants are its 59 Crennell figures, not its seven
+    # seeds: `solid` is the selector that changes the shape most, and the
+    # 59 are a closed historical list (see VARIANT_MAX below).  The seeds
+    # other than the icosahedron are reached through `preset` and are not
+    # enumerated here.  (The former mesh.general_stellation_add entry went
+    # when that operator was merged into this one.)
     "mesh.icosahedron_stellation_add": "solid",
-    "mesh.general_stellation_add": "seed",
+    "mesh.noble_faceting_add": "seed",
     "mesh.star_prism_add": "form",
     "mesh.polyhedral_torus_add": "tiling",
     "mesh.interlocking_add": "family",
@@ -418,7 +561,9 @@ VARIANT_SELECTOR = {
     "mesh.voderberg_add": "kind",
     "mesh.spiral_tiling_add": "family",
     "mesh.islamic_pattern_add": "preset",
-    "mesh.celtic_knot_2d_add": "preset",
+    "mesh.celtic_knot_2d_add": "substrate",
+    "mesh.transpolyhedron_add": "seed",
+    "mesh.slide_together_add": "model",
     "mesh.over_under_screen_add": "weave",
     "mesh.knot_carpet_add": "source",
     "mesh.modular_screen_add": "preset",
@@ -454,6 +599,8 @@ VARIANT_GROUP = {
     "mesh.canonical_polyhedron_add": ("family", "solid"),
     "mesh.parametric_minimal_add": ("family", "surface"),
     "mesh.periodic_minimal_add": ("periodicity", "surface"),
+    "mesh.algebraic_surface_add": ("family", "preset"),
+    "mesh.polyhedron_compound_add": ("family", "compound"),
 }
 
 # Groups to render, where a two-level selector reaches further than the
@@ -469,6 +616,9 @@ VARIANT_GROUP_ONLY = {
 # Kwargs applied to every variant of a generator, where the gallery
 # needs a setting held constant to stay comparable.
 VARIANT_COMMON = {
+    # span the substrates with the 3D woven interlace (the operator's
+    # interlace_mode defaults to FLAT, but the woven form is what reads).
+    "mesh.celtic_knot_2d_add": dict(interlace_mode='WOVEN'),
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.bubble_cluster_add": dict(separate=True, color=True),
     "mesh.sphericon_add": dict(coloring='NONE'),
@@ -488,6 +638,11 @@ VARIANT_SKIP = {
     # (A=50, B=310, C=-180).  It wants a hand-tuned VARIANT_EXTRA
     # entry from someone who knows the family, not a broken thumbnail.
     "mesh.spiral_tiling_add": {"POLY"},
+    # "From Active Object" reads its star off whatever mesh is selected,
+    # which in a headless render is nothing: the operator correctly
+    # refuses.  Same reason as GENERIC_SKIP_IDS' "ACTIVE", under this
+    # operator's own name for it.
+    "mesh.zonohedron_add": {"OBJECT"},
 }
 
 # Ids skipped in every gallery.  A "custom" entry is the operator
@@ -517,6 +672,25 @@ VARIANT_MAX = {
     "mesh.parametric_minimal_add": 96,
     "mesh.periodic_minimal_add": 96,
     "mesh.canonical_polyhedron_add": 96,
+    # 132 presets across ten named families: 10 classical, 63 Hauser,
+    # 4 record-nodal, 5 many-nodal octics, 7 named implicit, 11
+    # Encyclopedia, 10 MathWorld and 22 Goursat.  Every one of those is
+    # a named gallery whose point is completeness, which is the reason
+    # this entry exists at all.
+    #
+    # It was 96, which is now BELOW the preset count, and the shortfall
+    # did not thin the grid evenly -- the cap truncates in enumeration
+    # order, so it dropped whole families off the end: all 22 Goursat,
+    # all 10 MathWorld, and three of the Encyclopedia surfaces.  A
+    # gallery missing a scattering of members reads as a sample; one
+    # missing every Goursat surface reads as "this generator has no
+    # Goursat surfaces", which is false.
+    #
+    # The cost is real and belongs to the docs pass: this is 132 renders
+    # for one page, up from 96.  Lower it deliberately if that is too
+    # many -- the renderer prints what it dropped -- but do not leave it
+    # at a number that silently deletes families.
+    "mesh.algebraic_surface_add": 132,
 }
 
 # Galleries whose entries are combinations of properties rather than
@@ -568,6 +742,12 @@ VARIANT_EXTRA = {
          dict(mode='CONOID', conoid_kind='WALLIS')),
         ("WHITNEY", "Whitney Umbrella",
          dict(mode='CONOID', conoid_kind='WHITNEY')),
+        ("PARABOLIC_CONOID", "Parabolic Conoid",
+         dict(mode='CONOID', conoid_kind='PARABOLIC_CONOID')),
+        ("SINUSOIDAL_CONE", "Sinusoidal Cone",
+         dict(mode='CONOID', conoid_kind='SINUSOIDAL_CONE')),
+        ("HELICOIDAL_CONE", "Helicoidal Cone",
+         dict(mode='CONOID', conoid_kind='HELICOIDAL_CONE')),
         ("TANGENT_DEV", "Tangent Developable", dict(mode='TANGENT_DEV')),
         ("HELICOID", "Helicoid", dict(mode='HELICOID')),
         ("TWIST_STRIP", "Twisted Strip (Mobius)",
@@ -824,7 +1004,49 @@ if _IN_BLENDER:
     # tripled while the panel still reads as lit rather than murky.
     PLAN_EXPOSURE = -3.5
     PLAN_LIGHT_SCALE = 0.25
-    STUDIO_EXPOSURE = -0.5
+
+    # The 3/4 studio look.  Khronos PBR Neutral is a tone curve built to
+    # roll highlights off WITHOUT the desaturation and hue shift a
+    # filmic curve introduces, which is exactly what was wanted here:
+    # under AgX the subjects clipped, and the saddle palette -- colours
+    # like (0.85, 0.30, 0.24) -- measured 0.21 mean saturation against
+    # 0.43 under this curve.
+    #
+    # The exposure is set by the CONVEX subjects, and judging it on a
+    # spiky one is the trap.  A star self-shadows, so it shows a wide
+    # luminance range under any rig; a convex white solid inside a
+    # five-light surround does not.  At -0.5 the geodesic sphere renders
+    # at mean luminance 0.92 across a 0.58-0.99 range: its shading is
+    # present but crushed against white, with nothing clipped -- it is
+    # simply all bright.  At -2.0 the same sphere sits at mean 0.75
+    # across 0.31-0.96 and the facets appear.  Judge it on a ball.
+    #
+    # Menu icons go two thirds of a stop darker still (see
+    # tools/bake_menu_icons.py), because they are cropped to 64 px where
+    # a shallow gradient has far fewer pixels to read across.
+    STUDIO_EXPOSURE = -2.0
+    STUDIO_VIEW_TRANSFORM = "Khronos PBR Neutral"
+    STUDIO_RIM_SCALE = 0.35
+
+    def _set_view_transform(scene, *names):
+        """Set the first view transform this Blender actually offers.
+
+        `view_transform` is a DYNAMIC enum: its items come from the
+        loaded OCIO config at runtime, so `bl_rna` reports NONE of them
+        and testing membership that way rejects every name, including
+        the ones in use.  (That silently disabled the transform choice
+        here for as long as it has been written that way.)  Assigning
+        and reading back is the only reliable probe.
+        """
+        vs = scene.view_settings
+        for name in names:
+            try:
+                vs.view_transform = name
+            except TypeError:
+                continue
+            if vs.view_transform == name:
+                return name
+        return vs.view_transform
 
     # Focal lengths, solved rather than chosen.  Subjects are
     # normalised into a 2 m cube, so the guarantee the frame has to
@@ -910,17 +1132,32 @@ if _IN_BLENDER:
             if base is not None:
                 ob.data.energy = base * (PLAN_LIGHT_SCALE if plan else 1.0)
 
-        # AgX rolls highlights towards white, which is right for a full
-        # page figure and wrong for a flat, coloured subject that has to
-        # stay legible by colour.
+        # Colour management, and for the 3/4 view the light ratio with
+        # it.  Both are set HERE because aim_rig is the one call every
+        # render path makes -- hero figures, gallery variants and menu
+        # icons alike -- so this is the only place they cannot drift
+        # apart.  Anything a caller sets beforehand is overwritten by
+        # this function; a caller wanting to differ has to act after it.
         scene = bpy.context.scene
-        vt = [v.name for v in bpy.types.ColorManagedViewSettings.bl_rna
-              .properties["view_transform"].enum_items]
-        want = "Standard" if plan else ("AgX" if "AgX" in vt else "Standard")
-        if want in vt:
-            scene.view_settings.view_transform = want
+        want = "Standard" if plan else STUDIO_VIEW_TRANSFORM
+        _set_view_transform(scene, want, "AgX", "Standard")
         scene.view_settings.exposure = (PLAN_EXPOSURE if plan
                                         else STUDIO_EXPOSURE)
+        if not plan:
+            # Rim light is meant to draw an EDGE.  The rig builds two of
+            # them at 750 W against a 320 W key, so at full strength
+            # their wrap light reaches round into the shadow side and
+            # fills it -- and a white subject, which is most of them,
+            # then has no gradient left to read its form by.  Measured
+            # on a geodesic sphere, the facets simply disappear.  This
+            # brings them back under the key, where three-point practice
+            # puts them.  Plan views keep their own treatment above.
+            for name, _pose in _LIGHT_POSE.items():
+                if not name.startswith("Rim Light"):
+                    continue
+                ob = bpy.data.objects.get(name)
+                if ob is not None:
+                    ob.data.energy *= STUDIO_RIM_SCALE
 
     def pose_subjects(op, objects):
         """Apply the canonical pose for `op` to `objects`, if any."""
@@ -1152,6 +1389,24 @@ if _IN_BLENDER:
         return {per: _pairs(items)
                 for per, items in m._PERIODIC_ITEMS.items()}
 
+    def _groups_algebraic():
+        # Same shape as _groups_parametric: `_preset_items` returns
+        # the union list in a background context on purpose, so the
+        # grouping comes from the per-family catalogue the callback
+        # filters against.
+        m = _mod("algebraic_surface_generator")
+        return {fam: _pairs(items)
+                for fam, items in m._PRESET_ITEMS_FAM.items()}
+
+    def _groups_compound():
+        # Compound is a two-stage family -> compound selector, exactly
+        # like uniform/canonical above; its catalogue is the authority
+        # (both enums are dynamic callbacks).  compound_families() is
+        # [(family key, heading, [(compound key, label), ...]), ...].
+        m = _mod("compound_generator")
+        return {key: _pairs(rows)
+                for key, _head, rows in m._cmp.compound_families()}
+
     GROUP_RESOLVER = {
         "mesh.regular_solid_add": _groups_regular_solid,
         "mesh.uniform_polyhedron_add":
@@ -1160,6 +1415,17 @@ if _IN_BLENDER:
             _groups_by_family("canonical_polyhedra_generator"),
         "mesh.parametric_minimal_add": _groups_parametric,
         "mesh.periodic_minimal_add": _groups_periodic,
+        "mesh.algebraic_surface_add": _groups_algebraic,
+        "mesh.polyhedron_compound_add": _groups_compound,
+    }
+
+    # Flat (single-level) galleries whose selector is a DYNAMIC enum, so
+    # _static_enum_items reads nothing off the RNA type.  The resolver
+    # calls the module's items callback with a shim, exactly like the
+    # two-level GROUP_RESOLVER above.
+    SELECTOR_RESOLVER = {
+        "mesh.saddle_polyhedron_add": lambda: _pairs(
+            _mod("saddle_polyhedron_generator")._solid_items(_Shim(), None)),
     }
 
     def _static_enum_items(op, prop):
@@ -1220,7 +1486,9 @@ if _IN_BLENDER:
                                 labels.get(gid, gid)))
         elif op in VARIANT_SELECTOR:
             prop = VARIANT_SELECTOR[op]
-            for vid, label in _static_enum_items(op, prop):
+            items = (SELECTOR_RESOLVER[op]() if op in SELECTOR_RESOLVER
+                     else _static_enum_items(op, prop))
+            for vid, label in items:
                 if vid in skip:
                     continue
                 out.append((vid, label, dict(common, **{prop: vid}), None))

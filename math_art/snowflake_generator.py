@@ -86,7 +86,8 @@ if _IN_BLENDER:
         preset: EnumProperty(
             name="Habit",
             items=[(k, v[0], v[0]) for k, v in PRESETS.items()],
-            default='DENDRITE')
+            default='DENDRITE',
+            description="Snow-crystal habit to grow")
         radius: IntProperty(
             name="Radius", default=70, min=16, max=180,
             description="Lattice radius in cells; growth stops when "
@@ -104,8 +105,10 @@ if _IN_BLENDER:
             description="Extra height per unit of ice mass above 1, "
                         "giving the ridges and plateaus")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
-        smooth: BoolProperty(name="Smooth Shading", default=False)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size multiplier")
+        smooth: BoolProperty(name="Smooth Shading", default=False,
+                             description="Shade the surface smooth")
 
         def execute(self, context):
             label = PRESETS[self.preset][0]

@@ -1,0 +1,136 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "endrass-octic-family",
+  "name": "Endrass Octic Family",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 2.6
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nEndrass's 5-parameter family of octics with D8 x Z2 symmetry, combining two constructions of B. Segre: a product of eight planes (four symmetric plane-pair factors) minus the square of a degree-4 form in x^2+y^2, z and w, with complex parameters a, b, c, d, e.  The named members are promoted to their own records (see specimens).",
+    "parameters": [
+      {
+        "name": "a",
+        "domain": "complex"
+      },
+      {
+        "name": "b",
+        "domain": "complex"
+      },
+      {
+        "name": "c",
+        "domain": "complex"
+      },
+      {
+        "name": "d",
+        "domain": "complex"
+      },
+      {
+        "name": "e",
+        "domain": "complex"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": null,
+        "note": "Varies over the family: 112 for the generic member, 120/128/136 for one generic parameter (c/b/d resp.), 160, 165 and 168 at special values.  The construction page adds that every multiple of 4 from 112 to 152 seems attainable, while 156- and 164-nodal members do not seem to exist in this family."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "OCTIC",
+      "key": "ENDRASS_FAMILY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- the family and the 112-node count of its generic member.",
+      "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.",
+      "S. Breske, O. Labs and D. van Straten, \"Real Line Arrangements and Surfaces with Many Real Nodes\", arXiv:math/0507234 (2005) -- why real nodes are the rendering-relevant count.",
+      "V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's original series.",
+      "O. Labs, 'St. Endrass's Construction of D8 x Z2-symmetric Octics (the full 5-parameter equation)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch005_endroctconstr.md).",
+      "O. Labs, '120-/128-/136-nodal D8 x Z2-symmetric Octics', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch007_stephan120128136.md).",
+      "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
+      "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch005_endroctconstr"
+  },
+  "specimens": [
+    {
+      "label": "generic member",
+      "note": "112 nodes, at the pairwise intersections of the plane pairs with the doubled quartic."
+    },
+    {
+      "label": "generic c",
+      "note": "120 nodes."
+    },
+    {
+      "label": "generic b",
+      "note": "128 nodes."
+    },
+    {
+      "label": "generic d",
+      "note": "136 nodes."
+    },
+    {
+      "label": "Endrass 160-nodal octic",
+      "slug": "endrass-octic-160"
+    },
+    {
+      "label": "van Straten 165-nodal octic",
+      "slug": "van-straten-octic"
+    },
+    {
+      "label": "Endrass 168-nodal octic (the record)",
+      "slug": "endrass-octic"
+    }
+  ],
+  "named_after": "Endrass, Octic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

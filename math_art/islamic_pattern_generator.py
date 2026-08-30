@@ -1476,8 +1476,10 @@ if _IN_BLENDER:
             description="Inner-polygon radius of the rosette as a "
                         "fraction of the apothem (controls the central "
                         "star size); 0 = Kaplan's proportion")
-        nx: IntProperty(name="Cells X", default=5, min=1, max=40)
-        ny: IntProperty(name="Cells Y", default=5, min=1, max=40)
+        nx: IntProperty(name="Cells X", default=5, min=1, max=40,
+                        description="Number of substrate tiles across X")
+        ny: IntProperty(name="Cells Y", default=5, min=1, max=40,
+                        description="Number of substrate tiles across Y")
         girih_gens: IntProperty(
             name="Girih Generations", default=4, min=1, max=6,
             description="Inflation depth of the quasiperiodic Penrose "
@@ -1492,6 +1494,7 @@ if _IN_BLENDER:
             description="Width of the strapwork ribbons (edge units)")
         color_by: EnumProperty(
             name="Color By",
+            description="How the strapwork ribbons are colored",
             items=[('UNIFORM', "Uniform", "A single material"),
                    ('TILE', "By Tile",
                     "Material per substrate polygon"),
@@ -1543,7 +1546,8 @@ if _IN_BLENDER:
             description="Add a slab behind raised strapwork (relief "
                         "only)")
         base: FloatProperty(
-            name="Base Thickness", default=0.08, min=0.01, max=1.0)
+            name="Base Thickness", default=0.08, min=0.01, max=1.0,
+            description="Thickness of the backing slab behind the strapwork")
         separate: BoolProperty(
             name="Separate Motifs", default=False,
             description="Output each tile's motif as its own mesh "

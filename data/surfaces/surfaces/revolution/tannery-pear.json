@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "tannery-pear",
+  "name": "Tannery's Pear",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "implemented",
+    "revolution",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "sin(u)*cos(u)*cos(v)",
+    "y": "sin(u)*cos(u)*sin(v)",
+    "z": "sqrt(8)*sin(u)",
+    "u_range": [
+      "0",
+      "pi/2"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "half a Gerono lemniscate (rho = sin u cos u) stretched vertically by 2 sqrt2 and revolved, at the operator's default scale a = 1 -- the default TANNERY_PEAR variant (the hourglass revolves the whole lemniscate, u in [-pi/2, pi/2]).  The builder fits its output to the 2 m cube; verification applies the same centre-and-scale to the chart",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "genus": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "conical point",
+        "count": 2
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TANNERY_PEAR",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TANNERY_PEAR"
+    },
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TANNERY_HOURGLASS",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TANNERY_HOURGLASS"
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.67 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.01537).",
+    "sources": [
+      "J. Tannery (1892); the surface of revolution of half a Gerono lemniscate."
+    ]
+  },
+  "specimens": [
+    {
+      "label": "pear (half the figure eight)"
+    },
+    {
+      "label": "hourglass (the whole figure eight)"
+    }
+  ],
+  "discovered_by": "Jules Tannery",
+  "year": 1892,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1316_tannery_2"
+  },
+  "relations": {
+    "generalizes": [],
+    "specialises": [
+      "zoll-surface"
+    ]
+  },
+  "notes": {
+    "caveats": [
+      "All geodesics close, like Zoll's surface, but Tannery's is NOT smooth -- both tips are conical points, and repairing exactly that is what Zoll's surface achieves."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -4,7 +4,18 @@
 
 ## Overview
 
-Woven-strand spheres built from a seed polyhedron, a Blender take on Antiprism's `poly_weave` including its **weave pattern language**. The seed's flag (barycentric) subdivision is walked by a small pattern program; the visited pattern points become closed weave strands that are swept as ribbons over the sphere. A short pattern string chooses everything from a plain over-under weave to rings around vertices or faces, curved segments, and raised or wavy weaves.
+Woven-strand spheres built from a seed polyhedron and a short pattern program, a Blender take on Antiprism's `poly_weave` including its **weave pattern language**.
+
+The seed's flag (barycentric) subdivision is walked by a small pattern program; the visited pattern points become closed weave strands that are swept as ribbons or rope tubes over the sphere. A short pattern string chooses everything from a plain over-under weave to rings around vertices or faces, curved segments, and raised or wavy weaves.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Polyhedral Weave*.
+2. **Pick the Seed** — Cube, Icosahedron, Octahedron, Tetrahedron or Dodecahedron. For the triangular seeds (Tetrahedron, Octahedron, Icosahedron) a **Geodesic Frequency** control appears that subdivides each triangle into a finer mesh for denser weaves.
+3. **Choose a Pattern.** The **Pattern Preset** menu (Classic Weave `vfe`, Corner Weave `FEV`, Vertex Rings, Face Rings, Face Pairs, Curved, Raised Weave, and more) fills the **Pattern** string with a ready program; pick **Custom** to type your own into the Pattern field. The syntax is `[C|L][bV,bE,bF][:up,side,along…]steps[tl|tr|tb]`, with steps drawn from `V E F v e f R -`.
+4. **Pick the Output.** **Ribbon** gives flat strands sized by **Strand Width** and **Strand Thickness**; **Tube (Rope)** gives round tubes sized by **Tube Radius** and **Tube Sides**, with **Relax Iterations** and **Rope Clearance** to settle the ropes so they round their clasps and keep clear of each other.
+5. **Shape the weave.** **Weave Amplitude** sets the alternating over/under lift at each pattern point (set it to 0 when the pattern's own `up` values already do the weaving); **Path Subdivision** and **Smoothing** refine the strand curves.
+6. **Choose the output styling** — **Coloring** is **Per Strand** or **None**, and **Radius** sets the overall size. The status bar reports how many strands were woven; an unparseable pattern reports an error instead of building.
 
 ## Options
 
@@ -13,22 +24,22 @@ Woven-strand spheres built from a seed polyhedron, a Blender take on Antiprism's
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Cube | Cube, Icosahedron, Octahedron, Tetrahedron, Dodecahedron. |
+| Seed | Cube | Seed polyhedron whose flags the weave is walked over. Cube, Icosahedron, Octahedron, Tetrahedron, Dodecahedron. |
 | Geodesic Frequency | 1 | Subdivision of triangular seeds Range 1-6. |
-| Pattern Preset | Classic Weave (vfe) | Custom, Classic Weave (vfe), Corner Weave (FEV), Vertex Rings (1,1,1V), Face Rings (1,1,1F), Face Pairs (1,1,1FFE), Curved (1,1,1::::::FEV), Raised Weave (0,1,0:0.12FEV), and 2 more. |
+| Pattern Preset | Classic Weave (vfe) | Ready-made weave pattern; Custom keeps the pattern field below. Custom, Classic Weave (vfe), Corner Weave (FEV), Vertex Rings (1,1,1V), Face Rings (1,1,1F), Face Pairs (1,1,1FFE), Curved (1,1,1::::::FEV), Raised Weave (0,1,0:0.12FEV), and 2 more. |
 | Pattern | `vfe` | [C\|L][bV,bE,bF][:up,side,along...]steps[tl\|tr\|tb] -- steps from V E F v e f R - |
-| Output | Ribbon | Ribbon, Tube (Rope). |
-| Strand Width | 0.1 | Range 0.005-0.5. |
-| Strand Thickness | 0.03 | Range 0.002-0.2. |
-| Tube Radius | 0.03 | Range 0.005-0.2. |
-| Tube Sides | 10 | Range 3-32. |
+| Output | Ribbon | Sweep each strand as a flat ribbon or a round rope tube. Ribbon, Tube (Rope). |
+| Strand Width | 0.1 | Width of the flat ribbon strands Range 0.005-0.5. |
+| Strand Thickness | 0.03 | Thickness of the flat ribbon strands Range 0.002-0.2. |
+| Tube Radius | 0.03 | Radius of the round rope tubes Range 0.005-0.2. |
+| Tube Sides | 10 | Number of sides around each rope tube Range 3-32. |
 | Relax Iterations | 0 | Relax the strand centerlines together so the ropes round their clasps and keep clear of each other (0 = off) Range 0-500. |
 | Rope Clearance | 0 | Target centre-to-centre strand clearance when relaxing (0 = auto, 2.2 x tube radius) Range 0-0.5. |
 | Weave Amplitude | 0.05 | Alternating radial offset at pattern points (set 0 when the pattern's 'up' values weave) Range 0-0.3. |
-| Path Subdivision | 6 | Range 1-24. |
-| Smoothing | 2 | Range 0-10. |
-| Coloring | Per Strand | Per Strand, None. |
-| Radius | 1 | Range 0.01-100. |
+| Path Subdivision | 6 | How finely each strand path is subdivided Range 1-24. |
+| Smoothing | 2 | Number of smoothing passes over the strand paths Range 0-10. |
+| Coloring | Per Strand | Whether to give each strand its own material. Per Strand, None. |
+| Radius | 1 | Overall radius of the woven model Range 0.01-100. |
 
 <!-- /options -->
 
@@ -49,6 +60,8 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** Think of basket-weaving wrapped around a ball. First cut every face of the polyhedron into little triangles by drawing lines from the face centre out to each corner and each edge midpoint. From any one of these triangles there are just three moves: flip across a corner, flip across an edge, or step over into the neighbouring face. A weave "pattern" is nothing more than a short recipe of those moves — say "corner, edge, vertex, repeat" — and following the recipe traces a strand that loops all the way around the ball and closes up. Run the same recipe starting from every triangle and the loops lace over and under one another into a woven sphere; the code then thickens each loop into a flat ribbon or a round rope. The notation below (`v`, `e`, `f` and their capitals) is just how those moves are written down.
 
 The seed polyhedron is projected onto the unit sphere; triangular seeds are optionally refined by a **Class-I geodesic** subdivision of frequency $\nu$, splitting each triangle $ABC$ into $\nu^2$ smaller triangles at barycentric points $\tfrac{iA+jB+kC}{\nu}$ (with $i+j+k=\nu$) re-projected to the sphere.
 

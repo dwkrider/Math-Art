@@ -262,6 +262,7 @@ if _IN_BLENDER:
 
         seed: EnumProperty(
             name="Seed",
+            description="Which polyhedron to squeeze",
             items=[('CUBE', "Cube", "the Cubic Squeeze"),
                    ('RHOMBIC', "Rhombic Dodecahedron",
                     "12 rhombic faces"),
@@ -291,7 +292,8 @@ if _IN_BLENDER:
         alternate: BoolProperty(
             name="Alternate Pattern", default=False,
             description="Flip which edge pair each face claims")
-        smooth: BoolProperty(name="Smooth Shading", default=False)
+        smooth: BoolProperty(name="Smooth Shading", default=False,
+                             description="Shade the surface smooth")
         sharp_frames: BoolProperty(
             name="Sharp Bent Edges", default=True,
             description="Mark the bent frames sharp (and creased). "
@@ -304,7 +306,8 @@ if _IN_BLENDER:
             description="Solidify modifier thickness (0 = raw "
                         "surface)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             if self.seed == 'ACTIVE':

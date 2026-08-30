@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "willmore-surface",
+  "name": "Willmore Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "topological",
+    "willmore"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: produced by gradient-flow relaxation of the Willmore energy from a seed torus (make_willmore_torus, hundreds of iterations); the result has no parametrization at all. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "willmore",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.willmore_generator",
+      "operator_id": "mesh.willmore_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "T. J. Willmore, \"Note on embedded surfaces\", An. Sti. Univ. \"Al.",
+      "I. Cuza\" Iasi Sect. I a Mat. 11B (1965), 493-496.",
+      "F. C. Marques and A. Neves, \"Min-max theory and the Willmore conjecture\", Annals of Mathematics 179(2) (2014), 683-782.",
+      "W. Helfrich, \"Elastic properties of lipid bilayers: theory and possible experiments\", Z. Naturforsch. C 28 (1973), 693-703.",
+      "U. Seifert, K. Berndl, R. Lipowsky, \"Shape transformations of vesicles\", Physical Review A 44 (1991), 1182-1202 -- the discocyte/prolate/stomatocyte phase diagram at reduced volume < 1.",
+      "C. Zhu, C. T. Lee, P. Rangamani, \"Mem3DG: Modeling membrane mechanochemical dynamics in 3D using discrete differential geometry\", Biophysical Reports 2(3), 100062 (2022)."
+    ]
+  },
+  "ids": {
+    "mathcurve": "ch1358_willmore_2"
+  },
+  "alternate_names": [
+    "Willmore's torus"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

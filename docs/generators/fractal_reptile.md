@@ -1,5 +1,7 @@
 # Fractal Rep-Tile (Experimental)
 
+![Fractal Rep-Tile (Experimental)](../images/fractal_reptile.png)
+
 ## Overview
 
 Add a Fathauer fractal tiling built from a rep-tile
@@ -8,6 +10,16 @@ prototile.
 The same [fractal tiling](fractal_tiling.md) idea — a gap-free interior with a fractal limit boundary — built from **rep-tile** prototiles instead of kites and darts.
 
 That substitution does something neat. A [rep-tile](reptile.md) dissects into scaled copies of itself, which means its edge lengths already stand in the right ratios: the "long" edge of a child glues exactly onto the "short" edge of its parent. The generation ratio is therefore not a free parameter to be tuned but a consequence of the prototile's own self-similarity.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Fractal Rep-Tile (Experimental)*.
+2. **Pick a Family, then a Shape.** *Family* chooses a base-shape class (Square, Hex, Iamond, Rhomb, Bolo, Kite, Rectangle, Reflection, Classic) and *Shape* the specific rep-tile within it — for example the twindragon and the pentomino reptiles under Square, the Gosper flowsnake and other polyhex reptiles under Hex, the heptiamonds under Iamond, the Lévy dragon and the leaf tile under Reflection, and the right-triangle f-tiling under Classic. A large thumbnail previews the chosen shape's level-1 seed polyform.
+3. **Set Iterations** — the growth/substitution depth; each generation replaces every cell by its $1/\sqrt{N}$-scaled copies (capped to keep the mesh manageable).
+4. **Set Holes** — Fathauer's fractal-gasket option: drop this many of the rep-$N$ substitution maps at every level, leaving $(N-\text{holes})^k$ cells riddled with self-similar holes (the edge-grown right-triangle f-tiling ignores it).
+5. **Orient with Angle and Mirror** — *Angle* rotates the tile from its seed-page canonical angle (the allowed alternatives are the same tile turned by a lattice symmetry, e.g. $+120°$); *Mirror* reflects it.
+6. **Choose Color By** — *By Level* paints the right-triangle f-tiling per generation and the radix reptiles per top digit-pair (revealing the nested substitution); *Uniform* is one material.
+7. **Shape the output** — *Margin* opens grout lines, *Relief Height* extrudes each tile, *Separate Tiles* emits one object per tile. The report gives vertex/face or tile counts.
 
 ## Options
 
@@ -21,7 +33,7 @@ That substitution does something neat. A [rep-tile](reptile.md) dissects into sc
 | Mirror | Off | Reflect the tile (the seed pages' mirror variant) |
 | Iterations | 6 | Growth depth; each generation glues a 1/sqrt2-scaled child to every exposed leg (capped to keep the mesh manageable) Range 0-14. |
 | Holes | 0 | Fractal-gasket option (Fathauer): drop this many of the rep-N substitution digits/maps at every level, leaving (N-holes)^k cells with self-similar holes; 0 = solid rep-tile (ignored by the Right Triangle f-tiling) Range 0-6. |
-| Color By | By Level | By Level, Uniform. |
+| Color By | By Level | How tiles are colored: by generation / substitution digits, or one uniform material. By Level, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Separate Tiles | Off | Output each tile as its own mesh object |
@@ -52,19 +64,23 @@ Renders of each selectable option:
 
 ## How it works
 
-**The ratio comes from the prototile.** Take the isosceles right triangle. Its hypotenuse is $\sqrt2$ times a leg, so a child scaled by
+**In plain terms.** A **rep-tile** is a shape that can be cut into smaller, identical copies of itself — an isosceles right triangle splits into two half-size right triangles; an L-shaped tromino splits into four quarter-size L's. Turn that around and it becomes a growth rule: because a small copy is an *exact* scaled-down twin of the big one, its edges already line up with the parent's at just the right lengths, so you can surround a tile with shrunk copies of itself, then surround those, and never leave a gap. The shrink factor is not something you tune — it is dictated by the shape, since $N$ copies have to add up to the parent's area. Grown *outward* this makes the same fractal-edged, gap-free-interior tilings as the [kite f-tilings](fractal_tiling.md); grown *inward*, the same rule fills a single tile with ever-finer copies, and by rotating each copy a little the tile's outline curls up into a dragon or a snowflake.
+
+**The ratio is forced by the tile.** Take the isosceles right triangle. Its hypotenuse is $\sqrt2$ times a leg, so a child scaled by
 
 $$s=\frac{1}{\sqrt2}$$
 
-has a hypotenuse exactly equal to the parent's leg — child long edge meets parent short edge, endpoint to endpoint. Nothing is fitted; the $45$–$45$–$90$ triangle's own proportions fix the generation ratio.
+has a hypotenuse exactly equal to the parent's leg — child long edge meets parent short edge, endpoint to endpoint. More generally a **rep-$N$** tile dissects into $N$ copies, and since those copies must cover the parent's area the scale is $s=1/\sqrt{N}$. Nothing is fitted; the prototile's own proportions fix the generation ratio, which is the recurring theme of the whole generator. The seed follows just as directly: two right triangles sharing their hypotenuse form a unit square, the generation-0 patch.
 
-The seed follows just as directly: two such triangles sharing their hypotenuse form a unit square, which is the generation-0 patch.
+**Edge-grown f-tiling.** The Right-Triangle kind grows exactly like the kite f-tilings. Each generation glues a ring of $s$-scaled children onto the exposed legs (short edges) of the previous one — hypotenuse over the leg, right-angle apex pointing outward — meeting edge-to-edge. Because the ratio is exact the interior stays gap-free at every depth; because $s<1$ the extent converges and the accumulated boundary crinkles into a fractal curve in the limit.
 
-**Growth.** Each generation glues a ring of $s$-scaled children onto the exposed short edges of the previous one, edge-to-edge. Because the ratio is exact, the interior stays gap-free at every depth; because $s<1$, the extent converges and the accumulated boundary crinkles into a fractal curve in the limit.
+**Self-affine reptiles from a number base.** Most of the other shapes are built *inward*, as the attractor of a **radix system**. Choose a Gaussian-integer base $b$ with $N=|b|^2$ and a set $D$ of $N$ digit residues; every finite string $(d_0\dots d_{k-1})$ maps to the lattice point $\sum_j d_j b^j$, and dropping a unit cell at each of the $N^k$ positions gives a polyomino that, rescaled, converges to a rep-$N$ tile. Because $b$ carries a rotation, the boundary spirals into a fractal — base $-1+i$ with digits $\lbrace0,1\rbrace$ is the **twindragon**, base $-2+i$ with symmetric digits the round **rep-5 dragon**. The same construction over the Eisenstein (triangular) lattice, base $3+\omega$ with the six sixth-roots of unity, gives the rep-7 **flowsnake** whose union is the Gosper island. Here every cell is the *same* size, so there is no shrinking generation to colour by; *By Level* instead colours by the two most significant digits, exposing the $N$-fold substitution nested one level deep, as in Vince's and Fathauer's figures.
 
-**The families.** Squares, hexes, iamonds, rhombs, bolos, kites, rectangles and reflection variants — nine in all. Each is a rep-tile in its own right, and each brings its own ratio: the ratio is $1/\sqrt{N}$ for a rep-$N$ tile, since $N$ copies must have the parent's area.
+**Reflections, foldable tiles and graph-directed IFS.** A plain rotating base cannot reach every rep-tile. Following Sajid–Husain–Kumar (2026), each map is written in the closed conjugate-affine form $w(z)=Az+B\bar z+C$, which admits **reflections** drawn from the lattice's symmetry group: the **Lévy dragon** and the curled **leaf** are rep-2 tiles with one reflected map, and a rep-4 tile folds up when its last map is an orientation-reversing quarter-turn. Polyiamond, polyrhomb and polykite reptiles come in several lattice orientations at once, so they use one contraction per cell, $g_i(z)=S(\mu_i z+p_i)$ with $S=(1/\sqrt N)e^{i\theta}$ — a graph-directed IFS collapsed to a single attractor because every orientation is congruent. A twist angle $\theta$ off the lattice directions is what bends the boundary fractal; a lattice-aligned angle would leave an ordinary polygon.
 
-**Colouring by type** paints each tile by its orientation class — which rotation and reflection produced it. With one shape repeated at many scales the substitution structure is otherwise nearly impossible to read, and the colouring makes the generations and their turnings visible at a glance.
+**Isometry inflation and gaskets.** The **pentabolo** is grown the opposite way, by five fixed plane isometries whose union is a 5-triangle tile, each level re-applying them conjugated by a $\sqrt5$ expansion — $5^k$ congruent triangles with no overlap, a rep-5 gasket built from isometries rather than contractions. Finally, **Holes** turns any of the substitution kinds into one of Fathauer's **fractal gaskets**: keeping only $N-\text{holes}$ of the maps at every level punches self-similar holes at all scales (drop one map from a rep-4 digit system and the Sierpiński arrangement appears), leaving $(N-\text{holes})^k$ still-disjoint cells.
+
+**Colouring by type** paints each tile by the substitution digit or orientation class that produced it — which rotation or reflection it came from. With one shape repeated at many scales the substitution structure is otherwise nearly impossible to read, and the colouring makes the generations and their turnings visible at a glance.
 
 ## References
 

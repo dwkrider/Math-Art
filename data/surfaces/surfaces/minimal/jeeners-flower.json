@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "jeeners-flower",
+  "name": "Jeener's Flower",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "u**3*cos(3*v)/3 - u**5*cos(5*v)/5",
+    "y": "-(u**3*sin(3*v)/3 + u**5*sin(5*v)/5)",
+    "z": "u**4*cos(4*v)/2",
+    "u_range": [
+      "0.2",
+      "1.1"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "JEENER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row JEENER) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "alternate_definitions": [
+    {
+      "mode": "weierstrass",
+      "fidelity": "exact",
+      "exactness": "numerical-integral",
+      "gauss_map": "z",
+      "height_differential": "2.0*z**(1 + n)",
+      "parameters": [
+        {
+          "name": "n",
+          "domain": "see the generator's p_from",
+          "default": 4,
+          "integer": true
+        }
+      ],
+      "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack.",
+      "domain": "disk |z| < 1"
+    }
+  ],
+  "ids": {
+    "mathcurve": "ch1266_jeener_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

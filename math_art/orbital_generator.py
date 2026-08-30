@@ -258,6 +258,7 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Mode",
+            description="A single atomic orbital or a molecular combination",
             items=[('ATOMIC', "Atomic", "One hydrogenic orbital "
                                         "psi_nlm"),
                    ('MOLECULAR', "Molecular", "A linear combination of "
@@ -282,7 +283,8 @@ if _IN_BLENDER:
                         "(a Slater-type basis function)")
         preset: EnumProperty(
             name="Molecule", items=MOLECULAR_ITEMS,
-            default='SIGMA_1S')
+            default='SIGMA_1S',
+            description="Which molecular orbital to draw")
         separation: FloatProperty(
             name="Bond Length", default=1.4, min=0.2, max=12.0,
             description="Diatomic nuclear separation in bohr "
@@ -327,6 +329,7 @@ if _IN_BLENDER:
             description="Discard all but the biggest connected piece")
         display: EnumProperty(
             name="Display",
+            description="Draw one surface or a nested probability cloud",
             items=[('SOLID', "Single Surface", "One isosurface at the "
                                                "enclosed probability"),
                    ('CLOUD', "Probability Cloud", "Nested transparent "
@@ -348,12 +351,15 @@ if _IN_BLENDER:
                         "fraction of the mesh: grid-scale debris where "
                         "the contour grazes a sample plane")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size of the orbital")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="If > 0, add a Solidify modifier with this "
                         "thickness")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the isosurface smoothly "
+                                         "rather than faceted")
 
         def execute(self, context):
             if self.mode == 'ATOMIC' and self.l >= self.n:

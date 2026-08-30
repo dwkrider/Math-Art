@@ -4,7 +4,18 @@
 
 ## Overview
 
-This generator builds all 249 prime knots with up to 10 crossings (the Rolfsen table) from the minimum braid words of Thomas Gittings. Each braid closure is laid out around a circle — strands at radii by braid level, crossings as over/under bumps — and then relaxed by curve smoothing plus self-repulsion into a rounded, KnotPlot-like presentation. Every braid word in the table is verified programmatically: the closure permutation must be a single cycle and the Alexander polynomial (via the reduced Burau representation) must match Gittings' published value. Output styles follow the classic Torus Knot add-on: Bézier / Poly / NURBS curve or a swept tube mesh.
+Add any of the 249 prime knots with up to 10 crossings (the Rolfsen table), each built from a verified minimum braid word and relaxed into a rounded, KnotPlot-like curve or tube.
+
+Every knot in the classical tables is here, named by its `n.k` catalogue number — `3.1` the trefoil, `4.1` the figure-eight, on up through every 10-crossing knot. Each is seeded from Thomas Gittings' *minimum braid* word (the shortest braid whose closure is that knot), and every word in the table has been checked programmatically before shipping, so the shape you get is provably the knot it claims to be.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Knots & Curves ▸ Prime Knot*.
+2. **Pick the Knot.** The **Knot** dropdown lists every Rolfsen entry by its `n.k` name; choose one and its stored braid word is used. Select **Custom braid** instead to type your own word.
+3. **Enter a Braid Word** (Custom only). Lowercase `a..z` are the braid generators $\sigma_1,\sigma_2,\dots$ and uppercase `A..Z` their inverses; the word must close to a single knot (a word closing to a *link* is rejected — use [Tight Link](tight_link.md) or [Torus Knot](torus_knot.md) for those).
+4. **Set the shape knobs.** **Curve Samples** is the polyline resolution of the final curve. **Relax Iterations** is how many rounds of smoothing-plus-self-repulsion to run: `0` shows the raw braid closure (angular, drawn on concentric rings), and more iterations round it out. **Strand Clearance** is the distance at which strands push each other apart while relaxing — raise it for a looser, fatter-looking knot, lower it to let the curve pull in tighter. **Mirror** builds the mirror image (which for a chiral knot such as the trefoil is a genuinely different embedding).
+5. **Choose the Output.** **Bezier / Poly / NURBS Curve** emit a curve with a round bevel of **Tube Radius** (its cross-section smoothness set by **Bevel Resolution**); **Mesh Tube** sweeps a solid tube with **Tube Sides** facets. **Scale** fits the finished knot into the standard box.
+6. **Read the report.** On completion the operator prints the knot name, the exact braid word it used, and the final sample count — a quick confirmation of which table entry and word produced the object.
 
 ## Options
 
@@ -13,17 +24,17 @@ This generator builds all 249 prime knots with up to 10 crossings (the Rolfsen t
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Knot | 3.1 | Custom braid, 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, and 242 more. |
+| Knot | 3.1 | Which prime knot to build, or Custom for a typed braid word. Custom braid, 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, and 242 more. |
 | Braid Word | `AAA` | Letters a..z are braid generators, A..Z their inverses (used for Custom) |
-| Curve Samples | 240 | Range 60-1000. |
+| Curve Samples | 240 | Number of points sampled along the knot Range 60-1000. |
 | Relax Iterations | 150 | Smoothing + self-repulsion rounds (0 shows the raw braid closure) Range 0-600. |
 | Strand Clearance | 0.35 | Self-repulsion distance while relaxing Range 0.05-1. |
 | Mirror | Off | Mirror image of the knot |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Output | Bezier Curve | Curve type to build, or a swept tube mesh. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Tube Radius | 0.08 | Curve bevel depth / tube radius Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
-| Scale | 1 | Range 0.01-100. |
+| Bevel Resolution | 6 | Smoothness of the round bevel along the curve Range 1-16. |
+| Tube Sides | 12 | Number of sides around the swept tube Range 3-32. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 
@@ -116,23 +127,25 @@ Renders of each selectable option:
 
 ## How it works
 
-**Braid words.** A braid on $n$ strands is a word in the Artin generators $\sigma_1,\dots,\sigma_{n-1}$ and their inverses; Gittings' letter notation uses `a..z` for $\sigma_i$ and `A..Z` for $\sigma_i^{-1}$. The **closure** of a braid joins each strand's top to its bottom, producing a knot or link. The closure is a knot (one component) iff the induced permutation — the product of transpositions $(i\,\;i{+}1)$ for each generator $\sigma_i^{\pm}$ — is a single $n$-cycle; the generator rejects words whose closure is a link.
+**In plain terms.** Picture a handful of vertical strings hanging side by side. A *braid* is a recipe that says, step by step, "cross this string over its right-hand neighbour", "cross that one under", and so on down the length. When you have finished braiding, you glue the bottom of the whole bundle back up to the top — each string's foot to its own head — and pull it into a loop. That closing-up turns the braid into a single closed loop of string, and it turns out that **every knot in the world can be made this way** from some braid. The catalogue this generator draws on records, for each knot, the *shortest* braiding recipe that produces it. The rest of the work is bookkeeping (checking each recipe really makes the advertised knot) and cosmetics (relaxing the sharp, machine-like braid drawing into the smooth rounded rope you would actually tie).
 
-**Verification.** For every table entry the module recomputes the Alexander polynomial from the **reduced Burau representation** $\rho$ of the braid group: each generator maps to a matrix over $\mathbb{Z}[t,t^{-1}]$, the word's image $R$ is formed, and
+**Braid words.** A braid on $n$ strands is a word in the Artin generators $\sigma_1,\dots,\sigma_{n-1}$ and their inverses, where $\sigma_i$ crosses strand $i$ over strand $i{+}1$ and $\sigma_i^{-1}$ crosses it under; Gittings' letter notation uses `a..z` for $\sigma_i$ and `A..Z` for $\sigma_i^{-1}$. The **closure** of a braid joins each strand's top to its bottom around the back, producing a knot or link. Whether you get a *knot* (one component) or a *link* (several) is decided purely by how the braid permutes the strand endpoints: each generator $\sigma_i^{\pm}$ contributes the transposition $(i\;\,i{+}1)$, and the closure is a single loop exactly when the product of all those transpositions is a single $n$-cycle. The generator computes that permutation and rejects any word whose closure is a link — because a link cannot be laid down as one continuous rope.
+
+**Verification.** A braid word is only a *claim* about which knot it ties; two different-looking words can give the same knot, and a typo can silently give the wrong one. To make the table trustworthy, the module independently recomputes a knot invariant for every entry and checks it against Gittings' published value. It uses the Alexander polynomial, obtained from the **reduced Burau representation** $\rho$ of the braid group: each generator is sent to a matrix over the Laurent ring $\mathbb{Z}[t,t^{-1}]$, the matrices are multiplied in word order to form the braid's image $R$, and
 
 $$\Delta(t) \;\propto\; \frac{\det\!\big(R - t^{k} I\big)}{1 + t + \cdots + t^{\,n-1}},$$
 
-where $k$ counts inverse generators. Evaluated at $t=10$ this must equal Gittings' published invariant; the full table passes.
+where $k$ counts the inverse generators in the word (it accounts for the writhe so that the answer is a genuine knot invariant, unchanged by the many braid words that tie the same knot). Because the polynomial is only defined up to a factor $\pm t^{m}$, the code evaluates it at the fixed point $t=10$ and compares that single integer with the table; the full 249-entry table passes, so the words are verified rather than merely trusted.
 
-**Braid-closure embedding.** The closure is drawn around a circle of $L = $ word-length angular steps. Strand at level $\ell$ sits at radius $r = \text{ring} + \big(\ell - \tfrac{n-1}{2}\big)\,\text{spacing}$, i.e. the $n$ strands are concentric rings. At each letter $\sigma_i^{\pm}$ the two strands at levels $i,\,i{+}1$ swap, passing through a mid-angle point lifted to $z = \pm\text{bump}$ (sign from the generator's sign) so one goes over and the other under; the remaining strands advance flat. Following the closure permutation from strand 0 concatenates the per-strand paths into one closed polyline.
+**Braid-closure embedding.** With the word trusted, it must be turned into points in space. The closure is drawn around a circle divided into $L = $ word-length angular steps — one step per letter. The $n$ strands ride as **concentric rings**: the strand currently at level $\ell$ sits at radius $r = \text{ring} + \big(\ell - \tfrac{n-1}{2}\big)\,\text{spacing}$, so the whole braid is a set of nested circles seen from above. A letter $\sigma_i^{\pm}$ is realised as a crossing: over that angular step the two strands at levels $i$ and $i{+}1$ trade radii, and at the mid-angle they are lifted out of the plane to $z = \pm\text{bump}$ with *opposite* signs (the sign fixed by whether the generator is $\sigma_i$ or $\sigma_i^{-1}$), so one genuinely passes over and the other under. Strands not involved in that letter simply advance at constant radius. Finally the closure permutation is followed from strand $0$: it tells you which physical strand continues where the braid wraps around, and concatenating the per-strand arcs in that order stitches the pieces into one closed polyline — the raw knot.
 
-**Relaxation.** The raw closure is resampled to evenly spaced points, then relaxed for `iters` rounds. Each round applies Laplacian curve **smoothing**
+**Relaxation.** That raw closure is correct but ugly — all straight radial jumps and flat arcs. It is resampled to evenly spaced points and then relaxed for `iters` rounds to look like a rope that has been shaken loose. Each round does two things. First, Laplacian **smoothing** nudges every point toward the midpoint of its neighbours,
 
-$$P_i \leftarrow P_i + s\left(\tfrac{P_{i-1}+P_{i+1}}{2} - P_i\right)$$
+$$P_i \leftarrow P_i + s\left(\tfrac{P_{i-1}+P_{i+1}}{2} - P_i\right),$$
 
-and **self-repulsion**: any two points closer than `repel` that are not near-neighbours along the strand push apart with strength $(\text{repel}-d)/d$. After each round the curve is recentered and its mean radius renormalized, so for conservative settings the strand cannot pass through itself — the knot type is preserved while it rounds into shape. The final curve is resampled to `samples` points and fit to a 2 m cube.
+which is a discrete step of curve-shortening flow and irons out the kinks. Left alone, smoothing would collapse the knot to a point, so the second step, **self-repulsion**, pushes back: any two points closer than `repel` in space but not near-neighbours *along* the strand are driven apart with strength $(\text{repel}-d)/d$, which diverges as their distance $d\to0$. After each round the curve is recentered and its mean radius renormalized to hold its overall size. For conservative settings the repulsion barrier is stiff enough that no strand crosses another, so the knot type survives while the shape rounds — though, unlike the [tight knot](tight_knot.md) flow, that preservation is a practical property of the settings rather than a theorem. The result is resampled to `samples` points and fit to a 2 m cube.
 
-**Tube mesh.** Mesh output sweeps a circular cross-section along the curve using **parallel-transport frames**; the frame's closure holonomy (residual twist after going once around) is measured and distributed uniformly, $\text{corr}_i = -\text{ang}\cdot i/m$, so the seam matches with no visible twist discontinuity.
+**Tube mesh.** For the **Mesh Tube** output a circular cross-section is swept along the finished curve using **parallel-transport frames** — a frame carried along the curve rotating only as much as the curve itself bends, never spinning about its own axis, which keeps the tube from wrinkling. A closed curve, though, generally leaves the frame rotated by some leftover angle after one full loop (its *holonomy*); pasted as-is this would tear the tube at the seam. The residual twist is measured and spread uniformly over the samples, $\text{corr}_i = -\text{ang}\cdot i/m$, so the cross-section returns exactly to its start and the seam closes with no visible discontinuity.
 
 ## References
 

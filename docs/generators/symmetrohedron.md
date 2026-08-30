@@ -4,7 +4,16 @@
 
 ## Overview
 
-Symmetrohedra, introduced by Craig Kaplan and George Hart, are polyhedra assembled by placing regular polygons symmetrically on the rotation axes of a symmetry group and letting the convex hull fill the gaps between them. This generator inscribes each polygon in the unit sphere, gives every axis class (5/3/2 for icosahedral, 4/3/2 for octahedral, 3/3/2 for tetrahedral) its own polygon multiplier, size, and phase, and hulls the whole arrangement. Sweeping the size sliders passes through the exact edge-to-edge Kaplan–Hart solutions as well as a continuum of decorative in-between forms.
+A **symmetrohedron** (Craig Kaplan and George Hart) is built by pinning regular polygons onto the rotation axes of a symmetry group and letting the convex hull fill the gaps between them. Each of the three axis classes of the group — 5/3/2 for icosahedral, 4/3/2 for octahedral, 3/3/2 for tetrahedral — gets its own polygon, sized and spun as you like, so sweeping the sliders passes through the exact edge-to-edge Kaplan–Hart solids as well as a continuum of decorative in-between forms.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Symmetrohedron*.
+2. **Pick the Symmetry.** **Icosahedral (5,3,2)** (the default), **Octahedral (4,3,2)**, or **Tetrahedral (3,3,2)** — the three numbers are the orders of the group's three axis classes, addressed below as Axis-1, Axis-2, Axis-3.
+3. **Give each axis class a polygon.** Its **Multiplier** $m$ puts a polygon of $m\times(\text{axis order})$ sides on every axis of that class — so on icosahedral Axis-1 (order 5), multiplier 1 is a pentagon and 2 a decagon; **0 turns that class off**. At least one class must carry a polygon, or the build reports an error.
+4. **Shape it with Size and Phase.** Each class has a **Size** (the polygon's radius on the unit sphere: large polygons crowd together, small ones leave the hull to fill more of the gap) and a **Phase** (an in-plane twist, ±90°). The edge-to-edge Kaplan–Hart solids sit at particular size ratios; other settings give the smoothly varying family in between.
+5. **Choose Coloring and Style.** **Coloring ▸ By Face Size** paints each face by its side count with the shared Conway palette (view in Material Preview); **None** leaves it plain. **Style** offers Solid, Leonardo, Struts, Ball and Stick, Wireframe, and Face Segments as on the other polyhedra.
+6. **Read the report.** The build prints the vertex and face totals with a tally of face sizes, e.g. `V=… F=…: 12x5-gon, 20x3-gon` — a quick read on which regular polygons survived as faces and how many incidental ones the hull added.
 
 ## Options
 
@@ -13,19 +22,25 @@ Symmetrohedra, introduced by Craig Kaplan and George Hart, are polyhedra assembl
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Symmetry | Icosahedral (5,3,2) | Icosahedral (5,3,2), Octahedral (4,3,2), Tetrahedral (3,3,2). |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
+| Symmetry | Icosahedral (5,3,2) | Symmetry group whose rotation axes carry the polygons. Icosahedral (5,3,2), Octahedral (4,3,2), Tetrahedral (3,3,2). |
 | Axis-1 Multiplier | 1 | Polygon = multiplier x axis order sides (0 = no polygon on this class) Range 0-4. |
-| Axis-2 Multiplier | 1 | Range 0-4. |
-| Axis-3 Multiplier | 0 | Range 0-4. |
-| Axis-1 Size | 0.45 | Range 0.05-0.98. |
-| Axis-2 Size | 0.31 | Range 0.05-0.98. |
-| Axis-3 Size | 0.3 | Range 0.05-0.98. |
-| Axis-1 Phase | 0 | Range -90-90. |
-| Axis-2 Phase | 0 | Range -90-90. |
-| Axis-3 Phase | 0 | Range -90-90. |
-| Coloring | By Face Size | By Face Size, None. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width (fraction of the face) Range 0.02-0.95. |
+| Axis-2 Multiplier | 1 | Polygon on the second axis class = multiplier x axis order sides (0 = none) Range 0-4. |
+| Axis-3 Multiplier | 0 | Polygon on the third (2-fold) axis class = multiplier x 2 sides (0 = none) Range 0-4. |
+| Axis-1 Size | 0.45 | Size of the first-class polygons, as a radius on the unit sphere Range 0.05-0.98. |
+| Axis-2 Size | 0.31 | Size of the second-class polygons, as a radius on the unit sphere Range 0.05-0.98. |
+| Axis-3 Size | 0.3 | Size of the third-class polygons, as a radius on the unit sphere Range 0.05-0.98. |
+| Axis-1 Phase | 0 | Rotation of the first-class polygons about their axis, in degrees Range -90-90. |
+| Axis-2 Phase | 0 | Rotation of the second-class polygons about their axis, in degrees Range -90-90. |
+| Axis-3 Phase | 0 | Rotation of the third-class polygons about their axis, in degrees Range -90-90. |
+| Coloring | By Face Size | Assign a material per face size, or leave unpainted. By Face Size, None. |
+| Style | Solid | How the hull is rendered: solid, open panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
+| Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -33,7 +48,7 @@ Symmetrohedra, introduced by Craig Kaplan and George Hart, are polyhedra assembl
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the polyhedron Range 0.01-100. |
 
 <!-- /options -->
 
@@ -51,21 +66,25 @@ Renders of each selectable option:
 
 ## How it works
 
-Each of the three polyhedral rotation groups has three classes of rotation axis, named by their order:
+**In plain terms.** Every highly symmetric solid has a set of invisible skewers running through it — axes you can rotate the shape around and have it land back on itself. A cube, for instance, spins onto itself a quarter-turn at a time about a skewer through opposite face centres. A symmetrohedron starts from those skewers: slide a flat regular polygon onto each one, centred on the axis and tilted to face outward; put an identical copy on every equivalent skewer so the whole arrangement keeps the group's symmetry; then shrink-wrap the cloud of polygon corners. The polygons come out as faces of the wrapping, and wherever they do not meet, the hull bridges the gap with extra faces of its own.
 
-- **Tetrahedral T** — four 3-fold axes (cube diagonals) and three 2-fold axes (coordinate axes).
+**The axes.** Each of the three polyhedral rotation groups has three classes of axis, named by their order — how many times the shape maps onto itself in one full turn about that axis:
+
+- **Tetrahedral T** — four 3-fold axes (the cube diagonals) and three 2-fold axes (the coordinate axes).
 - **Octahedral O** — three 4-fold, four 3-fold, six 2-fold axes.
 - **Icosahedral I** — six 5-fold, ten 3-fold, fifteen 2-fold axes.
 
-The axis directions are generated from standard coordinates (the 5-fold axes from cyclic permutations of $(0,1,\varphi)$, and so on) and de-duplicated so each $\pm$-axis is represented once, then both ends are returned.
+The directions are generated from standard coordinates (the 5-fold axes from cyclic permutations of $(0,1,\varphi)$ with $\varphi$ the golden ratio, and so on) and de-duplicated so each $\pm$-axis is stored once, then both of its ends are returned.
 
-On every axis of a class with a nonzero **multiplier** $m$, the generator places a regular polygon with $m \times (\text{axis order})$ sides — e.g. multiplier 1 on the 5-fold axes of $I$ gives pentagons; multiplier 2 gives decagons. Each polygon is **inscribed in the unit sphere**: with a chosen radius $r$ (the size slider), its centre sits at height $h = \sqrt{1 - r^2}$ along the axis $\mathbf u$, so its vertices
+**Placing a polygon.** On every axis $\mathbf u$ of a class with a nonzero **multiplier** $m$, the generator places a regular polygon of $m \times (\text{axis order})$ sides — multiplier 1 on the 5-fold axes of $I$ gives pentagons, multiplier 2 gives decagons. The polygon is **inscribed in the unit sphere**: with a chosen radius $r$ (the Size slider) it rides at height $h = \sqrt{1 - r^2}$ up the axis, so its corners
 
 $$\mathbf p_i = h\,\mathbf u + r\big(\cos\alpha_i\,\mathbf e_1 + \sin\alpha_i\,\mathbf e_2\big),\qquad \alpha_i = \phi + \tfrac{2\pi i}{m\cdot\text{order}},$$
 
-all lie on the sphere. The in-plane frame $(\mathbf e_1, \mathbf e_2)$ is chosen **covariantly**: vertex 0 is aimed at the projection of a neighbouring symmetry axis onto the polygon's plane, so that all copies of the polygon are related by the group and the assembly is genuinely symmetric. (A polygon whose side count is a multiple of the axis order is invariant under that axis's stabilizer, so this alignment is consistent whichever tied neighbour is picked.) The `Phase` slider adds an extra in-plane twist $\phi$.
+satisfy $|\mathbf p_i|^2 = h^2 + r^2 = 1$ and so land exactly on the sphere. Because every corner of every polygon lives on one common sphere, they are all candidates for the same convex hull, and the polygon nearest the surface survives as a genuine face. Shrinking $r$ pulls a polygon in toward its axis and lets the hull fill more of the surrounding gap; enlarging it crowds the neighbours until, at special ratios, adjacent polygons touch edge-to-edge — the true Kaplan–Hart solutions.
 
-All the placed polygon vertices are then fed to a **convex hull**. The polygons themselves survive as faces of the hull; the gaps between them close up with the incidental faces the hull creates. A limit-dissolve merges coplanar hull triangles so genuine polygons read as single faces. At special size ratios the polygon edges meet exactly edge-to-edge — these are the true Kaplan–Hart symmetrohedra — while intermediate sizes give the smoothly varying family the sliders explore. Faces are tagged with an `ngon_sides` attribute and (optionally) colored by side count using the shared Conway palette.
+**Keeping it symmetric.** The in-plane frame $(\mathbf e_1, \mathbf e_2)$ cannot be picked at random, or copies of the polygon would sit at inconsistent angles and break the very symmetry we are assembling. Vertex 0 is aimed at the projection of a neighbouring symmetry axis onto the polygon's plane — a choice the whole group shares — so all copies are related by group elements. (Any tie between equally near neighbours differs only by the axis's own stabilizer, and a polygon whose side count is a multiple of the axis order is invariant under that stabilizer, so the alignment comes out consistent whichever tied neighbour is picked.) The `Phase` slider adds a deliberate extra in-plane twist $\phi$ on top.
+
+**Hulling.** All the placed corners are fed to a single **convex hull**. The polygons themselves survive as faces of the hull; the gaps between them close up with the incidental faces the hull creates, and a limit-dissolve merges coplanar hull triangles so each genuine polygon reads as a single face. Intermediate sizes give the smoothly varying family the sliders explore, and every face is tagged with an `ngon_sides` attribute and (optionally) colored by side count using the shared Conway palette.
 
 ## References
 

@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "stessmann-surface",
+  "name": "Stessmann Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "self-intersecting",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Stessmann's 1934 Plateau solution for one of the six Schoenflies quadrilaterals whose edge rotations generate a discrete group (Schwarz had solved the three most symmetric cases); extending it gives a triply periodic, non-embedded surface that Alan Schoen observed is the conjugate of his I-WP surface, predating it by 40 years."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Stessmann's Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch330_stesmanns_surface.md).",
+      "B. Stessmann, 'Periodische Minimalflaechen', Math. Z. 38 (1934) 417-442."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "ids": {
+    "msblog": "ch330_stesmanns_surface"
+  },
+  "named_after": "Stessmann",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

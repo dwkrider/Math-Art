@@ -36,6 +36,30 @@ from .elliptic import _SQUARE, _Lattice
 
 TAU = 2.0 * math.pi
 
+# How far the radial node grading is pushed toward its pure form.
+# 1.0 is the pure grading, whose spacing collapses to zero at the
+# clustered end and produces sliver quads with unstable normals; 0.0
+# is a plain linear grid with no clustering at all. 0.75 keeps most
+# of the clustering while bounding the worst gap ratio -- see the
+# blend in the disk grid builder.
+GRADE_BLEND = 0.75
+
+# Per-build boolean grid (same shape as the last disk grid) marking
+# vertices that must be EXEMPT from the mesher's boundary smoothing: the
+# bell-mouth neighbourhoods of masked end punctures.  Their rim vertices
+# are snapped onto the exact conformal circle |z - z_k| = eps_k, so they
+# are already analytically placed -- and the surrounding cells sit on a
+# steep 1/d flare where even the non-shrinking Taubin pair displaces the
+# loop enough to fold high-aspect neighbour quads inside out (measured:
+# every smoothing-induced flipped-normal edge in the k-noid family sat on
+# a mouth ring).  Reset by the mesher before each build; set by _we_disk
+# when it masks declared ends.
+LAST_PROTECT = None
+
+# diagnostic hook: set to a list to capture per-mouth rim-walk data
+# (grid indices, walk angles, ramp targets) from _we_disk
+RIM_DEBUG = None
+
 
 def _ev(x, p):
     """Evaluate a spec field: plain value or callable(p)."""
@@ -113,12 +137,364 @@ def _phi_fn(spec, p, theta):
 # Domain integrators
 # --------------------------------------------------------------------------
 
+def _cluster_nodes(lo, hi, n, centers, widths, gains, wrap=False,
+                   endpoint=True, fine=4096):
+    """Monotone 1-D node distribution on [lo, hi] with extra density
+    near each of `centers` (Cauchy bumps of half-width `widths` and
+    strength `gains`), built by inverting the density CDF at uniform
+    quantiles.  `wrap` treats the interval as periodic (angular grids).
+    Reduces to a uniform grid when `centers` is empty."""
+    t = np.linspace(lo, hi, fine + 1)
+    w = np.ones_like(t)
+    per = hi - lo
+    for c, h, g in zip(centers, widths, gains):
+        d = np.abs(t - c)
+        if wrap:
+            d = np.abs((t - c + 0.5 * per) % per - 0.5 * per)
+        w += g / (1.0 + (d / max(h, 1e-9)) ** 2)
+    cdf = np.concatenate([[0.0],
+                          np.cumsum(0.5 * (w[1:] + w[:-1]) * np.diff(t))])
+    cdf /= cdf[-1]
+    q = (np.linspace(0.0, 1.0, n) if endpoint
+         else (np.arange(n) + 0.5) / n)
+    return np.interp(q, cdf, t)
+
+
+def _end_principal_parts(phi, ends, max_order=2):
+    """Laurent principal parts of the phi-stack at each declared end
+    puncture: per end z_k, the coefficients C_m of C_m/(z - z_k)^m for
+    m = 1..max_order, for each of the three components, measured by
+    contour integration.  Catenoid ends are at most double poles (the
+    default); the winding Enneper ends of the Enneper-k-noid family put
+    poles of ORDER FOUR in dh, so those rows declare
+    'end_pole_order': 4 -- leaving orders 3-4 unsubtracted would let
+    each ray's quadrature keep a different near-pole error and tear
+    the mesh into wedges, exactly the failure the subtraction exists
+    to prevent.  A lower-order pole just yields ~0 for the unused
+    coefficients.  Returns a list of (z_k, C (max_order, 3)) with
+    C[m - 1] the order-m coefficient."""
+    zs = [zc for zc, _ in ends if zc is not None]
+    out = []
+    for k, zc in enumerate(zs):
+        others = [abs(zc - zo) for j, zo in enumerate(zs)
+                  if j != k and abs(zo - zc) > 1e-12]
+        rr = 0.3 * min(others) if others else 0.3 * max(abs(zc), 1.0)
+        C = np.zeros((max_order, 3), dtype=complex)
+        for m in range(1, max_order + 1):
+            for c in range(3):
+                C[m - 1, c] = period_integral(
+                    lambda z, c=c, m=m: phi(z)[..., c]
+                    * (z - zc) ** (m - 1),
+                    zc, rr, rr) / (2j * math.pi)
+        out.append((zc, C))
+    return out
+
+
+def _pp_sub(F, d, C):
+    """F minus the principal part sum_m C[m-1]/d^m (d carries a
+    trailing component axis broadcasting against C's rows)."""
+    dp = d
+    for m in range(1, len(C) + 1):
+        F = F - C[m - 1] / dp
+        dp = dp * d
+    return F
+
+
+def _pp_anti(d, C):
+    """Elementary antiderivative of the principal part:
+    C_1 Log(d) + sum_{m>=2} C_m d^(1-m)/(1-m).  Because every real
+    period is closed, each residue C_1 is real, so Re(C_1 Log d) =
+    C_1 ln|d| is single-valued and the immersion has no branch
+    seams."""
+    S = C[0] * np.log(d)
+    dp = d
+    for m in range(2, len(C) + 1):
+        S = S + C[m - 1] / ((1 - m) * dp)
+        dp = dp * d
+    return S
+
+
+def _end_graded_axes(ra, r1, nu, nv, off, ends):
+    """Radial and angular node distributions for a disk/annulus domain
+    whose declared end punctures sit on interior rings: cluster the
+    radial nodes toward each ring radius and the angular nodes toward
+    each end azimuth, so the catenoid bells around the punctures get
+    real mesh support instead of one or two stretched quads.  Nodes that
+    land exactly on a puncture centre are nudged off it."""
+    rc, rw, rg, tc, tw, tg = [], [], [], [], [], []
+    for zc, eps in ends:
+        if zc is None:
+            # axial end at z = infinity, cut by the outer rim: cluster
+            # the radial nodes toward r1 (mirror of the z = 0 case)
+            rc.append(r1)
+            rw.append(0.4 * r1)
+            rg.append(7.0)
+            continue
+        R = abs(zc)
+        if R < ra:
+            # axial end at/near z = 0, cut by the inner rim: cluster the
+            # radial nodes toward ra (log-like coverage of the 1/r flare)
+            rc.append(ra)
+            rw.append(2.0 * max(ra, 1e-3))
+            rg.append(7.0)
+            continue
+        if eps <= 0.0 or R > r1:
+            continue
+        # adaptive gain: aim for a local spacing of ~eps/4 at the
+        # puncture (so its mask spans several cells and the bell mouth
+        # is a polygon, not a triangle), whatever eps the row asked
+        # for.  Tighter masks get stronger clustering; the total node
+        # budget spent per bell stays roughly constant because
+        # gain x width is then resolution-independent.
+        du0 = (r1 - ra) / max(nu - 1, 1)
+        dt0 = TAU / nv
+        rc.append(R)
+        rw.append(max(2.0 * eps, 0.01 * (r1 - ra)))
+        rg.append(min(max(4.0 * du0 / max(eps, 1e-9) - 1.0, 4.0), 30.0))
+        tc.append(float(np.angle(zc)) % TAU)
+        tw.append(2.0 * eps / R)
+        tg.append(min(max(4.0 * dt0 * R / max(eps, 1e-9) - 1.0, 4.0),
+                      30.0))
+    # dedupe radial ring centres (a ring of nn ends is one radius),
+    # remembering the smallest mask eps on each ring
+    ring_eps = {}
+    for zc, eps in ends:
+        if zc is None or eps <= 0.0:
+            continue
+        key = round(abs(zc), 9)
+        ring_eps[key] = min(eps, ring_eps.get(key, eps))
+    seen = {}
+    for c, w, g in zip(rc, rw, rg):
+        key = round(c, 9)
+        seen[key] = (c, max(w, seen[key][1]) if key in seen else w, g)
+    rcd = [v[0] for v in seen.values()]
+    rwd = [v[1] for v in seen.values()]
+    rgd = [v[2] for v in seen.values()]
+    # Corrective passes: the one-shot gain guess above competes with the
+    # other rings' bumps for the shared node budget, so the delivered
+    # spacing at a ring can land well above the eps/4 aim -- the engine's
+    # mask floor (1.5 x local spacing) then OVERRIDES the row's eps and
+    # the bell mouths coarsen into sliver cells with unstable normals.
+    # Measure the actual spacing at each masked ring and scale that
+    # ring's gain until the local step is <= eps/4 -- the mask floor
+    # (1.5 x spacing) then sits well under the declared eps, and the
+    # mouth circle spans several radial cells (the bell rim is an
+    # inversion image, so a mouth crossed by only 1-2 radial cells
+    # yields warped quads with flipped normals) -- within a hard cap.
+    u = _cluster_nodes(ra, r1, nu, rcd, rwd, rgd)
+    for _ in range(4):
+        du_m = np.gradient(u)
+        worst = 1.0
+        for k, c in enumerate(rcd):
+            eps = ring_eps.get(round(c, 9), 0.0)
+            if eps <= 0.0:
+                continue
+            i = int(np.clip(np.searchsorted(u, c), 1, len(u) - 2))
+            need = float(du_m[i]) / (0.25 * eps)
+            if need > 1.05 and rgd[k] < 150.0:
+                rgd[k] = min(rgd[k] * min(need, 4.0), 150.0)
+                worst = max(worst, need)
+        if worst <= 1.05:
+            break
+        u = _cluster_nodes(ra, r1, nu, rcd, rwd, rgd)
+    v = _cluster_nodes(off, off + TAU, nv, tc, tw, tg, wrap=True,
+                       endpoint=False) % TAU
+    v.sort()
+    # Same corrective passes for the angular axis: deliver a local
+    # angular step <= eps/(4 R) at each end azimuth, so a bell mouth is
+    # crossed by several angular cells too (the flip census on the
+    # symmetrized-Riemann family showed mouth cells starved in ANGLE at
+    # high symmetry m -- 2m mouths share one fixed angular budget).
+    tgt = {}
+    for zc, eps in ends:
+        if zc is None or eps <= 0.0 or abs(zc) < ra or abs(zc) > r1:
+            continue
+        th = float(np.angle(zc)) % TAU
+        tgt[round(th, 9)] = min(0.25 * eps / abs(zc),
+                                tgt.get(round(th, 9), np.inf))
+    if tgt:
+        for _ in range(4):
+            dv_m = np.gradient(np.unwrap(v))
+            worst = 1.0
+            for k, c in enumerate(tc):
+                t = tgt.get(round(c, 9))
+                if not t or not np.isfinite(t):
+                    continue
+                j = int(np.argmin(np.abs((v - c + math.pi) % TAU
+                                         - math.pi)))
+                need = float(dv_m[j]) / t
+                if need > 1.05 and tg[k] < 150.0:
+                    tg[k] = min(tg[k] * min(need, 4.0), 150.0)
+                    worst = max(worst, need)
+            if worst <= 1.05:
+                break
+            v = _cluster_nodes(off, off + TAU, nv, tc, tw, tg, wrap=True,
+                               endpoint=False) % TAU
+            v.sort()
+    # nudge any node off an exact puncture centre (radially/angularly)
+    for zc, eps in ends:
+        if zc is None:
+            continue
+        R, th = abs(zc), float(np.angle(zc)) % TAU
+        j = np.abs(u - R) < 1e-9 * max(r1, 1.0)
+        u[j] += 1e-4 * (r1 - ra)
+        j = np.abs(v - th) < 1e-9
+        v[j] += 1e-4 * TAU / nv
+    return u, v
+
+
+def _metric_axes(spec, p, theta, ra, r1, nu, nv, off, ends):
+    """Radial and angular node distributions equidistributing the pulled
+    back surface METRIC instead of a parameter-space proxy.
+
+    A Weierstrass immersion is conformal: ds = lambda(z) |dz| with
+    lambda = (|g| + 1/|g|) |dh| / 2 = sqrt(sum_k |phi_k|^2 / 2), so the
+    local face AREA element is lambda^2 r dr dtheta.  Sampling that
+    density on a fine polar grid (masked at the declared end punctures,
+    where it diverges -- that divergence is exactly what earns the ends
+    their nodes) and inverting its two marginals' CDFs puts grid lines
+    where the surface actually has area: both end rings of an
+    antiprismatic k-noid get equal budgets regardless of whether they
+    sit at |z| = b or 1/b, which no r-space bump heuristic manages.
+    The marginals are blended with a uniform floor so spacing can never
+    collapse (the GRADE_BLEND lesson), and the density is ceiling-capped
+    at a high percentile so a near-pole sample cannot swallow the whole
+    budget.  Returns (u, v) or None when the density is unusable
+    (caller falls back to the Cauchy-bump axes)."""
+    NF, BLEND, CAP_PCT = 384, 0.95, 99.5
+    rf = np.exp(np.linspace(math.log(max(ra, 1e-4)), math.log(r1), NF))
+    tf = off + (np.arange(NF) + 0.5) * (TAU / NF)
+    Rf, Tf = np.meshgrid(rf, tf, indexing='ij')
+    zf = Rf * np.exp(1j * Tf)
+    try:
+        phi = _phi_fn(spec, p, theta)
+        with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+            F = phi(zf)
+            lam2 = 0.5 * np.sum(np.abs(F) ** 2, axis=-1)
+    except Exception:
+        return None
+    valid = np.isfinite(lam2)
+    for zc, eps in ends:
+        if zc is None or eps <= 0.0:
+            continue
+        valid &= np.abs(zf - zc) > eps
+    if valid.sum() < 0.5 * lam2.size:
+        return None
+    dens = np.where(valid, lam2 * Rf, 0.0)      # area density lambda^2 r
+    vv = dens[valid & (dens > 0.0)]
+    if not len(vv):
+        return None
+    dens = np.minimum(dens, np.percentile(vv, CAP_PCT))
+    # radial marginal (area per fine annulus row), uniform-floored
+    q = dens.sum(axis=1)
+    if q.sum() <= 0.0 or not np.all(np.isfinite(q)):
+        return None
+    q = (1.0 - BLEND) * q.mean() + BLEND * q
+
+    def _invert_r(qd):
+        # hard uniform floor (independent of any corrective boosts
+        # below): no region's density may fall under 30% of the average,
+        # so the widest spacing stays within ~3x uniform and a boosted
+        # ring band can never drain the rest of the axis
+        tot = float(np.sum(0.5 * (qd[1:] + qd[:-1]) * np.diff(rf)))
+        qf = np.maximum(qd, 0.3 * tot / (rf[-1] - rf[0]))
+        c = np.concatenate([[0.0], np.cumsum(0.5 * (qf[1:] + qf[:-1])
+                                             * np.diff(rf))])
+        c /= c[-1]
+        return np.interp(np.linspace(0.0, 1.0, nu), c, rf)
+
+    u = _invert_r(q)
+    # Corrective ring passes ON TOP of the metric marginal: the marginal
+    # sees the high-lambda band around a ring of masked ends, but not
+    # the exact eps-scale mouth structure (a 1e-3-scale neck smears to
+    # nothing on the fine grid, and the percentile cap flattens it).
+    # Guarantee the mouth-resolving spacing (<= eps/4 at each masked
+    # ring) the flip census demands by boosting the density in a narrow
+    # band at the exact ring radius until delivered spacing complies.
+    rings = {}
+    for zc, eps in ends:
+        if zc is not None and eps > 0.0:
+            key = round(abs(zc), 9)
+            rings[key] = min(eps, rings.get(key, eps))
+    for _ in range(5):
+        du_m = np.gradient(u)
+        worst = 1.0
+        for c, eps in rings.items():
+            i = int(np.clip(np.searchsorted(u, c), 1, len(u) - 2))
+            need = float(du_m[i]) / (0.25 * eps)
+            if need > 1.05:
+                # smooth Cauchy bump (same shape as _cluster_nodes):
+                # abrupt density steps make abrupt spacing jumps, which
+                # are themselves a normal-instability source
+                h = max(2.0 * eps, 0.005 * (r1 - ra))
+                lvl = float(np.interp(c, rf, q))
+                q = q + (min(need, 4.0) - 1.0) * lvl \
+                    / (1.0 + ((rf - c) / h) ** 2)
+                worst = max(worst, need)
+        if worst <= 1.05:
+            break
+        u = _invert_r(q)
+    # angular marginal (area per fine wedge), uniform-floored
+    w = (dens * np.gradient(rf)[:, None]).sum(axis=0)
+    w = (1.0 - BLEND) * w.mean() + BLEND * w
+
+    def _invert_t(wd):
+        # same hard uniform floor as _invert_r
+        tot = float(np.sum(0.5 * (wd[1:] + wd[:-1]) * np.diff(tf)))
+        wf = np.maximum(wd, 0.3 * tot / (tf[-1] - tf[0]))
+        c = np.concatenate([[0.0], np.cumsum(0.5 * (wf[1:] + wf[:-1])
+                                             * np.diff(tf))])
+        c /= c[-1]
+        vt = np.interp((np.arange(nv) + 0.5) / nv, c, tf) % TAU
+        vt.sort()
+        return vt
+
+    v = _invert_t(w)
+    # same corrective passes for the angular axis, per end azimuth
+    tgt = {}
+    for zc, eps in ends:
+        if zc is None or eps <= 0.0:
+            continue
+        th = float(np.angle(zc)) % TAU
+        tgt[round(th, 9)] = min(0.25 * eps / abs(zc),
+                                tgt.get(round(th, 9), np.inf))
+    for _ in range(5):
+        dv_m = np.gradient(np.unwrap(v))
+        worst = 1.0
+        for th, t in tgt.items():
+            j = int(np.argmin(np.abs((v - th + math.pi) % TAU - math.pi)))
+            need = float(dv_m[j]) / t
+            if need > 1.05:
+                dtf = np.abs((tf - th + math.pi) % TAU - math.pi)
+                h = max(4.0 * t, 0.005 * TAU)
+                lvl = float(w[np.argmin(dtf)])
+                w = w + (min(need, 4.0) - 1.0) * lvl \
+                    / (1.0 + (dtf / h) ** 2)
+                worst = max(worst, need)
+        if worst <= 1.05:
+            break
+        v = _invert_t(w)
+    # nudge any node off an exact puncture centre (radially/angularly)
+    for zc, eps in ends:
+        if zc is None:
+            continue
+        R, th = abs(zc), float(np.angle(zc)) % TAU
+        j = np.abs(u - R) < 1e-9 * max(r1, 1.0)
+        u[j] += 1e-4 * (r1 - ra)
+        j = np.abs(v - th) < 1e-9
+        v[j] += 1e-4 * TAU / nv
+    if not (np.all(np.diff(u) > 0.0) and np.all(np.diff(v) > 0.0)):
+        return None
+    return u, v
+
+
 def _we_disk(spec, p, nu, nv, theta):
     """Radial-ray integration on a disk/annulus domain
     ('disk', r_in, r_out).  Rays get a half-step angular offset so none
     lands exactly on a puncture (a la the Jorge-Meeks k-noid); an
     annulus (r_in > 0) is stitched with a base-ring arc integral, which
     closes because the engine's rows have vanishing real periods."""
+    global LAST_PROTECT
     d = spec['domain']
     r0 = max(float(_ev(d[1], p)), 0.0)
     r1 = float(_ev(d[2], p))
@@ -126,20 +502,108 @@ def _we_disk(spec, p, nu, nv, theta):
     off = 0.5 * dth if spec.get('offset_rays', True) else 0.0
     v = off + np.arange(nv) * dth
     ra = max(r0, 1e-3)
+    # Declared end punctures ('ends': list of (z_k, eps_k)): the row
+    # names where its catenoid ends live INSIDE the domain (typically
+    # rings of double poles of dh).  They drive three things: (1) the
+    # radial/angular sampling is clustered toward the rings so the bells
+    # get mesh support; (2) the integrand's principal parts at the poles
+    # are subtracted and re-added in closed form, so the radial
+    # quadrature never steps across a double pole (which used to leave
+    # per-ray period errors that tore the mesh into wedges); (3) a small
+    # parameter-space disk |z - z_k| <= eps_k is masked out, cutting
+    # each bell on a clean conformal circle instead of amputating it
+    # with the object-space percentile clip.
+    ends = _ev(spec.get('ends'), p) if spec.get('ends') else None
     # radial node distribution.  Enneper-type ends grow like a power of
     # the radius, so a linear-in-r grid starves the fast-growing rim with
     # a few huge facets; 'radial_grade' clusters nodes toward the
     # end(s) instead ('rim' -> toward r_out, 'both' -> a cosine/Chebyshev
     # grid dense at r_in and r_out for two-ended annuli).
-    grade = spec.get('radial_grade')
+    grade = spec.get('radial_grade') if ends is None else None
     s = np.linspace(0.0, 1.0, nu)
-    if grade == 'rim':
-        s = 1.0 - (1.0 - s) ** 2
-    elif grade == 'both':
-        s = 0.5 - 0.5 * np.cos(math.pi * s)
+    if grade == 'log' and ra > 0.0:
+        # log-spaced rings (equal RELATIVE steps), the natural grid for a
+        # z -> 1/z symmetric annulus with power-law ends at both rims
+        # (Weber's ExpNRange): the image-step growth per ring is a
+        # constant factor, and the node split about |z| = 1 mirrors the
+        # surface's own symmetry.  No blend needed -- the spacing ratio
+        # between neighbouring rings is bounded by construction.
+        s = (np.exp(np.linspace(math.log(ra), math.log(r1), nu)) - ra) \
+            / (r1 - ra)
+    elif grade in ('rim', 'both'):
+        if grade == 'rim':
+            g = 1.0 - (1.0 - s) ** 2
+        else:
+            g = 0.5 - 0.5 * np.cos(math.pi * s)
+        # BLEND with the linear grid rather than using the graded one
+        # neat.  Both curves have ZERO derivative at the clustered end,
+        # so the spacing between the last two rings collapses like
+        # 1/nu^2 while the angular spacing only falls like 1/nv: the
+        # outermost quads become slivers whose aspect ratio grows
+        # without bound as resolution rises.  The blend keeps the
+        # clustering (which is real: Enneper flares like r^(2k+1), and
+        # a linear grid leaves the rim a coarse polygon) but puts a
+        # floor under the spacing: the derivative at the clustered end
+        # is now at least 1 - GRADE_BLEND, so the gap ratio is bounded
+        # by a constant instead of growing with nu.
+        #
+        # NB the blend is an aspect-ratio bound, nothing more.  The
+        # folded-over "lip" once seen along Enneper's rim was NOT these
+        # slivers' fault: it was the boundary smoother's first-order
+        # shrink pulling the rim ring through its (tightly graded)
+        # neighbour ring -- fixed in domain._smooth_boundary, which is
+        # now a non-shrinking Taubin pair.  The tight last-ring gap
+        # merely made that pull easier to overshoot.
+        s = (1.0 - GRADE_BLEND) * s + GRADE_BLEND * g
     u = ra + (r1 - ra) * s
+    if ends:
+        # metric-equidistributed axes (see _metric_axes); the Cauchy-bump
+        # grading remains for rows that opt out ('metric_axes': False --
+        # geometry whose lambda concentration lives BELOW the mask scale,
+        # e.g. the symmetrized finite Riemann's 1e-3 necks, needs the
+        # exact-ring bump grading) and as the fallback when the density
+        # is unusable
+        ax = (_metric_axes(spec, p, theta, ra, r1, nu, nv, off, ends)
+              if spec.get('metric_axes', True) else None)
+        u, v = ax if ax is not None else _end_graded_axes(
+            ra, r1, nu, nv, off, ends)
     R, TH = np.meshgrid(u, v, indexing='ij')
     z = R * np.exp(1j * TH)
+    endmask = None
+    if ends:
+        # floor each end's mask radius at ~1.5 local grid spacings, so a
+        # masked disk can never fall BETWEEN nodes: a coarse cell that
+        # contains a pole with all four corners outside the mask would
+        # survive as one flat quad sealing the bell mouth (a "cap").
+        # With the floor, the cell containing a pole always has a corner
+        # inside the mask and the mouth stays open.
+        du = np.gradient(u)
+        dvw = np.diff(np.concatenate([v, [v[0] + TAU]]))
+        eff = []
+        for zc, eps in ends:
+            if zc is None:
+                continue          # z = infinity marker: grading only
+            if eps > 0.0:
+                Rk = abs(zc)
+                i = int(np.clip(np.searchsorted(u, Rk), 0, len(u) - 1))
+                thk = float(np.angle(zc)) % TAU
+                j = int(np.argmin(np.abs(
+                    (v - thk + math.pi) % TAU - math.pi)))
+                eps = max(eps, 1.5 * float(du[i]),
+                          1.5 * Rk * float(dvw[j]))
+            eff.append((zc, eps))
+        ends = eff
+        endmask = np.ones(z.shape, dtype=bool)
+        for zc, eps in ends:
+            if eps > 0.0:
+                endmask &= np.abs(z - zc) > eps
+        # bell-mouth neighbourhoods: exempt from boundary smoothing (the
+        # mouth rims are snapped onto exact conformal circles below)
+        prot = np.zeros(z.shape, dtype=bool)
+        for zc, eps in ends:
+            if eps > 0.0:
+                prot |= np.abs(z - zc) <= 2.5 * eps
+        LAST_PROTECT = prot
     if 'Xexact' in spec:
         # closed-form immersion (no radial quadrature): the antiderivative
         # is known analytically, so evaluate it straight on the grid --
@@ -148,8 +612,10 @@ def _we_disk(spec, p, nu, nv, theta):
             xx, yy, zz = spec['Xexact'](z, p, theta)
         X = np.stack(np.broadcast_arrays(xx, yy, zz), axis=-1).astype(float)
         mask = np.isfinite(X).all(axis=-1)
-        punct = _ev(spec.get('mask_punctures'), p) if spec.get(
-            'mask_punctures') else None
+        punct = (list(_ev(spec.get('mask_punctures'), p))
+                 if spec.get('mask_punctures') else [])
+        if ends:
+            punct = punct + [(zc, e) for zc, e in ends if e > 0.0]
         if punct:
             for zc, rho in punct:
                 mask &= np.abs(z - zc) > rho
@@ -160,7 +626,13 @@ def _we_disk(spec, p, nu, nv, theta):
                 # first ring of just-inside grid vertices radially out onto
                 # the circle |z - zc| = rho and re-evaluate the immersion
                 # there, so the cut lands exactly on the mask boundary and
-                # the wing edge reads as a clean smooth curve.
+                # the wing edge reads as a clean smooth curve.  Exactly-cut
+                # rims must not be re-smoothed afterwards (see LAST_PROTECT).
+                prot = np.zeros(z.shape, dtype=bool)
+                for zc, rho in punct:
+                    if rho > 0.0:
+                        prot |= np.abs(z - zc) <= 2.5 * rho
+                LAST_PROTECT = prot
                 zc_a = np.array([zc for zc, _ in punct])
                 rho_a = np.array([rho for _, rho in punct])
                 keep = mask
@@ -187,13 +659,34 @@ def _we_disk(spec, p, nu, nv, theta):
                     mask[gi, gj] = True
         return X[..., 0], X[..., 1], X[..., 2], False, True, mask
     phi = _phi_fn(spec, p, theta)
+    # principal-part subtraction at the declared end punctures: phi =
+    # phi_smooth + sum_k sum_m C_km/(z-z_k)^m, m up to the row's
+    # 'end_pole_order' (2 for catenoid ends, 4 for the winding Enneper
+    # ends).  The smooth part is integrated numerically (it is analytic
+    # across the end rings, so the per-ray trapezoid no longer
+    # accumulates a different error on each side of a pole); the
+    # singular part has the elementary antiderivative S(z) (_pp_anti),
+    # evaluated pointwise.  This is what actually GROWS the end
+    # geometry: the near-pole immersion is exact at any resolution.
+    pp = (_end_principal_parts(phi, ends,
+                               int(spec.get('end_pole_order', 2)))
+          if ends else None)
     with np.errstate(divide='ignore', invalid='ignore'):
         F = phi(z)
+        S = None
+        if pp:
+            S = np.zeros(z.shape + (3,), dtype=complex)
+            for zc, Ck in pp:
+                dd = (z - zc)[..., None]
+                F = _pp_sub(F, dd, Ck)
+                S = S + _pp_anti(dd, Ck)
     ez = np.exp(1j * TH)[..., None]
     Xr = np.real(F * ez)                       # dz = e^{i th} dr
     Xr = np.where(np.isfinite(Xr), Xr, 0.0)
     # loose cap: kill only true numerical garbage from rays that graze
-    # a pole, without flattening tall catenoid/planar ends
+    # a pole, without flattening tall catenoid/planar ends.  (With the
+    # principal parts subtracted the integrand is already tame near the
+    # declared ends, so the cap is a no-op there.)
     cap = 400.0 * float(np.median(np.abs(Xr))) or 1.0
     Xr = np.clip(Xr, -cap, cap)
     dr = np.diff(R, axis=0)[..., None]
@@ -205,18 +698,289 @@ def _we_disk(spec, p, nu, nv, theta):
         zi = u[0] * np.exp(1j * v)
         with np.errstate(divide='ignore', invalid='ignore'):
             Fi = phi(zi)
+            if pp:
+                for zc, Ck in pp:
+                    Fi = _pp_sub(Fi, (zi - zc)[:, None], Ck)
         arc = np.real(Fi * (1j * zi)[:, None])   # dz = i z dth
         arc = np.where(np.isfinite(arc), arc, 0.0)
+        dv_arc = np.diff(v)
         A = np.zeros((nv, 3))
-        A[1:] = np.cumsum(0.5 * (arc[1:] + arc[:-1]) * dth, axis=0)
+        A[1:] = np.cumsum(0.5 * (arc[1:] + arc[:-1])
+                          * dv_arc[:, None], axis=0)
         X = X + A[None, :, :]
+    if S is not None:
+        # add back the exact singular antiderivative (constant offset
+        # S(base) is irrelevant -- the mesher re-centres)
+        Sr = np.real(S)
+        X = X + np.where(np.isfinite(Sr), Sr, 0.0)
     mask = None
     punct = spec.get('mask_punctures')
-    if punct:
+    if punct or endmask is not None:
         valid = np.ones(z.shape, dtype=bool)
-        for zc, rho in _ev(punct, p):
-            valid &= np.abs(z - zc) > rho
+        if punct:
+            for zc, rho in _ev(punct, p):
+                valid &= np.abs(z - zc) > rho
+        if endmask is not None:
+            valid &= endmask
         mask = valid
+    if ends and pp and mask is not None:
+        # Cut each bell mouth ON the exact conformal circle.  The mesh's
+        # boundary loop around a masked end consists of the VALID grid
+        # vertices whose face neighbourhood (8-stencil) touches the
+        # masked disk -- so move exactly those vertices radially inward
+        # onto |z - z_k| = eps_k and re-evaluate the immersion there.
+        # (The earlier scheme snapped the just-INSIDE ring outward
+        # instead; the loop then alternated between snapped on-circle
+        # vertices and untouched just-outside ones -- vertices at
+        # different heights up the 1/d flare -- and read as a ragged
+        # staircase crown: rim zigzag ~0.31 of an edge length, measured
+        # across the whole k-noid family.  Snapping the OUTSIDE ring is
+        # the single-ring formulation: every loop vertex lands on the
+        # circle, and no snapped-vertex pair can degenerate a quad,
+        # because no vertex changes validity.)  The displacement is
+        # exact for the singular part (S is closed form) plus a short
+        # trapezoid step of the smooth remainder.
+        zc_a = np.array([zc for zc, e in ends if e > 0.0])
+        eps_a = np.array([e for zc, e in ends if e > 0.0])
+        if len(zc_a) and endmask is not None:
+            inv = ~endmask                  # inside some end's mask disk
+            nb = np.zeros_like(inv)
+            for dj in (-1, 0, 1):           # angular axis wraps
+                sh = np.roll(inv, dj, axis=1)
+                nb |= sh                    # (di = 0 row)
+                nb[:-1] |= sh[1:]           # di = +1
+                nb[1:] |= sh[:-1]           # di = -1
+            ring = mask & nb                # the future boundary loop
+            ii, jj = np.nonzero(ring)
+        else:
+            ii = jj = np.array([], dtype=int)
+        if len(ii):
+            zr = z[ii, jj]
+            k = np.abs(zr[:, None] - zc_a[None, :]).argmin(axis=1)
+            dvec = zr - zc_a[k]
+            adv = np.abs(dvec)
+            # only vertices actually hugging their end's mouth (a valid
+            # vertex can graze a *different* end's disk diagonally)
+            sel = (adv > 1e-12) & (adv < 2.5 * eps_a[k])
+            ii, jj, zr, k, dvec = ii[sel], jj[sel], zr[sel], k[sel], \
+                dvec[sel]
+            ang = np.angle(dvec)
+            # Equalize the rim spacing per end: radial projection alone
+            # keeps each vertex's grid azimuth, so the loop inherits the
+            # grid's uneven angular footprint -- including staircase
+            # steps where two LOOP-adjacent vertices are radially
+            # aligned (identical azimuth): any per-vertex respacing that
+            # sorts by angle backtracks against the actual boundary walk
+            # there (rim edge-length CV ~0.3-0.5 measured).  Around a
+            # pole of order M the immersion maps the circle at
+            # near-uniform speed (the -C_M/((M-1) d^(M-1)) term of the
+            # antiderivative dominates: d = eps e^{i phi} -> circle of
+            # radius |C_M|/((M-1) eps^(M-1)) traversed at uniform
+            # speed, winding M-1 times), so uniform PARAMETER angles
+            # along the LOOP are uniform 3-D rim edges -- for the
+            # double poles of catenoid ends and the order-four poles
+            # of Enneper ends alike.  Per end: trace the hole's
+            # boundary loop on the
+            # grid (edges with exactly one kept quad, kept = all four
+            # corners valid, angular axis wrapped) and assign a uniform
+            # angular ramp in loop order -- monotone by construction,
+            # no backtracking possible.  Falls back to an
+            # order-preserving angle-sorted blend if the trace fails
+            # (mask merged with another hole or the domain rim).
+            nu_g, nv_g = z.shape
+            mrn = np.roll(mask, -1, axis=1)
+            cellok = (mask[:-1] & mask[1:] & mrn[:-1] & mrn[1:])
+
+            def _kept(a, b):
+                return (0 <= a < nu_g - 1) and bool(cellok[a, b % nv_g])
+
+            pos = {(int(a), int(b)): t
+                   for t, (a, b) in enumerate(zip(ii, jj))}
+
+            def _sorted_blend(idx):
+                srt = idx[np.argsort(ang[idx])]
+                a_s = ang[srt]
+                n_k = len(srt)
+                uni = TAU * np.arange(n_k) / n_k
+                dphi = float(np.angle(np.exp(1j * (a_s - uni)).mean()))
+                tgt = uni + dphi
+                lo = 0.5 * (a_s + np.roll(a_s, 1))
+                lo[0] -= 0.5 * TAU
+                hi = 0.5 * (a_s + np.roll(a_s, -1))
+                hi[-1] += 0.5 * TAU
+                dd = (tgt - a_s + math.pi) % TAU - math.pi
+                ang[srt] = np.clip(a_s + dd, lo, hi)
+
+            walks = []                       # per-end rim reparam data
+            for ke in range(len(zc_a)):
+                idx = np.nonzero(k == ke)[0]
+                if len(idx) < 4:
+                    continue
+                # boundary edges among this end's rim vertices
+                adj = {}
+                okwalk = True
+                for t in idx:
+                    a, b = int(ii[t]), int(jj[t])
+                    for (a2, b2), cells in (
+                            ((a, b + 1), ((a, b), (a - 1, b))),
+                            ((a + 1, b), ((a, b), (a, b - 1)))):
+                        if a2 >= nu_g:      # radial axis does not wrap
+                            continue
+                        t2 = pos.get((a2, b2 % nv_g))
+                        if t2 is None or k[t2] != ke:
+                            continue
+                        if _kept(*cells[0]) != _kept(*cells[1]):
+                            adj.setdefault(t, []).append(t2)
+                            adj.setdefault(t2, []).append(t)
+                if (len(adj) != len(idx)
+                        or any(len(v) != 2 for v in adj.values())):
+                    okwalk = False
+                if okwalk:
+                    start = int(idx[0])
+                    walk = [start]
+                    prev, cur = None, start
+                    while True:
+                        nxt = [w for w in adj[cur] if w != prev]
+                        if not nxt:
+                            okwalk = False
+                            break
+                        prev, cur = cur, nxt[0]
+                        if cur == start:
+                            break
+                        walk.append(cur)
+                        if len(walk) > len(idx):
+                            okwalk = False
+                            break
+                    okwalk = okwalk and len(walk) == len(idx)
+                if okwalk:
+                    aw = ang[np.array(walk)]
+                    dth = (np.diff(aw) + math.pi) % TAU - math.pi
+                    tot = float(dth.sum()) + float(
+                        (aw[0] - aw[-1] + math.pi) % TAU - math.pi)
+                    if abs(abs(tot) - TAU) > 0.1 * TAU:
+                        okwalk = False       # not a simple mouth loop
+                if okwalk:
+                    unw = np.concatenate([[aw[0]],
+                                          aw[0] + np.cumsum(dth)])
+                    ramp = np.arange(len(walk)) * tot / len(walk)
+                    ph = float(np.angle(
+                        np.exp(1j * (unw - ramp)).mean()))
+                    tgt = ramp + ph
+                    wk = np.array(walk)
+                    if RIM_DEBUG is not None:
+                        RIM_DEBUG.append({
+                            'zc': zc_a[ke], 'eps': float(eps_a[ke]),
+                            'ij': (ii[wk].copy(), jj[wk].copy()),
+                            'unw': unw.copy(), 'tgt': tgt.copy()})
+                    ang[wk] = tgt
+                    walks.append((ke, unw, tgt))
+                else:
+                    _sorted_blend(idx)
+            znew = zc_a[k] + eps_a[k] * np.exp(1j * ang)
+            # Boundary-layer accommodation.  The uniform rim can sit
+            # several grid columns from the vertices' original azimuths
+            # (the deviation field peaks at ~4-5 rim slots on the KNOID
+            # mouths, where the grid's angular density seen from the end
+            # centre varies most), and ONE row of quads cannot absorb
+            # that much tangential shear without folding (26-83 flipped
+            # edges measured).  So distribute it: every interior vertex
+            # of the protected annulus eps < |z - z_k| < 2.4 eps gets
+            # the same angular deviation, interpolated in azimuth and
+            # tapered to zero at the outer edge -- the shear spreads
+            # over the ~6 rings the smoothing exemption already
+            # reserves for the mouth, well under one cell per ring.
+            # (Bands of neighbouring ends never overlap: every 'ends'
+            # row masks at most 0.35 x the half-gap between ring
+            # neighbours, so 2.4 eps < 0.85 x half-gap.)
+            if walks:
+                rimflag = np.zeros(z.shape, dtype=bool)
+                rimflag[ii, jj] = True
+                dist_all = np.abs(z[..., None] - zc_a[None, None, :])
+                near_all = dist_all.argmin(axis=-1)
+                add = []
+                for ke, unw, tgt in walks:
+                    zck, epsk = zc_a[ke], float(eps_a[ke])
+                    xs = unw % TAU
+                    # Wrap the deviation per-vertex.  tgt - unw can
+                    # carry a spurious constant +-2 pi: the phase fit
+                    # ph is a CIRCULAR mean, so when the walk's start
+                    # angle sits near the +-pi branch of np.angle
+                    # (every end whose origin-facing side is the cut,
+                    # e.g. an end on the positive real axis) the mean
+                    # lands on the other side of the branch and the
+                    # whole field shifts by a full turn.  On the rim
+                    # itself that is a no-op (e^{2 pi i} = 1), but the
+                    # tapered band multiplies the deviation by
+                    # tap < 1, so an un-wrapped 2 pi swirled the
+                    # band's rings most of a full turn around the end
+                    # (measured: max|dv| = 6.6 on the azimuth-0 end of
+                    # the Enneper-ended k-noid vs 0.33 on its other
+                    # two ends).
+                    dv = (tgt - unw + math.pi) % TAU - math.pi
+                    o = np.argsort(xs)
+                    xs, dv = xs[o], dv[o]
+                    # The outer band only needs the LOW-frequency part
+                    # of the deviation field: it exists to absorb the
+                    # multi-slot drift one quad row cannot, while the
+                    # slot-to-slot wiggle (radially aligned staircase
+                    # pairs) matters only right at the rim.  Feeding
+                    # the wiggle deep into the interior rings shears
+                    # them against each other and shows up as
+                    # cotan-|H| noise (KNOID median doubled), but
+                    # dropping it at the FIRST ring misaligns that
+                    # ring against the exactly-placed rim (4 flips on
+                    # M3_PYR) -- so keep the raw field beside the rim
+                    # and fade to the smoothed one outward.
+                    kw = min(7, len(dv) | 1)
+                    ker = np.ones(kw) / kw
+                    dvs = np.convolve(
+                        np.concatenate([dv[-(kw // 2):], dv,
+                                        dv[:kw // 2]]),
+                        ker, mode='valid')
+                    xs = xs + np.arange(len(xs)) * 1e-9   # break ties
+                    xse = np.concatenate([[xs[-1] - TAU], xs,
+                                          [xs[0] + TAU]])
+                    dve = np.concatenate([[dv[-1]], dv, [dv[0]]])
+                    dvse = np.concatenate([[dvs[-1]], dvs, [dvs[0]]])
+                    dk = dist_all[..., ke]
+                    band = (mask & ~rimflag & (near_all == ke)
+                            & (dk > epsk) & (dk < 2.4 * epsk))
+                    band[0, :] = False       # never the domain rims
+                    band[-1, :] = False
+                    bi, bj = np.nonzero(band)
+                    if not len(bi):
+                        continue
+                    zb = z[bi, bj]
+                    az = np.angle(zb - zck) % TAU
+                    rho = dk[bi, bj] / epsk
+                    wraw = np.clip((1.5 - rho) / 0.5, 0.0, 1.0)
+                    dvb = (wraw * np.interp(az, xse, dve)
+                           + (1.0 - wraw) * np.interp(az, xse, dvse))
+                    tap = np.clip((2.4 - rho) / 1.4, 0.0, 1.0)
+                    zbn = zck + (zb - zck) * np.exp(1j * dvb * tap)
+                    add.append((bi, bj, zb, zbn))
+                if add:
+                    ii = np.concatenate([ii] + [a[0] for a in add])
+                    jj = np.concatenate([jj] + [a[1] for a in add])
+                    zr = np.concatenate([zr] + [a[2] for a in add])
+                    znew = np.concatenate([znew] + [a[3] for a in add])
+            with np.errstate(divide='ignore', invalid='ignore'):
+                Fo = phi(zr)
+                Fn = phi(znew)
+                dS = np.zeros((len(zr), 3), dtype=complex)
+                for zc, Ck in pp:
+                    do = (zr - zc)[:, None]
+                    dn = (znew - zc)[:, None]
+                    Fo = _pp_sub(Fo, do, Ck)
+                    Fn = _pp_sub(Fn, dn, Ck)
+                    dS += _pp_anti(dn, Ck) - _pp_anti(do, Ck)
+            step = (znew - zr)[:, None]
+            dX = np.real(dS + 0.5 * (Fo + Fn) * step)
+            Xr_old = X[ii, jj, :]
+            Xn = Xr_old + dX
+            good = np.isfinite(Xn).all(axis=1) & np.isfinite(Xr_old).all(axis=1)
+            gi, gj = ii[good], jj[good]
+            X[gi, gj, :] = Xn[good]
     clip = spec.get('clip', True)
     tail = mask if mask is not None else clip
     return X[..., 0], X[..., 1], X[..., 2], False, True, tail
@@ -418,7 +1182,18 @@ def tile_dihedral(Z, Xr, rot, punctures, radius, scale,
     Vf, uvf = Vu[:, :3], Vu[:, 3:]
     Vf = _smooth_boundary(Vf, quads)
     if circularize:
-        Vf = _circularize_outer(Vf, quads)
+        # taper_rings spreads each puncture mouth's snap correction over
+        # the rings behind it (1/7 of it per quad row) instead of
+        # parking it all in the first row -- measured on COSTA_HM, the
+        # untapered snap left a 0-spread rim against a 13%-radius-spread
+        # first ring, a visible corrugation along every mouth.
+        # trim_sphere marks the object-space percentile trim: those
+        # loops get the (tapered) radial rounding but keep the
+        # surface's own z -- the planar end's cut is a genuinely wavy
+        # curve, and flattening it curled the disc edge into a "brim"
+        # (see _circularize_outer).
+        Vf = _circularize_outer(Vf, quads, taper_rings=6,
+                                trim_sphere=(cen, thr))
     Vf = _center_fit(Vf, scale, Vf)
     return Vf, quads, uvf
 

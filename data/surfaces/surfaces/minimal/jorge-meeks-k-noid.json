@@ -1,0 +1,124 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "jorge-meeks-k-noid",
+  "name": "Jorge-Meeks k-noid",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 1.76667",
+    "punctures": [
+      "z = 1 (radius 0.145)",
+      "z = -0.5+0.866025i (radius 0.145)",
+      "z = -0.5-0.866025i (radius 0.145)"
+    ],
+    "gauss_map": "1.0*z**(-1 + n)",
+    "height_differential": "z**(-1 + n)/(-1.0 + z**n)**2",
+    "parameters": [
+      {
+        "name": "n",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, phi triple (dh = phi3, g = phi3/(phi1 - i*phi2), a Weierstrass-representation identity)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true,
+    "finite_total_curvature": true,
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "KNOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row KNOID) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 2.48e-16); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "L. P. Jorge and W. H. Meeks III, 'The topology of complete minimal surfaces of finite total Gaussian curvature', Topology 22 (1983).",
+      "L. P. Jorge, W. H. Meeks III, 'The topology of complete minimal surfaces of finite total Gaussian curvature', Topology 22 (1983) 203-221; M. Weber (mirror: minsurf ch222): 'A k-Noid is a minimal surface with k catenoidal ends.'"
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Luquesio Jorge and William Meeks III",
+  "year": 1983,
+  "specimens": [
+    {
+      "label": "k = 2 (the catenoid)",
+      "parameters": {
+        "k": 2
+      },
+      "slug": "catenoid"
+    },
+    {
+      "label": "k = 3 (trinoid)",
+      "parameters": {
+        "k": 3
+      }
+    },
+    {
+      "label": "k = 4",
+      "parameters": {
+        "k": 4
+      }
+    }
+  ],
+  "notes": {
+    "caveats": [
+      "k catenoidal ends in symmetric position; k = 2 degenerates to the catenoid. Which k give EMBEDDED surfaces is not asserted here."
+    ]
+  },
+  "ids": {
+    "mathcurve": "ch1309_trinoide_2",
+    "msblog": "ch222_jorge_meeks_k_noids"
+  },
+  "alternate_names": [
+    "Trinoid"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

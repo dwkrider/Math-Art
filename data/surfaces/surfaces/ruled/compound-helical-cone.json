@@ -1,0 +1,69 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "compound-helical-cone",
+  "name": "Compound Helical Cone",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "ruled"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "(1 - v)*(1 + 0.18*(1 - v)*cos(6*u + 4*pi*v))*cos(u)",
+    "y": "(1 - v)*(1 + 0.18*(1 - v)*cos(6*u + 4*pi*v))*sin(u)",
+    "z": "2.5*v",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "1"
+    ],
+    "periodic_u": true,
+    "note": "base radius 1, height 2.5, 6 flutes of depth 0.18 winding 2 turns, straight taper, no planetary orbit -- the operator defaults.  The flutes fade linearly to arrises at the apex v = 1",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "HELICAL_CONE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.03437).",
+    "sources": [
+      "G. W. Hart, \"Curved, yet Straight: Stick Hyperboloids,\" Bridges 2023 Conference Proceedings, pp. 251-258.",
+      "E. Jannasch & J. Macnab, \"The Compound Helical Cone as Kinematic Trace,\" Bridges 2023 Conference Proceedings, pp. 15-22.",
+      "F. A. Farris, \"Spiral Ruled Surfaces,\" Bridges 2022 Conference",
+      "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
+      "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
+      "Milk carton: H. M. Cundy & A. P. Rollett, \"Mathematical Models\" (1951), 185-188."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

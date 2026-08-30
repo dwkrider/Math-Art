@@ -1,0 +1,82 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "clifford-torus",
+  "name": "Clifford Torus",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "the CIRCLE preset at its default mean colatitude of 90 degrees, i.e. the Hopf preimage of a great circle -- the Clifford torus S1(1/sqrt 2) x S1(1/sqrt 2) in S^3 -- stereographically projected to a torus of revolution; same builder normalisation (and fit) as hopf-torus",
+    "x": "cos(u + v)/(sqrt(2) - sin(v))",
+    "y": "sin(u + v)/(sqrt(2) - sin(v))",
+    "z": "cos(v)/(sqrt(2) - sin(v))",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "genus": 1,
+    "orientable": true,
+    "compact": true,
+    "boundary_components": 0,
+    "euler_characteristic": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hopf_fibration_generator",
+      "operator_id": "mesh.hopf_torus_add",
+      "key": "CIRCLE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.31 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.00772).",
+    "sources": [
+      "The 3DXM Consortium, 'Clifford Torus', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch048_clifford_torus.md)."
+    ]
+  },
+  "ids": {
+    "vmm": "ch048_clifford_torus"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Clifford",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

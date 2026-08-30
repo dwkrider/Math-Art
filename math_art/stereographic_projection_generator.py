@@ -104,6 +104,7 @@ if _IN_BLENDER:
 
         pattern: EnumProperty(
             name="Pattern",
+            description="Planar pattern the shell's shadow reproduces",
             items=[('GRID', "Square Grid",
                     "Shadow is a square grid of lines"),
                    ('POLAR', "Polar Grid",
@@ -129,7 +130,8 @@ if _IN_BLENDER:
             name="Petals", default=8, min=3, max=16,
             description="Petals per flower (Flower Lattice)")
         radius: FloatProperty(name="Sphere Radius", default=1.0,
-                              min=0.05, max=100.0)
+                              min=0.05, max=100.0,
+                              description="Radius of the sphere shell")
         thickness: FloatProperty(
             name="Shell Thickness", default=0.05, min=0.001,
             max=1.0, description="Radial wall thickness")
@@ -147,8 +149,12 @@ if _IN_BLENDER:
         spacing: FloatProperty(
             name="Grid Spacing", default=0.6, min=0.1, max=5.0,
             description="Grid line spacing in sphere radii")
-        rings: IntProperty(name="Rings", default=4, min=1, max=24)
-        rays: IntProperty(name="Rays", default=8, min=1, max=64)
+        rings: IntProperty(name="Rings", default=4, min=1, max=24,
+                           description="Number of concentric rings in the "
+                                       "shadow (Polar Grid)")
+        rays: IntProperty(name="Rays", default=8, min=1, max=64,
+                          description="Number of radial rays in the shadow "
+                                      "(Polar Grid)")
         tile_p: IntProperty(
             name="p", default=4, min=2, max=5,
             description="Tile polygon sides (2 = hosohedron)")

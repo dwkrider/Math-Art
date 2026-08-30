@@ -1,6 +1,21 @@
 
-# Helical Surfaces generator for Blender: three classic
-# helical / spiral parametric surfaces.
+# Swept Surfaces generator for Blender: surfaces traced by a curve
+# moving through space.
+#
+# The organising idea is DARBOUX's: a surface swept by a rigid curve --
+# kinematically, the trace of an unbending wire carried through space --
+# is a union of congruent copies of that curve, and the classical
+# families are all special cases of the one construction.  Translate the
+# wire and you get a translation surface; spin it about a fixed axis and
+# you get a surface of revolution; screw it and you get a helicoid.  A
+# general rigid motion gives none of the three, and that is what the
+# DARBOUX mode builds: the wire spins about the axis while tumbling, and
+# its centre rides a circle.  The mathematics and the congruence gate
+# live in `math_art/surfaces/encyclopedia.py`.
+#
+# The other three modes are fixed formulas rather than motions.  They
+# are what this module shipped before Darboux gave it a general case,
+# and they keep their own parameters:
 #
 #   HYPERBOLIC_HELICOID -- the helicoid's hyperbolic cousin,
 #     a twisted band whose points all share the denominator
@@ -12,6 +27,37 @@
 #   CORKSCREW -- the "twisted sphere": a sphere stretched
 #     along a diameter and sheared upward while it turns, so
 #     each meridian circle climbs by b per radian of turn.
+#   HELICONE -- the helico-conical surface, where the curve is carried
+#     by SIMILARITIES rather than rigid motions: turned and scaled at
+#     once, so its copies are similar but not congruent and each
+#     u-curve is a conical spiral.  It is the one sweep here that is
+#     deliberately not a Darboux surface.
+#   EGG_BOX -- z = a(sin(x/b) + sin(y/b)), one sinusoid slid along a
+#     perpendicular one: the simplest translation surface, and a
+#     standard picture of extrema and saddle points.
+#   SINE_TORUS -- a torus whose tube breathes, z = b sin(v) cos(k u).
+#     One parameter gives three surfaces: integer k a torus,
+#     half-odd-integer k a KLEIN BOTTLE (the tube returns inside out
+#     after one turn), and k = 1/2 with equal radii a CROSS-CAP, the
+#     closing of the hole dropping the genus by one.  El-Milick built
+#     that model in 1947 and called it a one-sided cyclide.
+#   SPHERICAL_HELICOID -- the helicoidal surfaces of constant Gaussian
+#     curvature K = +1: a unit-speed geodesic meridian, found by the
+#     Killing/Jacobi-field reduction |J(s)| = a cos(s), carried by a
+#     screw motion.  Every member except the round sphere ends on
+#     singular rims, since the only complete K = +1 surface is the
+#     sphere.
+#
+# The ROTOID motion added to the Darboux family carries the curve along
+# a helical SPINE instead of about a fixed axis, turning it as it goes:
+# no turn gives a tube (a coil, or a torus if the spine is flat) and a
+# turn gives the generalized helicoid proper.
+#
+#   COIL -- that no-turn tube shipped as its own named surface: the
+#     serpentine (helical tube, spring, toroidal helicoid), a circle of
+#     constant radius carried along a circular helix in the helix's
+#     normal plane.  Positive pitch winds right-handed, negative
+#     left-handed, and zero pitch degenerates the coil to the torus.
 #
 # Each surface is built by a pure-python function that works
 # without bpy, so this file can be run standalone for its
@@ -22,27 +68,64 @@
 # single vertex with a triangle fan.
 #
 # References:
+# - G. Darboux, "Lecons sur la theorie generale des surfaces", 1887-96
+#   -- the surfaces swept by a rigid curve.  The classification of the
+#   three special motions followed here is from R. Ferreol,
+#   "Encyclopedie des formes mathematiques remarquables", mathcurve.com,
+#   chapter "surface de Darboux"; a converted copy is in
+#   research/books/mathcurve_encyclopedie_formes_mathematiques/.
+# - Rotoid, helico-conical surface, egg box and sine torus: R. Ferreol,
+#   "Encyclopedie des formes mathematiques remarquables"
+#   (mathcurve.com), chapters "rotoide", "surface helicoconique",
+#   "boite a oeufs" and "tore sinusoidal".
+# - Coil (serpentin): the tube whose bore is a circular helix --
+#   R. Ferreol, ibid., chapter "serpentin"; h > 0 right-handed, h = 0
+#   the torus, h < 0 left-handed.
+# - Sine torus at k = 1/2: Maurice El-Milick (1947), who called it a
+#   one-sided cyclide; his model is in the Institut Henri Poincare
+#   collection.
 # - The helicoid is a classical minimal and ruled surface
 #   (J. B. C. Meusnier, 1776); the hyperbolic helicoid, conical
 #   seashell and twisted-sphere forms here are standard parametric
 #   surfaces. See A. Gray, E. Abbena, S. Salamon, "Modern
 #   Differential Geometry of Curves and Surfaces with Mathematica"
 #   (3rd ed., 2006), and J. Meier's gallery (3d-meier.de).
+# - Spherical helicoid: Matthias Weber, "The Spherical Helicoids",
+#   3D-XplorMath / Virtual Math Museum documentation,
+#   https://virtualmathmuseum.org/docs/spherical_helicoid.pdf -- the
+#   helicoidal surfaces of constant Gaussian curvature K = +1, reduced
+#   via the Killing/Jacobi-field argument |J(s)| = a cos(s) to a
+#   first-order ODE for the meridian.  The surface appears as an
+#   exercise in L. P. Eisenhart, "A Treatise on the Differential
+#   Geometry of Curves and Surfaces" (Ginn, 1909).
 
 bl_info = {
-    "name": "Helical Surfaces",
+    "name": "Swept Surfaces",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
-    "description": "Hyperbolic helicoid, seashell and "
-                   "corkscrew parametric surfaces",
+    "description": "Darboux surfaces swept by a rigid curve, plus "
+                   "the hyperbolic helicoid, seashell and corkscrew",
     "category": "Add Mesh",
 }
 
 import math
+from fractions import Fraction
 
 import numpy as np
+
+_TWO_PI = 2.0 * math.pi
+
+try:
+    from .surfaces.encyclopedia import build_darboux
+except ImportError:                       # flat import outside the package
+    from surfaces.encyclopedia import build_darboux
+
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
 
 try:
     import bpy
@@ -156,7 +239,273 @@ def build_corkscrew(a=1.0, b=0.3, res=96):
     return verts, faces
 
 
+def build_helicone(profile=2, turns=2.0, height=1.0, res_u=64, res_v=160):
+    """(verts, faces): the helico-conical surface, or "helicone".
+
+        x = v (f(u) cos v - g(u) sin v)
+        y = v (f(u) sin v + g(u) cos v)
+        z = v h(u)
+
+    The generatrix is carried by SIMILARITIES -- rotate by v and scale
+    by v at the same time -- so the copies are all similar to one
+    another but, unlike a Darboux sweep, not congruent: they grow as
+    they turn.  Each u = constant curve is therefore a conical spiral,
+    and the surface fills a cone.
+
+    `profile` picks the generatrix: 2 is the parabola of the source's
+    figure, higher values are the flatter even powers.
+    """
+    nu, nv = max(3, int(res_u)), max(3, int(res_v))
+    p = max(1, int(profile))
+    u = np.linspace(-1.0, 1.0, nu)
+    f, g, h = u, np.zeros_like(u), height * (1.0 - np.abs(u) ** p)
+    v = np.linspace(0.05, _TWO_PI * turns, nv)
+    cv, sv = np.cos(v), np.sin(v)
+    P = np.stack([
+        v[:, None] * (f[None, :] * cv[:, None] - g[None, :] * sv[:, None]),
+        v[:, None] * (f[None, :] * sv[:, None] + g[None, :] * cv[:, None]),
+        v[:, None] * h[None, :] * np.ones_like(cv)[:, None]], -1)
+    verts = [tuple(P[i, j]) for i in range(nv) for j in range(nu)]
+    faces = [[i * nu + j, i * nu + j + 1,
+              (i + 1) * nu + j + 1, (i + 1) * nu + j]
+             for i in range(nv - 1) for j in range(nu - 1)]
+    return verts, faces
+
+
+def build_translation_surface(amp=0.35, wavelength=1.0, extent=3.0,
+                              res=72):
+    """(verts, faces): the EGG BOX, z = a (sin(x/b) + sin(y/b)).
+
+    A translation surface is the sum of two curves, P(u,v) = c1(u) +
+    c2(v) -- one curve slid along the other without turning.  Take both
+    to be the same sinusoid, laid perpendicular, and the sum is the egg
+    box: a field of alternating bumps and hollows whose saddle points
+    sit where one curve is rising as fast as the other falls.
+
+    Ferreol notes the curiosity that replacing the sum by a PRODUCT
+    gives an egg box too, because
+    a sin(x/b) sin(y/b) is itself a sum of two sinusoids in the rotated
+    coordinates (y-x)/b and (x+y)/b -- the same surface turned 45
+    degrees and rescaled.  `_selftest` checks that identity.
+    """
+    n = max(3, int(res))
+    b = max(1e-6, wavelength)
+    t = np.linspace(-extent, extent, n)
+    c1 = np.stack([t, np.zeros_like(t), amp * np.sin(t / b)], -1)
+    c2 = np.stack([np.zeros_like(t), t, amp * np.sin(t / b)], -1)
+    P = c1[:, None, :] + c2[None, :, :]
+    verts = [tuple(P[i, j]) for i in range(n) for j in range(n)]
+    faces = [[i * n + j, i * n + j + 1, (i + 1) * n + j + 1,
+              (i + 1) * n + j]
+             for i in range(n - 1) for j in range(n - 1)]
+    return verts, faces
+
+
+def build_sine_torus(major=1.0, minor=0.4, k=0.5, res_u=192, res_v=64):
+    """(verts, faces): the SINE TORUS,
+
+        x = (a + b cos v) cos u,  y = (a + b cos v) sin u,
+        z = b sin v cos(k u)
+
+    A torus whose tube, instead of being circular, is an ellipse one of
+    whose axes breathes sinusoidally as it goes round -- so the source
+    describes it as a variable ellipse revolved about an axis.  The
+    single parameter k decides what it is:
+
+        k = 0                  z no longer depends on u: an exact TORUS
+        k = 1/2 and a > b      a KLEIN BOTTLE, immersed in 3-space
+        k = 1/2 and a = b      the hole closes and it becomes a
+                               CROSS-CAP -- losing the hole drops the
+                               genus by one, carrying the Klein bottle
+                               to the projective plane
+
+    El-Milick built the k = 1/2 model in 1947 and called it a one-sided
+    cyclide; it is in the Institut Henri Poincare collection.
+
+    What closes the surface is the seam, and getting it wrong silently
+    turns every case into a torus.  After ONE turn in u,
+
+        z(u + 2pi, v) = b sin v cos(ku + 2 pi k)
+
+    so for integer k the surface simply meets itself -- a torus seam --
+    while for half-odd-integer k the sign flips and it meets itself
+    REVERSED: F(u + 2pi, v) = F(u, -v).  The tube comes back inside out,
+    which is exactly the Klein bottle's identification.  So the grid runs
+    one turn and its seam is joined by INDEX with v negated in the
+    flipped case.  Welding by coordinate instead would fuse the
+    self-intersections an immersion necessarily has and destroy the
+    Euler characteristic; wrapping both directions plainly (the obvious
+    thing) forces chi = 0 and orientable no matter what the geometry
+    does.  A ring that genuinely degenerates to a point -- which is how
+    a = b closes the hole -- is collapsed to a single vertex.
+    """
+    frac = Fraction(float(k)).limit_denominator(12)
+    flip = (2 * frac).denominator == 1 and int(2 * frac) % 2 == 1
+    turns = 1 if flip else frac.denominator
+    nu = max(8, int(res_u))
+    nv = max(6, int(res_v))
+    nv += nv % 2                      # v -> -v must pair up columns
+    u = _TWO_PI * turns * np.arange(nu) / nu
+    v = _TWO_PI * np.arange(nv) / nv
+    R = major + minor * np.cos(v)
+    P = np.stack([
+        R[None, :] * np.cos(u)[:, None],
+        R[None, :] * np.sin(u)[:, None],
+        (minor * np.sin(v))[None, :] * np.cos(k * u)[:, None]], -1)
+
+    index = np.arange(nu * nv).reshape(nu, nv)
+    keep = np.ones(nu * nv, dtype=bool)
+    for j in range(nv):                       # collapse degenerate rings
+        ring = P[:, j, :]
+        if float(np.max(np.abs(ring - ring[0]))) < 1e-12:
+            keep[index[1:, j]] = False
+            index[1:, j] = index[0, j]
+    order = np.cumsum(keep) - 1
+    verts = [tuple(P.reshape(-1, 3)[i]) for i in range(nu * nv) if keep[i]]
+
+    def vid(i, j):
+        if i >= nu:                   # across the seam
+            i -= nu
+            if flip:
+                j = -j
+        return int(order[index[i, j % nv]])
+    faces = []
+    for i in range(nu):
+        for j in range(nv):
+            ring = [vid(i, j), vid(i + 1, j),
+                    vid(i + 1, j + 1), vid(i, j + 1)]
+            clean = [ring[0]] + [b for a, b in zip(ring, ring[1:])
+                                 if a != b]
+            if len(clean) > 2 and clean[0] == clean[-1]:
+                clean = clean[:-1]
+            if len(clean) >= 3:
+                faces.append(clean)
+    return verts, faces
+
+
+def _cumtrapz(f, x):
+    """Cumulative trapezoid integral of samples f over grid x, zero at
+    the first node."""
+    return np.concatenate([[0.0],
+                           np.cumsum(0.5 * (f[1:] + f[:-1])
+                                     * np.diff(x))])
+
+
+def build_spherical_helicoid(a=0.85, h=0.25, turns=1.0,
+                             res_s=96, res_t=192):
+    """(verts, faces): the spherical helicoid -- a helicoidal surface of
+    constant Gaussian curvature K = +1.
+
+    The meridian gamma is a unit-speed geodesic of the surface, found by
+    the Killing-field reduction (Weber's 3DXM note): along a geodesic
+    crossing the screw field X = (-y, x, h) at right angles, X restricts
+    to a Jacobi field J with |J|'' = -K |J|, so K = +1 forces
+
+        |J(s)| = sqrt(r(s)^2 + h^2) = a cos(s) ,
+        r(s)^2 = a^2 cos(s)^2 - h^2 .
+
+    Writing gamma = (r cos th, r sin th, z), unit speed and
+    orthogonality to X reduce the geodesic to two quadratures,
+
+        th'(s) = -h sqrt(1 - r'(s)^2) / (r(s) a cos(s)) ,
+        z'(s)  =  sqrt(1 - r'(s)^2) sqrt(1 - h^2/(a cos(s))^2) ,
+
+    integrated over the maximal band |s| <= s*, where |r'(s*)| = 1:
+
+        sin^2(s*) = ((a^2 + 1) - sqrt((a^2 - 1)^2 + 4 h^2)) / (2 a^2) .
+
+    At s* the surface has a singular edge -- necessarily, since the only
+    COMPLETE surface of constant K = +1 is the round sphere.  The screw
+    motion then sweeps the meridian through `turns` revolutions:
+
+        F(s, t) = RotZ(t) gamma(s) + (0, 0, h t) .
+
+    h = 0 gives the K = +1 surfaces of revolution (a = 1 the unit
+    sphere, a < 1 the spindles, a > 1 the bulge/barrel types); h is
+    clamped below a so the waist r(0)^2 = a^2 - h^2 stays positive."""
+    ns = max(8, int(res_s))
+    nt = max(8, int(res_t))
+    a = max(1e-3, float(a))
+    h = min(max(0.0, float(h)), 0.98 * a)
+    x = (((a * a + 1.0)
+          - math.sqrt((a * a - 1.0) ** 2 + 4.0 * h * h))
+         / (2.0 * a * a))
+    s_star = math.asin(math.sqrt(min(1.0, max(0.0, x))))
+    s = np.linspace(-s_star, s_star, ns + 1)
+    J = a * np.cos(s)                       # = sqrt(r^2 + h^2) > 0
+    r2 = np.maximum(J * J - h * h, 0.0)
+    r = np.sqrt(r2)
+    # r'^2 = a^4 sin^2 cos^2 / r^2, with the analytic h = 0 limit
+    # a^2 sin^2(s) taken where r underflows (the spindle cone points)
+    num = (a * a * np.sin(s) * np.cos(s)) ** 2
+    rp2 = np.where(r2 > 1e-12, num / np.maximum(r2, 1e-300),
+                   (a * np.sin(s)) ** 2)
+    w = np.sqrt(np.maximum(1.0 - rp2, 0.0))     # sqrt(1 - r'^2)
+    q = np.sqrt(np.maximum(
+        1.0 - (h / np.maximum(J, 1e-300)) ** 2, 0.0))   # r / |J|
+    zp = w * q
+    thp = np.where(r * J > 1e-12, -h * w / np.maximum(r * J, 1e-300),
+                   0.0)
+    z = _cumtrapz(zp, s)
+    z -= z[ns // 2]                          # equator at height zero
+    th = _cumtrapz(thp, s)
+    g1, g2 = r * np.cos(th), r * np.sin(th)
+    t = np.linspace(0.0, _TWO_PI * turns, nt + 1)
+    ct, st = np.cos(t), np.sin(t)
+    X = g1[None, :] * ct[:, None] - g2[None, :] * st[:, None]
+    Y = g1[None, :] * st[:, None] + g2[None, :] * ct[:, None]
+    Z = z[None, :] + h * t[:, None]
+    verts = [(X[i, j], Y[i, j], Z[i, j])
+             for i in range(nt + 1) for j in range(ns + 1)]
+    faces = []
+    for i in range(nt):
+        for j in range(ns):
+            p = i * (ns + 1) + j
+            faces.append([p, p + ns + 1, p + ns + 2, p + 1])
+    return verts, faces
+
+
+def _grid_gauss_curvature(P, wrap_u=False, wrap_v=False):
+    """Intrinsic (Gaussian) curvature of a quad-grid immersion by angle
+    defect.  P is an (nu, nv, 3) array; each quad is split along its
+    (i, j) -> (i+1, j+1) diagonal, and at every interior vertex
+
+        K = (2 pi - sum of the six incident triangle angles)
+            / (one third of the incident triangle area)
+
+    -- the polyhedral Gauss-Bonnet quotient, which uses only edge
+    lengths and is therefore intrinsic.  Wrapped directions treat the
+    grid as periodic; open directions lose their boundary row.  Returns
+    the grid of interior K values."""
+    P = np.asarray(P, dtype=float)
+    su = slice(None) if wrap_u else slice(1, -1)
+    sv = slice(None) if wrap_v else slice(1, -1)
+
+    def nb(di, dj):
+        return np.roll(np.roll(P, -di, axis=0), -dj, axis=1)
+
+    fan = [(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)]
+    ang = 0.0
+    area = 0.0
+    for k in range(6):
+        d1 = (nb(*fan[k]) - P)[su, sv]
+        d2 = (nb(*fan[(k + 1) % 6]) - P)[su, sv]
+        l1 = np.linalg.norm(d1, axis=-1)
+        l2 = np.linalg.norm(d2, axis=-1)
+        dot = np.einsum('ijk,ijk->ij', d1, d2)
+        ang = ang + np.arccos(np.clip(dot / np.maximum(l1 * l2, 1e-300),
+                                      -1.0, 1.0))
+        area = area + 0.5 * np.sqrt(
+            np.maximum((l1 * l2) ** 2 - dot ** 2, 0.0))
+    return (2.0 * math.pi - ang) / np.maximum(area / 3.0, 1e-300)
+
+
 _SURFACES = [
+    ('DARBOUX', "Darboux Surface",
+     "A rigid curve swept by a motion. Translation, revolution and "
+     "screw motions give translation surfaces, surfaces of revolution "
+     "and helicoids; a general motion gives a Darboux surface that is "
+     "none of the three"),
     ('HYPERBOLIC_HELICOID', "Hyperbolic Helicoid",
      "Twisted band with torsion tau over the shared "
      "denominator 1 + cosh(u) cosh(v)"),
@@ -164,22 +513,169 @@ _SURFACES = [
      "Conical spiral shell winding n whorls to an apex"),
     ('CORKSCREW', "Corkscrew",
      "Twisted sphere: a sphere sheared upward as it turns"),
+    ('HELICONE', "Helico-Conical Surface",
+     "A curve carried by SIMILARITIES -- turned and scaled together -- "
+     "so its copies are similar rather than congruent and each traces "
+     "a conical spiral"),
+    ('EGG_BOX', "Egg Box",
+     "z = a(sin(x/b) + sin(y/b)): one sinusoid slid along a "
+     "perpendicular one, the simplest translation surface"),
+    ('SINE_TORUS', "Sine Torus",
+     "A torus whose tube breathes: z = b sin(v) cos(k u). Integer k "
+     "gives a torus, half-odd-integer k a Klein bottle, and k = 1/2 "
+     "with equal radii a cross-cap"),
+    ('COIL', "Coil",
+     "The tube whose bore is a circular helix -- the spring or "
+     "serpentine (also called the helical tube or toroidal helicoid). "
+     "A circle carried along the helix in its normal plane; positive "
+     "pitch is a right-handed coil, negative left-handed, and zero "
+     "pitch degenerates it to the torus"),
+    ('SPHERICAL_HELICOID', "Spherical Helicoid",
+     "Helicoidal surface of constant Gaussian curvature K = +1: a "
+     "geodesic meridian carried by a screw motion. With no rise it is "
+     "a K = +1 surface of revolution (the round sphere at bulge 1, a "
+     "spindle below it); every member but the sphere ends on singular "
+     "rims"),
 ]
 
 
 if _IN_BLENDER:
 
     class MESH_OT_helical_surface_add(bpy.types.Operator):
-        """Add a classic helical parametric surface: the
-        hyperbolic helicoid, a conical seashell, or the
-        corkscrew surface (twisted sphere)"""
+        """Add a surface swept by a curve moving through space: a
+        Darboux surface (a rigid curve carried by a motion, of which
+        translation surfaces, surfaces of revolution and helicoids are
+        the special cases), or one of three classic helical formulas --
+        the hyperbolic helicoid, a conical seashell, or the corkscrew
+        surface (twisted sphere)"""
+        # The id stays `helical_surface_add`: renaming it would break
+        # every script, menu entry and subject table that names it, and
+        # the label is what the user actually reads.
         bl_idname = "mesh.helical_surface_add"
-        bl_label = "Helical Surface"
+        bl_label = "Swept Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         surface: EnumProperty(
             name="Surface", items=_SURFACES,
-            default='HYPERBOLIC_HELICOID')
+            default='HYPERBOLIC_HELICOID',
+            description="Which swept surface to build")
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "The surface itself, as a "
+                                      "continuous sheet"),
+                   ('LATTICE', "Cell Lattice",
+                    "A sparse openwork net of struts along the cells "
+                    "of the surface's dual, as a live modifier stack")],
+            default='SOLID',
+            description="Build the surface as a solid sheet or as an "
+                        "openwork lattice of struts along its dual")
+        # Cell Lattice style -- the canonical names cell_lattice.PROPS
+        # declares, so styles.cell_lattice.apply_from picks them up.
+        # These must stay spelled exactly as PROPS spells them: a
+        # mismatch does not raise, it silently substitutes the PROPS
+        # default and the slider does nothing.
+        cell_size: FloatProperty(
+            name="Cell Size", default=0.12, min=0.005, max=1.0,
+            description="Fraction of the surface's triangles kept "
+                        "before taking the dual: lower leaves fewer, "
+                        "larger cells")
+        strut_thickness: FloatProperty(
+            name="Strut Thickness", default=0.03, min=0.001, max=1.0,
+            description="Thickness of the lattice struts, in the "
+                        "unscaled surface's units")
+        smoothing: IntProperty(
+            name="Smoothing", default=1, min=0, max=4,
+            description="Subdivision levels rounding the struts")
+        keep_boundaries: BoolProperty(
+            name="Keep Boundaries", default=True,
+            description="Keep the rim of the swept sheet intact when "
+                        "taking the dual; without it the boundary "
+                        "cells are eaten away. Most swept surfaces are "
+                        "open sheets, so this matters here")
+        even_thickness: BoolProperty(
+            name="Even Thickness", default=False,
+            description="Maintain strut width at sharp corners. Off by "
+                        "default: the correction grows without bound as "
+                        "a corner gets more acute")
+        motion: EnumProperty(
+            name="Motion",
+            items=[('GENERAL', "General Darboux Motion",
+                    "Spin about the axis while tumbling, with the "
+                    "curve's centre riding a circle: neither a "
+                    "translation surface, nor a surface of revolution, "
+                    "nor a helicoid"),
+                   ('TRANSLATION', "Translation",
+                    "Slide the curve along a straight line"),
+                   ('REVOLUTION', "Revolution",
+                    "Spin the curve about a fixed axis"),
+                   ('HELICOID', "Helicoidal",
+                    "Screw the curve about a fixed axis"),
+                   ('ROTOID', "Rotoid (along a helix)",
+                    "Carry the curve along a helical SPINE in the "
+                    "spine's own normal plane, turning it as it goes: "
+                    "the generalized helicoid.  With no curve turn "
+                    "this is a plain tube about the helix (a coil, or "
+                    "a torus if the pitch is zero too)")],
+            default='GENERAL',
+            description="How the rigid curve is carried through space "
+                        "(Darboux surface only)")
+        generatrix: EnumProperty(
+            name="Generatrix",
+            items=[('CIRCLE', "Circle",
+                    "A circular generatrix; under a rotation this "
+                    "gives a cyclic surface"),
+                   ('ELLIPSE', "Ellipse", "An elliptical generatrix"),
+                   ('LEMNISCATE', "Gerono Lemniscate",
+                    "A figure-eight generatrix"),
+                   ('ASTROID', "Astroid",
+                    "A four-cusped generatrix"),
+                   ('SEGMENT', "Segment",
+                    "A straight generatrix, which makes the result a "
+                    "ruled surface")],
+            default='CIRCLE',
+            description="The rigid curve that is swept (Darboux only)")
+        curve_size: FloatProperty(
+            name="Curve Size", default=0.45, min=0.02, max=5.0,
+            description="Size of the swept curve (Darboux only)")
+        curve_ratio: FloatProperty(
+            name="Curve Ratio", default=0.5, min=0.02, max=5.0,
+            description="Minor-to-major ratio of an elliptical "
+                        "generatrix (Darboux only)")
+        path_radius: FloatProperty(
+            name="Path Radius", default=1.0, min=0.0, max=10.0,
+            description="Radius of the circle the curve's centre rides "
+                        "(Darboux only)")
+        pitch: FloatProperty(
+            name="Pitch", default=0.4, min=-5.0, max=5.0,
+            description="Rise per radian for the translation, screw "
+                        "and rotoid motions, and of the coil's helix "
+                        "bore: positive right-handed, negative "
+                        "left-handed, 0 flattens the coil to a torus")
+        tilt: FloatProperty(
+            name="Tumble", default=0.6, min=0.0, max=3.14,
+            description="How far the curve tips out of its plane as it "
+                        "goes round; 0 collapses the general motion "
+                        "back to a plain revolution.  For the rotoid "
+                        "motion: how many turns the curve makes per "
+                        "turn of the helical spine, 0 giving a plain "
+                        "tube (Darboux only)")
+        wobbles: IntProperty(
+            name="Tumbles", default=3, min=1, max=24,
+            description="How many times the curve tips back and forth "
+                        "per revolution (Darboux only)")
+        turns: FloatProperty(
+            name="Turns", default=1.0, min=0.05, max=12.0,
+            description="How far the motion runs, in revolutions. For "
+                        "the Darboux surface a whole number closes the "
+                        "sweep and welds the seam; anything else "
+                        "leaves it open (Darboux, helico-conical and "
+                        "spherical helicoid)")
         tau: FloatProperty(
             name="Torsion", default=2.5, min=0.0, max=20.0,
             description="Torsion tau of the hyperbolic "
@@ -204,6 +700,35 @@ if _IN_BLENDER:
             name="Opening", default=0.37, min=0.0, max=2.0,
             description="Offset radius that keeps the shell "
                         "mouth open (c)")
+        profile: IntProperty(
+            name="Profile Power", default=2, min=1, max=8,
+            description="Generatrix z = 1 - |u|^p; 2 is the parabola of "
+                        "the source's figure and higher powers flatten "
+                        "it (helico-conical surface only)")
+        wavelength: FloatProperty(
+            name="Wavelength", default=1.0, min=0.05, max=10.0,
+            description="b in sin(x/b): the spacing of the bumps "
+                        "(egg box only)")
+        sine_k: FloatProperty(
+            name="Modulation k", default=0.5, min=0.0, max=4.0,
+            description="k in z = b sin(v) cos(k u).  Whole numbers "
+                        "give a torus; halves of odd numbers bring the "
+                        "tube back inside out and give a KLEIN BOTTLE, "
+                        "and k = 1/2 with the two radii equal closes "
+                        "the hole into a CROSS-CAP (sine torus only)")
+        sph_a: FloatProperty(
+            name="Meridian Bulge", default=0.85, min=0.3, max=3.0,
+            description="Family parameter a of the K = +1 helicoid: "
+                        "with no rise, 1 is the round sphere, smaller "
+                        "values pinch it toward a spindle and larger "
+                        "ones bulge it into a barrel ending on "
+                        "singular rims (spherical helicoid only)")
+        sph_h: FloatProperty(
+            name="Screw Rise", default=0.25, min=0.0, max=2.0,
+            description="Rise h per radian of turn; 0 gives a K = +1 "
+                        "surface of revolution.  Clamped below the "
+                        "bulge so the meridian exists (spherical "
+                        "helicoid only)")
         cork_a: FloatProperty(
             name="Sphere Radius", default=0.5, min=0.01,
             max=10.0,
@@ -216,16 +741,39 @@ if _IN_BLENDER:
             description="Segments along each parametric "
                         "direction")
         smooth: BoolProperty(name="Smooth Shading",
-                             default=True)
+                             default=True,
+                             description="Shade the surface smooth")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
                         "surface)")
         scale: FloatProperty(name="Scale", default=1.0,
-                             min=0.01, max=100.0)
+                             min=0.01, max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
-            if self.surface == 'HYPERBOLIC_HELICOID':
+            if self.surface == 'DARBOUX':
+                V, faces = build_darboux(
+                    motion=self.motion, generatrix=self.generatrix,
+                    size=self.curve_size, ratio=self.curve_ratio,
+                    radius=self.path_radius, pitch=self.pitch,
+                    tilt=self.tilt, wobbles=self.wobbles,
+                    turns=self.turns, res_u=self.resolution,
+                    res_v=2 * self.resolution)
+                verts = [tuple(map(float, v)) for v in V]
+                name = "Darboux Surface"
+            elif self.surface == 'COIL':
+                # a tube about a circular helix: the rotoid motion with
+                # the curve turn switched off, which is exactly the
+                # serpentine of the encyclopedia
+                V, faces = build_darboux(
+                    motion='ROTOID', generatrix='CIRCLE',
+                    size=self.curve_size, radius=self.path_radius,
+                    pitch=self.pitch, tilt=0.0, turns=self.turns,
+                    res_u=self.resolution, res_v=2 * self.resolution)
+                verts = [tuple(map(float, v)) for v in V]
+                name = "Coil"
+            elif self.surface == 'HYPERBOLIC_HELICOID':
                 verts, faces = build_hyperbolic_helicoid(
                     self.tau, self.extent, self.resolution)
                 name = "Hyperbolic Helicoid"
@@ -234,6 +782,26 @@ if _IN_BLENDER:
                     self.whorls, self.aspect, self.height,
                     self.opening, self.resolution)
                 name = "Seashell"
+            elif self.surface == 'HELICONE':
+                verts, faces = build_helicone(
+                    self.profile, self.turns, self.height,
+                    self.resolution, 2 * self.resolution)
+                name = "Helico-Conical Surface"
+            elif self.surface == 'EGG_BOX':
+                verts, faces = build_translation_surface(
+                    self.aspect, self.wavelength, self.extent,
+                    self.resolution)
+                name = "Egg Box"
+            elif self.surface == 'SINE_TORUS':
+                verts, faces = build_sine_torus(
+                    self.path_radius, self.curve_size, self.sine_k,
+                    3 * self.resolution, self.resolution)
+                name = "Sine Torus"
+            elif self.surface == 'SPHERICAL_HELICOID':
+                verts, faces = build_spherical_helicoid(
+                    self.sph_a, self.sph_h, self.turns,
+                    self.resolution, 2 * self.resolution)
+                name = "Spherical Helicoid"
             else:
                 verts, faces = build_corkscrew(
                     self.cork_a, self.cork_b, self.resolution)
@@ -255,7 +823,19 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            if self.thickness > 0:
+            # Thickness and the cell lattice are ALTERNATIVES, not a
+            # stack. The lattice replaces the sheet with an openwork of
+            # struts that carry their own thickness, so solidifying
+            # first would thicken a surface that is about to be thrown
+            # away. The style wins, and Thickness is hidden under it
+            # rather than silently ignored -- see `draw`.
+            if self.style == 'LATTICE':
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.apply_from(obj, self, scale=self.scale)
+            elif self.thickness > 0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
                 mod.offset = 0.0
@@ -266,23 +846,67 @@ if _IN_BLENDER:
             self.report({'INFO'},
                         f"{name}: V={len(me.vertices)} "
                         f"F={len(me.polygons)}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'surface')
-            if self.surface == 'HYPERBOLIC_HELICOID':
+            lay.prop(self, 'style')
+            if self.surface == 'DARBOUX':
+                keys = ('motion', 'generatrix', 'curve_size')
+                if self.generatrix == 'ELLIPSE':
+                    keys += ('curve_ratio',)
+                if self.motion in ('GENERAL', 'TRANSLATION', 'ROTOID'):
+                    keys += ('path_radius',)
+                if self.motion in ('TRANSLATION', 'HELICOID', 'ROTOID'):
+                    keys += ('pitch',)
+                if self.motion == 'GENERAL':
+                    keys += ('tilt', 'wobbles')
+                elif self.motion == 'ROTOID':
+                    keys += ('tilt',)
+                keys += ('turns',)
+            elif self.surface == 'COIL':
+                keys = ('curve_size', 'path_radius', 'pitch', 'turns')
+            elif self.surface == 'HYPERBOLIC_HELICOID':
                 keys = ('tau', 'extent')
             elif self.surface == 'SEASHELL':
                 keys = ('whorls', 'aspect', 'height',
                         'opening')
+            elif self.surface == 'HELICONE':
+                keys = ('profile', 'turns', 'height')
+            elif self.surface == 'EGG_BOX':
+                keys = ('aspect', 'wavelength', 'extent')
+            elif self.surface == 'SINE_TORUS':
+                keys = ('path_radius', 'curve_size', 'sine_k')
+            elif self.surface == 'SPHERICAL_HELICOID':
+                keys = ('sph_a', 'sph_h', 'turns')
             else:
                 keys = ('cork_a', 'cork_b')
-            for k in keys + ('resolution', 'smooth',
-                             'thickness', 'scale'):
+            for k in keys + ('resolution', 'smooth'):
                 lay.prop(self, k)
+            if self.style == 'LATTICE':
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.draw_props(lay, self)
+            else:
+                # not offered under the lattice style: it would be
+                # ignored there, and a control that does nothing is
+                # worse than an absent one
+                lay.prop(self, 'thickness')
+            lay.prop(self, 'scale')
 
+            _rim.draw_rim(lay, self)
     def _menu_func(self, context):
         self.layout.operator("mesh.helical_surface_add",
                              icon='MOD_SCREW')
@@ -330,4 +954,165 @@ def _selftest():
     assert all(f[2] == len(verts) - 1 for f in tris)
     print(f"seashell apex {tuple(round(c, 6) for c in apex)}"
           f" welded into {len(tris)} triangles")
+
+    # ---- coil: a genuine TUBE about a helix ---------------------------
+    # The defining property of the serpentine is that every cross
+    # section is a circle of one radius centred on the helical spine,
+    # riding in the spine's normal plane.  build_darboux normalises its
+    # output (centre + one uniform scale), which preserves both, so the
+    # gates are scale-free: within every ring, all points equidistant
+    # from the ring's centroid, that distance identical across rings,
+    # and each ring orthogonal to the spine tangent its centroids trace.
+    nu_, nv_ = 24, 96
+    V, F = build_darboux(motion='ROTOID', generatrix='CIRCLE',
+                         size=0.45, radius=1.0, pitch=0.4, tilt=0.0,
+                         turns=2.0, res_u=nu_, res_v=nv_)
+    V = np.asarray(V, dtype=float)
+    assert np.all(np.isfinite(V))
+    rings = V.reshape(nv_, nu_, 3)
+    centres = rings.mean(axis=1)
+    d = np.linalg.norm(rings - centres[:, None, :], axis=-1)
+    spread = float(d.max() - d.min())
+    assert spread < 1e-9 * max(1.0, float(d.mean())), spread
+    tang = centres[2:] - centres[:-2]
+    tang /= np.linalg.norm(tang, axis=-1)[:, None]
+    inplane = rings[1:-1] - centres[1:-1, None, :]
+    cosang = np.einsum('rij,rj->ri', inplane, tang) \
+        / np.linalg.norm(inplane, axis=-1)
+    assert float(np.max(np.abs(cosang))) < 5e-3, float(
+        np.max(np.abs(cosang)))
+    # zero pitch degenerates the coil to a torus, welded shut
+    Vt, Ft = build_darboux(motion='ROTOID', generatrix='CIRCLE',
+                           size=0.45, radius=1.0, pitch=0.0, tilt=0.0,
+                           turns=1.0, res_u=24, res_v=96)
+    cnt = {}
+    for f in Ft:
+        for i in range(len(f)):
+            e = frozenset((f[i], f[(i + 1) % len(f)]))
+            cnt[e] = cnt.get(e, 0) + 1
+    assert all(c == 2 for c in cnt.values()), "torus limit not closed"
+    print("coil: every ring a circle of one radius centred on the "
+          "spine (spread %.1e), rings normal to the spine, and the "
+          "pitch 0 limit closes into a watertight torus" % spread)
+    # ---- helicone: similar copies, not congruent ones -----------------
+    # A Darboux sweep carries a RIGID curve, so its copies are congruent.
+    # The helicone carries it by similarities instead, so distances
+    # inside a copy all scale by the same factor v -- checking the whole
+    # distance matrix says "similar" and would catch a shear that a
+    # single distance would not.
+    nu, nv = 24, 40
+    V, F = build_helicone(res_u=nu, res_v=nv)
+    P = np.asarray(V).reshape(nv, nu, 3)
+    ratios = []
+    for row in (5, 17, 33):
+        D0 = np.linalg.norm(P[5][:, None] - P[5][None, :], axis=-1)
+        Dk = np.linalg.norm(P[row][:, None] - P[row][None, :], axis=-1)
+        m = D0 > 1e-9
+        ratios.append(float((Dk[m] / D0[m]).std()))
+    assert max(ratios) < 1e-9, ratios
+    print("helicone: each swept copy is SIMILAR to the first (distance "
+          "ratios constant to %.0e), not congruent -- a similarity "
+          "sweep, unlike Darboux's" % max(ratios))
+
+    # ---- egg box: the sum/product identity ---------------------------
+    # a sin(x/b) sin(y/b) = (a/2)(sin((y-x+pi/2)/b) + sin((x+y-pi/2)/b)),
+    # so the product form really is the same surface turned and rescaled.
+    xs = np.linspace(-3.0, 3.0, 41)
+    X, Y = np.meshgrid(xs, xs, indexing='ij')
+    b = 1.0
+    lhs = np.sin(X / b) * np.sin(Y / b)
+    rhs = 0.5 * (np.sin((Y - X + math.pi / 2) / b)
+                 + np.sin((X + Y - math.pi / 2) / b))
+    assert float(np.max(np.abs(lhs - rhs))) < 1e-12
+    V, F = build_translation_surface(res=24)
+    P = np.asarray(V).reshape(24, 24, 3)
+    # a translation surface: sliding along v is the same shift at every u
+    shift = P[:, 7, :] - P[:, 3, :]
+    assert float(np.max(np.abs(shift - shift[0]))) < 1e-12
+    print("egg box: sum and product forms agree to 1e-12, and the sweep "
+          "is a pure translation (same shift at every station)")
+
+    # ---- sine torus: one parameter, three surfaces --------------------
+    # The seam is what decides the topology, so each case is checked on
+    # chi AND sidedness -- chi = 0 alone cannot tell a torus from a
+    # Klein bottle.
+    try:
+        from .minsurf.topology import euler_characteristic as _euler
+        from .other_polyhedra_generator import is_orientable as _ori
+    except ImportError:                       # flat import
+        from minsurf.topology import euler_characteristic as _euler
+        from other_polyhedra_generator import is_orientable as _ori
+    cases = ((1.0, 0.4, 0.0, 0, True, "torus"),
+             (1.0, 0.4, 1.0, 0, True, "torus"),
+             (1.0, 0.4, 0.5, 0, False, "Klein bottle"),
+             (1.0, 0.4, 1.5, 0, False, "Klein bottle"),
+             (1.0, 1.0, 0.5, 1, False, "cross-cap"))
+    for a, bb, kk, chi_w, ori_w, label in cases:
+        V, F = build_sine_torus(a, bb, kk, res_u=180, res_v=42)
+        F = [list(f) for f in F]
+        cnt = {}
+        for f in F:
+            for i in range(len(f)):
+                p, q = f[i], f[(i + 1) % len(f)]
+                cnt[(min(p, q), max(p, q))] = \
+                    cnt.get((min(p, q), max(p, q)), 0) + 1
+        assert all(c == 2 for c in cnt.values()), (label, "not closed")
+        chi = _euler(len(V), F)
+        ori = _ori(F)
+        assert chi == chi_w and ori == ori_w, (label, chi, ori)
+    # and k = 0 is an EXACT torus, not merely a torus-shaped thing
+    V, F = build_sine_torus(1.0, 0.4, 0.0, res_u=96, res_v=48)
+    A = np.asarray(V)
+    d = np.hypot(np.hypot(A[:, 0], A[:, 1]) - 1.0, A[:, 2])
+    assert float(d.max() - d.min()) < 1e-12, (d.min(), d.max())
+    print("sine torus: k = 0 and 1 give a torus (k = 0 exactly, tube "
+          "radius constant to 1e-12), k = 1/2 and 3/2 a Klein bottle, "
+          "and k = 1/2 with a = b a cross-cap")
+
+    # ---- spherical helicoid: K = +1 is the defining property ----------
+    # The Killing/Jacobi reduction guarantees constant curvature only if
+    # the quadratures are right, so K is measured on the BUILT mesh with
+    # the intrinsic angle-defect quotient.  The columns nearest the
+    # singular rims (|r'| -> 1) are excluded: the sqrt integrand's
+    # derivative blows up there, so the trapezoid error concentrates in
+    # those columns -- discretisation, not geometry.
+    ns, nt = 96, 256
+    V, F = build_spherical_helicoid(a=0.85, h=0.25, turns=1.0,
+                                    res_s=ns, res_t=nt)
+    assert all(all(math.isfinite(c) for c in v) for v in V)
+    assert all(0 <= i < len(V) for f in F for i in f)
+    P = np.asarray(V).reshape(nt + 1, ns + 1, 3)
+    K = _grid_gauss_curvature(P)               # open in both directions
+    trim = max(1, (ns - 1) // 10)
+    kerr = float(np.abs(K[:, trim:-trim] - 1.0).max())
+    assert kerr < 0.02, kerr
+    # under refinement the deviation must shrink (it is O(h^2) error,
+    # not a real departure from K = 1)
+    V2, _ = build_spherical_helicoid(a=0.85, h=0.25, turns=1.0,
+                                     res_s=2 * ns, res_t=2 * nt)
+    P2 = np.asarray(V2).reshape(2 * nt + 1, 2 * ns + 1, 3)
+    K2 = _grid_gauss_curvature(P2)
+    kerr2 = float(np.abs(K2[:, 2 * trim:-2 * trim] - 1.0).max())
+    assert kerr2 < 0.6 * kerr, (kerr, kerr2)
+    # a = 1, h = 0 must be the round unit sphere -- an exact target
+    Vs, _ = build_spherical_helicoid(a=1.0, h=0.0, turns=1.0,
+                                     res_s=128, res_t=128)
+    sph_dev = float(np.abs(np.linalg.norm(np.asarray(Vs), axis=1)
+                           - 1.0).max())
+    assert sph_dev < 1e-3, sph_dev
+    # and the analytic band edge really is where |r'| = 1
+    a_, h_ = 0.85, 0.25
+    x_ = (((a_ * a_ + 1.0)
+           - math.sqrt((a_ * a_ - 1.0) ** 2 + 4.0 * h_ * h_))
+          / (2.0 * a_ * a_))
+    ss = math.asin(math.sqrt(x_))
+    rp2_edge = ((a_ * a_ * math.sin(ss) * math.cos(ss)) ** 2
+                / (a_ * a_ * math.cos(ss) ** 2 - h_ * h_))
+    assert abs(rp2_edge - 1.0) < 1e-9, rp2_edge
+    print(f"spherical helicoid: interior max|K-1| = {kerr:.2e} -> "
+          f"{kerr2:.2e} under refinement (angle defect; K = +1 is the "
+          f"defining property), a=1 h=0 lies on the unit sphere to "
+          f"{sph_dev:.1e}, rim exactly at |r'| = 1 "
+          f"({abs(rp2_edge - 1.0):.1e})")
+
     print("helical standalone tests passed")

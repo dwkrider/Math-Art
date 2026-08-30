@@ -1,13 +1,30 @@
 # Growth
 
+![Growth](../images/growth.png)
+
 ## Overview
 
 Add a structure grown into a space: space colonization,
 self-organizing tree, DLA cluster or Pythagoras tree.
 
-Form decided by the **environment** rather than by a grammar. The [L-system](lsystem.md) operators rewrite a string and read it as turtle commands, so the productions decide the shape. These four work the other way round: a structure grows *into* a space, and its form is a consequence of that space.
+Form decided by the **environment** rather than by a grammar. The [L-system](lsystem.md) operators rewrite a string and read it as turtle commands, so the productions decide the shape. These four modes work the other way round: a structure grows *into* a space, and its form is a consequence of that space. With a grammar, a tree's habit is a parameter you set; here it is an outcome — change the region the structure has to fill, and the habit changes although no "habit" parameter exists at all.
 
-The distinction is not stylistic. With a grammar, a tree's habit is a parameter you set. Here it is an outcome — change the region the structure has to fill, and the habit changes with no habit parameter existing at all.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Plants & Growth ▸ Growth*.
+2. **Pick the Mode.** Each is a different way of letting the surroundings decide the shape:
+   - **Space Colonization** — a tree grows toward scattered attractor points inside an **Envelope**; the envelope alone sets the habit.
+   - **Self-Organizing** — buds compete for light and split a resource by one constant **Lambda**, which sweeps the same range of tree shapes from the other direction.
+   - **Diffusion-Limited** — random walkers stick where they first touch, building a ramified aggregate (frost, mineral dendrites).
+   - **Pythagoras Tree** — a deterministic square-on-square recursion, the fixed-rule counterpoint to the three stochastic modes.
+3. **Set the main shape knob for that mode:**
+   - Space Colonization: choose the **Envelope** (Sphere, Crown, Cone, Box, Cylinder, Mushroom) and the number of **Attractors**. Keep **Influence** larger than the **Trunk** gap or the crown never connects to the root; **Kill Radius** sets how close a tip must get to consume an attractor; **Gravity** biases growth up (toward light) or down (the mycelial variant).
+   - Self-Organizing: **Lambda** is the one dial — above 0.5 gives an excurrent conifer with a dominant leader, below 0.5 a decurrent spreading crown; **Steps** sets how many generations grow and **Branch Angle** how far a lateral departs.
+   - Diffusion-Limited: pick the **Walk** (Lattice or Off-Lattice), the number of **Walkers**, **Dimension** (2-D/3-D), the **Seed** shape to nucleate on, **Stickiness** (below 1 packs tighter), and **Lattice** size.
+   - Pythagoras Tree: **Depth** of recursion and **Apex Angle**; **Roll** lifts each generation out of its parent's plane into a spatial figure, and **Angle Jitter** randomises the branching angle.
+4. **Watch for the controls that appear only in some modes.** **Particle Radius** shows up only for Off-Lattice DLA; **Growth Time** only for the two grown-tree modes; the skinning trio (**Branch Radius**, **Bevel Resolution**, **Pipe Exponent**) only for the three modes that produce a branching skeleton (everything but Pythagoras). Self-Organizing also prints a live *excurrent / decurrent / intermediate* label as you drag Lambda.
+5. **Choose the output.** The three tree/aggregate modes emit a skinned curve — tune **Branch Radius**, **Bevel Resolution** and **Pipe Exponent** (2 conserves cross-sectional area, ~2.5 matches real trees); Pythagoras emits a quad mesh. **Growth Time** freezes a developmental stage on the two grown trees (keyframe it for a pop-free growth animation). **Scale** fits the result to a 2 m cube.
+6. **Read the report.** The status line prints `Growth <Mode>: N elements` (curve splines or mesh vertices); in the Self-Organizing redo panel the habit label confirms which side of the excurrent/decurrent range your Lambda landed on.
 
 ## Options
 
@@ -15,33 +32,33 @@ The distinction is not stylistic. With a grammar, a tree's habit is a parameter 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Space Colonization | Space Colonization, Self-Organizing, Diffusion-Limited, Pythagoras Tree. |
-| Envelope | Crown | Sphere, Crown, Cone, Box, Cylinder, Mushroom. |
-| Attractors | 700 | Range 20-6000. |
+| Mode | Space Colonization | Which growth algorithm builds the structure. Space Colonization, Self-Organizing, Diffusion-Limited, Pythagoras Tree. |
+| Envelope | Crown | Shape the attractor cloud fills; its outline alone sets the tree's habit. Sphere, Crown, Cone, Box, Cylinder, Mushroom. |
+| Attractors | 700 | Number of attractor points the branches grow toward Range 20-6000. |
 | Trunk | 0.5 | How far the crown sits above the root. Without a gap the tree forks from the ground and the envelope's effect is washed out Range 0-2. |
 | Influence | 0.75 | How far an attractor can reach. It has to exceed the trunk gap, or nothing in the crown can see the root and the tree never starts Range 0.05-3. |
-| Kill Radius | 0.14 | Range 0.01-1. |
+| Kill Radius | 0.14 | How close a branch tip must reach an attractor to consume it Range 0.01-1. |
 | Gravity | 0 | Bias along the axis. Negative gives the mycelial variant -- the same algorithm growing down and out Range -2-2. |
-| Steps | 10 | Range 1-18. |
+| Steps | 10 | Number of growth cycles the tree runs through Range 1-18. |
 | Lambda | 0.5 | Borchert-Honda resource split. Above 0.5 the main axis wins and the tree is excurrent (a conifer); below, the laterals win and it is decurrent (a spreading crown) Range 0.05-0.95. |
-| Branch Angle | 42 | Range 5-89. |
-| Walkers | 700 | Range 20-6000. |
-| Dimension | 3-D | 2-D, 3-D. |
-| Seed | Point | Point, Line, Ring, Disk, Sphere. |
+| Branch Angle | 42 | Angle a new lateral branch makes with its parent, in degrees Range 5-89. |
+| Walkers | 700 | Number of random walkers released to aggregate onto the cluster Range 20-6000. |
+| Dimension | 3-D | Whether walkers aggregate in a plane or in space. 2-D, 3-D. |
+| Seed | Point | Shape of the initial nucleus the cluster grows from. Point, Line, Ring, Disk, Sphere. |
 | Stickiness | 1 | Below 1 a walker may refuse and keep going, so it packs deeper: wispy dendrite at 1, compact moss well below Range 0.02-1. |
-| Lattice | 44 | Range 12-140. |
-| Walk | Lattice | Lattice, Off-Lattice. |
+| Lattice | 44 | Size of the region the walkers roam; larger gives more room and a looser cluster Range 12-140. |
+| Walk | Lattice | Whether walkers step on a cubic lattice or move in continuous directions. Lattice, Off-Lattice. |
 | Particle Radius | 0.5 | Off-lattice only. Every bond comes out at one particle diameter Range 0.1-3. |
-| Depth | 9 | Range 1-14. |
-| Apex Angle | 45 | Range 5-85. |
+| Depth | 9 | Number of generations of squares to grow Range 1-14. |
+| Apex Angle | 45 | Apex angle of the right triangle sitting on each square, in degrees Range 5-85. |
 | Roll | 0 | Rotate each generation out of its parent's plane, turning the relief into a spatial figure Range 0-90. |
-| Angle Jitter | 0 | Range 0-30. |
-| Seed | 0 | Range 0-10000. |
-| Branch Radius | 0.02 | Range 0.0005-0.5. |
-| Bevel Resolution | 2 | Range 0-16. |
+| Angle Jitter | 0 | Random variation added to the apex angle each generation, in degrees Range 0-30. |
+| Seed | 0 | Random seed for the stochastic steps Range 0-10000. |
+| Branch Radius | 0.02 | Bevel radius of the thickest branch Range 0.0005-0.5. |
+| Bevel Resolution | 2 | Subdivisions around the round branch cross-section Range 0-16. |
 | Pipe Exponent | 2.5 | r^n = r1^n + r2^n. 2 conserves cross-sectional area; measured trees run nearer 2.5 Range 1.5-4. |
 | Growth Time | 1 | Freeze a developmental stage. Every element is born with zero size AND zero rate, so sweeping this is continuous -- keyframe it Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Uniform scale of the finished structure Range 0.01-100. |
 
 <!-- /options -->
 
@@ -62,23 +79,51 @@ Renders of each selectable option:
 
 ## How it works
 
-**COLONIZE — space colonisation.** Scatter attractor points through an envelope. At each step, every attractor votes for its nearest branch tip; each tip that received votes grows one segment toward the average direction of its voters; attractors within a kill radius of a tip are removed. Branching happens where a tip's voters pull in two directions.
+**In plain terms.** Think of the difference between building a plant from an *instruction sheet* and growing one in a *place*. An L-system is the instruction sheet: "branch left, branch right, repeat", and the plan alone fixes the shape. The four modes here throw the instruction sheet away and give the growing thing a **space to fill** instead — a cloud of targets to reach, a canopy of light to compete for, a cluster to bump into. The plant reacts to its surroundings step by step, the way a vine finds a trellis or frost spreads across a window, and the familiar tree shapes fall out on their own. Change the space and you change the plant, even though nowhere did you tell it what shape to be. Everything below is the exact rule each mode follows to turn "a space" into "a structure".
 
-The habit is entirely the **envelope's** doing. A tall narrow envelope produces an excurrent tree with a dominant leader; a broad one produces a decurrent, spreading crown. There is no parameter named "habit" — the shape of the space is the parameter.
+### Space colonization — growing toward what you can reach
 
-**SELFORG — self-organising resource allocation.** The other route to the same range. Each branch competes for a resource flowing up from the base, distributed at each fork by a single constant $\lambda$: the more vigorous branch takes a share
+Scatter a cloud of **attractor** points through the chosen envelope. Growth then proceeds in fixed-length steps of $0.07$: at each step every attractor looks for the nearest branch tip within a radius called the **influence distance** and casts a vote for it; every tip that received votes sprouts a new segment in the *average* of the directions to its voters,
 
-$$\frac{\lambda\,v}{\lambda\,v+(1-\lambda)(1-v)}$$
+$$\mathbf{p}_{\text{new}} = \mathbf{p}_{\text{tip}} + \text{step}\cdot\frac{\sum_i \widehat{(\mathbf{a}_i-\mathbf{p}_{\text{tip}})} + g\,\hat{\mathbf{u}}\,|\lbrace i\rbrace|}{\big\Vert\,\cdots\,\big\Vert},$$
 
-and the weaker one the rest. Small $\lambda$ shares resource evenly and the crown spreads; large $\lambda$ concentrates it in the leader and the tree becomes excurrent.
+where the $\mathbf{a}_i$ are that tip's voters, $\hat{\mathbf{u}}$ is the up-axis and $g$ the **Gravity** bias. Any attractor that comes within the **kill radius** of a tip has been "used up" and is deleted, so growth keeps moving into fresh territory rather than piling onto one spot. **Branching is emergent**: a tip whose voters pull in two clearly separated directions produces segments that fan apart at the next step, so forks appear exactly where the unclaimed space splits.
 
-Both modes are here rather than one because they reach the **same** excurrent-to-decurrent range from opposite directions — one from the geometry of the available space, one from a single physiological constant. Having both makes clear that tree habit is not one mechanism.
+The geometric payoff is that **habit is entirely the envelope's doing**. A tall narrow cone leaves attractors stacked above the growing tip, so one leader races upward and the tree is *excurrent* like a spruce; a broad ovoid crown spreads attractors sideways, the leader loses its monopoly and the tree becomes *decurrent* like an oak — with no apical-dominance dial anywhere in the code. One subtlety the operator handles for you: if the crown is lifted clear of the root (a bare **Trunk**), no attractor is initially within influence range, so a single leader is grown straight toward the nearest attractor until the crown comes into reach — exactly what a seedling does before it starts to branch.
 
-**DLA — diffusion-limited aggregation.** Particles random-walk until they touch the cluster and stick, producing the ramified, fractal forms of mineral dendrites and electrodeposits. Available in 2-D and 3-D, on a lattice or off it — the lattice version shows the anisotropy of its grid, the off-lattice one does not, which is a useful demonstration that DLA's familiar shapes are partly an artefact of the lattice.
+### Self-organizing — competing for light
 
-**PYTHAGORAS** — the Pythagoras tree, squares branching recursively at a fixed angle, included as the deterministic counterpoint to the three stochastic modes.
+The same excurrent-to-decurrent range, reached from the opposite direction: not from the geometry of the space but from a single physiological constant. Here buds compete for **light**. A voxel **shadow grid** is accumulated in which every existing metamer darkens a widening cone beneath it,
 
-**Envelopes and seeds.** Sphere, crown, cone, box, cylinder and mushroom envelopes; point, line, ring, disk and sphere seeds. Between them the same algorithm produces a shrub, a hedge, a column or a canopy.
+$$s \mathrel{+}= a\,b^{-q},$$
+
+with $q$ the depth below the caster — shade weakens with distance but spreads — and a bud's light exposure is whatever survives, $Q = \mathrm{clip}(1-s,\,0,\,1)$. At each fork the bud's vigour $v$ is split between the continuing main axis and one departing lateral by the extended **Borchert–Honda** rule, weighted by the light each direction heads into:
+
+$$v_{\text{main}} = v\,\frac{\lambda\,q_m}{\lambda\,q_m+(1-\lambda)\,q_l},\qquad v_{\text{lat}} = v\,\frac{(1-\lambda)\,q_l}{\lambda\,q_m+(1-\lambda)\,q_l}.$$
+
+The single constant $\lambda$ is the whole story. Above $\tfrac12$ the main axis keeps the lion's share, the leader stays dominant and the tree is excurrent; below $\tfrac12$ the laterals win, vigour disperses into a spreading forked crown, and it is decurrent. That two independent mechanisms — the shape of the available space, and one resource-allocation number — reach the *same* family of forms is the reason both modes ship together: it demonstrates that tree habit is not tied to any one cause.
+
+### Diffusion-limited aggregation — sticking on contact
+
+A **walker** is released from just outside the cluster and takes a random walk until it touches an existing particle, where it sticks and becomes part of the cluster; the next walker is then released, and so on. Because every particle attaches to exactly one earlier particle, the aggregate is secretly a **tree**, which is why it can be skinned and tapered like the grown trees rather than shown as a bag of dots. **Stickiness** below 1 lets a walker occasionally refuse and keep moving, so it penetrates deeper before attaching — wispy dendrite at 1.0, compact moss well below.
+
+The two **Walk** modes exist to separate a real effect from an artefact. On a **lattice** the walker takes unit steps along grid axes, so every bond is axis-aligned; this is genuinely anisotropic — arms grow preferentially along the lattice directions — a true property of lattice DLA but not what a frost dendrite or coral looks like. **Off-lattice** the walker moves in a uniformly random direction and, on contact, is backed off along its line of approach to exactly one particle diameter, so no direction is privileged and the arms wander smoothly. (Its step is *adaptive* — far from the cluster the walker leaps most of the remaining gap in one go — because a continuous walk at contact resolution would otherwise spend nearly all its time in empty space.) Comparing the two is a direct demonstration that DLA's square-shouldered classic images are partly the grid, not the physics.
+
+### Pythagoras tree — the deterministic counterpoint
+
+The Pythagoras tree stands a square on the hypotenuse-side of a right triangle and grows two smaller squares on the triangle's legs, recursively. With **Apex Angle** $\alpha$ the two children scale by $\cos\alpha$ and $\sin\alpha$, so a $45°$ tree halves its total area at every level and stays a bounded fractal. The flat construction lives in one plane; **Roll** rotates each child's basis about *its own* growth direction (a Rodrigues rotation in the plane normal to that axis), which genuinely lifts successive generations out of their parent's plane — merely tilting the starting frame would leave every square a linear combination of two fixed vectors and so trapped in the initial plane. The two children roll in opposite senses, so the whole figure spirals into space rather than shearing to one side.
+
+### Shared skinning, and freezing the growth
+
+The three branching modes hand off the same `(nodes, parents)` skeleton, skinned by the **pipe model**: a segment's radius satisfies
+
+$$r^{\,n} = r_1^{\,n} + r_2^{\,n}$$
+
+summed up the tree, so the **Pipe Exponent** $n=2$ conserves cross-sectional area at every fork while $n\approx2.5$ (measured trees) gives a slightly slimmer, more natural trunk. Finally **Growth Time** freezes a developmental stage of the two grown trees: every element is born with zero size *and* zero growth rate, so sweeping the slider is continuous and the topology never changes — keyframe it and the tree grows on without a single popping segment.
+
+### Envelopes and seeds
+
+Sphere, crown, cone, box, cylinder and mushroom envelopes for the colonizer; point, line, ring, disk and sphere seeds for the aggregate (an extended seed nucleates a *forest* of independent roots, not one tree). Between them the same handful of rules produces a shrub, a hedge, a column or a canopy — the shape of the space, not a shape parameter, doing the work.
 
 ## References
 

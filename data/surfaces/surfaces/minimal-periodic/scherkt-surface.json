@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherkt-surface",
+  "name": "Scherkt surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-nodal",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "nodal",
+    "fidelity": "exact",
+    "scale": "unit_cell",
+    "lattice": "cubic",
+    "level": 0.0,
+    "residual": {
+      "max_abs_mean_curvature": 0.0,
+      "measured_at_resolution": 120,
+      "note": "Measured max|H| = 6e-09, i.e. minimal to numerical precision: this level function defines the surface EXACTLY and is not an approximation, despite sitting in the nodal table."
+    },
+    "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py.",
+    "level_function": "sin(z) - sinh(x) * sinh(y)",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS",
+      "key": "SCHERKT",
+      "definition_index": null,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "notes": {
+    "known_issue": "FOUND BY THE DRIVE STAGE. 'SCHERKT' is a row in math_art/minsurf/tpms.py's TPMS registry and builds fine through minsurf.build_tpms, but NO operator offers it: mesh.periodic_minimal_add's surface enum omits it under every one of its five periodicity settings (SINGLY, DOUBLY, TRIPLY, EXACT, EXACT_FAMILY). The surface is reachable from the engine and not from the user interface."
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

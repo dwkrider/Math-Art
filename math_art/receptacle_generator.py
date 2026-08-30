@@ -116,6 +116,8 @@ if _IN_BLENDER:
 
         source: EnumProperty(
             name="Source",
+            description="How the receptacle is specified: a preset, a "
+                        "chosen profile, by parastichy, or a rise sweep",
             items=[('PRESET', "Preset", "A published receptacle"),
                    ('CUSTOM', "Custom", "Choose the profile directly"),
                    ('PARASTICHY', "By Parastichy", "Solve van Iterson "
@@ -128,26 +130,36 @@ if _IN_BLENDER:
             default='PRESET')
         preset: EnumProperty(
             name="Preset",
+            description="Which published receptacle to build",
             items=[(k, v["label"], v["label"])
                    for k, v in sorted(PRESETS.items())],
             default='PINE_CONE')
         profile: EnumProperty(
             name="Profile",
+            description="Surface-of-revolution profile the organs are "
+                        "placed on",
             items=[(k, k.replace("_", " ").title(),
                     f"Surface of revolution: {k.lower()}")
                    for k in sorted(phyllo.PROFILES)],
             default='CONE')
 
-        count: IntProperty(name="Organs", default=200, min=3, max=20000)
+        count: IntProperty(name="Organs", default=200, min=3, max=20000,
+                           description="Number of organs to place")
         divergence: FloatProperty(
             name="Divergence", default=phyllo.GOLDEN_ANGLE,
             min=0.0, max=360.0,
             description="Roll between successive organs; 137.50776 is "
                         "the golden angle")
         parastichy_m: IntProperty(name="Parastichy m", default=5,
-                                  min=1, max=89)
+                                  min=1, max=89,
+                                  description="First spiral count of "
+                                              "the parastichy pair to "
+                                              "solve for")
         parastichy_n: IntProperty(name="Parastichy n", default=8,
-                                  min=1, max=144)
+                                  min=1, max=144,
+                                  description="Second spiral count of "
+                                              "the parastichy pair to "
+                                              "solve for")
 
         rise: FloatProperty(
             name="Rise", default=0.05, min=0.0005, max=0.6,
@@ -161,7 +173,9 @@ if _IN_BLENDER:
             description="Organ radius as 1 + grade*s along the profile. "
                         "Real capitula grow their florets outward, and "
                         "the density integral handles that directly")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             prof, count, div = self.profile, self.count, self.divergence

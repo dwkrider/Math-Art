@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "multi-soliton-pseudospherical",
+  "name": "Multi-Soliton Pseudospherical Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "k-const-negative",
+    "not-implemented",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula from the literature would be worse than a null. See construction.blocked_by."
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "gaussian": {
+      "exact": "-1",
+      "value": -1.0
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Only the single BREATHER preset ships. The 2-, 3- and 4-soliton surfaces need Sym's formula.",
+      "resume": "A. Bobenko, 'Surfaces in terms of 2 by 2 matrices' (1994) for Sym's formula -- converted in research/papers/. NOTE: Melko-Sterling 1993 does NOT contain a closed-form breather parametrisation despite being cited for one. The Bianchi permutability the bubbleton module already implements is the same machinery."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "A. I. Bobenko, in Harmonic Maps and Integrable Systems (1994)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch056_two_soliton"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

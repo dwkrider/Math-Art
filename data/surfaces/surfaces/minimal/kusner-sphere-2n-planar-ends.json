@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "kusner-sphere-2n-planar-ends",
+  "name": "Kusner Sphere (2n planar ends)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Kusner's immersed minimal spheres with an even number 2n of planar ends (the VMM exhibit shows n = 4: a sphere with 8 punctures, 4 per hemisphere, and 4 straight lines on the surface).  For n odd the immersion factors through the antipodal map and gives the projective-plane family, which has its own record (kusner-projective-plane-p-planar-ends)."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
+      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'Kusner Surface', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch020_kusner_ds.md).",
+      "M. Weber, 'Kusner's Spheres with Planar Ends', minimalsurfaces.blog (local mirror: minsurf/book/.../ch065_kusners_spheres_with_planar_ends.md).",
+      "R. Kusner, 'Conformal geometry and complete minimal surfaces', Bull. Amer. Math. Soc. 17 (1987) 291-295."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch020_kusner_ds"
+  },
+  "named_after": "Kusner",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

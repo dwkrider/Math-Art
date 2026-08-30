@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "gabriels-horn",
+  "name": "Gabriel's Horn",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "noncompact",
+    "revolution",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "u",
+    "y": "cos(v)/u",
+    "z": "sin(v)/u",
+    "u_range": [
+      "1",
+      "6"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "y = 1/x revolved about the x-axis, cut at the operator's default length 6; finite volume, divergent lateral area",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "GABRIEL",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.79 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.01845).",
+    "sources": [
+      "E. Torricelli, De solido hyperbolico acuto (1643)."
+    ]
+  },
+  "alternate_names": [
+    "Torricelli's trumpet"
+  ],
+  "discovered_by": "Evangelista Torricelli",
+  "year": 1643,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "GabrielsHorn",
+    "mathcurve": "ch1269_gabriel_2"
+  },
+  "metrics": {
+    "area": null,
+    "measures_note": "Surface area is INFINITE while the enclosed volume is finite (pi) -- which is the whole point of the object, so a null with this note is the honest record."
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

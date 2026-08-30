@@ -115,7 +115,9 @@ if _IN_BLENDER:
                     "sheet, glued to itself, with interior creases "
                     "(a D-form provably has none) and not convex. "
                     "Exact -- no solver")],
-            default='SEAM')
+            default='SEAM',
+            description="Construction to use: two-sheet seam, anti-D-form, "
+                        "truncated polyhedron, or folded vesica")
         vesica_u: FloatProperty(
             name="Disc Offset u", default=0.5, min=0.06, max=0.94,
             description="Half the distance between the two disc "
@@ -129,9 +131,12 @@ if _IN_BLENDER:
                         "circular; the fold only exists up to "
                         "h = 1 - u^2")
         kind_a: EnumProperty(name="Piece A", items=_CURVE_ITEMS,
-                             default='ELLIPSE')
+                             default='ELLIPSE',
+                             description="Outline shape of the first sheet")
         kind_b: EnumProperty(name="Piece B", items=_CURVE_ITEMS,
-                             default='EGG')
+                             default='EGG',
+                             description="Outline shape of the second "
+                             "sheet")
         aspect_a: FloatProperty(
             name="A Aspect", default=0.6, min=0.1, max=1.0,
             description="Width-to-length ratio of the first outline")
@@ -144,8 +149,12 @@ if _IN_BLENDER:
         egg: FloatProperty(
             name="Egg Bias", default=0.35, min=0.0, max=0.8,
             description="How far the widest point moves off the short axis")
-        sides_a: IntProperty(name="A Sides", default=3, min=3, max=12)
-        sides_b: IntProperty(name="B Sides", default=5, min=3, max=12)
+        sides_a: IntProperty(name="A Sides", default=3, min=3, max=12,
+                             description="Number of sides when the first "
+                             "outline is a rounded polygon")
+        sides_b: IntProperty(name="B Sides", default=5, min=3, max=12,
+                             description="Number of sides when the second "
+                             "outline is a rounded polygon")
         corner: FloatProperty(
             name="Corner Radius", default=0.35, min=0.02, max=0.95,
             description="Rounding of the polygon corners")
@@ -166,7 +175,9 @@ if _IN_BLENDER:
                     "starting point for its multi-piece D-forms"),
                    ('ICOSA', "Icosahedron",
                     "Valence 5, so its vertices are truncated first")],
-            default='CUBE')
+            default='CUBE',
+            description="Truncated mode: convex polyhedron whose edges are "
+                        "rounded into developable bands")
         edges: EnumProperty(
             name="Cut Edges",
             items=[('EQUATOR', "Band (two caps)",
@@ -180,7 +191,9 @@ if _IN_BLENDER:
                     "D-forms arise"),
                    ('SHARPEST', "Sharpest first",
                     "Whatever is still sharp, wherever it is")],
-            default='EQUATOR')
+            default='EQUATOR',
+            description="Truncated mode: which edges of the seed "
+                        "polyhedron get cut")
         rounds: IntProperty(
             name="Truncation Rounds", default=4, min=0, max=12,
             description="How many times the surviving sharp edges are "
@@ -198,11 +211,15 @@ if _IN_BLENDER:
                         "HOLES are glued, so these two are the pair "
                         "whose perimeters get matched")
         hole_kind_b: EnumProperty(
-            name="Hole B", items=_CURVE_ITEMS, default='ELLIPSE')
+            name="Hole B", items=_CURVE_ITEMS, default='ELLIPSE',
+            description="Anti mode: outline of the second piece's hole "
+                        "(the holes are the glued pair)")
         hole_aspect_a: FloatProperty(
-            name="Hole A Aspect", default=0.6, min=0.1, max=1.0)
+            name="Hole A Aspect", default=0.6, min=0.1, max=1.0,
+            description="Width-to-length ratio of the first piece's hole")
         hole_aspect_b: FloatProperty(
-            name="Hole B Aspect", default=1.0, min=0.1, max=1.0)
+            name="Hole B Aspect", default=1.0, min=0.1, max=1.0,
+            description="Width-to-length ratio of the second piece's hole")
         hole_scale: FloatProperty(
             name="Hole Size", default=0.4, min=0.1, max=0.8,
             description="Hole size relative to the rim. Clamped so the "
@@ -229,7 +246,8 @@ if _IN_BLENDER:
                         "and resampled up, so raising the segment count "
                         "costs resolution but not convergence")
 
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the result")
         make_net: BoolProperty(
             name="Flat Development", default=False,
             description="Also add the two pieces laid out flat -- the "
@@ -246,7 +264,8 @@ if _IN_BLENDER:
             description="Store the angle defect at each seam vertex as a "
                         "'mu' colour attribute; it is zero away from the "
                         "seam and sums to 4*pi along it")
-        shade_smooth: BoolProperty(name="Shade Smooth", default=True)
+        shade_smooth: BoolProperty(name="Shade Smooth", default=True,
+                                   description="Shade the surface smooth")
 
         def execute(self, context):
             try:

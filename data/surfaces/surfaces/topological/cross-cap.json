@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "cross-cap",
+  "name": "Cross-Cap",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "implemented",
+    "non-orientable",
+    "singular",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "0.5*sin(u)*sin(2*v)",
+    "y": "0.5*sin(2*u)*cos(v)**2",
+    "z": "0.5*cos(2*u)*cos(v)**2",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "pi/2"
+    ],
+    "periodic_u": true,
+    "note": "the standard cross-cap immersion of RP^2; antipodes (u + pi, -v) map to the same point, so the hemisphere v >= 0 covers the surface once",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "euler_characteristic": 1,
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "non_orientable_genus": 1,
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "pinch point",
+        "count": 2
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "CROSSCAP",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.79 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.01661).",
+    "sources": [
+      "D. Hilbert and S. Cohn-Vossen, Anschauliche Geometrie (1932) -- Geometry and the Imagination, the standard exposition."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Cross-Cap",
+    "mathcurve": "ch1243_bonnetcroise_2",
+    "vmm": "ch042_cross_cap"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

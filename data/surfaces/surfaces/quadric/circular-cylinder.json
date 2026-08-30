@@ -1,0 +1,116 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "circular-cylinder",
+  "name": "Circular Cylinder",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "embedded",
+    "flat",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2 + y**2 - 1"
+  },
+  "curvature": {
+    "condition": "flat",
+    "gaussian": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "genus": 0,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.delaunay_generator",
+      "operator_id": "mesh.delaunay_surface_add",
+      "key": "CYLINDER",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "CIRCULAR_CYLINDER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Cylinder",
+    "mathcurve": "ch1230_cylindrederevolution_2"
+  },
+  "relations": {
+    "member_of": "delaunay-surface"
+  },
+  "notes": {
+    "caveats": [
+      "Both flat (K = 0, so developable) and CMC (H = 1/2r), which is why it sits in the Delaunay family. The curvature facet records `flat` as the stronger condition."
+    ]
+  },
+  "alternate_definitions": [
+    {
+      "x": "cos(u)",
+      "y": "sin(u)",
+      "z": "v",
+      "u_range": [
+        "0",
+        "2*pi"
+      ],
+      "v_range": [
+        "-1",
+        "1"
+      ],
+      "periodic_u": true,
+      "mode": "parametric",
+      "fidelity": "exact",
+      "exactness": "elementary"
+    }
+  ],
+  "alternate_names": [
+    "Cylinder of revolution"
+  ],
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -190,7 +190,8 @@ if _IN_BLENDER:
                         "infinite families (ignored by the seven "
                         "oddities)")
         radius: FloatProperty(
-            name="Sphere Radius", default=1.0, min=0.01, max=100.0)
+            name="Sphere Radius", default=1.0, min=0.01, max=100.0,
+            description="Radius of the decorated sphere")
         resolution: IntProperty(
             name="Sphere Resolution", default=48, min=8, max=256,
             description="Longitudinal segments of the sphere shell")

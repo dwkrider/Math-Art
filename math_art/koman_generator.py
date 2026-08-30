@@ -371,7 +371,8 @@ if _IN_BLENDER:
                     "The authors' demonstration from a plain rectangle: "
                     "overlapping tongues closing a flat wreath around a "
                     "central hole")],
-            default='SPIRAL')
+            default='SPIRAL',
+            description="Which Koman developable sculpture to build")
 
         blades: IntProperty(
             name="Blades", default=80, min=5, max=200,
@@ -427,8 +428,11 @@ if _IN_BLENDER:
             description="Subdivisions along each blade or arch")
 
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
-        shade_smooth: BoolProperty(name="Shade Smooth", default=False)
+                             max=100.0,
+                             description="Overall size of the result")
+        shade_smooth: BoolProperty(name="Shade Smooth", default=False,
+                                   description="Shade the surface "
+                                               "smooth")
         sharp_edges: BoolProperty(
             name="Sharp Folds", default=True,
             description="Mark the folds sharp (and creased) so smooth "

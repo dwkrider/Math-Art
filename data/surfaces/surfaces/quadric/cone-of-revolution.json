@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "cone-of-revolution",
+  "name": "Cone of Revolution",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "noncompact",
+    "quadric",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2 + y**2 - z**2",
+    "note": "Revolution of a line secant to an axis about that axis; the special case of the elliptic cone (whose record already resolves ch1235) with circular cross-section."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "conical point",
+        "count": 1
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "ELLIPTIC_CONE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical.",
+      "R. Ferreol, \"Cone of revolution\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1229_conederevolution_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1229_conederevolution_2.md)."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "alternate_names": [
+    "Right circular cone"
+  ],
+  "notes": {
+    "caveats": [
+      "The a = b special case of the elliptic cone, which is exactly what mesh.quadric_add's ELLIPTIC_CONE builds at its defaults (both semi-axes 1): revolution of a line secant to an axis about that axis."
+    ]
+  },
+  "ids": {
+    "mathcurve": "ch1229_conederevolution_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

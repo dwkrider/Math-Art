@@ -18,9 +18,13 @@ References are in the submodule header; the principal ones are Schlafli
 (1852) for the classification and Coxeter, "Regular Polytopes" (1973).
 """
 
+from . import wythoff
+from .wythoff import FAMILIES as WYTHOFF_FAMILIES
 from .regular import (COUNTS, DUAL_KIND, HALF_TOL, PHI, add_sphere, add_strut, clear_pole, dual_vertices, hopf_ring_cosets, polytope_edges, polytope_faces, polytope_vertices, project_point, ring_cell_points, rotate4)
 
 __all__ = [
+    "wythoff",
+    "WYTHOFF_FAMILIES",
     "COUNTS",
     "DUAL_KIND",
     "HALF_TOL",

@@ -56,7 +56,13 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    class MESH_OT_waterman_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_waterman_add(bpy.types.Operator,
+                               _net_style.NetStyleProps):
         """Add a Waterman polyhedron (hull of FCC points within
         radius sqrt(2*root))"""
         bl_idname = "mesh.waterman_add"
@@ -82,12 +88,16 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
-                    "segment per face")],
-            default='SOLID')
+                    "segment per face"),
+            _net_style.net_enum_item()],
+            default='SOLID',
+            description="Finish for the polyhedron: solid, Leonardo "
+                        "panels, struts, ball-and-stick, wireframe, or "
+                        "face segments")
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
-            description="Leonardo face frame width (fraction of "
-                        "the face)")
+            name="Border", default=0.06, min=0.005, max=1.0,
+            description="Leonardo face frame width, the same on every "
+                        "face whatever its size")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.001, max=1.0,
             description="Panel / strut thickness for the Leonardo "
@@ -112,7 +122,9 @@ if _IN_BLENDER:
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.001,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube, centered at the origin)")
 
         def execute(self, context):
             pts = fcc_points(self.root)
@@ -136,10 +148,13 @@ if _IN_BLENDER:
             bm.to_mesh(me)
             bm.free()
             me.update()
-            if self.style == 'FACETS':
+            if self.style in ('FACETS', 'NET'):
                 Vf = [tuple(v.co) for v in me.vertices]
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
+                if self.style == 'NET':
+                    return _net_style.emit_net_from_operator(
+                        self, context, Vf, Ff, f"Waterman W{self.root}")
                 try:
                     from .styles import facet_style
                 except ImportError:
@@ -194,6 +209,8 @@ if _IN_BLENDER:
             if self.style == 'BALLSTICK':
                 lay.prop(self, 'strut_radius')
                 lay.prop(self, 'node_radius')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

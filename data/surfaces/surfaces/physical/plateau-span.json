@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "plateau-span",
+  "name": "Plateau Soap-Film Span",
+  "primary_family": "physical",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "minimal",
+    "physical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: the soap film spanning a frame is computed by numerical relaxation (minimal_surface_toolkit); nothing closed-form to transcribe. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minimal_surface_toolkit",
+      "operator_id": "object.minimal_span",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Weierstrass-Enneper representation: K. Weierstrass (1866) and",
+      "A. Enneper (1864); the catenoid (surface of Euler, 1744) was shown minimal by J. B. C. Meusnier (1776).",
+      "Costa surface: C. J. Costa (1982); embeddedness by D. Hoffman and",
+      "W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and",
+      "W. H. Meeks III (1983).",
+      "Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

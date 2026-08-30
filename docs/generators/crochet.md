@@ -1,5 +1,7 @@
 # Crochet/Coral
 
+![Crochet/Coral](../images/crochet.png)
+
 ## Overview
 
 Add a crocheted hyperbolic plane -- a ruffled, negatively
@@ -24,7 +26,7 @@ It is a genuinely useful model precisely because it gives up on being flat. Hilb
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Wavy | Wavy, Ruffled, Bendy, Taimina (ball), Custom. |
+| Preset | Wavy | Curvature and fold tightness preset; Custom exposes the parameters below. Wavy, Ruffled, Bendy, Taimina (ball), Custom. |
 | Increase Ratio N | 6 | Increase 1 stitch every N. Small N = tight curvature, more bend Range 2-24. |
 | Rows | 14 | Crochet rows; more = larger and more folded Range 3-30. |
 | Stitch Size | 0.1 | Size of one (square) stitch Range 0.02-0.5. |
@@ -33,7 +35,7 @@ It is a genuinely useful model precisely because it gives up on being flat. Hilb
 | Bending | 0.08 | Higher = larger, smoother ruffles; lower = finer, crisper folds. Above ~0.5 it strongly over-smooths and can shrink the sheet Range 0-1. |
 | Self-Repulsion | 0.5 | Push apart ruffles that get too close Range 0-1. |
 | Collision Passes | 2 | BVHTree vertex-triangle self-collision passes that stop the fabric passing through itself Range 0-10. |
-| Fold By | Built-in Packing | Built-in Packing, Blender Cloth. |
+| Fold By | Built-in Packing | Method used to fold the sheet into its buckled shape. Built-in Packing, Blender Cloth. |
 | Cloth Bake Frames | 45 | Cloth mode: frames to auto-simulate and freeze. 0 = just set up the modifier and let you press Play Range 0-400. |
 | Gather Strength | 170 | Cloth mode: inward force that gathers the sheet into a ball. Lower = looser, less tightly folded (0 = drape under gravity) Range 0-2000. |
 | Sheet Prep Steps | 40 | Cloth mode: relaxation steps to tidy the procedurally-ruffled sheet before handing it to cloth (the cloth solver does the rest, so this can be small or 0) Range 0-400. |
@@ -44,8 +46,8 @@ It is a genuinely useful model precisely because it gives up on being flat. Hilb
 | Lobes | 3 | Coarsest ruffle count: the rim breaks into this many primary lobes, for a multi-lobed hyperbolic form Range 2-12. |
 | Coarse-to-Fine | 0 | Continuation levels: relax a coarse sheet first (large waves form there), then subdivide and re-relax. Larger, smoother ruffles at less cost than one-shot; 0 = off (classic single-resolution relax). 1 with Stiffness ~0.03 is the measured sweet spot; 2 makes still larger waves but wants a Collision pass to keep the deep folds apart Range 0-3. |
 | Stiffness | 0 | Thin-plate bending resistance: damps stitch-scale crumple while leaving the large waves intact. Best combined with Coarse-to-Fine (~0.02-0.06; measured best 0.03), 0 = off Range 0-0.35. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smooth rather than faceted |
 
 <!-- /options -->
 

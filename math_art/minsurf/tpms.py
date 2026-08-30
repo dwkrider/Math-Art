@@ -20,6 +20,11 @@
 import math
 import numpy as np
 
+try:
+    from .. import geom_cache as _geom_cache
+except ImportError:  # flat import outside the package
+    import geom_cache as _geom_cache
+
 TAU = 2.0 * math.pi
 
 
@@ -660,6 +665,191 @@ def _edge_points(keys, npt, sub, k0, xs, ys, zs, ny, nz):
     return pa + t[:, None] * (pb - pa)
 
 
+def clip_to_sphere(verts, faces, radius):
+    """Clip a mesh to the ball of radius `radius` about the origin.
+
+    Sutherland-Hodgman against the sphere, one face at a time: corners
+    inside are kept, and where an edge crosses, the crossing point is
+    solved for exactly (|a + t(b - a)| = r is a quadratic in t) rather
+    than approximated.  So the cut edge lies ON the sphere and comes out
+    smooth, instead of following the face boundaries in a staircase the
+    way dropping whole faces would.
+
+    A clipped surface has an open edge where it had none, which is
+    exactly what the rim curve is for -- sweeping a tube along it gives
+    the wire-rimmed sphere of TPMS that this option exists to make.
+
+    Returns (verts, faces); faces may be triangles or larger polygons.
+    """
+    V = np.asarray(verts, dtype=float)
+    r = float(radius)
+    if r <= 0.0 or not len(V):
+        return verts, faces
+    d = np.linalg.norm(V, axis=1) - r          # <= 0 is inside
+
+    out_v = [tuple(p) for p in V]
+    cache = {}
+
+    def cross(i, j):
+        """Where segment i->j meets the sphere, cached per edge."""
+        key = (i, j) if i < j else (j, i)
+        hit = cache.get(key)
+        if hit is not None:
+            return hit
+        a_, b_ = V[key[0]], V[key[1]]
+        e = b_ - a_
+        qa = float(e @ e)
+        qb = 2.0 * float(a_ @ e)
+        qc = float(a_ @ a_) - r * r
+        t = 0.5
+        if abs(qa) > 1e-30:
+            disc = qb * qb - 4.0 * qa * qc
+            if disc >= 0.0:
+                sq = math.sqrt(disc)
+                for cand in ((-qb - sq) / (2.0 * qa),
+                             (-qb + sq) / (2.0 * qa)):
+                    if -1e-9 <= cand <= 1.0 + 1e-9:
+                        t = min(1.0, max(0.0, cand))
+                        break
+        out_v.append(tuple(a_ + t * e))
+        idx = len(out_v) - 1
+        cache[key] = idx
+        return idx
+
+    out_f = []
+    for f in faces:
+        n = len(f)
+        if n < 3:
+            continue
+        idx = [int(k) for k in f]
+        if all(d[k] <= 0.0 for k in idx):
+            out_f.append(tuple(idx))
+            continue
+        if all(d[k] > 0.0 for k in idx):
+            continue
+        poly = []
+        for k in range(n):
+            a_i, b_i = idx[k], idx[(k + 1) % n]
+            ain, bin_ = d[a_i] <= 0.0, d[b_i] <= 0.0
+            if ain:
+                poly.append(a_i)
+            if ain != bin_:
+                poly.append(cross(a_i, b_i))
+        # drop repeats the clip can produce when a corner sits on the
+        # sphere; a polygon needs three distinct corners to be a face
+        clean = []
+        for k in poly:
+            if not clean or k != clean[-1]:
+                clean.append(k)
+        if len(clean) > 1 and clean[0] == clean[-1]:
+            clean.pop()
+        if len(clean) >= 3:
+            out_f.append(tuple(clean))
+
+    used = sorted({k for f in out_f for k in f})
+    remap = {k: i for i, k in enumerate(used)}
+    return ([out_v[k] for k in used],
+            [tuple(remap[k] for k in f) for f in out_f])
+
+
+# One extracted unit cell, kept so that changing only the cell counts
+# does not re-extract it.  Small and bounded: a cell at the default
+# resolution is ~35k vertices, and eight of them is a few megabytes.
+_CELL_CACHE = {}
+_CELL_CACHE_MAX = 8
+
+
+def _cached_cell(kind, f, res, key):
+    """Extract one unit cell, or hand back the one already extracted.
+
+    Keyed on everything the cell depends on -- the row, the sample
+    resolution, and the level offset -- and NOT on the cell counts,
+    which is the point: dragging Cells X/Y/Z re-tiles a cell that is
+    already in hand instead of marching the field again.
+
+    Copies are returned rather than the cached arrays themselves.
+    Callers here own and edit what they are handed (`_empty` says so
+    for the same reason), and handing out the cached arrays would let
+    one caller's edit turn up in the next call's result.
+    """
+    hit = _CELL_CACHE.get(key)
+    if hit is None:
+        half = TAU / 2.0
+        hit = marching_tets(f, (-half, -half, -half),
+                            (half, half, half), res)
+        if len(_CELL_CACHE) >= _CELL_CACHE_MAX:
+            _CELL_CACHE.pop(next(iter(_CELL_CACHE)))
+        _CELL_CACHE[key] = hit
+    return hit[0].copy(), hit[1].copy()
+
+
+def _tile_cells(verts, tris, cx, cy, cz):
+    """Repeat one extracted unit cell over a cx x cy x cz block.
+
+    Offsets are whole periods, so copies meet exactly on the shared cell
+    faces and the seam welds; the weld is by rounded position over the
+    joined vertex set, which is what removes the duplicated boundary
+    ring rather than leaving two coincident copies of it.
+    """
+    V = np.asarray(verts, dtype=float)
+    T = np.asarray(tris, dtype=np.int64)
+    i, j, k = np.meshgrid(np.arange(cx), np.arange(cy), np.arange(cz),
+                          indexing='ij')
+    off = (np.stack([i, j, k], axis=-1).reshape(-1, 3).astype(float)
+           - 0.5 * np.array([cx - 1, cy - 1, cz - 1])) * TAU
+    Vt = (V[None, :, :] + off[:, None, :]).reshape(-1, 3)
+    base = (np.arange(len(off)) * len(V))[:, None, None]
+    Tt = (T[None, :, :] + base).reshape(-1, 3)
+
+    # Weld the seams -- and ONLY the seams.  The shared face of two
+    # neighbouring cells carries the same crossing points twice, but
+    # that is a thin shell of the block: running unique over all of the
+    # vertices costs more than the extraction it was meant to save
+    # (1.4 s of a 1.5 s build at 5x5x5).  A vertex can only be
+    # duplicated if it lies on a cell boundary plane, which is a
+    # coordinate test, so the sort runs over those alone.
+    # The weld bin has to be far coarser than round-off but far finer
+    # than the sample spacing.  At 1e-9 of the span it was comparable
+    # to round-off itself, so pairs that straddled a bin boundary
+    # survived as duplicates -- about 1250 of them on a 2x2x2 gyroid --
+    # and a duplicated seam vertex splits the surface there, which is
+    # the whole thing this weld exists to prevent.  The grid spacing is
+    # TAU / res, so 1e-6 of the span sits orders of magnitude below any
+    # two distinct crossings.
+    span = float(np.max(Vt.max(0) - Vt.min(0))) or 1.0
+    tol = span * 1e-6
+    # Where the boundary planes fall depends on the PARITY of the cell
+    # count.  The block is centred, so an odd count puts cell centres on
+    # whole periods and boundaries on half periods, and an even count
+    # puts them the other way about.  Testing only one of the two
+    # misses every seam for the other parity -- which left ~1250
+    # duplicated vertices on a 2x2x2 block, and a duplicated seam vertex
+    # splits the surface there.  Testing 2V/TAU against an integer
+    # covers both at once.
+    d = 2.0 * Vt / TAU
+    on_seam = np.any(np.abs(d - np.round(d)) < 1e-7, axis=1)
+    idx = np.flatnonzero(on_seam)
+    remap = np.arange(len(Vt), dtype=np.int64)
+    if len(idx):
+        q = np.round(Vt[idx] / tol).astype(np.int64)
+        _, first, back = np.unique(q, axis=0, return_index=True,
+                                   return_inverse=True)
+        remap[idx] = idx[first][back.ravel()]
+    # Compact by a marked prefix sum rather than np.unique.  Dropping
+    # the merged duplicates only needs to know WHICH vertices survive,
+    # which is a boolean mark and a cumulative sum -- linear -- where
+    # unique sorts several million entries to rediscover the same thing.
+    Tt = remap[Tt]
+    live = np.zeros(len(Vt), dtype=bool)
+    live[Tt.ravel()] = True
+    order = np.cumsum(live) - 1
+    Vt = Vt[live]
+    Tt = order[Tt]
+    good = ((Tt[:, 0] != Tt[:, 1]) & (Tt[:, 1] != Tt[:, 2])
+            & (Tt[:, 0] != Tt[:, 2]))
+    return Vt, Tt[good]
+
+
 def _cells_xyz(cells):
     """Coerce a cell count to a (cx, cy, cz) triple.  A plain int means a
     symmetric cx = cy = cz block (kept for internal callers/tests); a tuple
@@ -673,6 +863,16 @@ def _cells_xyz(cells):
     return c, c, c
 
 
+# NOT cached at this level, deliberately.  A whole nodal block is the
+# largest thing this add-on makes -- a 5x5x5 gyroid is ~300 MB -- and
+# caching it bought about 0.4 s of a 3.5 s rebuild, because marching the
+# field is no longer the cost: handing the mesh to Blender is.  Paying
+# most of the memory budget for a tenth of the wait is a bad trade, and
+# it would evict the surfaces where a cache genuinely pays.
+#
+# The cache that DOES pay here is a layer down: `_cached_cell` keeps the
+# single extracted unit cell, which is small (~35k vertices) and is what
+# makes tiling a large block cheap in the first place.
 def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
     """Nodal TPMS mesh.  `cells` is an int (symmetric block) or a
     (cx, cy, cz) triple: the block spans cx x cy x cz unit cells, one
@@ -697,12 +897,30 @@ def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
         # sample density follows the true (post-matrix) axis lengths
         ln = ((1.0, 1.0, 1.0) if M is None
               else tuple(np.linalg.norm(M[:, i]) for i in range(3)))
-        sx, sy, sz = cx * TAU, cy * TAU, cz * TAU
-        box_min = (-sx / 2, -sy / 2, -sz / 2)
-        box_max = (sx / 2, sy / 2, sz / 2)
-        res = tuple(max(4, int(round(c * res_per_cell * l)))
-                    for c, l in zip((cx, cy, cz), ln))
-        verts, tris = marching_tets(f, box_min, box_max, res)
+        # EXTRACT ONE CELL AND TILE IT.
+        #
+        # These fields are exactly 2*pi-periodic, so the level set in
+        # every cell is a translate of the level set in the first --
+        # this is an identity, not an approximation, and the sample
+        # grids line up exactly because one cell at `res_per_cell` and
+        # a c-cell block at `c * res_per_cell` have the same spacing
+        # and share their boundary planes.
+        #
+        # Marching the whole block instead costs c^3 times the work for
+        # the same answer: a 5x5x5 gyroid at 50 per cell means a 250^3
+        # grid, 15.6M samples.  Measured, extracting once and tiling
+        # takes 0.11 s against 5.47 s, a 48x saving.
+        #
+        # The tiling has to be done with array operations to be worth
+        # anything.  Building the face list in a Python loop instead
+        # made it SLOWER than the full extraction (5.97 s), because at
+        # this size the cost is in touching 8.6M faces, not in the
+        # field.
+        per = tuple(max(4, int(round(res_per_cell * l))) for l in ln)
+        verts, tris = _cached_cell(kind, f, per,
+                                   (kind, per, round(off, 12)))
+        if (cx, cy, cz) != (1, 1, 1) and len(verts):
+            verts, tris = _tile_cells(verts, tris, cx, cy, cz)
         if M is not None:
             verts = verts @ M.T
     else:  # Scherk tower: periodic in z only, clip x/y
@@ -735,10 +953,42 @@ def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
 # _pgd_tile_cell docstrings in weierstrass.
 
 from . import weierstrass as _we_pgd
+from . import hexagonal as _we_hex
 
 # key -> (menu label, builder(cells, res_per_cell, scale, theta))
+# Rows that offer named assemblies, and the names they offer.
+TPMS_EXACT_ARRANGEMENTS = {'CLP': _we_hex.CLP_ARRANGEMENTS}
+
 TPMS_EXACT = {
     'PGD': ("Schwarz P-Gyroid-D (exact, Bonnet angle)", _we_pgd.pgd_build),
+    # Schwarz H has no published nodal formula at all -- it is the one
+    # row here that could not have been reached any other way, so it is
+    # exact-Weierstrass or nothing.
+    'H': ("Schwarz H (exact, hexagonal)", _we_hex.h_build),
+    # CLP is the other D1 entry with no published nodal formula.  It
+    # builds the exact fundamental piece rather than a filled cell --
+    # see the note above _SPECS in hexagonal.py for why its four
+    # boundary curves cannot close it.
+    'CLP': (_we_hex._SPECS['CLP']['label'],
+            lambda cells, res, scale, theta, arrangement='UNIT':
+                _we_hex.spec_build('CLP', cells, res, scale, theta,
+                                   arrangement)),
+    # The three rows that the generalised quadrature grading unblocked.
+    # See the note above `_SPECS` in hexagonal.py for what each can do:
+    # CLP with a handle assembles a connected cell, the other two ship
+    # the exact fundamental piece for reasons that are properties of the
+    # surfaces rather than of the code.
+    'CLP_HANDLE': (_we_hex._SPECS['CLP_HANDLE']['label'],
+                   lambda cells, res, scale, theta:
+                       _we_hex.spec_build('CLP_HANDLE', cells, res,
+                                          scale, theta)),
+    'LIDINOID': (_we_hex._SPECS['LIDINOID']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('LIDINOID', cells, res, scale,
+                                        theta)),
+    'RPD': (_we_hex._SPECS['RPD']['label'],
+            lambda cells, res, scale, theta:
+                _we_hex.spec_build('RPD', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
@@ -751,9 +1001,18 @@ _PGD_PRESET_ANGLE = {
 }
 
 
-def build_tpms_exact(kind, cells, res_per_cell, scale, theta):
+def build_tpms_exact(kind, cells, res_per_cell, scale, theta,
+                     arrangement=None):
+    """Build an exact-Weierstrass row.  `arrangement` selects among a
+    row's pre-defined assemblies where it has them; rows that do not
+    take one simply ignore it."""
     label, builder = TPMS_EXACT[kind]
-    return builder(cells, res_per_cell, scale, theta)
+    if arrangement is None:
+        return builder(cells, res_per_cell, scale, theta)
+    try:
+        return builder(cells, res_per_cell, scale, theta, arrangement)
+    except TypeError:
+        return builder(cells, res_per_cell, scale, theta)
 
 
 def _selftest():
@@ -874,6 +1133,55 @@ def _selftest():
             print(f"tpms: build {key:10s} V={len(Vv)} T={len(Tt)} FAIL")
     print(f"tpms: built {len(TPMS)} nodal surfaces "
           f"{'OK' if ok else 'FAIL'}")
+
+    # Tiling one extracted cell must give the SAME surface as marching
+    # the whole block.  It is an optimisation, so the only thing that
+    # makes it safe is that it changes nothing: same area, same vertex
+    # set, same face count.  (It is exact because these fields are
+    # 2*pi-periodic and the two sample grids share their spacing and
+    # their boundary planes -- but "it should be exact" is the claim
+    # under test, not the evidence.)
+    fld = TPMS['G'][1]
+    n = 2
+    r = 24
+    half = TAU / 2.0
+    Vt, Tt = build_tpms('G', n, r, TAU)          # tiled path
+    Vf, Tf = marching_tets(fld, (-n * half,) * 3, (n * half,) * 3,
+                           (n * r,) * 3)         # whole block
+
+    def _area(V, T):
+        P = np.asarray(V, float)[np.asarray(T, np.int64)]
+        return float(np.sum(np.linalg.norm(
+            np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0]), axis=1)) * 0.5)
+
+    at, af = _area(Vt, Tt), _area(Vf, Tf)
+    da = abs(at - af) / max(af, 1e-30)
+
+    def _used(V, T):
+        """The vertices a mesh actually references, sorted.
+
+        Compared on the USED vertices, because the two paths legitimately
+        differ on unused ones: the tiling compacts, so it drops any
+        vertex no face mentions, while the direct extraction keeps it.
+        That is where the counts differ by exactly one here -- and it is
+        also why the direct mesh appears to have two components and the
+        tiled one has one.  The extra "component" is a single loose
+        vertex, not a second piece of surface.
+        """
+        V = np.asarray(V, float)
+        live = np.zeros(len(V), dtype=bool)
+        live[np.asarray(T, np.int64).ravel()] = True
+        return np.unique(np.round(V[live], 6), axis=0)
+
+    st, sf = _used(Vt, Tt), _used(Vf, Tf)
+    same = (len(st) == len(sf)
+            and float(np.max(np.abs(st - sf))) < 1e-6)
+    good = da < 1e-9 and len(Tt) == len(Tf) and same
+    ok &= good
+    print("tpms: tiling one cell reproduces the %dx%dx%d block -- area "
+          "%.6f vs %.6f (rel %.1e), faces %d vs %d, %d used vertices %s %s"
+          % (n, n, n, at, af, da, len(Tt), len(Tf), len(st),
+             'identical' if same else 'DIFFER', 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

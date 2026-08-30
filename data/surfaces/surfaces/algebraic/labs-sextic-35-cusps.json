@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "labs-sextic-35-cusps",
+  "name": "Labs Sextic (35 cusps)",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "not-implemented",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Degree-6 surface with 35 cusps, built Rohn-style as P - Q^3 = 0: P a product of six symmetrically chosen planes, Q a quadric with parameters (s,t,u,v).  The family generically carries 30 cusps; the mirrored Singular script computes parameter values raising that to 35 and proves the count."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "cusp (A2)",
+        "count": 35,
+        "note": "CUSPS, not nodes: A2 singularities, per the Singular script's own statement ('35 cusps (i.e., A_2-singularities)') and its no-other-singularities proof."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built, and not buildable by this add-on: the 35-cusp member of the family has NON-REAL coefficients, so its real solution set is not a surface (at most a curve) and there is nothing to mesh.  The Singular script's elimination gives the paper's equation (3), 884736*s^6 - 8640*s^3 + 25 = 0, for the parameter s that enters the surface's own coefficients; it is a quadratic in s^3 of discriminant 8640^2 - 4*884736*25 = -13824000 < 0 and so has no real root.  Labs states the conclusion himself -- 'the coefficients of the surface S_35 are not real ... it is not possible to use the software surf to draw an image of this sextic' -- and extends it to the whole four-parameter family.  Terminal, not a missing transcription.  NOTE the scope: no member OF THIS FAMILY with 35 cusps is real; whether some other real sextic attains 35 cusps is open.",
+      "resume": "Nothing to resume for the 35-cusp surface itself.  The buildable substitute from the same paper is its Theorem 3 sextic -- the one its Figure 1 actually shows -- which carries 30 REAL cusps and 10 real nodes at s0 = 5**(1/3)/12, t0 = 4*s0, u = 0 (its nodes lie at infinity).  Source: O. Labs, 'A Sextic with 35 Cusps', arXiv:math/0502520, Theorem 3; and the mirrored Singular source sextic35cusps_all.sin in algsurf/book/data/."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "O. Labs, 'Algebraic Surface Homepage (announcing 'A Sextic with 35 Cusps')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch018_mainframe.md).",
+      "O. Labs, 'A Sextic with 35 Cusps', Singular proof script sextic35cusps_all.sin (local mirror: algsurf/book/data/), which computes the parameters and proves ('theorem 1') that the surface has exactly 35 cusps and no other singularities.  The script refers to an accompanying article for the family f_{s,t,u,v}."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "algsurf": "ch018_mainframe"
+  },
+  "named_after": "Labs, Sextic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

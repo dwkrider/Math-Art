@@ -1,0 +1,106 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "sphere-catenoid-enneper-end",
+  "name": "Sphere: catenoid + Enneper end",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "annulus 0.16 < |z| < 2.16667",
+    "gauss_map": "rho*(z - 1.0/z)",
+    "height_differential": "z - 1.0/z",
+    "parameters": [
+      {
+        "name": "rho",
+        "domain": "see the generator's p_from",
+        "default": 0.4,
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "total_curvature": {
+      "exact": "-8*pi",
+      "value": -25.132741228718345,
+      "source": "classical",
+      "note": "M. Weber (minsurf ch195): 'These are complete minimal surfaces of finite total curvature -8pi and were completely classified by Francisco Lopez.'  F. Lopez, Trans. Amer. Math. Soc. 334 (1992) 49-73."
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "catenoidal",
+        "count": 1
+      },
+      {
+        "type": "enneper",
+        "count": 1
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "M3_CATENN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row M3_CATENN) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "cross_checked": [
+      {
+        "source": "F. Lopez, Trans. Amer. Math. Soc. 334 (1992) 49-73 (minsurf ch195)",
+        "agrees": true,
+        "detail": "'Complete minimal surfaces of finite total curvature -8pi', one catenoidal + one Enneper end on a sphere."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch012_catenoid_enneper",
+    "msblog": "ch195_sphere_with_one_catenoid_and_one_enneper_end"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

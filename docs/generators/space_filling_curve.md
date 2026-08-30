@@ -4,7 +4,18 @@
 
 ## Overview
 
-This generator builds space-filling curves in 2D and 3D: the open **Hilbert** curve, the closed **Moore** curve, and the **Gilbert** generalized Hilbert curve that fills an arbitrary (not just power-of-two) rectangle or box. The curve visits every cell of a grid exactly once with unit steps, then can be rounded with Chaikin corner-cutting and emitted as a bevelled poly curve or plain wire.
+A single continuous path that threads through every cell of a grid exactly once — a space-filling curve — in 2D or 3D.
+
+Three families are offered: the open **Hilbert** curve, the closed **Moore** curve (a Hilbert curve joined end to end into one loop), and the **Gilbert** generalized Hilbert curve, which fills an arbitrary rectangle or box rather than only a power-of-two square. Any of them can be corner-rounded and emitted as a bevelled tube or a bare wire.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Space-Filling Curve*.
+2. **Pick the Curve.** Six choices pair a family with a dimension: **Hilbert 3D / 2D** (open path, fills a cube or square), **Moore 3D / 2D** (the closed-loop variant), and **Gilbert 3D / 2D** (Hilbert generalized to a box or rectangle of any size). Hilbert and Moore fill a $2^k$ grid; Gilbert fills a grid you size yourself.
+3. **Set the main shape knob.** For Hilbert and Moore that is **Order** — the recursion depth, giving $2^{k\cdot d}$ points ($8^k$ in 3D, $4^k$ in 2D). Higher order means a finer, denser fill; 3D order is capped at 5, and the operator warns if it had to clamp your value.
+4. **Gilbert sizing** (shown only for the Gilbert curves). Set **Cells W** and **Cells H**, plus **Cells D** for Gilbert 3D, to the grid you want filled. Even sizes keep every step a clean unit move; odd sizes force a few unavoidable diagonal hops (see below), so even sizes are recommended in 3D.
+5. **Round and thicken the output.** **Corner Rounding** applies 0–3 Chaikin corner-cutting passes to soften the right-angle turns. **Tube Radius** sets the bevel: $0$ leaves a bare wire (visible in the viewport but not to a solid render), any positive value gives a solid tube, and **Bevel Resolution** controls how round that tube is. **Size** scales the whole curve so its largest extent equals that value.
+6. **Read the report.** Each build reports its **point count**, and adds *closed* for the Moore curves — a quick confirmation of how many cells were threaded and whether the path came back to its start.
 
 ## Options
 
@@ -13,15 +24,15 @@ This generator builds space-filling curves in 2D and 3D: the open **Hilbert** cu
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Curve | Hilbert 3D | Hilbert 3D, Moore 3D, Hilbert 2D, Moore 2D, Gilbert 3D, Gilbert 2D. |
+| Curve | Hilbert 3D | Which space-filling curve and dimension to build. Hilbert 3D, Moore 3D, Hilbert 2D, Moore 2D, Gilbert 3D, Gilbert 2D. |
 | Cells W | 12 | Gilbert grid width Range 1-64. |
 | Cells H | 8 | Gilbert grid height Range 1-64. |
 | Cells D | 4 | Gilbert grid depth (even sizes recommended in 3D) Range 1-64. |
 | Order | 3 | Recursion depth; 3D point count is 8^order (3D capped at 5) Range 1-6. |
 | Tube Radius | 0.03 | Curve bevel depth (0 = wire only) Range 0-0.5. |
 | Corner Rounding | 1 | Chaikin corner-cutting passes Range 0-3. |
-| Bevel Resolution | 4 | Range 1-12. |
-| Size | 2 | Range 0.05-100. |
+| Bevel Resolution | 4 | Segments around the tube cross-section Range 1-12. |
+| Size | 2 | Overall extent of the curve Range 0.05-100. |
 
 <!-- /options -->
 
@@ -44,23 +55,25 @@ Renders of each selectable option:
 
 ## How it works
 
-A space-filling curve is a single path through every cell of a discrete grid, adjacent cells differing by one unit step. On a grid of side $2^k$ in $d$ dimensions the path has $2^{kd}$ points.
+**In plain terms.** Imagine you must visit every square on a chessboard, walking from each square to a neighbour sharing an edge, never stepping on a square twice, and ending up having covered them all. There are clever routes that do this and, crucially, do it *without long jumps across the board* — nearby squares in your walk are also nearby on the board. A **space-filling curve** is exactly such a route, drawn so that it keeps that "close on the path, close on the board" property no matter how fine you make the grid. That locality is why these curves are used far beyond decoration — to lay out image pixels, database keys or memory so that things stored near each other really are near each other. The Hilbert curve is the classic route; the Moore curve is the same idea bent into a closed loop; the Gilbert curve is the route generalized to boards that aren't square.
 
-**Hilbert curve.** The points come from Skilling's transpose algorithm, which maps a linear index $d \in \{0,\dots,2^{kd}-1\}$ to grid coordinates $X \in \mathbb{Z}^d$. The index bits are first scattered into the transposed coordinate words, then a Gray-code decode is applied,
+Formally, a space-filling curve is a single path through every cell of a discrete grid, adjacent cells differing by one unit step. On a grid of side $2^k$ in $d$ dimensions the path has $2^{kd}$ points — that exponential count is why a modest order already fills the space densely.
+
+**Hilbert curve.** The points come from Skilling's transpose algorithm, which maps a linear index $i \in \lbrace0,\dots,2^{kd}-1\rbrace$ directly to grid coordinates $X \in \mathbb{Z}^d$ without recursion — a closed-form address lookup rather than a subdivide-and-rotate walk. The index bits are first scattered into the transposed coordinate words, then a Gray-code decode is applied,
 
 $$X_i \mathrel{{\oplus}{=}} X_{i-1}, \qquad X_0 \mathrel{{\oplus}{=}} \lfloor X_{d-1}/2 \rfloor,$$
 
-and finally an "undo excess work" pass walks bit-planes $Q = 2, 4, \dots, 2^{k}$ exchanging/inverting coordinates so that consecutive indices land on grid-adjacent cells. The result is the classic Hilbert ordering, an **open** curve.
+and finally an "undo excess work" pass walks bit-planes $Q = 2, 4, \dots, 2^{k}$ exchanging/inverting coordinates so that consecutive indices land on grid-adjacent cells. Geometrically, the Gray-code step is what guarantees the *single-unit-step* property — consecutive Gray codes differ in exactly one bit — and the bit-plane pass is the reflect-and-rotate symmetry of the recursive Hilbert construction, re-expressed as bit operations so it can run without recursion. The result is the classic Hilbert ordering, an **open** curve whose two ends sit at opposite corners.
 
-**Moore curve.** The Moore curve is the **closed** variant: $2^d$ copies of an order-$(k{-}1)$ Hilbert block are placed in the orthants of a Gray-code ring around the cube. Each block is mapped by a signed axis permutation (base traversal axis $\alpha$ sent to that block's assigned axis $\tau$, and coordinates flipped per the block's entry-side vector $\sigma$) so that every block's exit cell is grid-adjacent to the next block's entry, and the final block closes back onto the first — a single closed loop filling the cube. Entry sides propagate as $\sigma_\tau \gets 1-\sigma_\tau$ (flip along the exit axis) and $\sigma_{\text{axis}} \gets$ crossing side toward the next orthant.
+**Moore curve.** The Moore curve is the **closed** variant: it takes $2^d$ copies of an order-$(k{-}1)$ Hilbert block and places one in each orthant (quadrant in 2D, octant in 3D) of the cube, threaded in a Gray-code ring so that consecutive blocks sit in face-adjacent orthants. Each block is mapped by a signed axis permutation — the base traversal axis $\alpha$ is sent to that block's assigned axis $\tau$, and coordinates are flipped per the block's entry-side vector $\sigma$ — chosen precisely so that every block's exit cell is grid-adjacent to the next block's entry, and the final block's exit closes back onto the very first block's entry. The result is one closed loop filling the cube: the same locality as Hilbert, but now with no loose ends, which is what makes it usable as a cyclic layout. The bookkeeping that keeps the seams aligned propagates the entry sides as $\sigma_\tau \gets 1-\sigma_\tau$ (flip along the exit axis) and $\sigma_{\text{axis}} \gets$ crossing side toward the next orthant.
 
-**Gilbert curve.** For arbitrary rectangle/box sizes the module ports Jakub Červený's `gilbert2d`/`gilbert3d`. The region is described by generator vectors ($\mathbf{a}$ = major extent, $\mathbf{b}$, $\mathbf{c}$) and recursively bisected: a $1$-thick slab is traversed linearly; otherwise the dominant extent is split — halved with a parity correction ($w_2$ odd and $w>2$ nudges the split by one cell) so that the two (or more) sub-blocks join with unit steps. For **even** sizes the whole path is unit-step; **odd** sizes make a few unavoidable diagonal hops, a documented property of the algorithm, while still covering every cell exactly once.
+**Gilbert curve.** Hilbert and Moore need a power-of-two grid because their symmetry halves the cube cleanly at every level. To fill a $12\times 8\times 4$ box, which has no such clean halving, the module ports Jakub Červený's `gilbert2d`/`gilbert3d`. The region is described by generator vectors ($\mathbf{a}$ = major extent, $\mathbf{b}$, $\mathbf{c}$) and recursively bisected: a $1$-thick slab has only one way through and is traversed linearly; otherwise the **dominant** extent is split — halved with a parity correction ($w_2$ odd and $w>2$ nudges the split by one cell) so that the two (or more) sub-blocks still join with unit steps at their shared boundary. The parity nudge is the whole trick: it keeps the join points on the same parity so the path never has to jump. For **even** sizes it succeeds everywhere and the whole path is unit-step; **odd** sizes leave a few boundaries where parity cannot be reconciled, forcing a handful of unavoidable diagonal hops — a documented property of the algorithm — while still covering every cell exactly once.
 
-**Rounding and placement.** Integer cells are centered on the origin and scaled so the largest extent equals *Size*. Optional **Chaikin** corner-cutting replaces each edge by the two points
+**Rounding and placement.** The path so far lives on integer grid coordinates; it is centered on the origin and scaled uniformly so the largest extent equals *Size*, so the object arrives centred no matter which corner the curve started in. The right-angle turns can then be softened by **Chaikin** corner-cutting, which replaces each edge's endpoints by the two interior points
 
 $$p' = \tfrac34 a + \tfrac14 b, \qquad p'' = \tfrac14 a + \tfrac34 b,$$
 
-per pass (endpoints preserved for open curves, wrapped for closed ones), giving rounded corners. The curve is a POLY spline, cyclic for Moore, with a round bevel of the requested radius.
+per pass — each corner is shaved back to the quarter and three-quarter points of its two adjoining edges, and repeating the pass drives the polyline toward a smooth quadratic B-spline. Endpoints are preserved for the open curves and wrapped for the closed ones, so a Moore loop stays a loop. The finished path is a POLY spline, cyclic for the Moore curves, given a round bevel of the requested radius so it renders as a tube rather than a mathematical wire.
 
 ## References
 

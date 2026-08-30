@@ -1,6 +1,6 @@
 # Math Art — Blender Extension
 
-A Blender **4.2+ / 5.x** extension bundling **125+ generators** for
+A Blender **4.2+ / 5.x** extension bundling **130+ generators** for
 mathematical sculpture: minimal surfaces, polyhedra (Platonic through
 Archimedean to four‑dimensional polytopes), knots and links, fractals,
 woven and tangled compounds, hyperbolic tilings, and much more. Each
@@ -21,7 +21,9 @@ underlying mathematics, and full references.
 
 ## Install
 
-1. Grab the latest **`dist/math_art-*.zip`** (or build it, below).
+1. Download the latest **`math_art-*.zip`** from the
+   **[Releases page](https://github.com/dwkrider/Math-Art/releases/latest)**
+   (or build it, below).
 2. In Blender: **Edit ▸ Preferences ▸ Get Extensions**, open the **⌄**
    menu (top‑right) ▸ **Install from Disk…**, and choose the zip — or
    simply drag the zip into the Blender window.

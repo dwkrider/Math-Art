@@ -4536,7 +4536,9 @@ if _IN_BLENDER:
                     "UV coordinates: the flat carpet is sampled through "
                     "the mesh's UV map (barycentric), relief along the "
                     "surface normal; clips to the UV islands")],
-            default='SQUARE')
+            default='SQUARE',
+            description="Arrangement of tiles or surface that carries the "
+                        "woven loops")
         sphere_scaffold: EnumProperty(
             name="Sphere Tiling", items=SPHERE_SCAFFOLD_ITEMS,
             default='GEODESIC',
@@ -4570,8 +4572,10 @@ if _IN_BLENDER:
             description="k-fold symmetry of each loop (rosette lobes; "
                         "4 suits the square lattice, 3 or 6 the "
                         "triangular)")
-        nx: IntProperty(name="Tiles X", default=3, min=1, max=12)
-        ny: IntProperty(name="Tiles Y", default=3, min=1, max=12)
+        nx: IntProperty(name="Tiles X", default=3, min=1, max=12,
+                        description="Number of tiles across in X")
+        ny: IntProperty(name="Tiles Y", default=3, min=1, max=12,
+                        description="Number of tiles across in Y")
         amplitude: FloatProperty(
             name="Rosette Amplitude", default=0.10, min=0.0, max=0.35,
             description="Lobe depth of the k-fold rosette; 0 = plain "
@@ -4597,7 +4601,8 @@ if _IN_BLENDER:
                     "The sampled rosette polyline as-is"),
                    ('SMOOTH', "Smooth",
                     "Catmull-Rom resampling of a coarser rosette")],
-            default='ANGULAR')
+            default='ANGULAR',
+            description="Keep the loops angular or smooth them with splines")
         smoothness: IntProperty(
             name="Smoothness", default=6, min=2, max=16,
             description="Spline subdivisions per control segment "
@@ -4613,7 +4618,8 @@ if _IN_BLENDER:
                     "interlace)"),
                    ('WOVEN', "Woven (3D)",
                     "Raise/dip each loop into a 3D woven surface")],
-            default='FLAT')
+            default='FLAT',
+            description="Flat 2D knotwork or a raised 3D woven surface")
         weave_height: FloatProperty(
             name="Weave Height", default=0.05, min=0.0, max=0.4,
             description="Z amplitude of the woven loops (woven only)")
@@ -4624,7 +4630,8 @@ if _IN_BLENDER:
                     "A distinct color per loop"),
                    ('CHECKER', "Over/Under",
                     "Two-tone by the over/under weave")],
-            default='LOOP')
+            default='LOOP',
+            description="How the loops are coloured")
         output: EnumProperty(
             name="Output",
             items=[('RIBBON', "Ribbon Mesh",
@@ -4638,7 +4645,8 @@ if _IN_BLENDER:
                     "tiles, inset by the ribbon width, coloured uniform "
                     "or with congruent tiles sharing a colour "
                     "(curvilinear lattice)")],
-            default='RIBBON')
+            default='RIBBON',
+            description="Geometry produced for the carpet")
         face_color: EnumProperty(
             name="Tile Color",
             items=[('UNIFORM', "Uniform", "All tiles one colour"),
@@ -4691,7 +4699,8 @@ if _IN_BLENDER:
             name="Backing Slab", default=False,
             description="Add a slab behind the carpet")
         base: FloatProperty(
-            name="Base Thickness", default=0.06, min=0.01, max=0.5)
+            name="Base Thickness", default=0.06, min=0.01, max=0.5,
+            description="Thickness of the backing slab")
         torus_major: FloatProperty(
             name="Torus Major R", default=1.0, min=0.2, max=5.0,
             description="Major radius of the torus (nx cells run the "

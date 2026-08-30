@@ -233,9 +233,13 @@ if _IN_BLENDER:
             items=[('BANDS', "Per Conical Band",
                     "A different color per conical band"),
                    ('NONE', "Single Material", "One plain material")],
-            default='BANDS')
-        smooth_shading: BoolProperty(name="Smooth Shading",
-                                     default=True)
+            default='BANDS',
+            description="Give each conical band its own color, or use "
+                        "one material for the whole roller")
+        smooth_shading: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Smooth-shade the curved surface while keeping "
+                        "the band folds crisp")
         sharp_edges: BoolProperty(
             name="Sharp Edges", default=True,
             description="Mark the solid's fold curves sharp (and "

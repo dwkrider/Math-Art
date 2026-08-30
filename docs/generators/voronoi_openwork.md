@@ -7,7 +7,16 @@
 
 ## Overview
 
-Voronoi Openwork is a **Styles operator applied to a selected existing object**, not a standalone add-mesh generator: with a mesh active, it perforates that mesh with organic Voronoi-cell holes, inspired by Primož Gabrijelčič's *voronoizer* but reworked as an in-Blender, boolean-free operator that runs on arbitrary surfaces — including open ones such as minimal surfaces and TPMS patches. The render image was produced by applying the operator to a base surface. Seeds are spread by farthest-point sampling in **graph-geodesic** distance (so holes never leak between nearby sheets of a minimal surface), each triangle is clipped at the smoothed iso-contour of the distance-to-cell-boundary field, and a live Solidify modifier supplies the thickness. The result is a new object; the mesh's own open boundary can be kept as a solid frame.
+Voronoi Openwork is a *style* — it reworks the object you already have rather than adding new geometry. It perforates a mesh with organic Voronoi-cell holes, inspired by Primož Gabrijelčič's *voronoizer* but rebuilt as an in-Blender, boolean-free operator that runs on arbitrary surfaces — including open ones such as minimal surfaces and TPMS patches.
+
+### Using it
+
+1. **Select the target first.** Click the mesh you want to perforate so it is the active object, be in *Object* mode, then choose *Add ▸ Mesh ▸ Math Art ▸ Styles ▸ Voronoi Openwork (Experimental)*. The style needs an active **mesh**; it reads the *evaluated* surface, so any modifiers already on it are taken into account.
+2. **Set the hole count — Holes.** The number of Voronoi cells, one hole per cell — the single biggest look decision. On a coarse mesh the operator may use fewer than requested (it caps holes at roughly one per eight vertices); the report tells you how many it actually used.
+3. **Set the Strut Width.** The width of the surviving web between holes, as a fraction of the mean cell radius. Small values give a lace of thin struts and big holes; large values leave narrow holes in a mostly-solid sheet.
+4. **Refine and thicken.** **Subdivisions** refines the surface before cutting, so the hole rims come out smooth rather than faceted. **Thickness** drives a live Solidify modifier that gives the openwork a wall depth (0 leaves it a raw single-sided surface).
+5. **Frame and finish.** **Keep Boundary Frame** (on by default) treats the mesh's own open edges as strut material, so an open surface keeps a solid frame around its rim instead of holes running off the edge. **Random Seed** reshuffles the seed placement for a different-but-equivalent pattern, and **Smooth Shading** sets the result smooth.
+6. **What it produces.** A **new** object named "&lt;source&gt; Openwork" — the original is left untouched — placed with the source's world transform and made active. The report gives the number of cells actually used and the vertex and face counts.
 
 ## Options
 
@@ -21,30 +30,32 @@ Voronoi Openwork is a **Styles operator applied to a selected existing object**,
 | Subdivisions | 2 | Refinement of the surface before clipping (smoother hole rims) Range 0-4. |
 | Thickness | 0.03 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
 | Keep Boundary Frame | On | Treat the mesh's own open boundary as strut material, keeping a solid frame around open surfaces |
-| Random Seed | 1 | -- |
-| Smooth Shading | On | -- |
+| Random Seed | 1 | Seed for the random seed placement (vary for a different hole layout) |
+| Smooth Shading | On | Smooth-shade the perforated surface |
 
 <!-- /options -->
 
 ## How it works
 
-The construction is boolean-free and geodesic throughout:
+**In plain terms.** Scatter a handful of points across the surface, and give each point the "territory" of every place closer to it than to any other point. That partition is a *Voronoi diagram* — the same pattern you see in cracked mud, a giraffe's coat, or the walls of soap foam. Now punch a hole in the middle of each territory, keeping only a thin web of material along the borders where territories meet; that web is the openwork. The one subtlety is *how distance is measured*: not straight-line through space, but by walking **along the surface**. That matters for a shape like a minimal surface, where two sheets can pass close together in space yet be far apart across the surface — measuring along the surface stops a hole on one sheet from leaking into the sheet behind it. Everything below is that idea done carefully, entirely without boolean cutting.
 
-**1. Triangulate and subdivide.** The evaluated source surface is copied into a bmesh, triangulated, and subdivided `Subdivisions` times (each pass followed by re-triangulation) to give smooth clipping later.
+The construction is boolean-free and geodesic throughout — every distance is a walk over the mesh's own edges.
 
-**2. Build the edge graph.** Every vertex becomes a node; every edge an undirected link weighted by its Euclidean length $w = \lVert \mathbf p_a - \mathbf p_b\rVert$.
+**1. Triangulate and subdivide.** The evaluated source surface is copied into a bmesh, triangulated, and subdivided **Subdivisions** times (each pass followed by re-triangulation). A denser triangle mesh makes the "walk along edges" distance below a closer stand-in for true surface distance, and lets the hole rims clip more smoothly.
 
-**3. Farthest-point seed sampling (graph-geodesic).** Starting from one random vertex, distances are found with **Dijkstra** over the edge graph. Repeatedly, the vertex currently farthest (in graph distance) from all chosen seeds is added, and the distance field is updated as $d(v) \leftarrow \min(d(v),\ d_{\text{new seed}}(v))$. Using graph-geodesic rather than straight-line distance is what keeps cells from leaking between two sheets of a minimal surface that are close in space but far along the surface.
+**2. Build the edge graph.** Every vertex becomes a node and every edge an undirected link weighted by its Euclidean length $w = \lVert \mathbf p_a - \mathbf p_b\rVert$. All the geometry from here on is graph distance on this weighted graph, which approximates geodesic (along-the-surface) distance.
 
-**4. Geodesic Voronoi labels.** A single multi-source Dijkstra from all seeds labels each vertex with its nearest seed, giving a geodesic Voronoi tessellation. Cell radius statistics come from this same distance field $d_{\text{seed}}$.
+**3. Farthest-point seed sampling (graph-geodesic).** The seeds are the centres of the future cells, and we want them evenly spread. Starting from one random vertex, distances to all others are found with **Dijkstra's** algorithm. Then, repeatedly, the vertex currently *farthest* (in graph distance) from every seed so far is added as the next seed, and the running distance field is updated by $d(v) \leftarrow \min\!\big(d(v),\ d_{\text{new seed}}(v)\big)$. Each new seed lands in the largest remaining gap, so the cells come out roughly equal in size. Using graph-geodesic rather than straight-line distance is exactly what keeps two nearby sheets from sharing seeds.
 
-**5. Distance to the cell boundary.** Cell boundaries are the edges whose two endpoints carry different seed labels; each such endpoint is given a head start of half the edge length as a Dijkstra source (starting "half an edge in"). If **Keep Boundary Frame** is on, vertices on the mesh's own open boundary (edges with a single incident face) are added as sources at distance 0, so the rim is treated as strut material. A multi-source Dijkstra then gives $d_b(v)$, the geodesic distance from every vertex to the nearest cell boundary.
+**4. Geodesic Voronoi labels.** A single multi-source Dijkstra launched from *all* seeds at once labels every vertex with its nearest seed — this is the Voronoi tessellation, measured along the surface. The same distance field $d_{\text{seed}}$ gives the mean cell radius used to scale the struts.
 
-**6. Strut field and iso-contour clip.** The strut half-width is a fraction of the mean cell radius,
+**5. Distance to the cell boundary.** The cell boundaries are the edges whose two endpoints carry *different* seed labels. Each such endpoint is seeded into a new Dijkstra with a head start of half the edge length, so the boundary is treated as passing through the edge midpoint rather than snapping to a vertex. If **Keep Boundary Frame** is on, the vertices on the mesh's own open boundary (edges with a single incident face) are also added as sources at distance $0$, which makes the rim behave like strut material. The resulting field $d_b(v)$ is every vertex's geodesic distance to the nearest boundary.
+
+**6. Strut field and iso-contour clip.** Struts are the band of material within a half-width of a boundary. The half-width is a fraction of the mean cell radius, and it defines a signed field that is negative on the strut side:
 
 $$h = \text{StrutWidth} \times \overline{d_{\text{seed}}}, \qquad g(v) = d_b(v) - h.$$
 
-Material is kept where $g < 0$ (within a strut half-width of a boundary). Because the graph metric is jagged, $g$ is relaxed with a few Laplacian passes ($g \leftarrow \tfrac12 g + \tfrac12 \bar g_{\text{nbr}}$) so hole rims come out smooth. Each triangle is then clipped at the interpolated zero-contour of $g$: fully-inside triangles are kept whole, fully-outside ones dropped, and crossing triangles are cut, inserting a new vertex on each straddling edge at the linear crossing $t = g_a/(g_a - g_b)$. This is the same field-clipping the project's stereographic shells use.
+Material is kept where $g < 0$. Because the graph metric is jagged at the triangle scale, $g$ is first relaxed with a few Laplacian passes ($g \leftarrow \tfrac12 g + \tfrac12 \bar g_{\text{nbr}}$) so the hole rims come out smooth instead of stair-stepped. Each triangle is then clipped against the zero-contour of $g$: triangles fully inside ($g<0$ at every corner) are kept whole, fully-outside ones dropped, and a triangle that straddles the contour is cut, inserting a new vertex on each crossing edge at the linear crossing point $t = g_a/(g_a - g_b)$. This is the same field-clipping the project's stereographic shells use, and it is what makes the operation boolean-free.
 
 **7. Thickness.** The clipped openwork surface becomes a new mesh; if **Thickness** > 0 a live Solidify modifier (centred offset) gives it a wall thickness. Smooth shading is set per the option, and the new object inherits the source's world transform.
 

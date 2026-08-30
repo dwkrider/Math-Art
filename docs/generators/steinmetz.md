@@ -1,14 +1,21 @@
 # Steinmetz Solid
 
+![Steinmetz Solid](../images/steinmetz.png)
+
 ## Overview
 
-Add a Steinmetz solid -- the intersection of two or three equal cylinders meeting at right angles.
+A **Steinmetz solid** is the intersection of two or three equal-radius circular cylinders whose axes meet at right angles.
 
-A **Steinmetz solid** is the intersection of equal-radius circular cylinders whose axes meet at right angles. Two cylinders give the **bicylinder** — a shape bounded by two cylindrical lune patches meeting along a pair of ellipse-like edges — and three give the **tricylinder**, a rounded cube with twelve curved edges.
+Two cylinders give the **bicylinder** — a shape bounded by two cylindrical lune patches meeting along a pair of ellipse-like edges — and three give the **tricylinder**, a rounded cube with twelve curved edges. Archimedes found the bicylinder's volume in *The Method*, one of the loveliest results in the subject: $16r^3/3$, exactly, with no $\pi$ in it at all — a volume bounded entirely by curved surfaces that is nonetheless rational in $r$. The bicylinder is also a **rolloid**: placed on an incline and nudged, it rolls in a straight line.
 
-Archimedes found the bicylinder's volume in *The Method*, and it is one of the loveliest results in the subject: $16r^3/3$, exactly, with no $\pi$ in it at all — a volume bounded entirely by curved surfaces that is nonetheless rational in $r$.
+### Using it
 
-The bicylinder is also a **rolloid**: placed on an incline and nudged, it rolls in a straight line.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Rollers ▸ Steinmetz Solid*.
+2. **Pick the Shape.** **Bicylinder (Steinmetz)** is the intersection of two perpendicular cylinders — the straight-line roller. **Tricylinder** adds a third, mutually perpendicular cylinder, giving the rounded cube with twelve curved edges.
+3. **Set the Radius**, the common radius shared by every cylinder — the one size knob (the solid is then built at that true radius, not normalized).
+4. **Set Segments** for the mesh resolution around each cylinder; higher values sharpen the curved edges.
+5. **Output.** The fold curves where the cylinders meet are creased automatically so smooth shading keeps those edges crisp while the barrel surfaces stay round.
+6. **Read the report.** Each build prints its vertex and face counts (`V=… F=…`) to the status bar.
 
 ## Options
 
@@ -16,8 +23,11 @@ The bicylinder is also a **rolloid**: placed on an incline and nudged, it rolls 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Shape | Bicylinder (Steinmetz) | Bicylinder (Steinmetz), Tricylinder. |
+| Shape | Bicylinder (Steinmetz) | Which set of cylinder axes to intersect. Bicylinder (Steinmetz), Tricylinder, Four Cube Diagonals, Six Cuboctahedral Axes, Six Icosahedral Axes, Ten Dodecahedral Axes, Twelve Truncated-Octahedral Axes, Equidomoid (Archimedes' Dome). |
+| Order | 5 | Number of coplanar cylinders, which is also the number of sides of the underlying prism (equidomoid only) Range 2-64. |
 | Radius | 1 | Common cylinder radius Range 0.05-100. |
+| Smooth Shading | On | Shade the cylinder patches smooth.  Turn it off to see the mesh faceting itself |
+| Crease Angle | 20 | Fold angle above which an edge counts as a ridge.  Ridges get shallower as cylinders are added -- a twelve-axis solid is nearly a sphere -- so a lower value is needed there than for a bicylinder Range 1-90. |
 | Sharp Edges | On | Mark the solid's fold curves sharp (and creased). Two cylinders meet along a pair of planar ellipse-like edges; three meet along twelve. The surface is smooth everywhere else, so shading straight across the fold rounds off the one feature that defines the shape |
 | Segments | 64 | Cylinder segments (mesh resolution) Range 8-512. |
 
@@ -31,14 +41,26 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/steinmetz__BICYLINDER.png" width="200"><br><sub>Bicylinder (Steinmetz)</sub></td>
 <td align="center"><img src="../images/variants/steinmetz__TRICYLINDER.png" width="200"><br><sub>Tricylinder</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__CUBE4.png" width="200"><br><sub>Four Cube Diagonals</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/steinmetz__CUBOCT6.png" width="200"><br><sub>Six Cuboctahedral Axes</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__ICOSA6.png" width="200"><br><sub>Six Icosahedral Axes</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__DODECA10.png" width="200"><br><sub>Ten Dodecahedral Axes</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/steinmetz__TRUNCOCT12.png" width="200"><br><sub>Twelve Truncated-Octahedral Axes</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__EQUIDOMOID.png" width="200"><br><sub>Equidomoid (Archimedes' Dome)</sub></td>
 </tr>
 </table>
 
 ## How it works
 
-**The solids.** With cylinders of radius $r$ along the coordinate axes, the bicylinder is $\{x^2+y^2\le r^2\}\cap\{x^2+z^2\le r^2\}$ and the tricylinder adds $\{y^2+z^2\le r^2\}$.
+**In plain terms.** Picture drilling two round holes of the same width straight through a block of wood, one left-to-right and one front-to-back, with the drills crossing at a perfect right angle. The chunk of solid that *both* drills would have to pass through — the region shared by the two cylinders — is the **bicylinder**. Add a third hole top-to-bottom and the common region shrinks to the **tricylinder**, a little barrel-cornered cube. What is surprising is that even though this shape is bounded by nothing but curved barrel surfaces, its volume comes out to a clean fraction of $r^3$ with no $\pi$ anywhere — and the reason turns out to be that if you slice it into thin parallel wafers the right way, every wafer is a perfect **square**, not a circle. Squares are easy to add up, and that is exactly the shortcut Archimedes found more than two thousand years ago.
 
-**Archimedes' volume, by slicing.** Cut the bicylinder by a plane $z=c$. Each cylinder contributes a strip, and their intersection is a **square** of half-width $\sqrt{r^2-c^2}$. So
+**The solids.** With cylinders of radius $r$ along the coordinate axes, the bicylinder is the set of points inside both perpendicular cylinders, $\lbrace x^2+y^2\le r^2\rbrace\cap\lbrace x^2+z^2\le r^2\rbrace$, and the tricylinder intersects a third, adding $\lbrace y^2+z^2\le r^2\rbrace$. Each inequality is "inside this cylinder", and taking them together keeps only the points common to all of them.
+
+**Archimedes' volume, by slicing.** The trick is to cut perpendicular to the one direction that appears in *both* cylinders' equations — here the $x$-axis. On the plane $x=c$ the first cylinder $x^2+y^2\le r^2$ becomes $y^2\le r^2-c^2$, a *slab* $|y|\le\sqrt{r^2-c^2}$, and the second $x^2+z^2\le r^2$ becomes the identical slab $|z|\le\sqrt{r^2-c^2}$ in the perpendicular direction. Their overlap is therefore a **square** of half-width $\sqrt{r^2-c^2}$, side $2\sqrt{r^2-c^2}$. Summing those square cross-sections along the axis gives
 
 $$V=\int_{-r}^{r}\Big(2\sqrt{r^2-c^2}\Big)^2 dc=4\int_{-r}^{r}(r^2-c^2)\,dc=\frac{16r^3}{3}.$$
 
@@ -57,7 +79,7 @@ Each intersection shaves the cube closer to the sphere without ever reaching it.
 
 **Why the bicylinder rolls straight.** Its surface consists of two cylindrical patches, and a cylinder rolling on its curved side travels in a straight line. The bicylinder alternates between the two patches as it turns, but both are cylinders of the same radius, so the contact geometry is the same throughout and the path stays straight — unlike the [oloid](oloid.md) or [sphericon](sphericon.md), whose rolling meanders precisely because their patches are not congruent cylinders.
 
-**Meshing.** Both solids are built from the exact surface patches rather than by Boolean intersection of tessellated cylinders, so the curved edges are clean curves rather than the ragged seam a mesh Boolean leaves where two nearly tangent surfaces meet.
+**Meshing.** The two solids are built by different routes. The **bicylinder** is generated directly as an exact watertight mesh of its two cylindrical patches: each patch is the surface of one cylinder clipped to the interior of the other, and because the two patch boundaries coincide exactly on the intersection edges $x=\pm y$, they weld into a single closed surface with clean curved edges rather than the ragged seam a mesh Boolean leaves where two nearly tangent surfaces meet. The **tricylinder** is instead built by an exact Boolean *intersection* of three full cylinders (Blender's `EXACT` solver), then cleaned up with a merge-by-distance and normal recalculation — three-way intersections do not decompose into a handful of tidy patches the way the bicylinder does, so the constructive-solid-geometry route is the practical one there.
 
 ## References
 

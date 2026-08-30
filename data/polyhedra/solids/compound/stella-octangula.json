@@ -1,0 +1,459 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "stella-octangula",
+  "name": "Stella Octangula (2 Tetrahedra)",
+  "alternate_names": [],
+  "families": [
+    "compound"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": null,
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": null,
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": null,
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "Oh",
+    "orbifold": "*432",
+    "coxeter": "[3,4]",
+    "hermann_mauguin": "m-3m",
+    "order": 48,
+    "rotation_group": "O",
+    "rotation_order": 24,
+    "chiral": false,
+    "transitivity": {
+      "vertex": true,
+      "edge": true,
+      "face": true
+    },
+    "orbits": {
+      "vertices": 1,
+      "edges": 1,
+      "faces": 1
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 8,
+      "edges": 12,
+      "faces": 8
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 8,
+        "regular": true
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 4,
+    "orientable": true,
+    "genus": null,
+    "density": null,
+    "convex": false,
+    "self_dual": false,
+    "dual": null,
+    "coincident_vertices": 0,
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": false,
+      "slug": "cube",
+      "counts": {
+        "vertices": 8,
+        "edges": 12,
+        "faces": 6
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "edge_length_1",
+    "edge_length": {
+      "value": 1.0000000000000007,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "edge_lengths_uniform": true,
+    "circumradius": {
+      "value": 0.6123724356957949,
+      "exact": "sqrt(6)/4",
+      "source": "pslq"
+    },
+    "midradius": {
+      "value": 0.353553390593274,
+      "exact": "sqrt(2)/4",
+      "source": "pslq"
+    },
+    "inradius": [
+      {
+        "face": "{3}",
+        "exact": "sqrt(6)/12",
+        "value": 0.20412414523193165
+      }
+    ],
+    "surface_area": null,
+    "volume": null,
+    "isoperimetric_quotient": null,
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos(1/3)",
+        "degrees": 70.52877936550931,
+        "radians": 1.2309594173407745
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 179.99999999999997,
+        "radians": 3.1415926535897927,
+        "exact": "acos(-1)",
+        "source": "pslq"
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 0.5512855984325309
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": true,
+      "circumradius": 0.6123724356957949,
+      "inradius": 0.20412414523193165,
+      "ratio": 0.33333333333333337,
+      "has_biscribed_form": true,
+      "biscribed_form": null
+    },
+    "measures_note": "Area and volume are omitted: the faces self-intersect, so both depend on a convention (net area vs. density-weighted vs. outer solid region). Record them only alongside an explicit convention field."
+  },
+  "geometry": {
+    "length_unit": "edge",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the compound construction, centred at the centroid",
+    "constants": {
+      "C0": {
+        "exact": "sqrt(2)/4",
+        "value": 0.353553390593274,
+        "source": "pslq"
+      }
+    },
+    "vertices": [
+      [
+        0.353553390593274,
+        0.353553390593274,
+        0.353553390593274
+      ],
+      [
+        0.353553390593274,
+        -0.353553390593274,
+        -0.353553390593274
+      ],
+      [
+        -0.353553390593274,
+        0.353553390593274,
+        -0.353553390593274
+      ],
+      [
+        -0.353553390593274,
+        -0.353553390593274,
+        0.353553390593274
+      ],
+      [
+        0.353553390593274,
+        0.353553390593274,
+        -0.353553390593274
+      ],
+      [
+        0.353553390593274,
+        -0.353553390593274,
+        0.353553390593274
+      ],
+      [
+        -0.353553390593274,
+        -0.353553390593274,
+        -0.353553390593274
+      ],
+      [
+        -0.353553390593274,
+        0.353553390593274,
+        0.353553390593274
+      ]
+    ],
+    "vertices_exact": [
+      [
+        "C0",
+        "C0",
+        "C0"
+      ],
+      [
+        "C0",
+        "-C0",
+        "-C0"
+      ],
+      [
+        "-C0",
+        "C0",
+        "-C0"
+      ],
+      [
+        "-C0",
+        "-C0",
+        "C0"
+      ],
+      [
+        "C0",
+        "C0",
+        "-C0"
+      ],
+      [
+        "C0",
+        "-C0",
+        "C0"
+      ],
+      [
+        "-C0",
+        "-C0",
+        "-C0"
+      ],
+      [
+        "-C0",
+        "C0",
+        "C0"
+      ]
+    ],
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 3,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 60.00000000000001,
+            "radians": 1.0471975511965979,
+            "count": 3,
+            "exact": "acos(1/2)",
+            "source": "pslq"
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        1,
+        2,
+        0
+      ],
+      [
+        3,
+        1,
+        0
+      ],
+      [
+        2,
+        3,
+        0
+      ],
+      [
+        3,
+        2,
+        1
+      ],
+      [
+        5,
+        6,
+        4
+      ],
+      [
+        7,
+        5,
+        4
+      ],
+      [
+        6,
+        7,
+        4
+      ],
+      [
+        7,
+        6,
+        5
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "antipodal": [
+      [
+        0,
+        7
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        3,
+        5
+      ]
+    ]
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    ]
+  },
+  "compound": {
+    "component_count": 2,
+    "components": [
+      {
+        "slug": "tetrahedron",
+        "counts": {
+          "vertices": 4,
+          "edges": 6,
+          "faces": 4
+        },
+        "faces": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "slug": "tetrahedron",
+        "counts": {
+          "vertices": 4,
+          "edges": 6,
+          "faces": 4
+        },
+        "faces": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "components_congruent": true,
+    "enumeration": [
+      {
+        "catalogue": "coxeter-regular",
+        "index": null,
+        "via": null,
+        "complete_for": "the five regular compounds"
+      }
+    ],
+    "parameters": null,
+    "discovered_by": "Johannes Kepler",
+    "first_published": "1619",
+    "axis_alignment": {
+      "component_axis_order": 3,
+      "compound_axis_order": 3,
+      "component_group": "Td",
+      "compound_group": "Oh",
+      "harman_style": "3t/3c",
+      "note": "Derived from the geometry, not transcribed from Hart; not verified against his own labelling."
+    }
+  },
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.compound_generator",
+    "operator_id": "mesh.polyhedron_compound_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: orbit of the component solid under the compound's rotation group, via math_art.polyhedra.compounds",
+    "sources": [
+      "J. Skilling, 'Uniform compounds of uniform polyhedra', Math. Proc. Camb. Phil. Soc. 79 (1976), 447-457 (complete for uniform compounds).",
+      "H. S. M. Coxeter, 'Regular Polytopes', 3rd ed. (1973) (the five regular compounds).",
+      "G. W. Hart, 'Virtual Polyhedra' (Harman's compounds, otherwise unpublished)."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

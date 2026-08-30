@@ -1,0 +1,1202 @@
+# Saddle Polyhedron -- Pearce's Table 8.1, as buildable geometry.
+#
+# A saddle polyhedron is bounded not by flat faces but by SADDLE
+# POLYGONS: skew circuits spanned by minimal surfaces.  Peter Pearce
+# catalogued 53 of them in "Structure in Nature is a Strategy for
+# Design", every one a closed circuit-graph in a single net -- the
+# Universal Node, whose branches run in just 26 directions of a cubic
+# lattice (6 of <100>, 12 of <110>, 8 of <111>).  Because the net is so
+# constrained, each solid's row in Table 8.1 -- node valences, branch
+# counts by direction class, face count, face types, included angles,
+# face-plane directions, symmetry axes -- is a complete CHECKSUM on the
+# geometry.
+#
+# WHERE THE GEOMETRY COMES FROM.  Pearce prints no coordinates.  So the
+# solids are not transcribed, they are FOUND: `pearce_net` searches the
+# net for closed complexes and `pearce_data` keeps only those matching
+# a row on every column it can check.  The table is the acceptance
+# test, not the source.  Coverage is therefore partial and honest --
+# rows with no verified geometry are listed in `pearce_data.UNRESOLVED`
+# and simply are not offered, because a guess with the right face count
+# would be worse than a shorter list.
+#
+# THE ANGLE THEOREM this all rests on: over all 325 pairs of the 26
+# branch directions there are exactly 12 distinct angles, and every
+# included angle Pearce prints is one of them.  Verified in
+# `pearce_net._selftest`, not assumed.  (Two of the twelve, 125d16' and
+# 135d, never occur as a face corner in the 53 solids; the table's lone
+# "69d" is a misprint for 60d, since 69d is not a branch-pair angle at
+# all and 2-fold symmetry forces that face's opposite angles equal.)
+#
+# FACE STYLES.  MINIMAL relaxes each face to the soap film Pearce
+# defines it as.  RULED keeps the straight-line disk grid -- the ruled
+# saddle his plastic panels approximate.  SPIDRON fills each face with
+# a spidron nest instead, after van Ballegooijen, Gailiunas and
+# Erdely's "Spidronised Space-fillers"; see the honest limitation
+# below.  NET draws the branch graph alone.
+#
+# THE SPIDRON LIMITATION, STATED PLAINLY.  A true spidron nest -- the
+# foldable kind, all triangles congruent -- exists only on an
+# equilateral, equiangular skew polygon.  That is an exact test, not a
+# judgement call, and the operator applies it per face: uniform edge
+# lengths and one included angle throughout.  Faces that pass get a
+# true nest.  Faces that fail get the general similarity
+# spidronisation, which is drawable and is what the Bridges paper does
+# for irregular polygons, but its annulus triangles are NOT congruent:
+# decoration, not a spidron in the strict sense.  The operator reports
+# the split so the distinction is never silent.
+#
+# References:
+# - Peter Pearce, "Structure in Nature is a Strategy for Design", The
+#   MIT Press, 1978 (paperback 1990), ch. 8 -- the Universal Node
+#   system, saddle polygons spanned by minimal surfaces, and Table
+#   8.1's inventory of 53 saddle polyhedra.
+# - Walt van Ballegooijen, Paul Gailiunas & Daniel Erdely,
+#   "Spidronised Space-fillers", Bridges 2009 Conference Proceedings,
+#   pp. 271-278 -- spidron nests on saddle-polyhedron faces and the
+#   rule that clockwise must meet counter-clockwise across a shared
+#   face.
+# - Daniel Erdely, "Some Surprising New Properties of the Spidrons",
+#   Bridges 2005 Conference Proceedings, pp. 179-186 -- the spidron
+#   nest the face decoration generalises.
+# - Ulrich Pinkall & Konrad Polthier, "Computing Discrete Minimal
+#   Surfaces and Their Conjugates", Experimental Mathematics 2(1),
+#   1993, pp. 15-36 -- the cotangent-Laplacian area minimisation used
+#   for the saddle faces.
+
+bl_info = {
+    "name": "Saddle Polyhedron",
+    "author": "Math Art project",
+    "version": (1, 0, 0),
+    "blender": (4, 2, 0),
+    "location": "View3D > Add > Math Art > Polyhedra",
+    "description": "Pearce's saddle polyhedra: skew circuits of the "
+                   "Universal Node net spanned by minimal surfaces, "
+                   "optionally filled with spidron nests",
+    "category": "Add Mesh",
+}
+
+from math import radians
+
+import numpy as np
+
+try:
+    from . import pearce_net as pnet
+    from . import pearce_data as pdata
+    from . import pearce_surface as psurf
+    from . import pearce_tiling as ptile
+    from . import spidron_math as sm
+    from .patterns import common as pc
+    from . import sharp_creases as _sc
+except Exception:                       # legacy single-file / CLI use
+    import pearce_net as pnet
+    import pearce_data as pdata
+    import pearce_surface as psurf
+    import pearce_tiling as ptile
+    import spidron_math as sm
+    from patterns import common as pc
+    import sharp_creases as _sc
+
+
+# --------------------------------------------------------------------
+# Decatrihedron twist limits, migrated from the space-filler
+# --------------------------------------------------------------------
+#
+# Measured intersection-free twist bounds for the spidron nests on the
+# decatrihedron (Table 8.1 entry 1), against ring scale.  Kept because
+# the result they encode was hard won and is easy to get wrong: THE
+# SAFE REGION IS NOT SYMMETRIC IN THE SIGN OF THE TWIST for a single
+# polyhedron, and it cannot be, because the bare cell is CHIRAL.
+# Winding +t and -t about the outward normals of a chiral cell are not
+# mirror-equivalent operations.  At ring scale 0.60 one form is clean
+# from -38.9 to +14.5 degrees; the other form is that interval negated.
+# A packing contains both forms, so its safe interval is the symmetric
+# minimum of the two -- the second table.
+#
+# An earlier revision of the space-filler claimed the region was
+# symmetric.  That was an artefact of only ever sweeping the two-cell
+# repeat unit, where the intersection of the two mirror-related
+# intervals is symmetric by construction; a single cell shows the
+# asymmetry directly, as a folded-over spike on one sign only.
+
+#: (ring scale, negative bound, positive bound) in degrees, form 0
+TWIST_LIMITS = (
+    (0.35, 60.00, 52.73), (0.40, 60.00, 36.91), (0.45, 60.00, 28.24),
+    (0.50, 60.00, 22.27), (0.55, 56.60, 17.81), (0.60, 38.91, 14.53),
+    (0.65, 27.30, 12.07), (0.70, 20.27, 9.84), (0.75, 15.00, 7.85),
+    (0.80, 10.90, 5.98), (0.85, 7.50, 4.34), (0.90, 4.57, 2.70),
+    (0.95, 2.11, 1.29), (0.97, 1.17, 0.70),
+)
+
+#: (ring scale, symmetric bound) in degrees, for a packing of both forms
+TWIST_LIMITS_PACKED = (
+    (0.35, 52.73), (0.40, 36.91), (0.45, 28.24), (0.50, 22.27),
+    (0.55, 17.81), (0.60, 14.18), (0.65, 11.37), (0.70, 8.91),
+    (0.75, 6.91), (0.80, 5.04), (0.85, 3.52), (0.90, 2.23),
+    (0.95, 1.05), (0.97, 0.59),
+)
+
+#: the entry the limits were measured on; they do NOT generalise
+TWIST_LIMIT_SOLID = 'DECATRIHEDRON'
+
+
+def _interp(table, scale):
+    s = min(max(float(scale), table[0][0]), table[-1][0])
+    for i in range(len(table) - 1):
+        r0, r1 = table[i], table[i + 1]
+        if s <= r1[0]:
+            f = (s - r0[0]) / (r1[0] - r0[0])
+            return tuple(a + f * (b - a) for a, b in zip(r0[1:], r1[1:]))
+    return tuple(table[-1][1:])
+
+
+def twist_limits(scale, form=0):
+    """Intersection-free twist interval of ONE cell, in radians.
+
+    Returns (neg, pos) magnitudes; form 1 is the mirror-wound cell, so
+    its interval is the other one's negated."""
+    neg, pos = _interp(TWIST_LIMITS, scale)
+    if form:
+        neg, pos = pos, neg
+    return radians(neg), radians(pos)
+
+
+def twist_limit_packed(scale):
+    """Symmetric bound for a packing, which contains both forms."""
+    return radians(_interp(TWIST_LIMITS_PACKED, scale)[0])
+
+
+def clamp_twist(key, twist, scale, packed):
+    """Clamp to the measured safe interval where one exists.
+
+    Only entry 1 has measured data, so every other solid is returned
+    untouched rather than clamped to a bound that was never measured
+    for it."""
+    if key != TWIST_LIMIT_SOLID:
+        return twist, False
+    if packed:
+        lim = twist_limit_packed(scale)
+        out = max(-lim, min(lim, twist))
+    else:
+        neg, pos = twist_limits(scale)
+        out = max(-neg, min(pos, twist))
+    return out, abs(out - twist) > 1e-12
+
+
+FAMILY_LABELS = {
+    'TRIHEDRA': "Three faces",
+    'TETRAHEDRA': "Four faces",
+    'PENTAHEDRA': "Five faces",
+    'HEXAHEDRA': "Six faces",
+    'OCTAHEDRA': "Eight faces",
+    'DECAHEDRA': "Ten faces",
+    'DODECAHEDRA': "Twelve faces",
+    'LARGER': "More faces",
+}
+
+
+# --------------------------------------------------------------------
+# 1.  Face fills
+# --------------------------------------------------------------------
+
+def true_nest_faces(solid):
+    """Which faces admit a TRUE (congruent-triangle) spidron nest.
+
+    Exact test, applied per face: one edge length and one included
+    angle throughout.  No per-solid judgement calls."""
+    V = pdata.points(solid)
+    return [pnet.is_equilateral_equiangular([V[i] for i in f])
+            for f in solid['faces']]
+
+
+def spidron_faces(solid, rings, scale, twist, cap=True):
+    """Spidron nests on every face, with a true/generalised split.
+
+    `cap` closes the small polygon the annuli leave at each face's
+    centre.  A nest converges on its centre without ever reaching it, so
+    an uncapped nest leaves a hole in every face and the solid is not a
+    closed surface -- fine as a drawing, wrong as a polyhedron."""
+    V = pdata.points(solid)
+    flags = true_nest_faces(solid)
+    P = np.asarray(V, float)
+    centre = P.mean(axis=0)
+    verts, tris, face_id = [], [], []
+    for fi, cyc in enumerate(solid['faces']):
+        loop = np.asarray([V[i] for i in cyc], float)
+        nz = pnet.newell_normal([V[i] for i in cyc])
+        mid = loop.mean(axis=0)
+        if float(nz @ (mid - centre)) < 0:
+            loop = loop[::-1]
+        pts, polys, _mats = sm.spidronise(loop, scale, twist, rings,
+                                          cap=cap)
+        base = len(verts)
+        verts.extend([tuple(p) for p in pts])
+        for t in polys:
+            if len(t) == 3:
+                tris.append(tuple(base + i for i in t))
+                face_id.append(fi)
+            else:
+                a, b, c, d = t
+                tris.append((base + a, base + b, base + c))
+                tris.append((base + a, base + c, base + d))
+                face_id.append(fi)
+                face_id.append(fi)
+    # Weld across faces.  Each face's nest is built with its own vertex
+    # list, so the vertices along a shared polyhedron edge are
+    # DUPLICATED and the faces never join -- capping the centres closes
+    # each nest's hole but leaves the solid open along every branch.
+    # The boundary points come from the same solid vertices, so they are
+    # geometrically identical and merging by position is exact.
+    V = np.asarray(verts, float)
+    key = {}
+    remap = np.empty(len(V), dtype=int)
+    out = []
+    for i, p in enumerate(V):
+        k = (round(float(p[0]), 6), round(float(p[1]), 6),
+             round(float(p[2]), 6))
+        j = key.get(k)
+        if j is None:
+            j = len(out)
+            key[k] = j
+            out.append(p)
+        remap[i] = j
+    # Filter triangles and their labels TOGETHER.  Welding can collapse
+    # a sliver to a degenerate triangle, and dropping those from `tris`
+    # while truncating `face_id` separately would misalign every label
+    # after the first removal -- colours and creases would silently
+    # belong to the wrong faces.
+    kept_t, kept_f = [], []
+    for t, f in zip(tris, face_id):
+        rt = tuple(int(remap[i]) for i in t)
+        if len(set(rt)) == 3:
+            kept_t.append(rt)
+            kept_f.append(f)
+    return np.asarray(out, float), kept_t, kept_f, flags
+
+
+# --------------------------------------------------------------------
+# 2.  Build
+# --------------------------------------------------------------------
+
+def build(key=None, face_style='MINIMAL', density=3, smoothness=25,
+          rings=5, scale=0.60, twist=0.0, layout='SINGLE',
+          nx=1, ny=1, nz=1, gap=1.0, colour_by='CELL', mirror=False,
+          cap=True):
+    """layout: SINGLE, UNIT (two cells sharing a face) or BLOCK."""
+    """Geometry for one saddle polyhedron, or a block of the packing.
+
+    Returns (verts, tris, face_id, info)."""
+    solid = pdata.by_key(key) if key else pdata.SOLIDS[0]
+
+    if layout in ('BLOCK', 'UNIT'):
+        return _build_block(solid, face_style, density, smoothness,
+                            rings, scale, twist, nx, ny, nz, gap,
+                            colour_by, mirror, unit=(layout == 'UNIT'),
+                            cap=cap)
+
+    # CARTESIAN, always.  A hexagonal solid's vertices are integer
+    # twenty-fourths of its own cell; read as Cartesian they give a
+    # sheared solid that still meshes and still looks plausible, which
+    # is the worst kind of wrong.
+    V0, F0 = pdata.points(solid), solid['faces']
+
+    if face_style == 'SPIDRON':
+        V, T, fid, flags = spidron_faces(solid, rings, scale, twist, cap)
+        info = dict(true_nests=sum(1 for x in flags if x),
+                    generalised=sum(1 for x in flags if not x),
+                    faces=len(F0))
+    elif face_style == 'NET':
+        V, T, fid = _net_mesh(V0, F0)
+        info = dict(true_nests=0, generalised=0, faces=len(F0))
+    else:
+        relax = (face_style == 'MINIMAL')
+        V, T, fid = psurf.solid_surface(
+            V0, F0, density=density,
+            iters=smoothness if relax else 0, relax=relax)
+        flags = true_nest_faces(solid)
+        info = dict(true_nests=sum(1 for x in flags if x),
+                    generalised=0, faces=len(F0))
+
+    V = psurf.fit_unit(V)
+    info['solid'] = solid
+    info['aspect'] = psurf.aspect(V)
+    return V, T, fid, info
+
+
+def _face_pair(copies, faces):
+    """Two cells of a packing that share a face, or None."""
+    keys = [[tuple(sorted(tuple(pts[i]) for i in cyc)) for cyc in faces]
+            for pts in copies]
+    owner = {}
+    for ci, ks in enumerate(keys):
+        for k in ks:
+            owner.setdefault(k, []).append(ci)
+    for k, v in sorted(owner.items()):
+        if len(v) == 2:
+            return [copies[v[0]], copies[v[1]]]
+    return None
+
+
+def form_colours(copies, faces):
+    """Two-colour the packing by face adjacency.
+
+    Pearce's decatrihedron space-filling needs two spidron-wound forms,
+    because any two coincident faces must read clockwise from one cell
+    and counter-clockwise from the other.  Cell adjacency is bipartite,
+    so a breadth-first 2-colouring gives exactly that alternation -- and
+    it generalises off the triamond net, which the old space-filler's
+    hard-coded translation classes did not."""
+    keys = [[tuple(sorted(tuple(pts[i]) for i in cyc)) for cyc in faces]
+            for pts in copies]
+    owner = {}
+    for ci, ks in enumerate(keys):
+        for k in ks:
+            owner.setdefault(k, []).append(ci)
+    colour = {}
+    for start in range(len(copies)):
+        if start in colour:
+            continue
+        colour[start] = 0
+        stack = [start]
+        while stack:
+            i = stack.pop()
+            for k in keys[i]:
+                for j in owner.get(k, ()):
+                    if j == i:
+                        continue
+                    if j not in colour:
+                        colour[j] = 1 - colour[i]
+                        stack.append(j)
+    return [colour.get(i, 0) for i in range(len(copies))]
+
+
+def _cell_geometry(V0, F0, face_style, density, smoothness, rings,
+                   scale, twist, cap=True):
+    """One cell's mesh, in its own coordinates (no fitting)."""
+    if face_style == 'SPIDRON':
+        cell = dict(verts=V0, faces=F0)
+        V, T, fid, flags = spidron_faces(cell, rings, scale, twist, cap)
+        return V, T, fid, flags
+    if face_style == 'NET':
+        V, T, fid = _net_mesh(V0, F0)
+        return V, T, fid, []
+    relax = (face_style == 'MINIMAL')
+    V, T, fid = psurf.solid_surface(
+        V0, F0, density=density,
+        iters=smoothness if relax else 0, relax=relax)
+    return V, T, fid, pnet_flags(V0, F0)
+
+
+def pnet_flags(V0, F0):
+    return [pnet.is_equilateral_equiangular([V0[i] for i in f])
+            for f in F0]
+
+
+def _build_block(solid, face_style, density, smoothness, rings, scale,
+                 twist, nx, ny, nz, gap, colour_by='CELL', mirror=False,
+                 unit=False, cap=True):
+    """A block of the space filling: every cell of the packing.
+
+    The packing is verified, not assumed -- `pearce_tiling.pack`
+    reports whether the cells' volume actually accounts for the block,
+    and the operator passes that on rather than presenting a partial
+    packing as a space filling."""
+    V0, F0 = pdata.points(solid), solid['faces']
+    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz,
+                             lattice=solid.get('lattice'))
+    if unit:
+        # The repeat unit: two cells sharing a face.  For the
+        # decatrihedron this is the Bridges paper's basic unit -- three
+        # faces cannot be split half clockwise and half
+        # counter-clockwise, so the smallest decorated piece that obeys
+        # the matching rule is a pair sharing one face, with four
+        # external faces.
+        copies = _face_pair(copies, F0) or copies[:1]
+        # the report must describe what was BUILT, not the packing the
+        # unit was taken from
+        rep = dict(rep, copies=len(copies), fills=False, unit=True)
+    forms = form_colours(copies, F0)
+
+    verts, tris, face_id, crease_id = [], [], [], []
+    nf = len(F0)
+    for ci, pts in enumerate(copies):
+        # The two forms wind their nests opposite ways: a rotation of
+        # +t about a face's OUTWARD normal is a rotation of -t about
+        # the inward one, so the two cells meeting at a shared face
+        # build the same surface -- Pearce's clockwise-meets-
+        # counter-clockwise rule, which is what makes the decorated
+        # packing close.
+        t = -twist if forms[ci] else twist
+        CV, CT, cfid, _flags = _cell_geometry(
+            pts, F0, face_style, density, smoothness, rings, scale, t,
+            cap=cap)
+        CV = np.asarray(CV, float)
+        if gap < 1.0:
+            c = CV.mean(axis=0)
+            CV = c + (CV - c) * gap
+        base = len(verts)
+        verts.extend([tuple(p) for p in CV])
+        for t, f in zip(CT, cfid):
+            tris.append(tuple(base + i for i in t))
+            # colour by cell, so the packing reads as separate solids
+            if colour_by == 'FORM':
+                face_id.append(forms[ci])
+            elif colour_by == 'FACE':
+                face_id.append(f)
+            elif colour_by == 'UNIFORM':
+                face_id.append(0)
+            else:                        # CELL
+                face_id.append(ci)
+            # crease by (cell, face): the outer edges of each polyhedron
+            # are where two of ITS saddle faces meet, and grouping by
+            # cell alone would leave those edges smoothed over -- the
+            # solids then read as blobs under smooth shading
+            crease_id.append(ci * nf + f)
+    V = np.asarray(verts, float)
+    if mirror:
+        V = V * np.array([-1.0, 1.0, 1.0])   # the enantiomorphic packing
+    V = psurf.fit_unit(V)
+    flags = pnet_flags(V0, F0)
+    info = dict(true_nests=sum(1 for x in flags if x) * len(copies),
+                generalised=sum(1 for x in flags if not x) * len(copies),
+                faces=len(F0) * len(copies), solid=solid,
+                aspect=psurf.aspect(V), packing=rep,
+                crease_id=crease_id)
+    return V, tris, face_id, info
+
+
+def build_cells(key=None, face_style='MINIMAL', density=3, smoothness=25,
+                rings=5, scale=0.60, twist=0.0, nx=1, ny=1, nz=1,
+                gap=1.0, cap=True, unit=False, mirror=False):
+    """The packing as SEPARATE cells, still in register with each other.
+
+    Returns (cells, info) where each cell is (verts, tris, face_id).
+    One transform is computed for the whole block and applied to every
+    cell, so the pieces stay assembled -- fitting each cell to the unit
+    cube individually would scale them differently and scatter the
+    packing.
+
+    This must build the SAME packing as `_build_block`, only cut into
+    separate meshes.  It previously did not, in two ways, and both were
+    visible on the decatrihedron with spidron faces: it ignored `unit`,
+    so "Repeat unit" plus "Separate objects" returned the whole block
+    instead of the two-cell pair; and it passed the same `twist` to
+    every cell, so every nest wound the same way and the cells could no
+    longer meet without overlapping.  See the winding note below."""
+    solid = pdata.by_key(key) if key else pdata.SOLIDS[0]
+    V0, F0 = pdata.points(solid), solid['faces']
+    copies, rep = ptile.pack(V0, F0, solid['net'], nx, ny, nz,
+                             lattice=solid.get('lattice'))
+    if unit:
+        copies = _face_pair(copies, F0) or copies[:1]
+        # the report must describe what was BUILT, not the packing the
+        # unit was taken from
+        rep = dict(rep, copies=len(copies), fills=False, unit=True)
+    forms = form_colours(copies, F0)
+
+    raw = []
+    for ci, pts in enumerate(copies):
+        # The two forms wind their nests opposite ways: a rotation of
+        # +t about a face's OUTWARD normal is a rotation of -t about
+        # the inward one, so the two cells meeting at a shared face
+        # build the SAME surface.  That is Pearce's clockwise-meets-
+        # counter-clockwise matching rule, and it is what lets the
+        # decorated cells interlock instead of overlapping -- so it has
+        # to be applied here exactly as `_build_block` applies it, not
+        # only on the merged path.
+        t = -twist if forms[ci] else twist
+        CV, CT, cfid, _flags = _cell_geometry(
+            pts, F0, face_style, density, smoothness, rings, scale, t,
+            cap=cap)
+        CV = np.asarray(CV, float)
+        if mirror:
+            # the enantiomorphic packing; mirror in the COMMON frame,
+            # before the shared fit below, so the cells stay assembled
+            CV = CV * np.array([-1.0, 1.0, 1.0])
+        if gap < 1.0:
+            c = CV.mean(axis=0)
+            CV = c + (CV - c) * gap
+        raw.append((CV, CT, cfid))
+
+    # one common fit for the whole block
+    allv = np.concatenate([c[0] for c in raw], axis=0) if raw else \
+        np.zeros((1, 3))
+    lo, hi = allv.min(axis=0), allv.max(axis=0)
+    centre = 0.5 * (lo + hi)
+    ext = float((hi - lo).max())
+    s = (2.0 / ext) if ext > 1e-12 else 1.0
+
+    cells = [((CV - centre) * s, CT, cfid) for CV, CT, cfid in raw]
+    flags = pnet_flags(V0, F0)
+    info = dict(solid=solid, packing=rep, faces=len(F0),
+                true_nests=sum(1 for x in flags if x),
+                generalised=sum(1 for x in flags if not x))
+    return cells, info
+
+
+def face_boundary_edges(tris, face_id):
+    """Edges where two DIFFERENT saddle faces meet -- the branches.
+
+    These are the creases: shading stays smooth across each saddle
+    patch and breaks along the net, which is what makes the solid read
+    as a polyhedron rather than a blob."""
+    owner = {}
+    for t, fi in zip(tris, face_id):
+        for k in range(3):
+            a, b = t[k], t[(k + 1) % 3]
+            e = (a, b) if a < b else (b, a)
+            owner.setdefault(e, set()).add(fi)
+    return [e for e, fs in owner.items() if len(fs) > 1]
+
+
+def _net_mesh(V0, F0, radius=0.06, sides=6):
+    """The branch graph as tubes -- Pearce's Universal Node model."""
+    P = np.asarray(V0, float)
+    verts, tris, fid = [], [], []
+    for (a, b) in pnet.edge_counts(F0):
+        A, B = P[a], P[b]
+        d = B - A
+        L = float(np.linalg.norm(d))
+        if L < 1e-12:
+            continue
+        d = d / L
+        up = np.array([0.0, 0.0, 1.0])
+        if abs(float(d @ up)) > 0.9:
+            up = np.array([1.0, 0.0, 0.0])
+        u = np.cross(d, up)
+        u = u / float(np.linalg.norm(u))
+        w = np.cross(d, u)
+        base = len(verts)
+        for k in range(sides):
+            th = 2.0 * np.pi * k / sides
+            off = radius * L * (np.cos(th) * u + np.sin(th) * w)
+            verts.append(tuple(A + off))
+            verts.append(tuple(B + off))
+        for k in range(sides):
+            a0 = base + 2 * k
+            a1 = base + 2 * ((k + 1) % sides)
+            tris.append((a0, a1, a1 + 1))
+            tris.append((a0, a1 + 1, a0 + 1))
+            fid.append(0)
+            fid.append(0)
+    return np.asarray(verts, float), tris, fid
+
+
+# --------------------------------------------------------------------
+# 3.  Operator
+# --------------------------------------------------------------------
+
+try:
+    import bpy
+    from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
+                           IntProperty)
+    _IN_BLENDER = True
+except Exception:
+    _IN_BLENDER = False
+
+
+if _IN_BLENDER:
+
+    import os as _os
+
+    _SOLID_ICON_DIR = _os.path.join(_os.path.dirname(__file__),
+                                    "icons", "solids")
+    _solid_previews = None
+    #: The enum items must be kept alive in a module global.  Blender
+    #: does not own the strings a dynamic enum callback returns, and
+    #: rebuilding them each call is the classic way to get garbled
+    #: labels or a crash.
+    _solid_items_cache = []
+
+    def _load_solid_icons():
+        """One preview per solid, for the gallery selector."""
+        global _solid_previews
+        if _solid_previews is not None:
+            return
+        try:
+            import bpy.utils.previews
+            _solid_previews = bpy.utils.previews.new()
+        except Exception:
+            _solid_previews = None
+            return
+        for solid in pdata.SOLIDS:
+            path = _os.path.join(_SOLID_ICON_DIR, "%s.png" % solid['key'])
+            if not _os.path.exists(path):
+                continue
+            try:
+                _solid_previews.load(solid['key'], path, 'IMAGE')
+            except Exception:
+                pass                 # a missing icon is non-fatal
+
+    def _cell_material(name, color):
+        """A shaded material for one cell.
+
+        `patterns.common` re-exports PALETTE_RGBA but not the material
+        helper (that one lives in patterns.emit), so this builds the
+        material directly.  use_nodes matters: without it every cell
+        renders flat grey, which this project has been bitten by twice.
+
+        Module level, not class level: a name defined in a class body
+        is not in scope inside its methods, so a bare call to it from
+        execute() raises NameError.
+        """
+        mat = bpy.data.materials.get(name)
+        if mat is None:
+            mat = bpy.data.materials.new(name)
+            mat.diffuse_color = color
+            mat.use_nodes = True
+            node = mat.node_tree.nodes.get("Principled BSDF")
+            if node:
+                node.inputs[0].default_value = color
+        return mat
+
+    def _layout_items(self, context):
+        """Only the layouts the chosen solid can actually produce.
+
+        Whether a solid packs is measured once at data-emit time and
+        stored on the record, because a packing search is far too slow
+        to run from an enum callback.  Offering a layout that cannot
+        work is worse than not offering it: entry 30's orbit fills 3.75
+        times the block -- cells interpenetrating -- and shown as
+        "space filling" it is just a tangle."""
+        items = [('SINGLE', "One solid", "A single saddle polyhedron")]
+        try:
+            s = pdata.by_key(self.solid)
+        except Exception:
+            s = None
+        if s is not None and s.get('has_unit'):
+            items.append(('UNIT', "Repeat unit",
+                          "Two cells sharing a face -- the smallest "
+                          "piece of the packing that obeys the winding "
+                          "rule"))
+        if s is not None and s.get('packs'):
+            items.append(('BLOCK', "Space filling",
+                          "Fill a block of unit cells with this solid's "
+                          "packing"))
+        return items
+
+
+    def _solid_items(self, context):
+        """Every verified solid, with a thumbnail.
+
+        One flat list rather than a group selector plus a list: thirty
+        entries with names like "Truncated tetragonal tetrahedron" and
+        "Tetragonal saddle hexahedron" are not tellable apart by name,
+        and grouping them by face count only hides half of them behind a
+        second control."""
+        _load_solid_icons()
+        out = []
+        for i, s in enumerate(pdata.SOLIDS):
+            icon = 0
+            if _solid_previews is not None and s['key'] in _solid_previews:
+                icon = _solid_previews[s['key']].icon_id
+            out.append((s['key'], "%d. %s" % (s['number'], s['name']),
+                        "Table 8.1 entry %d -- %s"
+                        % (s['number'], s['name']), icon, i))
+        _solid_items_cache[:] = out
+        return out or [('NONE', "None", "", 0, 0)]
+
+    class MESH_OT_saddle_polyhedron_add(bpy.types.Operator):
+        """Add one of Pearce's saddle polyhedra"""
+        bl_idname = "mesh.saddle_polyhedron_add"
+        bl_label = "Saddle Polyhedron"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        solid: EnumProperty(
+            name="Solid", items=_solid_items,
+            description="Which saddle polyhedron of Table 8.1 to build")
+        face_style: EnumProperty(
+            name="Faces",
+            items=[('MINIMAL', "Minimal surface",
+                    "Relax each face to the soap film spanning its "
+                    "skew circuit -- Pearce's own definition"),
+                   ('RULED', "Ruled",
+                    "Straight-line patch without relaxation, the ruled "
+                    "saddle a flat panel approximates"),
+                   ('SPIDRON', "Spidron nest",
+                    "Fill each face with a spidron nest. Only "
+                    "equilateral equiangular faces take a true nest of "
+                    "congruent triangles; the rest get a generalised "
+                    "nest, which is decoration rather than a spidron"),
+                   ('NET', "Branch network",
+                    "The Universal Node net alone, as rods")],
+            default='MINIMAL')
+        density: IntProperty(
+            name="Edge divisions", default=3, min=1, max=12,
+            description="Segments per branch; also the face mesh density")
+        smoothness: IntProperty(
+            name="Relax steps", default=25, min=0, max=200,
+            description="Area-minimisation iterations for minimal faces")
+        rings: IntProperty(
+            name="Nest rings", default=5, min=1, max=12,
+            description="Spidron annuli per face")
+        scale: FloatProperty(
+            name="Nest step", default=0.60, min=0.05, max=0.95,
+            description="Shrink factor between spidron annuli")
+        twist: FloatProperty(
+            name="Nest twist", default=radians(14.0), min=radians(-60.0),
+            max=radians(60.0), subtype='ANGLE',
+            description="Rotation between spidron annuli. The default "
+                        "sits just inside the measured intersection-free "
+                        "bound for a decatrihedron packing (14.18 "
+                        "degrees at ring scale 0.60)")
+        layout_kind: EnumProperty(
+            name="Layout", items=_layout_items,
+            description="What to build. Repeat unit and Space filling "
+                        "appear only for solids that actually have them")
+        nx: IntProperty(name="Cells across", default=1, min=1, max=6,
+                        description="Unit cells along X")
+        ny: IntProperty(name="Cells deep", default=1, min=1, max=6,
+                        description="Unit cells along Y")
+        nz: IntProperty(name="Cells high", default=1, min=1, max=6,
+                        description="Unit cells along Z")
+        colour_by: EnumProperty(
+            name="Colour",
+            items=[('CELL', "Cell", "One colour per polyhedron"),
+                   ('FORM', "Form",
+                    "By winding form: the two classes of cell whose "
+                    "nests wind opposite ways, so a shared face reads "
+                    "clockwise from one and counter-clockwise from the "
+                    "other"),
+                   ('FACE', "Face", "By face within each polyhedron"),
+                   ('UNIFORM', "Uniform", "A single colour")],
+            default='CELL')
+        mirror: BoolProperty(
+            name="Mirror", default=False,
+            description="Build the enantiomorphic packing; a chiral "
+                        "cell's space filling exists in two mirror forms")
+        limit_twist: BoolProperty(
+            name="Limit twist", default=True,
+            description="Clamp the nest twist to the measured "
+                        "intersection-free range. Measured for the "
+                        "decatrihedron only; other solids are left alone")
+        separate: BoolProperty(
+            name="Separate objects", default=False,
+            description="Emit each cell of the packing as its own "
+                        "object, grouped in a collection, instead of "
+                        "one merged mesh")
+        gap: FloatProperty(
+            name="Shrink", default=1.0, min=0.5, max=1.0,
+            description="Shrink each cell about its own centre so the "
+                        "packing reads as separate solids")
+        cap_center: BoolProperty(
+            name="Fill centres", default=True,
+            description="Close the small polygon each spidron nest "
+                        "leaves at the centre of a face. A nest spirals "
+                        "toward its centre without reaching it, so "
+                        "without this every face has a hole and the "
+                        "solid is not a closed surface")
+        crease_edges: BoolProperty(
+            name="Crease branches", default=True,
+            description="Mark the branch edges sharp and creased. ON "
+                        "keeps the corners crisp, and a Subdivision "
+                        "Surface modifier you add will hold them -- so "
+                        "cells of a packing keep meeting exactly. OFF "
+                        "lets such a modifier round the corners too, "
+                        "which suits a single smooth solid but stops "
+                        "neighbouring cells matching")
+        smooth: BoolProperty(
+            name="Smooth shading", default=True,
+            description="Shade smooth, with creases along the branches")
+
+        def draw(self, context):
+            # NB: the space-filling selector is `layout_kind`, never
+            # `layout` -- an operator property called `layout` shadows
+            # Operator.layout, so `self.layout` returns the enum STRING
+            # and every draw call raises, leaving the panel blank.
+            L = self.layout
+            # house convention: labels in the left column.  Without
+            # this an IntProperty draws as a slider with its name
+            # inside the widget, so the numeric fields sit out of line
+            # with the enums above them.
+            L.use_property_split = True
+            # a gallery, not a list: the solids are told apart by shape
+            L.template_icon_view(self, "solid", show_labels=True,
+                                 scale=6.0, scale_popup=6.0)
+            L.prop(self, "face_style")
+            L.prop(self, "layout_kind")
+            if self.layout_kind in ('BLOCK', 'UNIT'):
+                if self.layout_kind == 'BLOCK':
+                    r = L.row(align=True)
+                    r.prop(self, "nx")
+                    r.prop(self, "ny")
+                    r.prop(self, "nz")
+                L.prop(self, "gap")
+                L.prop(self, "colour_by")
+                L.prop(self, "mirror")
+                L.prop(self, "separate")
+            if self.face_style in ('MINIMAL', 'RULED'):
+                L.prop(self, "density")
+            if self.face_style == 'MINIMAL':
+                L.prop(self, "smoothness")
+            if self.face_style == 'SPIDRON':
+                L.prop(self, "rings")
+                L.prop(self, "scale")
+                L.prop(self, "twist")
+                L.prop(self, "cap_center")
+                L.prop(self, "limit_twist")
+            L.prop(self, "smooth")
+            if self.smooth:
+                L.prop(self, "crease_edges")
+
+        def _execute_separate(self, context, key):
+            """One object per cell, grouped in their own collection."""
+            try:
+                cells, info = build_cells(
+                    key=key, face_style=self.face_style,
+                    density=self.density, smoothness=self.smoothness,
+                    rings=self.rings, scale=self.scale, twist=self.twist,
+                    nx=self.nx, ny=self.ny, nz=self.nz, gap=self.gap,
+                    cap=self.cap_center,
+                    unit=(self.layout_kind == 'UNIT'),
+                    mirror=self.mirror)
+            except Exception as exc:
+                self.report({'ERROR'}, "Build failed: %s" % exc)
+                return {'CANCELLED'}
+            if not cells:
+                self.report({'ERROR'}, "no geometry generated")
+                return {'CANCELLED'}
+
+            solid = info['solid']
+            coll = bpy.data.collections.new("Saddle %s packing"
+                                            % solid['name'])
+            context.scene.collection.children.link(coll)
+
+            made = 0
+            pieces = []
+            for i, (CV, CT, cfid) in enumerate(cells):
+                me = bpy.data.meshes.new("Saddle %s cell %03d"
+                                         % (solid['name'], i + 1))
+                # give each cell its own origin at its centroid, so the
+                # pieces can be moved apart, and put that offset back on
+                # the object so the packing still reads as assembled
+                origin = np.asarray(CV, float).mean(axis=0)
+                local = [tuple(p) for p in (np.asarray(CV, float) - origin)]
+                me.from_pydata(local, [], [tuple(t) for t in CT])
+                cols = pc.PALETTE_RGBA
+                col = cols[i % len(cols)]
+                me.materials.append(_cell_material(
+                    "Saddle %s %d" % (solid['name'], i % len(cols)), col))
+                me.validate(clean_customdata=True)
+                # Recalculate normals, exactly as patterns.build_object
+                # does for the merged mesh.  Without this the cells are
+                # built inside-out: you see through each one into its
+                # interior and the packing reads as a scrambled mess,
+                # which is precisely how the first separate-objects
+                # build looked.
+                import bmesh
+                bm = bmesh.new()
+                bm.from_mesh(me)
+                bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+                bm.to_mesh(me)
+                bm.free()
+                me.update()
+                if self.smooth:
+                    me.polygons.foreach_set('use_smooth',
+                                            [True] * len(me.polygons))
+                me.update()
+                if self.smooth and self.face_style != 'NET':
+                    if self.crease_edges:
+                        _sc.mark_sharp(me, face_boundary_edges(CT, cfid))
+                obj = bpy.data.objects.new(me.name, me)
+                obj.location = tuple(float(x) for x in origin)
+                coll.objects.link(obj)
+                pieces.append(obj)
+                made += 1
+
+            # Parent the cells to an EMPTY root.  This is the house
+            # convention for a generator that lays its output out as
+            # separate objects, and the live rebuild depends on it:
+            # with no root it picks one cell as the anchor and moves
+            # every other cell by a delta transform relative to it, so
+            # a rebuild collapses the packing onto the origin.  The
+            # Empty gives the group a single unambiguous anchor.
+            root = bpy.data.objects.new(
+                "Saddle %s packing" % solid['name'], None)
+            root.empty_display_size = 0.2
+            coll.objects.link(root)
+            for obj in pieces:
+                obj.parent = root
+            for o in context.selected_objects:
+                o.select_set(False)
+            root.select_set(True)
+            context.view_layer.objects.active = root
+
+            rep = info['packing']
+            msg = ("Table 8.1 #%d %s: %d cells as separate objects, "
+                   "%.1f%% of the block"
+                   % (solid['number'], solid['name'], made,
+                      100.0 * rep['ratio']))
+            if not rep['fills']:
+                if rep.get('no_packing'):
+                    tail = (" -- not in the cubic net; fills space only "
+                            "in combination, so one cell is shown")
+                elif rep['copies'] <= 1:
+                    tail = (" -- no packing found for this solid in its "
+                            "net; showing one cell")
+                else:
+                    tail = " -- does NOT fill space alone"
+                self.report({'WARNING'}, msg + tail)
+                return {'FINISHED'}
+            self.report({'INFO'}, msg)
+            return {'FINISHED'}
+
+        def execute(self, context):
+            if not pdata.SOLIDS:
+                self.report({'ERROR'}, "No verified saddle polyhedra")
+                return {'CANCELLED'}
+            key = self.solid if self.solid != 'NONE' else None
+            lay = self.layout_kind
+            if lay in ('BLOCK', 'UNIT'):
+                sol = pdata.by_key(key) if key else pdata.SOLIDS[0]
+                if ((lay == 'BLOCK' and not sol.get('packs'))
+                        or (lay == 'UNIT' and not sol.get('has_unit'))):
+                    # switching solids can leave a layout selected that
+                    # the new one cannot do; build the single solid
+                    # rather than fail
+                    lay = 'SINGLE'
+            if lay in ('BLOCK', 'UNIT') and self.separate:
+                return self._execute_separate(context, key)
+            try:
+                tw, clamped = (clamp_twist(
+                    key or '', self.twist, self.scale,
+                    lay in ('BLOCK', 'UNIT'))
+                    if self.limit_twist else (self.twist, False))
+                V, T, fid, info = build(
+                    key=key, face_style=self.face_style,
+                    density=self.density, smoothness=self.smoothness,
+                    rings=self.rings, scale=self.scale, twist=tw,
+                    layout=lay, nx=self.nx, ny=self.ny,
+                    nz=self.nz, gap=self.gap,
+                    colour_by=self.colour_by, mirror=self.mirror,
+                    cap=self.cap_center)
+            except Exception as exc:
+                self.report({'ERROR'}, "Build failed: %s" % exc)
+                return {'CANCELLED'}
+
+            solid = info['solid']
+            obj = pc.build_object(
+                context, "Saddle %s" % solid['name'],
+                [tuple(p) for p in V], [tuple(t) for t in T], list(fid),
+                span=2.0, fit=True)
+            if obj is None:
+                self.report({'ERROR'}, "no geometry generated")
+                return {'CANCELLED'}
+
+            me = obj.data
+            ncrease = 0
+            if self.smooth:
+                me.polygons.foreach_set('use_smooth',
+                                        [True] * len(me.polygons))
+                me.update()
+                if self.face_style != 'NET':
+                    # crease along the branches: the edges where two
+                    # different saddle faces meet
+                    # crease on the per-FACE grouping, which in a
+                    # packing is not the same as the colour grouping
+                    ncrease = 0 if not self.crease_edges else _sc.mark_sharp(
+                        me, face_boundary_edges(
+                            T, info.get('crease_id') or fid))
+
+            msg = ("Table 8.1 #%d %s: %d faces"
+                   % (solid['number'], solid['name'], info['faces']))
+            if self.face_style == 'SPIDRON':
+                msg += (", %d true nests, %d generalised"
+                        % (info['true_nests'], info['generalised']))
+            if ncrease:
+                msg += ", %d branch creases" % ncrease
+            if self.face_style == 'SPIDRON' and clamped:
+                msg += " | twist clamped to the measured safe range"
+            rep = info.get('packing')
+            if rep is not None:
+                msg += (" | packing: %d cells, %.1f%% of the block"
+                        % (rep['copies'], 100.0 * rep['ratio']))
+                if not rep['fills']:
+                    # say so rather than pass a partial packing off as
+                    # a space filling -- many of Pearce's solids only
+                    # fill space in combination with a partner cell
+                    if rep.get('no_packing'):
+                        msg += (" -- this solid is not in the cubic net; "
+                                "it fills space only in combination with "
+                                "others, so one cell is shown")
+                    elif rep['copies'] <= 1:
+                        msg += (" -- no packing found for this solid in "
+                                "its net; showing one cell")
+                    else:
+                        msg += " -- does NOT fill space alone"
+                    self.report({'WARNING'}, msg)
+                    return {'FINISHED'}
+            self.report({'INFO'}, msg)
+            return {'FINISHED'}
+
+    _CLASSES = (MESH_OT_saddle_polyhedron_add,)
+
+    def register():
+        for c in _CLASSES:
+            bpy.utils.register_class(c)
+
+    def unregister():
+        global _solid_previews
+        if _solid_previews is not None:
+            try:
+                bpy.utils.previews.remove(_solid_previews)
+            except Exception:
+                pass
+            _solid_previews = None
+        for c in reversed(_CLASSES):
+            bpy.utils.unregister_class(c)
+
+else:
+    def register():
+        pass
+
+    def unregister():
+        pass
+
+
+def _selftest():
+    ok = True
+
+    def chk(name, cond, extra=""):
+        nonlocal ok
+        ok = ok and bool(cond)
+        print("  %-58s %s %s" % (name, "OK" if cond else "BAD", extra))
+
+    print("saddle_polyhedron: %d solids offered" % len(pdata.SOLIDS))
+    chk("at least one solid ships", bool(pdata.SOLIDS))
+
+    for s in pdata.SOLIDS:
+        tag = "#%d %s" % (s['number'], s['name'])
+        for style in ('MINIMAL', 'RULED', 'SPIDRON', 'NET'):
+            try:
+                V, T, fid, info = build(key=s['key'], face_style=style,
+                                        density=2, smoothness=6, rings=3)
+                good = len(V) > 0 and len(T) > 0
+            except Exception as exc:
+                good, V, T = False, [], []
+                chk("%s %s builds" % (tag, style), False, str(exc))
+                continue
+            chk("%s %s builds" % (tag, style), good,
+                "%d verts %d tris" % (len(V), len(T)))
+            if not good:
+                continue
+            chk("  fits the 2 m cube",
+                abs(max(psurf.mesh_extent(V)) - 2.0) < 1e-6)
+            if style != 'NET':
+                chk("  not collapsed", psurf.aspect(V) >= 0.2,
+                    "aspect %.3f" % psurf.aspect(V))
+        # the spidron honesty gate: the reported split must match the
+        # exact per-face test, not a per-solid assumption
+        flags = true_nest_faces(s)
+        _, _, _, info = build(key=s['key'], face_style='SPIDRON', rings=3)
+        chk("%s: nest split reported truthfully" % tag,
+            info['true_nests'] == sum(1 for x in flags if x)
+            and info['generalised'] == sum(1 for x in flags if not x),
+            "%d true / %d generalised of %d"
+            % (info['true_nests'], info['generalised'], len(s['faces'])))
+
+    # --- space filling ------------------------------------------
+    print("  space filling:")
+    for s in pdata.SOLIDS:
+        tag = "#%d %s" % (s['number'], s['name'])
+        try:
+            _V, _T, fid, info = build(key=s['key'], layout='BLOCK',
+                                      nx=1, ny=1, nz=1, density=2,
+                                      smoothness=4)
+            rep = info['packing']
+        except Exception as exc:
+            chk("%s packs" % tag, False, str(exc))
+            continue
+        chk("%s: packing built" % tag, rep['copies'] >= 1,
+            "%d cells, %.3f of the block, fills=%s"
+            % (rep['copies'], rep['ratio'], rep['fills']))
+        chk("  overlap reported truthfully",
+            rep['self_intersecting'] == (rep['overused_faces'] > 0),
+            "overused=%d" % rep['overused_faces'])
+        chk("  one colour group per cell",
+            len(set(fid)) == rep['copies'])
+        if rep['fills']:
+            # a block twice as wide must hold twice as many cells, or
+            # the packing is not periodic and the fill was a fluke
+            _V2, _T2, _f2, i2 = build(key=s['key'], layout='BLOCK',
+                                      nx=2, ny=1, nz=1, density=2,
+                                      smoothness=4)
+            chk("  doubling the block doubles the cells",
+                i2['packing']['copies'] == 2 * rep['copies']
+                and i2['packing']['fills'],
+                "%d -> %d" % (rep['copies'], i2['packing']['copies']))
+
+    # --- separate cells ------------------------------------------
+    print("  separate cells:")
+    for s in pdata.SOLIDS:
+        tag = "#%d %s" % (s['number'], s['name'])
+        cells, info = build_cells(key=s['key'], density=2, smoothness=4,
+                                  nx=1, ny=1, nz=1)
+        rep = info['packing']
+        chk("%s: one piece per cell" % tag,
+            len(cells) == rep['copies'], "%d" % len(cells))
+        if not cells:
+            continue
+        # the pieces must stay in register: their union has to be the
+        # same 2 m block the merged build produces, or the packing has
+        # been scattered by per-cell fitting
+        allv = np.concatenate([c[0] for c in cells], axis=0)
+        ext = allv.max(axis=0) - allv.min(axis=0)
+        chk("  union still fits the 2 m block",
+            abs(float(ext.max()) - 2.0) < 1e-6, "%.6f" % float(ext.max()))
+        chk("  cells are not individually rescaled",
+            all(float(np.asarray(c[0]).max(axis=0).max()
+                      - np.asarray(c[0]).min(axis=0).min()) <= 2.0 + 1e-6
+                for c in cells))
+        merged_v, merged_t, _f, _i = build(key=s['key'], layout='BLOCK',
+                                           nx=1, ny=1, nz=1, density=2,
+                                           smoothness=4)
+        chk("  same triangle count as the merged block",
+            sum(len(c[1]) for c in cells) == len(merged_t),
+            "%d vs %d" % (sum(len(c[1]) for c in cells), len(merged_t)))
+
+    # --- separate cells match the merged build EXACTLY ------------
+    # "Separate objects" must be the merged build cut into pieces, not
+    # a second, subtly different build.  Two things made it one: it
+    # ignored `unit`, so "Repeat unit" plus "Separate objects" returned
+    # the whole block; and it twisted every cell the same way, so the
+    # nests all wound alike and the cells could not interlock.
+    #
+    # Neither showed up above, because these checks ran on the DEFAULT
+    # minimal faces at zero twist -- where the winding is invisible,
+    # since -0 == +0.  So this exercises the case that broke: spidron
+    # faces, a non-zero twist, and the repeat unit.
+    print("  separate cells vs merged, spidron faces at non-zero twist:")
+
+    def _pointset(P):
+        P = np.asarray(P, float)
+        P = P - 0.5 * (P.min(axis=0) + P.max(axis=0))
+        span = float((P.max(axis=0) - P.min(axis=0)).max())
+        return set(map(tuple, np.round(P / max(span, 1e-12), 5)))
+
+    for s in pdata.SOLIDS:
+        if not s.get('has_unit'):
+            continue
+        tag = "#%d %s" % (s['number'], s['name'])
+        for tw in (0.0, 0.35):
+            V, _t, _f, _i = _build_block(
+                s, 'SPIDRON', 2, 4, 3, 0.60, tw, 1, 1, 1, 1.0,
+                colour_by='CELL', mirror=False, unit=True, cap=True)
+            cells, _info = build_cells(
+                key=s['key'], face_style='SPIDRON', density=2,
+                smoothness=4, rings=3, scale=0.60, twist=tw, unit=True)
+            chk("%s: repeat unit is two cells (twist %.2f)" % (tag, tw),
+                len(cells) == 2, "%d" % len(cells))
+            if not cells:
+                continue
+            merged = _pointset(V)
+            split = _pointset(np.concatenate(
+                [np.asarray(c[0], float) for c in cells], axis=0))
+            chk("  same point set as the merged unit (twist %.2f)" % tw,
+                merged == split,
+                "%d merged, %d split, %d common"
+                % (len(merged), len(split), len(merged & split)))
+
+    print("RESULT:", "OK" if ok else "BAD")
+    if not ok:
+        raise AssertionError("saddle_polyhedron self-test failed")

@@ -4,7 +4,16 @@
 
 ## Overview
 
-Curvature Color is a **Styles operator applied to a selected existing object**, not a standalone add-mesh generator: with a mesh active, it colors that mesh by discrete Gaussian curvature, after the curvature illustrations in Henry Segerman's *Visualizing Mathematics with 3D Printing* (fig. 4-4) — **red** where the surface is positively curved (sphere-like), **white** where it is flat, **blue** where it is negatively curved (saddle-like). The render image was produced by applying the operator to a base surface. The mesh geometry is never altered: the curvature is computed on a triangulated bmesh copy, written to a `Curvature` vertex-color attribute, and shown through a shared `Curvature Color` material. Apply modifiers first if you want the curvature of the modified surface.
+Curvature Color is a *style* — it recolours the object you already have rather than adding new geometry. It paints a mesh by its discrete Gaussian curvature, after the curvature illustrations in Henry Segerman's *Visualizing Mathematics with 3D Printing* (fig. 4-4): **red** where the surface is positively curved (sphere-like, dome-like), **white** where it is flat, **blue** where it is negatively curved (saddle-like).
+
+### Using it
+
+1. **Select the target first.** Click the mesh you want to colour so it is the active object, then choose *Add ▸ Mesh ▸ Math Art ▸ Styles ▸ Curvature Color*. The style needs an active **mesh**. It reads the object's *base* mesh data, so if the shape you see comes from modifiers, apply them first to colour the modified surface.
+2. **Choose how the scale is set — Normalize.** *Percentile* (the default) picks the value mapped to full red/blue automatically, from a percentile of the measured curvatures, so the colouring adapts to each model. *Manual* lets you fix that value yourself, which is what you want when comparing two models on one common scale.
+3. **Tune the chosen mode.** In *Percentile*, the **Percentile** knob (default 90) sets how aggressive the auto-scale is — a lower percentile saturates more of the surface. In *Manual*, the **Clamp** knob is the curvature value that maps to full colour. Both fields are always shown, but each is used only in its own mode.
+4. **Refine the look.** **Smoothing** relaxes the curvature field before colouring, blurring out per-triangle noise so broad regions read cleanly. **Invert** swaps which ramp end is red and which is blue, and **Positive** / **Negative** replace the two ramp colours outright.
+5. **What it produces.** The geometry is never altered. The curvature is written to a `Curvature` vertex-colour attribute and shown through a shared `Curvature Color` material that is created (or reused) and made the active slot. To restore the plain look, remove that material slot and the attribute.
+6. **Read the report.** The operator prints the measured curvature range and the clamp it used — handy for spotting whether a model is nearly flat (a tiny range) or has sharp spikes, and for choosing a Manual clamp.
 
 ## Options
 
@@ -25,23 +34,25 @@ Curvature Color is a **Styles operator applied to a selected existing object**, 
 
 ## How it works
 
-**Discrete Gaussian curvature (angle deficit).** The mesh is triangulated on a throwaway bmesh copy. For each vertex the classical angle deficit is computed:
+**In plain terms.** Curvature is just a measure of how a surface bends at a point, and two flavours are worth telling apart. On a ball the surface curves the *same* way in every direction — always away from you — and that counts as **positive** curvature. On a saddle, or a Pringle chip, it curves up one way and down the other; those opposite bends give **negative** curvature. A flat sheet of paper does not bend at all: **zero**. The clever part is measuring this on a mesh, which is built from flat triangles, without any calculus. Look at a vertex and add up the corner angles of all the triangles meeting there. On a flat sheet those angles fill the plane exactly — they sum to a full turn, $360°$. If the surface domes up like a ball, the triangles have to pinch together and the angles fall *short* of $360°$ (an "angle deficit" — positive curvature); if it flares out like a saddle, the angles *overshoot* $360°$ (an angle excess — negative curvature). That shortfall or surplus, per unit area, is the curvature we colour. The rest of this section makes that precise and turns it into colour.
+
+**Discrete Gaussian curvature (angle deficit).** Because Gaussian curvature is *intrinsic* — it depends only on distances measured within the surface, not on how the surface sits in space (Gauss's *Theorema Egregium*) — it can be read off from the triangle angles alone. The mesh is triangulated on a throwaway bmesh copy so the original is never touched, and for each vertex the classical angle deficit is computed:
 
 $$\kappa = \frac{2\pi - \sum_j \theta_j}{A} \quad \text{(interior vertex)}, \qquad \kappa = \frac{\pi - \sum_j \theta_j}{A} \quad \text{(boundary vertex)},$$
 
-where $\theta_j$ are the interior angles of the incident triangles at that vertex and $A$ is the **mixed area**, approximated barycentrically as one third of the total area of the incident triangles. Boundary vertices use the target angle $\pi$ (a straight surface edge) instead of $2\pi$, so a flat rim reads as flat. Angles are accumulated with $\theta = \operatorname{atan2}(\lVert \mathbf u \times \mathbf v\rVert,\ \mathbf u\!\cdot\!\mathbf v)$ for the two edge vectors $\mathbf u,\mathbf v$ at each triangle corner. Loose or degenerate vertices ($A \le 10^{-12}$) are left at $\kappa = 0$.
+where $\theta_j$ are the interior angles of the incident triangles at that vertex and $A$ is the **mixed area**. The numerator is exactly the shortfall-from-a-full-turn described above; dividing by an area turns a total defect into a *density*, so a gentle wide dome and a tight little dome are told apart correctly. The mixed area is approximated barycentrically as one third of the total area of the incident triangles — the natural share of each triangle that "belongs" to the vertex. A vertex on an open edge has no full ring of triangles around it, so its target is the straight-edge angle $\pi$ rather than $2\pi$; this makes a flat boundary read as flat instead of spuriously curved. Each corner angle is taken as $\theta = \mathrm{atan2}\!\big(\lVert \mathbf u \times \mathbf v\rVert,\ \mathbf u\!\cdot\!\mathbf v\big)$ for the two edge vectors $\mathbf u,\mathbf v$ at that corner — the numerically robust form, accurate across the whole $0$–$\pi$ range where a bare arccosine loses precision. Loose or degenerate vertices ($A \le 10^{-12}$) are left at $\kappa = 0$ rather than dividing by almost nothing.
 
-**Smoothing.** The scalar field is optionally relaxed with uniform-weight Laplacian smoothing over the mesh edges; each pass replaces a value with the average of itself and its neighbours' mean, $v \leftarrow \tfrac12(v + \bar v_{\text{nbr}})$.
+**Smoothing.** The raw per-vertex field can be speckly, since one ill-shaped triangle throws off its corner's angle. It is optionally relaxed with uniform-weight Laplacian smoothing over the mesh edges; each pass nudges every value toward the average of itself and its neighbours' mean, $v \leftarrow \tfrac12(v + \bar v_{\text{nbr}})$. A few passes blur out triangle-scale noise while leaving the broad curved regions intact.
 
-**Normalization and ramp.** A clamp value $c$ is chosen either as a percentile of $|\kappa|$ (auto) or a manual constant, and floored at $10^{-3}$ so a flat mesh stays white rather than amplifying float noise to full saturation. Each vertex maps through
+**Normalization and ramp.** To turn a number into a colour we must decide which curvature counts as "fully red". A clamp value $c$ is chosen either as a percentile of $|\kappa|$ (auto — robust to a few extreme spikes) or as a manual constant, and floored at $10^{-3}$ so a genuinely flat mesh stays white instead of amplifying float noise to full saturation. Each vertex maps through
 
-$$t = \operatorname{clip}\!\left(\frac{\kappa}{c},\ -1,\ 1\right),$$
+$$t = \mathrm{clip}\!\left(\frac{\kappa}{c},\ -1,\ 1\right),$$
 
-optionally negated by **Invert**. The positive part $t_+ = \max(t,0)$ blends white toward the **Positive** color and the negative part $t_- = \max(-t,0)$ blends white toward the **Negative** color:
+so $t$ runs from $-1$ (fully negative) through $0$ (flat) to $+1$ (fully positive), optionally negated by **Invert**. Splitting $t$ into its positive part $t_+ = \max(t,0)$ and negative part $t_- = \max(-t,0)$ lets each side drive its own colour: $t_+$ blends white toward the **Positive** color and $t_-$ blends white toward the **Negative** color,
 
 $$\mathbf{color} = \mathbf 1 + t_+(\mathbf{c}_{\text{pos}} - \mathbf 1) + t_-(\mathbf{c}_{\text{neg}} - \mathbf 1),$$
 
-a diverging color ramp with white at $\kappa = 0$. The result is written to a `FLOAT_COLOR` point attribute named `Curvature`; a shared material (a Principled BSDF fed by an Attribute node reading that attribute) is created or reused and made the active slot. The operator reports the measured curvature range and the clamp used.
+a diverging color ramp pinned to white at $\kappa = 0$. Because the two halves are handled separately, flat regions never drift toward a muddy mid-grey the way a single red-to-blue blend through the middle would. The result is written to a `FLOAT_COLOR` point attribute named `Curvature`; a shared material (a Principled BSDF fed by an Attribute node reading that attribute) is created or reused and made the active slot. Finally the operator reports the measured curvature range and the clamp used.
 
 ## References
 

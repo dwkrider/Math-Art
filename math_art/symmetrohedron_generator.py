@@ -141,7 +141,13 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    class MESH_OT_symmetrohedron_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_symmetrohedron_add(bpy.types.Operator,
+                                     _net_style.NetStyleProps):
         """Symmetrohedron: regular polygons on the symmetry axes,
         convex hull filling the gaps (after Kaplan & Hart)"""
         bl_idname = "mesh.symmetrohedron_add"
@@ -153,27 +159,45 @@ if _IN_BLENDER:
             items=[('I', "Icosahedral (5,3,2)", ""),
                    ('O', "Octahedral (4,3,2)", ""),
                    ('T', "Tetrahedral (3,3,2)", "")],
-            default='I')
+            default='I',
+            description="Symmetry group whose rotation axes carry the "
+                        "polygons")
         mult1: IntProperty(
             name="Axis-1 Multiplier", default=1, min=0, max=4,
             description="Polygon = multiplier x axis order sides "
                         "(0 = no polygon on this class)")
         mult2: IntProperty(name="Axis-2 Multiplier", default=1,
-                           min=0, max=4)
+                           min=0, max=4,
+                           description="Polygon on the second axis class = "
+                           "multiplier x axis order sides (0 = none)")
         mult3: IntProperty(name="Axis-3 Multiplier", default=0,
-                           min=0, max=4)
+                           min=0, max=4,
+                           description="Polygon on the third (2-fold) axis "
+                           "class = multiplier x 2 sides (0 = none)")
         r1: FloatProperty(name="Axis-1 Size", default=0.45,
-                          min=0.05, max=0.98)
+                          min=0.05, max=0.98,
+                          description="Size of the first-class polygons, as "
+                          "a radius on the unit sphere")
         r2: FloatProperty(name="Axis-2 Size", default=0.31,
-                          min=0.05, max=0.98)
+                          min=0.05, max=0.98,
+                          description="Size of the second-class polygons, "
+                          "as a radius on the unit sphere")
         r3: FloatProperty(name="Axis-3 Size", default=0.3,
-                          min=0.05, max=0.98)
+                          min=0.05, max=0.98,
+                          description="Size of the third-class polygons, as "
+                          "a radius on the unit sphere")
         ph1: FloatProperty(name="Axis-1 Phase", default=0.0,
-                           min=-90.0, max=90.0)
+                           min=-90.0, max=90.0,
+                           description="Rotation of the first-class "
+                           "polygons about their axis, in degrees")
         ph2: FloatProperty(name="Axis-2 Phase", default=0.0,
-                           min=-90.0, max=90.0)
+                           min=-90.0, max=90.0,
+                           description="Rotation of the second-class "
+                           "polygons about their axis, in degrees")
         ph3: FloatProperty(name="Axis-3 Phase", default=0.0,
-                           min=-90.0, max=90.0)
+                           min=-90.0, max=90.0,
+                           description="Rotation of the third-class "
+                           "polygons about their axis, in degrees")
         coloring: EnumProperty(
             name="Coloring",
             items=[('SIDES', "By Face Size",
@@ -182,7 +206,9 @@ if _IN_BLENDER:
                     "Preview or Solid shading set to Material "
                     "color)"),
                    ('NONE', "None", "No materials")],
-            default='SIDES')
+            default='SIDES',
+            description="Assign a material per face size, or leave "
+                        "unpainted")
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "Plain closed polyhedron"),
@@ -199,12 +225,16 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
-                    "segment per face")],
-            default='SOLID')
+                    "segment per face"),
+            _net_style.net_enum_item()],
+            default='SOLID',
+            description="How the hull is rendered: solid, open panels, "
+                        "struts, ball-and-stick, wireframe, or face "
+                        "segments")
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
-            description="Leonardo face frame width (fraction of "
-                        "the face)")
+            name="Border", default=0.06, min=0.005, max=1.0,
+            description="Leonardo face frame width, the same on every "
+                        "face whatever its size")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.001, max=1.0,
             description="Panel / strut thickness for the Leonardo "
@@ -229,7 +259,8 @@ if _IN_BLENDER:
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the polyhedron")
 
         _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
                     5: (0.30, 0.69, 0.42), 6: (0.95, 0.77, 0.29),
@@ -290,10 +321,14 @@ if _IN_BLENDER:
                 me.polygons.foreach_set('material_index',
                                         [lut[s] for s in fsz])
             me.update()
-            if self.style == 'FACETS':
+            if self.style in ('FACETS', 'NET'):
                 Vf = [tuple(v.co) for v in me.vertices]
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
+                if self.style == 'NET':
+                    return _net_style.emit_net_from_operator(
+                        self, context, Vf, Ff, "Symmetrohedron", material_fn=self._material_for
+                        if self.coloring == 'SIDES' else None)
                 try:
                     from .styles import facet_style
                 except ImportError:
@@ -364,6 +399,8 @@ if _IN_BLENDER:
             if self.style == 'BALLSTICK':
                 lay.prop(self, 'strut_radius')
                 lay.prop(self, 'node_radius')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

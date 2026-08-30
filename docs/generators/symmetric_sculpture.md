@@ -23,7 +23,7 @@ It ships three ready presets (**Frabjous**, **Krull**, **Whimsy**) plus a fully 
 |--------|---------|-------------|
 | Preset | Frabjous | Sculpture setup; the motif stays editable afterwards |
 | — Frabjous | | After *Frabjous* (2003): 30 S-shaped parts in the face planes of the great rhombic triacontahedron — ends meeting in threes at the 3-fold corners ($\varphi^2 \times$ the plane distance), five-fold vortices at the 5-fold corners ($\varphi \times$) |
-| — Krull | | A small stellated dodecahedron $\{5/2, 5\}$: 12 five-armed stars in the dodecahedral planes, traced from the cutting template. The arms end on the crossings at twice the plane distance, where five planes meet, so each of the solid's 12 spikes is built from five arms |
+| — Krull | | A small stellated dodecahedron $\lbrace5/2, 5\rbrace$: 12 five-armed stars in the dodecahedral planes, traced from the cutting template. The arms end on the crossings at twice the plane distance, where five planes meet, so each of the solid's 12 spikes is built from five arms |
 | — Whimsy | | After *Whimsy* (2014): 60 flat blades in the face planes of the pentagonal hexecontahedron (snub dodecahedron dual) — a curved band with two teardrop openings, five to a hub and three at each 3-fold corner |
 | — Custom | | Choose the group and plane family yourself; starts from the demo arc motif |
 | Symmetry Group | Icosahedral (60) | Rotation group: Icosahedral (60), Octahedral (24), or Tetrahedral (12). Shown only in Custom mode |
@@ -55,15 +55,20 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/symmetric_sculpture__KRULL.png" width="200"><br><sub>Krull</sub></td>
 <td align="center"><img src="../images/variants/symmetric_sculpture__WHIMSY.png" width="200"><br><sub>Whimsy</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/symmetric_sculpture__SOLAR_FLAIR.png" width="200"><br><sub>Solar Flair</sub></td>
+<td align="center"><img src="../images/variants/symmetric_sculpture__DRAGONFLIES.png" width="200"><br><sub>Dragonflies</sub></td>
+<td align="center"><img src="../images/variants/symmetric_sculpture__EDDY.png" width="200"><br><sub>Eddy</sub></td>
+</tr>
 </table>
 
 ## How it works
 
-**The point group.** Each symmetry choice is the chiral (rotation-only) tetrahedral, octahedral, or icosahedral group, of order 12, 24, and 60 respectively. The group is built by closure: starting from the identity and two generator rotations $G_1, G_2$ (Rodrigues matrices), every product is generated until no new $3\times3$ matrix appears, giving all $N$ rotations $\{R_k\}$.
+**The point group.** Each symmetry choice is the chiral (rotation-only) tetrahedral, octahedral, or icosahedral group, of order 12, 24, and 60 respectively. The group is built by closure: starting from the identity and two generator rotations $G_1, G_2$ (Rodrigues matrices), every product is generated until no new $3\times3$ matrix appears, giving all $N$ rotations $\lbrace R_k\rbrace$.
 
 **Plane families.** A plane family is fixed by a single axis $\mathbf a$ (a symmetry axis of the group); the representative plane sits at distance $d$ perpendicular to $\mathbf a$. The distinct plane normals are the **orbit** of $\mathbf a$ under the group,
 
-$$\{\, \hat{R_k\,\mathbf a} \,\}, \qquad k = 1,\dots,N,$$
+$$\lbrace\, \hat{R_k\,\mathbf a} \,\rbrace, \qquad k = 1,\dots,N,$$
 
 with duplicates removed. A $k$-fold axis has a stabiliser of order $k$, so the orbit has $N/k$ distinct normals — exactly $N/k$ planes, each carrying $k$-fold in-plane symmetry. This is Hart's plane-family construction: a motif placed perpendicular to a $k$-fold axis and instanced under all $N$ rotations lands in $N/k$ planes with $k$-fold symmetry inside each.
 
@@ -81,7 +86,7 @@ $$\mathbf f = \frac{c}{\lVert (\mathbf b\!\cdot\!\mathbf u,\ \mathbf b\!\cdot\!\
 
 clipped to a disc of radius (Guide Extent $\times d$). Motifs whose corners land on the piercings of neighbouring axes (e.g. Frabjous's rhombus corners at $\pm\varphi^2 d$ and $\pm\varphi d$, $\varphi=\tfrac{1+\sqrt5}{2}$) join their neighbours cleanly across these lines.
 
-**The preset motifs.** Each named preset is a single flat motif traced onto that guide pattern, then handed to the same replication machinery as a Custom motif — nothing about a preset is special once it is built, so you can freely reshape it. **Frabjous** places one S-curve whose two ends reach the neighbouring-plane crossings at $\varphi^2 d$ and $\varphi d$, so under the icosahedral group the 30 copies interlock three-to-a-corner and five-to-a-vortex. **Krull** traces the outline of a small stellated dodecahedron $\{5/2,5\}$ directly from its stellation diagram in the dodecahedral plane: a five-pointed star whose arms reach the crossings at $2d$, so the 12 copies assemble the solid's 12 five-arm spikes. **Whimsy** is a curved band with two teardrop cut-outs, sized so five meet at each 5-fold hub and three at each 3-fold corner of the hexecontahedral family. Because all three are built by the same "draw on the guide lines" method Hart used, **Custom** is not a lesser mode — it is the general case, and the presets are just worked examples to start from.
+**The preset motifs.** Each named preset is a single flat motif traced onto that guide pattern, then handed to the same replication machinery as a Custom motif — nothing about a preset is special once it is built, so you can freely reshape it. **Frabjous** places one S-curve whose two ends reach the neighbouring-plane crossings at $\varphi^2 d$ and $\varphi d$, so under the icosahedral group the 30 copies interlock three-to-a-corner and five-to-a-vortex. **Krull** traces the outline of a small stellated dodecahedron $\lbrace5/2,5\rbrace$ directly from its stellation diagram in the dodecahedral plane: a five-pointed star whose arms reach the crossings at $2d$, so the 12 copies assemble the solid's 12 five-arm spikes. **Whimsy** is a curved band with two teardrop cut-outs, sized so five meet at each 5-fold hub and three at each 3-fold corner of the hexecontahedral family. Because all three are built by the same "draw on the guide lines" method Hart used, **Custom** is not a lesser mode — it is the general case, and the presets are just worked examples to start from.
 
 ## References
 

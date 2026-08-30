@@ -30,8 +30,12 @@
 #     n-fold-symmetric rosette), swept with a tangent+vertical ruling.
 #   CONOID        -- right conoids S=(v cos u, v sin u, h(u)):
 #     Plucker's conoid / cylindroid (h = c sin 2u), the n-fold
-#     generalization, the Wallis conical edge, and the Whitney
-#     umbrella (a pinch-point ruled surface).
+#     generalization, the Wallis conical edge, Zindler's conoid
+#     (h = a tan 2u, the cubic ruled surface z(x^2-y^2) = 2axy) and
+#     the Whitney umbrella (a pinch-point ruled surface); plus the
+#     parabolic conoid (parabola directrix, a^2 z = x(b^2 - y^2)) and
+#     two ruled cones -- the sinusoidal cone z = k rho cos(n theta)
+#     and the helicoidal cone (apex joined to a circular helix).
 #   TANGENT_DEV   -- the tangent developable of a circular helix,
 #     T(u,v) = c(u) + v c'(u): a flat-unrollable (developable) surface
 #     whose edge of regression is the helix itself.
@@ -39,6 +43,12 @@
 #     screwing up the axis; the right helicoid (slope 0) is minimal.
 #   TWIST_STRIP   -- an n-half-twist ruled band; odd n is a Mobius
 #     band (one-sided), even n an orientable twisted annulus.
+#   NAMED         -- five ruled surfaces that are named after what they
+#     were built for rather than after their equation: Gaudi's
+#     sinusoidal conoid (the Sagrada Familia escoles roof), Guimard's
+#     Art Nouveau surface, the milk carton / berlingot, the skew ruled
+#     cubic (a conic and a line joined by a homography), and Monge's
+#     surface of constant slope, the shape a heap of dry sand takes.
 #   HYPAR         -- the doubly-ruled hyperbolic paraboloid, either as
 #     z = c((x/a)^2 - (y/b)^2) or as the bilinear patch spanning four
 #     user-set skew corner points (the surface of any four points in
@@ -62,9 +72,32 @@
 # - F. A. Farris, "Spiral Ruled Surfaces," Bridges 2022 Conference
 #   Proceedings, pp. 289-292; and F. A. Farris, "Creating
 #   Symmetry" (Princeton Univ. Press, 2015).
+# - Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia
+#   escoles; Hector Guimard (1867-1942).  Both parametrizations, and the
+#   milk carton's, from R. Ferreol, "Encyclopedie des formes
+#   mathematiques remarquables" (mathcurve.com), chapters "surface de
+#   Gaudi", "surface de Guimard" and "berlingot".
+# - Milk carton: H. M. Cundy & A. P. Rollett, "Mathematical Models"
+#   (1951), 185-188.
+# - Surface of constant slope: Gaspard Monge (1807); see also R. Iss
+#   (1985).
+# - Ruled cubics as a conic and a line joined by a homography: the
+#   classification in R. Ferreol, ibid., chapter "cubique reglee".
 # - J. Plucker, "On a New Geometry of Space" (1865); H. Whitney,
 #   "The general type of singularity of a set of 2n-1 smooth
 #   functions of n variables" (1943).
+# - K. Zindler (1866-1934), the conoid z = a tan 2 theta; see
+#   R. Ferreol, "Encyclopedie des formes mathematiques remarquables",
+#   mathcurve.com, chapter "conoide de Zindler", for the cartesian
+#   form and the tangentoid-crown directrix used here.  A converted
+#   copy of the encyclopedia is in research/books/
+#   mathcurve_encyclopedie_formes_mathematiques/.
+# - Parabolic conoid (a2 z = x(b2 - y2), the roof-shell conoid with a
+#   parabola directrix), sinusoidal cone (cylindrical equation
+#   z = k rho cos(n theta), the cone over the sine-wave crown) and
+#   helicoidal cone (x = a u cos v, y = a u sin v, z = b u v, the cone
+#   joining an apex to a circular helix): R. Ferreol, ibid., chapters
+#   "conoide parabolique", "cone sinusoidal" and "cone helicoidal".
 # - S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms,"
 #   MIT Project MAC TR-41 (1967) -- the bilinear patch.
 # - Torus knots (p, q): classical; see e.g. C. C. Adams, "The Knot
@@ -189,6 +222,111 @@ def _rods(segments, radius=0.02, sides=8):
                           base + 2 * k1 + 1, base + 2 * k + 1])
         faces.append([base + 2 * k for k in range(sides)][::-1])
         faces.append([base + 2 * k + 1 for k in range(sides)])
+    return verts, faces
+
+
+def _tube(pts, closed=True, radius=0.02, sides=8):
+    """Sweep one continuous tube along a polyline.
+
+    `_rods` gives every segment its own capped cylinder, which is right
+    for the rulings -- they really are separate sticks -- but wrong for
+    a boundary rail, where consecutive chords share an endpoint.  Two
+    capped cylinders meeting at an angle leave a visible lump at every
+    joint, and on a rail that approximates a circle the result is a ring
+    of bumps rather than a smooth hoop.
+
+    Here the cross-sections are shared: one ring of `sides` points per
+    polyline vertex, oriented on the average of the incoming and
+    outgoing tangents, quad-stripped to its neighbours.  The frame is
+    carried along by parallel transport so the tube does not spin about
+    its own axis, and for a closed rail the leftover holonomy is spread
+    evenly around the loop so the seam closes without a twist.
+    """
+    P = np.asarray(pts, dtype=float)
+    if len(P) > 1 and closed and np.linalg.norm(P[0] - P[-1]) < 1e-12:
+        P = P[:-1]                      # drop a duplicated closing point
+    n = len(P)
+    if n < 2:
+        return [], []
+
+    if closed:
+        T = np.roll(P, -1, axis=0) - np.roll(P, 1, axis=0)
+    else:
+        T = np.empty_like(P)
+        T[1:-1] = P[2:] - P[:-2]
+        T[0] = P[1] - P[0]
+        T[-1] = P[-1] - P[-2]
+    L = np.linalg.norm(T, axis=1, keepdims=True)
+    L[L < 1e-12] = 1.0
+    T = T / L
+
+    ref = np.array([0.0, 0.0, 1.0])
+    if abs(float(T[0] @ ref)) > 0.9:
+        ref = np.array([1.0, 0.0, 0.0])
+    N = np.cross(T[0], ref)
+    N /= np.linalg.norm(N)
+    normals = [N]
+    for i in range(1, n):
+        prev, cur = T[i - 1], T[i]
+        v = np.cross(prev, cur)
+        s = float(np.linalg.norm(v))
+        Nn = normals[-1]
+        if s > 1e-12:                   # rotate the frame onto the new tangent
+            axis = v / s
+            ang = math.atan2(s, float(prev @ cur))
+            c, sn = math.cos(ang), math.sin(ang)
+            Nn = (Nn * c + np.cross(axis, Nn) * sn
+                  + axis * float(axis @ Nn) * (1.0 - c))
+        Nn = Nn - float(Nn @ cur) * cur
+        ln = float(np.linalg.norm(Nn))
+        Nn = normals[-1] if ln < 1e-12 else Nn / ln
+        normals.append(Nn)
+
+    if closed:
+        # close the frame: whatever angle the transported normal has
+        # drifted by after one lap gets unwound evenly along the loop
+        last = normals[-1]
+        v = np.cross(last, T[-1])
+        drift = math.atan2(float(np.cross(last, normals[0]) @ T[0]),
+                           float(last @ normals[0]))
+        for i in range(n):
+            a = -drift * i / n
+            c, sn = math.cos(a), math.sin(a)
+            Ni, Ti = normals[i], T[i]
+            normals[i] = (Ni * c + np.cross(Ti, Ni) * sn
+                          + Ti * float(Ti @ Ni) * (1.0 - c))
+
+    verts, faces = [], []
+    for i in range(n):
+        Ti = T[i]
+        Ni = normals[i]
+        Bi = np.cross(Ti, Ni)
+        for k in range(sides):
+            ang = _TWO_PI * k / sides
+            verts.append(tuple(P[i] + radius * (math.cos(ang) * Ni
+                                                + math.sin(ang) * Bi)))
+    rings = n if closed else n - 1
+    for i in range(rings):
+        a0 = i * sides
+        a1 = ((i + 1) % n) * sides
+        for k in range(sides):
+            k1 = (k + 1) % sides
+            faces.append([a0 + k, a0 + k1, a1 + k1, a1 + k])
+    if not closed:
+        faces.append(list(range(sides))[::-1])
+        base = (n - 1) * sides
+        faces.append([base + k for k in range(sides)])
+    return verts, faces
+
+
+def _tubes(loops, radius=0.02, sides=8):
+    """`_tube` over a list of (points, closed) polylines, merged."""
+    verts, faces = [], []
+    for pts, closed in loops:
+        v, f = _tube(pts, closed, radius, sides)
+        o = len(verts)
+        verts.extend(v)
+        faces.extend([[i + o for i in q] for q in f])
     return verts, faces
 
 
@@ -353,6 +491,41 @@ def build_helical_cone(base_radius=1.0, height=2.0, flutes=6,
 # 3. spiral ruled surface (Farris)
 # --------------------------------------------------------------------
 
+def arrises_helical_cone(base_radius=1.0, height=2.0, flutes=6,
+                         flute_depth=0.18, twist=2.0, taper=1.0,
+                         orbit_amp=0.0, orbit_turns=1.0, n=48):
+    """Segments along the compound helical cone's ARRISES.
+
+    Every other mode here is straight-ruled, and its rod output draws
+    the rulings.  This one is not: the flutes wind as they climb and the
+    radius falls off faster than linearly, so no straight line lies in
+    the surface.  What it does have is its `flutes` ridge curves, the
+    arrises running from base to apex, and those are the lines a
+    Solomonic column is actually read by -- so they are what the rod and
+    curve outputs draw here.  Each is emitted as a polyline of short
+    segments rather than one straight rod.
+
+    A ridge sits where cos(flutes.theta + 2pi.twist.t) = 1, so
+    theta_k(t) = 2pi(k - twist.t) / flutes.
+    """
+    m = max(1, int(flutes))
+    steps = max(8, int(n))
+    segs = []
+    for k in range(m):
+        pts = []
+        for j in range(steps + 1):
+            t = j / steps
+            th = _TWO_PI * (k - twist * t) / m
+            Rt = base_radius * (1.0 - t) ** max(taper, 1e-6)
+            r = Rt * (1.0 + flute_depth * (1.0 - t))
+            cx = orbit_amp * Rt * math.cos(_TWO_PI * orbit_turns * t)
+            cy = orbit_amp * Rt * math.sin(_TWO_PI * orbit_turns * t)
+            pts.append((cx + r * math.cos(th), cy + r * math.sin(th),
+                        height * t))
+        segs.extend(zip(pts, pts[1:]))
+    return segs
+
+
 def build_spiral_ruled(tightness=0.15, slope=1.0, turns=2.0,
                        petals=1, petal_amp=0.0, v_extent=1.0,
                        res_u=200, res_v=20):
@@ -409,13 +582,199 @@ def rulings_spiral(tightness=0.15, slope=1.0, turns=2.0, petals=1,
 # 4. conoids  (right conoid S = (v cos u, v sin u, h(u)))
 # --------------------------------------------------------------------
 
+def named_ruled_curves(kind, u, amp=0.5, extent=1.0, folds=2,
+                       wallis_a=1.0, wallis_b=0.6):
+    """The two directrix curves A(u), B(u) of a named ruled surface.
+
+    Every one of these is "the union of the lines A(u) B(u)" for two
+    curves, which is the oldest way of writing a ruled surface down and
+    the way all five sources state them.  Returning the pair rather than
+    a mesh keeps the definition in one place: the surface, its rulings
+    and its self-test all read the same two curves.
+    """
+    u = np.asarray(u, dtype=float)
+    z = np.zeros_like(u)
+    if kind == 'GAUDI':
+        # Right conoid z = k x sin(y/a): rulings run along x at each
+        # height y, all meeting the y-axis at right angles.  Gaudi
+        # roofed the Sagrada Familia escoles with it -- a warped surface
+        # you can nevertheless build out of straight timber.
+        a = max(1e-6, wallis_a)
+        k = amp / max(1e-6, extent)
+        return (np.stack([-extent + z, u, -k * extent * np.sin(u / a)], -1),
+                np.stack([extent + z, u, k * extent * np.sin(u / a)], -1))
+    if kind == 'GUIMARD':
+        # M moves along a line with a sinusoidal law, N around a circle
+        # with a doubled sinusoid, and the segment MN sweeps the surface
+        # Guimard used in his Art Nouveau ironwork.
+        a, b, c = wallis_a, extent, amp
+        return (np.stack([a * np.cos(u), z, z], -1),
+                np.stack([b * np.cos(u), b * np.sin(u),
+                          c * np.sin(u) ** 2], -1))
+    if kind == 'MILK_CARTON':
+        # The "berlingot": every horizontal section is an ellipse whose
+        # axes trade places as the height rises, so the top and bottom
+        # degenerate into two perpendicular segments.  Linear in the
+        # ruling parameter, which is why a paper carton folds flat.
+        k, al = max(1e-6, amp), max(1e-6, extent)
+        return (np.stack([z, 2 * k * al * np.sin(u), -al + z], -1),
+                np.stack([2 * k * al * np.cos(u), z, al + z], -1))
+    if kind == 'RULED_CUBIC':
+        # A conic, a line meeting its plane, and a homography between
+        # them: join corresponding points and the union is a cubic
+        # surface.  Here the conic is the unit circle taken rationally
+        # and the line is Oz, with the identity homography.
+        s = np.tan(np.clip(u, -1.5, 1.5))
+        d = 1.0 + s * s
+        return (np.stack([(1.0 - s * s) / d, 2.0 * s / d, z], -1),
+                np.stack([z, z, extent * s], -1))
+    # CONSTANT_SLOPE -- Monge's sandpile.  Rise from each point of a
+    # closed base curve along the curve's outward normal at a fixed
+    # angle; the result is the shape a heap of dry sand takes, and it is
+    # developable, since a constant-slope surface is the envelope of a
+    # one-parameter family of equal cones.
+    n = max(2, int(folds))
+    r = 1.0 + wallis_b * np.cos(n * u)               # base curve radius
+    dr = -wallis_b * n * np.sin(n * u)
+    cu, su = np.cos(u), np.sin(u)
+    base = np.stack([r * cu, r * su, z], -1)
+    # outward normal of the polar curve r(u)
+    tx, ty = dr * cu - r * su, dr * su + r * cu
+    ln = np.sqrt(tx * tx + ty * ty)
+    nx, ny = ty / ln, -tx / ln
+    slope = math.tan(math.radians(min(85.0, max(5.0, wallis_a * 45.0))))
+    top = base + extent * np.stack([nx, ny, slope * np.ones_like(u)], -1)
+    return base, top
+
+
+def build_named_ruled(kind='GAUDI', amp=0.5, extent=1.0, folds=2,
+                      wallis_a=1.0, wallis_b=0.6, res_u=160, res_v=16):
+    """Mesh a named ruled surface as the lines joining its two curves."""
+    wrap = kind in ('GUIMARD', 'MILK_CARTON', 'CONSTANT_SLOPE')
+    if kind == 'GAUDI':
+        u = np.linspace(-math.pi * wallis_a, math.pi * wallis_a, res_u)
+    elif kind == 'RULED_CUBIC':
+        u = np.linspace(-1.45, 1.45, res_u)
+    else:
+        u = np.linspace(0.0, _TWO_PI, res_u, endpoint=not wrap)
+    A, B = named_ruled_curves(kind, u, amp, extent, folds,
+                              wallis_a, wallis_b)
+    v = np.linspace(0.0, 1.0, res_v + 1)
+    P = A[:, None, :] + v[None, :, None] * (B - A)[:, None, :]
+    return _mesh_grid(P, wrap_u=wrap)
+
+
+def rulings_named_ruled(kind='GAUDI', amp=0.5, extent=1.0, folds=2,
+                        wallis_a=1.0, wallis_b=0.6, n=48):
+    if kind == 'GAUDI':
+        u = np.linspace(-math.pi * wallis_a, math.pi * wallis_a, n)
+    elif kind == 'RULED_CUBIC':
+        u = np.linspace(-1.45, 1.45, n)
+    else:
+        u = np.linspace(0.0, _TWO_PI, n, endpoint=False)
+    A, B = named_ruled_curves(kind, u, amp, extent, folds,
+                              wallis_a, wallis_b)
+    return [(tuple(A[i]), tuple(B[i])) for i in range(len(u))]
+
+
+def _cone_over(res_v, extent, cx, cy, cz, wrap=True):
+    """Mesh the cone with apex at the origin over the directrix
+    (cx, cy, cz)(v): a welded apex vertex, then rings scaled u/m out to
+    the directrix at u = extent.  Faces wind consistently, so an
+    orientation sweep sees a plain disk (wrap=False) or cone."""
+    n = len(cx)
+    verts = [(0.0, 0.0, 0.0)]
+    rows = []
+    m = max(2, int(res_v))
+    for j in range(1, m + 1):
+        u = extent * j / m
+        base = len(verts)
+        verts.extend(zip(u * cx, u * cy, u * cz))
+        rows.append(list(range(base, base + n)))
+    kmax = n if wrap else n - 1
+    faces = []
+    for i in range(kmax):
+        i1 = (i + 1) % n
+        faces.append((0, rows[0][i], rows[0][i1]))
+    for j in range(m - 1):
+        for i in range(kmax):
+            i1 = (i + 1) % n
+            faces.append((rows[j][i], rows[j + 1][i],
+                          rows[j + 1][i1], rows[j][i1]))
+    return verts, faces
+
+
 def build_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
-                 wallis_b=0.6, extent=1.0, res_u=120, res_v=16):
-    """Right conoids and the Whitney umbrella.
+                 wallis_b=0.6, extent=1.0, res_u=120, res_v=16,
+                 turns=2.0):
+    """Right conoids, ruled cones and the Whitney umbrella.
         PLUCKER  h = amp sin(2u)            (Plucker's cylindroid)
         NFOLD    h = amp sin(folds*u)       (n-leaved conoid)
         WALLIS   h = amp sqrt(a^2 - b^2 cos^2 u)   (Wallis conical edge)
-        WHITNEY  S = (u v, u, v^2)          (pinch-point umbrella)"""
+        ZINDLER  h = amp tan(folds*u)       (Zindler's conoid)
+        WHITNEY  S = (u v, u, v^2)          (pinch-point umbrella)
+        PARABOLIC_CONOID  S = (v, u, amp v (1 - u^2)), the roof-shell
+                 conoid a^2 z = x(b^2 - y^2) with b = 1, amp = 1/a^2
+        SINUSOIDAL_CONE   the cone over (cos v, sin v, amp cos(folds v)):
+                 cylindrical equation z = amp rho cos(n theta)
+        HELICOIDAL_CONE   the cone over the helix (cos v, sin v, amp v),
+                 v running `turns` turns: S = (u cos v, u sin v, amp u v)
+    """
+    if kind == 'PARABOLIC_CONOID':
+        # right conoid with axis Oy: rulings parallel to the xz-plane
+        # joining the axis point (0, u, 0) to the parabola directrix
+        # (extent, u, amp extent (1 - u^2)) in the plane x = extent
+        u = np.linspace(-1.3, 1.3, res_u)
+        v = np.linspace(0.0, extent, res_v + 1)
+        P = np.empty((res_u, res_v + 1, 3))
+        for j, vv in enumerate(v):
+            P[:, j, 0] = vv
+            P[:, j, 1] = u
+            P[:, j, 2] = amp * vv * (1.0 - u * u)
+        return _mesh_grid(P)
+    if kind == 'SINUSOIDAL_CONE':
+        n = max(1, int(folds))
+        v = np.linspace(0.0, _TWO_PI, res_u, endpoint=False)
+        return _cone_over(res_v, extent,
+                          np.cos(v), np.sin(v), amp * np.cos(n * v))
+    if kind == 'HELICOIDAL_CONE':
+        v = np.linspace(0.0, _TWO_PI * max(0.25, turns), res_u)
+        return _cone_over(res_v, extent,
+                          np.cos(v), np.sin(v), amp * v, wrap=False)
+    if kind == 'ZINDLER':
+        # Zindler's conoid, z = a tan(n theta) -- cartesian
+        # z(x^2 - y^2) = 2 a x y for the classical n = 2.  Its height is
+        # UNBOUNDED at the 2n asymptotes theta = (2k+1) pi / (2n), so
+        # sampling theta uniformly (as every other conoid here does)
+        # would spend the whole mesh on a pair of spikes and still clip
+        # them.  Sample the HEIGHT uniformly instead and invert the
+        # tangent: exact, bounded, and it grades the angular samples
+        # toward the asymptotes automatically, which is where the sheet
+        # actually turns.
+        #
+        # Each of the 2n branches is its own open patch.  They meet only
+        # along Oz, which is not a defect: Oz is the conoid's double
+        # line, and the directrix -- a tangentoid crown -- really does
+        # have 2n separate branches.
+        n = max(1, int(folds))
+        cap = 2.0 * extent                     # vertical reach
+        a = max(1e-6, abs(amp))
+        h = np.linspace(-cap, cap, res_u)
+        vv = np.linspace(-extent, extent, res_v + 1)
+        verts, faces = [], []
+        for k in range(2 * n):
+            u = (np.arctan(h / a) + k * math.pi) / n
+            cu, su = np.cos(u), np.sin(u)
+            P = np.empty((res_u, res_v + 1, 3))
+            for j, t in enumerate(vv):
+                P[:, j, 0] = t * cu
+                P[:, j, 1] = t * su
+                P[:, j, 2] = h
+            V, F = _mesh_grid(P)
+            off = len(verts)
+            verts.extend(V)
+            faces.extend([[i + off for i in f] for f in F])
+        return verts, faces
     if kind == 'WHITNEY':
         s = np.linspace(-extent, extent, res_u)
         v = np.linspace(-extent, extent, res_v + 1)
@@ -444,7 +803,46 @@ def build_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
 
 
 def rulings_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
-                   wallis_b=0.6, extent=1.0, n=48):
+                   wallis_b=0.6, extent=1.0, n=48, turns=2.0):
+    if kind == 'PARABOLIC_CONOID':
+        segs = []
+        for i in range(n + 1):
+            y = -1.3 + 2.6 * i / n
+            segs.append(((0.0, y, 0.0),
+                         (extent, y, amp * extent * (1.0 - y * y))))
+        return segs
+    if kind == 'SINUSOIDAL_CONE':
+        m = max(1, int(folds))
+        segs = []
+        for i in range(n):
+            v = _TWO_PI * i / n
+            segs.append(((0.0, 0.0, 0.0),
+                         (extent * math.cos(v), extent * math.sin(v),
+                          extent * amp * math.cos(m * v))))
+        return segs
+    if kind == 'HELICOIDAL_CONE':
+        span = _TWO_PI * max(0.25, turns)
+        segs = []
+        for i in range(n + 1):
+            v = span * i / n
+            segs.append(((0.0, 0.0, 0.0),
+                         (extent * math.cos(v), extent * math.sin(v),
+                          extent * amp * v)))
+        return segs
+    if kind == 'ZINDLER':
+        # same height-first sampling as the surface, so the rods land on
+        # the rulings the mesh actually shows
+        m = max(1, int(folds))
+        cap, a = 2.0 * extent, max(1e-6, abs(amp))
+        segs = []
+        for k in range(2 * m):
+            for i in range(n):
+                hgt = -cap + 2.0 * cap * i / max(1, n - 1)
+                u = (math.atan(hgt / a) + k * math.pi) / m
+                cu, su = math.cos(u), math.sin(u)
+                segs.append(((-extent * cu, -extent * su, hgt),
+                             (extent * cu, extent * su, hgt)))
+        return segs
     if kind == 'WHITNEY':
         segs = []
         for i in range(n + 1):
@@ -688,6 +1086,65 @@ _MODES = [
     ('KNOT_SPAN', "Concentric Toroidal Knots",
      "Straight rulings strung between two concentric (p, q) torus "
      "knots; outer q=0 degenerates the outer curve to a circle"),
+    ('GAUDI', "Gaudi's Surface",
+     "Sinusoidal conoid z = k x sin(y/a); Gaudi roofed the Sagrada "
+     "Familia escoles with it, a warped surface built from straight "
+     "timber"),
+    ('GUIMARD', "Guimard's Surface",
+     "The lines joining a point moving sinusoidally along a line to a "
+     "point on a doubled sinusoid round a circle; Art Nouveau ironwork"),
+    ('MILK_CARTON', "Milk Carton",
+     "The berlingot: elliptical sections whose axes trade places with "
+     "height, closing to two perpendicular segments at top and bottom"),
+    ('RULED_CUBIC', "Skew Ruled Cubic",
+     "A conic, a line meeting its plane, and a homography between them; "
+     "the joining lines sweep a cubic surface"),
+    ('CONSTANT_SLOPE', "Surface of Constant Slope",
+     "Monge's sandpile: rise from a closed base curve along its normal "
+     "at a fixed angle, so every tangent plane leans the same way"),
+]
+
+#: modes whose natural default output is the filled SURFACE rather than
+#: the rulings.  The compound helical cone is the one such: it is not
+#: straight-ruled, so its rod output draws arrises rather than rulings
+#: and is a deliberate choice rather than the obvious first look.
+_SURFACE_FIRST = {'HELICAL_CONE'}
+
+
+def effective_output(op):
+    """Resolve the AUTO output against the mode.
+
+    Blender gives an enum one default, but the right first look differs
+    by surface: a ruled surface is best shown BY its rulings, while the
+    helical cone has none and reads as a column only when filled.  AUTO
+    is the sentinel that lets one property mean both.
+    """
+    if op.output != 'AUTO':
+        return op.output
+    return 'SURFACE' if op.mode in _SURFACE_FIRST else 'RODS'
+
+
+#: the five surfaces above, which share one builder
+_NAMED_MODES = ('GAUDI', 'GUIMARD', 'MILK_CARTON', 'RULED_CUBIC',
+                'CONSTANT_SLOPE')
+
+_NAMED_LABELS = [
+    ('GAUDI', "Gaudi's Surface",
+     "Sinusoidal conoid z = k x sin(y/a); Gaudi roofed the Sagrada "
+     "Familia escoles with it, a warped surface built from straight "
+     "timber"),
+    ('GUIMARD', "Guimard's Surface",
+     "The lines joining a point moving sinusoidally along a line to a "
+     "point on a doubled sinusoid round a circle; Art Nouveau ironwork"),
+    ('MILK_CARTON', "Milk Carton",
+     "The berlingot: elliptical sections whose axes trade places with "
+     "height, closing to two perpendicular segments at top and bottom"),
+    ('RULED_CUBIC', "Skew Ruled Cubic",
+     "A conic, a line meeting its plane, and a homography between them; "
+     "the joining lines sweep a cubic surface"),
+    ('CONSTANT_SLOPE', "Surface of Constant Slope",
+     "Monge's sandpile: rise from a closed base curve along its normal "
+     "at a fixed angle, so every tangent plane leans the same way"),
 ]
 
 _CONOID_KINDS = [
@@ -695,13 +1152,31 @@ _CONOID_KINDS = [
     ('NFOLD', "n-Fold Conoid", "h = amp sin(folds * u)"),
     ('WALLIS', "Wallis Conical Edge",
      "h = amp sqrt(a^2 - b^2 cos^2 u)"),
+    ('ZINDLER', "Zindler Conoid",
+     "h = a tan(folds * u): the cubic ruled surface "
+     "z(x^2 - y^2) = 2 a x y, with Oz as its double line"),
     ('WHITNEY', "Whitney Umbrella",
      "S = (uv, u, v^2): a pinch-point ruled surface"),
+    ('PARABOLIC_CONOID', "Parabolic Conoid",
+     "The conoid whose curved directrix is a parabola: the roof-shell "
+     "surface a^2 z = x(b^2 - y^2), rulings joining the axis line to "
+     "the parabola.  When the parabola's axis is instead parallel to "
+     "the conoid's axis it degenerates to the Whitney umbrella"),
+    ('SINUSOIDAL_CONE', "Sinusoidal Cone",
+     "The cone with apex at the origin over the closed sine-wave "
+     "crown: cylindrical equation z = k rho cos(n theta).  Distinct "
+     "from Plucker's conoid z = a cos(n theta), whose rulings do not "
+     "pass through one point"),
+    ('HELICOIDAL_CONE', "Helicoidal Cone",
+     "The cone joining a fixed apex to a circular helix: rulings "
+     "(u cos v, u sin v, k u v).  A cone, not a helicoid -- every "
+     "ruling passes through the apex"),
 ]
 
 # modes that are genuinely straight-ruled -> rods available
-_RULED = {'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV',
-          'HELICOID', 'TWIST_STRIP', 'HYPAR', 'KNOT_SPAN'}
+_RULED = ({'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV', 'HELICOID',
+           'TWIST_STRIP', 'HYPAR', 'KNOT_SPAN', 'HELICAL_CONE'}
+          | set(_NAMED_MODES))
 
 
 def _build_surface(op):
@@ -725,8 +1200,14 @@ def _build_surface(op):
     if m == 'CONOID':
         vf = build_conoid(op.conoid_kind, op.amp, op.folds,
                           op.wallis_a, op.wallis_b, op.v_extent,
-                          op.res_u, op.res_v)
-        return (*vf, "Conoid")
+                          op.res_u, op.res_v, turns=op.turns)
+        return (*vf, dict((i[0], i[1])
+                          for i in _CONOID_KINDS)[op.conoid_kind])
+    if m in _NAMED_MODES:
+        vf = build_named_ruled(m, op.amp, op.v_extent, op.folds,
+                               op.wallis_a, op.wallis_b,
+                               op.res_u, op.res_v)
+        return (*vf, dict((i[0], i[1]) for i in _NAMED_LABELS)[m])
     if m == 'TANGENT_DEV':
         vf = build_tangent_developable(op.radius, op.pitch, op.turns,
                                        op.v_extent, op.v_min,
@@ -766,12 +1247,21 @@ def _build_rulings(op, n=None):
     if m == 'HYPERBOLOID':
         return rulings_hyperboloid(op.radius, op.height, op.twist,
                                    op.family, n)
+    if m == 'HELICAL_CONE':
+        return arrises_helical_cone(
+            op.radius, op.cone_height, op.flutes, op.flute_depth,
+            op.cone_twist, op.taper, op.orbit_amp, op.orbit_turns,
+            max(8, n // max(1, int(op.flutes))))
     if m == 'SPIRAL':
         return rulings_spiral(op.tightness, op.slope, op.turns,
                               op.petals, op.petal_amp, op.v_extent, n)
     if m == 'CONOID':
         return rulings_conoid(op.conoid_kind, op.amp, op.folds,
-                              op.wallis_a, op.wallis_b, op.v_extent, n)
+                              op.wallis_a, op.wallis_b, op.v_extent, n,
+                              turns=op.turns)
+    if m in _NAMED_MODES:
+        return rulings_named_ruled(m, op.amp, op.v_extent, op.folds,
+                                   op.wallis_a, op.wallis_b, n)
     if m == 'TANGENT_DEV':
         return rulings_tangent_developable(op.radius, op.pitch,
                                            op.turns, op.v_extent,
@@ -830,9 +1320,18 @@ def _boundary_loops(op):
     m = op.mode
     if m not in _RULED:
         return []
-    N = max(8, op.res_u)
+    # A rail is a smooth curve, not one point per stick: sample it far
+    # more finely than the ruling count so the hoop reads as a circle.
+    N = max(96, op.res_u)
     if m == 'HYPAR':
         return _hypar_boundary(op, N)
+    if m == 'HELICAL_CONE':
+        # the arrises all meet at the apex, so a "rail" through their
+        # far ends would be a point; only the base circle is a curve
+        segs = arrises_helical_cone(
+            op.radius, op.cone_height, op.flutes, op.flute_depth,
+            op.cone_twist, op.taper, op.orbit_amp, op.orbit_turns, 2)
+        return [([s[0] for s in segs[::2]], True)]
     if m == 'HYPERBOLOID':
         # a single ruling family gives clean bottom/top rails
         segs = rulings_hyperboloid(op.radius, op.height, op.twist,
@@ -843,8 +1342,19 @@ def _boundary_loops(op):
         return []
     rail0 = [s[0] for s in segs]
     rail1 = [s[1] for s in segs]
+    if m == 'CONOID' and op.conoid_kind in ('SINUSOIDAL_CONE',
+                                            'HELICOIDAL_CONE'):
+        # every ruling starts at the apex, so rail0 is a single point;
+        # only the directrix (the sine-wave crown, or the helix, which
+        # is open) is a curve
+        return [(rail1, op.conoid_kind == 'SINUSOIDAL_CONE')]
     closed = (m in ('HYPERBOLOID', 'KNOT_SPAN', 'TWIST_STRIP')
-              or (m == 'CONOID' and op.conoid_kind != 'WHITNEY'))
+              # Zindler's directrix has 2n separate branches running off
+              # to infinity, so its rails are open like Whitney's --
+              # and the parabolic conoid's parabola is open too
+              or (m == 'CONOID'
+                  and op.conoid_kind not in ('WHITNEY', 'ZINDLER',
+                                             'PARABOLIC_CONOID')))
     return [(rail0, closed), (rail1, closed)]
 
 
@@ -874,13 +1384,19 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         mode: EnumProperty(name="Surface", items=_MODES,
-                           default='HYPERBOLOID')
+                           default='HYPERBOLOID',
+                           description="Which ruled-surface family to "
+                                       "build")
         conoid_kind: EnumProperty(name="Conoid", items=_CONOID_KINDS,
-                                  default='PLUCKER')
+                                  default='PLUCKER',
+                                  description="Which right conoid to "
+                                              "build (Conoid mode)")
 
         # shared geometry
         radius: FloatProperty(name="Radius", default=1.0, min=0.01,
-                              max=20.0)
+                              max=20.0,
+                              description="Radius of the base circle or "
+                                          "helix the rulings spring from")
         height: FloatProperty(name="Half Height", default=1.0,
                               min=0.05, max=20.0,
                               description="Half the axial height "
@@ -900,10 +1416,17 @@ if _IN_BLENDER:
                                          "string sculpture)")
         # helical cone
         cone_height: FloatProperty(name="Height", default=2.5,
-                                   min=0.1, max=30.0)
-        flutes: IntProperty(name="Flutes", default=6, min=0, max=64)
+                                   min=0.1, max=30.0,
+                                   description="Total height of the cone, "
+                                               "base to apex")
+        flutes: IntProperty(name="Flutes", default=6, min=0, max=64,
+                            description="Number of helical flutes "
+                                        "(ridges) around the cone")
         flute_depth: FloatProperty(name="Flute Depth", default=0.18,
-                                   min=0.0, max=0.9)
+                                   min=0.0, max=0.9,
+                                   description="Depth of the flutes at "
+                                               "the base, fading to "
+                                               "arrises at the apex")
         cone_twist: FloatProperty(name="Spiral Twist", default=2.0,
                                   min=-12.0, max=12.0,
                                   description="Turns the flutes wind "
@@ -917,30 +1440,51 @@ if _IN_BLENDER:
                                  description="Amplitude of the second "
                                              "(planetary) helix")
         orbit_turns: FloatProperty(name="Orbit Turns", default=1.0,
-                                   min=-8.0, max=8.0)
+                                   min=-8.0, max=8.0,
+                                   description="Turns of the secondary "
+                                               "planetary helix over the "
+                                               "height")
         # spiral
         tightness: FloatProperty(name="Spiral Tightness", default=0.15,
                                  min=-0.6, max=0.6,
                                  description="Log-spiral growth k "
                                              "(0 = circle)")
         slope: FloatProperty(name="Ruling Slope", default=1.0,
-                             min=-6.0, max=6.0)
+                             min=-6.0, max=6.0,
+                             description="Vertical rise of the rulings; "
+                                         "in Helicoid mode tilts them off "
+                                         "horizontal (0 = right helicoid)")
         turns: FloatProperty(name="Turns", default=2.0, min=0.1,
-                             max=12.0)
+                             max=12.0,
+                             description="Number of turns of the base "
+                                         "curve or helix")
         petals: IntProperty(name="Symmetry", default=1, min=1, max=16,
                             description="Rosette fold count of the "
                                         "base curve (1 = plain "
                                         "spiral)")
         petal_amp: FloatProperty(name="Rosette Amount", default=0.0,
-                                 min=0.0, max=1.0)
+                                 min=0.0, max=1.0,
+                                 description="Depth of the rosette lobes "
+                                             "on the spiral base curve "
+                                             "(0 = plain spiral)")
         # conoid
         amp: FloatProperty(name="Amplitude", default=0.5, min=0.0,
-                           max=4.0)
-        folds: IntProperty(name="Folds", default=3, min=1, max=16)
+                           max=4.0,
+                           description="Height amplitude of the conoid's "
+                                       "rise and fall")
+        folds: IntProperty(name="Folds", default=3, min=1, max=16,
+                           description="Number of lobes for the n-fold "
+                                       "and Zindler conoids")
         wallis_a: FloatProperty(name="Wallis a", default=1.0,
-                                min=0.05, max=4.0)
+                                min=0.05, max=4.0,
+                                description="Wallis conical edge "
+                                            "parameter a, in "
+                                            "sqrt(a^2 - b^2 cos^2 u)")
         wallis_b: FloatProperty(name="Wallis b", default=0.6,
-                                min=0.0, max=4.0)
+                                min=0.0, max=4.0,
+                                description="Wallis conical edge "
+                                            "parameter b, in "
+                                            "sqrt(a^2 - b^2 cos^2 u)")
         # helix-based
         pitch: FloatProperty(name="Pitch", default=0.4, min=-4.0,
                              max=4.0,
@@ -950,27 +1494,51 @@ if _IN_BLENDER:
                              description="Inner offset from the "
                                          "cuspidal edge")
         inner: FloatProperty(name="Inner Radius", default=0.0,
-                             min=0.0, max=10.0)
+                             min=0.0, max=10.0,
+                             description="Radius of the hole where the "
+                                         "helicoid rulings start "
+                                         "(0 = full disc)")
         # twist strip
         width: FloatProperty(name="Strip Half-Width", default=0.4,
-                             min=0.02, max=5.0)
+                             min=0.02, max=5.0,
+                             description="Half-width of the twisted "
+                                         "strip; keep below the radius")
         half_twists: IntProperty(name="Half Twists", default=1,
-                                 min=0, max=12)
+                                 min=0, max=12,
+                                 description="Number of half-twists; odd "
+                                             "gives a one-sided Mobius "
+                                             "band")
         # hypar
-        hy_a: FloatProperty(name="a", default=1.0, min=0.05, max=6.0)
-        hy_b: FloatProperty(name="b", default=1.0, min=0.05, max=6.0)
+        hy_a: FloatProperty(name="a", default=1.0, min=0.05, max=6.0,
+                            description="Width scale a in "
+                                        "z = c((x/a)^2 - (y/b)^2)")
+        hy_b: FloatProperty(name="b", default=1.0, min=0.05, max=6.0,
+                            description="Width scale b in "
+                                        "z = c((x/a)^2 - (y/b)^2)")
         hy_c: FloatProperty(name="Saddle Height", default=1.0,
-                            min=0.05, max=6.0)
+                            min=0.05, max=6.0,
+                            description="Vertical scale c of the saddle")
         use_corners: BoolProperty(name="From 4 Corner Points",
-                                  default=False)
+                                  default=False,
+                                  description="Build the hypar as a "
+                                              "bilinear patch spanning "
+                                              "four skew corner points")
         p00: FloatVectorProperty(name="P00", size=3,
-                                 default=(-1.0, -1.0, -1.0))
+                                 default=(-1.0, -1.0, -1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=0, t=0)")
         p10: FloatVectorProperty(name="P10", size=3,
-                                 default=(1.0, -1.0, 1.0))
+                                 default=(1.0, -1.0, 1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=1, t=0)")
         p01: FloatVectorProperty(name="P01", size=3,
-                                 default=(-1.0, 1.0, 1.0))
+                                 default=(-1.0, 1.0, 1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=0, t=1)")
         p11: FloatVectorProperty(name="P11", size=3,
-                                 default=(1.0, 1.0, -1.0))
+                                 default=(1.0, 1.0, -1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=1, t=1)")
         # concentric torus-knot span
         knot_p: IntProperty(name="Knot p", default=2, min=1, max=8,
                             description="Times the knots wind around "
@@ -980,7 +1548,9 @@ if _IN_BLENDER:
                                         "around the tube; 0 makes it a "
                                         "flat circle wound p times")
         knot_scale: FloatProperty(name="Inner Scale", default=1.0,
-                                  min=0.1, max=5.0)
+                                  min=0.1, max=5.0,
+                                  description="Overall size of the inner "
+                                              "torus knot")
         knot_tube: FloatProperty(name="Inner Tube", default=1.0,
                                  min=0.0, max=5.0,
                                  description="Tube radius of the inner "
@@ -1012,7 +1582,9 @@ if _IN_BLENDER:
                                               "degenerates it to a "
                                               "circle")
         knot_outer_scale: FloatProperty(name="Outer Scale",
-                                        default=2.0, min=0.1, max=10.0)
+                                        default=2.0, min=0.1, max=10.0,
+                                        description="Overall size of the "
+                                                    "outer torus knot")
         knot_outer_tube: FloatProperty(name="Outer Tube", default=1.0,
                                        min=0.0, max=5.0,
                                        description="Tube radius of the "
@@ -1035,12 +1607,24 @@ if _IN_BLENDER:
                                 description="Half-length of the "
                                             "rulings / patch extent")
         res_u: IntProperty(name="Resolution U", default=120, min=6,
-                           max=800)
+                           max=800,
+                           description="Samples around the surface, along "
+                                       "the base curve")
         res_v: IntProperty(name="Resolution V", default=20, min=1,
-                           max=200)
+                           max=200,
+                           description="Samples across the rulings")
         output: EnumProperty(
             name="Output",
-            items=[('SURFACE', "Surface",
+            description="Build the filled surface, or its straight "
+                        "rulings as solid rods or bare curves.  The "
+                        "compound helical cone is not straight-ruled, "
+                        "so for that one these draw its arrises -- the "
+                        "helical ridges of its flutes",
+            items=[('AUTO', "Automatic",
+                    "Rulings as rods for the straight-ruled surfaces, "
+                    "and the filled surface for the compound helical "
+                    "cone, which has none"),
+                   ('SURFACE', "Surface",
                     "The filled ruled surface"),
                    ('RODS', "Rulings as Rods",
                     "The straight rulings as solid rods (string / "
@@ -1048,39 +1632,55 @@ if _IN_BLENDER:
                    ('CURVES', "Bare Curves",
                     "The straight rulings as a bare wireframe of "
                     "edges (no faces)")],
-            default='SURFACE')
+            default='AUTO')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
-                            max=400)
+                            max=400,
+                            description="Number of rulings drawn in rods "
+                                        "or bare-curves output")
         rod_radius: FloatProperty(name="Rod Radius", default=0.02,
-                                  min=0.002, max=0.3)
+                                  min=0.002, max=0.3,
+                                  description="Radius of each rod in rods "
+                                              "output")
         show_boundaries: BoolProperty(
             name="Include Boundary Curves", default=True,
             description="Add the directrix / rail curves the rulings "
                         "are strung between (the two torus knots, the "
                         "hyperboloid's end circles, etc.) to the rods / "
                         "bare-curves output")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
         thickness: FloatProperty(name="Thickness", default=0.0,
                                  min=0.0, max=1.0,
                                  description="Solidify thickness "
                                              "(surface modes)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; 1 fits the "
+                                         "2 m cube")
 
         def execute(self, context):
             verts, faces, name = _build_surface(self)
             edges = []
             info = ""
-            want_rulings = self.output in ('RODS', 'CURVES')
+            out = effective_output(self)
+            want_rulings = out in ('RODS', 'CURVES')
             if want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
-                if self.show_boundaries:
-                    segs = segs + _loop_segments(_boundary_loops(self))
-                if self.output == 'RODS':
+                loops = (_boundary_loops(self)
+                         if self.show_boundaries else [])
+                if out == 'RODS':
                     verts, faces = _rods(segs, self.rod_radius, 8)
+                    # the rails are continuous curves, so they are swept
+                    # as one tube each instead of a capped cylinder per
+                    # chord, which would lump at every joint
+                    tv, tf = _tubes(loops, self.rod_radius, 8)
+                    o = len(verts)
+                    verts = list(verts) + tv
+                    faces = list(faces) + [[i + o for i in q] for q in tf]
                     name += " (Rods)"
                 else:
-                    verts, faces = _edges(segs)
+                    verts, faces = _edges(
+                        segs + _loop_segments(loops))
                     name += " (Curves)"
             elif want_rulings:
                 info = " [rulings N/A for this mode]"
@@ -1109,7 +1709,7 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            if self.thickness > 0 and self.output == 'SURFACE':
+            if self.thickness > 0 and out == 'SURFACE':
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
                 mod.offset = 0.0
@@ -1136,13 +1736,28 @@ if _IN_BLENDER:
             elif m == 'SPIRAL':
                 keys = ('tightness', 'slope', 'turns', 'petals',
                         'petal_amp', 'v_extent')
+            elif m in _NAMED_MODES:
+                nk = m
+                if nk == 'GAUDI':
+                    keys = ('amp', 'wallis_a', 'v_extent')
+                elif nk == 'GUIMARD':
+                    keys = ('amp', 'wallis_a', 'v_extent')
+                elif nk == 'MILK_CARTON':
+                    keys = ('amp', 'v_extent')
+                elif nk == 'RULED_CUBIC':
+                    keys = ('v_extent',)
+                else:
+                    keys = ('folds', 'wallis_a', 'wallis_b', 'v_extent')
             elif m == 'CONOID':
                 lay.prop(self, 'conoid_kind')
                 keys = ('amp',)
-                if self.conoid_kind == 'NFOLD':
+                if self.conoid_kind in ('NFOLD', 'ZINDLER',
+                                        'SINUSOIDAL_CONE'):
                     keys += ('folds',)
                 elif self.conoid_kind == 'WALLIS':
                     keys += ('wallis_a', 'wallis_b')
+                elif self.conoid_kind == 'HELICOIDAL_CONE':
+                    keys += ('turns',)
                 keys += ('v_extent',)
             elif m == 'TANGENT_DEV':
                 keys = ('radius', 'pitch', 'turns', 'v_extent',
@@ -1173,11 +1788,11 @@ if _IN_BLENDER:
             lay.prop(self, 'res_v')
             if m in _RULED:
                 lay.prop(self, 'output')
-                if self.output in ('RODS', 'CURVES'):
+                if effective_output(self) in ('RODS', 'CURVES'):
                     if m == 'HYPERBOLOID':
                         lay.prop(self, 'family')
                     lay.prop(self, 'n_rods')
-                    if self.output == 'RODS':
+                    if effective_output(self) == 'RODS':
                         lay.prop(self, 'rod_radius')
                     lay.prop(self, 'show_boundaries')
             for k in ('smooth', 'thickness', 'scale'):
@@ -1214,8 +1829,17 @@ def _selftest():
         ("nfold", lambda: build_conoid('NFOLD', folds=5, res_u=48,
                                        res_v=8)),
         ("wallis", lambda: build_conoid('WALLIS', res_u=48, res_v=8)),
+        ("zindler", lambda: build_conoid('ZINDLER', folds=2, res_u=48,
+                                         res_v=8)),
         ("whitney", lambda: build_conoid('WHITNEY', res_u=32,
                                          res_v=8)),
+        ("parabolic conoid", lambda: build_conoid('PARABOLIC_CONOID',
+                                                  res_u=48, res_v=8)),
+        ("sinusoidal cone", lambda: build_conoid('SINUSOIDAL_CONE',
+                                                 folds=3, res_u=48,
+                                                 res_v=8)),
+        ("helicoidal cone", lambda: build_conoid('HELICOIDAL_CONE',
+                                                 res_u=64, res_v=8)),
         ("tangent dev", lambda: build_tangent_developable(res_u=64,
                                                           res_v=8)),
         ("helicoid", lambda: build_helicoid(res_u=64, res_v=8)),
@@ -1246,6 +1870,85 @@ def _selftest():
         assert valid, f"{label}: face index out of range"
         print(f"{label}: V={len(verts)} F={len(faces)} "
               f"finite={finite} indices_ok={valid}")
+
+    # Zindler's conoid is defined by a cartesian equation, so gate on
+    # it rather than on "it meshed": for n = 2 every vertex must
+    # satisfy z(x^2 - y^2) = 2 a x y exactly, and for general n the
+    # cylindrical z = a tan(n theta).  Sampling the height and
+    # inverting the tangent (rather than sampling theta) is what makes
+    # the mesh bounded, and this is the check that the inversion is
+    # right way round -- a sign slip there produces a plausible
+    # crown-shaped surface that is simply a different conoid.
+    for n_ in (1, 2, 3):
+        a_ = 0.5
+        verts, _f = build_conoid('ZINDLER', amp=a_, folds=n_,
+                                 extent=1.0, res_u=41, res_v=6)
+        V = np.asarray(verts, dtype=float)
+        # every ruling passes through the axis, and on Oz -- the
+        # conoid's double line -- theta is undefined, so those points
+        # carry no cylindrical identity to check
+        V = V[np.hypot(V[:, 0], V[:, 1]) > 1e-9]
+        th = np.arctan2(V[:, 1], V[:, 0])
+        # tan(n theta) blows up at the asymptotes; compare as
+        # z cos(n th) == a sin(n th), which is the same identity
+        # cleared of its denominator and finite everywhere
+        resid = np.abs(V[:, 2] * np.cos(n_ * th) - a_ * np.sin(n_ * th))
+        assert np.max(resid) < 1e-9, (n_, float(np.max(resid)))
+        if n_ == 1:
+            # n = 1 degenerates to the equilateral hyperbolic
+            # paraboloid x z = a y
+            hyp = np.abs(V[:, 0] * V[:, 2] - a_ * V[:, 1])
+            assert np.max(hyp) < 1e-9, float(np.max(hyp))
+        if n_ == 2:
+            cart = np.abs(V[:, 2] * (V[:, 0] ** 2 - V[:, 1] ** 2)
+                          - 2.0 * a_ * V[:, 0] * V[:, 1])
+            assert np.max(cart) < 1e-9, float(np.max(cart))
+        # 2n branches, each an open patch -- and the height really is
+        # bounded, which is the whole point of the sampling
+        assert np.max(np.abs(V[:, 2])) <= 2.0 + 1e-9
+    print("zindler conoid: z = a tan(n theta) holds for n = 1, 2, 3, "
+          "xz = ay at n = 1, z(x^2-y^2) = 2axy at n = 2, height "
+          "bounded  OK")
+
+    # the three Ferreol additions are defined by cartesian /
+    # cylindrical equations, so gate on those identities too:
+    #   parabolic conoid   a^2 z = x (b^2 - y^2)  (b = 1, amp = 1/a^2)
+    #   sinusoidal cone    z = k rho cos(n theta)
+    #   helicoidal cone    every ruling passes through the apex, and
+    #                      the directrix ring is the helix z = k theta
+    #                      (checked unwound, ring by ring)
+    amp_ = 0.5
+    verts, _f = build_conoid('PARABOLIC_CONOID', amp=amp_, extent=1.0,
+                             res_u=33, res_v=6)
+    V = np.asarray(verts, dtype=float)
+    resid = np.abs(V[:, 2] - amp_ * V[:, 0] * (1.0 - V[:, 1] ** 2))
+    assert np.max(resid) < 1e-12, float(np.max(resid))
+    for n_ in (1, 2, 3):
+        verts, _f = build_conoid('SINUSOIDAL_CONE', amp=amp_, folds=n_,
+                                 extent=1.0, res_u=48, res_v=6)
+        V = np.asarray(verts, dtype=float)
+        rho = np.hypot(V[:, 0], V[:, 1])
+        keep = rho > 1e-9
+        th = np.arctan2(V[keep, 1], V[keep, 0])
+        resid = np.abs(V[keep, 2]
+                       - amp_ * rho[keep] * np.cos(n_ * th))
+        assert np.max(resid) < 1e-9, (n_, float(np.max(resid)))
+        assert np.min(np.linalg.norm(V, axis=1)) < 1e-12  # apex is there
+    verts, _f = build_conoid('HELICOIDAL_CONE', amp=amp_, extent=1.0,
+                             res_u=48, res_v=6, turns=2.0)
+    V = np.asarray(verts, dtype=float)
+    assert np.min(np.linalg.norm(V, axis=1)) < 1e-12
+    rho = np.hypot(V[1:, 0], V[1:, 1])
+    # z / rho = amp * v with v the (unwound) helix parameter: recover v
+    # from z itself and confirm the angle matches it mod 2 pi
+    vpar = V[1:, 2] / (amp_ * np.maximum(rho, 1e-300))
+    ang = np.arctan2(V[1:, 1], V[1:, 0])
+    wrap = np.abs(((vpar - ang) + math.pi) % _TWO_PI - math.pi)
+    assert np.max(wrap) < 1e-6, float(np.max(wrap))
+    print("ferreol conoids: a^2 z = x(b^2 - y^2) on the parabolic "
+          "conoid, z = k rho cos(n theta) on the sinusoidal cone "
+          "(n = 1, 2, 3), apex + unwound helix on the helicoidal "
+          "cone  OK")
 
     # the waist radius of the stick hyperboloid must equal R cos(tw/2)
     R, tw = 1.0, 120.0
@@ -1313,4 +2016,74 @@ def _selftest():
                'TWIST_STRIP', 'HYPAR'):
         assert md in _RULED
     print(f"curves: {len(segs)} segments -> V={len(ev)} E={len(ee)} OK")
+
+    # ---- the five named ruled surfaces --------------------------------
+    # Each is checked on the property that DEFINES it, not on its mesh.
+    for kd in ('GAUDI', 'GUIMARD', 'MILK_CARTON', 'RULED_CUBIC',
+               'CONSTANT_SLOPE'):
+        V, F = build_named_ruled(kd, res_u=90, res_v=8)
+        assert len(F) > 0 and np.all(np.isfinite(np.asarray(V))), kd
+        assert len(rulings_named_ruled(kd, n=24)) == 24, kd
+
+    # Milk carton: the source gives a closed-form volume, which is an
+    # independent check on the parametrization rather than on the mesh.
+    k, al = 0.5, 1.0
+    V, F = build_named_ruled('MILK_CARTON', amp=k, extent=al,
+                             res_u=320, res_v=160)
+    V = np.asarray(V)
+    vol = 0.0
+    for f in F:
+        for i in range(1, len(f) - 1):
+            a, b, c = V[f[0]], V[f[i]], V[f[i + 1]]
+            vol += float(np.dot(a, np.cross(b, c))) / 6.0
+    want = 4.0 * math.pi * k * k * al ** 3 / 3.0
+    assert abs(abs(vol) - want) < 1e-3 * want, (abs(vol), want)
+    print("milk carton: volume %.6f vs the published 4.pi.k^2.a^3/3 = "
+          "%.6f OK" % (abs(vol), want))
+
+    # Constant slope: the tangent plane must make the SAME angle with the
+    # horizontal everywhere -- that is the definition.  Measured on the
+    # analytic tangent plane, not on mesh triangles: a quad only lies in
+    # the tangent plane in the limit, so a mesh test would be reporting
+    # its own truncation error (it falls off like 1/res, from 1.4e-2 at
+    # res 100 to 2.2e-5 at 1600).
+    uu = np.linspace(0.0, _TWO_PI, 900, endpoint=False)
+    du = 1e-7
+    worst = 0.0
+    for vv in (0.0, 0.35, 0.7, 1.0):
+        A, B = named_ruled_curves('CONSTANT_SLOPE', uu)
+        A2, B2 = named_ruled_curves('CONSTANT_SLOPE', uu + du)
+        P = A + vv * (B - A)
+        Pu = ((A2 + vv * (B2 - A2)) - P) / du
+        N = np.cross(Pu, B - A)
+        nz = np.abs(N[:, 2] / np.linalg.norm(N, axis=1))
+        worst = max(worst, float(nz.max() - nz.min()))
+        assert abs(float(nz.mean()) - 1.0 / math.sqrt(2.0)) < 1e-6, nz.mean()
+    assert worst < 1e-9, worst
+    print("constant slope: tangent plane holds one angle to the "
+          "horizontal across the whole surface (spread %.1e) OK" % worst)
+
+    # Ruled cubic: it should satisfy a cubic and NOT a quadric.  Fitting
+    # both and looking at the null space says which -- a cubic with a
+    # 1-dimensional null space is one surface, not a coincidence.
+    uu = np.linspace(-1.4, 1.4, 80)
+    A, B = named_ruled_curves('RULED_CUBIC', uu)
+    vv = np.linspace(0.0, 1.0, 18)
+    P = (A[:, None, :] + vv[None, :, None] * (B - A)[:, None, :])
+    P = P.reshape(-1, 3)
+    P = P[np.all(np.isfinite(P), axis=1)]
+
+    def _nullity(deg):
+        mon = [(i, j, k) for i in range(deg + 1)
+               for j in range(deg + 1 - i) for k in range(deg + 1 - i - j)]
+        M = np.stack([P[:, 0] ** i * P[:, 1] ** j * P[:, 2] ** k
+                      for i, j, k in mon], 1)
+        s = np.linalg.svd(M, compute_uv=False)
+        return int(np.sum(s < 1e-6 * s[0])), float(s[-1] / s[0])
+    n2, _r2 = _nullity(2)
+    n3, r3 = _nullity(3)
+    assert n2 == 0, "the ruled cubic collapsed onto a quadric"
+    assert n3 == 1, ("expected exactly one cubic", n3)
+    print("ruled cubic: no quadric fits, and exactly one cubic does "
+          "(residual %.1e) OK" % r3)
     print("RESULT: OK")

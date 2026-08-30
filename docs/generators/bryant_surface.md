@@ -1,5 +1,7 @@
 # Bryant Surface
 
+![Bryant Surface](../images/bryant_surface.png)
+
 ## Overview
 
 Add a Bryant surface: constant mean curvature ONE in
@@ -24,8 +26,8 @@ $H=1$ is the distinguished value in hyperbolic space the way $H=0$ is in Euclide
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Catenoid Cousin | Catenoid Cousin, Enneper Cousin, Polynomial Data, Trinoid. |
-| Model | Poincare Ball | Poincare Ball, Klein Ball, Hyperboloid. |
+| Surface | Catenoid Cousin | Which Bryant CMC-1 surface family to build. Catenoid Cousin, Enneper Cousin, Polynomial Data, Trinoid. |
+| Model | Poincare Ball | Model of hyperbolic space the surface is drawn in. Poincare Ball, Klein Ball, Hyperboloid. |
 | mu | -0.3 | Catenoid-cousin parameter, mu > -1/2 and mu != 0.  Total curvature is -4 pi (2 mu + 1); the profile is embedded below 0 and has one self-intersection above it Range -0.49-3. |
 | lambda | 1 | Enneper-cousin parameter (only its modulus matters, so it is taken real and positive) Range 0.05-6. |
 | Degree n | 1 | r1 = z^n in the Theorem B data; n = 1 reproduces Enneper's cousin Range 1-6. |
@@ -34,11 +36,11 @@ $H=1$ is the distinguished value in hyperbolic space the way $H=0$ is in Euclide
 | d1 | 0.18 | Modulus of the end at z = 1; set all three equal for a symmetric trinoid (embedded below 0.2332, self-intersecting above) Range 0.01-1.2. |
 | d_inf | 0.2 | Modulus of the end at z = infinity Range 0.01-1.2. |
 | Domain Extent | 1 | Scales the parameter domain: larger reaches further out towards the sphere at infinity Range 0.1-3. |
-| U Resolution | 96 | Range 8-400. |
-| V Resolution | 96 | Range 8-400. |
+| U Resolution | 96 | Mesh divisions along the u parameter Range 8-400. |
+| V Resolution | 96 | Mesh divisions along the v parameter Range 8-400. |
 | ODE Steps | 64 | RK4 steps per ray for the Theorem B integration Range 8-512. |
-| Smooth Shading | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smooth rather than faceted |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 
@@ -93,7 +95,7 @@ $$F'=F\begin{pmatrix} r_1r_2 & -r_2^{\,2}\\ r_1^{\,2} & -r_1r_2\end{pmatrix},\qq
 
 gives a complete CMC-1 immersion of $\mathbb{C}$ with total curvature $-4\pi k$. Notice the matrix has determinant $r_1^2r_2^2-r_1^2r_2^2=0$ identically — so the nullity condition holds automatically, for *any* polynomials, and the recipe can never accidentally leave the CMC-1 family. To evaluate $F$ at a sample point the code integrates that ODE outward from $F(0)=I$ along the straight ray to the point, by RK4. It can take the straight ray because the equation is holomorphic and the plane is simply connected: the answer does not depend on the path, so the cheapest path — the radial one — is as good as any. Exposed here as $r_1=z^n$, $r_2=c$, which contains the Enneper cousin at $n=1$ and generalises upward as $n$ raises the order of the end.
 
-**Trinoid** — Bobenko–Pavlyukevich–Springborn's explicit CMC-1 surfaces of genus zero with **three catenoidal ends**: think of a sphere with three points removed, each puncture opening out into a flaring funnel, the three funnels joined at a central body. The parameter domain is exactly that thrice-punctured sphere $\mathbb{CP}^1\setminus\{0,1,\infty\}$, the three removed points $0,1,\infty$ becoming the three ends. Their spinor immersion $F=\Psi\overline{\Psi}^{\,\mathsf T}$ solves
+**Trinoid** — Bobenko–Pavlyukevich–Springborn's explicit CMC-1 surfaces of genus zero with **three catenoidal ends**: think of a sphere with three points removed, each puncture opening out into a flaring funnel, the three funnels joined at a central body. The parameter domain is exactly that thrice-punctured sphere $\mathbb{CP}^1\setminus\lbrace0,1,\infty\rbrace$, the three removed points $0,1,\infty$ becoming the three ends. Their spinor immersion $F=\Psi\overline{\Psi}^{\,\mathsf T}$ solves
 $$\Psi_z=\begin{pmatrix} PQ & P^2\\ -Q^2 & -PQ\end{pmatrix}\Psi,\qquad P=\tfrac{p_0}{z}+\tfrac{p_1}{z-1}+p_\infty,\quad Q=\tfrac{q_0}{z}+\tfrac{q_1}{z-1}+q_\infty,$$
 which a gauge reduces to a Fuchsian system $\Phi_z=\big(A_0/z+A_1/(z-1)\big)\Phi$ whose canonical solutions at the three punctures are $2\times2$ matrices of Gauss hypergeometric functions ${}_2F_1$, glued by connection matrices. The ends are described by three moduli
 $$d_0,\;d_1,\;d_\infty,\qquad \alpha=\tfrac12-\sqrt{d_0},\;\;\tau=\sqrt{d_1},\;\;\rho=\sqrt{d_\infty},$$

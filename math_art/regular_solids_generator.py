@@ -32,8 +32,10 @@
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
 # stella octangula, dodecahedron the small stellated dodecahedron),
-# Solid / Leonardo (da Vinci) / Wireframe styles, and coloring by
-# face size (sharing the Conway generator's palette).
+# Solid / Leonardo (da Vinci) / Wireframe styles, a papercraft net
+# (the shell edge-unfolded flat, with fold lines, glue tabs and a Fold
+# slider that folds it back up -- see `styles/net_style.py`), and
+# coloring by face size (sharing the Conway generator's palette).
 #
 # References:
 # - Platonic solids: Euclid, "Elements" Book XIII (construction
@@ -45,6 +47,10 @@
 #   Poinsot, "Memoire sur les polygones et les polyedres" (1810).
 # - Johnson solids: Norman W. Johnson (1966); completeness proved by
 #   Victor Zalgaller (1969).
+# - Polyhedral nets: Albrecht Duerer, "Underweysung der Messung mit dem
+#   Zirckel und Richtscheyt" (Nuremberg, 1525), which introduced the
+#   unfolded-and-folded-up presentation the Papercraft Net style
+#   builds.
 
 bl_info = {
     "name": "Regular Solids",
@@ -179,10 +185,15 @@ _J = [
      ('cup', 5), 0),
     (31, "Pentagonal Gyrobicupola (J31)", ('cup', 5), None,
      ('cup', 5), 1),
+    # NB the twist that means "ortho" for a bicupola means "gyro" for a
+    # cupola-ROTUNDA pair: a rotunda's decagonal rim alternates triangle /
+    # pentagon where a cupola's alternates triangle / square, so the two rims
+    # line up half a step apart.  J32/J33 and J40/J41 therefore carry the
+    # opposite twist to J30/J31 and J38/J39.
     (32, "Pentagonal Orthocupolarotunda (J32)", ('rot',), None,
-     ('cup', 5), 0),
-    (33, "Pentagonal Gyrocupolarotunda (J33)", ('rot',), None,
      ('cup', 5), 1),
+    (33, "Pentagonal Gyrocupolarotunda (J33)", ('rot',), None,
+     ('cup', 5), 0),
     (34, "Pentagonal Orthobirotunda (J34)", ('rot',), None,
      ('rot',), 0),
     (35, "Elongated Triangular Orthobicupola (J35)", ('cup', 3),
@@ -196,9 +207,9 @@ _J = [
     (39, "Elongated Pentagonal Gyrobicupola (J39)", ('cup', 5),
      'prism', ('cup', 5), 1),
     (40, "Elongated Pentagonal Orthocupolarotunda (J40)", ('rot',),
-     'prism', ('cup', 5), 0),
+     'prism', ('cup', 5), 1),          # see the J32/J33 note above
     (41, "Elongated Pentagonal Gyrocupolarotunda (J41)", ('rot',),
-     'prism', ('cup', 5), 1),
+     'prism', ('cup', 5), 0),
     (42, "Elongated Pentagonal Orthobirotunda (J42)", ('rot',),
      'prism', ('rot',), 0),
     (43, "Elongated Pentagonal Gyrobirotunda (J43)", ('rot',),
@@ -706,9 +717,41 @@ def _augment_cupola(V, F, fi, shift=0, edge=1.0):
     return V, NF
 
 
-def _augment_cupola_faces(V, F, idxs, shift=0):
+def _edge_neighbour_size(V, F, fi, k):
+    """Number of sides of the face across edge k of face fi."""
+    f = F[fi]
+    a, b = f[k % len(f)], f[(k + 1) % len(f)]
+    for j, g in enumerate(F):
+        if j == fi or a not in g or b not in g:
+            continue
+        m = len(g)
+        if any({g[t], g[(t + 1) % m]} == {a, b} for t in range(m)):
+            return m
+    return 0
+
+
+def _cupola_shift_for(V, F, fi):
+    """The shift that seats a cupola on face fi the way the Johnson solids do.
+
+    A truncated solid's 2n-gon has edges that ALTERNATE between a large
+    neighbour and a triangle; the cupola must land with its triangles over the
+    large-neighbour edges and its squares over the triangle edges.  Which
+    literal shift value achieves that depends on where the face's vertex list
+    happens to start, so it is measured here rather than assumed -- passing a
+    fixed shift is correct only by luck, and silently produces the wrong solid
+    for every face whose list starts on the other parity.
+    """
+    return 0 if (_edge_neighbour_size(V, F, fi, 0)
+                 >= _edge_neighbour_size(V, F, fi, 1)) else 1
+
+
+def _augment_cupola_faces(V, F, idxs, shift=None):
+    """Glue cupolas onto the given faces.  `shift=None` (the default) picks
+    each cupola's orientation from the base's local structure, which is what
+    keeps multi-augmentation correct."""
     for fi in sorted(idxs, reverse=True):
-        V, F = _augment_cupola(V, F, fi, shift=shift)
+        s = _cupola_shift_for(V, F, fi) if shift is None else shift
+        V, F = _augment_cupola(V, F, fi, shift=s)
     return V, F
 
 
@@ -1112,9 +1155,26 @@ def build_johnson_ext(num, scale=1.0):
         for i in dim_i:
             V, F = _diminish_cap(V, F, _find_face_by_dir(V, F, dirs[i], 5))
         for i in gyr_i:
-            V, F = _diminish_cap(V, F, _find_face_by_dir(V, F, dirs[i], 5))
+            # Gyrating means re-gluing the cupola in the OTHER of its two
+            # orientations.  `_augment_cupola`'s `shift` counts ring steps
+            # from the decagon's first listed vertex, and that starting
+            # vertex is arbitrary -- it moves when an earlier cap is
+            # diminished -- so a hard-coded shift gyrates for some solids and
+            # silently restores the original for others.  Decide it by
+            # geometry instead: remember where the cap's pentagon was, and
+            # take whichever shift does not put it back there.
+            fi5 = _find_face_by_dir(V, F, dirs[i], 5)
+            before = {tuple(round(c, 6) for c in V[k]) for k in F[fi5]}
+            V, F = _diminish_cap(V, F, fi5)
             di = _find_face_by_dir(V, F, dirs[i], 10)
-            V, F = _augment_cupola(V, F, di, shift=1)
+            for _sh in (0, 1):
+                V2, F2 = _augment_cupola(V, F, di, shift=_sh)
+                after = {tuple(round(c, 6) for c in V2[k]) for k in F2[-1]}
+                if after != before:
+                    V, F = V2, F2
+                    break
+            else:                       # both orientations coincide: impossible
+                raise ValueError(f"J{num}: cupola gyration had no effect")
     else:
         raise ValueError(f"J{num} not available")
     cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
@@ -1794,6 +1854,10 @@ try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
                            BoolProperty)
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -1869,7 +1933,8 @@ if _IN_BLENDER:
         if ids and self.solid not in ids:
             self.solid = ids[0]
 
-    class MESH_OT_regular_solid_add(bpy.types.Operator):
+    class MESH_OT_regular_solid_add(bpy.types.Operator,
+                                    _net_style.NetStyleProps):
         """Add a regular / semiregular / star / Johnson solid,
         organised by family, with stellation, styles and coloring"""
         bl_idname = "mesh.regular_solid_add"
@@ -1877,8 +1942,11 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(name="Family", items=FAMILIES,
-                             default='PLATONIC', update=_family_update)
-        solid: EnumProperty(name="Solid", items=_solid_items)
+                             default='PLATONIC', update=_family_update,
+                             description="Family of solids to choose from")
+        solid: EnumProperty(name="Solid", items=_solid_items,
+                            description="Which solid within the chosen "
+                                        "family to build")
         n: IntProperty(name="Sides", default=6, min=3, max=32,
                        description="Prism / antiprism base sides")
         canonicalize: BoolProperty(
@@ -1892,7 +1960,9 @@ if _IN_BLENDER:
                         "trapezohedra); the exact families are left "
                         "untouched")
         canon_iters: IntProperty(name="Canonical Iterations", default=250,
-                                 min=5, max=3000)
+                                 min=5, max=3000,
+                                 description="Number of Hart "
+                                             "canonicalization passes")
         handedness: EnumProperty(
             name="Handedness",
             items=[('RIGHT', "Right-Handed", "As constructed"),
@@ -1922,8 +1992,10 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split the shell into one thick plate per face, "
-                    "padded apart and optionally exploded outward")],
-            default='SOLID')
+                    "padded apart and optionally exploded outward"),
+                   _net_style.net_enum_item()],
+            default='SOLID',
+            description="How the solid is rendered as geometry")
         facet_depth: FloatProperty(
             name="Depth", default=0.15, min=0.01, max=2.0,
             description="How far each face is extruded inward (Face "
@@ -1936,10 +2008,14 @@ if _IN_BLENDER:
             name="Separate Meshes", default=False,
             description="Output each face segment as its own mesh "
                         "object (Face Segments style)")
-        border: FloatProperty(name="Border", default=0.3, min=0.02,
-                              max=0.95)
+        border: FloatProperty(name="Border", default=0.06, min=0.005,
+                              max=1.0,
+                              description="Frame width left around each "
+                                          "open panel in the Leonardo style")
         thickness: FloatProperty(name="Thickness", default=0.05,
-                                 min=0.001, max=1.0)
+                                 min=0.001, max=1.0,
+                                 description="Shell / panel / wire "
+                                             "thickness")
         strut_radius: FloatProperty(
             name="Strut Radius", default=0.02, min=0.001, max=0.5,
             description="Ball-and-stick edge cylinder radius")
@@ -1954,7 +2030,8 @@ if _IN_BLENDER:
                     "Conway generator; view with Material Preview "
                     "or Solid shading set to Material color)"),
                    ('NONE', "None", "")],
-            default='SIDES')
+            default='SIDES',
+            description="How the faces are coloured")
         pieces: IntProperty(
             name="Congruent Pieces", default=1, min=1, max=60,
             description="Split the shell into this many congruent, "
@@ -1966,9 +2043,12 @@ if _IN_BLENDER:
             name="Explode", default=0.1, min=0.0, max=5.0,
             description="Move each piece / face segment outward along "
                         "its centroid direction so the split is "
-                        "visible")
+                        "visible; for a Papercraft Net, the gap left "
+                        "between separate pieces of the net")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; fits the result into "
+                                         "a 2 m cube times this factor")
 
         _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
                     5: (0.30, 0.69, 0.42), 6: (0.95, 0.77, 0.29),
@@ -2043,6 +2123,11 @@ if _IN_BLENDER:
                         and (self.family, sid) in CHIRAL):
                     V, F = mirror_solid(V, F)
                 return self._emit_facets(context, V, F, label)
+            if self.style == 'NET':
+                if (self.handedness == 'LEFT'
+                        and (self.family, sid) in CHIRAL):
+                    V, F = mirror_solid(V, F)
+                return self._emit_net(context, V, F, label)
             if self.pieces > 1:
                 assign, valid = split_congruent(V, F, self.pieces)
                 if assign is None:
@@ -2159,6 +2244,19 @@ if _IN_BLENDER:
                    else ""))
             return {'FINISHED'}
 
+        def _emit_net(self, context, V, F, label):
+            hint = None
+            if self.family == 'KEPLER':
+                hint = ("the star faces cross one another instead of "
+                        "meeting edge to edge. Of the Kepler-Poinsot "
+                        "solids only the Great Dodecahedron unfolds")
+            return _net_style.emit_net_from_operator(
+                self, context, V, F, label,
+                gap=max(0.02, self.explode) * self.scale,
+                material_fn=(self._material_for
+                             if self.coloring == 'SIDES' else None),
+                hint=hint)
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
@@ -2194,8 +2292,11 @@ if _IN_BLENDER:
                 lay.prop(self, 'padding')
                 lay.prop(self, 'explode')
                 lay.prop(self, 'separate_facets')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
+                lay.prop(self, 'explode', text="Piece Spacing")
             lay.prop(self, 'coloring')
-            if self.style != 'FACETS':
+            if self.style not in ('FACETS', 'NET'):
                 lay.prop(self, 'pieces')
                 if self.pieces > 1:
                     lay.prop(self, 'explode')
@@ -2281,8 +2382,17 @@ def _selftest():
                 a, b = f[i], f[(i + 1) % len(f)]
                 e2[(min(a, b), max(a, b))].append(len(f))
         return sum(1 for s in e2.values() if s == [3, 3])
+    # Triangle-triangle contacts across the join distinguish ortho from gyro
+    # -- but the sense REVERSES between a bicupola and a cupolarotunda, and
+    # assuming otherwise is what made J32/J33 come out swapped.  A cupola's rim
+    # alternates triangle/square, a rotunda's triangle/pentagon, so "ortho"
+    # there seats triangles against pentagons and leaves NO triangle pair.
+    # Confirmed independently by two sources: netlib's Johnson records give
+    # J32 the vertex figure (3.4.3.5) -- alternating, no adjacent triangles --
+    # against J33's (3^2.4.5); and D. McCooey's tables give the same
+    # face-contact counts.
     for num, expect in ((27, True), (28, True), (29, False),
-                        (32, True), (33, False), (34, True)):
+                        (32, False), (33, True), (34, True)):
         has = titi(num) > 0
         ok = has == expect
         print(f"J{num} tri-tri contacts={has} (expect {expect}) "

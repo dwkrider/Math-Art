@@ -174,12 +174,17 @@ if _IN_BLENDER:
             name="Tube Ratio", default=0.28, min=0.05, max=0.5,
             description="Tube radius as a fraction of ring radius")
         ring_seg: IntProperty(
-            name="Ring Segments", default=28, min=6, max=96)
+            name="Ring Segments", default=28, min=6, max=96,
+            description="Segments around each torus's core circle")
         tube_seg: IntProperty(
-            name="Tube Segments", default=10, min=4, max=48)
+            name="Tube Segments", default=10, min=4, max=48,
+            description="Segments around each torus's tube cross-section")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size of the result")
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the tori smooth rather "
+                                         "than faceted")
 
         def execute(self, context):
             verts, faces, n = build_antoine(

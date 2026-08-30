@@ -1,12 +1,26 @@
 # Spiral Tiling
 
+![Spiral Tiling](../images/spiral_tiling.png)
+
 ## Overview
 
-Add a Fathauer logarithmic spiral tiling of triangles.
+Add a Fathauer logarithmic spiral tiling of triangles: one triangle shape at every size, winding to a centre.
 
 A **logarithmic spiral tiling** fills an annulus with triangles that shrink geometrically as they wind inward, spiralling toward a central point where the tiles become infinitesimally small. Robert Fathauer described the family at Bridges 2021.
 
 Unlike the [Voderberg spiral](voderberg.md), which is monohedral and made of congruent tiles, here every tile is the *same shape at a different size*: the whole tiling is the orbit of one triangle under a single spiral similarity. That makes it self-similar in the strict sense — zoom in by the right factor and rotate, and the picture is unchanged.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Spiral Tiling*.
+2. **Pick the Family.** Two are fully fixed — **Equilateral (plastic number)** and **Golden Triangle** — and set every angle themselves. The three **Isosceles** families (side-to-side $B=C$, side-to-base $A=B$, base-to-side $A=C$) and two **Right** families ($C=90$, $B=90$) fix the *shape* of the triangle but let you tune the pitch. **Any Isosceles**, **Regular m-gon** and **General / Custom** are the continuous families driven by an explicit angle.
+3. **Set the shape knobs — only the ones the chosen family exposes appear:**
+   - **n** (the isosceles, right and General families) — the number of reduced triangles mated before one closes an edge with the start; it sets the spiral pitch. The fixed families override it.
+   - **Arms (m)** (every family except Equilateral and Any Isosceles) — how many spiral arms wind in one direction; closure becomes $nA+B=360/m$.
+   - **Angle** (Any Isosceles, Regular m-gon, General) — the controlling angle, whose meaning depends on the family: the isosceles side angle for Any Isosceles, the apex angle $A$ for the m-gon, or $C$ for General.
+4. **Set Rings** — how many scale levels to build outward from the prototile; inward, the spiral is always carried far enough to converge visibly on the singular centre.
+5. **Choose Color By.** **By Arm** makes the spiral arms read; **By Ring / Size** bands the tiles into concentric shells by scale level; **Uniform** is one material. Output options are **Margin** (grout), **Relief Height** (extrude to 3D) and **Separate Tiles** (each tile its own object).
+6. **Read the report.** If your $n$, arm count and angle produce a degenerate triangle (an angle at or past $0^\circ$/$180^\circ$), the operator cancels with an error naming the offending angles and asking you to adjust $n$, arms or angle — so if nothing appears, that message says which knob to move.
 
 ## Options
 
@@ -14,12 +28,12 @@ Unlike the [Voderberg spiral](voderberg.md), which is monohedral and made of con
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Family | Golden Triangle | Equilateral (plastic number), Golden Triangle, Isosceles, side-to-side (B = C), Isosceles, side-to-base (A = B), Isosceles, base-to-side (A = C), Right, leg-to-hypotenuse (C = 90), Right, hypotenuse-to-leg (B = 90), Any Isosceles (m = n = 2), and 2 more. |
+| Family | Golden Triangle | Prototile-angle family: fixes the triangle's shape and how the spiral winds. Equilateral (plastic number), Golden Triangle, Isosceles, side-to-side (B = C), Isosceles, side-to-base (A = B), Isosceles, base-to-side (A = C), Right, leg-to-hypotenuse (C = 90), Right, hypotenuse-to-leg (B = 90), Any Isosceles (m = n = 2), and 2 more. |
 | n | 3 | Number of reduced triangles mated before one shares an edge with the starting triangle; sets the spiral pitch (fixed families override this) Range 1-24. |
 | Arms (m) | 1 | Number of spiral arms in one direction; the closure becomes n*A + B = 360/m Range 1-16. |
 | Angle | 50 | Controlling angle in degrees for the continuous families: the isosceles side angle C (= A) for Any Isosceles, the angle A for the Regular m-gon, or the angle C for General Range 1-179. |
 | Rings | 3 | How many scale levels to build outward from the prototile; the spiral is always carried inward far enough to converge on the singular point Range 1-10. |
-| Color By | By Ring / Size | By Arm, By Ring / Size, Uniform. |
+| Color By | By Ring / Size | How tiles are colored: by spiral arm, by size ring, or one uniform material. By Arm, By Ring / Size, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Separate Tiles | Off | Output each tile as its own mesh object (parented to an empty) so tiles can be edited individually |
@@ -50,21 +64,27 @@ Renders of each selectable option:
 
 ## How it works
 
-**The prototile.** One triangle with interior angles $A,B,C$ and opposite sides $a,b,c$. Fixing $c=1$ without loss of generality, the Law of Sines gives the other two:
+**In plain terms.** Think of a nautilus shell, or a spiral staircase seen from above: each step is a little smaller than the one before, by the *same* fraction every time, and the steps wind around a central point they get closer and closer to but never reach. Here each "step" is a triangle. Lay down a triangle, then a copy shrunk by a fixed factor and rotated a fixed angle, then a copy of *that*, and so on — the triangles curl inward toward a centre while shrinking to nothing, and outward while growing without bound. The one delicate part is the shrink factor: it has to be tuned so that after the triangles have wound once around, they mate up edge-to-edge with no gap. The rest of this section pins that number down.
+
+**The prototile.** One triangle with interior angles $A,B,C$ and opposite sides $a,b,c$. Fixing $c=1$ loses no generality (it just sets the scale), and the Law of Sines gives the other two side lengths from the angles alone:
 
 $$a=\frac{\sin A}{\sin C},\qquad b=\frac{\sin B}{\sin C},\qquad c=1 .$$
 
-**The spiral similarity.** The tiling is the orbit of that one triangle under a similarity $T$ that scales by $s\in(0,1)$ and rotates by $A$ about a fixed point $O$ — the singular centre. Every tile is $T^k(\text{prototile})$ for some integer $k$, which is what makes the tiling self-similar: applying $T$ maps the whole tiling onto itself, one step further in.
+**The spiral similarity.** The tiling is the orbit of that one triangle under a single **spiral similarity** $T$ — a map that scales by $s\in(0,1)$ and rotates by the angle $A$ about a fixed point $O$, the singular centre. Every tile is $T^k(\text{prototile})$ for some integer $k$ (negative $k$ larger and outward, positive $k$ smaller and inward). This is exactly what "self-similar" means: applying $T$ carries the whole tiling onto itself, shifted one notch inward, so the picture looks identical after a rotate-and-zoom by $(A,s)$. In the code $T$ is realised as the complex map $z\mapsto \alpha z+\beta$ with $|\alpha|=s$ and $\arg\alpha=A$, whose fixed point $O=\beta/(1-\alpha)$ is the spiral's eye.
 
-**Fathauer's closure condition.** The scale factor is not free. Each next triangle, $s$ times smaller, puts its $C$-corner on the previous triangle's $B$-corner and lays its $b$-edge — now of length $bs$ — along the previous triangle's unit $c$-edge. After $n$ such reduced triangles the spiral has wound once around $O$, and the $n$-th triangle's $a$-edge, of length $as^n$, must lie on the *remaining* part of that same unit edge. Equating the two pieces of the unit side gives Fathauer's Eq. (1):
+**Fathauer's closure condition.** The scale factor is not free — it is forced by the demand that the tiles mate exactly. Each next triangle, $s$ times smaller, sets its $C$-corner on the previous triangle's $B$-corner and lays its $b$-edge, now of length $bs$, along the previous triangle's unit $c$-edge. After $n$ such reduced triangles the chain has wound once around $O$, and the $n$-th triangle's $a$-edge, of length $as^n$, must fall on the *remaining* stretch of that same unit edge. Adding the two pieces that share the unit side gives Fathauer's Eq. (1):
 
 $$a\,s^{\,n} + b\,s = 1 .$$
 
-Here $n$ is the number of triangles per turn, chosen as an integer, and the equation is then solved numerically for the real root $s\in(0,1)$. Everything else follows: pick the triangle's angles and how many tiles you want per revolution, and the shrink factor is determined.
+Here $n$, the number of triangles per turn, is chosen as a positive integer; the left side is increasing in $s$ and runs from $-1$ at $s=0$ upward, so there is exactly one root in $(0,1)$, found here by bisection. Pick the triangle's angles and how many tiles per revolution, and the shrink factor is thereby determined — generally an *irrational* number with no closed form, which is why these tilings had to wait for computation to be drawn.
 
-That single equation is the whole design constraint. Because it must be satisfied *exactly* for the tiles to mate without gaps, $s$ is generally irrational and has to be found by root-finding rather than written in closed form — which is why these tilings were not drawn until they could be computed.
+**The angular closure and the arms.** The edge condition above is only half the story; the angles must close too. To bring the $n$-th triangle back onto the starting edge, the accumulated rotation has to turn through $A$ at each of the $n$ mates and a further $B$ to restore the original orientation, and for an $m$-armed spiral that total must be $360^\circ/m$. Hence Fathauer's Eq. (3),
 
-**The patch.** Output is a finite annular band: the spiral is truncated at an inner and outer radius, since the tiles shrink without limit toward $O$ and grow without limit outward. Tiles are coloured by arm, by ring, or uniformly — colouring by arm makes the spiral structure read, while colouring by ring shows the successive scalings.
+$$n\,A + B = \frac{360^\circ}{m},$$
+
+which (with $B=180^\circ-A-C$) is what each named family solves. The fixed families fall straight out of it — the **golden triangle** is $C=36^\circ,\,n=3$, forcing apex $A=108^\circ$ and $s=1/\varphi$; the **equilateral** case is admitted only at $n=5$, where $s^5+s=1$ makes $s$ the reciprocal of the plastic number — while the continuous families leave one angle free and let you sweep the pitch. Building the full patch then just unions the single-arm orbit with its $m-1$ rotated copies about $O$.
+
+**The patch.** Output is a finite annular band: the spiral is truncated at an inner and outer radius, since the tiles shrink without limit toward $O$ and would grow without limit outward. Tiles are coloured **by arm**, which makes the spiral structure read, or **by ring**, which bands them by scale level to show the successive scalings, or uniformly. The self-test verifies the whole construction closes: every tile is similar to the prototile with size ratios that are exact powers of $s$, consecutive tiles mate edge-to-edge, and a dense annulus around $O$ is covered with no gaps or overlaps.
 
 ## References
 

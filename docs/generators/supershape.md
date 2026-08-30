@@ -1,5 +1,7 @@
 # Supershape
 
+![Supershape](../images/supershape.png)
+
 ## Overview
 
 Gielis superformula: 3D supershapes, supertoroids, seashells
@@ -27,29 +29,29 @@ The claim is worth taking with some salt: a formula flexible enough to fit almos
 | --- | --- | --- |
 | Preset | Starfish | A curated starting shape; choose Custom to dial in the parameters by hand. Custom, Sphere, Starfish, Flower, Gear Blob, Spiky, Rounded Cube, Seed Pod, and 15 more. |
 | Mode | 3D Supershape | Which superformula construction to build (used when Preset is Custom). 3D Supershape, Supertoroid, Shell, Superellipsoid. |
-| m (set 1) | 5 | Range 0-50. |
-| n1 (set 1) | 2 | Range 0.01-100. |
-| n2 (set 1) | 7 | Range -100-100. |
-| n3 (set 1) | 7 | Range -100-100. |
-| a (set 1) | 1 | Range 0.01-10. |
-| b (set 1) | 1 | Range 0.01-10. |
-| m (set 2) | 5 | Range 0-50. |
-| n1 (set 2) | 2 | Range 0.01-100. |
-| n2 (set 2) | 7 | Range -100-100. |
-| n3 (set 2) | 7 | Range -100-100. |
-| a (set 2) | 1 | Range 0.01-10. |
-| b (set 2) | 1 | Range 0.01-10. |
+| m (set 1) | 5 | Symmetry: number of lobes or points of set 1 (longitude / ring / shell section) Range 0-50. |
+| n1 (set 1) | 2 | Set 1 exponent n1: overall roundness -- small bulges, large pinches the outline Range 0.01-100. |
+| n2 (set 1) | 7 | Set 1 exponent n2: shape of the sides (paired with n3) Range -100-100. |
+| n3 (set 1) | 7 | Set 1 exponent n3: shape of the sides (paired with n2) Range -100-100. |
+| a (set 1) | 1 | Set 1 size along the first axis (divides the cosine term) Range 0.01-10. |
+| b (set 1) | 1 | Set 1 size along the second axis (divides the sine term) Range 0.01-10. |
+| m (set 2) | 5 | Symmetry: number of lobes or points of set 2 (latitude / tube) Range 0-50. |
+| n1 (set 2) | 2 | Set 2 exponent n1: overall roundness -- small bulges, large pinches the outline Range 0.01-100. |
+| n2 (set 2) | 7 | Set 2 exponent n2: shape of the sides (paired with n3) Range -100-100. |
+| n3 (set 2) | 7 | Set 2 exponent n3: shape of the sides (paired with n2) Range -100-100. |
+| a (set 2) | 1 | Set 2 size along the first axis (divides the cosine term) Range 0.01-10. |
+| b (set 2) | 1 | Set 2 size along the second axis (divides the sine term) Range 0.01-10. |
 | Torus Radius | 2 | Ring radius; keep above the tube size to stay embedded (Supertoroid) Range 0-20. |
-| Exponent (vertical) | 1 | Range 0.05-8. |
-| Exponent (horizontal) | 1 | Range 0.05-8. |
-| Whorls | 4 | Range 0.5-12. |
-| Growth / Whorl | 1.7 | Range 1.01-4. |
-| Tube Size | 0.35 | Range 0.02-2. |
-| Spire Rise | 1.4 | Range 0-6. |
+| Exponent (vertical) | 1 | Vertical squareness (Barr superquadric): below 1 boxy, 1 ellipsoid, above 1 pinched Range 0.05-8. |
+| Exponent (horizontal) | 1 | Horizontal squareness (Barr superquadric): below 1 boxy, 1 round, above 1 star Range 0.05-8. |
+| Whorls | 4 | Number of turns of the shell's coil Range 0.5-12. |
+| Growth / Whorl | 1.7 | How much the section expands each whorl (self-similar growth) Range 1.01-4. |
+| Tube Size | 0.35 | Thickness of the shell's tube relative to the coil Range 0.02-2. |
+| Spire Rise | 1.4 | How fast the coil rises along the axis (0 = flat spiral) Range 0-6. |
 | Segments | 128 | Longitude / ring resolution Range 3-1024. |
 | Rings | 64 | Latitude / tube resolution Range 2-512. |
-| Coloring | Latitude Bands | None, Latitude Bands, By Distance. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | None | Whether and how to assign materials across the surface. None, Latitude Bands, By Distance. |
+| Scale | 1 | Overall size; 1 fits the 2 m cube Range 0.01-100. |
 
 <!-- /options -->
 
@@ -120,7 +122,7 @@ This is the classic 3-D supershape. Think of it as a globe whose lines of longit
 
 **Shell** — a superformula cross-section swept along a **logarithmic spiral**, the growth curve molluscs actually follow. A snail cannot rebuild its shell as it grows, so it can only *add* to the open rim; the only way to grow while keeping the same shape is to scale up by a fixed factor each turn, which is exactly an exponential spiral. Here the cross-section keeps its outline but multiplies in size by *Growth / Whorl* every revolution and climbs by *Spire Rise*, so a fixed superformula section on that spiral produces conch and snail forms with genuine self-similar whorls.
 
-**Superellipsoid** — Barr's superquadric. Instead of the full superformula it uses signed powers of cosine and sine, $\operatorname{sign}(\cos\theta)\,|\cos\theta|^{e}$, with two exponents that run the solid continuously from cube (exponents near 0) through sphere (exponents 1) to octahedron and on to pinched stars (exponents above 2). The signed power is the trick that keeps the correct octant while allowing a fractional exponent — a plain fractional power of a negative number is undefined. This is the one member with a life outside art: superquadrics are a standard primitive in solid modelling and shape fitting.
+**Superellipsoid** — Barr's superquadric. Instead of the full superformula it uses signed powers of cosine and sine, $\mathrm{sign}(\cos\theta)\,|\cos\theta|^{e}$, with two exponents that run the solid continuously from cube (exponents near 0) through sphere (exponents 1) to octahedron and on to pinched stars (exponents above 2). The signed power is the trick that keeps the correct octant while allowing a fractional exponent — a plain fractional power of a negative number is undefined. This is the one member with a life outside art: superquadrics are a standard primitive in solid modelling and shape fitting.
 
 **A numerical note.** The absolute values in the formula make $r$ continuous but not smooth: at each lobe boundary its derivative jumps, so a mesh sampled at uniform $\varphi$ facets exactly where the outline turns most sharply. Denser **Segments**/**Rings** is the only remedy, because the corner is genuinely a kink in the function and not an artefact of the mesh. One more subtlety: a lobed supershape is not star-shaped about its centre, so the builder checks the mesh's actual signed volume and flips every face if it came out inside-out, rather than trusting a fixed winding to put the normals outward.
 

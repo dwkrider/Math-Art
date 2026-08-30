@@ -95,6 +95,7 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Compound",
+            description="Which polyhedral compound to weave",
             items=[('T5', "5 Tetrahedra", "the classic Tetra Tangle"),
                    ('T2', "2 Tetrahedra", "stella octangula"),
                    ('T10', "10 Tetrahedra", "both chiralities"),
@@ -104,6 +105,7 @@ if _IN_BLENDER:
             default='T5')
         style: EnumProperty(
             name="Style",
+            description="How each component's frame is built",
             items=[('FACES', "Hollow Faces (da Vinci)",
                     "Leonardo da Vinci style: solid face panels with "
                     "openings, mitred exactly along the shared edges "
@@ -121,7 +123,9 @@ if _IN_BLENDER:
             name="Frame Width", default=0.22, min=0.02, max=0.9,
             description="Hollow-face ring width (fraction of the face)")
         thickness: FloatProperty(name="Frame Thickness", default=0.10,
-                                 min=0.01, max=1.0)
+                                 min=0.01, max=1.0,
+                                 description="Thickness of the "
+                                             "hollow-face frames")
         cap_size: FloatProperty(
             name="Cap Size", default=1.0, min=0.3, max=3.0,
             description="How far the edge struts stop short of each "
@@ -149,12 +153,14 @@ if _IN_BLENDER:
                         "its main symmetry axis")
         coloring: EnumProperty(
             name="Coloring",
+            description="How components are assigned materials",
             items=[('COMP', "Per Component", "one material per "
                     "polyhedron (view with Material Preview)"),
                    ('NONE', "None", "no materials")],
             default='COMP')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the compound")
 
         _PALETTE = [(0.83, 0.68, 0.21), (0.27, 0.52, 0.79),
                     (0.90, 0.36, 0.23), (0.30, 0.69, 0.42),

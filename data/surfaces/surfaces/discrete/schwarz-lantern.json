@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "schwarz-lantern",
+  "name": "Schwarz's Lantern",
+  "primary_family": "discrete",
+  "families": [
+    "aperiodic",
+    "closed",
+    "compact-with-boundary",
+    "def-parametric",
+    "discrete",
+    "embedded",
+    "implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: a POLYHEDRON inscribed in a cylinder (4 m n flat triangles); being non-smooth is its entire point, and no single smooth chart represents it. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "genus": 0,
+    "boundary_components": 2,
+    "class": "compact-with-boundary"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "SCHWARZ_LANTERN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. A. Schwarz, 'Sur une definition erronee de l'aire d'une surface courbe', Gesammelte Mathematische Abhandlungen (1890)."
+    ]
+  },
+  "discovered_by": "Hermann Amandus Schwarz",
+  "year": 1880,
+  "tradition": [
+    "classical"
+  ],
+  "notes": {
+    "caveats": [
+      "THE cautionary counterexample: a polyhedral approximation to a cylinder whose area DIVERGES as the mesh is refined. Any generator that measures a discrete surface and assumes convergence is wrong in exactly this way."
+    ]
+  },
+  "relations": {
+    "polyhedral_analogue": "hexagonal-prism"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": true,
+    "requires_thickening": true,
+    "sliceable": true
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "meeks-mobius-strip",
+  "name": "Meeks Mobius Strip",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "non-orientable",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "annulus 0.47619 < |z| < 2.1",
+    "gauss_map": "1.0*z**2*(1 + z)/(-1 + z)",
+    "height_differential": "1.0*i - 1.0*i/z**2",
+    "parameters": [],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, phi triple (dh = phi3, g = phi3/(phi1 - i*phi2), a Weierstrass-representation identity)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "total_curvature": {
+      "exact": "-6*pi",
+      "value": -18.84955592153876,
+      "source": "classical",
+      "note": "W. H. Meeks III, 'The classification of complete minimal surfaces in R^3 with total curvature greater than -8pi', Duke Math. J. 48 (1981) 523-535 -- the complete minimal Moebius strip with total curvature -6pi; unique up to rigid motion by J. L. Barbosa and A. G. Colares (1986)."
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": false,
+    "one_sided": true
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "NONORIENT",
+      "key": "MEEKS_MOBIUS",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row MEEKS_MOBIUS) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 1.06e-12); dh: matches over 144 complex samples (worst 9.93e-16).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "cross_checked": [
+      {
+        "source": "W. H. Meeks III, Duke Math. J. 48 (1981) 523-535",
+        "agrees": true,
+        "detail": "The complete minimal Moebius strip with total curvature -6pi; by the same classification every complete minimal surface with total curvature > -8pi is the plane, catenoid, Enneper surface or this Moebius strip.  Uniqueness: Barbosa-Colares 1986."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "relations": {
+    "same_surface_as": [
+      {
+        "slug": "bjorling-twisted-band",
+        "confidence": "suspected",
+        "check": "the Bjorling surface of a circle with a uniformly rotating normal is a minimal Mobius band; whether it is congruent to Meeks' is not asserted by either row's label, so it is not merged. Compare total curvature (Meeks' is -6*pi) and the boundary-curve knot type.",
+        "source": "row labels in math_art/minsurf/zoo.py: 'Bjorling: Twisted Band (Mobius)' and 'Meeks Mobius Strip'."
+      }
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

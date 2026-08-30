@@ -1,0 +1,124 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "torus",
+  "name": "Torus",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "implemented",
+    "revolution",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "(1 + 0.35*cos(v))*cos(u)",
+    "y": "(1 + 0.35*cos(v))*sin(u)",
+    "z": "0.35*sin(v)",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "note": "centre-circle radius 1 and tube radius 0.35 fixed to the operator defaults",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "total_curvature": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical",
+      "note": "Gauss-Bonnet: chi = 0"
+    },
+    "also_satisfies": []
+  },
+  "topology": {
+    "genus": 1,
+    "euler_characteristic": 0,
+    "orientable": true,
+    "compact": true,
+    "boundary_components": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 0,
+    "continuous": "SO(2) about the axis, with reflections"
+  },
+  "embedding": {
+    "quality": "varies"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TORUS",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.03435).",
+    "sources": [
+      "Classical."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Torus",
+    "mathcurve": "ch1291_tore_2",
+    "vmm": "ch070_torus"
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "specimens": [
+    {
+      "label": "ring torus (R > r)",
+      "parameters": {
+        "regime": "ring"
+      },
+      "embedding": {
+        "quality": "embedded"
+      }
+    },
+    {
+      "label": "horn torus (R = r)",
+      "parameters": {
+        "regime": "horn"
+      },
+      "embedding": {
+        "quality": "singular"
+      }
+    },
+    {
+      "label": "spindle torus (R < r)",
+      "parameters": {
+        "regime": "spindle"
+      },
+      "embedding": {
+        "quality": "self-intersecting"
+      }
+    }
+  ],
+  "relations": {
+    "inverse_of": "dupin-cyclide"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

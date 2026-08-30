@@ -4,7 +4,21 @@
 
 ## Overview
 
-Orderly tangles of regular polygons, after George W. Hart's **regular polylinks**: one polygonal frame is placed on every face plane of a Platonic solid, each rotated about its face normal, scaled, and pushed along the normal so the frames interlock. Classic examples are 4 triangles (tetrahedron), 6 squares (cube), 8 or 20 triangles (octahedron / icosahedron), and 6 or 12 pentagons (dodecahedron). Beyond the flat polygon frame, each link can also be a radius-modulated wavy circle or a torus knot swept as a tube (both after Shengyi Wang's polylink add-on).
+Orderly tangles of regular polygons: one polygon frame is laid on every face-plane of a Platonic solid, then rotated, scaled and pushed together until the frames thread through one another and lock, after George W. Hart's **regular polylinks**.
+
+The classic tangles are 4 triangles (tetrahedron), 6 squares (cube), 8 or 20 triangles (octahedron / icosahedron), and 6 or 12 pentagons (dodecahedron). Beyond the flat polygon frame, each link can instead be a radius-modulated wavy circle or a torus knot swept as a tube (both after Shengyi Wang's polylink add-on).
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Regular Polylinks*.
+2. **Pick a Preset.** The six named presets (**4 Triangles**, **6 Squares**, **8 Triangles**, **6 Pentagons**, **12 Pentagons**, **20 Triangles**) each set the Solid and its framing for one of Hart's classic tangles; **Custom** leaves every control free.
+3. **Choose the Solid** — Tetrahedron, Cube, Octahedron, Dodecahedron or Icosahedron. One frame is placed on each face, so the solid fixes how many frames there are and their symmetry.
+4. **Set the shape knobs.** **Frame Size** scales each frame, **Rotation** turns it about its face normal (the twist that makes neighbouring frames pass *through* each other rather than merely stack), and **Plane Offset** slides every frame along its normal — negative values pull them inward toward the centre so they interlock.
+5. **Pick a Link Shape** and dial the controls that appear for it:
+   - **Polygon Frame** — flat mitred rings; **Frame Width** and **Frame Thickness** set the ring's profile.
+   - **Wavy Circle** — round rings with **Wave Amplitude** ripples repeating **Wave Factor** times per side; **Tube Sides** and **Link Segments** set the swept tube.
+   - **Torus Knot** — a $(p,q)$ knot about each face axis with **Knot p** windings and **Knot q Factor** (times the side count), **Wave Amplitude** as its minor radius, again with **Tube Sides** and **Link Segments**.
+6. **Choose the output styling.** **Antipodal Half** keeps only one face of each opposite pair; **Coloring** is **Per Link** (a colour per frame), **Per Parallel Pair** (Hart's convention — parallel frames share a colour, e.g. 6 squares in 3 colours) or **None**. The status bar reports how many frames were built.
 
 ## Options
 
@@ -13,22 +27,22 @@ Orderly tangles of regular polygons, after George W. Hart's **regular polylinks*
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | 4 Triangles | Custom, 4 Triangles, 6 Squares, 8 Triangles, 6 Pentagons, 12 Pentagons, 20 Triangles. |
-| Solid | Tetrahedron | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
-| Frame Size | 1.55 | Range 0.5-4. |
+| Preset | 4 Triangles | Preset polylink arrangement (Custom to set the parameters by hand). Custom, 4 Triangles, 6 Squares, 8 Triangles, 6 Pentagons, 12 Pentagons, 20 Triangles. |
+| Solid | Tetrahedron | Platonic solid whose face planes host the polygon frames. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
+| Frame Size | 1.55 | Size of each polygon frame Range 0.5-4. |
 | Plane Offset | -0.45 | Push of each frame along its normal (negative = toward the centre) Range -2-2. |
-| Link Shape | Polygon Frame | Polygon Frame, Wavy Circle, Torus Knot. |
+| Link Shape | Polygon Frame | Shape of each link: flat polygon frame, wavy circle, or torus knot. Polygon Frame, Wavy Circle, Torus Knot. |
 | Wave Amplitude | 0.35 | Radial wave amplitude (wavy circle) or knot minor radius Range 0-2. |
 | Wave Factor | 1 | Wave frequency in multiples of the face side count Range 1-8. |
 | Knot p | 2 | Windings around the face axis Range 1-8. |
 | Knot q Factor | 1 | q = factor x face side count Range 1-8. |
-| Tube Sides | 8 | Range 3-24. |
+| Tube Sides | 8 | Sides of the swept tube cross-section (wavy / knot links) Range 3-24. |
 | Link Segments | 128 | Samples along wavy / knot centerlines Range 24-512. |
-| Frame Width | 0.14 | Range 0.02-0.9. |
-| Frame Thickness | 0.1 | Range 0.01-1. |
+| Frame Width | 0.14 | Width of each polygon frame bar Range 0.02-0.9. |
+| Frame Thickness | 0.1 | Thickness of each frame bar or swept tube Range 0.01-1. |
 | Antipodal Half | Off | Use only one face of each antipodal pair |
-| Coloring | Per Link | Per Link, Per Parallel Pair, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Link | How the frames are coloured. Per Link, Per Parallel Pair, None. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 
@@ -51,6 +65,8 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Take a die and lay a cardboard triangle (or square) flat against each face. Now give every panel the same little twist in its own plane and slide it inward a touch. Do that on all the faces at once and the panels stop sitting apart — they begin to weave through one another, each frame passing between the corners of its neighbours like links in a chain mail. Nothing is glued, yet nothing can be pulled free: that woven cage of polygons is a **polylink**. Everything below is just the bookkeeping that says *where* to put each frame and *how far* to twist it so the weave comes out symmetric.
+
 The seed Platonic solid gives vertices $V$ and faces $F$. For each face $f$ the centroid is
 
 $$c = \frac{1}{m}\sum_{i \in f} V_i,\qquad n = \frac{c}{\lVert c\rVert},$$
@@ -65,11 +81,11 @@ A ring of these rotated corners, together with an inner ring shrunk by $(1-\text
 
 **Wavy circle.** Instead of the polygon, a circle of radius $r = s\,\lVert V_{f_0}-c\rVert$ is drawn in the face plane with a radially modulated radius
 
-$$r(t) = r + A\cos(\text{frq}\cdot t),\qquad \text{frq} = \text{wave\_factor}\cdot m,$$
+$$r(t) = r + A\cos(\text{frq}\cdot t),\qquad \text{frq} = w\cdot m,$$
 
-so the ring has $m$ (or a multiple of $m$) lobes matching the polygon's symmetry, and neighbouring wavy rings weave through each other.
+where $w$ is the `wave_factor`, so the ring has $m$ (or a multiple of $m$) lobes matching the polygon's symmetry, and neighbouring wavy rings weave through each other.
 
-**Torus knot.** A $(p,q)$ torus knot is traced about the face axis, with $q = \text{knot\_q\_factor}\cdot m$ and minor radius $r_2 = A$:
+**Torus knot.** A $(p,q)$ torus knot is traced about the face axis, with $q = c\cdot m$ (with $c$ the `knot_q_factor`) and minor radius $r_2 = A$:
 
 $$P(t) = c_{\text{en}} + (r + r_2\cos qt)\big(\cos pt\,\hat x_N + \sin pt\,\hat y_N\big) + r_2\sin qt\;n,$$
 

@@ -1,0 +1,142 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "pgd-associate-family",
+  "name": "P-Gyroid-D Associate Family",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
+    "domain": "plane with branch points at z = 0, +-1, +-3 and infinity (the genus-3 hyperelliptic cover)",
+    "gauss_map": "-1.0*i*sqrt(3.0 + z)*sqrt(-1.0 + z)/(2.0*i*sqrt(z) - 1.0*sqrt(1.0 + z)*sqrt(-3.0 + z))",
+    "height_differential": "-1.0*i/(sqrt(z)*sqrt(1.0 + z)*sqrt(-3.0 + z))",
+    "parameters": [],
+    "associate_angle_degrees": 0.0,
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, the shipped rPD coordinate 1-forms (_pgd_om in math_art/minsurf/weierstrass.py): dh = phi3, g = phi3/(phi1 - i*phi2)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack. theta = 0 is Schwarz P; the Bonnet angle e^{i theta} sweeps the associate family through the gyroid (38.0148 deg) to Schwarz D (90 deg). Square roots are per-factor principal branches, the shipped code's own convention on its fundamental domain."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus_per_cell": 3,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3,
+    "hermann_mauguin": "varies",
+    "chiral": "varies"
+  },
+  "embedding": {
+    "quality": "varies"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "PGD",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row PGD) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 8.52e-14); dh: matches over 144 complex samples (worst 1.11e-16).",
+    "sources": [
+      "A. H. Schoen, NASA TN D-5541 (1970).",
+      "O. Bonnet (1853) for the associate family in general."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical",
+    "crystallographic"
+  ],
+  "discovered_by": "Hermann Amandus Schwarz (P, D); Alan H. Schoen (the gyroid member)",
+  "year": 1970,
+  "specimens": [
+    {
+      "label": "Schwarz P (theta = 0)",
+      "slug": "schwarz-p",
+      "parameters": {
+        "theta_degrees": 0.0
+      },
+      "embedding": {
+        "quality": "embedded"
+      },
+      "symmetry": {
+        "hermann_mauguin": "Im-3m",
+        "chiral": false
+      }
+    },
+    {
+      "label": "gyroid (theta = 38.0148)",
+      "slug": "gyroid",
+      "parameters": {
+        "theta_degrees": 38.014772
+      },
+      "embedding": {
+        "quality": "embedded"
+      },
+      "symmetry": {
+        "hermann_mauguin": "Ia-3d",
+        "chiral": true
+      }
+    },
+    {
+      "label": "Schwarz D (theta = 90)",
+      "slug": "schwarz-d",
+      "parameters": {
+        "theta_degrees": 90.0
+      },
+      "embedding": {
+        "quality": "embedded"
+      },
+      "symmetry": {
+        "hermann_mauguin": "Pn-3m",
+        "chiral": false
+      }
+    },
+    {
+      "label": "generic associate",
+      "parameters": {
+        "theta_degrees": 20.0
+      },
+      "embedding": {
+        "quality": "self-intersecting"
+      },
+      "symmetry": {
+        "hermann_mauguin": null,
+        "chiral": true
+      }
+    }
+  ],
+  "notes": {
+    "caveats": [
+      "The three named members are the only EMBEDDED ones; a generic associate angle self-intersects, which is why only three of a continuous family have names."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

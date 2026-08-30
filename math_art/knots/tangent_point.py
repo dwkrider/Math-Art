@@ -35,15 +35,31 @@
 # low-order midpoint term with kernel k_2^(3+2s), both scaled by
 # |I| |J|).  Constraint rows (mass-weighted barycenter, plus total or
 # per-edge length -- without a length constraint the energy is
-# minimized by inflating the curve to infinity) are appended to the
-# same matrix and the bordered dense system is solved directly; the
+# minimized by inflating the curve to infinity) border that matrix; the
 # step is an Evolver-style parabola line search (shared
 # `solver.descent.parabola_line_search`) with a tunneling cap, followed
 # by the same constraint-backprojection Newton loop as the reference
 # (`LSBackproject` / `BackprojectConstraints`), reusing the iteration's
-# factorization.  Barnes-Hut and multigrid acceleration (the paper's
-# large-n machinery) are deliberately skipped: at the curve resolutions
-# used for art (n of a few hundred) the dense solve is milliseconds.
+# factorization.
+#
+# The bordered system is never assembled.  The metric is the SAME n x n
+# matrix on each coordinate axis -- M = G (x) I3 -- so `_BlockSaddle`
+# eliminates the 3n block and factors G and the m x m Schur complement
+# instead of a (3n + m)-square matrix, folding the barycenter rows into
+# G exactly (they are w (x) e_c, so they keep the Kronecker structure)
+# to deal with G's constant null space.  On top of that the flow reuses
+# a factorization across several iterations (`_LaggedSaddleSolver`),
+# which is what makes the remaining O(n^3) term a minor cost rather
+# than the dominant one it was.  Barnes-Hut and multigrid acceleration
+# (the paper's large-n machinery) are still deliberately skipped: with
+# the factorization no longer dominating, the O(n^2) energy and
+# gradient kernels are the bulk of an iteration at the resolutions used
+# for art (n of a few hundred), and they carry small constants.
+#
+# Iteration stops on a measured plateau rather than a fixed count --
+# see `_plateaued`, which documents why the energy alone is not a safe
+# signal (the Whitehead seed has a false plateau seventy iterations
+# wide, on the far side of which its ropelength drops from 110 to 68).
 #
 # The Gonzalez-Maddocks thickness (minimum over local radius of
 # curvature and pairwise tangent-point radius) and the ropelength
@@ -100,18 +116,29 @@ def _geometry(P):
 
 
 def _pair_terms(P, T, alpha, beta):
-    """All-pairs displacement D, distance r (diag set to 1), tangential
-    component c = D . T_i, normal projection p and its norm pn, and the
-    kernel matrix K = pn^alpha / r^beta (diag zeroed)."""
+    """All-pairs displacement D, squared distance r2 and distance r
+    (both with the diagonal set to 1), tangential component c = D . T_i,
+    normal projection p and its norm pn, the reciprocal power
+    inv_rb = r^-beta (diag zeroed), and the kernel matrix
+    K = pn^alpha inv_rb (diag zeroed).
+
+    The contractions go through `einsum` rather than `np.linalg.norm`:
+    the norm materializes its own squared-and-summed temporary over the
+    last axis, and this is the hottest O(n^2) kernel in the flow -- it
+    runs once per gradient and once per line-search energy probe.  r2
+    and inv_rb come back with the rest because every caller needs them
+    and recomputing r^beta is a full n^2 pow."""
     D = P[:, None, :] - P[None, :, :]
-    r = np.linalg.norm(D, axis=2)
-    np.fill_diagonal(r, 1.0)
+    r2 = np.einsum('ijk,ijk->ij', D, D)
+    np.fill_diagonal(r2, 1.0)
+    r = np.sqrt(r2)
     c = np.einsum('ijk,ik->ij', D, T)
     p = D - c[:, :, None] * T[:, None, :]
-    pn = np.linalg.norm(p, axis=2)
-    K = pn ** alpha / r ** beta
-    np.fill_diagonal(K, 0.0)
-    return D, r, c, p, pn, K
+    pn = np.sqrt(np.einsum('ijk,ijk->ij', p, p))
+    inv_rb = r ** (-beta)
+    np.fill_diagonal(inv_rb, 0.0)
+    K = pn ** alpha * inv_rb
+    return D, r2, r, c, p, pn, inv_rb, K
 
 
 # ----------------------------------------------------------------------
@@ -124,7 +151,7 @@ def tp_energy(P, alpha=3.0, beta=6.0):
     sum_{i != j} K(x_i, x_j) l_i l_j (ordered pairs)."""
     P = np.asarray(P, dtype=float)
     _e, _L, _that, _u, _un, T, l = _geometry(P)
-    _D, _r, _c, _p, _pn, K = _pair_terms(P, T, alpha, beta)
+    *_rest, K = _pair_terms(P, T, alpha, beta)
     return float(np.sum(K * l[:, None] * l[None, :]))
 
 
@@ -138,7 +165,7 @@ def tp_gradient(P, alpha=3.0, beta=6.0):
     P = np.asarray(P, dtype=float)
     n = len(P)
     _e, L, that, _u, un, T, l = _geometry(P)
-    D, r, c, p, pn, K = _pair_terms(P, T, alpha, beta)
+    D, r2, _r, c, p, pn, inv_rb, K = _pair_terms(P, T, alpha, beta)
     ll = l[:, None] * l[None, :]
 
     # guard: where the normal projection vanishes (exactly collinear
@@ -147,13 +174,12 @@ def tp_gradient(P, alpha=3.0, beta=6.0):
     pn_safe = np.where(pn > 1e-12, pn, 1.0)
     apn = np.where(pn > 1e-12, alpha * pn_safe ** (alpha - 2.0), 0.0)
 
-    inv_rb = r ** (-beta)
-    np.fill_diagonal(inv_rb, 0.0)
-
     # --- displacement channel: dK/dD = alpha pn^(a-2) p / r^b
     #                                   - beta pn^a D / r^(b+2)
+    # (pn^a / r^b is the kernel K itself, so the second coefficient
+    # reuses it rather than repeating a full n^2 power)
     coef_p = apn * inv_rb * ll                      # (n, n)
-    coef_d = beta * pn ** alpha * inv_rb / (r * r) * ll
+    coef_d = beta * K / r2 * ll
     Vd = coef_p[:, :, None] * p - coef_d[:, :, None] * D
     grad = Vd.sum(axis=1) - Vd.sum(axis=0)
 
@@ -178,12 +204,16 @@ def tp_gradient(P, alpha=3.0, beta=6.0):
 # fractional Sobolev Gram matrix (dense reference path)
 # ----------------------------------------------------------------------
 
-def sobolev_gram(P, alpha=3.0, beta=6.0, diag_eps=0.0):
+def sobolev_gram(P, alpha=3.0, beta=6.0, diag_eps=0.0, fast=False):
     """Scalar (n x n) Sobolev-Slobodeckij Gram matrix of the H^s inner
     product, s = (beta - 1)/alpha: dense 4x4 blocks over all ordered
     pairs of non-adjacent edges (port of the reference
     `SobolevCurves::SobolevGramMatrix`).  Constants span its null
-    space, so it is only used bordered by constraint rows."""
+    space, so it is only used bordered by constraint rows.
+
+    `fast=True` accumulates the sixteen scatters as one `np.bincount`,
+    visiting the identical entries in the identical order (the link
+    assembly's `fast` path, asserted bitwise-equal in the self-test)."""
     P = np.asarray(P, dtype=float)
     n = len(P)
     e, L, that, _u, _un, _T, l = _geometry(P)
@@ -220,17 +250,23 @@ def sobolev_gram(P, alpha=3.0, beta=6.0, diag_eps=0.0):
 
     u0, u1 = ii, (ii + 1) % n
     v0, v1 = jj, (jj + 1) % n
-    A = np.zeros((n, n))
-    for (a, b, val) in (
-            (u0, u0, paa + wlo), (u0, u1, -paa + wlo),
-            (u1, u0, -paa + wlo), (u1, u1, paa + wlo),
-            (v0, v0, pbb + wlo), (v0, v1, -pbb + wlo),
-            (v1, v0, -pbb + wlo), (v1, v1, pbb + wlo),
-            (u0, v0, -pab - wlo), (u0, v1, pab - wlo),
-            (u1, v0, pab - wlo), (u1, v1, -pab - wlo),
-            (v0, u0, -pab - wlo), (v0, u1, pab - wlo),
-            (v1, u0, pab - wlo), (v1, u1, -pab - wlo)):
-        np.add.at(A, (a, b), val)
+    entries = (
+        (u0, u0, paa + wlo), (u0, u1, -paa + wlo),
+        (u1, u0, -paa + wlo), (u1, u1, paa + wlo),
+        (v0, v0, pbb + wlo), (v0, v1, -pbb + wlo),
+        (v1, v0, -pbb + wlo), (v1, v1, pbb + wlo),
+        (u0, v0, -pab - wlo), (u0, v1, pab - wlo),
+        (u1, v0, pab - wlo), (u1, v1, -pab - wlo),
+        (v0, u0, -pab - wlo), (v0, u1, pab - wlo),
+        (v1, u0, pab - wlo), (v1, u1, -pab - wlo))
+    if fast:
+        lin = np.concatenate([a * n + b for (a, b, _v) in entries])
+        wt = np.concatenate([v for (_a, _b, v) in entries])
+        A = np.bincount(lin, weights=wt, minlength=n * n).reshape(n, n)
+    else:
+        A = np.zeros((n, n))
+        for (a, b, val) in entries:
+            np.add.at(A, (a, b), val)
     if diag_eps:
         A[idx, idx] += diag_eps * l
     return A
@@ -240,55 +276,91 @@ def sobolev_gram(P, alpha=3.0, beta=6.0, diag_eps=0.0):
 # constraints (mass-weighted barycenter + length)
 # ----------------------------------------------------------------------
 
+def _constraint_values(P, mode):
+    """Just the constraint VALUES (m,), without the Jacobian.
+
+    The Newton backprojection needs this residual at every sub-step but
+    reuses the frozen Jacobian from the iteration's factorization, so
+    assembling the (m, 3n) row block there is pure waste -- in edge mode
+    that is a Python loop building one 3n-vector per vertex, several
+    times per iteration."""
+    P = np.asarray(P, dtype=float)
+    if mode not in ("edge", "total"):
+        raise ValueError(f"unknown length constraint mode {mode!r}")
+    _e, L, _that, _u, _un, _T, l = _geometry(P)
+    Ltot = float(L.sum())
+    w = l / Ltot
+    vals = np.empty(3 + (len(P) if mode == "edge" else 1))
+    for c in range(3):
+        vals[c] = float(np.dot(w, P[:, c]))
+    if mode == "total":
+        vals[3] = Ltot
+    else:
+        vals[3:] = L
+    return vals
+
+
 def _constraint_rows(P, mode):
     """Constraint Jacobian C (m, 3n) and current values (m,) for the
     mass-weighted barycenter (3 rows) plus either the total length
     (1 row, mode="total") or every edge length (n rows, mode="edge").
-    Coordinates are interleaved: column 3i + c is vertex i, axis c."""
+    Coordinates are interleaved: column 3i + c is vertex i, axis c.
+
+    The rows are written straight into the (m, 3n) block, three
+    assignments per family, rather than appending one freshly allocated
+    3n-vector per row: edge mode has a row per vertex and the whole
+    block is rebuilt every iteration."""
     P = np.asarray(P, dtype=float)
+    if mode not in ("edge", "total"):
+        raise ValueError(f"unknown length constraint mode {mode!r}")
     n = len(P)
     _e, L, that, _u, _un, _T, l = _geometry(P)
     Ltot = float(L.sum())
     tm = np.roll(that, 1, axis=0)                # t_{i-1} at slot i
+    ar = np.arange(n)
 
-    rows = []
-    vals = []
+    m = 3 + (n if mode == "edge" else 1)
+    C = np.zeros((m, 3 * n))
+    vals = np.empty(m)
     # barycenter (mass-weighted, matching the reference's DualLength
     # weights; d(bary)/dx is dominated by the l_i / Ltot diagonal --
     # like the reference we use exactly that row, and let the Newton
     # backprojection absorb the dropped weight-variation terms)
     w = l / Ltot
     for c in range(3):
-        row = np.zeros(3 * n)
-        row[3 * np.arange(n) + c] = w
-        rows.append(row)
-        vals.append(float(np.dot(w, P[:, c])))
+        C[c, 3 * ar + c] = w
+        vals[c] = float(np.dot(w, P[:, c]))
     if mode == "total":
-        row = np.zeros(3 * n)
         g = tm - that                            # dL/dx_i
         for c in range(3):
-            row[3 * np.arange(n) + c] = g[:, c]
-        rows.append(row)
-        vals.append(Ltot)
-    elif mode == "edge":
-        ar = np.arange(n)
-        for k in range(n):
-            row = np.zeros(3 * n)
-            row[3 * k: 3 * k + 3] = -that[k]
-            k1 = (k + 1) % n
-            row[3 * k1: 3 * k1 + 3] = that[k]
-            rows.append(row)
-        vals.extend(L.tolist())
-        _ = ar
+            C[3, 3 * ar + c] = g[:, c]
+        vals[3] = Ltot
     else:
-        raise ValueError(f"unknown length constraint mode {mode!r}")
-    return np.asarray(rows), np.asarray(vals, dtype=float)
+        nxt = (ar + 1) % n
+        for c in range(3):
+            C[3 + ar, 3 * ar + c] = -that[:, c]
+            C[3 + ar, 3 * nxt + c] = that[:, c]
+        vals[3:] = L
+    return C, vals
+
+
+def _metric_block(P, alpha, beta, precondition, diag_eps, fast=True):
+    """The per-axis metric block G of M = G (x) I3: the H^s Gram, or the
+    diagonal L2 mass matrix diag(l_i) when unpreconditioned."""
+    if precondition:
+        return sobolev_gram(P, alpha, beta, diag_eps=diag_eps, fast=fast)
+    _e, _L, _that, _u, _un, _T, l = _geometry(P)
+    return np.diag(l)
 
 
 def _saddle_inverse(P, alpha, beta, mode, precondition, diag_eps):
     """Inverse of the bordered system [[M, C^T], [C, 0]] where M is the
     H^s Gram (expanded to 3n) or, unpreconditioned, the diagonal L2
-    mass matrix diag(l_i)."""
+    mass matrix diag(l_i).
+
+    The straight assembly-and-invert reference, kept as the definition
+    the block solver is measured against (self-test); the flow itself
+    goes through `_BlockSaddle`."""
     n = len(P)
     C, _vals = _constraint_rows(P, mode)
     m = C.shape[0]
@@ -352,10 +424,59 @@ def gm_ropelength(P):
 # the flow driver
 # ----------------------------------------------------------------------
 
+def _plateaued(hist, gnorm0, rel_tol, window, grad_rel_tol):
+    """Has the flow stopped moving the picture?
+
+    True when the trailing `window` iterations dropped the energy by
+    less than `rel_tol` relatively AND the preconditioned gradient has
+    fallen to `grad_rel_tol` of its opening value.
+
+    Both halves are load-bearing, and the second is the one that is easy
+    to leave out.  A detector watching only the energy is unsafe here:
+    the Whitehead seed sits within 3e-4 of a fixed energy for seventy
+    iterations -- drifting UP as often as down -- and then falls from
+    114.6 to 80.7, taking its ropelength from 110 to 68.  Anything that
+    calls that flat stretch 'converged' ships the loose shape.  Through
+    it the preconditioned gradient stays around 2e-2 of its opening
+    value, thirty times the threshold used here, while every genuinely
+    settled preset measured sits below 5e-4.  The gradient alone will
+    not do either: at a saddle it is small by definition, which is why
+    the energy window is the other half.
+
+    A rise over the window still counts as flat -- the pairing with the
+    gradient test is what makes that safe."""
+    if len(hist) <= window:
+        return False
+    if hist[-1]["gnorm"] > grad_rel_tol * gnorm0:
+        return False
+    E_now = hist[-1]["E"]
+    E_then = hist[-1 - window]["E"]
+    return (E_then - E_now) <= rel_tol * max(abs(E_now), 1e-300)
+
+
+def _max_row_norm(V):
+    """Largest Euclidean row norm of an (n, 3) array -- sqrt of the
+    largest squared norm, which is the same double and one pass."""
+    return float(np.sqrt(np.einsum('ik,ik->i', V, V).max()))
+
+
+def _make_saddle_solver(solver, assemble, refresh_every, refresh_drift):
+    """The saddle solver named by `solver`, wrapping an (X) -> (G, C)
+    assembler."""
+    if solver == "dense":
+        return _DenseSaddleSolver(assemble)
+    if solver == "lagged":
+        return _LaggedSaddleSolver(assemble,
+                                   refresh_every=refresh_every,
+                                   refresh_drift=refresh_drift)
+    raise ValueError(f"unknown solver {solver!r}")
+
+
 def _min_gap(P):
     """Closest approach between vertices with ring separation >= 2."""
     n = len(P)
-    r = np.linalg.norm(P[:, None, :] - P[None, :, :], axis=2)
+    D = P[:, None, :] - P[None, :, :]
+    r = np.sqrt(np.einsum('ijk,ijk->ij', D, D))
     idx = np.arange(n)
     sep = np.abs(idx[:, None] - idx[None, :])
     sep = np.minimum(sep, n - sep)
@@ -364,7 +485,9 @@ def _min_gap(P):
 
 def tighten(P, iters=100, alpha=3.0, beta=6.0, length_mode="edge",
             precondition=True, diag_eps=0.0, backproj_tol=1e-6,
-            grad_tol=1e-10, callback=None):
+            grad_tol=1e-10, solver="dense", refresh_every=10,
+            refresh_drift=1.0, rel_tol=1e-5, rel_window=25,
+            grad_rel_tol=1e-3, callback=None):
     """Minimize the tangent-point energy of the closed polyline `P`
     under mass-weighted-barycenter plus length constraints
     (`length_mode`: "edge" fixes every edge length, keeping the
@@ -374,32 +497,59 @@ def tighten(P, iters=100, alpha=3.0, beta=6.0, length_mode="edge",
     (the point of this module); `precondition=False` is plain L2
     descent on the same energy, kept only for A/B measurement.
 
+    `solver` selects how the bordered system is handled, exactly as in
+    `tighten_link`: "dense" re-factors it every iteration, "lagged"
+    reuses the factorization for up to `refresh_every` iterations.
+    Either way the factorization itself is the block elimination of
+    `_BlockSaddle`, not an inverse of the assembled matrix.
+
+    `rel_tol` / `rel_window` / `grad_rel_tol` are the plateau stop
+    described in `tighten_link` and justified in `_plateaued`; set
+    `rel_tol=0` to run the full iteration budget.
+
     Returns (P_out, info) where info records per-iteration energy,
     accepted step, constraint violation, and clearance; the energy is
     non-increasing up to the (recorded) backprojection perturbation.
     """
     x = np.asarray(P, dtype=float).copy()
     n = len(x)
-    _C0, targets = _constraint_rows(x, length_mode)
+
+    def _assemble(Y):
+        return (_metric_block(Y, alpha, beta, precondition, diag_eps),
+                _constraint_rows(Y, length_mode)[0])
+
+    sad = _make_saddle_solver(solver, _assemble, refresh_every,
+                              refresh_drift)
+    targets = _constraint_values(x, length_mode)
     hist = []
     E = tp_energy(x, alpha, beta)
     E0 = E
     last_s = None
     converged = False
-    for it in range(int(iters)):
+    stop_reason = "iters"
+    gnorm0 = None
+    gap = None
+    it = 0
+    retried = False
+    while it < int(iters):
+        it += 1
         dE = tp_gradient(x, alpha, beta)
-        Ainv, m = _saddle_inverse(x, alpha, beta, length_mode,
-                                  precondition, diag_eps)
+        if gap is None:
+            gap = _min_gap(x)
+        sad.prepare(x, it, gap)
+        m = sad.m
         rhs = np.zeros(3 * n + m)
         rhs[:3 * n] = dE.ravel()
-        g = (Ainv @ rhs)[:3 * n]
+        g = sad.solve(rhs)[:3 * n]
         gnorm = float(np.linalg.norm(g))
+        if gnorm0 is None:
+            gnorm0 = gnorm
         if gnorm < grad_tol:
             converged = True
+            stop_reason = "grad"
             break
         d = -g
-        dmax = float(np.max(np.linalg.norm(d.reshape(n, 3), axis=1)))
-        gap = _min_gap(x)
+        dmax = _max_row_norm(d.reshape(n, 3))
         s_max = 0.45 * gap / max(dmax, 1e-300)   # tunneling cap
         init = 1.0 / gnorm if gnorm > 1.0 else 1.0 / math.sqrt(gnorm)
         if last_s is not None and last_s > 1e-12:
@@ -413,8 +563,15 @@ def tighten(P, iters=100, alpha=3.0, beta=6.0, length_mode="edge",
         _x_ls, s_used, _E_ls, _ne = parabola_line_search(
             _energy_flat, xf, d, s0, s_max=s_max)
         if s_used <= 0.0:
+            if sad.stale() and not retried:
+                sad.force_refresh(x, it, gap)
+                it -= 1
+                retried = True
+                continue
             converged = True
+            stop_reason = "line_search"
             break
+        retried = False
 
         # constraint backprojection (Newton, reusing the factorization;
         # halve the step if it cannot be restored)
@@ -422,16 +579,15 @@ def tighten(P, iters=100, alpha=3.0, beta=6.0, length_mode="edge",
         for _attempt in range(8):
             y = (xf + s_used * d).reshape(n, 3).copy()
             for _newton in range(3):
-                _Cy, vals = _constraint_rows(y, length_mode)
-                phi = targets - vals
+                phi = targets - _constraint_values(y, length_mode)
                 viol = float(np.max(np.abs(phi)))
                 if viol < backproj_tol:
                     break
                 rhs2 = np.zeros(3 * n + m)
                 rhs2[3 * n:] = phi
-                y += (Ainv @ rhs2)[:3 * n].reshape(n, 3)
-            _Cy, vals = _constraint_rows(y, length_mode)
-            viol = float(np.max(np.abs(targets - vals)))
+                y += sad.solve(rhs2)[:3 * n].reshape(n, 3)
+            viol = float(np.max(np.abs(
+                targets - _constraint_values(y, length_mode))))
             if viol < backproj_tol:
                 break
             s_used *= 0.5
@@ -439,18 +595,25 @@ def tighten(P, iters=100, alpha=3.0, beta=6.0, length_mode="edge",
                 y = x.copy()
                 break
         E_new = tp_energy(y, alpha, beta)
-        hist.append({"it": it + 1, "E": E_new, "s": s_used,
-                     "viol": viol, "gap": _min_gap(y),
+        gap = _min_gap(y)
+        hist.append({"it": it, "E": E_new, "s": s_used,
+                     "viol": viol, "gap": gap, "gnorm": gnorm,
                      "rise": max(0.0, E_new - E)})
         x = y
         E = E_new
         last_s = s_used
         if callback is not None:
-            callback(it + 1, x)
+            callback(it, x)
+        if _plateaued(hist, gnorm0, rel_tol, rel_window, grad_rel_tol):
+            converged = True
+            stop_reason = "plateau"
+            break
     info = {"iters_run": len(hist), "converged": converged,
+            "stop_reason": stop_reason,
             "E0": E0, "E": E, "history": hist,
             "viol_max": max((h["viol"] for h in hist), default=0.0),
-            "rise_max": max((h["rise"] for h in hist), default=0.0)}
+            "rise_max": max((h["rise"] for h in hist), default=0.0),
+            "factorizations": sad.factorizations}
     return x, info
 
 
@@ -527,6 +690,10 @@ class _LinkTopology:
             s = np.minimum(s, nk - s)
             sep[a:b, a:b] = s
         self.sep = sep
+        # the two pair masks the flow tests every iteration, built once
+        # rather than rebuilt from `sep`/`cid` on each clearance probe
+        self.far = sep >= 2
+        self.cross = cid[:, None] != cid[None, :]
 
     def split(self, X):
         return [X[self.off[k]:self.off[k + 1]].copy()
@@ -554,7 +721,7 @@ def _geometry_link(X, topo):
 
 def _tp_energy_X(X, topo, alpha, beta):
     _e, _L, _that, _u, _un, T, l = _geometry_link(X, topo)
-    _D, _r, _c, _p, _pn, K = _pair_terms(X, T, alpha, beta)
+    *_rest, K = _pair_terms(X, T, alpha, beta)
     return float(np.sum(K * l[:, None] * l[None, :]))
 
 
@@ -573,17 +740,14 @@ def _tp_gradient_X(X, topo, alpha, beta):
     topology's successor/predecessor maps."""
     nxt, prv = topo.nxt, topo.prv
     _e, L, that, _u, un, T, l = _geometry_link(X, topo)
-    D, r, c, p, pn, K = _pair_terms(X, T, alpha, beta)
+    D, r2, _r, c, p, pn, inv_rb, K = _pair_terms(X, T, alpha, beta)
     ll = l[:, None] * l[None, :]
 
     pn_safe = np.where(pn > 1e-12, pn, 1.0)
     apn = np.where(pn > 1e-12, alpha * pn_safe ** (alpha - 2.0), 0.0)
 
-    inv_rb = r ** (-beta)
-    np.fill_diagonal(inv_rb, 0.0)
-
     coef_p = apn * inv_rb * ll
-    coef_d = beta * pn ** alpha * inv_rb / (r * r) * ll
+    coef_d = beta * K / r2 * ll
     Vd = coef_p[:, :, None] * p - coef_d[:, :, None] * D
     grad = Vd.sum(axis=1) - Vd.sum(axis=0)
 
@@ -676,49 +840,80 @@ def sobolev_gram_link(comps, alpha=3.0, beta=6.0, diag_eps=0.0):
     return _sobolev_gram_X(X, topo, alpha, beta, diag_eps=diag_eps)
 
 
+def _constraint_values_X(X, topo, mode):
+    """`_constraint_values` over a link -- the residual alone, for the
+    backprojection Newton loop that reuses the frozen Jacobian."""
+    if mode not in ("edge", "total"):
+        raise ValueError(f"unknown length constraint mode {mode!r}")
+    _e, L, _that, _u, _un, _T, l = _geometry_link(X, topo)
+    Ltot = float(L.sum())
+    w = l / Ltot
+    vals = np.empty(3 + (topo.N if mode == "edge" else topo.K))
+    for c in range(3):
+        vals[c] = float(np.dot(w, X[:, c]))
+    if mode == "total":
+        for k in range(topo.K):
+            vals[3 + k] = float(L[topo.off[k]:topo.off[k + 1]].sum())
+    else:
+        vals[3:] = L
+    return vals
+
+
 def _constraint_rows_X(X, topo, mode):
     """Constraint Jacobian and values for a link: global mass-weighted
     barycenter (3 rows) plus per-component total length (K rows,
-    mode="total") or every edge length (N rows, mode="edge")."""
+    mode="total") or every edge length (N rows, mode="edge").
+
+    Assembled by direct assignment into the (m, 3N) block, as in
+    `_constraint_rows`."""
+    if mode not in ("edge", "total"):
+        raise ValueError(f"unknown length constraint mode {mode!r}")
     N = topo.N
     _e, L, that, _u, _un, _T, l = _geometry_link(X, topo)
     Ltot = float(L.sum())
     tm = that[topo.prv]
+    ar = np.arange(N)
 
-    rows = []
-    vals = []
+    m = 3 + (N if mode == "edge" else topo.K)
+    C = np.zeros((m, 3 * N))
+    vals = np.empty(m)
     w = l / Ltot
     for c in range(3):
-        row = np.zeros(3 * N)
-        row[3 * np.arange(N) + c] = w
-        rows.append(row)
-        vals.append(float(np.dot(w, X[:, c])))
+        C[c, 3 * ar + c] = w
+        vals[c] = float(np.dot(w, X[:, c]))
     if mode == "total":
         g = tm - that                            # dL/dx_i
         for k in range(topo.K):
-            row = np.zeros(3 * N)
-            ar = np.arange(topo.off[k], topo.off[k + 1])
+            ak = np.arange(topo.off[k], topo.off[k + 1])
             for c in range(3):
-                row[3 * ar + c] = g[ar, c]
-            rows.append(row)
-            vals.append(float(L[topo.off[k]:topo.off[k + 1]].sum()))
-    elif mode == "edge":
-        for k in range(N):
-            row = np.zeros(3 * N)
-            row[3 * k: 3 * k + 3] = -that[k]
-            k1 = topo.nxt[k]
-            row[3 * k1: 3 * k1 + 3] = that[k]
-            rows.append(row)
-        vals.extend(L.tolist())
+                C[3 + k, 3 * ak + c] = g[ak, c]
+            vals[3 + k] = float(L[topo.off[k]:topo.off[k + 1]].sum())
     else:
-        raise ValueError(f"unknown length constraint mode {mode!r}")
-    return np.asarray(rows), np.asarray(vals, dtype=float)
+        nxt = topo.nxt
+        for c in range(3):
+            C[3 + ar, 3 * ar + c] = -that[:, c]
+            C[3 + ar, 3 * nxt + c] = that[:, c]
+        vals[3:] = L
+    return C, vals
+
+
+def _metric_block_X(X, topo, alpha, beta, precondition, diag_eps,
+                    fast=True):
+    """`_metric_block` over a link."""
+    if precondition:
+        return _sobolev_gram_X(X, topo, alpha, beta, diag_eps=diag_eps,
+                               fast=fast)
+    _e, _L, _that, _u, _un, _T, l = _geometry_link(X, topo)
+    return np.diag(l)
 
 
 def _saddle_matrix_X(X, topo, alpha, beta, mode, precondition,
                      diag_eps, fast=False):
     """The bordered matrix [[M, C^T], [C, 0]] for a link (M = H^s Gram
-    expanded to 3N, or the diagonal L2 mass matrix)."""
+    expanded to 3N, or the diagonal L2 mass matrix).
+
+    The reference assembly the block solver is measured against; the
+    flow itself never forms this matrix."""
     N = topo.N
     C, _vals = _constraint_rows_X(X, topo, mode)
     m = C.shape[0]
@@ -736,21 +931,35 @@ def _saddle_matrix_X(X, topo, alpha, beta, mode, precondition,
     return A, m
 
 
+def _gaps_X(X, topo):
+    """Both clearance readouts from ONE all-pairs pass: the closest
+    approach over 'far' pairs (same component with ring separation >= 2,
+    or any cross-component pair), and the minimum distance between
+    DISTINCT components.
+
+    The flow needs both after every accepted step, and the tunneling cap
+    needs the first at the top of the next iteration -- for the same
+    configuration.  Measured together and carried forward, that is one
+    N x N distance build per iteration instead of three."""
+    D = X[:, None, :] - X[None, :, :]
+    r = np.sqrt(np.einsum('ijk,ijk->ij', D, D))
+    far = float(r[topo.far].min())
+    if topo.K < 2:
+        return far, float("inf")
+    return far, float(r[topo.cross].min())
+
+
 def _min_gap_X(X, topo):
     """Closest approach over 'far' pairs: same component with ring
     separation >= 2, or any cross-component pair."""
-    r = np.linalg.norm(X[:, None, :] - X[None, :, :], axis=2)
-    return float(r[topo.sep >= 2].min())
+    return _gaps_X(X, topo)[0]
 
 
 def min_intercomponent_gap(comps):
     """Minimum vertex-vertex distance between DISTINCT components --
     the interpenetration readout (must stay strictly positive)."""
     X, topo = _link_concat(comps)
-    if topo.K < 2:
-        return float("inf")
-    r = np.linalg.norm(X[:, None, :] - X[None, :, :], axis=2)
-    return float(r[topo.cid[:, None] != topo.cid[None, :]].min())
+    return _gaps_X(X, topo)[1]
 
 
 def gm_thickness_link(comps):
@@ -805,33 +1014,126 @@ def linking_matrix(comps):
 
 
 # ----------------------------------------------------------------------
-# saddle solvers: exact dense, and lagged factorization reuse
+# saddle solvers: block elimination, and lagged factorization reuse
 # ----------------------------------------------------------------------
 
-class _DenseSaddleSolver:
-    """Exact reference path: assemble and invert the bordered system
-    every iteration (what `tighten` does inline)."""
+class _BlockSaddle:
+    """Factorization of the bordered saddle system
 
-    def __init__(self, alpha, beta, mode, precondition, diag_eps):
-        self.args = (alpha, beta, mode, precondition, diag_eps)
-        self.Ainv = None
+        [[M, C^T], [C, 0]] [u; lam] = [b; c],      M = G (x) I3
+
+    that never forms the (3N + m)-square matrix.
+
+    Both metrics used here act one coordinate axis at a time -- the H^s
+    Gram is the SAME N x N matrix G on each axis (`_saddle_matrix_X`
+    even assembles it stride-wise), and the unpreconditioned L2 fallback
+    is diag(l) (x) I3 -- so inverting the assembled bordered matrix pays
+    (4N)^3 for what N^3 + m^3 buys.  Eliminating the 3N block leaves the
+    Schur complement S = C M^-1 C^T on the m multipliers alone:
+
+        S lam = C M^-1 b - c,        u = M^-1 (b - C^T lam)
+
+    and every later solve against the same geometry is two small
+    products.  At the Borromean size (N = 240, m = 243) that is a 240-
+    and a 243-cube in place of a 963-cube.
+
+    G is singular: the global constants are its null space, which is
+    precisely what the barycenter rows are there to pin.  Rather than
+    perturb it and accept the bias, fold those rows in EXACTLY.  They
+    are w (x) e_c for the mass weights w, so C_b^T C_b = (w w^T) (x) I3
+    -- still a Kronecker product -- and for any sigma
+
+        [[M + sigma C_b^T C_b, C^T], [C, 0]] [u; lam]
+              = [b + sigma C_b^T c_b; c]
+
+    has the SAME solution, because the added term equals sigma C_b^T c_b
+    wherever the barycenter constraint holds.  With sigma > 0 the folded
+    G is positive definite (w . 1 = 1, so w is not orthogonal to the
+    null space), and sigma is scaled to put that direction at the
+    matrix's own magnitude rather than at the bottom of its spectrum.
+
+    Eliminating a stiff block costs digits that a bordered LU with
+    pivoting would keep, so each solve takes a step of iterative
+    refinement against the UNMODIFIED operator; applying that operator
+    is three N x N matvecs plus two thin ones, O(N^2) and free beside
+    the factorization.  The self-test holds the result to the dense
+    inverse."""
+
+    def __init__(self, G, C, refine=1):
+        N = G.shape[0]
+        m = C.shape[0]
+        self.N, self.m, self.refine = N, m, int(refine)
+        self.G, self.C = G, C
+        # rows 0..2 of C are the barycenter rows: row c is w at every
+        # column 3i + c, so the weights read straight off the stride
+        w = np.ascontiguousarray(C[0, 0::3])
+        ww = float(np.dot(w, w))
+        self.w = w
+        self.sigma = (float(np.trace(G)) / N) / max(ww, 1e-300)
+        Ginv = np.linalg.inv(G + self.sigma * np.outer(w, w))
+        self.Ginv = Ginv
+        # W = M^-1 C^T: interleaved rows 3i + c reshape to (N, 3m), so
+        # all three axes go through one gemm
+        self.W = (Ginv @ C.T.reshape(N, 3 * m)).reshape(3 * N, m)
+        self.Sinv = np.linalg.inv(C @ self.W)
+
+    def _apply(self, rhs):
+        N = self.N
+        b = rhs[:3 * N].reshape(N, 3) \
+            + self.sigma * self.w[:, None] * rhs[3 * N:3 * N + 3]
+        cc = rhs[3 * N:]
+        Mb = (self.Ginv @ b).ravel()
+        lam = self.Sinv @ (self.C @ Mb - cc)
+        return np.concatenate([Mb - self.W @ lam, lam])
+
+    def _matvec(self, z):
+        N = self.N
+        u = z[:3 * N]
+        lam = z[3 * N:]
+        return np.concatenate([
+            (self.G @ u.reshape(N, 3)).ravel() + self.C.T @ lam,
+            self.C @ u])
+
+    def solve(self, rhs):
+        z = self._apply(rhs)
+        for _ in range(self.refine):
+            z = z + self._apply(rhs - self._matvec(z))
+        return z
+
+
+def _saddle_from(G, C, refine=1):
+    """Factor the bordered system built from a metric block G (N x N,
+    acting per axis) and a constraint Jacobian C (m x 3N)."""
+    return _BlockSaddle(G, C, refine=refine)
+
+
+class _DenseSaddleSolver:
+    """Reference path: re-factor the bordered system every iteration.
+
+    `assemble(X)` returns the (G, C) pair for the current geometry; the
+    two flow drivers supply their own (knot / link) assemblers, whose
+    outputs the self-test holds bitwise equal for a single component."""
+
+    def __init__(self, assemble, refine=1):
+        self.assemble = assemble
+        self.refine = refine
+        self.sad = None
         self.m = 0
         self.factorizations = 0
 
-    def prepare(self, X, topo, it, gap):
-        alpha, beta, mode, precondition, diag_eps = self.args
-        A, self.m = _saddle_matrix_X(X, topo, alpha, beta, mode,
-                                     precondition, diag_eps)
-        self.Ainv = np.linalg.inv(A)
+    def prepare(self, X, it, gap):
+        G, C = self.assemble(X)
+        self.sad = _saddle_from(G, C, refine=self.refine)
+        self.m = self.sad.m
         self.factorizations += 1
 
     def solve(self, rhs):
-        return self.Ainv @ rhs
+        return self.sad.solve(rhs)
 
     def stale(self):
         return False
 
-    def force_refresh(self, X, topo, it, gap):
+    def force_refresh(self, X, it, gap):
         pass
 
 
@@ -858,52 +1160,54 @@ class _LaggedSaddleSolver:
     uses the bincount fast path (bitwise-identical accumulation,
     asserted in the self-test)."""
 
-    def __init__(self, alpha, beta, mode, precondition, diag_eps,
-                 refresh_every=10, refresh_drift=1.0):
-        self.args = (alpha, beta, mode, precondition, diag_eps)
+    def __init__(self, assemble, refresh_every=10, refresh_drift=1.0,
+                 refine=1):
+        self.assemble = assemble
         self.refresh_every = max(1, int(refresh_every))
         self.refresh_drift = float(refresh_drift)
-        self.Ainv = None
+        self.refine = refine
+        self.sad = None
         self.m = 0
         self.age = 0
         self.X_ref = None
         self.gap_ref = None
         self.factorizations = 0
 
-    def _refresh(self, X, topo, gap):
-        alpha, beta, mode, precondition, diag_eps = self.args
-        A, self.m = _saddle_matrix_X(X, topo, alpha, beta, mode,
-                                     precondition, diag_eps, fast=True)
-        self.Ainv = np.linalg.inv(A)
+    def _refresh(self, X, gap):
+        G, C = self.assemble(X)
+        self.sad = _saddle_from(G, C, refine=self.refine)
+        self.m = self.sad.m
         self.age = 0
         self.X_ref = X.copy()
         self.gap_ref = gap
         self.factorizations += 1
 
-    def prepare(self, X, topo, it, gap):
-        if self.Ainv is None or self.age >= self.refresh_every:
-            self._refresh(X, topo, gap)
+    def prepare(self, X, it, gap):
+        if self.sad is None or self.age >= self.refresh_every:
+            self._refresh(X, gap)
             return
-        drift = float(np.max(np.linalg.norm(X - self.X_ref, axis=1)))
+        dX = X - self.X_ref
+        drift = float(np.sqrt(np.einsum('ik,ik->i', dX, dX).max()))
         if drift > self.refresh_drift * self.gap_ref:
-            self._refresh(X, topo, gap)
+            self._refresh(X, gap)
             return
         self.age += 1
 
     def solve(self, rhs):
-        return self.Ainv @ rhs
+        return self.sad.solve(rhs)
 
     def stale(self):
         return self.age > 0
 
-    def force_refresh(self, X, topo, it, gap):
-        self._refresh(X, topo, gap)
+    def force_refresh(self, X, it, gap):
+        self._refresh(X, gap)
 
 
 def tighten_link(comps, iters=100, alpha=3.0, beta=6.0,
                  length_mode="edge", precondition=True, diag_eps=0.0,
                  backproj_tol=1e-6, grad_tol=1e-10, solver="dense",
-                 refresh_every=10, refresh_drift=1.0, callback=None):
+                 refresh_every=10, refresh_drift=1.0, rel_tol=1e-5,
+                 rel_window=25, grad_rel_tol=1e-3, callback=None):
     """Minimize the tangent-point energy of a link (list of closed
     polylines) under a global mass-weighted barycenter plus
     PER-COMPONENT length constraints.  The inter-component kernel terms
@@ -919,51 +1223,58 @@ def tighten_link(comps, iters=100, alpha=3.0, beta=6.0,
     `refresh_drift` x clearance), removing the dominant O(n^3) cost --
     profiled at ~94% of an iteration at n = 400.
 
+    The flow stops early when it has plateaued: less than `rel_tol`
+    relative energy drop across the last `rel_window` iterations AND a
+    preconditioned gradient below `grad_rel_tol` of its opening value.
+    See `_plateaued` for why both conditions are needed -- the energy
+    test alone stops the Whitehead seed on a false plateau seventy
+    iterations wide.  Set `rel_tol=0` to run the full iteration budget.
+
     Returns (comps_out, info); info adds `inter_gap` per iteration (the
-    minimum cross-component clearance) and `factorizations`."""
+    minimum cross-component clearance), `factorizations`, and
+    `stop_reason` (one of "plateau", "line_search", "grad", "iters")."""
     X, topo = _link_concat(comps)
     n = topo.N
-    if solver == "dense":
-        sad = _DenseSaddleSolver(alpha, beta, length_mode,
-                                 precondition, diag_eps)
-    elif solver == "lagged":
-        sad = _LaggedSaddleSolver(alpha, beta, length_mode,
-                                  precondition, diag_eps,
-                                  refresh_every=refresh_every,
-                                  refresh_drift=refresh_drift)
-    else:
-        raise ValueError(f"unknown solver {solver!r}")
 
-    def _inter_gap(Y):
-        if topo.K < 2:
-            return float("inf")
-        r = np.linalg.norm(Y[:, None, :] - Y[None, :, :], axis=2)
-        return float(r[topo.cid[:, None] != topo.cid[None, :]].min())
+    def _assemble(Y):
+        return (_metric_block_X(Y, topo, alpha, beta, precondition,
+                                diag_eps),
+                _constraint_rows_X(Y, topo, length_mode)[0])
+
+    sad = _make_saddle_solver(solver, _assemble, refresh_every,
+                              refresh_drift)
 
     x = X.copy()
-    _C0, targets = _constraint_rows_X(x, topo, length_mode)
+    targets = _constraint_values_X(x, topo, length_mode)
     hist = []
     E = _tp_energy_X(x, topo, alpha, beta)
     E0 = E
     last_s = None
     converged = False
+    stop_reason = "iters"
+    gnorm0 = None
+    gap = None
     it = 0
     retried = False
     while it < int(iters):
         it += 1
         dE = _tp_gradient_X(x, topo, alpha, beta)
-        gap = _min_gap_X(x, topo)
-        sad.prepare(x, topo, it, gap)
+        if gap is None:
+            gap, _ = _gaps_X(x, topo)
+        sad.prepare(x, it, gap)
         m = sad.m
         rhs = np.zeros(3 * n + m)
         rhs[:3 * n] = dE.ravel()
         g = sad.solve(rhs)[:3 * n]
         gnorm = float(np.linalg.norm(g))
+        if gnorm0 is None:
+            gnorm0 = gnorm
         if gnorm < grad_tol:
             converged = True
+            stop_reason = "grad"
             break
         d = -g
-        dmax = float(np.max(np.linalg.norm(d.reshape(n, 3), axis=1)))
+        dmax = _max_row_norm(d.reshape(n, 3))
         s_max = 0.45 * gap / max(dmax, 1e-300)   # tunneling cap
         init = 1.0 / gnorm if gnorm > 1.0 else 1.0 / math.sqrt(gnorm)
         if last_s is not None and last_s > 1e-12:
@@ -980,11 +1291,12 @@ def tighten_link(comps, iters=100, alpha=3.0, beta=6.0,
             if sad.stale() and not retried:
                 # a stale metric can propose a non-descent direction;
                 # refresh once and redo this iteration before giving up
-                sad.force_refresh(x, topo, it, gap)
+                sad.force_refresh(x, it, gap)
                 it -= 1
                 retried = True
                 continue
             converged = True
+            stop_reason = "line_search"
             break
         retried = False
 
@@ -992,16 +1304,16 @@ def tighten_link(comps, iters=100, alpha=3.0, beta=6.0,
         for _attempt in range(8):
             y = (xf + s_used * d).reshape(n, 3).copy()
             for _newton in range(3):
-                _Cy, vals = _constraint_rows_X(y, topo, length_mode)
-                phi = targets - vals
+                phi = targets - _constraint_values_X(y, topo,
+                                                     length_mode)
                 viol = float(np.max(np.abs(phi)))
                 if viol < backproj_tol:
                     break
                 rhs2 = np.zeros(3 * n + m)
                 rhs2[3 * n:] = phi
                 y += sad.solve(rhs2)[:3 * n].reshape(n, 3)
-            _Cy, vals = _constraint_rows_X(y, topo, length_mode)
-            viol = float(np.max(np.abs(targets - vals)))
+            viol = float(np.max(np.abs(
+                targets - _constraint_values_X(y, topo, length_mode))))
             if viol < backproj_tol:
                 break
             s_used *= 0.5
@@ -1009,16 +1321,22 @@ def tighten_link(comps, iters=100, alpha=3.0, beta=6.0,
                 y = x.copy()
                 break
         E_new = _tp_energy_X(y, topo, alpha, beta)
+        gap, inter_gap = _gaps_X(y, topo)
         hist.append({"it": it, "E": E_new, "s": s_used,
-                     "viol": viol, "gap": _min_gap_X(y, topo),
-                     "inter_gap": _inter_gap(y),
+                     "viol": viol, "gap": gap,
+                     "inter_gap": inter_gap, "gnorm": gnorm,
                      "rise": max(0.0, E_new - E)})
         x = y
         E = E_new
         last_s = s_used
         if callback is not None:
             callback(it, x)
+        if _plateaued(hist, gnorm0, rel_tol, rel_window, grad_rel_tol):
+            converged = True
+            stop_reason = "plateau"
+            break
     info = {"iters_run": len(hist), "converged": converged,
+            "stop_reason": stop_reason,
             "E0": E0, "E": E, "history": hist,
             "viol_max": max((h["viol"] for h in hist), default=0.0),
             "rise_max": max((h["rise"] for h in hist), default=0.0),
@@ -1189,7 +1507,9 @@ def _selftest():
     Xh, topoh = _link_concat([A2, B2])
     Gs = _sobolev_gram_X(Xh, topoh, 3.0, 6.0, fast=False)
     Gf = _sobolev_gram_X(Xh, topoh, 3.0, 6.0, fast=True)
-    good = np.array_equal(Gs, Gf)
+    good = (np.array_equal(Gs, Gf)
+            and np.array_equal(sobolev_gram(Pk, fast=False),
+                               sobolev_gram(Pk, fast=True)))
     ok &= good
     print(f"tangent_point: gram bincount == add.at (bitwise) "
           f"{'OK' if good else 'FAIL'}")
@@ -1287,6 +1607,34 @@ def _selftest():
     print(f"tangent_point: lagged vs dense E rel diff {rel:.1e}, "
           f"factorizations {infol['factorizations']} vs "
           f"{infod['factorizations']} {'OK' if good else 'FAIL'}")
+
+    # 13. The block elimination must REPRODUCE the bordered inverse.
+    # Exploiting M = G (x) I3 and folding the barycenter rows into G are
+    # algebraic identities, not approximations, so both RHS families the
+    # flow uses -- energy gradient in the top block, constraint residual
+    # in the bottom -- must come back to near machine precision.  This
+    # is what licenses never assembling `_saddle_matrix_X` at all.
+    N13 = topoh.N
+    A13, m13 = _saddle_matrix_X(Xh, topoh, 3.0, 6.0, "edge", True, 0.0)
+    Ainv13 = np.linalg.inv(A13)
+    C13, _v13 = _constraint_rows_X(Xh, topoh, "edge")
+    blk = _BlockSaddle(Gs, C13)
+    rng13 = np.random.default_rng(3)
+    worst = 0.0
+    for top in (True, False):
+        rhs13 = np.zeros(3 * N13 + m13)
+        if top:
+            rhs13[:3 * N13] = rng13.standard_normal(3 * N13)
+        else:
+            rhs13[3 * N13:] = rng13.standard_normal(m13)
+        za = Ainv13 @ rhs13
+        zb = blk.solve(rhs13)
+        worst = max(worst, float(np.linalg.norm(za - zb)
+                                 / max(np.linalg.norm(za), 1e-300)))
+    good = worst < 1e-9 and blk.m == m13
+    ok &= good
+    print(f"tangent_point: block saddle vs bordered inverse rel diff "
+          f"{worst:.1e} {'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

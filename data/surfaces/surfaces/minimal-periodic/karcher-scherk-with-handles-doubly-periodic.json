@@ -1,0 +1,80 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "karcher-scherk-with-handles-doubly-periodic",
+  "name": "Karcher-Scherk with Handles (doubly periodic)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No (g, dh) pair is stored: the shipped row is built by the dedicated mesher we.dptail_mesh (a torus/branched-cover or multi-patch assembly); no elementary (g, dh) pair on a plane domain is stored in the code. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "KARCHER_SCHERK_DP",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
+      "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
+    ],
+    "cross_checked": [
+      {
+        "source": "M. Weber, M. Wolf, 'Handle Addition for doubly-periodic Scherk Surfaces' (minsurf ch032/ch047)",
+        "agrees": true,
+        "detail": "Genus-one member: page title 'The Doubly Periodic Karcher-Scherk Surface of Genus One' (annular ends); higher-genus members of genus 2, 3, 4 are shown at ch032.  No single genus is asserted because the shipped row carries members of different genus."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch028_scherk_w_handle",
+    "msblog": "ch032_doubly_periodic_karcher_scherk_surfaces_of_highe"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

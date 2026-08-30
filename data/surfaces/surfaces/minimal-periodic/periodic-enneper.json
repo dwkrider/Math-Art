@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "periodic-enneper",
+  "name": "Periodic Enneper",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No (g, dh) pair is stored: the shipped row is built by the dedicated mesher we.sptail_penneper_mesh (a torus/branched-cover or multi-patch assembly); no elementary (g, dh) pair on a plane domain is stored in the code. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "total_curvature": {
+      "exact": "-4*pi",
+      "value": -12.566370614359172,
+      "source": "classical",
+      "note": "Per translational quotient.  M. Weber (minsurf ch134): 'The surface belongs to the class of translation invariant complete minimal surfaces which have total curvature -4pi in the quotient.'  D. Freese, M. Weber, J. Geom. 108 (2017) 743-762."
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 1
+      },
+      {
+        "type": "annular",
+        "count": 1
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SP_PERIODIC_ENNEPER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
+      "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024)."
+    ],
+    "cross_checked": [
+      {
+        "source": "D. Freese, M. Weber, J. Geom. 108 (2017) 743-762 (minsurf ch134)",
+        "agrees": true,
+        "detail": "'a translation invariant surface with one periodic Enneper end and one annular flat end. ... It is not embedded'; total curvature -4pi in the quotient."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch134_periodic_enneper_surface"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -1,15 +1,21 @@
 # Polystix
 
+![Polystix](../images/polystix.png)
+
 ## Overview
 
-Non-intersecting cubic rod packing (hexastix / tetrastix /
-tristix), after O'Keeffe, Conway and Widmark.
+Non-intersecting cubic rod packings — symmetric bundles of straight rods running in three or four directions that interlock through space **without ever touching**, after O'Keeffe, Conway and Widmark.
 
-**Polystix** are symmetric bundles of straight rods running in three or four directions, interlocking through space **without ever touching**. They are the rod packings of crystallography, cut down to a finite sculptural cell.
+They are the rod packings of crystallography, cut down to a finite sculptural cell. Conway's nomenclature is worth knowing before reading the names: the prefix counts the **sides of the rod's cross-section**, not the number of directions. So *tetrastix* is square rods (four sides) in three directions, and *hexastix* is hexagonal rods in four. These are distinct from the [polylinks](polylinks.md): there the elements are linked closed loops, here they are infinite straight rods on a crystallographic lattice — nothing is knotted, the interlocking is purely that the rods cannot separate without passing through one another.
 
-Conway's nomenclature is worth knowing before reading the names: the prefix counts the **sides of the rod's cross-section**, not the number of directions. So *tetrastix* is square rods (four sides) in three directions, and *hexastix* is hexagonal rods in four.
+### Using it
 
-These are distinct from the [polylinks](polylinks.md): there the elements are linked closed loops, here they are infinite straight rods on a crystallographic lattice. Nothing is knotted or linked — the interlocking is purely a matter of the rods being unable to separate without passing through one another.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Polystix*.
+2. **Pick a Preset.** The named presets (**Hexagonal Pencils**, **Cylinder Bundle**, **Tetrastix Cubes**, **Tristix**, **+Sigma bundle**, **Hexastix Knot**) each set the Packing, Cross Section, Fill and Clip Volume for a known arrangement; **Custom** frees every control. While a preset is active its four driven fields are greyed out.
+3. **Choose the Packing** — **Tetrastix** (square rods, 3 directions), **Hemistix** (square, 3, chiral), **Hexastix** (hexagonal, 4 directions — the "bundle of pencils"), **Tristix** (triangular, 4, chiral) or **+Sigma** (hexagonal, 4, chiral).
+4. **Set the rod shape.** **Cross Section** is the **Native Prism** (the space-filling polygon for that packing) or a **Round Cylinder**; **Fill** is the rod radius as a fraction of the just-touching radius (1.0 = rods touch).
+5. **Set the extent and cell.** **Extent** is how many lattice cells the arrangement spans (more cells, more rods); **Clip Volume** trims the infinite packing to a Cube, Rhombic Dodecahedron, Truncated Octahedron or Sphere; **Handedness** mirrors the chiral packings (tristix / +Sigma).
+6. **Optional ends and loops.** **Overhang** pushes the rod ends out past the clip so the weave shows (negative retracts them); **Connect Loops** fuses the protruding ends into continuous knots and links (this forces round tubes and overhang, and reveals **Loop Smoothness**). Round out with **Tube Sides**, **Cap Ends** and **Coloring** (Per Direction / None). The report gives the rod count — or loop count when connecting — and warns if the packing was capped by a low Extent.
 
 ## Options
 
@@ -17,20 +23,20 @@ These are distinct from the [polylinks](polylinks.md): there the elements are li
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Hexagonal Pencils (hexastix) | Custom, Hexagonal Pencils (hexastix), Cylinder Bundle (hexastix), Tetrastix Cubes, Tristix (chiral triangles), +Sigma bundle (chiral), Hexastix Knot (linked loops). |
-| Packing | Hexastix - hexagonal rods, 4 directions (pencils) | Tetrastix - square rods, 3 directions, Hemistix - square rods, 3 directions (chiral), Hexastix - hexagonal rods, 4 directions (pencils), Tristix / +Omega - triangular rods, 4 dir (chiral), +Sigma - hexagonal rods, 4 directions (chiral). |
-| Cross Section | Native Prism | Native Prism, Round Cylinder. |
+| Preset | Hexagonal Pencils (hexastix) | Ready-made packing setups; Custom keeps your own settings. Custom, Hexagonal Pencils (hexastix), Cylinder Bundle (hexastix), Tetrastix Cubes, Tristix (chiral triangles), +Sigma bundle (chiral), Hexastix Knot (linked loops). |
+| Packing | Hexastix - hexagonal rods, 4 directions (pencils) | Which invariant cubic rod packing to build. Tetrastix - square rods, 3 directions, Hemistix - square rods, 3 directions (chiral), Hexastix - hexagonal rods, 4 directions (pencils), Tristix / +Omega - triangular rods, 4 dir (chiral), +Sigma - hexagonal rods, 4 directions (chiral). |
+| Cross Section | Native Prism | Shape of each rod's cross-section. Native Prism, Round Cylinder. |
 | Fill | 0.98 | Rod radius as a fraction of the just-touching radius for this packing (1.0 = rods touch) Range 0.02-1.2. |
 | Extent | 4 | Number of lattice cells the arrangement spans (more = more rods) Range 1-10. |
-| Clip Volume | Rhombic Dodecahedron | Cube, Rhombic Dodecahedron, Truncated Octahedron, Sphere. |
+| Clip Volume | Rhombic Dodecahedron | Shape the infinite packing is trimmed to. Cube, Rhombic Dodecahedron, Truncated Octahedron, Sphere. |
 | Handedness | Right | Mirror the packing (flips the chiral enantiomorph of tristix / +Sigma). Right, Left (mirror). |
-| Tube Sides | 16 | Range 3-48. |
+| Tube Sides | 16 | Cross-section segments of each round rod Range 3-48. |
 | Overhang | 0 | Extend each rod past the interleaved core by this many cells at both ends (negative retracts the rods to expose the weave) Range -4-8. |
 | Connect Loops | Off | Fuse the protruding rod ends into continuous knots/links: 'half loops' join same-axis neighbours, 'twists' join crossing neighbours (after Widmark 2021). Rods become round tubes; overhang is forced on so the ends can meet |
 | Loop Smoothness | 12 | Samples along each connecting arc Range 2-48. |
-| Cap Ends | On | -- |
-| Coloring | Per Direction | Per Direction, None. |
-| Scale | 1 | Range 0.01-100. |
+| Cap Ends | On | Close the open ends of the rods |
+| Coloring | Per Direction | How the rods are coloured. Per Direction, None. |
+| Scale | 1 | Overall size; fits the result into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 
@@ -51,6 +57,8 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** Grab a fistful of unsharpened hexagonal pencils and they nest together with no gaps — that is one "bundle". Now imagine three more bundles running along the other diagonals of a cube, each threaded through the gaps of the first so that no pencil ever touches a pencil from another bundle. Because every rod is hemmed in on all sides, you cannot slide any single one out — the whole thing is locked rigid — and yet nothing presses on anything. That "interlocked but never touching" is the entire trick. The different packings below are just choices of *what shape* the rods are (square, triangular, hexagonal) and *how many directions* they run in.
 
 **The five packings.**
 

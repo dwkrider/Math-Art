@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "constant-width-solid",
+  "name": "Constant Width Solid",
+  "primary_family": "misc",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "misc"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: Meissner-style bodies are piecewise (spherical caps, torus-arc wedges, revolved circular arcs) assembled with edge patches; no single chart. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.constant_width_generator",
+      "operator_id": "mesh.constant_width_add",
+      "key": "MEISSNER",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "MEISSNER"
+    },
+    {
+      "generator": "math_art.constant_width_generator",
+      "operator_id": "mesh.constant_width_add",
+      "key": "REVOLUTION",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "REVOLUTION"
+    },
+    {
+      "generator": "math_art.constant_width_generator",
+      "operator_id": "mesh.constant_width_add",
+      "key": "REULEAUX",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "REULEAUX"
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Ernst Meissner & Friedrich Schilling, \"Drei Gipsmodelle von Flaechen konstanter Breite\", Z. Math. Phys. 60 (1912), 92-94.",
+      "Bernd Kawohl & Christof Weber, \"Meissner's Mysterious Bodies\", Math. Intelligencer 33 (2011), no. 3, 94-101.",
+      "T. Bonnesen & W. Fenchel, \"Theorie der konvexen Koerper\", Springer 1934 (the minimal-volume conjecture).",
+      "Wikipedia, \"Surface of constant width\" and \"Reuleaux triangle\"."
+    ]
+  },
+  "specimens": [
+    {
+      "label": "Meissner tetrahedron"
+    },
+    {
+      "label": "Reuleaux solid of revolution"
+    },
+    {
+      "label": "Reuleaux tetrahedron"
+    }
+  ],
+  "ids": {
+    "vmm": "ch075_constant_width_surface"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

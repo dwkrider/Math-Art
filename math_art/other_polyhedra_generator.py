@@ -15,7 +15,54 @@
 # Schulte-Wills regular maps {6,4} / {4,6} (genus 6), and a pair of genus-2
 # heptagonal dodecahedra (12 heptagons each; see _highgenus_maps_data).
 #
+# Four of the entries carry mathematics rather than just a shape.  Brehm's
+# 9-vertex polyhedron is the SMALLEST polyhedral model of Boy's surface --
+# an immersed projective plane, so V - E + F = 1 and the surface is
+# one-sided.  Bricard's octahedron FLEXES: rigid faces hinged along the
+# edges still move, which is why Cauchy's 1813 theorem that convex
+# polyhedra are rigid needs its hypothesis.  Its motion is computed here,
+# not stored: the rigidity matrix is checked to leave exactly one degree of
+# freedom beyond the six rigid motions, and Gauss-Newton then walks that
+# freedom while every edge length is held.  The signed volume stays put
+# throughout -- the Bellows theorem, that a flexible polyhedron can bend
+# but not breathe.  Steffen's nine-vertex polyhedron goes one better:
+# two of Bricard's octahedra, opened up into boundary "crinkles" and
+# joined by a two-triangle tent, flex together with NO self-intersections
+# -- the smallest EMBEDDED flexible polyhedron, the one that can really
+# be built from card, and its constant volume is not zero.
+#
 # References:
+# - Ulrich Brehm, "How to build minimal polyhedral models of the Boy
+#   surface", Math. Intelligencer 12 (1990), 51-56; the 9-vertex model
+#   dates from 1988 and 9 vertices is known to be minimal.  Coordinates and
+#   face lists follow Robert Ferreol, "Encyclopedie des formes
+#   mathematiques remarquables" (mathcurve.com), "polyedre de Brehm".
+# - Raoul Bricard, "Memoire sur la theorie de l'octaedre articule",
+#   J. Math. Pures Appl. 3 (1897), 113-148; vertex coordinates from
+#   E. D. Demaine & J. O'Rourke, "Geometric Folding Algorithms" (2007),
+#   Table 23.1.
+# - Augustin-Louis Cauchy (1813), the rigidity of convex polyhedra.
+# - Robert Connelly, "A flexible sphere", Math. Intelligencer 1 (1978),
+#   130-131; and "Flexing surfaces", in D. A. Klarner (ed.), "The
+#   Mathematical Gardner", Wadsworth (1981), 79-89.
+# - R. Connelly, I. Sabitov & A. Walz, "The bellows conjecture", Beitraege
+#   zur Algebra und Geometrie 38 (1997), 1-10 -- the volume of a flexing
+#   polyhedron is constant.
+# - Klaus Steffen (late 1970s), the smallest embedded flexible polyhedron:
+#   9 vertices, 21 edges, 14 triangles, two Bricard octahedron "crinkles"
+#   joined by a two-triangle tent.  The incidences and integer edge
+#   lengths used here are read off Steffen's unfolding as reproduced in
+#   E. D. Demaine & J. O'Rourke, "Geometric Folding Algorithms:
+#   Linkages, Origami, Polyhedra", Cambridge University Press (2007),
+#   Section 23.2.3 and Figure 23.8, and in P. R. Cromwell, "Polyhedra",
+#   Cambridge University Press (1997), Chapter 6, Figure 6.18.
+#   I. G. Maksimov showed that every triangulated sphere with fewer than
+#   nine vertices is rigid, so Steffen's vertex count is minimal.
+# - Tetragonal triacontahexahedron: no discoverer is recorded by the
+#   source; the construction used here (the sum of a truncated octahedron
+#   and its dual the tetrakis hexahedron) is from Robert Ferreol,
+#   "Encyclopedie des formes mathematiques remarquables" (mathcurve.com),
+#   "triacontahexaedre tetragonal".
 # - M. C. Escher, "Waterfall" (1961) and "Study for Stars" (1948); the
 #   solid is the first stellation of the rhombic dodecahedron.
 # - J. D. Stasheff, "Homotopy associativity of H-spaces", Trans. AMS 108
@@ -55,9 +102,394 @@ bl_info = {
 
 import math
 
-from .polyhedra import _highgenus_maps_data as _hgm
+# Relative when imported as part of the package (how Blender loads the
+# extension), flat when the module is imported on its own -- which is how
+# tests/test_polyhedra.py and tools/polydb_build.py reach it, neither of
+# which has a package context. Without the fallback both fail at import
+# with "attempted relative import with no known parent package". This is
+# the same pattern the other generators use.
+try:
+    from .polyhedra import _highgenus_maps_data as _hgm
+    from .polyhedra import canonical as _canon
+    from .polyhedra import hull as _hull
+    from .polyhedra import seeds as _seeds
+except ImportError:                                   # flat import
+    from polyhedra import _highgenus_maps_data as _hgm
+    from polyhedra import canonical as _canon
+    from polyhedra import hull as _hull
+    from polyhedra import seeds as _seeds
 
 PHI = (1 + 5 ** 0.5) / 2
+_SQRT3 = math.sqrt(3.0)
+
+
+try:
+    import numpy as _np
+except ImportError:                          # flexing needs a linear solve
+    _np = None
+
+
+# --------------------------------------------------------------------------
+# Brehm's polyhedral Boy surface (1988)
+# --------------------------------------------------------------------------
+
+def brehm_boy():
+    """Brehm's 9-vertex polyhedral model of Boy's surface.
+
+    Boy's surface is an immersion of the PROJECTIVE PLANE in 3-space, and
+    this is the smallest polyhedron that realises it: 9 vertices, 18 edges,
+    10 faces, so V - E + F = 1 -- the Euler characteristic of the projective
+    plane, not of a sphere.  Nine vertices is optimal; it can be shown that
+    no such model has eight.
+
+    The faces come in three orbits of a 3-fold rotation plus a base: three
+    congruent pentagons that together form a Moebius band, three triangles
+    meeting at a triple point, three more triangles, and the base triangle
+    A0 A1 A2.  Because the pentagon band is a Moebius band the surface is
+    ONE-SIDED: no consistent choice of face orientation exists, which is
+    what `_self_test` checks alongside the Euler count.  A polyhedron with
+    chi = 1 could not be orientable anyway, but testing both says that the
+    face list really does close up the way it should.
+    """
+    r3 = _SQRT3
+    s2 = math.sqrt(2.0)
+    A = [(1.0, 0.0, 0.0), (-0.5, r3 / 2, 0.0), (-0.5, -r3 / 2, 0.0)]
+    B = [(0.5, 0.0, 1 / s2), (-0.25, r3 / 4, 1 / s2), (-0.25, -r3 / 4, 1 / s2)]
+    C = [(0.75, -r3 / 4, s2), (0.0, r3 / 2, s2), (-0.75, -r3 / 4, s2)]
+    V = A + B + C                            # A_k = k, B_k = 3+k, C_k = 6+k
+    F = [[0, 3, 1, 4, 6], [1, 4, 2, 5, 7], [2, 5, 0, 3, 8],   # pentagons
+         [2, 4, 6], [0, 5, 7], [1, 3, 8],                     # triple point
+         [6, 0, 2], [7, 1, 0], [8, 2, 1],                     # second triple
+         [0, 1, 2]]                                           # base
+    return V, F
+
+
+# --------------------------------------------------------------------------
+# Flexible polyhedra: Bricard (1897), and the flex solver they need
+# --------------------------------------------------------------------------
+
+def _edge_list(F):
+    """Undirected edges of a face list, in a stable order."""
+    E = []
+    seen = set()
+    for f in F:
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            k = (min(a, b), max(a, b))
+            if k not in seen:
+                seen.add(k)
+                E.append(k)
+    return E
+
+
+def flex_solve(V, E, L, drive, target, iters=200, tol=1e-13):
+    """Move the configuration V to one with the prescribed edge lengths.
+
+    A flexible polyhedron's edge-length equations do not pin it down: after
+    the six rigid motions are accounted for there is still a one-parameter
+    family of shapes, which is exactly what "flexible" means.  So we add one
+    more equation -- hold the distance between the pair `drive` at `target`
+    -- which selects a single member of that family, and solve
+
+        |v_i - v_j|^2 - L_ij^2 = 0   for every edge (i, j)
+        |v_a - v_b|^2 - target^2 = 0 for the driving pair
+
+    by Gauss-Newton from the current V.  The system is rank-deficient by the
+    six rigid motions, so the least-squares step is taken with `lstsq`,
+    whose minimum-norm solution simply declines to drift the whole body.
+    Returns (V, residual); walk `target` in small steps to trace the flex.
+    """
+    if _np is None:
+        raise RuntimeError("flexing needs NumPy")
+    X = _np.array([list(map(float, v)) for v in V], dtype=float)
+    cons = [(i, j, float(l)) for (i, j), l in zip(E, L)]
+    cons.append((drive[0], drive[1], float(target)))
+    for _ in range(iters):
+        r = _np.empty(len(cons))
+        J = _np.zeros((len(cons), X.size))
+        for k, (i, j, l) in enumerate(cons):
+            d = X[i] - X[j]
+            r[k] = float(d @ d) - l * l
+            J[k, 3 * i:3 * i + 3] = 2.0 * d
+            J[k, 3 * j:3 * j + 3] = -2.0 * d
+        if float(r @ r) < tol:
+            break
+        step = _np.linalg.lstsq(J, -r, rcond=None)[0]
+        X = X + step.reshape(X.shape)
+    return [tuple(p) for p in X], float(_np.sqrt(r @ r))
+
+
+def flex_dof(V, E):
+    """Degrees of freedom beyond the 6 rigid motions (1 => it flexes).
+
+    The rigidity matrix has a row per edge and three columns per vertex;
+    its kernel is the space of infinitesimal flexes, which always contains
+    the 6 rigid motions of space.  Anything more is a genuine mechanism.
+    """
+    if _np is None:
+        raise RuntimeError("flexing needs NumPy")
+    X = _np.array([list(map(float, v)) for v in V], dtype=float)
+    R = _np.zeros((len(E), X.size))
+    for k, (i, j) in enumerate(E):
+        d = X[i] - X[j]
+        R[k, 3 * i:3 * i + 3] = d
+        R[k, 3 * j:3 * j + 3] = -d
+    return X.size - int(_np.linalg.matrix_rank(R, tol=1e-8)) - 6
+
+
+def signed_volume(V, F):
+    """Signed volume enclosed by an oriented closed polyhedral surface.
+
+    Sabitov's theorem says this is an algebraic function of the edge
+    lengths alone, so it CANNOT change as a polyhedron flexes -- the
+    Bellows theorem.  Self-intersecting surfaces like Bricard's still have
+    a well-defined signed volume, and it is just as constant.
+    """
+    vol = 0.0
+    for f in F:
+        for i in range(1, len(f) - 1):
+            a, b, c = V[f[0]], V[f[i]], V[f[i + 1]]
+            vol += (a[0] * (b[1] * c[2] - b[2] * c[1])
+                    - a[1] * (b[0] * c[2] - b[2] * c[0])
+                    + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6.0
+    return vol
+
+
+def is_orientable(F):
+    """Can the faces be oriented so every edge is traversed both ways?"""
+    adj = {}
+    for fi, f in enumerate(F):
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            adj.setdefault((min(a, b), max(a, b)), []).append((fi, a, b))
+    sign = {}
+    for start in range(len(F)):
+        if start in sign:
+            continue
+        sign[start] = 1
+        stack = [start]
+        while stack:
+            fi = stack.pop()
+            f = F[fi]
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                for (fj, c, d) in adj[(min(a, b), max(a, b))]:
+                    if fj == fi:
+                        continue
+                    # consistent iff the shared edge runs the opposite way
+                    want = sign[fi] if (c, d) == (b, a) else -sign[fi]
+                    if fj in sign:
+                        if sign[fj] != want:
+                            return False
+                    else:
+                        sign[fj] = want
+                        stack.append(fj)
+    return True
+
+
+# Bricard's flexible octahedron, from the coordinates tabulated in Demaine
+# & O'Rourke, "Geometric Folding Algorithms" (2007), Table 23.1.
+#
+# An octahedron has exactly three DIAGONALS -- the three pairs of vertices
+# sharing no face -- and every face takes one vertex from each pair, giving
+# 2^3 = 8 faces.  Which pairing is chosen is what decides rigidity here, and
+# only the pairing (a, c) (b, d) (e, f) yields a mechanism: the rigidity
+# matrix then leaves one degree of freedom beyond the six rigid motions,
+# while all the other pairings on the same six points are rigid.  That
+# pairing is also the one respecting the mirror x -> -x, which swaps a with
+# c and b with d and fixes e and f, so this is Bricard's PLANE-SYMMETRIC
+# octahedron and its flex preserves that mirror throughout.
+#
+# The quadrilateral a-b-c-d has |ab| = |cd| = 2 and |bc| = |da| = 2 sqrt3 --
+# opposite sides equal but crossed, a CONTRAPARALLELOGRAM, which is the
+# classic one-degree-of-freedom four-bar driving the motion.
+_BRICARD_V = [(2.0, 0.0, 0.0), (1.0, _SQRT3, 0.0),          # a, b
+              (-2.0, 0.0, 0.0), (-1.0, _SQRT3, 0.0),        # c, d
+              (0.0, 0.0, 1.0), (0.0, 0.0, -1.0)]            # e, f
+_BRICARD_DIAGONALS = ((0, 2), (1, 3), (4, 5))
+_BRICARD_F = []
+for _i in (0, 1):
+    for _j in (0, 1):
+        for _k in (0, 1):
+            _f = [_BRICARD_DIAGONALS[0][_i], _BRICARD_DIAGONALS[1][_j],
+                  _BRICARD_DIAGONALS[2][_k]]
+            if (_i + _j + _k) % 2:                # keep the winding coherent
+                _f = [_f[0], _f[2], _f[1]]
+            _BRICARD_F.append(_f)
+
+
+def bricard_octahedron(flex=0.0):
+    """One of Bricard's flexible octahedra (1897), at flex parameter `flex`.
+
+    Cauchy proved in 1813 that every CONVEX polyhedron is rigid.  Bricard
+    found, 84 years later, that dropping convexity breaks it: these
+    octahedra move.  They are not polyhedra one can build out of card --
+    the faces pass through one another -- which is why they were long
+    treated as a curiosity rather than a counterexample, and why Connelly's
+    1977 embedded flexible sphere was such a surprise.
+
+    `flex` shifts the driving diagonal |ac| away from its tabulated value;
+    every edge length is held fixed while it does.
+    """
+    E = _edge_list(_BRICARD_F)
+    L = [math.dist(_BRICARD_V[i], _BRICARD_V[j]) for (i, j) in E]
+    base = math.dist(_BRICARD_V[0], _BRICARD_V[2])
+    V, res = flex_solve(_BRICARD_V, E, L, (0, 2), base + flex)
+    return V, [list(f) for f in _BRICARD_F], res
+
+
+# Steffen's flexible polyhedron, reconstructed from the unfolding in
+# Demaine & O'Rourke (2007), Figure 23.8 (also Cromwell (1997), Figure
+# 6.18): 14 triangles with the integer edge lengths 5, 10, 11, 12 and 17,
+# whose gluing labels force these identifications and no others.  Nine
+# vertices remain after gluing:
+#
+#     0 T   apex of the tent (all four outer corners of the net)
+#     1 P   left end of the 17-edge      2 Q   right end
+#     3 M   bottom of the tent (the two inner 5-5 corners)
+#     4 H, 5 G   the left crinkle's free vertices
+#     7 H', 8 G'  the right crinkle's, with the same edge lengths
+#     6 B   the bottom vertex the two crinkles SHARE
+#
+# Each crinkle is a Bricard octahedron of the first (line-symmetric) kind
+# with two adjacent faces removed: on the left the six vertices T P M H G
+# B pair into the diagonals (T,G) (P,B) (M,H), opposite edges come out
+# equal (T-P = G-B = 12, T-H = G-M = 5, T-B = G-P = 10, P-H = B-M = 10,
+# P-M = B-H = 12), and the two missing faces T-P-M and T-M-B are exactly
+# where the tent and the other crinkle attach.  A Bricard octahedron of
+# this kind flexes precisely when the remaining opposite pair also
+# matches, i.e. when the ABSENT diagonal T-M equals the edge H-G = 11 --
+# and that is the whole secret of the construction: hold the tent
+# T, P, Q, M rigid with |TM| = 11 and BOTH crinkles become mechanisms at
+# once, swinging their shared vertex B about the T-M axis while every one
+# of the 21 edges keeps its integer length.  That swing angle is the flex
+# parameter below; no equation solving is needed, because every other
+# vertex is the three-sphere intersection point of its neighbours.
+#
+# Which of the two intersection points to take (the sign pattern +,-,+,-
+# below) selects the EMBEDDED assembly: the mirror-symmetric-looking
+# choice +,-,-,+ closes up with the same lengths but its two 11-edges
+# H-G and H'-G' pass through each other, which is presumably why nets of
+# this polyhedron come with folding instructions.  The embedded flex is
+# bounded by face collisions at |flex| ~ 0.2393 rad (a crinkle face
+# meets a tent face), so the slider stops just short at 0.235.
+_STEFFEN_F = [[1, 0, 4], [1, 4, 5], [4, 0, 6], [6, 5, 4], [5, 6, 3],
+              [1, 5, 3], [7, 0, 2], [8, 7, 2], [6, 0, 7], [7, 8, 6],
+              [3, 6, 8], [3, 8, 2], [0, 1, 2], [3, 2, 1]]
+_STEFFEN_LEN = {(0, 1): 12, (0, 2): 12, (1, 2): 17, (1, 3): 12, (2, 3): 12,
+                (0, 4): 5, (1, 4): 10, (1, 5): 10, (4, 5): 11, (4, 6): 12,
+                (5, 6): 12, (3, 5): 5, (0, 6): 10, (3, 6): 10, (0, 7): 5,
+                (2, 7): 10, (2, 8): 10, (7, 8): 11, (6, 7): 12, (6, 8): 12,
+                (3, 8): 5}
+_STEFFEN_FLEX_MAX = 0.235
+
+
+def _sphere3(p1, r1, p2, r2, p3, r3, sgn):
+    """The point at distances r1, r2, r3 from p1, p2, p3 (trilateration).
+
+    The three sphere centres span a plane; the two solutions sit
+    symmetrically on either side of it, and `sgn` picks one.
+    """
+    ex = [p2[k] - p1[k] for k in range(3)]
+    d = math.sqrt(sum(c * c for c in ex))
+    ex = [c / d for c in ex]
+    t = [p3[k] - p1[k] for k in range(3)]
+    i = sum(ex[k] * t[k] for k in range(3))
+    ey = [t[k] - i * ex[k] for k in range(3)]
+    j = math.sqrt(sum(c * c for c in ey))
+    ey = [c / j for c in ey]
+    ez = [ex[1] * ey[2] - ex[2] * ey[1], ex[2] * ey[0] - ex[0] * ey[2],
+          ex[0] * ey[1] - ex[1] * ey[0]]
+    x = (r1 * r1 - r2 * r2 + d * d) / (2 * d)
+    y = (r1 * r1 - r3 * r3 + i * i + j * j - 2 * i * x) / (2 * j)
+    h = math.sqrt(max(0.0, r1 * r1 - x * x - y * y))
+    return tuple(p1[k] + x * ex[k] + y * ey[k] + sgn * h * ez[k]
+                 for k in range(3))
+
+
+def steffen_polyhedron(flex=0.0):
+    """Steffen's flexible polyhedron, at swing angle `flex` (radians).
+
+    Connelly's 1977 sphere was the first flexible polyhedron free of
+    self-intersections; Steffen boiled it down to 14 triangles on 9
+    vertices, which Maksimov later proved minimal.  Unlike Bricard's
+    octahedra this one is embedded, so it can be built from card -- and
+    it visibly wobbles.  Its volume, which the Bellows theorem holds
+    constant, is genuinely non-zero here, so the theorem's content
+    ("bend but not breathe") is on show rather than vacuous.
+    """
+    fl = max(-_STEFFEN_FLEX_MAX, min(_STEFFEN_FLEX_MAX, float(flex)))
+    px = math.sqrt(144.0 - 8.5 ** 2)        # |TP| = 12 with |PQ| = 17
+    T = (0.0, 0.0, 0.0)
+    P = (px, 8.5, 0.0)
+    Q = (px, -8.5, 0.0)
+    # M on the tent hinge circle |MP| = |MQ| = 12, at the angle that makes
+    # the absent diagonal |TM| = 11 -- the Bricard condition above.
+    ch = 11.0 / (2.0 * px)                  # cos of the half-angle
+    sh = math.sqrt(1.0 - ch * ch)
+    M = (px * 2.0 * ch * ch, 0.0, px * 2.0 * sh * ch)
+    # B swings on the circle |TB| = |MB| = 10 about the T-M axis.
+    u = tuple(c / 11.0 for c in M)
+    r = math.sqrt(100.0 - 5.5 ** 2)
+    e1 = (-u[2], 0.0, u[0])                 # in the T,P,Q,M mirror plane
+    B = (M[0] / 2.0 + r * math.cos(fl) * e1[0],
+         -r * math.sin(fl),
+         M[2] / 2.0 + r * math.cos(fl) * e1[2])
+    H = _sphere3(T, 5.0, P, 10.0, B, 12.0, 1)
+    G = _sphere3(P, 10.0, M, 5.0, B, 12.0, -1)
+    H2 = _sphere3(T, 5.0, Q, 10.0, B, 12.0, 1)
+    G2 = _sphere3(Q, 10.0, M, 5.0, B, 12.0, -1)
+    V = [T, P, Q, M, H, G, B, H2, G2]
+    return V, [list(f) for f in _STEFFEN_F]
+
+
+def triacontahexahedron():
+    """The tetragonal triacontahexahedron: 38 vertices, 72 edges, 36 faces.
+
+    Three vertex orbits of the cube group, in the ratio that makes all 36
+    faces planar quadrilaterals -- 12 rhombi and 24 kites:
+
+        (+-a, +-2a, 0) and permutations   the truncated octahedron, 24
+        (+-b, +-b, +-b)  with  2b = 3a    a cube, 8
+        (+-c, 0, 0) and permutations      an octahedron, 6, with 4c = 9a
+
+    Equivalently it is the truncated octahedron with a right pyramid raised
+    on each of its 14 faces, or the tetrakis hexahedron with a pyramid on
+    each of its 24 -- two quite different augmentations landing on the same
+    solid, which is the sum of the truncated octahedron and its dual.  It
+    has the full symmetry of the cube but is not semi-regular: three vertex
+    orbits (degrees 3, 4 and 6), two edge orbits and two face orbits.
+
+    Taken as a convex hull, so the face structure is derived rather than
+    transcribed; `_self_test` checks the orbit and face counts that result.
+
+    One correction to the source: it gives 8 vertices of degree 4 and 6 of
+    degree 6.  It must be the other way round, and the hull confirms it --
+    a truncated octahedron has 8 HEXAGONS and 6 SQUARES, so the 8 pyramid
+    apexes raised over the hexagons (the cube orbit) have degree 6 and the
+    6 raised over the squares (the octahedron orbit) have degree 4.  The
+    same transposition appears in the source's construction note.
+    """
+    a, b, c = 1.0, 1.5, 2.25              # 2b = 3a, 4c = 9a
+    P = []
+    for s in (1, -1):
+        for t in (1, -1):
+            P += [(s * a, t * 2 * a, 0.0), (0.0, s * a, t * 2 * a),
+                  (t * 2 * a, 0.0, s * a), (t * 2 * a, s * a, 0.0),
+                  (0.0, t * 2 * a, s * a), (s * a, 0.0, t * 2 * a)]
+    for sx in (1, -1):
+        for sy in (1, -1):
+            for sz in (1, -1):
+                P.append((sx * b, sy * b, sz * b))
+    for s in (1, -1):
+        P += [(s * c, 0.0, 0.0), (0.0, s * c, 0.0), (0.0, 0.0, s * c)]
+    seen, V = set(), []
+    for p in P:                            # the 24 permutations come in dups
+        k = tuple(round(x, 9) for x in p)
+        if k not in seen:
+            seen.add(k)
+            V.append(p)
+    return V, _hull.hull_faces(V)
 
 
 def schonhardt(twist_deg=40.0):
@@ -480,6 +912,327 @@ GALLERY = {
 GALLERY.update({k: {"name": v["name"], "V": v["V"], "F": v["F"]}
                 for k, v in _hgm.HIGHGENUS_MAPS.items()})
 
+# --- The Sharpohedron -----------------------------------------------------
+# Abraham Sharp (1651-1742), the Royal Observatory astronomer and
+# instrument maker, published twelve original polyhedra in "Geometry
+# Improv'd" (1717), computing their dimensions to fifteen and twenty
+# decimal places and engraving the plates himself.  The first and
+# simplest is this eighteen-hedron of six rhombi and twelve kites, which
+# Hart named the Sharpohedron.
+#
+# Sharp built his solids out of wooden cubes, and the coordinates show
+# it.  Taking the cube's half-edge as h, the twenty vertices are
+#
+#   * four at h(+-1, +-1, +-1) with the sign product NEGATIVE -- one of
+#     the cube's two inscribed tetrahedra, kept at full size;
+#   * four at (3/5)h(+-1, +-1, +-1) with the sign product POSITIVE --
+#     the other inscribed tetrahedron, pulled in to three fifths;
+#   * twelve at every permutation of (h, h/3, h/3) whose sign product is
+#     positive.
+#
+# Those are exact rationals, and in exact arithmetic they give exactly
+# eighteen supporting planes of four vertices each -- so the solid is
+# exact rather than a fit, which is what `_selftest` checks.
+_SHARP_H = 0.5
+
+
+def sharpohedron():
+    """Sharp's eighteen-hedron: 6 rhombi and 12 kites."""
+    h = _SHARP_H
+    V = []
+    for sx in (1, -1):
+        for sy in (1, -1):
+            for sz in (1, -1):
+                if sx * sy * sz < 0:
+                    V.append((h * sx, h * sy, h * sz))
+                else:
+                    V.append((0.6 * h * sx, 0.6 * h * sy, 0.6 * h * sz))
+    for pos in range(3):                  # which axis carries the long leg
+        for sx in (1, -1):
+            for sy in (1, -1):
+                for sz in (1, -1):
+                    if sx * sy * sz < 0:
+                        continue
+                    c = [h / 3 * sx, h / 3 * sy, h / 3 * sz]
+                    c[pos] = h * (sx, sy, sz)[pos]
+                    V.append(tuple(c))
+    return V, _hull.hull_faces(V)
+
+
+# --- The tetrahedrally stellated icosahedron and its two companions -------
+# Choose four of the icosahedron's twenty faces lying in the planes of a
+# tetrahedron and cap each with a low pyramid whose sides continue the
+# neighbouring face planes.  Equivalently -- and this is how it is built
+# here -- intersect the SIXTEEN remaining face half-spaces: the four
+# chosen planes stop being faces, twelve of their neighbours open out
+# into kites, and four faces are left untouched, giving 4 triangles and
+# 12 kites on 16 vertices and 30 edges.  Hart calls it the simplest
+# chiral polyhedron with tetrahedral symmetry.
+#
+# Its polar dual is the tetrahedrally truncated dodecahedron -- the same
+# topology with trapezoids in place of the kites -- and canonicalizing
+# that shared combinatorial type lands on the geometrically self-dual
+# sixteen-hedron that sits halfway between the two.
+_TETRA_NORMALS = [(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)]
+
+
+def _tetra_stellated_planes():
+    V, F = _seeds.seed_poly('ICOSA')
+    keep = []
+    for nx, d in _hull.face_planes(V, F):
+        if any(all(abs(nx[k] - t[k] / _SQRT3) < 1e-6 for k in range(3))
+               for t in _TETRA_NORMALS):
+            continue                      # one tetrahedral orbit, dropped
+        keep.append((nx, d))
+    if len(keep) != 16:
+        raise ValueError(f"expected 16 planes, kept {len(keep)}")
+    return keep
+
+
+def tetra_stellated_icosahedron():
+    P = _hull.halfspace_vertices(_tetra_stellated_planes())
+    return P, _hull.hull_faces(P)
+
+
+def tetra_truncated_dodecahedron():
+    V, F = tetra_stellated_icosahedron()
+    return _hull.polar_dual(V, F)
+
+
+def self_dual_16():
+    """The canonical form of that combinatorial type, which is where the
+    solid becomes its own dual."""
+    V, F = tetra_stellated_icosahedron()
+    W = _canon.canonicalize_best([list(v) for v in V], [list(f) for f in F])
+    return [tuple(v) for v in W], F
+
+
+# --- The pseudo great rhombicuboctahedron --------------------------------
+# The rhombicuboctahedron has a famous impostor.  Cut it along its
+# octagonal band and give one square cupola a 45-degree turn: every face
+# is still regular and every vertex still reads 3.4.4.4, yet the solid is
+# no longer vertex-transitive, so it is a Johnson solid (J37, the
+# elongated square gyrobicupola) and not an Archimedean one.  Mistaking
+# it for Archimedean is the error Grunbaum traced through three
+# centuries of the literature.
+#
+# R. Hughes Jones observed that the same turn works on the NONCONVEX
+# great rhombicuboctahedron (U17, the quasirhombicuboctahedron), whose
+# square cupolas are CROSSED -- each cupola's top square lies on the far
+# side of the centre from that cupola's own octagonal rim.  Turning one
+# of them through 45 degrees gives the pseudo great rhombicuboctahedron:
+# 8 triangles and 18 squares on 24 vertices, one vertex figure
+# throughout, and no vertex-transitivity.  Its symmetry drops from the
+# octahedral O_h to the antiprismatic D_4d.
+#
+# U17's vertices are every permutation of (+-1, +-1, +-xi) with
+# xi = 1 - sqrt(2), which puts every edge at length 2 and every one of
+# the 26 face planes at POSITIVE distance from the centre -- so "outward"
+# is well defined face by face even though the solid is not convex:
+#
+#     8 triangles      s . x = 2 + xi                (s a sign vector)
+#     6 "axis" squares x_k = sigma xi
+#    12 "pair" squares sigma_i x_i + sigma_j x_j = 1 + xi
+#
+# Writing each vertex as (k, s) -- xi in slot k, signs s -- makes the
+# cupola split exact rather than geometric.  The cupola whose rim lies at
+# z = -1 is precisely the twelve vertices with s[2] = -1, and its nine
+# faces are precisely the faces all of whose vertices have s[2] = -1; the
+# other eight squares are the band, and they are what holds still while
+# the cupola turns.
+#
+# The turn itself needs no new geometry, which is what makes this cheap:
+# 45 degrees about z carries the rim octagon onto itself, so only the
+# cupola's own square moves.  Its eight remaining faces just re-index
+# onto the rim vertex one step around, and the band keeps the rim it
+# already had.
+#
+# References:
+# - R. Hughes Jones, "The pseudo-great rhombicuboctahedron",
+#   Mathematical Scientist 19(1) (June 1994), 60-63 (Letters to the
+#   Editor).  The discovery and the 45-degree construction; the letter
+#   gives no coordinates.
+# - B. Grunbaum, "An enduring error", Elemente der Mathematik 64 (2009),
+#   89-101 -- the pseudorhombicuboctahedron among other repeated
+#   miscounts in the enumeration of polyhedra.
+# - Norman W. Johnson (1966), who catalogued the convex case as J37;
+#   completeness of the list proved by Victor Zalgaller (1969).
+_PGR_XI = 1.0 - math.sqrt(2.0)
+
+#: sign vectors, in one fixed order
+_PGR_SIGNS = [(a, b, c) for a in (1, -1) for b in (1, -1) for c in (1, -1)]
+
+
+def _pgr_key(p):
+    return tuple(round(c, 7) + 0.0 for c in p)
+
+
+def _pgr_vertices():
+    """U17's 24 vertices, and the (xi-slot, signs) -> index map.
+
+    Slot k carries the xi, so the point is every permutation of
+    (+-1, +-1, +-xi) exactly once.
+    """
+    V, idx = [], {}
+    for k in range(3):
+        for s in _PGR_SIGNS:
+            idx[(k, s)] = len(V)
+            V.append(tuple(s[m] * (_PGR_XI if m == k else 1.0)
+                           for m in range(3)))
+    return V, idx
+
+
+def _pgr_faces(idx):
+    """U17's 26 faces as (vertex indices, cupola tag).
+
+    The tag is the sign of z shared by every vertex of the face, which is
+    +-1 exactly on the two crossed cupolas and 0 on the eight band
+    squares that join their rims.
+    """
+    out = []
+    for s in _PGR_SIGNS:                    # 8 triangles, s . x = 2 + xi
+        out.append(([idx[(k, s)] for k in range(3)], s[2]))
+    for k in range(3):                      # 6 squares, x_k = sigma xi
+        for sk in (1, -1):
+            f = [idx[(k, s)] for s in _PGR_SIGNS if s[k] == sk]
+            out.append((f, sk if k == 2 else 0))
+    for i in range(3):                      # 12 squares,
+        for j in range(i + 1, 3):           # s_i x_i + s_j x_j = 1 + xi
+            for si in (1, -1):
+                for sj in (1, -1):
+                    f = [idx[(m, s)] for m in (i, j) for s in _PGR_SIGNS
+                         if s[i] == si and s[j] == sj]
+                    out.append((f, sj if j == 2 else 0))
+    return out
+
+
+def _pgr_wind(V, f):
+    """Order one face into a cycle wound outward from the centre.
+
+    Each of the 26 faces is a regular polygon centred on its own plane's
+    normal, so the centroid direction IS that normal -- no orientation
+    guess is needed, which matters because the solid is not convex and a
+    hull cannot supply one.
+    """
+    cen = [sum(V[i][k] for i in f) / len(f) for k in range(3)]
+    ln = math.sqrt(sum(c * c for c in cen))
+    n = [c / ln for c in cen]
+    d = [V[f[0]][k] - cen[k] for k in range(3)]
+    ln = math.sqrt(sum(c * c for c in d))
+    u = [c / ln for c in d]
+    w = [n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2],
+         n[0] * u[1] - n[1] * u[0]]
+
+    def az(i):
+        e = [V[i][k] - cen[k] for k in range(3)]
+        return math.atan2(sum(w[k] * e[k] for k in range(3)),
+                          sum(u[k] * e[k] for k in range(3)))
+    return sorted(f, key=az)
+
+
+def _pgr_gyrate(V, faces, idx):
+    """Turn the cupola whose rim lies at z = -1 through 45 degrees.
+
+    Its square moves to new coordinates; its rim maps onto itself, so
+    those vertices are re-indexed instead of duplicated and the band --
+    which shares them -- is left alone.
+    """
+    ca = sa = math.sqrt(0.5)
+
+    def rot(p):
+        return (ca * p[0] - sa * p[1], sa * p[0] + ca * p[1], p[2])
+
+    key = {_pgr_key(p): i for i, p in enumerate(V)}
+    W = list(V)
+    perm = list(range(len(V)))
+    for (k, s), i in idx.items():
+        if s[2] != -1:
+            continue
+        q = rot(V[i])
+        if k == 2:                          # the cupola's own square
+            W[i] = q
+        else:                               # the rim turns onto itself
+            j = key.get(_pgr_key(q))
+            if j is None:
+                raise ValueError("the rim octagon is not 45-degree "
+                                 "symmetric")
+            perm[i] = j
+    out = [[perm[i] for i in f] if tag == -1 else list(f)
+           for f, tag in faces]
+    return W, out
+
+
+def pseudo_great_rhombicuboctahedron(gyrate=True):
+    """Hughes Jones's solid, or plain U17 when `gyrate` is False."""
+    V, idx = _pgr_vertices()
+    faces = [(_pgr_wind(V, f), tag) for f, tag in _pgr_faces(idx)]
+    if not gyrate:
+        return V, [f for f, _t in faces]
+    return _pgr_gyrate(V, faces, idx)
+
+
+def _symmetry_perms(V, F):
+    """Every orthogonal map carrying (V, F) to itself, as index permutations.
+
+    The point of the pseudo solid is a negative claim -- that it is NOT
+    vertex-transitive despite one vertex figure throughout -- and a
+    negative claim needs the whole symmetry group, not a sample of it.
+    So the group is found rather than assumed: fix a spanning pair of
+    vertices, and for every image pair with the same Gram entries the map
+    is determined up to the handedness of the third axis.  Try both
+    handednesses, keep the maps that permute the vertices AND carry faces
+    to faces, and the result is exhaustive.
+    """
+    def dot(p, q):
+        return p[0] * q[0] + p[1] * q[1] + p[2] * q[2]
+
+    def cross(p, q):
+        return (p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2],
+                p[0] * q[1] - p[1] * q[0])
+
+    def unit(p):
+        ln = math.sqrt(dot(p, p))
+        return (p[0] / ln, p[1] / ln, p[2] / ln)
+
+    def frame(p, q, sgn):
+        e0 = unit(p)
+        t = tuple(q[k] - dot(q, e0) * e0[k] for k in range(3))
+        e1 = unit(t)
+        e2 = cross(e0, e1)
+        return e0, e1, tuple(sgn * c for c in e2)
+
+    key = {_pgr_key(p): i for i, p in enumerate(V)}
+    faces = {frozenset(f) for f in F}
+    a = V[0]
+    b = next(p for p in V if dot(cross(a, p), cross(a, p)) > 1e-12)
+    src = frame(a, b, 1)
+    out = set()
+    for p in V:
+        if abs(dot(p, p) - dot(a, a)) > 1e-6:
+            continue
+        for q in V:
+            if abs(dot(q, q) - dot(b, b)) > 1e-6 or \
+                    abs(dot(p, q) - dot(a, b)) > 1e-6:
+                continue
+            for sgn in (1, -1):
+                dst = frame(p, q, sgn)
+                M = [[sum(dst[t][r] * src[t][k] for t in range(3))
+                      for k in range(3)] for r in range(3)]
+                img = []
+                for v in V:
+                    w = _pgr_key(tuple(sum(M[r][k] * v[k] for k in range(3))
+                                       for r in range(3)))
+                    if w not in key:
+                        break
+                    img.append(key[w])
+                if len(img) != len(V) or len(set(img)) != len(V):
+                    continue
+                if any(frozenset(img[i] for i in f) not in faces for f in F):
+                    continue
+                out.add(tuple(img))
+    return sorted(out)
+
+
 ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "echidnahedron -- the outermost stellation (W42)"),
          ("SCHONHARDT", "Schonhardt Polyhedron", "twisted octahedron"),
@@ -494,6 +1247,34 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "near-miss: 132 pentagons, icosahedral"),
          ("ASSOCIAHEDRON", "Associahedron (3D, K5)",
           "Stasheff polytope; 6 pentagons + 3 quadrilaterals"),
+         ("SHARP", "Sharpohedron",
+          "Abraham Sharp's eighteen-hedron (1717): 6 rhombi, 12 kites"),
+         ("TETRA_STELLATED_ICOSA", "Tetrahedrally Stellated Icosahedron",
+          "simplest chiral solid of tetrahedral symmetry; "
+          "4 triangles + 12 kites"),
+         ("TETRA_TRUNCATED_DODECA", "Tetrahedrally Truncated Dodecahedron",
+          "its polar dual; trapezoids in place of the kites"),
+         ("SELF_DUAL_16", "Self-Dual 16-Hedron",
+          "the canonical form between the two, its own dual"),
+         ("PSEUDO_GRCO", "Pseudo Great Rhombicuboctahedron",
+          "Hughes Jones (1994): one crossed cupola of the nonconvex "
+          "great rhombicuboctahedron turned 45 degrees, so the vertex "
+          "figure is uniform but the solid is not"),
+         ("BREHM_BOY", "Brehm's Boy Surface (9 vertices)",
+          "the smallest polyhedral model of Boy's surface; 3 pentagons "
+          "in a Moebius band plus 7 triangles, one-sided, V-E+F = 1"),
+         ("BRICARD", "Bricard's Flexible Octahedron",
+          "Bricard (1897): an octahedron that MOVES with rigid faces, "
+          "so non-convex polyhedra escape Cauchy's rigidity theorem; "
+          "self-intersecting, and the Flex slider drives the motion"),
+         ("STEFFEN", "Steffen's Flexible Polyhedron",
+          "Steffen (1970s): the smallest EMBEDDED flexible polyhedron "
+          "-- 14 triangles on 9 vertices, two Bricard octahedron "
+          "crinkles joined by a tent, with no self-intersections "
+          "anywhere in its motion; the Flex slider drives the swing"),
+         ("TRIACONTAHEXA", "Tetragonal Triacontahexahedron",
+          "36 faces (12 rhombi + 24 kites) of cube symmetry; the sum of "
+          "a truncated octahedron and its dual"),
          ("KLEIN", "Klein Regular Map {3,7} (genus 3)", ""),
          ("MAP64", "Regular Map {6,4} (genus 6)",
           "Schulte-Wills; 20 hexagons"),
@@ -501,11 +1282,29 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "dual of {6,4}; 30 squares")] + list(_hgm.ITEMS)
 
 
-def build(kind):
+def build(kind, flex=0.0):
     if kind == 'SCHONHARDT':
         V, F = schonhardt()
+    elif kind == 'BREHM_BOY':
+        V, F = brehm_boy()
+    elif kind == 'TRIACONTAHEXA':
+        V, F = triacontahexahedron()
+    elif kind == 'BRICARD':
+        V, F, _ = bricard_octahedron(flex)
+    elif kind == 'STEFFEN':
+        V, F = steffen_polyhedron(flex)
     elif kind == 'ESCHER':
         V, F = escher()
+    elif kind == 'SHARP':
+        V, F = sharpohedron()
+    elif kind == 'TETRA_STELLATED_ICOSA':
+        V, F = tetra_stellated_icosahedron()
+    elif kind == 'TETRA_TRUNCATED_DODECA':
+        V, F = tetra_truncated_dodecahedron()
+    elif kind == 'SELF_DUAL_16':
+        V, F = self_dual_16()
+    elif kind == 'PSEUDO_GRCO':
+        V, F = pseudo_great_rhombicuboctahedron()
     else:
         S = GALLERY[kind]
         V = [tuple(float(c) for c in v) for v in S["V"]]
@@ -516,6 +1315,16 @@ def build(kind):
     return [tuple(c / mx for c in v) for v in V], F
 
 
+# Entries whose counts are ASSERTED rather than merely printed.  The
+# older gallery predates the assertion and several of its solids are
+# deliberately non-manifold or higher-genus, so tightening all of them
+# belongs to whoever owns those solids; new entries assert from the
+# start.
+_ASSERTED = {'SHARP', 'TETRA_STELLATED_ICOSA', 'TETRA_TRUNCATED_DODECA',
+             'SELF_DUAL_16', 'PSEUDO_GRCO',
+             'BREHM_BOY', 'BRICARD', 'STEFFEN', 'TRIACONTAHEXA'}
+
+
 def _self_test():
     want = {'ECHIDNAHEDRON': (92, 270, 180, 2),
             'SCHONHARDT': (6, 12, 8, 2), 'JESSEN': (12, 30, 20, 2),
@@ -523,7 +1332,16 @@ def _self_test():
             'ESCHER': (26, 72, 48, 2), 'TETRATED': (28, 54, 28, 2),
             'PENTAGON132': (200, 330, 132, 2),
             'ASSOCIAHEDRON': (14, 21, 9, 2), 'KLEIN': (24, 84, 56, -4),
-            'MAP64': (30, 60, 20, -10), 'MAP46': (20, 60, 30, -10)}
+            'MAP64': (30, 60, 20, -10), 'MAP46': (20, 60, 30, -10),
+            'SHARP': (20, 36, 18, 2),
+            'TETRA_STELLATED_ICOSA': (16, 30, 16, 2),
+            'TETRA_TRUNCATED_DODECA': (16, 30, 16, 2),
+            'SELF_DUAL_16': (16, 30, 16, 2),
+            'PSEUDO_GRCO': (24, 48, 26, 2),
+            'BREHM_BOY': (9, 18, 10, 1),        # projective plane, chi = 1
+            'BRICARD': (6, 12, 8, 2),
+            'STEFFEN': (9, 21, 14, 2),
+            'TRIACONTAHEXA': (38, 72, 36, 2)}
     want.update(_hgm.WANT)
     for kind, _lbl, _d in ITEMS:
         V, F = build(kind)
@@ -537,6 +1355,275 @@ def _self_test():
         e2 = all(v == 2 for v in E.values())
         print(f"{kind:11s} V={len(V):2d} E={len(E):2d} F={len(F):2d} "
               f"chi={chi:3d} edge-in-2={e2}  want{want[kind]}")
+        if kind in _ASSERTED:
+            assert (len(V), len(E), len(F), chi) == want[kind], \
+                (kind, len(V), len(E), len(F), chi, want[kind])
+            assert e2, (kind, "an edge is not shared by exactly two faces")
+
+    def _sides(V, F):
+        """Edge lengths of each face, rounded, for shape classification."""
+        return [sorted(round(math.dist(V[f[k]], V[f[(k + 1) % len(f)]]), 6)
+                       for k in range(len(f))) for f in F]
+
+    # The Sharpohedron: Hart's description is six rhombi and twelve
+    # kites, which is a real check on the coordinates rather than just a
+    # face count -- a wrong vertex orbit would still give eighteen faces.
+    V, F = build('SHARP')
+    assert all(len(f) == 4 for f in F), sorted(len(f) for f in F)
+    rhombi = sum(1 for s in _sides(V, F) if abs(s[0] - s[3]) < 1e-6)
+    kites = sum(1 for s in _sides(V, F)
+                if abs(s[0] - s[1]) < 1e-6 and abs(s[2] - s[3]) < 1e-6
+                and abs(s[0] - s[3]) >= 1e-6)
+    assert (rhombi, kites) == (6, 12), (rhombi, kites)
+    # and the exact rationals really are coplanar four at a time: take
+    # each face's plane from three of its vertices and measure the
+    # fourth against it.  (Verified in exact rational arithmetic too --
+    # the twenty vertices give exactly eighteen supporting planes of
+    # four vertices each -- so this is float noise, not a fit.)
+    worst = 0.0
+    for f in F:
+        a, b, c = (V[i] for i in f[:3])
+        u = [b[k] - a[k] for k in range(3)]
+        w = [c[k] - a[k] for k in range(3)]
+        nx = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2],
+              u[0] * w[1] - u[1] * w[0]]
+        ln = math.sqrt(sum(x * x for x in nx)) or 1.0
+        nx = [x / ln for x in nx]
+        for i in f[3:]:
+            off = sum(nx[k] * (V[i][k] - a[k]) for k in range(3))
+            worst = max(worst, abs(off))
+    assert worst < 1e-9, ("Sharpohedron faces are not planar", worst)
+
+    # The tetrahedrally stellated icosahedron: 4 triangles + 12 kites
+    V, F = build('TETRA_STELLATED_ICOSA')
+    assert sorted(len(f) for f in F) == [3] * 4 + [4] * 12, \
+        sorted(len(f) for f in F)
+
+    # Its dual has the same topology with quadrilaterals that are no
+    # longer kites, and the canonical member really is its own dual.
+    #
+    # "Its own dual" means CONGRUENT to itself, not identical to itself:
+    # polar reciprocation returns the solid rotated (here, into the dual
+    # position), so demanding that each dual vertex land on an original
+    # one fails on a perfectly self-dual solid.  Compare congruence
+    # invariants instead -- the radius spectrum and the full multiset of
+    # pairwise distances, which together pin the vertex set down to an
+    # isometry without having to solve for the rotation.
+    V, F = build('SELF_DUAL_16')
+    deg = {}
+    for f in F:
+        for i in f:
+            deg[i] = deg.get(i, 0) + 1
+    assert sorted(deg.values()) == sorted(len(f) for f in F), \
+        "the combinatorial type is not self-dual"
+    P, G = _hull.polar_dual(V, F)
+    s = (max(math.dist((0, 0, 0), v) for v in V)
+         / max(math.dist((0, 0, 0), p) for p in P))
+    P = [tuple(c * s for c in p) for p in P]
+
+    def _spectrum(pts):
+        rad = sorted(round(math.dist((0, 0, 0), p), 7) for p in pts)
+        pair = sorted(round(math.dist(a, b), 7)
+                      for i, a in enumerate(pts) for b in pts[i + 1:])
+        return rad, pair
+
+    rv, pv = _spectrum(V)
+    rp, pp = _spectrum(P)
+    assert len(rv) == len(rp), (len(rv), len(rp))
+    assert max(abs(a - b) for a, b in zip(rv, rp)) < 1e-6, "radii differ"
+    assert max(abs(a - b) for a, b in zip(pv, pp)) < 1e-6, "distances differ"
+
+    # --- The pseudo great rhombicuboctahedron ---------------------------
+    # The un-gyrated build must be U17 itself, because the whole
+    # construction rests on the claim that permutations of
+    # (+-1, +-1, +-xi) with the plane families above really do give the
+    # nonconvex great rhombicuboctahedron.  Check it against the
+    # independent Wythoff construction rather than against itself: the
+    # radius spectrum plus the full multiset of pairwise distances pins
+    # a vertex set down to an isometry without solving for the rotation.
+    U, UF = pseudo_great_rhombicuboctahedron(gyrate=False)
+    assert sorted(len(f) for f in UF) == [3] * 8 + [4] * 18, \
+        sorted(len(f) for f in UF)
+    try:
+        from . import uniform_polyhedra_generator as _uni
+    except ImportError:                     # flat import (test runner)
+        try:
+            import uniform_polyhedra_generator as _uni
+        except ImportError:
+            _uni = None
+    if _uni is not None and getattr(_uni, 'np', None) is not None:
+        W = [tuple(float(c) for c in v)
+             for v in _uni.build_uniform("3/2 4 | 2", ["3/2", "4", "2"])[0]]
+        su = max(math.dist((0, 0, 0), v) for v in U)
+        sw = max(math.dist((0, 0, 0), v) for v in W)
+        ru, du = _spectrum([tuple(c / su for c in v) for v in U])
+        rw, dw = _spectrum([tuple(c / sw for c in v) for v in W])
+        assert len(ru) == len(rw) == 24, (len(ru), len(rw))
+        assert max(abs(x - y) for x, y in zip(ru, rw)) < 1e-6, \
+            "the exact coordinates are not U17's (radii)"
+        assert max(abs(x - y) for x, y in zip(du, dw)) < 1e-6, \
+            "the exact coordinates are not U17's (distances)"
+
+    # Every face regular and all of one edge length, gyrated or not --
+    # this is what makes the impostor convincing.
+    V, F = build('PSEUDO_GRCO')
+    assert sorted(len(f) for f in F) == [3] * 8 + [4] * 18, \
+        sorted(len(f) for f in F)
+    lens = [math.dist(V[f[k]], V[f[(k + 1) % len(f)]])
+            for f in F for k in range(len(f))]
+    assert max(lens) - min(lens) < 1e-9, (min(lens), max(lens))
+
+    # And the gyration is not a symmetry in disguise: the turned cupola
+    # really does move the solid to a new one.
+    su = max(math.dist((0, 0, 0), v) for v in U)
+    U = [tuple(c / su for c in v) for v in U]
+    assert sorted(_pgr_key(v) for v in U) != sorted(_pgr_key(v) for v in V), \
+        "the 45-degree turn left the vertex set unchanged"
+
+    # The headline: one vertex figure throughout, yet not
+    # vertex-transitive.  U17 has all 24 vertices in one orbit under its
+    # 48 symmetries; the pseudo solid keeps a single vertex figure but
+    # its group collapses to the antiprismatic D_4d of order 16, which
+    # breaks the vertices into the 16 on the two rims and the 8 on the
+    # two cupola squares.
+    for tag, (PV, PF), order, orbits in (
+            ("U17", (U, UF), 48, [24]),
+            ("pseudo", (V, F), 16, [8, 16])):
+        G = _symmetry_perms(PV, PF)
+        assert len(G) == order, (tag, len(G), order)
+        seen, sizes = set(), []
+        for i in range(len(PV)):
+            if i in seen:
+                continue
+            orb = {g[i] for g in G}
+            seen |= orb
+            sizes.append(len(orb))
+        assert sorted(sizes) == orbits, (tag, sorted(sizes), orbits)
+    print("PSEUDO_GRCO  8 triangles + 18 squares, one edge length, "
+          "|sym| 48 -> 16, vertex orbits [24] -> [8, 16]")
+
+    # BREHM_BOY.  chi = 1 is already asserted above; what makes it a model
+    # of the PROJECTIVE PLANE rather than an odd sphere is that it is
+    # one-sided, and that the pentagons really do form a Moebius band.
+    V, F = brehm_boy()
+    assert not is_orientable(F), "Brehm's Boy surface came out orientable"
+    band = [f for f in F if len(f) == 5]
+    assert len(band) == 3 and is_orientable(band) is False, \
+        "the three pentagons should close into a Moebius band"
+    assert sorted(len(f) for f in F) == [3] * 7 + [5] * 3
+    print("BREHM_BOY    9 vertices, 18 edges, 10 faces, chi = 1 and "
+          "one-sided: the projective plane, on the minimum 9 vertices")
+
+    # BRICARD.  The headline is that it MOVES.  Three things are checked:
+    # the rigidity matrix leaves exactly one degree of freedom beyond the
+    # six rigid motions; walking that freedom holds every edge length
+    # fixed; and the signed volume does not budge while the shape does --
+    # the Bellows theorem, which says a flexing polyhedron can bend but
+    # cannot breathe.
+    E = _edge_list(_BRICARD_F)
+    L0 = [math.dist(_BRICARD_V[i], _BRICARD_V[j]) for (i, j) in E]
+    assert flex_dof(_BRICARD_V, E) == 1, "Bricard's octahedron is not a "\
+        "mechanism -- check the diagonal pairing"
+    shapes, vols = [], []
+    for fl in (-1.6, -1.2, -0.8, -0.4, 0.0, 0.2, 0.3):
+        V, F, res = bricard_octahedron(fl)
+        assert res < 1e-7, ("flex did not converge", fl, res)
+        worst = max(abs(math.dist(V[i], V[j]) - l)
+                    for (i, j), l in zip(E, L0))
+        assert worst < 1e-7, ("edge length drifted", fl, worst)
+        vols.append(signed_volume(V, F))
+        shapes.append(sorted(round(math.dist(V[i], V[j]), 6)
+                             for i in range(6) for j in range(i + 1, 6)))
+    assert max(vols) - min(vols) < 1e-9, ("bellows theorem violated", vols)
+    assert shapes[0] != shapes[-1], "the octahedron never actually moved"
+    print("BRICARD      1 degree of freedom beyond rigid motions; over the "
+          "flex every edge holds to 1e-7 and the signed volume to 1e-9 "
+          "(bellows theorem) while the full distance multiset changes")
+
+    # STEFFEN.  Everything Bricard's octahedron proves, plus the property
+    # Bricard's lacks: the surface is EMBEDDED, and stays embedded across
+    # the whole flex range.  Checked here: the 21 edge lengths are the
+    # exact integers of the published net at every flex angle; the
+    # rigidity matrix leaves exactly one degree of freedom; the signed
+    # volume is constant (bellows) and NON-zero, unlike Bricard's which
+    # is identically zero; the shape genuinely moves (the full pairwise
+    # distance multiset changes); and no two faces sharing at most one
+    # vertex ever pierce or touch (checked with the exact face-gap and
+    # transversal tests of the toroidal-polyhedron module).
+    V, F = steffen_polyhedron()
+    E = _edge_list(F)
+    assert (len(V), len(E), len(F)) == (9, 21, 14)
+    assert is_orientable(F), "Steffen's polyhedron should be orientable"
+    try:
+        from . import toroidal_polyhedron_generator as _toro
+    except ImportError:                     # flat import (test runner)
+        try:
+            import toroidal_polyhedron_generator as _toro
+        except ImportError:
+            _toro = None
+    shapes, vols, gaps = [], [], []
+    for fl in (-0.235, -0.15, -0.075, 0.0, 0.075, 0.15, 0.235):
+        V, F = steffen_polyhedron(fl)
+        worst = max(abs(math.dist(V[i], V[j]) - _STEFFEN_LEN[(i, j)])
+                    for (i, j) in E)
+        assert worst < 1e-9, ("Steffen edge left the net lengths", fl, worst)
+        assert flex_dof(V, E) == 1, ("Steffen stopped being a mechanism", fl)
+        vols.append(signed_volume(V, F))
+        shapes.append(sorted(round(math.dist(V[i], V[j]), 6)
+                             for i in range(9) for j in range(i + 1, 9)))
+        if _toro is not None:
+            assert not _toro._self_intersects(V, F), \
+                ("Steffen's polyhedron self-intersects", fl)
+            gap = min(_toro._face_gap(V, F[i], F[j])
+                      for i in range(len(F)) for j in range(i + 1, len(F))
+                      if not set(F[i]) & set(F[j]))
+            assert gap > 1e-6, ("disjoint faces touch", fl, gap)
+            gaps.append(gap)
+    assert max(vols) - min(vols) < 1e-9, ("bellows theorem violated", vols)
+    assert abs(vols[3] - 200.7772051581) < 1e-6, vols[3]   # and non-zero
+    # flex -> -flex is a mirror image, so the two ENDS share a distance
+    # multiset; compare an end against the middle to see actual motion
+    assert shapes[0] != shapes[3], "Steffen's polyhedron never moved"
+    print("STEFFEN      9 vertices / 21 integer edges / 14 triangles; "
+          "1 degree of freedom; over |flex| <= 0.235 every edge is exact, "
+          "the volume 200.7772 is constant to 1e-9 (bellows, non-zero), "
+          "and the surface stays embedded (min face gap %.4f..%.4f)"
+          % ((min(gaps), max(gaps)) if gaps else (float('nan'),) * 2))
+
+    # TRIACONTAHEXA.  Face and orbit structure, and planarity -- the whole
+    # claim is that these three vertex orbits make 36 PLANAR quads.
+    V, F = triacontahexahedron()
+    assert all(len(f) == 4 for f in F), "not all faces are quadrilaterals"
+    shape = {'rhombus': 0, 'kite': 0}
+    for f in F:
+        lens = {round(math.dist(V[f[i]], V[f[(i + 1) % 4]]), 6)
+                for i in range(4)}
+        shape['rhombus' if len(lens) == 1 else 'kite'] += 1
+    assert shape == {'rhombus': 12, 'kite': 24}, shape
+    deg = {}
+    for i, j in _edge_list(F):
+        deg[i] = deg.get(i, 0) + 1
+        deg[j] = deg.get(j, 0) + 1
+    tally = {}
+    for d in deg.values():
+        tally[d] = tally.get(d, 0) + 1
+    assert tally == {3: 24, 6: 8, 4: 6}, tally
+    worst = 0.0
+    for f in F:
+        pts = [V[i] for i in f]
+        cen = [sum(p[k] for p in pts) / 4 for k in range(3)]
+        u = [pts[1][k] - pts[0][k] for k in range(3)]
+        w = [pts[2][k] - pts[0][k] for k in range(3)]
+        nx = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2],
+              u[0] * w[1] - u[1] * w[0]]
+        ln = math.sqrt(sum(x * x for x in nx)) or 1.0
+        nx = [x / ln for x in nx]
+        for p in pts:
+            worst = max(worst, abs(sum(nx[k] * (p[k] - cen[k])
+                                       for k in range(3))))
+    assert worst < 1e-9, ("faces not planar", worst)
+    print("TRIACONTAHEXA 12 rhombi + 24 kites, planar to %.0e, vertex "
+          "degrees 24x3 + 8x6 + 6x4" % worst)
 
 
 try:
@@ -549,7 +1636,13 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    class MESH_OT_notable_polyhedron_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_notable_polyhedron_add(bpy.types.Operator,
+                                         _net_style.NetStyleProps):
         """Add a notable individual polyhedron (the echidnahedron / final
         stellation of the icosahedron, Schonhardt, Jessen, Durer, Bilinski,
         or Klein's genus-3 regular map)"""
@@ -557,9 +1650,28 @@ if _IN_BLENDER:
         bl_label = "Notable Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        solid: EnumProperty(name="Solid", items=ITEMS)
+        solid: EnumProperty(name="Solid", items=ITEMS,
+                            description="Which notable polyhedron to build")
+        flex: FloatProperty(
+            name="Flex", default=0.0, min=-1.6, max=0.3,
+            description="Position along the one-parameter motion, as the "
+                        "shift in the driving diagonal.  Every face stays "
+                        "congruent to itself and every edge keeps its "
+                        "length; only the shape changes (Bricard's "
+                        "flexible octahedron only)")
+        steffen_flex: FloatProperty(
+            name="Flex", default=0.0,
+            min=-_STEFFEN_FLEX_MAX, max=_STEFFEN_FLEX_MAX,
+            description="Position along the one-parameter motion, as the "
+                        "angle through which the two crinkles swing about "
+                        "the axis joining their tips.  Every edge keeps "
+                        "its integer length and the polyhedron stays free "
+                        "of self-intersections over the whole range, "
+                        "whose ends are where faces would first collide "
+                        "(Steffen's flexible polyhedron only)")
         style: EnumProperty(
             name="Style",
+            description="How the polyhedron is rendered",
             items=[('SOLID', "Solid", ""),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -573,11 +1685,12 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
-                    "segment per face")],
+                    "segment per face"),
+            _net_style.net_enum_item()],
             default='SOLID')
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
-            description="Leonardo face frame width (fraction of the face)")
+            name="Border", default=0.06, min=0.005, max=1.0,
+            description="Leonardo face frame width, the same on every face")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.001, max=1.0,
             description="Panel / strut thickness")
@@ -600,11 +1713,23 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
-            V, F = build(self.solid)
+            try:
+                V, F = build(self.solid,
+                             self.steffen_flex if self.solid == 'STEFFEN'
+                             else self.flex)
+            except RuntimeError as exc:         # flexing without NumPy
+                self.report({'ERROR'}, str(exc))
+                return {'CANCELLED'}
             label = dict((i[0], i[1]) for i in ITEMS)[self.solid]
+            if self.style == 'NET':
+                return _net_style.emit_net_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], label)
             if self.style == 'FACETS':
                 try:
                     from .styles import facet_style
@@ -655,6 +1780,10 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'solid')
+            if self.solid == 'BRICARD':
+                lay.prop(self, 'flex')
+            elif self.solid == 'STEFFEN':
+                lay.prop(self, 'steffen_flex')
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
@@ -663,6 +1792,8 @@ if _IN_BLENDER:
             if self.style == 'BALLSTICK':
                 lay.prop(self, 'strut_radius')
                 lay.prop(self, 'node_radius')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

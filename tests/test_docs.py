@@ -103,6 +103,11 @@ def check_page_shape(fail):
                     encoding="utf-8").read()
         if not text.startswith("# "):
             fail(f"{slug}.md: no H1 title (the gallery uses it as the label)")
+        # every page opens with a hero image (../images/<slug>.png); the
+        # scaffolder emits it and render_docs.py fills the PNG.  A missing
+        # hero line means the page renders as a wall of text on GitHub.
+        if f"](../images/{slug}.png)" not in text:
+            fail(f"{slug}.md: no hero image (../images/{slug}.png)")
         for section in ("## Overview", "## Options", "## References"):
             if section not in text:
                 fail(f"{slug}.md: no '{section}' section")

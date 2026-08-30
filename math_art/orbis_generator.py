@@ -195,11 +195,14 @@ if _IN_BLENDER:
                         "contact spot, as a fraction of the tube "
                         "radius (small = a shallow glued joint)")
         major_segments: IntProperty(
-            name="Ring Segments", default=96, min=12, max=512)
+            name="Ring Segments", default=96, min=12, max=512,
+            description="Segments around each ring")
         tube_segments: IntProperty(
-            name="Tube Segments", default=32, min=6, max=128)
+            name="Tube Segments", default=32, min=6, max=128,
+            description="Segments around the tube cross-section")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             r = self.tube

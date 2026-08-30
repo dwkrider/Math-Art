@@ -1,0 +1,105 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "richmond-surface",
+  "name": "Richmond",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "-cos(v)/(2*u) - u**3*cos(3*v)/6",
+    "y": "sin(v)/(2*u) + u**3*sin(3*v)/6",
+    "z": "u*cos(v)",
+    "u_range": [
+      "0.3",
+      "1.25"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true,
+    "finite_total_curvature": true,
+    "ends": [
+      {
+        "type": "planar",
+        "count": 1,
+        "embedded": true
+      },
+      {
+        "type": "enneper",
+        "count": 1,
+        "order": 1,
+        "embedded": false
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "RICHMOND",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
+    "sources": [
+      "H. W. Richmond, 'On the simplest algebraic minimal curves, and the derived real minimal surfaces', Proc. Cambridge Phil. Soc. 19 (1904)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Herbert William Richmond",
+  "year": 1904,
+  "ids": {
+    "mathcurve": "ch1329_richmond_2",
+    "vmm": "ch011_planar_enneper"
+  },
+  "alternate_names": [
+    "Richmond surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

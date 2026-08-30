@@ -177,6 +177,8 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Mode",
+            description="Whether to build an affine IFS attractor or a "
+                        "self-affine lattice tile",
             items=[('IFS', "IFS Attractor", "The attractor of a set of "
                                             "contractive affine maps"),
                    ('RADIX', "Self-Affine Tile", "A lattice tile from "
@@ -186,10 +188,12 @@ if _IN_BLENDER:
             default='IFS')
         preset: EnumProperty(
             name="Tile",
+            description="Which self-affine lattice tile to build",
             items=[(k, v[0], v[0]) for k, v in RADIX_PRESETS.items()],
             default='ABC_124')
         tile_output: EnumProperty(
             name="Tile Output",
+            description="How the self-affine tile is turned into a mesh",
             items=[('VOXEL', "Voxels", "Sample the attractor and mesh "
                                        "it as a watertight voxel "
                                        "solid"),
@@ -214,6 +218,8 @@ if _IN_BLENDER:
                         "the tile into a gasket")
         dimension: EnumProperty(
             name="Dimension",
+            description="Whether the IFS attractor fills three "
+                        "dimensions or is planar",
             items=[('3', "3D", "Systems whose attractor fills three "
                                "dimensions"),
                    ('2', "2D", "Planar systems, meshed as a relief")],
@@ -222,10 +228,17 @@ if _IN_BLENDER:
         # take an items callback rather than a fixed list; a dynamic
         # enum cannot carry a default, so the first entry is it
         ifs_preset: EnumProperty(name="System", items=_system_items,
-                                 update=_on_system)
-        output: EnumProperty(name="Output", items=_output_items)
+                                 update=_on_system,
+                                 description="IFS whose attractor to "
+                                             "build (Custom uses the "
+                                             "Maps field)")
+        output: EnumProperty(name="Output", items=_output_items,
+                             description="How the IFS attractor is "
+                                         "rendered")
         seed_solid: EnumProperty(
             name="Seed Solid",
+            description="Solid placed at each word in the deterministic "
+                        "solid-copies output",
             items=[('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
                    ('OCTA', "Octahedron", "")],
             default='TETRA')
@@ -288,12 +301,14 @@ if _IN_BLENDER:
             description="Smooth contour: discard all but the biggest "
                         "connected piece")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size (1.0 fits a 2 m cube)")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="If > 0, add a Solidify modifier with this "
                         "thickness")
-        smooth: BoolProperty(name="Smooth Shading", default=False)
+        smooth: BoolProperty(name="Smooth Shading", default=False,
+                             description="Shade the mesh smooth")
 
         def execute(self, context):
             try:

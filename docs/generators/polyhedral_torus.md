@@ -1,5 +1,7 @@
 # Polyhedral Torus
 
+![Polyhedral Torus](../images/polyhedral_torus.png)
+
 ## Overview
 
 Add a regular polyhedral torus: a ring of congruent polygon
@@ -7,9 +9,19 @@ cross-sections (prism / antiprism ring), or a uniform tiling
 (triangles, hexagons, and the other Archimedean/Laves patterns
 from the tiling engine) wrapped onto the torus.
 
-A torus paved with a **uniform tiling** — the regular triangular, square or hexagonal tilings, an Archimedean one, or a Laves dual — wrapped so that the pattern closes seamlessly with no seam and no distortion of its combinatorics.
+Two ways to build a genus-1 polyhedron on a torus. A **polygon ring** threads congruent polygon cross-sections around the tube like the slices of a bagel; a **uniform tiling** — the regular triangular, square or hexagonal tilings, an Archimedean one, or a Laves dual — is wrapped onto the torus so that the pattern closes seamlessly, with no seam and no distortion of its combinatorics.
 
-This works because a torus *is* the plane modulo a lattice. A periodic tiling is already defined on that quotient, so wrapping it round is not an approximation: the tiles that meet across the join meet exactly as they did in the plane, and the result is a genuine genus-1 polyhedron with $V-E+F=0$.
+The tiling wrap works because a torus *is* the plane modulo a lattice. A periodic tiling is already defined on that quotient, so wrapping it round is not an approximation: the tiles that meet across the join meet exactly as they did in the plane, and the result is a genuine genus-1 polyhedron with $V-E+F=0$.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Polyhedral Torus*.
+2. **Choose the Pattern.** **Polygon Ring** (the default) sweeps a chain of identical polygon cross-sections around the major circle; **Uniform Tiling** wraps one of the periodic plane tilings onto the tube instead.
+3. **For a Polygon Ring**, set **Segments** (how many cross-sections go around the major circle), **Cross-section Sides** (the polygon used for each — 4 gives a square tube), and toggle **Antiprism Ring** to twist neighbouring sections by half a step, so the side faces become triangles rather than quads.
+4. **For a Uniform Tiling**, pick the **Tiling** from the menu (all nineteen uniform tilings bar Rhombille — the regular, Archimedean and Laves patterns from the [tiling engine](tiling.md)) and set **Cells Around** and **Cells Through** — the whole number of tiling periods that go around the major and minor circles. These must be whole numbers or the pattern will not close.
+5. **Shape the torus** with **Major Radius** (the ring radius) and **Minor Radius** (the tube radius).
+6. **Pick a Style.** **Solid** is the closed surface; **Leonardo** opens each face into a framed panel (with a **Border** width); **Struts** and **Wireframe** show the edge network; **Ball and Stick** renders edges as cylinders and vertices as spheres (**Strut Radius**, **Node Radius**); **Face Segments** splits the surface into one inward-extruded, mitre-bevelled piece per face (**Depth**, **Bevel Gap**, **Explode**, and **Separate Meshes** to make each its own object).
+7. **Read the report.** The build prints the vertex and face counts and confirms `(genus 1)` — or, in Face Segments mode, the number of segments emitted.
 
 ## Options
 
@@ -17,17 +29,25 @@ This works because a torus *is* the plane modulo a lattice. A periodic tiling is
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Pattern | Polygon Ring | Polygon Ring, Uniform Tiling. |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
+| Pattern | Polygon Ring | Whether to build a polygon-ring toroid or wrap a uniform tiling onto the torus. Polygon Ring, Uniform Tiling, Flat Torus (Brehm). |
+| Ring Sides | 7 | Vertices in each of the two rings (the faces stop meeting one another at 7) Range 5-64. |
+| Ring Separation | 0 | Half the distance between the two rings (0 = auto, the value that makes the side faces square) Range 0-5. |
 | Segments | 12 | Sections around the major circle Range 3-64. |
-| Cross-section Sides | 4 | Range 3-32. |
+| Cross-section Sides | 4 | Number of sides of each polygon cross-section Range 3-32. |
 | Antiprism Ring | Off | Half-step twist between sections (triangular faces) instead of a prism ring (quads) |
-| Tiling | Hexagonal (6.6.6) | Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 10 more. |
+| Tiling | Hexagonal (6.6.6) | Which uniform plane tiling to wrap onto the torus. Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 10 more. |
 | Cells Around | 12 | Tiling periods around the major circle Range 3-64. |
 | Cells Through | 6 | Tiling periods around the minor circle (tube) Range 2-48. |
-| Major Radius | 1 | Range 0.1-10. |
-| Minor Radius | 0.4 | Range 0.02-5. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width Range 0.02-0.95. |
+| Major Radius | 1 | Radius of the torus ring Range 0.1-10. |
+| Minor Radius | 0.4 | Radius of the torus tube Range 0.02-5. |
+| Style | Solid | How the torus surface is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
+| Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -35,7 +55,7 @@ This works because a torus *is* the plane modulo a lattice. A periodic tiling is
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 
@@ -78,7 +98,11 @@ Renders of each selectable option:
 
 ## How it works
 
-**The wrap.** The tiling's two lattice vectors are mapped to the torus's two circles — the first around the major circle, the second around the minor one. A tiling vertex at lattice coordinates $(u,v)$, each taken modulo 1, lands at
+**In plain terms.** A torus is a donut surface, and it has two independent ways to go round: the long way, around the ring, and the short way, around the tube. That gives two natural ways to panel it. The first is to imagine slicing the donut into rings, like a bagel cut crossways, and making each slice a polygon — stack enough identical polygon rings and their sides close up into a faceted tube. The second, and the prettier one, is to take a flat sheet of repeating pattern — graph paper, a honeycomb, a bathroom tiling — and roll it into a tube and then bend the tube round into a ring. The trick that makes the pattern meet itself perfectly where the edges join is that a donut is, mathematically, exactly a flat repeating sheet with its opposite edges glued.
+
+**The polygon ring.** In *Polygon Ring* mode the tube's cross-section is a fixed regular $k$-gon, and $m$ copies of it are placed at equal angles around the major circle. Joining matching corners of neighbouring polygons with quadrilaterals gives a **prism ring**; giving each successive section a half-step twist so its corners fall between the previous one's — the *Antiprism Ring* toggle — joins them with triangles instead, an **antiprism ring**. Either way the ring closes on itself after one full turn, so the result is a closed genus-1 surface with no free boundary.
+
+**The wrap.** In *Uniform Tiling* mode the tiling's two lattice vectors are mapped to the torus's two circles — the first around the major circle, the second around the minor one. A tiling vertex at lattice coordinates $(u,v)$, each taken modulo 1, lands at
 
 $$\big((R+r\cos 2\pi v)\cos 2\pi u,\ \ (R+r\cos 2\pi v)\sin 2\pi u,\ \ r\sin 2\pi v\big).$$
 

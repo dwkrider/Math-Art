@@ -1,0 +1,115 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherk-doubly-periodic",
+  "name": "Scherk's Doubly Periodic Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "embedded",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 1 (the four ends at the 4th roots of unity on the rim)",
+    "gauss_map": "1.0*z",
+    "height_differential": "4.0*z/(-1.0 + z**4)",
+    "parameters": [],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, the shipped tilted-Scherk forms (_tiltscherk_phi) at Rho = 1, which the zoo states reproduces SCHERK1 exactly) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 4
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "SCHERK1",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row SCHERK1) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 4e-16); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "H. F. Scherk, 'Bemerkungen uber die kleinste Flache innerhalb gegebener Grenzen', J. reine angew. Math. 13 (1835).",
+      "H. F. Scherk, 'Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen', J. Reine Angew. Math. 13 (1835) 185-208.",
+      "H. Lazard-Holly, W. H. Meeks III, 'Classification of doubly-periodic minimal surfaces of genus zero', Invent. Math. 143 (2001) 1-27; M. Weber (mirror: minsurf ch046): 'The quotient surface by its translational symmetries is a 4-punctured sphere.'"
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Heinrich Ferdinand Scherk",
+  "year": 1835,
+  "ids": {
+    "mathworld": "ScherksMinimalSurfaces",
+    "mathcurve": "ch1335_scherk_2",
+    "vmm": "ch004_scherk",
+    "msblog": "ch046_scherks_doubly_periodic_surface"
+  },
+  "notes": {
+    "caveats": [
+      "The first minimal surfaces found after the catenoid and helicoid. The doubly periodic one is the graph of z = log(cos y / cos x)."
+    ]
+  },
+  "alternate_definitions": [
+    {
+      "x": "u",
+      "y": "v",
+      "z": "log(cos(u)/cos(v))",
+      "u_range": [
+        "-0.47*pi",
+        "0.47*pi"
+      ],
+      "v_range": [
+        "-0.47*pi",
+        "0.47*pi"
+      ],
+      "mode": "parametric",
+      "fidelity": "exact",
+      "exactness": "elementary"
+    }
+  ],
+  "alternate_names": [
+    "Scherk surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

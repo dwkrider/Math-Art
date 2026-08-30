@@ -1,0 +1,104 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "non-orientable-genus-k",
+  "name": "Non-Orientable Genus-k Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "non-orientable",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: built by mesh surgery -- cut k disks from a sphere and weld each boundary circle to itself antipodally; exact topologically, but there is no formula to store. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "euler_characteristic": "varies",
+    "non_orientable_genus": "varies",
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed",
+    "self_intersecting": true
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "NONORIENT",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "The classification theorem of closed surfaces; W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888) for N_3."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "specimens": [
+    {
+      "label": "N_1 = projective plane",
+      "parameters": {
+        "k": 1
+      },
+      "topology": {
+        "euler_characteristic": 1,
+        "non_orientable_genus": 1
+      }
+    },
+    {
+      "label": "N_2 = Klein bottle",
+      "parameters": {
+        "k": 2
+      },
+      "slug": "klein-bottle",
+      "topology": {
+        "euler_characteristic": 0,
+        "non_orientable_genus": 2
+      }
+    },
+    {
+      "label": "N_3 = Dyck's surface",
+      "parameters": {
+        "k": 3
+      },
+      "topology": {
+        "euler_characteristic": -1,
+        "non_orientable_genus": 3
+      }
+    }
+  ],
+  "notes": {
+    "caveats": [
+      "One parameterised row subsumes Dyck's surface as the k = 3 case, which is why no separate Dyck record exists."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": true
+  }
+}

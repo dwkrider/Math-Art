@@ -1,13 +1,19 @@
 # Strahler
 
+![Strahler](../images/strahler.png)
+
 ## Overview
 
-Style a branching object by Horton-Strahler order: thickness,
-colour, or pruning of the low orders.
+Strahler is a *style* — it restyles the branching object you already have rather than adding new geometry. It scores every limb by its **Horton–Strahler order** — a measure of "which of these limbs are structural, and which are decoration?" — and uses that score to drive thickness, colour, or pruning. It suits any branching object the add-on makes: L-system plants, fractal trees, knotwork strands, DLA clusters, space-colonisation skeletons.
 
-**Horton–Strahler ordering** answers the question "which of these limbs are structural, and which are decoration?" for any branching object — L-system plants, fractal trees, knotwork strands, DLA clusters, space-colonisation skeletons.
+### Using it
 
-It was devised for river networks: Horton in 1945 and Strahler in 1952 needed a way to say that a mighty river is not merely a long stream. The insight is that order should rise only where two *comparably developed* branches meet — a great river joined by a trickle is still the same river, but two equal rivers joining make something new. That single rule turns out to characterise branching structure across biology, hydrology and computer science alike.
+1. **Select the target first.** Click the branching object so it is the active object, then choose *Add ▸ Mesh ▸ Math Art ▸ Styles ▸ Strahler*. The style accepts an active **mesh or curve**, and it needs edges to order — a curve's spline segments or a mesh's edges. Separate curve splines that meet at a shared endpoint are welded into one tree, so multi-strand objects order correctly.
+2. **Pick the Mode.** *Thickness* tapers the object by order (thick trunks, thin twigs); *Colour* writes the order out for a material to read; *Prune* deletes everything below a chosen order — the practical route to a printable simplification of a bushy model.
+3. **Shape the taper (Thickness / Colour).** **Base Radius** is the radius given to the highest order present, and **Area Exponent** controls how fast the radius falls off toward the twigs: $0.5$ conserves cross-sectional area from one order to the next, reproducing da Vinci's branching rule.
+4. **Set the pruning threshold (Prune).** **Keep Order ≥** discards every branch below that order. Dropping everything below order 3, say, keeps the structural skeleton and sheds the fuzz.
+5. **What it produces.** *Thickness* on a curve sets each point's bevel radius; on a mesh it writes `strahler` (int) and `width` (float) point attributes. *Colour* writes those same attributes for a material to sample. *Prune* creates a **new** pruned object beside the original, leaving the source intact. **Report Only** computes and reports the ordering without changing anything — use it to inspect a model first.
+6. **Read the report.** Each run prints the edge count, the maximum order found (a one-number measure of branching complexity) and which vertex was chosen as the root; Prune also reports how many edges it kept.
 
 ## Options
 
@@ -15,7 +21,7 @@ It was devised for river networks: Horton in 1945 and Strahler in 1952 needed a 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Thickness | Thickness, Colour, Prune. |
+| Mode | Thickness | What to do with the computed order: set thickness, write a color attribute, or prune low orders. Thickness, Colour, Prune. |
 | Base Radius | 1 | Radius at the highest order present Range 0-10. |
 | Area Exponent | 0.5 | r ~ (order/max)^p; 0.5 conserves cross-sectional area between orders (da Vinci) Range 0.05-2. |
 | Keep Order >= | 2 | Prune mode: discard branches below this order Range 1-12. |
@@ -25,7 +31,9 @@ It was devised for river networks: Horton in 1945 and Strahler in 1952 needed a 
 
 ## How it works
 
-**The ordering.** Number every tip 1. At a junction, look at the orders of the branches meeting there:
+**In plain terms.** Think of a river system seen from above. Every little headwater trickle is a "level 1" stream. When two level-1 trickles join, together they make something bigger — a level 2. But here is the key rule: a stream is *promoted* only when two streams of the *same* level meet. If a big river is joined by a tiny trickle, it is still the same big river — it does not get promoted, because the trickle is just decoration. So the level (the Horton–Strahler *order*) climbs only at genuine confluences of comparable branches, and the final number at the mouth tells you how deeply branched the whole network is. The same counting works for anything tree-shaped: plant stems, blood vessels, lightning, the branches of a 3-D model. Below is the exact rule and how the operator turns it into thickness, colour, or a pruned model.
+
+**The ordering.** Number every tip $1$. At a junction, look at the orders of the branches meeting there:
 
 - if the largest is **unique**, the parent keeps it;
 - if the largest is **shared** by two or more, the parent takes it $+1$.
@@ -34,13 +42,17 @@ Formally, for children of orders $s_1,\dots,s_k$ with maximum $m$,
 
 $$s_{\text{parent}}=\begin{cases} m & \text{if exactly one child has order } m,\\ m+1 & \text{if two or more do.}\end{cases}$$
 
-So order rises only where two comparably developed branches meet. A long chain of side-twigs off a single trunk leaves the trunk's order unchanged, however many twigs there are — which is exactly the property that makes the measure meaningful rather than just a depth count.
+So order rises only where two comparably developed branches meet. A long chain of side-twigs off a single trunk leaves the trunk's order unchanged, however many twigs there are — that invariance is exactly what makes the measure meaningful rather than a disguised depth count. The operator computes it by walking the object's edge graph: it roots the tree at the lowest degree-1 vertex (the base of an upright plant), builds a spanning tree from that root, then folds orders up from the tips to the root in a single reverse pass. Any stray edge not on the spanning tree — a loop — is tolerated and inherits the order of its deeper endpoint, so a cluster with a few cycles never hangs the traversal.
 
-**What it is not.** Depth from the root would call every twig on a long branch important. Counting descendants would rank a bushy tuft above a structural limb. Strahler order does neither: it is invariant to how many low-order tributaries attach, and it increases only at genuine confluences. The maximum order over the whole structure is a measure of its branching complexity.
+**What it is not.** Depth from the root would call every twig on a long branch important, since a late twig sits as deep as the trunk that carries it. Counting descendants would rank a bushy tuft above a structural limb. Strahler order does neither: it is invariant to how many low-order tributaries attach, and it increases only at genuine confluences. The maximum order over the whole structure is therefore a compact measure of its branching complexity.
 
-**As a style.** The operator computes the order for each segment of whatever branching object is selected and uses it to drive appearance — segment radius, colour, or pruning below a threshold. Tapering by order gives a tree the correct structural hierarchy automatically: trunks thick, twigs thin, and the transition happening where branches actually merge rather than at an arbitrary depth.
+**As a style.** With an order on every segment, the operator maps it to appearance. For **thickness**, the radius of an order-$o$ segment is
 
-Pruning by order is the other common use, and it is what makes a dense [DLA cluster](growth.md) or space-colonisation skeleton legible — dropping everything below order 3 leaves the structural skeleton and discards the fuzz.
+$$r(o) = r_{\text{base}}\left(\frac{o}{o_{\max}}\right)^{p},$$
+
+with $r_{\text{base}}$ the **Base Radius** at the top order and $p$ the **Area Exponent**. At $p = 0.5$ this conserves cross-sectional area across a junction — the branch areas below a fork sum to the parent's area above it — which is Leonardo da Vinci's observation about how tree trunks split, so a tapered model automatically gets the girth the eye expects: trunks thick, twigs thin, the transition landing where branches truly merge. On a curve this drives each control point's bevel radius directly; on a mesh it is written to `strahler` (integer order) and `width` (float radius) point attributes for a geometry-nodes or shader setup to read.
+
+**Pruning by order** is the other common use, and it is what makes a dense [DLA cluster](growth.md) or space-colonisation skeleton legible — keeping only edges at or above **Keep Order ≥** leaves the structural skeleton and discards the fuzz, emitting the survivors as a new object so the original is untouched.
 
 ## References
 

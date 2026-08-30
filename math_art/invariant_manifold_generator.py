@@ -264,16 +264,27 @@ if _IN_BLENDER:
         system: EnumProperty(
             name="System",
             items=[(k, v[0], v[0]) for k, v in SYSTEMS.items()],
+            description="Chaotic dynamical system to grow the manifold of",
             default='LORENZ', update=_on_system)
         p1: FloatProperty(name="Parameter 1", default=10.0,
-                          min=-100.0, max=100.0)
+                          min=-100.0, max=100.0,
+                          description="First system parameter (its meaning "
+                                      "depends on the system)")
         p2: FloatProperty(name="Parameter 2", default=28.0,
-                          min=-100.0, max=100.0)
+                          min=-100.0, max=100.0,
+                          description="Second system parameter (its meaning "
+                                      "depends on the system)")
         p3: FloatProperty(name="Parameter 3", default=8.0 / 3.0,
-                          min=-100.0, max=100.0)
+                          min=-100.0, max=100.0,
+                          description="Third system parameter (its meaning "
+                                      "depends on the system)")
         equilibrium: EnumProperty(name="Equilibrium",
-                                  items=_equilibrium_items)
-        kind: EnumProperty(name="Manifold", items=_kind_items)
+                                  items=_equilibrium_items,
+                                  description="Equilibrium point to grow the "
+                                              "manifold from")
+        kind: EnumProperty(name="Manifold", items=_kind_items,
+                           description="Grow the stable manifold (flows in) "
+                                       "or the unstable one (flows out)")
         arclength: FloatProperty(
             name="Arclength", default=100.0, min=5.0, max=250.0,
             description="How far to grow, measured along trajectories "
@@ -284,7 +295,8 @@ if _IN_BLENDER:
                         "invariant eigenplane; the linear seed costs "
                         "an error of order its square")
         seed_points: IntProperty(
-            name="Seed Points", default=96, min=16, max=512)
+            name="Seed Points", default=96, min=16, max=512,
+            description="Number of points on the starting seed circle")
         ring_spacing: FloatProperty(
             name="Ring Spacing", default=1.0, min=0.1, max=5.0,
             description="Arclength between recorded rings")
@@ -293,7 +305,8 @@ if _IN_BLENDER:
             description="Wanted spacing along a ring; smaller keeps "
                         "the sharp folds from being cut across")
         max_ring_points: IntProperty(
-            name="Max Ring Points", default=3000, min=200, max=20000)
+            name="Max Ring Points", default=3000, min=200, max=20000,
+            description="Cap on points per ring as it grows and is refined")
         step: FloatProperty(
             name="Step", default=0.02, min=0.002, max=0.2,
             description="Arclength step of the integrator")
@@ -302,8 +315,10 @@ if _IN_BLENDER:
             description="If > 0, add a Solidify modifier -- these are "
                         "surfaces, so they need a shell to print")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size of the surface")
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Smooth-shade the surface")
 
         def execute(self, context):
             try:

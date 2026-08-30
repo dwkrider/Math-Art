@@ -156,7 +156,8 @@ if _IN_BLENDER:
         kind: EnumProperty(
             name="Base Knot",
             items=[(k, v[0], v[0]) for k, v in PRESETS.items()],
-            default='TREFOIL')
+            default='TREFOIL',
+            description="Starting knot that gets recursively cabled")
         iters: IntProperty(
             name="Cable Levels", default=2, min=0, max=4,
             description="How many times to cable the base knot")
@@ -177,11 +178,14 @@ if _IN_BLENDER:
             description="Points along the curve (must exceed the "
                         "highest winding number several times over)")
         radius: FloatProperty(
-            name="Tube Radius", default=0.02, min=0.0, max=0.3)
+            name="Tube Radius", default=0.02, min=0.0, max=0.3,
+            description="Thickness of the swept tube; 0 leaves a bare curve")
         resolution: IntProperty(
-            name="Bevel Resolution", default=3, min=0, max=12)
+            name="Bevel Resolution", default=3, min=0, max=12,
+            description="Roundness of the tube cross-section")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size of the result")
 
         def execute(self, context):
             label = PRESETS[self.kind][0]

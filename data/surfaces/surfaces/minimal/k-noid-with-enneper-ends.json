@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "k-noid-with-enneper-ends",
+  "name": "k-Noid with Enneper Ends",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 1.76667",
+    "punctures": [
+      "z = 1 (radius 0.192)",
+      "z = -0.5+0.866025i (radius 0.192)",
+      "z = -0.5-0.866025i (radius 0.192)"
+    ],
+    "gauss_map": "z**(-1 + k)*(R**k - z**k)/(-1.0 + z**k*R**k)",
+    "height_differential": "(1.0 - (z**k + z**(-k))/(R**k + R**(-k)))/(z*(-2.0 + z**k + z**(-k))**2)",
+    "parameters": [
+      {
+        "name": "R",
+        "domain": "see the generator's p_from",
+        "default": 1.1,
+        "integer": false
+      },
+      {
+        "name": "k",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "KNOID_ENN_ENDS",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row KNOID_ENN_ENDS) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 7.83e-13).",
+    "sources": [
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch192_k_noids_with_enneper_ends"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

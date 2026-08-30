@@ -192,7 +192,9 @@ if _IN_BLENDER:
         bl_label = "Twisted Torus"
         bl_options = {'REGISTER', 'UNDO'}
 
-        n: IntProperty(name="Polygon Sides", default=3, min=2, max=16)
+        n: IntProperty(name="Polygon Sides", default=3, min=2, max=16,
+                       description="Number of sides on the swept polygon "
+                                   "profile")
         twist_steps: IntProperty(
             name="Twist Steps", default=1, min=-8, max=8,
             description="Total twist in units of 360/n degrees; "
@@ -207,19 +209,26 @@ if _IN_BLENDER:
             name="Sheet Thickness", default=0.06, min=0.005, max=0.5,
             description="Thickness of the separated sheets (shrink < 1)")
         major: FloatProperty(name="Ring Radius", default=1.6,
-                             min=0.2, max=20.0)
+                             min=0.2, max=20.0,
+                             description="Radius of the ring the profile "
+                                         "is swept around")
         minor: FloatProperty(name="Profile Radius", default=0.55,
-                             min=0.02, max=5.0)
+                             min=0.02, max=5.0,
+                             description="Radius of the polygon profile "
+                                         "cross-section")
         rounding: FloatProperty(
             name="Corner Rounding", default=0.0, min=0.0, max=1.0,
             description="0 = crisp polygon, 1 = circle")
         segments: IntProperty(name="Ring Segments", default=192,
-                              min=16, max=512)
+                              min=16, max=512,
+                              description="Number of sweep steps around "
+                                          "the ring")
         profile_res: IntProperty(
             name="Profile Subdivision", default=2, min=1, max=16,
             description="Points per polygon side")
         coloring: EnumProperty(
             name="Coloring",
+            description="How the helical bands are colored",
             items=[('STRIP', "Per Strip",
                     "One material per visible helical strip (n colors). "
                     "Strips that spiral into each other change color "
@@ -232,7 +241,8 @@ if _IN_BLENDER:
                    ('NONE', "None", "No materials")],
             default='STRIP')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the torus")
 
         _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
                     (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),

@@ -3,7 +3,17 @@
 ![Stereographic Projection Sphere](../images/stereographic.png)
 
 ## Overview
-After Henry Segerman's stereographic-projection sculptures: a perforated spherical shell that, lit by a point light at its north pole, casts a shadow reproducing a chosen flat planar pattern (square grid, polar grid, $\{p,q\}$ tiling, beach-ball gores, or a flower lattice). The shell is watertight and boolean-free, and its pattern boundaries are exact -- meshed on strip-aligned divisions or by marching squares on a signed field, so there is no staircasing at any resolution. A **Bowl** option stops the shell just above the pattern with a solid rim and an open top.
+
+A perforated spherical shell that, lit from its north pole, casts a shadow reproducing a chosen flat pattern — after Henry Segerman's stereographic-projection sculptures.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Stereographic Projection*.
+2. **Pick the Pattern** — the flat design the shadow will draw. **Square Grid** casts a grid of lines; **Polar Grid** concentric circles and radial rays; **{p,q} Tiling** the edge graph of a spherical Platonic tiling; **Beach Ball** alternating solid and open gores; **Flower Lattice** a field of daisies with petal-shaped holes.
+3. **Set the pattern's own controls**, which appear only for the matching pattern: **Grid Spacing** for Square Grid and Flower Lattice, **Petals** for Flower Lattice, **Rings** and **Rays** for Polar Grid, **p** and **q** for {p,q} Tiling, **Gores** for Beach Ball.
+4. **Shape the shell.** **Sphere Radius** and **Shell Thickness** size the wall; **Strip Width** sets how thick the material bars are as a fraction of each pattern cell; **Pattern Extent** is how far the flat pattern reaches (in sphere radii), which fixes the latitude below which the shell is perforated — everything above stays solid as the cap around the projection point.
+5. **Choose the output.** **Bowl** stops the shell just above the pattern with a solid rim and an open top instead of a full sphere. **Add Point Light** drops a point light at the north pole and **Add Floor Plane** (with **Floor Size**) lays a plane underneath, so you can render the projected shadow directly.
+6. **Read the report.** The operator prints the final vertex and face counts; choosing **{p,q} Tiling** with a non-spherical pair also warns and substitutes the nearest valid $\lbrace p,q\rbrace$.
 
 ## Options
 
@@ -12,16 +22,16 @@ After Henry Segerman's stereographic-projection sculptures: a perforated spheric
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Pattern | Square Grid | Square Grid, Polar Grid, {p,q} Tiling, Beach Ball, Flower Lattice. |
+| Pattern | Square Grid | Planar pattern the shell's shadow reproduces. Square Grid, Polar Grid, {p,q} Tiling, Beach Ball, Flower Lattice. |
 | Bowl | Off | Open bowl instead of a full sphere: the shell stops just above the pattern with a solid rim band and an open top |
 | Petals | 8 | Petals per flower (Flower Lattice) Range 3-16. |
-| Sphere Radius | 1 | Range 0.05-100. |
+| Sphere Radius | 1 | Radius of the sphere shell Range 0.05-100. |
 | Shell Thickness | 0.05 | Radial wall thickness Range 0.001-1. |
 | Strip Width | 0.35 | Material strip width as a fraction of the pattern cell (grid spacing, ring gap, tile edge, lune slot) Range 0.05-0.95. |
 | Pattern Extent | 3 | Radius of the plane pattern disc in sphere radii; the shell is solid above the matching latitude (the cap holding the projection point) Range 1-10. |
 | Grid Spacing | 0.6 | Grid line spacing in sphere radii Range 0.1-5. |
-| Rings | 4 | Range 1-24. |
-| Rays | 8 | Range 1-64. |
+| Rings | 4 | Number of concentric rings in the shadow (Polar Grid) Range 1-24. |
+| Rays | 8 | Number of radial rays in the shadow (Polar Grid) Range 1-64. |
 | p | 4 | Tile polygon sides (2 = hosohedron) Range 2-5. |
 | q | 3 | Tiles per vertex (needs 1/p + 1/q > 1/2; clamped if not) Range 3-8. |
 | Gores | 8 | Number of solid lunes Range 2-64. |
@@ -50,16 +60,18 @@ Renders of each selectable option:
 
 ## How it works
 
-**Stereographic projection $S^2\to$ plane.** The sphere of radius $R$ rests with its south pole at the origin, so its centre is $C=(0,0,R)$ and its north pole (the projection point) is $N=(0,0,2R)$. Stereographic projection from $N$ onto the plane $z=0$ sends a sphere point at polar angle $\theta$ (measured from $N$) to plane radius
-$$r = 2R\cot\!\frac{\theta}{2},\qquad\text{inversely}\qquad \theta = 2\arctan\!\frac{2R}{r}.$$
-This is the conformal map behind the sculptures: with a point light at $N$, a ray through a hole in the shell continues to exactly the projected plane point, so the shadow *is* the plane pattern. A flat pattern clipped to a disc of radius $R_{\max}=\text{extent}\cdot R$ becomes a perforation pattern below the latitude $\theta_{\min}=2\arctan(2R/R_{\max})$; everything above stays solid -- the cap that surrounds the projection point, without which the shell would fall apart.
+**In plain terms.** Balance a glass ball on a tabletop and put a tiny bright bulb at the very top of the ball. Every point on the ball's surface casts a straight shadow: the light streams out from the top, grazes that point, and lands somewhere on the table. This rule — "draw the line from the top of the ball through a surface point and see where it hits the floor" — is a map that turns the whole ball (minus its very top) into the whole flat table. It is called *stereographic projection*, and it is the same map mapmakers use to flatten the globe. Now the sculpture: instead of a solid ball, use a shell with holes cut in it. Wherever there's a hole, light gets through and reaches the floor; wherever there's solid material, it's blocked. So the bright pattern on the floor is a picture of where the holes are — and by cutting the holes in just the right places on the ball, the shadow on the floor can be made into any flat pattern you like: a grid, rings, a tiling, a field of flowers. The maths below is the recipe for "where on the ball must a hole go so its light lands at a chosen spot on the floor", plus the bookkeeping that keeps the shell a single solid printable object.
 
-**Watertight construction.** The kept (material) faces are duplicated at radii $R\pm t/2$ from $C$, and every boundary edge of the kept region is closed with a side-wall quad, so the solid is closed by construction -- no boolean is needed. Two guards keep it 2-manifold: pole fan rows are forced uniform, and a cleanup pass fills "checkerboard" cells (material touching only diagonally, which would put four walls on one vertical edge). Because the map is conformal but not equiareal, the latitude rows for the plane patterns are spaced uniformly in *plane radius* $r$, so cells are evenly resolved where the pattern actually lives.
+**Stereographic projection $S^2\to$ plane.** The sphere of radius $R$ rests with its south pole at the origin, so its centre is $C=(0,0,R)$ and its north pole (the projection point, the bulb) is $N=(0,0,2R)$. Stereographic projection from $N$ onto the plane $z=0$ sends a sphere point at polar angle $\theta$ (measured down from $N$) to plane radius
+$$r = 2R\cot\!\frac{\theta}{2},\qquad\text{inversely}\qquad \theta = 2\arctan\!\frac{2R}{r}.$$
+Read the formula geometrically: a point right next to the bulb ($\theta\to0$) has $\cot(\theta/2)\to\infty$, so it flings out toward the far edge of the plane; a point at the south pole ($\theta=\pi$) has $\cot(\theta/2)=0$ and lands at the origin directly below. The $\cot(\theta/2)$ is exactly the "similar triangles" ratio of the light ray from $N$ down to the plane. This is the conformal map behind the sculptures: with the light at $N$, a ray through a hole in the shell continues in a straight line to precisely the projected plane point, so the shadow *is* the plane pattern — no distortion of the design, only of the spacing. A flat pattern is clipped to a disc of radius $R_{\max}=\text{extent}\cdot R$; by the inverse formula that disc pulls back to everything below the latitude $\theta_{\min}=2\arctan(2R/R_{\max})$, so the shell is perforated there and left solid above. That solid cap surrounds the projection point, and without it the shell — cut away right where all the rays converge — would have nothing to hold it together.
+
+**Watertight construction.** The sphere is meshed as a latitude–longitude quad grid with triangle fans at the poles, and each face is labelled *material* or *hole* by mapping its centre down to the plane (for the grid and polar patterns) or testing it directly on the sphere (for the others). To make a printable solid rather than a paper-thin surface, the kept (material) faces are duplicated at radii $R\pm t/2$ from $C$ — an outer wall and an inner wall — and every boundary edge where material meets a hole is bridged with a side-wall quad, so the solid is sealed by construction and no boolean subtraction is ever needed. Two failure modes would otherwise break the 2-manifold guarantee, and each has a guard: the triangle-fan rows at the poles are forced to be uniformly all-solid or all-hole (else more than two side-walls could meet along one vertical pole edge), and a cleanup pass fills any "checkerboard" cell where two material squares touch only at a corner (a diagonal contact would stack four walls on a single vertical edge). One more subtlety: stereographic projection is *conformal* (angle-preserving) but not *equiareal* (area-preserving), so a uniform grid of latitudes would bunch the pattern up near the pole; instead the latitude rows are spaced uniformly in *plane radius* $r$ and then mapped back through $\theta(r)$, putting the mesh resolution where the pattern actually lives.
 
 **Pattern classification.**
 - *Square grid* is meshed on a Cartesian grid whose division lines fall exactly on the strip edges, so every cell is wholly material or wholly hole -- exact boundaries, no staircase.
 - *Polar grid* and *beach ball* use latitude/longitude divisions aligned to the ring/ray/lune edges; a small solid cap at the south pole keeps converging rays and gore tips joined.
-- *$\{p,q\}$ tiling* keeps material along the great-circle edges of a spherical Platonic edge graph. Only spherical Schlaefli symbols are valid ($1/p+1/q>1/2$); the code clamps otherwise. The signed field is the angular distance from each sphere point to the nearest tiling arc, minus half the strip width.
+- *$\lbrace p,q\rbrace$ tiling* keeps material along the great-circle edges of a spherical Platonic edge graph. Only spherical Schlaefli symbols are valid ($1/p+1/q>1/2$); the code clamps otherwise. The signed field is the angular distance from each sphere point to the nearest tiling arc, minus half the strip width.
 - *Flower lattice* is a hexagonal lattice of petal-shaped elliptical holes; its signed field (material between petals) is marched on a Cartesian grid at a feature-sized step.
 
 The tiling and flower patterns are extracted by **marching squares** on their signed fields, clipping cells at the zero crossings so the hole boundaries come out as smooth level sets. For bowls, the solid rim band $r\in[R_{\max},1.15\,R_{\max}]$ and the open trim are folded into the field as additional level sets.

@@ -1,0 +1,125 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "weber-pqr-series",
+  "name": "Weber (p,q,r) Triangle-Group Series",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Five series (series1..series5), each with members indexed by a (p,q,r) triangle group.",
+    "parameters": [
+      {
+        "name": "series",
+        "domain": "{1, 2, 3, 4, 5}",
+        "default": 1,
+        "integer": true,
+        "note": "which of Weber's five series"
+      },
+      {
+        "name": "p",
+        "domain": "{2, 3, 4, 6}",
+        "default": 2,
+        "integer": true
+      },
+      {
+        "name": "q",
+        "domain": "{2, 3, 4, 6}",
+        "default": 3,
+        "integer": true
+      },
+      {
+        "name": "r",
+        "domain": "{2, 3, 4, 6}",
+        "default": 6,
+        "integer": true
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built. Weber's archive holds five systematic series indexed by triangle group -- roughly 40 surfaces in total.",
+      "resume": "Implement as ONE row plus a triangle-group selector, not forty rows; flagged in research/missing-surfaces-catalog.md Part D4 as the structurally interesting item of that survey."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, https://minimalsurfaces.blog/ and the archive formerly at indiana.edu/~minimal/archive/ (the site is dead; 280 surface folders were recovered from the Wayback CDX index)."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "specimens": [
+    {
+      "label": "(2,3,6)",
+      "parameters": {
+        "p": 2,
+        "q": 3,
+        "r": 6
+      }
+    },
+    {
+      "label": "(2,4,4)",
+      "parameters": {
+        "p": 2,
+        "q": 4,
+        "r": 4
+      }
+    },
+    {
+      "label": "(3,3,3)",
+      "parameters": {
+        "p": 3,
+        "q": 3,
+        "r": 3
+      }
+    },
+    {
+      "label": "(6,2,3)",
+      "parameters": {
+        "p": 6,
+        "q": 2,
+        "r": 3
+      }
+    }
+  ],
+  "named_after": "Weber",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

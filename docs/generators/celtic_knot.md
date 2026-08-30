@@ -4,7 +4,17 @@
 
 ## Overview
 
-Strands weaving over and under along the edges of a framework mesh — a port of Adam Newgas's *Celtic Knot* Blender add-on (BorisTheBrave/celtic-knot, MIT license). The framework can be one of the built-in Platonic seeds (so the operator works straight from the Add menu) or the active mesh object. Two weave types are offered: **Celtic** (plain weaving where every crossing alternates) and **Twill** (over-two, under-two, via a heuristic edge colouring after Akleman et al.). Optional remeshing refines the pattern, and strands come out as bezier curves, beveled pipes, or flat ribbon meshes.
+Strands weaving over and under along the edges of a framework mesh — a port of Adam Newgas's *Celtic Knot* Blender add-on (BorisTheBrave/celtic-knot, MIT license).
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Celtic Weave*.
+2. **Pick the Framework** the strands weave along. A built-in Platonic seed (*Icosahedron*, *Dodecahedron*, *Cube*, *Octahedron*, *Tetrahedron*) works straight from the menu; *Active Object* instead weaves over whatever mesh is selected, so any mesh becomes a knot.
+3. **Choose the Weave.** *Celtic* is plain weaving where every crossing alternates over/under, and its **Twist Proportion** sets the fraction of edges that actually cross — the rest let the strand run straight through, so lower values give longer straight runs and fewer crossings. *Twill* instead weaves over-two-under-two.
+4. **Optionally Remesh** to refine the pattern: *Edge Subdivide* or *Medial* both make the weave denser. *Medial* also makes the twill colouring exact rather than heuristic, so it is the one to pair with *Twill*.
+5. **Set the crossing depth and Output.** *Weave Up* lifts the strand passing over and *Weave Down* drops the one passing under. *Bezier Strands* gives bare curves, *Pipes* bevels them into round tubes (**Pipe Radius**, **Bevel Resolution**), and *Ribbons* makes flat bands (**Ribbon Length** along and **Ribbon Breadth** across each face). For curves and pipes the *Handles* can be *Auto* or *Aligned*, the latter placing control points at a fixed **Crossing Angle** and **Crossing Strength**.
+6. **Choose Coloring and Scale.** *Per Strand* gives each closed strand its own material; *Per Braid* uses as few materials as possible with no two crossing strands sharing one; *None* leaves it plain. **Scale** sets the size of the built-in frameworks (it is hidden when weaving over an Active Object, which keeps its own size).
+7. **Read the report.** The operator prints how many closed strands the weave resolved into (for example "3 strand(s)") — the strand count is one of a knot's most basic descriptors.
 
 ## Options
 
@@ -15,19 +25,19 @@ Strands weaving over and under along the edges of a framework mesh — a port of
 | --- | --- | --- |
 | Framework | Icosahedron | Mesh the strands weave along. Icosahedron, Dodecahedron, Cube, Octahedron, Tetrahedron, Active Object. |
 | Remesh | None | Pre-process the framework before weaving. None, Edge Subdivide, Medial. |
-| Weave | Celtic | Celtic, Twill. |
+| Weave | Celtic | Crossing pattern the strands follow. Celtic, Twill. |
 | Twist Proportion | 1 | Fraction of edges that cross (Celtic only); the rest pass straight through Range 0-1. |
-| Output | Pipes | Bezier Strands, Pipes, Ribbons. |
+| Output | Pipes | Geometry produced for the strands. Bezier Strands, Pipes, Ribbons. |
 | Weave Up | 0.12 | Lift of a strand crossing over Range 0-2. |
 | Weave Down | 0.12 | Drop of a strand crossing under Range 0-2. |
-| Handles | Auto | Auto, Aligned. |
+| Handles | Auto | How the strand curve control points are set. Auto, Aligned. |
 | Crossing Angle | 0.785398 | Aligned handles: angle between strands at a crossing Range 0-1.5708. |
 | Crossing Strength | 0.25 | Aligned handles: control point length Range 0-5. |
 | Pipe Radius | 0.05 | Bevel radius of the pipes Range 0.001-1. |
-| Bevel Resolution | 4 | Range 1-12. |
+| Bevel Resolution | 4 | Roundness of the pipe cross-section Range 1-12. |
 | Ribbon Length | 0.9 | Fraction along faces the ribbon runs Range 0.05-1. |
 | Ribbon Breadth | 0.5 | Ribbon width as a fraction across faces Range 0.05-1. |
-| Coloring | Per Strand | Per Strand, Per Braid, None. |
+| Coloring | Per Strand | How strands are assigned materials. Per Strand, Per Braid, None. |
 | Scale | 1 | Built-in frameworks: half-size of the bounding cube Range 0.01-100. |
 
 <!-- /options -->
@@ -50,20 +60,22 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Celtic knotwork is that endless-looking interlace where a band goes over, then under, then over again, weaving with itself forever. To make one on a surface, think of the surface's edges as a network of little roads. A strand travels from the middle of one edge to the middle of the next; at each edge it either keeps going straight, or takes a **crossing** — ducking over or under the strand it meets there. Follow those simple turn rules all the way around and the strands automatically close into loops that lace the whole surface, so you never have to draw the knot by hand: choosing the surface and the crossing rule *is* drawing it.
+
 The knot is a **midpoint weave** over a framework mesh. Every strand threads from edge midpoint to edge midpoint, and at each edge it either passes straight or twists (crosses over/under its neighbour). The whole pattern is produced by walking the mesh's **half-edge loops**.
 
-**Loops and turning.** Blender's bmesh gives each face-edge a *loop*. A `DirectedLoop` is a loop plus a facing. Two moves drive the walk: `next_face_loop` advances around the current face to the next non-boundary edge, and `next_edge_loop` swaps to the loop on the other side of the edge (used when a crossing turns the strand). Walking with these moves, marking loops entered/exited so each is visited once, decomposes the surface into closed **strands**.
+**Loops and turning.** Blender's bmesh gives each face-edge a *loop* — one side of one edge as seen from one face. A `DirectedLoop` is a loop plus a facing, which is enough to say both *where* the strand is and *which way* it is heading. Two moves drive the walk: `next_face_loop` advances around the current face to the next non-boundary edge (the strand carrying on across a face), and `next_edge_loop` swaps to the loop on the other side of the edge (used only when a crossing turns the strand onto its neighbour). Walking with these two moves, and marking each loop entered/exited so it is visited exactly once, decomposes the whole surface into a set of closed **strands** — the walk terminates because there are finitely many directed loops and none is used twice.
 
-**Twists.** Each edge is assigned a twist — `STRAIGHT`, `TWIST_CW`, `TWIST_CCW`, or `IGNORE` (boundary):
+**Twists.** What kind of crossing happens at each edge is decided *before* the walk, by tagging every edge with a twist — `STRAIGHT`, `TWIST_CW`, `TWIST_CCW`, or `IGNORE` (a boundary edge, skipped). This tag is the single lever that turns one weave into another:
 
-- **Celtic** weaves assign `TWIST_CW` to a random fraction (**Twist Proportion**) of edges and `STRAIGHT` to the rest, seeded deterministically so the result is reproducible.
-- **Twill** weaves need an over-two/under-two edge colouring. On a **Medial**-remeshed framework this is exact (edges of the original faces get one twist, the rest the other). Otherwise a **heuristic voting** colouring after Akleman et al. is grown from a seed edge: uncoloured frontier edges accumulate CW/CCW votes from local edge-, face-, and vertex-conditions, and the highest-voted edge is coloured next until the whole mesh is consistent.
+- **Celtic** weaves assign `TWIST_CW` to a random fraction (**Twist Proportion**) of edges and `STRAIGHT` to the rest, from a fixed random seed so the same settings always give the same knot. At proportion 1 every interior edge crosses and you get the classic all-crossings interlace; lower it and crossings thin out, leaving longer straight runs.
+- **Twill** weaves need a coherent over-two/under-two edge colouring, which cannot be random. On a **Medial**-remeshed framework it is *exact*: the edges inherited from the original faces get one twist and the newly introduced ones get the other, which is why Medial is the natural partner for twill. On any other mesh the colouring is grown by a **heuristic voting** scheme after Akleman et al.: starting from one seed edge, each uncoloured frontier edge accumulates clockwise/counter-clockwise votes from local edge-, face-, and vertex-conditions that look at how its already-coloured neighbours were assigned, and the most decisively voted edge is coloured next, the frontier advancing until the whole mesh is consistently two-coloured.
 
-**Weaving offset.** At each crossed edge midpoint the strand is displaced along the averaged loop normal by a signed offset:
+**Weaving offset.** Crossings are made physical by pushing the strand off the surface. At each crossed edge midpoint the point is displaced along the averaged loop normal (the mean of the two adjacent faces' normals, so it points cleanly "outward" at the edge) by a signed offset, writing $u$ and $d$ for the `weave_up` and `weave_down` distances:
 
-$$\text{offset} = \begin{cases} -\text{weave\_down} \text{ or } +\text{weave\_up}, & \text{twisting (which one depends on facing/sense)}\\[2pt] \tfrac{\text{weave\_up}-\text{weave\_down}}{2}, & \text{straight.}\end{cases}$$
+$$\text{offset} = \begin{cases} -d \text{ or } +u, & \text{twisting (which one depends on facing/sense)}\\[2pt] \tfrac{u-d}{2}, & \text{straight.}\end{cases}$$
 
-so the strand passing **over** lifts by `weave_up` and the one passing **under** drops by `weave_down`.
+The two strands meeting at a crossing read *opposite* senses of the same edge, so one takes the $+u$ branch and the other the $-d$ branch: the strand passing **over** lifts by `weave_up` and the one passing **under** drops by `weave_down`, which is what makes the interlace read as genuinely three-dimensional. A straight edge splits the difference so the strand stays smooth where it does not cross.
 
 **Remeshing.** *Edge Subdivide* inserts a vertex at every edge midpoint (each face becomes a $2n$-gon through vertex and edge-midpoint points); *Medial* replaces each vertex with a fan of faces, turning faces into edge-midpoint polygons plus corner triangles. Both refine how densely the strands weave.
 

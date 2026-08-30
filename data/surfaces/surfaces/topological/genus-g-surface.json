@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "genus-g-surface",
+  "name": "Genus-g Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: meshed by marching tetrahedra on an implicit field (a product of normalised circle factors plus k z^2); it is an implicit surface with no parametric chart. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "orientable": true,
+    "compact": true,
+    "euler_characteristic": "varies",
+    "genus": "varies",
+    "boundary_components": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "GENUS",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "The classification theorem of closed orientable surfaces."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "specimens": [
+    {
+      "label": "sphere (g = 0)",
+      "parameters": {
+        "g": 0
+      },
+      "slug": "sphere",
+      "topology": {
+        "genus": 0,
+        "euler_characteristic": 2
+      }
+    },
+    {
+      "label": "torus (g = 1)",
+      "parameters": {
+        "g": 1
+      },
+      "slug": "torus",
+      "topology": {
+        "genus": 1,
+        "euler_characteristic": 0
+      }
+    },
+    {
+      "label": "double torus (g = 2)",
+      "parameters": {
+        "g": 2
+      },
+      "topology": {
+        "genus": 2,
+        "euler_characteristic": -2
+      }
+    },
+    {
+      "label": "triple torus (g = 3)",
+      "parameters": {
+        "g": 3
+      },
+      "topology": {
+        "genus": 3,
+        "euler_characteristic": -4
+      }
+    }
+  ],
+  "ids": {
+    "mathcurve": "ch1261_tn_4"
+  },
+  "alternate_names": [
+    "n-holed torus"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

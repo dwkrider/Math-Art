@@ -1,0 +1,87 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "moebius-strip",
+  "name": "Moebius Strip",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "compact-with-boundary",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "non-orientable",
+    "topological",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "ring radius 1 and strip width 0.6 fixed to the operator defaults; the u seam closes with v reversed (the half twist)",
+    "x": "(1 + v*cos(u/2))*cos(u)",
+    "y": "(1 + v*cos(u/2))*sin(u)",
+    "z": "v*sin(u/2)",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "-0.3",
+      "0.3"
+    ],
+    "periodic_u": true,
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "boundary_components": 1,
+    "class": "compact-with-boundary"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "MOBIUS",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.05).",
+    "sources": [
+      "Klein bottle: F. Klein (1882).  The default classical bottle shape is built by the tube scheme of G. Franzoni, \"The Klein bottle in its classical shape: a further step towards a good parametrization\", arXiv:0909.5354 (2009): a tube of varying radius swept along a plane directrix, with the dumbbell-curve directrix of the paper's section 4 (which closes) as the default and its section-3 piriform directrix and the older polynomial immersion as alternatives.  A converted copy is in research/papers/ surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.",
+      "Mobius band (the plain ruled one-sided strip): A. F. Mobius (1858) and J. B. Listing (1858), as the standard half-twist ruled parametrization.",
+      "Boy's surface: W. Boy, Math. Ann. 57 (1903), here via the R. Bryant - R. Kusner parametrization.",
+      "Cross-cap and Roman surface: two immersions of RP^2 due to J. Steiner (Rome, 1844).",
+      "Veronese surface: G. Veronese (1854-1917); see M. Berger, \"Geometry Revealed\", Springer 2010, p. 47.  The two named projections used as the endpoints of the Steiner family here are from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com, chapter \"surface de Veronese\"; a converted copy is in research/books/ mathcurve_encyclopedie_formes_mathematiques/. Mobius band: A. F. Mobius (1858).",
+      "Sudanese Mobius band: H. B. Lawson, \"Complete Minimal Surfaces in S^3\", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman and Daniel Asimov (cf. G. Francis, \"A Topological Picturebook\", Springer 1987).",
+      "The 3DXM Consortium, 'Moebius Strip', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch043_moebius_strip.md)."
+    ]
+  },
+  "ids": {
+    "vmm": "ch043_moebius_strip"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Moebius, Strip",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": true
+  }
+}

@@ -330,6 +330,8 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Preset",
+            description="Ready-made harmonic knot; Custom keeps the "
+                        "values below",
             items=[('LISSAJOUS_327', "Lissajous (3,2,7)",
                     "classic Lissajous knot, phases 0.7 / 0.2 / 0"),
                    ('FOURIER_TREFOIL', "Fourier (1,1,2) Trefoil",
@@ -345,6 +347,7 @@ if _IN_BLENDER:
             default='LISSAJOUS_327', update=_apply_preset)
         family: EnumProperty(
             name="Family",
+            description="Which harmonic curve family to trace",
             items=[('LISSAJOUS', "Lissajous",
                     "cosine in each coordinate"),
                    ('FOURIER', "Fourier",
@@ -394,6 +397,7 @@ if _IN_BLENDER:
             description="Points along the curve")
         output: EnumProperty(
             name="Output",
+            description="Curve type to build, or a swept tube mesh",
             items=[('BEZIER', "Bezier Curve", "auto-smoothed"),
                    ('POLY', "Poly Curve", ""),
                    ('NURBS', "NURBS Curve", ""),
@@ -404,11 +408,16 @@ if _IN_BLENDER:
             step=1, precision=3,
             description="Curve bevel depth / tube radius")
         resolution: IntProperty(name="Bevel Resolution",
-                                default=6, min=1, max=16)
+                                default=6, min=1, max=16,
+                                description="Smoothness of the round "
+                                            "bevel along the curve")
         tube_sides: IntProperty(name="Tube Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around the "
+                                            "swept tube")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             if (self.family != 'FOURIER'

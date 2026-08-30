@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "lubeck-batista-surface",
+  "name": "Lubeck-Batista Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "doubly-periodic",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Doubly periodic 1-parameter family (2011) with genus 3 and four annular ends in the quotient: layers joined by Costa saddles keeping the Costa surface's straight lines, limiting in the Callahan-Hoffman-Meeks surface -- a doubly periodic version of it."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "layer",
+    "periodicity_rank": 2
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Lubeck-Batista Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch038_lubeck_batista_surface.md).",
+      "K. R. M. Lubeck and V. Ramos Batista, 'The doubly periodic Scherk-Costa surfaces', Journal of Mathematics Research 6 (2014) 77-90."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch038_lubeck_batista_surface"
+  },
+  "named_after": "Batista, Lubeck",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

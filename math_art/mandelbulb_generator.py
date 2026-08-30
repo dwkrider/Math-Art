@@ -109,7 +109,8 @@ if _IN_BLENDER:
                     "Quaternion Julia set, w = const slice"),
                    ('MANDELBOX', "Mandelbox",
                     "Box/ball-folding Mandelbox (scale 2)")],
-            default='MANDELBULB')
+            default='MANDELBULB',
+            description="Which escape-time fractal to build")
         resolution: IntProperty(
             name="Resolution", default=96, min=24, max=256,
             description="Sample grid cells per axis (cost grows as "
@@ -127,7 +128,8 @@ if _IN_BLENDER:
             description="Which w = const 3D slice of the 4D "
                         "quaternion Julia set to mesh")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size of the result")
         largest_only: BoolProperty(
             name="Largest Part Only", default=True,
             description="Keep only the largest connected component, "
@@ -136,7 +138,8 @@ if _IN_BLENDER:
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="If > 0, add a Solidify modifier of this "
                         "thickness (for a shell / printing)")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
 
         def execute(self, context):
             label = PRESETS[self.preset][0]

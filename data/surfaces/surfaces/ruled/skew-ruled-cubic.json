@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "skew-ruled-cubic",
+  "name": "Skew Ruled Cubic",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "ruled"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "(1 - v)*cos(2*u)",
+    "y": "(1 - v)*sin(2*u)",
+    "z": "v*tan(u)",
+    "u_range": [
+      "-1.45",
+      "1.45"
+    ],
+    "v_range": [
+      "0",
+      "1"
+    ],
+    "note": "a conic (the unit circle), the line Oz, and the identity homography s = tan u between them; the joining segments sweep the cubic.  u stays inside (-pi/2, pi/2) as in the shipped builder",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "RULED_CUBIC",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.38 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.05218).",
+    "sources": [
+      "G. W. Hart, \"Curved, yet Straight: Stick Hyperboloids,\" Bridges 2023 Conference Proceedings, pp. 251-258.",
+      "E. Jannasch & J. Macnab, \"The Compound Helical Cone as Kinematic Trace,\" Bridges 2023 Conference Proceedings, pp. 15-22.",
+      "F. A. Farris, \"Spiral Ruled Surfaces,\" Bridges 2022 Conference",
+      "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
+      "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
+      "Milk carton: H. M. Cundy & A. P. Rollett, \"Mathematical Models\" (1951), 185-188."
+    ]
+  },
+  "ids": {
+    "mathcurve": "ch1226_cubique_reglee_2"
+  },
+  "alternate_names": [
+    "Ruled cubic"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

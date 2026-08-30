@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "togliatti-quintic",
+  "name": "Togliatti Quintic",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "record-holder",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 5.0
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "is_record": true,
+    "record_for": "maximum nodes, degree 5",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 31,
+        "note": "IMAGINARY (imaginary.org, local mirror ch934): 'Eugenio Giuseppe Togliatti proved in 1937, that there is a surface of degree 5 - a Quintic - with exactly 31 singularities, which was world record at that time.'  Breske-Labs-van Straten (2005), mu(5) table: upper and lower bounds both 31, so the count is exact (optimality is Beauville's)."
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "CLASSICAL",
+      "key": "TOGLIATTI",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "A. Cayley, \"A Memoir on Cubic Surfaces\", Phil. Trans. 159, 1869.",
+      "A. Clebsch, \"Ueber die Flachen vierter Ordnung...\", Journal fur die reine und angewandte Mathematik 69, 1868 -- the diagonal surface.",
+      "W. Barth, \"Two projective surfaces with many nodes admitting the symmetries of the icosahedron\", J. Algebraic Geometry 5, 1996.",
+      "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien -- the named gallery surfaces in the _HAUSER block below.",
+      "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- also the source of the five-parameter D8 x Z2 octic family; the 160- and 165-nodal parameter values are published on O. Labs's Algebraic Surface",
+      "Homepage, algebraicsurface.net (octics pages)."
+    ],
+    "cross_checked": [
+      {
+        "source": "IMAGINARY, imaginary.org (mirror ch934); Breske-Labs-van Straten (2005)",
+        "agrees": true,
+        "detail": "'Togliatti proved in 1937, that there is a surface of degree 5 - a Quintic - with exactly 31 singularities, which was world record at that time'; mu(5) = 31 is exact (both bounds) in the Breske-Labs-van Straten table."
+      }
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

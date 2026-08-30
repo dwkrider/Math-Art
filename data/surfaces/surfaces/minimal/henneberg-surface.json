@@ -1,0 +1,105 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "henneberg-surface",
+  "name": "Henneberg",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "non-orientable",
+    "noncompact",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "2*sinh(u)*cos(v) - (2.0/3.0)*sinh(3*u)*cos(3*v)",
+    "y": "2*sinh(u)*sin(v) + (2.0/3.0)*sinh(3*u)*sin(3*v)",
+    "z": "2*cosh(2*u)*cos(2*v)",
+    "u_range": [
+      "0.05",
+      "1.0"
+    ],
+    "v_range": [
+      "0",
+      "pi"
+    ]
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": false,
+    "compact": false,
+    "orientable": false,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 1
+      }
+    ],
+    "class": "noncompact"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting",
+    "branch_points": 2
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "HENNEBERG",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
+    "sources": [
+      "L. Henneberg, 'Uber salche Minimalflachen, welche eine vorgeschriebene ebene Curve zur geodatischen Linie haben' (1875).",
+      "E. L. Henneberg, 'Ueber diejenige Minimalflaeche, welche die Neil'sche Parabel zur ebenen geodaetischen Linie hat' (1876); M. Weber (mirror: minsurf posts ch384): parametrizes a projective plane, 'the puncture at 0 represents an Enneper end'."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Lebrecht Henneberg",
+  "year": 1875,
+  "ids": {
+    "mathworld": "HennebergsMinimalSurface",
+    "mathcurve": "ch1284_henneberg_2",
+    "vmm": "ch005_henneberg",
+    "msblog": "ch384_henneberg_surface"
+  },
+  "notes": {
+    "caveats": [
+      "The classical example of a NON-ORIENTABLE minimal surface; it is a minimal immersion of the projective plane minus a point, and carries two branch points."
+    ]
+  },
+  "alternate_names": [
+    "Henneberg's surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -26,12 +26,12 @@ Hydrogenic atomic orbitals and LCAO molecular orbitals, drawn as isosurfaces of 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Atomic | Atomic, Molecular. |
+| Mode | Atomic | A single atomic orbital or a molecular combination. Atomic, Molecular. |
 | n | 2 | Principal quantum number: the orbital has n-l-1 radial nodes Range 1-6. |
 | l | 1 | Azimuthal quantum number (0 = s, 1 = p, 2 = d, 3 = f); must be < n Range 0-5. |
 | m | 0 | Magnetic quantum number of the real orbital; clamped to \|m\| <= l Range -5-5. |
 | Zeta | 1 | Effective nuclear charge: 1 is hydrogen, larger values contract the orbital (a Slater-type basis function) Range 0.1-10. |
-| Molecule | sigma 1s | sigma 1s, sigma* 1s, sigma 2s, sigma* 2s, sigma 2pz, sigma* 2pz, pi 2px, pi* 2px, and 9 more. |
+| Molecule | sigma 1s | Which molecular orbital to draw. sigma 1s, sigma* 1s, sigma 2s, sigma* 2s, sigma 2pz, sigma* 2pz, pi 2px, pi* 2px, and 9 more. |
 | Bond Length | 1.4 | Diatomic nuclear separation in bohr (1.4 a0 is H2) Range 0.2-12. |
 | Hueckel MO | 0 | Which of the six benzene pi orbitals to draw, lowest energy first Range 0-5. |
 | LCAO | `1s@0,0,-1.4 1; 1s@0,0,1.4 -1` | Custom combination: orbital@x,y,z[:zeta] coefficient, semicolon separated (positions in bohr) |
@@ -42,13 +42,13 @@ Hydrogenic atomic orbitals and LCAO molecular orbitals, drawn as isosurfaces of 
 | Nuclei & Bonds | On | Add a ball-and-stick skeleton for the nuclei (molecular mode) |
 | Sign Colours | On | Two material slots for the positive and negative lobes of psi |
 | Largest Lobe Only | Off | Discard all but the biggest connected piece |
-| Display | Single Surface | Single Surface, Probability Cloud. |
+| Display | Single Surface | Draw one surface or a nested probability cloud. Single Surface, Probability Cloud. |
 | Cloud Shells | 3 | How many nested contours the cloud has; each encloses an even step of the electron density Range 2-6. |
 | Outer Opacity | 0.18 | Opacity of the outermost shell; the inner ones are progressively more solid Range 0.02-1. |
 | Despeckle | 0.005 | Drop connected pieces smaller than this fraction of the mesh: grid-scale debris where the contour grazes a sample plane Range 0-0.2. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the orbital Range 0.01-100. |
 | Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the isosurface smoothly rather than faceted |
 
 <!-- /options -->
 

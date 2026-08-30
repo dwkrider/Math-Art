@@ -1,5 +1,7 @@
 # Islamic Star Pattern
 
+![Islamic Star Pattern](../images/islamic_pattern.png)
+
 ## Overview
 
 Add an Islamic star pattern (polygons in contact).
@@ -7,6 +9,16 @@ Add an Islamic star pattern (polygons in contact).
 Islamic geometric **star patterns** — *girih* strapwork — are among the most sophisticated ornamental systems ever devised, and the surprise is how little machinery generates them. E. H. Hankin, working from Mughal monuments in the early 20th century, reverse-engineered the craftsmen's method: lay down a hidden tiling of regular polygons, then draw the visible strapwork from the *midpoints of its edges*. The tiling is never drawn; only its edge midpoints leave a trace.
 
 That single idea, now called **polygons in contact** (PIC), explains why the bands run continuously across the whole design and why one grid yields a family of patterns rather than a single one: the contact angle is free, and sliding it takes the stars from spiky and acute to broad and obtuse without ever breaking the strapwork.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Islamic Star Pattern*.
+2. **Pick a Preset.** Each historical preset — the 8-fold star-and-cross, the 12- and 6-fold stars, the 8- and 12-fold rosettes, a {8/3} star weave, the two irregular "Star Weave" duals, or the quasiperiodic Girih patch — fixes a substrate, contact angle and motif in one go. Choose **Custom** to expose those three controls and drive the construction yourself.
+3. **Choose the Substrate and Motif** (Custom only). The **Substrate** is the hidden tiling, and it fixes the star orders you can get: the square grid gives 4- and 8-point stars, the hexagonal 6- and 12-point, the $4.8.8$ truncated square the iconic 8-point star-and-cross. The **Motif** picks how each tile is filled — **Polygons in Contact** (Hankin's rays), **Rosette** (a star ringed by petals), or a regular **Star Polygon {n/d}**.
+4. **Set the Contact Angle** — the one real shape knob (10°–80°, Custom only, since a preset fixes it). Small angles give long, spiky, acute stars; large angles blunt, obtuse ones.
+5. **Dial the mode-specific controls** that appear only for some choices: **Star Density d** for the Star-Polygon motif (shown even under the {8/3} preset), **Rosette Core** for the Rosette motif (the central star's size), and **Girih Generations** for the Girih substrate (the inflation depth of the quasiperiodic patch) — the last replacing the **Cells X / Y** count that every periodic substrate uses.
+6. **Set the field and ribbon controls.** **Trim Boundary** clips the ragged edge to a clean rectangle; **Ribbon Width** sets the strapwork width; **Curved Ribbons** (with **Smoothness**) flows each band along a spline instead of straight segments.
+7. **Choose the Output and finish.** **Ribbon Mesh** builds filled strapwork — then **Color By**, **Interlace (Weave)** (with **Interlace Mode** and, for the woven 3D form, **Weave Height**), **Relief Height**, **Backing Slab** and **Separate Motifs** all apply; **Centerline Curves** instead emits the bare band centerlines as a curve object. The operator reports the substrate, contact angle and the vertex/face (or band) count it built.
 
 ## Options
 
@@ -20,12 +32,12 @@ That single idea, now called **polygons in contact** (PIC), explains why the ban
 | Contact Angle | 30 | Angle (degrees) of the rays to each edge; the primary knob -- small = spiky, large = obtuse Range 10-80. |
 | Star Density d | 3 | Density of the {n/d} star polygon (STAR motif); larger d gives sharper, more overlapping points Range 2-6. |
 | Rosette Core | 0.4 | Inner-polygon radius of the rosette as a fraction of the apothem (controls the central star size); 0 = Kaplan's proportion Range 0-0.95. |
-| Cells X | 5 | Range 1-40. |
-| Cells Y | 5 | Range 1-40. |
+| Cells X | 5 | Number of substrate tiles across X Range 1-40. |
+| Cells Y | 5 | Number of substrate tiles across Y Range 1-40. |
 | Girih Generations | 4 | Inflation depth of the quasiperiodic Penrose girih patch (GIRIH substrate); higher = larger patch, more tiles Range 1-6. |
 | Trim Boundary | On | Clip the strapwork to a clean central rectangle, removing the ragged edge |
 | Ribbon Width | 0.14 | Width of the strapwork ribbons (edge units) Range 0.01-0.6. |
-| Color By | By Star Order | Uniform, By Tile, By Star Order, By Ribbon. |
+| Color By | By Star Order | How the strapwork ribbons are colored. Uniform, By Tile, By Star Order, By Ribbon. |
 | Curved Ribbons | Off | Flow each band along a Catmull-Rom spline through its nodes instead of straight segments |
 | Smoothness | 8 | Spline subdivisions per band segment (curved ribbons only) Range 2-32. |
 | Output | Ribbon Mesh | Build filled ribbon meshes or the band centerlines as curve splines. Ribbon Mesh, Centerline Curves. |
@@ -34,7 +46,7 @@ That single idea, now called **polygons in contact** (PIC), explains why the ban
 | Weave Height | 0.05 | Z amplitude of the woven ribbons at crossings (WOVEN interlace only) Range 0-0.5. |
 | Relief Height | 0 | 0 = flat ribbons; > 0 extrudes the strapwork Range 0-2. |
 | Backing Slab | Off | Add a slab behind raised strapwork (relief only) |
-| Base Thickness | 0.08 | Range 0.01-1. |
+| Base Thickness | 0.08 | Thickness of the backing slab behind the strapwork Range 0.01-1. |
 | Separate Motifs | Off | Output each tile's motif as its own mesh object (parented to an empty) |
 
 <!-- /options -->
@@ -67,14 +79,20 @@ Renders of each selectable option:
 
 ## How it works
 
-**Polygons in contact.** Lay down an underlying tiling of regular polygons. On **every edge**, from its midpoint, send out a pair of rays at a fixed **contact angle** $\theta$ to that edge — one ray into each of the two incident tiles. Inside a tile, each ray runs until it meets the next ray around that tile, and the meeting points close up into the tile's star motif.
+**In plain terms.** Start with a hidden scaffold — a tiling of regular polygons, the pencil guidelines an artist would later rub out. At the middle of every wall between two tiles, plant a little "X": two short lines that cross the wall at the same chosen slant. Now let each line grow inward until it runs into a line coming from another wall of the same tile; where they meet, a star closes up inside the tile. Because every X sits exactly on a shared wall-midpoint, the line leaving one tile arrives precisely where its neighbour's line begins, so the stars knit into one continuous interlaced band across the whole panel. The slant you chose is the single dial that makes the stars needle-sharp or fat and blunt.
+
+**Polygons in contact.** Formally, on **every edge** of the substrate, from its midpoint $\mathbf m$, send out a pair of rays at a fixed **contact angle** $\theta$ to that edge — one into each incident tile. Writing $\hat{\mathbf e}$ for the unit vector along the edge and $\hat{\mathbf n}$ for the unit inward normal, the two rays leave in directions
+
+$$\mathbf d_{\text{left}} = \cos\theta\,\hat{\mathbf e} + \sin\theta\,\hat{\mathbf n},\qquad \mathbf d_{\text{right}} = -\cos\theta\,\hat{\mathbf e} + \sin\theta\,\hat{\mathbf n},$$
+
+each making the angle $\theta$ with the edge but turning toward opposite vertices. Inside a tile every "left" ray is truncated at its first crossing with a "right" ray; the pair that meets are mirror images across a symmetry axis of the polygon, so they meet cleanly on that axis and the truncation points close into the tile's star motif.
 
 Two consequences follow immediately, and together they are the whole reason the method works:
 
 - Because the contact points are **shared edge midpoints**, the band leaving one tile arrives exactly where the neighbouring tile's band starts. The strapwork is continuous across the whole pattern with no matching rules and no bookkeeping.
 - Because the rays are symmetric about the edge midpoint, the pattern inherits the tiling's symmetry group automatically.
 
-**The contact angle is the design.** For a regular $n$-gon, the rays from its $n$ edges meet in a star with $n$ points (or $2n$, depending on how far they run before meeting). Small $\theta$ gives long, spiky, acute stars; large $\theta$ gives short, blunt, obtuse ones. One substrate therefore generates a continuous family, which is exactly the freedom the historical craftsmen exploited.
+**The contact angle is the design.** For a regular $n$-gon the $n$ edges send rays that meet in an $n$-pointed star, and $\theta$ sets its sharpness: a small $\theta$ gives grazing rays that cross far out into long acute points, a large $\theta$ gives rays that cross close in for short blunt ones. One substrate therefore generates a continuous family, which is exactly the freedom the historical craftsmen exploited.
 
 **Substrates decide the star orders.** The polygon that a star sits in fixes how many points it has, so the choice of underlying tiling chooses the vocabulary:
 
@@ -88,9 +106,17 @@ Two consequences follow immediately, and together they are the whole reason the 
 
 These are the same [uniform tilings](tiling.md) the tiling generator builds, reused as scaffolding.
 
-**Rosettes.** The classic Islamic **rosette** — an $n$-pointed star ringed by $n$ petals — does not arise from plain PIC on a single polygon. It comes from Kaplan's rosette transform: subdivide the regular $n$-gon into a central $n$-gon plus a surrounding ring of $n$ pentagons, then apply the same contact construction to *those* cells. The petals emerge from the pentagons and the star from the central polygon, so the rosette is PIC applied one level deeper rather than a separate construction.
+**Rosettes.** The classic Islamic **rosette** — an $n$-pointed star ringed by $n$ petals — is not plain PIC on a single polygon but Kaplan's *rosette transform*: the regular $n$-gon is first subdivided into a smaller central $n$-gon plus a ring of $n$ pentagons, and the contact construction is applied to *those* cells. The petals emerge from the pentagons and the central star from the inner polygon. The one free proportion is the inner radius, which for circumradius $R$ Kaplan sets to
 
-**Interlace.** Finally the bands are given over-under alternation, which is what turns a flat line drawing into strapwork that reads as woven ribbon.
+$$r' = R\cos\frac{\pi}{n} - R\sin\frac{\pi}{n}\,\tan\frac{\pi(n-2)}{4n},$$
+
+so the segments linking star to petals are half a polygon side long — the **Rosette Core** control overrides $r'$ as a fraction of the apothem when you want a larger or smaller central star.
+
+**Irregular tiles and inference.** When a substrate's tiles are *not* regular — the Laves duals, or the rhombi of the girih quasilattice — the rays are measured from each edge's **true normal** and truncated *mutually*: the two rays aiming into the wedge at a shared vertex are cut at their common crossing. Each edge midpoint then joins exactly two segments and the motif closes into one stub-free loop that stays continuous across every shared edge. This is Kaplan's **motif inference**.
+
+**From segments to woven bands.** PIC hands back a heap of short segments. Snapping their endpoints to shared nodes builds an *arrangement*, and each band is traced through it "straightest-through": at every contact node the two tiles' rays are collinear, so a band crosses straight and only bends at the star points — exactly the classic strapwork topology. Each traced band is then built as one continuous mitered ribbon rather than a pile of quads. For the woven look every interior 4-valent crossing is assigned an **over** and an **under** so the sense strictly alternates along each band; this alternating-knot assignment is solved as a parity (XOR) system with a union-find — the same over/under engine the [Celtic knot](celtic_knot_2d.md) generator uses.
+
+**Girih.** The **Girih** substrate breaks the periodicity: the strapwork is laid on a **Penrose (P3) quasilattice** — the two rhombi Lu & Steinhardt showed are equivalent to the medieval girih tiles — inflated to the chosen number of generations and decorated by inference at the girih $72°$ contact angle. Because the contacts still land on shared edge midpoints the bands stay continuous, and where five and ten tiles meet they close into the characteristic ten-point stars and decagonal rosettes of a pattern that never exactly repeats.
 
 ## References
 

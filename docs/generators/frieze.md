@@ -1,10 +1,21 @@
 # Frieze Group
 
+![Frieze Group](../images/frieze.png)
+
 ## Overview
 
-A **frieze group** is the symmetry group of a strip pattern — one that repeats by translation in a single direction. Restricting the plane's isometries to those that preserve an infinite band leaves only four kinds of move: translation along the strip, the half-turn, reflection in the strip's axis or perpendicular to it, and glide reflection. Every consistent combination of these collapses into exactly **seven** groups, a classical result of crystallography; the memorable names used here — *hop*, *step*, *sidle*, *jump* and their "spinning" variants — are Conway's.
+Add a frieze pattern: one asymmetric motif repeated along a strip by every symmetry of a chosen frieze group, coloured so the symmetry reads.
 
-The generator replicates one deliberately **asymmetric** motif by every element of the chosen group and colours the copies so the symmetry is legible. The asymmetry is the point: a motif that is already mirror-symmetric makes several of the seven groups produce identical pictures, and the distinctions the classification is about disappear.
+A **frieze group** is the symmetry group of a strip pattern — one that repeats by translation in a single direction. Restricting the plane's isometries to those that preserve an infinite band leaves only four kinds of move: translation along the strip, the half-turn, reflection in the strip's axis or perpendicular to it, and glide reflection. Every consistent combination collapses into exactly **seven** groups, a classical result of crystallography; the memorable names used here — *hop*, *step*, *sidle*, *jump* and their "spinning" variants — are Conway's. The motif is deliberately **asymmetric**, because a mirror-symmetric one would make several of the seven groups draw identical pictures and hide the very distinctions the classification is about.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Frieze Group*.
+2. **Pick the Group** — the seven friezes, listed by Conway name and IUC symbol: *Hop* (p1) is bare translation; *Step* (p11g) adds a glide; *Sidle* (p1m1) a vertical mirror; *Jump* (p11m) the axis mirror; *Spinning hop* (p2) a half-turn; *Spinning sidle* (p2mg) and *Spinning jump* (p2mm) combine the half-turn with mirrors. Each draws a visibly different repeat.
+3. **Set Repeats** — how many translation cells run along the strip, the main length knob.
+4. **Choose the Motif.** The built-in chiral shapes (Arrow, F, L, Comma, Zig, Triangle) each expose a **Relief Height** so a flat strip can be extruded into a low relief. Choosing **Object** instead hides Relief Height and reveals an **Object** picker: that mesh (or, left empty, the active/selected one) is tiled at its own size in 3D, and its reflected copies become genuine mirror images.
+5. **Colour and space the copies.** *Color By* tints each copy by **Symmetry Copy**, **Operation Type** (identity/rotation/reflection/glide), **Handedness** (direct vs. mirrored) or **Repeat** along the strip; **Handedness** is the most telling, since only reflections and glides flip the motif. **Margin** opens a gap around each unit, and **Separate Cells** emits every copy as its own object (parented to an empty) for individual editing.
+6. **Read the report.** The status line echoes the group and the vertex/face count of the finished strip (or, with Separate Cells, the number of cells) — a quick confirmation of what was built.
 
 ## Options
 
@@ -12,11 +23,11 @@ The generator replicates one deliberately **asymmetric** motif by every element 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Group | Spinning jump  (p2mm) | Hop  (p1), Step (glide)  (p11g), Sidle (vertical mirror)  (p1m1), Jump (horizontal mirror)  (p11m), Spinning hop (180)  (p2), Spinning sidle  (p2mg), Spinning jump  (p2mm). |
-| Motif | Arrow | Arrow, F, L, Comma, Zig, Triangle, Object. |
+| Group | Spinning jump  (p2mm) | Which of the 7 frieze (strip) groups to repeat with. Hop  (p1), Step (glide)  (p11g), Sidle (vertical mirror)  (p1m1), Jump (horizontal mirror)  (p11m), Spinning hop (180)  (p2), Spinning sidle  (p2mg), Spinning jump  (p2mm). |
+| Motif | Arrow | Shape replicated along the strip. Arrow, F, L, Comma, Zig, Triangle, Object. |
 | Object | empty | Object whose mesh is used as the motif. Leave empty to use the active or selected mesh |
-| Repeats | 6 | Range 1-60. |
-| Color By | Symmetry Copy | Symmetry Copy, Operation Type, Handedness, Repeat. |
+| Repeats | 6 | Number of times the cell repeats along the strip Range 1-60. |
+| Color By | Symmetry Copy | How the replicated faces are colored. Symmetry Copy, Operation Type, Handedness, Repeat. |
 | Margin | 0 | Spacing around each unit, as a fraction of its size (0 = flush) Range 0-3. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes into a relief Range 0-1. |
 | Separate Cells | Off | Output each unit as its own mesh object (parented to an empty) so cells can be edited individually |
@@ -45,22 +56,26 @@ Renders of each selectable option:
 
 ## How it works
 
-**Isometries as matrices.** Every plane isometry is stored as a $3\times3$ homogeneous matrix acting on $(x,y,1)^{\mathsf T}$, so that composing two of them is just matrix multiplication:
+**In plain terms.** A *frieze* is the decorated band that runs along the top of a wall, the border of a ribbon, or the pattern stamped down the rim of a plate. Whatever the ornament, the strip repeats as you slide along it — and there are only so many ways it can be symmetric. Conway's names come from walking: *hop* is a bunny springing forward with both feet together; *step* is an ordinary walk, left foot then right foot shifted half a stride (a glide); *sidle* is a crab edging sideways along a wall (a mirror across the strip); *jump* flips heels over head. Fold a half-turn spin into those gaits and you exhaust the possibilities — **seven** strip symmetries, no more. Everything below turns those moves into matrices, because a matrix is something the computer can multiply, invert, and check for consistency.
 
-$$T(t_x,t_y)=\begin{pmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{pmatrix},\qquad
-R(\theta)=\begin{pmatrix}\cos\theta&-\sin\theta&0\\ \sin\theta&\cos\theta&0\\0&0&1\end{pmatrix}$$
+**Isometries as matrices.** Every rigid motion of the plane is stored as a $3\times3$ homogeneous matrix acting on $(x,y,1)^{\mathsf T}$, so that *composing* two motions becomes matrix multiplication — the whole algebra of symmetry turns into linear algebra:
 
-A reflection in the line through the origin at angle $\alpha$ is
+$$
+T(t_x,t_y)=\begin{pmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{pmatrix},\qquad
+R(\theta)=\begin{pmatrix}\cos\theta&-\sin\theta&0\\ \sin\theta&\cos\theta&0\\0&0&1\end{pmatrix}
+$$
+
+The padding is the trick: writing a point as $(x,y,1)$ lets a *translation* — which is not linear on its own — ride inside a single matrix beside the rotations, so a slide and a spin multiply together seamlessly. A reflection in the line through the origin at angle $\alpha$ is
 
 $$M(\alpha)=\begin{pmatrix}\cos 2\alpha&\sin 2\alpha&0\\ \sin 2\alpha&-\cos 2\alpha&0\\0&0&1\end{pmatrix},$$
 
-rotations and mirrors about a general centre $c$ are conjugated into place as $T(c)\,X\,T(-c)$, and a **glide** is a reflection followed by a translation along its own axis, $G(\alpha,d)=T(d\cos\alpha,\,d\sin\alpha)\,M(\alpha)$.
+and its determinant is $-1$ — the algebraic fingerprint of a move that flips handedness, which is exactly what mirrors and glides do. A rotation or mirror about a general centre $c$ is conjugated into place as $T(c)\,X\,T(-c)$ — carry the centre to the origin, act there, carry it back — and a **glide** is a reflection followed by a translation along its own axis, $G(\alpha,d)=T(d\cos\alpha,\,d\sin\alpha)\,M(\alpha)$.
 
-**The group as coset representatives.** A frieze group $F$ contains the unit translation $T(1,0)$ and all its powers; that lattice is infinite, but the quotient $F/\langle T(1,0)\rangle$ is finite. Storing one representative $g_1,\dots,g_k$ per coset is enough, and the strip of $n$ repeats is the union
+**The group as coset representatives.** A frieze group $F$ always contains the unit translation $T(1,0)$ and all its powers; that lattice of slides is infinite, so the group can never be listed outright. But the quotient $F/\langle T(1,0)\rangle$ — the group *modulo* sliding by a whole cell — is finite. Storing one representative $g_1,\dots,g_k$ per coset captures everything the translations do not, and the strip of $n$ repeats is rebuilt as
 
 $$P=\bigcup_{i=0}^{n-1}\ \bigcup_{j=1}^{k} T(i,0)\,g_j\,(\text{motif}).$$
 
-The seven groups are exactly these representative sets:
+The inner union stamps the $k$ symmetry copies of one cell; the outer union slides that cell $n$ times along the strip. The seven groups are exactly seven such representative sets:
 
 | Group | Name | Cosets beyond the identity |
 | --- | --- | --- |
@@ -72,9 +87,9 @@ The seven groups are exactly these representative sets:
 | p2mg | Spinning sidle | $R(\pi)$, $M(\pi/2)$ at $x=\tfrac14$, $G(0,\tfrac12)$ |
 | p2mm | Spinning jump | $R(\pi)$, $M(0)$, $M(\pi/2)$ |
 
-Note the half-cell offsets: p11g glides by $\tfrac12$ of the translation, and p2mg puts its mirror at $x=\tfrac14$. Those offsets are what make the groups *close* — composing two representatives has to land back in the group modulo the lattice, and a table with the offsets wrong still draws a pattern, just not that group's pattern. The engine's self-test checks closure rather than appearance for precisely that reason.
+Notice the half-cell offsets: p11g glides by $\tfrac12$ of a translation, and p2mg parks its mirror at $x=\tfrac14$. Those fractions are what make the group *close* — composing any two representatives has to land back in the group once you subtract off whole-cell slides, and a table with the offsets wrong still draws a pattern, just not that group's. The engine's self-test therefore checks **closure**, an algebraic property, rather than how the picture happens to look.
 
-**Colouring.** Because the copies are generated by named group elements, each copy can be tinted by which one produced it — by symmetry copy, by the type of operation (rotation, mirror, glide), by handedness (direct versus mirrored), or by which repeat along the strip it belongs to. Handedness is the most telling: it makes reflections and glides visible at a glance, since only those flip the motif's chirality.
+**Colouring and relief.** Because every copy is produced by a *named* group element, it can be tinted by which one made it — by symmetry copy, by operation type (rotation, mirror, glide), by handedness (direct versus mirrored), or by which repeat along the strip it belongs to. Handedness is the most revealing: only reflections and glides carry determinant $-1$, so colouring by it makes precisely the orientation-reversing moves light up. When a **Relief Height** is set the flat faces are extruded into prisms, and when the unit is an active mesh the reflections carry through into genuine three-dimensional mirror copies.
 
 ## References
 

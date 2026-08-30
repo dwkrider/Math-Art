@@ -58,64 +58,64 @@ two opposite-handed families of rods cross to weave the same surface.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Stick Hyperboloid | Stick Hyperboloid, Compound Helical Cone, Spiral Ruled, Conoid, Tangent Developable, Helicoid, Twisted Strip, Hyperbolic Paraboloid, and 1 more. |
-| Conoid | Plucker Cylindroid | Plucker Cylindroid, n-Fold Conoid, Wallis Conical Edge, Whitney Umbrella. |
-| Radius | 1 | Range 0.01-20. |
+| Surface | Stick Hyperboloid | Which ruled-surface family to build. Stick Hyperboloid, Compound Helical Cone, Spiral Ruled, Conoid, Tangent Developable, Helicoid, Twisted Strip, Hyperbolic Paraboloid, and 6 more. |
+| Conoid | Plucker Cylindroid | Which right conoid to build (Conoid mode). Plucker Cylindroid, n-Fold Conoid, Wallis Conical Edge, Zindler Conoid, Whitney Umbrella. |
+| Radius | 1 | Radius of the base circle or helix the rulings spring from Range 0.01-20. |
 | Half Height | 1 | Half the axial height (rings sit at +-this) Range 0.05-20. |
 | Twist | 120 | Rotation of the top ring in degrees; waist radius = R cos(twist/2) Range 0-179. |
 | Ruling Family | Both | Which ruling family to draw as rods (both = crossing string sculpture). Both, Right, Left. |
-| Height | 2.5 | Range 0.1-30. |
-| Flutes | 6 | Range 0-64. |
-| Flute Depth | 0.18 | Range 0-0.9. |
+| Height | 2.5 | Total height of the cone, base to apex Range 0.1-30. |
+| Flutes | 6 | Number of helical flutes (ridges) around the cone Range 0-64. |
+| Flute Depth | 0.18 | Depth of the flutes at the base, fading to arrises at the apex Range 0-0.9. |
 | Spiral Twist | 2 | Turns the flutes wind over the full height Range -12-12. |
 | Taper | 1 | Envelope profile exponent (1 = straight cone) Range 0.2-4. |
 | Orbit Amount | 0 | Amplitude of the second (planetary) helix Range 0-1. |
-| Orbit Turns | 1 | Range -8-8. |
+| Orbit Turns | 1 | Turns of the secondary planetary helix over the height Range -8-8. |
 | Spiral Tightness | 0.15 | Log-spiral growth k (0 = circle) Range -0.6-0.6. |
-| Ruling Slope | 1 | Range -6-6. |
-| Turns | 2 | Range 0.1-12. |
+| Ruling Slope | 1 | Vertical rise of the rulings; in Helicoid mode tilts them off horizontal (0 = right helicoid) Range -6-6. |
+| Turns | 2 | Number of turns of the base curve or helix Range 0.1-12. |
 | Symmetry | 1 | Rosette fold count of the base curve (1 = plain spiral) Range 1-16. |
-| Rosette Amount | 0 | Range 0-1. |
-| Amplitude | 0.5 | Range 0-4. |
-| Folds | 3 | Range 1-16. |
-| Wallis a | 1 | Range 0.05-4. |
-| Wallis b | 0.6 | Range 0-4. |
+| Rosette Amount | 0 | Depth of the rosette lobes on the spiral base curve (0 = plain spiral) Range 0-1. |
+| Amplitude | 0.5 | Height amplitude of the conoid's rise and fall Range 0-4. |
+| Folds | 3 | Number of lobes for the n-fold and Zindler conoids Range 1-16. |
+| Wallis a | 1 | Wallis conical edge parameter a, in sqrt(a^2 - b^2 cos^2 u) Range 0.05-4. |
+| Wallis b | 0.6 | Wallis conical edge parameter b, in sqrt(a^2 - b^2 cos^2 u) Range 0-4. |
 | Pitch | 0.4 | Axial rise per radian Range -4-4. |
 | Edge Gap | 0.04 | Inner offset from the cuspidal edge Range 0-0.5. |
-| Inner Radius | 0 | Range 0-10. |
-| Strip Half-Width | 0.4 | Range 0.02-5. |
-| Half Twists | 1 | Range 0-12. |
-| a | 1 | Range 0.05-6. |
-| b | 1 | Range 0.05-6. |
-| Saddle Height | 1 | Range 0.05-6. |
-| From 4 Corner Points | Off | -- |
-| P00 | -1, -1, -1 | -- |
-| P10 | 1, -1, 1 | -- |
-| P01 | -1, 1, 1 | -- |
-| P11 | 1, 1, -1 | -- |
+| Inner Radius | 0 | Radius of the hole where the helicoid rulings start (0 = full disc) Range 0-10. |
+| Strip Half-Width | 0.4 | Half-width of the twisted strip; keep below the radius Range 0.02-5. |
+| Half Twists | 1 | Number of half-twists; odd gives a one-sided Mobius band Range 0-12. |
+| a | 1 | Width scale a in z = c((x/a)^2 - (y/b)^2) Range 0.05-6. |
+| b | 1 | Width scale b in z = c((x/a)^2 - (y/b)^2) Range 0.05-6. |
+| Saddle Height | 1 | Vertical scale c of the saddle Range 0.05-6. |
+| From 4 Corner Points | Off | Build the hypar as a bilinear patch spanning four skew corner points |
+| P00 | -1, -1, -1 | Corner point of the bilinear patch (s=0, t=0) |
+| P10 | 1, -1, 1 | Corner point of the bilinear patch (s=1, t=0) |
+| P01 | -1, 1, 1 | Corner point of the bilinear patch (s=0, t=1) |
+| P11 | 1, 1, -1 | Corner point of the bilinear patch (s=1, t=1) |
 | Knot p | 2 | Times the knots wind around the main axis Range 1-8. |
 | Knot q | 3 | Times the inner knot winds around the tube; 0 makes it a flat circle wound p times Range 0-9. |
-| Inner Scale | 1 | Range 0.1-5. |
+| Inner Scale | 1 | Overall size of the inner torus knot Range 0.1-5. |
 | Inner Tube | 1 | Tube radius of the inner torus knot Range 0-5. |
 | Inner Height | 1 | Vertical oscillation of the inner knot Range 0-5. |
 | Inner Lift | 0 | Shift the inner knot up or down along the axis Range -10-10. |
 | Inner Rotation | 0 | Rotate the inner knot about the axis, twisting the rulings Range -6.28319-6.28319. |
 | Outer p | 0 | p of the outer knot; 0 matches the inner p so the rulings line up Range 0-8. |
 | Outer q | 5 | q of the outer knot; 0 degenerates it to a circle Range 0-9. |
-| Outer Scale | 2 | Range 0.1-10. |
+| Outer Scale | 2 | Overall size of the outer torus knot Range 0.1-10. |
 | Outer Tube | 1 | Tube radius of the outer torus knot Range 0-5. |
 | Outer Height | 1 | Vertical oscillation of the outer knot Range 0-5. |
 | Outer Circle Radius | 4.5 | Radius of the outer circle when Outer q = 0 Range 1-20. |
 | Ruling Extent | 1 | Half-length of the rulings / patch extent Range 0.05-8. |
-| Resolution U | 120 | Range 6-800. |
-| Resolution V | 20 | Range 1-200. |
-| Output | Surface | Surface, Rulings as Rods, Bare Curves. |
-| Rod Count | 48 | Range 3-400. |
-| Rod Radius | 0.02 | Range 0.002-0.3. |
+| Resolution U | 120 | Samples around the surface, along the base curve Range 6-800. |
+| Resolution V | 20 | Samples across the rulings Range 1-200. |
+| Output | Automatic | Build the filled surface, or its straight rulings as solid rods or bare curves.  The compound helical cone is not straight-ruled, so for that one these draw its arrises -- the helical ridges of its flutes. Automatic, Surface, Rulings as Rods, Bare Curves. |
+| Rod Count | 48 | Number of rulings drawn in rods or bare-curves output Range 3-400. |
+| Rod Radius | 0.02 | Radius of each rod in rods output Range 0.002-0.3. |
 | Include Boundary Curves | On | Add the directrix / rail curves the rulings are strung between (the two torus knots, the hyperboloid's end circles, etc.) to the rods / bare-curves output |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
 | Thickness | 0 | Solidify thickness (surface modes) Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size; 1 fits the 2 m cube Range 0.01-100. |
 
 <!-- /options -->
 
@@ -137,6 +137,11 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/ruled_surface__WALLIS.png" width="200"><br><sub>Wallis Conical Edge</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__WHITNEY.png" width="200"><br><sub>Whitney Umbrella</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__PARABOLIC_CONOID.png" width="200"><br><sub>Parabolic Conoid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/ruled_surface__SINUSOIDAL_CONE.png" width="200"><br><sub>Sinusoidal Cone</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__HELICOIDAL_CONE.png" width="200"><br><sub>Helicoidal Cone</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__TANGENT_DEV.png" width="200"><br><sub>Tangent Developable</sub></td>
 </tr>
 <tr>

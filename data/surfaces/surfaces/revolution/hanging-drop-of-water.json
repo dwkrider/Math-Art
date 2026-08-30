@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hanging-drop-of-water",
+  "name": "Hanging Drop of Water",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "revolution"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: the profile is the Young-Laplace equation with hydrostatic head, integrated by RK4 from the apex; no closed form. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "PENDANT_DROP",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "D. von Seggern, \"CRC Standard Curves and Surfaces\" (1993), p. 304 -- Fresnel's elasticity surface.",
+      "A. Robin (2004), plotted after M. Trott, \"The Mathematica GuideBook for Graphics\" (2004), p. 103 -- the paper bag surface.",
+      "O. Knill (2017); M. A. Villarino and J. C. Varilly (2024) -- the trihyperboloid and its volume ln 256.",
+      "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
+      "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
+      "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978."
+    ]
+  },
+  "ids": {
+    "mathcurve": "ch1258_gouttedeau_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -1,12 +1,23 @@
 # Rep-Tile Tiling
 
+![Rep-Tile Tiling](../images/reptile.png)
+
 ## Overview
 
-Add a rep-tile substitution tiling.
+Add a rep-tile substitution tiling: one shape filled with ever-finer congruent copies of itself.
 
 A **rep-tile** is a shape that dissects into $N$ smaller congruent copies of *itself* — the L-tromino splits into four half-size L-trominoes, and each of those splits again, forever. Solomon Golomb coined the name in 1962.
 
 Applying the dissection repeatedly is the **deflation** of a substitution tiling, and it fills the original prototile with an ever finer self-similar patch. The construction is the plane-tiling counterpart of a fractal: the same shape at every scale, but tiling exactly rather than approximately, with no gaps and no overlaps at any depth.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Rep-Tile Tiling*.
+2. **Pick the Rep-Tile.** Four are rep-4 — **L-Tromino**, **L-Tetromino** and **P-Pentomino** on the square lattice, plus the **Sphinx Hexiamond** (the classic non-lattice case, one of whose four children is mirrored) — and the **Right Triangle** is rep-2. The number in each name is $N$, how many self-copies the shape dissects into.
+3. **Set Iterations** — the deflation depth. The patch holds $N^{\text{iterations}}$ sub-tiles, so it grows fast (a rep-4 tile reaches 1024 tiles by step 5); the cap is 7.
+4. **Every control applies to every rep-tile** — this generator has no mode-specific options, so nothing appears or disappears when you change the tile.
+5. **Choose Color By.** **By Orientation** gives each sub-tile a material from its orientation class (the rotation and reflection built up along its dissection chain), which makes the substitution structure visible; **Uniform** is one material.
+6. **Set the output.** **Margin** insets each tile to leave grout lines, **Relief Height** extrudes flat tiles into 3D, **Trim Boundary** clips the patch to a clean central rectangle, and **Separate Tiles** emits each tile as its own object. The operator's info line reports the vertex/face count (or tile count when separated).
 
 ## Options
 
@@ -14,9 +25,9 @@ Applying the dissection repeatedly is the **deflation** of a substitution tiling
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Rep-Tile | L-Tromino (rep-4) | L-Tromino (rep-4), Sphinx Hexiamond (rep-4), L-Tetromino (rep-4), P-Pentomino (rep-4), Right Triangle (rep-2). |
+| Rep-Tile | L-Tromino (rep-4) | Which rep-tile to substitute. L-Tromino (rep-4), Sphinx Hexiamond (rep-4), L-Tetromino (rep-4), P-Pentomino (rep-4), Right Triangle (rep-2). |
 | Iterations | 3 | Deflation depth (tile count is N**iterations, N = 4 for the rep-4 tiles, 2 for the triangle) Range 0-7. |
-| Color By | By Orientation | By Orientation, Uniform. |
+| Color By | By Orientation | How the tiles are colored. By Orientation, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the patch to a clean central rectangle |
@@ -42,23 +53,25 @@ Renders of each selectable option:
 
 ## How it works
 
-**The scale factor is forced.** If a shape of area $A$ dissects into $N$ congruent copies of itself, each copy has area $A/N$. Area scales as the square of length, so every child map is a similarity of ratio
+**In plain terms.** A rep-tile is a shape you can build a bigger copy of itself out of, using nothing but shrunken copies of that same shape — like four small L-shaped pieces snapping together into one big L. Because the pieces are the *same shape* as the whole, you can do it again inside each small piece, and again inside those, forever. Each round leaves twice as many pieces, each half the size, filling the original outline with a self-similar mosaic that has no gaps and no overlaps at any depth. It is a jigsaw where every piece is a miniature of the finished puzzle.
+
+**The scale factor is forced.** Nothing about that shrinking is a free choice. If a shape of area $A$ dissects into $N$ congruent copies of itself, each copy must have area $A/N$. Area scales as the *square* of length, so a length that shrinks by a factor $r$ shrinks area by $r^2$; setting $r^2=1/N$ gives
 
 $$r=\frac{1}{\sqrt N}.$$
 
-A rep-4 tile therefore halves at each step, and a rep-2 tile shrinks by $1/\sqrt2$ — which is why the right isosceles triangle, cut along the altitude from its right angle to the hypotenuse, is the simplest rep-tile of all.
+A rep-4 tile therefore halves at each step ($r=\tfrac12$), and a rep-2 tile shrinks by $1/\sqrt2$. That second case explains the simplest rep-tile of all: a right isosceles triangle, cut by the altitude from its right angle to the hypotenuse, falls into two half-size copies of itself, so it is rep-2 by inspection.
 
-**Storage and deflation.** Each rep-tile is stored as its prototile polygon plus a fixed list of $N$ affine maps $f_1,\dots,f_N$, each of ratio $1/\sqrt N$, whose images tile the prototile exactly. One deflation step replaces the patch $P$ by
+**Storage and deflation.** Each rep-tile is stored as its prototile polygon together with a fixed list of $N$ affine maps $f_1,\dots,f_N$ — every one a similarity of ratio $1/\sqrt N$ (a rotation and/or reflection times that scale, plus a translation) — whose images tile the prototile exactly. One deflation step replaces the whole patch $P$ by the union of its images under all $N$ maps,
 
 $$P \mapsto \bigcup_{i=1}^{N} f_i(P),$$
 
-so $k$ iterations yield $N^k$ sub-tiles. The growth is why the iteration count is capped: a rep-4 tile reaches 1024 tiles by step 5 and 4096 by step 6.
+and iterating composes the maps: after $k$ steps a sub-tile is the image of the prototile under a chain $f_{i_k}\circ\dots\circ f_{i_1}$, and there are $N^k$ such chains, hence $N^k$ sub-tiles. That exponential growth is why the iteration count is capped — a rep-4 tile reaches 1024 tiles by step 5 and 4096 by step 6.
 
-**The families.** The **L-tromino** (three unit squares) and **L-tetromino** and **P-pentomino** are all rep-4 on the square lattice. The **right isosceles triangle** is rep-2. The interesting one is the **sphinx** hexiamond — six equilateral triangles in an arrowhead shape — which is rep-4 with a twist: one of its four children is a *mirror image*. That makes it the classic non-lattice substitution tiling, since no amount of translation and rotation alone reproduces it.
+**The families.** The **L-tromino** (three unit squares in an L), the **L-tetromino** (four) and the **P-pentomino** (a $2\times2$ block plus one square) are all rep-4 on the square lattice, where the four half-size copies drop neatly onto the integer grid. The **right isosceles triangle** is the lone rep-2. The interesting one is the **sphinx** hexiamond — six equilateral triangles in an arrowhead — which is rep-4 with a twist: one of its four children is a *mirror image* of the other three. Because a reflection is unavoidable, the sphinx is the classic **non-lattice** substitution tiling, one that no amount of translation and rotation alone can reproduce.
 
-**Reading the structure.** Each sub-tile carries a **type** index: the orientation class of its accumulated map, meaning the rotation and reflection built up along the chain $f_{i_k}\circ\dots\circ f_{i_1}$. Colouring by orientation therefore exposes the substitution structure directly — the recursive pattern of how children are turned relative to their parent, which is invisible when every tile is one colour.
+**Reading the structure.** Each sub-tile carries a **type** index: the orientation class of its accumulated map — the rotation and reflection built up along its chain $f_{i_k}\circ\dots\circ f_{i_1}$, with the scale factored out so the class survives every further deflation. Two sub-tiles share a colour under **By Orientation** exactly when they sit at the same rotation-and-flip, so the colouring exposes the substitution's hidden grammar: the recursive rule for how each generation of children is turned relative to its parent, invisible when every tile is one colour. For the sphinx it also makes the reflected children stand out as their own class.
 
-Every dissection is coverage-checked in the module's own pure-Python self-test, since a child map that is slightly wrong still produces a plausible-looking patch.
+**Why it is checked.** A child map that is slightly wrong still produces a plausible-looking patch, so the module's pure-Python self-test doesn't trust the eye: it samples a dense grid of interior points and confirms each is covered by *exactly* one sub-tile (zero gaps, zero overlaps) and that the tile count equals $N^{\text{iterations}}$, for every rep-tile.
 
 ## References
 

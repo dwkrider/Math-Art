@@ -1,0 +1,58 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "ida-surface",
+  "name": "Ida Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "def-parametric",
+    "immersed",
+    "not-implemented",
+    "topological",
+    "tradition-sculptural"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "A companion to the Etruscan Venus in the same family."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "compact": true
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built.",
+      "resume": "The Geometry Center's Topological Zoo and C. Sequin's sculptural pages are the sources; see research/surface-gallery-gap-review.md Part 3."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "C. H. Sequin, topological sculpture pages, University of California, Berkeley.",
+      "The Geometry Center Topological Zoo, University of Minnesota."
+    ]
+  },
+  "tradition": [
+    "sculptural"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

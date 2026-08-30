@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "parabolic-conoid",
+  "name": "Parabolic Conoid",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "ruled",
+    "tradition-architectural",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "the roof-shell conoid a^2 z = x(b^2 - y^2) with b = 1 and amp = 1/a^2 = 0.5, ruling extent 1 -- the operator defaults",
+    "x": "v",
+    "y": "u",
+    "z": "0.5*v*(1 - u**2)",
+    "u_range": [
+      "-1.3",
+      "1.3"
+    ],
+    "v_range": [
+      "0",
+      "1"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "PARABOLIC_CONOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.27 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.02813).",
+    "sources": [
+      "Parabolic conoid (a2 z = x(b2 - y2), the roof-shell conoid with a parabola directrix), sinusoidal cone (cylindrical equation z = k rho cos(n theta), the cone over the sine-wave crown) and helicoidal cone (x = a u cos v, y = a u sin v, z = b u v, the cone joining an apex to a circular helix): R. Ferreol, ibid., chapters \"conoide parabolique\", \"cone sinusoidal\" and \"cone helicoidal\".",
+      "G. W. Hart, \"Curved, yet Straight: Stick Hyperboloids,\" Bridges 2023 Conference Proceedings, pp. 251-258.",
+      "E. Jannasch & J. Macnab, \"The Compound Helical Cone as Kinematic Trace,\" Bridges 2023 Conference Proceedings, pp. 15-22.",
+      "F. A. Farris, \"Spiral Ruled Surfaces,\" Bridges 2022 Conference",
+      "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
+      "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
+      "R. Ferreol, \"Parabolic conoid\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1240_conoide_parabolique_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1240_conoide_parabolique_2.md)."
+    ]
+  },
+  "tradition": [
+    "architectural",
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1240_conoide_parabolique_2"
+  },
+  "named_after": "Parabolic",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

@@ -216,11 +216,15 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         tiling: EnumProperty(name="Tiling", items=TILING_ITEMS,
-                             default='S_TT')
-        nx: IntProperty(name="Cells X", default=5, min=1, max=40)
-        ny: IntProperty(name="Cells Y", default=5, min=1, max=40)
+                             default='S_TT',
+                             description="Which k-uniform tiling to build")
+        nx: IntProperty(name="Cells X", default=5, min=1, max=40,
+                        description="Number of lattice cells along X")
+        ny: IntProperty(name="Cells Y", default=5, min=1, max=40,
+                        description="Number of lattice cells along Y")
         color_by: EnumProperty(
             name="Color By",
+            description="How the tiles are colored",
             items=[('SIDES', "By Sides",
                     "Material per polygon side count"),
                    ('TYPE', "By Tile Type",

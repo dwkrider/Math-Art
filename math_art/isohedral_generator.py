@@ -455,15 +455,20 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         tiling: EnumProperty(name="Tiling", items=TILING_ITEMS,
-                             default='P2')
-        nx: IntProperty(name="Cells X", default=4, min=1, max=30)
-        ny: IntProperty(name="Cells Y", default=4, min=1, max=30)
+                             default='P2',
+                             description="Wallpaper symmetry type of the "
+                                         "isohedral tiling")
+        nx: IntProperty(name="Cells X", default=4, min=1, max=30,
+                        description="Number of lattice cells along X")
+        ny: IntProperty(name="Cells Y", default=4, min=1, max=30,
+                        description="Number of lattice cells along Y")
         shape: FloatProperty(
             name="Edge Shape", default=0.0, min=-1.0, max=1.0,
             description="Edge deformation: 0 = straight polygon tiling, "
                         "non-zero = Escher-like interlocking curved tiles")
         color_by: EnumProperty(
             name="Color By",
+            description="How the tiles are colored",
             items=[('SIDES', "By Sides", "Material per polygon side count"),
                    ('TYPE', "By Tile Type",
                     "Material per symmetry orbit in the unit cell"),

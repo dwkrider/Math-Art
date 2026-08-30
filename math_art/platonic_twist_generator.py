@@ -225,9 +225,12 @@ if _IN_BLENDER:
                    ('OCTA', "Octahedron", ""),
                    ('DODECA', "Dodecahedron", ""),
                    ('ICOSA', "Icosahedron", "")],
-            default='CUBE')
+            default='CUBE',
+            description="Platonic solid whose faces and edges are twisted")
         shrink: FloatProperty(name="Face Shrink", default=0.55,
-                              min=0.1, max=0.95)
+                              min=0.1, max=0.95,
+                              description="How far each face plate is "
+                                          "shrunk toward its centre")
         push: FloatProperty(
             name="Face Push", default=0.35, min=0.0, max=2.0,
             description="Separation of the faces from the solid")
@@ -235,21 +238,28 @@ if _IN_BLENDER:
             name="Half Twists", default=1, min=0, max=4,
             description="Half turns of each connecting ribbon")
         bulge: FloatProperty(name="Ribbon Bulge", default=0.35,
-                             min=0.0, max=1.5)
+                             min=0.0, max=1.5,
+                             description="How far each ribbon bows "
+                                         "outward between the plates")
         smooth_joins: BoolProperty(
             name="Smooth Joins (C1)", default=True,
             description="Ribbons leave and arrive within the plate "
                         "planes (tangent-continuous, no crease); off "
                         "reverts to creased joins with sharp edges")
         band_rows: IntProperty(name="Ribbon Rows", default=16,
-                               min=4, max=64)
+                               min=4, max=64,
+                               description="Mesh divisions along the "
+                                           "length of each ribbon")
         edge_cols: IntProperty(name="Ribbon Columns", default=6,
-                               min=2, max=24)
+                               min=2, max=24,
+                               description="Mesh divisions across the "
+                                           "width of each ribbon")
         thickness: FloatProperty(
             name="Thickness", default=0.04, min=0.0, max=0.5,
             description="Solidify modifier thickness (0 = pure surface)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the sculpture")
 
         def execute(self, context):
             verts, faces, ne, rim = build_platonic_twist(

@@ -101,7 +101,9 @@ if _IN_BLENDER:
                    ('GILBERT2D', "Gilbert 2D",
                     "generalized Hilbert curve filling an "
                     "arbitrary W x H rectangle (Cerveny)")],
-            default='HILBERT3D')
+            default='HILBERT3D',
+            description="Which space-filling curve and dimension "
+                        "to build")
         gw: IntProperty(name="Cells W", default=12, min=1, max=64,
                         description="Gilbert grid width")
         gh: IntProperty(name="Cells H", default=8, min=1, max=64,
@@ -121,9 +123,12 @@ if _IN_BLENDER:
             name="Corner Rounding", default=1, min=0, max=3,
             description="Chaikin corner-cutting passes")
         resolution: IntProperty(name="Bevel Resolution", default=4,
-                                min=1, max=12)
+                                min=1, max=12,
+                                description="Segments around the tube "
+                                            "cross-section")
         size: FloatProperty(name="Size", default=2.0, min=0.05,
-                            max=100.0)
+                            max=100.0,
+                            description="Overall extent of the curve")
 
         def execute(self, context):
             order = self.order

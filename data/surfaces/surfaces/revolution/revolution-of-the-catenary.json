@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "revolution-of-the-catenary",
+  "name": "Revolution of the Catenary",
+  "primary_family": "revolution",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "revolution",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "the catenary z = a cosh(rho/a) revolved about its axis of symmetry; a = 1 and base radius 1.6 fixed to the operator defaults",
+    "x": "u*cos(v)",
+    "y": "u*sin(v)",
+    "z": "cosh(u)",
+    "u_range": [
+      "0",
+      "1.6"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "ALYSSEID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.02217).",
+    "sources": [
+      "Revolution of the catenary (alysseid), z = a cosh(rho/a) about the catenary's axis of symmetry -- the catenoid's companion, and not minimal: R. Ferreol, ibid., chapter \"alysseide\".",
+      "Revolution of the sinusoid, x = a cos(z/b) about Oz -- a string of onion-dome beads meeting in cusp circles on the axis: R. Ferreol, ibid., chapter \"surface de revolution de la sinusoide\" (the chapter dates its study to 2012).",
+      "D. von Seggern, \"CRC Standard Curves and Surfaces\" (1993), p. 304 -- Fresnel's elasticity surface.",
+      "A. Robin (2004), plotted after M. Trott, \"The Mathematica GuideBook for Graphics\" (2004), p. 103 -- the paper bag surface.",
+      "O. Knill (2017); M. A. Villarino and J. C. Varilly (2024) -- the trihyperboloid and its volume ln 256.",
+      "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
+      "R. Ferreol, \"Revolution of the catenary (Alysseid)\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1366_alysseid_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1366_alysseid_2.md)."
+    ]
+  },
+  "alternate_names": [
+    "Alysseid"
+  ],
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1366_alysseid_2"
+  },
+  "named_after": "Revolution",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

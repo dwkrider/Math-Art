@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "lopez-sphere-2-ends-of-index-2",
+  "name": "Lopez sphere (2 ends of index 2)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "annulus 0.375 < |z| < 2.66667",
+    "gauss_map": "B*(1.0 + z**2 + 1.0*i*z*c)/z",
+    "height_differential": "1.0*B*(i + i*z**2 - z*c)/z**2",
+    "parameters": [
+      {
+        "name": "B",
+        "domain": "see the generator's p_from",
+        "default": 0.8137884587711595,
+        "integer": false
+      },
+      {
+        "name": "c",
+        "domain": "see the generator's p_from",
+        "default": 0.7,
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "M3_LOPEZ",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row M3_LOPEZ) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 4.97e-16); dh: matches over 144 complex samples (worst 9.93e-16).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch196_sphere_with_two_ends_of_index_2"
+  },
+  "named_after": "Lopez",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

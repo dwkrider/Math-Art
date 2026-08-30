@@ -1,0 +1,75 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "titeica-surface",
+  "name": "Titeica Surface",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "implemented",
+    "tradition-gallery"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BOX",
+      "radius": 2.6
+    },
+    "polynomial": "x*y*z - 1"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "MATHCURVE",
+      "key": "TITEICA",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
+    "sources": [
+      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com -- the chapters \"parapluie de Cartan\", \"surface de Cassini\", \"surface de Titeica\".  A converted copy of the whole encyclopedia is in research/books/ mathcurve_encyclopedie_formes_mathematiques/.",
+      "G. Titeica, \"Sur une nouvelle classe de surfaces\", Rend. Circ. Mat. Palermo 25 (1908) 180-187 -- the affine spheres of 1907.",
+      "H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own umbrella x^2 = y^2 z, already in the Hauser block above.",
+      "G. D. Cassini, the ovals of 1680; the surface is the classical three-dimensional generalisation of them.",
+      "A. Fresnel (1821) -- the wave surface; the chapter \"Fresnel's wave surface\" prints the quartic and its four singular points.",
+      "A. Gray, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\", 2nd ed., CRC Press (1997) -- named the sine surface.",
+      "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve)."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "gallery"
+  ],
+  "named_after": "Titeica",
+  "ids": {
+    "mathcurve": "ch1349_titeica_2"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

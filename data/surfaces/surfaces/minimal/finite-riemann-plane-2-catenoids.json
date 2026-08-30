@@ -1,0 +1,96 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "finite-riemann-plane-2-catenoids",
+  "name": "Finite Riemann (plane + 2 catenoids)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 1.68333",
+    "punctures": [
+      "z = 1 (radius 0.0768)",
+      "z = -1 (radius 0.0768)"
+    ],
+    "gauss_map": "t*(3.0 + z**2)/(-1.0 + z**2)",
+    "height_differential": "(3.0 + z**2)/(-1.0 + z**2)",
+    "parameters": [
+      {
+        "name": "t",
+        "domain": "see the generator's p_from",
+        "default": 0.2,
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "M3_FRIEM",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row M3_FRIEM) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "cross_checked": [
+      {
+        "source": "D. Hoffman, H. Karcher, 'Complete embedded minimal surfaces of finite total curvature' (1995) (minsurf ch190)",
+        "agrees": true,
+        "detail": "'These surfaces are never embedded. This is an illustration of the Lopez-Ros theorem which asserts that a complete, embedded minimal sphere of finite total curvature must be the plane or catenoid.'"
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathcurve": "ch1330_weber_2",
+    "msblog": "ch190_finite_riemann"
+  },
+  "alternate_names": [
+    "Riemann finite minimal surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

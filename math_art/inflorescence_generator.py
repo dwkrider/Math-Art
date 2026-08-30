@@ -145,18 +145,22 @@ if _IN_BLENDER:
             items=[('ARCHETYPE', "Architecture", "One of the Table 3.1 "
                                  "architectures"),
                    ('SPECIES', "Species", "A published reconstruction")],
-            default='ARCHETYPE')
+            default='ARCHETYPE',
+            description="Build a generic Table 3.1 architecture or a "
+                        "published species reconstruction")
         archetype: EnumProperty(
             name="Architecture",
             items=[(k, v["label"], f"n={v['n']}, m={v['m']}, "
                     f"{'determinate' if v['determinate'] else 'indeterminate'}")
                    for k, v in sorted(inf.ARCHETYPES.items())],
-            default='RACEME')
+            default='RACEME',
+            description="Which Table 3.1 inflorescence architecture to build")
         species: EnumProperty(
             name="Species",
             items=[(k, v["label"], v["label"])
                    for k, v in sorted(inf.SPECIES.items())],
-            default='LILAC')
+            default='LILAC',
+            description="Which published species reconstruction to build")
 
         orders: IntProperty(
             name="Orders", default=3, min=1, max=6,
@@ -186,7 +190,9 @@ if _IN_BLENDER:
             description="Reveal flowers up to this point in the "
                         "flowering sequence -- keyframe it to animate "
                         "the bloom running through the structure")
-        show_flowers: BoolProperty(name="Flowers", default=True)
+        show_flowers: BoolProperty(
+            name="Flowers", default=True,
+            description="Add drawn geometry at each flower position")
 
         branch_mapping: BoolProperty(
             name="Branch Mapping", default=True,
@@ -194,15 +200,21 @@ if _IN_BLENDER:
                         "the same order, so gradients align distally")
 
         radius: FloatProperty(name="Stem Radius", default=0.01,
-                              min=0.0001, max=0.5)
+                              min=0.0001, max=0.5,
+                              description="Bevel depth of the stem tubes")
         resolution: IntProperty(name="Bevel Resolution", default=2,
-                                min=0, max=16)
+                                min=0, max=16,
+                                description="Roundness of the stem tubes")
         order_taper: FloatProperty(
             name="Order Taper", default=0.7, min=0.1, max=1.0,
             description="Stem radius ratio between successive orders")
         flower_size: FloatProperty(name="Flower Size", default=0.03,
-                                   min=0.001, max=0.5)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+                                   min=0.001, max=0.5,
+                                   description="Size of the marker drawn "
+                                               "at each flower")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size; fits the result into "
+                                         "a 2 m cube times this factor")
 
         def execute(self, context):
             kw = dict(orders=self.orders, nodes=self.nodes,

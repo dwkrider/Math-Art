@@ -1,12 +1,23 @@
 # Orbis / Holey Roller
 
+![Orbis / Holey Roller](../images/orbis.png)
+
 ## Overview
 
 Add an Orbis / Holey Roller -- two torus rings hinged at 45 degrees and fused into one rolling solid.
 
-Two torus rings joined at a hinge into a single rigid two-holed solid. Peer Clahsen designed the **Orbis** — two wooden rings fused where they meet, their planes folded to about $45°$ — as one of his *Objeux* play objects for the Swiss toy company Naef. Kenneth Brecher and the woodworker Randy Rhine later built a large sculptural version, the **Holey Roller**.
+Two torus rings joined at a hinge into a single rigid, two-holed rolling solid. Peer Clahsen designed the **Orbis** — two wooden rings fused where they meet, their planes folded to about $45°$ — as one of his *Objeux* play objects for the Swiss toy company Naef. Kenneth Brecher and the woodworker Randy Rhine later built a large sculptural version, the **Holey Roller**. It rolls on the outer rims of its two rings, and the path wobbles and meanders rather than running straight: contact alternates between rings whose planes are tilted relative to one another, so the axis of rotation keeps changing.
 
-It rolls on the outer rims of its two rings, and the path it takes wobbles and meanders rather than running straight — the contact alternates between rings whose planes are tilted relative to one another, so the axis of rotation keeps changing.
+The generator has no separate modes — it always builds the same object, a genus-2 solid, and every control shapes that one body.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Rollers ▸ Orbis / Holey Roller*.
+2. **Set the Hinge Angle** — the dihedral angle between the two ring planes, and the whole design. About $45°$ is Clahsen's original, the setting that gives the meandering roll; toward $90°$ the two rings grow perpendicular and the object rolls more predictably; $180°$ flattens them into one plane, a coplanar figure-eight.
+3. **Set the Tube Radius** — the thickness of each ring as a fraction of its radius (0.02–0.49). Fatter tubes give a chunkier, more sphere-like roller; thin ones read as two wire hoops.
+4. **Set the Join Depth** — how deeply the two tube *surfaces* are pushed past touching at their single contact spot before they are welded, as a fraction of the tube radius. Small values leave a shallow glued seam; the centre circles of the two rings stay well apart at every setting, so the rings never thread through each other.
+5. **Choose the resolution and size.** Ring Segments sets the facet count around each ring circle and Tube Segments the count around the tube; Scale fits the finished solid into a 2 m cube times the scale factor.
+6. **Read the report.** On each build the operator prints the vertex and face totals (`V=… F=…`) of the finished watertight solid — a quick check that the Boolean union closed up into one clean mesh.
 
 ## Options
 
@@ -17,23 +28,35 @@ It rolls on the outer rims of its two rings, and the path it takes wobbles and m
 | Tube Radius | 0.35 | Ring thickness (fraction of the ring radius) Range 0.02-0.49. |
 | Hinge Angle | 45 | Dihedral angle between the two ring planes at the hinge (about 45 degrees on the original Orbis; 180 = coplanar figure-eight) Range 5-180. |
 | Join Depth | 0.5 | Depth of the surface weld where the two tube surfaces are pushed past tangency at the contact spot, as a fraction of the tube radius (small = a shallow glued joint) Range 0.05-1. |
-| Ring Segments | 96 | Range 12-512. |
-| Tube Segments | 32 | Range 6-128. |
-| Scale | 1 | Range 0.01-100. |
+| Ring Segments | 96 | Segments around each ring Range 12-512. |
+| Tube Segments | 32 | Segments around the tube cross-section Range 6-128. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 
 ## How it works
 
-**The fold.** The two ring planes share a **hinge line** and are folded to a dihedral angle — about $45°$ in Clahsen's original. Each ring is an ordinary torus of major radius $R$ and minor radius $r$, centred so that the hinge line is a common chord: the rings meet along it, and fusing them there makes one rigid body of genus 2.
+**In plain terms.** Take two identical rings — think of two stiff bracelets. Lay them so they share one straight line, the way the two covers of a partly opened book share their spine, and tip one relative to the other so their flat faces make a shallow V. Now glue them solidly where they cross. What you have is a single stiff, two-holed lump — not a chain of two links, but one welded object. Set it rolling on a table and it never rolls in a straight line, because it keeps handing itself off from one ring to the other, and the two rings point in different directions, so it wanders. Everything below is just the bookkeeping that places the two rings exactly so, and the trick that fuses them into one clean surface.
 
-The fold angle is the whole design. At $0°$ the rings coincide; at $90°$ they are perpendicular and the object becomes symmetric enough to roll predictably. The intermediate angle is what produces the wobble — the two contact circles are tilted relative to each other, so as the solid transfers from one rim to the other the instantaneous axis swings, and the path curves.
+**The fold, precisely.** The shared line — the **hinge** — is taken to be the $y$-axis. Each ring lives in a plane that contains this hinge, splayed by half the dihedral angle to either side of the upright bisector. Writing $\alpha$ for that half-angle, one ring's in-plane radial direction is
 
-**Rolling on the rims.** Contact is on the outer equator of each ring, a circle of radius $R+r$. A single such ring rolling alone would trace a straight line, as a wheel does. What makes the Orbis meander is that it never rolls on one ring for long: the tilt means the contact point migrates around the rim and eventually transfers to the other ring, whose plane points elsewhere. The result is a path made of arcs rather than a line — deterministic, but not obviously so to watch.
+$$d = (\sin\alpha,\ 0,\ \cos\alpha),\qquad e = (0,1,0),\qquad n = e \times d,$$
 
-**Genus and rigidity.** Fusing the rings at the hinge gives a single connected solid with two holes, so its surface has genus 2 and Euler characteristic $-2$. It is a *rigid* object, not a linkage: the hinge is a name for where the planes meet, not a joint.
+with $e$ pointing along the hinge and $n$ the plane's normal. Each ring is then an ordinary torus of major radius $R$ and minor (tube) radius $r$, its points swept out as
 
-**Construction.** Both tori are generated at the same major and minor radii, rotated to their respective planes about the shared hinge line, and merged; the intersection region is welded so the result is one watertight manifold rather than two overlapping shells.
+$$c + (R + r\cos v)\,(\cos u\,d + \sin u\,e) + r\sin v\,\;n,$$
+
+where $u$ runs around the ring and $v$ around the tube. Geometrically $d$ and $e$ span the ring's own plane and $n$ lifts the tube off it; changing the hinge angle only re-aims $d$ and $n$, so the two rings pivot about their common $y$-axis exactly like a hinge.
+
+**Placing them so the surfaces just kiss.** The subtle part is *where* to centre each ring. If the two centre circles were allowed to pass close, the rings would thread through one another and you would have a chain, not a solid. So each ring's centre is set a distance $a = R + g$ from the hinge, measured along $d$, with
+
+$$g = \frac{2r - \delta}{2\sin\alpha},$$
+
+where $\delta$ is the weld depth (the Join Depth as a fraction of $r$). This choice makes the closest approach of the two *centre circles* equal to $2r - \delta$, which stays larger than $r$ — so the centrelines never meet. Only the tube **surfaces** overlap, and only by the shallow depth $\delta$, at a single contact patch facing across the wedge. In other words the rings touch skin-to-skin at one spot while their cores stay comfortably apart: exactly the condition for gluing rather than linking.
+
+**Fusing into one body.** A Boolean **union** of the two solid tori (an exact solver, then a weld of coincident vertices) turns the shallow overlap into one connected surface. Because two rings joined at a patch have two independent holes, the result is a closed surface of **genus 2**, with Euler characteristic $\chi = 2 - 2g = -2$. It is a genuinely *rigid* object, not a linkage — the "hinge" is only the name of the line the planes share, never a moving joint.
+
+**Why it wobbles as it rolls.** Contact with the table is on the outer equator of whichever ring is down, a circle of radius $R + r$. A lone ring rolling on that rim would trace a straight line, exactly as a wheel does. The Orbis meanders because it never stays on one ring: the tilt makes the contact point migrate around the rim until it hands off to the other ring, whose plane aims elsewhere, so the instantaneous axis of rotation swings and the ground track becomes a sequence of arcs rather than a line. The motion is fully deterministic — the fold angle fixes it — but far from obvious to the eye, which is the charm of the object.
 
 ## References
 

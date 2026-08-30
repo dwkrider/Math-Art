@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "richmond-generalized-g-eq-z-k",
+  "name": "Richmond (generalized, g = z^k)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "-cos(2*v)/(4*u**2) - u**4*cos(4*v)/8",
+    "y": "sin(2*v)/(4*u**2) + u**4*sin(4*v)/8",
+    "z": "u*cos(v)",
+    "u_range": [
+      "0.35",
+      "1.25"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "RICHMOND_K",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row RICHMOND_K) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch011_planar_enneper"
+  },
+  "alternate_definitions": [
+    {
+      "mode": "weierstrass",
+      "fidelity": "exact",
+      "exactness": "numerical-integral",
+      "gauss_map": "z**k",
+      "height_differential": "1",
+      "parameters": [
+        {
+          "name": "k",
+          "domain": "see the generator's p_from",
+          "default": 4,
+          "integer": true
+        }
+      ],
+      "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack.",
+      "domain": "annulus 0.25 < |z| < 1.25"
+    }
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

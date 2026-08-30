@@ -168,7 +168,8 @@ if _IN_BLENDER:
                     "Honda's tree-like body (1971): bifurcation from "
                     "two branching angles and two length ratios, with "
                     "the published plate parameters")],
-            default='TREE')
+            default='TREE',
+            description="Which construction to build")
         honda_plate: EnumProperty(
             name="Plate",
             items=[('PLATE_I', "I - axis lost",
@@ -186,7 +187,9 @@ if _IN_BLENDER:
                    ('PLATE_VI_FLAT', "VI flat - weak dominance",
                     "theta 0/-45, R 0.7/0.9"),
                    ('CUSTOM', "Custom", "use the sliders below")],
-            default='PLATE_II')
+            default='PLATE_II',
+            description="Honda's published plate parameter set "
+                        "(or Custom to use the sliders)")
         theta1: FloatProperty(
             name="Theta 1", default=0.0, min=-90.0, max=90.0,
             description="First branching angle (degrees)")
@@ -268,7 +271,9 @@ if _IN_BLENDER:
                    ('CURVE', "Curve",
                     "keep a curve object with bevel (only honoured "
                     "when no spheres are requested)")],
-            default='MESH')
+            default='MESH',
+            description="Result as a mesh or a bevelled curve "
+                        "(spheres force mesh output)")
 
         def execute(self, context):
             arity = self.arity

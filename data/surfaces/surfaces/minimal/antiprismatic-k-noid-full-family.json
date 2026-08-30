@@ -1,0 +1,110 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "antiprismatic-k-noid-full-family",
+  "name": "Antiprismatic k-noid (full family)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 2.66667",
+    "punctures": [
+      "z = 0.6 (radius 0.0873)",
+      "z = -0.3+0.519615i (radius 0.0873)",
+      "z = -0.3-0.519615i (radius 0.0873)",
+      "z = 0.833333+1.44338i (radius 0.242)",
+      "z = -1.66667 (radius 0.242)",
+      "z = 0.833333-1.44338i (radius 0.242)"
+    ],
+    "gauss_map": "rho*z**(-1 + nn)*(z**nn + 1.0/a**nn)/(z**nn - a**nn)",
+    "height_differential": "z**(-1 + nn)*(z**nn - a**nn)*(z**nn + 1.0/a**nn)/((z**nn - b**nn)**2*(z**nn + 1.0/b**nn)**2)",
+    "parameters": [
+      {
+        "name": "a",
+        "domain": "see the generator's p_from",
+        "default": 0.7442667943811709,
+        "integer": false
+      },
+      {
+        "name": "b",
+        "domain": "see the generator's p_from",
+        "default": 0.6,
+        "integer": false
+      },
+      {
+        "name": "nn",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      },
+      {
+        "name": "rho",
+        "domain": "see the generator's p_from",
+        "default": 0.4122739837748027,
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "ANTIPRISM_KNOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row ANTIPRISM_KNOID) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 7.64e-15); dh: matches over 144 complex samples (worst 3.55e-16).",
+    "sources": [
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch174_antiprismatic_k_noids"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

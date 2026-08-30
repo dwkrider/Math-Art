@@ -9,6 +9,15 @@
 # Both are stored from their original published coordinates and centred /
 # fit to a 2 m cube on build.
 #
+# Brehm's FLAT polyhedral torus (the diplotorus) is a third construction:
+# two regular n-gon rings joined by 2n skew triangles and n rectangles, so
+# arranged that the face angles at every vertex sum to exactly 360 degrees.
+# Such a polyhedron is intrinsically FLAT -- it carries the metric of a flat
+# torus -- and cannot be convex, since a convex vertex always falls short of
+# 360; by Gauss-Bonnet the total angle defect is 2.pi.chi, so a flat
+# polyhedron must have chi = 0 and hence be toroidal.  Its faces stop meeting
+# one another at n = 7.
+#
 # This module also builds parametric regular toroids -- a ring of congruent
 # polygon cross-sections (prism / antiprism ring) -- and tiled toroids, where
 # any of the uniform plane tilings (regular triangular/square/hexagonal, the
@@ -23,6 +32,13 @@
 #   69-80; and "On three classes of regular toroids".
 # - B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the
 #   toroidal-polyhedron tradition.
+# - Ulrich Brehm (1978), the flat polyhedral torus / diplotorus; the model
+#   was transmitted by Guy Valette.  No paper is named by the source, so the
+#   attribution is reproduced as given rather than assigned a citation.
+#   Coordinates and face lists follow Robert Ferreol, "Encyclopedie des
+#   formes mathematiques remarquables" (mathcurve.com), "tore plat".
+# - Flatness and the total angle defect: the discrete Gauss-Bonnet theorem,
+#   sum over vertices of (2.pi - angle sum) = 2.pi.chi.
 # - Johannes Kepler, "Harmonices Mundi" (1619); Branko Grunbaum & G. C.
 #   Shephard, "Tilings and Patterns" (1987) -- the uniform tilings wrapped
 #   onto the torus here (see tiling_generator.py).
@@ -231,6 +247,50 @@ def build_polyhedral_torus(m, k, R, r, twist):
     return verts, faces
 
 
+def build_flat_torus(n, alpha=0.0, radius=1.0):
+    """Brehm's FLAT polyhedral torus (the diplotorus) of order n.
+
+    Two regular n-gons, one at z = -alpha and one at z = +alpha,
+
+        A_k = (cos(2k.pi/n), sin(2k.pi/n), -alpha)
+        B_k = (cos(2k.pi/n), sin(2k.pi/n), +alpha)
+
+    carry 3n faces: n triangles (A_k, A_k+1, B_k+3), n congruent triangles
+    (B_k, B_k-1, A_k-3), and the n rectangles (A_k, A_k+1, B_k+1, B_k).
+    V - E + F = 2n - 5n + 3n = 0, so the surface is a torus.
+
+    It is FLAT in the intrinsic sense: the five face angles at every vertex
+    sum to exactly 360 degrees.  Three of the five come from the three
+    triangles at that vertex, which are congruent to one another and
+    contribute the triangle's three DIFFERENT angles (each vertex sees the
+    angle opposite a different side), so those three sum to 180; the two
+    rectangles contribute a right angle each.  That argument never uses
+    alpha, so every member of the family is flat -- alpha only sets how tall
+    the torus is.  A vertex of a convex polyhedron always has angle sum
+    below 360, so a flat polyhedron cannot be convex; by Gauss-Bonnet the
+    total curvature is 2.pi.chi = 0, which forces the torus.
+
+    alpha = 0 picks the half-height that makes the n side faces square.
+    The faces stop intersecting one another at n = 7.
+    """
+    if alpha <= 0.0:
+        alpha = math.sin(math.pi / n)       # square side faces
+
+    def ring(z):
+        return [(radius * math.cos(2 * math.pi * k / n),
+                 radius * math.sin(2 * math.pi * k / n), z) for k in range(n)]
+    A = ring(-alpha)
+    B = ring(alpha)
+    verts = A + B                            # A_k = k, B_k = n + k
+    faces = []
+    for k in range(n):
+        faces.append([k, (k + 1) % n, n + (k + 3) % n])           # "red"
+        faces.append([n + k, n + (k - 1) % n, (k - 3) % n])       # "blue"
+    for k in range(n):
+        faces.append([k, (k + 1) % n, n + (k + 1) % n, n + k])    # rectangles
+    return verts, faces
+
+
 def build_tiled_torus(name, nu, nv, R, r):
     """Wrap one of the uniform planar tilings from the tiling engine onto a
     torus: the tiling's lattice vector b1 maps to the major circle (nu
@@ -285,7 +345,211 @@ def build_tiled_torus(name, nu, nv, R, r):
     return verts, faces
 
 
+def _tris(V, F):
+    """Fan-triangulate every face; used by the self-intersection check."""
+    out = []
+    for fi, f in enumerate(F):
+        for i in range(1, len(f) - 1):
+            out.append((fi, (V[f[0]], V[f[i]], V[f[i + 1]]),
+                        (f[0], f[i], f[i + 1])))
+    return out
+
+
+def _seg_hits_tri(p, q, t, eps=1e-9):
+    """Moller-Trumbore: does the open segment p->q pierce triangle t?"""
+    (a, b, c) = t
+    e1 = [b[i] - a[i] for i in range(3)]
+    e2 = [c[i] - a[i] for i in range(3)]
+    d = [q[i] - p[i] for i in range(3)]
+    h = [d[1] * e2[2] - d[2] * e2[1], d[2] * e2[0] - d[0] * e2[2],
+         d[0] * e2[1] - d[1] * e2[0]]
+    det = sum(e1[i] * h[i] for i in range(3))
+    if abs(det) < eps:
+        return False                        # parallel; grazing is not a hit
+    s = [p[i] - a[i] for i in range(3)]
+    u = sum(s[i] * h[i] for i in range(3)) / det
+    if u < eps or u > 1.0 - eps:
+        return False
+    qv = [s[1] * e1[2] - s[2] * e1[1], s[2] * e1[0] - s[0] * e1[2],
+          s[0] * e1[1] - s[1] * e1[0]]
+    v = sum(d[i] * qv[i] for i in range(3)) / det
+    if v < eps or u + v > 1.0 - eps:
+        return False
+    t0 = sum(e2[i] * qv[i] for i in range(3)) / det
+    return eps < t0 < 1.0 - eps
+
+
+def _self_intersects(V, F):
+    """True if any face edge pierces the interior of a non-adjacent face.
+
+    Only faces sharing an EDGE are skipped.  Two faces meeting at a single
+    vertex must still be tested -- they are free to cross away from that
+    vertex, and around a vertex of high degree they often do.  The
+    Moller-Trumbore epsilons exclude contact at the shared vertex itself.
+    """
+    T = _tris(V, F)
+    for fi, tri, tidx in T:
+        for fj, _, sidx in T:
+            if fi == fj or len(set(F[fi]) & set(F[fj])) >= 2:
+                continue
+            for i in range(3):
+                if _seg_hits_tri(V[sidx[i]], V[sidx[(i + 1) % 3]], tri):
+                    return True
+    return False
+
+
+def _seg_seg_dist(p1, q1, p2, q2):
+    """Exact distance between two closed segments (Ericson, RTCD 5.1.9)."""
+    d1 = [q1[i] - p1[i] for i in range(3)]
+    d2 = [q2[i] - p2[i] for i in range(3)]
+    r = [p1[i] - p2[i] for i in range(3)]
+    a = sum(x * x for x in d1)
+    e = sum(x * x for x in d2)
+    f = sum(d2[i] * r[i] for i in range(3))
+    eps = 1e-15
+    if a <= eps and e <= eps:
+        return math.dist(p1, p2)
+    if a <= eps:
+        s, t = 0.0, min(1.0, max(0.0, f / e))
+    else:
+        c = sum(d1[i] * r[i] for i in range(3))
+        if e <= eps:
+            t, s = 0.0, min(1.0, max(0.0, -c / a))
+        else:
+            b = sum(d1[i] * d2[i] for i in range(3))
+            den = a * e - b * b
+            s = min(1.0, max(0.0, (b * f - c * e) / den)) if den > eps else 0.0
+            t = (b * s + f) / e
+            if t < 0.0:
+                t, s = 0.0, min(1.0, max(0.0, -c / a))
+            elif t > 1.0:
+                t, s = 1.0, min(1.0, max(0.0, (b - c) / a))
+    c1 = [p1[i] + d1[i] * s for i in range(3)]
+    c2 = [p2[i] + d2[i] * t for i in range(3)]
+    return math.dist(c1, c2)
+
+
+def _pt_poly_dist(p, poly):
+    """Distance from a point to a planar convex polygon (fan-triangulated)."""
+    best = min(math.dist(p, v) for v in poly)
+    n = len(poly)
+    for i in range(1, n - 1):
+        a, b, c = poly[0], poly[i], poly[i + 1]
+        u = [b[j] - a[j] for j in range(3)]
+        w = [c[j] - a[j] for j in range(3)]
+        nrm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2],
+               u[0] * w[1] - u[1] * w[0]]
+        ln = math.sqrt(sum(x * x for x in nrm))
+        if ln < 1e-15:
+            continue
+        nrm = [x / ln for x in nrm]
+        h = sum(nrm[j] * (p[j] - a[j]) for j in range(3))
+        q = [p[j] - h * nrm[j] for j in range(3)]        # projection
+        # inside test via barycentric coordinates
+        v0, v1, v2 = w, u, [q[j] - a[j] for j in range(3)]
+        d00 = sum(x * x for x in v0)
+        d01 = sum(v0[j] * v1[j] for j in range(3))
+        d11 = sum(x * x for x in v1)
+        d20 = sum(v2[j] * v0[j] for j in range(3))
+        d21 = sum(v2[j] * v1[j] for j in range(3))
+        den = d00 * d11 - d01 * d01
+        if abs(den) < 1e-18:
+            continue
+        s = (d11 * d20 - d01 * d21) / den
+        t = (d00 * d21 - d01 * d20) / den
+        if s >= 0.0 and t >= 0.0 and s + t <= 1.0:
+            best = min(best, abs(h))
+    return best
+
+
+def _face_gap(V, f, g):
+    """Exact minimum distance between two convex faces (0 if they touch)."""
+    P = [V[i] for i in f]
+    Q = [V[i] for i in g]
+    best = min(_pt_poly_dist(p, Q) for p in P)
+    best = min(best, min(_pt_poly_dist(q, P) for q in Q))
+    for i in range(len(P)):
+        for j in range(len(Q)):
+            best = min(best, _seg_seg_dist(P[i], P[(i + 1) % len(P)],
+                                           Q[j], Q[(j + 1) % len(Q)]))
+    return best
+
+
+def _min_disjoint_gap(V, F):
+    """Smallest gap between faces sharing NO vertex.
+
+    The transversal piercing test above is blind to faces that merely TOUCH,
+    and a construction as symmetric as this one produces exactly that:
+    at n < 7 two triangles meet edge-to-edge rather than crossing through
+    each other.  Measuring the gap catches both cases.
+    """
+    best = float('inf')
+    for i in range(len(F)):
+        for j in range(i + 1, len(F)):
+            if set(F[i]) & set(F[j]):
+                continue
+            best = min(best, _face_gap(V, F[i], F[j]))
+    return best
+
+
+def _vertex_angle_sums(V, F):
+    """Total face angle at each vertex (2.pi exactly <=> intrinsically flat)."""
+    tot = [0.0] * len(V)
+    for f in F:
+        m = len(f)
+        for i in range(m):
+            o = V[f[i]]
+            u = [V[f[(i - 1) % m]][j] - o[j] for j in range(3)]
+            w = [V[f[(i + 1) % m]][j] - o[j] for j in range(3)]
+            lu = math.sqrt(sum(x * x for x in u))
+            lw = math.sqrt(sum(x * x for x in w))
+            c = sum(u[j] * w[j] for j in range(3)) / (lu * lw)
+            tot[f[i]] += math.acos(max(-1.0, min(1.0, c)))
+    return tot
+
+
 def _self_test():
+    # Brehm's flat polyhedral torus: Euler characteristic 0, every edge in
+    # exactly two faces, all 2n triangles congruent, EVERY vertex angle sum
+    # exactly 2.pi (the flatness), and embedded (no self-intersection) from
+    # n = 7 on.  Checked over a range of n and of the free half-height.
+    for n in (5, 6, 7, 8, 9, 11, 13):
+        for alpha in (0.0, 0.25, 0.8):
+            V, F = build_flat_torus(n, alpha)
+            E = {}
+            for f in F:
+                for i in range(len(f)):
+                    a, b = f[i], f[(i + 1) % len(f)]
+                    E[(min(a, b), max(a, b))] = \
+                        E.get((min(a, b), max(a, b)), 0) + 1
+            assert len(V) == 2 * n and len(F) == 3 * n, (len(V), len(F))
+            assert len(E) == 5 * n, len(E)
+            assert all(c == 2 for c in E.values()), "edge not in exactly 2"
+            assert len(V) - len(E) + len(F) == 0, "not a torus"
+            # the 2n triangles are all congruent to one another
+            sides = set()
+            for f in F:
+                if len(f) != 3:
+                    continue
+                sides.add(tuple(sorted(
+                    round(math.dist(V[f[i]], V[f[(i + 1) % 3]]), 9)
+                    for i in range(3))))
+            assert len(sides) == 1, ("triangles not congruent", n, sides)
+            # the headline: intrinsically flat at every vertex
+            worst = max(abs(s - 2 * math.pi) for s in _vertex_angle_sums(V, F))
+            assert worst < 1e-12, ("angle defect", n, alpha, worst)
+        # Ferreil's embedding threshold: the faces stop meeting at n = 7.
+        V, F = build_flat_torus(n, 0.0)
+        gap = _min_disjoint_gap(V, F)
+        assert not _self_intersects(V, F), ("faces pierce", n)
+        if n < 7:
+            assert gap < 1e-9, ("expected touching faces below n=7", n, gap)
+        else:
+            assert gap > 1e-3, ("expected an embedded torus", n, gap)
+    print("flat torus  n=5..13  chi=0, triangles congruent, vertex angle "
+          "sums = 2.pi (defect < 1e-12); faces touch at n=5,6 and the "
+          "torus is embedded from n=7 on")
+
     for kind, S in TOROIDS.items():
         V, F = build_toroid(kind)
         E = {}
@@ -338,18 +602,52 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    class MESH_OT_toroidal_polyhedron_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_toroidal_polyhedron_add(bpy.types.Operator,
+                                          _net_style.NetStyleProps):
         """Add a toroidal (genus-1) polyhedron: the Csaszar polyhedron
         (no diagonals) or its dual the Szilassi polyhedron"""
         bl_idname = "mesh.toroidal_polyhedron_add"
         bl_label = "Toroidal Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        solid: EnumProperty(name="Solid", items=TOROID_ITEMS)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        solid: EnumProperty(name="Solid", items=TOROID_ITEMS,
+                            description="Which toroidal (genus-1) "
+                                        "polyhedron to build")
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "Plain closed polyhedron"),
+                   _net_style.net_enum_item()],
+            default='SOLID',
+            description="How the polyhedron is rendered as geometry")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'solid')
+            lay.prop(self, 'style')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
+            lay.prop(self, 'scale')
 
         def execute(self, context):
             V, F = build_toroid(self.solid)
+            if self.style == 'NET':
+                return _net_style.emit_net_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], TOROIDS[self.solid]["name"],
+                    hint=("the Borromean Rings are three separate "
+                          "rings, not one surface; unfold a single "
+                          "ring instead"
+                          if self.solid == 'BORROMEAN' else None))
             me = bpy.data.meshes.new(TOROIDS[self.solid]["name"])
             me.from_pydata([tuple(c * self.scale for c in v) for v in V],
                            [], [tuple(f) for f in F])
@@ -379,7 +677,8 @@ if _IN_BLENDER:
     TORUS_TILING_ITEMS = [it for it in _tg.TILING_ITEMS
                           if it[0] not in _TORUS_TILING_EXCLUDE]
 
-    class MESH_OT_polyhedral_torus_add(bpy.types.Operator):
+    class MESH_OT_polyhedral_torus_add(bpy.types.Operator,
+                                       _net_style.NetStyleProps):
         """Add a regular polyhedral torus: a ring of congruent polygon
         cross-sections (prism / antiprism ring), or a uniform tiling
         (triangles, hexagons, and the other Archimedean/Laves patterns
@@ -390,21 +689,40 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Pattern",
+            description="Whether to build a polygon-ring toroid or wrap "
+                        "a uniform tiling onto the torus",
             items=[('RING', "Polygon Ring",
                     "A ring of congruent polygon cross-sections"),
                    ('TILING', "Uniform Tiling",
-                    "A uniform plane tiling wrapped onto the torus")],
+                    "A uniform plane tiling wrapped onto the torus"),
+                   ('FLAT', "Flat Torus (Brehm)",
+                    "Brehm's flat polyhedral torus: two n-gon rings joined "
+                    "by skew triangles and rectangles, whose face angles "
+                    "sum to exactly 360 degrees at every vertex")],
             default='RING')
+        flat_sides: IntProperty(
+            name="Ring Sides", default=7, min=5, max=64,
+            description="Vertices in each of the two rings (the faces stop "
+                        "meeting one another at 7)")
+        flat_height: FloatProperty(
+            name="Ring Separation", default=0.0, min=0.0, max=5.0,
+            description="Half the distance between the two rings "
+                        "(0 = auto, the value that makes the side faces "
+                        "square)")
         segments: IntProperty(name="Segments", default=12, min=3, max=64,
                               description="Sections around the major circle")
         sides: IntProperty(name="Cross-section Sides", default=4, min=3,
-                           max=32)
+                           max=32,
+                           description="Number of sides of each polygon "
+                                       "cross-section")
         antiprism: BoolProperty(
             name="Antiprism Ring", default=False,
             description="Half-step twist between sections (triangular "
                         "faces) instead of a prism ring (quads)")
         tiling: EnumProperty(name="Tiling", items=TORUS_TILING_ITEMS,
-                             default='HEX')
+                             default='HEX',
+                             description="Which uniform plane tiling to "
+                                         "wrap onto the torus")
         cells_u: IntProperty(
             name="Cells Around", default=12, min=3, max=64,
             description="Tiling periods around the major circle")
@@ -412,11 +730,14 @@ if _IN_BLENDER:
             name="Cells Through", default=6, min=2, max=48,
             description="Tiling periods around the minor circle (tube)")
         major: FloatProperty(name="Major Radius", default=1.0, min=0.1,
-                             max=10.0)
+                             max=10.0,
+                             description="Radius of the torus ring")
         minor: FloatProperty(name="Minor Radius", default=0.4, min=0.02,
-                             max=5.0)
+                             max=5.0,
+                             description="Radius of the torus tube")
         style: EnumProperty(
             name="Style",
+            description="How the torus surface is rendered",
             items=[('SOLID', "Solid", "Plain closed torus"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -429,10 +750,11 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
-                    "segment per face")],
+                    "segment per face"),
+            _net_style.net_enum_item()],
             default='SOLID')
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
+            name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo face frame width")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.001, max=1.0,
@@ -456,10 +778,16 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         def execute(self, context):
-            if self.mode == 'TILING':
+            if self.mode == 'FLAT':
+                V, F = build_flat_torus(self.flat_sides, self.flat_height,
+                                        self.major)
+                name = "Flat Torus %d" % self.flat_sides
+            elif self.mode == 'TILING':
                 V, F = build_tiled_torus(self.tiling, self.cells_u,
                                          self.cells_v, self.major, self.minor)
                 name = "Tiled Torus %s" % self.tiling
@@ -484,10 +812,13 @@ if _IN_BLENDER:
             except Exception:
                 pass
             me.update()
-            if self.style == 'FACETS':
+            if self.style in ('FACETS', 'NET'):
                 Vf = [tuple(v.co) for v in me.vertices]
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
+                if self.style == 'NET':
+                    return _net_style.emit_net_from_operator(
+                        self, context, Vf, Ff, name)
                 try:
                     from .styles import facet_style
                 except ImportError:
@@ -540,15 +871,30 @@ if _IN_BLENDER:
                                        self.node_radius)
             elif self.style == 'WIREFRAME':
                 obj.display_type = 'WIRE'
-            self.report({'INFO'}, "%s: V=%d F=%d (genus 1)" %
-                        (name, len(V), len(F)))
+            if self.mode == 'FLAT':
+                defect = max(abs(s - 2 * math.pi)
+                             for s in _vertex_angle_sums(V, F))
+                msg = ("%s: V=%d F=%d, worst vertex angle defect %.1e "
+                       "(0 = intrinsically flat)" %
+                       (name, len(V), len(F), defect))
+                if self.flat_sides < 7:
+                    self.report({'WARNING'}, msg + " -- faces meet below 7 "
+                                             "sides; use 7 or more to embed")
+                else:
+                    self.report({'INFO'}, msg)
+            else:
+                self.report({'INFO'}, "%s: V=%d F=%d (genus 1)" %
+                            (name, len(V), len(F)))
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'mode')
-            if self.mode == 'TILING':
+            if self.mode == 'FLAT':
+                lay.prop(self, 'flat_sides')
+                lay.prop(self, 'flat_height')
+            elif self.mode == 'TILING':
                 lay.prop(self, 'tiling')
                 lay.prop(self, 'cells_u')
                 lay.prop(self, 'cells_v')
@@ -557,7 +903,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'sides')
                 lay.prop(self, 'antiprism')
             lay.prop(self, 'major')
-            lay.prop(self, 'minor')
+            if self.mode != 'FLAT':
+                lay.prop(self, 'minor')
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
@@ -566,6 +913,8 @@ if _IN_BLENDER:
             if self.style == 'BALLSTICK':
                 lay.prop(self, 'strut_radius')
                 lay.prop(self, 'node_radius')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

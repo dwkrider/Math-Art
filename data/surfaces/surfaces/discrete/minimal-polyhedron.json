@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "minimal-polyhedron",
+  "name": "Minimal Polyhedron",
+  "primary_family": "discrete",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "discrete",
+    "immersed",
+    "implemented",
+    "minimal"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: faces are pierced and Laplacian-relaxed into membranes over the edge frame; the surface exists only as the relaxed mesh. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minimal_polyhedron_generator",
+      "operator_id": "mesh.minimal_surface_polyhedron_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Minimal surfaces / Plateau's problem: the pierced membrane approximates a soap film spanning the held edge frame.",
+      "Discrete membrane relaxation: U. Pinkall and K. Polthier, \"Computing Discrete Minimal Surfaces and Their Conjugates\", Experimental Mathematics 2(1), 1993, pp. 15-36.",
+      "Laplacian mesh smoothing: M. Desbrun, M. Meyer, P. Schroder, A. Barr, \"Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow\", SIGGRAPH 1999.",
+      "Quad-split topology: E. Catmull and J. Clark, \"Recursively generated B-spline surfaces on arbitrary topological meshes\", Computer-Aided Design 10(6), 1978."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

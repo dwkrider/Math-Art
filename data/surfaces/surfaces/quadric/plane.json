@@ -1,0 +1,91 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "plane",
+  "name": "Plane",
+  "primary_family": "quadric",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-implicit",
+    "embedded",
+    "implemented",
+    "minimal",
+    "quadric",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "z"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "gaussian": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "complete": true,
+    "genus": 0,
+    "finite_total_curvature": true,
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "PLANE",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
+    "sources": [
+      "Classical."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_radius"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "Plane",
+    "mathcurve": "ch1320_plan_2"
+  },
+  "notes": {
+    "caveats": [
+      "Both minimal and flat -- the only surface that is both, and the trivial member of every minimal-surface classification. Filed as a quadric because degree is the axis this folder sorts on; the curvature facet records `minimal` as the stronger condition."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

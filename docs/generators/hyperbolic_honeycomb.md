@@ -4,7 +4,15 @@
 
 ## Overview
 
-The edge framework of a $\{p,q,r\}$ regular honeycomb of hyperbolic 3-space, rendered inside the Poincaré ball. Struts follow hyperbolic geodesics and thin toward the boundary sphere by the local conformal factor, so the infinite honeycomb appears to crowd into the ball's skin. Compact presets ($\{4,3,5\}$, $\{5,3,4\}$, $\{3,5,3\}$, $\{5,3,5\}$) fill $H^3$ with finite cells; paracompact presets ($\{6,3,3\}$, $\{3,3,6\}$) reach the boundary at ideal points. After the figures in Segerman's *Visualizing Mathematics with 3D Printing* (figs 4-21 – 4-23).
+The edge framework of a $\lbrace p,q,r\rbrace$ regular honeycomb of hyperbolic 3-space, rendered inside the Poincaré ball. It is the hyperbolic cousin of a cube-lattice scaffold: an infinite tiling of $H^3$ by identical cells, drawn as the struts along its edges. Struts follow hyperbolic geodesics and thin toward the boundary sphere by the local conformal factor, so the infinite honeycomb appears to crowd into the ball's skin. Compact presets ($\lbrace4,3,5\rbrace$, $\lbrace5,3,4\rbrace$, $\lbrace3,5,3\rbrace$, $\lbrace5,3,5\rbrace$) fill $H^3$ with finite cells; paracompact presets ($\lbrace6,3,3\rbrace$, $\lbrace3,3,6\rbrace$) reach the boundary at ideal points. After the figures in Segerman's *Visualizing Mathematics with 3D Printing* (figs 4-21 – 4-23).
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Hyperbolic Honeycomb*.
+2. **Pick the Honeycomb.** The four **compact** presets have finite cells all the way in: $\lbrace4,3,5\rbrace$ (cubes, five around each edge — the default), $\lbrace5,3,4\rbrace$ (dodecahedra), $\lbrace3,5,3\rbrace$ (icosahedra) and $\lbrace5,3,5\rbrace$ (dodecahedra, five around an edge). The two **paracompact** presets touch the boundary sphere: $\lbrace6,3,3\rbrace$ has ideal cell centres and $\lbrace3,3,6\rbrace$ has ideal *vertices*, so every strut is a full geodesic running between two boundary points. **Custom $\lbrace p,q,r\rbrace$** accepts any symbol and validates it — a non-hyperbolic or otherwise unrealisable choice is rejected with an error instead of a mesh.
+3. **Set the growth knobs.** *Word Depth* is how many reflection steps the group walk takes outward from the seed cell — more depth means more edges reaching deeper into the ball's skin — and *Edge Cap* stops the walk once it has emitted that many struts, so a deep, dense honeycomb still returns in bounded time. *Radius Cutoff* culls struts whose midpoint lies past that ball radius, trimming the near-boundary haze.
+4. **Style the framework.** *Strut Thickness* is the radius before the conformal thinning (a strut at the dead centre of the ball gets half of it); *Strut Sides* and *Arc Segments* set the tube resolution — long, strongly-curved near-boundary geodesics need more arc segments. *Node Spheres* drops a matching sphere at each vertex, itself scaled by the conformal factor (it is skipped automatically for ideal-vertex honeycombs like $\lbrace3,3,6\rbrace$, whose vertices are on the boundary). *Ball Radius* is the overall scale.
+5. **Read the report.** Each build prints the realised symbol with its vertex and strut counts (`{p,q,r}: N vertices, M edges`), so you can see how far the walk reached before the depth or edge cap stopped it.
 
 ## Options
 
@@ -13,7 +21,7 @@ The edge framework of a $\{p,q,r\}$ regular honeycomb of hyperbolic 3-space, ren
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Honeycomb | {4,3,5} Order-5 Cubic | {4,3,5} Order-5 Cubic, {5,3,4} Order-4 Dodecahedral, {3,5,3} Icosahedral, {5,3,5} Order-5 Dodecahedral, {6,3,3} Hexagonal Tiling Cells, {3,3,6} Order-6 Tetrahedral, Custom {p,q,r}. |
+| Honeycomb | {4,3,5} Order-5 Cubic | Which {p,q,r} honeycomb to build. {4,3,5} Order-5 Cubic, {5,3,4} Order-4 Dodecahedral, {3,5,3} Icosahedral, {5,3,5} Order-5 Dodecahedral, {6,3,3} Hexagonal Tiling Cells, {3,3,6} Order-6 Tetrahedral, Custom {p,q,r}. |
 | p | 4 | Cell face size (cells are {p,q}) Range 3-12. |
 | q | 3 | Faces per cell vertex Range 3-12. |
 | r | 5 | Cells around each edge Range 3-12. |
@@ -21,10 +29,10 @@ The edge framework of a $\{p,q,r\}$ regular honeycomb of hyperbolic 3-space, ren
 | Edge Cap | 15000 | Stop the group walk early past this many edges Range 10-200000. |
 | Radius Cutoff | 0.97 | Cull struts whose midpoint lies outside this ball radius Range 0.5-0.999. |
 | Strut Thickness | 0.07 | Strut radius before the conformal thinning (a strut at the ball center gets half this) Range 0.005-0.5. |
-| Strut Sides | 6 | Range 3-16. |
+| Strut Sides | 6 | Facets around each strut cross-section Range 3-16. |
 | Arc Segments | 8 | Samples per geodesic strut (long near-boundary edges need the curvature) Range 1-32. |
 | Node Spheres | On | Spheres at the honeycomb vertices, scaled by the same conformal factor (skipped for ideal-vertex honeycombs like {3,3,6}) |
-| Sphere Size | 1.6 | Range 1-4. |
+| Sphere Size | 1.6 | Node sphere radius relative to the local strut thickness Range 1-4. |
 | Ball Radius | 1 | Overall scale: radius of the Poincare ball Range 0.01-100. |
 
 <!-- /options -->
@@ -48,31 +56,35 @@ Renders of each selectable option:
 
 ## How it works
 
-**The Schläfli symbol and its Coxeter orthoscheme.** A regular honeycomb $\{p,q,r\}$ has cells $\{p,q\}$, $r$ of them meeting around every edge, with vertex figure $\{q,r\}$. Its symmetry group is generated by reflections in the four faces of a *Coxeter orthoscheme* (a characteristic simplex). Writing $m_{01}=p,\ m_{12}=q,\ m_{23}=r$ for the dihedral angles $\pi/m$ along the chain, the unit mirror normals $n_0,\dots,n_3$ have Gram matrix
+**In plain terms.** In flat space you can pack cubes eight-around-a-corner, or fill the plane with squares four-around-a-corner, and the counts have to come out just right or there is a gap or an overlap. Hyperbolic space is roomier: near any point there is *more* room than flat space allows, so tilings that would over-crowd in flat space fit perfectly. Five cubes will close up neatly around an edge in $H^3$ — impossible with flat cubes — and that is the honeycomb $\lbrace4,3,5\rbrace$. The whole infinite tiling is generated by *mirrors*: a single small tetrahedral chamber (the "orthoscheme") whose four walls, reflected over and over, tile all of $H^3$ and carry one seed edge to every edge of the honeycomb. The generator builds those four mirrors from the symbol $\lbrace p,q,r\rbrace$, checks the symbol really is hyperbolic, finds one vertex and one edge, then lets the mirror group flood outward to fill the framework, finally squashing infinite hyperbolic space into a finite ball we can look at. The steps below are exactly that pipeline.
+
+**The Schläfli symbol and its Coxeter orthoscheme.** A regular honeycomb $\lbrace p,q,r\rbrace$ has cells $\lbrace p,q\rbrace$, with $r$ of them meeting around every edge and vertex figure $\lbrace q,r\rbrace$; the three numbers are the local "how many fit" counts at a face, an edge and a vertex. Its symmetry group is generated by reflections in the four faces of a *Coxeter orthoscheme*, the characteristic simplex you get by cutting a cell down to a single flag (a nested face–edge–vertex). Writing $m_{01}=p,\ m_{12}=q,\ m_{23}=r$ for the dihedral angles $\pi/m$ along the chain, the geometry of that chamber is captured entirely by the angles between its walls, i.e. by the unit mirror normals $n_0,\dots,n_3$ through their Gram matrix
 
 $$G_{ii}=1,\qquad G_{i,i+1}=G_{i+1,i}=-\cos\frac{\pi}{m_{i,i+1}},$$
 
-with non-adjacent mirrors perpendicular ($G_{ij}=0$).
+with non-adjacent mirrors perpendicular ($G_{ij}=0$). The $-\cos(\pi/m)$ is just the cosine of the angle two adjacent walls make; the whole honeycomb is encoded in these four numbers.
 
-**Spherical / Euclidean / hyperbolic classification.** The signature of $G$ decides the geometry: eigenvalues all positive $(4,0)$ give a spherical (finite) honeycomb, a degenerate $G$ gives a Euclidean one, and signature $(3,1)$ — one negative eigenvalue — gives a honeycomb of hyperbolic 3-space. The generator refuses any symbol that is not hyperbolic.
+**Spherical / Euclidean / hyperbolic classification.** The *signature* of $G$ — how many of its eigenvalues are positive, zero or negative — decides which of the three geometries the chamber lives in, because the sign of a length-squared is what distinguishes sphere, plane and hyperboloid. Eigenvalues all positive, signature $(4,0)$, give a spherical (finite) honeycomb; a degenerate $G$ with a zero eigenvalue gives a Euclidean one; and signature $(3,1)$ — exactly one negative eigenvalue — is the fingerprint of hyperbolic 3-space, whose model needs one "timelike" direction. The generator computes these eigenvalues and refuses any symbol that is not hyperbolic, which is what makes the Custom field safe to experiment with.
 
-**Realizing the mirrors in the hyperboloid model.** Work in Minkowski space $\mathbb{R}^{3,1}$ with metric $J=\operatorname{diag}(1,1,1,-1)$ and inner product $\langle a,b\rangle = a_0b_0+a_1b_1+a_2b_2-a_3b_3$. Concrete normals $N$ (rows $n_i$) that realize the Gram matrix, $N\,J\,N^{\mathsf T}=G$, come from the eigen-factorization $G=Q\,\operatorname{diag}(w)\,Q^{\mathsf T}$: the three positive eigenvalues fill the spacelike slots and the one negative eigenvalue the timelike slot. Reflection in mirror $i$ is the Lorentz transformation
+**Realizing the mirrors in the hyperboloid model.** Hyperbolic space is drawn here as one sheet of a hyperboloid in Minkowski space $\mathbb{R}^{3,1}$, with metric $J=\mathrm{diag}(1,1,1,-1)$ and inner product $\langle a,b\rangle = a_0b_0+a_1b_1+a_2b_2-a_3b_3$ — the minus sign on the last coordinate is the whole difference from Euclidean geometry. We need concrete normal vectors $N$ (its rows $n_i$) whose angles reproduce the Gram matrix, that is $N\,J\,N^{\mathsf T}=G$. They fall straight out of the eigen-factorization $G=Q\,\mathrm{diag}(w)\,Q^{\mathsf T}$: spread the three positive eigenvalues over the spacelike slots and the single negative one over the timelike slot, and the mirrors are placed. Reflection in mirror $i$ is then the Lorentz transformation
 
-$$r_i:\ x\ \longmapsto\ x-2\,\langle x,n_i\rangle\,n_i.$$
+$$r_i:\ x\ \longmapsto\ x-2\,\langle x,n_i\rangle\,n_i,$$
 
-**The honeycomb vertex.** The dual basis $M=(N\,J)^{-1}$ satisfies $\langle m_i,n_j\rangle=\delta_{ij}$, so $m_0$ lies on mirrors $1,2,3$ — it is the honeycomb vertex $P_0$. Normalized to $\langle P_0,P_0\rangle=-1$ it is a genuine point of $H^3$; if $\langle m_0,m_0\rangle=0$ the vertex is *lightlike* (ideal), on the boundary sphere, and the honeycomb is paracompact (e.g. $\{3,3,6\}$, where every strut is a complete geodesic between two boundary points). A vertex figure $\{q,r\}$ that is itself hyperbolic has no vertex inside $H^3$ and is rejected.
+the same "subtract twice the perpendicular component" as an ordinary mirror, but measured with the Minkowski inner product so it is an isometry of $H^3$.
 
-**Sweeping the framework.** The fundamental edge is $P_0$ together with its reflection $r_0P_0$. The vertex-stabilizer subgroup $\langle r_1,r_2,r_3\rangle$ — the finite symmetry group of the vertex figure $\{q,r\}$ (at most 120 elements for compact vertices) — carries this edge to the complete edge star of $P_0$, found by breadth-first search over reflection words. A second BFS then walks vertex-to-vertex through the 1-skeleton up to the chosen word depth: each reached group element $g$ emits its star $g\,w\,(P_0,\,r_0P_0)$ and continues through $g\,w\,r_0$. Group elements are deduped by rounded matrix entries, vertices and edges by rounded ball coordinates.
+**The honeycomb vertex.** We still need one actual point to start from. The dual basis $M=(N\,J)^{-1}$ satisfies $\langle m_i,n_j\rangle=\delta_{ij}$, so its column $m_0$ is orthogonal to mirrors $1,2,3$ and lies *on* all three of them at once — precisely a vertex of the honeycomb, $P_0$. Its self-product tells us where it sits: normalized to $\langle P_0,P_0\rangle=-1$ it is a genuine interior point of $H^3$, but if $\langle m_0,m_0\rangle=0$ the vertex is *lightlike* (ideal), stranded on the boundary sphere, and the honeycomb is **paracompact** — this is $\lbrace3,3,6\rbrace$, where every strut is a complete geodesic running from one boundary point to another. A vertex figure $\lbrace q,r\rbrace$ that is itself hyperbolic gives a point that never lands inside $H^3$ at all, and the symbol is rejected.
 
-**Into the Poincaré ball.** Hyperboloid points drop to the conformal ball by
+**Sweeping the framework.** The fundamental edge is $P_0$ together with its mirror image $r_0P_0$; every other edge is a group image of this one. The vertex-stabilizer subgroup $\langle r_1,r_2,r_3\rangle$ — which is just the *finite* symmetry group of the vertex figure $\lbrace q,r\rbrace$, at most $120$ elements for a compact vertex — sweeps the fundamental edge around $P_0$ into its complete edge star, enumerated by a breadth-first search over reflection words (finite, so it closes on its own; for an ideal vertex it is infinite and gets capped). A second BFS then walks vertex-to-vertex out through the 1-skeleton to the chosen word depth: each reached group element $g$ emits its star $g\,w\,(P_0,\,r_0P_0)$ and steps to neighbours through $g\,w\,r_0$. Because the same edge is reached by many different words, group elements are de-duplicated by their rounded matrix entries and vertices and edges by their rounded ball coordinates — otherwise the walk would re-emit the honeycomb over and over.
 
-$$(x,y,z,t)\ \longmapsto\ \frac{(x,y,z)}{1+t}.$$
+**Into the Poincaré ball.** Infinite hyperbolic space is finally squashed into a unit ball by the stereographic drop
 
-A strut between $A$ and $B$ is drawn as the hyperbolic geodesic in the plane they span: interpolate linearly in $\mathbb{R}^{3,1}$ and renormalize each sample onto $\langle x,x\rangle=-1$, then map to the ball, so long near-boundary edges curve correctly. Strut radii scale with the ball conformal factor
+$$(x,y,z,t)\ \longmapsto\ \frac{(x,y,z)}{1+t},$$
+
+the standard hyperboloid-to-Poincaré projection, which is *conformal* (angles are preserved, distances are not). A strut between $A$ and $B$ must follow the true hyperbolic geodesic, not a chord: the code interpolates linearly in $\mathbb{R}^{3,1}$ and renormalizes each sample back onto $\langle x,x\rangle=-1$ (the geodesic is exactly the intersection of the hyperboloid with the plane $A$ and $B$ span), then maps to the ball, so long near-boundary edges bow correctly toward the centre. Strut radii scale with the ball conformal factor
 
 $$\lambda(r)=\frac{1-r^2}{2},$$
 
-which is exactly what makes the infinite honeycomb appear to thin and crowd into the boundary sphere; ideal edges are trimmed slightly off their lightlike endpoints, where the strut has already thinned to nothing.
+which vanishes as $r\to1$: this is exactly what makes the infinite honeycomb appear to thin and crowd into the boundary sphere, since in the true metric those far cells are all the same size and it is only the projection that shrinks them. Ideal edges are trimmed a hair off their lightlike endpoints, where the strut has already thinned to nothing.
 
 ## References
 

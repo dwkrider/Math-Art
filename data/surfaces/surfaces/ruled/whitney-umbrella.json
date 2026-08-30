@@ -1,0 +1,98 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "whitney-umbrella",
+  "name": "Whitney Umbrella",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "ruled",
+    "singular",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BOX",
+      "radius": 1.2
+    },
+    "polynomial": "x**2-y**2*z"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "pinch point",
+        "count": 1
+      },
+      {
+        "type": "double line",
+        "count": 1
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "HAUSER",
+      "key": "WHITNEY",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "WHITNEY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
+    "sources": [
+      "H. Whitney, 'The general type of singularity of a set of 2n-1 smooth functions of n variables', Duke Math. J. 10 (1943)."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "hauser": "Whitney",
+    "mathworld": "WhitneyUmbrella",
+    "mathcurve": "ch1355_whitney_2",
+    "vmm": "ch076_whitney_umbrella"
+  },
+  "discovered_by": "Hassler Whitney",
+  "year": 1943,
+  "notes": {
+    "caveats": [
+      "The canonical pinch-point singularity, and the reason it appears twice in math_art: once parametrically as a ruled surface and once implicitly as x^2 - y^2 z = 0 in the Hauser gallery."
+    ]
+  },
+  "alternate_names": [
+    "Whitney's umbrella"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

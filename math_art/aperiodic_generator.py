@@ -1246,7 +1246,8 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         kind: EnumProperty(name="Tiling", items=KIND_ITEMS,
-                           default='PENROSE_P3')
+                           default='PENROSE_P3',
+                           description="Which aperiodic tiling to build")
         seed: EnumProperty(
             name="P2 Seed", items=P2_SEED_ITEMS, default='SUN',
             description="Central patch the Penrose kite & dart deflation "
@@ -1267,7 +1268,8 @@ if _IN_BLENDER:
                     "Material per second-level supertile (einstein "
                     "monotiles only)"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='TYPE')
+            default='TYPE',
+            description="How the tiles are colored")
         margin: FloatProperty(
             name="Margin", default=0.0, min=0.0, max=0.45,
             description="Inset each tile toward its centroid, leaving "

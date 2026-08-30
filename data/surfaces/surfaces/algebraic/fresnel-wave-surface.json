@@ -1,0 +1,103 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "fresnel-wave-surface",
+  "name": "Fresnel Wave Surface",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "implemented",
+    "tradition-classical",
+    "tradition-physical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 1.6
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nThe quartic locus of light-wavefront propagation in a biaxial anisotropic crystal: two sheets, with four conical points that gave conical refraction.  Distinct from Fresnel's ELASTICITY surface, which is already implemented.",
+    "parameters": [
+      {
+        "name": "axis_b",
+        "symbol": "Middle Semi-axis",
+        "domain": "[1.02, 1.48]",
+        "default": 1.2,
+        "integer": false,
+        "note": "Middle semi-axis b of the generating ellipsoid (a = 1 is fixed); with the long semi-axis it steers the four conical points where the two shells meet"
+      },
+      {
+        "name": "axis_c",
+        "symbol": "Long Semi-axis",
+        "domain": "[1.5, 3]",
+        "default": 1.5,
+        "integer": false,
+        "note": "Long semi-axis c of the generating ellipsoid; further from the middle semi-axis the shells separate more strongly"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "MATHCURVE",
+      "key": "FRESNEL",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com -- the chapters \"parapluie de Cartan\", \"surface de Cassini\", \"surface de Titeica\".  A converted copy of the whole encyclopedia is in research/books/ mathcurve_encyclopedie_formes_mathematiques/.",
+      "H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own umbrella x^2 = y^2 z, already in the Hauser block above.",
+      "G. D. Cassini, the ovals of 1680; the surface is the classical three-dimensional generalisation of them.",
+      "G. Titeica, \"Sur une nouvelle classe de surfaces\", Rend. Circ. Mat. Palermo 25 (1908) 180-187 -- the affine spheres of 1907.",
+      "A. Fresnel (1821) -- the wave surface; the chapter \"Fresnel's wave surface\" prints the quartic and its four singular points.",
+      "A. Gray, \"Modern Differential Geometry of Curves and Surfaces with Mathematica\", 2nd ed., CRC Press (1997) -- named the sine surface.",
+      "R. Ferreol, Encyclopedie des formes mathematiques remarquables (mathcurve).",
+      "R. Ferreol, \"Fresnel's wave surface\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1201_ondes_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1201_ondes_2.md).",
+      "A. Fresnel (1821), per the chapter; the chapter also points to Jules Richard's thesis and [Loria 3d p. 197]."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical",
+    "physical"
+  ],
+  "discovered_by": "Augustin Fresnel",
+  "year": 1821,
+  "ids": {
+    "mathcurve": "ch1201_ondes_2",
+    "algsurf": "ch028_no_10"
+  },
+  "alternate_names": [
+    "Fresnel's wave surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

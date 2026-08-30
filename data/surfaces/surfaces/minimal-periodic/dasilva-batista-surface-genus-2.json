@@ -1,0 +1,87 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "dasilva-batista-surface-genus-2",
+  "name": "daSilva-Batista Surface (genus 2)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No (g, dh) pair is stored: the shipped row is built by the dedicated mesher we.sscherk_das_mesh (a torus/branched-cover or multi-patch assembly); no elementary (g, dh) pair on a plane domain is stored in the code. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 2,
+    "ends": [
+      {
+        "type": "annular",
+        "count": 8
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SP_DASILVA_BATISTA",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "K. Li thesis lineage (6/8-ended towers); L. daSilva, V. Ramos Batista (2009); M. Weber, https://minimalsurfaces.blog/ notebooks Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb, Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb (research/msblog_harvest/singly_periodic.json).  Full scholarly details in the weierstrass sscherk block header.",
+      "H. Karcher, Manuscripta Math. 62 (1988); H. F. Scherk (1835);"
+    ],
+    "cross_checked": [
+      {
+        "source": "M. F. da Silva, V. Ramos Batista, 'Scherk Saddle Towers of Genus Two in R^3' (minsurf ch131)",
+        "agrees": true,
+        "detail": "'This translation invariant surface ... features 8 annular ends and has genus 2.'  NOT the same surface as Lubeck-Batista (doubly periodic, genus 3, four annular ends -- minsurf ch038)."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch131_dasilva_batista_surface"
+  },
+  "named_after": "Batista",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

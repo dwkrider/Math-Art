@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "horgan-surface",
+  "name": "Horgan Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "A plausible-looking finite total curvature minimal surface (two planes joined by catenoidal necks in the pattern later realized triply periodically) whose period problem admits no solution."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "PROVED NOT TO EXIST -- not merely unbuilt.  Weber proved that the proposed finite-total-curvature minimal surface cannot close its periods, so no such surface exists; the record is a negative result, kept so the construction is not attempted again.",
+      "resume": "Nothing to build.  If the family is ever revisited, note that the same neck configuration DOES exist as a triply periodic surface (see the triply-periodic-horgan record)."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'The Horgan Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch062_the_horgan_surface.md).",
+      "M. Weber, 'Non-Existent Surfaces (the section index that lists it as a failed construction)', minimalsurfaces.blog (local mirror: minsurf/book/.../ch061_non_existent_surfaces.md).",
+      "M. Weber, 'On the Horgan minimal non-surface', Calc. Var. Partial Differential Equations 7 (1998) 373-379."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch062_the_horgan_surface"
+  },
+  "named_after": "Horgan",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

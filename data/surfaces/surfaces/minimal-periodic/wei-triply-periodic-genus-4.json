@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "wei-triply-periodic-genus-4",
+  "name": "Wei Triply Periodic Surface (genus 4)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Wei's 2-parameter family of genus-4 triply periodic minimal surfaces from his 1992 doubly periodic paper; his doubly periodic genus-2 surfaces (which have their own record) arise as limits, as do vertical planes over a rhombic tiling desingularized by singly periodic Scherk surfaces."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Wei's Triply Periodic Surface of Genus 4', minimalsurfaces.blog (local mirror: minsurf/book/.../ch335_weis_triply_periodic_surface_of_genus_4.md).",
+      "F. Wei, 'Some existence and uniqueness theorems for doubly periodic minimal surfaces', Invent. Math. 109 (1992) 113-136."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "ids": {
+    "msblog": "ch335_weis_triply_periodic_surface_of_genus_4"
+  },
+  "named_after": "Triply, Wei",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

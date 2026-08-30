@@ -1,0 +1,121 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "six-icosidodecahedral-planes",
+  "name": "Six Icosidodecahedral Planes",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 2.0
+    },
+    "polynomial": "(z**6 - 5*(x**2 + y**2)*z**4 + 5*(x**2 + y**2)**2*z**2 - 2*(x**4 - 10*x**2*y**2 + 5*y**4)*x*z) + 0.0*(x**2 + y**2 + z**2)**3 + 0.0*(x**2 + y**2 + z**2)**2 + 0.0*(x**2 + y**2 + z**2) + 0.0",
+    "parameters": [
+      {
+        "name": "k0",
+        "symbol": "k",
+        "domain": "[-40, 40]",
+        "default": 0.0,
+        "integer": false,
+        "note": "Coefficient k of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "k1",
+        "symbol": "k'",
+        "domain": "[-40, 40]",
+        "default": 0.0,
+        "integer": false,
+        "note": "Coefficient k' of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "k2",
+        "symbol": "k''",
+        "domain": "[-100, 100]",
+        "default": 0.0,
+        "integer": false,
+        "note": "Coefficient k'' of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "k3",
+        "symbol": "k'''",
+        "domain": "[-200, 200]",
+        "default": 0.0,
+        "integer": false,
+        "note": "Coefficient k''' of the family; the surface is continuous in it, so dragging it walks the family through its transitions"
+      },
+      {
+        "name": "size",
+        "symbol": "Size",
+        "domain": "[0.05, 10]",
+        "default": 1.0,
+        "integer": false,
+        "note": "The length a the coefficients are measured against. It rescales the surface inside the clip ball rather than the finished object, so it changes how much is shown"
+      }
+    ]
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "Ih",
+    "order": 120,
+    "orbifold": "*532",
+    "chiral": false,
+    "generator_set": "Ih_z5"
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "GOURSAT_DODEC",
+      "key": "DODEC_PLANES",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 2.84e-14).",
+    "sources": [
+      "A. Cayley, \"A Memoir on Cubic Surfaces\", Phil. Trans. 159, 1869.",
+      "A. Clebsch, \"Ueber die Flachen vierter Ordnung...\", Journal fur die reine und angewandte Mathematik 69, 1868 -- the diagonal surface.",
+      "W. Barth, \"Two projective surfaces with many nodes admitting the symmetries of the icosahedron\", J. Algebraic Geometry 5, 1996.",
+      "H. Hauser, \"Bildergalerie algebraischer Flaechen\", Universitaet Wien -- the named gallery surfaces in the _HAUSER block below.",
+      "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- also the source of the five-parameter D8 x Z2 octic family; the 160- and 165-nodal parameter values are published on O. Labs's Algebraic Surface",
+      "Homepage, algebraicsurface.net (octics pages).",
+      "E. Goursat, 'Etude des surfaces qui admettent tous les plans de symetrie d'un polyedre regulier', Ann. Sci. ENS 3e serie 4 (1887)."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical"
+  ],
+  "relations": {
+    "polyhedral_analogue": "icosidodecahedron"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

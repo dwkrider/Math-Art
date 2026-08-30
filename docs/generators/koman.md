@@ -1,15 +1,21 @@
 # Koman Developable
 
+![Koman Developable](../images/koman.png)
+
 ## Overview
 
-Add one of Ilhan Koman's developable sculptures: a slit sheet
-coiled into a ring, or wound out as a logarithmic spiral.
+Add one of İlhan Koman's developable sculptures: a single slit sheet coiled into a ring, or wound out as a logarithmic spiral.
 
-İlhan Koman's **developable sculptures**: forms cut from a single flat sheet, slit and coiled, with nothing glued and no seam anywhere. The sheet is never stretched, so the surface is developable throughout — it could be flattened back out, in principle, by uncoiling it.
+These are forms cut from *one* flat sheet, slit and coiled, with nothing glued and no seam anywhere. The sheet is never stretched, so the surface stays **developable** throughout — it could, in principle, be flattened straight back out by uncoiling it. Koman (1921–1986) never wrote his method down; Akgün, Kaya, Koman and Akleman reconstructed it from the surviving sculptures in 2007. They are **not** [D-forms](dform.md), despite the shared theme of shapes from unstretched sheet: a D-form glues *two* pieces of equal perimeter edge to edge and comes out convex, whereas these are cut from a single sheet with nothing glued boundary to boundary at all.
 
-Koman (1921–1986) never wrote his method down. Akgün, Kaya, Koman and Akleman reconstructed it from the surviving sculptures in 2007.
+### Using it
 
-These are **not** [D-forms](dform.md), despite the shared theme of shapes made from unstretched flat sheet, and they are kept apart here for that reason. A D-form glues *two* pieces of equal perimeter edge to edge and comes out convex, with all its curvature on one seam and no interior creases. These are cut from *one* sheet, with nothing glued boundary to boundary at all.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Koman Developable*.
+2. **Pick the Form.** **Spiral Sculpture** cuts the alternating slits into a *trapezoid*, so the ribbon tapers and winds outward forever as a logarithmic spiral — the shape of Koman's own metal pieces. **Closed Ring** cuts them into a *rectangle*, so equal tongues fan around a central hole and close into a flat wreath. The two modes swap which controls appear.
+3. **Set the main shape knobs.** **Blades** is the number of ribbon segments (tongues) — the resolution of the coil — and **Growth** shrinks or grows each segment geometrically along the ribbon. Growth is the single parameter Koman himself varied: at 0 the coil holds one radius, and a positive value is what opens it outward into the spiral.
+4. **Reach the mode-specific controls.** For **Spiral**: **Blades per Turn** (how tight the winding is), **Skew** and **Lean** (how each blade sits against the coil), **Blade Length** and **Blade Width** (both relative to the local radius, so the form stays self-similar), and **Blade Twist** — off by default because twisting a blade turns it into a hyperbolic paraboloid that is no longer flat-cuttable. For **Ring**: **Close Ring** derives the slide that makes the tongues meet in exactly one turn; switch it off to set **Slide d** by hand. **Tongue Lean** controls how far each tongue rides up on its neighbours, and **Hole** sets the inner radius.
+5. **Choose the output.** **Samples** subdivides each blade or arch; **Scale** fits the piece to the cube; **Shade Smooth** and **Sharp Folds** decide whether the fold lines stay crisp (marked sharp) or are rounded by smooth shading.
+6. **Read the report.** The Spiral build prints the vertex/face counts, blade count and growth, and flags whether the blades are still planar (developable) or have been twisted out of flat. The Ring build reports how many degrees each tongue turns — a check that, with Close Ring on, the turns sum to a full revolution and the wreath actually closes.
 
 ## Options
 
@@ -17,7 +23,7 @@ These are **not** [D-forms](dform.md), despite the shared theme of shapes made f
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Spiral Sculpture | Spiral Sculpture, Closed Ring. |
+| Form | Spiral Sculpture | Which Koman developable sculpture to build. Spiral Sculpture, Closed Ring. |
 | Blades | 80 | Segments of the slit ribbon Range 5-200. |
 | Growth | 0.034 | Shrink or grow each segment geometrically along the ribbon. The radius goes as h/2, so this is what opens the coil into a spiral -- the parameter Koman himself varied Range -0.12-0.12. |
 | Blades per Turn | 30 | Spiral: how many blades make one full turn Range 6-90. |
@@ -31,8 +37,8 @@ These are **not** [D-forms](dform.md), despite the shared theme of shapes made f
 | Tongue Lean | 0.42 | Ring: how far each tongue leans as it rides up on the ones beneath it Range 0-1.2. |
 | Hole | 0.45 | Ring: inner radius as a fraction of the tongue length Range 0.05-2. |
 | Samples | 5 | Subdivisions along each blade or arch Range 1-24. |
-| Scale | 1 | Range 0.01-100. |
-| Shade Smooth | Off | -- |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
+| Shade Smooth | Off | Shade the surface smooth |
 | Sharp Folds | On | Mark the folds sharp (and creased) so smooth shading does not round them off |
 
 <!-- /options -->
@@ -50,19 +56,19 @@ Renders of each selectable option:
 
 ## How it works
 
-**Slit and coil.** Cut a sheet from **alternating** edges — a slit in from the left, then from the right, then the left again — so it becomes one long serpentine ribbon that is still a single connected piece. Then coil that ribbon so each segment, a **tongue**, lies flat and slides under its neighbour by a distance $2d$.
+**In plain terms.** Take a strip of paper and cut slits into it from alternating sides — one from the left, the next from the right — without ever cutting all the way through. You now have one long zig-zag ribbon that is still a single connected piece, a bit like a paper garland. Coil that ribbon up so each flap lies flat and tucks a little under the one before it, and the flaps fan out like a spread deck of cards. Every flap stays perfectly flat; the only parts that bend are the little bridges of paper *between* the flaps, which get squeezed and pop up into small arches. Because nothing ever stretches and only those bridges curve, the whole sculpture could be flattened straight back into the sheet you cut it from — which is exactly what makes it buildable from a single laser-cut sheet.
 
-**The turn per slide.** Each slide turns the ribbon by
+**Slit and coil.** Cut the sheet from **alternating** edges so it becomes one serpentine ribbon, then coil it so each segment — a **tongue** of height $h$ — lies flat and slides under its neighbour by a distance $2d$. The overlap $2d$ is the whole mechanism: it is what forces each tongue to sit at an angle to the last.
 
-$$a=\arctan\!\left(\frac{2d}{h}\right),$$
+**The turn per slide.** Sliding one tongue under the next by $2d$ pivots it about the shared fold, and a little right-angle trigonometry on that fold — the overlap $2d$ across the tongue height $h$ — gives the turn as
 
-for tongue height $h$. After $n$ slides the ribbon has turned through $na$, and it closes into a ring when that reaches a full turn, giving a radius of about $h/2$ — with the tongues overlapping like a fanned deck of cards.
+$$a=\arctan\!\left(\frac{2d}{h}\right).$$
 
-**Where the curvature is.** The tongues themselves stay **planar**. The paper between two tongues cannot: it is longer than the gap it now has to bridge, so it **arches**. Those arches are the only curved surfaces in the entire piece.
+Each tongue is therefore rotated from the last by the same fixed angle $a$, so after $n$ tongues the ribbon has swept a total angle $na$. It **closes into a ring** exactly when that reaches a full turn, $na = 2\pi$ — which is why driving the ring from the tongue count is the reliable handle (the operator inverts this, choosing $a = 2\pi/n$ and hence the slide $d$ that closes it), while picking $d$ by hand almost always leaves the wreath gaping open at some arbitrary angle. In the small-angle regime the paper works in, the resulting ring has radius about $h/2$, with the tongues overlapping like a fanned deck of cards.
 
-That is the property that keeps the sculpture cuttable from flat stock. The blades are flat by construction and the curvature is confined to the webs between them, which is why a design can be laser-cut and then simply coiled rather than formed.
+**Where the curvature is.** The tongues themselves stay **planar** — this is the crux. The web of paper spanning the gap between two consecutive tongues *cannot* stay flat: once its ends have pivoted apart it is longer than the straight distance it now has to bridge, so the surplus length buckles it up into an **arch**. The generator models each arch as a circular bow ruled by straight lines across its width, which keeps it a piece of a cylinder — a developable surface — so it too could be unrolled flat. Those arches are the only genuinely curved surfaces in the entire piece. Confining every bit of curvature to the webs, and leaving every tongue flat by construction, is precisely the property that keeps the sculpture cuttable from flat stock: it can be laser-cut and then simply *coiled* rather than stretched or moulded into shape.
 
-**The spiral.** Cut the same slits into a **trapezoid** instead of a rectangle and the ribbon tapers, so the coil never closes — it winds outward as a logarithmic spiral, which is what Koman's own metal pieces are. The mechanism is direct: hold the turn per slide constant and shrink $h$ exponentially along the strip. Since the radius goes as $h/2$, shrinking $h$ geometrically walks the blades steadily outward, and a constant turn with an exponentially changing radius is precisely a logarithmic spiral.
+**The spiral.** Cut the same alternating slits into a **trapezoid** instead of a rectangle and the ribbon tapers, so the coil never closes — it winds outward as a **logarithmic spiral**, which is what Koman's own metal pieces are. The mechanism is exact and worth stating carefully, because it is easy to get wrong: hold the turn per tongue $a$ *constant* (so each step rotates by the same angle) while shrinking the tongue height $h$ **geometrically**, $h_{i+1} = (1+g)\,h_i$ for a growth ratio $g$. Since the radius tracks $h/2$, a constant angular step paired with a radius that multiplies by a fixed ratio each step is the defining recipe for a logarithmic spiral. Scaling the *slide* $d$ on its own would not do it — that only changes the turn rate and leaves every tongue on the same circle — which the self-test checks explicitly, having once caught exactly that bug.
 
 **Two modes,** then: `RING` closes on itself from a rectangular sheet, `SPIRAL` opens outward from a trapezoidal one — the same cut and the same coil, differing only in whether the strip tapers.
 

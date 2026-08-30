@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "dini-surface",
+  "name": "Dini Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "constant-curvature",
+    "def-parametric",
+    "embedded",
+    "implemented",
+    "k-const-negative",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "sqrt(1 - 0.2**2)*cos(u)*sin(v)",
+    "y": "sqrt(1 - 0.2**2)*sin(u)*sin(v)",
+    "z": "sqrt(1 - 0.2**2)*(cos(v) + log(tan(v/2))) + 0.2*u",
+    "u_range": [
+      "0",
+      "4*pi"
+    ],
+    "v_range": [
+      "0.15",
+      "2.0"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "gaussian": {
+      "exact": "-1",
+      "value": -1.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "continuous",
+    "periodicity_rank": 1,
+    "continuous": "screw motion about the axis"
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hyperbolic_surface_generator",
+      "operator_id": "mesh.hyperbolic_surface_add",
+      "key": "DINI",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
+    "sources": [
+      "U. Dini, 'Sopra le funzioni di una variabile complessa' and the helicoidal surfaces of constant curvature (1865)."
+    ]
+  },
+  "discovered_by": "Ulisse Dini",
+  "year": 1865,
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "mathworld": "DinisSurface",
+    "mathcurve": "ch1255_dini_2",
+    "vmm": "ch053_dini"
+  },
+  "notes": {
+    "caveats": [
+      "The helicoidal (twisted) pseudosphere: applying a screw motion to the tractrix gives a whole one-parameter family of K = -1 surfaces, of which the pseudosphere is the untwisted member."
+    ]
+  },
+  "alternate_names": [
+    "Dini's surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

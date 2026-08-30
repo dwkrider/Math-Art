@@ -1,3 +1,4 @@
 docs/images/*.png filter=lfs diff=lfs merge=lfs -text
 docs/images/**/*.png filter=lfs diff=lfs merge=lfs -text
+web/thumbs/*.png filter=lfs diff=lfs merge=lfs -text
 dist/*.zip filter=lfs diff=lfs merge=lfs -text

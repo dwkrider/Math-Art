@@ -1,0 +1,69 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "trihyperboloid",
+  "name": "Trihyperboloid",
+  "primary_family": "misc",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "misc"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "sin(u)*cos(v)/sqrt(max(max(sin(u)**2 - cos(u)**2, sin(u)**2*sin(v)**2 + cos(u)**2 - sin(u)**2*cos(v)**2), cos(u)**2 + sin(u)**2*cos(v)**2 - sin(u)**2*sin(v)**2))",
+    "y": "sin(u)*sin(v)/sqrt(max(max(sin(u)**2 - cos(u)**2, sin(u)**2*sin(v)**2 + cos(u)**2 - sin(u)**2*cos(v)**2), cos(u)**2 + sin(u)**2*cos(v)**2 - sin(u)**2*sin(v)**2))",
+    "z": "cos(u)/sqrt(max(max(sin(u)**2 - cos(u)**2, sin(u)**2*sin(v)**2 + cos(u)**2 - sin(u)**2*cos(v)**2), cos(u)**2 + sin(u)**2*cos(v)**2 - sin(u)**2*sin(v)**2))",
+    "u_range": [
+      "0",
+      "pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "the radial graph r = 1/sqrt(max of the three hyperboloid forms) along the unit direction (sin u cos v, sin u sin v, cos u); the max of the three is >= 1/3, so 1 <= r <= sqrt 3 everywhere",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TRIHYPERBOLOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.30 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.05605).",
+    "sources": [
+      "D. von Seggern, \"CRC Standard Curves and Surfaces\" (1993), p. 304 -- Fresnel's elasticity surface.",
+      "A. Robin (2004), plotted after M. Trott, \"The Mathematica GuideBook for Graphics\" (2004), p. 103 -- the paper bag surface.",
+      "O. Knill (2017); M. A. Villarino and J. C. Varilly (2024) -- the trihyperboloid and its volume ln 256.",
+      "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
+      "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
+      "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

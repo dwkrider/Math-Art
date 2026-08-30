@@ -22,12 +22,30 @@
 import math
 import numpy as np
 
+try:
+    from .. import geom_cache as _geom_cache
+except ImportError:  # flat import outside the package
+    import geom_cache as _geom_cache
+
 TAU = 2.0 * math.pi
 
 from . import weierstrass as _we
-from .domain import (_center_fit, _circularize_outer, _inliers,
+from .domain import (_center_fit, _inliers,
                      _largest_component, _puncture_mask, _smooth_boundary,
-                     _torus_grid)
+                     _torus_grid, area_cov, equal_area_resample,
+                     mesh_area_cov)
+
+# How finely the domain is sampled before equal-area resampling measures
+# the area element on it.  The measurement is only as good as the grid it
+# is taken on, so this is deliberately well above any usable output
+# resolution; `build_parametric` also honours 4x the request, whichever
+# is larger, and caps at that.
+_EQ_AREA_FINE = 256
+
+# (cov_before, cov_after) of the last equal-area resample, so the
+# operator can report what it actually achieved instead of claiming
+# success blind.  None when the last build did not resample.
+LAST_EQ_AREA_COV = None
 from .elliptic import _SQUARE, _Lattice
 from .tpms import TPMS, TPMS_EXACT
 
@@ -117,44 +135,286 @@ def _scherk_graph(nu, nv, order, radius, theta=0.0):
 # boundary), so it needs no clipping.
 
 
+def _costa_xyz(U, V):
+    """Costa immersion (Gray/Nylander closed form) at torus coordinates
+    (U, V); vectorized, poles at the three end punctures come out
+    non-finite and must be masked by the caller."""
+    L = _SQUARE
+    e1 = L.wp(0.5).real
+    z = U + 1j * V
+    with np.errstate(divide='ignore', invalid='ignore'):
+        ze, z1, z3 = L.zeta(z), L.zeta(z - 0.5), L.zeta(z - 0.5j)
+        P = L.wp(z)
+        a = math.pi / (2.0 * e1)
+        x = 0.5 * np.real(-ze + math.pi * U + a * (z1 - z3))
+        y = 0.5 * np.real(-1j * ze + math.pi * V
+                          - a * (1j * z1 - 1j * z3))
+        zc = (math.sqrt(2.0 * math.pi) / 4.0) * np.log(
+            np.abs((P - e1) / (P + e1)))
+    return x, y, zc
+
+
+def _wrap_half(d):
+    """Signed toroidal offset in (-1/2, 1/2]."""
+    return ((d + 0.5) % 1.0) - 0.5
+
+
+def _cut_rims_analytic(xyz_fn, x, y, zc, mask, ends, band_rings=4):
+    """Cut every masked end's mesh rim on its exact parameter circle,
+    evenly sampled, with the immersion re-evaluated at every moved node
+    -- so each rim is a smooth analytic curve ON the true surface.
+
+    This is the torus-grid port of the k-noid bell-mouth machinery in
+    weierstrass.py (which needed principal parts because its immersion
+    is a numeric integral; here `xyz_fn` is closed form, so moved nodes
+    are simply re-evaluated exactly).  Three steps per end:
+
+    1. The future boundary loop -- kept nodes incident to a boundary
+       edge of the kept-quad mesh -- is traced in walk order and pulled
+       onto |d| = rho at UNIFORM parameter angles (uniform ramp in loop
+       order, phase-fitted to the original azimuths).  Near a pole of
+       order M the immersion maps the parameter circle at near-uniform
+       speed, so uniform parameter angles are near-uniform 3-D rim
+       edges (the same argument as the k-noid mouths; it covers the
+       double poles of Costa's ends and the higher-order pole of the
+       Chen-Gackstatter Enneper end alike).  Radial-staircase vertex
+       pairs at identical azimuth -- which a pure radial pull would
+       collapse onto one point -- get distinct angles by construction.
+    2. The angular deviation field (target minus original azimuth) is
+       spread over a short band of interior rings behind the rim,
+       azimuth-interpolated and linearly tapered to zero `band_rings`
+       grid steps out -- raw beside the rim, azimuthally smoothed
+       further out -- so the tangential shear of the respacing never
+       concentrates in the single quad row behind the rim (the measured
+       deviation is <= ~1.7 azimuth slots, well under one cell per ring
+       across this band; a wider band buys nothing and reaches cells
+       the respacing never moved).  Band nodes keep their own radial
+       distance and are re-evaluated exactly, so the band stays ON the
+       surface too.
+    3. The rim nodes are published as a protect mask (via
+       weierstrass.LAST_PROTECT) so the mesher's Taubin boundary pass
+       cannot drag the analytically placed loop off the surface.
+
+    Falls back, per end, to the plain radial pull at grid azimuths if
+    the loop trace fails (a mask merged with a neighbour at very coarse
+    resolution).  Mutates x, y, zc in place; returns the protect grid.
+    """
+    nu, nv = mask.shape
+    U, V = _torus_grid(nu, nv)
+    protect = np.zeros(mask.shape, dtype=bool)
+    # kept quad at (i, j) <=> all four corners valid (both axes wrap)
+    mr = np.roll(mask, -1, axis=0)
+    cellok = (mask & mr & np.roll(mask, -1, axis=1)
+              & np.roll(mr, -1, axis=1))
+    inv = ~mask
+    nb = np.zeros_like(inv)
+    for di in (-1, 0, 1):
+        for dj in (-1, 0, 1):
+            nb |= np.roll(np.roll(inv, di, axis=0), dj, axis=1)
+    rimflag = mask & nb                  # kept nodes hugging a puncture
+    if not rimflag.any():
+        return protect
+    ii, jj = np.nonzero(rimflag)
+    pos = {(int(a), int(b)): t for t, (a, b) in enumerate(zip(ii, jj))}
+    # boundary-edge adjacency: a grid edge is a mesh boundary edge iff
+    # exactly one of its two flanking cells is kept
+    adj = {}
+    for t in range(len(ii)):
+        a, b = int(ii[t]), int(jj[t])
+        for (a2, b2), (c1, c2) in (
+                ((a, (b + 1) % nv), ((a, b), ((a - 1) % nu, b))),
+                (((a + 1) % nu, b), ((a, b), (a, (b - 1) % nv)))):
+            t2 = pos.get((a2, b2))
+            if t2 is None:
+                continue
+            if bool(cellok[c1]) != bool(cellok[c2]):
+                adj.setdefault(t, []).append(t2)
+                adj.setdefault(t2, []).append(t)
+    # per-node toroidal offset/distance/azimuth about every end
+    du = np.stack([_wrap_half(U - cu) for cu, cv, _ in ends])
+    dv = np.stack([_wrap_half(V - cv) for cu, cv, _ in ends])
+    dd = np.hypot(du, dv)                # (n_ends, nu, nv)
+    near = dd.argmin(axis=0)             # nearest end per node
+    step = 1.0 / max(min(nu, nv), 1)
+    for ke, (cu, cv, rho) in enumerate(ends):
+        # Degenerate-mask guard: when this end's disk has merged with a
+        # neighbour's (extreme radius slider) or is too large to embed
+        # its cut circle in the torus, there is no clean per-end mouth
+        # to respace -- any pull would drag vertices into (or through)
+        # the other end's territory.  Leave the staircase to the
+        # mesher's Taubin pass, which is the well-behaved legacy result.
+        merged = rho >= 0.45 or any(
+            math.hypot(_wrap_half(cu - cu2), _wrap_half(cv - cv2))
+            <= rho + rho2 + 2.0 * step
+            for j2, (cu2, cv2, rho2) in enumerate(ends) if j2 != ke)
+        if merged:
+            continue
+        idx = [t for t in range(len(ii))
+               if near[ii[t], jj[t]] == ke
+               and dd[ke, ii[t], jj[t]] < rho + 3.5 * step]
+
+        def _radial_fallback(sel_t):
+            sel_t = [t for t in sel_t if dd[ke, ii[t], jj[t]] > 1e-12]
+            if not sel_t:
+                return
+            ai = ii[np.array(sel_t)]
+            aj = jj[np.array(sel_t)]
+            f = rho / dd[ke, ai, aj]
+            Us = cu + f * du[ke, ai, aj]
+            Vs = cv + f * dv[ke, ai, aj]
+            xs, ys, zs = xyz_fn(Us, Vs)
+            x[ai, aj], y[ai, aj], zc[ai, aj] = xs, ys, zs
+            protect[ai, aj] = True
+
+        if len(idx) < 8:
+            _radial_fallback(idx)
+            continue
+        # trace the loop in walk order
+        ok = all(len(adj.get(t, ())) == 2 for t in idx)
+        walk = None
+        if ok:
+            start = idx[0]
+            walk, prev, cur = [start], None, start
+            while True:
+                nxt = [w for w in adj[cur] if w != prev]
+                if not nxt:
+                    ok = False
+                    break
+                prev, cur = cur, nxt[0]
+                if cur == start:
+                    break
+                walk.append(cur)
+                if len(walk) > len(idx):
+                    ok = False
+                    break
+            # a clean mouth loop visits exactly this end's rim vertices
+            ok = ok and len(walk) == len(idx) and set(walk) == set(idx)
+        if ok:
+            wk = np.array(walk)
+            ai, aj = ii[wk], jj[wk]
+            ang = np.arctan2(dv[ke, ai, aj], du[ke, ai, aj])
+            dth = (np.diff(ang) + math.pi) % TAU - math.pi
+            tot = float(dth.sum()) + float(
+                (ang[0] - ang[-1] + math.pi) % TAU - math.pi)
+            ok = abs(abs(tot) - TAU) < 0.1 * TAU   # one simple turn
+        if not ok:
+            _radial_fallback(idx)
+            continue
+        unw = np.concatenate([[ang[0]], ang[0] + np.cumsum(dth)])
+        ramp = np.arange(len(wk)) * tot / len(wk)
+        ph = float(np.angle(np.exp(1j * (unw - ramp)).mean()))
+        tgt = ramp + ph
+        Us = cu + rho * np.cos(tgt)
+        Vs = cv + rho * np.sin(tgt)
+        xs, ys, zs = xyz_fn(Us, Vs)
+        x[ai, aj], y[ai, aj], zc[ai, aj] = xs, ys, zs
+        protect[ai, aj] = True
+        # tapered angular deviation over the band behind the rim
+        dev = (tgt - unw + math.pi) % TAU - math.pi
+        xs_a = unw % TAU
+        o = np.argsort(xs_a)
+        xs_a, dev = xs_a[o], dev[o]
+        kw = min(7, len(dev) | 1)
+        ker = np.ones(kw) / kw
+        devs = np.convolve(np.concatenate([dev[-(kw // 2):], dev,
+                                           dev[:kw // 2]]),
+                           ker, mode='valid')
+        xs_a = xs_a + np.arange(len(xs_a)) * 1e-9      # break ties
+        xse = np.concatenate([[xs_a[-1] - TAU], xs_a, [xs_a[0] + TAU]])
+        deve = np.concatenate([[dev[-1]], dev, [dev[0]]])
+        devse = np.concatenate([[devs[-1]], devs, [devs[0]]])
+        # band members: kept, not an analytically placed rim node (the
+        # diagonal "touchers" of rimflag that are NOT on the boundary
+        # loop are ordinary interior vertices and DO belong to the band,
+        # or the shear would concentrate on exactly them)
+        bw = band_rings * step
+        band = (mask & ~protect
+                & (near == ke) & (dd[ke] > rho) & (dd[ke] < rho + bw))
+        bi, bj = np.nonzero(band)
+        if not len(bi):
+            continue
+        az = np.arctan2(dv[ke, bi, bj], du[ke, bi, bj]) % TAU
+        dpar = dd[ke, bi, bj]
+        # raw field beside the rim, low-frequency field further out
+        wraw = np.clip((rho + 0.35 * bw - dpar) / (0.35 * bw), 0.0, 1.0)
+        dvb = (wraw * np.interp(az, xse, deve)
+               + (1.0 - wraw) * np.interp(az, xse, devse))
+        tap = np.clip((rho + bw - dpar) / bw, 0.0, 1.0)
+        anew = az + dvb * tap
+        Us = cu + dpar * np.cos(anew)
+        Vs = cv + dpar * np.sin(anew)
+        xs, ys, zs = xyz_fn(Us, Vs)
+        x[bi, bj], y[bi, bj], zc[bi, bj] = xs, ys, zs
+    return protect
+
+
 def _costa(nu, nv, order, radius, theta=0.0):
     """Costa's minimal surface -- genus 1, three ends, on the square torus.
     Gray/Nylander closed form (constant offsets dropped; re-centered by the
     mesher). Meshed periodically with the planar end (0,0) and the two
     catenoid ends (1/2,0), (0,1/2) removed. `order`/`theta` unused;
-    `radius` scales the end-rim disk size (smaller -> ends reach further)."""
-    L = _SQUARE
-    e1 = L.wp(0.5).real
+    `radius` scales the end-rim disk size (smaller -> ends reach further).
+
+    End rims are cut on the ANALYTIC parameter circles, evenly sampled,
+    via _cut_rims_analytic, so each rim is a smooth, uniformly spaced
+    curve lying ON the true surface (about the surface's own axis --
+    which sits at (-0.179, -0.179) in these raw coordinates -- the
+    planar rim is then round to ~0.3% and flat only up to its genuine
+    z-wave, and the catenoid rims are flat to ~0.002 but genuinely ~27%
+    oval: the end's 2-fold deviation from its asymptotic catenoid decays
+    like 1/r^2, and no rounder on-surface cut exists at this depth --
+    the iso-z contour is MORE oval, and the constant-image-radius curve
+    trades the ovality for a large height wave).  The rims are NOT
+    snapped to object-space circles: that snap (tried once) circularizes
+    about the raw origin -- the wrong axis -- drags the whole surface
+    ~10% off-center, flattens the planar rim's real z-wave, and parks a
+    perfect circle one quad row in front of the true surface, corrugating
+    the band behind every rim.  An honest oval that lies on the surface
+    beats a perfect circle that lies about it."""
     U, V = _torus_grid(nu, nv)
-    z = U + 1j * V
-    ze, z1, z3 = L.zeta(z), L.zeta(z - 0.5), L.zeta(z - 0.5j)
-    P = L.wp(z)
-    a = math.pi / (2.0 * e1)
-    x = 0.5 * np.real(-ze + math.pi * U + a * (z1 - z3))
-    y = 0.5 * np.real(-1j * ze + math.pi * V - a * (1j * z1 - 1j * z3))
-    zc = (math.sqrt(2.0 * math.pi) / 4.0) * np.log(
-        np.abs((P - e1) / (P + e1)))
+    x, y, zc = _costa_xyz(U, V)
     s = max(radius / 1.2, 0.4)
-    mask = _puncture_mask(U, V, [(0.0, 0.0, 0.20 / s),      # planar end
-                                 (0.5, 0.0, 0.11 / s),      # catenoid end
-                                 (0.0, 0.5, 0.11 / s)])     # catenoid end
+    ends = [(0.0, 0.0, 0.20 / s),      # planar end
+            (0.5, 0.0, 0.11 / s),      # catenoid end
+            (0.0, 0.5, 0.11 / s)]      # catenoid end
+    mask = _puncture_mask(U, V, ends)
+    _we.LAST_PROTECT = _cut_rims_analytic(_costa_xyz, x, y, zc, mask, ends)
     return x, y, zc, True, True, mask
+
+
+def _chen_gack_xyz(U, V):
+    """Chen-Gackstatter immersion at torus coordinates (U, V);
+    vectorized, non-finite at the end puncture w = 0."""
+    L = _SQUARE
+    g2 = 4.0 * L.wp(0.5).real ** 2
+    w = U + 1j * V
+    with np.errstate(divide='ignore', invalid='ignore'):
+        ze, P, Pp = L.zeta(w), L.wp(w), L.wp_prime(w)
+        x = np.real(math.pi * w - ze - (math.pi / g2) * Pp)
+        y = np.imag(math.pi * w + ze - (math.pi / g2) * Pp)
+        zc = math.sqrt(6.0 * math.pi / g2) * np.real(P)
+    return x, y, zc
 
 
 def _chen_gackstatter(nu, nv, order, radius, theta=0.0):
     """Chen-Gackstatter -- genus 1 with a single Enneper (order-3) end,
     total curvature -8 pi, on the square torus. Meshed periodically with a
     disk removed around the lone end at w = 0. `order`/`theta` unused;
-    `radius` scales the end-rim disk size."""
-    L = _SQUARE
-    g2 = 4.0 * L.wp(0.5).real ** 2
+    `radius` scales the end-rim disk size.
+
+    The lone rim is a genuine space curve (it follows the wing edges up
+    and down the Enneper end, spanning the surface's full height), so no
+    object-space snap could ever be right for it.  Instead the rim is
+    cut on the exact parameter circle |w| = rho, evenly sampled, and
+    re-evaluated through the closed form (_cut_rims_analytic) -- the
+    same treatment as Costa's ends -- replacing the old raw staircase
+    cut whose wobble was amplified by the end's very large cells."""
     U, V = _torus_grid(nu, nv)
-    w = U + 1j * V
-    ze, P, Pp = L.zeta(w), L.wp(w), L.wp_prime(w)
-    x = np.real(math.pi * w - ze - (math.pi / g2) * Pp)
-    y = np.imag(math.pi * w + ze - (math.pi / g2) * Pp)
-    zc = math.sqrt(6.0 * math.pi / g2) * np.real(P)
-    mask = _puncture_mask(U, V, [(0.0, 0.0, 0.26 / max(radius / 1.2, 0.4))])
+    x, y, zc = _chen_gack_xyz(U, V)
+    ends = [(0.0, 0.0, 0.26 / max(radius / 1.2, 0.4))]
+    mask = _puncture_mask(U, V, ends)
+    _we.LAST_PROTECT = _cut_rims_analytic(_chen_gack_xyz, x, y, zc,
+                                          mask, ends)
     return x, y, zc, True, True, mask
 
 
@@ -220,6 +480,18 @@ COUNT_PARAM = {}
 STOREY_PARAM = {}
 # surfaces that use the associate-family angle
 ANGLE_PARAM = {'CATHEL', 'PGD'}
+# surfaces that are a single fixed family member: the order/count slider
+# has no effect, so the operator hides it (a visible dead control reads
+# as a bug)
+ORDERLESS = set()
+# surfaces whose order/count slider only supports a sub-range of the
+# shared property: surface key -> (lo, hi) in SLIDER units.  The
+# operator snaps the slider into this range, so the control always
+# shows the value actually built -- a slider that silently substitutes
+# a different value is worse than one that is absent or correctly
+# bounded (the k-noid-with-Enneper-ends "Ends (k)" slider used to
+# build k = 3 for order 1, 2 and 3 without saying so)
+ORDER_RANGE = {}
 
 # Wire in the catalog (KNOID, COSTA_HM and the rest of the zoo): the
 # rows in zoo.py are built by the generic engine in weierstrass.py and
@@ -234,7 +506,7 @@ ANGLE_PARAM = {'CATHEL', 'PGD'}
 try:
     from . import zoo as _zoo
     _zoo.register(PARAMETRIC, MESH_PARAM, COUNT_PARAM, ANGLE_PARAM,
-                  STOREY_PARAM)
+                  STOREY_PARAM, ORDERLESS, ORDER_RANGE)
     SURFACE_FAMILY = _zoo.SURFACE_FAMILY
     FAMILIES = _zoo.FAMILIES
 except Exception as _e:                        # WIP catalog: skip
@@ -254,6 +526,10 @@ def _raw_grid(kind, nu, nv, order, radius, theta, copies=None):
     direction tiles the surface welded and in its true period scale."""
     b = PARAMETRIC[kind][1]
     spec = getattr(b, 'spec', None)
+    # stale-guard: the engine publishes per-build masks (the bell-mouth
+    # no-smooth zones) through a module global; clear it before every
+    # build so a non-disk builder can never inherit the previous one's
+    _we.LAST_PROTECT = None
     if (copies is not None and spec is not None and 'domain' in spec
             and spec['domain'][0] == 'torus'):
         spec2 = dict(spec, copies=int(max(1, copies)))
@@ -594,12 +870,34 @@ def _tilt_scherk_doubly(nu, nv, rho, scale, cells_u, cells_v,
 
 
 
-def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
+def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0,
+                          equal_areas=False):
     """(nu, nv, 3) point grid plus wrap flags, centered and fit to a 2 m
-    cube. (Used for NURBS output; end clipping is a mesh-only operation.)"""
+    cube. (Used for NURBS output; end clipping is a mesh-only operation.)
+
+    `equal_areas` spaces the control grid by equal surface area rather
+    than equal parameter, which is usually what you want of a NURBS
+    control net too -- it puts control points where the surface actually
+    is instead of bunching them where the parametrization contracts."""
     if kind in MESH_PARAM:
         raise ValueError(f"{kind} has no NURBS/grid form; use mesh output")
-    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
+    global LAST_EQ_AREA_COV
+    LAST_EQ_AREA_COV = None
+    if equal_areas:
+        fu = max(nu, min(4 * nu, _EQ_AREA_FINE))
+        fv = max(nv, min(4 * nv, _EQ_AREA_FINE))
+        Gf, wrap_u, wrap_v, clipf = _raw_grid(kind, fu, fv, order, radius,
+                                              theta)
+        G, clip, cov0, cov1 = equal_area_resample(Gf, nu, nv, clipf)
+        if cov1 >= cov0:                       # do no harm -- see below
+            G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order,
+                                                radius, theta)
+            LAST_EQ_AREA_COV = (cov0, cov0, False)
+        else:
+            LAST_EQ_AREA_COV = (cov0, cov1, True)
+    else:
+        G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius,
+                                            theta)
     nu, nv = G.shape[:2]           # the grid may resize itself (odd rows)
     flat = G.reshape(-1, 3)
     if isinstance(clip, np.ndarray):
@@ -612,8 +910,48 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
     return G, wrap_u, wrap_v
 
 
+@_geom_cache.memoise(version=11)  # v11: COSTA + CHEN_GACK rims cut on
+                                  # the analytic parameter circles,
+                                  # evenly sampled, banded, on-surface;
+                                  # COSTA object-space snap retired;
+                                  # COSTA_HM circularization tapered
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
-                     with_uv=False, cells=(1, 1)):
+                     with_uv=False, cells=(1, 1), equal_areas=False):
+    """Mesh (V, quads) for `kind` -- see `_build_parametric` for the full
+    contract.  This wrapper owns the equal-area DECISION.
+
+    Judging the resampling on the grid alone is not good enough: the rim
+    smoothing, circularization and welding that run afterwards move
+    boundary vertices, and equalizing thins the boundary bands so those
+    steps bite harder.  Measured on Catalan, a grid that equalized from
+    0.632 to 0.033 still delivered a mesh that was WORSE than the plain
+    one (0.708 against 0.631).  So when the option is on, build the
+    surface both ways and ship whichever mesh actually has the more even
+    faces.  The second build only happens for an opt-in flag."""
+    if not equal_areas:
+        return _build_parametric(kind, nu, nv, order, radius, scale, theta,
+                                 with_uv, cells, equal_areas=False)
+
+    global LAST_EQ_AREA_COV
+    out_eq = _build_parametric(kind, nu, nv, order, radius, scale, theta,
+                               with_uv, cells, equal_areas=True)
+    grid = LAST_EQ_AREA_COV
+    if grid is None or not grid[2]:
+        # never reached the grid seam, or already stood down there
+        return out_eq
+    out_pl = _build_parametric(kind, nu, nv, order, radius, scale, theta,
+                               with_uv, cells, equal_areas=False)
+    cov_eq = mesh_area_cov(out_eq[0], out_eq[1])
+    cov_pl = mesh_area_cov(out_pl[0], out_pl[1])
+    if cov_eq < cov_pl:
+        LAST_EQ_AREA_COV = (cov_pl, cov_eq, True)
+        return out_eq
+    LAST_EQ_AREA_COV = (cov_pl, cov_pl, False)
+    return out_pl
+
+
+def _build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
+                      with_uv=False, cells=(1, 1), equal_areas=False):
     """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
     per-face-corner UV array (sum of face lengths, 2).  Minimal
     surfaces are conformally parametrized by their Weierstrass data,
@@ -630,6 +968,13 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
     All arraying happens in the surface's true period scale BEFORE
     _center_fit normalizes the whole (tiled) object into the 2 m cube.
     A plain int is accepted as (cells, 1)."""
+    # Cleared HERE, not at the grid seam below: several surfaces return
+    # early (the Scherk graphs, the finished 2-D lattice meshes, the
+    # towers) and never reach it, and a stale value from the previous
+    # build would have the operator report an equalization that this one
+    # never performed.  None means "the option did not apply".
+    global LAST_EQ_AREA_COV
+    LAST_EQ_AREA_COV = None
     if isinstance(cells, (int, float)):
         cells = (int(cells), 1)
     cells_u = int(max(1, cells[0]))
@@ -706,8 +1051,31 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
     if kind in PERIODIC_COPIES_1D:
         copies = cells_u
         nu = max(3, nu * cells_u)
-    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta,
-                                        copies=copies)
+    if equal_areas:
+        # Sample the domain far more densely than asked, measure the area
+        # element on that fine grid, then lay the requested nu x nv lines
+        # at equal quantiles of it (see domain.equal_area_resample).  The
+        # oversampling is what makes the measured density trustworthy.
+        fu = max(nu, min(4 * nu, _EQ_AREA_FINE))
+        fv = max(nv, min(4 * nv, _EQ_AREA_FINE))
+        Gf, wrap_u, wrap_v, clipf = _raw_grid(kind, fu, fv, order, radius,
+                                              theta, copies=copies)
+        G, clip, cov0, cov1 = equal_area_resample(Gf, nu, nv, clipf)
+        if cov1 >= cov0:
+            # Do no harm.  A surface whose live domain is not simply a
+            # rectangle -- Costa punctures its ends at INTERIOR points --
+            # can end up worse: concentrating samples in the live region
+            # leaves the cells that bridge a hole enormous.  Equalizing is
+            # an improvement or it does not happen.
+            G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order,
+                                                radius, theta,
+                                                copies=copies)
+            LAST_EQ_AREA_COV = (cov0, cov0, False)
+        else:
+            LAST_EQ_AREA_COV = (cov0, cov1, True)
+    else:
+        G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius,
+                                            theta, copies=copies)
     # trust the grid's own dimensions: a builder may return a different
     # size than requested (the Bjorling strip forces an odd row count so
     # a column lands on the seed axis).  Indexing the quads/UVs with the
@@ -757,14 +1125,18 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         ref = None
     else:
         # grid disk/strip with no puncture mask and no radial clip (Enneper,
-        # Bour, Henneberg, Richmond, the associate disks...).  Historically
-        # this branch skipped _smooth_boundary, so the outer disk-edge ring
-        # (and any strip corner) kept the raw grid staircase.  A gentle
-        # boundary relaxation knocks that residual facet down; the denser
-        # sampling (res baseline + per-surface res_boost) does the heavy
-        # lifting, so a light pass is enough and leaves clean circular rims
-        # (catenoid/cathel) essentially untouched.
-        V = _smooth_boundary(V, quads, iters=5)
+        # Bour, Henneberg, Richmond, the associate disks...).  On this
+        # branch the boundary vertices are EXACT samples of the immersion
+        # along the domain edge -- there is no clip staircase to relax, so
+        # do NOT smooth here: any curve smoothing displaces a genuinely
+        # curved rim off the true surface by ~ curvature * spacing^2, and
+        # wherever the transverse mesh spacing is finer than that (the
+        # rim-graded Enneper disk, the tightly wound helicoid strip edge,
+        # Henneberg's inner ring) the boundary ring gets dragged through
+        # its neighbour ring, folding the outermost face ring inside out --
+        # one full ring of inverted normals, seen as a thin doubled "lip"
+        # along the rim.  Rim smoothness comes from sampling density (res
+        # baseline + per-surface res_boost), not from moving exact points.
         ref = _inliers(V) if clip else V
 
     if ref is None:
@@ -776,7 +1148,24 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         V = V[used]
         UVg = UVg[used]
         quads = [tuple(int(remap[i]) for i in qd) for qd in quads]
-        V = _smooth_boundary(V, quads)   # smooth staircase/clip end rims
+        # smooth staircase/clip end rims -- EXCEPT the bell-mouth rims the
+        # engine cut on exact conformal circles (LAST_PROTECT): those are
+        # analytically placed, and smoothing them folds the adjacent
+        # steep-flare sliver quads inside out (measured on the k-noid
+        # family: every smoothing-induced flipped edge sat on a mouth ring)
+        prot = getattr(_we, 'LAST_PROTECT', None)
+        protv = None
+        if (prot is not None and prot.shape == (nu, nv)
+                and not equal_areas and len(used)):
+            protv = prot.reshape(-1)[used]
+        V = _smooth_boundary(V, quads, protect=protv)
+        # (No object-space rim circularization here.  It was tried for
+        # Costa's ends and measured harmful: _circularize_outer snaps
+        # about the raw z-axis, which is NOT the torus surfaces' own
+        # symmetry axis, and even about the right axis a snapped rim
+        # sits one quad row off the true surface, corrugating the band
+        # behind it.  Analytic rims are cut ON the surface by their
+        # builders via _cut_rims_analytic and protected above instead.)
         ref = V
 
     # --- doubly periodic lattice array (in the true period scale, BEFORE

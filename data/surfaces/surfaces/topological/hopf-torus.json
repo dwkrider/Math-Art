@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "hopf-torus",
+  "name": "Hopf Torus",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "topological"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "cos((pi/4 + (17.5*pi/180)*cos(3*u)))*cos(u + v)/(1 - sin((pi/4 + (17.5*pi/180)*cos(3*u)))*sin(v))",
+    "y": "cos((pi/4 + (17.5*pi/180)*cos(3*u)))*sin(u + v)/(1 - sin((pi/4 + (17.5*pi/180)*cos(3*u)))*sin(v))",
+    "z": "sin((pi/4 + (17.5*pi/180)*cos(3*u)))*cos(v)/(1 - sin((pi/4 + (17.5*pi/180)*cos(3*u)))*sin(v))",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "note": "the operator's default WAVY curve: colatitude beta(u) = pi/2 + (35 deg) cos 3u on S^2, lifted to its Hopf fibre torus in S^3 and stereographically projected from (0,0,0,1).  The builder centres on the bounding box and scales the 97th-percentile radius to 1; verification applies the same fit to the chart",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.hopf_fibration_generator",
+      "operator_id": "mesh.hopf_torus_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.52 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.007408).",
+    "sources": [
+      "Heinz Hopf, \"Ueber die Abbildungen der dreidimensionalen Sphaere auf die Kugelflaeche\", Math. Ann. 104 (1931), 637-665 (the fibration and its linking invariant).",
+      "D. W. Lyons, \"An Elementary Introduction to the Hopf Fibration\", Math. Mag. 76 (2003), 87-98.",
+      "N. Johnson, \"Visualization of the Hopf fibration\" (2011), https://nilesjohnson.net/hopf.html (the colour/latitude-torus rendering imitated here).",
+      "Y. Villarceau (1848): a torus of revolution carries two extra circles through each point, the \"Villarceau circles\" -- exactly the Hopf fibres of a stereographically projected Clifford torus.",
+      "Ulrich Pinkall, \"Hopf tori in S^3\", Invent. Math. 81 (1985), 379-386 (the Hopf torus over a curve on S^2, and the theorem that it is Willmore exactly over an elastic curve).",
+      "Luigi Bianchi (1894): classification of the flat surfaces immersed in S^3; the case with one family of asymptotic lines a great circle is exactly the Hopf tori.  Modern treatment in M. Spivak, \"A Comprehensive Introduction to Differential Geometry\", vol. IV, p. 139ff."
+    ]
+  },
+  "ids": {
+    "vmm": "ch073_hopf_fibered"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

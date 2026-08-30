@@ -1,0 +1,363 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "schonhardt-polyhedron",
+  "name": "Schonhardt Polyhedron",
+  "alternate_names": [],
+  "families": [
+    "notable"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": null,
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": "Sch\u00f6nhardt polyhedron",
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": null,
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "D3",
+    "orbifold": "223",
+    "coxeter": "[2,3]+",
+    "hermann_mauguin": "322",
+    "order": 6,
+    "rotation_group": "D3",
+    "rotation_order": 6,
+    "chiral": true,
+    "transitivity": {
+      "vertex": true,
+      "edge": false,
+      "face": false
+    },
+    "orbits": {
+      "vertices": 1,
+      "edges": 3,
+      "faces": 2
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 6,
+      "edges": 12,
+      "faces": 8
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 8,
+        "regular": false
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": null,
+    "convex": false,
+    "self_dual": false,
+    "dual": null,
+    "coincident_vertices": 0,
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": false,
+      "slug": null,
+      "counts": {
+        "vertices": 6,
+        "edges": 12,
+        "faces": 8
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "circumradius_1",
+    "edge_length": null,
+    "edge_lengths_uniform": false,
+    "circumradius": {
+      "value": 1.0,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "midradius": null,
+    "inradius": null,
+    "surface_area": null,
+    "volume": null,
+    "isoperimetric_quotient": null,
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": null,
+        "degrees": 89.05498564035643,
+        "radians": 1.5543027147404904
+      },
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": null,
+        "degrees": 113.73473785154854,
+        "radians": 1.9850456494021438
+      },
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": null,
+        "degrees": 118.68083944635488,
+        "radians": 2.0713714073696567
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 120.00000000000001,
+        "radians": 2.0943951023931957,
+        "exact": "acos(-1/2)",
+        "source": "pslq"
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 1.3125801137348485
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": 1.0,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    },
+    "measures_note": "Area and volume are omitted: the faces self-intersect, so both depend on a convention (net area vs. density-weighted vs. outer solid region). Record them only alongside an explicit convention field."
+  },
+  "geometry": {
+    "length_unit": "circumradius_1",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the construction, centred at the centroid",
+    "constants": {},
+    "vertices": [
+      [
+        0.894427190999916,
+        0.0,
+        -0.447213595499958
+      ],
+      [
+        -0.447213595499958,
+        0.774596669241483,
+        -0.447213595499958
+      ],
+      [
+        -0.447213595499958,
+        -0.774596669241483,
+        -0.447213595499958
+      ],
+      [
+        0.685170979440002,
+        0.574926716141482,
+        0.447213595499958
+      ],
+      [
+        -0.840486631212889,
+        0.305912116060167,
+        0.447213595499958
+      ],
+      [
+        0.155315651772887,
+        -0.880838832201648,
+        0.447213595499958
+      ]
+    ],
+    "vertices_exact": null,
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 3,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 60.00000000000002,
+            "radians": 1.047197551196598,
+            "count": 3,
+            "exact": "acos(1/2)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 1,
+        "sides": 3,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 42.12201285566692,
+            "radians": 0.7351678118987667,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 64.3737004247386,
+            "radians": 1.1235330241041608,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 73.50428671959449,
+            "radians": 1.2828918175868658,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        2,
+        1,
+        0
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        0,
+        1,
+        3
+      ],
+      [
+        1,
+        4,
+        3
+      ],
+      [
+        1,
+        2,
+        4
+      ],
+      [
+        2,
+        5,
+        4
+      ],
+      [
+        2,
+        0,
+        5
+      ],
+      [
+        0,
+        3,
+        5
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        9,
+        11
+      ],
+      [
+        7,
+        8,
+        10
+      ]
+    ]
+  },
+  "compound": null,
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.other_polyhedra_generator",
+    "operator_id": "mesh.notable_polyhedron_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: via math_art.other_polyhedra_generator",
+    "sources": [
+      "E. Schonhardt, \"Ueber die Zerlegung von Dreieckspolyedern in Tetraeder\", Math. Ann. 98 (1928), 309-312."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "bryant-surface",
+  "name": "Bryant Surface",
+  "primary_family": "cmc",
+  "families": [
+    "aperiodic",
+    "cmc",
+    "cmc1-bryant",
+    "def-parametric",
+    "immersed",
+    "implemented"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: the CMC-1 surface is built by numerically integrating Bryant's holomorphic representation in H^3 and then mapping through the Poincare-ball model; there is no closed real chart to transcribe. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "cmc1-bryant",
+    "also_satisfies": [
+      "cmc",
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.bryant_generator",
+      "operator_id": "mesh.bryant_surface_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Robert L. Bryant, \"Surfaces of mean curvature one in hyperbolic space\", Asterisque 154-155 (1987), 321-347.  Theorem A (the representation f = F (conj F)^T), Theorem B (the polynomial data on C), Example 1 (Enneper's cousin, p. 341), Example 2 (the catenoid cousins, pp. 341-342).",
+      "A. I. Bobenko, T. V. Pavlyukevich, B. A. Springborn, \"Hyperbolic constant mean curvature one surfaces: spinor representation and trinoids in hypergeometric functions\", Math. Z. 245 (2003), 63-91; arXiv:math/0206021 -- the spinor form of the same representation and the explicit trinoids the TRINOID mode implements (see math_art/trinoid.py for the construction, gates and details).",
+      "M. Umehara and K. Yamada, \"Complete surfaces of constant mean curvature 1 in the hyperbolic 3-space\", Ann. of Math. 137 (1993), 611-638 -- the global theory these examples opened up."
+    ]
+  },
+  "named_after": "Bryant",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

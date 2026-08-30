@@ -32,22 +32,22 @@ but the same machinery grows the manifold of any equilibrium of any shipped syst
 
 | Option | Default | Description |
 | --- | --- | --- |
-| System | Lorenz | Lorenz, Chen-Celikovsky, Rayleigh-Benard, Shimizu-Morioka, Roessler, Halvorsen, Thomas. |
-| Parameter 1 | 10 | Range -100-100. |
-| Parameter 2 | 28 | Range -100-100. |
-| Parameter 3 | 2.66667 | Range -100-100. |
-| Equilibrium |  | -- |
-| Manifold |  | -- |
+| System | Lorenz | Chaotic dynamical system to grow the manifold of. Lorenz, Chen-Celikovsky, Rayleigh-Benard, Shimizu-Morioka, Roessler, Halvorsen, Thomas. |
+| Parameter 1 | 10 | First system parameter (its meaning depends on the system) Range -100-100. |
+| Parameter 2 | 28 | Second system parameter (its meaning depends on the system) Range -100-100. |
+| Parameter 3 | 2.66667 | Third system parameter (its meaning depends on the system) Range -100-100. |
+| Equilibrium |  | Equilibrium point to grow the manifold from |
+| Manifold |  | Grow the stable manifold (flows in) or the unstable one (flows out) |
 | Arclength | 100 | How far to grow, measured along trajectories rather than in time Range 5-250. |
 | Seed Radius | 0.02 | Radius of the starting circle in the invariant eigenplane; the linear seed costs an error of order its square Range 0.0001-0.5. |
-| Seed Points | 96 | Range 16-512. |
+| Seed Points | 96 | Number of points on the starting seed circle Range 16-512. |
 | Ring Spacing | 1 | Arclength between recorded rings Range 0.1-5. |
 | Target Edge | 0.25 | Wanted spacing along a ring; smaller keeps the sharp folds from being cut across Range 0.02-2. |
-| Max Ring Points | 3000 | Range 200-20000. |
+| Max Ring Points | 3000 | Cap on points per ring as it grows and is refined Range 200-20000. |
 | Step | 0.02 | Arclength step of the integrator Range 0.002-0.2. |
 | Thickness | 0.03 | If > 0, add a Solidify modifier -- these are surfaces, so they need a shell to print Range 0-0.5. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Scale | 1 | Overall size of the surface Range 0.01-100. |
+| Smooth Shading | On | Smooth-shade the surface |
 
 <!-- /options -->
 

@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "callahan-hoffman-meeks-chm-1-2-genus-4",
+  "name": "Callahan-Hoffman-Meeks CHM-(1,2) (genus 4)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No (g, dh) pair is stored: the shipped row is built by the dedicated mesher we.stinv_chm12_mesh (a torus/branched-cover or multi-patch assembly); no elementary (g, dh) pair on a plane domain is stored in the code. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "CHM12_PERIODIC",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
+      "C. J. Costa (1984); D. Hoffman, W. H. Meeks III (1985); M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks (research/msblog_harvest/singly_periodic.json).",
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988) 83-114;"
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf posts ch372, higher-genus CHM)",
+        "agrees": false,
+        "detail": "UNRESOLVED between three statements, so no genus is asserted here: (a) the page's convention 'denote by CHM_r,s a translation invariant surface with 2r ends of genus s+1 in the quotient' makes CHM-(1,2) genus 3 with 2 ends; (b) the shipped implementation (math_art/minsurf/zoo.py) measures quotient genus 4 with 2 planar ends (chi = -8); (c) Invent. Math. 96 (1989) covers only the dihedral family M_k (genus 2k+1), of which CHM-(1,2) is not a member.  Note the same page convention gives CHM-(1,1) genus 2, which contradicts the 1989 paper's genus 3 for M_1 -- so the blog's genus convention appears shifted by one, and the record's name '(genus 4)' agrees with the measurement.  Flagged for resolution against Weber's 'CHM 1999' manuscript."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch372_callahan_hoffman_meeks_surfaces_of_higher_genus"
+  },
+  "named_after": "Callahan, Hoffman, Meeks",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

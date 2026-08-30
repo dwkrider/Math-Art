@@ -329,8 +329,10 @@ if _IN_BLENDER:
         bl_label = "Spiral Tiling"
         bl_options = {'REGISTER', 'UNDO'}
 
-        family: EnumProperty(name="Family", items=FAMILY_ITEMS,
-                             default='GOLDEN')
+        family: EnumProperty(
+            name="Family", items=FAMILY_ITEMS, default='GOLDEN',
+            description="Prototile-angle family: fixes the triangle's "
+                        "shape and how the spiral winds")
         n: IntProperty(
             name="n", default=3, min=1, max=24,
             description="Number of reduced triangles mated before one "
@@ -359,7 +361,9 @@ if _IN_BLENDER:
                     "A material per scale level, so tiles band into "
                     "concentric rings by size (colors cycle)"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='RING')
+            default='RING',
+            description="How tiles are colored: by spiral arm, by size "
+                        "ring, or one uniform material")
         margin: FloatProperty(
             name="Margin", default=0.0, min=0.0, max=0.45,
             description="Inset each tile toward its centroid, leaving "

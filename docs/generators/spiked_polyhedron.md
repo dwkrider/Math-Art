@@ -6,6 +6,15 @@
 
 A family of augmented and folded Platonic sculptures. **Spiked** raises a pyramid on every face of a Platonic seed — an icosahedron at pyramid height $\sqrt6/3$ becomes a 60-face deltahedron of regular tetrahedra. **Hyperbolic** sags each face toward the centre while spiking the vertices outward. **Folded / Rhombic Hexecontahedron** builds the 60 golden rhombi of the rhombic hexecontahedron (the union of 20 acute golden rhombohedra) and can fold each rhombus gently along its long diagonal.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Spiked & Hyperbolic*. The entry expands into the four **Form**s — pick one (it is also the Form dropdown in the redo panel). Each form shows only the controls that apply to it.
+2. **Spiked Polyhedron.** Choose a **Seed** (any Platonic solid, or a **Goldberg Sphere** — 12 pentagons plus hexagons, whose **Frequency** you then set). **Spike Height** is the pyramid height in edge-lengths; the default $\sqrt6/3\approx0.816$ makes the icosahedron's pyramids into *regular tetrahedra*, turning it into a 60-face deltahedron. Spiking a Goldberg seed gives Fathauer's "Pollen / Fungus" form.
+3. **Hyperbolic Polyhedron.** Choose a **Seed** (default Dodecahedron). **Spike Length** is how far the corners are pulled out, **Sharpness** how abruptly the spikes rise from the sagging faces ($1\approx$ the flat solid), and **Resolution** the subdivision of each face. **Smooth Shading** applies to this form only.
+4. **Folded / Rhombic Hexecontahedron.** **Mid Scale** and **Top Scale** shape the sixty golden rhombi: $\text{mid}=\text{top}=1$ is the flat rhombic hexecontahedron, and raising Top (default $1.05$) folds each rhombus gently along its long diagonal. The separate **Rhombic Hexecontahedron** form emits the flat rhombi as planar quads.
+5. **Colour and Style.** **Coloring** *By Face Group* tints each seed face with its own material. **Style** is Solid, Leonardo (open panels, via Border), Struts (Wireframe modifier), Ball and Stick (Strut / Node Radius), or Wireframe (edges only). Set the overall **Scale** — the solid is auto-centred and fit into a 2 m cube, spikes included.
+6. **Read the report.** The operator prints the built object's name with `V=… F=…` (vertex and face counts) in the status bar.
+
 ## Options
 
 
@@ -13,7 +22,7 @@ A family of augmented and folded Platonic sculptures. **Spiked** raises a pyrami
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Folded Rhombic Hexecontahedron | Spiked Polyhedron, Hyperbolic Polyhedron, Folded Rhombic Hexecontahedron, Rhombic Hexecontahedron. |
+| Form | Folded Rhombic Hexecontahedron | Which polyhedron family to build. Spiked Polyhedron, Hyperbolic Polyhedron, Folded Rhombic Hexecontahedron, Rhombic Hexecontahedron. |
 | Seed | Icosahedron | Base solid (Platonic, or a Goldberg polyhedron). Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Goldberg Sphere. |
 | Frequency | 2 | Goldberg seed only: GP(f,0) frequency; f=2 gives 12 pentagons + 30 hexagons Range 1-8. |
 | Seed | Dodecahedron | Base Platonic solid. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
@@ -23,14 +32,14 @@ A family of augmented and folded Platonic sculptures. **Spiked** raises a pyrami
 | Resolution | 12 | Subdivision of each face Range 2-48. |
 | Mid Scale | 1 | Radial scale of the rhombus mid vertices (1 = rhombic hexecontahedron) Range 0.5-2. |
 | Top Scale | 1.05 | Radial scale of the rhombus tips; 1 is the flat rhombic hexecontahedron, ~1.05 a gentle fold Range 0.5-2. |
-| Coloring | None | By Face Group, None. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
-| Border | 0.3 | Range 0.02-0.95. |
-| Thickness | 0.04 | Range 0.001-1. |
+| Coloring | None | How faces are assigned materials. By Face Group, None. |
+| Style | Solid | How the polyhedron surface is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
+| Border | 0.3 | Width of the open-face panel frame (Leonardo style) Range 0.02-1. |
+| Thickness | 0.04 | Panel or strut thickness (Leonardo and Struts styles) Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
 | Smooth Shading | On | Hyperbolic preset only |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the solid Range 0.01-100. |
 
 <!-- /options -->
 
@@ -51,23 +60,25 @@ Renders of each selectable option:
 
 ## How it works
 
-**Platonic seeds.** Each seed is generated at circumradius 1. The icosahedron uses the cyclic coordinates $(0,\pm1,\pm\varphi)$ with $\varphi=\tfrac{1+\sqrt5}{2}$, normalized by $1/\sqrt{1+\varphi^2}$; the dodecahedron is its dual (a vertex at each icosahedral face centroid, faces ordered around each icosahedral vertex).
+**In plain terms.** Start with one of the five Platonic solids — a cube, an icosahedron. Each of these three forms reshapes it. *Spiked* glues a pyramid onto every face, so a smooth solid grows a coat of spikes (tuned just right, an icosahedron's pyramids become perfect little tetrahedra and the whole thing becomes a sixty-sided spiky ball). *Hyperbolic* does the opposite in the middle of each face — it lets the faces cave inward toward the centre while dragging the corners outward into points, giving a saddle-shaped, "hyperbolic" look. The last form rebuilds the icosahedron out of sixty identical diamond (rhombus) faces and can crease each diamond down its middle. The rest of this section gives the exact vectors.
+
+**Platonic seeds.** Each seed is generated at circumradius 1 — every vertex the same distance from the centre, so they all sit on one sphere. The icosahedron uses the cyclic coordinates $(0,\pm1,\pm\varphi)$ with $\varphi=\tfrac{1+\sqrt5}{2}$, normalized by $1/\sqrt{1+\varphi^2}$, and its faces are found by taking every triple of vertices that are pairwise nearest neighbours. The dodecahedron is its dual (a vertex at each icosahedral face centroid, faces ordered around each icosahedral vertex) — dualising simply swaps the roles of faces and vertices.
 
 **Spiked (face augmentation).** Every face $f$ with centroid $c$, unit outward normal $\hat n$ and edge length $e$ gains an apex
 
 $$a = c + h\,e\,\hat n,$$
 
-and the face is replaced by the pyramid of triangles from each edge to $a$. On the icosahedron the special height
+a point lifted straight out from the middle of the face by $h$ edge-lengths, and the face is replaced by the fan of triangles from each of its edges up to $a$ — the pyramid. Measuring the lift in edge-lengths means one height setting gives geometrically similar spikes on faces of any size. On the icosahedron the special height
 
 $$h=\frac{\sqrt6}{3}\approx0.8165$$
 
-makes each pyramid a *regular* tetrahedron, so the 20 faces become 60 equilateral triangles — a closed 60-face deltahedron (the self-test verifies uniform edge length and a watertight surface).
+is exactly what makes each pyramid's slant edges equal its base edges, so every pyramid is a *regular* tetrahedron; the 20 faces become 60 equilateral triangles — a closed 60-face deltahedron (the self-test verifies uniform edge length and a watertight surface). A **Goldberg** seed instead pyramids the twelve pentagons and the hexagons of the Goldberg polyhedron $GP(f,0)$, giving the spiky "Pollen / Fungus" form after Fathauer's ceramics.
 
-**Hyperbolic (concave faces, spiked vertices).** Each face is subdivided into a barycentric grid over its (centroid, $A$, $B$) sub-triangles, and every point is pushed radially by a factor that stays near 1 across the face interiors and rises to the spike length at the vertices. With inradius $r_{\min}$ (centre-to-face distance), radius $r$, spike $\sigma$ and sharpness $s$,
+**Hyperbolic (concave faces, spiked vertices).** Each face is subdivided into a barycentric grid over its (centroid, $A$, $B$) sub-triangles — a fan of small triangles from the face-centre out to each edge — and every point is pushed radially by a factor that stays near 1 across the face interiors and rises to the spike length at the vertices. With inradius $r_{\min}$ (the centre-to-face distance, the smallest radius on the solid), radius $r$, spike $\sigma$ and sharpness $s$,
 
-$$w=\left(\operatorname{clip}\frac{r-r_{\min}}{1-r_{\min}},\,0,\,1\right)^{s},\qquad g=1+(\sigma-1)\,w,\qquad \mathbf{p}\mapsto g\,\mathbf{p}.$$
+$$w=\left(\mathrm{clip}\frac{r-r_{\min}}{1-r_{\min}},\,0,\,1\right)^{s},\qquad g=1+(\sigma-1)\,w,\qquad \mathbf{p}\mapsto g\,\mathbf{p}.$$
 
-The exponent $s$ controls how abruptly the spikes rise from the sagging faces ($s=1$ is nearly the flat solid); every vertex reaches radius exactly $\sigma$.
+The blend $w$ is 0 at the face centres (where $r=r_{\min}$) and 1 at the vertices (where $r=1$), so face-centre points are left where they are and only the corners are pushed out to radius $\sigma$. The exponent $s$ controls how abruptly that transition happens ($s=1$ is nearly the flat solid; large $s$ keeps the faces flat until the spikes shoot up right at the corners). Because the flat face now dips *below* the sphere between its raised corners, each face reads as a concave, saddle-like well — the "hyperbolic" appearance.
 
 **Folded & flat rhombic hexecontahedron.** For each icosahedron face with vertex vectors $a,b,c$, the construction places a tent whose mid vertices sit along $a+b$ (scaled by *mid*) and whose top sits along $a+b+c$ (scaled by *top*), forming rhombi $(a,\,a+b,\,a+b+c,\,a+c)$. At $\text{mid}=\text{top}=1$ the 120 triangles fuse in pairs into the **60 golden rhombi** of the rhombic hexecontahedron — the union of 20 acute golden rhombohedra sharing the centre, whose diagonals are in the golden ratio
 

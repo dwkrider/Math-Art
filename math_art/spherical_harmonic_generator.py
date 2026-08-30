@@ -182,7 +182,10 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         form: EnumProperty(name="Form", items=FORM_ITEMS,
-                           default='OFFSET')
+                           default='OFFSET',
+                           description="Radial surface to build: offset "
+                           "sphere, absolute or sign-split lobes, or a "
+                           "Bourke harmonic")
         degree: IntProperty(
             name="Degree l", default=3, min=0, max=12,
             description="Degree l of the harmonic: the surface has l "
@@ -209,30 +212,52 @@ if _IN_BLENDER:
             name="Bourke Set",
             items=[(k, lab, lab) for k, lab, _ in BOURKE_PRESETS]
                   + [('CUSTOM', "Custom", "Use the m0..m7 fields")],
-            default='B1')
-        m0: IntProperty(name="m0", default=4, min=0, max=8)
-        m1: IntProperty(name="m1", default=1, min=0, max=8)
-        m2: IntProperty(name="m2", default=4, min=0, max=8)
-        m3: IntProperty(name="m3", default=1, min=0, max=8)
-        m4: IntProperty(name="m4", default=4, min=0, max=8)
-        m5: IntProperty(name="m5", default=1, min=0, max=8)
-        m6: IntProperty(name="m6", default=4, min=0, max=8)
-        m7: IntProperty(name="m7", default=1, min=0, max=8)
+            default='B1',
+            description="Bourke form: preset eight-integer parameter set, "
+                        "or Custom to set m0-m7 by hand")
+        m0: IntProperty(name="m0", default=4, min=0, max=8,
+                        description="Bourke form: frequency of the first "
+                        "sine term in phi")
+        m1: IntProperty(name="m1", default=1, min=0, max=8,
+                        description="Bourke form: exponent of the first "
+                        "sine term in phi")
+        m2: IntProperty(name="m2", default=4, min=0, max=8,
+                        description="Bourke form: frequency of the cosine "
+                        "term in phi")
+        m3: IntProperty(name="m3", default=1, min=0, max=8,
+                        description="Bourke form: exponent of the cosine "
+                        "term in phi")
+        m4: IntProperty(name="m4", default=4, min=0, max=8,
+                        description="Bourke form: frequency of the sine "
+                        "term in theta")
+        m5: IntProperty(name="m5", default=1, min=0, max=8,
+                        description="Bourke form: exponent of the sine "
+                        "term in theta")
+        m6: IntProperty(name="m6", default=4, min=0, max=8,
+                        description="Bourke form: frequency of the cosine "
+                        "term in theta")
+        m7: IntProperty(name="m7", default=1, min=0, max=8,
+                        description="Bourke form: exponent of the cosine "
+                        "term in theta")
         abs_radius: BoolProperty(
             name="Absolute Radius", default=False,
             description="Bourke form: use |r|, so the surface cannot "
                         "fold through the origin")
         res_u: IntProperty(
-            name="Resolution (polar)", default=128, min=8, max=1024)
+            name="Resolution (polar)", default=128, min=8, max=1024,
+            description="Number of subdivisions from pole to pole")
         res_v: IntProperty(
-            name="Resolution (azimuth)", default=256, min=8, max=1024)
+            name="Resolution (azimuth)", default=256, min=8, max=1024,
+            description="Number of subdivisions around the azimuth")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size of the surface")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="If > 0, add a Solidify modifier with this "
                         "thickness")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
 
         def execute(self, context):
             l, m = self.degree, self.order

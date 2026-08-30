@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "weber-wolf-genus-3-5-ends",
+  "name": "Weber-Wolf Surface (genus 3, 5 ends)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "not-implemented",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Weber and Wolf's surface with two catenoidal and three planar ends realizing the borderline case g = 3 of the Hoffman-Meeks conjecture (at most g + 2 ends for an embedded finite-total-curvature surface of genus g); the planar levels connect through Costa saddles.  The page states similar surfaces exist for all odd genera; a companion page shows a genus-4 version."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "M. Weber, 'Weber-Wolf Surface of genus 3 with 5 ends', minimalsurfaces.blog (local mirror: minsurf/book/.../ch415_weber_wolf_surface_of_genus_3_with_5_ends.md).",
+      "M. Weber, 'Weber-Wolf Surface of Genus 4 with 5 Ends', minimalsurfaces.blog (local mirror: minsurf/book/.../ch416_weber_wolf_surface_of_genus_4_with_5_ends.md)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch415_weber_wolf_surface_of_genus_3_with_5_ends"
+  },
+  "named_after": "Weber, Wolf",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -220,6 +220,8 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Preset",
+            description="Curvature and fold tightness preset; Custom "
+                        "exposes the parameters below",
             items=[('WAVY', "Wavy", "Gently wavy (loose curvature)"),
                    ('RUFFLED', "Ruffled", "Clearly ruffled"),
                    ('BENDY', "Bendy", "Tightly folded, very 3D "
@@ -260,6 +262,8 @@ if _IN_BLENDER:
                         "that stop the fabric passing through itself")
         physics: EnumProperty(
             name="Fold By",
+            description="Method used to fold the sheet into its buckled "
+                        "shape",
             items=[('PBD', "Built-in Packing",
                     "Fold with the internal collision-packing"),
                    ('CLOTH', "Blender Cloth",
@@ -329,8 +333,11 @@ if _IN_BLENDER:
                         "Fine (~0.02-0.06; measured best 0.03), 0 = "
                         "off")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                            max=100.0)
-        shade_smooth: BoolProperty(name="Smooth Shading", default=True)
+                            max=100.0,
+                            description="Overall size of the result")
+        shade_smooth: BoolProperty(name="Smooth Shading", default=True,
+                                   description="Shade the surface smooth "
+                                               "rather than faceted")
 
         def execute(self, context):
             if self.preset == 'CUSTOM':

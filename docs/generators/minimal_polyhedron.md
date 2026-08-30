@@ -24,18 +24,18 @@ The recipe is always the same: subdivide the faces, open a hole (or dent them in
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Cube | Cube, Tetrahedron, Octahedron, Dodecahedron, Icosahedron, Active Object. |
-| Mode | Face Openings | Face Openings, Inward Bulge. |
+| Seed | Cube | Polyhedron whose faces are pierced and relaxed. Cube, Tetrahedron, Octahedron, Dodecahedron, Icosahedron, Active Object. |
+| Mode | Face Openings | Whether faces are pierced open or dented inward. Face Openings, Inward Bulge. |
 | Bulge Depth | 0.5 | Inward Bulge: how deep each face dents, as a fraction of its inradius Range 0-2. |
 | Subdivisions | 3 | Linear face subdivisions before piercing Range 1-5. |
 | Hole Size | 0.55 | Opening radius as a fraction of each face's inradius (0 = no holes) Range 0-0.95. |
-| Openings | Every Face | Every Face, Every Other Face, None. |
+| Openings | Every Face | Which faces receive an opening. Every Face, Every Other Face, None. |
 | Relax Iterations | 40 | Laplacian membrane relaxation steps; hole rims tighten as they smooth Range 0-400. |
 | Hold | Edge Frame | Which part of the seed stays fixed while the surface relaxes. Edge Frame, Corners Only, Nothing. |
 | Corner Softness | 0.35 | Radius (in edge lengths) over which the relaxation fades out toward the pinned corners: small = sharp Carlberg points, large = rounded tips Range 0.02-1.5. |
 | Thickness | 0.08 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
-| Smooth Shading | Off | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smooth Shading | Off | Shade the surface smoothly rather than faceted |
+| Scale | 1 | Overall size of the form Range 0.01-100. |
 
 <!-- /options -->
 

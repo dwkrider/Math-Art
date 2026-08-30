@@ -1,0 +1,83 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "catalan",
+  "name": "Catalan",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "u - sin(u)*cosh(v)",
+    "y": "1 - cos(u)*cosh(v)",
+    "z": "4*sin(u/2)*sinh(v/2)",
+    "u_range": [
+      "0",
+      "4*pi"
+    ],
+    "v_range": [
+      "-1.2",
+      "1.2"
+    ]
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "CATALAN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
+    "sources": [
+      "E. Catalan (1855), H. F. Scherk (1835), H. W. Richmond (1904).",
+      "The catalog follows Matthias Weber's repository of minimal surfaces, https://minimalsurfaces.blog/ , and his lecture notes \"Classical Minimal Surfaces in Euclidean Space by Examples\" (Indiana University) -- gratefully credited.  Specific sources:",
+      "L. P. Jorge & W. H. Meeks III (1983) k-noids; C. J. Costa (1982),",
+      "D. Hoffman & W. H. Meeks III (1985+) Costa-Hoffman-Meeks; H. Karcher (1988) saddle towers (\"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62);",
+      "W. H. Meeks III (1981) the minimal Mobius strip (\"The classification of complete minimal surfaces in R3 with total curvature greater than -8pi\", Duke Math. J. 48);",
+      "B. Riemann (1867) the singly periodic minimal example foliated by circles; H. A. Schwarz (1890) the Bjorling formula;"
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Catalan",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

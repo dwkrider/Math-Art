@@ -23,20 +23,34 @@ Classical **algebraic surfaces** — the shapes carved out by a single polynomia
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Clebsch Diagonal Cubic | Clebsch Diagonal Cubic, Cayley Nodal Cubic, Kummer Quartic, Barth Sextic, Togliatti Quintic, Taubin Heart, Ding-dong, Chmutov Sextic, and 2 more. |
-| Resolution | 80 | Sample grid resolution per axis (algebraic surfaces need more than TPMS) Range 16-256. |
-| Scale | 1 | Range 0.01-100. |
-| Kummer Mu | 1.3 | Kummer quartic parameter (node sharpness); used by the Kummer preset only Range 1.05-2. |
-| Fold n | 3 | Saddle fold count: 2 = ordinary saddle, 3 = monkey saddle, higher = n-fold saddles; Monkey Saddle preset only Range 2-8. |
+| Family | Classical | Which group of surfaces to choose from; filters the Preset list. Classical, Hauser Gallery, Record Nodal Surfaces, Named Implicit Surfaces, Encyclopedia Surfaces, Goursat (Octahedral), Goursat (Tetrahedral), Goursat (Dodecahedral). |
+| Preset |  | The surface to build; the tooltip gives its defining equation where one is printed |
+| Resolution | 120 | Sample grid resolution per axis. Algebraic surfaces need more of it than the periodic ones: their interest is usually a cusp, a self-intersection or a double point, and a coarse grid rounds exactly those away Range 16-256. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
+| Node Sharpness | 1.3 | Kummer quartic parameter (node sharpness) Range 1.05-2. |
+| Folds | 3 | Saddle fold count: 2 = ordinary saddle, 3 = monkey saddle, higher = n-fold saddles Range 2-8. |
+| k | 0 | Family coefficient Range -40-40. |
+| k' | 0 | Family coefficient Range -40-40. |
+| k'' | 0 | Family coefficient Range -100-100. |
+| k''' | 0 | Family coefficient Range -200-200. |
+| Size | 1 | The length the family's coefficients are measured against; it changes how much of the surface the clip ball shows, not the size of the finished object Range 0.05-10. |
 | Clip Override | 0 | Clip ball radius / box half-extent; 0 uses the preset default Range 0-20. |
 | Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
 
 <!-- /options -->
 
 ## Variants
 
 Renders of each selectable option:
+
+### Classical
 
 <table>
 <tr>
@@ -59,11 +73,268 @@ Renders of each selectable option:
 </tr>
 </table>
 
+### Hauser Gallery
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CALYX.png" width="200"><br><sub>Calyx</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CALYPSO.png" width="200"><br><sub>Calypso</sub></td>
+<td align="center"><img src="../images/variants/algebraic__COLUMPIUS.png" width="200"><br><sub>Columpius</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DATTEL.png" width="200"><br><sub>Dattel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DAISY.png" width="200"><br><sub>Daisy</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DISTEL.png" width="200"><br><sub>Distel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DURCHBLICK.png" width="200"><br><sub>Durchblick</sub></td>
+<td align="center"><img src="../images/variants/algebraic__EISTUETE.png" width="200"><br><sub>Eistuete</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__EVE.png" width="200"><br><sub>Eve</sub></td>
+<td align="center"><img src="../images/variants/algebraic__FLIRT.png" width="200"><br><sub>Flirt</sub></td>
+<td align="center"><img src="../images/variants/algebraic__GEISHA.png" width="200"><br><sub>Geisha</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__HARLEKIN.png" width="200"><br><sub>Harlekin</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HELIX.png" width="200"><br><sub>Helix</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HERZ.png" width="200"><br><sub>Herz</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__HIMMEL_UND_HOELLE.png" width="200"><br><sub>Himmel und Hoelle</sub></td>
+<td align="center"><img src="../images/variants/algebraic__KOLIBRI.png" width="200"><br><sub>Kolibri</sub></td>
+<td align="center"><img src="../images/variants/algebraic__LEOPOLD.png" width="200"><br><sub>Leopold</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCTDONG.png" width="200"><br><sub>Octdong</sub></td>
+<td align="center"><img src="../images/variants/algebraic__PLOP.png" width="200"><br><sub>Plop</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SEEPFERDCHEN.png" width="200"><br><sub>Seepferdchen</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SOFA.png" width="200"><br><sub>Sofa</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SOLITUDE.png" width="200"><br><sub>Solitude</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SUESS.png" width="200"><br><sub>Suess</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TANZ.png" width="200"><br><sub>Tanz</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TAUBE.png" width="200"><br><sub>Taube</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SPITZ.png" width="200"><br><sub>Spitz</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TOBEL.png" width="200"><br><sub>Tobel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VIS_A_VIS.png" width="200"><br><sub>Vis a vis</sub></td>
+<td align="center"><img src="../images/variants/algebraic__WEDELN.png" width="200"><br><sub>Wedeln</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__WINDKANAL.png" width="200"><br><sub>Windkanal</sub></td>
+<td align="center"><img src="../images/variants/algebraic__XANO.png" width="200"><br><sub>Xano</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ZITRUS.png" width="200"><br><sub>Zitrus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DROMEDAR.png" width="200"><br><sub>Dromedar</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ZEPPELIN.png" width="200"><br><sub>Zeppelin</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MICHELANGELO.png" width="200"><br><sub>Michelangelo</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__STERN.png" width="200"><br><sub>Stern</sub></td>
+<td align="center"><img src="../images/variants/algebraic__LIMAO.png" width="200"><br><sub>Limao</sub></td>
+<td align="center"><img src="../images/variants/algebraic__WHITNEY.png" width="200"><br><sub>Whitney</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__BUGGLE.png" width="200"><br><sub>Buggle</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DIABOLO.png" width="200"><br><sub>Diabolo</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DULLO.png" width="200"><br><sub>Dullo</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__MIAU.png" width="200"><br><sub>Miau</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TRICHTER.png" width="200"><br><sub>Trichter</sub></td>
+<td align="center"><img src="../images/variants/algebraic__NEPALI.png" width="200"><br><sub>Nepali</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__PILZCHEN.png" width="200"><br><sub>Pilzchen</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SUBWAY.png" width="200"><br><sub>Subway</sub></td>
+<td align="center"><img src="../images/variants/algebraic__POLSTERZIPF.png" width="200"><br><sub>Polsterzipf</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CRIXXI.png" width="200"><br><sub>Crixxi</sub></td>
+<td align="center"><img src="../images/variants/algebraic__BERG.png" width="200"><br><sub>Berg</sub></td>
+<td align="center"><img src="../images/variants/algebraic__GUPF.png" width="200"><br><sub>Gupf</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__KEGEL.png" width="200"><br><sub>Kegel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__WIGWAM.png" width="200"><br><sub>Wigwam</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TUELLE.png" width="200"><br><sub>Tuelle</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__PIPE.png" width="200"><br><sub>Pipe</sub></td>
+<td align="center"><img src="../images/variants/algebraic__FANFARE.png" width="200"><br><sub>Fanfare</sub></td>
+<td align="center"><img src="../images/variants/algebraic__KREUZ.png" width="200"><br><sub>Kreuz</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SPINDEL.png" width="200"><br><sub>Spindel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TWILIGHT.png" width="200"><br><sub>Twilight</sub></td>
+<td align="center"><img src="../images/variants/algebraic__UFO.png" width="200"><br><sub>Ufo</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__ZECK.png" width="200"><br><sub>Zeck</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SATTEL.png" width="200"><br><sub>Sattel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SCHNEEFLOCKE.png" width="200"><br><sub>Schneeflocke</sub></td>
+</tr>
+</table>
+
+### Record Nodal Surfaces
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__LABS.png" width="200"><br><sub>Labs Septic (99 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ENDRASS.png" width="200"><br><sub>Endrass Octic (168 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__BARTH_DECIC.png" width="200"><br><sub>Barth Decic (345 nodes)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SEPTIC_TRIPLE.png" width="200"><br><sub>Septic with 16 Triple Points</sub></td>
+</tr>
+</table>
+
+### Many-Nodal Octics
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__ENDRASS_FAMILY.png" width="200"><br><sub>Endrass Octic Family</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ENDRASS_160.png" width="200"><br><sub>Endrass Octic (160 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VAN_STRATEN_165.png" width="200"><br><sub>Van Straten Octic (165 nodes)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VAN_STRATEN_124.png" width="200"><br><sub>Van Straten Octic (124 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MOD_CHMUTOV.png" width="200"><br><sub>Modified Chmutov Octic (144 nodes)</sub></td>
+</tr>
+</table>
+
+### Named Implicit Surfaces
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VMM_PRETZEL.png" width="200"><br><sub>Pretzel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_BRETZEL2.png" width="200"><br><sub>Bretzel2</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_BRETZEL5.png" width="200"><br><sub>Bretzel5</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VMM_PILZ.png" width="200"><br><sub>Pilz Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_ORTHOCIRCLES.png" width="200"><br><sub>Orthocircles</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_DECOCUBE.png" width="200"><br><sub>Deco-Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VMM_JOIN2TORI.png" width="200"><br><sub>Join of Two Tori</sub></td>
+</tr>
+</table>
+
+### Encyclopedia Surfaces
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CARTAN.png" width="200"><br><sub>Cartan's Umbrella</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HENRICI.png" width="200"><br><sub>Henrici Cubic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CUSHION.png" width="200"><br><sub>Bouligand's Pillow</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CASSINI_3D.png" width="200"><br><sub>Cassinian Surface (3 poles)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CASSINI.png" width="200"><br><sub>Cassini Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CASSINI_REV.png" width="200"><br><sub>Cassini Surface of Revolution</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TITEICA.png" width="200"><br><sub>Titeica Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__FRESNEL.png" width="200"><br><sub>Fresnel Wave Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MOBIUS_SURFACE.png" width="200"><br><sub>Moebius Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SINE_SURFACE.png" width="200"><br><sub>Sine Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DARBOUX_CYCLIDE.png" width="200"><br><sub>Darboux Cyclide</sub></td>
+</tr>
+</table>
+
+### MathWorld Gallery
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__PEANO.png" width="200"><br><sub>Peano Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CHAIR.png" width="200"><br><sub>Chair Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CROSSED_TROUGH.png" width="200"><br><sub>Crossed Trough</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__HANDKERCHIEF.png" width="200"><br><sub>Handkerchief Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HUNT.png" width="200"><br><sub>Hunt's Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__KISS.png" width="200"><br><sub>Kiss Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__MENN.png" width="200"><br><sub>Menn's Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MITER.png" width="200"><br><sub>Miter Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__NORDSTRAND_WEIRD.png" width="200"><br><sub>Nordstrand's Weird Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TOOTH.png" width="200"><br><sub>Tooth Surface</sub></td>
+</tr>
+</table>
+
+### Goursat (Octahedral)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBOCTA.png" width="200"><br><sub>Cuboctahedral Quartic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBOCTA_NODES.png" width="200"><br><sub>Quartic with 12 Cuboctahedral Nodes</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_OCTA_EDGES.png" width="200"><br><sub>Octahedron-Edge Quartic</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBE_DIAGONALS.png" width="200"><br><sub>Cube-Diagonal Quartic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBE_EDGES.png" width="200"><br><sub>Cube-Edge Quartic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBE_MEDIANS.png" width="200"><br><sub>Cube-Median Quartic</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCT_TRIANGLES.png" width="200"><br><sub>Cuboctahedral Triangle Quartic</sub></td>
+</tr>
+</table>
+
+### Goursat (Tetrahedral)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TET_TITEICA.png" width="200"><br><sub>Titeica Cubic (k' = 0)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_FOUR_SHEETS.png" width="200"><br><sub>Tetrahedral Cubic (k < 0)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_ISOLATED_POINT.png" width="200"><br><sub>Tetrahedral Cubic (k = 0)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TET_ROUNDED.png" width="200"><br><sub>Rounded Tetrahedron (0 < k < 4)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_CAYLEY.png" width="200"><br><sub>Cayley's Cubic (k = 4)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_BEYOND.png" width="200"><br><sub>Tetrahedral Cubic (k > 4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TET4_TRICONIC.png" width="200"><br><sub>Triconic Tetrahedral Quartic</sub></td>
+</tr>
+</table>
+
+### Goursat (Dodecahedral)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DODEC_PLANES.png" width="200"><br><sub>Six Icosidodecahedral Planes</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_ROUNDED.png" width="200"><br><sub>Rounded Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ICOSA_ROUNDED.png" width="200"><br><sub>Rounded Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DODEC_TRIANGLES.png" width="200"><br><sub>Icosidodecahedral Triangle Sextic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_PENTAGONS.png" width="200"><br><sub>Icosidodecahedral Pentagon Sextic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_BARTH.png" width="200"><br><sub>Barth Sextic (icosahedral frame)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DODEC_LINES_60.png" width="200"><br><sub>Sextic with 60 Lines</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DODEC_LINES_60B.png" width="200"><br><sub>Sextic with 60 Lines (second solution)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Imagine a formula that hands every point in space a single number — the way every spot in a room has a temperature. Here that number comes from a polynomial in the point's coordinates $x, y, z$. Somewhere the number is positive, somewhere negative, and in between runs the dividing wall where it is exactly zero. That dividing wall is the surface — just as a coastline is the line where the land's height crosses sea level, land on one side, seabed on the other. Every preset is a different formula, so it draws a different wall: a smooth cubic, a heart, a lattice with sixty-five sharp pinch points where the wall crosses through itself. The computer never draws the formula directly; it tastes the number at a dense grid of test points and, wherever neighbouring tastes flip from positive to negative, it knows the wall passes between them and stitches a triangle there.
 
-**Level sets and marching tetrahedra.** Each preset is a real polynomial $f(x,y,z)$ whose **zero level set** $\{f=0\}$ is the surface. Because that set is defined by a condition, not a parametrization, there is no formula that lists its points — so the generator samples $f$ on a regular $\text{res}\times\text{res}\times\text{res}$ grid of points filling a cube, turning the continuous field into a $\text{res}^3$ table of numbers. It then extracts the isosurface with **marching tetrahedra** (`marching_tets` from the Minimal Surface Toolkit): each little grid cube is split into tetrahedra, and along any tetrahedron edge whose two endpoints have opposite signs the surface must cross exactly once, so a vertex is placed there — positioned by **linear interpolation** between the endpoints, i.e. at the fraction of the way where the straight-line estimate of $f$ hits zero, which puts the vertex close to the true crossing and keeps the mesh smooth. The triangles that join these edge-vertices are wound so their normals point along the field gradient $\nabla f$ (toward increasing $f$), giving the whole surface a consistent outside. Splitting into tetrahedra rather than marching the cubes directly is what removes the classic topological ambiguities of marching cubes, so the extracted mesh is always watertight and correctly connected.
+**Level sets and marching tetrahedra.** Each preset is a real polynomial $f(x,y,z)$ whose **zero level set** $\lbrace f=0\rbrace$ is the surface. Because that set is defined by a condition, not a parametrization, there is no formula that lists its points — so the generator samples $f$ on a regular $\text{res}\times\text{res}\times\text{res}$ grid of points filling a cube, turning the continuous field into a $\text{res}^3$ table of numbers. It then extracts the isosurface with **marching tetrahedra** (`marching_tets` from the Minimal Surface Toolkit): each little grid cube is split into tetrahedra, and along any tetrahedron edge whose two endpoints have opposite signs the surface must cross exactly once, so a vertex is placed there — positioned by **linear interpolation** between the endpoints, i.e. at the fraction of the way where the straight-line estimate of $f$ hits zero, which puts the vertex close to the true crossing and keeps the mesh smooth. The triangles that join these edge-vertices are wound so their normals point along the field gradient $\nabla f$ (toward increasing $f$), giving the whole surface a consistent outside. Splitting into tetrahedra rather than marching the cubes directly is what removes the classic topological ambiguities of marching cubes, so the extracted mesh is always watertight and correctly connected.
 
 The polynomials (as commented in the code):
 

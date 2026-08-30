@@ -1,0 +1,98 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "cayley-nodal-cubic",
+  "name": "Cayley Nodal Cubic",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "implemented",
+    "record-holder",
+    "singular",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 1.4
+    },
+    "polynomial": "4*(x**2 + y**2 + z**2) + 16*x*y*z - 1"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0,
+    "schoenflies": "Td",
+    "order": 24,
+    "verified_by": "curated"
+  },
+  "embedding": {
+    "quality": "singular",
+    "is_record": true,
+    "record_for": "maximum nodes, degree 3",
+    "singularities": [
+      {
+        "type": "node (A1)",
+        "count": 4
+      }
+    ]
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "CLASSICAL",
+      "key": "CAYLEY",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
+    "sources": [
+      "A. Cayley, 'A Memoir on Cubic Surfaces', Phil. Trans. Roy. Soc. 159 (1869).",
+      "Breske-Labs-van Straten, 'Real Line Arrangements and Surfaces with Many Real Nodes' (2005), mu(3) = 4 (exact) -- independent node-count oracle."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "discovered_by": "Arthur Cayley",
+  "year": 1869,
+  "ids": {
+    "mathworld": "CayleyCubic",
+    "mathcurve": "ch1225_cayley_2",
+    "vmm": "ch081_cayley_cubic"
+  },
+  "notes": {
+    "caveats": [
+      "Four nodes is the maximum for a cubic surface, so this is the degree-3 member of the record-nodal family that continues through Kummer, Barth, Labs, Endrass and Sarti."
+    ]
+  },
+  "relations": {
+    "polyhedral_analogue": "tetrahedron"
+  },
+  "alternate_names": [
+    "Cayley surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

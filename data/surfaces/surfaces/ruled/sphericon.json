@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "sphericon",
+  "name": "Sphericon",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "flat",
+    "immersed",
+    "implemented",
+    "ruled"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "v*cos(u)",
+    "y": "v*sin(u)",
+    "z": "1 - v",
+    "u_range": [
+      "0",
+      "pi"
+    ],
+    "v_range": [
+      "0.1",
+      "1"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.sphericon_generator",
+      "operator_id": "mesh.sphericon_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
+    "sources": [
+      "David Swart, \"Arcs on Spheres and Snakes on Planes\", Bridges 2024 (the sphericon = solid of revolution of a regular polygon, halved and its cross-section rotated onto itself).",
+      "I. Sabitov / P. Roberts (polysphericons); H-ITS Polysphericons project, https://www.h-its.org/projects/polysphericons/ .",
+      "Sphericon invented by Colin J. Roberts (Baldock, England); popularized by Ian Stewart, \"Cone with a Twist\", Mathematical",
+      "Recreations, Scientific American, October 1999.  See also Wikipedia \"sphericon\"."
+    ]
+  },
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

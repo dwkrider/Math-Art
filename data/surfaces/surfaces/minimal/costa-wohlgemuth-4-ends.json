@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "costa-wohlgemuth-4-ends",
+  "name": "Costa-Wohlgemuth (4 ends)",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "note": "No (g, dh) pair is stored: the shipped row is built by the dedicated mesher we.cwce_cw_mesh (a torus/branched-cover or multi-patch assembly); no elementary (g, dh) pair on a plane domain is stored in the code. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 2,
+    "euler_characteristic": -6,
+    "ends": [
+      {
+        "type": "catenoidal",
+        "count": 2
+      },
+      {
+        "type": "planar",
+        "count": 2
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "HIGHER",
+      "key": "COSTA_WOHLGEMUTH",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "M. J. Callahan, D. Hoffman, W. H. Meeks III, \"Embedded minimal surfaces with an infinite number of ends\", Invent. Math. 96 (1989) 459-505;",
+      "M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks surfaces; the CHM-(1,1) notebook)."
+    ],
+    "cross_checked": [
+      {
+        "source": "M. Wohlgemuth, Arch. Rational Mech. Anal. 137 (1997) 1-25 (minsurf ch053)",
+        "agrees": true,
+        "detail": "'a 4-ended embedded minimal surface of genus 2 ... It has two catenoidal and two planar ends' (CSSCFF); NOTE 'an embeddedness proof is still lacking' per the same page."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch053_costa_wohlgemuth_surfaces"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

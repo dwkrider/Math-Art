@@ -171,7 +171,13 @@ if _IN_BLENDER:
         ('ccO', "Twice-Chamfered Octahedron (ccO)", ""),
     ]
 
-    class MESH_OT_conway_add(bpy.types.Operator):
+    try:
+        from .styles import net_style as _net_style
+    except ImportError:
+        from styles import net_style as _net_style
+
+    class MESH_OT_conway_add(bpy.types.Operator,
+                             _net_style.NetStyleProps):
         """Build a polyhedron from Conway notation (e.g. dkC, taD, k3sT).
         Seeds: T C O D I, Pn, An, Yn; ops: d a k g c r t j e o b m s n z"""
         bl_idname = "mesh.conway_add"
@@ -183,7 +189,9 @@ if _IN_BLENDER:
                 self.notation = self.example
 
         example: EnumProperty(name="Example", items=EXAMPLES,
-                              default='tI', update=_example_chosen)
+                              default='tI', update=_example_chosen,
+                              description="Ready-made notation string; "
+                                          "sets Notation when chosen")
         notation: StringProperty(
             name="Notation", default="tI",
             description="Operators then seed, applied right to left")
@@ -198,11 +206,17 @@ if _IN_BLENDER:
                     "not) -- a warning is shown if it cannot converge"),
                    ('SPHERE', "Spherized", "Project vertices to a sphere"),
                    ('RAW', "Raw", "Whatever the operators produce")],
-            default='CANON')
+            default='CANON',
+            description="Geometry post-processing applied after the "
+                        "operator string")
         iterations: IntProperty(name="Canonical Iterations", default=200,
-                                min=5, max=2000)
+                                min=5, max=2000,
+                                description="Number of Hart "
+                                            "canonicalization passes")
         kis_height: FloatProperty(name="Kis Height", default=0.25,
-                                  min=-1.0, max=2.0)
+                                  min=-1.0, max=2.0,
+                                  description="How far the kis operator "
+                                              "raises each face apex")
         coloring: EnumProperty(
             name="Coloring",
             items=[('SIDES', "Colored (by face sides)",
@@ -210,7 +224,8 @@ if _IN_BLENDER:
                     "display (view with Material Preview or Solid "
                     "shading set to Material color)"),
                    ('NONE', "None", "No materials")],
-            default='SIDES')
+            default='SIDES',
+            description="How faces are assigned materials")
         uv_map: BoolProperty(
             name="Spherical UV Map", default=True,
             description="Smooth equirectangular UVs projected from the "
@@ -231,12 +246,14 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
-                    "segment per face")],
-            default='SOLID')
+                    "segment per face"),
+            _net_style.net_enum_item()],
+            default='SOLID',
+            description="How the polyhedron is built and displayed")
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
-            description="Leonardo face frame width (fraction of "
-                        "the face)")
+            name="Border", default=0.06, min=0.005, max=1.0,
+            description="Leonardo face frame width, the same on every "
+                        "face whatever its size")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.001, max=1.0,
             description="Panel / strut thickness for the Leonardo "
@@ -260,7 +277,9 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
+                             max=100.0,
+                             description="Overall size of the result")
 
         # Hart-style palette per face size; golden-angle HSV fallback
         _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
@@ -307,6 +326,13 @@ if _IN_BLENDER:
             elif self.post == 'CANON':
                 V = canonicalize_best(V, F, hart_iters=self.iterations)
             V, F = orient_outward(V, [list(f) for f in F])
+            if self.style == 'NET':
+                return _net_style.emit_net_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], f"Conway {self.notation}",
+                    material_fn=self._material_for
+                    if self.coloring == 'SIDES' else None)
             if self.style == 'FACETS':
                 try:
                     from .styles import facet_style
@@ -418,6 +444,8 @@ if _IN_BLENDER:
             if self.style == 'BALLSTICK':
                 lay.prop(self, 'strut_radius')
                 lay.prop(self, 'node_radius')
+            if self.style == 'NET':
+                _net_style.draw_net_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

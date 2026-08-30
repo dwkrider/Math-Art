@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "klein-bottle",
+  "name": "Klein Bottle",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-nonorientable",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "non-orientable",
+    "topological",
+    "tradition-classical",
+    "tradition-physical-model"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "2*sin(u)**2*cos(u) + (1/2 - (1/30)*(2*u - pi)*sqrt(2*u*(2*pi - 2*u)))*cos(v)*5*cos(u)/sqrt(25*cos(u)**2 + 4*sin(u)**2*(3*cos(u)**2 - 1)**2)",
+    "y": "(1/2 - (1/30)*(2*u - pi)*sqrt(2*u*(2*pi - 2*u)))*sin(v)",
+    "z": "5*sin(u) - (1/2 - (1/30)*(2*u - pi)*sqrt(2*u*(2*pi - 2*u)))*cos(v)*2*sin(u)*(3*cos(u)**2 - 1)/sqrt(25*cos(u)**2 + 4*sin(u)**2*(3*cos(u)**2 - 1)**2)",
+    "u_range": [
+      "0",
+      "pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "Franzoni's classical bottle shape, the operator's default rendition: a tube of radius r(u) about the stretched dumbbell directrix, upright with the long axis on Oz.  The u = pi tube end meets the u = 0 end in the same circle under v -> pi - v, and the mesh is glued closed there.  The paper's shape numbers (a, b, c, d) = (20, 8, 11/2, 2/5) are baked in at their dumbbell scaling (5, 2, 1/2, 1/30); the older polynomial immersion stays reachable as the operator's POLYNOMIAL rendition",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "euler_characteristic": 0,
+    "orientable": false,
+    "one_sided": true,
+    "compact": true,
+    "boundary_components": 0,
+    "non_orientable_genus": 2,
+    "class": "closed-nonorientable"
+  },
+  "symmetry": {
+    "kind": "point",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed",
+    "self_intersecting": true
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "KLEIN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.48 of tol, 1.0% of oracle beyond tol (tol floor 2.5 x 0.04376).",
+    "sources": [
+      "F. Klein, 'Ueber Riemann's Theorie der algebraischen Functionen und ihrer Integrale' (1882)."
+    ]
+  },
+  "discovered_by": "Felix Klein",
+  "year": 1882,
+  "tradition": [
+    "classical",
+    "physical-model"
+  ],
+  "ids": {
+    "mathworld": "KleinBottle",
+    "mathcurve": "ch1215_klein_4",
+    "wikipedia": "Klein bottle",
+    "vmm": "ch049_klein_bottle"
+  },
+  "notes": {
+    "caveats": [
+      "Cannot be embedded in R^3 -- any realisation here self-intersects. It embeds in R^4. The self-intersection is a property of the ambient space, not a defect of the model."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": true
+  }
+}

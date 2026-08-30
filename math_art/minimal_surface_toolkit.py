@@ -76,24 +76,38 @@ bl_info = {
 import math
 import numpy as np
 
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
 from .minsurf.domain import _center_fit
 from .minsurf.elliptic import _SQUARE
 from .minsurf.parametric import (ANGLE_PARAM, COUNT_PARAM, FAMILIES,
-                                 MESH_PARAM, PARAMETRIC, PERIODIC_NO_ARRAY,
-                                 STOREY_PARAM, SURFACE_FAMILY, _periodic_dim,
-                                 build_parametric, build_parametric_grid)
+                                 MESH_PARAM, ORDERLESS, ORDER_RANGE,
+                                 PARAMETRIC, PERIODIC_NO_ARRAY,
+                                 STOREY_PARAM, SURFACE_FAMILY,
+                                 _periodic_dim, build_parametric,
+                                 build_parametric_grid)
 from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
                               _selfx_crossings, align_loops,
                               build_annulus_grid, build_disk_grid,
                               build_seifert_span_grid, fair_grid_2d,
                               fair_grid_columns, mesh_area, minimize_area,
                               relax_normal_flow, resample_loop, torus_knot)
+from .minsurf.hexagonal import clp_params as _clp_params
+from .minsurf.tpms import clip_to_sphere as _clip_to_sphere
 from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
+                           TPMS_EXACT_ARRANGEMENTS,
                            _PGD_PRESET_ANGLE, _f_p, build_tpms,
                            build_tpms_exact, marching_tets,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
 # the catalog module itself, for the self-test's CHM-modulus reference
 from .minsurf import zoo as _zoo
+# the parametric module itself, to read back what the last equal-area
+# resample achieved (LAST_EQ_AREA_COV is rebound per build, so it has to
+# be read through the module rather than imported by value)
+from .minsurf import parametric as _pm
 
 TAU = 2.0 * math.pi
 
@@ -167,6 +181,106 @@ if _IN_BLENDER:
         su.update_tag()
         obj.location = context.scene.cursor.location
         return obj
+
+    def _maybe_clip(op, verts, faces):
+        """Clip to an inscribed sphere, if the operator asks for it.
+
+        The radius is a FRACTION of the block's own half-extent rather
+        than a length, so it keeps meaning when the cell count or cell
+        size changes -- 1.0 is the largest sphere the block contains.
+
+        Clipping opens an edge where a periodic surface had none, which
+        is what makes the option worth having: switch the rim curve on
+        as well and the cut is swept into the wire that rims it.
+        """
+        if not getattr(op, 'clip_sphere', False):
+            return verts, faces
+        V = np.asarray(verts, dtype=float)
+        if not len(V):
+            return verts, faces
+        half = 0.5 * float(np.max(V.max(0) - V.min(0)))
+        r = float(op.clip_radius) * half
+        out_v, out_f = _clip_to_sphere(V, faces, r)
+        if not len(out_f):
+            op.report({'WARNING'},
+                      "Sphere clip removed the whole surface; raise "
+                      "Sphere Radius")
+            return verts, faces
+        return out_v, out_f
+
+    def _solidify(obj, thickness, crease=True):
+        """Give `obj` a shell, and sharpen the band around its open edge.
+
+        Solidify leaves the rim -- the strip joining the outer shell to
+        the inner one -- in the same smooth shading group as the shells,
+        so a thick surface reads as though its cut edge were rounded
+        over.  An Edge Split above 50 degrees creases exactly that band:
+        the shells themselves are sampled finely enough that neighbouring
+        faces meet at a few degrees, while the rim meets them at about a
+        right angle, so the threshold separates the two cleanly without
+        touching the smooth interior.
+        """
+        mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
+        mod.thickness = float(thickness)
+        mod.offset = 0.0
+        mod.use_quality_normals = True
+        if crease:
+            sharp = obj.modifiers.new("Sharpen", 'EDGE_SPLIT')
+            sharp.split_angle = math.radians(50.0)
+            sharp.use_edge_angle = True
+            sharp.use_edge_sharp = False
+        return mod
+
+    def _shell_inversion(verts, faces, half):
+        """Fraction of faces the inner shell turns inside out.
+
+        Solidify slides every vertex along its normal, so wherever half
+        the thickness exceeds the local radius of curvature the inner
+        shell passes through itself and those faces come out facing
+        backwards -- which is what the dark specks on an over-thickened
+        gyroid are.  It is a property of the geometry, not of the
+        modifier: measured on a 28-per-cell gyroid at thickness 0.09,
+        Blender's simple mode inverts 2.25% of faces, quality normals
+        2.12% and the Complex mode 2.20%.  Nothing in the modifier's
+        settings rescues it, so the operator measures it and says so.
+        """
+        V = np.asarray(verts, float)
+        F = [f for f in faces if len(f) >= 3]
+        if not len(V) or not F:
+            return 0.0
+        T = np.array([(f[0], f[1], f[2]) for f in F], dtype=np.int64)
+        P = V[T]
+        n = np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0])
+        N = np.zeros_like(V)
+        for k in range(3):
+            np.add.at(N, T[:, k], n)
+        N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-30)
+        Q = (V - float(half) * N)[T]
+        m = np.cross(Q[:, 1] - Q[:, 0], Q[:, 2] - Q[:, 0])
+        return float(np.mean(np.sum(m * n, axis=1) < 0.0))
+
+    def _check_thickness(op, verts, faces, thickness):
+        """Warn when the requested shell cannot be represented, and say
+        what would fit.  Bisects for the largest thickness that keeps
+        the inversion under a tenth of a percent."""
+        if thickness <= 0.0:
+            return
+        bad = _shell_inversion(verts, faces, 0.5 * thickness)
+        if bad <= 0.001:
+            return
+        lo, hi = 0.0, float(thickness)
+        for _ in range(12):
+            mid = 0.5 * (lo + hi)
+            if _shell_inversion(verts, faces, 0.5 * mid) <= 0.001:
+                lo = mid
+            else:
+                hi = mid
+        op.report({'WARNING'},
+                  f"Thickness {thickness:.3g} folds the inner shell "
+                  f"through itself on {100.0 * bad:.1f}% of faces "
+                  f"(the dark patches). This surface supports about "
+                  f"{lo:.3g} at this resolution -- raise Resolution / "
+                  f"Cell or lower Thickness.")
 
     def _new_object(context, name, verts, faces, weld=0.0, smooth=True,
                     loop_uv=None, recalc_normals=True):
@@ -304,16 +418,50 @@ if _IN_BLENDER:
         # Weierstrass P/Gyroid/D (Bonnet angle) is listed LAST
         exact_items = [(k, v[0], v[0]) for k, v in TPMS_EXACT.items()]
         tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()
-                      if k not in _NOT_TRIPLY] + exact_items
+                      if k not in _NOT_TRIPLY]
         if tpms_items:
             _PERIODIC_ITEMS['TRIPLY'] = tpms_items
             _PERIODIC_ALL.extend(tpms_items)
             _PERIODICITY_ITEMS.append(
                 ('TRIPLY', "Triply Periodic (TPMS)",
-                 f"Triply periodic minimal surfaces: the exact "
-                 f"P/Gyroid/D associate family + "
-                 f"{len(tpms_items) - len(exact_items)} nodal "
-                 f"approximations"))
+                 f"{len(tpms_items)} triply periodic minimal surfaces "
+                 f"as published nodal (level-set) approximations"))
+        # A FOURTH entry, beside singly / doubly / triply: the surfaces
+        # built by integrating the Weierstrass representation instead of
+        # approximating it with a trigonometric polynomial.  They differ
+        # from the nodal rows in kind, not just in accuracy -- each is
+        # assembled from a fundamental piece by its own symmetry group,
+        # so each carries an Arrangement rather than a cell count, and
+        # Schwarz H and CLP have no nodal form at all.
+        # CLP is split off into a FIFTH entry of its own.  The others
+        # are single surfaces (or, for P/Gyroid/D, one associate family
+        # sampled by an angle); CLP is a two-parameter family whose
+        # shape genuinely changes with the torus modulus and the branch
+        # value, and it carries named assemblies instead of a cell
+        # count.  Sharing a dropdown entry with the fixed surfaces would
+        # mean showing its two shape sliders on rows that have no such
+        # parameters.
+        fam_items = [it for it in exact_items
+                     if it[0] in TPMS_EXACT_ARRANGEMENTS]
+        fixed_items = [it for it in exact_items
+                       if it[0] not in TPMS_EXACT_ARRANGEMENTS]
+        if fixed_items:
+            _PERIODIC_ITEMS['EXACT'] = fixed_items
+            _PERIODIC_ALL.extend(fixed_items)
+            _PERIODICITY_ITEMS.append(
+                ('EXACT', "Exact (Weierstrass)",
+                 f"{len(fixed_items)} surfaces integrated exactly from "
+                 f"their Weierstrass data and assembled by reflection, "
+                 f"rather than approximated by a nodal polynomial"))
+        if fam_items:
+            _PERIODIC_ITEMS['EXACT_FAMILY'] = fam_items
+            _PERIODIC_ALL.extend(fam_items)
+            _PERIODICITY_ITEMS.append(
+                ('EXACT_FAMILY', "Exact (Deformable)",
+                 f"{len(fam_items)} exact surfaces that are FAMILIES "
+                 f"rather than single surfaces: their shape is driven "
+                 f"by moduli, and they are built at named assemblies "
+                 f"instead of a cell count"))
         if not _PERIODICITY_ITEMS:
             _PERIODICITY_ITEMS.append(
                 ('TRIPLY', "Triply Periodic (TPMS)", "TPMS"))
@@ -340,12 +488,62 @@ if _IN_BLENDER:
         return _PERIODIC_ITEMS.get(self.periodicity,
                                    _PERIODIC_ALL or _SURF_ITEMS_ALL)
 
+    def _snap_order(self, context):
+        """Snap the shared Order/Count slider into the current surface's
+        supported range (ORDER_RANGE).  The slider then always SHOWS the
+        value that gets built: dragging below the k-noid-with-Enneper-
+        ends' k = 3 snaps back to 3 instead of displaying 1 while
+        silently building 3 (a control that substitutes a different
+        value without saying so reads as a working control that does
+        nothing).  Writing through self[...] sets the stored id-property
+        without re-triggering this update."""
+        rng = ORDER_RANGE.get(self.surface)
+        if rng:
+            v = int(min(max(self.order, rng[0]), rng[1]))
+            if v != self.order:
+                self['order'] = v
+
     class MESH_OT_parametric_minimal_add(bpy.types.Operator):
         """Add a minimal surface from the Weierstrass-Enneper / Bjorling
         catalog. Pick a Family, then a Surface within it."""
         bl_idname = "mesh.parametric_minimal_add"
         bl_label = "Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        thickness: FloatProperty(
+            name="Thickness", default=0.0, min=0.0, max=1.0, step=1,
+            precision=3,
+            description="If > 0, add a Solidify modifier with this "
+                        "thickness, turning the surface into a shell. A "
+                        "shell thicker than twice the local radius of "
+                        "curvature folds through itself; the operator "
+                        "measures that and warns with the thickness the "
+                        "current resolution can carry")
+        clip_sphere: BoolProperty(
+            name="Clip to Sphere", default=False,
+            description="Cut the surface to an inscribed sphere. The "
+                        "cut is solved on the sphere rather than "
+                        "following whole faces, so the edge comes out "
+                        "smooth -- switch the rim curve on as well and "
+                        "it is swept into a wire around the ball")
+        clip_radius: FloatProperty(
+            name="Sphere Radius", default=0.85, min=0.05, max=1.0,
+            step=1, precision=3,
+            description="Radius of that sphere as a fraction of the "
+                        "block's own half-size, so it keeps its meaning "
+                        "when the cell count or cell size changes")
+        shade_smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the surface smooth. Turn it off to read "
+                        "the actual sample grid, or for a deliberately "
+                        "faceted look. With Thickness on, smooth "
+                        "shading also creases the cut edge so the shell "
+                        "does not appear rounded over")
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         family: EnumProperty(
             name="Family",
@@ -355,15 +553,42 @@ if _IN_BLENDER:
                         "filters the Surface list")
         surface: EnumProperty(
             name="Surface",
-            items=_surface_items)
+            items=_surface_items,
+            update=_snap_order,
+            description="The specific minimal surface to build, from the "
+                        "chosen Family")
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "The surface itself, as a "
+                                      "continuous sheet"),
+                   ('LATTICE', "Cell Lattice",
+                    "A sparse openwork net of struts along the cells "
+                    "of the surface's dual, as a live modifier stack")],
+            default='SOLID',
+            description="Build the surface as a solid sheet or as an "
+                        "openwork lattice of struts along its dual")
         output: EnumProperty(
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
                    ('NURBS', "NURBS", "Compact NURBS surface patch "
                                       "(control grid = Resolution U x V)")],
-            default='MESH')
-        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
-        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
+            default='MESH',
+            description="Emit a dense polygon mesh or a compact NURBS "
+                        "surface patch")
+        equal_areas: BoolProperty(
+            name="Equal Areas", default=False,
+            description="Space the grid lines by equal surface area "
+                        "instead of equal parameter, so faces come out "
+                        "the same size instead of bunching where the "
+                        "parametrization contracts. Reports the spread "
+                        "it achieved, and leaves the surface alone if "
+                        "it cannot improve on the plain grid")
+        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512,
+                           description="Mesh sample count across the U "
+                                       "parameter direction")
+        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512,
+                           description="Mesh sample count across the V "
+                                       "parameter direction")
         ctrl_u: IntProperty(
             name="Control Points U", default=24, min=6, max=128,
             description="NURBS control grid size in U")
@@ -372,16 +597,24 @@ if _IN_BLENDER:
             description="NURBS control grid size in V")
         order: IntProperty(
             name="Order / Count", default=1, min=1, max=12,
+            update=_snap_order,
             description="Enneper order; helicoid half-turns; Jorge-Meeks "
-                        "end count n (>= 3); ignored for the rest")
+                        "end count n (>= 3); ignored for the rest. "
+                        "Surfaces that only support a sub-range snap "
+                        "the slider into it")
         storeys: IntProperty(
             name="Storeys", default=3, min=1, max=8,
             description="Number of periodic fundamental domains to stack "
                         "(saddle tower); ignored for the rest")
         radius: FloatProperty(
-            name="Domain Radius", default=1.2, min=0.2, max=4.0,
-            description="Extent of the parameter domain (for the k-noid, "
-                        "how close the disk reaches its ends)")
+            name="Domain Radius", default=1.2, min=0.2, max=20.0,
+            soft_max=4.0,
+            description="Extent of the parameter domain (for the k-noid "
+                        "family, how close the domain reaches its ends -- "
+                        "bigger grows the bells).  The slider drags to 4; "
+                        "type larger values (up to 20) for extreme end "
+                        "reach, which saturates at what the resolution "
+                        "can carry")
         assoc_angle: FloatProperty(
             name="Associate Angle", default=0.0,
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
@@ -392,6 +625,32 @@ if _IN_BLENDER:
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 = a 2 m "
                         "cube, centered on the origin)")
+        # Cell Lattice style -- the canonical names cell_lattice.PROPS
+        # declares, so styles.cell_lattice.apply_from picks them up.
+        cell_size: FloatProperty(
+            name="Cell Size", default=0.12, min=0.005, max=1.0,
+            description="Fraction of the surface's triangles kept "
+                        "before taking the dual: lower leaves fewer, "
+                        "larger cells")
+        strut_thickness: FloatProperty(
+            name="Strut Thickness", default=0.03, min=0.001, max=1.0,
+            description="Thickness of the lattice struts, in the "
+                        "unscaled surface's units")
+        smoothing: IntProperty(
+            name="Smoothing", default=1, min=0, max=4,
+            description="Subdivision levels rounding the struts")
+        keep_boundaries: BoolProperty(
+            name="Keep Boundaries", default=True,
+            description="Keep the rim of an open surface intact when "
+                        "taking the dual; without it the boundary "
+                        "cells are eaten away")
+        even_thickness: BoolProperty(
+            name="Even Thickness", default=False,
+            description="Maintain strut width at sharp corners. Off by "
+                        "default: the correction grows without bound as "
+                        "a corner gets more acute, so at larger Strut "
+                        "Thickness it shoots spikes out of the sliver "
+                        "cells along an open rim")
 
         def execute(self, context):
             # When the Family changes, the dynamic Surface enum is
@@ -406,46 +665,122 @@ if _IN_BLENDER:
             label = PARAMETRIC[surf][0]
             theta = (self.assoc_angle if surf in ANGLE_PARAM
                      else 0.0)
-            # some surfaces are assembled meshes with no NURBS/grid form
-            if self.output == 'NURBS' and surf not in MESH_PARAM:
+            # some surfaces are assembled meshes with no NURBS/grid form;
+            # the lattice is a modifier stack, so it needs the mesh form
+            # too -- a NURBS patch has no faces to take the dual of
+            lattice = self.style == 'LATTICE'
+            if self.output == 'NURBS' and not lattice \
+                    and surf not in MESH_PARAM:
                 G, wrap_u, wrap_v = build_parametric_grid(
                     surf, self.ctrl_u, self.ctrl_v,
-                    self.order, self.radius, self.scale, theta)
+                    self.order, self.radius, self.scale, theta,
+                    equal_areas=self.equal_areas)
                 if wrap_u:          # drop duplicated periodic endpoint
                     G = G[:-1]
                 if wrap_v:
                     G = G[:, :-1]
                 _nurbs_grid_object(context, label, G,
                                    cyclic_u=wrap_u, cyclic_v=wrap_v)
+                self._report_equal_areas()
             else:
                 out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
-                                       with_uv=True, cells=(self.storeys, 1))
+                                       with_uv=True, cells=(self.storeys, 1),
+                                       equal_areas=self.equal_areas)
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
-                _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale),
-                            loop_uv=cuv)
+                obj = _new_object(context, label, V, quads,
+                                  weld=1e-5 * max(1.0, self.scale),
+                                  loop_uv=cuv, smooth=self.shade_smooth)
+                self._report_equal_areas()
+                # Thickness and the cell lattice are alternatives, not a
+                # stack.  The lattice replaces the surface with the
+                # struts of its dual, so solidifying first would hand it
+                # a shell to take the dual OF and give struts around
+                # nothing.  The lattice is a whole output style and this
+                # is a finishing option, so the style wins and Thickness
+                # is hidden under it -- see `draw`.
+                if lattice:
+                    try:
+                        from .styles import cell_lattice
+                    except ImportError:
+                        from styles import cell_lattice
+                    cell_lattice.apply_from(obj, self, scale=self.scale)
+                    self.report(
+                        {'INFO'},
+                        "cell lattice added as a live modifier stack; "
+                        "tune it in the modifier properties or apply "
+                        "to make it permanent")
+                elif self.thickness > 0:
+                    _check_thickness(self, V, quads, self.thickness)
+                    _solidify(obj, self.thickness,
+                              crease=self.shade_smooth)
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
+
+        def _report_equal_areas(self):
+            """Say what the equal-area pass actually achieved.
+
+            Three outcomes, all worth distinguishing: it improved the
+            spread (report by how much), it could not improve on the
+            plain grid and stood down (Costa punctures its ends at
+            interior points, so resampled cells bridge a hole), or the
+            surface never reaches the grid seam at all because it is
+            built as a finished mesh."""
+            if not self.equal_areas:
+                return
+            cov = getattr(_pm, 'LAST_EQ_AREA_COV', None)
+            if cov is None:
+                self.report({'WARNING'},
+                            "Equal Areas does not apply to this surface: "
+                            "it is assembled as a finished mesh rather "
+                            "than sampled on a parameter grid")
+                return
+            before, after, applied = cov
+            if not applied:
+                self.report({'WARNING'},
+                            "Equal Areas left this surface alone: its "
+                            "domain is punctured, and equalizing made "
+                            f"the area spread worse (stayed at "
+                            f"{before:.3f})")
+            else:
+                gain = before / after if after > 1e-9 else float('inf')
+                self.report({'INFO'},
+                            f"equal areas: face-area spread "
+                            f"{before:.3f} -> {after:.4f} ({gain:.0f}x "
+                            f"more even)")
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'family')
             lay.prop(self, 'surface')
+            lay.prop(self, 'style')
+            lattice = self.style == 'LATTICE'
             mesh_only = self.surface in MESH_PARAM
-            if not mesh_only:
+            # NURBS has no faces to take a dual of, so the Output choice
+            # is meaningless while the lattice is on
+            if not mesh_only and not lattice:
                 lay.prop(self, 'output')
-            if self.output == 'NURBS' and not mesh_only:
+            if self.output == 'NURBS' and not lattice and not mesh_only:
                 lay.prop(self, 'ctrl_u')
                 lay.prop(self, 'ctrl_v')
             else:
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')
+            lay.prop(self, 'equal_areas')
             if self.surface in COUNT_PARAM:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
-            elif self.surface not in ANGLE_PARAM:
+            elif (self.surface not in ANGLE_PARAM
+                  and self.surface not in ORDERLESS):
                 lay.prop(self, 'order')
             if self.surface in STOREY_PARAM:
                 lay.prop(self, 'storeys', text=STOREY_PARAM[self.surface])
@@ -453,12 +788,31 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            if lattice:
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.draw_props(lay, self)
+            else:
+                # not offered under the lattice style: it would be
+                # ignored there, and a control that does nothing is
+                # worse than an absent one
+                lay.prop(self, 'thickness')
+            lay.prop(self, 'shade_smooth')
+            _rim.draw_rim(lay, self)
 
     class MESH_OT_tpms_add(bpy.types.Operator):
         """Add a triply-periodic minimal surface (nodal approximation)"""
         bl_idname = "mesh.tpms_add"
         bl_label = "Periodic Minimal Surface (TPMS)"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         surface: EnumProperty(
             name="Surface",
@@ -468,14 +822,44 @@ if _IN_BLENDER:
             name="Cells", default=1, min=1, max=4,
             description="Number of unit cells per axis")
         resolution: IntProperty(
-            name="Resolution / Cell", default=28, min=8, max=80,
-            description="Sample grid resolution per unit cell")
+            name="Resolution / Cell", default=50, min=8, max=500,
+            soft_max=200,
+            description="Sample grid resolution per unit cell. Cost is "
+                        "cubic in this and the extraction runs over the "
+                        "whole block, so a 3x3x3 array at 300 is a very "
+                        "different proposition from a single cell at 300")
         cell_size: FloatProperty(
             name="Cell Size", default=2.0, min=0.1, max=100.0,
             description="Edge length of one unit cell in Blender units")
         thickness: FloatProperty(
-            name="Thickness", default=0.0, min=0.0, max=1.0,
-            description="If > 0, add a Solidify modifier with this thickness")
+            name="Thickness", default=0.0, min=0.0, max=1.0, step=1,
+            precision=3,
+            description="If > 0, add a Solidify modifier with this "
+                        "thickness. A shell thicker than twice the local "
+                        "radius of curvature folds through itself; the "
+                        "operator measures that and warns with the "
+                        "thickness the current resolution can carry")
+        clip_sphere: BoolProperty(
+            name="Clip to Sphere", default=False,
+            description="Cut the surface to an inscribed sphere. The "
+                        "cut is solved on the sphere rather than "
+                        "following whole faces, so the edge comes out "
+                        "smooth -- switch the rim curve on as well and "
+                        "it is swept into a wire around the ball")
+        clip_radius: FloatProperty(
+            name="Sphere Radius", default=0.85, min=0.05, max=1.0,
+            step=1, precision=3,
+            description="Radius of that sphere as a fraction of the "
+                        "block's own half-size, so it keeps its meaning "
+                        "when the cell count or cell size changes")
+        shade_smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the surface smooth. Turn it off to read "
+                        "the actual sample grid -- useful for judging "
+                        "whether the resolution is high enough, and for "
+                        "a deliberately faceted look. With Thickness on, "
+                        "smooth shading also creases the cut edge so the "
+                        "shell does not appear rounded over")
         level_offset: FloatProperty(
             name="Level Offset", default=0.0, min=-3.0, max=3.0,
             description="Constant c in F(x,y,z) = c, relative to the "
@@ -497,19 +881,30 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, "Empty level set")
                 return {'CANCELLED'}
             label = TPMS[self.surface][0]
-            obj = _new_object(context, label, verts, tris)
+            verts, tris = _maybe_clip(self, verts, tris)
+            obj = _new_object(context, label, verts, tris,
+                              smooth=self.shade_smooth)
             if self.thickness > 0:
-                mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
-                mod.thickness = self.thickness
-                mod.offset = 0.0
+                _check_thickness(self, verts, tris, self.thickness)
+                _solidify(obj, self.thickness, crease=self.shade_smooth)
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             for k in ('surface', 'cells', 'resolution', 'cell_size',
-                      'thickness', 'level_offset', 'cell_aspect'):
+                      'thickness', 'level_offset', 'cell_aspect',
+                      'clip_sphere', 'clip_radius', 'shade_smooth'):
                 lay.prop(self, k)
+            _rim.draw_rim(lay, self)
 
     class MESH_OT_periodic_minimal_add(bpy.types.Operator):
         """Add a periodic minimal surface.  Pick the Periodicity
@@ -519,6 +914,12 @@ if _IN_BLENDER:
         bl_idname = "mesh.periodic_minimal_add"
         bl_label = "Periodic Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         periodicity: EnumProperty(
             name="Periodicity",
@@ -528,15 +929,61 @@ if _IN_BLENDER:
                         "periodic (TPMS); filters the Surface list")
         surface: EnumProperty(
             name="Surface",
-            items=_periodic_surface_items)
+            items=_periodic_surface_items,
+            update=_snap_order,
+            description="The specific periodic surface to build, from the "
+                        "chosen Periodicity")
+        arrangement: EnumProperty(
+            name="Arrangement",
+            items=[('PATCH', "Fundamental Piece",
+                    "The single patch the Weierstrass integral "
+                    "produces, before any reflection"),
+                   ('UNIT', "Unit",
+                    "The smallest assembly that reads as the surface"),
+                   ('CONJ_PATCH', "Conjugate Piece",
+                    "The fundamental piece of the CONJUGATE surface -- "
+                    "the same Weierstrass data read from the real part "
+                    "instead of the imaginary one"),
+                   ('CONJUGATE', "Conjugate",
+                    "The conjugate assembled as far as it is verified "
+                    "connected. It is a different surface, not a "
+                    "re-view: shaped like singly periodic Scherk "
+                    "surfaces rather than crossed sheets, and at the "
+                    "octagonal case (modulus 1, branch 0.25) it is "
+                    "congruent to the original")],
+            default='UNIT',
+            description="Which pre-defined assembly to build. The exact "
+                        "surfaces are grown from a fundamental piece by "
+                        "their own symmetry group, so these stages -- "
+                        "not a cell count -- are the natural sizes")
+        clp_tau: FloatProperty(
+            name="Modulus", default=2.0, min=0.05, max=8.0, step=10,
+            precision=3,
+            description="Im(tau), the torus modulus. CLP is a "
+                        "two-parameter family; Weber publishes renders "
+                        "at (tau, branch) = (0.4, 0.15), (2.0, 0.15) "
+                        "and (1.0, 0.25)")
+        clp_branch: FloatProperty(
+            name="Branch Value", default=0.15, min=0.02, max=0.48,
+            step=1, precision=3,
+            description="The branch value a. At tau = 1 and a = 0.25 "
+                        "the four branch points sit at the vertices of "
+                        "a regular octagon and the surface is "
+                        "self-conjugate")
         # -- Weierstrass (singly / doubly) parameters
         output: EnumProperty(
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
                    ('NURBS', "NURBS", "Compact NURBS surface patch")],
-            default='MESH')
-        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
-        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
+            default='MESH',
+            description="Emit a dense polygon mesh or a compact NURBS "
+                        "surface patch")
+        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512,
+                           description="Mesh sample count across the U "
+                                       "parameter direction")
+        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512,
+                           description="Mesh sample count across the V "
+                                       "parameter direction")
         ctrl_u: IntProperty(
             name="Control Points U", default=24, min=6, max=128,
             description="NURBS control grid size in U")
@@ -545,8 +992,11 @@ if _IN_BLENDER:
             description="NURBS control grid size in V")
         order: IntProperty(
             name="Order / Count", default=1, min=1, max=12,
+            update=_snap_order,
             description="Period count / lattice modulus where the surface "
-                        "uses it (e.g. saddle-tower wing count)")
+                        "uses it (e.g. saddle-tower wing count). "
+                        "Surfaces that only support a sub-range snap "
+                        "the slider into it")
         # -- unified cell counts: one INDEPENDENT count per tiling
         # dimension, shown by periodicity (singly -> u only; doubly ->
         # u, v; triply -> u, v, w = x, y, z).  The array's dimensionality
@@ -570,8 +1020,12 @@ if _IN_BLENDER:
             description="Legacy uniform cell count (broadcasts to every "
                         "period axis); 0 = use the per-axis Cells controls")
         radius: FloatProperty(
-            name="Domain Radius", default=1.2, min=0.2, max=4.0,
-            description="Extent of the parameter domain")
+            name="Domain Radius", default=1.2, min=0.2, max=20.0,
+            soft_max=4.0,
+            description="Extent of the parameter domain (for the k-noid "
+                        "family, how close the domain reaches its ends).  "
+                        "The slider drags to 4; type larger values (up to "
+                        "20) for extreme end reach")
         assoc_angle: FloatProperty(
             name="Associate Angle", default=0.0,
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
@@ -597,14 +1051,44 @@ if _IN_BLENDER:
                         "the raw Bonnet angle")
         # -- TPMS (triply) parameters (cells come from cells_u/v/w above)
         resolution: IntProperty(
-            name="Resolution / Cell", default=28, min=8, max=80,
-            description="Sample grid resolution per unit cell")
+            name="Resolution / Cell", default=50, min=8, max=500,
+            soft_max=200,
+            description="Sample grid resolution per unit cell. Cost is "
+                        "cubic in this and the extraction runs over the "
+                        "whole block, so a 3x3x3 array at 300 is a very "
+                        "different proposition from a single cell at 300")
         cell_size: FloatProperty(
             name="Cell Size", default=2.0, min=0.1, max=100.0,
             description="Edge length of one unit cell in Blender units")
         thickness: FloatProperty(
-            name="Thickness", default=0.0, min=0.0, max=1.0,
-            description="If > 0, add a Solidify modifier with this thickness")
+            name="Thickness", default=0.0, min=0.0, max=1.0, step=1,
+            precision=3,
+            description="If > 0, add a Solidify modifier with this "
+                        "thickness. A shell thicker than twice the local "
+                        "radius of curvature folds through itself; the "
+                        "operator measures that and warns with the "
+                        "thickness the current resolution can carry")
+        clip_sphere: BoolProperty(
+            name="Clip to Sphere", default=False,
+            description="Cut the surface to an inscribed sphere. The "
+                        "cut is solved on the sphere rather than "
+                        "following whole faces, so the edge comes out "
+                        "smooth -- switch the rim curve on as well and "
+                        "it is swept into a wire around the ball")
+        clip_radius: FloatProperty(
+            name="Sphere Radius", default=0.85, min=0.05, max=1.0,
+            step=1, precision=3,
+            description="Radius of that sphere as a fraction of the "
+                        "block's own half-size, so it keeps its meaning "
+                        "when the cell count or cell size changes")
+        shade_smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the surface smooth. Turn it off to read "
+                        "the actual sample grid -- useful for judging "
+                        "whether the resolution is high enough, and for "
+                        "a deliberately faceted look. With Thickness on, "
+                        "smooth shading also creases the cut edge so the "
+                        "shell does not appear rounded over")
         level_offset: FloatProperty(
             name="Level Offset", default=0.0, min=-3.0, max=3.0,
             description="Constant c in F(x,y,z) = c, relative to the "
@@ -647,7 +1131,13 @@ if _IN_BLENDER:
                 # unique capability of this entry -- and at exactly 0 / 38.0148
                 # / 90 deg Custom still yields the exact tiled P/D cell.
                 cxyz = (cu, cv, cw)
-                _PGD_NODAL = {'P': 'P', 'GYROID': 'G', 'D': 'D'}
+                # The named-preset shortcut belongs to the P/Gyroid/D row
+                # alone -- it is a map onto THAT family's nodal
+                # equivalents.  Schwarz H has no nodal equivalent at all,
+                # which is the reason it is here, so it always takes the
+                # exact route.
+                _PGD_NODAL = ({'P': 'P', 'GYROID': 'G', 'D': 'D'}
+                              if surf == 'PGD' else {})
                 if self.pgd_preset in _PGD_NODAL:
                     nk = _PGD_NODAL[self.pgd_preset]
                     verts, tris = build_tpms(nk, cxyz,
@@ -656,18 +1146,42 @@ if _IN_BLENDER:
                                              aspect=self.cell_aspect)
                     label = TPMS[nk][0]
                 else:                                   # CUSTOM: exact morph
+                    if surf == 'CLP':
+                        _clp_params(self.clp_tau, self.clp_branch)
                     verts, tris = build_tpms_exact(
                         surf, cxyz, self.resolution, self.cell_size,
-                        self.assoc_angle)
+                        self.assoc_angle,
+                        arrangement=(self.arrangement
+                                     if surf in TPMS_EXACT_ARRANGEMENTS
+                                     else None))
                     label = TPMS_EXACT[surf][0]
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty surface")
                     return {'CANCELLED'}
-                obj = _new_object(context, label, verts, tris)
+                verts, tris = _maybe_clip(self, verts, tris)
+                obj = _new_object(context, label, verts, tris,
+                                  smooth=self.shade_smooth)
                 if self.thickness > 0:
-                    mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
-                    mod.thickness = self.thickness
-                    mod.offset = 0.0
+                    _check_thickness(self, verts, tris, self.thickness)
+                    _solidify(obj, self.thickness,
+                              crease=self.shade_smooth)
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        # An exact cell is a parametric quad grid whose
+                        # boundary has genuine corners -- the spikes
+                        # where the surface leaves the cell.  Free
+                        # smoothing rounds those off, so it gets the
+                        # anchored fit, the same as the woven polyhedra;
+                        # the NODAL rows below stay relaxed, because
+                        # their rims are marching-tetrahedra staircases
+                        # with no real corners to keep.
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth,
+                            self.rim_profile, 'ANCHORED',
+                            twist=self.rim_twist,
+                            reeds=self.rim_reeds)
                 return {'FINISHED'}
             if surf in TPMS:
                 cxyz = (cu, cv, cw)
@@ -679,11 +1193,21 @@ if _IN_BLENDER:
                     self.report({'ERROR'}, "Empty level set")
                     return {'CANCELLED'}
                 label = TPMS[surf][0]
-                obj = _new_object(context, label, verts, tris)
+                verts, tris = _maybe_clip(self, verts, tris)
+                obj = _new_object(context, label, verts, tris,
+                                  smooth=self.shade_smooth)
                 if self.thickness > 0:
-                    mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
-                    mod.thickness = self.thickness
-                    mod.offset = 0.0
+                    _check_thickness(self, verts, tris, self.thickness)
+                    _solidify(obj, self.thickness,
+                              crease=self.shade_smooth)
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
                 return {'FINISHED'}
             if surf not in PARAMETRIC:
                 self.report({'ERROR'}, f"Unknown surface '{surf}'")
@@ -709,19 +1233,43 @@ if _IN_BLENDER:
                                        cells=(cu, cv))
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
-                _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale),
-                            loop_uv=cuv)
+                obj = _new_object(context, label, V, quads,
+                                  weld=1e-5 * max(1.0, self.scale),
+                                  loop_uv=cuv, smooth=self.shade_smooth)
+                if self.thickness > 0:
+                    _check_thickness(self, V, quads, self.thickness)
+                    _solidify(obj, self.thickness,
+                              crease=self.shade_smooth)
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
+            # The body returns early for the triply-periodic branch, and
+            # for a while that quietly swallowed the rim controls: the
+            # properties existed and every execute() exit honoured them,
+            # but a TPMS never DREW the checkbox, so there was no way to
+            # switch it on.  Splitting the body out means the rim is
+            # drawn on the way out of draw() itself, where no branch of
+            # the body can skip it.
             lay = self.layout
             lay.use_property_split = True
+            self._draw_body(lay)
+            _rim.draw_rim(lay, self)
+
+        def _draw_body(self, lay):
             lay.prop(self, 'periodicity')
             lay.prop(self, 'surface')
-            if (self.periodicity == 'TRIPLY' or self.surface in TPMS
+            if (self.periodicity in ('TRIPLY', 'EXACT', 'EXACT_FAMILY')
+                    or self.surface in TPMS
                     or self.surface in TPMS_EXACT):
-                if self.surface in TPMS_EXACT:
+                if self.surface == 'PGD':
                     # exact P/Gyroid/D: named preset first, then always show
                     # the raw Bonnet-angle slider.  A named preset reflects the
                     # special angle it uses; Custom drives the slider directly.
@@ -734,12 +1282,38 @@ if _IN_BLENDER:
                     else:
                         row.prop(self, 'assoc_angle',
                                  text=f"Associate Angle [{math.degrees(ang):.4g} deg]")
+                elif self.surface in TPMS_EXACT:
+                    # every other exact row: the associate angle is the
+                    # only control it has, and only zero is the named
+                    # surface -- the rest of the family is not periodic
+                    lay.prop(self, 'assoc_angle')
+                    if self.surface in TPMS_EXACT_ARRANGEMENTS:
+                        lay.prop(self, 'arrangement')
+                    if self.surface == 'CLP':
+                        lay.prop(self, 'clp_tau')
+                        lay.prop(self, 'clp_branch')
+                if self.surface in TPMS_EXACT:
+                    # No cell counts here.  These are grown from a
+                    # fundamental piece by their own symmetry group, not
+                    # arrayed on a lattice, so an X/Y/Z count has
+                    # nothing to act on -- the Arrangement above is what
+                    # sets the size.  Level Offset and Cell Aspect go
+                    # too: both are properties of a NODAL field (the
+                    # constant c in F = c, and the c/a ratio of the
+                    # sampling cell) and neither exists for a surface
+                    # integrated from its Weierstrass data.
+                    for k in ('resolution', 'cell_size', 'thickness',
+                              'clip_sphere', 'clip_radius',
+                              'shade_smooth'):
+                        lay.prop(self, k)
+                    return
                 # triply: three independent per-axis counts (x, y, z)
                 lay.prop(self, 'cells_u', text="Cells X")
                 lay.prop(self, 'cells_v', text="Cells Y")
                 lay.prop(self, 'cells_w', text="Cells Z")
                 for k in ('resolution', 'cell_size', 'thickness',
-                          'level_offset', 'cell_aspect'):
+                          'level_offset', 'cell_aspect', 'clip_sphere',
+                          'clip_radius', 'shade_smooth'):
                     lay.prop(self, k)
                 return
             mesh_only = self.surface in MESH_PARAM
@@ -753,7 +1327,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'res_v')
             if self.surface in COUNT_PARAM:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
-            elif self.surface not in ANGLE_PARAM:
+            elif (self.surface not in ANGLE_PARAM
+                  and self.surface not in ORDERLESS):
                 lay.prop(self, 'order')
             # cell counts: one per tiling dimension (singly -> u; doubly ->
             # u, v).  NURBS output is a single control patch (no array).
@@ -769,6 +1344,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            lay.prop(self, 'thickness')
+            lay.prop(self, 'shade_smooth')
 
     class OBJECT_OT_minimal_span(bpy.types.Operator):
         """Span a minimal surface across the selected curve (1 object:
@@ -776,13 +1353,23 @@ if _IN_BLENDER:
         bl_idname = "object.minimal_span"
         bl_label = "Span Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         samples: IntProperty(
-            name="Boundary Samples", default=128, min=16, max=512)
+            name="Boundary Samples", default=128, min=16, max=512,
+            description="Number of points sampled around each boundary loop")
         rings: IntProperty(
-            name="Interior Rings", default=24, min=3, max=128)
+            name="Interior Rings", default=24, min=3, max=128,
+            description="Number of concentric interior rings spanning the "
+                        "surface between the boundaries")
         iterations: IntProperty(
-            name="Solver Iterations", default=40, min=1, max=200)
+            name="Solver Iterations", default=40, min=1, max=200,
+            description="Number of area-minimization passes the solver runs")
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Emit a compact NURBS surface (control grid = the "
@@ -837,6 +1424,14 @@ if _IN_BLENDER:
             obj.location = (0, 0, 0)   # loops are in world space
             self.report({'INFO'},
                         f"area = {mesh_area(V, T):.4f}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -844,6 +1439,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             for k in ('samples', 'rings', 'iterations', 'output_nurbs'):
                 lay.prop(self, k)
+            _rim.draw_rim(lay, self)
 
     class MESH_OT_knot_span_add(bpy.types.Operator):
         """Minimal surface between a circle and a (p,q) torus knot
@@ -851,17 +1447,27 @@ if _IN_BLENDER:
         bl_idname = "mesh.minimal_knot_span_add"
         bl_label = "Knot to Knot Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
-        p: IntProperty(name="Knot p", default=2, min=1, max=8)
+        p: IntProperty(name="Knot p", default=2, min=1, max=8,
+                       description="p of the inner (p, q) torus knot; with q "
+                                   "it picks which knot spans to the circle")
         q: IntProperty(
             name="Knot q", default=3, min=0, max=9,
             description="q of the inner torus knot; 0 degenerates "
                         "it to a flat circle (radius 3 x Knot "
                         "Scale) wound p times")
         circle_radius: FloatProperty(
-            name="Circle Radius", default=4.5, min=1.0, max=20.0)
+            name="Circle Radius", default=4.5, min=1.0, max=20.0,
+            description="Radius of the round outer boundary circle")
         knot_scale: FloatProperty(
-            name="Knot Scale", default=1.0, min=0.1, max=5.0)
+            name="Knot Scale", default=1.0, min=0.1, max=5.0,
+            description="Overall size of the inner torus knot")
         inner_height: FloatProperty(
             name="Inner Height", default=1.0, min=0.0, max=5.0,
             description="Scale of the inner boundary's vertical "
@@ -879,10 +1485,14 @@ if _IN_BLENDER:
                         "vertical axis relative to the outer one, "
                         "twisting the ruling between them")
         samples: IntProperty(
-            name="Boundary Samples", default=96, min=32, max=512)
-        rings: IntProperty(name="Interior Rings", default=16, min=4, max=128)
+            name="Boundary Samples", default=96, min=32, max=512,
+            description="Number of points sampled around each boundary loop")
+        rings: IntProperty(name="Interior Rings", default=16, min=4, max=128,
+                           description="Number of concentric interior rings "
+                                       "spanning between the two boundaries")
         iterations: IntProperty(
-            name="Solver Iterations", default=2, min=1, max=200)
+            name="Solver Iterations", default=2, min=1, max=200,
+            description="Number of area-minimization passes the solver runs")
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Emit a compact NURBS surface (control grid = the "
@@ -985,6 +1595,14 @@ if _IN_BLENDER:
                     {'INFO'},
                     f"single sheet, genus {(self.q - 1) // 2}, "
                     f"area = {mesh_area(V, T):.4f}{capped}")
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
                 return {'FINISHED'}
             if (self.span_topology == 'SEIFERT' and self.outer_q == 0
                     and self.p > 1):
@@ -1070,6 +1688,14 @@ if _IN_BLENDER:
                 self.report({'INFO'},
                             f"{self.p} sheets, area = "
                             f"{mesh_area(V, T):.4f}")
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
                 return {'FINISHED'}
             if self.output_nurbs:
                 G = fair_grid_columns(V.reshape(self.rings + 1, m, 3))
@@ -1082,6 +1708,14 @@ if _IN_BLENDER:
             else:
                 obj = _new_object(context, name, V, quads)
             self.report({'INFO'}, f"area = {mesh_area(V, T):.4f}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -1111,6 +1745,7 @@ if _IN_BLENDER:
     # Add > Mesh > Minimal Surfaces already, so it was a second copy
     # of the menu taking up the tab -- and the tab is for editing the
     # selected object, not for making new ones.
+            _rim.draw_rim(lay, self)
 
     class VIEW3D_MT_math_art_minimal_zoo(bpy.types.Menu):
         """The minimal-surface catalog, one entry per family (each

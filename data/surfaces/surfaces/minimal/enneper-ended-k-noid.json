@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "enneper-ended-k-noid",
+  "name": "Enneper-ended k-noid",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 0.985",
+    "punctures": [
+      "z = 1 (radius 0.24)",
+      "z = -0.5+0.866025i (radius 0.24)",
+      "z = -0.5-0.866025i (radius 0.24)"
+    ],
+    "gauss_map": "1.0*(-1 + z**n)/z",
+    "height_differential": "(z**(-1 + n) + t*z**(-1 + 2*n))/(-1.0 + z**n)**3",
+    "parameters": [
+      {
+        "name": "n",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      },
+      {
+        "name": "t",
+        "domain": "see the generator's p_from",
+        "default": 0.4400000000000509,
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, phi triple (dh = phi3, g = phi3/(phi1 - i*phi2), a Weierstrass-representation identity)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "ENNK",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row ENNK) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 1.42e-15); dh: matches over 144 complex samples (worst 3.58e-15).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

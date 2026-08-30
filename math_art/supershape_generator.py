@@ -165,20 +165,47 @@ if _IN_BLENDER:
             default='SUPERSHAPE_3D')
 
         # superformula set 1 (longitude / ring / shell section)
-        m1: FloatProperty(name="m (set 1)", default=5.0, min=0.0, max=50.0)
-        n1_1: FloatProperty(name="n1 (set 1)", default=2.0, min=0.01, max=100.0)
-        n2_1: FloatProperty(name="n2 (set 1)", default=7.0, min=-100.0, max=100.0)
-        n3_1: FloatProperty(name="n3 (set 1)", default=7.0, min=-100.0, max=100.0)
-        a1: FloatProperty(name="a (set 1)", default=1.0, min=0.01, max=10.0)
-        b1: FloatProperty(name="b (set 1)", default=1.0, min=0.01, max=10.0)
+        m1: FloatProperty(name="m (set 1)", default=5.0, min=0.0, max=50.0,
+                          description="Symmetry: number of lobes or points "
+                                      "of set 1 (longitude / ring / shell "
+                                      "section)")
+        n1_1: FloatProperty(name="n1 (set 1)", default=2.0, min=0.01, max=100.0,
+                            description="Set 1 exponent n1: overall "
+                                        "roundness -- small bulges, large "
+                                        "pinches the outline")
+        n2_1: FloatProperty(name="n2 (set 1)", default=7.0, min=-100.0, max=100.0,
+                            description="Set 1 exponent n2: shape of the "
+                                        "sides (paired with n3)")
+        n3_1: FloatProperty(name="n3 (set 1)", default=7.0, min=-100.0, max=100.0,
+                            description="Set 1 exponent n3: shape of the "
+                                        "sides (paired with n2)")
+        a1: FloatProperty(name="a (set 1)", default=1.0, min=0.01, max=10.0,
+                          description="Set 1 size along the first axis "
+                                      "(divides the cosine term)")
+        b1: FloatProperty(name="b (set 1)", default=1.0, min=0.01, max=10.0,
+                          description="Set 1 size along the second axis "
+                                      "(divides the sine term)")
 
         # superformula set 2 (latitude / tube)
-        m2: FloatProperty(name="m (set 2)", default=5.0, min=0.0, max=50.0)
-        n1_2: FloatProperty(name="n1 (set 2)", default=2.0, min=0.01, max=100.0)
-        n2_2: FloatProperty(name="n2 (set 2)", default=7.0, min=-100.0, max=100.0)
-        n3_2: FloatProperty(name="n3 (set 2)", default=7.0, min=-100.0, max=100.0)
-        a2: FloatProperty(name="a (set 2)", default=1.0, min=0.01, max=10.0)
-        b2: FloatProperty(name="b (set 2)", default=1.0, min=0.01, max=10.0)
+        m2: FloatProperty(name="m (set 2)", default=5.0, min=0.0, max=50.0,
+                          description="Symmetry: number of lobes or points "
+                                      "of set 2 (latitude / tube)")
+        n1_2: FloatProperty(name="n1 (set 2)", default=2.0, min=0.01, max=100.0,
+                            description="Set 2 exponent n1: overall "
+                                        "roundness -- small bulges, large "
+                                        "pinches the outline")
+        n2_2: FloatProperty(name="n2 (set 2)", default=7.0, min=-100.0, max=100.0,
+                            description="Set 2 exponent n2: shape of the "
+                                        "sides (paired with n3)")
+        n3_2: FloatProperty(name="n3 (set 2)", default=7.0, min=-100.0, max=100.0,
+                            description="Set 2 exponent n3: shape of the "
+                                        "sides (paired with n2)")
+        a2: FloatProperty(name="a (set 2)", default=1.0, min=0.01, max=10.0,
+                          description="Set 2 size along the first axis "
+                                      "(divides the cosine term)")
+        b2: FloatProperty(name="b (set 2)", default=1.0, min=0.01, max=10.0,
+                          description="Set 2 size along the second axis "
+                                      "(divides the sine term)")
 
         torus_radius: FloatProperty(
             name="Torus Radius", default=2.0, min=0.0, max=20.0,
@@ -187,17 +214,32 @@ if _IN_BLENDER:
 
         # superellipsoid exponents
         e1: FloatProperty(name="Exponent (vertical)", default=1.0,
-                          min=0.05, max=8.0)
+                          min=0.05, max=8.0,
+                          description="Vertical squareness (Barr "
+                                      "superquadric): below 1 boxy, 1 "
+                                      "ellipsoid, above 1 pinched")
         e2: FloatProperty(name="Exponent (horizontal)", default=1.0,
-                          min=0.05, max=8.0)
+                          min=0.05, max=8.0,
+                          description="Horizontal squareness (Barr "
+                                      "superquadric): below 1 boxy, 1 "
+                                      "round, above 1 star")
 
         # shell controls
-        whorls: FloatProperty(name="Whorls", default=4.0, min=0.5, max=12.0)
+        whorls: FloatProperty(name="Whorls", default=4.0, min=0.5, max=12.0,
+                              description="Number of turns of the shell's "
+                                          "coil")
         growth: FloatProperty(name="Growth / Whorl", default=1.7,
-                              min=1.01, max=4.0)
-        tube: FloatProperty(name="Tube Size", default=0.35, min=0.02, max=2.0)
+                              min=1.01, max=4.0,
+                              description="How much the section expands "
+                                          "each whorl (self-similar "
+                                          "growth)")
+        tube: FloatProperty(name="Tube Size", default=0.35, min=0.02, max=2.0,
+                            description="Thickness of the shell's tube "
+                                        "relative to the coil")
         z_rate: FloatProperty(name="Spire Rise", default=1.4,
-                              min=0.0, max=6.0)
+                              min=0.0, max=6.0,
+                              description="How fast the coil rises along "
+                                          "the axis (0 = flat spiral)")
 
         segments: IntProperty(
             name="Segments", default=128, min=3, max=1024,
@@ -208,15 +250,18 @@ if _IN_BLENDER:
 
         coloring: EnumProperty(
             name="Coloring",
+            description="Whether and how to assign materials across the "
+                        "surface",
             items=[('NONE', "None", "No materials"),
                    ('LATITUDE', "Latitude Bands",
                     "Gradient of materials from pole to pole (or along "
                     "the tube / coil)"),
                    ('DISTANCE', "By Distance",
                     "Gradient by distance from the centre")],
-            default='LATITUDE')
+            default='NONE')
 
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size; 1 fits the 2 m cube")
 
         # ------------------------------------------------------------------
         def _params(self):

@@ -1,0 +1,87 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "saddle-tower-karcher-unequal-wings",
+  "name": "Saddle Tower (Karcher, unequal wings)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 0.999",
+    "punctures": [
+      "z = 0.92388+0.382683i (radius 0.102)",
+      "z = -0.382683+0.92388i (radius 0.102)",
+      "z = -0.92388-0.382683i (radius 0.102)",
+      "z = 0.382683-0.92388i (radius 0.102)",
+      "z = 0.92388-0.382683i (radius 0.102)",
+      "z = 0.382683+0.92388i (radius 0.102)",
+      "z = -0.92388+0.382683i (radius 0.102)",
+      "z = -0.382683-0.92388i (radius 0.102)"
+    ],
+    "note": "No (g, dh) pair is stored: not a closed-form expression: phi (_atower_phi) is an algorithm, not a single closed-form expression (call to unknown min()). The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SADDLE_TOWER_A",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "cross_checked": [
+      {
+        "source": "H. Karcher, Manuscripta Math. 62 (1988); J. Perez, M. Traizet, Trans. Amer. Math. Soc. 359 (2007) 965-990 (minsurf ch140)",
+        "agrees": true,
+        "detail": "'Hermann Karcher's Scherk Towers are translation invariant minimal surface with genus 0 in the quotient'; Perez-Traizet: 'the only singly periodic minimal surfaces of genus 0 with annular ends.'"
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "atomic-orbital-surface",
+  "name": "Atomic Orbital Surface",
+  "primary_family": "spectral",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "spectral"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: hydrogenic orbitals need Laguerre polynomials and spherical harmonics; outside the language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.orbital",
+      "operator_id": "mesh.orbital_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "E. Schroedinger, \"Quantisierung als Eigenwertproblem\", Annalen der Physik 384 (1926) -- the wave equation whose bound states these are.",
+      "The closed form psi_nlm = R_nl(r) Y_lm(theta, phi), with R_nl an associated Laguerre polynomial and Y_lm a spherical harmonic, is standard; see L. Pauling and E. B. Wilson, \"Introduction to Quantum Mechanics\" (1935), chapter V, for the derivation and the tabulated low-n forms."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

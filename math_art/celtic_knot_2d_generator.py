@@ -2324,8 +2324,12 @@ if _IN_BLENDER:
             description="The graph the cord lives on: the square grid, or "
                         "a tiling's medial graph (Mercat's knot on any "
                         "graph)")
-        grid_w: IntProperty(name="Grid Width", default=5, min=1, max=40)
-        grid_h: IntProperty(name="Grid Height", default=5, min=1, max=40)
+        grid_w: IntProperty(name="Grid Width", default=5, min=1, max=40,
+                            description="Number of cells across the panel "
+                                        "(square grid)")
+        grid_h: IntProperty(name="Grid Height", default=5, min=1, max=40,
+                            description="Number of cells down the panel "
+                                        "(square grid)")
         trim: BoolProperty(
             name="Trim Boundary", default=True,
             description="Keep only tiling faces inside a clean central "
@@ -2344,14 +2348,22 @@ if _IN_BLENDER:
             description="Source of the internal barriers that carve the "
                         "knot")
         preset: EnumProperty(name="Panel", items=_PRESET_ITEMS,
-                             default='PLAIN')
+                             default='PLAIN',
+                             description="Named barrier panel to carve "
+                                         "(Preset barriers)")
         wall_spacing: IntProperty(
             name="Wall Spacing", default=2, min=1, max=20,
             description="Internal walls every this many cells "
                         "(procedural)")
-        walls_v: BoolProperty(name="Vertical Walls", default=True)
-        walls_h: BoolProperty(name="Horizontal Walls", default=True)
-        seed: IntProperty(name="Seed", default=0, min=0, max=100000)
+        walls_v: BoolProperty(name="Vertical Walls", default=True,
+                              description="Place vertical internal walls "
+                                          "(procedural)")
+        walls_h: BoolProperty(name="Horizontal Walls", default=True,
+                              description="Place horizontal internal walls "
+                                          "(procedural)")
+        seed: IntProperty(name="Seed", default=0, min=0, max=100000,
+                          description="Random seed for the barrier layout "
+                                      "(random)")
         density: FloatProperty(
             name="Barrier Density", default=0.25, min=0.0, max=1.0,
             description="Fraction of internal walls made barriers "
@@ -2395,6 +2407,7 @@ if _IN_BLENDER:
                     "Straight mitered cords with sharp corners"),
                    ('SMOOTH', "Smooth",
                     "Catmull-Rom curved cords with rounded U-turns")],
+            description="Straight mitered cords or smooth curved cords",
             default='SMOOTH')
         smoothness: IntProperty(
             name="Smoothness", default=8, min=2, max=32,
@@ -2423,6 +2436,7 @@ if _IN_BLENDER:
                     "Break the under-cord at crossings (2D interlace)"),
                    ('WOVEN', "Woven (3D)",
                     "Raise/dip each cord into a 3D woven surface")],
+            description="Flat 2D interlace, or a raised 3D woven surface",
             default='FLAT')
         weave_height: FloatProperty(
             name="Weave Height", default=0.06, min=0.0, max=0.5,
@@ -2434,6 +2448,7 @@ if _IN_BLENDER:
                     "A distinct color per closed cord"),
                    ('CHECKER', "Over/Under",
                     "Two-tone by the over/under weave")],
+            description="How the cords are coloured",
             default='LOOP')
         output: EnumProperty(
             name="Output",
@@ -2441,6 +2456,8 @@ if _IN_BLENDER:
                     "Filled cord ribbons (supports relief)"),
                    ('CURVE', "Centerline Curves",
                     "Cord centerlines as a Blender curve object")],
+            description="Emit filled cord ribbons or the cord centerline "
+                        "curves",
             default='RIBBON')
         height: FloatProperty(
             name="Relief Height", default=0.0, min=0.0, max=2.0,
@@ -2449,7 +2466,8 @@ if _IN_BLENDER:
             name="Backing Slab", default=False,
             description="Add a slab behind the knot")
         base: FloatProperty(
-            name="Base Thickness", default=0.08, min=0.01, max=1.0)
+            name="Base Thickness", default=0.08, min=0.01, max=1.0,
+            description="Thickness of the extruded base / backing slab")
         separate: BoolProperty(
             name="Separate Cords", default=False,
             description="Output each closed cord as its own object")

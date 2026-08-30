@@ -411,6 +411,7 @@ if _IN_BLENDER:
 
         surface: EnumProperty(
             name="Surface",
+            description="Which surface the cord is wound on",
             items=[('RING', "Ring (Flat Mat)",
                     "The classic Turk's head opened flat -- a "
                     "woven annular mat"),
@@ -458,13 +459,16 @@ if _IN_BLENDER:
             step=1, precision=3,
             description="Radius of the swept rope tube")
         tube_sides: IntProperty(name="Rope Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Sides of the rope tube "
+                                            "cross-section")
         color_components: BoolProperty(
             name="Color Cords", default=True,
             description="One material with a distinct color per "
                         "cord (multi-cord Turk's heads only)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             lift = max(self.weave_depth, 1.3 * self.tube_radius)

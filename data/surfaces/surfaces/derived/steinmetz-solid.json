@@ -1,0 +1,141 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "steinmetz-solid",
+  "name": "Steinmetz Solid",
+  "primary_family": "derived",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "derived",
+    "immersed",
+    "implemented"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: the boundary of a cylinder intersection is piecewise -- several cylindrical lune patches meeting along curved edges; no single chart covers it. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "BICYLINDER",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "BICYLINDER"
+    },
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "TRICYLINDER",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TRICYLINDER"
+    },
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "CUBE4",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CUBE4"
+    },
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "CUBOCT6",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CUBOCT6"
+    },
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "ICOSA6",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "ICOSA6"
+    },
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "DODECA10",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "DODECA10"
+    },
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "TRUNCOCT12",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TRUNCOCT12"
+    },
+    {
+      "generator": "math_art.steinmetz_generator",
+      "operator_id": "mesh.steinmetz_add",
+      "key": "EQUIDOMOID",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "EQUIDOMOID"
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Archimedes, \"The Method of Mechanical Theorems\" (c. 250 BC); T. L. Heath (ed.), \"The Works of Archimedes\", Cambridge, 1897.",
+      "M. Moore, \"Symmetrical Intersections of Right Circular Cylinders\", The Mathematical Gazette 58 (1974), 181-185.",
+      "K. Brecher, \"Rolloids\", Bridges 2023 Conference Proceedings, 345-352 (the bicylinder as a straight-line roller; local copy at research/bridges/2023/bridges2023-345/).",
+      "The n-cylinder axis sets and their patch counts: Robert Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), \"polyedres cylindriques\".  Four of its five patch counts are reproduced exactly here; for the twelve truncated-octahedral axes the count is 216 rather than the published 240, since that axis set is in special position (two of the eleven cross-product directions coincide).",
+      "Equidomoid: studied by Archimedes, and named by Leopold Hugo between 1867 and 1875; Emile Fourrey, \"Recreations geometriques\", 319-326."
+    ]
+  },
+  "specimens": [
+    {
+      "label": "bicylinder"
+    },
+    {
+      "label": "tricylinder"
+    },
+    {
+      "label": "four cube diagonals"
+    },
+    {
+      "label": "six cuboctahedral axes"
+    },
+    {
+      "label": "six icosahedral axes"
+    },
+    {
+      "label": "ten dodecahedral axes"
+    },
+    {
+      "label": "twelve truncated-octahedral axes"
+    },
+    {
+      "label": "equidomoid"
+    }
+  ],
+  "relations": {
+    "polyhedral_analogue": "cube"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

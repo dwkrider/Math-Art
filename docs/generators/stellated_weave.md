@@ -4,7 +4,15 @@
 
 ## Overview
 
-A port of Shengyi Wang's **Stellated Surface Weave**: twelve folded strips interlock along the pentagram planes of a small stellated dodecahedron. Each of the twelve pentagram faces carries a strip that folds over the star's points and weaves through its neighbours; the strip width is the single free parameter, and every mitre recomputes to keep the folds sharp at constant width.
+Twelve folded strips that interlock along the pentagram planes of a small stellated dodecahedron — a port of Shengyi Wang's **Stellated Surface Weave**. Each of the twelve star faces carries one strip that folds over the star's points and weaves through its neighbours.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Stellated Surface Weave*.
+2. **Set the Strip Width** — the single shape control. It is the width of the folded strips, and every mitre is recomputed as you change it so the folds stay sharp and the strips keep a constant width all the way round. Narrow values give a delicate open lattice of thin bands; wide ones broaden the strips until they nearly meet, closing the star faces into near-solid panels.
+3. **Choose Coloring.** *Per Strip* assigns one material to each of the twelve pentagram planes, so every woven strip reads as its own colour; *None* leaves the mesh bare.
+4. **Scale** sizes the finished weave (it is otherwise built so the underlying dodecahedron's vertices sit at radius $\sqrt3$).
+5. **Read the report.** The operator prints the vertex and face counts of the result (for example "V=… F=…") as a quick check that the strips welded into one clean mesh.
 
 ## Options
 
@@ -14,32 +22,34 @@ A port of Shengyi Wang's **Stellated Surface Weave**: twelve folded strips inter
 | Option | Default | Description |
 | --- | --- | --- |
 | Strip Width | 0.12 | Width of the folded strips; all mitres recompute Range 0.02-0.32. |
-| Coloring | Per Strip | Per Strip, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Strip | Give each of the 12 strips its own material, or leave the weave unmaterialed. Per Strip, None. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube, centered at the origin) Range 0.01-100. |
 
 <!-- /options -->
 
 ## How it works
 
-The construction is driven entirely by the geometry of the **small stellated dodecahedron** (SSD). Starting from a regular dodecahedron (vertices built from $\varphi = \tfrac{\sqrt5+1}{2}$ and $1/\varphi$), each of the 12 pentagonal faces is capped by a pentagonal-pyramid apex raised along the face normal by
+**In plain terms.** Start with a spiky star ball: take a dodecahedron (the twelve-sided solid) and raise a shallow five-sided pyramid on each face, so the surface sprouts twelve five-pointed stars. That shape is the *small stellated dodecahedron*. Now over each star lay a ribbon that runs out toward the star's points, folds sharply over them, and threads under and over the ribbons of the neighbouring stars — the way strands cross in a woven mat. The one tricky part is the corners: a ribbon has to turn at every star point while staying the same width, so each corner is **mitred** like a picture frame, cut at just the right angle that the folded band neither pinches shut nor splays open. Getting those mitre angles right, automatically, for any ribbon width, is what the construction below does.
 
-$$h = \sqrt{2 + \tfrac{2}{\sqrt5}},$$
+**Building the star ball.** The whole construction is driven by the geometry of the **small stellated dodecahedron** (SSD). Starting from a regular dodecahedron (vertices built from the golden ratio $\varphi = \tfrac{\sqrt5+1}{2}$ and $1/\varphi$), each of the 12 pentagonal faces is capped by a pentagonal-pyramid apex, raised along the face normal by
 
-giving the 12 star points. Each SSD pentagram face is then indexed as the five apexes of its neighbouring faces taken in star order (every second face around the pentagon).
+$$h = \sqrt{2 + \tfrac{2}{\sqrt5}}.$$
 
-**Skeleton arms.** Every pentagram face contributes five arms. An arm runs from a tip apex, to a **bend** placed a fraction
+That height is exactly the one for which the five triangular flanks of neighbouring caps fall into the same plane, so the apexes become the 12 sharp **star points** and the "faces" of the SSD are true flat pentagrams rather than dented cones. Each pentagram face is then indexed as the five apexes of its neighbouring faces taken in star order — every *second* face around the pentagon — which is what makes the face a five-pointed star instead of a convex pentagon.
+
+**Skeleton arms.** Every pentagram face contributes five **arms**, one per point, and an arm is the spine the ribbon will follow. It runs from a tip apex inward to a **bend** placed a fraction
 
 $$\frac{5-\sqrt5}{10}$$
 
-of the way along the star edge, to the face centre. Where five arms meet at a shared tip, they form a pentagonal-pyramid apex; the strip's inner point is placed $2\times\text{width}$ inward from the apex toward the origin.
+of the way along the star edge, then on to the face centre. This fraction is the point where the star's edge crosses its neighbour, so the bend is exactly where the physical ribbon must fold to pass through the weave. Where five arms meet at a shared tip they reconstruct the pentagonal-pyramid apex, and the strip's inner point is placed $2\times\text{width}$ inward from that apex toward the origin — far enough in that a strip of the chosen width clears the point without overlapping itself.
 
-**Mitred folds.** Each strip has two side faces lying in the two adjacent star planes plus a parallelogram closure. To keep the strip a constant width as it folds over a bend, the two extension factors
+**Mitred folds.** Each strip is a band with two side faces lying in the two adjacent star planes, closed by a parallelogram. To hold the strip at *constant* width as it folds over a bend, the fold points are pushed out along the edge direction by two extension factors,
 
-$$\sqrt{\tfrac{5+\sqrt5}{10}}\quad\text{(outer mitre)}\qquad\text{and}\qquad\sqrt{\tfrac{5-\sqrt5}{10}}\quad\text{(inner mitre)}$$
+$$\sqrt{\tfrac{5+\sqrt5}{10}}\quad\text{(outer mitre)}\qquad\text{and}\qquad\sqrt{\tfrac{5-\sqrt5}{10}}\quad\text{(inner mitre)},$$
 
-extend the mitre points along the edge direction. Where an arm meets a face, the inward direction is the component of (face centre − apex) perpendicular to the edge, and mitre points are found as the intersection of the two offset edge lines. At each tip a **star patch** stitches the outer mitre points, the per-face mitre point and the inner apex; toward the face centres the strips stay parallel and meet in mitred pentagon junctions.
+which are the secants of the two fold half-angles: a fold turns the band through a fixed dihedral, and multiplying the offset by the secant of half that angle is exactly what a mitre joint does to keep the band's edges meeting flush instead of gapping. Where an arm meets a face, the inward direction is taken as the component of (face centre − apex) perpendicular to the edge, and the mitre points themselves are found as the intersection of the two offset edge lines — the corner where the two constant-width sides actually cross. At each tip a **star patch** stitches together the outer mitre points, the per-face mitre point and the inner apex, closing the five-way junction; toward the face centres the strips simply stay parallel and meet in mitred pentagon junctions.
 
-Finally all polygons are welded (coincident vertices merged at 8-decimal precision, degenerate faces dropped) and scaled so the dodecahedron vertices sit at radius $\sqrt3$. Each face is tagged with its pentagram-plane (strip) index as a `strip_index` attribute, driving the 12-colour **Per Strip** materials; face normals are recomputed with bmesh. A self-test checks 12 faces / 12 tips / 60 arms and reports any non-2-manifold edges across a range of widths.
+**Finishing.** All polygons are then welded (coincident vertices merged at 8-decimal precision, degenerate faces dropped) so the twelve strips become one watertight surface, and the whole thing is scaled so the dodecahedron vertices sit at radius $\sqrt3$. Each face is tagged with its pentagram-plane (strip) index as a `strip_index` attribute, which drives the 12-colour **Per Strip** materials, and the face normals are recomputed with bmesh so the shading is consistent. A self-test confirms the expected 12 faces / 12 tips / 60 arms and reports any non-2-manifold edges across a range of widths — the check that the mitres really did close the weave into a single manifold.
 
 ## References
 

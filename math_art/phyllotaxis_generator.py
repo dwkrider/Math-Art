@@ -179,6 +179,7 @@ if _IN_BLENDER:
                         "spiral")
         form: EnumProperty(
             name="Form",
+            description="Surface the florets are placed on",
             items=[('DISK', "Disk (sunflower)",
                     "Flat Vogel disk, the classic sunflower head"),
                    ('DOME', "Dome (cactus)",
@@ -193,6 +194,7 @@ if _IN_BLENDER:
             default='DISK')
         floret: EnumProperty(
             name="Floret",
+            description="Shape placed at each floret point",
             items=[('BUMP', "Seed Bump",
                     "A flattened spheroid seed at each point"),
                    ('SPIKE', "Areole Spike",
@@ -202,6 +204,8 @@ if _IN_BLENDER:
             default='BUMP')
         output: EnumProperty(
             name="Output",
+            description="Floret solids, or just the center points for "
+                        "instancing",
             items=[('SOLID', "Floret Solids",
                     "A mesh of floret solids (bumps / spikes / discs)"),
                    ('POINTS', "Points Only",
@@ -212,6 +216,7 @@ if _IN_BLENDER:
             default='SOLID')
         chirality: EnumProperty(
             name="Handedness",
+            description="Winding direction of the spiral",
             items=[('RIGHT', "Right", "Counterclockwise spiral"),
                    ('LEFT', "Left", "Clockwise (mirror) spiral")],
             default='RIGHT')
@@ -255,6 +260,7 @@ if _IN_BLENDER:
             description="Sides of the spike / disc florets")
         color_by: EnumProperty(
             name="Color By",
+            description="How the florets are colored",
             items=[('PARASTICHY', "Parastichy Arms",
                     "Color each residue class i mod k, lighting up the "
                     "k-arm family of spirals (pick a Fibonacci k)"),
@@ -267,7 +273,10 @@ if _IN_BLENDER:
             description="Which spiral-arm family to color; a Fibonacci "
                         "number (8, 13, 21, 34...) matches the natural "
                         "parastichies")
-        smooth_shading: BoolProperty(name="Smooth Shading", default=True)
+        smooth_shading: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the floret solids smooth rather than "
+                        "faceted")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 fits a "

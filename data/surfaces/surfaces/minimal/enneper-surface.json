@@ -1,0 +1,132 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "enneper-surface",
+  "name": "Enneper",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "u - u**3/3 + u*v**2",
+    "y": "v - v**3/3 + v*u**2",
+    "z": "u**2 - v**2",
+    "u_range": [
+      "-1.4",
+      "1.4"
+    ],
+    "v_range": [
+      "-1.4",
+      "1.4"
+    ]
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "total_curvature": {
+      "exact": "-4*pi",
+      "value": -12.566370614359172,
+      "source": "classical",
+      "note": "M. Weber (minsurf ch189): 'Besides the catenoid it is the only complete minimal surface of finite total curvature -4pi.'  Single end of winding number 3, not embedded."
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "orientable": true,
+    "finite_total_curvature": true,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 1,
+        "order": 1,
+        "embedded": false
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "ENNEPER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row ENNEPER) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "A. Enneper, 'Analytisch-geometrische Untersuchungen', Zeitschrift fur Mathematik und Physik 9 (1864).",
+      "A. Enneper, 'Weitere Bemerkungen ueber asymptotische Linien', Nachr. Koenigl. Ges. Wiss. Goettingen 15 (1871); M. Weber (mirror: minsurf ch189): total curvature -4pi, single end of winding number 3, not embedded."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Alfred Enneper",
+  "year": 1864,
+  "ids": {
+    "mathworld": "EnnepersMinimalSurface",
+    "mathcurve": "ch1264_enneper_2",
+    "vmm": "Enneper",
+    "msblog": "ch189_enneper_surface"
+  },
+  "notes": {
+    "caveats": [
+      "Complete and of finite total curvature, but NOT embedded: the surface crosses itself beyond radius 1 in the standard parametrisation."
+    ]
+  },
+  "alternate_definitions": [
+    {
+      "mode": "weierstrass",
+      "fidelity": "exact",
+      "exactness": "numerical-integral",
+      "gauss_map": "z**k",
+      "height_differential": "2.0*z**k",
+      "parameters": [
+        {
+          "name": "k",
+          "domain": "see the generator's p_from",
+          "default": 1,
+          "integer": true
+        }
+      ],
+      "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack.",
+      "domain": "disk |z| < 1"
+    }
+  ],
+  "alternate_names": [
+    "Enneper surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

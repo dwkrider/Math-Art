@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "morin-surface",
+  "name": "Morin's Surface",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "topological",
+    "tradition-classical",
+    "tradition-sculptural"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "cos(u)*(2*cos(u) + sqrt(2)*sin(u))*cos(v)/(sqrt(2) - sin(2*u)*sin(2*v))",
+    "y": "cos(u)*(2*cos(u) - sqrt(2)*sin(u))*sin(v)/(sqrt(2) - sin(2*u)*sin(2*v))",
+    "z": "cos(u)**2/(sqrt(2) - sin(2*u)*sin(2*v))",
+    "u_range": [
+      "-pi/2",
+      "pi/2"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "note": "Apery order n = 2 (Morin's own halfway model, an immersed sphere) and pinch k = 1 fixed to the operator defaults; u = +-pi/2 collapse to the triple point",
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "orientable": true,
+    "compact": true,
+    "euler_characteristic": 2,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed",
+    "self_intersecting": true
+  },
+  "construction": [
+    {
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "MORIN",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.64 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.04064).",
+    "sources": [
+      "B. Morin's halfway model for the sphere eversion; see G. Francis, A Topological Picturebook (1987)."
+    ]
+  },
+  "discovered_by": "Bernard Morin",
+  "year": 1978,
+  "tradition": [
+    "classical",
+    "sculptural"
+  ],
+  "ids": {
+    "mathcurve": "ch1306_morin_2"
+  },
+  "notes": {
+    "caveats": [
+      "The halfway model of the sphere eversion: an immersed sphere that is isotopic to its own inside-out image, which is what makes the eversion possible. Morin was blind from the age of six."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

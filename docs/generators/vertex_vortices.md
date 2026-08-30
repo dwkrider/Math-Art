@@ -24,15 +24,15 @@ Every original edge yields exactly one saddle patch, and every spoke borders exa
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Dodecahedron | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Cuboctahedron, Truncated Octahedron, Snub Cube, and 4 more. |
+| Seed | Dodecahedron | Which polyhedron the vortices are built on. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Cuboctahedron, Truncated Octahedron, Snub Cube, and 4 more. |
 | Bend | 0.2 | Sideways bend of each spoke, as a fraction of its length (about 0.11 in the original sculpture) Range 0-0.6. |
 | Spoke Samples | 12 | Subdivisions of each bent spoke Range 3-48. |
 | Solver Iterations | 30 | Plateau area-minimization iterations per patch Range 0-200. |
 | Reverse Swirl | Off | Mirror the vortex chirality |
-| Smooth Shading | Off | -- |
+| Smooth Shading | Off | Shade the surface smooth |
 | Sharp Spokes | On | Mark the bent spokes sharp (and creased). Each spoke borders exactly two saddle patches and is a genuine fold between them, so with smooth shading on it should stay crisp rather than round over |
 | Thickness | 0 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 
@@ -71,7 +71,7 @@ Renders of each selectable option:
 $$P(t) = C + \mathbf d\,t + \hat p\,\big(\text{bend}\cdot L\cdot 4t(1-t)\big),\quad t=\tfrac{j}{m}.$$
 Because $\hat p$ turns the same rotational way for every spoke on the face, they all curve with a common handedness — a pinwheel. And because the bump vanishes at $t=0$ and $t=1$, each spoke still begins exactly at the centre and ends exactly on its corner; only the middle swings aside.
 
-**One patch per edge.** Deleting the original edges leaves a four-sided gap around each. For an undirected edge $\{a,b\}$, the two faces sharing it — $f_a$, which runs $a\!\to\!b$, and $f_b$, which runs $b\!\to\!a$ — contribute the four bent spokes $C_a\!\to\!a$, $C_a\!\to\!b$, $C_b\!\to\!a$, $C_b\!\to\!b$, and these form a curved quadrilateral frame straddling the missing edge. A **Coons patch** fills the frame by blending its four boundary curves into an interior grid:
+**One patch per edge.** Deleting the original edges leaves a four-sided gap around each. For an undirected edge $\lbrace a,b\rbrace$, the two faces sharing it — $f_a$, which runs $a\!\to\!b$, and $f_b$, which runs $b\!\to\!a$ — contribute the four bent spokes $C_a\!\to\!a$, $C_a\!\to\!b$, $C_b\!\to\!a$, $C_b\!\to\!b$, and these form a curved quadrilateral frame straddling the missing edge. A **Coons patch** fills the frame by blending its four boundary curves into an interior grid:
 $$P(u,v) = (1-v)\,\text{bot}(u) + v\,\text{top}(u) + (1-u)\,\text{lef}(v) + u\,\text{rig}(v) - \big[\text{bilinear blend of the four corners}\big].$$
 The two linear interpolations — one per parameter direction — each satisfy two of the four sides, but adding them double-counts the corners; subtracting the bilinear corner blend cancels that double-count, leaving a surface that meets all four bent spokes exactly. That patch is only the starting shape: its boundary rows and columns are pinned and the interior is relaxed toward minimal area by the toolkit's `minimize_area` (Pinkall–Polthier cotangent-Laplacian, conjugate-gradient solve), with a uniform-Laplacian fallback, turning the blended quad into a true saddle. The seed must be a closed manifold mesh with consistent winding, checked via the directed-edge set — every directed edge must occur once and its reverse must also appear. After all patches are built, the whole surface is oriented outward by the sign of its signed volume, then centred, fit within a $2\times\text{scale}$ cube, tagged with an `edge_index` attribute, and optionally given a Solidify shell.
 

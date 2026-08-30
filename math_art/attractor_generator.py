@@ -80,7 +80,9 @@ if _IN_BLENDER:
 
         preset: EnumProperty(name="Attractor",
                              items=_preset_items(),
-                             default='LORENZ')
+                             default='LORENZ',
+                             description="Which strange-attractor "
+                                         "system to integrate and draw")
         steps: IntProperty(
             name="Steps", default=0, min=0, max=200000, step=1000,
             description="Integration steps (0 = preset default)")
@@ -95,7 +97,8 @@ if _IN_BLENDER:
             items=[('POLY', "Poly", "one point per sample"),
                    ('BEZIER', "Bezier",
                     "auto-handles, smoother at low sample counts")],
-            default='POLY')
+            default='POLY',
+            description="Spline type used for the trajectory curve")
         samples: IntProperty(
             name="Resample", default=0, min=0, max=20000,
             description="Resample to N evenly spaced points "
@@ -106,7 +109,9 @@ if _IN_BLENDER:
             step=1, precision=3,
             description="Curve bevel depth (0 = wire only)")
         resolution: IntProperty(name="Bevel Resolution", default=4,
-                                min=0, max=16)
+                                min=0, max=16,
+                                description="Segments around the tube "
+                                            "cross-section")
         taper: FloatProperty(
             name="Speed Taper", default=0.0, min=0.0, max=1.0,
             description="Thicken the tube where the flow is slow "

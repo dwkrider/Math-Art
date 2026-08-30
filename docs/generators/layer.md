@@ -1,15 +1,21 @@
 # Layer Group
 
+![Layer Group](../images/layer.png)
+
 ## Overview
 
-Add a layer-group pattern: a wallpaper group augmented with
-a z-symmetry (shows only in 3D -- use relief or an active mesh).
+Add a layer-group pattern: a wallpaper group given an extra third-axis symmetry, so the repeated unit can flip up and down as well as move within the plane. It only reads in 3D — give it relief height or an active mesh.
 
-The three-dimensional extension of the [wallpaper groups](wallpaper.md). A **layer group** describes a pattern periodic in two directions — a slab — whose symmetries may involve the *third* axis: a horizontal mirror through the layer plane, a 2-fold axis lying in the plane, or a centre of inversion.
+A **layer group** is the three-dimensional cousin of the [wallpaper groups](wallpaper.md): a pattern still periodic in two directions — a slab — but whose symmetries may involve the *third* axis, a horizontal mirror through the layer plane, a two-fold axis lying in the plane, or a centre of inversion. There are 80 in full; this generator takes the tractable **z-augmentation** route, pairing one of the 17 in-plane wallpaper groups with one added $z$-symmetry. Flat, a layer pattern is indistinguishable from its wallpaper group — the third dimension is the whole point, so it must be built with real height.
 
-There are 80 of them in full. This generator takes the tractable **z-augmentation** route: pick one of the 17 in-plane wallpaper groups and add a $z$-symmetry, so copies can flip up and down as well as rotate and reflect within the plane.
+### Using it
 
-Because the third dimension is the entire point, a layer pattern only reads in 3-D — with a relief height or with the active mesh as the repeated unit. Flat, it is indistinguishable from its wallpaper group.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Layer Group*.
+2. **Pick the In-plane Group** — any of the 17 wallpaper groups (by IUC name and orbifold signature) to govern the pattern within the slab.
+3. **Pick the Z-Symmetry** — the third-axis move layered on top: **None** (a plain extruded slab), **Horizontal Mirror** (top/bottom symmetric — the screen-like case), **2-fold In-plane Axis** (copies flipped over), or **Inversion Centre**. Not every pairing is a distinct group, which is why the full classification runs to 80.
+4. **Set Cells X / Cells Y** for the block size, and give it height. Because a layer pattern needs real 3D depth, **Relief Height** defaults to 0.3 for the built-in motifs; choosing **Object** hides it and reveals an **Object** picker whose mesh (or the active/selected one) is tiled at its own size, with every $z$-inverted copy genuinely flipped through the plane.
+5. **Colour and space the copies.** *Color By* tints by **Symmetry Copy**, **Operation Type**, **Handedness** (here fully three-dimensional — it counts the $z$-flip) or **Lattice Cell**. **Margin** opens gaps; **Separate Cells** emits each unit as its own object.
+6. **Read the report.** The status line echoes the group, the $z$-symmetry, and the vertex/face count (or cell count) of the slab.
 
 ## Options
 
@@ -17,13 +23,13 @@ Because the third dimension is the entire point, a layer pattern only reads in 3
 
 | Option | Default | Description |
 | --- | --- | --- |
-| In-plane Group | p4  (442) | p1  (o), p2  (2222), pm  (**), pg  (xx), cm  (*x), pmm  (*2222), pmg  (22*), pgg  (22x), and 9 more. |
-| Z-Symmetry | Horizontal Mirror | None, Horizontal Mirror, 2-fold In-plane Axis, Inversion Centre. |
-| Motif | Arrow | Arrow, F, L, Comma, Zig, Triangle, Object. |
+| In-plane Group | p4  (442) | Which of the 17 wallpaper groups tiles the plane. p1  (o), p2  (2222), pm  (**), pg  (xx), cm  (*x), pmm  (*2222), pmg  (22*), pgg  (22x), and 9 more. |
+| Z-Symmetry | Horizontal Mirror | Extra symmetry added through the third axis. None, Horizontal Mirror, 2-fold In-plane Axis, Inversion Centre. |
+| Motif | Arrow | Shape tiled through the group, or another object's mesh. Arrow, F, L, Comma, Zig, Triangle, Object. |
 | Object | empty | Object whose mesh is used as the motif. Leave empty to use the active or selected mesh |
-| Cells X | 3 | Range 1-30. |
-| Cells Y | 3 | Range 1-30. |
-| Color By | Symmetry Copy | Symmetry Copy, Operation Type, Handedness, Lattice Cell. |
+| Cells X | 3 | Number of unit cells along X Range 1-30. |
+| Cells Y | 3 | Number of unit cells along Y Range 1-30. |
+| Color By | Symmetry Copy | How the symmetry copies are colored. Symmetry Copy, Operation Type, Handedness, Lattice Cell. |
 | Margin | 0 | Spacing around each unit, as a fraction of its size (0 = flush) Range 0-3. |
 | Relief Height | 0.3 | Relief depth for built-in motifs (a layer pattern needs real 3D height to show) Range 0.02-2. |
 | Separate Cells | Off | Output each unit as its own mesh object (parented to an empty) so cells can be edited individually |
@@ -68,7 +74,9 @@ Renders of each selectable option:
 
 ## How it works
 
-**Z-augmentation.** Start from a wallpaper group $G$ acting in the plane, and extend each of its elements to act on the slab. Every in-plane isometry is lifted to $\mathbb{R}^3$ by acting trivially on $z$, and then the group is augmented by one of the $z$-symmetries:
+**In plain terms.** A wallpaper pattern is perfectly flat — it has no front or back to speak of. Give it *thickness*, though, and new symmetries become possible: the slab might look identical from above and below, or a raised bump here might be matched by a dented pit there. Picture a pierced garden screen or a panel of lace — it repeats sideways like wallpaper, but it also has a top face and a bottom face that can be related to one another. A **layer group** is a wallpaper group plus one of these up/down relationships. That is exactly why a layer pattern is invisible when flat: squash the thickness to zero and the top-and-bottom rule has nothing to act on, leaving only the wallpaper group you started from.
+
+**Z-augmentation.** Start from a wallpaper group $G$ acting in the plane and lift each of its elements to act on the slab, doing nothing to the height — an in-plane isometry becomes a map of $\mathbb{R}^3$ that leaves $z$ alone. Then *augment* the group with a single new generator that does touch $z$:
 
 | Augmentation | Operation | Effect |
 | --- | --- | --- |
@@ -77,15 +85,15 @@ Renders of each selectable option:
 | 2-fold in plane | $(x,y,z)\mapsto(x,-y,-z)$ | copies flipped over |
 | inversion | $\mathbf{p}\mapsto-\mathbf{p}$ | a centre of symmetry |
 
-The lifted elements compose with the in-plane ones exactly as before, so the augmented set is a group provided the added symmetry is compatible with $G$ — which is why not every wallpaper group admits every augmentation, and why the full count is 80 rather than $17\times4$.
+Each new generator has order 2 — do it twice and you are back where you started — so augmenting *doubles* the group: every in-plane copy gains one $z$-partner. The lifted elements still have to compose with the in-plane ones to form a group, and that only works when the added $z$-symmetry is *compatible* with $G$ (an in-plane mirror or axis must fall where $G$ already has the matching feature). Because some pairings coincide and others are forbidden, not every one of the $17\times4$ combinations is a valid, distinct group; the complete classification, reached by other means, has 80 members, of which this route builds the tractable subset.
 
-**Building the pattern.** As with the wallpaper generator, the group is stored as coset representatives modulo the translation lattice, and the slab is
+**Building the pattern.** As with the wallpaper generator, the group is kept as coset representatives modulo the translation lattice, and the slab is the union
 
 $$P=\bigcup_{u,v}\ \bigcup_{j} T(u\,b_1+v\,b_2)\ g_j\,(\text{unit}),$$
 
-with the unit now a three-dimensional object — a relief-height motif or the active mesh — rather than a flat polygon.
+except the unit is now a genuinely three-dimensional object — a relief-height motif or an active mesh — and each representative $g_j$ carries a $z$-sign. Where that sign is negative the height is negated, so the copy is reflected through the layer plane and a bump becomes a matching pit. Colouring by **Handedness** is measured in 3D here, folding the $z$-flip into the determinant, so a copy counts as mirrored only when its full three-dimensional orientation is reversed.
 
-**Why the z-mirror is the useful one.** Adding $z\mapsto-z$ makes a slab identical from above and below, which is exactly what an architectural screen wants: it reads the same from either side and can be cast or printed without a preferred face. The other augmentations are more interesting mathematically and less often what you want to build.
+**Why the z-mirror is the useful one.** Adding $z\mapsto-z$ makes a slab identical from above and below, which is exactly what an architectural screen wants: it reads the same from either side and can be cast or printed with no preferred face. The two-fold axis and the inversion centre are more interesting mathematically but less often what you actually want to build — which is why **Horizontal Mirror** is the default.
 
 ## References
 

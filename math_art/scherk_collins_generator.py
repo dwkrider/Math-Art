@@ -337,6 +337,8 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Preset",
+            description="Start from a named sculpture, or Default for "
+                        "the program defaults",
             items=[('CUSTOM', "Default", "Program defaults")] +
                   [(k, v[0], v[0]) for k, v in PRESETS.items()],
             default='CUSTOM', update=_preset_chosen)
@@ -383,13 +385,18 @@ if _IN_BLENDER:
             name="Detail", default=5, min=1, max=16,
             description="Grid detail (tessellation density)")
         scale_x: FloatProperty(name="Stretch X", default=1.0,
-                               min=0.2, max=5.0)
+                               min=0.2, max=5.0,
+                               description="Stretch factor along the X axis")
         scale_y: FloatProperty(name="Stretch Y", default=1.0,
-                               min=0.2, max=5.0)
+                               min=0.2, max=5.0,
+                               description="Stretch factor along the Y axis")
         scale_z: FloatProperty(name="Stretch Z", default=1.0,
-                               min=0.2, max=5.0)
+                               min=0.2, max=5.0,
+                               description="Stretch factor along the Z axis")
         global_scale: FloatProperty(name="Overall Scale", default=1.0,
-                                    min=0.05, max=10.0)
+                                    min=0.05, max=10.0,
+                                    description="Overall size of the "
+                                                "sculpture")
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Output a compact NURBS surface (mid-surface "

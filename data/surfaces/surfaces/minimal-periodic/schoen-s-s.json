@@ -1,0 +1,70 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "schoen-s-s",
+  "name": "Schoen S'-S'' Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Genus-4 (per cell) member of Schoen's 1970 NASA report, in a 1-parameter family; one nodal limit is two planes joined per cell by one large and four small catenoidal necks, the other limit is 8-ended singly periodic Scherk surfaces.  The name derives from the two skeletal graphs of the complement: square grids at different sizes."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "The 3DXM Consortium, 'A Schoen S-S Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch035_schoen_ss.md).",
+      "M. Weber, 'Schoen S'-S''', minimalsurfaces.blog (local mirror: minsurf/book/.../ch287_schoen_s_s.md).",
+      "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970)."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "ids": {
+    "vmm": "ch035_schoen_ss",
+    "msblog": "ch287_schoen_s_s"
+  },
+  "named_after": "Schoen",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

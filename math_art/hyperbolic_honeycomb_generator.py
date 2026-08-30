@@ -157,7 +157,8 @@ if _IN_BLENDER:
                     "complete geodesic between boundary points"),
                    ('CUSTOM', "Custom {p,q,r}",
                     "Any hyperbolic Schlafli symbol (validated)")],
-            default='H435')
+            default='H435',
+            description="Which {p,q,r} honeycomb to build")
         p: IntProperty(name="p", default=4, min=3, max=12,
                        description="Cell face size (cells are {p,q})")
         q: IntProperty(name="q", default=3, min=3, max=12,
@@ -184,7 +185,9 @@ if _IN_BLENDER:
             description="Strut radius before the conformal thinning "
                         "(a strut at the ball center gets half this)")
         sides: IntProperty(name="Strut Sides", default=6, min=3,
-                           max=16)
+                           max=16,
+                           description="Facets around each strut "
+                                       "cross-section")
         arc_segments: IntProperty(
             name="Arc Segments", default=8, min=1, max=32,
             description="Samples per geodesic strut (long "
@@ -195,7 +198,10 @@ if _IN_BLENDER:
                         "by the same conformal factor (skipped for "
                         "ideal-vertex honeycombs like {3,3,6})")
         sphere_factor: FloatProperty(name="Sphere Size", default=1.6,
-                                     min=1.0, max=4.0)
+                                     min=1.0, max=4.0,
+                                     description="Node sphere radius "
+                                                 "relative to the local "
+                                                 "strut thickness")
         ball_radius: FloatProperty(name="Ball Radius", default=1.0,
                                    min=0.01, max=100.0,
                                    description="Overall scale: radius "

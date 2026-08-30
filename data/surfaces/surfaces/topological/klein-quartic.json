@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "klein-quartic",
+  "name": "Klein Quartic",
+  "primary_family": "topological",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-implicit",
+    "immersed",
+    "not-implemented",
+    "topological",
+    "tradition-classical",
+    "tradition-sculptural"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "polynomial": null,
+    "degree": 4,
+    "note": "x^3 y + y^3 z + z^3 x = 0 in the complex projective plane -- not a real surface in R^3, so the realisation is a genus-3 handlebody carrying its 336-fold symmetry."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {
+    "genus": 3,
+    "compact": true,
+    "orientable": true,
+    "euler_characteristic": -4,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Not built. It is a Riemann surface with a named sculptural realisation, which is what brings it in scope; a generic hyperelliptic curve would not be.",
+      "resume": "F. Klein (1878). Helaman Ferguson's 'The Eightfold Way' is the sculpture; see research/books/ for helaman_ferguson_mathematics_in_stone_and_bronze_1994."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "F. Klein, 'Ueber die Transformation siebenter Ordnung der elliptischen Functionen', Math. Ann. 14 (1878)."
+    ]
+  },
+  "discovered_by": "Felix Klein",
+  "year": 1878,
+  "tradition": [
+    "classical",
+    "sculptural"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

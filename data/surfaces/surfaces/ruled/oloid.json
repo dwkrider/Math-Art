@@ -1,0 +1,101 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "oloid",
+  "name": "Oloid",
+  "primary_family": "ruled",
+  "families": [
+    "aperiodic",
+    "closed",
+    "closed-orientable",
+    "def-parametric",
+    "embedded",
+    "flat",
+    "implemented",
+    "ruled",
+    "tradition-classical",
+    "tradition-sculptural"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "x": "(1 - v)*sin(u)",
+    "y": "(1 - v)*(-1/2 - cos(u)) + v*(1/2 - cos(u)/(1 + cos(u)))",
+    "z": "v*sqrt(1 + 2*cos(u))/(1 + cos(u))",
+    "u_range": [
+      "-1.8",
+      "1.8"
+    ],
+    "v_range": [
+      "0",
+      "1"
+    ],
+    "exactness": "elementary"
+  },
+  "curvature": {
+    "condition": "flat",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "genus": 0,
+    "class": "closed-orientable"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.oloid_generator",
+      "operator_id": "mesh.oloid_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
+    "sources": [
+      "P. Schatz, Rhythmusforschung und Technik (1975); the oloid dates from his 1929 work on the invertible cube.",
+      "H. Dirnboeck, H. Stachel, 'The development of the oloid', J. Geom. Graphics 1 (1997) 105-118 -- area 4*pi*r^2."
+    ]
+  },
+  "discovered_by": "Paul Schatz",
+  "year": 1929,
+  "tradition": [
+    "classical",
+    "sculptural"
+  ],
+  "ids": {
+    "mathworld": "Oloid",
+    "wikipedia": "Oloid",
+    "mathcurve": "ch1311_orthobicycle_2"
+  },
+  "notes": {
+    "caveats": [
+      "The convex hull of two perpendicular circles each passing through the other's centre. DEVELOPABLE -- it can be unrolled flat -- which is why it is filed under `ruled` rather than `misc`, and it rolls with its whole surface touching the ground."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_radius",
+    "area": {
+      "exact": "4*pi",
+      "value": 12.566370614359172,
+      "source": "classical",
+      "note": "H. Dirnboeck, H. Stachel, 'The development of the oloid', J. Geom. Graphics 1 (1997) 105-118: the oloid's surface area equals that of the sphere with the same generating- circle radius r, A = 4*pi*r^2; r = 1 here."
+    },
+    "measures_note": "Area for generating-circle radius 1 (Dirnboeck-Stachel 1997).  The enclosed volume has no comparably simple closed form and is not recorded here."
+  },
+  "fabrication": {
+    "developable": true,
+    "printable_watertight": true,
+    "requires_thickening": false,
+    "sliceable": true
+  }
+}

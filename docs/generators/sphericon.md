@@ -4,7 +4,18 @@
 
 ## Overview
 
-A **sphericon** is a developable roller built from a regular polygon. Take the solid of revolution of a regular $n$-gon about one of its axes of symmetry, slice it in half with a plane through that axis, rotate one half so the polygon cross-section lands back on itself, and rejoin the two halves. The result rolls with a lurching, meandering motion whose contact point traces the whole surface — a cousin of the [Oloid](oloid.md). The classic sphericon is the $n=4$ case (a square swept into a bicone, halved and given a quarter turn); this generator makes the whole **$(n,k)$ polysphericon** family, including the **heptagonal sphericon** ($n=7$).
+A **sphericon** is a developable roller built from a regular polygon — a bicone (or its many-sided cousins) sliced in half and given a twist so it rolls with a meandering, whole-surface motion.
+
+Take the solid of revolution of a regular $n$-gon about one of its axes of symmetry, slice it in half with a plane through that axis, rotate one half so the polygon cross-section lands back on itself, and rejoin the two halves. The result rolls with a lurching, meandering gait whose contact point traces the entire surface — a cousin of the [Oloid](oloid.md). The classic sphericon is the $n=4$ case (a square swept into a bicone, halved and given a quarter turn); this generator makes the whole **$(n,k)$ polysphericon** family, including the **heptagonal sphericon** ($n=7$).
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Rollers ▸ Sphericon*.
+2. **Choose the polygon.** **Polygon Sides** is $n$, the number of sides of the regular polygon that is revolved into the spindle ($n=4$ is the classic sphericon, $n=7$ the heptagonal one). **Rotation Steps** is $k$: the second half is turned by $k\cdot 360/n$ degrees before rejoining, and $k=1$ gives the fundamental sphericon.
+3. **Shape the sides with Side Curve.** At $0$ the cone sides are straight (the true sphericon); a positive value bows them outward into a convex "femisphere", a negative value hollows them inward — the polygon vertices stay fixed either way, so the weld is untouched.
+4. **Set Segments** for the angular resolution over each half turn. (No control here is mode-gated — every option stays visible for all $n$ and $k$.)
+5. **Pick the output finish.** **Coloring** is either **Per Conical Band** (a different colour for each cone of the spindle, which makes the twist easy to read) or **Single Material**; **Smooth Shading** rounds the circumference while the operator automatically creases the fold rims so the cones stay crisp; **Scale** sizes the result (1.0 fits a 2 m cube, centred on the origin).
+6. **Read the report.** Each build prints its parameters and mesh size as `(n,k) sphericon: V=… F=…` in the status bar.
 
 ## Options
 
@@ -16,8 +27,8 @@ A **sphericon** is a developable roller built from a regular polygon. Take the s
 | Polygon Sides | 4 | n: sides of the regular polygon revolved into the roller (4 = classic sphericon, 7 = heptagonal sphericon) Range 3-24. |
 | Rotation Steps | 1 | k: the second half is turned by k x 360/n degrees so the polygon cross-section lands on itself (1 = the fundamental sphericon) Range 1-23. |
 | Segments | 96 | Angular resolution over each half turn Range 6-512. |
-| Coloring | Per Conical Band | Per Conical Band, Single Material. |
-| Smooth Shading | On | -- |
+| Coloring | Per Conical Band | Give each conical band its own color, or use one material for the whole roller. Per Conical Band, Single Material. |
+| Smooth Shading | On | Smooth-shade the curved surface while keeping the band folds crisp |
 | Sharp Edges | On | Mark the solid's fold curves sharp (and creased). A sphericon is two half-cones turned against each other; the rims where they meet are real edges. The surface is smooth everywhere else, so shading straight across the fold rounds off the one feature that defines the shape |
 | Scale | 1 | Multiplier on the normalized size (1.0 = a 2 m cube, centered on the origin) Range 0.01-100. |
 | Side Curve | 0 | Curve the cone sides: 0 = straight sphericon, > 0 = convex 'femisphere', < 0 = concave Range -0.5-0.5. |
@@ -43,18 +54,20 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Start with a spinning top made by whirling a flat polygon — say a square — around a line through two of its corners; the square sweeps out a double cone, like two ice-cream cones stuck base to base. Now saw that top clean in half down the middle, give one half a twist, and glue it back on. Because the polygon looks the same after the right amount of turn, the two halves still meet edge to edge and seal up — but their cone surfaces no longer line up, and that little mismatch is the whole shape. When you set it rolling it can't just spin like a wheel on one circle; it keeps tipping from one cone onto the next, wandering along a weaving path that eventually brings *every* part of its surface into contact with the ground. Everything below is the bookkeeping that makes that cut-and-twist watertight for any polygon, not just the square.
+
 **Solid of revolution.** A regular $n$-gon is spun about one of its axes of symmetry to make a spindle of **conical bands** (each polygon edge sweeps a cone or frustum). Which axis depends on the parity of $n$:
 
 - **Even $n$:** the axis runs through two opposite vertices, so both ends of the profile are cone apexes. For $n=4$ this is a **bicone** (two cones base to base) — a square standing on its diagonal.
 - **Odd $n$:** a regular polygon with an odd number of sides has no diameter through two vertices; its only symmetry axes pass through one vertex and the **midpoint of the opposite edge**. So one end of the spindle is a pointed apex and the other a disc. The heptagon ($n=7$) is this case.
 
-**Cut and rotate.** The spindle is cut in half by a plane containing the axis; the cut face of each half is the whole $n$-gon. One half is turned by
+**Cut and rotate.** The spindle is cut in half by a plane containing the axis; the cut face of each half is the whole $n$-gon. One half is then turned by
 
 $$\theta = k\cdot\frac{360^\circ}{n}$$
 
-about the normal of the cut plane. Because the regular $n$-gon has $n$-fold rotational symmetry, this angle carries the cross-section exactly onto itself, so the halves rejoin into a closed surface — but the conical bands of the two halves no longer line up, which is what gives the sphericon its characteristic offset silhouette. The standard sphericon is $(n,k)=(4,1)$, a $90^\circ$ turn.
+about the normal of the cut plane. The angle is not arbitrary: $360^\circ/n$ is exactly the smallest rotation that maps a regular $n$-gon onto itself, so any integer multiple $k$ of it carries the polygonal cross-section precisely back onto its own outline. That is what lets the halves rejoin into a *closed* surface with no gap along the cut — the boundary of one half still matches the boundary of the other. What the turn does **not** preserve is the pairing of cone bands across the seam: a band that was at one height on the first half now meets a band from a different height on the second, and that deliberate mismatch is the characteristic offset silhouette of the sphericon. The standard sphericon is $(n,k)=(4,1)$, a single step of $360^\circ/4 = 90^\circ$.
 
-**Developability and rolling.** Every piece of the surface is part of a cone, so the whole surface is **developable** (it unrolls flat — Swart's paper unwraps it as a "snake" of circular arcs). As the sphericon rolls, its centre of mass stays at a constant height and the contact point sweeps the entire surface. Not every $(n,k)$ rolls smoothly: the clean rollers are those whose polygon has an even number of vertices with the axis through two corners and $\gcd(n/2,k)=1$; the odd-$n$ pieces (like the heptagonal one) are still valid developable solids with the same family of conical bands.
+**Developability and rolling.** Every patch of the surface belongs to some cone, and a cone is the archetypal developable surface — slit it and it flattens without a wrinkle. Since the sphericon is nothing but cone patches welded edge to edge, the whole thing is **developable**, and Swart's paper literally unrolls it as a "snake" of circular arcs laid out in the plane. This is also why it rolls the way it does: a cone in contact with the ground pivots about its apex, tracing an arc, so a solid made of several cones rolls as a chain of such arcs, the contact point hopping from one cone to the next and eventually visiting the entire surface while the centre of mass holds a constant height. Not every $(n,k)$ rolls as a single clean cycle, though: the smooth rollers are those whose polygon has an even number of vertices with the axis through two opposite corners and $\gcd(n/2,\,k)=1$, so the twist doesn't decompose the roll into shorter repeats. The odd-$n$ pieces (like the heptagonal sphericon) are still perfectly valid developable solids built from the same family of conical bands — they simply roll with a different, less symmetric gait.
 
 **Watertight seam.** The one subtlety in building the mesh is the weld along the cut. The turn $k\cdot360/n$ maps each polygon **vertex** onto the next vertex, and (for odd $n$) the bottom **edge-midpoint** onto the next edge-midpoint. So the profile is sampled at every polygon vertex *and* every edge midpoint; the rotated half's seam then coincides vertex-for-vertex with the other half's, and the two weld into a single closed, manifold surface ($\chi = 2$) for every $n$ and $k$.
 

@@ -105,6 +105,11 @@ import math
 
 import numpy as np
 
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
 
 def _pseudosphere(U, V, twist=0.0, a=0.5, breather_a=0.4,
                   amsler_angle=90.0):
@@ -546,15 +551,26 @@ if _IN_BLENDER:
         bl_idname = "mesh.hyperbolic_surface_add"
         bl_label = "Hyperbolic Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         preset: EnumProperty(
             name="Surface",
+            description="Which constant-negative-curvature surface to build",
             items=[(k, v[0], v[0]) for k, v in PRESETS.items()],
             default='PSEUDOSPHERE')
         ures: IntProperty(name="U Resolution", default=64, min=8,
-                          max=400)
+                          max=400,
+                          description="Mesh divisions along the surface's "
+                                      "u direction")
         vres: IntProperty(name="V Resolution", default=96, min=8,
-                          max=400)
+                          max=400,
+                          description="Mesh divisions along the surface's "
+                                      "v direction")
         twist: FloatProperty(
             name="Twist", default=0.2, min=0.0, max=2.0,
             description="Helical shear of Dini's surface "
@@ -577,8 +593,11 @@ if _IN_BLENDER:
                         "radius; the spindle is r = a sinh(u) and needs "
                         "a < 1, its equator sitting at sqrt(1 - a^2)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                            max=100.0)
-        shade_smooth: BoolProperty(name="Smooth Shading", default=True)
+                            max=100.0,
+                            description="Overall size of the surface")
+        shade_smooth: BoolProperty(name="Smooth Shading", default=True,
+                                   description="Shade the surface smoothly "
+                                               "rather than faceted")
 
         def execute(self, context):
             label = PRESETS[self.preset][0]
@@ -612,6 +631,14 @@ if _IN_BLENDER:
             self.report({'INFO'},
                         f"{label}: V={len(me.vertices)} "
                         f"F={len(me.polygons)}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -634,6 +661,7 @@ if _IN_BLENDER:
             lay.prop(self, 'scale')
             lay.prop(self, 'shade_smooth')
 
+            _rim.draw_rim(lay, self)
     def _menu_func(self, context):
         self.layout.operator("mesh.hyperbolic_surface_add",
                              icon='MESH_CAPSULE')

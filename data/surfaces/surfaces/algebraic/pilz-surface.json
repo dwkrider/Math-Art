@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "pilz-surface",
+  "name": "Pilz Surface",
+  "primary_family": "algebraic",
+  "families": [
+    "algebraic",
+    "aperiodic",
+    "def-implicit",
+    "immersed",
+    "implemented",
+    "tradition-gallery"
+  ],
+  "definition": {
+    "mode": "implicit",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BOX",
+      "radius": 2.0
+    },
+    "polynomial": null,
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "NAMED",
+      "key": "VMM_PILZ",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "3DXM Consortium, \"Functions with compact levels in 3D-XplorMath\", virtualmathmuseum.org/docs/ImplicitCompact.pdf -- the formulas and the default parameters used here.  A converted copy is in research/papers/algebraic-surfaces/vmm-implicit-surfaces-compact/.",
+      "H. Karcher and R. Palais, 3D-XplorMath / Virtual Math Museum surface gallery, virtualmathmuseum.org/Surface/.",
+      "3DXM Virtual Math Museum, implicit-surfaces gallery."
+    ]
+  },
+  "metrics": {
+    "normalization": "published"
+  },
+  "tradition": [
+    "gallery"
+  ],
+  "ids": {
+    "vmm": "ch086_pilz"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

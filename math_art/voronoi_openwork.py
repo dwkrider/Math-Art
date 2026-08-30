@@ -128,8 +128,13 @@ if _IN_BLENDER:
                         "strut material, keeping a solid frame "
                         "around open surfaces")
         rand_seed: IntProperty(name="Random Seed", default=1,
-                               min=0)
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+                               min=0,
+                               description="Seed for the random seed "
+                                           "placement (vary for a "
+                                           "different hole layout)")
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Smooth-shade the perforated "
+                                         "surface")
 
         @classmethod
         def poll(cls, context):

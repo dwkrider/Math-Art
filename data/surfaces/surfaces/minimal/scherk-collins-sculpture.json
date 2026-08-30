@@ -1,0 +1,53 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "scherk-collins-sculpture",
+  "name": "Scherk-Collins Sculpture",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "minimal"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: procedural geometry (Sequin's generator: Scherk tower segments warped into a toroid by a numeric pipeline of twists and bends); no chart. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.scherk_collins_generator",
+      "operator_id": "mesh.scherk_collins_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. F. Scherk, \"Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen\", J. reine angew. Math. (Crelle) 13, 1835",
+      "- the singly-periodic saddle-tower minimal surface. Sculptural form after the collaboration of sculptor Brent Collins and Carlo H. Sequin (see the Leonardo and I3D papers above)."
+    ]
+  },
+  "named_after": "Collins, Scherk",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

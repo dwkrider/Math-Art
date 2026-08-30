@@ -12,6 +12,15 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 
 **Planar systems** — the Barnsley fern, the Sierpinski triangle, the Heighway dragon, the Lévy C curve, the Koch curve — are recognised as flat and meshed as a watertight slab one cell thick, at *plane* resolution. This is not a lesser case: a 512×512 grid is a quarter of a million cells, where a 512³ volume grid is out of reach and would leave all but a sliver of it empty. The result prints, and Solidify gives it real depth.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Iterated Function System*.
+2. **Pick the Mode.** **Self-Affine Tile** builds a lattice tile from an expanding integer matrix and a digit set (the ABC tiles and twindragons); **IFS Attractor** builds the attractor of a set of contractive maps (Sierpinski solids, Menger sponge, the planar systems, or maps you type in). The two modes expose entirely different controls, so choose this first.
+3. **Self-Affine Tile path.** Choose the **Tile** preset, then the **Tile Output**: *Voxels* (a watertight blocky solid — the printable default), *Smooth Contour* (a marching-tetrahedra surface), or *Exact Level-k Cubes* (the exact union of cells, volume exactly 1, but which flattens into plates as the level rises). **Holes** drops digits to turn the tile into a gasket. *Exact* mode exposes **Level**; the sampled outputs expose **Resolution**, **Points** and **Seed** instead, and *Smooth Contour* adds **Largest Piece Only**.
+4. **IFS Attractor path.** Set the **Dimension** (2D or 3D) first — it filters both the **System** list and the available **Output**s. Pick a **System** (or *Custom* and type **Maps** as `nine matrix entries | three translations | probability`, one map per semicolon); the *Sierpinski triangle in 3D* system adds **Polygon Sides** and **Polygon Ratio**, and **Reverse** replaces every map $f$ by $-f$. Choose the **Output**: in 3D, *Solid Copies* (exact copies, with **Seed Solid** and **Depth**), *Voxels* (with **Min Points per Cell**), or *Smooth Contour* (with **Cover** and **Largest Piece Only**); in 2D the only output is *Relief*, meshed at **Plane Resolution**. The sampled outputs use **Points** and **Seed**.
+5. **Finish the mesh.** **Scale** sizes the object, **Thickness** adds a Solidify modifier (useful because these figures touch at edges and corners), and **Smooth Shading** toggles normals.
+6. **Read the reports.** Each build reports what it made and how faithful it is: the sampled tiles report the **percentage of the true tile extent** reached, *Exact* mode reports **cell count, volume and cell aspect ratio** (warning when the cells have become slivers), and every output checks the surface — warning if it has boundary edges (not closed) or non-manifold edges where cells meet only edge-to-edge, so you know to thicken before printing.
+
 ## Options
 
 
@@ -19,15 +28,15 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | IFS Attractor | IFS Attractor, Self-Affine Tile. |
-| Tile | ABC tile (1,2,4) | ABC tile (1,2,3), ABC tile (1,2,4), ABC tile (1,2,8) - self-similar, ABC tile (1,3,6), ABC tile (1,3,4), ABC tile (2,2,3), Twindragon A (0,0) - non-fractal (a cube), Twindragon B (-1,1), and 6 more. |
-| Tile Output | Voxels | Voxels, Smooth Contour, Exact Level-k Cubes. |
+| Mode | IFS Attractor | Whether to build an affine IFS attractor or a self-affine lattice tile. IFS Attractor, Self-Affine Tile. |
+| Tile | ABC tile (1,2,4) | Which self-affine lattice tile to build. ABC tile (1,2,3), ABC tile (1,2,4), ABC tile (1,2,8) - self-similar, ABC tile (1,3,6), ABC tile (1,3,4), ABC tile (2,2,3), Twindragon A (0,0) - non-fractal (a cube), Twindragon B (-1,1), and 6 more. |
+| Tile Output | Voxels | How the self-affine tile is turned into a mesh. Voxels, Smooth Contour, Exact Level-k Cubes. |
 | Level | 0 | Exact mode only: radix depth; 0 picks a level landing in the 30k-300k cell band Range 0-24. |
 | Holes | 0 | Drop this many digits at every level, turning the tile into a gasket Range 0-6. |
-| Dimension | 3D | 3D, 2D. |
-| System |  | -- |
-| Output |  | -- |
-| Seed Solid | Tetrahedron | Tetrahedron, Cube, Octahedron. |
+| Dimension | 3D | Whether the IFS attractor fills three dimensions or is planar. 3D, 2D. |
+| System |  | IFS whose attractor to build (Custom uses the Maps field) |
+| Output |  | How the IFS attractor is rendered |
+| Seed Solid | Tetrahedron | Solid placed at each word in the deterministic solid-copies output. Tetrahedron, Cube, Octahedron. |
 | Depth | 5 | Solid-copies depth; the count is maps^depth and is capped automatically Range 1-12. |
 | Points | 400000 | Chaos-game sample count Range 10000-5000000. |
 | Resolution | 128 | Voxel / density grid resolution per axis Range 16-256. |
@@ -40,9 +49,9 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 | Polygon Ratio | 0.666667 | Contraction ratio toward each vertex; 2/3 is the triangle value at which the pieces meet, and 1/2 would give a Cantor set Range 0.35-0.95. |
 | Reverse | Off | Replace every map f by -f: the neighbour maps are unchanged, so the dimension and the boundary structure survive, but the shape does not |
 | Largest Piece Only | Off | Smooth contour: discard all but the biggest connected piece |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 | Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
-| Smooth Shading | Off | -- |
+| Smooth Shading | Off | Shade the mesh smooth |
 
 <!-- /options -->
 
@@ -90,6 +99,10 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Suppose you have a copying machine with several lenses, and every lens shrinks whatever you feed it and drops the smaller copy somewhere on the page. Feed the page back into the machine, over and over, and the picture stops changing: it settles onto one shape that is made of shrunken copies of itself. That limiting shape is the **attractor** of the machine, and the set of lenses is an **iterated function system (IFS)**. A remarkable fact — Hutchinson's theorem — is that as long as every lens genuinely shrinks, there is exactly one such shape, and it does not matter where you start: the machine always converges to it. The Sierpinski triangle, the Barnsley fern and the Menger sponge are all just different sets of lenses. This generator has two ways to draw that shape. The direct way stamps down the actual shrunken copies; the fast way plays the **chaos game** — drop a single point and repeatedly send it through a lens picked at random — which, astonishingly, traces out the very same attractor and is far cheaper to compute. A second family, the **self-affine tiles**, comes from the same idea run on a whole-number grid, where the copies fit together to tile space perfectly.
+
+Everything below makes that picture exact: how the tiles are computed on the integer lattice without rounding, why the tile is *sampled* rather than assembled from cubes, and how each construction is meshed into something you can print.
+
 ### Self-affine tiles, exactly
 
 An expanding integer matrix $M$ (every eigenvalue of modulus $>1$) together with a digit set $D \subset \mathbb{Z}^3$ that is a **complete residue system** for $\mathbb{Z}^3/M\mathbb{Z}^3$ — so $|D| = |\det M| = C$ — determines a unique compact set $T$ with
@@ -98,11 +111,11 @@ $$M\,T = T + D, \qquad\text{equivalently}\qquad T = \bigcup_{d \in D} M^{-1}(T +
 
 and that $T$ tiles $\mathbb{R}^3$ by the lattice $\mathbb{Z}^3$ (Bandt 1991).
 
-The level-$k$ approximation is computed on the integers rather than sampled. Starting from $S_0 = \{0\}$, iterate
+The level-$k$ approximation is computed on the integers rather than sampled. Starting from $S_0 = \lbrace0\rbrace$, iterate
 
 $$S_{j+1} = D + M\,S_j$$
 
-as one int64 broadcast — int64 because the coordinates grow like $\|M\|^k$ and would overflow int32 within a few levels. After $k$ steps $S_k$ has **exactly** $C^k$ distinct points; the distinctness is precisely what the residue condition buys, and the self-test checks it for every preset at every level up to 6. In **Exact Level-$k$ Cubes** mode those unit cubes are meshed by an exterior-face walker (only faces between an occupied cell and an empty neighbour, with shared vertices), and then the single linear map $M^{-k}$ is applied. Being linear it cannot break what the walker just built, so the surface stays closed — and its volume is $C^k \cdot |\det M|^{-k} = 1$ exactly, at any level. The default outputs sample the attractor instead and make no such volume claim; see below for why.
+as one int64 broadcast — int64 because the coordinates grow like $\Vert M\Vert^k$ and would overflow int32 within a few levels. After $k$ steps $S_k$ has **exactly** $C^k$ distinct points; the distinctness is precisely what the residue condition buys, and the self-test checks it for every preset at every level up to 6. In **Exact Level-$k$ Cubes** mode those unit cubes are meshed by an exterior-face walker (only faces between an occupied cell and an empty neighbour, with shared vertices), and then the single linear map $M^{-k}$ is applied. Being linear it cannot break what the walker just built, so the surface stays closed — and its volume is $C^k \cdot |\det M|^{-k} = 1$ exactly, at any level. The default outputs sample the attractor instead and make no such volume claim; see below for why.
 
 The presets:
 
@@ -133,9 +146,9 @@ What is known about each (Bandt, Prop. 6.4, Prop. 7.2 and §12):
 | G | (0,2) | — | ≥22 | — | — |
 
 F and G are left blank on purpose. Bandt prints neighbour counts for them but writes "we shall provide no details for the complicated twindragons $\mathcal{F}$ and $\mathcal{G}$", and warns that "for $\mathcal{F}$ and $\mathcal{G}$ there are rare outliers on the thin fibres, and an exact estimate is needed" — so this generator does not repeat those two numbers as settled.
-- **Cube** — $M = 2I$ with the eight digits $\{0,1\}^3$: the degenerate case, and the base for the gaskets.
+- **Cube** — $M = 2I$ with the eight digits $\lbrace0,1\rbrace^3$: the degenerate case, and the base for the gaskets.
 
-A **Holes** count drops the last $h$ digits at every level, giving $(C-h)^k$ cells instead of $C^k$ — the same gasket semantics the sibling 2-D Fractal Rep-Tile generator uses. The count is clamped so the survivors still fill three dimensions. That test is on the *attractor*, not on the digits: the affine hull is the span of $\{M^{-j}(d-d_0)\}$, the smallest $M^{-1}$-invariant subspace containing the digit differences, which is why the twindragons stay solid on two collinear digits while a badly ordered cube subset would collapse to a sheet. The cube's digits are ordered so that the first four are an inscribed tetrahedron, making its four-hole gasket a Sierpinski tetrahedron.
+A **Holes** count drops the last $h$ digits at every level, giving $(C-h)^k$ cells instead of $C^k$ — the same gasket semantics the sibling 2-D Fractal Rep-Tile generator uses. The count is clamped so the survivors still fill three dimensions. That test is on the *attractor*, not on the digits: the affine hull is the span of $\lbrace M^{-j}(d-d_0)\rbrace$, the smallest $M^{-1}$-invariant subspace containing the digit differences, which is why the twindragons stay solid on two collinear digits while a badly ordered cube subset would collapse to a sheet. The cube's digits are ordered so that the first four are an inscribed tetrahedron, making its four-hole gasket a Sierpinski tetrahedron.
 
 ### Why the tile is sampled, not built from cubes
 
@@ -143,7 +156,7 @@ The obvious way to mesh the level-$k$ body is the one the mathematics hands you:
 
 The tile's *own* proportions are fine — bounding-box aspect ratios across the presets run 1.0 to 5.2. It is the cells that degenerate, not the object, and compensating with a non-uniform scale would falsify the tile.
 
-So the default output samples the **attractor** instead. Because $T$ tiles $\mathbb{R}^3$ by $\mathbb{Z}^3$, the invariant measure of $w_d(x) = M^{-1}(x+d)$ with equal weights is Lebesgue measure restricted to $T$ — the chaos game samples the tile *uniformly*, and a voxel grid over its exact bounding box recovers the solid. The transient has to be long: $\|M^{-n}\|$ decays only like $\min|\lambda|^{-n}$, which is $0.94^n$ for twindragon G, so the sampler runs 300 steps before recording anything. This is also how the published pictures of these tiles are made.
+So the default output samples the **attractor** instead. Because $T$ tiles $\mathbb{R}^3$ by $\mathbb{Z}^3$, the invariant measure of $w_d(x) = M^{-1}(x+d)$ with equal weights is Lebesgue measure restricted to $T$ — the chaos game samples the tile *uniformly*, and a voxel grid over its exact bounding box recovers the solid. The transient has to be long: $\Vert M^{-n}\Vert$ decays only like $\min|\lambda|^{-n}$, which is $0.94^n$ for twindragon G, so the sampler runs 300 steps before recording anything. This is also how the published pictures of these tiles are made.
 
 **Exact Level-$k$ Cubes** remains available, because it is the only mode with volume exactly 1 and it is genuinely exact for the cube and for twindragon A. It reports its own cell aspect ratio and warns when the body has become a laminate.
 

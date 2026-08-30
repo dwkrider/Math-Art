@@ -223,6 +223,8 @@ if _IN_BLENDER:
         preset: EnumProperty(
             name="Cut",
             items=[(k, lbl, desc) for k, lbl, desc in catalogue.cut_items()],
+            description="Faceting design to cut, grouped by family in the "
+                        "catalogue",
             # Named, not "whatever sorts first": the menu is ordered by
             # family and then alphabetically, so adding a cut would
             # otherwise move the default out from under the user.
@@ -232,13 +234,16 @@ if _IN_BLENDER:
             description="Lighting to build around the stone. Custom leaves "
                         "the scene alone; the others hide whichever rig "
                         "they replace rather than deleting it")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the stone")
         # Soft ranges span the IDC grading table end to end, so the slider
         # itself shows how much room the trade recognises; the defaults sit
         # in its Excellent band.
         table_pct: FloatProperty(
             name="Table", default=57.0, min=30.0, max=85.0,
-            soft_min=49.0, soft_max=70.0, subtype='PERCENTAGE')
+            soft_min=49.0, soft_max=70.0, subtype='PERCENTAGE',
+            description="Diameter of the flat top facet, as a percentage of "
+                        "the girdle width")
         crown_angle: FloatProperty(
             name="Crown Angle", default=34.5, min=10.0, max=60.0,
             soft_min=26.0, soft_max=40.0,
@@ -251,7 +256,9 @@ if _IN_BLENDER:
                         "40.6 to 41.8)")
         girdle_pct: FloatProperty(
             name="Girdle", default=3.0, min=0.0, max=15.0,
-            soft_min=0.5, soft_max=7.5, subtype='PERCENTAGE')
+            soft_min=0.5, soft_max=7.5, subtype='PERCENTAGE',
+            description="Thickness of the girdle band, as a percentage of "
+                        "the girdle width")
         culet_pct: FloatProperty(
             name="Culet", default=0.0, min=0.0, max=10.0,
             subtype='PERCENTAGE',
@@ -268,7 +275,9 @@ if _IN_BLENDER:
             description="How far the lower halves reach from the girdle "
                         "towards the culet")
         girdle_facets: IntProperty(name="Girdle Facets", default=16,
-                                   min=8, max=128)
+                                   min=8, max=128,
+                                   description="Number of facets around the "
+                                               "girdle band")
         size_mm: FloatProperty(
             name="Size (mm)", default=6.5, min=0.1, max=100.0,
             description="Real diameter. Reported as a carat weight only -- "
@@ -761,6 +770,7 @@ if _IN_BLENDER:
             name="Shape",
             items=[(k, lbl, desc)
                    for k, lbl, desc in gem_curved.cabochon_items()],
+            description="Cabochon outline and dome profile to build",
             default='SINGLE')
         lw: FloatProperty(name="Length / Width", default=0.0, min=0.0,
                           max=4.0,
@@ -775,9 +785,13 @@ if _IN_BLENDER:
             description="The profile's superellipse exponent: below 2 is "
                         "pointed like a sugarloaf, 2 is a hemisphere, "
                         "above 2 is a flatter cabochon. 0 uses the preset")
-        rings: IntProperty(name="Rings", default=24, min=3, max=200)
-        segments: IntProperty(name="Segments", default=64, min=6, max=512)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        rings: IntProperty(name="Rings", default=24, min=3, max=200,
+                           description="Number of latitude rings up the dome")
+        segments: IntProperty(name="Segments", default=64, min=6, max=512,
+                              description="Number of segments around the "
+                                          "outline")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the stone")
         material: EnumProperty(
             name="Material",
             items=[(k, lbl, desc)
@@ -785,9 +799,13 @@ if _IN_BLENDER:
             default='RUBY',
             description="Cabochons are cut for material that facets would "
                         "waste -- opaque or translucent, or phenomenal")
-        assign_material: BoolProperty(name="Assign Material", default=True)
+        assign_material: BoolProperty(
+            name="Assign Material", default=True,
+            description="Build and assign a material for the chosen species")
         size_mm: FloatProperty(name="Size (mm)", default=8.0, min=0.1,
-                               max=100.0)
+                               max=100.0,
+                               description="Real size in millimetres, used to "
+                                           "scale the material's colour")
         rig: EnumProperty(
             name="Viewing Rig", items=RIG_ITEMS, default='CUSTOM',
             description="Lighting to build around the stone. Custom leaves "

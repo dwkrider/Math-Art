@@ -173,12 +173,15 @@ if _IN_BLENDER:
 
         group: EnumProperty(
             name="In-plane Group",
+            description="Which of the 17 wallpaper groups tiles the "
+                        "plane",
             items=[(g, "%s  (%s)" % (g, pc.SIG_OF[g]),
                     "In-plane wallpaper group %s" % g)
                    for g in pc.IUC_ORDER],
             default='p4')
         zsym: EnumProperty(
             name="Z-Symmetry",
+            description="Extra symmetry added through the third axis",
             items=[('NONE', "None",
                     "In-plane pattern only (no third-axis symmetry)"),
                    ('MIRROR', "Horizontal Mirror",
@@ -191,6 +194,8 @@ if _IN_BLENDER:
             default='MIRROR')
         motif_kind: EnumProperty(
             name="Motif",
+            description="Shape tiled through the group, or another "
+                        "object's mesh",
             items=[('ARROW', "Arrow", "Arrow with unequal barbs"),
                    ('F', "F", "Asymmetric F"),
                    ('L', "L", "L-tromino"),
@@ -206,10 +211,13 @@ if _IN_BLENDER:
             name="Object",
             description="Object whose mesh is used as the motif. Leave "
                         "empty to use the active or selected mesh")
-        nx: IntProperty(name="Cells X", default=3, min=1, max=30)
-        ny: IntProperty(name="Cells Y", default=3, min=1, max=30)
+        nx: IntProperty(name="Cells X", default=3, min=1, max=30,
+                        description="Number of unit cells along X")
+        ny: IntProperty(name="Cells Y", default=3, min=1, max=30,
+                        description="Number of unit cells along Y")
         color_by: EnumProperty(
             name="Color By",
+            description="How the symmetry copies are colored",
             items=[('COPY', "Symmetry Copy",
                     "Each point-group copy a distinct color"),
                    ('OP', "Operation Type",

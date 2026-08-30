@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "crochet-hyperbolic-surface",
+  "name": "Crochet Hyperbolic Surface",
+  "primary_family": "constant-curvature",
+  "families": [
+    "aperiodic",
+    "constant-curvature",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "k-const-negative"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: grown by a discrete stitch-increase rule, row by row; the surface is the crochet fabric itself, not a formula. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "k-const-negative",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.crochet_generator",
+      "operator_id": "mesh.crochet_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Daina Taimina, \"Crocheting Adventures with Hyperbolic Planes\", A K Peters, 2009; David W. Henderson and Daina Taimina, \"Crocheting the hyperbolic plane\", Math. Intelligencer 23(2), 2001, pp. 17-28.",
+      "Self-similar buckling / distributed branch points of constant- negative-curvature elastic sheets: John A. Gemmer, E. Sharon,",
+      "S. C. Venkataramani et al., \"Distributed branch points and the shape of elastic surfaces with constant negative curvature\", arXiv:2006.14461.",
+      "Hilbert's theorem (no complete C^2 isometric immersion of H^2 in R^3): D. Hilbert, Trans. AMS 2, 1901, pp. 87-99."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

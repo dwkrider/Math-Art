@@ -1,0 +1,149 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "costa-hoffman-meeks",
+  "name": "Costa-Hoffman-Meeks Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "complete-finite-total-curvature",
+    "def-weierstrass",
+    "embedded",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "half-plane (extent 12)",
+    "punctures": [
+      "z = 1 (radius 0.09)",
+      "z = -1 (radius 0.09)"
+    ],
+    "gauss_map": "1.0*c*exp(-(k*log(z) + log(1.0 + z) + log(-1.0 + z))/(1 + k))",
+    "height_differential": "c/(-1.0 + z**2)",
+    "parameters": [
+      {
+        "name": "c",
+        "domain": "see the generator's p_from",
+        "default": 0.9951174559841937,
+        "integer": false
+      },
+      {
+        "name": "k",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, phi triple (dh = phi3, g = phi3/(phi1 - i*phi2), a Weierstrass-representation identity)) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": "varies",
+    "orientable": true,
+    "finite_total_curvature": true,
+    "euler_characteristic": "varies",
+    "ends": [
+      {
+        "type": "planar",
+        "count": 1,
+        "embedded": true
+      },
+      {
+        "type": "catenoidal",
+        "count": 2,
+        "embedded": true
+      }
+    ],
+    "class": "complete-finite-total-curvature"
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "embedded"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "TORI",
+      "key": "COSTA_HM",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row COSTA_HM) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 1.57e-15); dh: matches over 144 complex samples (worst 0).",
+    "sources": [
+      "D. Hoffman and W. H. Meeks III, 'Embedded minimal surfaces of finite topology', Ann. of Math. 131 (1990)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "David Hoffman and William Meeks III",
+  "year": 1990,
+  "specimens": [
+    {
+      "label": "genus 1 (Costa)",
+      "parameters": {
+        "k": 1
+      },
+      "slug": "costa-surface",
+      "topology": {
+        "genus": 1,
+        "euler_characteristic": -3
+      }
+    },
+    {
+      "label": "genus 2",
+      "parameters": {
+        "k": 2
+      },
+      "topology": {
+        "genus": 2,
+        "euler_characteristic": -5
+      }
+    },
+    {
+      "label": "genus 3",
+      "parameters": {
+        "k": 3
+      },
+      "topology": {
+        "genus": 3,
+        "euler_characteristic": -7
+      }
+    }
+  ],
+  "relations": {
+    "generalizes": [
+      "costa-surface"
+    ]
+  },
+  "ids": {
+    "vmm": "ch029_costa_h_m"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

@@ -1,5 +1,7 @@
 # Over-Under Screen
 
+![Over-Under Screen](../images/over_under_screen.png)
+
 ## Overview
 
 Add a woven over-under screen (Hauer woven web).
@@ -7,6 +9,16 @@ Add a woven over-under screen (Hauer woven web).
 A woven screen rendered as **one visually continuous smooth relief**, in the modular-constructivist tradition of Erwin Hauer and Norman Carlberg — the woven screens of Hauer's *Continua*.
 
 The difficulty, and the interest, is that a woven screen is not really woven here. A true weave is two separate sheets passing through one another, which cannot be cast as a single continuous surface. Hauer's solution was an **asymmetric** weave: where one family would ride on top, it instead descends and *merges* with the other, so the whole screen fuses into one flowing back-web with the other family arching over it. The result reads as woven while being a single connected relief with no planar region anywhere.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Over-Under Screen*.
+2. **Set the grid.** Grid Width and Grid Height are the number of woven cells across and down; Cell Size is one cell's edge length (the whole screen is refit to the 2 m cube afterwards).
+3. **Choose the Surface** — the key mode. **Membrane** is the headline: the one continuous Hauer back-web with star-shaped openings. **Minimal (Taut)** is that same membrane pulled tighter by extra fairing passes. **Ribbons** is a literal two-family weave of separate lofted strips — and the only mode in which the **Weave** draft (Plain, Twill 2/2, Basket 2/2) has any effect; the membrane is always the plain asymmetric structure.
+4. **Shape it.** Strand Width sets the ribbon width as a fraction of the pitch (and so the size of the openings); Weave Depth is the front-to-back amplitude; Resolution is the subdivision depth; Thickness is the shell thickness — which also fixes the width of the twisting bridges — with 0 giving an open surface.
+5. **Reach the mode-specific controls.** Smooth Rounds (Taubin fairing passes) appears for Membrane and Minimal; Relax Iterations appears only for Minimal; Weave appears only for Ribbons.
+6. **Set the output.** Color By tones the mesh Uniform, By Element (back ribbons / risers / merges / bridges / arches) or By Height; Backing Slab adds a plate behind the screen (with its Base Thickness); Separate Parts emits one object per part; Scale sizes the whole.
+7. **Read the report.** It prints the surface mode, the hole count, the component count and the vertex/face totals — for a clean membrane the openings number $(W-1)(H-1)$ and the whole screen is a single connected component.
 
 ## Options
 
@@ -18,7 +30,7 @@ The difficulty, and the interest, is that a woven screen is not really woven her
 | Grid Height | 5 | Cells down Range 1-30. |
 | Cell Size | 1 | Edge length of one lattice cell (the whole screen is refit to the 2 m cube) Range 0.1-10. |
 | Weave | Plain | Weave draft (TWILL / BASKET apply to the ribbons mode only). Plain, Twill 2/2, Basket 2/2. |
-| Surface | Membrane | Ribbons, Membrane, Minimal (Taut). |
+| Surface | Membrane | Screen construction: separate ribbons or the woven membrane web. Ribbons, Membrane, Minimal (Taut). |
 | Strand Width | 0.33 | Ribbon width as a fraction of the ribbon pitch (also sets the opening size) Range 0.15-0.9. |
 | Weave Depth | 0.18 | Peak-to-peak front-to-back amplitude as a fraction of a cell (2h) Range 0-2. |
 | Resolution | 10 | Tessellation (sets the subdivision depth of the patch network) Range 4-48. |
@@ -27,7 +39,7 @@ The difficulty, and the interest, is that a woven screen is not really woven her
 | Relax Iterations | 12 | Extra fairing passes (taut mode) Range 1-60. |
 | Backing Slab | Off | Add a slab behind the screen |
 | Base Thickness | 0.1 | Backing slab thickness (fraction of a cell) Range 0.01-1. |
-| Color By | Uniform | Uniform, By Element, By Height. |
+| Color By | Uniform | How the screen is colored. Uniform, By Element, By Height. |
 | Separate Parts | Off | One object per part (each ribbon / the membrane and slab) |
 | Scale | 1 | Overall size (1 = fit the 2 m cube) Range 0.05-10. |
 
@@ -46,6 +58,8 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** A real woven basket is two sets of strips threaded through each other: over, under, over, under. You cannot carve that from a single unbroken sheet, because to go from riding over to passing under, a strip has to become *separate* from the one it crosses — and one sheet is never separate from itself. Erwin Hauer's way around this is a deliberate cheat. Keep one family of strips (call them red) always in the back, as a gently rolling floor. Let the other family (blue) do the weaving: at half its crossings it arches up and over the red floor, leaving a real gap you can see daylight through; at the other half, instead of dutifully diving *under* red, it simply sinks down and **fuses** into the floor. So everything except the raised blue arches melts together into one flowing web, pierced by star-shaped holes where the arches lift away. From the front it reads as a woven screen; underneath it is a single connected surface with not one flat patch anywhere. The rest of this section says which crossings arch and which fuse, and how the one surface is actually built.
 
 **The asymmetric weave.** Two families of diagonal ribbons — call them red and blue — cross on a square lattice of crossovers, but they are not treated alike:
 

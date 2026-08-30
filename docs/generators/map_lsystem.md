@@ -1,13 +1,22 @@
 # Cellular Layer
 
+![Cellular Layer](../images/map_lsystem.png)
+
 ## Overview
 
 Add cellular tissue grown by developmental division, relaxed
 under turgor pressure.
 
-Tissue grown by **cell division**. A map L-system rewrites a planar map — a network of cells and walls — by splitting cells rather than by rewriting a string, so the result is a sheet of cells with a developmental history.
+Tissue grown by **cell division**. A map L-system rewrites a planar map — a network of cells and walls — by splitting cells rather than by rewriting a string, so the result is a sheet of cells with a developmental history. This add-on already makes cells three other ways, and all of them **partition**: [Voronoi openwork](voronoi_openwork.md), [organic wireframe](organic_wireframe.md) and [bubble clusters](bubble_cluster.md) each take a region and cut it up. Division is a different object — cell sizes graded by age, walls meeting at angles set by the order they were laid down, and an outline that *emerges* rather than being the boundary you started with. Voronoi looks scattered; this looks grown.
 
-This add-on already makes cells three other ways, and all of them **partition**: [Voronoi openwork](voronoi_openwork.md), [organic wireframe](organic_wireframe.md) and [bubble clusters](bubble_cluster.md) each take a region and cut it up. Division is a different object. The tissue's cell sizes are graded by age, its walls meet at angles that came from the order they were laid down, and its outline **emerges** rather than being the boundary you started with. Voronoi looks scattered; this looks grown, and that difference is the whole reason it exists alongside them.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Plants & Growth ▸ Cellular Layer*.
+2. **Pick the Mode.** **Cellular Layer** grows a flat sheet of cells (the fern-gametophyte case); **Cell Ball** applies the same division rule to a closed surface, giving a *Patella*-style blastula shell.
+3. **Set Divisions.** This is a step count, not a size threshold: every cell divides once per step, so the cell count doubles to $2^n$ (the redo panel shows the running total). Cost climbs fast — the dial stops at 9.
+4. **Shape the sheet (Cellular Layer only).** The one shape dial is **Periclinal / Anticlinal** — the ratio of walls laid *parallel* to the surface (thickening it) versus *perpendicular* (extending it). Below ~1.25 the sheet stays convex, above ~2 it dishes inward, and a live label tells you which regime you are in. **Plane Jitter** randomises the division-plane orientation. The tissue's geometry then comes from a turgor-pressure solver you tune with **Turgor** (a small cell pushes harder, which is what equalises cell sizes), **Wall Stiffness** and **Relax Steps**. None of these appear in Cell Ball mode, which needs no relaxation.
+5. **Choose the output.** **Wall Inset** shrinks each cell toward its centroid so the gaps read as walls — this is what turns a solid tiling into a printable openwork screen. **Thickness** (Cellular Layer only) extrudes the sheet into a solid slab. **Scale** fits the result to a 2 m cube.
+6. **Read the report.** The status line prints `<name>: N cells from M divisions`, and the two live labels in the redo panel confirm the cell count ($2^n$) and the convex / intermediate / dished regime of the current P/A ratio.
 
 ## Options
 
@@ -15,17 +24,17 @@ This add-on already makes cells three other ways, and all of them **partition**:
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Cellular Layer | Cellular Layer, Cell Ball. |
+| Mode | Cellular Layer | Grow a flat sheet or a closed ball of cells. Cellular Layer, Cell Ball. |
 | Divisions | 5 | Map L-systems divide by ELAPSED TIME, not by cell size, so the dial is a step count. Every cell divides once per step, so cell count doubles Range 1-9. |
 | Periclinal / Anticlinal | 1 | The one shape dial. A periclinal wall lies parallel to the surface and thickens the tissue; an anticlinal one is perpendicular and extends it. Below about 1.25 the sheet stays convex, above 2 it dishes in Range 0.05-8. |
-| Plane Jitter | 0.25 | Range 0-1.2. |
-| Seed | 0 | Range 0-10000. |
+| Plane Jitter | 0.25 | Random tilt applied to each division plane Range 0-1.2. |
+| Seed | 0 | Random seed for the division planes Range 0-10000. |
 | Turgor | 0.02 | Each cell pushes out with p = nRT/(A h), so a small cell pushes harder. That single term is what equalises cell size -- no rule says cells should be similar Range 0-0.3. |
-| Wall Stiffness | 0.6 | Range 0.05-2. |
-| Relax Steps | 60 | Range 0-600. |
+| Wall Stiffness | 0.6 | How strongly the cell walls resist stretching during relaxation Range 0.05-2. |
+| Relax Steps | 60 | Pressure-relaxation iterations after each division Range 0-600. |
 | Wall Inset | 0.14 | Shrink each cell toward its centroid so the gaps become walls -- what turns a tiling into an openwork screen Range 0-0.45. |
-| Thickness | 0 | Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Thickness | 0 | Extrude the sheet to this thickness (0 keeps it flat) Range 0-1. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 
@@ -42,20 +51,37 @@ Renders of each selectable option:
 
 ## How it works
 
-**Rewriting a map, not a string.** The state is a planar map: cells, the walls between them, and the vertices where walls meet. A production divides a cell by inserting a new wall between two points on its boundary. All cells are rewritten in parallel, generation by generation, exactly as an ordinary [L-system](lsystem.md) rewrites all symbols at once — the difference is that the object being rewritten is two-dimensional.
+**In plain terms.** Real tissue does not get *cut* into cells — it *grows* them, one cell pinching into two, those two into four, again and again. That is the whole idea here. A ["map L-system"](lsystem.md) is like an ordinary L-system, the rewriting rule that draws ferns and snowflakes by repeatedly replacing symbols in a string — except the thing being rewritten is not a line of text but a **map**: a patch of cells with walls between them. Each step, every cell splits by dropping a new wall across its middle, and after $n$ steps you have $2^n$ cells that remember where they came from. Then the whole patch is inflated like a sheet of tiny balloons pressed together, and it settles into the rounded, snug arrangement you see under a microscope. Because a cell is *born from a parent* rather than *sliced out of a slab*, the sheet has a history — older cells are bigger, younger ones smaller — and that history is exactly what makes it look grown rather than shattered. The rest of this section makes each of those steps precise.
 
-**The one dial that does the shape work** is the **periclinal / anticlinal ratio** $P/A$ — the relative likelihood that a new wall is laid *parallel* to the tissue surface (periclinal) or *perpendicular* to it (anticlinal). These are the botanist's terms for the two ways a cell can divide, and the ratio between them decides whether a sheet thickens or spreads:
+**Rewriting a map, not a string.** The state is a planar map: cells, the walls between them, and the vertices where walls meet. A production divides a cell by cutting a line through its centroid and inserting the two new wall endpoints on its boundary; all cells are rewritten in parallel, generation by generation, exactly as an ordinary L-system rewrites all symbols at once — the only difference is that the rewritten object is two-dimensional. Two constraints, shared by every map-L-system formalism, are what make this a genuine rewriting system rather than an ad-hoc drawing routine:
 
-- **anticlinal-dominant** — divisions perpendicular to the surface, so the tissue extends sideways and stays a layer;
-- **periclinal-dominant** — divisions parallel to the surface, so layers stack and the tissue thickens into a mass.
+- **No cell disappears.** A division replaces one cell with two, never with none; allowing erasure "would complicate these models quite considerably", so nothing is ever deleted.
+- **Adjacency is inherited.** Two new elements can be adjacent only if the elements that produced them were. Because the new wall is *shared* by both daughters, they are adjacent precisely because their mother was one cell — the same locality that makes an L-system propagating.
 
-Everything from a single-layered epidermis to a bulky parenchyma is that one ratio.
+**The one dial that does the shape work** is the **periclinal / anticlinal ratio** $P/A$ — the botanist's two names for the plane a cell divides on. A **periclinal** wall lies *parallel* to the tissue surface and thickens it; an **anticlinal** wall is *perpendicular* and extends it. The operator turns the ratio into a probability: each dividing cell lays a periclinal wall with chance
 
-**Two constraints** hold the map together, and they are what make this a formalism rather than a heuristic: a new wall must run between two points on the *same* cell's boundary, and walls must remain consistent across shared edges, so that a division seen from one cell agrees with what its neighbour sees. `lsystem/maps.py` states both precisely.
+$$p_{\text{peri}} = \frac{P/A}{1 + P/A},$$
 
-**Geometry from a pressure solver.** Rewriting gives the map's *combinatorics* — which cell borders which — but not where anything sits. The positions come from a mass-spring relaxation with internal pressure: walls behave as springs, each cell pushes outward with a pressure set by its area, and the tissue settles into equilibrium.
+and an anticlinal one otherwise (a small random **jitter** then tilts the plane so the tissue does not look mechanical). Geometrically the consequence is direct:
 
-That is why the walls meet at sensible angles and the outline bulges the way a real sheet of cells does: the shape is a force balance over a history of divisions, not a drawing.
+- **anticlinal-dominant** ($P/A$ small) — divisions run across the surface, so the tissue extends sideways, its outline stays convex, and it remains a layer;
+- **periclinal-dominant** ($P/A$ large) — divisions stack parallel to the surface, so the boundary folds inward and the sheet dishes, on its way to a bulky mass.
+
+Everything from a single-layered epidermis to a thick parenchyma is that one number, which is why the redo panel reports "convex" below ~1.25 and "dished" above ~2.
+
+**Geometry from a pressure solver.** Rewriting fixes only the map's *combinatorics* — which cell borders which — not where anything sits. The positions come from a **mass-spring relaxation with turgor**, the Fracchia interpretation in which cell shape is the equilibrium between wall tension and internal pressure. Every wall is a spring pulling its endpoints toward a rest length,
+
+$$\mathbf{f}_{\text{wall}} = k_{\text{stiff}}\,\frac{L - L_0}{L}\,\mathbf{d},$$
+
+while every cell inflates itself. The turgor pressure of a cell of area $A$ is
+
+$$p = \frac{nRT}{A\,h}\;\propto\;\frac{1}{A},$$
+
+so a **small cell pushes harder than a large one** — and that single term is what equalises cell sizes, with no rule anywhere stating that cells *should* be similar. Crucially the pressure is applied to each wall along its *outward normal*, not radially from the centroid: a vertex shared by several cells would otherwise collect several independent radial shoves and could be flung across its own ring, inverting the cell into dark overlapping shards. The system is stepped by forward Euler — chosen because the appeal of mass-spring over finite elements is precisely that it is simple enough to implement — with each step capped at a fraction of the shortest wall so a stiff pressure term cannot fling a vertex clean through its neighbours.
+
+That force balance over a *history* of divisions is why the walls meet at sensible angles and the outline bulges the way a real sheet of cells does: the shape is grown, not drawn.
+
+**The Cell Ball.** Cell Ball mode applies the identical division rule to a closed surface. It starts from the eight faces of an octahedron as cells and, at each step, splits each cell across its **longest** diagonal — Errera's shortest-wall rule read on the sphere — then re-projects the new vertices onto the sphere so the tissue stays a shell. Trying candidate diagonals in order of length until one yields two valid rings is what keeps the count doubling ($8\cdot2^n$ cells) instead of leaving some cells stubbornly undivided.
 
 ## References
 

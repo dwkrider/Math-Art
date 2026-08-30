@@ -204,10 +204,14 @@ if _IN_BLENDER:
             items=[('PRESET', "Preset", "One of the shipped grammars"),
                    ('TEXT', "Text Block", "A grammar written in a Blender "
                             "text block -- the power user's escape hatch")],
-            default='PRESET')
+            default='PRESET',
+            description="Where the grammar comes from: a shipped preset or "
+                        "a grammar you wrote in a text block")
         kind: EnumProperty(
             name="System", items=_PRESET_ITEMS, default='KOCH',
-            update=lambda self, ctx: _seed_params(self))
+            update=lambda self, ctx: _seed_params(self),
+            description="Which shipped grammar to build, grouped as curves, "
+                        "plants and trees")
         use_params: BoolProperty(
             name="Grammar Parameters", default=True,
             description="Expose the free parameters the grammar declares "
@@ -216,18 +220,34 @@ if _IN_BLENDER:
         # The generic slots.  Their name here is never shown: the label,
         # the range shown beside it and a menu's entries all come from
         # the grammar at draw time.
-        pnum0: FloatProperty(name="P0", update=_snap_on_edit(0))
-        pnum1: FloatProperty(name="P1", update=_snap_on_edit(1))
-        pnum2: FloatProperty(name="P2", update=_snap_on_edit(2))
-        pnum3: FloatProperty(name="P3", update=_snap_on_edit(3))
-        pnum4: FloatProperty(name="P4", update=_snap_on_edit(4))
-        pnum5: FloatProperty(name="P5", update=_snap_on_edit(5))
-        pnum6: FloatProperty(name="P6", update=_snap_on_edit(6))
-        pnum7: FloatProperty(name="P7", update=_snap_on_edit(7))
-        penum0: EnumProperty(name="C0", items=_enum_items_for(0))
-        penum1: EnumProperty(name="C1", items=_enum_items_for(1))
-        penum2: EnumProperty(name="C2", items=_enum_items_for(2))
-        penum3: EnumProperty(name="C3", items=_enum_items_for(3))
+        _P_DESC = ("Numeric grammar parameter; its label, range and step "
+                   "come from the selected grammar's #param line")
+        _C_DESC = ("Grammar choice parameter; its label and options come "
+                   "from the selected grammar's #param line")
+        pnum0: FloatProperty(name="P0", update=_snap_on_edit(0),
+                             description=_P_DESC)
+        pnum1: FloatProperty(name="P1", update=_snap_on_edit(1),
+                             description=_P_DESC)
+        pnum2: FloatProperty(name="P2", update=_snap_on_edit(2),
+                             description=_P_DESC)
+        pnum3: FloatProperty(name="P3", update=_snap_on_edit(3),
+                             description=_P_DESC)
+        pnum4: FloatProperty(name="P4", update=_snap_on_edit(4),
+                             description=_P_DESC)
+        pnum5: FloatProperty(name="P5", update=_snap_on_edit(5),
+                             description=_P_DESC)
+        pnum6: FloatProperty(name="P6", update=_snap_on_edit(6),
+                             description=_P_DESC)
+        pnum7: FloatProperty(name="P7", update=_snap_on_edit(7),
+                             description=_P_DESC)
+        penum0: EnumProperty(name="C0", items=_enum_items_for(0),
+                             description=_C_DESC)
+        penum1: EnumProperty(name="C1", items=_enum_items_for(1),
+                             description=_C_DESC)
+        penum2: EnumProperty(name="C2", items=_enum_items_for(2),
+                             description=_C_DESC)
+        penum3: EnumProperty(name="C3", items=_enum_items_for(3),
+                             description=_C_DESC)
         # An Operator cannot hold a PointerProperty to an ID datablock
         # ("this type doesn't support data-block properties"), so the
         # text block is referenced by NAME and resolved at execute time.
@@ -253,12 +273,16 @@ if _IN_BLENDER:
                              "bevel; per-point radius carries the taper"),
                    ('MESH', "Skeleton Mesh", "Edges with width, colour and "
                             "Strahler attributes")],
-            default='CURVE')
+            default='CURVE',
+            description="Emit the L-system as a bevelled curve or as a "
+                        "skeleton mesh")
         radius: FloatProperty(
             name="Tube Radius", default=0.01, min=0.0, max=0.5,
             description="Bevel radius at the widest point (0 = bare curve)")
         resolution: IntProperty(
-            name="Bevel Resolution", default=2, min=0, max=12)
+            name="Bevel Resolution", default=2, min=0, max=12,
+            description="Subdivisions around the round bevel cross-section; "
+                        "higher is smoother")
         fillet: FloatProperty(
             name="Round Corners", default=0.25, min=0.0, max=0.5,
             description="Round each corner by this fraction of the "
@@ -289,7 +313,9 @@ if _IN_BLENDER:
             name="Angle Override", default=-1.0, min=-1.0, max=180.0,
             description="Default turn angle in degrees (-1 = the "
                         "grammar's own)")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Uniform scale of the finished "
+                                         "figure")
         development: EnumProperty(
             name="Development",
             items=[('AUTO', "Auto", "Draw the developmental series only "
@@ -299,7 +325,9 @@ if _IN_BLENDER:
                           "filament, and the only way a one-dimensional "
                           "system reads as anything but a rod"),
                    ('OFF', "Final Only", "Draw the last generation only")],
-            default='AUTO')
+            default='AUTO',
+            description="Whether to draw the whole generation-by-generation "
+                        "series or only the final generation")
 
         show_grammar: BoolProperty(
             name="Show Grammar", default=False,
@@ -312,7 +340,9 @@ if _IN_BLENDER:
             description="Bend each segment toward a fixed direction, by "
                         "alpha = e |H x T| -- gravity or light")
         tropism: FloatVectorProperty(
-            name="Direction", default=(0.0, 0.0, -1.0), size=3, subtype='XYZ')
+            name="Direction", default=(0.0, 0.0, -1.0), size=3, subtype='XYZ',
+            description="Direction each segment bends toward when tropism is "
+                        "on (e.g. straight down for gravity)")
         elasticity: FloatProperty(
             name="Elasticity", default=0.22, min=0.0, max=1.0,
             description="Susceptibility to bending; published values run "

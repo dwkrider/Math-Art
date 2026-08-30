@@ -24,16 +24,16 @@ Every edge is claimed by exactly one of its two faces and bows toward that face'
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Cube | Cube, Rhombic Dodecahedron, Truncated Octahedron, Hexagonal Prism, Active Object. |
+| Seed | Cube | Which polyhedron to squeeze. Cube, Rhombic Dodecahedron, Truncated Octahedron, Hexagonal Prism, Active Object. |
 | Bend | 0.45 | Inward bend of each edge, as a fraction of the distance from the edge midpoint to its face centre Range 0-0.95. |
 | Edge Samples | 12 | Subdivisions of each bent edge Range 3-48. |
 | Rings | 10 | Concentric rings toward each face centre Range 2-48. |
 | Solver Iterations | 30 | Plateau area-minimization iterations per face Range 0-200. |
 | Alternate Pattern | Off | Flip which edge pair each face claims |
-| Smooth Shading | Off | -- |
+| Smooth Shading | Off | Shade the surface smooth |
 | Sharp Bent Edges | On | Mark the bent frames sharp (and creased). They are where two face membranes meet, so with smooth shading on they should stay crisp rather than round over -- the squeeze is the shape |
 | Thickness | 0 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 
@@ -56,7 +56,7 @@ Renders of each selectable option:
 
 **In plain terms.** Picture a cube's twelve edges as taut strings. Fathauer's idea is to let each edge sag inward toward the middle of just one of the two faces it borders, then stretch a soap-film across each face's now-curved boundary. The tricky part is fairness: every edge must sag toward exactly one face, and around any single face the edges it "owns" have to alternate with edges owned by its neighbours, like a checkerboard running around the rim. On a square that means two opposite edges bow toward the centre and pinch together — the "squeeze". So the generator does three things in turn: hand out those ownerships consistently, bend the owned edges, and stretch a least-area membrane over each bent boundary.
 
-**Parity assignment.** The ownership problem is a fair hand-out: each edge picks one of its two faces, every edge is picked exactly once, and around each face the picks alternate. The generator gives each face a single bit — a phase $p_f\in\{0,1\}$ — and declares slot $i$ of that face "claimed" exactly when $i+p_f$ is even, which by itself guarantees the claims alternate around the face. Fairness across a shared edge, joining slot $i$ of face $f$ to slot $j$ of face $g$, then becomes one parity equation,
+**Parity assignment.** The ownership problem is a fair hand-out: each edge picks one of its two faces, every edge is picked exactly once, and around each face the picks alternate. The generator gives each face a single bit — a phase $p_f\in\lbrace0,1\rbrace$ — and declares slot $i$ of that face "claimed" exactly when $i+p_f$ is even, which by itself guarantees the claims alternate around the face. Fairness across a shared edge, joining slot $i$ of face $f$ to slot $j$ of face $g$, then becomes one parity equation,
 $$(i+p_f) + (j+p_g) \equiv 1 \pmod 2,$$
 saying exactly one of the two slots is even. This is a two-colouring of the face graph: fix one face's phase and every neighbour's phase is forced by the edge they share, so the phases spread outward by **breadth-first search**. It can only close up consistently when every face has an even number of edges (odd faces are rejected immediately), the mesh is a closed manifold (each edge in exactly two faces), and no cycle of faces demands a contradiction; otherwise a `ValueError` is reported. `Alternate Pattern` flips every phase, swapping each face's claimed pair for the other.
 

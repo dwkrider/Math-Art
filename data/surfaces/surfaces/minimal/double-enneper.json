@@ -1,0 +1,103 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "double-enneper",
+  "name": "Double Enneper",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "annulus 0.115112 < |z| < 8.68719",
+    "gauss_map": "z**(-1 + n)*(z**n - zeta**n)/(-1.0 + z**n*zeta**n)",
+    "height_differential": "-z**(-1 - n)*(-1.0 + (z*zeta)**n)*(z**n - zeta**n)/(1.0 + zeta**(2*n))",
+    "parameters": [
+      {
+        "name": "n",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      },
+      {
+        "name": "zeta",
+        "domain": "see the generator's p_from",
+        "default": "(3.247595264191645 + 1.8749999999999998*i)",
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 0,
+    "ends": [
+      {
+        "type": "enneper",
+        "count": 2,
+        "embedded": false
+      }
+    ]
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "DOUBLE_ENNEPER",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row DOUBLE_ENNEPER) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 9.49e-16); dh: matches over 144 complex samples (worst 1.34e-15).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ],
+    "cross_checked": [
+      {
+        "source": "minimalsurfaces.blog (minsurf ch176, Double Enneper)",
+        "agrees": true,
+        "detail": "'We have a sphere with two Enneper ends' (Karcher's Tokyo Notes); not embedded."
+      }
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "vmm": "ch009_double_enneper",
+    "msblog": "ch176_double_enneper"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

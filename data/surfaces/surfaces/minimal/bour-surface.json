@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "bour-surface",
+  "name": "Bour's Minimal Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "implemented",
+    "minimal",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "exactness": "elementary",
+    "x": "u*cos(v) - u**2*cos(2*v)/2",
+    "y": "-u*sin(v) - u**2*sin(2*v)/2",
+    "z": "4/3*u**(3.0/2.0)*cos(3*v/2)",
+    "u_range": [
+      "0.05",
+      "1.4"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ]
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "CLASSICAL",
+      "key": "BOUR",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Chart as curated in tools/surfdb/charts.py, verified numerically against the curvature condition the record claims (measured over the chart by the validator and the charts self-test).",
+    "sources": [
+      "E. Bour, 'Theorie de la deformation des surfaces', J. Ecole Imperiale Polytechnique 22 (1862)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Edmond Bour",
+  "year": 1862,
+  "ids": {
+    "mathworld": "BoursMinimalSurface",
+    "mathcurve": "ch1214_bour_2"
+  },
+  "alternate_names": [
+    "Bour surface"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

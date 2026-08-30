@@ -34,6 +34,11 @@ print("[menu] VIEW3D_MT_math_art_add registered OK")
 # is missing whenever someone gets round to it.
 # --------------------------------------------------------------------
 PANEL_ONLY = {
+    # Superseded by mesh.icosahedron_stellation_add, which merged the two
+    # stellation generators behind a seed selector. Kept registered for one
+    # release so objects built with it stay live-editable, and deliberately
+    # kept OUT of the menu so only the merged operator is offered.
+    "mesh.general_stellation_add": "deprecated; forwards to Stellation",
     # Reached from the minimal-surface toolkit's own N-panel, which is
     # where its parameters live; a bare Add-menu entry would have no
     # surface to act on.
@@ -46,6 +51,11 @@ PANEL_ONLY = {
     # each builds a lighting/camera rig around an existing gem, not a mesh.
     "mesh.gem_aset_rig_add": "per-stone selector on the gem, not a menu add",
     "mesh.gem_studio_add": "per-stone selector on the gem, not a menu add",
+    # Writes the sliced layout to SVG/DXF through a file dialog. An Add
+    # menu lists things you can add; this adds nothing and needs a
+    # layout to already exist, so it is reached from the slicer's own
+    # redo panel instead.
+    "object.fabrication_slice_export": "file export, not a menu add",
 }
 
 
@@ -593,6 +603,43 @@ OPS = [
         seed='TETRA', radius_mode='LOCAL', factor=0.7, subdiv=2)),
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
+    ("zonohedrification", lambda: bpy.ops.mesh.zonish_add()),
+    ("slide-together squares", lambda: bpy.ops.mesh.slide_together_add()),
+    ("slide-together pentagrams", lambda: bpy.ops.mesh.slide_together_add(
+        model='PG12')),
+    # the compound enum is narrowed by the family it belongs to, so a
+    # scripted call names both -- there is no "all families" entry to
+    # fall back on
+    ("harman compound", lambda: bpy.ops.mesh.polyhedron_compound_add(
+        family='AXES', compound='H_5CUBES')),
+    ("twelve-faced pyritohedron", lambda: bpy.ops.mesh.twelve_faced_add()),
+    ("twelve-faced tetartoid", lambda: bpy.ops.mesh.twelve_faced_add(
+        solid='TETARTOID')),
+    ("elongated dodecahedron", lambda: bpy.ops.mesh.twelve_faced_add(
+        solid='ELONGATED')),
+    ("skilling figure", lambda: bpy.ops.mesh.uniform_polyhedron_add(
+        family='SKILLING', solid='76')),
+    ("sharpohedron", lambda: bpy.ops.mesh.notable_polyhedron_add(
+        solid='SHARP')),
+    ("tetrahedrally stellated icosahedron",
+     lambda: bpy.ops.mesh.notable_polyhedron_add(
+        solid='TETRA_STELLATED_ICOSA')),
+    ("hexagonal prism honeycomb", lambda: bpy.ops.mesh.spacefill_add(
+        kind='HEXPRISM', nx=2, ny=2, nz=2)),
+    ("elongated dodecahedron honeycomb",
+     lambda: bpy.ops.mesh.spacefill_add(
+        kind='ELONGDODEC', nx=2, ny=2, nz=2)),
+    ("transpolyhedron", lambda: bpy.ops.mesh.transpolyhedron_add()),
+    ("transpolyhedron prism", lambda: bpy.ops.mesh.transpolyhedron_add(
+        seed='A7', blend=0.35)),
+    ("zonish polyhedron", lambda: bpy.ops.mesh.zonish_add(
+        mode='ZONISH', seed='ID', length=0.4)),
+    ("rhombohedral dissection", lambda: bpy.ops.mesh.zonish_add(
+        mode='DISSECTION', seed='ICOSA', explode=0.3, color='BLOCK')),
+    ("zonohedron by zone pair", lambda: bpy.ops.mesh.zonish_add(
+        color='ZONES')),
+    ("zonish by face size", lambda: bpy.ops.mesh.zonish_add(
+        mode='ZONISH', seed='ID', length=0.4, color='SIDES')),
     ("relaxed bubble", lambda: bpy.ops.mesh.relaxed_bubble_add()),
     ("cmc capillary", lambda: bpy.ops.mesh.cmc_capillary_add()),
     ("bryant surface", lambda: bpy.ops.mesh.bryant_surface_add()),

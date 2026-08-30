@@ -1,5 +1,7 @@
 # Notable Polyhedron
 
+![Notable Polyhedron](../images/notable_polyhedron.png)
+
 ## Overview
 
 Add a notable individual polyhedron (the echidnahedron / final
@@ -8,7 +10,15 @@ or Klein's genus-3 regular map).
 
 A gallery of famous individual polyhedra that belong to no parametric family — each is here because of a specific property, usually a counterexample to something one would expect to be true.
 
-The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into tetrahedra without adding new vertices, disproving the natural assumption that every polyhedron can be triangulated as every polygon can. **Jessen's orthogonal icosahedron** has all dihedral angles right-angled and is *shaky* — infinitesimally flexible though rigid. Also here: Dürer's solid from *Melencolia I*, the Bilinski dodecahedron (the "other" rhombic dodecahedron, whose existence Kepler missed), Escher's stellated rhombic dodecahedron from *Waterfall*, the 3-D associahedron, and polyhedral realisations of Klein's genus-3 regular map $\{3,7\}_8$ and the Schulte–Wills genus-6 maps.
+The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into tetrahedra without adding new vertices, disproving the natural assumption that every polyhedron can be triangulated as every polygon can. **Jessen's orthogonal icosahedron** has all dihedral angles right-angled and is *shaky* — infinitesimally flexible though rigid. Also here: Dürer's solid from *Melencolia I*, the Bilinski dodecahedron (the "other" rhombic dodecahedron, whose existence Kepler missed), Escher's stellated rhombic dodecahedron from *Waterfall*, the 3-D associahedron, and polyhedral realisations of Klein's genus-3 regular map $\lbrace3,7\rbrace_8$ and the Schulte–Wills genus-6 maps.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Notable Polyhedron*.
+2. **Pick the Solid.** The dropdown is the gallery itself, roughly grouped by *why* each is famous: the **counterexamples** (Schönhardt, which can't be triangulated; Jessen's shaky right-angled icosahedron); the **art solids** (Dürer's *Melencolia I* solid, Escher's stellated rhombic dodecahedron, the Bilinski dodecahedron); the **final stellation of the icosahedron** (echidnahedron); the **near-misses** (tetrated dodecahedron, 132-pentagon polyhedron); the 3-D **associahedron** (Stasheff polytope); and the **high-genus regular maps** (Klein's $\lbrace3,7\rbrace_8$ at genus 3, the Schulte–Wills $\lbrace6,4\rbrace$/$\lbrace4,6\rbrace$ at genus 6, and a pair of genus-2 heptagonal dodecahedra).
+3. **Choose a Style.** **Solid** is the plain surface; **Leonardo** opens each face into a framed panel (**Border** sets the frame width); **Struts** and **Wireframe** show the edges; **Ball and Stick** renders edges as cylinders and vertices as spheres (**Strut Radius**, **Node Radius**); **Face Segments** splits the mesh into one inward-extruded, mitre-bevelled piece per face (**Depth**, **Bevel Gap**, **Explode**, and **Separate Meshes**).
+4. **Set the Scale.** Every solid arrives centred and fitted to the 2 m cube; Scale multiplies that.
+5. **Read the report.** The build prints the vertex and face counts (or, in Face Segments mode, the number of segments) — handy for confirming, say, that the echidnahedron really has 92 vertices and 180 triangular faces.
 
 ## Options
 
@@ -16,9 +26,17 @@ The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into t
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Final Stellation of Icosahedron | Final Stellation of Icosahedron, Schonhardt Polyhedron, Jessen's Orthogonal Icosahedron, Durer's Solid, Bilinski Dodecahedron, Escher's Solid, Tetrated Dodecahedron, 132-Pentagon Polyhedron, and 6 more. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width (fraction of the face) Range 0.02-0.95. |
+| Fold | 0 | How far the net is folded up: 0 lays it out flat, 1 closes it into the finished solid, and every value between keeps each face rigid Range 0-1. |
+| Unfolding | Breadth First | How the faces are unfolded into the plane. Breadth First, Best Of Many. |
+| Net Seed | 0 | Which set of unfoldings Best Of Many tries; change it for a different net of the same solid |
+| Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
+| Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
+| Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
+| Solid | Final Stellation of Icosahedron | Which notable polyhedron to build. Final Stellation of Icosahedron, Schonhardt Polyhedron, Jessen's Orthogonal Icosahedron, Durer's Solid, Bilinski Dodecahedron, Escher's Solid, Tetrated Dodecahedron, 132-Pentagon Polyhedron, and 15 more. |
+| Flex | 0 | Position along the one-parameter motion, as the shift in the driving diagonal.  Every face stays congruent to itself and every edge keeps its length; only the shape changes (Bricard's flexible octahedron only) Range -1.6-0.3. |
+| Flex | 0 | Position along the one-parameter motion, as the angle through which the two crinkles swing about the axis joining their tips.  Every edge keeps its integer length and the polyhedron stays free of self-intersections over the whole range, whose ends are where faces would first collide (Steffen's flexible polyhedron only) Range -0.235-0.235. |
+| Style | Solid | How the polyhedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
+| Border | 0.06 | Leonardo face frame width, the same on every face Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -26,7 +44,7 @@ The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into t
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 
@@ -51,6 +69,21 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/notable_polyhedron__ASSOCIAHEDRON.png" width="200"><br><sub>Associahedron (3D, K5)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__SHARP.png" width="200"><br><sub>Sharpohedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__TETRA_STELLATED_ICOSA.png" width="200"><br><sub>Tetrahedrally Stellated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__TETRA_TRUNCATED_DODECA.png" width="200"><br><sub>Tetrahedrally Truncated Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__SELF_DUAL_16.png" width="200"><br><sub>Self-Dual 16-Hedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__PSEUDO_GRCO.png" width="200"><br><sub>Pseudo Great Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__BREHM_BOY.png" width="200"><br><sub>Brehm's Boy Surface (9 vertices)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__BRICARD.png" width="200"><br><sub>Bricard's Flexible Octahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__STEFFEN.png" width="200"><br><sub>Steffen's Flexible Polyhedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__TRIACONTAHEXA.png" width="200"><br><sub>Tetragonal Triacontahexahedron</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/notable_polyhedron__KLEIN.png" width="200"><br><sub>Klein Regular Map {3,7} (genus 3)</sub></td>
 <td align="center"><img src="../images/variants/notable_polyhedron__MAP64.png" width="200"><br><sub>Regular Map {6,4} (genus 6)</sub></td>
 <td align="center"><img src="../images/variants/notable_polyhedron__MAP46.png" width="200"><br><sub>Regular Map {4,6} (genus 6)</sub></td>
@@ -63,7 +96,7 @@ Renders of each selectable option:
 
 ## How it works
 
-Each solid is built from its own definition rather than from a shared construction — that is what makes them "other". The ones worth understanding:
+**In plain terms.** Most of the polyhedra in this add-on come from a recipe with a dial — pick a number of sides, a symmetry, a stellation depth, and the shape follows. The ones here don't. Each is a single, specific object that earned a place in the textbooks on its own, usually by being a **counterexample**: a shape that quietly breaks a rule everyone assumed was safe. You'd expect any solid to be sliceable into tetrahedra the way any flat polygon can be cut into triangles — Schönhardt's twisted octahedron proves you can't. You'd expect a rigid framework to be *provably* rigid to the first tiny wobble — Jessen's icosahedron is rigid yet wobbles to first order. Because there's no shared recipe, each solid below is built straight from its own stored or derived coordinates, then centred and scaled to the 2 m cube. The ones worth understanding:
 
 **Schönhardt.** Take a triangular antiprism — two parallel triangles, one rotated relative to the other — and twist further until each of the three rectangular side faces folds inward along a diagonal, becoming two triangles meeting at a **reflex** edge. The result is a non-convex hexahedron with 6 vertices and 8 triangular faces in which *no* two non-adjacent vertices can be joined by a segment lying inside the solid. Since any tetrahedron of a triangulation would need such a diagonal, the polyhedron admits no triangulation without new vertices. The twist angle must exceed the point where the diagonals pass outside; below it the shape is still convex and triangulates normally.
 
@@ -73,7 +106,7 @@ Each solid is built from its own definition rather than from a shared constructi
 
 **Bilinski dodecahedron.** Twelve golden rhombi, like the rhombic dodecahedron — but a *different* solid, with two distinct vertex types instead of one. Its existence shows that a rhombic dodecahedron is not determined by "twelve congruent golden rhombi" alone, a fact overlooked for three centuries after Kepler.
 
-**Regular maps.** Klein's $\{3,7\}_8$ (genus 3) and the Schulte–Wills $\{6,4\}$ / $\{4,6\}$ (genus 6) are combinatorial surfaces with more symmetry than any embedding in 3-space can display; the realisations here make them touchable at the cost of some of that symmetry. A pair of genus-2 heptagonal dodecahedra, 12 heptagons each, rounds out the high-genus set.
+**Regular maps.** Klein's $\lbrace3,7\rbrace_8$ (genus 3) and the Schulte–Wills $\lbrace6,4\rbrace$ / $\lbrace4,6\rbrace$ (genus 6) are combinatorial surfaces with more symmetry than any embedding in 3-space can display; the realisations here make them touchable at the cost of some of that symmetry. A pair of genus-2 heptagonal dodecahedra, 12 heptagons each, rounds out the high-genus set.
 
 ## References
 

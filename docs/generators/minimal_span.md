@@ -1,5 +1,7 @@
 # Span Minimal Surface
 
+![Span Minimal Surface](../images/minimal_span.png)
+
 This operator works on **1 or 2 selected closed curves** (Curve objects or closed mesh edge loops) rather than adding a new primitive: with one curve selected it spans a disk-type minimal surface across it, and with two it spans an annulus-type minimal surface between them.
 
 ## Overview
@@ -22,9 +24,15 @@ The Span operator solves the **Plateau problem** in Blender: given one or two cl
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Boundary Samples | 128 | Range 16-512. |
-| Interior Rings | 24 | Range 3-128. |
-| Solver Iterations | 40 | Range 1-200. |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
+| Boundary Samples | 128 | Number of points sampled around each boundary loop Range 16-512. |
+| Interior Rings | 24 | Number of concentric interior rings spanning the surface between the boundaries Range 3-128. |
+| Solver Iterations | 40 | Number of area-minimization passes the solver runs Range 1-200. |
 | NURBS Output | Off | Emit a compact NURBS surface (control grid = the solver grid) instead of a dense mesh. Where the surface curls tightly (e.g. near a knot) the NURBS may ripple; raise rings/samples or use mesh output |
 
 <!-- /options -->

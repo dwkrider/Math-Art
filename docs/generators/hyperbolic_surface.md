@@ -1,5 +1,7 @@
 # Hyperbolic Surface
 
+![Hyperbolic Surface](../images/hyperbolic_surface.png)
+
 ## Overview
 
 Add a smooth constant-negative-curvature surface: the pseudosphere, Dini,
@@ -29,15 +31,21 @@ The family is governed by the **sine-Gordon equation**, so its members correspon
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Pseudosphere | Pseudosphere, Dini Surface, Kuen Surface, Minding Bulge, Minding Spindle, Breather Surface, Amsler Surface. |
-| U Resolution | 64 | Range 8-400. |
-| V Resolution | 96 | Range 8-400. |
-| Twist | 0.2 | Helical shear of Dini's surface (curvature = -1/(1+twist^2)) Range 0-2. Shown for Dini. |
-| Crossing Angle | 90 | Angle (degrees) at which Amsler's two straight lines cross. It is the whole parameter: the surface is the unique K = -1 surface through two lines meeting at this angle. Range 10-170. Shown for Amsler. |
-| Breather b | 0.4 | Breather parameter b in (0, 1): small b gives a long, loosely bound breather with many lobes; b near 1 a short tightly bound one. Range 0.05-0.95. Shown for Breather. |
-| Waist / Girth | 0.5 | Shape parameter a of the Minding surfaces: the bulge is r = a cosh(u), so a is its waist radius; the spindle is r = a sinh(u) and needs a < 1, its equator sitting at sqrt(1 - a^2). Range 0.05-3. Shown for the Minding surfaces. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
+| Surface | Pseudosphere | Which constant-negative-curvature surface to build. Pseudosphere, Dini Surface, Kuen Surface, Minding Bulge, Minding Spindle, Breather Surface, Amsler Surface. |
+| U Resolution | 64 | Mesh divisions along the surface's u direction Range 8-400. |
+| V Resolution | 96 | Mesh divisions along the surface's v direction Range 8-400. |
+| Twist | 0.2 | Helical shear of Dini's surface (curvature = -1/(1+twist^2)) Range 0-2. |
+| Crossing Angle | 90 | Angle (degrees) at which Amsler's two straight lines cross.  It is the whole parameter: the surface is the unique K = -1 surface through two lines meeting at this angle Range 10-170. |
+| Breather b | 0.4 | Breather parameter b in (0, 1): small b gives a long, loosely bound breather with many lobes; b near 1 a short tightly bound one Range 0.05-0.95. |
+| Waist / Girth | 0.5 | Shape parameter a of the Minding surfaces: the bulge is r = a cosh(u), so a is its waist radius; the spindle is r = a sinh(u) and needs a < 1, its equator sitting at sqrt(1 - a^2) Range 0.05-3. |
+| Scale | 1 | Overall size of the surface Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smoothly rather than faceted |
 
 <!-- /options -->
 

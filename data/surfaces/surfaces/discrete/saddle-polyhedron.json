@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "saddle-polyhedron",
+  "name": "Saddle Polyhedron",
+  "primary_family": "discrete",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "discrete",
+    "immersed",
+    "implemented"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: bounded by numerically relaxed saddle-polygon patches (see pearce-saddle-surface); also piecewise, one patch per face. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.saddle_polyhedron_generator",
+      "operator_id": "mesh.saddle_polyhedron_add",
+      "definition_index": 0,
+      "implemented": true,
+      "blocked_by": null
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Peter Pearce, \"Structure in Nature is a Strategy for Design\", The MIT Press, 1978 (paperback 1990), ch. 8 -- the Universal Node system, saddle polygons spanned by minimal surfaces, and Table 8.1's inventory of 53 saddle polyhedra.",
+      "Walt van Ballegooijen, Paul Gailiunas & Daniel Erdely, \"Spidronised Space-fillers\", Bridges 2009 Conference Proceedings, pp. 271-278 -- spidron nests on saddle-polyhedron faces and the rule that clockwise must meet counter-clockwise across a shared face.",
+      "Daniel Erdely, \"Some Surprising New Properties of the Spidrons\", Bridges 2005 Conference Proceedings, pp. 179-186 -- the spidron nest the face decoration generalises.",
+      "Ulrich Pinkall & Konrad Polthier, \"Computing Discrete Minimal Surfaces and Their Conjugates\", Experimental Mathematics 2(1), 1993, pp. 15-36 -- the cotangent-Laplacian area minimisation used for the saddle faces."
+    ]
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

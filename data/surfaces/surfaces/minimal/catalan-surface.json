@@ -1,0 +1,101 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "catalan-surface",
+  "name": "Catalan's Minimal Surface",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "implemented",
+    "minimal",
+    "self-intersecting",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "domain": "disk",
+    "note": "Bjorling's problem: the unique minimal surface through a given real-analytic strip. The defining seed, reproduced numerically against the shipped row (math_art/minsurf/zoo.py, BJ_CYCLOID): c(t) = (t - sin(t), 1.0 - cos(t), 0), with normal n(t) = (cos(t/2), -sin(t/2), 0), t in [-3.141592654, 9.424777961]. The Weierstrass data is the holomorphic extension of the seed, computed numerically by the engine -- the seed, not a (g, dh) pair, is what specifies this surface.",
+    "exactness": "numerical-integral"
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "orientable": true
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "self-intersecting"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "BJORLING",
+      "key": "BJ_CYCLOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Bjorling seed reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row BJ_CYCLOID): seed reproduced against the shipped callables over 200 samples (worst 0).",
+    "sources": [
+      "E. Catalan, 'Memoire sur les surfaces dont les rayons de courbure en chaque point sont egaux et de signes contraires', C. R. Acad. Sci. Paris 41 (1855).",
+      "E. Schwarz's Bjorling construction realises it from a cycloid."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "discovered_by": "Eugene Charles Catalan",
+  "year": 1855,
+  "ids": {
+    "mathworld": "CatalanMinimalSurface",
+    "mathcurve": "ch1222_minimale_catalan_2",
+    "vmm": "ch006_catalan",
+    "msblog": "ch129_catalans_minimal_surface"
+  },
+  "notes": {
+    "caveats": [
+      "Contains a cycloid as a geodesic -- which is exactly the Bjorling data that generates it, so the parametric row and the Bjorling row in math_art are two constructions of ONE surface."
+    ]
+  },
+  "alternate_definitions": [
+    {
+      "x": "u - sin(u)*cosh(v)",
+      "y": "1 - cos(u)*cosh(v)",
+      "z": "4*sin(u/2)*sinh(v/2)",
+      "u_range": [
+        "0",
+        "4*pi"
+      ],
+      "v_range": [
+        "-1.2",
+        "1.2"
+      ],
+      "mode": "parametric",
+      "fidelity": "exact",
+      "exactness": "elementary"
+    }
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

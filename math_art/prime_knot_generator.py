@@ -85,13 +85,17 @@ if _IN_BLENDER:
         bl_label = "Prime Knot"
         bl_options = {'REGISTER', 'UNDO'}
 
-        knot: EnumProperty(name="Knot", items=_ITEMS, default='3_1')
+        knot: EnumProperty(name="Knot", items=_ITEMS, default='3_1',
+                           description="Which prime knot to build, or "
+                                       "Custom for a typed braid word")
         braid: StringProperty(
             name="Braid Word", default="AAA",
             description="Letters a..z are braid generators, A..Z "
                         "their inverses (used for Custom)")
         samples: IntProperty(name="Curve Samples", default=240,
-                             min=60, max=1000)
+                             min=60, max=1000,
+                             description="Number of points sampled "
+                                         "along the knot")
         iters: IntProperty(
             name="Relax Iterations", default=150, min=0, max=600,
             description="Smoothing + self-repulsion rounds (0 shows "
@@ -104,6 +108,7 @@ if _IN_BLENDER:
             description="Mirror image of the knot")
         output: EnumProperty(
             name="Output",
+            description="Curve type to build, or a swept tube mesh",
             items=[('BEZIER', "Bezier Curve", "auto-smoothed"),
                    ('POLY', "Poly Curve", ""),
                    ('NURBS', "NURBS Curve", ""),
@@ -114,11 +119,16 @@ if _IN_BLENDER:
             step=1, precision=3,
             description="Curve bevel depth / tube radius")
         resolution: IntProperty(name="Bevel Resolution", default=6,
-                                min=1, max=16)
+                                min=1, max=16,
+                                description="Smoothness of the round "
+                                            "bevel along the curve")
         tube_sides: IntProperty(name="Tube Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around the "
+                                            "swept tube")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             braid = (self.braid if self.knot == 'CUSTOM'

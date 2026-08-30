@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "spherical-helicoid",
+  "name": "Spherical Helicoid",
+  "primary_family": "swept",
+  "families": [
+    "aperiodic",
+    "def-parametric",
+    "immersed",
+    "implemented",
+    "swept",
+    "tradition-gallery"
+  ],
+  "definition": {
+    "mode": "parametric",
+    "fidelity": "exact",
+    "note": "No chart is stored: the meridian is a geodesic found by two quadratures (the builder cumulatively integrates theta'(s) and z'(s) with the trapezoid rule); neither integral is elementary, so no closed-form chart exists to store. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "none",
+    "also_satisfies": []
+  },
+  "topology": {},
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.helical_surface_generator",
+      "operator_id": "mesh.helical_surface_add",
+      "key": "SPHERICAL_HELICOID",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "Spherical helicoid: Matthias Weber, \"The Spherical Helicoids\", 3D-XplorMath / Virtual Math Museum documentation, https://virtualmathmuseum.org/docs/spherical_helicoid.pdf -- the helicoidal surfaces of constant Gaussian curvature K = +1, reduced via the Killing/Jacobi-field argument |J(s)| = a cos(s) to a first-order ODE for the meridian.  The surface appears as an exercise in L. P. Eisenhart, \"A Treatise on the Differential Geometry of Curves and Surfaces\" (Ginn, 1909).",
+      "G. Darboux, \"Lecons sur la theorie generale des surfaces\", 1887-96",
+      "- the surfaces swept by a rigid curve.  The classification of the three special motions followed here is from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com, chapter \"surface de Darboux\"; a converted copy is in research/books/mathcurve_encyclopedie_formes_mathematiques/.",
+      "Rotoid, helico-conical surface, egg box and sine torus: R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"rotoide\", \"surface helicoconique\", \"boite a oeufs\" and \"tore sinusoidal\".",
+      "Coil (serpentin): the tube whose bore is a circular helix -- R. Ferreol, ibid., chapter \"serpentin\"; h > 0 right-handed, h = 0 the torus, h < 0 left-handed.",
+      "Sine torus at k = 1/2: Maurice El-Milick (1947), who called it a one-sided cyclide; his model is in the Institut Henri Poincare collection.",
+      "3DXM Virtual Math Museum, Surfaces gallery."
+    ]
+  },
+  "tradition": [
+    "gallery"
+  ],
+  "ids": {
+    "vmm": "ch062_spherical_helicoid"
+  },
+  "named_after": "Helicoid",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": false,
+    "sliceable": false
+  }
+}

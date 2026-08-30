@@ -259,7 +259,9 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         preset: EnumProperty(name="Preset", items=_PRESETS,
-                             default='HOPF')
+                             default='HOPF',
+                             description="Which link or connect-sum "
+                                         "construction to build")
         p: IntProperty(name="p", default=2, min=1, max=16,
                        description="Windings around the torus axis")
         q: IntProperty(name="q", default=4, min=1, max=32,
@@ -267,9 +269,13 @@ if _IN_BLENDER:
         links: IntProperty(name="Rings", default=5, min=2, max=50,
                            description="Rings in the chain")
         knot_a: EnumProperty(name="Knot A", items=_KNOT_ITEMS,
-                             default='3_1')
+                             default='3_1',
+                             description="First prime-knot summand of the "
+                                         "connect sum")
         knot_b: EnumProperty(name="Knot B", items=_KNOT_ITEMS,
-                             default='3_1')
+                             default='3_1',
+                             description="Second prime-knot summand of the "
+                                         "connect sum")
         mirror_b: BoolProperty(
             name="Mirror Second Knot", default=False,
             description="Mirror the second summand (e.g. square "
@@ -282,7 +288,9 @@ if _IN_BLENDER:
             name="Weave Depth", default=0.35, min=0.05, max=1.0,
             description="Height of the over/under weave bumps")
         samples: IntProperty(name="Samples / Component", default=160,
-                             min=40, max=1000)
+                             min=40, max=1000,
+                             description="Points sampled along each "
+                                         "link component")
         iters: IntProperty(
             name="Relax Iterations", default=100, min=0, max=600,
             description="Smoothing + repulsion rounds for the "
@@ -301,17 +309,24 @@ if _IN_BLENDER:
                    ('POLY', "Poly Curve", ""),
                    ('NURBS', "NURBS Curve", ""),
                    ('MESH', "Mesh Tube", "swept tube mesh")],
-            default='BEZIER')
+            default='BEZIER',
+            description="Curve type, or a swept tube mesh, for the output")
         radius: FloatProperty(
             name="Rope Radius", default=0.08, min=0.0, max=1.0,
             step=1, precision=3,
             description="Curve bevel depth / tube radius")
         resolution: IntProperty(name="Bevel Resolution", default=6,
-                                min=1, max=16)
+                                min=1, max=16,
+                                description="Roundness of the curve's "
+                                            "bevelled rope")
         tube_sides: IntProperty(name="Tube Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around the "
+                                            "swept tube mesh")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; fits the result into "
+                                         "a 2 m cube times this factor")
 
         def _build(self):
             s = self.samples

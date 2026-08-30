@@ -280,10 +280,13 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Preset", items=_PRESET_ITEMS, default='PLANET',
-            update=_preset_update)
+            update=_preset_update,
+            description="Load a ready-made surface and pattern; Custom leaves "
+                        "the controls below untouched")
 
         base: EnumProperty(
             name="Base",
+            description="Which closed surface to carve the relief onto",
             items=[('SPHERE', "Sphere (geodesic)",
                     "Subdivided icosahedron: no poles, no seam, faces within "
                     "a third of one another"),
@@ -303,46 +306,81 @@ if _IN_BLENDER:
             description="Grid resolution around the torus or along the "
                         "cylinder")
         ring: FloatProperty(name="Ring Radius", default=1.0, min=0.1,
-                            max=10.0)
+                            max=10.0,
+                            description="Radius from the torus centre to the "
+                                        "middle of its tube")
         tube: FloatProperty(name="Tube Radius", default=0.4, min=0.02,
-                            max=5.0)
-        height: FloatProperty(name="Height", default=2.0, min=0.1, max=20.0)
-        radius: FloatProperty(name="Radius", default=0.7, min=0.05, max=10.0)
+                            max=5.0,
+                            description="Radius of the torus tube")
+        height: FloatProperty(name="Height", default=2.0, min=0.1, max=20.0,
+                              description="Height of the cylinder")
+        radius: FloatProperty(name="Radius", default=0.7, min=0.05, max=10.0,
+                              description="Radius of the cylinder")
 
         field: EnumProperty(name="Pattern", items=_FIELD_ITEMS,
-                            default='FRACTAL')
+                            default='FRACTAL',
+                            description="Which pattern to evaluate over the "
+                                        "surface")
         method: EnumProperty(
             name="Fractal",
+            description="Which fractal construction supplies the field",
             items=[('FBM', "Fractional Brownian",
                     "Hurst exponent is the knob"),
                    ('WEIERSTRASS', "Weierstrass-Mandelbrot",
                     "Fractal dimension is the knob")],
             default='FBM')
-        hurst: FloatProperty(name="Hurst", default=0.7, min=0.05, max=0.99)
+        hurst: FloatProperty(name="Hurst", default=0.7, min=0.05, max=0.99,
+                             description="Fractional Brownian roughness: lower "
+                                         "is rougher, higher is smoother")
         dim: FloatProperty(name="Fractal Dimension", default=2.3, min=2.01,
-                           max=2.95)
-        octaves: IntProperty(name="Octaves", default=8, min=1, max=16)
+                           max=2.95,
+                           description="Fractal dimension of the "
+                                       "Weierstrass-Mandelbrot field; higher "
+                                       "is more crumpled")
+        octaves: IntProperty(name="Octaves", default=8, min=1, max=16,
+                             description="Number of frequency bands summed "
+                                         "into the fractal")
         lacunarity: FloatProperty(name="Lacunarity", default=2.0, min=1.2,
-                                  max=4.0)
-        modes: IntProperty(name="fBm Modes", default=240, min=16, max=1200)
+                                  max=4.0,
+                                  description="Frequency ratio between "
+                                              "successive octaves")
+        modes: IntProperty(name="fBm Modes", default=240, min=16, max=1200,
+                           description="Number of random Fourier modes summed "
+                                       "for the fBm field")
         field_scale: FloatProperty(name="Feature Scale", default=1.0,
-                                   min=0.05, max=20.0)
+                                   min=0.05, max=20.0,
+                                   description="Overall size of the field "
+                                               "features; larger stretches "
+                                               "the pattern")
 
-        points_n: IntProperty(name="Points", default=120, min=4, max=2000)
+        points_n: IntProperty(name="Points", default=120, min=4, max=2000,
+                              description="Number of feature points scattered "
+                                          "through space")
         cell_mode: EnumProperty(
             name="Cells",
+            description="Which Worley distance to plot: cell walls, nearest, "
+                        "or second nearest",
             items=[('CRACK', "Cell Walls", "F2 - F1: the Voronoi boundaries"),
                    ('F1', "Domes", "Distance to the nearest point"),
                    ('F2', "Second Nearest", "Distance to the second")],
             default='CRACK')
         cell_sharp: FloatProperty(name="Wall Profile", default=1.0, min=0.2,
-                                  max=4.0)
+                                  max=4.0,
+                                  description="Sharpness of the cell-wall "
+                                              "profile")
         gabor_freq: FloatProperty(name="Pitch", default=6.0, min=0.5,
-                                  max=40.0)
+                                  max=40.0,
+                                  description="Spatial frequency (pitch) of "
+                                              "the Gabor weave")
         gabor_band: FloatProperty(name="Bandwidth", default=0.35, min=0.05,
-                                  max=1.0)
+                                  max=1.0,
+                                  description="Bandwidth of the Gabor kernel; "
+                                              "wider blurs the pitch")
         spread: FloatProperty(name="Direction Spread", default=3.1416,
-                              min=0.0, max=3.1416, unit='ROTATION')
+                              min=0.0, max=3.1416, unit='ROTATION',
+                              description="Angular spread of the Gabor kernel "
+                                          "directions; 0 is aligned, pi is "
+                                          "isotropic")
 
         regime: EnumProperty(
             name="Regime",
@@ -372,10 +410,16 @@ if _IN_BLENDER:
                    for g in ('P1', 'P2', 'PM', 'PG', 'CM', 'PMM', 'PMG',
                              'PGG', 'CMM', 'P4', 'P4M', 'P4G', 'P3',
                              'P3M1', 'P31M', 'P6', 'P6M')],
-            default='P4M')
-        freq_max: IntProperty(name="Detail", default=3, min=1, max=8)
+            default='P4M',
+            description="Which of the 17 wallpaper symmetry groups the "
+                        "pattern obeys")
+        freq_max: IntProperty(name="Detail", default=3, min=1, max=8,
+                              description="Highest harmonic used to build the "
+                                          "wallpaper pattern")
         ell_kind: EnumProperty(
             name="Function",
+            description="Which elliptic function supplies the height; only P "
+                        "and P' are doubly periodic",
             items=[('WP', "Weierstrass P", "Doubly periodic: tiles exactly"),
                    ('WP_PRIME', "Weierstrass P'", "Also doubly periodic"),
                    ('ZETA', "Weierstrass zeta",
@@ -388,24 +432,42 @@ if _IN_BLENDER:
             items=[('SPHERE', "Riemann Sphere", "Smooth through the poles"),
                    ('RE', "Real Part", ""), ('IM', "Imaginary Part", ""),
                    ('ABS', "Modulus", "")],
-            default='SPHERE')
+            default='SPHERE',
+            description="Which part of the complex value to take as height")
         use_conformal: BoolProperty(
             name="Conformal Lattice", default=True,
             description="Set the lattice to the torus's own conformal "
                         "modulus, so the function sits on the shape it "
                         "belongs to rather than an arbitrary square")
         tau_re: FloatProperty(name="Lattice Skew", default=0.0, min=-2.0,
-                              max=2.0)
+                              max=2.0,
+                              description="Real part (skew) of the lattice "
+                                          "modulus when not using the "
+                                          "conformal lattice")
         tau_im: FloatProperty(name="Lattice Ratio", default=1.0, min=0.05,
-                              max=4.0)
-        tile_cells: IntProperty(name="Cells", default=6, min=1, max=32)
+                              max=4.0,
+                              description="Imaginary part (ratio) of the "
+                                          "lattice modulus when not using the "
+                                          "conformal lattice")
+        tile_cells: IntProperty(name="Cells", default=6, min=1, max=32,
+                                description="Number of tiles across the "
+                                            "pattern")
         lane: FloatProperty(name="Lane Width", default=0.3, min=0.02,
-                            max=1.0)
+                            max=1.0,
+                            description="Width of the Truchet lanes")
         straight: FloatProperty(name="Straight Tiles", default=0.0, min=0.0,
-                                max=1.0)
-        rings: IntProperty(name="Arcs", default=3, min=1, max=12)
-        crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0)
-        rim: FloatProperty(name="Rim", default=0.08, min=0.0, max=0.5)
+                                max=1.0,
+                                description="Fraction of tiles that run "
+                                            "straight rather than curving")
+        rings: IntProperty(name="Arcs", default=3, min=1, max=12,
+                           description="Number of concentric arcs per "
+                                       "Seigaiha scale")
+        crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0,
+                             description="Height of each Seigaiha scale; snaps "
+                                         "so the stagger closes")
+        rim: FloatProperty(name="Rim", default=0.08, min=0.0, max=0.5,
+                           description="Width of the flat rim around each "
+                                       "Seigaiha scale")
         sea_sim: IntProperty(
             name="Sea Grid", default=256, min=64, max=512,
             description="Lattice the sea is synthesised on before being "
@@ -415,28 +477,45 @@ if _IN_BLENDER:
             description="Physical size of the sea being simulated; with the "
                         "wind speed it decides how many waves cross it")
         wind_speed: FloatProperty(name="Wind", default=8.0, min=1.0,
-                                  max=30.0)
+                                  max=30.0,
+                                  description="Wind speed driving the sea; "
+                                              "higher raises longer waves")
         wind_dir: FloatProperty(name="Wind Direction", default=0.0,
-                                min=-6.2832, max=6.2832, unit='ROTATION')
+                                min=-6.2832, max=6.2832, unit='ROTATION',
+                                description="Direction the wind blows across "
+                                            "the sea")
         choppy: FloatProperty(
             name="Choppiness", default=0.0, min=0.0, max=3.0,
             description="Measured in cusp limits: 1 puts the steepest crest "
                         "exactly at the Stokes cusp")
-        sources: IntProperty(name="Sources", default=4, min=1, max=32)
+        sources: IntProperty(name="Sources", default=4, min=1, max=32,
+                             description="Number of ripple sources on the "
+                                         "surface")
         wavelength: FloatProperty(name="Wavelength", default=0.35, min=0.01,
-                                  max=8.0, unit='LENGTH')
+                                  max=8.0, unit='LENGTH',
+                                  description="Distance between successive "
+                                              "wave crests")
         decay: FloatProperty(
             name="Decay", default=0.0, min=0.0, max=4.0,
             description="Fades each wavefront with distance from its source")
         steepness: FloatProperty(name="Steepness", default=0.0, min=0.0,
-                                 max=1.0)
-        wave_count: IntProperty(name="Waves", default=1, min=1, max=12)
+                                 max=1.0,
+                                 description="How peaked the wave crests are")
+        wave_count: IntProperty(name="Waves", default=1, min=1, max=12,
+                                description="Number of zonal wave trains about "
+                                            "the axis")
         wave_spread: FloatProperty(name="Axis Spread", default=0.0, min=0.0,
-                                   max=1.0)
+                                   max=1.0,
+                                   description="How far the extra wave trains "
+                                               "tilt off the axis")
         sigma: FloatProperty(name="Kernel Radius", default=0.12, min=0.01,
-                             max=2.0, unit='LENGTH')
+                             max=2.0, unit='LENGTH',
+                             description="Radius of the kernel raised at each "
+                                         "scattered point")
         kernel: EnumProperty(
             name="Kernel",
+            description="Falloff shape of the bump raised at each scattered "
+                        "point",
             items=[(k, k.title().replace('_', ' '), "")
                    for k in ('WYVILL', 'GAUSSIAN', 'BLINN', 'COSINE',
                              'WENDLAND', 'CONE')],
@@ -445,7 +524,8 @@ if _IN_BLENDER:
             name="Merge",
             items=[('MAX', "Merge", "Keep the tallest where they overlap"),
                    ('SUM', "Sum", "Add them, so overlaps pile up")],
-            default='MAX')
+            default='MAX',
+            description="How overlapping scatter bumps combine")
         qc_cells: FloatProperty(
             name="Scale", default=6.0, min=1.0, max=30.0,
             description="How many wave periods span the object")
@@ -467,40 +547,70 @@ if _IN_BLENDER:
                    ('STAR_532', "*532 - full icosahedral (Ih)",
                     "Order 120, the largest"),
                    ('3STAR2', "3*2 - pyritohedral (Th)", "Order 24")],
-            default='STAR_532')
+            default='STAR_532',
+            description="Which spherical symmetry group the field is made "
+                        "invariant under")
         sym_cells: FloatProperty(name="Wave Scale", default=4.0, min=0.5,
-                                 max=20.0)
-        waves: IntProperty(name="Seed Waves", default=5, min=1, max=16)
+                                 max=20.0,
+                                 description="Spatial frequency of the "
+                                             "symmetric waves; higher is finer")
+        waves: IntProperty(name="Seed Waves", default=5, min=1, max=16,
+                           description="Number of seed waves averaged over the "
+                                       "symmetry group")
         seed_kind: EnumProperty(
             name="Seed",
+            description="Whether the seed is smooth plane waves or localised "
+                        "packets",
             items=[('WAVE', "Plane Waves", "Smooth, spread over the sphere"),
                    ('PACKET', "Packets",
                     "Localised, giving distinct motifs at the group's "
                     "special points")],
             default='WAVE')
-        sph_l: IntProperty(name="Degree l", default=4, min=0, max=24)
-        sph_m: IntProperty(name="Order m", default=2, min=-24, max=24)
-        mode_m: IntProperty(name="m", default=3, min=0, max=16)
-        mode_n: IntProperty(name="n", default=2, min=0, max=16)
-        mode_k: IntProperty(name="k", default=1, min=0, max=16)
+        sph_l: IntProperty(name="Degree l", default=4, min=0, max=24,
+                           description="Degree l of the spherical harmonic")
+        sph_m: IntProperty(name="Order m", default=2, min=-24, max=24,
+                           description="Order m of the spherical harmonic "
+                                       "(clamped to |m| <= l)")
+        mode_m: IntProperty(name="m", default=3, min=0, max=16,
+                            description="Mode number m: angular order for the "
+                                        "torus mode, or first lattice index")
+        mode_n: IntProperty(name="n", default=2, min=0, max=16,
+                            description="Mode number n: second index of the "
+                                        "torus or lattice mode")
+        mode_k: IntProperty(name="k", default=1, min=0, max=16,
+                            description="Mode number k: third index of the "
+                                        "lattice wave")
         phase: FloatProperty(name="Phase", default=0.0, min=-6.2832,
-                             max=6.2832, unit='ROTATION')
+                             max=6.2832, unit='ROTATION',
+                             description="Phase offset of the wave or mode")
 
         curve: EnumProperty(
             name="Profile",
             items=[(c, c.title(), "") for c in _transfer.CURVES],
-            default='NONE')
+            default='NONE',
+            description="Transfer profile reshaping the field before it is "
+                        "carved")
         curve_amount: FloatProperty(name="Amount", default=1.0, min=0.05,
-                                    max=4.0)
+                                    max=4.0,
+                                    description="Strength of the transfer "
+                                                "profile")
         depth: FloatProperty(name="Relief Depth", default=0.05, min=0.0,
-                             max=4.0, unit='LENGTH')
-        seed: IntProperty(name="Seed", default=1, min=0, max=100000)
+                             max=4.0, unit='LENGTH',
+                             description="How far the relief rises above or "
+                                         "sinks below the surface")
+        seed: IntProperty(name="Seed", default=1, min=0, max=100000,
+                          description="Random seed for the field")
         fit: EnumProperty(
             name="Fit",
             items=[('CUBE', "2 m Cube", ""), ('NONE', "None", "")],
-            default='CUBE')
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+            default='CUBE',
+            description="Whether to rescale the result to fit a 2 m cube")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Uniform scale applied to the final "
+                                         "mesh")
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth rather than "
+                                         "faceted")
 
         def _params(self):
             return dict(

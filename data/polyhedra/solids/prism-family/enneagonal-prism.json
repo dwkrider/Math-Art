@@ -1,0 +1,506 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "enneagonal-prism",
+  "name": "Enneagonal Prism",
+  "alternate_names": [],
+  "families": [
+    "prism-family",
+    "convex",
+    "prism"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": "EnneagonalPrism",
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": null,
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": "t{2,9}",
+    "wythoff": "2 9 | 2",
+    "coxeter_diagram": null,
+    "conway": "P9",
+    "vertex_configuration": [
+      "4.4.9"
+    ],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "D9h",
+    "orbifold": "*229",
+    "coxeter": "[2,9]",
+    "hermann_mauguin": "-18m2",
+    "order": 36,
+    "rotation_group": "D9",
+    "rotation_order": 18,
+    "chiral": false,
+    "transitivity": {
+      "vertex": true,
+      "edge": false,
+      "face": false
+    },
+    "orbits": {
+      "vertices": 1,
+      "edges": 2,
+      "faces": 2
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 18,
+      "edges": 27,
+      "faces": 11
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{4}",
+        "sides": 4,
+        "count": 9,
+        "regular": true
+      },
+      {
+        "schlafli": "{9}",
+        "sides": 9,
+        "count": 2,
+        "regular": true
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": 1,
+    "convex": true,
+    "self_dual": false,
+    "dual": "enneagonal-dipyramid",
+    "coincident_vertices": 0,
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": true,
+      "slug": null,
+      "counts": {
+        "vertices": 18,
+        "edges": 27,
+        "faces": 11
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "edge_length_1",
+    "edge_length": {
+      "value": 1.0000000000000002,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "edge_lengths_uniform": true,
+    "circumradius": {
+      "value": 1.5450430552587384,
+      "exact": null
+    },
+    "midradius": {
+      "value": 1.4619022000815436,
+      "exact": null
+    },
+    "inradius": [
+      {
+        "face": "{4}",
+        "exact": null,
+        "value": 1.3737387097273108
+      },
+      {
+        "face": "{9}",
+        "exact": "1/2",
+        "value": 0.5
+      }
+    ],
+    "surface_area": {
+      "value": 21.363648387545783,
+      "exact": null
+    },
+    "volume": {
+      "value": 6.181824193772895,
+      "exact": null
+    },
+    "isoperimetric_quotient": {
+      "value": 0.4432608844171934,
+      "exact": null
+    },
+    "dihedral_angles": [
+      {
+        "between": [
+          "{4}",
+          "{4}"
+        ],
+        "exact": null,
+        "degrees": 139.99999999999997,
+        "radians": 2.4434609527920608
+      },
+      {
+        "between": [
+          "{4}",
+          "{9}"
+        ],
+        "exact": "acos(0)",
+        "degrees": 90.0,
+        "radians": 1.5707963267948966
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 39.99999999999996,
+        "radians": 0.698131700797731,
+        "exact": null
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 2.4434609527920617
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": 1.5450430552587384,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    }
+  },
+  "geometry": {
+    "length_unit": "edge",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "principal axis along z, centred at the centroid",
+    "constants": {},
+    "vertices": [
+      [
+        1.461902200081543,
+        0.0,
+        0.5
+      ],
+      [
+        1.119882056755875,
+        0.939692620785908,
+        0.5
+      ],
+      [
+        0.253856652971436,
+        1.439692620785908,
+        0.5
+      ],
+      [
+        -0.730951100040771,
+        1.266044443118978,
+        0.5
+      ],
+      [
+        -1.37373870972731,
+        0.5,
+        0.5
+      ],
+      [
+        -1.37373870972731,
+        -0.5,
+        0.5
+      ],
+      [
+        -0.730951100040772,
+        -1.266044443118977,
+        0.5
+      ],
+      [
+        0.253856652971436,
+        -1.439692620785908,
+        0.5
+      ],
+      [
+        1.119882056755874,
+        -0.939692620785908,
+        0.5
+      ],
+      [
+        1.461902200081543,
+        0.0,
+        -0.5
+      ],
+      [
+        1.119882056755875,
+        0.939692620785908,
+        -0.5
+      ],
+      [
+        0.253856652971436,
+        1.439692620785908,
+        -0.5
+      ],
+      [
+        -0.730951100040771,
+        1.266044443118978,
+        -0.5
+      ],
+      [
+        -1.37373870972731,
+        0.5,
+        -0.5
+      ],
+      [
+        -1.37373870972731,
+        -0.5,
+        -0.5
+      ],
+      [
+        -0.730951100040772,
+        -1.266044443118977,
+        -0.5
+      ],
+      [
+        0.253856652971436,
+        -1.439692620785908,
+        -0.5
+      ],
+      [
+        1.119882056755874,
+        -0.939692620785908,
+        -0.5
+      ]
+    ],
+    "vertices_exact": null,
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 4,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 90.0,
+            "radians": 1.5707963267948966,
+            "count": 4,
+            "exact": "acos(0)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 1,
+        "sides": 9,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 140.00000000000003,
+            "radians": 2.4434609527920617,
+            "count": 9,
+            "exact": null
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        9,
+        10,
+        1,
+        0
+      ],
+      [
+        10,
+        11,
+        2,
+        1
+      ],
+      [
+        11,
+        12,
+        3,
+        2
+      ],
+      [
+        12,
+        13,
+        4,
+        3
+      ],
+      [
+        13,
+        14,
+        5,
+        4
+      ],
+      [
+        14,
+        15,
+        6,
+        5
+      ],
+      [
+        15,
+        16,
+        7,
+        6
+      ],
+      [
+        16,
+        17,
+        8,
+        7
+      ],
+      [
+        17,
+        9,
+        0,
+        8
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      [
+        17,
+        16,
+        15,
+        14,
+        13,
+        12,
+        11,
+        10,
+        9
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      [
+        9,
+        10
+      ]
+    ],
+    "polygon_type": {
+      "4": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "9": [
+        9,
+        10
+      ]
+    }
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        2,
+        4,
+        6,
+        7,
+        9,
+        10,
+        12,
+        13,
+        15,
+        16,
+        18,
+        19,
+        21,
+        22,
+        24,
+        25,
+        26
+      ],
+      [
+        1,
+        3,
+        5,
+        8,
+        11,
+        14,
+        17,
+        20,
+        23
+      ]
+    ]
+  },
+  "compound": null,
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.regular_solids_generator",
+    "operator_id": "mesh.regular_solid_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: exact uniform prism, via math_art.regular_solids_generator",
+    "sources": [
+      "H. S. M. Coxeter, 'Regular Polytopes', 3rd ed., Dover (1973), ch. 2 (the prisms and antiprisms as the two infinite families of uniform polyhedra).",
+      "Z. Har'El, 'Uniform Solution for Uniform Polyhedra', Geometriae Dedicata 47 (1993), Appendix II Table 4 (dihedral uniform polyhedra)."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

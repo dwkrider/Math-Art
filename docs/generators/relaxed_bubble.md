@@ -1,15 +1,21 @@
 # Optimized Bubble
 
+![Optimized Bubble](../images/relaxed_bubble.png)
+
 ## Overview
 
-Single bubble or double bubble relaxed by genuine
-volume-constrained area minimization: Plateau's 120-degree
-triple line and the Young-Laplace pressures emerge from the
-evolution rather than being drawn in closed form.
+A single, double or triple soap bubble found by **relaxation** rather than construction: the films are evolved to minimise area at fixed enclosed volumes, so the equilibrium shape is *discovered* and Plateau's laws come out as consequences instead of being drawn in.
 
-Soap-bubble clusters found by **relaxation** rather than construction: the films are relaxed to minimise area at fixed enclosed volumes, so the equilibrium shape is discovered, and Plateau's laws come out as consequences instead of being imposed.
+The double and triple bubbles are the interesting cases. That the familiar double bubble really is the least-area way to enclose two given volumes was proved only in 2002, by Hutchings, Morgan, Ritoré and Ros — a statement everyone believed for a century and nobody could establish. The triple bubble in $\mathbb{R}^3$ was settled more recently still. This generator reaches those same shapes numerically, by letting a seed mesh slide downhill in area.
 
-The double and triple bubbles are the interesting cases. That the familiar double bubble really is the least-area way to enclose two given volumes was proved only in 2002, by Hutchings, Morgan, Ritoré and Ros — a statement everyone believed for a century and nobody could establish. The triple bubble in $\mathbb{R}^3$ was settled more recently still.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Optimized Bubble*.
+2. **Pick the Bubbles count.** **Single Bubble** relaxes to the round sphere — the isoperimetric answer, and a sanity check with a known result. **Double Bubble** gives two spherical caps joined by a gently curved interface meeting along a $120°$ circle. **Triple Bubble** gives three chambers whose films run into two tetrahedral points where four triple lines meet.
+3. **Set the Volume Ratio** — the size asymmetry. It only appears for *Double* and *Triple* (a single bubble has nothing to grade against). For the double bubble it is the small/large radius ratio ($1$ = symmetric, flat interface); for the triple it grades the three cell volumes $V_1:V_2:V_3 = \text{ratio}:1:(2-\text{ratio})$.
+4. **Drive the evolution.** **Seed Squash** deliberately distorts the starting mesh so you can watch the relaxation pull it back to equilibrium ($0$ starts already on the closed form). **Evolve Iterations** sets how far the descent runs ($0$ shows the raw seed). **Groom Every** re-tidies the mesh every $N$ steps, which measurably tightens the Plateau angles at no extra cost. **Optimizer** switches between conjugate gradient and the Laplacian-seeded L-BFGS (much faster at high resolution or large squash).
+5. **Choose the output.** **Color** paints the films *Per Bubble*, *By Pressure* (which makes the physics visible), or *None*; **Sharp Creases** marks the Plateau borders so smooth shading and Subdivision Surface keep them as crisp folds.
+6. **Read the report.** The operator prints the iteration count, the final area, the number of creased edges, and each chamber's **pressure** $p_1, p_2, \dots$ — read across them to confirm the smaller bubble carries the higher pressure, which is exactly why its dividing film bulges outward.
 
 ## Options
 
@@ -17,7 +23,7 @@ The double and triple bubbles are the interesting cases. That the familiar doubl
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Bubbles | Double Bubble | Single Bubble, Double Bubble, Triple Bubble. |
+| Bubbles | Double Bubble | How many bubbles to relax to equilibrium. Single Bubble, Double Bubble, Triple Bubble. |
 | Volume Ratio | 0.75 | Double bubble: small/large radius ratio (1 = symmetric, flat interface).  Triple bubble: volume grading V1:V2:V3 = ratio : 1 : (2 - ratio); 1 = equal cells with planar films Range 0.4-1. |
 | Seed Squash | 0.15 | Anisotropic distortion of the seed before relaxing -- the evolution visibly pulls it back to the equilibrium (0 starts at the closed form) Range 0-0.4. |
 | Resolution | 48 | Vertices around the Plateau border (double bubble) / icosphere resolution (single) Range 16-128. |
@@ -25,9 +31,9 @@ The double and triple bubbles are the interesting cases. That the familiar doubl
 | Groom Every | 4 | Run label-aware mesh grooming (edge flips + tangential smoothing) every N iterations (0 = off; the default 4 measurably tightens the Plateau angles at equal cost) Range 0-50. |
 | Optimizer | Conjugate Gradient | Outer descent algorithm for the volume-constrained evolution. Conjugate Gradient, L-BFGS (Laplacian-seeded). |
 | Color | Per Bubble | Material scheme for the generated films. None, Per Bubble, By Pressure. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the bubble surfaces smooth |
 | Sharp Creases | On | Mark the Plateau borders sharp (and creased): every edge where films of different region pairs meet, read off the evolver's own labels, so smooth shading and Subdivision Surface keep the fold instead of rounding it into a bulge |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size; fits the cluster into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 
@@ -45,7 +51,9 @@ Renders of each selectable option:
 
 ## How it works
 
-**The variational problem.** Minimise total film area subject to each chamber holding a fixed volume. The Lagrange multiplier for each volume constraint is that chamber's **pressure**, and the first variation gives Young–Laplace:
+**In plain terms.** A soap film is lazy: left alone it pulls itself into the smallest surface that still does its job. A lone bubble becomes a sphere because a sphere is the tightest possible skin around a fixed pocket of air; two bubbles stuck together share a wall for the same reason, since one shared wall is cheaper than two separate ones. Rather than *tell* the mesh what those shapes are, this generator hands the computer a rough starting bubble and lets it nudge every point a little at a time, always in the direction that shrinks the total surface, while never letting any pocket lose or gain air. When the shrinking has nowhere left to go, the shape it has landed on *is* the soap-film answer — and the famous rules soap obeys (walls meeting three-at-a-time at $120°$, seams meeting four-at-a-time at about $109.5°$) appear on their own, because any other arrangement could still be made smaller. Everything below makes that "nudge downhill" precise.
+
+**The variational problem.** Minimise total film area subject to each chamber holding a fixed volume. The Lagrange multiplier for each volume constraint is that chamber's **pressure** — the multiplier is not a bookkeeping device here but the genuine physical pressure, which is why the report can print it — and the first variation gives Young–Laplace:
 
 $$\Delta p = 2\sigma H,$$
 

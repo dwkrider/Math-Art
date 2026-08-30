@@ -376,7 +376,8 @@ if _IN_BLENDER:
                    ('SLOAN_II', "Analytic - Sloan II",
                     "Sloan's closed-form II; a near-sphere "
                     "(beta up to ~0.17)")],
-            default='FABRICATED')
+            default='FABRICATED',
+            description="Which gomboc construction to build")
         smooth_sigma: FloatProperty(
             name="Edge Rounding", default=0.09, min=0.07, max=0.25,
             description="Fabricated: heat-kernel rounding radius "
@@ -414,7 +415,8 @@ if _IN_BLENDER:
                         "the fold rounds off the one feature that "
                         "defines the shape")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             if self.kind == 'FABRICATED':

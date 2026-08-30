@@ -1,0 +1,101 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "prismatic-k-noid",
+  "name": "Prismatic k-noid",
+  "primary_family": "minimal",
+  "families": [
+    "aperiodic",
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 2.58333",
+    "punctures": [
+      "z = 0.6 (radius 0.0873)",
+      "z = -0.3+0.519615i (radius 0.0873)",
+      "z = -0.3-0.519615i (radius 0.0873)",
+      "z = 1.66667 (radius 0.242)",
+      "z = -0.833333+1.44338i (radius 0.242)",
+      "z = -0.833333-1.44338i (radius 0.242)"
+    ],
+    "gauss_map": "z**(-1 + nn)*(1.0 - (z*a)**nn)/(a**nn - z**nn)",
+    "height_differential": "z**(-1 + nn)*(z**nn - a**nn)*(z**nn - 1.0/a**nn)/((z**nn - b**nn)**2*(z**nn - 1.0/b**nn)**2)",
+    "parameters": [
+      {
+        "name": "a",
+        "domain": "see the generator's p_from",
+        "default": 0.7031788012649991,
+        "integer": false
+      },
+      {
+        "name": "b",
+        "domain": "see the generator's p_from",
+        "default": 0.6,
+        "integer": false
+      },
+      {
+        "name": "nn",
+        "domain": "see the generator's p_from",
+        "default": 3,
+        "integer": true
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "none",
+    "periodicity_rank": 0
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "M3_PRISM",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row M3_PRISM) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 3.97e-15); dh: matches over 144 complex samples (worst 3e-16).",
+    "sources": [
+      "R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F. Scherk (1835) for the base Scherk surface; the decorated-Enneper symmetrization follows M. Weber's repository, https://minimalsurfaces.blog/ (Enneper with n Catenoids)."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "ids": {
+    "msblog": "ch193_prismatic_k_noids"
+  },
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

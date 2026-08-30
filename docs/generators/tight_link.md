@@ -1,14 +1,25 @@
 # Tight Link
 
+![Tight Link](../images/tight_link.png)
+
 ## Overview
 
 Add a tight link: several closed components relaxed under
 the multi-component tangent-point energy (linking numbers
 provably kept; components cannot pass through each other).
 
-The multi-component counterpart of the [tight knot](tight_knot.md): several closed ropes, each of fixed length, pulled taut against one another until the whole link reaches its ideal shape. The Hopf link tightens into two perpendicular stadium-shaped loops; the Borromean rings into a form with no two components touching in a way that could be pulled apart.
+The multi-component counterpart of the [tight knot](tight_knot.md): several closed ropes, each of fixed length, pulled taut against one another until the whole link reaches its ideal shape. The Hopf link tightens into two perpendicular round loops; the Borromean rings into a symmetric three-fold form with no two components touching in a way that could be pulled apart.
 
 The same tangent-point energy does the work, and the same guarantee applies — the energy diverges as any two strands approach, so components cannot pass through each other, and the link type survives the flow.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Knots & Curves ▸ Tight Link*.
+2. **Pick the Link.** The **Link** dropdown offers named classics — **Hopf Link** (two rings, linking number 1), **Torus Link (2,4)** (linking number 2), **Whitehead Link** (linking number 0 yet inseparable), **Borromean Rings** (three rings, no two linked, yet inseparable), and **Chain** (a row of Hopf-linked rings) — plus **Custom Braid** to supply your own.
+3. **Enter mode-specific controls.** For **Custom Braid**, type a **Braid Word** whose closure has two or more components (`a..z` generators, `A..Z` inverses; a knot-closing word is rejected — use [Tight Knot](tight_knot.md)). For **Chain**, set **Chain Rings** (2–8) for the number of links in the chain. These fields only appear for their respective modes.
+4. **Set the flow knobs.** **Samples Per Component** is the polyline resolution of *each* loop; large links whose total sample count passes the threshold switch to the accelerated solver automatically. **Tighten Iterations** is the number of flow steps (`0` shows the raw seed).
+5. **Choose the Output and rope radius.** Curve or **Mesh Tube** as usual. **Radius From Thickness** (on by default) draws every rope at the measured **Gonzalez–Maddocks thickness** of the whole tightened link — the fattest common tube that keeps *all* components embedded and clear of one another — or turn it off for a manual **Tube Radius**. **Bevel Resolution** / **Tube Sides** and **Scale** finish the presentation.
+6. **Read the report.** The operator prints the number of components, the pairwise **linking numbers** with a "(kept)" note confirming they are unchanged by the flow, the energy $E_0 \to E$, the steps run, which solver ran, and the link's ropelength.
 
 ## Options
 
@@ -16,17 +27,18 @@ The same tangent-point energy does the work, and the same guarantee applies — 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Link | Hopf Link | Hopf Link, Torus Link (2,4), Whitehead Link, Borromean Rings, Chain, Custom Braid. |
+| Link | Hopf Link | Link to build (Custom uses the braid word below). Hopf Link, Torus Link (2,4), Whitehead Link, Borromean Rings, Chain, Custom Braid. |
 | Braid Word | `aa` | Letters a..z are braid generators, A..Z their inverses (used for Custom; must close to a link) |
 | Chain Rings | 3 | Number of rings in the chain Range 2-8. |
-| Samples Per Component | 80 | Polyline resolution per component (larger links switch to the accelerated solver automatically) Range 32-400. |
-| Tighten Iterations | 100 | Tangent-point flow steps (links typically converge in a few tens; 0 shows the seed) Range 0-500. |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Samples Per Component | 80 | Polyline resolution per component Range 32-400. |
+| Tighten Iterations | 300 | Ceiling on tangent-point flow steps; the flow stops on its own once tightening has plateaued, so raising this costs nothing for links that settle early (0 shows the seed). The Whitehead link is the slow one, needing about 270 Range 0-1000. |
+| Coarse First | Off | Tighten at half resolution before finishing at full resolution: quicker on links that need a long rearrangement (Whitehead, Borromean), no help on the ones that settle quickly, and about 1 per cent looser in energy |
+| Output | Bezier Curve | Curve type, or a swept mesh tube, for the rope. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Radius From Thickness | On | Set the rope radius to the measured Gonzalez-Maddocks thickness of the tight link (the maximal embedded tube) |
 | Tube Radius | 0.08 | Curve bevel depth / tube radius (when not taken from the thickness) Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
-| Scale | 1 | Range 0.01-100. |
+| Bevel Resolution | 6 | Smoothness of the round bevel on curve output Range 1-16. |
+| Tube Sides | 12 | Number of sides around the swept tube (Mesh output) Range 3-32. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 
@@ -48,15 +60,21 @@ Renders of each selectable option:
 
 ## How it works
 
-The machinery is the [tight knot](tight_knot.md)'s — tangent-point energy, fixed length and barycentre, fractional Sobolev preconditioning — extended in three ways that a link needs and a knot does not.
+**In plain terms.** This is the same idea as the [tight knot](tight_knot.md), but with several separate ropes instead of one. Imagine two or three loops of rope threaded through each other and then pulled tight all at once. Each loop wants to shrink, but it presses against both itself *and* its neighbours, and those contacts are what lock the whole arrangement into a snug, repeatable shape. The rule "no rope may pass through any other" now has to cover every pair of loops, not just each loop with itself — otherwise the loops would simply slide apart and the link would come undone. So the same tightening force is applied, extended to watch every pair of ropes, and a few extra bookkeeping steps make sure that while the shape changes, the *way the loops are threaded together* never does.
 
-**Inter-component terms.** The energy is summed over pairs of points on *different* components as well as on the same one. Those cross terms are what keep two rings from sliding through one another; without them each component would tighten happily and independently, and the link would fall apart.
+The machinery is the tight knot's — the tangent-point energy $E=\iint(2/r)^{\alpha}$ with $(\alpha,\beta)=(3,6)$, the fixed-length and fixed-barycentre constraints, and the fractional Sobolev ($H^s$, $s=5/3$) preconditioning — extended in three ways that a link needs and a knot does not.
 
-**Per-component length.** Each component keeps its **own** length constraint. A single global constraint would let the flow pay for tightening one ring by feeding rope to it from another, which changes the link's proportions rather than tightening it.
+**Inter-component terms.** The energy's double integral now runs over pairs of points on *different* components as well as pairs on the same one:
 
-**Verified invariants.** The pairwise **linking numbers** are computed and asserted unchanged across the flow. The energy barrier should make a crossing impossible; checking the linking numbers is how that is confirmed rather than assumed, since a large enough time step could in principle jump the barrier.
+$$E \;=\; \sum_{a}\;E(\gamma_a)\;+\;\sum_{a<b}\;\iint_{\gamma_a\times\gamma_b}\frac{\big|P^{\perp}_{T(x)}(x-y)\big|^{\alpha}}{|x-y|^{\beta}}\,ds_x\,ds_y .$$
 
-**Solver.** Above roughly 400 total samples the flow switches to a **lagged-factorization** solver, which reuses the preconditioner's factorisation across several steps instead of rebuilding it each time. It was measured against the exact dense path before being trusted.
+Those cross terms carry the same $r\to0$ blow-up between strands of different loops, and they are what keep two rings from sliding through one another. Without them each component would tighten happily and independently, feeling no barrier from its neighbours, and the link would fall apart into separate shrinking circles.
+
+**Per-component length.** Each component keeps its **own** length constraint rather than the link sharing one global length. This matters because a single global budget would let the flow "pay" for tightening one ring by quietly feeding rope to it from another — lengthening one loop while shortening the next — which changes the link's proportions instead of tightening it. Holding every loop's length fixed forces each to reach its own taut shape.
+
+**Verified invariants.** For each pair of components the **linking number** — the signed count of how many times one loop passes through the other, a topological invariant of the link — is computed before and after the flow and asserted unchanged. In principle the infinite energy barrier already makes a crossing impossible, but the flow moves in finite time steps, and a step large enough to leap the barrier could in principle let one loop tunnel through another; recomputing the linking numbers and requiring an exact match is how that is *checked* rather than merely assumed, and the operator raises an error if it ever failed.
+
+**Solver.** Above roughly 400 total samples the flow switches to a **lagged-factorization** solver, which reuses the expensive factorisation of the preconditioner's Gram matrix across several steps instead of rebuilding it every iteration. Because the metric changes only slowly as the curve relaxes, a slightly stale factorisation still gives a good descent direction, and the payoff is a large speed-up on the big multi-component systems. It was measured against the exact dense path — same converged energy, same preserved topology — before being trusted.
 
 ## References
 

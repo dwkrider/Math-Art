@@ -4,7 +4,20 @@
 
 ## Overview
 
-Interwoven compounds of polyhedron frames — "tangles" in the spirit of Alan Holden's *Orderly Tangles*: several rotated copies of a seed polyhedron interlocked into a symmetric compound. Supported compounds are 2 tetrahedra (the stella octangula), 5 and 10 tetrahedra, 3 cubes (Escher's compound), 5 cubes, and 5 octahedra. Each component is rendered either as hollow face panels (the Leonardo da Vinci open-faced style, mitred exactly along shared edges) or as square edge struts with faceted knuckles at the vertices (the Lang polypolyhedra style).
+Interwoven compounds of polyhedron frames — several rotated copies of one seed polyhedron locked into a single symmetric compound, "tangles" in the spirit of Alan Holden's *Orderly Tangles*.
+
+Supported compounds are 2 tetrahedra (the stella octangula), 5 and 10 tetrahedra, 3 cubes (Escher's compound), 5 cubes, and 5 octahedra. Each component can be drawn three ways: hollow face panels (Leonardo da Vinci's open-faced style, mitred exactly along shared edges), square edge struts with faceted knuckles at the vertices (Lang's polypolyhedra style), or a ball-and-stick model of round rods and vertex spheres.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Polyhedral Tangle*.
+2. **Pick the Compound** — **5 Tetrahedra** (the classic Tetra Tangle), **2 Tetrahedra** (stella octangula), **10 Tetrahedra** (both handednesses at once), **3 Cubes** (Escher's compound), **5 Cubes** or **5 Octahedra**. This chooses the seed polyhedron and how many rotated copies interlock.
+3. **Choose a Style** and set its controls (only the relevant ones appear):
+   - **Hollow Faces (da Vinci)** — open face panels; **Frame Width** is the ring width as a fraction of the face and **Frame Thickness** the panel depth.
+   - **Edge Struts** — square sticks along the edges with faceted knuckles; **Cap Size** sets how far each strut stops short of a vertex (the knuckle fills the gap). **Frame Thickness** sets the stick's section.
+   - **Ball and Stick** — round cylinders on the edges and spheres at the vertices; **Strut Radius** sizes the rods and **Node Radius** the balls (0 removes them).
+4. **Adjust placement.** **Component Rotation** turns every copy about its own symmetry axis (exploring Lang-style polypolyhedra variants), **Component Size** scales each copy about the centre, and **Spin** rotates the whole assembled compound about its main axis.
+5. **Choose the output styling** — **Coloring** is **Per Component** (one metallic colour each) or **None**, plus overall **Scale**. The status bar reports the component count.
 
 ## Options
 
@@ -13,18 +26,18 @@ Interwoven compounds of polyhedron frames — "tangles" in the spirit of Alan Ho
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Compound | 5 Tetrahedra | 5 Tetrahedra, 2 Tetrahedra, 10 Tetrahedra, 3 Cubes, 5 Cubes, 5 Octahedra. |
-| Style | Hollow Faces (da Vinci) | Hollow Faces (da Vinci), Edge Struts, Ball and Stick. |
+| Compound | 5 Tetrahedra | Which polyhedral compound to weave. 5 Tetrahedra, 2 Tetrahedra, 10 Tetrahedra, 3 Cubes, 5 Cubes, 5 Octahedra. |
+| Style | Hollow Faces (da Vinci) | How each component's frame is built. Hollow Faces (da Vinci), Edge Struts, Ball and Stick. |
 | Frame Width | 0.22 | Hollow-face ring width (fraction of the face) Range 0.02-0.9. |
-| Frame Thickness | 0.1 | Range 0.01-1. |
+| Frame Thickness | 0.1 | Thickness of the hollow-face frames Range 0.01-1. |
 | Cap Size | 1 | How far the edge struts stop short of each vertex (in strut thicknesses); the faceted knuckle fills the joint Range 0.3-3. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
 | Component Rotation | 0 | Rotate every component about its own symmetry axis (explores Lang-style polypolyhedra variants) Range -180-180. |
 | Component Size | 1 | Scale of each component about the centre Range 0.5-2. |
 | Spin | 0 | Extra rotation of the whole compound about its main symmetry axis Range -180-180. |
-| Coloring | Per Component | Per Component, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Component | How components are assigned materials. Per Component, None. |
+| Scale | 1 | Overall size of the compound Range 0.01-100. |
 
 <!-- /options -->
 
@@ -47,6 +60,8 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Take a shape like a tetrahedron, make several copies of it, and spin each copy to a different angle about a shared centre. Chosen right, the copies weave over and under one another — edges threading between edges — into a single knot of frames that shares no material but cannot be pulled apart. The most famous is the compound of five tetrahedra, five copies arranged with the symmetry of the icosahedron so that the whole thing looks the same from many angles. The maths below is just the exact list of turns that places each copy so the weave lands symmetric.
+
 Each compound is generated from a seed polyhedron by **exact symmetry rotations**. Every rotation uses the axis–angle (Rodrigues) matrix
 
 $$R(\hat a,\theta) = I\cos\theta + [\hat a]_\times\sin\theta + \hat a\hat a^{\!\top}(1-\cos\theta).$$
@@ -58,11 +73,13 @@ $$R(\hat a,\theta) = I\cos\theta + [\hat a]_\times\sin\theta + \hat a\hat a^{\!\
 
 Each component also carries its own symmetry axis, so **Component Rotation** turns every copy about that axis to explore Lang-style polypolyhedra variants, and **Spin** rotates the assembled compound about its main axis.
 
-Each component is then drawn in one of two styles.
+Each component is then drawn in one of three styles.
 
 **Hollow Faces (da Vinci).** Two scaled copies of the polyhedron are made, one at radius $1+\tfrac{\text{thickness}}{2}$ and one at $1-\tfrac{\text{thickness}}{2}$; adjacent panels share these scaled vertices, so the joints along edges and at vertices are exact watertight mitres. Within each face a hole is inset by the factor $(1-\text{width})$ toward the face centroid, and the panel is the shell between the outer surface, the inner surface and the hole rim — the open "vacuus" panels Leonardo drew for Pacioli's *De divina proportione*.
 
-**Edge Struts.** Each edge becomes a square-section stick trimmed back from both endpoints by $s = \min(\text{thickness}\cdot\text{cap\_size},\,0.35\,\ell)$ (with $\ell$ the edge length) and closed with flat end caps. At every vertex the surrounding strut-cap corners are collected and filled with their **convex hull**, giving a clean faceted knuckle at the joint.
+**Edge Struts.** Each edge becomes a square-section stick trimmed back from both endpoints by $s = \min(\text{thickness}\cdot k,\,0.35\,\ell)$ (with $\ell$ the edge length and $k$ the `cap_size`) and closed with flat end caps. At every vertex the surrounding strut-cap corners are collected and filled with their **convex hull**, giving a clean faceted knuckle at the joint.
+
+**Ball and Stick.** Each edge becomes a round cylinder of radius **Strut Radius** and each vertex a small sphere of radius **Node Radius** (0 omits the balls) — the familiar molecular-model rendering, built through the repo's shared `ball_and_stick` module. It reads the same rotated component edges as the strut style, only rounding the sections and capping the joints with spheres instead of hull knuckles.
 
 Every emitted face is tagged with its component index (a `component_index` face attribute), which also drives **Per Component** colouring (metallic materials from a fixed palette). A built-in self-test confirms each compound is a closed 2-manifold with the expected component count and positive volume.
 
