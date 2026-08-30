@@ -1015,6 +1015,22 @@ TPMS_EXACT = {
     'TR': (_we_hex._SPECS['TR']['label'],
            lambda cells, res, scale, theta:
                _we_hex.spec_build('TR', cells, res, scale, theta)),
+    # Rows whose period problem Weber solved and tabulated; the
+    # constants are transcribed from his notebooks.  See the block above
+    # `_prod_spec` in hexagonal.
+    'STESSMANN': (_we_hex._SPECS['STESSMANN']['label'],
+                  lambda cells, res, scale, theta:
+                      _we_hex.spec_build('STESSMANN', cells, res, scale,
+                                         theta)),
+    'RII': (_we_hex._SPECS['RII']['label'],
+            lambda cells, res, scale, theta:
+                _we_hex.spec_build('RII', cells, res, scale, theta)),
+    'CH': (_we_hex._SPECS['CH']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('CH', cells, res, scale, theta)),
+    'I6': (_we_hex._SPECS['I6']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('I6', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
