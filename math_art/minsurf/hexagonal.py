@@ -2036,6 +2036,14 @@ def spec_reflect_tile(key, P, depth):
 
     It is deliberately NOT presented as the unit cell: it is a partial
     reflection orbit, and for these rows a true cell is not available.
+
+    Three rows get no growth from this and the reasons differ.  R-II and
+    Stessmann produce copies that PARTIALLY OVERLAP -- 21 and 70
+    duplicate faces at the first step, with the copies connected and in
+    one piece, so it is not a placement bug but genuine overlap of the
+    reflected sheets -- and they correctly fall back to the patch.  I-6
+    grows once and then closes, which is the orbit finishing rather than
+    failing.
     """
     V0 = P.reshape(-1, 3)
     Q0 = _patch_quads(P.shape[0], P.shape[1])
@@ -2043,6 +2051,26 @@ def spec_reflect_tile(key, P, depth):
     if not gens or depth < 1:
         return V0, Q0
     span = float(np.max(V0.max(0) - V0.min(0))) or 1.0
+
+    # Deduplicate the orbit by the IMAGE, not by the matrix.
+    #
+    # Two different words can place the patch in exactly the same spot,
+    # whenever they differ by an isometry that happens to stabilise the
+    # patch, and keying the orbit on the matrix keeps both -- so the
+    # weld then reports duplicate faces and `_orbit_ok` rejects an
+    # otherwise correct tiling.  That is what made Reflections inert on
+    # R-II, H''-R and Stessmann while working on the other nine rows.
+    #
+    # It is NOT that their generators are degenerate: measured, every one
+    # moves the patch (centroid shifts 0.29 to 1.10, point-set overlap
+    # 1-7%).  They are fine individually and collide only in
+    # composition, which is why filtering the generators does nothing
+    # and only the image test catches it.
+    def _imgkey(V):
+        q = np.round(V / (1e-4 * span)).astype(np.int64)
+        return (tuple(q.min(0)), tuple(q.max(0)),
+                tuple(np.round(V.mean(0) / (1e-4 * span)).astype(np.int64)))
+
     best = (V0, Q0)
     seen = {}
     ident = np.eye(4)
@@ -2060,15 +2088,26 @@ def spec_reflect_tile(key, P, depth):
         frontier = nxt
         if not frontier:
             break
-        Vs, Qs, base = [], [], 0
+        Vs, Qs, base, placed = [], [], 0, set()
         for M in seen.values():
-            Vs.append(V0 @ M[:3, :3].T + M[:3, 3])
+            W = V0 @ M[:3, :3].T + M[:3, 3]
+            ik = _imgkey(W)
+            if ik in placed:            # same placement by a longer word
+                continue
+            placed.add(ik)
+            Vs.append(W)
             flip = np.linalg.det(M[:3, :3]) < 0.0
             for q in Q0:
                 f = tuple(int(i) + base for i in q)
                 Qs.append(f[::-1] if flip else f)
             base += len(V0)
-        Vv, Qq = _weld(np.concatenate(Vs, 0), np.asarray(Qs), 1e-4 * span)
+        # The spec's OWN weld tolerance, not a hardcoded one.  H''-R
+        # declares 3e-5 precisely because 1e-4 over-merges its patch,
+        # and using the shared default here left it with two over-shared
+        # edges -- enough to reject an otherwise clean five-copy orbit,
+        # which is why Reflections appeared to do nothing on that row.
+        Vv, Qq = _weld(np.concatenate(Vs, 0), np.asarray(Qs),
+                       _weld_tol(key) * span)
         Qq = [tuple(int(i) for i in q) for q in Qq]
         if _orbit_ok(Vv, Qq):
             best = (Vv, Qq)
