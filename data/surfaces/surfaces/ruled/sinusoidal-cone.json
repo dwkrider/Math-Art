@@ -7,15 +7,27 @@
     "aperiodic",
     "def-parametric",
     "immersed",
-    "not-implemented",
+    "implemented",
     "ruled",
     "tradition-classical"
   ],
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "The cone with apex at the origin over the closed spherical sinusoid: cylindrical equation z = k rho cos(n theta).  The n = 1/2 member has a Viviani-curve directrix.  Distinct from Plucker's conoid z = a cos(n theta), whose rulings do not pass through one point and which already ships as a right-conoid specimen."
+    "note": "cylindrical equation z = k rho cos(n theta) with k = 0.5 and n = 3, the operator defaults; the apex u = 0 is welded to one vertex",
+    "x": "u*cos(v)",
+    "y": "u*sin(v)",
+    "z": "0.5*u*cos(3*v)",
+    "u_range": [
+      "0",
+      "1"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -31,14 +43,22 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.",
-      "resume": "math_art/ruled_surface_generator.py already carries the cone and conoid machinery (build_conoid and the CONOID variant table); add a row and take the parametrization from the cited mirror chapter."
+      "generator": "math_art.ruled_surface_generator",
+      "operator_id": "mesh.ruled_surface_add",
+      "key": "SINUSOIDAL_CONE",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.29 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.04167).",
     "sources": [
+      "G. W. Hart, \"Curved, yet Straight: Stick Hyperboloids,\" Bridges 2023 Conference Proceedings, pp. 251-258.",
+      "E. Jannasch & J. Macnab, \"The Compound Helical Cone as Kinematic Trace,\" Bridges 2023 Conference Proceedings, pp. 15-22.",
+      "F. A. Farris, \"Spiral Ruled Surfaces,\" Bridges 2022 Conference",
+      "Proceedings, pp. 289-292; and F. A. Farris, \"Creating Symmetry\" (Princeton Univ. Press, 2015).",
+      "Antoni Gaudi (1852-1926), the ruled roof of the Sagrada Familia escoles; Hector Guimard (1867-1942).  Both parametrizations, and the milk carton's, from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapters \"surface de Gaudi\", \"surface de Guimard\" and \"berlingot\".",
+      "Milk carton: H. M. Cundy & A. P. Rollett, \"Mathematical Models\" (1951), 185-188.",
       "R. Ferreol, \"Sinusoidal cone\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1236_conesinusoidal_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1236_conesinusoidal_2.md)."
     ]
   },

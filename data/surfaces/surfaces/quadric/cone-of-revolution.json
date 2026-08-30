@@ -6,55 +6,80 @@
   "families": [
     "aperiodic",
     "def-implicit",
-    "immersed",
-    "not-implemented",
+    "implemented",
+    "noncompact",
     "quadric",
+    "singular",
     "tradition-classical"
   ],
   "definition": {
     "mode": "implicit",
     "fidelity": "exact",
-    "polynomial": null,
+    "exactness": "elementary",
+    "scale": "unit_radius",
+    "degree": 2,
+    "polynomial": "x**2 + y**2 - z**2",
     "note": "Revolution of a line secant to an axis about that axis; the special case of the elliptic cone (whose record already resolves ch1235) with circular cross-section."
   },
   "curvature": {
     "condition": "none",
     "also_satisfies": []
   },
-  "topology": {},
+  "topology": {
+    "compact": false,
+    "orientable": true,
+    "class": "noncompact"
+  },
   "symmetry": {
     "kind": "none",
     "periodicity_rank": 0
   },
   "embedding": {
-    "quality": "immersed"
+    "quality": "singular",
+    "singularities": [
+      {
+        "type": "conical point",
+        "count": 1
+      }
+    ]
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built -- like most of the quadric family. Blender's own cone primitive is not a math_art construction and is not counted as coverage.",
-      "resume": "The quadric block is the database's biggest honest gap (10 of 13 quadrics unimplemented -- data/surfaces/README.md, Coverage); implement together with the other quadrics of revolution rather than piecemeal."
+      "generator": "math_art.quadric_generator",
+      "operator_id": "mesh.quadric_add",
+      "key": "ELLIPTIC_CONE",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Classical closed form, written directly in the exact language and checked by the validator.",
     "sources": [
+      "Classical.",
       "R. Ferreol, \"Cone of revolution\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1229_conederevolution_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1229_conederevolution_2.md)."
     ]
   },
-  "alternate_names": [
-    "Right circular cone"
-  ],
+  "metrics": {
+    "normalization": "unit_radius"
+  },
   "tradition": [
     "classical"
   ],
+  "alternate_names": [
+    "Right circular cone"
+  ],
+  "notes": {
+    "caveats": [
+      "The a = b special case of the elliptic cone, which is exactly what mesh.quadric_add's ELLIPTIC_CONE builds at its defaults (both semi-axes 1): revolution of a line secant to an axis about that axis."
+    ]
+  },
   "ids": {
     "mathcurve": "ch1229_conederevolution_2"
   },
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
-    "requires_thickening": false,
+    "requires_thickening": true,
     "sliceable": false
   }
 }

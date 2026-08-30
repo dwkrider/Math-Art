@@ -9,15 +9,28 @@
     "closed-orientable",
     "def-parametric",
     "immersed",
-    "not-implemented",
+    "implemented",
     "topological",
     "tradition-classical"
   ],
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "The torus S1(1/sqrt(2)) x S1(1/sqrt(2)) in R4, lying in the unit 3-sphere; intrinsically flat there, and stereographic projection carries it to a torus of revolution in R3 (the VMM exhibit morphs the projection centre, including centres on the torus where the image becomes a plane with a handle).  The flatness lives in S3; the R3 image is not flat, so no curvature condition is claimed for the projected surface."
+    "note": "the CIRCLE preset at its default mean colatitude of 90 degrees, i.e. the Hopf preimage of a great circle -- the Clifford torus S1(1/sqrt 2) x S1(1/sqrt 2) in S^3 -- stereographically projected to a torus of revolution; same builder normalisation (and fit) as hopf-torus",
+    "x": "cos(u + v)/(sqrt(2) - sin(v))",
+    "y": "sin(u + v)/(sqrt(2) - sin(v))",
+    "z": "cos(v)/(sqrt(2) - sin(v))",
+    "u_range": [
+      "0",
+      "2*pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -40,13 +53,15 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built: the Hopf-fibration generator renders Hopf tori and the Bianchi-Pinkall record covers the flat-torus family in S3, but the Clifford torus itself -- the square flat torus S1(1/sqrt(2)) x S1(1/sqrt(2)) in S3 -- has no record.",
-      "resume": "Stereographic projection of the explicit S3 chart; math_art/hopf_fibration_generator.py already carries the needed projection machinery."
+      "generator": "math_art.hopf_fibration_generator",
+      "operator_id": "mesh.hopf_torus_add",
+      "key": "CIRCLE",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.31 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.00772).",
     "sources": [
       "The 3DXM Consortium, 'Clifford Torus', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch048_clifford_torus.md)."
     ]

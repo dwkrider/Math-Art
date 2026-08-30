@@ -53,12 +53,12 @@
   "provenance": {
     "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.33 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.09814).",
     "sources": [
-      "Klein bottle: F. Klein (1882). Boy's surface: W. Boy, Math. Ann. 57 (1903), here via the R. Bryant - R. Kusner parametrization.",
+      "Klein bottle: F. Klein (1882).  The default classical bottle shape is built by the tube scheme of G. Franzoni, \"The Klein bottle in its classical shape: a further step towards a good parametrization\", arXiv:0909.5354 (2009): a tube of varying radius swept along a plane directrix, with the dumbbell-curve directrix of the paper's section 4 (which closes) as the default and its section-3 piriform directrix and the older polynomial immersion as alternatives.  A converted copy is in research/papers/ surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.",
+      "Mobius band (the plain ruled one-sided strip): A. F. Mobius (1858) and J. B. Listing (1858), as the standard half-twist ruled parametrization.",
+      "Boy's surface: W. Boy, Math. Ann. 57 (1903), here via the R. Bryant - R. Kusner parametrization.",
       "Cross-cap and Roman surface: two immersions of RP^2 due to J. Steiner (Rome, 1844).",
       "Veronese surface: G. Veronese (1854-1917); see M. Berger, \"Geometry Revealed\", Springer 2010, p. 47.  The two named projections used as the endpoints of the Steiner family here are from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com, chapter \"surface de Veronese\"; a converted copy is in research/books/ mathcurve_encyclopedie_formes_mathematiques/. Mobius band: A. F. Mobius (1858).",
-      "Sudanese Mobius band: H. B. Lawson, \"Complete Minimal Surfaces in S^3\", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman and Daniel Asimov (cf. G. Francis, \"A Topological Picturebook\", Springer 1987).",
-      "Morin's surface: Bernard Morin (1933-2018); B. Morin and J.-P. Petit on turning a sphere inside out.  Parametrization by Francois Apery, \"Models of the Real Projective Plane\" (Vieweg, 1987), p. 104; via",
-      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapter \"surface de Morin\"."
+      "Sudanese Mobius band: H. B. Lawson, \"Complete Minimal Surfaces in S^3\", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman and Daniel Asimov (cf. G. Francis, \"A Topological Picturebook\", Springer 1987)."
     ]
   },
   "fabrication": {

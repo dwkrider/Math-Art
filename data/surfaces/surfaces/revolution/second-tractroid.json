@@ -7,15 +7,27 @@
     "aperiodic",
     "def-parametric",
     "immersed",
-    "not-implemented",
+    "implemented",
     "revolution",
     "tradition-classical"
   ],
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "Revolution of the tractrix about the axis PERPENDICULAR to its asymptote -- the companion to the pseudosphere (revolution about the asymptote), which already resolves ch1210.  Unlike the pseudosphere it is not of constant curvature; its volume involves Catalan's constant."
+    "note": "the tractrix (a(t - tanh t), a sech t) revolved about the axis PERPENDICULAR to its asymptote; a = 1 and profile reach 3 fixed to the operator defaults",
+    "x": "(u - tanh(u))*cos(v)",
+    "y": "(u - tanh(u))*sin(v)",
+    "z": "1/cosh(u)",
+    "u_range": [
+      "0",
+      "3"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -31,14 +43,22 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.",
-      "resume": "A meridian-profile surface-of-revolution row; the radial builders in math_art/curiosity_surface_generator.py (build_radial, build_fresnel) are the pattern to follow, and the parametrization is in the cited mirror chapter."
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "TRACTROID2",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.35 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.02257).",
     "sources": [
+      "D. von Seggern, \"CRC Standard Curves and Surfaces\" (1993), p. 304 -- Fresnel's elasticity surface.",
+      "A. Robin (2004), plotted after M. Trott, \"The Mathematica GuideBook for Graphics\" (2004), p. 103 -- the paper bag surface.",
+      "O. Knill (2017); M. A. Villarino and J. C. Varilly (2024) -- the trihyperboloid and its volume ln 256.",
+      "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
+      "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
+      "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978.",
       "R. Ferreol, \"Tractroid 2\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1352_tractroid_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1352_tractroid_2.md).",
       "Proposed by Ludovic Schwob, per the chapter."
     ]

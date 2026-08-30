@@ -4,6 +4,17 @@
 # only -- no `bpy` -- so the engine imports and self-tests headlessly;
 # the registered operators stay in their flat generator modules.
 #
+# References:
+# - G. Franzoni, "The Klein bottle in its classical shape: a further
+#   step towards a good parametrization", arXiv:0909.5354 (2009) -- the
+#   tube-over-a-directrix scheme Tube(t, theta) = alpha(t) +
+#   r(t)(cos theta J(T) + sin theta k), its closure conditions, the
+#   re-parametrized piriform directrix of its section 3, and the
+#   dumbbell-curve directrix of its section 4 that closes where the
+#   piriform one cannot.  A converted copy is in research/papers/
+#   surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.
+# - A. F. Mobius (1858) and J. B. Listing (1858) -- the one-sided band.
+#
 
 import math
 import numpy as np
@@ -84,6 +95,175 @@ def build_klein_figure8(nu, nv, radius=2.0):
             j2 = (j + 1) % nv
             faces.append((i * nv + j, i * nv + j2,
                           (i + 1) * nv + j2, (i + 1) * nv + j))
+    return V, faces
+
+
+def winding_conflict_edges(faces):
+    """Edges traversed in the SAME direction by more than one face.
+
+    On an orientable mesh with consistent winding there are none.  On a
+    CLOSED non-orientable mesh a ring of them is unavoidable -- there is
+    no globally consistent winding to give -- and it marks where the
+    winding flips.  Averaged smooth normals degenerate across exactly
+    these edges (the two incident faces' geometric normals oppose), so
+    the Blender layer marks them sharp: each side then keeps its own
+    smooth normal fan and the renderer's double-sided flip hides the
+    sign, which is the honest closed-mesh version of the old split-seam
+    workaround.  Returns undirected (a, b) pairs with a < b.
+    """
+    seen = set()
+    out = set()
+    for f in faces:
+        k = len(f)
+        for i in range(k):
+            a, b = f[i], f[(i + 1) % k]
+            if (a, b) in seen:
+                out.add((a, b) if a < b else (b, a))
+            seen.add((a, b))
+    return sorted(out)
+
+
+def franzoni_klein_point(t, theta, a=20.0, b=8.0, c=5.5, d=0.4,
+                         directrix='DUMBBELL'):
+    """Franzoni's tube scheme for the classical Klein bottle shape.
+
+        Tube(t, theta) = alpha(t) + r(t) (cos theta J(T) + sin theta k)
+
+    with alpha a plane directrix, T = alpha'/|alpha'|, J the quarter
+    turn J(v1, v2) = (-v2, v1) and k the vertical.  Two directrices from
+    the paper:
+
+      PIRIFORM (its section 3):  gamma(t) = (a(1 - cos t),
+        b sin t (1 - cos t)), r(t) = c - d(t - pi) sqrt(t(2 pi - t)),
+        (t, theta) in (0, 2 pi) x [0, 2 pi], with the paper's values
+        (a, b, c, d) = (20, 8, 11/2, 2/5).  |gamma'| vanishes at the
+        cusp t = 0 (== 2 pi), so the tube is undefined there and the
+        image MISSES a circle: this rendition cannot close.
+
+      DUMBBELL (its section 4):  alpha(t) = (A sin t, B sin^2 t cos t),
+        r(t) = C - D(2t - pi) sqrt(2t(2 pi - 2t)), t in [0, pi].  This
+        directrix is regular on all of [0, pi] and satisfies the
+        closure conditions alpha(0) = alpha(pi), alpha'(0) =
+        -alpha'(pi), r(0) = r(pi), so the two tube ends meet in the
+        same circle and glue under theta -> pi - theta: the image is a
+        CLOSED Klein bottle.  The four shape numbers act
+        proportionally: the paper's section-3 defaults (20, 8, 11/2,
+        2/5) map to its stretched dumbbell values (5, 2, 1/2, 1/30),
+        i.e. (A, B, C, D) = (a/4, b/4, c/11, d/12).
+
+    Returns (x, y, z) arrays in the paper's frame: directrix in the
+    xy-plane, tube circles spanning {J(T), z}.
+    """
+    t = np.asarray(t, dtype=float)
+    theta = np.asarray(theta, dtype=float)
+    if directrix == 'PIRIFORM':
+        ax = a * (1.0 - np.cos(t))
+        ay = b * np.sin(t) * (1.0 - np.cos(t))
+        dx = a * np.sin(t)
+        dy = b * (np.cos(t) - np.cos(2.0 * t))
+        r = c - d * (t - math.pi) * np.sqrt(
+            np.maximum(t * (TAU - t), 0.0))
+    else:
+        aa, bb, cc, dd = a / 4.0, b / 4.0, c / 11.0, d / 12.0
+        ax = aa * np.sin(t)
+        ay = bb * np.sin(t) ** 2 * np.cos(t)
+        dx = aa * np.cos(t)
+        dy = bb * np.sin(t) * (3.0 * np.cos(t) ** 2 - 1.0)
+        r = cc - dd * (2.0 * t - math.pi) * np.sqrt(
+            np.maximum(2.0 * t * (TAU - 2.0 * t), 0.0))
+    L = np.sqrt(dx * dx + dy * dy)
+    # an over-cranked taper would pinch the tube inside out; floor the
+    # radius at a sliver of the base radius instead of going negative
+    r = np.maximum(r, 0.02 * abs(c) if c else 1e-3)
+    ct, st = np.cos(theta), np.sin(theta)
+    x = ax + r * ct * (-dy / L)
+    y = ay + r * ct * (dx / L)
+    z = r * st
+    return x, y, z
+
+
+def build_klein_franzoni(nu, nv, a=20.0, b=8.0, c=5.5, d=0.4,
+                         directrix='DUMBBELL'):
+    """Mesh Franzoni's classical-shape Klein bottle (see
+    `franzoni_klein_point`).
+
+    DUMBBELL: the t = pi row is glued to the t = 0 row by index under
+    theta -> pi - theta -- the Klein identification -- so the mesh is
+    genuinely CLOSED: chi = 0, no boundary edges, non-orientable.  The
+    unavoidable winding-flip ring lands on the seam circle; fetch it
+    with `winding_conflict_edges` and mark it sharp.
+
+    PIRIFORM: |gamma'| = 0 at the cusp, exactly as the paper says, so
+    the tube is meshed on the open interval and the two rims near the
+    cusp stay honest boundary circles (2 nv boundary edges).
+
+    The result is rotated so the bottle stands upright (directrix plane
+    vertical, long axis = Z).  Returns (verts, faces).
+    """
+    nv += nv % 2                     # theta -> pi - theta must be a grid map
+    th = TAU * np.arange(nv)[None, :] / nv
+    if directrix == 'PIRIFORM':
+        eps = math.pi / max(nu, 8)
+        t = (eps + (TAU - 2.0 * eps)
+             * np.arange(nu + 1)[:, None] / nu)
+        x, y, z = franzoni_klein_point(t, th, a, b, c, d, 'PIRIFORM')
+        V = np.stack(np.broadcast_arrays(y, z, x), axis=-1).reshape(-1, 3)
+        faces = []
+        for i in range(nu):
+            for j in range(nv):
+                j2 = (j + 1) % nv
+                faces.append((i * nv + j, i * nv + j2,
+                              (i + 1) * nv + j2, (i + 1) * nv + j))
+        return V, faces
+    t = math.pi * np.arange(nu)[:, None] / nu
+    x, y, z = franzoni_klein_point(t, th, a, b, c, d, 'DUMBBELL')
+    V = np.stack(np.broadcast_arrays(y, z, x), axis=-1).reshape(-1, 3)
+
+    def vid(i, j):
+        if i == nu:                  # (pi, theta) ~ (0, pi - theta)
+            return (nv // 2 - j) % nv
+        return i * nv + j % nv
+
+    faces = []
+    for i in range(nu):
+        for j in range(nv):
+            faces.append((vid(i, j), vid(i, j + 1),
+                          vid(i + 1, j + 1), vid(i + 1, j)))
+    return V, faces
+
+
+def build_mobius_band(nu, nv, radius=1.0, width=0.6):
+    """The canonical one-sided band (Mobius / Listing, 1858), as the
+    standard ruled chart
+
+        ((R + v cos(u/2)) cos u, (R + v cos(u/2)) sin u, v sin(u/2)),
+
+    u in [0, 2 pi], v in [-w/2, w/2].  The u = 2 pi seam coincides with
+    u = 0 under v -> -v and is glued BY INDEX, so the mesh is the real
+    Mobius band: chi = 0, one boundary loop (of 2 nu edges -- the famous
+    single edge), non-orientable.  The winding-flip ring lands on the
+    seam ruling; mark it sharp via `winding_conflict_edges`."""
+    nu = max(8, int(nu))
+    nv = max(2, int(nv))
+    u = TAU * np.arange(nu)[:, None] / nu
+    v = width * (np.arange(nv + 1)[None, :] / nv - 0.5)
+    w = radius + v * np.cos(u / 2.0)
+    x = w * np.cos(u)
+    y = w * np.sin(u)
+    z = v * np.sin(u / 2.0)
+    V = np.stack(np.broadcast_arrays(x, y, z), axis=-1).reshape(-1, 3)
+    stride = nv + 1
+
+    def vid(i, j):
+        if i == nu:                  # (2 pi, v) ~ (0, -v)
+            return nv - j
+        return i * stride + j
+
+    faces = []
+    for i in range(nu):
+        for j in range(nv):
+            faces.append((vid(i, j), vid(i, j + 1),
+                          vid(i + 1, j + 1), vid(i + 1, j)))
     return V, faces
 
 
@@ -800,6 +980,98 @@ def _selftest():
     print("topology: Morin/Boy family n = 2..7 -- order-n rotation and "
           "the side-swapping symmetry exact to 1e-12; even n closed "
           "two-sided chi = 2 (Morin), odd n one-sided chi = 1 (Boy) %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # ---- Franzoni's classical-shape Klein bottle --------------------
+    # The paper's closure conditions are exact identities of the
+    # dumbbell directrix, so they are checked as identities first --
+    # alpha(0) = alpha(pi), alpha'(0) = -alpha'(pi), r(0) = r(pi) --
+    # and only then is the glued mesh gated on what those conditions
+    # buy: a genuinely CLOSED non-orientable chi = 0 surface, with the
+    # unavoidable winding flip confined to the one seam ring.
+    bad = []
+    for t0, t1 in ((0.0, math.pi),):
+        x0, y0, z0 = franzoni_klein_point(np.array([t0]), np.array([0.0]))
+        x1, y1, z1 = franzoni_klein_point(np.array([t1]),
+                                          np.array([math.pi]))
+        if max(float(np.max(np.abs(x0 - x1))),
+               float(np.max(np.abs(y0 - y1))),
+               float(np.max(np.abs(z0 - z1)))) > 1e-12:
+            bad.append("seam circle mismatch")
+    aa, bb = 20.0 / 4.0, 8.0 / 4.0
+    for t0, t1, s in ((1e-9, math.pi - 1e-9, -1.0),):
+        d0 = np.array([aa * math.cos(t0),
+                       bb * math.sin(t0) * (3 * math.cos(t0) ** 2 - 1)])
+        d1 = np.array([aa * math.cos(t1),
+                       bb * math.sin(t1) * (3 * math.cos(t1) ** 2 - 1)])
+        if np.max(np.abs(d0 + d1)) > 1e-6:
+            bad.append("alpha'(0) != -alpha'(pi)")
+    nu_, nv_ = 48, 24
+    V, F = build_klein_franzoni(nu_, nv_)
+    cnt = edge_face_counts(F)
+    chi = len(V) - len(cnt) + len(F)
+    nbound = sum(1 for v in cnt.values() if v == 1)
+    conflicts = winding_conflict_edges(F)
+    if chi != 0:
+        bad.append("dumbbell chi=%d" % chi)
+    if nbound != 0:
+        bad.append("dumbbell boundary=%d" % nbound)
+    if _orientable(F):
+        bad.append("dumbbell orientable")
+    if len(conflicts) != nv_:
+        bad.append("dumbbell conflict ring %d != nv" % len(conflicts))
+    if not np.all(np.isfinite(V)):
+        bad.append("dumbbell non-finite")
+    # the piriform rendition CANNOT close (|gamma'| = 0 at the cusp,
+    # the paper's own section-4 caveat): meshed open, it is an
+    # orientable tube with exactly the two rim circles as boundary
+    V, F = build_klein_franzoni(nu_, nv_, directrix='PIRIFORM')
+    cnt = edge_face_counts(F)
+    chi = len(V) - len(cnt) + len(F)
+    nbound = sum(1 for v in cnt.values() if v == 1)
+    if chi != 0 or nbound != 2 * nv_ or not _orientable(F):
+        bad.append("piriform chi=%d boundary=%d" % (chi, nbound))
+    ok &= not bad
+    print("topology: Franzoni Klein bottle -- closure identities hold, "
+          "dumbbell tube closes (chi 0, 0 boundary edges, one-sided, "
+          "winding flip = one seam ring), piriform stays honestly open "
+          "%s" % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # ---- the plain Mobius band --------------------------------------
+    bad = []
+    nu_, nv_ = 64, 8
+    V, F = build_mobius_band(nu_, nv_)
+    cnt = edge_face_counts(F)
+    chi = len(V) - len(cnt) + len(F)
+    bedges = [e for e, cx in cnt.items() if cx == 1]
+    if chi != 0:
+        bad.append("chi=%d" % chi)
+    if len(bedges) != 2 * nu_:
+        bad.append("boundary edges %d" % len(bedges))
+    # the famous single edge: the boundary must be ONE loop
+    adj = {}
+    for e0, e1 in bedges:
+        adj.setdefault(e0, []).append(e1)
+        adj.setdefault(e1, []).append(e0)
+    start = bedges[0][0]
+    loop, prev, cur = 1, None, start
+    while True:
+        nxt = [w for w in adj[cur] if w != prev]
+        if not nxt:
+            break
+        prev, cur = cur, nxt[0]
+        if cur == start:
+            break
+        loop += 1
+    if loop != len(bedges):
+        bad.append("boundary is %d loops' worth" % loop)
+    if _orientable(F):
+        bad.append("two-sided")
+    if len(winding_conflict_edges(F)) != nv_:
+        bad.append("conflict ring != seam")
+    ok &= not bad
+    print("topology: Mobius band -- chi 0, ONE boundary loop, "
+          "one-sided, winding flip = the seam ruling %s"
           % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     print("RESULT:", "OK" if ok else "FAIL")

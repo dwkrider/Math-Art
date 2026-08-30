@@ -77,7 +77,7 @@
     "mathworld": "BarthSextic",
     "mathcurve": "ch1209_barth_2",
     "vmm": "ch084_barth_sextic",
-    "algsurf": "ch024_no_02"
+    "algsurf": "ch020_no_02"
   },
   "relations": {
     "polyhedral_analogue": "icosahedron"

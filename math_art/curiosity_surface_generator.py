@@ -148,6 +148,21 @@
 #   344-348 -- the masonry dome.
 # - W. Neile (1637-1670) for the semicubical parabola whose revolution
 #   is the neiloid.
+# - Torus of revolution: classical (a circle revolved about an axis in
+#   its plane); R. Ferreol, "Encyclopedie des formes mathematiques
+#   remarquables" (mathcurve.com), chapter "tore".
+# - Revolution of the catenary (alysseid), z = a cosh(rho/a) about the
+#   catenary's axis of symmetry -- the catenoid's companion, and not
+#   minimal: R. Ferreol, ibid., chapter "alysseide".
+# - Revolution of the sinusoid, x = a cos(z/b) about Oz -- a string of
+#   onion-dome beads meeting in cusp circles on the axis: R. Ferreol,
+#   ibid., chapter "surface de revolution de la sinusoide" (the chapter
+#   dates its study to 2012).
+# - Second tractroid: the tractrix revolved about the axis
+#   PERPENDICULAR to its asymptote (the pseudosphere revolves it about
+#   the asymptote itself); proposed by Ludovic Schwob per R. Ferreol,
+#   ibid., chapter "tractroide".  Not of constant curvature; its
+#   volume involves Catalan's constant.
 # - R. Ferreol, "Encyclopedie des formes mathematiques remarquables"
 #   (mathcurve.com), chapters "dome de Bouguer", "goutte d'eau",
 #   "neiloide", "poire de Tannery" and "lampion de Schwarz" -- the
@@ -351,6 +366,71 @@ def build_gabriels_horn(length=6.0, segments=96, rings=120):
                           (j + 1) * segments + i1,
                           (j + 1) * segments + i))
     return verts, faces
+
+def build_torus(ring=1.0, tube=0.35, segments=96, rings=48):
+    """The torus of revolution: the circle of radius `tube`, centred
+    `ring` from the axis, revolved about Oz.  Both parameter seams are
+    welded by index, so the mesh is watertight with chi = 0.  Every
+    vertex satisfies (sqrt(x^2 + y^2) - R)^2 + z^2 = r^2 exactly, which
+    is what `_selftest` gates on."""
+    m = max(3, int(segments))
+    n = max(3, int(rings))
+    verts = []
+    for i in range(m):
+        u = 2.0 * math.pi * i / m
+        cu, su = math.cos(u), math.sin(u)
+        for j in range(n):
+            v = 2.0 * math.pi * j / n
+            w = ring + tube * math.cos(v)
+            verts.append((w * cu, w * su, tube * math.sin(v)))
+    faces = []
+    for i in range(m):
+        i1 = (i + 1) % m
+        for j in range(n):
+            j1 = (j + 1) % n
+            faces.append((i * n + j, i1 * n + j, i1 * n + j1,
+                          i * n + j1))
+    return verts, faces
+
+
+def alysseid_profile(a=1.0, extent=1.6, steps=96):
+    """[(rho, z)] of the ALYSSEID: the catenary z = a cosh(rho / a)
+    revolved about its own axis of symmetry.  The companion to the
+    catenoid, which revolves the catenary about its BASE instead --
+    and unlike the catenoid it is not minimal."""
+    n = max(8, int(steps))
+    return [(extent * i / n, a * math.cosh(extent * i / (n * a)))
+            for i in range(n + 1)]
+
+
+def sinusoid_rev_profile(aspect=1.0, beads=3, steps=32):
+    """[(rho, z)] of the REVOLUTION OF THE SINUSOID, x = a cos(z/b)
+    about Oz: a string of onion-dome beads meeting in cusp points on
+    the axis.  Sampled bead by bead so every meridian zero lands
+    EXACTLY on a sample; `_revolve` then welds those rings to single
+    axis vertices and the beads close watertight."""
+    k = max(1, int(beads))
+    per = max(6, int(steps))
+    zeta0 = math.pi / 2.0
+    span = k * math.pi
+    out = []
+    for i in range(k * per + 1):
+        zeta = zeta0 + span * i / (k * per)
+        out.append((aspect * math.cos(zeta), zeta - zeta0 - span / 2.0))
+    return out
+
+
+def tractroid2_profile(a=1.0, reach=3.0, steps=120):
+    """[(rho, z)] of the SECOND TRACTROID: the tractrix
+    (a (t - tanh t), a sech t) revolved about the axis PERPENDICULAR
+    to its asymptote.  (The pseudosphere is the other revolution, about
+    the asymptote itself.)  t = 0 is the tractrix's cusp, on the axis,
+    so the surface closes there in an apex; the far end is an open
+    rim that flares toward the asymptote plane z = 0."""
+    n = max(8, int(steps))
+    return [(a * (t - math.tanh(t)), a / math.cosh(t))
+            for t in (reach * i / n for i in range(n + 1))]
+
 
 def _thin(profile, keep):
     """Subsample a profile to about `keep` points, ends included.
@@ -738,6 +818,23 @@ if _IN_BLENDER:
                    ('GABRIEL', "Gabriel's Horn",
                     "y = 1/x revolved: finite volume, infinite "
                     "lateral area"),
+                   ('TORUS', "Torus",
+                    "The torus of revolution: a circle revolved about "
+                    "an axis in its plane, the bare classical donut"),
+                   ('ALYSSEID', "Revolution of the Catenary",
+                    "The alysseid: the catenary z = a cosh(rho/a) "
+                    "revolved about its axis of symmetry -- the "
+                    "catenoid's companion (which revolves the catenary "
+                    "about its base instead), and not minimal"),
+                   ('SINUSOID_REV', "Revolution of the Sinusoid",
+                    "The sinusoid x = a cos(z/b) revolved about Oz: a "
+                    "string of onion-dome beads meeting in cusp points "
+                    "on the axis"),
+                   ('TRACTROID2', "Second Tractroid",
+                    "The tractrix revolved about the axis "
+                    "PERPENDICULAR to its asymptote; the pseudosphere "
+                    "revolves it about the asymptote itself.  Unlike "
+                    "the pseudosphere it is not of constant curvature"),
                    ('CYCLIDE_RING', "Dupin Cyclide (ring)",
                     "Inversion of a ring torus (R > r); every "
                     "line of curvature is a circle"),
@@ -787,14 +884,38 @@ if _IN_BLENDER:
             description="Upper limit L of x in y = 1/x; the enclosed "
                         "volume tends to pi as L grows while the "
                         "lateral area diverges (Gabriel's horn only)")
+        torus_tube: FloatProperty(
+            name="Tube Radius", default=0.35, min=0.02, max=3.0,
+            description="Radius of the revolved circle, against a "
+                        "centre circle of radius 1: below 1 a ring "
+                        "torus, 1 a horn torus, above 1 a spindle "
+                        "torus (torus only)")
+        beads: IntProperty(
+            name="Beads", default=3, min=1, max=12,
+            description="How many onion-dome beads of the revolved "
+                        "sinusoid to build, one per half-period "
+                        "(revolution of the sinusoid only)")
+        bead_aspect: FloatProperty(
+            name="Bead Aspect", default=1.0, min=0.1, max=6.0,
+            description="Amplitude-to-period ratio a/b of the meridian "
+                        "x = a cos(z/b): larger is fatter beads "
+                        "(revolution of the sinusoid only)")
+        tract_reach: FloatProperty(
+            name="Profile Reach", default=3.0, min=0.5, max=8.0,
+            description="How far along the tractrix the meridian runs "
+                        "from its cusp, in the curve's parameter; the "
+                        "rim creeps toward the asymptote plane as it "
+                        "grows (second tractroid only)")
         dome_a: FloatProperty(
             name="Scale a", default=1.0, min=0.05, max=10.0,
             description="The a in Bouguer's a^2 y'' = x sqrt(1 + y'^2), "
-                        "and the a in the neiloid's a rho^2 = z^3")
+                        "in the neiloid's a rho^2 = z^3, in the "
+                        "revolved catenary's z = a cosh(rho/a) and in "
+                        "the second tractroid's tractrix")
         dome_extent: FloatProperty(
             name="Base Radius", default=1.6, min=0.2, max=6.0,
-            description="How far out the dome's profile runs "
-                        "(Bouguer dome only)")
+            description="How far out the profile runs (Bouguer dome "
+                        "and revolution of the catenary)")
         drop_a: FloatProperty(
             name="Capillary Length", default=1.0, min=0.1, max=6.0,
             description="The a in 2H = z / a^2: large a is a nearly "
@@ -889,6 +1010,27 @@ if _IN_BLENDER:
                 verts, faces = build_gabriels_horn(
                     self.horn_length, 2 * res, 3 * res)
                 name = "Gabriel's Horn"
+            elif self.surface == 'TORUS':
+                verts, faces = build_torus(1.0, self.torus_tube,
+                                           2 * res, res)
+                name = "Torus"
+            elif self.surface == 'ALYSSEID':
+                verts, faces, rims = _revolve(
+                    alysseid_profile(self.dome_a, self.dome_extent,
+                                     res), 2 * res)
+                name = "Revolution of the Catenary"
+            elif self.surface == 'SINUSOID_REV':
+                verts, faces, rims = _revolve(
+                    sinusoid_rev_profile(self.bead_aspect, self.beads,
+                                         max(8, (3 * res)
+                                             // max(1, self.beads))),
+                    2 * res)
+                name = "Revolution of the Sinusoid"
+            elif self.surface == 'TRACTROID2':
+                verts, faces, rims = _revolve(
+                    tractroid2_profile(self.dome_a, self.tract_reach,
+                                       2 * res), 2 * res)
+                name = "Second Tractroid"
             elif self.surface == 'BOUGUER':
                 verts, faces, rims = _revolve(
                     _thin(bouguer_profile(self.dome_a, self.dome_extent,
@@ -1005,6 +1147,17 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             elif self.surface == 'GABRIEL':
                 lay.prop(self, 'horn_length')
+            elif self.surface == 'TORUS':
+                lay.prop(self, 'torus_tube')
+            elif self.surface == 'ALYSSEID':
+                for k in ('dome_a', 'dome_extent'):
+                    lay.prop(self, k)
+            elif self.surface == 'SINUSOID_REV':
+                for k in ('beads', 'bead_aspect'):
+                    lay.prop(self, k)
+            elif self.surface == 'TRACTROID2':
+                for k in ('dome_a', 'tract_reach'):
+                    lay.prop(self, k)
             elif self.surface == 'BOUGUER':
                 for k in ('dome_a', 'dome_extent'):
                     lay.prop(self, k)
@@ -1333,5 +1486,52 @@ def _selftest():
     assert err < 1e-4, err
     print("neiloid: volume converges on the published "
           "pi(z2^4 - z1^4)/4a, relative error %.1e at 800 steps" % err)
+
+    # ---- the four Ferreol revolution additions -----------------------
+    # Each is gated on the closed-form identity that defines it, not on
+    # "it meshed".
+    R_, r_ = 1.0, 0.35
+    V, F = build_torus(R_, r_, 96, 48)
+    assert _finite(V) and _valid(V, F) and _watertight(F)
+    for (x, y, z) in V:
+        w = math.hypot(x, y) - R_
+        assert abs(w * w + z * z - r_ * r_) < 1e-12
+    vol = abs(_volume(V, F))
+    want = 2.0 * math.pi ** 2 * R_ * r_ * r_       # Pappus
+    assert abs(vol - want) / want < 5e-3, vol
+    print("torus: watertight, every vertex on (sqrt(x^2+y^2)-R)^2 + "
+          "z^2 = r^2, volume within 0.5 percent of Pappus' "
+          "2 pi^2 R r^2")
+
+    a_ = 1.3
+    V, F, _r = _revolve(alysseid_profile(a_, 1.6, 64), 48)
+    assert _finite(V) and _valid(V, F)
+    for (x, y, z) in V:
+        rho = math.hypot(x, y)
+        assert abs(z - a_ * math.cosh(rho / a_)) < 1e-9
+    print("alysseid: every vertex on z = a cosh(rho/a)")
+
+    asp = 1.2
+    prof = sinusoid_rev_profile(asp, 3, 24)
+    V, F, _r = _revolve(prof, 48)
+    assert _finite(V) and _valid(V, F) and _watertight(F)
+    span = 3 * math.pi
+    for (x, y, z) in V:
+        rho = math.hypot(x, y)
+        want = abs(asp * math.cos(z + span / 2.0 + math.pi / 2.0))
+        assert abs(rho - want) < 1e-9, (rho, want)
+    print("revolution of the sinusoid: watertight (beads weld at "
+          "their cusp points), every vertex on rho = a |cos(z/b)|")
+
+    a_ = 0.9
+    V, F, _r = _revolve(tractroid2_profile(a_, 3.0, 60), 48)
+    assert _finite(V) and _valid(V, F)
+    for (x, y, z) in V:
+        rho = math.hypot(x, y)
+        if z > 1e-9 and rho > 1e-9:
+            t = math.acosh(a_ / z)
+            assert abs(rho - a_ * (t - math.tanh(t))) < 1e-7
+    print("second tractroid: every vertex on the revolved tractrix "
+          "(rho, z) = a(t - tanh t, sech t)")
 
     print("miscellaneous surfaces standalone tests passed")

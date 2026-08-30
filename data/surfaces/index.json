@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 426,
-  "implemented_count": 330,
+  "implemented_count": 342,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -2253,7 +2253,7 @@
         "closed-orientable",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "topological",
         "tradition-classical"
       ],
@@ -2272,8 +2272,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.hopf_torus_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -2355,7 +2357,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "swept",
         "tradition-classical"
       ],
@@ -2374,8 +2376,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.helical_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -2453,9 +2457,10 @@
       "families": [
         "aperiodic",
         "def-implicit",
-        "immersed",
-        "not-implemented",
+        "implemented",
+        "noncompact",
         "quadric",
+        "singular",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -2464,17 +2469,19 @@
       "periodicity_rank": 0,
       "genus": null,
       "genus_per_cell": null,
-      "orientable": null,
+      "orientable": true,
       "ends": 0,
-      "embedding": "immersed",
+      "embedding": "singular",
       "symmetry": {
         "kind": "none",
         "symbol": null,
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -5646,7 +5653,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "ruled",
         "tradition-classical"
       ],
@@ -5665,8 +5672,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.ruled_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7939,8 +7948,8 @@
         "compact-with-boundary",
         "def-parametric",
         "immersed",
+        "implemented",
         "non-orientable",
-        "not-implemented",
         "topological",
         "tradition-classical"
       ],
@@ -7959,8 +7968,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.topological_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8694,7 +8705,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "ruled",
         "tradition-architectural",
         "tradition-classical"
@@ -8714,8 +8725,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.ruled_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8762,8 +8775,9 @@
       "families": [
         "aperiodic",
         "def-implicit",
-        "immersed",
-        "not-implemented",
+        "embedded",
+        "implemented",
+        "noncompact",
         "quadric",
         "tradition-classical"
       ],
@@ -8773,17 +8787,19 @@
       "periodicity_rank": 0,
       "genus": null,
       "genus_per_cell": null,
-      "orientable": null,
+      "orientable": true,
       "ends": 0,
-      "embedding": "immersed",
+      "embedding": "embedded",
       "symmetry": {
         "kind": "none",
         "symbol": null,
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.quadric_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -9412,7 +9428,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "revolution",
         "tradition-classical"
       ],
@@ -9431,8 +9447,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.curiosity_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -9444,7 +9462,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "revolution",
         "tradition-classical"
       ],
@@ -9463,8 +9481,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.curiosity_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -10971,7 +10991,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "revolution",
         "tradition-classical"
       ],
@@ -10990,8 +11010,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.curiosity_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11373,7 +11395,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "ruled",
         "tradition-classical"
       ],
@@ -11392,8 +11414,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.ruled_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13166,7 +13190,7 @@
         "closed",
         "closed-orientable",
         "def-parametric",
-        "not-implemented",
+        "implemented",
         "revolution",
         "tradition-classical"
       ],
@@ -13185,8 +13209,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.curiosity_surface_add"
+      ],
       "specimen_count": 3
     },
     {

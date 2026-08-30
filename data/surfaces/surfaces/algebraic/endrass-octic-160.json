@@ -59,8 +59,8 @@
       "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.",
       "S. Breske, O. Labs and D. van Straten, \"Real Line Arrangements and Surfaces with Many Real Nodes\", arXiv:math/0507234 (2005) -- why real nodes are the rendering-relevant count.",
       "V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's original series.",
-      "O. Labs, 'St. Endrass's 160-nodal D8 x Z2-symmetric Octic (with the explicit parameter values)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch009_stephan160.md).",
-      "O. Labs, 'Advent calendar 2002, No. 19 ('Besides constructing the octics with 168 nodes, St. Endrass found this 160-nodal octic with dihedral symmetry, which is not so well-known')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch043_no_19.md).",
+      "O. Labs, 'St. Endrass's 160-nodal D8 x Z2-symmetric Octic (with the explicit parameter values)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch008_stephan160.md).",
+      "O. Labs, 'Advent calendar 2002, No. 19 ('Besides constructing the octics with 168 nodes, St. Endrass found this 160-nodal octic with dihedral symmetry, which is not so well-known')', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch037_no_19.md).",
       "O. Labs, 'Octics (the survey of known nodal octic counts: Miyaoka bound 174, best known 168)', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch006_octics.md).",
       "St. Endrass, Ph.D. thesis (1996), as cited throughout the mirrored octics pages for the D8 x Z2 construction."
     ]
@@ -72,7 +72,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch009_stephan160"
+    "algsurf": "ch008_stephan160"
   },
   "named_after": "Endrass, Octic",
   "fabrication": {
