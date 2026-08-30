@@ -1099,6 +1099,55 @@ _SPECS['SIMOES_BATISTA'] = _prod_spec(
 _SPECS['SIMOES_BATISTA']['test_res'] = (60, 90)
 
 
+# --------------------------------------------------------------------
+# Hackman's toroidal 1-noid -- DEFERRED, and exactly why
+# --------------------------------------------------------------------
+# This is the row that `dh_terms` was built for, and the data is right:
+#
+#     k = 1/3,   tau = t + 2i,
+#     g  = theta11(z + k/2) / theta11(z - k/2),
+#     dh = sigma(z - k/2) sigma(z + k/2) / sigma(z)^2
+#        = const * theta11(z - k/2) theta11(z + k/2) / theta11(z)^2,
+#
+# the sigma-to-theta step being exact because the eta-exponentials cancel
+# (see the note in `_spec_patch`), with the constant folding into the
+# Bonnet phase.  Driven through the spec engine on a domain clear of the
+# origin it converges cleanly to minimal -- median |H| * diam
+# 6.67e-4 -> 2.29e-4 -> 1.04e-4 over n = 45/75/110, better than an order
+# of magnitude under any shipped row.
+#
+# It does NOT ship, because of what sits at the origin.  The exponents
+# there are p = 0 from g and d = -2 from dh, so the integrand goes like
+# s^-2: an order-two POLE, which is the catenoid end of the 1-noid, not
+# a branch point.  Grading cannot absorb that -- s^-2 is not integrable
+# -- and the rectangle domain has no way to excise a puncture at one of
+# its own corners.  Truncating the domain to avoid the origin does give
+# a minimal patch, but it is a patch with the surface's defining feature
+# cut out, which would be a misleading thing to ship under this name.
+#
+# Resume: the row needs end trimming (a masked puncture, as the zoo's
+# disk domains have) plus the screw-motion assembly of 2 pi k per storey,
+# and the modulus t solved from the notebook's 1-D FindRoot on
+# period(k, tau) with the seed t in [0.15, 0.25].  The Bonnet phase does
+# NOT need its transcendental closed form transcribed -- it is the
+# associate angle, already a spec field, so it can be solved for by the
+# same closure condition rather than typed in.
+#
+# References:
+# - M. Hackman, thesis; toroidal 1-Noids on every conformal type of
+#   torus.  Reported at M. Weber, "Hackman surfaces",
+#   minimalsurfaces.blog, whose notebook `Hackman-Surfaces.nb` carries
+#   the data transcribed above.
+_HACKMAN_DEFERRED = dict(
+    label="Hackman Surface (toroidal 1-noid)",
+    tau=0.2 + 2.0j, a=1.0 / 6.0,          # a = k/2, k = 1/3
+    terms=lambda a, tau: ((a, -1.0), (-a, 1.0)),
+    dh_terms=lambda a, tau: ((a, 1.0), (-a, 1.0), (0.0, -2.0)),
+    const=0j, theta=0.0,
+    xlim=(0.0, 0.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
+    nb="Hackman-Surfaces.nb")
+
+
 def spec_curves(key, P):
     """The boundary curves of a spec patch, split where the spec says.
 
@@ -1243,7 +1292,14 @@ def spec_singularities(key):
     y0, y1 = sp['ylim'](tau)
     ty = float(np.imag(tau))
     pad = 1e-9
+    # g and dh are accumulated SEPARATELY.  With g ~ s^p and dh ~ s^d at
+    # a point, the three integrand components go like s^(p+d), s^(d-p)
+    # and s^d, so the worst power is d - |p| and the point is singular
+    # exactly when that is negative.  With no dh_terms, d = 0 and this
+    # reduces to -|p|, which is what the old single-accumulator code
+    # computed -- so every existing row grades identically.
     acc = {}
+    accd = {}
     for shift, c in sp['terms'](a, tau):
         sx, sy = float(np.real(shift)), float(np.imag(shift))
         # every lattice translate that can land in the rectangle
@@ -1261,7 +1317,28 @@ def spec_singularities(key):
                     continue
                 k = (round(px, 12), round(py, 12))
                 acc[k] = acc.get(k, 0.0) + float(c)
-    return {k: v for k, v in acc.items() if abs(v) > 1e-12}
+    for shift, c in (sp['dh_terms'](a, tau) if 'dh_terms' in sp else ()):
+        sx, sy = float(np.real(shift)), float(np.imag(shift))
+        for n in range(int(math.floor((y0 - sy) / ty)) - 1,
+                       int(math.ceil((y1 - sy) / ty)) + 2):
+            py = sy + n * ty
+            if not (y0 - pad <= py <= y1 + pad):
+                continue
+            for m in range(int(math.floor(x0 - sx - n * float(np.real(tau))))
+                           - 1,
+                           int(math.ceil(x1 - sx - n * float(np.real(tau))))
+                           + 2):
+                px = sx + m + n * float(np.real(tau))
+                if not (x0 - pad <= px <= x1 + pad):
+                    continue
+                k = (round(px, 12), round(py, 12))
+                accd[k] = accd.get(k, 0.0) + float(c)
+    out = {}
+    for k in set(acc) | set(accd):
+        eff = accd.get(k, 0.0) - abs(acc.get(k, 0.0))
+        if eff < -1e-12:
+            out[k] = eff
+    return out
 
 
 def _graded_axis(lo, hi, sing, n, tiny=1e-6):
@@ -1481,8 +1558,23 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
         L = L + c * _log_theta(Z - shift, q)
     g = np.exp(L)
     inv = 1.0 / g
-    W = np.stack([0.5 * (inv - g), 0.5j * (inv + g),
-                  np.ones_like(g)], axis=-1) * np.exp(1j * ang)
+    # dh defaults to dz, which is what every row above uses.  A row may
+    # instead give `dh_terms`, a second theta product -- Hackman's height
+    # differential is sigma(z-k/2) sigma(z+k/2) / sigma(z)^2, and the
+    # Weierstrass sigma quotient IS a theta quotient here because the
+    # eta-exponentials cancel identically:
+    #     sigma(z-a) sigma(z+a) / sigma(z)^2
+    #       = const * theta11(z-a) theta11(z+a) / theta11(z)^2,
+    # the constant coming out of exp(eta1 * 2a^2 / (2 omega1)), which is
+    # independent of z and so folds into the Bonnet phase.
+    dh = np.ones_like(g)
+    if 'dh_terms' in sp:
+        Ld = np.zeros(Z.shape, dtype=complex)
+        for shift, c in sp['dh_terms'](a, tau):
+            Ld = Ld + c * _log_theta(Z - shift, q)
+        dh = np.exp(Ld)
+    W = np.stack([0.5 * (inv - g) * dh, 0.5j * (inv + g) * dh,
+                  dh], axis=-1) * np.exp(1j * ang)
 
     F = np.zeros((len(xs), len(ys), 3), dtype=complex)
     # The left-edge column integrates up in y (dz = i dy), then every
