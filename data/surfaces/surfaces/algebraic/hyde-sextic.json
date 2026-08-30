@@ -51,7 +51,7 @@
   "provenance": {
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "O. Labs, 'Advent calendar 2002, No. 17', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch029_no_17.md).",
+      "O. Labs, 'Advent calendar 2002, No. 17', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch035_no_17.md).",
       "Hyde, Ann. of Math., 2nd series, vol. 2 (1901), and Ann. of Math. 4 (1888) (the page's references for the screw-theory construction); description and equation communicated to O. Labs by W. Barth."
     ]
   },
@@ -59,7 +59,7 @@
     "classical"
   ],
   "ids": {
-    "algsurf": "ch029_no_17"
+    "algsurf": "ch035_no_17"
   },
   "named_after": "Hyde",
   "fabrication": {

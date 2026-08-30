@@ -22,10 +22,10 @@ data/surfaces/
 Family folders are for humans; `slug` is unique across the **whole** database,
 and `index.json` is the only thing that resolves a slug to a path.
 
-**423 records, 298 implemented, 0 validator errors.**
+**426 records, 342 implemented, 0 validator errors.**
 
 Every record carries a real citation; **146 are independently cross-checked**
-against the local mirrors; 421 external IDs resolve offline; and the 298
+against the local mirrors; 421 external IDs resolve offline; and the
 implemented records are built by *running their actual operator* and comparing
 the resulting mesh against what the record claims.
 
@@ -323,7 +323,7 @@ which is precisely what let `research/missing-surfaces-catalog.md` go stale.
 `--coverage` is the gap ledger, and it is **computed**, not curated:
 
 ```
-COVERAGE  423 records, 298 implemented, 125 not (70%)
+COVERAGE  426 records, 342 implemented, 84 not (80%)
 ```
 
 **That figure has fallen from 93% to 70% as the corpus grew, and that is the
@@ -335,21 +335,21 @@ absent is not a ledger, and an honest 82% is worth more than a flattering 93%.
 
 | family | total | impl. | | family | total | impl. |
 |---|---|---|---|---|---|---|
-| algebraic | 126 | 111 | | ruled | 12 | 12 |
-| minimal-periodic | 89 | 63 | | constant-curvature | 10 | 9 |
-| minimal | 46 | 46 | | cmc | 8 | 7 |
-| topological | 21 | 14 | | swept | 8 | 7 |
-| quadric | 13 | 3 | | misc | 7 | 7 |
-| revolution | 7 | 6 | | discrete | 4 | 4 |
+| algebraic | 146 | 130 | | ruled | 15 | 15 |
+| minimal-periodic | 108 | 63 | | constant-curvature | 10 | 9 |
+| minimal | 56 | 46 | | cmc | 8 | 7 |
+| topological | 22 | 16 | | swept | 9 | 9 |
+| quadric | 15 | 15 | | misc | 9 | 8 |
+| revolution | 12 | 10 | | discrete | 4 | 4 |
 | physical | 4 | 4 | | spectral | 3 | 3 |
-| derived | 3 | 1 | | cyclide | 2 | 1 |
+| derived | 3 | 1 | | cyclide | 2 | 2 |
 
-**The quadrics are the honest surprise.** Ten of thirteen are *not*
-implemented: only the hyperboloid of one sheet and the hyperbolic paraboloid
-ship (both as *ruled* surfaces), plus the circular cylinder as the Delaunay
-family's member. An "ellipsoid" exists only as a superellipsoid special case,
-which is a different family. Blender's own primitives are not `math_art`
-constructions and are not counted as coverage.
+**The quadrics were the honest surprise** — for most of the database's life
+only three of thirteen shipped — until `mesh.quadric_add` closed the block by
+building all of them from their exact charts. The cone and paraboloid of
+revolution ride along as the a = b members of their elliptic kinds, which is
+exactly what the operator's defaults build. Blender's own primitives are not
+`math_art` constructions and are not counted as coverage.
 
 This replaces `research/missing-surfaces-catalog.md`, which listed 19 headline
 gaps of which **13 had silently closed** — cyclides, the Hauser block, all

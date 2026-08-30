@@ -1182,7 +1182,18 @@ def tile_dihedral(Z, Xr, rot, punctures, radius, scale,
     Vf, uvf = Vu[:, :3], Vu[:, 3:]
     Vf = _smooth_boundary(Vf, quads)
     if circularize:
-        Vf = _circularize_outer(Vf, quads)
+        # taper_rings spreads each puncture mouth's snap correction over
+        # the rings behind it (1/7 of it per quad row) instead of
+        # parking it all in the first row -- measured on COSTA_HM, the
+        # untapered snap left a 0-spread rim against a 13%-radius-spread
+        # first ring, a visible corrugation along every mouth.
+        # trim_sphere marks the object-space percentile trim: those
+        # loops get the (tapered) radial rounding but keep the
+        # surface's own z -- the planar end's cut is a genuinely wavy
+        # curve, and flattening it curled the disc edge into a "brim"
+        # (see _circularize_outer).
+        Vf = _circularize_outer(Vf, quads, taper_rings=6,
+                                trim_sphere=(cen, thr))
     Vf = _center_fit(Vf, scale, Vf)
     return Vf, quads, uvf
 

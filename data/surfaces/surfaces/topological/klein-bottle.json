@@ -18,9 +18,9 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "x": "(-2.0/15.0)*cos(u)*(3*cos(v) - 30*sin(u) + 90*cos(u)**4*sin(u) - 60*cos(u)**6*sin(u) + 5*cos(u)*cos(v)*sin(u))",
-    "y": "(-1.0/15.0)*sin(u)*(3*cos(v) - 3*cos(u)**2*cos(v) - 48*cos(u)**4*cos(v) + 48*cos(u)**6*cos(v) - 60*sin(u) + 5*cos(u)*cos(v)*sin(u) - 5*cos(u)**3*cos(v)*sin(u) - 80*cos(u)**5*cos(v)*sin(u) + 80*cos(u)**7*cos(v)*sin(u))",
-    "z": "(2.0/15.0)*sin(v)*(3 + 5*cos(u)*sin(u))",
+    "x": "2*sin(u)**2*cos(u) + (1/2 - (1/30)*(2*u - pi)*sqrt(2*u*(2*pi - 2*u)))*cos(v)*5*cos(u)/sqrt(25*cos(u)**2 + 4*sin(u)**2*(3*cos(u)**2 - 1)**2)",
+    "y": "(1/2 - (1/30)*(2*u - pi)*sqrt(2*u*(2*pi - 2*u)))*sin(v)",
+    "z": "5*sin(u) - (1/2 - (1/30)*(2*u - pi)*sqrt(2*u*(2*pi - 2*u)))*cos(v)*2*sin(u)*(3*cos(u)**2 - 1)/sqrt(25*cos(u)**2 + 4*sin(u)**2*(3*cos(u)**2 - 1)**2)",
     "u_range": [
       "0",
       "pi"
@@ -30,7 +30,7 @@
       "2*pi"
     ],
     "periodic_v": true,
-    "note": "the standard bottle-shaped closed-form immersion; the u = pi rim meets the u = 0 rim under v -> pi - v",
+    "note": "Franzoni's classical bottle shape, the operator's default rendition: a tube of radius r(u) about the stretched dumbbell directrix, upright with the long axis on Oz.  The u = pi tube end meets the u = 0 end in the same circle under v -> pi - v, and the mesh is glued closed there.  The paper's shape numbers (a, b, c, d) = (20, 8, 11/2, 2/5) are baked in at their dumbbell scaling (5, 2, 1/2, 1/30); the older polynomial immersion stays reachable as the operator's POLYNOMIAL rendition",
     "exactness": "elementary"
   },
   "curvature": {
@@ -64,7 +64,7 @@
     }
   ],
   "provenance": {
-    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.80 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.02822).",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.48 of tol, 1.0% of oracle beyond tol (tol floor 2.5 x 0.04376).",
     "sources": [
       "F. Klein, 'Ueber Riemann's Theorie der algebraischen Functionen und ihrer Integrale' (1882)."
     ]

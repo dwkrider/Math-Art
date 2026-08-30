@@ -102,6 +102,10 @@ FAMILY_OVERRIDE = {
     "curiosity:NEILOID": "revolution",
     "curiosity:BOUGUER": "revolution",
     "curiosity:PENDANT_DROP": "revolution",
+    "curiosity:TORUS": "revolution",
+    "curiosity:ALYSSEID": "revolution",
+    "curiosity:SINUSOID_REV": "revolution",
+    "curiosity:TRACTROID2": "revolution",
     "curiosity:SCHWARZ_LANTERN": "discrete",
     "ruled:HYPERBOLOID": "quadric",
     "ruled:HYPAR": "quadric",
@@ -785,7 +789,9 @@ class Builder:
         reading its enums wholesale would emit rows for both; naming the
         one preset is safer than teaching the reader to disambiguate.
         """
-        for slug, (module, op, key, name) in IMPLEMENTED_PRESET.items():
+        for slug, spec in IMPLEMENTED_PRESET.items():
+            module, op, key, name = spec[:4]
+            family = spec[4] if len(spec) > 4 else "misc"
             path = os.path.join(ROOT, "math_art", *module.split(".")) + ".py"
             src = ""
             if os.path.exists(path):
@@ -796,7 +802,7 @@ class Builder:
                     "IMPLEMENTED_PRESET claims %s has key %r, which is not in "
                     "the module source" % (op, key))
                 continue
-            rec = self.get(slug, name, "misc")
+            rec = self.get(slug, name, family)
             self.add_construction(rec, {
                 "generator": "math_art." + module, "operator_id": op,
                 "key": key, "definition_index": 0, "implemented": True,
@@ -1400,9 +1406,18 @@ BUILD_DATE = "2026-08-28"
 # Surfaces implemented as a PRESET on an operator whose module is not a
 # FLAT_SOURCE.  slug -> (module, operator id, enum key, name)
 IMPLEMENTED_PRESET = {
+    # slug -> (module, operator, enum key, name[, primary family])
     "bianchi-pinkall-flat-torus": (
         "hopf_fibration_generator", "mesh.hopf_torus_add",
         "BIANCHI_PINKALL", "Bianchi-Pinkall Flat Torus"),
+    # The Hopf preimage of a GREAT circle is the Clifford torus, and
+    # the CIRCLE preset's default mean colatitude is 90 degrees -- a
+    # great circle -- so the operator's default CIRCLE torus IS the
+    # stereographically projected Clifford torus (a torus of
+    # revolution in R3, exactly as the record's own note says).
+    "clifford-torus": (
+        "hopf_fibration_generator", "mesh.hopf_torus_add",
+        "CIRCLE", "Clifford Torus", "topological"),
 }
 
 
@@ -1415,6 +1430,10 @@ QUADRIC_KIND = {
     "hyperboloid-one-sheet": "HYPERBOLOID_ONE",
     "hyperboloid-two-sheets": "HYPERBOLOID_TWO",
     "elliptic-cone": "ELLIPTIC_CONE",
+    # the two quadrics of revolution are the a = b (default) members of
+    # their elliptic kinds -- the operator's defaults build exactly them
+    "cone-of-revolution": "ELLIPTIC_CONE",
+    "paraboloid-of-revolution": "ELLIPTIC_PARABOLOID",
     "circular-cylinder": "CIRCULAR_CYLINDER",
     "elliptic-cylinder": "ELLIPTIC_CYLINDER",
     "hyperbolic-cylinder": "HYPERBOLIC_CYLINDER",
@@ -1426,7 +1445,11 @@ QUADRIC_KIND = {
 # The thirteen classical quadrics, at unit radius.  Nine non-degenerate
 # real quadrics, plus the sphere and spheroid as the distinguished
 # ellipsoids and the plane as the degenerate limit that every ruled and
-# developable discussion needs to refer to.
+# developable discussion needs to refer to.  The cone and paraboloid of
+# revolution ride along as the distinguished circular (a = b) members
+# of their elliptic kinds -- which is what mesh.quadric_add's defaults
+# build, so their records carry implemented constructions keyed to the
+# elliptic rows.
 QUADRICS = {
     "sphere": {
         "name": "Sphere", "polynomial": "x**2 + y**2 + z**2 - 1",
@@ -1495,6 +1518,38 @@ QUADRICS = {
                 "Disconnected: two sheets. The only quadric in this table "
                 "whose real locus has two components, which is why a "
                 "component count is worth measuring rather than assuming."]},
+        },
+    },
+    "cone-of-revolution": {
+        "name": "Cone of Revolution",
+        "polynomial": "x**2 + y**2 - z**2",
+        "extra": {
+            "alternate_names": ["Right circular cone"],
+            "curvature": {"condition": "flat"},
+            "topology": {"compact": False, "orientable": True},
+            "embedding": {"quality": "singular",
+                          "singularities": [{"type": "conical point",
+                                             "count": 1}]},
+            "notes": {"caveats": [
+                "The a = b special case of the elliptic cone, which is "
+                "exactly what mesh.quadric_add's ELLIPTIC_CONE builds "
+                "at its defaults (both semi-axes 1): revolution of a "
+                "line secant to an axis about that axis."]},
+        },
+    },
+    "paraboloid-of-revolution": {
+        "name": "Paraboloid of Revolution",
+        "polynomial": "x**2 + y**2 - z",
+        "extra": {
+            "alternate_names": ["Circular paraboloid"],
+            "topology": {"compact": False, "orientable": True},
+            "embedding": {"quality": "embedded"},
+            "notes": {"caveats": [
+                "The a = b special case of the elliptic paraboloid, "
+                "which is exactly what mesh.quadric_add's "
+                "ELLIPTIC_PARABOLOID builds at its defaults (both "
+                "semi-axes 1): the mirror shape that focuses a "
+                "parallel beam to a point."]},
         },
     },
     "elliptic-cone": {
@@ -1588,9 +1643,8 @@ QUADRICS = {
 # Curated surfaces with no registry row of their own.  `slug -> why it is
 # not implemented`.
 CURATED_ONLY = {
-    "torus": "No math_art operator adds a bare torus; it appears only as the "
-             "base of derived generators. Blender's own primitive is not a "
-             "math_art construction.",
+    # ("torus" lived here until mesh.curiosity_surface_add grew a TORUS
+    # row; it now arrives from the curiosity registry like any other.)
     "delaunay-surface": "The family record. Its MEMBERS ship "
                         "(mesh.delaunay_surface_add), so the family itself "
                         "has no row of its own.",

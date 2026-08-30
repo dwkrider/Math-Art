@@ -46,7 +46,19 @@
 # grid samples land exactly on a self-intersection curve.
 #
 # References:
-# - Klein bottle: F. Klein (1882). Boy's surface: W. Boy, Math. Ann.
+# - Klein bottle: F. Klein (1882).  The default classical bottle shape
+#   is built by the tube scheme of G. Franzoni, "The Klein bottle in
+#   its classical shape: a further step towards a good
+#   parametrization", arXiv:0909.5354 (2009): a tube of varying radius
+#   swept along a plane directrix, with the dumbbell-curve directrix of
+#   the paper's section 4 (which closes) as the default and its
+#   section-3 piriform directrix and the older polynomial immersion as
+#   alternatives.  A converted copy is in research/papers/
+#   surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.
+# - Mobius band (the plain ruled one-sided strip): A. F. Mobius (1858)
+#   and J. B. Listing (1858), as the standard half-twist ruled
+#   parametrization.
+# - Boy's surface: W. Boy, Math. Ann.
 #   57 (1903), here via the R. Bryant - R. Kusner parametrization.
 # - Cross-cap and Roman surface: two immersions of RP^2 due to
 #   J. Steiner (Rome, 1844).
@@ -91,19 +103,32 @@ import numpy as np
 try:
     from .minsurf.topology import (build_boy, build_crosscap, build_morin,
                                    build_steiner,
-                                       build_genus, build_klein_bottle,
-                                      build_nonorientable,
-                                       build_nonorientable,
-                                       build_klein_figure8, build_roman,
-                                       build_sudanese_mobius,
-                                       build_twist_strip, edge_face_counts)
+                                   build_genus, build_klein_bottle,
+                                   build_klein_franzoni,
+                                   build_mobius_band,
+                                   build_nonorientable,
+                                   build_klein_figure8, build_roman,
+                                   build_sudanese_mobius,
+                                   build_twist_strip, edge_face_counts,
+                                   winding_conflict_edges)
 except ImportError:  # flat import outside the package
     from minsurf.topology import (build_boy, build_crosscap, build_morin,
                                   build_steiner,
-                                      build_genus, build_klein_bottle,
-                                      build_klein_figure8, build_roman,
-                                      build_sudanese_mobius,
-                                      build_twist_strip, edge_face_counts)
+                                  build_genus, build_klein_bottle,
+                                  build_klein_franzoni,
+                                  build_mobius_band,
+                                  build_nonorientable,
+                                  build_klein_figure8, build_roman,
+                                  build_sudanese_mobius,
+                                  build_twist_strip, edge_face_counts,
+                                  winding_conflict_edges)
+try:
+    from .sharp_creases import mark_sharp
+except ImportError:  # flat import outside the package
+    try:
+        from sharp_creases import mark_sharp
+    except ImportError:               # headless numeric self-test only
+        mark_sharp = None
 
 
 
@@ -203,9 +228,19 @@ except ImportError:
 
 PRESET_ITEMS = [
     ('KLEIN', "Klein Bottle",
-     "Classical bottle-shaped Klein bottle immersion"),
+     "The Klein bottle in its classical bottle shape, built by "
+     "Franzoni's tube scheme: a tube of varying radius swept along a "
+     "plane directrix.  The default dumbbell directrix closes the "
+     "surface exactly (no boundary); the paper's piriform directrix "
+     "and the older polynomial immersion are offered as alternative "
+     "renditions"),
     ('KLEIN8', "Klein Bottle (Figure-8)",
      "Figure-8 / twisted-torus Klein bottle immersion"),
+    ('MOBIUS', "Moebius Strip",
+     "The canonical one-sided band (Moebius and Listing, 1858): a "
+     "strip closed up after a half twist, as the standard ruled "
+     "parametrization, seam glued so the mesh has the band's true "
+     "topology -- one side, one boundary edge"),
     ('SUDANESE', "Sudanese Mobius Band",
      "Lawson's minimal Mobius band in S^3, stereographically "
      "projected to R^3 (embedded, round boundary circle)"),
@@ -236,7 +271,8 @@ PRESET_ITEMS = [
      "Solid closed strip with n half-twists; n = 1 is a Mobius band"),
 ]
 
-_IMMERSIONS = {'KLEIN', 'KLEIN8', 'SUDANESE', 'CROSSCAP', 'ROMAN', 'BOY',
+_IMMERSIONS = {'KLEIN', 'KLEIN8', 'MOBIUS', 'SUDANESE', 'CROSSCAP',
+               'ROMAN', 'BOY',
                'MORIN',
                'STEINER'}
 
@@ -270,6 +306,44 @@ if _IN_BLENDER:
         preset: EnumProperty(name="Surface", items=PRESET_ITEMS,
                              default='KLEIN',
                              description="Which topological surface to build")
+        klein_form: EnumProperty(
+            name="Rendition", default='DUMBBELL',
+            description="How the classical bottle shape is built "
+                        "(Klein Bottle preset only)",
+            items=[('DUMBBELL', "Dumbbell Tube (closed)",
+                    "Franzoni's dumbbell-curve directrix: the one "
+                    "rendition whose image genuinely closes, so the "
+                    "mesh has no boundary at all"),
+                   ('PIRIFORM', "Piriform Tube (open at the cusp)",
+                    "Franzoni's re-parametrized piriform directrix "
+                    "(his section 3).  The directrix's speed vanishes "
+                    "at the cusp, so -- as the paper itself notes -- "
+                    "the image misses a circle there and the tube is "
+                    "left honestly open (two rim circles)"),
+                   ('POLYNOMIAL', "Polynomial Immersion",
+                    "The older closed-form polynomial immersion; "
+                    "squatter than the classical shape, seam left "
+                    "split as before")])
+        klein_length: FloatProperty(
+            name="Length", default=20.0, min=4.0, max=60.0,
+            description="Length of the directrix the tube is swept "
+                        "along -- the bottle's height (the paper's a, "
+                        "default 20)")
+        klein_width: FloatProperty(
+            name="Width", default=8.0, min=0.5, max=40.0,
+            description="Sideways spread of the directrix -- how far "
+                        "the neck swings out before diving back "
+                        "through the wall (the paper's b, default 8)")
+        klein_radius: FloatProperty(
+            name="Tube Radius", default=5.5, min=0.5, max=20.0,
+            description="Overall radius of the swept tube, before the "
+                        "taper varies it (the paper's c, default 11/2)")
+        klein_taper: FloatProperty(
+            name="Taper", default=0.4, min=0.0, max=1.2,
+            description="Spread between the tube's minimum and maximum "
+                        "radius: 0 keeps the tube uniform, larger "
+                        "values fatten the bulb and tighten the neck "
+                        "(the paper's d, default 2/5)")
         res_u: IntProperty(
             name="Resolution U", default=96, min=8, max=512,
             description="Samples along u (around); for the genus "
@@ -342,9 +416,25 @@ if _IN_BLENDER:
 
         def execute(self, context):
             p = self.preset
+            seam_sharp = False
             if p == 'KLEIN':
-                V, F = build_klein_bottle(self.res_u, self.res_v)
+                if self.klein_form == 'POLYNOMIAL':
+                    V, F = build_klein_bottle(self.res_u, self.res_v)
+                else:
+                    V, F = build_klein_franzoni(
+                        self.res_u, self.res_v, self.klein_length,
+                        self.klein_width, self.klein_radius,
+                        self.klein_taper, self.klein_form)
+                    # the closed dumbbell mesh carries the unavoidable
+                    # winding-flip ring on its seam circle; sharp-split
+                    # the normals there instead of splitting vertices
+                    seam_sharp = self.klein_form == 'DUMBBELL'
                 name = "Klein Bottle"
+            elif p == 'MOBIUS':
+                V, F = build_mobius_band(self.res_u, self.res_v,
+                                         width=self.strip_width)
+                seam_sharp = True
+                name = "Moebius Strip"
             elif p == 'KLEIN8':
                 V, F = build_klein_figure8(self.res_u, self.res_v)
                 name = "Klein Bottle 8"
@@ -395,6 +485,19 @@ if _IN_BLENDER:
             V = (V - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9 else 1.0)
             obj = _new_object(context, name, V * self.scale, F,
                               smooth=self.smooth)
+            if seam_sharp and mark_sharp is not None:
+                # A closed non-orientable mesh cannot wind consistently:
+                # one ring of edges is traversed the same way by both of
+                # its faces, and averaged smooth normals degenerate
+                # there into a dark crease.  Marking exactly that ring
+                # sharp splits the normals at the seam -- each side
+                # shades smoothly and the renderer's double-sided flip
+                # hides the sign -- which is what the old split-vertex
+                # seam achieved, but on a genuinely closed mesh.  No
+                # crease weight: the surface through the seam is smooth
+                # geometry, not a fold a subdivider should keep.
+                mark_sharp(obj.data, winding_conflict_edges(F),
+                           crease=False)
             if p in _IMMERSIONS and self.thickness > 0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
@@ -422,6 +525,14 @@ if _IN_BLENDER:
                 lay.prop(self, 'strip_thickness')
                 lay.prop(self, 'ridge')
             else:
+                if p == 'KLEIN':
+                    lay.prop(self, 'klein_form')
+                    if self.klein_form != 'POLYNOMIAL':
+                        for k in ('klein_length', 'klein_width',
+                                  'klein_radius', 'klein_taper'):
+                            lay.prop(self, k)
+                if p == 'MOBIUS':
+                    lay.prop(self, 'strip_width')
                 if p == 'STEINER':
                     lay.prop(self, 'steiner_angle')
                 if p == 'MORIN':
@@ -475,13 +586,25 @@ def _selftest():
               f"boundary edges = {nbound}")
         assert chi == chi_want and nbound == nbound_want, name
 
-    # the Klein seams are split (2 coincident rims of nv edges
-    # each), so cut open they are orientable cylinders: chi = 0
-    # with 2*nv boundary edges
+    # the DEFAULT Klein bottle (Franzoni's dumbbell tube) is index-glued
+    # and genuinely closed: chi = 0 with NO boundary edges
+    V, F = build_klein_franzoni(64, 32)
+    stats("klein", V, F, 0, nbound_want=0)
+    # the piriform tube cannot close (the paper's own caveat): its two
+    # rim circles near the cusp are honest boundary
+    V, F = build_klein_franzoni(64, 32, directrix='PIRIFORM')
+    stats("kleinpiri", V, F, 0, nbound_want=64)
+    # the legacy polynomial immersion keeps its split seam (2
+    # coincident rims of nv edges each), so cut open it is an
+    # orientable cylinder: chi = 0 with 2*nv boundary edges
     V, F = build_klein_bottle(64, 32)
-    stats("klein", V, F, 0, nbound_want=64)
+    stats("kleinpoly", V, F, 0, nbound_want=64)
     V, F = build_klein_figure8(64, 32)
     stats("klein8", V, F, 0, nbound_want=64)
+    # the plain Mobius band: chi = 0 and its single boundary edge,
+    # 2*nu edges long
+    V, F = build_mobius_band(64, 8)
+    stats("mobius", V, F, 0, nbound_want=128)
     # split-seam Sudanese band: cut open it is a disk (chi 1); its
     # boundary is the full grid perimeter, 2*nu + 2*nv edges.
     V, F = build_sudanese_mobius(64, 32)

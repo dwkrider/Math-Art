@@ -50,14 +50,14 @@
   "provenance": {
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "O. Labs, 'Advent calendar 2002, No. 9', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch031_no_09.md)."
+      "O. Labs, 'Advent calendar 2002, No. 9', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch027_no_09.md)."
     ]
   },
   "tradition": [
     "classical"
   ],
   "ids": {
-    "algsurf": "ch031_no_09"
+    "algsurf": "ch027_no_09"
   },
   "fabrication": {
     "developable": false,

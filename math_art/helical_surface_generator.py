@@ -53,6 +53,12 @@
 # no turn gives a tube (a coil, or a torus if the spine is flat) and a
 # turn gives the generalized helicoid proper.
 #
+#   COIL -- that no-turn tube shipped as its own named surface: the
+#     serpentine (helical tube, spring, toroidal helicoid), a circle of
+#     constant radius carried along a circular helix in the helix's
+#     normal plane.  Positive pitch winds right-handed, negative
+#     left-handed, and zero pitch degenerates the coil to the torus.
+#
 # Each surface is built by a pure-python function that works
 # without bpy, so this file can be run standalone for its
 # self-tests.  Seams where a parameter wraps (the seashell's
@@ -72,6 +78,9 @@
 #   "Encyclopedie des formes mathematiques remarquables"
 #   (mathcurve.com), chapters "rotoide", "surface helicoconique",
 #   "boite a oeufs" and "tore sinusoidal".
+# - Coil (serpentin): the tube whose bore is a circular helix --
+#   R. Ferreol, ibid., chapter "serpentin"; h > 0 right-handed, h = 0
+#   the torus, h < 0 left-handed.
 # - Sine torus at k = 1/2: Maurice El-Milick (1947), who called it a
 #   one-sided cyclide; his model is in the Institut Henri Poincare
 #   collection.
@@ -515,6 +524,12 @@ _SURFACES = [
      "A torus whose tube breathes: z = b sin(v) cos(k u). Integer k "
      "gives a torus, half-odd-integer k a Klein bottle, and k = 1/2 "
      "with equal radii a cross-cap"),
+    ('COIL', "Coil",
+     "The tube whose bore is a circular helix -- the spring or "
+     "serpentine (also called the helical tube or toroidal helicoid). "
+     "A circle carried along the helix in its normal plane; positive "
+     "pitch is a right-handed coil, negative left-handed, and zero "
+     "pitch degenerates it to the torus"),
     ('SPHERICAL_HELICOID', "Spherical Helicoid",
      "Helicoidal surface of constant Gaussian curvature K = +1: a "
      "geodesic meridian carried by a screw motion. With no rise it is "
@@ -600,7 +615,13 @@ if _IN_BLENDER:
                    ('REVOLUTION', "Revolution",
                     "Spin the curve about a fixed axis"),
                    ('HELICOID', "Helicoidal",
-                    "Screw the curve about a fixed axis")],
+                    "Screw the curve about a fixed axis"),
+                   ('ROTOID', "Rotoid (along a helix)",
+                    "Carry the curve along a helical SPINE in the "
+                    "spine's own normal plane, turning it as it goes: "
+                    "the generalized helicoid.  With no curve turn "
+                    "this is a plain tube about the helix (a coil, or "
+                    "a torus if the pitch is zero too)")],
             default='GENERAL',
             description="How the rigid curve is carried through space "
                         "(Darboux surface only)")
@@ -632,13 +653,18 @@ if _IN_BLENDER:
                         "(Darboux only)")
         pitch: FloatProperty(
             name="Pitch", default=0.4, min=-5.0, max=5.0,
-            description="Rise per radian for the translation and screw "
-                        "motions (Darboux only)")
+            description="Rise per radian for the translation, screw "
+                        "and rotoid motions, and of the coil's helix "
+                        "bore: positive right-handed, negative "
+                        "left-handed, 0 flattens the coil to a torus")
         tilt: FloatProperty(
             name="Tumble", default=0.6, min=0.0, max=3.14,
             description="How far the curve tips out of its plane as it "
                         "goes round; 0 collapses the general motion "
-                        "back to a plain revolution (Darboux only)")
+                        "back to a plain revolution.  For the rotoid "
+                        "motion: how many turns the curve makes per "
+                        "turn of the helical spine, 0 giving a plain "
+                        "tube (Darboux only)")
         wobbles: IntProperty(
             name="Tumbles", default=3, min=1, max=24,
             description="How many times the curve tips back and forth "
@@ -736,6 +762,17 @@ if _IN_BLENDER:
                     res_v=2 * self.resolution)
                 verts = [tuple(map(float, v)) for v in V]
                 name = "Darboux Surface"
+            elif self.surface == 'COIL':
+                # a tube about a circular helix: the rotoid motion with
+                # the curve turn switched off, which is exactly the
+                # serpentine of the encyclopedia
+                V, faces = build_darboux(
+                    motion='ROTOID', generatrix='CIRCLE',
+                    size=self.curve_size, radius=self.path_radius,
+                    pitch=self.pitch, tilt=0.0, turns=self.turns,
+                    res_u=self.resolution, res_v=2 * self.resolution)
+                verts = [tuple(map(float, v)) for v in V]
+                name = "Coil"
             elif self.surface == 'HYPERBOLIC_HELICOID':
                 verts, faces = build_hyperbolic_helicoid(
                     self.tau, self.extent, self.resolution)
@@ -828,13 +865,17 @@ if _IN_BLENDER:
                 keys = ('motion', 'generatrix', 'curve_size')
                 if self.generatrix == 'ELLIPSE':
                     keys += ('curve_ratio',)
-                if self.motion in ('GENERAL', 'TRANSLATION'):
+                if self.motion in ('GENERAL', 'TRANSLATION', 'ROTOID'):
                     keys += ('path_radius',)
-                if self.motion in ('TRANSLATION', 'HELICOID'):
+                if self.motion in ('TRANSLATION', 'HELICOID', 'ROTOID'):
                     keys += ('pitch',)
                 if self.motion == 'GENERAL':
                     keys += ('tilt', 'wobbles')
+                elif self.motion == 'ROTOID':
+                    keys += ('tilt',)
                 keys += ('turns',)
+            elif self.surface == 'COIL':
+                keys = ('curve_size', 'path_radius', 'pitch', 'turns')
             elif self.surface == 'HYPERBOLIC_HELICOID':
                 keys = ('tau', 'extent')
             elif self.surface == 'SEASHELL':
@@ -913,6 +954,46 @@ def _selftest():
     assert all(f[2] == len(verts) - 1 for f in tris)
     print(f"seashell apex {tuple(round(c, 6) for c in apex)}"
           f" welded into {len(tris)} triangles")
+
+    # ---- coil: a genuine TUBE about a helix ---------------------------
+    # The defining property of the serpentine is that every cross
+    # section is a circle of one radius centred on the helical spine,
+    # riding in the spine's normal plane.  build_darboux normalises its
+    # output (centre + one uniform scale), which preserves both, so the
+    # gates are scale-free: within every ring, all points equidistant
+    # from the ring's centroid, that distance identical across rings,
+    # and each ring orthogonal to the spine tangent its centroids trace.
+    nu_, nv_ = 24, 96
+    V, F = build_darboux(motion='ROTOID', generatrix='CIRCLE',
+                         size=0.45, radius=1.0, pitch=0.4, tilt=0.0,
+                         turns=2.0, res_u=nu_, res_v=nv_)
+    V = np.asarray(V, dtype=float)
+    assert np.all(np.isfinite(V))
+    rings = V.reshape(nv_, nu_, 3)
+    centres = rings.mean(axis=1)
+    d = np.linalg.norm(rings - centres[:, None, :], axis=-1)
+    spread = float(d.max() - d.min())
+    assert spread < 1e-9 * max(1.0, float(d.mean())), spread
+    tang = centres[2:] - centres[:-2]
+    tang /= np.linalg.norm(tang, axis=-1)[:, None]
+    inplane = rings[1:-1] - centres[1:-1, None, :]
+    cosang = np.einsum('rij,rj->ri', inplane, tang) \
+        / np.linalg.norm(inplane, axis=-1)
+    assert float(np.max(np.abs(cosang))) < 5e-3, float(
+        np.max(np.abs(cosang)))
+    # zero pitch degenerates the coil to a torus, welded shut
+    Vt, Ft = build_darboux(motion='ROTOID', generatrix='CIRCLE',
+                           size=0.45, radius=1.0, pitch=0.0, tilt=0.0,
+                           turns=1.0, res_u=24, res_v=96)
+    cnt = {}
+    for f in Ft:
+        for i in range(len(f)):
+            e = frozenset((f[i], f[(i + 1) % len(f)]))
+            cnt[e] = cnt.get(e, 0) + 1
+    assert all(c == 2 for c in cnt.values()), "torus limit not closed"
+    print("coil: every ring a circle of one radius centred on the "
+          "spine (spread %.1e), rings normal to the spine, and the "
+          "pitch 0 limit closes into a watertight torus" % spread)
     # ---- helicone: similar copies, not congruent ones -----------------
     # A Darboux sweep carries a RIGID curve, so its copies are congruent.
     # The helicone carries it by similarities instead, so distances

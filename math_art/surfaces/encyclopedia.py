@@ -349,7 +349,16 @@ def build_darboux(motion='GENERAL', generatrix='CIRCLE', size=0.45,
     """
     nu = max(6, int(res_u))
     nv = max(6, int(res_v))
-    closed_v = abs(turns - round(turns)) < 1e-9 and round(turns) >= 1
+    # A whole number of turns only CLOSES the sweep if the motion
+    # itself is periodic: revolution and the general (tumbling) motion
+    # return to their start, but a screw or a helical spine climbs by
+    # pitch per turn, so welding their seam would stitch faces across
+    # the vertical gap.  (A helicoid or rotoid with zero pitch is a
+    # revolution again and may close.)
+    periodic = motion in ('REVOLUTION', 'GENERAL') or (
+        motion in ('HELICOID', 'ROTOID') and abs(pitch) < 1e-12)
+    closed_v = (periodic and abs(turns - round(turns)) < 1e-9
+                and round(turns) >= 1)
     t = np.linspace(0.0, _TWO_PI, nu, endpoint=False)
     C = _generatrix(generatrix, t, size, ratio)          # (nu, 3)
     if generatrix == 'SEGMENT':
