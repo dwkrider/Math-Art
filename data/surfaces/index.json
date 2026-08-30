@@ -81,7 +81,7 @@
   "topological"
  ],
  "count": 426,
- "implemented_count": 357,
+ "implemented_count": 359,
  "entries": [
   {
    "slug": "alternating-fence-of-half-catenoids",
@@ -10491,9 +10491,9 @@
    "families": [
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-crystallographic",
     "triply-periodic"
    ],
@@ -10512,8 +10512,10 @@
     "ita_number": null,
     "order": null
    },
-   "implemented": false,
-   "operator_ids": [],
+   "implemented": true,
+   "operator_ids": [
+    "mesh.periodic_minimal_add"
+   ],
    "specimen_count": 0
   },
   {
@@ -10524,9 +10526,9 @@
    "families": [
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-crystallographic",
     "triply-periodic"
    ],
@@ -10545,8 +10547,10 @@
     "ita_number": null,
     "order": null
    },
-   "implemented": false,
-   "operator_ids": [],
+   "implemented": true,
+   "operator_ids": [
+    "mesh.periodic_minimal_add"
+   ],
    "specimen_count": 0
   },
   {

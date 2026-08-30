@@ -1071,6 +1071,19 @@ TPMS_EXACT = {
     'R3_RING': (_pl.RING_SURFACES['R3'][0] + " (relaxed)",
                 lambda cells, res, scale, theta:
                     _pl.ring_build('R3', cells, res, scale, theta)),
+    # Schoen's I-8 and I-9, by the same route and for the same reason:
+    # neither has a notebook in Weber's archive, and both are stated by
+    # Brakke's datafiles as pinned-boundary Plateau problems over
+    # rosette contours.  I-6 is deliberately NOT offered here -- it
+    # already ships as an exact Weierstrass row, and two routes to one
+    # surface would be two rows for one thing; it stays in
+    # RING_SURFACES as a cross-check between the routes.
+    'I8_RING': (_pl.RING_SURFACES['I8'][0] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.ring_build('I8', cells, res, scale, theta)),
+    'I9_RING': (_pl.RING_SURFACES['I9'][0] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.ring_build('I9', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;

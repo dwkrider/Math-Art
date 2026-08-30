@@ -683,6 +683,12 @@ def _selfx_crossings(V, T, tol=1e-7):
 
 # key -> (label, triangle vertices in the z = 0 plane, prism height).
 # The triangles are Schoen's, and the heights are Brakke's `#define HT`.
+# The contour need not be convex, or even simple.  Schoen's I-series is
+# bounded by ROSETTES -- closed polylines that return to the origin
+# several times, two petals for I-6 and I-8 and four for I-9 -- which is
+# the "figure-8 wireframe" whose soap film Schoen recorded finding in
+# October 1970.  `build_annulus_grid` spans any closed loop, so these
+# need contour data and nothing else.
 RING_SURFACES = {
     'R1': ("Schoen R-I / Schwarz H (ring form)",
            ((0.0, 0.0), (1.0, 0.0), (0.5, math.sqrt(0.75))), 0.5),
@@ -690,22 +696,215 @@ RING_SURFACES = {
            ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0)), 0.2),
     'R3': ("Schoen R-III (ring form, genus 13)",
            ((0.0, 0.0), (math.sqrt(3.0), 0.0), (0.0, 3.0)), 0.5),
+    # Two-petal rosettes.  I-6 also ships as an exact Weierstrass row, so
+    # it is kept here as a CROSS-CHECK between the two routes rather than
+    # as a second way to offer the same surface.
+    'I6': ("Schoen I-6 (ring form, genus 5)",
+           ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0),
+            (0.0, 0.0), (0.0, -1.0), (-1.0, -1.0), (-1.0, 0.0)), 0.8),
+    'I8': ("Schoen I-8 (ring form)",
+           ((0.0, 0.0), (1.0, 0.0), (0.5, 0.5), (0.0, 1.0),
+            (0.0, 0.0), (0.0, -1.0), (-0.5, -0.5), (-1.0, 0.0)), 0.5),
+    # Four petals.
+    'I9': ("Schoen I-9 (ring form)",
+           ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0),
+            (0.0, 0.0), (0.0, 1.0), (-1.0, 1.0),
+            (0.0, 0.0), (-1.0, 0.0), (-1.0, -1.0),
+            (0.0, 0.0), (0.0, -1.0), (1.0, -1.0)), 0.5),
 }
+
+
+# Half-turn generators for the ring surfaces, transcribed from the
+# `view_transform_generators` blocks of Brakke's datafiles.  Each is a
+# 180-degree rotation about one edge of the bounding prism: three about
+# the edges of the bottom triangle, three about the top ones.  Reflecting
+# the annulus in these is Schwarz's principle applied to the straight
+# boundary lines, and it is what turns one "triangular catenoid" into a
+# piece of the periodic surface.
+#
+# Stored as (3x3 rotation, translation), the two halves of the 4x4 the
+# datafile prints.
+def _halfturn_pair(rot, tx, ty, ht):
+    """The datafile's generators come in pairs: one about a bottom edge
+    and the same rotation about the corresponding top edge, differing
+    only by a z offset of 2*HT."""
+    return [(rot, (tx, ty, 0.0)), (rot, (tx, ty, 2.0 * ht))]
+
+
+def ring_generators(key):
+    """The tiling generators for one ring surface, or None.
+
+    The R family and the I family do NOT share generators, and assuming
+    they do is a silent error rather than a loud one: applying the R
+    half-turns to I-8 welds into 244 over-shared edges, and to I-9 into
+    14 266 while halving the vertex count -- coincident duplicate sheets,
+    which no topological count catches on its own.  So each key declares
+    its own, transcribed from its datafile's own
+    `view_transform_generators` block, and a key with none returns None
+    and is not tiled.
+
+    Note the datafile writes its 4x4 matrices ROW-major and inline, so
+    "1 0 0 2*xsize  0 1 0 0  0 0 1 0  0 0 0 1" is a translation by
+    (2*xsize, 0, 0), not a shear.
+    """
+    _label, tri, ht = RING_SURFACES[key]
+    rx = ((1.0, 0.0, 0.0), (0.0, -1.0, 0.0), (0.0, 0.0, -1.0))
+    ry = ((-1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, -1.0))
+    ident = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+    rotz = ((0.0, 1.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 0.0, 1.0))
+    if key == 'R3':
+        c = math.sqrt(3.0)
+        rc = ((-0.5, -c / 2.0, 0.0), (-math.sqrt(0.75), 0.5, 0.0),
+              (0.0, 0.0, -1.0))
+        return (_halfturn_pair(rx, 0.0, 0.0, ht)
+                + _halfturn_pair(ry, 0.0, 0.0, ht)
+                + _halfturn_pair(rc, 3.0 * c / 2.0, 1.5, ht))
+    if key == 'R2':
+        rc = ((0.0, -1.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 0.0, -1.0))
+        return (_halfturn_pair(rx, 0.0, 0.0, ht)
+                + _halfturn_pair(ry, 0.0, 0.0, ht)
+                + _halfturn_pair(rc, 1.0, 1.0, ht))
+    if key == 'I6':
+        return [(ident, (2.0, 0.0, 0.0)), (ident, (0.0, 2.0, 0.0)),
+                (rotz, (0.0, 0.0, ht))]
+    if key == 'I8':
+        return [(ident, (2.0, 0.0, 0.0)),
+                (rotz, (1.0, 1.0, 0.0)),          # translation with twist
+                (rotz, (0.0, 0.0, ht))]
+    if key == 'I9':
+        # I-9's third generator is the MIRROR-like ((0,1,0),(1,0,0),z),
+        # not the rotation the other two use -- the datafile prints
+        # "0 1 0 0   1 0 0 0" where I-6 and I-8 print "-1 0 0 0".
+        swapxy = ((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, 1.0))
+        return [(ident, (2.0, 0.0, 0.0)), (ident, (0.0, 2.0, 0.0)),
+                (swapxy, (0.0, 0.0, ht))]
+    return None
+
+
+def ring_tile(V, quads, key, depth=2, tol=1e-7):
+    """Close the group generated by `ring_generators` up to `depth`
+    words and emit the welded orbit of the patch.
+
+    The orbit is deduplicated by the transform, not by the mesh: two
+    different words that give the same isometry would otherwise each
+    contribute a copy, and coincident sheets are invisible to any
+    topological count -- the failure that once rendered CLP-with-a-handle
+    as leopard spots.
+    """
+    V = np.asarray(V, dtype=float)
+    seen = {}
+    ident = (np.eye(3), np.zeros(3))
+
+    def keyof(R, t):
+        return tuple(np.round(np.concatenate([R.ravel(), t]), 7))
+
+    frontier = [ident]
+    seen[keyof(*ident)] = ident
+    raw = ring_generators(key)
+    if raw is None:
+        return V, [tuple(int(i) for i in q) for q in quads], 1
+    gens = [(np.array(R, float), np.array(t, float)) for R, t in raw]
+    for _ in range(depth):
+        nxt = []
+        for R0, t0 in frontier:
+            for R1, t1 in gens:
+                R = R1 @ R0
+                t = R1 @ t0 + t1
+                k = keyof(R, t)
+                if k not in seen:
+                    seen[k] = (R, t)
+                    nxt.append((R, t))
+        frontier = nxt
+        if not frontier:
+            break
+    Vs, Qs, base = [], [], 0
+    for R, t in seen.values():
+        Vs.append(V @ R.T + t)
+        flip = np.linalg.det(R) < 0.0
+        for q in quads:
+            f = tuple(int(i) + base for i in q)
+            Qs.append(f[::-1] if flip else f)
+        base += len(V)
+    return np.concatenate(Vs, 0), Qs, len(seen)
+
+
+def ring_tile_checked(V, quads, key, depth=2):
+    """Tile, weld, and ACCEPT ONLY IF the result is a surface.
+
+    Same contract as `hexagonal._assembly_ok`, and for the same reason:
+    a wrong generator set produces coincident sheets, which are invisible
+    to a component count and to the eye until they render as stripes.
+    I-6 and I-8 fail this at depth 2 -- 1390 and 78 over-shared edges --
+    while R-2, R-3 and I-9 come through at exactly zero, so the check is
+    not decorative and the failures are not marginal.  A surface that
+    does not pass falls back to its single relaxed patch, which is
+    honest: one triangular catenoid IS a piece of the surface, whereas a
+    stack of overlapping copies is not.
+    """
+    try:
+        VT, QT, n = ring_tile(V, quads, key, depth=depth)
+    except Exception:
+        return np.asarray(V, float), [tuple(int(i) for i in q)
+                                      for q in quads], 1
+    if n <= 1:
+        return VT, QT, 1
+    VT = np.asarray(VT, float)
+    span = float(np.max(VT.max(0) - VT.min(0)))
+    W, QQ = _weld_points(VT, QT, 1e-4 * max(span, 1e-12))
+    ec = {}
+    for f in QQ:
+        m = len(f)
+        for t in range(m):
+            a, b = f[t], f[(t + 1) % m]
+            e = (a, b) if a < b else (b, a)
+            ec[e] = ec.get(e, 0) + 1
+    if any(c > 2 for c in ec.values()):
+        return np.asarray(V, float), [tuple(int(i) for i in q)
+                                      for q in quads], 1
+    return W, QQ, n
+
+
+def _weld_points(V, faces, tol):
+    """Merge vertices within `tol` and reindex."""
+    keys = np.round(np.asarray(V, float) / max(tol, 1e-30)).astype(np.int64)
+    uniq = {}
+    remap = np.empty(len(V), dtype=np.int64)
+    out = []
+    for i, k in enumerate(map(tuple, keys)):
+        j = uniq.get(k)
+        if j is None:
+            j = uniq[k] = len(out)
+            out.append(V[i])
+        remap[i] = j
+    W = np.asarray(out, dtype=float)
+    QQ = []
+    for f in faces:
+        g = [int(remap[i]) for i in f]
+        d = [g[i] for i in range(len(g)) if g[i] != g[(i + 1) % len(g)]]
+        if len(d) >= 3:
+            QQ.append(tuple(d))
+    return W, QQ
 
 
 def ring_build(key, cells, res_per_cell, scale, theta):
     """TPMS_EXACT-compatible wrapper: relax, then centre and fit the
     result into the 2*scale cube the rest of the catalog uses.
 
-    `cells` and `theta` are accepted and ignored.  Tiling this by the
-    prism's six half-turn generators is real future work, and stacking
-    un-reflected copies would be a lie about the surface; `theta` is
-    meaningless here because there is no holomorphic family to rotate --
-    that is precisely the difference between this route and the exact
-    Weierstrass rows.
+    `cells` selects how many words of the symmetry group to close, and
+    the tiling is accepted only if it welds into a surface (see
+    `ring_tile_checked`); otherwise the single relaxed patch ships.
+    `theta` is accepted and ignored -- it is meaningless here because
+    there is no holomorphic family to rotate, which is precisely the
+    difference between this route and the exact Weierstrass rows.
     """
     m = max(48, int(round(res_per_cell)) * 2)
     V, quads, _area = ring_surface(key, m=m, rows=max(10, m // 6))
+    # `cells` drives how many words of the symmetry group to close, so
+    # asking for more cells genuinely extends the surface instead of
+    # being ignored -- but only where the tiling verifies.
+    depth = int(np.clip(int(cells) if np.isscalar(cells) else
+                        max(cells), 1, 3))
+    V, quads, _n = ring_tile_checked(V, quads, key, depth=depth)
     V = np.asarray(V, dtype=float)
     lo, hi = V.min(0), V.max(0)
     V = V - 0.5 * (lo + hi)
@@ -817,9 +1016,9 @@ def _selftest():
     # triangle quality as much as it measures the surface -- R-II's rises
     # under refinement while its area settles to five figures -- so area
     # is the honest invariant and the one gated here.
-    for key in ('R1', 'R2', 'R3'):
+    for key in ('R1', 'R2', 'R3', 'I6', 'I8', 'I9'):
         areas = []
-        for m, rows in ((90, 15), (135, 22)):
+        for m, rows in ((96, 16), (144, 24)):
             _V, _Q, a = ring_surface(key, m=m, rows=rows)
             areas.append(a)
         drift = abs(areas[1] - areas[0]) / max(areas[1], 1e-30)
@@ -828,6 +1027,32 @@ def _selftest():
         print("plateau: ring %s area %.6f -> %.6f (drift %.4f%%) %s"
               % (key, areas[0], areas[1], 100.0 * drift,
                  'OK' if good else 'FAIL'))
+
+    # The tiling must be ACCEPTED where the generators are right and
+    # REFUSED where they are not.  Both halves matter: a check that only
+    # ever accepts would have passed the first version of
+    # `ring_generators`, which applied the R family's half-turns to the
+    # I family and welded I-9 into 14 266 over-shared edges while halving
+    # its vertex count -- coincident sheets, invisible to a component
+    # count.
+    for key, expect_tiled in (('R2', True), ('R3', True),
+                              ('I9', True), ('I8', False), ('I6', False)):
+        V, Q, _a = ring_surface(key, m=96, rows=16)
+        W, QQ, n = ring_tile_checked(V, Q, key, depth=2)
+        ec = {}
+        for f in QQ:
+            mm = len(f)
+            for t in range(mm):
+                x, y = f[t], f[(t + 1) % mm]
+                e = (x, y) if x < y else (y, x)
+                ec[e] = ec.get(e, 0) + 1
+        over = sum(1 for c in ec.values() if c > 2)
+        tiled = n > 1
+        good = (over == 0) and (tiled == expect_tiled)
+        ok &= good
+        print("plateau: ring %s tiling %s (%d copies, %d over-shared) %s"
+              % (key, "accepted" if tiled else "refused -> patch",
+                 n, over, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
