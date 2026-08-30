@@ -857,6 +857,106 @@ _SPECS['I6'] = _prod_spec(
     nb="Schoen_I6.nb")
 
 
+def spec_period(key, t, n=3000):
+    """Re of the period integral whose vanishing fixes a spec's modulus.
+
+    Only rows carrying a `period` entry have one.  That entry names the
+    two ends of a straight path in the torus, as functions of (a, tau),
+    and both of them are theta ZEROS -- so the integrand diverges like
+    s^(-1/2) along the way.  That is integrable, but only with a
+    quadrature that clusters into the ends: s = (1 - cos(pi u))/2 makes
+    ds vanish at exactly the rate the integrand blows up, leaving a
+    bounded transformed integrand.  Sampling the path uniformly instead
+    returns nan, because the very first node sits on a zero of theta.
+    """
+    sp = _SPECS[key]
+    a = float(sp['a'])
+    tau = 1j * float(t)
+    z0, z1 = sp['period'](a, tau)
+    q = np.exp(1j * np.pi * tau)
+    u = (np.arange(n) + 0.5) / n
+    s = 0.5 * (1.0 - np.cos(np.pi * u))
+    ds = 0.5 * np.pi * np.sin(np.pi * u) / n
+    z = z0 + (z1 - z0) * s
+    L = np.full(z.shape, complex(sp['const']), dtype=complex)
+    for sh, e in sp['terms'](a, tau):
+        L = L + e * np.log(_theta11(z - sh, q))
+    g = np.exp(L)
+    return float(np.real(np.sum(0.5 * (1.0 / g - g) * (z1 - z0) * ds)))
+
+
+def solve_spec_tau(key, lo, hi, steps=40):
+    """Bisect `spec_period` for the modulus, returning t with tau = i t.
+
+    Used as a GATE rather than at import: each row below stores the
+    solved value, and the self-test re-solves from a bracket and checks
+    it lands on the stored one.  That makes the stored constant testable
+    instead of merely asserted, which is the whole point of keeping the
+    solver -- a transcribed number that nothing re-derives is a number
+    nobody can check.
+    """
+    ts = np.linspace(lo, hi, steps)
+    vals = [spec_period(key, float(t)) for t in ts]
+    for i in range(len(ts) - 1):
+        if vals[i] * vals[i + 1] < 0.0:
+            a_, b_, fa = float(ts[i]), float(ts[i + 1]), vals[i]
+            for _ in range(80):
+                m = 0.5 * (a_ + b_)
+                fm = spec_period(key, m)
+                if fa * fm <= 0.0:
+                    b_ = m
+                else:
+                    a_, fa = m, fm
+            return 0.5 * (a_ + b_)
+    return None
+
+
+# Schoen F-RD, genus 6.  Weber: "I neither know an algebraic equation
+# for this surface, nor a simple polyhedral approximation."  Its
+# conjugate solves the Plateau problem for a quadrilateral in a
+# 1 x 1 x sqrt(2) box with angles 90/90/60/45, and was known to
+# Stessmann.  Divisor constraints b = (1-2a)/3, c = 1/2 - b, d = 1/2 - a.
+#
+# The notebook forms Omega1 as (phi2/sqrt(i) - sqrt(i) phi1)/2 rather
+# than the standard (phi2 - phi1)/2.  That is not a different formula:
+# it is the standard one with G replaced by G e^(i pi/4), i.e. a
+# rotation of the Gauss map, so it is folded into `const` here and the
+# ordinary combination applies.
+_FRD_A = 0.11
+_FRD_B = (1.0 - 2.0 * _FRD_A) / 3.0
+_SPECS['FRD_EXACT'] = _prod_spec(
+    "Schoen F-RD (exact, cubic, genus 6)",
+    tau=0.4097611639604068j, a=_FRD_A,
+    terms=lambda a, tau, _b=_FRD_B: (
+        (a, -0.5), (-a, 0.5), (_b, -0.75), (-_b, 0.75),
+        (0.5 - _b + tau / 2.0, 0.75), (-(0.5 - _b) + tau / 2.0, -0.75),
+        (0.5 - a + tau / 2.0, 0.5), (-(0.5 - a) + tau / 2.0, -0.5)),
+    const=0.25j * math.pi,
+    nb="FR-D.nb")
+
+# Schoen's unnamed surface 12, later named F-RD(r) -- the quarter-twisted
+# relative of F-RD, genus 5.  Divisor constraints a + a' = 1/2 = b + b'
+# and a + b = 1/4, the last of which is what produces the quarter twist;
+# one period condition then fixes tau in terms of a.
+#
+# tau below is SOLVED, not transcribed: Weber's notebook plots solper(a)
+# without printing a value.  `solve_spec_tau('FRDR', 0.10, 0.45)`
+# recovers 0.3947862928575998 with a residual of 6e-17, and the
+# self-test re-runs that bisection against the stored constant.
+_FRDR_A = 0.07
+_SPECS['FRDR'] = _prod_spec(
+    "Schoen F-RD(r) (exact, quarter-twisted, genus 5)",
+    tau=0.3947862928575998j, a=_FRDR_A,
+    terms=lambda a, tau, _b=0.25 - _FRDR_A: (
+        (a, 0.5), (_b, 0.5), (-a, -0.5), (-_b, -0.5),
+        (0.5 - a - tau / 2.0, -0.5), (0.5 - _b - tau / 2.0, -0.5),
+        (-0.5 + a - tau / 2.0, 0.5), (-0.5 + _b - tau / 2.0, 0.5)),
+    const=0.25j * math.pi,
+    nb="Unnamed-12.nb")
+_SPECS['FRDR']['period'] = (
+    lambda a, tau: (complex(a), complex(0.5 - a - tau / 2.0)))
+
+
 def spec_curves(key, P):
     """The boundary curves of a spec patch, split where the spec says.
 
@@ -2185,8 +2285,26 @@ def _selftest():
     print("hexagonal: theta exponents sum to zero on all %d spec rows %s"
           % (len(_SPECS), 'OK' if not bad else 'FAIL ' + ','.join(bad)))
 
+    # A transcribed constant that nothing re-derives is a constant
+    # nobody can check.  F-RD(r)'s modulus was SOLVED rather than copied
+    # -- Weber's notebook plots solper(a) without printing a value -- so
+    # the gate re-runs that bisection from a bracket and requires it to
+    # land on the stored number, and requires the period residual there
+    # to vanish.
+    want_t = float(np.imag(_SPECS['FRDR']['tau']))
+    got_t = solve_spec_tau('FRDR', 0.10, 0.45)
+    resid = abs(spec_period('FRDR', want_t))
+    good = (got_t is not None and abs(got_t - want_t) < 1e-9
+            and resid < 1e-10)
+    ok &= good
+    print("hexagonal: F-RD(r) modulus re-solves to %.16f (stored %.16f), "
+          "period residual %.1e %s"
+          % (got_t if got_t is not None else float('nan'), want_t, resid,
+             'OK' if good else 'FAIL'))
+
     # ...then each member must build a converging minimal patch.
-    for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6'):
+    for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
+                'FRD_EXACT', 'FRDR'):
         rows = []
         for n in (45, 75):
             xs, _a, _b, ys, _c, _d = _spec_axes(key, n, n)
