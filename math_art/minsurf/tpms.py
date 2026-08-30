@@ -1038,6 +1038,19 @@ TPMS_EXACT = {
     'FRDR': (_we_hex._SPECS['FRDR']['label'],
              lambda cells, res, scale, theta:
                  _we_hex.spec_build('FRDR', cells, res, scale, theta)),
+    # The box-symmetry series: one template, selected by a sign vector.
+    'BOX_1001': (_we_hex._SPECS['BOX_1001']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('BOX_1001', cells, res, scale,
+                                        theta)),
+    'BOX_1010': (_we_hex._SPECS['BOX_1010']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('BOX_1010', cells, res, scale,
+                                        theta)),
+    'BOX_1011': (_we_hex._SPECS['BOX_1011']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('BOX_1011', cells, res, scale,
+                                        theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;

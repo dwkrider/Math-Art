@@ -957,6 +957,76 @@ _SPECS['FRDR']['period'] = (
     lambda a, tau: (complex(a), complex(0.5 - a - tau / 2.0)))
 
 
+# --------------------------------------------------------------------
+# The box-symmetry series
+# --------------------------------------------------------------------
+# Thirteen of Weber's notebooks share ONE template, selected by a small
+# sign vector.  With {e1,e2,e3,e4} in {-1,+1}^4 and three free branch
+# values p1, p2, p3,
+#
+#   G0 = prod_k theta11(z - p_k)^(e_k/2) theta11(z + p_k)^(-e_k/2)
+#        * theta11(z - (d + tau/2))^(e4/2)
+#        * theta11(z + (d - tau/2))^(-e4/2),
+#   d  = -1/2 - p1 + p2 + p3   (Abel's theorem),
+#
+# and G = G0 / G0(0), a Lopez-Ros normalisation folded into `const`.
+# Every exponent appears with both signs, so the sum is zero by
+# construction rather than by luck.
+#
+# This is the structure `research/missing-surfaces-catalog.md` D4 hoped
+# for -- one row plus a selector rather than thirteen transcriptions --
+# found as a fact in the sources rather than imposed on them.
+#
+# References:
+# - M. Weber, "Box type (g=5)" series, minimalsurfaces.blog -- the
+#   template, the sign vectors and the solved parameter tables.
+# - V. Ramos Batista and collaborators, for the (+++|-) member; see the
+#   triply-periodic Costa row.
+
+def _box_spec(label, e, p1, p2, p3, tau, nb=None):
+    """One member of the box-symmetry series, from its sign vector.
+
+    `d` is DERIVED from Abel's theorem rather than passed, because it is
+    not free: the divisor has to sum correctly for g to exist at all.
+    """
+    e1, e2, e3, e4 = (float(x) for x in e)
+    d = -0.5 - p1 + p2 + p3
+
+    def terms(a, tau, _p=(p1, p2, p3), _e=(e1, e2, e3, e4), _d=d):
+        q1, q2, q3 = _p
+        f1, f2, f3, f4 = _e
+        return ((q1, f1 / 2.0), (-q1, -f1 / 2.0),
+                (q2, f2 / 2.0), (-q2, -f2 / 2.0),
+                (q3, f3 / 2.0), (-q3, -f3 / 2.0),
+                (_d + tau / 2.0, f4 / 2.0),
+                (-_d + tau / 2.0, -f4 / 2.0))
+
+    # G0(0) is a plain number, so the Lopez-Ros normalisation G/G0(0) is
+    # a constant shift of log g -- computed once here rather than left
+    # out, because it is what orients the surface in its own cell.
+    q = np.exp(1j * np.pi * complex(tau))
+    L0 = sum(ex * np.log(_theta11(np.array([0.0 + 0j]) - sh, q))[0]
+             for sh, ex in terms(p1, complex(tau)))
+    sp = _prod_spec(label, tau=tau, a=p1, terms=terms,
+                    const=complex(-L0), nb=nb)
+    sp['boxtype'] = tuple(int(x) for x in e)
+    return sp
+
+
+_SPECS['BOX_1001'] = _box_spec(
+    "Box Type (+-|+) (exact, genus 5)", (-1, 1, 1, -1),
+    0.1, 0.2, 0.46802126852411385, 0.42287483495076733j,
+    nb="Box_Type_g_5_-_1_0_0_1_.nb")
+_SPECS['BOX_1010'] = _box_spec(
+    "Box Type (+-+|-) (exact, genus 5)", (-1, 1, -1, 1),
+    0.13, 0.2540625168102844, 0.40751143412603386, 0.8j,
+    nb="Box_Type_g_5_-_1_0_1_0_.nb")
+_SPECS['BOX_1011'] = _box_spec(
+    "Box Type (+-+|+) (exact, genus 5)", (-1, 1, -1, -1),
+    0.06, 0.25007414956744817, 0.43994933834214295, 0.8j,
+    nb="Box_Type_g_5_-_1_0_1_1_.nb")
+
+
 def spec_curves(key, P):
     """The boundary curves of a spec patch, split where the spec says.
 
@@ -2304,7 +2374,8 @@ def _selftest():
 
     # ...then each member must build a converging minimal patch.
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
-                'FRD_EXACT', 'FRDR'):
+                'FRD_EXACT', 'FRDR',
+                'BOX_1001', 'BOX_1010', 'BOX_1011'):
         rows = []
         for n in (45, 75):
             xs, _a, _b, ys, _c, _d = _spec_axes(key, n, n)
