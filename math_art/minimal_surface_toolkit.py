@@ -606,14 +606,6 @@ if _IN_BLENDER:
             name="Storeys", default=3, min=1, max=8,
             description="Number of periodic fundamental domains to stack "
                         "(saddle tower); ignored for the rest")
-        reflect_depth: IntProperty(
-            name="Reflections", default=2, min=1, max=4,
-            description="How far to reflect the fundamental piece in "
-                        "its own boundary symmetry planes.  1 shows the "
-                        "bare piece; each step up adds another round of "
-                        "reflections, and the surface stops growing on "
-                        "its own once the orbit closes or stops "
-                        "verifying as a single clean sheet")
         radius: FloatProperty(
             name="Domain Radius", default=1.2, min=0.2, max=20.0,
             soft_max=4.0,
@@ -1023,6 +1015,14 @@ if _IN_BLENDER:
         # legacy scalar alias (not shown): scripted
         # periodic_minimal_add(surface=..., cells=3) still works and
         # broadcasts to every tiling axis left at its default (1).
+        reflect_depth: IntProperty(
+            name="Reflections", default=2, min=1, max=4,
+            description="How far to reflect the fundamental piece in "
+                        "its own boundary symmetry planes.  1 shows the "
+                        "bare piece; each step up adds another round of "
+                        "reflections, and the surface stops growing on "
+                        "its own once the orbit closes or stops "
+                        "verifying as a single clean sheet")
         cells: IntProperty(
             name="Cells", default=0, min=0, max=8,
             description="Legacy uniform cell count (broadcasts to every "
