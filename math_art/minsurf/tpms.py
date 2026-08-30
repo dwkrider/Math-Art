@@ -1051,6 +1051,14 @@ TPMS_EXACT = {
                  lambda cells, res, scale, theta:
                      _we_hex.spec_build('BOX_1011', cells, res, scale,
                                         theta)),
+    'TRIPLY_COSTA': (_we_hex._SPECS['TRIPLY_COSTA']['label'],
+                     lambda cells, res, scale, theta:
+                         _we_hex.spec_build('TRIPLY_COSTA', cells, res,
+                                            scale, theta)),
+    'SIMOES_BATISTA': (_we_hex._SPECS['SIMOES_BATISTA']['label'],
+                       lambda cells, res, scale, theta:
+                           _we_hex.spec_build('SIMOES_BATISTA', cells,
+                                              res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;

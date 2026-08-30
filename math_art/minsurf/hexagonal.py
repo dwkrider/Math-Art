@@ -1027,6 +1027,78 @@ _SPECS['BOX_1011'] = _box_spec(
     nb="Box_Type_g_5_-_1_0_1_1_.nb")
 
 
+def _cluster_path(z0, z1, n=2000):
+    """Nodes and weights along a straight path whose ENDS are theta
+    zeros.  Same substitution as `spec_period`, for the same reason."""
+    u = (np.arange(n) + 0.5) / n
+    s = 0.5 * (1.0 - np.cos(np.pi * u))
+    return z0 + (z1 - z0) * s, 0.5 * np.pi * np.sin(np.pi * u) / n * (z1 - z0)
+
+
+def _lopez_ros(terms, const, a, tau, z0, z1):
+    """Solve for the Lopez-Ros factor rho that makes a surface close.
+
+    Weber's notebooks set rho = sqrt(Int phi2 / conj(Int phi1)) along a
+    path between two branch points.  It is a genuine unknown, not a
+    cosmetic scale: it is what makes the horizontal period condition
+    Int G dh = conj(Int dh/G) hold, and dropping it gives a surface that
+    does not close up.
+    """
+    q = np.exp(1j * np.pi * tau)
+    z, w = _cluster_path(complex(z0), complex(z1))
+    L = np.full(z.shape, complex(const), dtype=complex)
+    for sh, e in terms(a, tau):
+        L = L + e * np.log(_theta11(z - sh, q))
+    g = np.exp(L)
+    i1 = np.sum(g * w)
+    i2 = np.sum((1.0 / g) * w)
+    return np.sqrt(i2 / np.conj(i1))
+
+
+# Batista's triply periodic Costa surface, genus 5 -- the (+++|-) box
+# type, and the surface Weber also calls a triply periodic
+# Costa-Hoffman-Meeks.  Three (tau, a) pairs are tabulated; this is the
+# tau = 0.8i member.  Note the DATABASE records `triply-periodic-costa`
+# and `horgan-surface` as distinct objects, and they are: the finite
+# Horgan surface is proved not to exist, while this one does.
+_TPC_A, _TPC_TAU = 0.2723060550713618, 0.8j
+
+
+def _tpc_terms(a, tau):
+    return ((0.0, -0.5), (a, 0.5), (-a, 0.5), (0.5, 0.5),
+            (tau / 2.0, -0.5), (0.5 - tau / 2.0, -0.5))
+
+
+_SPECS['TRIPLY_COSTA'] = _prod_spec(
+    "Triply Periodic Costa (Batista, exact, genus 5)",
+    tau=_TPC_TAU, a=_TPC_A, terms=_tpc_terms,
+    const=0.25j * math.pi,
+    nb="Triply_Costa_g_4_straight.nb")
+# rho is solved, not guessed -- see `_lopez_ros`.
+_SPECS['TRIPLY_COSTA']['const'] = (
+    0.25j * math.pi
+    + np.log(_lopez_ros(_tpc_terms, 0.25j * math.pi, _TPC_A, _TPC_TAU,
+                        0.0, _TPC_A)))
+
+# The Simoes-Batista surface, genus 7: Batista's triply periodic Costa
+# with a handle added.  Twelve theta factors on a rectangular lattice,
+# with a two-parameter period problem Weber solved; this is the
+# tau = 0.97i member.
+_SB_A, _SB_B, _SB_TAU = (0.04631108617540206, 0.19605836826545586, 0.97j)
+_SPECS['SIMOES_BATISTA'] = _prod_spec(
+    "Simoes-Batista Surface (exact, genus 7)",
+    tau=_SB_TAU, a=_SB_A,
+    terms=lambda a, tau, _b=_SB_B: (
+        (a, -0.5), (-a, 0.5), (0.25, 0.5), (-0.25, -0.5),
+        (0.5 - a, -0.5), (-(0.5 - a), 0.5),
+        (0.25 - tau / 2.0, -0.5), (-(0.25 + tau / 2.0), 0.5),
+        (_b - tau / 2.0, -0.5), (-(_b + tau / 2.0), 0.5),
+        (0.5 - _b - tau / 2.0, -0.5), (-(0.5 - _b + tau / 2.0), 0.5)),
+    const=0.25j * math.pi,
+    nb="Sim-es-Batista-g-7.nb")
+_SPECS['SIMOES_BATISTA']['test_res'] = (60, 90)
+
+
 def spec_curves(key, P):
     """The boundary curves of a spec patch, split where the spec says.
 
@@ -2375,9 +2447,16 @@ def _selftest():
     # ...then each member must build a converging minimal patch.
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
                 'FRD_EXACT', 'FRDR',
-                'BOX_1001', 'BOX_1010', 'BOX_1011'):
+                'BOX_1001', 'BOX_1010', 'BOX_1011',
+                'TRIPLY_COSTA', 'SIMOES_BATISTA'):
         rows = []
-        for n in (45, 75):
+        # 45/75 suits most rows.  A few need a finer pair -- at 45 the
+        # Simoes-Batista patch is still coarse enough that its diameter
+        # moves 5.2% to 75, which would fail the settling gate for being
+        # under-resolved rather than wrong; by 60/90 it is at 1.6% and
+        # falling.  Declaring that per row beats loosening the gate for
+        # everyone.
+        for n in _SPECS[key].get('test_res', (45, 75)):
             xs, _a, _b, ys, _c, _d = _spec_axes(key, n, n)
             P = _spec_patch(key, n, n)
             Pu = np.gradient(P, xs, axis=0)
