@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "schoen-c33-p",
+  "name": "Schoen C33(P) Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Member of the C(P) family: Neovius' surface is C9(P), and the family continues by adding handles in the same 96-fold symmetric cell.  No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula would be worse than a null."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 33
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "Needs constraint-plane support in the area minimiser (vertices sliding on planes rather than pinned) plus the discrete adjoint/Bonnet transform. math_art/minsurf/plateau.py has neither; its `minimize_area` only pins vertices. Brakke's datafile for this surface is an ADJOINT file and cannot be used without that step.",
+      "resume": "K. Brakke's adjoint.cmd (mirrored in starfish.tar) is the algorithm, and U. Pinkall and K. Polthier, 'Computing discrete minimal surfaces and their conjugates', Experimental Mathematics 2(1) (1993) -- converted at research/papers/minimal-surfaces/ -- is the method. See BACKLOG.md."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "A. H. Schoen, NASA TN D-5541 (1970), for the C(P) construction.",
+      "K. A. Brakke, 'Triply Periodic Minimal Surfaces', Surface Evolver example collection, kenbrakke.com/evolver/examples/periodic/periodic.html (local mirror: brakke/book/evolver/). C-P family page ch018_cpfamily.md."
+    ]
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "named_after": "Schoen",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

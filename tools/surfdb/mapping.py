@@ -49,6 +49,14 @@
 # ---------------------------------------------------------------------------
 
 MERGE = {
+    # The box-symmetry series is ONE template selected by a sign vector,
+    # so its three shipped members are three constructions of the same
+    # catalogued family rather than three surfaces.  MERGE, not ALIAS:
+    # an alias is one-to-one and three rows aliased to one slug collide.
+    "tpms_exact:BOX_1001": "weber-pqr-series",
+    "tpms_exact:BOX_1010": "weber-pqr-series",
+    "tpms_exact:BOX_1011": "weber-pqr-series",
+
     # Catalan's minimal surface is the Bjorling surface of a cycloid.
     # The zoo row's own label reads "Bjorling: Cycloid (Catalan)", so the
     # identity is asserted by the shipped code, not inferred by us.
@@ -215,6 +223,31 @@ ALIAS = {
     "minsurf:MEEKS_MOBIUS": "meeks-mobius-strip",
     "minsurf:BJ_CIRCLE": "bjorling-twisted-band",
     "tpms_exact:PGD": "pgd-associate-family",
+    # The exact-Weierstrass rows added on the minimal-periodic branch.
+    # These MUST live here rather than being hand-edited into the record
+    # files: `data/surfaces` is regenerated from the registries, so a
+    # hand-flipped record is reverted the moment anyone rebuilds -- which
+    # is exactly what happened once, silently, in a merge.
+    "tpms_exact:H": "h-exact",
+    "tpms_exact:CLP": "clp-exact",
+    "tpms_exact:CLP_HANDLE": "clp-handle-exact",
+    "tpms_exact:LIDINOID": "lidinoid-exact",
+    "tpms_exact:RPD": "rpd-exact",
+    "tpms_exact:HT": "schoen-h-t",
+    "tpms_exact:SS": "schoen-s-s",
+    "tpms_exact:H2R": "weber-h2r",
+    "tpms_exact:TR": "weber-trr",
+    "tpms_exact:STESSMANN": "stessmann-surface",
+    "tpms_exact:RII": "schoen-rii",
+    "tpms_exact:CH": "schoen-c-h",
+    "tpms_exact:I6": "schoen-i6",
+    "tpms_exact:FRD_EXACT": "weber-fr-d",
+    "tpms_exact:FRDR": "schoen-frd-r",
+    "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
+    "tpms_exact:SIMOES_BATISTA": "simoes-batista-surface",
+    "tpms_exact:R3_RING": "schoen-riii",
+    "tpms_exact:I8_RING": "schoen-i8",
+    "tpms_exact:I9_RING": "schoen-i9",
     "tpms:LIDINOID": "lidinoid",
     "tpms:NEOVIUS": "neovius-surface",
     "tpms:FK_CS": "fischer-koch-cs",
