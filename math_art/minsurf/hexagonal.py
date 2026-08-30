@@ -658,20 +658,97 @@ _SPECS = {
     # a = (r-1)/r and p = (-r-s+rs)/(2(r-1)s) on the Euclidean triangle
     # group Delta(r,s,t) -- and H'-T is its (2,3,6) member, giving
     # a = 1/2 and p = 1/6.  Identical.
-    'HT': dict(
-        label="Schoen H'-T (exact, hexagonal, genus 4)",
-        tau=0.4j, a=1.0 / 6.0,
-        terms=lambda a, tau: ((a, 0.5), (-a, -0.5)),
-        const=0j,
-        xlim=(0.0, 0.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
-        # the y = 0 edge runs through the branch point at x = a0, as
-        # CLP's does; split it so the two halves classify separately
-        splits=(1.0 / 6.0,), split_edge='y0',
-        theta=0.0,
-        # see `_weld_tol`: the default 1e-4 over-merges this patch
-        weld=3e-5,
-        nb="H_-T.nb"),
 }
+
+
+# --------------------------------------------------------------------
+# The Euclidean-triangle-group series
+# --------------------------------------------------------------------
+# Weber states outright that P, H, H'-T, H''-R, S'-S'' and T'-R' "share
+# enough properties so that a SINGLE PIECE OF CODE can be used to compute
+# all of them": each has a reflectional fundamental cell that is a right
+# prism over a triangle of type (3,3,3), (2,4,4) or (2,3,6).  This is
+# that single piece of code.
+#
+# Fujimori and Weber (2009), section 3, give the family in closed form.
+# On C/<1, tau> with tau in i R+,
+#
+#     g(z) = (theta11(z - p) / theta11(z + p))^a ,   dh = dz ,
+#     a = (r - 1)/r ,   p = (-r - s + r s) / (2 (r - 1) s) ,
+#
+# where Delta(r,s,t) is the Euclidean triangle group with angles pi/r,
+# pi/s, pi/t.  Ten (r,s,t) choices give six distinct surfaces, because
+# (r,s,t) and (r,t,s) are the same surface turned upside down.
+#
+# The formula is checked, not trusted.  It reproduces every constant
+# recovered independently from Weber's notebooks -- exponent 1/2 for
+# H'-T, 3/4 for S'-S'', 2/3 for H''-R, 5/6 for T'-R', and branch values
+# 1/6, 1/6, 1/8, 3/10 -- and it reproduces SCHWARZ H's shipped data
+# (a = 2/3, p = 1/4), which this module has been self-testing since long
+# before the family was recognised.  Weber's own page gives the branch
+# value in the different form p = s / (2(s + t)); the two expressions
+# agree on every member (they coincide under 1/r + 1/s + 1/t = 1), which
+# is two independent derivations landing on the same numbers.
+#
+# References:
+# - S. Fujimori and M. Weber, "A construction method for triply periodic
+#   minimal surfaces", OCAMI Studies 3 (2009) 79-90 -- the closed form
+#   and the (r,s,t) table transcribed here.
+# - A. H. Schoen, "Infinite periodic minimal surfaces without
+#   self-intersections", NASA TN D-5541 (1970) -- H'-T, S'-S'', H''-R and
+#   T'-R' as entries of the original catalogue, with their genera.
+# - M. Weber, "Alan Schoen's NASA report 1970", minimalsurfaces.blog --
+#   the observation that one program computes the whole family.
+
+def _trigroup(label, r, s, t, tau, weld=None, nb=None):
+    """One member of the triangle-group series, from (r, s, t).
+
+    `a` in the returned spec is the BRANCH value p of the paper, not its
+    exponent -- the spec schema calls the shape parameter `a` and the
+    exponent lives inside `terms`.  Mixing those two up silently builds a
+    different surface, so both are derived here rather than typed in.
+    """
+    expo = (r - 1.0) / r
+    p = (-r - s + r * s) / (2.0 * (r - 1.0) * s)
+    sp = dict(
+        label=label,
+        tau=complex(tau), a=float(p),
+        terms=(lambda a, tau, _e=expo: ((a, _e), (-a, -_e))),
+        const=0j,
+        xlim=(0.0, 0.5), ylim=lambda tt: (0.0, np.imag(tt) / 2.0),
+        # The y = 0 edge runs THROUGH the branch point at x = p, exactly
+        # as CLP's does, and the two halves are different symmetry
+        # elements.  Read as one curve it contributes one generator
+        # instead of two and the group cannot close.
+        splits=(float(p),), split_edge='y0',
+        theta=0.0,
+        trigroup=(r, s, t))
+    if weld is not None:
+        sp['weld'] = weld
+    if nb is not None:
+        sp['nb'] = nb
+    return sp
+
+
+_SPECS.update({
+    # (2,3,6) -- genus 4.  The one member that ASSEMBLES: its boundary
+    # curves all classify as mirrors and the derived lattice is hexagonal.
+    'HT': _trigroup("Schoen H'-T (exact, hexagonal, genus 4)",
+                    2, 3, 6, 0.4j, weld=3e-5, nb="H_-T.nb"),
+    # (4,2,4) -- genus 4, tetragonal.
+    'SS': _trigroup("Schoen S'-S'' (exact, tetragonal, genus 4)",
+                    4, 2, 4, 0.3j, nb="S_-S_.nb"),
+    # (3,2,6) -- genus 5.
+    # weld: as for H'-T, the shared 1e-4 default over-merges this patch
+    # and leaves two over-shared edges; 3e-5 is clean.
+    'H2R': _trigroup("Schoen H''-R (exact, hexagonal, genus 5)",
+                     3, 2, 6, 0.15j, weld=3e-5, nb="H_-R.nb"),
+    # (6,3,2) -- genus 6.  Weber's notebook uses this member rather than
+    # the (6,2,3) twin, i.e. p = 3/10 rather than 1/5; they are the same
+    # surface upside down.
+    'TR': _trigroup("Schoen T'-R' (exact, hexagonal, genus 6)",
+                    6, 3, 2, 1.0j, nb="T_-R_.nb"),
+})
 
 
 def spec_curves(key, P):
@@ -1957,6 +2034,76 @@ def _selftest():
         ok &= not bad
         print("hexagonal: %s builds clean at res 50/100/160 %s"
               % (key, 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # The triangle-group series is generated from (r, s, t) rather than
+    # typed in, so the first thing to gate is the GENERATOR: every member
+    # must reproduce the constants recovered independently from Weber's
+    # notebooks.  If `_trigroup`'s algebra drifts, this catches it before
+    # any geometry is built.  Schwarz H is included deliberately -- it is
+    # not one of the rows built through `_trigroup`, so it is an
+    # out-of-sample check on the formula.
+    want = {'HT': (2, 3, 6, 0.5, 1.0 / 6.0),
+            'SS': (4, 2, 4, 0.75, 1.0 / 6.0),
+            'H2R': (3, 2, 6, 2.0 / 3.0, 0.125),
+            'TR': (6, 3, 2, 5.0 / 6.0, 0.3)}
+    bad = []
+    for key, (r, s, t, expo, p) in want.items():
+        sp = _SPECS[key]
+        got_p = float(sp['a'])
+        got_e = float(sp['terms'](got_p, sp['tau'])[0][1])
+        if sp['trigroup'] != (r, s, t):
+            bad.append('%s:rst' % key)
+        if abs(got_e - expo) > 1e-12 or abs(got_p - p) > 1e-12:
+            bad.append('%s:a=%.6f p=%.6f' % (key, got_e, got_p))
+    # Schwarz H is (3,3,3): a = 2/3, p = 1/4, which is what this module's
+    # own header records for the surface it has shipped all along.
+    hr, hs = 3.0, 3.0
+    h_e = (hr - 1.0) / hr
+    h_p = (-hr - hs + hr * hs) / (2.0 * (hr - 1.0) * hs)
+    if abs(h_e - 2.0 / 3.0) > 1e-12 or abs(h_p - _A0) > 1e-12:
+        bad.append('H(3,3,3):a=%.6f p=%.6f vs shipped _A0=%.6f'
+                   % (h_e, h_p, _A0))
+    ok &= not bad
+    print("hexagonal: triangle-group closed form reproduces all four "
+          "members and Schwarz H %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # ...then each member must build a converging minimal patch.
+    for key in ('SS', 'H2R', 'TR'):
+        rows = []
+        for n in (45, 75):
+            xs, _a, _b, ys, _c, _d = _spec_axes(key, n, n)
+            P = _spec_patch(key, n, n)
+            Pu = np.gradient(P, xs, axis=0)
+            Pv = np.gradient(P, ys, axis=1)
+            nn = np.cross(Pu, Pv)
+            nn = nn / np.maximum(np.linalg.norm(nn, axis=-1, keepdims=True),
+                                 1e-300)
+            E = np.sum(Pu * Pu, -1)
+            F = np.sum(Pu * Pv, -1)
+            G = np.sum(Pv * Pv, -1)
+            L = np.sum(np.gradient(Pu, xs, axis=0) * nn, -1)
+            M = np.sum(np.gradient(Pu, ys, axis=1) * nn, -1)
+            N = np.sum(np.gradient(Pv, ys, axis=1) * nn, -1)
+            den = 2.0 * (E * G - F * F)
+            Hc = (E * N - 2.0 * F * M + G * L) / np.where(
+                np.abs(den) < 1e-300, 1e-300, den)
+            fl = P.reshape(-1, 3)
+            diam = float(np.linalg.norm(fl.max(0) - fl.min(0)))
+            k = max(4, n // 8)
+            sv = np.linalg.svd(fl - fl.mean(0), compute_uv=False)
+            rows.append((diam,
+                         float(np.median(np.abs(Hc[k:-k, k:-k]))) * diam,
+                         float(sv[2] / sv[0])))
+        (d0, h0, n0), (d1, h1, n1) = rows
+        # a PLANE is minimal, so non-planarity is gated too -- see the
+        # note on the CLP curvature check above
+        good = (abs(d1 - d0) / max(d1, 1e-30) < 0.05 and h1 < h0
+                and h1 < 2e-2 and n1 > 0.05)
+        ok &= good
+        print("hexagonal: %s diam %.4f -> %.4f, med|H|*d %.2e -> %.2e, "
+              "nonplanar %.4f %s"
+              % (key, d0, d1, h0, h1, n1, 'OK' if good else 'FAIL'))
 
     # Schoen H'-T is the one spec row that ASSEMBLES rather than shipping
     # its fundamental piece, so it gets the check the other three cannot

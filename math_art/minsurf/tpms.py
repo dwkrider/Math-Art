@@ -998,6 +998,23 @@ TPMS_EXACT = {
     'HT': (_we_hex._SPECS['HT']['label'],
            lambda cells, res, scale, theta:
                _we_hex.spec_build('HT', cells, res, scale, theta)),
+    # The rest of the Euclidean-triangle-group series (see the block
+    # above `_trigroup` in hexagonal).  These three ship the exact
+    # fundamental PIECE rather than an assembled cell: some of their
+    # boundary curves classify as neither a straight line nor a planar
+    # geodesic, so there is no reflection generator to find and
+    # `_assemble` is right to decline -- the same contract the Lidinoid
+    # and rPD rows already ship under.  None of the three has a
+    # published nodal formula either, so this is the only route to them.
+    'SS': (_we_hex._SPECS['SS']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('SS', cells, res, scale, theta)),
+    'H2R': (_we_hex._SPECS['H2R']['label'],
+            lambda cells, res, scale, theta:
+                _we_hex.spec_build('H2R', cells, res, scale, theta)),
+    'TR': (_we_hex._SPECS['TR']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('TR', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
