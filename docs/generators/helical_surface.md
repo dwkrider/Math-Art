@@ -75,6 +75,8 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/helical_surface__SINE_TORUS.png" width="200"><br><sub>Sine Torus</sub></td>
+<td align="center"><img src="../images/variants/helical_surface__COIL.png" width="200"><br><sub>Coil</sub></td>
+<td align="center"><img src="../images/variants/helical_surface__SPHERICAL_HELICOID.png" width="200"><br><sub>Spherical Helicoid</sub></td>
 </tr>
 </table>
 

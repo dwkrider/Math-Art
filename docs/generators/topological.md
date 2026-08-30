@@ -50,19 +50,20 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/topological__KLEIN.png" width="200"><br><sub>Klein Bottle</sub></td>
 <td align="center"><img src="../images/variants/topological__KLEIN8.png" width="200"><br><sub>Klein Bottle (Figure-8)</sub></td>
-<td align="center"><img src="../images/variants/topological__SUDANESE.png" width="200"><br><sub>Sudanese Mobius Band</sub></td>
+<td align="center"><img src="../images/variants/topological__MOBIUS.png" width="200"><br><sub>Moebius Strip</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/topological__SUDANESE.png" width="200"><br><sub>Sudanese Mobius Band</sub></td>
 <td align="center"><img src="../images/variants/topological__CROSSCAP.png" width="200"><br><sub>Cross-Cap</sub></td>
 <td align="center"><img src="../images/variants/topological__ROMAN.png" width="200"><br><sub>Roman Surface</sub></td>
-<td align="center"><img src="../images/variants/topological__STEINER.png" width="200"><br><sub>Steiner Surface (Veronese shadow)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/topological__STEINER.png" width="200"><br><sub>Steiner Surface (Veronese shadow)</sub></td>
 <td align="center"><img src="../images/variants/topological__BOY.png" width="200"><br><sub>Boy's Surface</sub></td>
 <td align="center"><img src="../images/variants/topological__MORIN.png" width="200"><br><sub>Morin's Surface</sub></td>
-<td align="center"><img src="../images/variants/topological__NONORIENT.png" width="200"><br><sub>Non-Orientable Genus-k</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/topological__NONORIENT.png" width="200"><br><sub>Non-Orientable Genus-k</sub></td>
 <td align="center"><img src="../images/variants/topological__GENUS.png" width="200"><br><sub>Genus-g Surface</sub></td>
 <td align="center"><img src="../images/variants/topological__TWIST_STRIP.png" width="200"><br><sub>Twisted Strip (solid)</sub></td>
 </tr>

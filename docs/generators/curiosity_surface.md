@@ -71,15 +71,21 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/curiosity_surface__GABRIEL.png" width="200"><br><sub>Gabriel's Horn</sub></td>
-<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_RING.png" width="200"><br><sub>Dupin Cyclide (ring)</sub></td>
-<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_HORN.png" width="200"><br><sub>Dupin Cyclide (horn)</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__TORUS.png" width="200"><br><sub>Torus</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__ALYSSEID.png" width="200"><br><sub>Revolution of the Catenary</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/curiosity_surface__SINUSOID_REV.png" width="200"><br><sub>Revolution of the Sinusoid</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__TRACTROID2.png" width="200"><br><sub>Second Tractroid</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_RING.png" width="200"><br><sub>Dupin Cyclide (ring)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_HORN.png" width="200"><br><sub>Dupin Cyclide (horn)</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_SPINDLE.png" width="200"><br><sub>Dupin Cyclide (spindle)</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__TANNERY_PEAR.png" width="200"><br><sub>Tannery's Pear</sub></td>
-<td align="center"><img src="../images/variants/curiosity_surface__TANNERY_HOURGLASS.png" width="200"><br><sub>Tannery's Hourglass</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/curiosity_surface__TANNERY_HOURGLASS.png" width="200"><br><sub>Tannery's Hourglass</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__ZOLL.png" width="200"><br><sub>Zoll's Surface</sub></td>
 </tr>
 </table>
