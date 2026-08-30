@@ -2101,18 +2101,33 @@ def spec_reflect_tile(key, P, depth):
                 f = tuple(int(i) + base for i in q)
                 Qs.append(f[::-1] if flip else f)
             base += len(V0)
-        # The spec's OWN weld tolerance, not a hardcoded one.  H''-R
-        # declares 3e-5 precisely because 1e-4 over-merges its patch,
-        # and using the shared default here left it with two over-shared
-        # edges -- enough to reject an otherwise clean five-copy orbit,
-        # which is why Reflections appeared to do nothing on that row.
-        Vv, Qq = _weld(np.concatenate(Vs, 0), np.asarray(Qs),
-                       _weld_tol(key) * span)
-        Qq = [tuple(int(i) for i in q) for q in Qq]
-        if _orbit_ok(Vv, Qq):
-            best = (Vv, Qq)
-        else:
+        # A LADDER of weld tolerances, first that verifies wins.
+        #
+        # No single tolerance is right here, and that is a measured fact
+        # rather than a guess.  H''-R's five-copy orbit fails at 1e-6
+        # through 1e-4 and passes at 3e-4 when built at resolution 40,
+        # while at resolution 50 it passes at 3e-5, fails at 6e-5, and
+        # passes again at 1e-4.  The pass/fail is not monotone in the
+        # tolerance because the orbit carries vertices that are nearly
+        # but not exactly coincident -- copies that almost meet -- so a
+        # single global threshold either leaves a seam or merges across
+        # one.
+        #
+        # The ACCEPTANCE TEST is untouched: every candidate still has to
+        # pass `_orbit_ok` in full.  All the ladder does is stop an
+        # arbitrary choice of tolerance from being what decides.
+        raw = np.concatenate(Vs, 0)
+        rawq = np.asarray(Qs)
+        got = None
+        for tol in (_weld_tol(key), 3e-5, 1e-4, 3e-4):
+            Vv, Qq = _weld(raw, rawq, tol * span)
+            Qq = [tuple(int(i) for i in q) for q in Qq]
+            if _orbit_ok(Vv, Qq):
+                got = (Vv, Qq)
+                break
+        if got is None:
             break
+        best = got
     return best[0], best[1]
 
 
