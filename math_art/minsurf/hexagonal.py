@@ -2071,6 +2071,76 @@ def spec_reflect_tile(key, P, depth):
         return (tuple(q.min(0)), tuple(q.max(0)),
                 tuple(np.round(V.mean(0) / (1e-4 * span)).astype(np.int64)))
 
+    # Use the largest generator SUBSET that actually tiles -- chosen at
+    # the requested depth, and never allowed to do worse than the full
+    # set.
+    #
+    # Taking all the generators is wrong when two conflict.  R-II tiles
+    # cleanly on generators {0, 2} -- 3279 faces against a 1296-face
+    # patch -- and Stessmann on {0} alone (2558), while all three
+    # together make their copies partially overlap and the orbit is
+    # rejected, so refusing everything discards a correct tiling.
+    #
+    # Two things make this safe, both learned by getting it wrong first.
+    # Choosing the subset at DEPTH 1 regressed rows that already worked
+    # (C(H) fell from 9471 faces to 2250, F-RD from 8218 to 1816),
+    # because the subset that tiles best one step out is not the one
+    # that closes best three steps out -- so candidates are scored at
+    # the depth actually requested.  And the full set is scored too and
+    # wins ties, so this can only add faces, never remove them.
+    def _orbit(gs, dep):
+        seen = {tuple(np.round(np.eye(4).ravel(), 7)): np.eye(4)}
+        frontier = [np.eye(4)]
+        out = None
+        for _ in range(int(dep)):
+            nxt = []
+            for M0 in frontier:
+                for G in gs:
+                    M = np.asarray(G, float) @ M0
+                    kk = tuple(np.round(M.ravel(), 7))
+                    if kk not in seen:
+                        seen[kk] = M
+                        nxt.append(M)
+            frontier = nxt
+            if not frontier:
+                break
+            Vs, Qs, base, placed = [], [], 0, set()
+            for M in seen.values():
+                W = V0 @ M[:3, :3].T + M[:3, 3]
+                if _imgkey(W) in placed:
+                    continue
+                placed.add(_imgkey(W))
+                Vs.append(W)
+                flip = np.linalg.det(M[:3, :3]) < 0.0
+                for qq in Q0:
+                    ff = tuple(int(i) + base for i in qq)
+                    Qs.append(ff[::-1] if flip else ff)
+                base += len(V0)
+            cand = None
+            for tol in (_weld_tol(key), 3e-5, 1e-4, 3e-4):
+                Vv, Qq = _weld(np.concatenate(Vs, 0), np.asarray(Qs),
+                               tol * span)
+                Qq = [tuple(int(i) for i in q) for q in Qq]
+                if _orbit_ok(Vv, Qq):
+                    cand = (Vv, Qq)
+                    break
+            if cand is None:
+                break
+            out = cand
+        return out
+
+    if len(gens) > 1:
+        import itertools as _it
+        best_res = _orbit(gens, depth)
+        best_n = len(best_res[1]) if best_res else 0
+        for r in range(len(gens) - 1, 0, -1):
+            for sub in _it.combinations(range(len(gens)), r):
+                cand = _orbit([gens[i] for i in sub], depth)
+                if cand is not None and len(cand[1]) > best_n:
+                    best_res, best_n = cand, len(cand[1])
+        if best_res is not None and best_n > len(Q0):
+            return best_res[0], best_res[1]
+
     best = (V0, Q0)
     seen = {}
     ident = np.eye(4)
@@ -2139,10 +2209,36 @@ def spec_build(key, cells, res_per_cell, scale, theta,
     reflection group does not close on a rank-3 period lattice, which is
     the same rule the P/Gyroid/D builder follows for its non-periodic
     angles."""
+    # `cells` carries the REFLECTION DEPTH, not a lattice cell count.
+    #
+    # The two are different operations and conflating them breaks the
+    # rows that DO assemble a cell: arraying Schwarz H's or CLP's cell
+    # 2x2x2 gives eight disconnected copies (and 4x4x4 gives
+    # sixty-four), because a cell tiled by pure translation only joins
+    # if its boundary matches its neighbour's, and theirs does not.
+    # That path was unreachable from the UI until Reflections was
+    # exposed, so exposing it turned a latent problem into a visible one.
+    #
+    # The lattice count is therefore pinned at 1 and the incoming number
+    # is used only as the reflection depth.  Arraying an assembled cell
+    # is a separate capability needing its own control and its own seam
+    # handling.
+    # A TUPLE means lattice cell counts, a SCALAR means reflection
+    # depth.  They are different operations and the type says which.
+    #
+    # Arraying is right for the rows that close a cell (Schwarz H, CLP)
+    # and wrong for the rest: tiling an unassembled patch by pure
+    # translation gives disconnected copies, and tiling an assembled
+    # cell 2x2x2 from the operator's scalar gave eight of them (4x4x4
+    # gave sixty-four) once Reflections started feeding that path.
+    # Reflection depth is right for the rows that ship a fundamental
+    # piece and meaningless for the others.
     if isinstance(cells, (tuple, list)):
         cx, cy, cz = (int(max(1, c)) for c in (list(cells) + [1, 1, 1])[:3])
+        depth = 1
     else:
-        cx = cy = cz = max(1, int(cells))
+        cx = cy = cz = 1
+        depth = max(1, int(cells))
     nu = max(24, int(round(res_per_cell)))
     nv = max(24, int(round(res_per_cell)))
     named = abs(float(theta)) < 1e-9
@@ -2194,8 +2290,8 @@ def spec_build(key, cells, res_per_cell, scale, theta,
         # in whichever boundary curves ARE symmetry elements first, as
         # far as that verifies.  `cells` drives the depth, so the control
         # does something on these rows instead of being inert.
-        if named and cx > 1:
-            Vr, Qr = spec_reflect_tile(key, P, cx - 1)
+        if named and depth > 1:
+            Vr, Qr = spec_reflect_tile(key, P, depth - 1)
             if len(Qr) > (P.shape[0] - 1) * (P.shape[1] - 1):
                 span = float(np.max(Vr.max(0) - Vr.min(0))) or 1.0
                 Vr, Qr = _weld(Vr, np.asarray(Qr), 1e-7 * span)
@@ -2783,6 +2879,24 @@ def _selftest():
         print("hexagonal: %s diam %.4f -> %.4f, med|H|*d %.2e -> %.2e, "
               "nonplanar %.4f %s"
               % (key, d0, d1, h0, h1, n1, 'OK' if good else 'FAIL'))
+
+    # Every fundamental-piece row must GROW under Reflections, and grow
+    # to a clean surface.  Two of them did not until the generator
+    # subset was chosen at the requested depth -- R-II and Stessmann,
+    # whose full generator sets produce overlapping copies while proper
+    # subsets tile.  Gating growth here stops a future change quietly
+    # returning them to a bare patch.
+    bad = []
+    for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
+                'FRD_EXACT', 'FRDR', 'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+        P = _spec_patch(key, 40, 40)
+        base = (P.shape[0] - 1) * (P.shape[1] - 1)
+        Vr, Qr = spec_reflect_tile(key, P, 2)
+        if len(Qr) <= base or not _orbit_ok(np.asarray(Vr), Qr):
+            bad.append('%s:%d/%d' % (key, len(Qr), base))
+    ok &= not bad
+    print("hexagonal: all 11 fundamental-piece rows tile under "
+          "Reflections %s" % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     # Schoen H'-T does NOT assemble, and the gate records why rather
     # than just asserting the fallback.  Its reflection group closes on

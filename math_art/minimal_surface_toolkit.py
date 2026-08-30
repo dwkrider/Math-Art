@@ -1022,11 +1022,7 @@ if _IN_BLENDER:
                         "bare piece; each step up adds another round of "
                         "reflections, and the surface stops growing on "
                         "its own once the orbit closes or stops "
-                        "verifying as a single clean sheet.  It has NO "
-                        "effect on Schoen R-II or Stessmann: reflecting "
-                        "those two patches produces overlapping rather "
-                        "than adjacent copies, so they ship the "
-                        "fundamental piece alone")
+                        "verifying as a single clean sheet")
         cells: IntProperty(
             name="Cells", default=0, min=0, max=8,
             description="Legacy uniform cell count (broadcasts to every "
