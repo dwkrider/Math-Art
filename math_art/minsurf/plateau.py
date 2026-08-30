@@ -668,51 +668,57 @@ def _selfx_crossings(V, T, tol=1e-7):
 # forcing it onto vertices too early is what makes naive attempts fail.
 # Vertices are recovered afterwards by averaging their incident edges.
 #
-# STATUS -- read before using this on a surface.
+# STATUS -- read before using this on a surface.  The diagnosis below is
+# complete; what is missing is a solver, not an understanding.
 #
-# What is VERIFIED, and gated in `_selftest`:
-#   * the per-facet relation closes exactly.  Walking one triangle
-#     0 -> 1 -> 2 -> 0 returns to the start at 5.6e-17, and the medial
-#     edge lengths come out |e|/2 at every Bonnet angle, as they must,
-#     since the two terms are orthogonal and n is a unit normal.
-#   * at bangle 0 the transform is the IDENTITY on a full mesh, to
-#     1.3e-14 in area and edge length.  That is a real check, not a
-#     trivial one: it exercises the whole propagation and the
-#     least-squares vertex recovery together.
+# VERIFIED, and gated in `_selftest`:
+#   * the per-facet relation closes exactly -- 5.6e-17 walking one
+#     triangle 0 -> 1 -> 2 -> 0, with medial edge lengths |e|/2 at every
+#     Bonnet angle, as they must be since the two terms are orthogonal;
+#   * at bangle 0 the whole pipeline is the IDENTITY on a real mesh, to
+#     0.0e+00 in area -- propagation and vertex recovery together;
+#   * on an EXACTLY minimal mesh (a flat grid) the propagation is exact
+#     at bangle 90 too: residual 1.0e-16 against an edge scale of 0.25.
+#     That is the check that says the algorithm is right.
 #
-# What is NOT established, and why this is not yet used by any shipped
-# row: on a relaxed mesh at bangle 90 the medial edge lengths change by
-# far more than they should (they should not change at all).  That means
-# the propagation is path-dependent there, and I have not isolated
-# whether the cause is the traversal, the closing condition, or the fact
-# that `minimize_area`'s output is only approximately discretely
-# minimal.  A defect functional written to test the last of those
-# plateaus at 2.9e-2 instead of falling as the surface is relaxed
-# further (0, 20, 80, 300, 1200 iterations all give ~2.9e-2), which
-# says that functional is not the right closing condition rather than
-# saying the surface is at fault -- so the question is still open.
+# WHY IT IS NOT YET USED BY ANY SHIPPED ROW.  On a relaxed surface the
+# propagation picks up a residual, and the reason is now understood
+# rather than suspected.  It has two independent parts:
 #
-# Resume: Pinkall and Polthier's conjugate is well defined for a surface
-# that is discretely minimal in THEIR sense (a critical point of area
-# over conforming triangulations).  Establish that `minimize_area`'s
-# output satisfies that condition, derive the correct per-vertex closing
-# condition from the paper -- it is the one whose vanishing makes the
-# propagation path-independent -- and gate on it.  Only then wire this
-# into the Group G surfaces.  Shipping a conjugate that cannot be gated
-# would put unverifiable geometry in front of a user, which is the one
-# thing this module has consistently refused to do.
+#   1. A REAL PERIOD, on any domain that is not simply connected.  The
+#      relation is a discrete 1-form, and integrating it around a
+#      non-contractible loop returns the conjugate's period, not zero --
+#      the conjugate of a catenoid is a helicoid, which does not close.
+#      On an annulus the residual is 42x the edge length and is
+#      concentrated exactly where the walk wraps and meets itself; on a
+#      simply connected disk it falls to 0.12x.  This is the "period
+#      killing" Karcher's conjugate Plateau method exists to do, and it
+#      is why Brakke's datafiles carry tunable rhs parameters.
+#   2. NON-INTEGRABILITY, because the surface is only approximately
+#      minimal.  The closing condition around an interior vertex is
+#      exactly the area gradient there -- (1/2) sum over incident facets
+#      of n_T x (edge opposite v) -- which `minimize_area` drives down
+#      (2.6e-2 -> 1.5e-4 -> 9.7e-6 over 0/10/600 iterations) but never
+#      to zero.
 #
-# References:
-# - U. Pinkall and K. Polthier, "Computing discrete minimal surfaces and
-#   their conjugates", Experimental Mathematics 2(1) (1993) 15-36 --
-#   converted at research/papers/minimal-surfaces/102-polthier-1993-*/.
-# - K. A. Brakke, adjoint.cmd, distributed inside starfish.tar with the
-#   Surface Evolver periodic examples.
-# - H. Karcher, "The triply periodic minimal surfaces of Alan Schoen and
-#   their constant mean curvature companions", manuscripta math. 64
-#   (1989) -- the conjugate Plateau construction this implements.
-
-
+# So a WALK is the wrong integrator: it commits to whichever facet
+# reached an edge first and pushes all the inconsistency into the edges
+# reached last.  Measured on a disk, its residual RISES relative to the
+# edge length as the mesh refines -- 0.083 at 48x8, 0.116 at 96x16,
+# 0.324 at 144x24 -- while the area converges cleanly.
+#
+# RESUME, and this is a solver task now.  Replace the walk with a
+# least-squares integration of the 1-form: minimise
+#     sum over facets, over k, |P[e_{k+1}] - P[e_k] - w_{f,k}|^2,
+# a graph Laplacian on edge-adjacency, singular only in the global
+# translation.  That spreads the inconsistency instead of accumulating
+# it.  It was tried here with 600 Jacobi sweeps and abandoned: Jacobi
+# converges far too slowly on a Laplacian of this diameter and lost the
+# bangle-0 identity entirely (33% area error), which is a solver
+# failure, not a formulation one.  Use conjugate gradients, and keep the
+# bangle-0 identity as the acceptance test -- it is exact for the walk
+# and must stay exact.
+#
 def _facet_edges(T):
     """Undirected edge index per facet corner, plus the edge list."""
     ids = {}
