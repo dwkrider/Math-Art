@@ -639,6 +639,38 @@ _SPECS = {
         xlim=(-0.5, 1.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
         theta=math.pi / 2.0,
         nb="Triply_Gyroid_AssociateRPD.nb"),
+    # Schoen's H'-T, genus 4, the hexagonal-graph/triangle-graph surface
+    # of the 1970 NASA catalogue.  This is the FIRST row of the
+    # triangle-group series below to be added, and the one that needed no
+    # new machinery at all: its four boundary curves classify as mirrors
+    # straight off the patch, `_assemble` closes the group, and the
+    # period lattice comes out hexagonal as a measured result --
+    #     (0, 0, 1)  (-1.2754, 0, 0)  (-0.6377, 1.1046, 0)
+    # two equal in-plane generators at 120 degrees (0.6377 = 1.2754/2,
+    # 1.1046 = 1.2754 * sqrt(3)/2) perpendicular to the third.  That is
+    # the same check Schwarz H gates on, and getting it out rather than
+    # putting it in is the evidence the data is right.
+    #
+    # Both independent sources agree on the constants.  Weber's notebook
+    # `H_-T.nb` gives tau = 0.4i, a0 = 1/6 and the exponent 1/2 directly.
+    # Fujimori-Weber (2009) Section 3 derives the whole triangle-group
+    # family in closed form -- g = (theta(z-p)/theta(z+p))^a with
+    # a = (r-1)/r and p = (-r-s+rs)/(2(r-1)s) on the Euclidean triangle
+    # group Delta(r,s,t) -- and H'-T is its (2,3,6) member, giving
+    # a = 1/2 and p = 1/6.  Identical.
+    'HT': dict(
+        label="Schoen H'-T (exact, hexagonal, genus 4)",
+        tau=0.4j, a=1.0 / 6.0,
+        terms=lambda a, tau: ((a, 0.5), (-a, -0.5)),
+        const=0j,
+        xlim=(0.0, 0.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
+        # the y = 0 edge runs through the branch point at x = a0, as
+        # CLP's does; split it so the two halves classify separately
+        splits=(1.0 / 6.0,), split_edge='y0',
+        theta=0.0,
+        # see `_weld_tol`: the default 1e-4 over-merges this patch
+        weld=3e-5,
+        nb="H_-T.nb"),
 }
 
 
@@ -1368,6 +1400,22 @@ def _assembly_ok(V, Q, tol=0.005):
     return dup <= tol * int(live.sum())
 
 
+def _weld_tol(key):
+    """Vertex-weld tolerance for a spec, as a fraction of the cell span.
+
+    1e-4 is right for every row that predates H'-T and stays the default,
+    so nothing already shipped moves.  It is NOT right for all of them:
+    the weld is a single distance threshold applied to a patch whose
+    feature spacing varies per surface, and H'-T packs its copies closer
+    than CLP or Schwarz H do.  At 1e-4 it merges vertices either side of
+    a symmetry plane and leaves six over-shared edges at z = 0.5 -+ 0.105;
+    at 3e-5 there are none.  The failure is quiet -- 0.0036% of edges,
+    which sails through `_assembly_ok`'s 0.5% threshold while the rows
+    known to be right sit at exactly 0.000%.
+    """
+    return float(_SPECS[key].get('weld', 1e-4))
+
+
 def _spec_state(key, *_a, **_k):
     """The shape moduli `spec_build` reads but does not take.
 
@@ -1437,7 +1485,7 @@ def spec_build(key, cells, res_per_cell, scale, theta,
             # how the bad cell shipped in the first place.
             Vv, Qq, Bb = built
             sp = float(np.max(np.linalg.norm(Bb, axis=1)))
-            Vv, Qq = _weld(Vv, Qq, 1e-4 * sp)
+            Vv, Qq = _weld(Vv, Qq, _weld_tol(key) * sp)
             built = (Vv, Qq, Bb) if _assembly_ok(Vv, Qq) else None
     if built is None:
         # The piece is WELDED before it is returned, which the assembled
@@ -1454,7 +1502,7 @@ def spec_build(key, cells, res_per_cell, scale, theta,
         return _fit(V, [tuple(int(x) for x in q) for q in Q], scale)
     V, Q, B = built
     span = float(np.max(np.linalg.norm(B, axis=1)))
-    V, Q = _weld(V, Q, 1e-4 * span)
+    V, Q = _weld(V, Q, _weld_tol(key) * span)
     if cx > 1 or cy > 1 or cz > 1:
         Vp, Qp, base = [], [], 0
         for i in range(cx):
@@ -1468,7 +1516,7 @@ def spec_build(key, cells, res_per_cell, scale, theta,
                     base += len(V)
         V = np.concatenate(Vp, axis=0)
         Q = np.concatenate(Qp, axis=0)
-        V, Q = _weld(V, Q, 1e-4 * span)
+        V, Q = _weld(V, Q, _weld_tol(key) * span)
     return _fit(V, [tuple(int(x) for x in q) for q in Q], scale)
 
 
@@ -1909,6 +1957,53 @@ def _selftest():
         ok &= not bad
         print("hexagonal: %s builds clean at res 50/100/160 %s"
               % (key, 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # Schoen H'-T is the one spec row that ASSEMBLES rather than shipping
+    # its fundamental piece, so it gets the check the other three cannot
+    # take: the reflection group must close on a rank-3 lattice, and that
+    # lattice must come out HEXAGONAL -- two equal in-plane generators at
+    # 120 degrees, perpendicular to the third.  Deriving that rather than
+    # assuming it is the evidence the Weierstrass data is right, exactly
+    # as it is for Schwarz H above.
+    P = _spec_patch('HT', 70, 70)
+    gens, kinds = spec_generators('HT', P)
+    built = _assemble(P, gens=gens)
+    good = built is not None
+    if good:
+        Vv, Qq, B = built
+        a, b, c = B[1], B[2], B[0]
+        la, lb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
+        ang = math.degrees(math.acos(
+            float(np.dot(a, b)) / max(la * lb, 1e-30)))
+        perp = max(abs(float(np.dot(c, a))), abs(float(np.dot(c, b))))
+        # 60 and 120 degrees describe the SAME hexagonal lattice -- the
+        # reduced basis `_assemble` returns may hand back b or -b, and
+        # Schwarz H's gate above reports 60 for the same reason.  Accept
+        # either rather than pinning a sign convention that is not
+        # actually part of the claim.
+        good = (abs(la / lb - 1.0) < 1e-3 and perp < 1e-9
+                and min(abs(ang - 60.0), abs(ang - 120.0)) < 0.5)
+        ok &= good
+        print("hexagonal: H'-T lattice |a|/|b| %.6f, angle %.3f deg, "
+              "c.a/c.b %.1e %s"
+              % (la / lb, ang, perp, 'OK' if good else 'FAIL'))
+    else:
+        ok = False
+        print("hexagonal: H'-T lattice FAIL (_assemble declined)")
+
+    # ...and the assembled cell itself must be clean.  H'-T is also why
+    # `_weld_tol` exists: at the shared 1e-4 default this row merges
+    # vertices either side of a symmetry plane and leaves six over-shared
+    # edges -- 0.0036% of them, far under `_assembly_ok`'s 0.5% threshold
+    # and so completely silent, while every row known to be right sits at
+    # exactly 0.000%.
+    V, faces = spec_build('HT', 1, 60, 1.0, 0.0)
+    Q = np.asarray([f for f in faces if len(f) == 4])
+    over = _over_shared(Q) if len(Q) == len(faces) and len(Q) else -1
+    good = over == 0 and np.all(np.isfinite(V))
+    ok &= good
+    print("hexagonal: H'-T cell %d verts %d faces, over-shared %d %s"
+          % (len(V), len(faces), over, 'OK' if good else 'FAIL'))
 
     # ...and the rejector itself must not be vacuous: it has to ACCEPT
     # the two assemblies that are known to be right.  Without this the

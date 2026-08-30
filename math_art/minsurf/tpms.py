@@ -989,6 +989,15 @@ TPMS_EXACT = {
     'RPD': (_we_hex._SPECS['RPD']['label'],
             lambda cells, res, scale, theta:
                 _we_hex.spec_build('RPD', cells, res, scale, theta)),
+    # Schoen H'-T.  Unlike the three rows above it assembles into a full
+    # watertight cell rather than shipping the fundamental piece: its
+    # boundary curves all classify as mirrors, the reflection group
+    # closes, and the period lattice it derives is hexagonal.  Like
+    # Schwarz H it is a surface with no published nodal formula, so this
+    # route is the only one that reaches it.
+    'HT': (_we_hex._SPECS['HT']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('HT', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
