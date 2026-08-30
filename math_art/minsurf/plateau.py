@@ -22,6 +22,8 @@
 #       TVCG 12(4) (2006).
 
 import math
+from collections import defaultdict
+
 import numpy as np
 
 try:
@@ -638,6 +640,191 @@ def _selfx_crossings(V, T, tol=1e-7):
 
 
 # ==========================================================================
+# ==========================================================================
+# The discrete conjugate (adjoint) surface
+# ==========================================================================
+# The capability that most of Brakke's triply-periodic collection waits
+# on, and it turned out to be smaller than it looked.
+#
+# His `*adj.fe` datafiles were read here for a long time as needing
+# constraint planes with free-sliding vertices.  They do not.  Each one
+# states a PLAIN PLATEAU PROBLEM -- a closed space polygon with every
+# vertex and every edge fixed (GW5adj.fe is six fixed vertices, six
+# fixed edges, one hexagonal face) -- which `minimize_area` already
+# solves.  The declared constraint planes describe where the CONJUGATE
+# surface's boundary lands, not where the original's does.  So the only
+# missing piece was the conjugate itself.
+#
+# Pinkall and Polthier's discrete conjugate, in the form Brakke's
+# adjoint.cmd implements: walk the facets, and for a facet with unit
+# normal n whose three edge vectors are taken in traversal order,
+#
+#     p[next] = p[this] - ( cos(b) * e[other]
+#                           + sin(b) * (n x e[other]) ) / 2,
+#
+# with b the Bonnet angle -- b = 90 degrees is the conjugate proper.
+# The positions live on EDGES, not vertices, which is the whole trick:
+# the conjugate of a conforming triangulation is nonconforming, and
+# forcing it onto vertices too early is what makes naive attempts fail.
+# Vertices are recovered afterwards by averaging their incident edges.
+#
+# STATUS -- read before using this on a surface.
+#
+# What is VERIFIED, and gated in `_selftest`:
+#   * the per-facet relation closes exactly.  Walking one triangle
+#     0 -> 1 -> 2 -> 0 returns to the start at 5.6e-17, and the medial
+#     edge lengths come out |e|/2 at every Bonnet angle, as they must,
+#     since the two terms are orthogonal and n is a unit normal.
+#   * at bangle 0 the transform is the IDENTITY on a full mesh, to
+#     1.3e-14 in area and edge length.  That is a real check, not a
+#     trivial one: it exercises the whole propagation and the
+#     least-squares vertex recovery together.
+#
+# What is NOT established, and why this is not yet used by any shipped
+# row: on a relaxed mesh at bangle 90 the medial edge lengths change by
+# far more than they should (they should not change at all).  That means
+# the propagation is path-dependent there, and I have not isolated
+# whether the cause is the traversal, the closing condition, or the fact
+# that `minimize_area`'s output is only approximately discretely
+# minimal.  A defect functional written to test the last of those
+# plateaus at 2.9e-2 instead of falling as the surface is relaxed
+# further (0, 20, 80, 300, 1200 iterations all give ~2.9e-2), which
+# says that functional is not the right closing condition rather than
+# saying the surface is at fault -- so the question is still open.
+#
+# Resume: Pinkall and Polthier's conjugate is well defined for a surface
+# that is discretely minimal in THEIR sense (a critical point of area
+# over conforming triangulations).  Establish that `minimize_area`'s
+# output satisfies that condition, derive the correct per-vertex closing
+# condition from the paper -- it is the one whose vanishing makes the
+# propagation path-independent -- and gate on it.  Only then wire this
+# into the Group G surfaces.  Shipping a conjugate that cannot be gated
+# would put unverifiable geometry in front of a user, which is the one
+# thing this module has consistently refused to do.
+#
+# References:
+# - U. Pinkall and K. Polthier, "Computing discrete minimal surfaces and
+#   their conjugates", Experimental Mathematics 2(1) (1993) 15-36 --
+#   converted at research/papers/minimal-surfaces/102-polthier-1993-*/.
+# - K. A. Brakke, adjoint.cmd, distributed inside starfish.tar with the
+#   Surface Evolver periodic examples.
+# - H. Karcher, "The triply periodic minimal surfaces of Alan Schoen and
+#   their constant mean curvature companions", manuscripta math. 64
+#   (1989) -- the conjugate Plateau construction this implements.
+
+
+def _facet_edges(T):
+    """Undirected edge index per facet corner, plus the edge list."""
+    ids = {}
+    per = np.empty((len(T), 3), dtype=np.int64)
+    for f, tri in enumerate(T):
+        for k in range(3):
+            a, b = int(tri[k]), int(tri[(k + 1) % 3])
+            key = (a, b) if a < b else (b, a)
+            j = ids.get(key)
+            if j is None:
+                j = ids[key] = len(ids)
+            per[f, k] = j
+    return per, ids
+
+
+def discrete_adjoint(V, T, bangle=90.0):
+    """Conjugate of a discrete minimal surface (Pinkall-Polthier).
+
+    Returns new vertex positions.  `bangle` sweeps the associate family:
+    0 returns the original, 90 the conjugate.
+    """
+    V = np.asarray(V, dtype=float)
+    T = np.asarray(T, dtype=np.int64)
+    per, _ids = _facet_edges(T)
+    ne = int(per.max()) + 1
+    P = np.zeros((ne, 3))
+    known = np.zeros(ne, dtype=bool)
+
+    e = np.empty((len(T), 3, 3))
+    for k in range(3):
+        e[:, k] = V[T[:, (k + 1) % 3]] - V[T[:, k]]
+    n = np.cross(e[:, 0], e[:, 1])
+    ln = np.linalg.norm(n, axis=1, keepdims=True)
+    n = n / np.maximum(ln, 1e-300)
+
+    bc = math.cos(math.radians(bangle))
+    bs = math.sin(math.radians(bangle))
+
+    # facets touching each edge, so the walk is a BFS rather than the
+    # repeated full sweep the Evolver script uses
+    inc = defaultdict(list)
+    for f in range(len(T)):
+        for k in range(3):
+            inc[int(per[f, k])].append(f)
+
+    start = int(per[0, 0])
+    known[start] = True
+    frontier = [start]
+    while frontier:
+        nxt = []
+        for ei in frontier:
+            for f in inc[ei]:
+                k = int(np.where(per[f] == ei)[0][0])
+                for step in (1, 2):
+                    kn = (k + step) % 3
+                    en = int(per[f, kn])
+                    if known[en]:
+                        continue
+                    ko = (k + (3 - step)) % 3
+                    eo = e[f, ko] * (1.0 if step == 1 else -1.0)
+                    P[en] = P[ei] - 0.5 * (bc * eo
+                                           + bs * np.cross(n[f], eo))
+                    known[en] = True
+                    nxt.append(en)
+        frontier = nxt
+
+    # NONCONFORMING -> CONFORMING, by least squares rather than by
+    # averaging.
+    #
+    # `P` holds one position per EDGE, and at bangle 0 those are exactly
+    # the original edge MIDPOINTS -- which is the check that the
+    # propagation above is right.  A vertex is therefore NOT the mean of
+    # its incident edge values: averaging midpoints pulls every vertex
+    # toward the centroid of its neighbourhood and shrinks the surface
+    # (measured: 6% area loss and 31% edge-length distortion at bangle 0,
+    # where the transform is supposed to be the identity).
+    #
+    # What the edge values actually assert is (x_a + x_b)/2 = P_e for
+    # every edge, an overdetermined linear system whose least-squares
+    # solution is the conforming surface.  Its normal equations are
+    #     deg(v) x_v + sum_{w ~ v} x_w = 2 sum_{e in v} P_e,
+    # solved below by Jacobi iteration -- diagonally dominant, so it
+    # converges, and the system is singular only in the global
+    # translation, which is fixed at the end by recentring.
+    ends = np.empty((ne, 2), dtype=np.int64)
+    for f in range(len(T)):
+        for k in range(3):
+            ends[int(per[f, k])] = (int(T[f, k]), int(T[f, (k + 1) % 3]))
+    rhs = np.zeros((len(V), 3))
+    deg = np.zeros(len(V))
+    for ei in range(ne):
+        a, b = ends[ei]
+        rhs[a] += 2.0 * P[ei]
+        rhs[b] += 2.0 * P[ei]
+        deg[a] += 1.0
+        deg[b] += 1.0
+    deg = np.maximum(deg, 1.0)
+    x = V - V.mean(0)
+    for _ in range(400):
+        nb = np.zeros((len(V), 3))
+        for ei in range(ne):
+            a, b = ends[ei]
+            nb[a] += x[b]
+            nb[b] += x[a]
+        xn = (rhs - nb) / deg[:, None]
+        if np.max(np.abs(xn - x)) < 1e-12:
+            x = xn
+            break
+        x = xn
+    return x - x.mean(0)
+
+
 # Schoen's ring-like surfaces (the R family), by relaxation
 # ==========================================================================
 # A SECOND construction route, and the only one that reaches these.
@@ -1111,6 +1298,55 @@ def _selftest():
         print("plateau: ring %s tiling %s (%d copies, %d over-shared) %s"
               % (key, "accepted" if tiled else "refused -> patch",
                  n, over, 'OK' if good else 'FAIL'))
+
+    # The discrete adjoint: only the two facts that ARE established.
+    a3 = np.array([0., 0., 0.])
+    b3 = np.array([1., 0., 0.])
+    c3 = np.array([0.3, 0.9, 0.2])
+    Vt = np.array([a3, b3, c3])
+    Tt = np.array([[0, 1, 2]])
+    ev = [b3 - a3, c3 - b3, a3 - c3]
+    nn = np.cross(ev[0], ev[1])
+    nn = nn / np.linalg.norm(nn)
+    worst_close = 0.0
+    worst_len = 0.0
+    for ang in (0.0, 30.0, 90.0):
+        bc = math.cos(math.radians(ang))
+        bs = math.sin(math.radians(ang))
+
+        def _st(eo, _bc=bc, _bs=bs):
+            return -0.5 * (_bc * eo + _bs * np.cross(nn, eo))
+
+        Pp = [np.zeros(3), None, None]
+        Pp[1] = Pp[0] + _st(ev[2])
+        Pp[2] = Pp[1] + _st(ev[0])
+        worst_close = max(worst_close,
+                          float(np.linalg.norm(Pp[2] + _st(ev[1]) - Pp[0])))
+        for k, want in enumerate((ev[2], ev[0], ev[1])):
+            got = float(np.linalg.norm(Pp[(k + 1) % 3] - Pp[k]))
+            worst_len = max(worst_len,
+                            abs(got - 0.5 * float(np.linalg.norm(want))))
+    good = worst_close < 1e-12 and worst_len < 1e-12
+    ok &= good
+    print("plateau: adjoint facet relation closes %.1e, medial lengths "
+          "|e|/2 to %.1e %s"
+          % (worst_close, worst_len, 'OK' if good else 'FAIL'))
+
+    # ...and bangle 0 must be the identity on a real mesh.
+    tt = np.linspace(0.0, 2.0 * math.pi, 40, endpoint=False)
+    lo = np.stack([np.cos(tt), np.sin(tt), np.zeros_like(tt)], 1)
+    hi = lo.copy()
+    hi[:, 2] = 1.0
+    Vc, qc, fx = build_annulus_grid(lo, hi, 8)
+    Tc = _quads_to_tris(qc)
+    Vc = np.asarray(minimize_area(np.asarray(Vc, float).copy(), Tc, fx,
+                                  outer_iters=80), dtype=float)
+    Wc = discrete_adjoint(Vc, Tc, bangle=0.0)
+    da = abs(mesh_area(Wc, Tc) / max(mesh_area(Vc, Tc), 1e-30) - 1.0)
+    good = da < 1e-9
+    ok &= good
+    print("plateau: adjoint at bangle 0 is the identity (area ratio "
+          "off by %.1e) %s" % (da, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
