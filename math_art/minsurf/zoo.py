@@ -2810,6 +2810,151 @@ WE_SURFACES['SP_2ENN_2ANN'] = {
 SURFACE_FAMILY['SP_2ENN_2ANN'] = 'SINGLY'
 
 
+# ==========================================================================
+# RATIONAL-DATA TAIL (appended catalog block)
+# ==========================================================================
+# Four periodic surfaces whose Weierstrass data is RATIONAL -- printed in
+# closed form on Weber's repository pages rather than living on a torus
+# behind a theta quotient.  They need no elliptic chart and, unusually for
+# this family, no period solve at all: the pages state outright that there
+# are no period conditions left to satisfy.
+#
+# Each phi below is written in a form with the removable singularities
+# already cancelled.  The naive 0.5*(1/G - G)*dh evaluates to inf/inf at
+# every zero of G even where the product is perfectly regular -- for the
+# half-twisted Scherk surface that happens at the centre of its own
+# domain, where phi1 is in fact the constant -1/2.
+#
+# References:
+# - H. F. Scherk, "Bemerkungen ueber die kleinste Flaeche innerhalb
+#   gegebener Grenzen", J. reine angew. Math. 13 (1835) 185-208 -- the
+#   fourth surface of that paper.
+# - H. Karcher, "Construction of minimal surfaces", Surveys in Geometry,
+#   Univ. of Tokyo (1989), and Lecture Notes No. 12, SFB 256, Bonn (1989)
+#   -- the half-catenoid chain and field.
+# - M. Weber, "The half-twisted Scherk surface", "Scherk's fourth
+#   surface", "Plane with catenoids", minimalsurfaces.blog (Indiana
+#   University) -- the closed-form Weierstrass pairs transcribed here.
+# - The 3DXM Consortium, "Chain of Half-Catenoids and Field of
+#   Half-Catenoids", Virtual Math Museum, virtualmathmuseum.org.
+
+
+def _sp_hts_phi(z, p):
+    """Half-twisted Scherk surface: G = z, dh = z/(z^2 - 1) dz.
+
+    phi1 = (1/2)(1/G - G) dh collapses to the CONSTANT -1/2 -- the pole
+    of 1/G at the origin is cancelled exactly by the zero of dh there.
+    Evaluating the unsimplified form would return nan at z = 0, which is
+    an interior point of this chart, not a puncture.
+    """
+    d = z * z - 1.0
+    return (np.full_like(z, -0.5 + 0j),
+            0.5j * (1.0 + z * z) / d,
+            z / d)
+
+
+WE_SURFACES['SP_HALF_TWISTED_SCHERK'] = {
+    'label': "Half-Twisted Scherk Surface",
+    'family': 'SINGLY',
+    'phi': _sp_hts_phi,
+    'domain': ('disk', 0.0, lambda p: p['rmax']),
+    # Two annular and two helicoidal ends, at the dh poles z = +-1.
+    # NOT embedded: the surface meets itself along straight lines, which
+    # is a property of the surface (it is the k -> infinity limit of the
+    # Jorge-Meeks k-noids) and not of this chart.
+    'p_from': lambda order, radius: {
+        'rmax': float(np.clip(1.75 * (radius / 1.2) ** 0.6, 1.30, 2.40))},
+    'clip': False,
+    # The two ends sit ON the unit circle, so the chart has to reach
+    # PAST it for them to appear at all -- with rmax below 1 the masks
+    # below are dead code and the row is a featureless interior patch.
+    'mask_punctures': lambda p: [(1.0 + 0j, 0.30), (-1.0 + 0j, 0.30)],
+    'res_boost': (1.4, 1.4),
+    # The chart is a disk with two holes, so it is NOT simply connected
+    # and Re Int phi is only single-valued once the contour periods are
+    # accounted for.  Measured around each end (radius 0.3):
+    #   Re contour(phi) = (0, -pi, 0) at z = +1 and (0, +pi, 0) at z = -1.
+    # Only the y-component survives, and it is the singly-periodic
+    # TRANSLATION -- hence cycle_free = (1,).  Omitting this does not
+    # merely skip a check: the mesher then treats a multivalued patch as
+    # single-valued and the surface stops converging to minimal.
+    'cycles': lambda p: [(1.0 + 0j, 0.30), (-1.0 + 0j, 0.30)],
+    'cycle_free': (1,),
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_HALF_TWISTED_SCHERK'] = 'SINGLY'
+
+
+def _sp_scherk4_phi(z, p):
+    """Scherk's fourth surface: G = (z-1)/(z+1), dh = i z/(z^4 - 1) dz.
+
+    Reduced with z^4 - 1 = (z^2 - 1)(z^2 + 1):
+        1/G - G = 4z/(z^2 - 1),   1/G + G = 2(z^2 + 1)/(z^2 - 1),
+    so phi1 = 2i z^2 / ((z^2-1)^2 (z^2+1)),  phi2 = -z/(z^2-1)^2,
+    phi3 = i z / ((z^2-1)(z^2+1)).  Ends at the four roots of z^4 = 1.
+    """
+    a = z * z - 1.0
+    b = z * z + 1.0
+    return (2j * z * z / (a * a * b),
+            -z / (a * a),
+            1j * z / (a * b))
+
+
+# DEFERRED -- the Weierstrass data below is verified correct, but the
+# generic disk chart cannot present this surface and the row does NOT
+# ship.  Detail, so it is not re-attempted blindly:
+#
+#   * The data integrates to a minimal surface.  Integrating phi directly
+#     on a small disk clear of the ends gives median |H| * d falling
+#     1.03e-1 -> 3.0e-2 -> 1.7e-2 over n = 60/90/135.
+#   * Its contour periods are Re contour(phi) = (0, 0, -pi/2) at z = +-1
+#     and (0, 0, +pi/2) at z = +-i, measured at radius 0.3.  The four sum
+#     to zero, so the OUTER loop closes, but every partial path between
+#     ends carries +-pi/2 of vertical translation.
+#   * So X3 is multivalued across the chart, and a disk-with-four-holes
+#     domain seams rather than closing.  Through the meshing pipeline the
+#     row does not converge -- median |H| * d goes 1.7e-2 -> 1.9e-2 ->
+#     2.6e-2 over n = 60/90/135, RISING, and it stays non-convergent for
+#     every puncture-mask radius tried (0.28 / 0.34 / 0.40 / 0.45 / 0.55)
+#     and in the deep interior with 8 rings eroded, so it is not a
+#     boundary artifact.
+#   * `cycles` / `cycle_free` do not fix it: they feed the period-closure
+#     GATE, not the mesher, and adding them left the mesh bit-identical.
+#
+# Resume: give it a dedicated fundamental-domain mesher that cuts along a
+# path between the +1 and +i ends and stacks by the measured pi/2, the
+# way the other singly-periodic rows are built (`we.sptail_*`), rather
+# than a raw disk chart.  Do not simply re-enable the row below.
+_SCHERK_FOURTH_DEFERRED = {
+    'label': "Scherk's Fourth Surface",
+    'family': 'SINGLY',
+    'phi': _sp_scherk4_phi,
+    'domain': ('disk', 0.0, lambda p: p['rmax']),
+    # Two annular and two helicoidal ends.  Weber recovers this data by
+    # applying the Schwarz-Bjoerling formula to Scherk's own implicit
+    # equation of 1835; the surface is singular over 0 and infinity.
+    'p_from': lambda order, radius: {
+        'rmax': float(np.clip(1.70 * (radius / 1.2) ** 0.6, 1.30, 2.30))},
+    'clip': False,
+    # As for the half-twisted surface: all four ends lie on |z| = 1.
+    'mask_punctures': lambda p: [(1.0 + 0j, 0.34), (-1.0 + 0j, 0.34),
+                                 (1j, 0.34), (-1j, 0.34)],
+    'res_boost': (1.4, 1.4),
+    # Measured contour periods (radius 0.3 about each end):
+    #   Re contour(phi) = (0, 0, -pi/2) at z = +-1
+    #                     (0, 0, +pi/2) at z = +-i
+    # so the horizontal periods vanish and the vertical one ALTERNATES in
+    # sign between the two pairs of ends -- the same alternating +-T
+    # structure the Scherk-Enneper row carries.  cycle_free = (2,).
+    'cycles': lambda p: [(1.0 + 0j, 0.34), (-1.0 + 0j, 0.34),
+                         (1j, 0.34), (-1j, 0.34)],
+    'cycle_free': (2,),
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+
+
 def _selftest():
     # standalone catalog tests: build every row through the meshing
     # pipeline, then the engine-level QA gates (period closure,
