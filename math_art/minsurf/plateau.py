@@ -637,6 +637,99 @@ def _selfx_crossings(V, T, tol=1e-7):
     return count
 
 
+# ==========================================================================
+# Schoen's ring-like surfaces (the R family), by relaxation
+# ==========================================================================
+# A SECOND construction route, and the only one that reaches these.
+#
+# Schoen's R_I (= Schwarz H), R_II and R_III are, in his own words in the
+# 1970 NASA catalogue, "assembled from ring-like surfaces, each bounded
+# by the opposite parallel triangles of a prism" -- (pi/3,pi/3,pi/3) for
+# R_I, (pi/2,pi/4,pi/4) for R_II, (pi/2,pi/3,pi/6) for R_III.  Karcher
+# (1989) section 5.2 builds the same objects as annular Plateau problems
+# and calls them triangular catenoids.
+#
+# The exact-Weierstrass route does NOT reach R_III.  Karcher says why,
+# and it is a property of the surfaces rather than a gap in anyone's
+# effort: "RIII is not cut by planar symmetry lines into simply
+# connected pieces.  RII has such symmetry lines but the conjugate
+# contour is complicated, in particular not a Nitsche graph."  Brakke's
+# Surface Evolver datafiles state the same problem the same way -- two
+# fixed parallel triangles, everything between them free -- so this is
+# what those datafiles are, transcribed rather than read at runtime
+# (the extension cannot depend on a mirror).
+#
+# WHAT IS AND IS NOT CLAIMED.  This produces a DISCRETE minimal surface,
+# certified by area minimisation and the Pinkall-Polthier cotan flow,
+# not by integrating an exact Weierstrass representation.  It is a
+# weaker claim than the `hexagonal` spec rows make and the gate reflects
+# that: convergence is measured on AREA, which settles to four or five
+# figures, and not on median |H|, which on a relaxed mesh measures
+# triangle quality as much as it measures the surface.
+#
+# References:
+# - A. H. Schoen, "Infinite periodic minimal surfaces without
+#   self-intersections", NASA TN D-5541 (1970), Table II -- the R family
+#   and the triangles bounding each.
+# - H. Karcher, "The triply periodic minimal surfaces of Alan Schoen and
+#   their constant mean curvature companions", manuscripta math. 64
+#   (1989) 291-357, section 5.2 -- triangular catenoids, and the
+#   obstruction quoted above.
+# - U. Pinkall and K. Polthier, "Computing discrete minimal surfaces and
+#   their conjugates", Experimental Mathematics 2(1) (1993) -- the flow
+#   `minimize_area` runs.
+# - K. A. Brakke, "The Surface Evolver", Experimental Mathematics 1(2)
+#   (1992); datafiles RII.fe and RIII.fe.
+
+# key -> (label, triangle vertices in the z = 0 plane, prism height).
+# The triangles are Schoen's, and the heights are Brakke's `#define HT`.
+RING_SURFACES = {
+    'R1': ("Schoen R-I / Schwarz H (ring form)",
+           ((0.0, 0.0), (1.0, 0.0), (0.5, math.sqrt(0.75))), 0.5),
+    'R2': ("Schoen R-II (ring form, genus 9)",
+           ((0.0, 0.0), (1.0, 0.0), (0.0, 1.0)), 0.2),
+    'R3': ("Schoen R-III (ring form, genus 13)",
+           ((0.0, 0.0), (math.sqrt(3.0), 0.0), (0.0, 3.0)), 0.5),
+}
+
+
+def ring_build(key, cells, res_per_cell, scale, theta):
+    """TPMS_EXACT-compatible wrapper: relax, then centre and fit the
+    result into the 2*scale cube the rest of the catalog uses.
+
+    `cells` and `theta` are accepted and ignored.  Tiling this by the
+    prism's six half-turn generators is real future work, and stacking
+    un-reflected copies would be a lie about the surface; `theta` is
+    meaningless here because there is no holomorphic family to rotate --
+    that is precisely the difference between this route and the exact
+    Weierstrass rows.
+    """
+    m = max(48, int(round(res_per_cell)) * 2)
+    V, quads, _area = ring_surface(key, m=m, rows=max(10, m // 6))
+    V = np.asarray(V, dtype=float)
+    lo, hi = V.min(0), V.max(0)
+    V = V - 0.5 * (lo + hi)
+    ext = float(np.max(hi - lo))
+    if ext > 1e-12:
+        V = V * (2.0 * float(scale) / ext)
+    return V, [tuple(int(i) for i in q) for q in quads]
+
+
+def ring_surface(key, m=120, rows=20, iters=150):
+    """Relax the minimal annulus spanning two parallel congruent
+    triangles.  Returns (V, quads, area)."""
+    _label, tri, ht = RING_SURFACES[key]
+    pts = np.array([(x, y, 0.0) for x, y in tri], dtype=float)
+    loop = resample_loop(np.vstack([pts, pts[:1]]), m)
+    top = loop.copy()
+    top[:, 2] = ht
+    V, quads, fixed = build_annulus_grid(loop, top, rows)
+    T = _quads_to_tris(quads)
+    V = np.asarray(minimize_area(np.asarray(V, float).copy(), T, fixed,
+                                 outer_iters=iters), dtype=float)
+    return V, quads, mesh_area(V, T)
+
+
 def _selftest():
     ok = True
 
@@ -718,6 +811,23 @@ def _selftest():
         ok &= good
         print(f"plateau: catenoid ({label}) waist={waist2:.4f}, rims "
               f"pinned ({moved2:.1e}) {'OK' if good else 'FAIL'}")
+
+    # The R family is certified by AREA, not by median |H|.  On a mesh
+    # produced by relaxation rather than by integration, |H| measures
+    # triangle quality as much as it measures the surface -- R-II's rises
+    # under refinement while its area settles to five figures -- so area
+    # is the honest invariant and the one gated here.
+    for key in ('R1', 'R2', 'R3'):
+        areas = []
+        for m, rows in ((90, 15), (135, 22)):
+            _V, _Q, a = ring_surface(key, m=m, rows=rows)
+            areas.append(a)
+        drift = abs(areas[1] - areas[0]) / max(areas[1], 1e-30)
+        good = drift < 0.01 and areas[1] > 1e-6
+        ok &= good
+        print("plateau: ring %s area %.6f -> %.6f (drift %.4f%%) %s"
+              % (key, areas[0], areas[1], 100.0 * drift,
+                 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

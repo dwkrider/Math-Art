@@ -954,6 +954,7 @@ def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
 
 from . import weierstrass as _we_pgd
 from . import hexagonal as _we_hex
+from . import plateau as _pl
 
 # key -> (menu label, builder(cells, res_per_cell, scale, theta))
 # Rows that offer named assemblies, and the names they offer.
@@ -1059,6 +1060,17 @@ TPMS_EXACT = {
                        lambda cells, res, scale, theta:
                            _we_hex.spec_build('SIMOES_BATISTA', cells,
                                               res, scale, theta)),
+    # Schoen R-III, by RELAXATION rather than by integrating an exact
+    # Weierstrass representation -- see the block above `RING_SURFACES`
+    # in plateau.  It is the only route that reaches this surface:
+    # Karcher records that R-III "is not cut by planar symmetry lines
+    # into simply connected pieces", so the conjugate-Plateau method his
+    # own paper uses for the rest of the family does not apply, and no
+    # notebook for it exists in Weber's archive either.  The fidelity
+    # claim is correspondingly weaker and the row says so in its label.
+    'R3_RING': (_pl.RING_SURFACES['R3'][0] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.ring_build('R3', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
