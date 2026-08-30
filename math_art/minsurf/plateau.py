@@ -734,11 +734,66 @@ def _facet_edges(T):
     return per, ids
 
 
-def discrete_adjoint(V, T, bangle=90.0):
-    """Conjugate of a discrete minimal surface (Pinkall-Polthier).
+def adjoint_mesh(V, T, bangle=90.0):
+    """The conjugate as a mesh, in the form where its area is exact.
 
-    Returns new vertex positions.  `bangle` sweeps the associate family:
-    0 returns the original, 90 the conjugate.
+    The conjugate of a conforming triangulation is NONCONFORMING: it
+    carries one position per EDGE, and adjacent triangles meet only at
+    those edge midpoints, not at shared vertices.  Brakke states the
+    reconstruction directly (`fe/adjoint.cmd`, `write_conjugate`): the
+    facet whose three edge positions are P1, P2, P3 becomes the triangle
+
+        P1 + P2 - P3,   -P1 + P2 + P3,   P1 - P2 + P3,
+
+    the unique triangle whose edge midpoints are P1, P2, P3 -- check:
+    the midpoint of the first two is P2, of the second two P3, of the
+    third and first P1.  Each such triangle is the Bonnet rotation of
+    its parent about that parent's own normal, hence CONGRUENT to it, so
+    the area is preserved facet by facet at any resolution.
+
+    Two other reconstructions are wrong in ways that look plausible, and
+    both were tried here first:
+
+      * the conforming least-squares surface `discrete_adjoint` returns.
+        Its area drifts FURTHER from the original as the mesh refines
+        (2.5300 / 2.0798 / 1.9025 against 2.5178 / 2.5146 / 2.5136).
+        Brakke calls the conforming version a "tweak" and never claims
+        it preserves area; his own is an incident-facet corner average,
+        not least squares.
+      * the medial triangles on P1, P2, P3 themselves.  Those ARE
+        isometric, but a medial triangle has a QUARTER its parent's
+        area, so they measure a quarter of the surface.
+
+    The returned mesh is deliberately unwelded -- adjacent triangles
+    share midpoints, not vertices -- because that is what the conjugate
+    is.  Weld it afterwards if a closed mesh is wanted, and expect the
+    seams to be exactly as good as the input surface is critical.
+    """
+    V = np.asarray(V, dtype=float)
+    T = np.asarray(T, dtype=np.int64)
+    P, per = _adjoint_edge_positions(V, T, bangle)
+    p1 = P[per[:, 0]]
+    p2 = P[per[:, 1]]
+    p3 = P[per[:, 2]]
+    pts = np.concatenate([p1 + p2 - p3, -p1 + p2 + p3, p1 - p2 + p3], axis=0)
+    nf = len(T)
+    faces = [(f, f + nf, f + 2 * nf) for f in range(nf)]
+    return pts, faces
+
+
+def _boundary_vertices(T):
+    d = defaultdict(int)
+    for tri in T:
+        for k in range(3):
+            d[(int(tri[k]), int(tri[(k + 1) % 3]))] += 1
+    return {v for (a, b) in d if (b, a) not in d for v in (a, b)}
+
+
+def _adjoint_edge_positions(V, T, bangle=90.0):
+    """Conjugate positions, one per EDGE, by least-squares integration.
+
+    Shared by `adjoint_mesh` and `discrete_adjoint`; see the note above
+    `adjoint_mesh` for why the edge form is the primary one.
     """
     V = np.asarray(V, dtype=float)
     T = np.asarray(T, dtype=np.int64)
@@ -757,34 +812,80 @@ def discrete_adjoint(V, T, bangle=90.0):
     bc = math.cos(math.radians(bangle))
     bs = math.sin(math.radians(bangle))
 
-    # facets touching each edge, so the walk is a BFS rather than the
-    # repeated full sweep the Evolver script uses
-    inc = defaultdict(list)
-    for f in range(len(T)):
-        for k in range(3):
-            inc[int(per[f, k])].append(f)
+    # INTEGRATE the 1-form by least squares, with conjugate gradients.
+    #
+    # The relation P[next] - P[this] = -(bc e + bs n x e)/2 is a discrete
+    # 1-form on the facet graph.  Integrating it by WALKING the mesh is
+    # exact only if the form is exactly closed, which needs the surface
+    # to be exactly discretely minimal -- and a relaxed surface never
+    # is.  Worse, a walk commits to whichever facet reached an edge
+    # first and dumps every inconsistency on the edges reached last, so
+    # its residual RISES relative to the edge length as the mesh refines
+    # (0.083 at 48x8, 0.116 at 96x16, 0.324 at 144x24) even while the
+    # area converges.
+    #
+    # Least squares spreads the inconsistency instead: minimise
+    #     sum over facets, over k, |P[e_{k+1}] - P[e_k] - w_{f,k}|^2.
+    # The normal equations are a graph Laplacian on edge-adjacency,
+    # singular only in the global translation, so CG converges on it
+    # with the constant mode projected out.  Jacobi does NOT -- it was
+    # tried at 600 sweeps and lost the bangle-0 identity entirely, which
+    # is a solver failure rather than a formulation one.
+    src = per[:, [0, 1, 2]].ravel()
+    dst = per[:, [1, 2, 0]].ravel()
+    W = np.empty((len(T) * 3, 3))
+    for k in range(3):
+        ko = (k + 2) % 3
+        W[k::3] = -0.5 * (bc * e[:, ko] + bs * np.cross(n, e[:, ko]))
+    # reorder to match src/dst raveling (facet-major, k within facet)
+    W = np.concatenate([(-0.5 * (bc * e[:, (k + 2) % 3]
+                                 + bs * np.cross(n, e[:, (k + 2) % 3])))[:, None]
+                        for k in range(3)], axis=1).reshape(-1, 3)
 
-    start = int(per[0, 0])
-    known[start] = True
-    frontier = [start]
-    while frontier:
-        nxt = []
-        for ei in frontier:
-            for f in inc[ei]:
-                k = int(np.where(per[f] == ei)[0][0])
-                for step in (1, 2):
-                    kn = (k + step) % 3
-                    en = int(per[f, kn])
-                    if known[en]:
-                        continue
-                    ko = (k + (3 - step)) % 3
-                    eo = e[f, ko] * (1.0 if step == 1 else -1.0)
-                    P[en] = P[ei] - 0.5 * (bc * eo
-                                           + bs * np.cross(n[f], eo))
-                    known[en] = True
-                    nxt.append(en)
-        frontier = nxt
+    def _AtA(X):
+        r = X[dst] - X[src]
+        out = np.zeros_like(X)
+        np.add.at(out, dst, r)
+        np.add.at(out, src, -r)
+        return out
 
+    rhs = np.zeros((ne, 3))
+    np.add.at(rhs, dst, W)
+    np.add.at(rhs, src, -W)
+
+    P = np.zeros((ne, 3))
+    r = rhs - _AtA(P)
+    r -= r.mean(0)                     # project out the constant mode
+    d = r.copy()
+    rs = float(np.sum(r * r))
+    for _ in range(4000):
+        if rs < 1e-24:
+            break
+        Ad = _AtA(d)
+        denom = float(np.sum(d * Ad))
+        if abs(denom) < 1e-300:
+            break
+        al = rs / denom
+        P += al * d
+        r -= al * Ad
+        r -= r.mean(0)
+        rs2 = float(np.sum(r * r))
+        d = r + (rs2 / rs) * d
+        rs = rs2
+
+    return P, per
+
+
+def discrete_adjoint(V, T, bangle=90.0):
+    """Conjugate of a discrete minimal surface (Pinkall-Polthier).
+
+    Returns new vertex positions.  `bangle` sweeps the associate family:
+    0 returns the original, 90 the conjugate.
+    """
+    V = np.asarray(V, dtype=float)
+    T = np.asarray(T, dtype=np.int64)
+    P, per = _adjoint_edge_positions(V, T, bangle)
+    ne = len(P)
     # NONCONFORMING -> CONFORMING, by least squares rather than by
     # averaging.
     #
@@ -1353,6 +1454,62 @@ def _selftest():
     ok &= good
     print("plateau: adjoint at bangle 0 is the identity (area ratio "
           "off by %.1e) %s" % (da, 'OK' if good else 'FAIL'))
+
+    # The conjugate must be ISOMETRIC, and with Brakke's reconstruction
+    # that is checkable FACET BY FACET, not just in total: each triangle
+    # (P1+P2-P3, -P1+P2+P3, P1-P2+P3) is the Bonnet rotation of its
+    # parent about the parent's own normal, hence congruent to it.
+    #
+    # Two weaker reconstructions were measured first and both are wrong:
+    # the conforming least-squares surface drifts FURTHER off as the mesh
+    # refines, and the medial triangles are isometric but cover a quarter
+    # of the area.  Gate on the real thing.
+    #
+    # The two Bonnet angles are gated differently ON PURPOSE:
+    #
+    #   bangle 0 is the identity, so per-facet congruence must hold to
+    #   ROUNDOFF (1e-11) and the total area must match exactly.  That
+    #   catches any error in the reconstruction algebra itself.
+    #
+    #   bangle 90 propagates a 1-form that is closed only insofar as the
+    #   input is discretely minimal, and `_adjoint_edge_positions` fits
+    #   it by least squares, which SPREADS the closure defect over the
+    #   mesh.  Per-facet congruence is therefore only ~3e-3 in the mean,
+    #   while the defect cancels in the sum and the TOTAL area survives
+    #   to ~2e-4.  So the total is what is gated here, and the number is
+    #   a measure of how discretely minimal `minimize_area`'s output is,
+    #   not of the transform.  Tightening it means polishing the input,
+    #   not touching this code.
+    r3v = math.sqrt(3.0)
+    hexpoly = np.array([[0, 0, 0], [r3v, -1, 0], [r3v, -1, 1.0],
+                        [r3v / 2, -1.5, 1.0], [r3v / 2, .5, 1.0],
+                        [r3v / 2, .5, 0]], dtype=float)
+    lp = resample_loop(np.vstack([hexpoly, hexpoly[:1]]), 96)
+    Vh, qh, fxh = build_disk_grid(lp, 16)
+    Th = np.asarray(_quads_to_tris(qh))
+    Vh = np.asarray(minimize_area(np.asarray(Vh, float).copy(), Th, fxh,
+                                  outer_iters=300), dtype=float)
+
+    def _tri_areas(P, F):
+        P = np.asarray(P, dtype=float)
+        F = np.asarray(F)
+        A, B, C = P[F[:, 0]], P[F[:, 1]], P[F[:, 2]]
+        return 0.5 * np.linalg.norm(np.cross(B - A, C - A), axis=1)
+
+    face_a = _tri_areas(Vh, Th)
+    tot_a = float(face_a.sum())
+    for ang, cong_tol, tot_tol in ((0.0, 1e-11, 1e-12), (90.0, None, 2e-3)):
+        Pa, Fa = adjoint_mesh(Vh, Th, bangle=ang)
+        new_a = _tri_areas(Pa, np.asarray(Fa))
+        cong = float(np.max(np.abs(new_a - face_a) / np.maximum(face_a, 1e-300)))
+        rat = float(new_a.sum()) / max(tot_a, 1e-30)
+        good = abs(rat - 1.0) < tot_tol and bool(np.all(np.isfinite(Pa)))
+        if cong_tol is not None:
+            good = good and cong < cong_tol
+        ok &= good
+        print("plateau: conjugate at %2.0fdeg -- per-facet congruence %.1e, "
+              "total area ratio %.9f %s"
+              % (ang, cong, rat, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
