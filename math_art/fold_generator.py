@@ -88,16 +88,40 @@ def _build_mesh(name, frame, sheet_size):
     me.from_pydata(co, edges if not faces else [], faces)
     me.update()
 
-    if frame.assignment is not None and len(me.edges) == len(edges):
+    # MAP BY VERTEX PAIR, NOT BY INDEX.
+    #
+    # These used to be written positionally, guarded by
+    # `len(me.edges) == len(edges)` -- and when that guard failed the
+    # assignment was dropped in silence, leaving a mesh with no creases
+    # and, much later, "this mesh carries no crease_assignment
+    # attribute" from the folder.  The guard fails routinely: passing
+    # faces makes `from_pydata` derive the edges from them, so any
+    # crease bordering no face simply is not in the mesh.  A real file
+    # hit it -- Origami Simulator's `6ptHypar-anti.svg` has 500 creases
+    # of which 499 border a face, and lost all 500.
+    #
+    # By pair, a count mismatch is no longer fatal: every edge the mesh
+    # does have gets its true assignment, and anything unmatched falls
+    # back to unassigned rather than to nothing at all.
+    if frame.assignment is not None:
+        want = {}
+        for k, (a, b) in enumerate(frame.edges):
+            code = _ASSIGN_CODE.get(str(frame.assignment[k]), 3)
+            want[(int(a), int(b))] = code
+            want[(int(b), int(a))] = code
         attr = me.attributes.new("crease_assignment", 'INT', 'EDGE')
         attr.data.foreach_set(
-            "value", [_ASSIGN_CODE.get(str(a), 3) for a in frame.assignment])
-    if frame.fold_angle is not None and len(me.edges) == len(edges):
-        import math
-        vals = [0.0 if (a != a) else float(a)      # NaN -> 0
-                for a in frame.fold_angle]
+            "value", [want.get(tuple(e.vertices), 3) for e in me.edges])
+    if frame.fold_angle is not None:
+        ang = {}
+        for k, (a, b) in enumerate(frame.edges):
+            v = float(frame.fold_angle[k])
+            v = 0.0 if v != v else v               # NaN -> 0
+            ang[(int(a), int(b))] = v
+            ang[(int(b), int(a))] = v
         attr = me.attributes.new("fold_angle", 'FLOAT', 'EDGE')
-        attr.data.foreach_set("value", vals)
+        attr.data.foreach_set(
+            "value", [ang.get(tuple(e.vertices), 0.0) for e in me.edges])
 
     me.update()
     return me, extent
@@ -107,11 +131,16 @@ class MESH_OT_fold_import(bpy.types.Operator, ImportHelper):
     """Import a FOLD crease pattern or folded state"""
 
     bl_idname = "mesh.fold_import"
-    bl_label = "Crease Pattern (.fold)"
+    bl_label = "Crease Pattern (.fold/.svg)"
     bl_options = {'REGISTER', 'UNDO'}
 
     filename_ext = ".fold"
-    filter_glob: StringProperty(default="*.fold;*.json", options={'HIDDEN'})
+    # SVG belongs here rather than behind a second menu entry: a user
+    # with a crease pattern does not care which interchange format it
+    # happens to be in, and the reference libraries are split across
+    # both -- Origami Simulator ships its patterns as SVG only.
+    filter_glob: StringProperty(default="*.fold;*.json;*.svg",
+                                options={'HIDDEN'})
 
     frame_index: FloatProperty(
         name="Frame", default=0, min=0, max=4096, precision=0,
@@ -124,6 +153,13 @@ class MESH_OT_fold_import(bpy.types.Operator, ImportHelper):
         name="Recover Faces", default=True,
         description="Build faces from the crease graph when the file "
                     "lists only vertices and edges")
+    triangulate_cells: BoolProperty(
+        name="Triangulate Cells", default=False,
+        description="Split every non-triangular panel with a diagonal, "
+                    "left unassigned so the solver may bend there. A "
+                    "rigid solver holds a quad panel flat, so patterns "
+                    "whose panels must bend -- the pleated hypar above "
+                    "all -- will not fold at all without this")
     report_checks: BoolProperty(
         name="Report Checks", default=True,
         description="Check developability, Maekawa and Kawasaki after "
@@ -136,9 +172,42 @@ class MESH_OT_fold_import(bpy.types.Operator, ImportHelper):
                 frame=int(self.frame_index),
                 recover_faces=self.recover_faces,
                 validate_it=self.report_checks)
-        except crease.FoldError as exc:
+        except (crease.FoldError, crease.SvgError) as exc:
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
+
+        # TRIANGULATE BEFORE BUILDING THE MESH, so the diagonals are
+        # real creases in the frame rather than a mesh-only change the
+        # solver never sees.  They go in UNASSIGNED, not FLAT: FLAT
+        # means "creased but not folded" and the solver freezes it, so
+        # a flat-tagged diagonal leaves the panel exactly as rigid as
+        # the quad it replaced -- which defeats the whole option.
+        # UNASSIGNED says what is actually true: nobody decided, and the
+        # solver may choose.
+        tri_note = None
+        if self.triangulate_cells and frame.faces:
+            # A face that fan triangulation cannot handle must not take
+            # the whole import down with it.  Real files contain them:
+            # `6ptHypar-anti.svg` recovers a face that visits one vertex
+            # twice -- a pinch point, not a simple polygon -- and the
+            # triangulator rightly refuses it.  Import the pattern
+            # untriangulated and say so, rather than failing after the
+            # file has been read and parsed.
+            try:
+                tris, diags = crease.triangulate(frame.verts, frame.faces)
+            except crease.GraphError as exc:
+                tris, diags = None, None
+                tri_note = f"could not triangulate: {exc}"
+            if diags:
+                import numpy as _np
+                frame.faces = tris
+                frame.edges = _np.vstack(
+                    [frame.edges, _np.array(diags, dtype=_np.int64)])
+                frame.assignment = _np.concatenate(
+                    [frame.assignment,
+                     _np.array([crease.UNASSIGNED] * len(diags), dtype="<U1")])
+                frame.meta = dict(frame.meta or {})
+                frame.meta["triangulated"] = len(diags)
 
         import os
         name = os.path.splitext(os.path.basename(self.filepath))[0] or "Fold"
@@ -168,6 +237,19 @@ class MESH_OT_fold_import(bpy.types.Operator, ImportHelper):
             msgs.append(f"{len(order)} layer relations"
                         + ("" if order.stacking() is not None
                            else " (CYCLIC)"))
+        # What the SVG reader had to drop, and why.  An importer that
+        # discards a third of a file without saying so is worse than one
+        # that refuses it: `hypar.svg` alone contributes 94 annotation
+        # strokes that must not become creases, and the user should be
+        # able to tell that from a mistake.
+        st = frame.meta.get("import_stats") if frame.meta else None
+        if st:
+            msgs.append(crease.svg_io.stats_summary(st))
+        if frame.meta and frame.meta.get("triangulated"):
+            msgs.append(f"{frame.meta['triangulated']} panel diagonal(s) "
+                        f"added, unassigned")
+        if tri_note:
+            msgs.append(tri_note)
         if rep is not None and rep.checked:
             msgs.append(rep.summary())
         elif rep is not None:

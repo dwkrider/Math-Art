@@ -48,11 +48,12 @@ References:
       2007), ch. 11-14.
 """
 
-from . import fold_io, graph, layers, patterns, rigid, validate
+from . import fold_io, graph, layers, patterns, rigid, svg_io, validate
 from .fold_io import (ASSIGNMENTS, BOUNDARY, CREASES, FLAT, MOUNTAIN,
                       UNASSIGNED, VALLEY, FoldError, Frame, read_fold,
                       write_fold)
 from .graph import GraphError, build_faces, triangulate, vertex_rings
+from .svg_io import SvgError, read_svg
 from .layers import LayerOrder, read_layer_order
 from .validate import Report, validate as check
 
@@ -62,7 +63,7 @@ __all__ = [
     "FoldError", "Frame", "GraphError", "LayerOrder", "Report",
     "build_faces", "check", "load_pattern", "read_fold",
     "read_layer_order", "triangulate", "vertex_rings", "write_fold",
-    "patterns", "rigid",
+    "patterns", "rigid", "svg_io", "read_svg", "SvgError",
 ]
 
 
@@ -78,12 +79,26 @@ def load_pattern(path_or_text, frame=0, recover_faces=True, validate_it=True):
     `validate.Report` whose `.checked` says whether the frame was even
     eligible (a folded 3-D state is not).
     """
-    fr, _frames = read_fold(path_or_text, frame=frame)
+    # DISPATCH ON THE FILE, not on a separate operator.  A user with a
+    # crease pattern does not care which of the two interchange formats
+    # it happens to be in, and Origami Simulator -- which reads both --
+    # sets that expectation.  `stats` is None for FOLD, and the SVG
+    # importer's report otherwise.
+    stats = None
+    if isinstance(path_or_text, str) and (
+            path_or_text.lstrip().startswith("<svg")
+            or path_or_text.lstrip().startswith("<?xml")
+            or path_or_text.lower().endswith(".svg")):
+        fr, stats = svg_io.read_svg(path_or_text)
+    else:
+        fr, _frames = read_fold(path_or_text, frame=frame)
     if recover_faces and fr.faces is None and fr.verts is not None \
             and fr.edges is not None and fr.is_flat:
         fr.faces = build_faces(fr.verts, fr.edges)
     report = validate.validate(fr) if validate_it else None
     order = read_layer_order(fr)
+    if stats is not None:
+        fr.meta["import_stats"] = stats
     return fr, report, order
 
 
