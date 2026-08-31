@@ -94,9 +94,9 @@ _PATTERN_ITEMS = (
      "A herringbone pleat, and the simplest thing here that folds "
      "unconditionally -- useful mainly as a control"),
     ('KRESLING', "Kresling",
-     "A cylinder that twists as it deploys: the Yoshimura with one "
-     "diagonal family instead of two, so a cell cannot collapse "
-     "symmetrically. The twist itself is NOT yet measured"),
+     "A cylinder that twists as it deploys, derived from the tube it "
+     "closes into: the top ring ends up rotated by Rows times 45 "
+     "degrees. Fold this one with Bending Paper at full drive"),
     ('RESCH', "Ron Resch",
      "Ron Resch's triangular tessellation, whose tucks hide surplus "
      "material and leave a stiff sheet that takes curvature both ways. "
@@ -169,7 +169,7 @@ _NATURAL_FOLD = {
     'MONKEY': 150.0,
     'EGGBOX': 90.0,
     'CHEVRON': 80.0,
-    'KRESLING': 60.0,
+    'KRESLING': 47.0,
     'RESCH': 70.0,
 }
 
@@ -278,6 +278,26 @@ def _frame_to_mesh(name, frame, positions, size):
             a, b = e.vertices
             vals.append(_ASSIGN_CODE.get(want.get((a, b), "U"), 3))
         attr.data.foreach_set("value", vals)
+
+    # THE ANGLES TRAVEL WITH THE MESH TOO, when the pattern knows them.
+    # Writing the assignment and not the angle loses the difference
+    # between "this crease is a valley" and "this crease is a valley of
+    # 43 degrees", and the second is what tells the solver which of the
+    # branches meeting at the flat state to take.  The Kresling folded
+    # to a shallow crimp rather than its tube for exactly this reason:
+    # the maker measured every angle off the target cylinder and the
+    # mesh then dropped all of them on the floor.  Mapped by vertex pair
+    # for the same reason as the assignment above -- `from_pydata`
+    # reorders edges once faces are supplied.
+    if frame.fold_angle is not None:
+        ang = {}
+        for k, (a, b) in enumerate(frame.edges):
+            val = float(frame.fold_angle[k])
+            val = 0.0 if val != val else val            # NaN means unknown
+            ang[(int(a), int(b))] = ang[(int(b), int(a))] = val
+        fa = me.attributes.new("fold_angle", 'FLOAT', 'EDGE')
+        fa.data.foreach_set("value", [ang.get(tuple(e.vertices), 0.0)
+                                      for e in me.edges])
     me.update()
     return me, scale, centre
 
@@ -351,8 +371,18 @@ def _frame_from_object(obj):
         if not np.any(np.abs(angles) > 1e-9):
             angles = None              # all zero means "not recorded"
 
+    # A RECORDED ANGLE IS ALSO A SEED, and the seed has to be rebuilt
+    # here or it is lost: the mesh carries per-edge attributes, not the
+    # frame's `meta`, so a pattern that told the solver which branch to
+    # leave the flat state along has that advice thrown away the moment
+    # it becomes an object.  The rigid continuation then falls back to
+    # the mountain/valley signs, which fold every crease at one rate --
+    # for the Kresling that is a shallow crimp (widest extent 9.04 to
+    # 7.06) instead of the tube (3.47), and the bug is invisible because
+    # the crimp looks like a perfectly plausible fold.
+    meta = {} if angles is None else {"fold_seed": np.nan_to_num(angles)}
     return crease.Frame(verts=verts, edges=edges, assignment=assign,
-                        fold_angle=angles,
+                        fold_angle=angles, meta=meta,
                         faces=faces or None)
 
 
@@ -702,7 +732,12 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
 
-        frame.faces = crease.build_faces(frame.verts, frame.edges)
+        # A maker that already knows its faces keeps them.  The Kresling
+        # measures its fold angles against that exact triangulation, so
+        # re-deriving the faces here would be re-deriving the thing the
+        # targets were computed from.
+        if frame.faces is None:
+            frame.faces = crease.build_faces(frame.verts, frame.edges)
         me, _scale, _c = _frame_to_mesh(self.pattern.title(), frame,
                                         None, self.size)
         obj = bpy.data.objects.new(me.name, me)

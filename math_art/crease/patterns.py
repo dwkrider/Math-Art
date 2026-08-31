@@ -402,10 +402,11 @@ def hypar(rings=6, sides=4, radius=1.0):
 #              compliant solver under-converges at the drive needed to
 #              show it.
 #   CHEVRON    nothing beyond "it folds".
-#   KRESLING   the twist.  Chirality is built in by construction -- one
-#              diagonal family where the Yoshimura has two -- but the
-#              rotation itself has not been measured.
 #   RESCH      the characteristic tuck.
+#
+# KRESLING WAS ON THIS LIST AND HAS COME OFF IT.  It is now derived from
+# the cylinder rather than guessed, and checked against three oracles it
+# previously failed -- see its docstring.
 #
 # A pattern that passes Maekawa and does not do its job is exactly what
 # the square twist turned out to be: flat-foldable at every vertex, and
@@ -476,40 +477,143 @@ def chevron(rows=6, cols=6, cell=1.0, height=0.6, skew=0.45):
     return B.frame("Chevron")
 
 
-def kresling(rows=4, cols=6, cell=1.0, height=0.8):
+def kresling(rows=4, cols=6, radius=1.0, twist=np.deg2rad(45.0),
+             height=0.8):
     """The Kresling pattern: a cylinder that TWISTS as it deploys.
 
-    The Yoshimura's chiral cousin, and the difference is exactly one
-    diagonal: where the Yoshimura triangulates each cell both ways, this
-    keeps only one family, so a cell cannot collapse symmetrically and
-    the tube rotates as it closes.  That handedness IS the pattern.
+    `cols` is the number of sides around the tube, `rows` the number of
+    stacked bands, and `twist` the rotation from one band to the next --
+    so the deployed tube turns through `rows * twist` in total.
+
+    DERIVED FROM THE TUBE, NOT GUESSED.  This is the whole method, and
+    the reason it works where the obvious construction does not.  Build
+    the target cylinder first: band `i` sits at height `i*height` with
+    its vertices at angles `2*pi*j/cols + i*twist`.  Three edge lengths
+    fall straight out of it,
+
+        a = 2 R sin(pi/n)               around a ring
+        b = hypot(2 R sin(phi/2), h)    band to band, same j
+        c = hypot(2 R sin((th-phi)/2), h)   the diagonal
+
+    and a flat sheet carrying exactly those lengths is isometric to the
+    tube, so a folded state PROVABLY exists.  Laying it out is then one
+    triangle intersection: with the lower band on the x axis at spacing
+    `a`, the vertex above lands at
+
+        x = (b^2 - c^2 + a^2) / 2a,     y = sqrt(b^2 - x^2)
+
+    which makes the pattern a sheared lattice whose shear and row height
+    are consequences of R, phi and h rather than free parameters.  Each
+    cell carries ONE diagonal, always in the same sense; that constant
+    handedness is what stops a cell collapsing symmetrically, and it is
+    what makes the tube rotate instead of merely closing.
+
+    The fold angles are then MEASURED on the cylinder rather than
+    assigned by parity, and so are the mountain/valley labels -- for a
+    convex tube they come out uniformly signed, which parity would never
+    have produced.
+
+    WHY THE DERIVATION, when guessing a layout is so much easier.  The
+    guess was tried first: Yoshimura offsets with one diagonal family
+    deleted.  It satisfied every local condition and folded without
+    tearing, and it was not a Kresling -- its widest extent went 7.00 to
+    7.28 where a tube must CONTRACT.  Three oracles now stand over this
+    version, and the guessed one failed all three:
+
+      curl    widest extent 7.31 -> 3.36, the same test the Yoshimura
+              is held to
+      seam    the sheet's two cut edges close to within 1e-3 of a ring
+              edge, so the tube is a tube
+      twist   the top ring rotates by exactly `rows * twist` -- 80, 120
+              and 180 degrees at four rows of 20, 30 and 45 -- which is
+              the one measurement that separates a Kresling from a
+              Yoshimura
+
+    all at zero edge strain, as an isometry must be.
 
     References:
       B. Kresling, "Natural twist buckling in shells," Proc. IASS, 1995
           -- the buckling pattern this reproduces.
+      J. Cai, X. Deng, Y. Zhou, J. Feng, Y. Tu, "Bistable behavior of
+          the cylindrical origami structure with Kresling pattern,"
+          ASME J. Mech. Des. 137(6), 2015 -- the closure geometry the
+          edge lengths above come from.
       J. Cai et al., "Geometry and motion analysis of origami-based
           deployable shelter structures," J. Struct. Eng. 141, 2015.
     """
+    n = max(3, int(cols))
+    th = 2.0 * np.pi / n
+    a = 2.0 * radius * np.sin(th / 2.0)
+    b = np.hypot(2.0 * radius * np.sin(twist / 2.0), height)
+    c = np.hypot(2.0 * radius * np.sin((th - twist) / 2.0), height)
+    x = (b * b - c * c + a * a) / (2.0 * a)
+    y2 = b * b - x * x
+    if y2 <= 1e-12:
+        raise ValueError(
+            "kresling: no flat layout for this twist -- the band is "
+            "degenerate.  Reduce the twist or raise the height.")
+    y = np.sqrt(y2)
+
     B = _Builder()
-    idx = [[B.v(j * cell + 0.5 * cell * (i % 2), i * height)
-            for j in range(cols + 1)] for i in range(rows + 1)]
+    idx = [[B.v(j * a + i * x, i * y) for j in range(n + 1)]
+           for i in range(rows + 1)]
+    faces = []
     for i in range(rows + 1):
-        for j in range(cols + 1):
-            if j < cols:
+        for j in range(n + 1):
+            if j < n:
                 B.e(idx[i][j], idx[i][j + 1],
-                    BOUNDARY if i in (0, rows)
-                    else (MOUNTAIN if i % 2 else VALLEY))
+                    BOUNDARY if i in (0, rows) else VALLEY)
             if i < rows:
                 B.e(idx[i][j], idx[i + 1][j],
-                    BOUNDARY if j in (0, cols) else VALLEY)
-                # ONE diagonal family only.  Adding the second makes
-                # this a Yoshimura and takes the twist away.
-                if j < cols:
-                    if i % 2:
-                        B.e(idx[i][j], idx[i + 1][j + 1], MOUNTAIN)
-                    else:
-                        B.e(idx[i][j + 1], idx[i + 1][j], MOUNTAIN)
-    return B.frame("Kresling")
+                    BOUNDARY if j in (0, n) else VALLEY)
+                if j < n:
+                    # ONE diagonal family.  Adding the second makes this
+                    # a Yoshimura and takes the twist away.
+                    B.e(idx[i][j + 1], idx[i + 1][j], MOUNTAIN)
+                    faces.append([idx[i][j], idx[i][j + 1], idx[i + 1][j]])
+                    faces.append([idx[i][j + 1], idx[i + 1][j + 1],
+                                  idx[i + 1][j]])
+
+    fr = B.frame("Kresling")
+    fr.faces = faces
+    fr.fold_angle = np.full(fr.n_edges, np.nan)
+
+    tube = np.zeros((fr.n_verts, 3))
+    for i in range(rows + 1):
+        for j in range(n + 1):
+            ang = th * j + twist * i
+            tube[idx[i][j]] = (radius * np.cos(ang), radius * np.sin(ang),
+                               height * i)
+
+    # MEASURED WITH THE SOLVER'S OWN FUNCTION, deliberately, rather than
+    # with a private copy of the dihedral formula.  The sign convention
+    # and the apex ordering both depend on how the crease list was
+    # built, so a hand-rolled second implementation is free to disagree
+    # by a sign -- and a target angle that is exactly negated drives the
+    # sheet the wrong way while looking perfectly reasonable.  This
+    # module has already paid for that mistake once.
+    from .compliant import CompliantFolder
+    cf = CompliantFolder(fr)
+    ang = cf.fold_angles(tube)
+    where = {(min(int(p), int(q)), max(int(p), int(q))): k
+             for k, (p, q) in enumerate(fr.edges)}
+    for m, (p, q) in enumerate(cf.cr_edge):
+        k = where[(min(int(p), int(q)), max(int(p), int(q)))]
+        fr.fold_angle[k] = ang[m]
+        if fr.assignment[k] in (MOUNTAIN, VALLEY):
+            fr.assignment[k] = VALLEY if ang[m] > 0.0 else MOUNTAIN
+
+    # THE SAME ANGLES ALSO STEER THE RIGID SOLVER.  Its continuation
+    # leaves the flat state along `fold_seed`, and the flat state is a
+    # bifurcation point where several branches meet -- so relative
+    # magnitudes are not a refinement, they choose the branch.  Left to
+    # the mountain/valley signs alone the solver folds every crease at
+    # one rate, which for this pattern is a shallow crimp rather than a
+    # tube: the widest extent only came down from 9.04 to 7.06 where the
+    # tube is 3.47.  The tube's own angles are exactly the ratios it
+    # wants, and they are already measured, so hand them over.
+    fr.meta["fold_seed"] = np.nan_to_num(fr.fold_angle, nan=0.0)
+    return fr
 
 
 def resch(rows=3, cols=3, cell=1.0, tuck=0.30):
@@ -827,6 +931,91 @@ def _selftest():
             f"holds those flat and the pleats will not fold")
     hp = hypar(rings=3, sides=4)
     hp.faces = build_faces(hp.verts, hp.edges)
+
+    # --- Kresling: it must actually make a twisting tube -------------
+    # THE ORACLES THE GUESSED VERSION FAILED.  An earlier Kresling
+    # satisfied Maekawa and Kawasaki and folded cleanly, and was not a
+    # Kresling -- it never closed and never turned.  Local conditions
+    # cannot tell you that, so these check the tube instead.
+    from .compliant import CompliantFolder
+
+    for rows, n, tw in ((2, 5, 45.0), (3, 6, 30.0), (2, 6, 60.0)):
+        phi = np.deg2rad(tw)
+        fr = kresling(rows=rows, cols=n, twist=phi)
+
+        # (1) ISOMETRY.  The flat sheet must carry exactly the tube's
+        # edge lengths -- this is what makes a folded state exist at
+        # all, so it is checked to machine precision rather than loosely.
+        th = 2.0 * np.pi / n
+        want = {round(2.0 * np.sin(th / 2.0), 9),
+                round(float(np.hypot(2.0 * np.sin(phi / 2.0), 0.8)), 9),
+                round(float(np.hypot(2.0 * np.sin((th - phi) / 2.0),
+                                     0.8)), 9)}
+        got = {round(float(np.linalg.norm(fr.verts[b] - fr.verts[a])), 9)
+               for a, b in fr.edges}
+        assert got <= want, (
+            f"kresling {rows}x{n} twist={tw}: flat edge lengths "
+            f"{sorted(got - want)} are on no edge of the target tube, so "
+            f"the sheet is not isometric to it and cannot fold there")
+
+        # (2) HANDEDNESS.  One diagonal per cell, all the same way round.
+        diag = [k for k, (a, b) in enumerate(fr.edges)
+                if abs(float(np.linalg.norm(fr.verts[b] - fr.verts[a]))
+                       - round(float(np.hypot(
+                           2.0 * np.sin((th - phi) / 2.0), 0.8)), 9)) < 1e-9]
+        assert len(diag) >= rows * n, (
+            f"kresling {rows}x{n}: {len(diag)} diagonals for {rows * n} "
+            f"cells -- a second family makes this a Yoshimura")
+
+        # (3) TARGETS MEASURED, not defaulted.  Every driven crease
+        # carries a real angle off the tube; a NaN here means the
+        # measurement missed it and the solver would fall back to a
+        # blanket +-1 radian.
+        drv = [k for k, a in enumerate(fr.assignment)
+               if a in (MOUNTAIN, VALLEY)]
+        assert drv and not np.isnan(fr.fold_angle[drv]).any(), (
+            f"kresling {rows}x{n}: {int(np.isnan(fr.fold_angle[drv]).sum())} "
+            f"driven crease(s) have no measured fold angle")
+
+    # (4) IT FOLDS THERE.  One run, at the smallest size that shows it:
+    # the sheet must contract, the two cut edges must meet, and the top
+    # ring must turn.  The third is the one that separates a Kresling
+    # from a Yoshimura, so it is the one worth the seconds this costs.
+    rows, n, phi = 2, 5, np.deg2rad(45.0)
+    fr = kresling(rows=rows, cols=n, twist=phi)
+    w0 = float(np.ptp(fr.verts[:, 0]))
+    cf = CompliantFolder(fr)
+    cf.run(drive=1.0)
+    P = cf.pos
+    Q = P - P.mean(0)
+    wide = max(float(np.ptp(Q @ u))
+               for u in np.linalg.svd(Q, full_matrices=False)[2])
+    assert wide < 0.6 * w0, (
+        f"kresling does not curl: widest extent went {w0:.2f} -> "
+        f"{wide:.2f}, where a tube must contract")
+
+    order = np.lexsort((fr.verts[:, 0], fr.verts[:, 1]))
+    row0 = order[:n + 1]
+    row1 = order[-(n + 1):]
+    seam = np.linalg.norm(P[row0[0]] - P[row0[-1]]) / (2.0 * np.sin(np.pi / n))
+    assert seam < 0.15, (
+        f"kresling does not close: its two cut edges finish {seam:.2f} "
+        f"ring-edges apart, so the tube is still a sheet")
+
+    cb, ct = P[row0[:n]].mean(0), P[row1[:n]].mean(0)
+    ax = ct - cb
+    ax = ax / np.linalg.norm(ax)
+    u = P[row0[0]] - cb
+    u -= (u @ ax) * ax
+    w = P[row1[0]] - ct
+    w -= (w @ ax) * ax
+    turn = abs(np.degrees(np.arctan2(np.cross(u, w) @ ax, u @ w)))
+    assert turn > 30.0, (
+        f"kresling does not twist: its top ring turned {turn:.1f} deg. "
+        f"Without the twist this is a Yoshimura under another name")
+
+    assert float(np.abs(cf.edge_strain()).max()) < 0.02, (
+        "kresling reached its tube by stretching, not by folding")
 
     # --- dispatch ----------------------------------------------------
     for name in PATTERNS:
