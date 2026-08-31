@@ -42,6 +42,24 @@
 #     therefore checks a FOLDED state against Schenk and Guest's closed
 #     form, which is the only thing that actually settled this.
 #
+# THE DERIVATIVE IS EXACT, AND THAT IS WHERE THE SPEED IS.  Each factor
+# in the vertex product turns about a FIXED axis -- the crease direction
+# in the flat pattern, which does not move as the sheet folds -- so
+#
+#     dM/drho_j = R_1 ... R_{j-1} (sigma_j K_j R_j) R_{j+1} ... R_n
+#
+# and dr/drho_j = vee(dM/drho_j), since vee is linear.  Prefix and suffix
+# products make a whole vertex cost O(degree) instead of O(n_vars *
+# degree).  The finite-difference version this replaced needed
+# 2*n_vars residual evaluations and was 99% of the solve time: on an
+# 8x10 Miura the Jacobian went from 813 ms to 2.9 ms (279x, matching the
+# predicted 2*n_vars) and a full fold from 64 s to 0.67 s.
+#
+# `jacobian_fd` is kept deliberately.  It is an INDEPENDENT reference for
+# the analytic one, and the self-test compares them along a fold path --
+# not merely at rho = 0, which is where every wrong convention in this
+# module's history still looked right.
+#
 # SOLVING IT.  Newton on the residual, with the step taken by least
 # squares rather than a square solve, because the Jacobian is RANK
 # DEFICIENT: a quad-mesh Miura is overconstrained -- redundant
@@ -113,6 +131,12 @@ def _vee(M):
     return 0.5 * np.array([M[2, 1] - M[1, 2],
                            M[0, 2] - M[2, 0],
                            M[1, 0] - M[0, 1]], dtype=float)
+
+
+def _expm_skew(K, angle):
+    """Rodrigues from a precomputed unit-axis skew matrix."""
+    return (np.eye(3) + np.sin(angle) * K +
+            (1.0 - np.cos(angle)) * (K @ K))
 
 
 def _axis_rotation(axis, angle):
@@ -258,6 +282,37 @@ class RigidFolder:
                 else:
                     self.right_of[k] = fi
 
+        # Fixed per-crossing data, so the residual and its derivative do
+        # no geometry work per call.
+        self.terms = self._vertex_terms()
+
+    def _vertex_terms(self):
+        """Per interior vertex, the fixed data every crossing needs.
+
+        The rotation axis of a crease is its direction in the FLAT
+        pattern, which does not depend on the fold angles at all -- so
+        the axis, its skew matrix, and the traversal sign can all be
+        computed once here rather than rebuilt on every residual call.
+        That is what makes an analytic derivative cheap: the only thing
+        varying is the angle.
+        """
+        terms = []
+        for (v, ring, _ang) in self.vertices:
+            row = []
+            for u in ring:
+                k = self.edge_of[(v, int(u))]
+                to_left = int(self.edges[k][0]) == v
+                a, b = int(self.edges[k][0]), int(self.edges[k][1])
+                axis = np.append(self.verts0[b] - self.verts0[a], 0.0)
+                n = axis / (np.linalg.norm(axis) or 1.0)
+                K = np.array([[0.0, -n[2], n[1]],
+                              [n[2], 0.0, -n[0]],
+                              [-n[1], n[0], 0.0]])
+                sigma = -1.0 if to_left else 1.0
+                row.append((k, self.var_of.get(k), n, K, sigma))
+            terms.append(row)
+        return terms
+
     def _cross(self, k, rho_k, to_left):
         """3x3 rotation for stepping across crease `k`.
 
@@ -303,13 +358,15 @@ class RigidFolder:
             out[-1] = rho[driver] - target
         return out
 
-    def jacobian(self, rho, driver=None, target=0.0, h=1e-6):
-        """Central differences.
+    def jacobian_fd(self, rho, driver=None, target=0.0, h=1e-6):
+        """Central-difference Jacobian.
 
-        The analytic derivative of a product of rotations is available,
-        but the vertex rings are short (degree 4 to 6) and patterns are
-        small, so the O(n_vars) extra products cost less than the risk of
-        a sign slip in a hand-derived Jacobian.
+        Superseded by the analytic one for real work, and kept because
+        it is an INDEPENDENT reference: the two must agree elementwise,
+        not only at the flat state but along a fold path.  A derivative
+        that is right only at rho = 0 is exactly the failure mode that
+        produced three convention bugs in this module's history, so the
+        self-test checks both.
         """
         rows = self.n_rows + (1 if driver is not None else 0)
         J = np.zeros((rows, self.n_vars))
@@ -318,6 +375,53 @@ class RigidFolder:
             step[i] = h
             J[:, i] = (self.residual(rho + step, driver, target) -
                        self.residual(rho - step, driver, target)) / (2 * h)
+        return J
+
+    def jacobian(self, rho, driver=None, target=0.0):
+        """Exact derivative of the closure residual.
+
+        The vertex residual is r = vee(M) with M = R_1 R_2 ... R_n, and
+        each R_t = exp(sigma_t rho_t K_t) turns about a FIXED axis -- the
+        crease direction in the flat pattern, which does not move as the
+        sheet folds.  So
+
+            dM/drho_j = R_1 ... R_{j-1} (sigma_j K_j R_j) R_{j+1} ... R_n
+
+        and, since vee is linear, dr/drho_j = vee(dM/drho_j).
+
+        Evaluated with prefix and suffix products, one vertex costs
+        O(degree) matrix products rather than the O(n_vars * degree) the
+        finite-difference version needs -- the whole Jacobian drops from
+        2*n_vars residual evaluations to a single sweep.
+
+        Note what is NOT here: no 1/cos(theta) anywhere.  Schenk and
+        Guest's constraint carries that factor and it is singular at
+        theta = +/- pi/2, in the middle of an ordinary fold; working in
+        rotations rather than sines avoids it by construction.
+        """
+        rows = self.n_rows + (1 if driver is not None else 0)
+        J = np.zeros((rows, self.n_vars))
+        for n, row in enumerate(self.terms):
+            m = len(row)
+            # the individual rotations, in ring order
+            Rs = []
+            for (_k, idx, _axis, K, sigma) in row:
+                ang = 0.0 if idx is None else float(rho[idx])
+                Rs.append(_expm_skew(K, sigma * ang))
+            # prefix[t] = R_0 ... R_{t-1};  suffix[t] = R_{t+1} ... R_{m-1}
+            prefix = [np.eye(3)] * (m + 1)
+            for t in range(m):
+                prefix[t + 1] = prefix[t] @ Rs[t]
+            suffix = [np.eye(3)] * (m + 1)
+            for t in range(m - 1, -1, -1):
+                suffix[t] = Rs[t] @ suffix[t + 1]
+            for t, (_k, idx, _axis, K, sigma) in enumerate(row):
+                if idx is None:
+                    continue                      # boundary or flat crease
+                dM = prefix[t] @ (sigma * K @ Rs[t]) @ suffix[t + 1]
+                J[3 * n:3 * n + 3, idx] += _vee(dM)
+        if driver is not None:
+            J[-1, driver] = 1.0
         return J
 
     def _valley_sign(self, k):
@@ -702,6 +806,31 @@ def _selftest():
     flat_again = folder.place(np.zeros(folder.n_vars))
     assert np.allclose(flat_again[:, :2], mi.verts[:, :2], atol=1e-9)
     assert np.abs(flat_again[:, 2]).max() < 1e-9
+
+    # -- THE ANALYTIC JACOBIAN AGAINST ITS FREE ORACLE.
+    #
+    # The finite-difference Jacobian it replaced is an INDEPENDENT
+    # reference, so there is no excuse for not checking against it -- and
+    # checking at the flat state alone would not do.  rho = 0 is where
+    # every wrong convention in this module's history still looked right,
+    # so the comparison is made along an actual fold path as well.
+    for (rr, cc) in ((4, 4), (4, 6)):
+        mj = patterns.miura(rows=rr, cols=cc, alpha=np.deg2rad(60.0))
+        mj.faces = build_faces(mj.verts, mj.edges)
+        fj = RigidFolder(mj)
+        pth = fj.fold_path(np.deg2rad(50.0), steps=8)
+        states = [np.zeros(fj.n_vars),
+                  np.linspace(-0.4, 0.4, fj.n_vars),
+                  pth[len(pth) // 3], pth[-1]]
+        for x in states:
+            d = float(np.abs(fj.jacobian(x) - fj.jacobian_fd(x)).max())
+            assert d < 1e-6, (
+                f"{rr}x{cc}: analytic Jacobian differs from finite "
+                f"differences by {d:.2e}")
+        # the driver row is a plain unit entry, and must survive too
+        d = float(np.abs(fj.jacobian(pth[-1], driver=0, target=0.2) -
+                         fj.jacobian_fd(pth[-1], driver=0, target=0.2)).max())
+        assert d < 1e-6, f"driver row mismatch: {d:.2e}"
 
     # -- THE ORACLE.  Compare the WHOLE folded state, vertex by vertex,
     # -- against Schenk and Guest's closed form.
