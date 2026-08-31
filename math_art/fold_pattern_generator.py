@@ -269,7 +269,19 @@ def _frame_from_object(obj):
         [code_to_char.get(int(d.value), "U") for d in attr.data],
         dtype="<U1")
     faces = [list(p.vertices) for p in me.polygons]
+    # Read the fold angles back too, when the mesh carries them.  A
+    # pattern fitted to a surface knows the angle every crease must
+    # reach; without them the solver can only guess a uniform one and
+    # folds a different object.
+    fa = me.attributes.get("fold_angle")
+    angles = None
+    if fa is not None:
+        angles = np.array([float(d.value) for d in fa.data], dtype=float)
+        if not np.any(np.abs(angles) > 1e-9):
+            angles = None              # all zero means "not recorded"
+
     return crease.Frame(verts=verts, edges=edges, assignment=assign,
+                        fold_angle=angles,
                         faces=faces or None)
 
 
@@ -318,7 +330,8 @@ def _paint_strain(obj, strain, clamp=None):
     return lim
 
 
-def _compliant_fold(obj, drive, steps, animate, colour_strain):
+def _compliant_fold(obj, drive, steps, animate, colour_strain,
+                    progress=None):
     """Fold `obj` with the compliant solver.
 
     Triangulates first when it has to.  A quad panel has no interior
@@ -354,9 +367,11 @@ def _compliant_fold(obj, drive, steps, animate, colour_strain):
             for _ in range(per):
                 cf.step(d)
             states.append(cf.pos.copy())
+            if progress is not None:
+                progress((i + 1) / n)
         _apply_states(obj, states)
     else:
-        cf.run(drive=drive, steps=12000)
+        cf.run(drive=drive, steps=12000, progress=progress)
         for v, p in zip(obj.data.vertices, cf.pos):
             v.co = Vector(p)
         obj.data.update()
@@ -674,8 +689,21 @@ class OBJECT_OT_fold_solve(bpy.types.Operator):
         obj = context.active_object
         try:
             if self.solver == 'COMPLIANT':
-                msg = _compliant_fold(obj, self.drive, self.steps,
-                                      self.animate, self.colour_strain)
+                # The compliant solve is the only slow one here --
+                # measured at 7.5-8.5s against 0.2-1.5s for the rigid
+                # path -- so it is the one that needs to say it is
+                # still working.  `progress_*` moves the cursor; it does
+                # NOT make the operator cancellable, which would take a
+                # modal operator with a timer.
+                wm = context.window_manager
+                wm.progress_begin(0.0, 1.0)
+                try:
+                    msg = _compliant_fold(
+                        obj, self.drive, self.steps, self.animate,
+                        self.colour_strain,
+                        progress=lambda f: wm.progress_update(f))
+                finally:
+                    wm.progress_end()
             else:
                 msg = _fold_object(obj, self.fold_angle, self.steps,
                                    self.animate)

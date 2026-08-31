@@ -267,7 +267,19 @@ class CompliantFolder:
         p3, p4, p1, p2 = P[i3], P[i4], P[i1], P[i2]
 
         theta = self.fold_angles(P)
-        err = self.cr_k * (theta - drive * self.cr_target)
+        # WRAP THE ERROR INTO (-pi, pi].
+        #
+        # `fold_angles` is an arctan2, so it returns an angle in that
+        # range -- and a crease driven past pi comes back with its sign
+        # flipped.  Unwrapped, the servo then sees an error of nearly
+        # 2*pi and drives the crease HARDER the wrong way, which is the
+        # opposite of restoring.  Measured on a spherical cap: the two
+        # creases with targets beyond 170 degrees ended up 268 degrees
+        # from target.  Wrapping makes the shortest rotation the one
+        # taken, which is what a torsion spring does.
+        d = theta - drive * self.cr_target
+        d = (d + np.pi) % (2.0 * np.pi) - np.pi
+        err = self.cr_k * d
 
         e = p4 - p3
         eL = np.maximum(np.linalg.norm(e, axis=1), 1e-12)
@@ -366,7 +378,8 @@ class CompliantFolder:
         self.pos += self.vel * dt
         return float(np.abs(F).max())
 
-    def run(self, drive=1.0, steps=12000, ramp=0.35, tol=1e-6):
+    def run(self, drive=1.0, steps=12000, ramp=0.35, tol=1e-6,
+            progress=None):
         """Fold to `drive` (0 flat, 1 the full target angles).
 
         The drive is RAMPED rather than applied at once.  Slamming every
@@ -377,9 +390,14 @@ class CompliantFolder:
         """
         n_ramp = max(1, int(steps * ramp))
         last = 0.0
+        # Report every ~1%: often enough to move a bar, rarely enough
+        # that the callback is not itself the cost.
+        every = max(1, steps // 100)
         for i in range(steps):
             d = drive * min(1.0, (i + 1) / n_ramp)
             last = self.step(d)
+            if progress is not None and i % every == 0:
+                progress(i / steps)
             if i > n_ramp and last < tol and \
                     float(np.abs(self.vel).max()) < tol:
                 break

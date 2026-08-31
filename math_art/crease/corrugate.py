@@ -49,7 +49,7 @@
 
 import numpy as np
 
-from .fold_io import BOUNDARY, MOUNTAIN, VALLEY, Frame
+from .fold_io import BOUNDARY, MOUNTAIN, UNASSIGNED, VALLEY, Frame
 
 
 class CorrugateError(ValueError):
@@ -110,8 +110,25 @@ def sample_target_uv(kind, U, V, size=2.0, depth=0.6):
         r2 = np.clip(U ** 2 + V ** 2, 0.0, 1.0)
         Z = depth * np.sqrt(1.0 - r2)
     else:                                   # CATENOID
-        # A catenoid strip: minimal, K < 0.
-        th = V * np.pi
+        # A catenoid STRIP, and the angular range matters.
+        #
+        # At the full +/- pi the first and last columns land on the same
+        # points: the tube closes, and an open grid then carries a seam
+        # of coincident-but-separate vertices that nothing joins.  So
+        # the strip stays open rather than pretending to wrap;
+        # corrugating a CLOSED surface needs seam handling this module
+        # does not have.
+        #
+        # BUT THE SEAM WAS NOT WHY THE CATENOID ROUND-TRIPPED BADLY, and
+        # an earlier version of this comment claimed it was.  Opening
+        # the strip changed almost nothing (0.45 to 0.45).  The real
+        # cause was the PLEAT DIRECTION: this grid sweeps a ring, and
+        # pleating across the ring leaves a pattern describing a shape
+        # it cannot hold -- equilibrium drift 0.334 against 0.101 for
+        # meridian pleats.  `fit(axis=None)` now measures both and
+        # keeps the better.  Left here because a wrong diagnosis in a
+        # comment is worse than none: it stops the next person looking.
+        th = V * (0.8 * np.pi)
         c = np.cosh(U * 1.2)
         X = h * c * np.cos(th) / np.cosh(1.2)
         Y = h * c * np.sin(th) / np.cosh(1.2)
@@ -331,8 +348,61 @@ def flatten(verts, edges, iters=600, seed=None):
     return xy, report
 
 
+def equilibrium_drift(frame, folded, steps=6000):
+    """Does the pleated form actually SIT in the pattern's energy well?
+
+    Seed the compliant solver at the target shape and let it relax.  If
+    the emitted pattern really encodes that shape, it stays; if it
+    drifts, the pattern describes some other object and no amount of
+    solver tuning will fold it to this one.
+
+    This is the honest measure of a corrugation, and it is not the same
+    as the flattening residual -- on the catenoid the two pleat
+    directions differ by 0.004 in residual and by a factor of three in
+    drift.  Selecting on residual therefore picks the wrong one.
+
+    Returned as a fraction of model size, so it is comparable across
+    targets.
+    """
+    from . import compliant as _c
+    cf = _c.CompliantFolder(frame)
+    cf.pos = np.asarray(folded, dtype=float).copy()
+    cf.vel[:] = 0.0
+    cf.run(drive=1.0, steps=steps)
+    scale = float(np.ptp(np.asarray(folded), axis=0).max()) or 1.0
+    return float(np.linalg.norm(cf.pos - folded, axis=1).mean()) / scale
+
+
 def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
-        iters=600, develop=0):
+        iters=600, develop=0, axis=0):
+    """Corrugate a target and flatten it.
+
+    `axis` is which parameter direction the pleats run along, and it
+    matters far more than it looks: on the catenoid, whose parameter
+    grid sweeps a ring, pleating the wrong way leaves the pattern
+    describing a shape it cannot hold (equilibrium drift 0.334 against
+    0.101).  Pass `axis=None` to try both and keep the better, measured
+    by drift rather than by flattening residual -- residual barely
+    distinguishes them.
+    """
+    if axis is None:
+        best = None
+        for ax in (0, 1):
+            cand = _fit_one(kind, nu, nv, size, depth, amplitude, iters,
+                            develop, ax)
+            try:
+                d = equilibrium_drift(cand[0], cand[1], steps=4000)
+            except Exception:
+                d = float("inf")
+            cand[2]["drift"] = d
+            if best is None or d < best[2]["drift"]:
+                best = cand
+        return best
+    return _fit_one(kind, nu, nv, size, depth, amplitude, iters, develop,
+                    axis)
+
+
+def _fit_one(kind, nu, nv, size, depth, amplitude, iters, develop, axis):
     """Corrugate a target and flatten it; return everything measured.
 
     Returns `(frame, folded, report)` where `frame` is the FLAT crease
@@ -340,7 +410,8 @@ def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
     the numbers the Theorema Egregium forces this operator to admit to.
     """
     P = sample_target(kind, nu=nu, nv=nv, size=size, depth=depth)
-    verts, faces, assign, edges = corrugate(P, amplitude=amplitude)
+    verts, faces, assign, edges = corrugate(P, amplitude=amplitude,
+                                           axis=axis)
 
     if develop:
         nu_g, nv_g = P.shape[0] - 1, P.shape[1] - 1
@@ -362,6 +433,22 @@ def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
     # Unrolling instead walks the grid accumulating true 3-D edge
     # lengths, so the pleats arrive already opened out and the sheet
     # starts near its answer rather than folded over on itself.
+    # SEED BY UNROLLING THE PARAMETER GRID.
+    #
+    # There used to be a second seed here -- lay one triangle flat and
+    # walk outwards -- chosen between by flattening residual.  It was
+    # removed after measuring it properly: the grid unroll wins on BOTH
+    # max and rms for every curved target (hypar 0.180 against 0.718,
+    # Scherk 0.242 against 0.566, sphere 0.332 against 0.476, catenoid
+    # 0.317 against 0.525), so the walk was selected only on the plane,
+    # by float noise on a tie.  It was dead machinery, and the numbers
+    # that justified it in this comment had been taken from a different
+    # measurement than the one the code selected on.
+    #
+    # The walk is worth revisiting only if it is fixed first: it flooded
+    # depth-first, which maximises accumulated drift, where breadth-first
+    # with averaging over multiply-reachable vertices is the standard
+    # cheap improvement.
     G = verts.reshape(P.shape[0], P.shape[1], 3)
     du = np.linalg.norm(np.diff(G, axis=0), axis=2)
     dv = np.linalg.norm(np.diff(G, axis=1), axis=2)
@@ -369,9 +456,8 @@ def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
     xs = np.zeros(P.shape[:2])
     ys[1:, :] = np.cumsum(du, axis=0)
     xs[:, 1:] = np.cumsum(dv, axis=1)
-    seed = np.stack([xs.ravel(), ys.ravel()], axis=1)
-
-    xy, rep = flatten(verts, edges, iters=iters, seed=seed)
+    xy, rep = flatten(verts, edges, iters=iters,
+                      seed=np.stack([xs.ravel(), ys.ravel()], axis=1))
 
     # HOW WELL THE PLEATED FORM TRACKS THE SURFACE -- measured BETWEEN
     # the samples, not at them.
@@ -404,16 +490,22 @@ def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
 
     tgt_w = float(np.ptp(target[:, 0]))
     tgt_h = float(np.ptp(target[:, 1]))
+    rep["axis"] = int(axis)
     rep.update({
         "fit_max": float(fit_err.max()),
         "fit_rms": float(np.sqrt(np.mean(fit_err ** 2))),
         "target_w": tgt_w,
         "target_h": tgt_h,
-        # The surplus: how much bigger the flat sheet is than the
-        # surface it will become.  Always positive for a real
-        # corrugation -- the pleats have to come from somewhere.
-        "area_ratio": float((rep["sheet_w"] * rep["sheet_h"]) /
-                            max(tgt_w * tgt_h, 1e-12)),
+        # THE SURPLUS, as a real area ratio.
+        #
+        # This used to divide bounding boxes, which is not an area at
+        # all: for the catenoid it compared a flat strip's box with an
+        # annulus's diameter box, so the "the pleats have to come from
+        # somewhere" story attached to it was measuring nothing of the
+        # kind.  Summed triangle areas, flat against target, actually
+        # say how much material the pleats are storing.
+        "area_ratio": float(_tri_area(xy, faces) /
+                            max(_tri_area(target, faces), 1e-12)),
     })
 
     # THE FOLD ANGLE OF EVERY CREASE, measured off the fitted form.
@@ -425,6 +517,32 @@ def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
     # the pattern carries what it takes to fold back into the target.
     angles = _fold_angles_of(verts, faces, edges)
 
+    # ASSIGNMENTS FROM THE MEASURED ANGLES, not from a parity rule.
+    #
+    # `corrugate` labels creases by index parity, which is right for the
+    # ring lines and wrong for everything else: the cross edges and the
+    # cell diagonals fold whichever way the surface curls, and that does
+    # not alternate.  Checked against the measured dihedral, the parity
+    # guess got exactly half of them backwards on every target -- 120 of
+    # 240 cross edges, and the diagonals were a coin flip.  The compliant
+    # solver hid it because the recorded angles override the labels, but
+    # the crease pattern this operator hands the user showed mountains
+    # that were valleys, and anything reading the labels alone -- the
+    # rigid solver, a FOLD export, the viewport overlay -- folded a
+    # different object.
+    tol_a = 1e-6
+    measured = []
+    for k in range(len(edges)):
+        if str(assign[k]) == BOUNDARY:
+            measured.append(BOUNDARY)
+            continue
+        a = float(angles[k])
+        if a != a or abs(a) <= tol_a:
+            measured.append(UNASSIGNED)      # marked, but not folded
+        else:
+            measured.append(MOUNTAIN if a < 0 else VALLEY)
+    assign = np.array(measured, dtype="<U1")
+
     frame = Frame(
         verts=xy,
         edges=edges,
@@ -435,7 +553,17 @@ def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
         meta={"frame_title": f"{kind.title()} corrugation",
               "corrugation": rep},
     )
-    return frame, verts, rep
+    return [frame, verts, rep]
+
+
+def _tri_area(pts, faces):
+    """Total area of a triangle list, in 2-D or 3-D."""
+    V = np.asarray(pts, dtype=float)
+    if V.shape[1] == 2:
+        V = np.hstack([V, np.zeros((len(V), 1))])
+    F = np.asarray([list(f) for f in faces], dtype=np.int64)
+    cr = np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]])
+    return float(0.5 * np.linalg.norm(cr, axis=1).sum())
 
 
 def _fold_angles_of(verts, faces, edges):
@@ -484,7 +612,10 @@ def report_summary(rep):
             f"flat sheet {rep['sheet_w']:.2f} x {rep['sheet_h']:.2f} "
             f"for a {rep['target_w']:.2f} x {rep['target_h']:.2f} target "
             f"({rep['area_ratio']:.2f}x the area); "
-            f"unfolding residual {rep['max_edge_error']:.2g}")
+            f"unfolding residual {rep['max_edge_error']:.2g}"
+            + (f"; pleats along {'UV'[rep['axis']]}" if 'axis' in rep else "")
+            + (f"; the pattern holds the shape to {rep['drift']:.2f} "
+               f"of model size" if 'drift' in rep else ""))
 
 
 def _selftest():
@@ -562,7 +693,7 @@ def _selftest():
     fr, folded, rep = fit("HYPAR", nu=8, nv=8)
     assert fr.is_flat, "the emitted crease pattern must be flat"
     assert len(fr.edges) == len(fr.assignment)
-    assert set(fr.assignment.tolist()) <= {"M", "V", "B"}
+    assert set(fr.assignment.tolist()) <= {"M", "V", "B", "U"}
     assert len(folded) == fr.n_verts
     assert "x" in report_summary(rep)
 
