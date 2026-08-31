@@ -294,10 +294,18 @@ def yoshimura(rows=4, cols=6, cell=1.0, height=0.8):
                 # two slanted creases per cell make the diamonds
                 B.e(idx[i][j], idx[i + 1][j],
                     BOUNDARY if j in (0, cols) else MOUNTAIN)
+                # THE SECOND DIAGONAL, and which neighbour it may reach.
+                # Row i sits at x = j*cell + 0.5*cell*(i % 2), so the only
+                # row-(i+1) vertices within half a cell of (i, j) are
+                # (i+1, j) -- the edge above -- and (i+1, j-1) when i is
+                # EVEN, (i+1, j+1) when i is ODD.  These two branches were
+                # once the other way round, which reaches a vertex three
+                # half-cells away: still a triangulation, still crossing
+                # nothing, but slivers instead of diamonds.
                 if (i % 2) and j < cols:
-                    B.e(idx[i][j + 1], idx[i + 1][j], MOUNTAIN)
-                elif not (i % 2) and j < cols:
                     B.e(idx[i][j], idx[i + 1][j + 1], MOUNTAIN)
+                elif not (i % 2) and j < cols:
+                    B.e(idx[i][j + 1], idx[i + 1][j], MOUNTAIN)
     return B.frame("Yoshimura Diamond")
 
 
@@ -490,11 +498,45 @@ def _selftest():
     assert len(inc) == 6, inc
     assert kinds.count("M") == 2 and kinds.count("V") == 4, kinds
 
-    for rc in ((2, 3), (4, 6)):
-        ym = yoshimura(rows=rc[0], cols=rc[1])
+    # --- yoshimura: the diamond grid's SHAPE, not just its validity ---
+    #
+    # `n_faces > 0` and Maekawa/Kawasaki were the whole test here, and
+    # all three passed while the two second-diagonal branches were
+    # swapped -- which reaches a vertex three half-cells away instead of
+    # one.  That still triangulates the sheet, still crosses no edges and
+    # still satisfies every local condition; it just makes slivers rather
+    # than diamonds, and the result does not curl when folded.  So pin
+    # the geometry: an offset grid admits exactly two edge vectors.
+    for rc in ((2, 3), (4, 6), (5, 4)):
+        cell, hgt = 1.0, 0.8
+        ym = yoshimura(rows=rc[0], cols=rc[1], cell=cell, height=hgt)
         ym.faces = build_faces(ym.verts, ym.edges)
         assert ym.n_faces > 0
         assert validate(ym), f"yoshimura {rc}: {validate(ym).summary()}"
+        assert all(len(f) == 3 for f in ym.faces), "yoshimura is triangulated"
+
+        want = {(cell, 0.0), (cell / 2, hgt)}
+        for k, (a, b) in enumerate(ym.edges):
+            d = ym.verts[b] - ym.verts[a]
+            got = (round(abs(float(d[0])), 9), round(abs(float(d[1])), 9))
+            assert got in want, (
+                f"yoshimura {rc}: edge {k} spans {got}; an offset grid can "
+                f"only have {sorted(want)} -- this is the wrong neighbour")
+
+        # every INTERIOR vertex of a diamond grid meets six creases
+        deg = {}
+        for a, b in ym.edges:
+            deg[int(a)] = deg.get(int(a), 0) + 1
+            deg[int(b)] = deg.get(int(b), 0) + 1
+        rim = set()
+        for k, (a, b) in enumerate(ym.edges):
+            if str(ym.assignment[k]) == BOUNDARY:
+                rim.add(int(a))
+                rim.add(int(b))
+        inner = [v for v in range(ym.n_verts) if v not in rim]
+        assert inner and all(deg[v] == 6 for v in inner), (
+            f"yoshimura {rc}: interior degrees "
+            f"{sorted({deg[v] for v in inner})}, expected all 6")
 
     # --- hypar builds, and is honest about not folding rigidly -------
     hp = hypar(rings=3, sides=4)

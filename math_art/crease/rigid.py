@@ -883,6 +883,40 @@ def _selftest():
             f"{rr}x{cc} alpha={gd}: best fit to the Schenk closed form is "
             f"{best:.2e} -- the solver is not producing a Miura")
 
+    # --- the Yoshimura must CURL ------------------------------------
+    #
+    # It is the buckle pattern of a cylinder, so the direction along its
+    # rows has to contract as it folds: that is the whole behaviour.  A
+    # wrong-neighbour triangulation shipped here once and folded into a
+    # straight trough instead -- corrugating in z while its width stayed
+    # put to within 0.02 across the entire fold -- and no test noticed,
+    # because the paper still did not stretch and every local
+    # flat-foldability condition still held.  Width is the observable
+    # that separates a cylinder from a channel, so measure it.
+    ym = patterns.yoshimura(rows=4, cols=6, cell=1.0, height=0.8)
+    ym.faces = build_faces(ym.verts, ym.edges)
+    w0 = float(ym.verts[:, 0].max() - ym.verts[:, 0].min())
+    widths = []
+    for tgt in (20.0, 45.0, 70.0):
+        PY, _r3, _p3 = fold(ym, np.deg2rad(tgt), steps=16)
+        e0 = np.linalg.norm(ym.verts[ym.edges[:, 1]] -
+                            ym.verts[ym.edges[:, 0]], axis=1)
+        e1 = np.linalg.norm(PY[ym.edges[:, 1]] - PY[ym.edges[:, 0]], axis=1)
+        assert float(np.abs(e1 / e0 - 1.0).max()) < 1e-9, (
+            "yoshimura: the paper stretched")
+        # width across the curling direction, measured on the principal
+        # axes so it does not depend on how `place` happened to orient it
+        Q = PY - PY.mean(0)
+        span = sorted(float(np.ptp(Q @ v))
+                      for v in np.linalg.svd(Q, full_matrices=False)[2])
+        widths.append(span[-1])
+    assert widths[0] < 0.85 * w0 and widths[-1] < 0.5 * w0, (
+        f"yoshimura does not curl: widest extent went {w0:.2f} -> "
+        f"{[round(w, 2) for w in widths]}; a cylinder buckle pattern must "
+        f"contract, a straight trough keeps its width")
+    assert widths[0] > widths[-1], (
+        f"yoshimura should keep curling as it folds: {widths}")
+
     print("RESULT: OK  crease.rigid")
 
 
