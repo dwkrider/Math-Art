@@ -294,14 +294,24 @@ def _make_gallery_menu(spec):
                  'draw': draw})
 
 
-# Every content submenu is drawn as a gallery.  STYLES is deliberately
-# not: all five of its entries are pinned to built-in glyphs, so its
-# gallery would have nothing to put in the grid and would fall back to
-# exactly the plain menu -- a duplicate class for an identical result.
+# Content submenus are drawn as galleries.  Two are deliberately not:
+#
+#   STYLES    all five entries are pinned to built-in glyphs, so its
+#             gallery would have nothing to put in the grid and would
+#             fall back to exactly the plain menu -- a duplicate class
+#             for an identical result.
+#   ORIGAMI   only ONE of its entries bakes a preview; the other four
+#             are tools rather than generators.  A gallery of one draws
+#             a lone thumbnail with the rest listed underneath as
+#             ordinary rows, which reads as a stray picture stuck above
+#             the menu rather than as a grid.  The pattern choice now
+#             lives where it belongs -- in Crease Pattern's own redo
+#             panel, as a thumbnail selector over the five patterns.
 #
 # The plain row-per-entry menus stay registered alongside the galleries
 # so a single build can still be compared either way.
-GALLERY_MENUS = menu_defs.MENU_ORDER
+GALLERY_MENUS = tuple(s for s in menu_defs.MENU_ORDER
+                      if s is not menu_defs.ORIGAMI)
 
 _GALLERIES = tuple(_make_gallery_menu(s) for s in GALLERY_MENUS)
 _GALLERY_BY_IDNAME = {g.bl_idname: g for g in _GALLERIES}

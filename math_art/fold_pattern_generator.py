@@ -35,10 +35,18 @@
 #       "(Non)existence of Pleated Folds," Graphs and Combinatorics
 #       27(3), 2011 -- why the hypar folds only faceted.
 
+import os as _os
+
 import numpy as np
 
 import bpy
-from bpy.props import EnumProperty, FloatProperty, IntProperty
+# Imported HERE, not inside the functions that use it.  `import
+# bpy.utils.previews` binds the name `bpy` in whatever scope it runs in,
+# so doing it inside unregister() shadowed the module-level `bpy` for
+# that whole function and the class-unregister loop below it then raised
+# UnboundLocalError -- leaving every operator registered.
+import bpy.utils.previews
+from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty
 from mathutils import Vector
 
 try:
@@ -60,6 +68,65 @@ _PATTERN_ITEMS = (
     ('HYPAR', "Pleated Hypar",
      "Concentric pleats and diagonals; folds only faceted, never smooth"),
 )
+
+# --------------------------------------------------------------------
+# The pattern gallery
+# --------------------------------------------------------------------
+# A thumbnail selector rather than a dropdown, the same way Saddle
+# Polyhedron picks its solid: these five are told apart by what they
+# LOOK like, and "Yoshimura Diamond" tells a reader nothing that a
+# picture of the folded tube does not tell them faster.
+#
+# THE THUMBNAILS SHOW THE FOLDED STATE, not the flat crease pattern.
+# Flat, all five are grids of lines and three of them are near enough
+# identical at 128 px to be useless as a choice; folded, they are a
+# corrugation, a pleat, a ball, a tube and a saddle -- which is the
+# distinction the user is actually making.  `tools/bake_fold_icons.py`
+# renders them through the same studio rig as the menu icons and the
+# documentation figures, so the three cannot drift apart.
+_ICON_DIR = _os.path.join(_os.path.dirname(__file__), "icons", "folds")
+_fold_previews = None
+#: Blender does not own the strings a dynamic enum callback returns, so
+#: the built items must be kept alive in a module global or the labels
+#: garble.  Same reason as the saddle gallery's cache.
+_pattern_items_cache = []
+
+
+def _load_fold_icons():
+    """One preview per pattern, for the gallery selector."""
+    global _fold_previews
+    if _fold_previews is not None:
+        return
+    try:
+        _fold_previews = bpy.utils.previews.new()
+    except Exception:
+        _fold_previews = None
+        return
+    for key, _label, _desc in _PATTERN_ITEMS:
+        path = _os.path.join(_ICON_DIR, "%s.png" % key)
+        if not _os.path.exists(path):
+            continue
+        try:
+            _fold_previews.load(key, path, 'IMAGE')
+        except Exception:
+            pass                     # a missing icon is non-fatal
+
+
+def _pattern_items(self, context):
+    """The five patterns, each with its folded thumbnail if one is baked.
+
+    An un-baked pattern still appears, with icon 0 -- a partial bake is
+    a valid build, exactly as it is for the menu icons.
+    """
+    _load_fold_icons()
+    out = []
+    for i, (key, label, desc) in enumerate(_PATTERN_ITEMS):
+        icon = 0
+        if _fold_previews is not None and key in _fold_previews:
+            icon = _fold_previews[key].icon_id
+        out.append((key, label, desc, icon, i))
+    _pattern_items_cache[:] = out
+    return out
 
 
 def _frame_to_mesh(name, frame, positions, size):
@@ -97,6 +164,89 @@ def _frame_to_mesh(name, frame, positions, size):
     return me, scale, centre
 
 
+def _frame_from_object(obj):
+    """Rebuild a crease.Frame from a mesh and its edge attributes."""
+    me = obj.data
+    verts = np.array([(v.co.x, v.co.y, v.co.z) for v in me.vertices],
+                     dtype=float)
+    edges = np.array([tuple(e.vertices) for e in me.edges],
+                     dtype=np.int64).reshape(-1, 2)
+    code_to_char = {0: "M", 1: "V", 2: "F", 3: "U", 4: "B"}
+    attr = me.attributes.get("crease_assignment")
+    if attr is None:
+        raise crease.FoldError(
+            "this mesh carries no crease_assignment attribute, so "
+            "there is nothing to fold; build or import a crease "
+            "pattern first")
+    assign = np.array(
+        [code_to_char.get(int(d.value), "U") for d in attr.data],
+        dtype="<U1")
+    faces = [list(p.vertices) for p in me.polygons]
+    return crease.Frame(verts=verts, edges=edges, assignment=assign,
+                        faces=faces or None)
+
+
+def _fold_object(obj, fold_angle, steps, animate):
+    """Fold `obj` in place; return a report string.
+
+    ONE implementation, called both by Fold Pattern and by Crease
+    Pattern's own Fold checkbox.  The checkbox exists to save a second
+    operator call, not to be a second folder -- if it re-derived the
+    fold it would be free to disagree with the button, which is the
+    class of bug this module has already paid for once between
+    `residual` and `place`.
+    """
+    frame = _frame_from_object(obj)
+    if frame.faces is None:
+        frame.faces = crease.build_faces(frame.verts, frame.edges)
+    folder = crease.rigid.RigidFolder(frame)
+    if not folder.n_vars:
+        raise crease.rigid.FoldFailure(
+            "no foldable creases: every edge is boundary or flat")
+    path = folder.fold_path(float(fold_angle), steps=int(steps))
+    states = [folder.place(r) for r in path]
+
+    me = obj.data
+    if not animate:
+        for v, p in zip(me.vertices, states[-1]):
+            v.co = Vector(p)
+        me.update()
+        obj["fold_is_flat"] = False
+        return (f"folded to {np.rad2deg(fold_angle):.1f} deg; "
+                f"{folder.dof(path[-1])} degree(s) of freedom")
+
+    # Cache the path: one shape key per solved state, blended by a hat
+    # function of a single property so the fold is one dial.
+    if obj.data.shape_keys:
+        obj.shape_key_clear()
+    obj.shape_key_add(name="Flat", from_mix=False)
+    for i, p in enumerate(states):
+        key = obj.shape_key_add(name=f"Fold {i:02d}", from_mix=False)
+        for kv, co in zip(key.data, p):
+            kv.co = Vector(co)
+        key.slider_min, key.slider_max = 0.0, 1.0
+
+    obj["fold_t"] = 0.0
+    obj.id_properties_ui("fold_t").update(
+        min=0.0, max=1.0, description="Fold progress, 0 flat to 1 folded")
+    n = len(states) - 1
+    for i, key in enumerate(obj.data.shape_keys.key_blocks[1:]):
+        fc = key.driver_add("value")
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        var = drv.variables.new()
+        var.name = "t"
+        var.type = 'SINGLE_PROP'
+        var.targets[0].id = obj
+        var.targets[0].data_path = '["fold_t"]'
+        drv.expression = f"max(0.0, 1.0 - abs(t*{n} - {i}))"
+
+    obj["fold_is_flat"] = False
+    return (f"folded to {np.rad2deg(fold_angle):.1f} deg over {n} steps; "
+            f"keyframe the Fold T property to animate; "
+            f"{folder.dof(path[-1])} degree(s) of freedom")
+
+
 class MESH_OT_crease_pattern_add(bpy.types.Operator):
     """Add a classical origami crease pattern, flat"""
 
@@ -104,8 +254,12 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
     bl_label = "Crease Pattern"
     bl_options = {'REGISTER', 'UNDO'}
 
+    # A dynamic items callback, so the thumbnails can be attached.  It
+    # costs the `default=` keyword -- Blender rejects one on a dynamic
+    # enum -- and the default becomes "the first item", which is Miura
+    # either way.
     pattern: EnumProperty(
-        name="Pattern", items=_PATTERN_ITEMS, default='MIURA',
+        name="Pattern", items=_pattern_items,
         description="Which classical pattern to build")
     rows: IntProperty(
         name="Rows", default=4, min=1, max=64,
@@ -120,10 +274,49 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
     size: FloatProperty(
         name="Sheet Size", default=2.0, min=0.001, max=1000.0,
         unit='LENGTH', description="Longest side of the flat sheet")
-    check: bpy.props.BoolProperty(
+    check: BoolProperty(
         name="Report Checks", default=True,
         description="Check Maekawa and Kawasaki after building and "
                     "report any vertices that fail")
+    auto_fold: BoolProperty(
+        name="Fold", default=True,
+        description="Fold the pattern as soon as it is built, so Fold "
+                    "Pattern need not be run separately. Turn this off "
+                    "to keep the flat crease pattern")
+    fold_angle: FloatProperty(
+        name="Fold Angle", default=np.deg2rad(70.0),
+        min=np.deg2rad(-179.0), max=np.deg2rad(179.0), subtype='ANGLE',
+        description="Dihedral angle to drive the pattern to")
+    steps: IntProperty(
+        name="Steps", default=12, min=1, max=120,
+        description="States solved along the fold path; each becomes a "
+                    "shape key, so this is also the animation resolution")
+    animate: BoolProperty(
+        name="Animate", default=True,
+        description="Cache the whole path as shape keys driven by a "
+                    "single Fold property, instead of only the end state")
+
+    def draw(self, context):
+        L = self.layout
+        # a gallery, not a dropdown: the patterns are told apart by
+        # shape.  Drawn before use_property_split so the thumbnails get
+        # the full panel width rather than the right-hand column.
+        L.template_icon_view(self, "pattern", show_labels=True,
+                             scale=6.0, scale_popup=6.0)
+        L.use_property_split = True
+        r = L.row(align=True)
+        r.prop(self, "rows")
+        r.prop(self, "cols")
+        if self.pattern == 'MIURA':
+            L.prop(self, "panel_angle")
+        L.prop(self, "size")
+        L.prop(self, "check")
+        L.separator()
+        L.prop(self, "auto_fold")
+        if self.auto_fold:
+            L.prop(self, "fold_angle")
+            L.prop(self, "steps")
+            L.prop(self, "animate")
 
     def execute(self, context):
         kw = dict(rows=self.rows, cols=self.cols, alpha=self.panel_angle,
@@ -157,6 +350,19 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
         if self.pattern == 'HYPAR':
             msg += "; note the pleated hypar has no planar-facet folding " \
                    "(Demaine et al. 2011) -- it folds only faceted"
+
+        # A fold that fails is NOT a failed build.  The flat pattern is
+        # already correct and on screen, and cancelling here would throw
+        # it away and leave the user with nothing -- so report the
+        # reason and keep the paper.
+        if self.auto_fold:
+            try:
+                msg += "; " + _fold_object(obj, self.fold_angle,
+                                           self.steps, self.animate)
+            except (crease.FoldError, crease.rigid.FoldFailure) as exc:
+                msg += f"; left flat -- {exc}"
+                level = {'WARNING'}
+
         self.report(level, msg)
         return {'FINISHED'}
 
@@ -176,7 +382,7 @@ class OBJECT_OT_fold_solve(bpy.types.Operator):
         name="Steps", default=12, min=1, max=120,
         description="States solved along the fold path; each becomes a "
                     "shape key, so this is also the animation resolution")
-    animate: bpy.props.BoolProperty(
+    animate: BoolProperty(
         name="Animate", default=True,
         description="Cache the whole path as shape keys driven by a "
                     "single Fold property, instead of only the end state")
@@ -186,89 +392,15 @@ class OBJECT_OT_fold_solve(bpy.types.Operator):
         obj = context.active_object
         return obj is not None and obj.type == 'MESH'
 
-    def _frame_from_object(self, obj):
-        """Rebuild a crease.Frame from the mesh and its edge attributes."""
-        me = obj.data
-        verts = np.array([(v.co.x, v.co.y, v.co.z) for v in me.vertices],
-                         dtype=float)
-        edges = np.array([tuple(e.vertices) for e in me.edges],
-                         dtype=np.int64).reshape(-1, 2)
-        code_to_char = {0: "M", 1: "V", 2: "F", 3: "U", 4: "B"}
-        attr = me.attributes.get("crease_assignment")
-        if attr is None:
-            raise crease.FoldError(
-                "this mesh carries no crease_assignment attribute, so "
-                "there is nothing to fold; build or import a crease "
-                "pattern first")
-        assign = np.array(
-            [code_to_char.get(int(d.value), "U") for d in attr.data],
-            dtype="<U1")
-        faces = [list(p.vertices) for p in me.polygons]
-        fr = crease.Frame(verts=verts, edges=edges, assignment=assign,
-                          faces=faces or None)
-        return fr
-
     def execute(self, context):
         obj = context.active_object
         try:
-            frame = self._frame_from_object(obj)
-            if frame.faces is None:
-                frame.faces = crease.build_faces(frame.verts, frame.edges)
-            folder = crease.rigid.RigidFolder(frame)
-            if not folder.n_vars:
-                raise crease.rigid.FoldFailure(
-                    "no foldable creases: every edge is boundary or flat")
-            path = folder.fold_path(float(self.fold_angle),
-                                    steps=int(self.steps))
-            states = [folder.place(r) for r in path]
+            msg = _fold_object(obj, self.fold_angle, self.steps,
+                               self.animate)
         except (crease.FoldError, crease.rigid.FoldFailure) as exc:
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
-
-        me = obj.data
-        if not self.animate:
-            for v, p in zip(me.vertices, states[-1]):
-                v.co = Vector(p)
-            me.update()
-            self.report({'INFO'},
-                        f"folded to {np.rad2deg(self.fold_angle):.1f} deg; "
-                        f"{folder.dof(path[-1])} degree(s) of freedom")
-            return {'FINISHED'}
-
-        # Cache the path: one shape key per solved state, blended by a
-        # hat function of a single property so the fold is one dial.
-        if obj.data.shape_keys:
-            obj.shape_key_clear()
-        basis = obj.shape_key_add(name="Flat", from_mix=False)
-        for i, p in enumerate(states):
-            for v, co in zip(basis.data, states[0]):
-                pass
-            key = obj.shape_key_add(name=f"Fold {i:02d}", from_mix=False)
-            for kv, co in zip(key.data, p):
-                kv.co = Vector(co)
-            key.slider_min, key.slider_max = 0.0, 1.0
-
-        obj["fold_t"] = 0.0
-        obj.id_properties_ui("fold_t").update(
-            min=0.0, max=1.0, description="Fold progress, 0 flat to 1 folded")
-        n = len(states) - 1
-        for i, key in enumerate(obj.data.shape_keys.key_blocks[1:]):
-            fc = key.driver_add("value")
-            drv = fc.driver
-            drv.type = 'SCRIPTED'
-            var = drv.variables.new()
-            var.name = "t"
-            var.type = 'SINGLE_PROP'
-            var.targets[0].id = obj
-            var.targets[0].data_path = '["fold_t"]'
-            drv.expression = f"max(0.0, 1.0 - abs(t*{n} - {i}))"
-
-        obj["fold_is_flat"] = False
-        self.report(
-            {'INFO'},
-            f"folded to {np.rad2deg(self.fold_angle):.1f} deg over "
-            f"{n} steps; keyframe the Fold T property to animate; "
-            f"{folder.dof(path[-1])} degree(s) of freedom")
+        self.report({'INFO'}, msg)
         return {'FINISHED'}
 
 
@@ -281,5 +413,15 @@ def register():
 
 
 def unregister():
+    global _fold_previews
+    # Blender leak-checks preview collections at shutdown, so the
+    # gallery's must be handed back or unregistering warns.
+    if _fold_previews is not None:
+        try:
+            bpy.utils.previews.remove(_fold_previews)
+        except Exception:
+            pass
+        _fold_previews = None
+    _pattern_items_cache.clear()
     for cls in reversed(_CLASSES):
         bpy.utils.unregister_class(cls)
