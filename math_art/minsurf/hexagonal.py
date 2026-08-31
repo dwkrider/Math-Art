@@ -1318,7 +1318,12 @@ def spec_modulus_range(key):
     squat or elongated, and Brakke's published figures are particular
     members.
     """
-    r = _SPECS[key].get('tau_range')
+    # `.get` on the OUTER lookup too: this is called with any
+    # TPMS_EXACT row id, including the relaxation and conjugate-Plateau
+    # ones that have no `_SPECS` entry at all.  Indexing directly here
+    # raised KeyError and took out R-III, I-8 and I-9.
+    sp = _SPECS.get(key)
+    r = sp.get('tau_range') if sp else None
     return tuple(r) if r else None
 
 
