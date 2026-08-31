@@ -1388,11 +1388,49 @@ def ring_surface(key, m=120, rows=20, iters=150):
 #   documentation warns about precisely this.  Until a saddle-point
 #   solver exists here, projection alone is the honest step.
 
+def gw_poly(length1):
+    """GW's contour at a given prism height (GW5adj.fe's `length1`).
+
+    GW is a one-parameter FAMILY, not a single surface, and Brakke's page
+    shows six members: "as a parameter is varied from small (left) to
+    large (right), the surface goes from horizontal parallel sheets with
+    catenoid connections to pairs of vertical sheets in a hexagonal
+    layout with cross-tunnels at the junctions".  The datafile ships
+    length1 = 0.5, which is his `gw.5` figure -- comparing against `gw.1`
+    shows visibly larger holes, and that is a different member, not an
+    error in the surface.
+    """
+    h = float(length1)
+    return [(0.0, 0.0, 0.0),
+            (SQRT3, -1.0, 0.0),
+            (SQRT3, -1.0, h),
+            (SQRT3 / 2.0, -1.5, h),
+            (SQRT3 / 2.0, 0.5, h),
+            (SQRT3 / 2.0, 0.5, 0.0)]
+
+
+GW_LENGTH_DEFAULT = 0.5
+
+
+def gw_params(length1=GW_LENGTH_DEFAULT):
+    """Set GW's prism height, the way `clp_params` sets CLP's moduli.
+
+    The spec table is the only channel a TPMS_EXACT row has for a shape
+    parameter, so this rewrites GW's contour in place before a build.
+    """
+    spec = CONJUGATE_SURFACES['GW']
+    spec['poly'] = gw_poly(length1)
+    spec['length1'] = float(length1)
+    return spec
+
+
 CONJUGATE_SURFACES = {
     'GW': {
         'name': "Schoen GW (graphite-wurtzite)",
-        # GW5adj.fe with length1 = 0.5.  Data supplied to Brakke by Alan
-        # Schoen, 2 May 2008.
+        # GW5adj.fe, data supplied to Brakke by Alan Schoen, 2 May 2008.
+        # `length1` defaults to 0.5, matching his `gw.5` figure; see
+        # `gw_poly` on why the family matters.
+        'length1': 0.5,
         'poly': [(0.0, 0.0, 0.0),
                  (SQRT3, -1.0, 0.0),
                  (SQRT3, -1.0, 0.5),

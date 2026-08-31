@@ -104,6 +104,7 @@ from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
 # the catalog module itself, for the self-test's CHM-modulus reference
 from .minsurf import zoo as _zoo
+from .minsurf import plateau as _plateau
 # the parametric module itself, to read back what the last equal-area
 # resample achieved (LAST_EQ_AREA_COV is rebound per build, so it has to
 # be read through the module rather than imported by value)
@@ -1023,6 +1024,14 @@ if _IN_BLENDER:
                         "reflections, and the surface stops growing on "
                         "its own once the orbit closes or stops "
                         "verifying as a single clean sheet")
+        prism_height: FloatProperty(
+            name="Prism Height", default=0.5, min=0.05, max=4.0,
+            description="Height of the hexagonal prism the GW surface "
+                        "spans.  GW is a one-parameter family: small "
+                        "values give parallel sheets joined by narrow "
+                        "catenoid necks, large ones give vertical sheets "
+                        "with wide cross-tunnels.  0.5 is the member "
+                        "Brakke publishes")
         cells: IntProperty(
             name="Cells", default=0, min=0, max=8,
             description="Legacy uniform cell count (broadcasts to every "
@@ -1163,6 +1172,12 @@ if _IN_BLENDER:
                     # rows that cannot close a full cell reflect their
                     # piece in whichever boundary curves ARE symmetry
                     # elements, as far as that stays one clean sheet.
+                    # GW is a FAMILY.  Its shape parameter reaches the
+                    # builder through the spec table, the way CLP's
+                    # moduli do, because a TPMS_EXACT row has no other
+                    # channel for one.
+                    if surf == 'GW_CONJ':
+                        _plateau.gw_params(self.prism_height)
                     verts, tris = build_tpms_exact(
                         surf, self.reflect_depth, self.resolution,
                         self.cell_size, self.assoc_angle,
@@ -1326,6 +1341,8 @@ if _IN_BLENDER:
                     # neither exists for a surface integrated from its
                     # Weierstrass data.
                     lay.prop(self, 'reflect_depth')
+                    if self.surface == 'GW_CONJ':
+                        lay.prop(self, 'prism_height')
                     for k in ('resolution', 'cell_size', 'thickness',
                               'clip_sphere', 'clip_radius',
                               'shade_smooth'):
