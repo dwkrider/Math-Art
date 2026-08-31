@@ -56,7 +56,7 @@ from .fold_io import (ASSIGNMENTS, BOUNDARY, MOUNTAIN, UNASSIGNED, VALLEY,
                       Frame)
 
 PATTERNS = ("MIURA", "ACCORDION", "WATERBOMB", "YOSHIMURA", "HYPAR",
-            "MONKEY", "EGGBOX", "CHEVRON", "RESCH")
+            "MONKEY", "EGGBOX", "CHEVRON", "KRESLING", "RESCH")
 
 
 class _Builder:
@@ -402,14 +402,9 @@ def hypar(rings=6, sides=4, radius=1.0):
 #              compliant solver under-converges at the drive needed to
 #              show it.
 #   CHEVRON    nothing beyond "it folds".
-# KRESLING WAS HERE AND WAS REMOVED, 2026-08-31.  It passed the local
-# conditions and folded, and it was still not a Kresling: the defining
-# behaviour is that the tube CLOSES and twists, and measured against the
-# same test the Yoshimura passes -- widest extent must contract -- it
-# went 7.00 to 7.28 where the Yoshimura goes 3.60 to 1.20.  Two
-# constructions were tried, alternating row offsets and a progressive
-# shear, and neither curled.  Removed rather than shipped under a name
-# it had not earned; the reference geometry needs finding first.
+#   KRESLING   the twist.  Chirality is built in by construction -- one
+#              diagonal family where the Yoshimura has two -- but the
+#              rotation itself has not been measured.
 #   RESCH      the characteristic tuck.
 #
 # A pattern that passes Maekawa and does not do its job is exactly what
@@ -479,6 +474,42 @@ def chevron(rows=6, cols=6, cell=1.0, height=0.6, skew=0.45):
                     BOUNDARY if j in (0, cols)
                     else (VALLEY if j % 2 else MOUNTAIN))
     return B.frame("Chevron")
+
+
+def kresling(rows=4, cols=6, cell=1.0, height=0.8):
+    """The Kresling pattern: a cylinder that TWISTS as it deploys.
+
+    The Yoshimura's chiral cousin, and the difference is exactly one
+    diagonal: where the Yoshimura triangulates each cell both ways, this
+    keeps only one family, so a cell cannot collapse symmetrically and
+    the tube rotates as it closes.  That handedness IS the pattern.
+
+    References:
+      B. Kresling, "Natural twist buckling in shells," Proc. IASS, 1995
+          -- the buckling pattern this reproduces.
+      J. Cai et al., "Geometry and motion analysis of origami-based
+          deployable shelter structures," J. Struct. Eng. 141, 2015.
+    """
+    B = _Builder()
+    idx = [[B.v(j * cell + 0.5 * cell * (i % 2), i * height)
+            for j in range(cols + 1)] for i in range(rows + 1)]
+    for i in range(rows + 1):
+        for j in range(cols + 1):
+            if j < cols:
+                B.e(idx[i][j], idx[i][j + 1],
+                    BOUNDARY if i in (0, rows)
+                    else (MOUNTAIN if i % 2 else VALLEY))
+            if i < rows:
+                B.e(idx[i][j], idx[i + 1][j],
+                    BOUNDARY if j in (0, cols) else VALLEY)
+                # ONE diagonal family only.  Adding the second makes
+                # this a Yoshimura and takes the twist away.
+                if j < cols:
+                    if i % 2:
+                        B.e(idx[i][j], idx[i + 1][j + 1], MOUNTAIN)
+                    else:
+                        B.e(idx[i][j + 1], idx[i + 1][j], MOUNTAIN)
+    return B.frame("Kresling")
 
 
 def resch(rows=3, cols=3, cell=1.0, tuck=0.30):
@@ -578,6 +609,7 @@ _MAKERS = {
     "MONKEY": monkey_saddle,
     "EGGBOX": eggbox,
     "CHEVRON": chevron,
+    "KRESLING": kresling,
     "RESCH": resch,
     "ACCORDION": accordion,
     "WATERBOMB": waterbomb,

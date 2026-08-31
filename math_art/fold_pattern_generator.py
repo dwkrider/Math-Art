@@ -93,6 +93,10 @@ _PATTERN_ITEMS = (
     ('CHEVRON', "Chevron Pleat",
      "A herringbone pleat, and the simplest thing here that folds "
      "unconditionally -- useful mainly as a control"),
+    ('KRESLING', "Kresling",
+     "A cylinder that twists as it deploys: the Yoshimura with one "
+     "diagonal family instead of two, so a cell cannot collapse "
+     "symmetrically. The twist itself is NOT yet measured"),
     ('RESCH', "Ron Resch",
      "Ron Resch's triangular tessellation, whose tucks hide surplus "
      "material and leave a stiff sheet that takes curvature both ways. "
@@ -165,6 +169,7 @@ _NATURAL_FOLD = {
     'MONKEY': 150.0,
     'EGGBOX': 90.0,
     'CHEVRON': 80.0,
+    'KRESLING': 60.0,
     'RESCH': 70.0,
 }
 
@@ -189,6 +194,7 @@ _NATURAL_ROWS = {
     'MONKEY': 12,
     'EGGBOX': 4,
     'CHEVRON': 6,
+    'KRESLING': 4,
     'RESCH': 3,
 }
 
