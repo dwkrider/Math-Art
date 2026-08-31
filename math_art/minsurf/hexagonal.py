@@ -923,26 +923,33 @@ _SPECS['RII'] = _prod_spec(
     nb="Schoen_RII.nb")
 
 
-# R-II is the first row to need a HALF-TURN generator.  Its x = 0 edge is
-# not a plane at all: it is a straight line along (1, 0, 0), exact to
-# 1.3e-10, i.e. a 2-fold rotation axis lying in the surface.  Brakke's
-# RII.fe says the same thing in its own words -- "view_transform_
-# generators 6 // one 180 degree rotation about each line".
+# R-II: half-turn machinery proven here, but the CELL IS NOT SHIPPED.
 #
-# With that axis and the two clean mirrors (z = 0.5 and x = const) the
-# word `abc` closes at 8 copies, and repeating it STACKS: `abcabc` gives
-# 16 and doubles the height from 2.0 to 4.0, because a half-turn composed
-# with a parallel mirror is a translation.  That is why Brakke calls his
-# own version `layers`.  Both are offered, cell first.
+# The machinery works and this row is what drove it: R-II's x = 0 edge is
+# not a plane but a straight line along (1, 0, 0), exact to 1.7e-10 -- a
+# 2-fold rotation axis lying in the surface.  Brakke's RII.fe says the
+# same, "one 180 degree rotation about each line".
 #
-# The count is a group order, not an Evolver one: his word is `fdfedfe`
-# over six generators, a different spelling over a different generating
-# set, so there is no like-for-like number to compare.
-_SPECS['RII'].update(
-    exact_planes={'x=1': (0.0, 0.0, 1.0), 'y=1': (1.0, 0.0, 0.0)},
-    exact_axes={'x=0': (1.0, 0.0, 0.0)},
-    letters={'a': 'x=0', 'b': 'x=1', 'c': 'y=1'},
-    words=('abc', 'abcabc'))
+# What is NOT established is the cell.  A word over the axis and the two
+# clean mirrors closes at 8 copies and passes every gate, but rendered
+# beside Evolver's own assembly it is plainly wrong: Brakke's `layers`
+# word builds a flat LATTICE of triangular units, and 8 copies give a
+# couple of crossed triangles.  Passing the gate is not the same as
+# being right -- the gate only asks whether the copies form one clean
+# sheet.
+#
+# The obstruction is the fourth edge.  Whole, it classifies as neither
+# (straight 3.4e-1, planar 3.6e-2).  Split at x = 1 - a = 0.454006 --
+# a real branch point, not a fitted one, since `a` = 0.545994 -- the
+# first half becomes a clean mirror (planar 5.6e-5, normal (1,1,0)) but
+# the second is still 1.4e-2, and scanning it for a second branch point
+# lands back at the same place, with a 9-node horizontal-plane fragment
+# and a 58-node vertical-plane one.  So the edge wants THREE elements,
+# not two, and until that decomposition is settled the row ships its
+# fundamental piece, which is honest.
+#
+# Resume by establishing the third segment properly rather than fitting
+# it; the exact offsets should follow from `a` as the first one did.
 
 # Schoen C(H), genus 7, the complement of Schwarz H.  Nineteen solved
 # (tau, ss) pairs in the notebook; this is the tau = 0.9i member.
@@ -1328,7 +1335,7 @@ def spec_curves(key, P):
 # the group order, which the word reaches from three spellings alike.
 _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
-                'I6': (8, 'group'), 'RII': (8, 'group')}
+                'I6': (8, 'group')}
 
 
 def spec_modulus_range(key):
