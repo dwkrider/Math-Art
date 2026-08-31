@@ -66,7 +66,19 @@ _PATTERN_ITEMS = (
     ('YOSHIMURA', "Yoshimura Diamond",
      "The diamond buckle pattern of a cylinder"),
     ('HYPAR', "Pleated Hypar",
-     "Concentric pleats and diagonals; folds only faceted, never smooth"),
+     "Four sectors of concentric pleats: the classical saddle, two "
+     "corners up and two down"),
+    # NAME AS REQUESTED, DESCRIPTION AS MEASURED.  A true monkey saddle
+    # (z = r^3 cos 3(theta)) alternates three up and three down around
+    # the rim.  What the six-sector pleated hypar actually folds to here
+    # is 3-fold periodic but 2 up and 4 down (+0.39, -0.24, -0.29,
+    # repeated), so the description says what it does rather than
+    # claiming the textbook surface.  Whether a 3-up/3-down branch also
+    # exists is open -- this pattern has many degrees of freedom and the
+    # solver settles on one of them.
+    ('MONKEY', "Monkey Saddle",
+     "Six sectors of concentric pleats: the hexagonal hypar, whose rim "
+     "repeats every third sector instead of simply alternating"),
 )
 
 # --------------------------------------------------------------------
@@ -130,8 +142,16 @@ _NATURAL_FOLD = {
     'ACCORDION': 70.0,
     'WATERBOMB': 43.0,
     'YOSHIMURA': 37.0,
-    'HYPAR': 120.0,
+    'HYPAR': 150.0,
+    'MONKEY': 150.0,
 }
+
+#: Patterns whose sector count is part of their identity rather than a
+#: free parameter.  The hypar and the monkey saddle are the SAME
+#: construction at four and six sectors, and the difference is a
+#: different surface -- so the count is pinned here and Columns is
+#: hidden for them, instead of being a number the user has to know.
+_PINNED_SIDES = {'HYPAR': 4, 'MONKEY': 6}
 
 
 def _pattern_changed(self, context):
@@ -362,8 +382,14 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
         # `row(align=True)` under use_property_split, Blender prints the
         # first property's label and suppresses the second -- so it read
         # "Rows [4] [6]", with the column count unlabelled.
-        L.prop(self, "rows")
-        L.prop(self, "cols")
+        # "Rows" is the ring count for the concentric-pleat patterns,
+        # and Columns means nothing there -- their sector count is
+        # pinned, so showing a control that does nothing is worse than
+        # showing none.
+        L.prop(self, "rows",
+               text="Rings" if self.pattern in _PINNED_SIDES else "Rows")
+        if self.pattern not in _PINNED_SIDES:
+            L.prop(self, "cols")
         if self.pattern == 'MIURA':
             L.prop(self, "panel_angle")
         L.prop(self, "size")
@@ -377,7 +403,9 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
 
     def execute(self, context):
         kw = dict(rows=self.rows, cols=self.cols, alpha=self.panel_angle,
-                  count=max(2, self.cols), sides=max(3, min(8, self.cols)),
+                  count=max(2, self.cols),
+                  sides=_PINNED_SIDES.get(self.pattern,
+                                          max(3, min(8, self.cols))),
                   rings=max(2, self.rows))
         try:
             frame = crease.patterns.build(self.pattern, **kw)

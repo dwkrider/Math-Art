@@ -55,7 +55,8 @@ import numpy as np
 from .fold_io import (ASSIGNMENTS, BOUNDARY, MOUNTAIN, UNASSIGNED, VALLEY,
                       Frame)
 
-PATTERNS = ("MIURA", "ACCORDION", "WATERBOMB", "YOSHIMURA", "HYPAR")
+PATTERNS = ("MIURA", "ACCORDION", "WATERBOMB", "YOSHIMURA", "HYPAR",
+            "MONKEY")
 
 
 class _Builder:
@@ -381,8 +382,36 @@ def hypar(rings=6, sides=4, radius=1.0):
     return B.frame("Pleated Hypar")
 
 
+def monkey_saddle(rings=8, radius=1.0):
+    """The six-sector pleated hypar: a monkey saddle.
+
+    Same construction as `hypar`, six sectors instead of four, and a
+    genuinely different surface rather than a cosmetic variant: the
+    four-sector hypar folds to an ordinary saddle, two rim corners up
+    and two down alternating, while this one comes out **3-fold
+    periodic**.
+
+    A CAVEAT ON THE NAME, which is the user's and is kept, but which the
+    folded result does not fully earn. A true monkey saddle
+    (z = r^3 cos 3*theta) has three ups and three downs alternating
+    around the rim. Measured here the rim is +0.39, -0.24, -0.29 twice
+    over -- 3-fold, but two up and four down. Whether a 3-up/3-down
+    branch of this pattern also exists is open: it has many degrees of
+    freedom and the continuation settles on one of them. Do not describe
+    the output as the textbook monkey saddle without re-measuring.
+
+    References:
+      E. D. Demaine, M. L. Demaine, A. Lubiw, "Polyhedral Sculptures
+          with Hyperbolic Paraboloids," Bridges 1999 -- the generalized
+          hypar crease pattern for non-square polygons, of which this is
+          the hexagonal case.
+    """
+    return hypar(rings=rings, sides=6, radius=radius)
+
+
 _MAKERS = {
     "MIURA": miura,
+    "MONKEY": monkey_saddle,
     "ACCORDION": accordion,
     "WATERBOMB": waterbomb,
     "YOSHIMURA": yoshimura,

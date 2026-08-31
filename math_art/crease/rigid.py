@@ -1057,7 +1057,8 @@ def _selftest():
                      ('ACCORDION', dict(count=8)),
                      ('WATERBOMB', dict(rows=3, cols=4)),
                      ('YOSHIMURA', dict(rows=4, cols=6)),
-                     ('HYPAR', dict(rings=4, sides=6))):
+                     ('HYPAR', dict(rings=4, sides=6)),
+                     ('MONKEY', dict(rings=6))):
         pf = patterns.build(name, **kw)
         pf.faces = build_faces(pf.verts, pf.edges)
         pfs = RigidFolder(pf)

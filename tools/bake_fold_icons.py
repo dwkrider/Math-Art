@@ -57,9 +57,16 @@ CASES = {
     # generator, which is the one thing an icon must not do.
     'WATERBOMB': dict(rows=4, cols=6),
     'YOSHIMURA': dict(rows=4, cols=6),
-    # Square (4 sides) is the classical hypar and the reading that shows
-    # its saddle; its angle, like the rest, comes from _NATURAL_FOLD.
-    'HYPAR':     dict(rows=6, cols=4),
+    # 16 rings, folded hard -- the ring count and the depth were chosen
+    # by the user from a live viewport, and they are the right call for
+    # the reason Demaine, Demaine and Lubiw give: "the more concentric
+    # squares one folds, the closer the pleated hypar is to a true hypar
+    # surface".  At 6 rings the pleats read as a few steps; at 16 they
+    # read as the surface.  The sector count comes from `_PINNED_SIDES`
+    # via the operator, so these two differ only in which pattern is
+    # asked for -- 4 sectors and 6.
+    'HYPAR':     dict(rows=16, cols=4, steps=14),
+    'MONKEY':    dict(rows=16, cols=6, steps=14),
 }
 
 #: Three-quarter view.  A folded corrugation seen straight down reads as
@@ -78,7 +85,10 @@ def bake(key, path):
         size=2.0, check=False,
         auto_fold=True,
         fold_angle=math.radians(_NATURAL_FOLD[key]),
-        steps=10, animate=False)
+        # more continuation steps where the fold is deep: the path is
+        # solved once and only its end state is kept here, but a deep
+        # target still wants smaller strides to stay on the branch.
+        steps=case.get('steps', 10), animate=False)
     obj = bpy.context.view_layer.objects.active
     if obj is None:
         raise RuntimeError("no object was created")
