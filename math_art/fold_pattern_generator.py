@@ -94,9 +94,9 @@ _PATTERN_ITEMS = (
      "A herringbone pleat, and the simplest thing here that folds "
      "unconditionally -- useful mainly as a control"),
     ('KRESLING', "Kresling",
-     "A cylinder that twists as it deploys, derived from the tube it "
-     "closes into: the top ring ends up rotated by Rows times 45 "
-     "degrees. Fold this one with Bending Paper at full drive"),
+     "Biruta Kresling's twist-buckling pattern: inclined parallelograms "
+     "cut by their long diagonal, which roll into a tube whose top ring "
+     "turns as it deploys. Panel Angle sets the lean"),
     ('RESCH', "Ron Resch",
      "Ron Resch's triangular tessellation, whose tucks hide surplus "
      "material and leave a stiff sheet that takes curvature both ways. "
@@ -198,6 +198,29 @@ _NATURAL_ROWS = {
     'RESCH': 3,
 }
 
+#: The panel angle each pattern wants, for the patterns the angle means
+#: anything to -- and only those, since the control is hidden for the
+#: rest.  The Kresling is the reason this table exists: its angle is not
+#: a free shape knob but the one parameter of its closure condition, and
+#: a cell too shallow for the chosen side count has NO deployed state at
+#: all.  Sixty degrees suits the Miura and is right on the Kresling's
+#: degenerate edge at six sides, so switching pattern has to move it.
+_NATURAL_ANGLE = {
+    'MIURA': 60.0,
+    'EGGBOX': 60.0,
+    'KRESLING': 72.0,
+}
+
+#: Which solver a pattern needs to become itself.  Rigid Panels is the
+#: right default and is exact where it applies, but it drives every
+#: crease along ONE continuation parameter -- so a pattern whose creases
+#: want genuinely different angles can only get near its shape, never to
+#: it.  The Kresling is that case: its targets run from 42 to 103
+#: degrees, and under Rigid Panels the tube stalls half open (widest
+#: extent 7.65 -> 4.95) where Bending Paper closes it (-> 3.71, seam
+#: zero).  So the choice is per pattern rather than one global default.
+_NATURAL_SOLVER = {'KRESLING': 'COMPLIANT'}
+
 #: Patterns whose sector count is part of their identity rather than a
 #: free parameter.  The hypar and the monkey saddle are the SAME
 #: construction at four and six sectors, and the difference is a
@@ -221,6 +244,11 @@ def _pattern_changed(self, context):
     rows = _NATURAL_ROWS.get(self.pattern)
     if rows is not None:
         self.rows = rows
+    ang = _NATURAL_ANGLE.get(self.pattern)
+    if ang is not None:
+        self.panel_angle = np.deg2rad(ang)
+    if hasattr(self, "solver"):
+        self.solver = _NATURAL_SOLVER.get(self.pattern, 'RIGID')
 
 
 def _pattern_label(key):
@@ -668,10 +696,28 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
         description="Fold the pattern as soon as it is built, so Fold "
                     "Pattern need not be run separately. Turn this off "
                     "to keep the flat crease pattern")
+    solver: EnumProperty(
+        name="Solver", default='RIGID',
+        items=[
+            ('RIGID', "Rigid Panels",
+             "Panels stay perfectly flat and only the creases bend. "
+             "Exact for rigid-foldable patterns like the Miura, and the "
+             "right choice when you want clean faceted geometry"),
+            ('COMPLIANT', "Bending Paper",
+             "Let the paper bend between creases, as real paper does. "
+             "Slower, and the only way to reach a pattern whose creases "
+             "want genuinely different angles -- the Kresling's tube "
+             "closes under this and not under Rigid Panels"),
+        ],
+        description="How the sheet is allowed to deform while folding")
     fold_angle: FloatProperty(
         name="Fold Angle", default=np.deg2rad(70.0),
         min=np.deg2rad(-179.0), max=np.deg2rad(179.0), subtype='ANGLE',
         description="Dihedral angle to drive the pattern to")
+    drive: FloatProperty(
+        name="Fold Amount", default=1.0, min=0.0, max=1.0, subtype='FACTOR',
+        description="How far toward each crease's target angle to drive "
+                    "the sheet, when the solver is Bending Paper")
     steps: IntProperty(
         name="Steps", default=12, min=1, max=120,
         description="States solved along the fold path; each becomes a "
@@ -709,14 +755,16 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
                text="Rings" if self.pattern in _PINNED_SIDES else "Rows")
         if self.pattern not in _PINNED_SIDES:
             L.prop(self, "cols")
-        if self.pattern == 'MIURA':
+        if self.pattern in _NATURAL_ANGLE:
             L.prop(self, "panel_angle")
         L.prop(self, "size")
         L.prop(self, "check")
         L.separator()
         L.prop(self, "auto_fold")
         if self.auto_fold:
-            L.prop(self, "fold_angle")
+            L.prop(self, "solver")
+            L.prop(self, "drive" if self.solver == 'COMPLIANT'
+                   else "fold_angle")
             L.prop(self, "steps")
             L.prop(self, "animate")
 
@@ -766,8 +814,12 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
         # reason and keep the paper.
         if self.auto_fold:
             try:
-                msg += "; " + _fold_object(obj, self.fold_angle,
-                                           self.steps, self.animate)
+                if self.solver == 'COMPLIANT':
+                    msg += "; " + _compliant_fold(
+                        obj, self.drive, self.steps, self.animate, False)
+                else:
+                    msg += "; " + _fold_object(obj, self.fold_angle,
+                                               self.steps, self.animate)
             except (crease.FoldError, crease.rigid.FoldFailure) as exc:
                 msg += f"; left flat -- {exc}"
                 level = {'WARNING'}

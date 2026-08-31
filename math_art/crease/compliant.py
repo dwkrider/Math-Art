@@ -198,11 +198,21 @@ class CompliantFolder:
         opposite corners -- because the fold angle is a function of all
         four, and so is the force it applies.
         """
+        # THE TWO FACES ARE ORDERED BY WINDING, not by whichever landed
+        # in the map first.  The sign of a dihedral is only defined once
+        # you say which face is which, and taking them in insertion order
+        # makes it arbitrary edge by edge: measured on a Kresling module
+        # whose creases are known from its geometry, the sign came out
+        # right on 15 edges of 45.  A consistently wound mesh does supply
+        # the order -- exactly one of the two faces traverses the edge
+        # a->b -- so record the direction and put that face first.
         edge_faces = {}
         for fi, f in enumerate(self.faces):
             for t in range(3):
                 a, b = int(f[t]), int(f[(t + 1) % 3])
-                edge_faces.setdefault((min(a, b), max(a, b)), []).append(fi)
+                fwd = a < b
+                edge_faces.setdefault((min(a, b), max(a, b)),
+                                      []).append((fi, fwd))
 
         self.cr_edge, self.cr_face, self.cr_apex = [], [], []
         self.cr_k, self.cr_target = [], []
@@ -212,6 +222,14 @@ class CompliantFolder:
             code = str(self.assign[k])
             if len(fl) != 2 or code == BOUNDARY:
                 continue
+            # Forward-traversing face first.  If the two disagree about
+            # direction the patch is not consistently wound, and there is
+            # no canonical order to have -- fall back to insertion order
+            # rather than inventing one.
+            if fl[0][1] == fl[1][1]:
+                fl = [fl[0][0], fl[1][0]]
+            else:
+                fl = [fi for fi, fwd in sorted(fl, key=lambda t: not t[1])]
             apex = []
             for fi in fl:
                 rest = [int(v) for v in self.faces[fi] if v not in key]
@@ -249,7 +267,17 @@ class CompliantFolder:
 
     # -- geometry ---------------------------------------------------
     def fold_angles(self, P=None):
-        """Signed fold angle of every crease, valley positive."""
+        """Signed fold angle of every crease, valley positive.
+
+        The negation at the end is what makes that docstring true.  With
+        the faces ordered by winding, the raw arctan2 below comes out
+        POSITIVE on a convex edge -- checked against a hexagonal
+        antiprism, every edge of which is a ridge, where all twelve read
+        +33.6 degrees.  Convex is a mountain, and `cr_target` states
+        mountains as -1, so the raw value is mountain-positive and has to
+        be flipped to meet it.  Before the faces were ordered this was
+        moot, because the sign was arbitrary per edge anyway.
+        """
         P = self.pos if P is None else P
         if not len(self.cr_edge):
             return np.zeros(0)
@@ -263,7 +291,7 @@ class CompliantFolder:
         n1, n2 = _unit(n1), _unit(n2)
         s = np.einsum('ij,ij->i', np.cross(n1, n2), e)
         c = np.einsum('ij,ij->i', n1, n2)
-        return np.arctan2(s, c)
+        return -np.arctan2(s, c)
 
     def _corner_angles(self, P):
         """Interior angle at each corner of each triangle."""
@@ -309,7 +337,11 @@ class CompliantFolder:
         # taken, which is what a torsion spring does.
         d = theta - drive * self.cr_target
         d = (d + np.pi) % (2.0 * np.pi) - np.pi
-        err = self.cr_k * d
+        # NEGATED because the lever arms below are the gradient of the
+        # RAW arctan2, and `fold_angles` now reports its negative so that
+        # valley comes out positive.  Reporting one sign and pushing with
+        # the other would drive every crease away from its target.
+        err = -self.cr_k * d
 
         e = p4 - p3
         eL = np.maximum(np.linalg.norm(e, axis=1), 1e-12)

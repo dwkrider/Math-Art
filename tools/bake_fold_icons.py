@@ -34,8 +34,10 @@ import bpy                                                # noqa: E402
 # registers math_art on import via render_docs.  Reuse it rather than
 # keeping a second studio that can drift.
 import bake_menu_icons as bmi                             # noqa: E402
-from math_art.fold_pattern_generator import (_NATURAL_FOLD,  # noqa: E402
-                                             _NATURAL_ROWS)
+from math_art.fold_pattern_generator import (_NATURAL_ANGLE,  # noqa: E402
+                                             _NATURAL_FOLD,
+                                             _NATURAL_ROWS,
+                                             _NATURAL_SOLVER)
 
 OUT_DIR = os.path.join(ROOT, "math_art", "icons", "folds")
 
@@ -85,6 +87,12 @@ def bake(key, path):
         pattern=key, rows=_NATURAL_ROWS[key], cols=case['cols'],
         size=2.0, check=False,
         auto_fold=True,
+        # Each pattern's own solver, so the thumbnail shows what the
+        # operator's defaults produce.  The Kresling only closes its
+        # tube under Bending Paper; baked rigid it reads as a half-open
+        # crimp, which is the one thing an icon must not do.
+        solver=_NATURAL_SOLVER.get(key, 'RIGID'),
+        panel_angle=math.radians(_NATURAL_ANGLE.get(key, 60.0)),
         fold_angle=math.radians(_NATURAL_FOLD[key]),
         # more continuation steps where the fold is deep: the path is
         # solved once and only its end state is kept here, but a deep
