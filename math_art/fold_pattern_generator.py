@@ -152,7 +152,9 @@ _NATURAL_FOLD = {
 #: the tessellations, but a hypar at four rings is a few coarse steps
 #: rather than a surface, and Demaine, Demaine and Lubiw say why --
 #: "the more concentric squares one folds, the closer the pleated hypar
-#: is to a true hypar surface".  Sixteen is where it reads as one.
+#: is to a true hypar surface".  Twelve reads as one while staying
+#: quick to solve; the count is a straight legibility-against-cost
+#: trade, so raise it when a render wants a finer pleat.
 #:
 #: `tools/bake_fold_icons.py` takes its ring count from HERE, so the
 #: thumbnail and the default output cannot drift apart.
@@ -161,8 +163,8 @@ _NATURAL_ROWS = {
     'ACCORDION': 4,
     'WATERBOMB': 4,
     'YOSHIMURA': 4,
-    'HYPAR': 16,
-    'MONKEY': 16,
+    'HYPAR': 12,
+    'MONKEY': 12,
 }
 
 #: Patterns whose sector count is part of their identity rather than a
