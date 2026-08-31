@@ -56,7 +56,7 @@ from .fold_io import (ASSIGNMENTS, BOUNDARY, MOUNTAIN, UNASSIGNED, VALLEY,
                       Frame)
 
 PATTERNS = ("MIURA", "ACCORDION", "WATERBOMB", "YOSHIMURA", "HYPAR",
-            "MONKEY")
+            "MONKEY", "EGGBOX", "CHEVRON", "KRESLING", "RESCH")
 
 
 class _Builder:
@@ -382,6 +382,201 @@ def hypar(rings=6, sides=4, radius=1.0):
     return B.frame("Pleated Hypar")
 
 
+# --------------------------------------------------------------------
+# VERIFICATION STATUS OF THE FOUR PATTERNS BELOW -- read before
+# trusting one.
+# --------------------------------------------------------------------
+# The original patterns each earned an oracle: the Miura is checked
+# against Schenk and Guest's closed form, the Yoshimura must curl, the
+# hypar must saddle while its triangular case stays flat.  Those checks
+# caught three real bugs that Maekawa and Kawasaki did not.
+#
+# These four are NOT yet held to that standard.  They build, they pass
+# the local conditions where those apply, and they fold without
+# tearing -- but nothing yet verifies that each does the thing it is
+# NAMED for.  Specifically unverified:
+#
+#   EGGBOX     the positive Poisson ratio: it should shrink in BOTH
+#              directions as it folds, opposite to the Miura.  Measured
+#              once and the result was inconclusive, because the
+#              compliant solver under-converges at the drive needed to
+#              show it.
+#   CHEVRON    nothing beyond "it folds".
+#   KRESLING   the twist.  Chirality is built in by construction -- one
+#              diagonal family where the Yoshimura has two -- but the
+#              rotation itself has not been measured.
+#   RESCH      the characteristic tuck.
+#
+# A pattern that passes Maekawa and does not do its job is exactly what
+# the square twist turned out to be: flat-foldable at every vertex, and
+# rotating 1.7 degrees where it should rotate tens.  Treat these as
+# provisional until each has an oracle of its own.
+
+
+def eggbox(rows=4, cols=6, panel_a=1.0, panel_b=1.0,
+           alpha=np.deg2rad(60.0)):
+    """The eggbox: the Miura's opposite number.
+
+    The same parallelogram tiling as the Miura, but every row line is a
+    mountain and every zigzag a valley instead of the Miura's 3-1 -- so
+    the sheet domes rather than shearing, and its Poisson ratio comes
+    out POSITIVE where the Miura's is negative.  That pairing is the
+    reason to ship it alongside.
+
+    Not flat-foldable, and that is correct rather than a defect: a
+    degree-4 vertex carrying two mountains and two valleys fails Maekawa
+    by construction, which is the price of the doming.
+
+    References:
+      M. Schenk, S. D. Guest, "Geometry of Miura-folded metamaterials,"
+          PNAS 110(9), 2013 -- contrasts the eggbox with the Miura.
+      H. Nassar, A. Lebee, L. Monasse, "Curvature, metric and
+          parametrization of origami tessellations," Proc. R. Soc. A
+          473, 2017 -- the two sheets' opposite curvature response.
+    """
+    h = panel_b * np.sin(alpha)
+    s = panel_b * np.cos(alpha)
+    B = _Builder()
+    idx = [[B.v(j * panel_a + (s if i % 2 else 0.0), i * h)
+            for j in range(cols + 1)] for i in range(rows + 1)]
+    for i in range(rows + 1):
+        for j in range(cols + 1):
+            if j < cols:
+                B.e(idx[i][j], idx[i][j + 1],
+                    BOUNDARY if i in (0, rows) else MOUNTAIN)
+            if i < rows:
+                B.e(idx[i][j], idx[i + 1][j],
+                    BOUNDARY if j in (0, cols) else VALLEY)
+    return B.frame("Eggbox")
+
+
+def chevron(rows=6, cols=6, cell=1.0, height=0.6, skew=0.45):
+    """A herringbone pleat: parallel zigzag fold lines.
+
+    The simplest pattern here with a direction to it, and useful mostly
+    as a control -- it folds unconditionally, so anything that cannot
+    fold this has a problem unrelated to the pattern.
+    """
+    B = _Builder()
+    idx = [[B.v(j * cell + (skew * cell if i % 2 else 0.0), i * height)
+            for j in range(cols + 1)] for i in range(rows + 1)]
+    for i in range(rows + 1):
+        for j in range(cols + 1):
+            if j < cols:
+                B.e(idx[i][j], idx[i][j + 1],
+                    BOUNDARY if i in (0, rows)
+                    else (MOUNTAIN if i % 2 else VALLEY))
+            if i < rows:
+                # The cross creases must be ASSIGNED or nothing drives
+                # them.  Left unassigned, the sheet folded to a z-extent
+                # of 0.28 and simply looked broken.
+                B.e(idx[i][j], idx[i + 1][j],
+                    BOUNDARY if j in (0, cols)
+                    else (VALLEY if j % 2 else MOUNTAIN))
+    return B.frame("Chevron")
+
+
+def kresling(rows=4, cols=6, cell=1.0, height=0.8):
+    """The Kresling pattern: a cylinder that TWISTS as it deploys.
+
+    The Yoshimura's chiral cousin, and the difference is exactly one
+    diagonal: where the Yoshimura triangulates each cell both ways, this
+    keeps only one family, so a cell cannot collapse symmetrically and
+    the tube rotates as it closes.  That handedness IS the pattern.
+
+    References:
+      B. Kresling, "Natural twist buckling in shells," Proc. IASS, 1995
+          -- the buckling pattern this reproduces.
+      J. Cai et al., "Geometry and motion analysis of origami-based
+          deployable shelter structures," J. Struct. Eng. 141, 2015.
+    """
+    B = _Builder()
+    idx = [[B.v(j * cell + 0.5 * cell * (i % 2), i * height)
+            for j in range(cols + 1)] for i in range(rows + 1)]
+    for i in range(rows + 1):
+        for j in range(cols + 1):
+            if j < cols:
+                B.e(idx[i][j], idx[i][j + 1],
+                    BOUNDARY if i in (0, rows)
+                    else (MOUNTAIN if i % 2 else VALLEY))
+            if i < rows:
+                B.e(idx[i][j], idx[i + 1][j],
+                    BOUNDARY if j in (0, cols) else VALLEY)
+                # ONE diagonal family only.  Adding the second makes
+                # this a Yoshimura and takes the twist away.
+                if j < cols:
+                    if i % 2:
+                        B.e(idx[i][j], idx[i + 1][j + 1], MOUNTAIN)
+                    else:
+                        B.e(idx[i][j + 1], idx[i + 1][j], MOUNTAIN)
+    return B.frame("Kresling")
+
+
+def resch(rows=3, cols=3, cell=1.0, tuck=0.30):
+    """Ron Resch's triangular tessellation.
+
+    A triangular grid in which each cell carries a smaller,
+    counter-rotated triangle.  Folding tucks the surplus material behind
+    the surface and leaves a stiff faceted sheet that can take curvature
+    in both directions, which is what made it interesting to
+    architecture and, later, to the freeform-origami literature.
+
+    IN SCOPE BY EXCEPTION.  This project's rule sends named, published
+    tessellations to the importer rather than the generator, and this is
+    one of those.  It is here on request, and because the corrugation
+    work refers to it as the alternative to a generalised Miura, so
+    having it to hand is worth the exception.  The credit is Resch's and
+    is recorded rather than implied away.
+
+    References:
+      R. D. Resch, "The topological design of sculptural and
+          architectural systems," AFIPS Conference Proceedings, 1973.
+      T. Tachi, "Designing Freeform Origami Tessellations by
+          Generalizing Resch's Patterns," ASME J. Mech. Des. 135, 2013.
+    """
+    B = _Builder()
+    h = cell * np.sqrt(3.0) / 2.0
+    grid = {}
+    for i in range(rows + 1):
+        for j in range(cols + 1):
+            grid[(i, j)] = B.v(j * cell + 0.5 * cell * i, i * h)
+
+    for i in range(rows + 1):
+        for j in range(cols + 1):
+            if j < cols:
+                B.e(grid[(i, j)], grid[(i, j + 1)],
+                    BOUNDARY if i in (0, rows) else MOUNTAIN)
+            if i < rows:
+                B.e(grid[(i, j)], grid[(i + 1, j)],
+                    BOUNDARY if j in (0, cols) else MOUNTAIN)
+                if j > 0:
+                    B.e(grid[(i, j)], grid[(i + 1, j - 1)], MOUNTAIN)
+
+    # THE TUCK is what distinguishes Resch from a plain triangular
+    # grid: a counter-rotated triangle inside each cell, joined to the
+    # cell's corners, holding the material the fold hides.
+    for i in range(rows):
+        for j in range(cols):
+            a = np.array([j * cell + 0.5 * cell * i, i * h])
+            b = np.array([(j + 1) * cell + 0.5 * cell * i, i * h])
+            c = np.array([j * cell + 0.5 * cell * (i + 1), (i + 1) * h])
+            cen = (a + b + c) / 3.0
+            # INSCRIBED, not counter-rotated.  Resch's tuck turns the
+            # inner triangle the other way, and connecting each inner
+            # vertex to its opposite corner then sends the connectors
+            # across the middle where they cross each other -- the graph
+            # stops being planar and `build_faces` refuses it.  Keeping
+            # the inner triangle in the same orientation makes every
+            # connector radial, so nothing crosses.  This is the tuck's
+            # shape, not yet its full twist.
+            iv = [B.v(*(cen + tuck * (p - cen))) for p in (a, b, c)]
+            for k in range(3):
+                B.e(iv[k], iv[(k + 1) % 3], VALLEY)
+            for k, corner in enumerate((a, b, c)):
+                B.e(iv[k], B.v(*corner), VALLEY)
+    return B.frame("Ron Resch")
+
+
 def monkey_saddle(rings=8, radius=1.0):
     """The six-sector pleated hypar: a monkey saddle.
 
@@ -412,6 +607,10 @@ def monkey_saddle(rings=8, radius=1.0):
 _MAKERS = {
     "MIURA": miura,
     "MONKEY": monkey_saddle,
+    "EGGBOX": eggbox,
+    "CHEVRON": chevron,
+    "KRESLING": kresling,
+    "RESCH": resch,
     "ACCORDION": accordion,
     "WATERBOMB": waterbomb,
     "YOSHIMURA": yoshimura,

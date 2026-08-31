@@ -64,6 +64,10 @@ CASES = {
     # tables, so each icon shows what its own defaults produce.
     'HYPAR':     dict(cols=4, steps=14),
     'MONKEY':    dict(cols=6, steps=14),
+    'EGGBOX':    dict(cols=6),
+    'CHEVRON':   dict(cols=6),
+    'KRESLING':  dict(cols=6),
+    'RESCH':     dict(cols=3),
 }
 
 #: Three-quarter view.  A folded corrugation seen straight down reads as

@@ -79,6 +79,29 @@ _PATTERN_ITEMS = (
     ('MONKEY', "Monkey Saddle",
      "Six sectors of concentric pleats: the hexagonal hypar, whose rim "
      "repeats every third sector instead of simply alternating"),
+    # THE FOUR BELOW ARE PROVISIONAL.  Each builds, passes the local
+    # conditions where they apply, and folds without tearing -- but none
+    # yet has a check that it does the thing it is named for, the way
+    # the Miura is checked against Schenk and Guest's closed form and
+    # the Yoshimura is required to curl.  Their descriptions say what is
+    # unverified rather than implying it works.
+    ('EGGBOX', "Eggbox",
+     "The Miura's opposite number: it domes instead of shearing, and "
+     "its Poisson ratio is positive where the Miura's is negative. Not "
+     "flat-foldable, which is correct. The Poisson behaviour is NOT yet "
+     "verified"),
+    ('CHEVRON', "Chevron Pleat",
+     "A herringbone pleat, and the simplest thing here that folds "
+     "unconditionally -- useful mainly as a control"),
+    ('KRESLING', "Kresling",
+     "A cylinder that twists as it deploys: the Yoshimura with one "
+     "diagonal family instead of two, so a cell cannot collapse "
+     "symmetrically. The twist itself is NOT yet measured"),
+    ('RESCH', "Ron Resch",
+     "Ron Resch's triangular tessellation, whose tucks hide surplus "
+     "material and leave a stiff sheet that takes curvature both ways. "
+     "The tuck is inscribed rather than counter-rotated here, so this "
+     "is the pattern's shape and not yet its full twist"),
 )
 
 # --------------------------------------------------------------------
@@ -144,6 +167,10 @@ _NATURAL_FOLD = {
     'YOSHIMURA': 37.0,
     'HYPAR': 150.0,
     'MONKEY': 150.0,
+    'EGGBOX': 90.0,
+    'CHEVRON': 80.0,
+    'KRESLING': 60.0,
+    'RESCH': 70.0,
 }
 
 #: How many rows -- rings, for the concentric-pleat patterns -- each
@@ -165,6 +192,10 @@ _NATURAL_ROWS = {
     'YOSHIMURA': 4,
     'HYPAR': 12,
     'MONKEY': 12,
+    'EGGBOX': 4,
+    'CHEVRON': 6,
+    'KRESLING': 4,
+    'RESCH': 3,
 }
 
 #: Patterns whose sector count is part of their identity rather than a
