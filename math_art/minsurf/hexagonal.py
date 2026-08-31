@@ -750,6 +750,38 @@ _SPECS.update({
                     6, 3, 2, 1.0j, nb="T_-R_.nb"),
 })
 
+# S'-S" assembles by Brakke's own recipe rather than by classification.
+#
+# SSadj.fe declares four generators -- a: the x = z mirror, b: x = 0,
+# c: y = 0, d: z = 0 -- and its cell is `cube := { transform_expr
+# "dcba" }`, sixteen transforms.  Its `d` is a*b*a, a derived mirror he
+# lists only because it shortens the word.
+#
+# His matrices do NOT transfer literally.  Both his patch and ours are
+# the (4,4,2)-kaleidoscope prism -- a 45-45-90 triangle times an
+# interval, five mirror boundary planes -- but ours sits rotated 45
+# degrees in-plane, with the legs on the diagonal planes and the
+# hypotenuse axis-aligned where his are the other way round.  The WORD
+# transfers; the letters are re-pointed at our own curves:
+#
+#     a  the hypotenuse mirror      curve y=0#1,  normal (0, 1, 0)
+#     b  the leg mirror             curve y=0#0,  normal (1, 1, 0)
+#     c  the lid mirror             curve x=0,    normal (0, 0, 1)
+#     d  a*b*a, derived
+#
+# The declared normals also need 45-degree snapping, which `_snap_axis`'s
+# default 30-degree grid does not provide -- another reason the
+# classified route could not reach this surface.
+_SPECS['SS'].update(
+    exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                  'y=1': (1.0, -1.0, 0.0), 'y=0#0': (1.0, 1.0, 0.0),
+                  'y=0#1': (0.0, 1.0, 0.0)},
+    letters={'a': 'y=0#1', 'b': 'y=0#0', 'c': 'x=0',
+             'd': ('derived', 'aba')},
+    words=('dcba',),
+)
+
+
 
 # --------------------------------------------------------------------
 # Surfaces with a SOLVED period problem
@@ -1179,6 +1211,191 @@ def spec_curves(key, P):
             curves.append(('y=0#%d' % k, edge[lo:hi + 1]))
         lo = hi
     return curves
+
+
+# Order of the transform set each cell word generates, as reported
+# by Evolver 2.70 running the matching datafile.
+_WORD_COPIES = {'SS': 16}
+
+
+def spec_declared_planes(key, P):
+    """Exact mirror planes for a spec that DECLARES them.
+
+    `spec_generators` classifies boundary curves and fits a plane to
+    each.  That works where the patch is accurate and fails where it is
+    not: two of S'-S"'s five curves miss planarity by 5.8e-3 and 2.6e-3,
+    the miss sits at the branch point, and it scales with the Gauss-map
+    exponent (r-1)/r across the family -- H'-T (1/2) 2.5e-5 and passes,
+    H"-R (2/3) 1.9e-3, S'-S" (3/4) 7.1e-3, T'-R' (5/6) 1.4e-2.  It also
+    GROWS with resolution, because a finer grid samples nearer the
+    singular corner.  So the classifier is the messenger: raising its
+    tolerance would admit the curves and their polluted planes together.
+
+    Brakke does not classify anything.  Every `.fe` DECLARES its mirrors
+    (`view_transform_generators`), and only their offsets are read off
+    the surface.  A spec that gives `exact_planes` does the same here:
+    the normal is exact, and the offset is the MEDIAN of curve.n, median
+    rather than mean because the branch-point end of the curve is the
+    part that is wrong.
+
+    Returns None when the spec declares nothing.
+    """
+    sp = _SPECS[key]
+    decl = sp.get('exact_planes')
+    if not decl:
+        return None
+    curves = dict(spec_curves(key, P))
+    out = {}
+    for name, raw in decl.items():
+        C = curves.get(name)
+        if C is None or len(C) < 3:
+            return None
+        n = np.asarray(raw, dtype=float)
+        n = n / np.linalg.norm(n)
+        out[name] = (n, float(np.median(np.asarray(C, dtype=float) @ n)))
+    return out
+
+
+# Which way each boundary curve of the grid faces, for the projection.
+_CURVE_ROWS = {'x=0': ('i', 0), 'x=1': ('i', -1), 'y=1': ('j', -1)}
+
+
+def _curve_indices(key, P):
+    """Grid indices of each boundary curve `spec_curves` returns."""
+    nu, nv = P.shape[0], P.shape[1]
+    sp = _SPECS[key]
+    idx = {'x=0': (np.zeros(nv, int), np.arange(nv)),
+           'x=1': (np.full(nv, nu - 1), np.arange(nv)),
+           'y=1': (np.arange(nu), np.full(nu, nv - 1))}
+    splits = sp.get('splits', ())
+    col = 0 if sp.get('split_edge', 'y0') == 'y0' else nv - 1
+    if not splits:
+        idx['y=0'] = (np.arange(nu), np.full(nu, col))
+        return idx
+    xs = _spec_nodes(key, nu)[0]
+    x1 = sp['xlim'][1]
+    lo = 0
+    for k, c in enumerate(list(splits) + [x1]):
+        hi = int(np.argmin(np.abs(xs - c)))
+        if hi - lo >= 3:
+            idx['y=0#%d' % k] = (np.arange(lo, hi + 1),
+                                 np.full(hi + 1 - lo, col))
+        lo = hi
+    return idx
+
+
+def spec_project_boundary(key, P, planes, iters=30):
+    """Land each boundary curve exactly on its declared plane.
+
+    This is the discrete form of Brakke's `frame`, which pins the
+    conjugate's boundary edges to their constraint planes before showing
+    any transforms.  It matters more than it looks: reflected copies of a
+    boundary that is only ~1e-3 from its mirror do not weld, so the cell
+    never closes.  Alternating projection converges the corner nodes,
+    which belong to two planes at once, onto their intersection line.
+    """
+    P = np.asarray(P, dtype=float).copy()
+    idx = _curve_indices(key, P)
+    for _ in range(int(iters)):
+        for name, (n, c) in planes.items():
+            ii = idx.get(name)
+            if ii is None:
+                continue
+            a, b = ii
+            pts = P[a, b]
+            P[a, b] = pts - ((pts @ n) - c)[:, None] * n
+    return P
+
+
+def spec_word_transforms(key, planes):
+    """The transform set the spec's cell word generates.
+
+    `letters` maps a letter to a curve name, or to `('derived', word)`
+    for a mirror Brakke declares as a product of others -- S'-S"'s
+    `d` is `a*b*a`, the image of one leg mirror in the diagonal, which he
+    lists only because it shortens the word.
+    """
+    sp = _SPECS[key]
+    lets = {}
+    for ch, src in sp['letters'].items():
+        if not isinstance(src, tuple):
+            lets[ch] = _mirror(*planes[src])
+    for ch, src in sp['letters'].items():
+        if isinstance(src, tuple):
+            M = np.eye(4)
+            for d in src[1]:
+                M = M @ lets[d]
+            lets[ch] = M
+    return [(w, eval_transform_expr(lets, w)) for w in sp['words']]
+
+
+def eval_transform_expr(gens, word):
+    """Evolver's `transform_expr`.
+
+    Each letter g denotes the SET {I, g}, so scanning left to right the
+    transform set doubles: S := S union S*g.  The result is every product
+    of a SUBSEQUENCE of the word, deduplicated as group elements, which
+    is what keeps it small -- `dcba` is 16, not 2^4 by accident but
+    because the dedup happens to be trivial there, while `bcbcbc` is 12
+    (the dihedral group D6) rather than 2^6 = 64.  Composition runs left
+    to right, so the RIGHTMOST letter acts on points first.
+
+    Confirmed against Evolver 2.70 on Brakke's own datafiles.
+    """
+    S = [np.eye(4)]
+    seen = {tuple(np.round(S[0][:3, :].ravel(), 7) + 0.0)}
+    for ch in word:
+        G = gens[ch]
+        for M in list(S):
+            N = M @ G
+            k = tuple(np.round(N[:3, :].ravel(), 7) + 0.0)
+            if k not in seen:
+                seen.add(k)
+                S.append(N)
+    return S
+
+
+def spec_word_assemble(key, P):
+    """Assemble the cell the spec's datafile names, or None.
+
+    Returns `(V, quads, transform_count, word)`.  Weld tolerance runs
+    down a LADDER and the first that verifies wins -- the same pattern
+    `spec_reflect_tile` uses, and for the same reason: pass/fail is not
+    monotone in the tolerance, because too loose merges vertices either
+    side of a mirror and too tight leaves the graded grid's clustered
+    nodes as separate copies.
+    """
+    sp = _SPECS[key]
+    if not sp.get('words'):
+        return None
+    planes = spec_declared_planes(key, P)
+    if planes is None:
+        return None
+    Pp = spec_project_boundary(key, P, planes)
+    V0 = Pp.reshape(-1, 3)
+    Q0 = _patch_quads(Pp.shape[0], Pp.shape[1])
+    best = None
+    for word, mats in spec_word_transforms(key, planes):
+        Vs, Qs, base = [], [], 0
+        for M in mats:
+            Vs.append(_apply(M, V0))
+            q = Q0 + base
+            if np.linalg.det(M[:3, :3]) < 0.0:
+                q = q[:, ::-1]
+            Qs.append(q)
+            base += len(V0)
+        V = np.concatenate(Vs, 0)
+        Q = np.concatenate(Qs, 0)
+        span = float(np.max(V.max(0) - V.min(0))) or 1.0
+        for tol in (1e-5, 3e-5, 1e-4, 3e-4, 1e-6):
+            Vw, Qw = _weld(V, Q, tol * span)
+            Qw = np.asarray(Qw)
+            if _assembly_ok(Vw, Qw):
+                best = (Vw, Qw, len(mats), word)
+                break
+        if best is not None:
+            break
+    return best
 
 
 def spec_generators(key, P, tol=1e-3):
@@ -1912,8 +2129,36 @@ def _assembly_ok(V, Q, tol=0.005):
     cen = P[live].mean(axis=1)
     span = float(np.max(V.max(0) - V.min(0))) if len(V) else 1.0
     key = np.round(cen / max(span * 1e-5, 1e-12)).astype(np.int64)
-    _u, cnt = np.unique(key, axis=0, return_counts=True)
-    dup = int(cnt.sum() - len(cnt))
+    _u, inv, cnt = np.unique(key, axis=0, return_inverse=True,
+                             return_counts=True)
+    # A shared centroid CELL is not yet a duplicate.  The cell is a fixed
+    # fraction of the whole span, while the graded quadrature grid packs
+    # nodes exponentially towards each singular end -- so at high
+    # resolution two ADJACENT faces there are thin enough that their
+    # centroids land in one cell and the raw count reads 4-7.5% duplicate
+    # on assemblies that are perfectly clean.  Measured on S'-S'': every
+    # such pair shares exactly 2 vertices, i.e. an edge.
+    #
+    # Coincident sheets -- the thing this test exists to catch, CLP with
+    # a handle's leopard spots -- share 0 vertices when they are separate
+    # copies, or all 4 once welded.  Never exactly 2.  So requiring
+    # NON-ADJACENCY separates the real failure from the meshing artifact
+    # without touching the threshold.
+    live_idx = np.nonzero(live)[0]
+    dup = 0
+    for cell in np.nonzero(cnt > 1)[0]:
+        fs = live_idx[inv == cell]
+        k = len(fs)
+        if k > 8:
+            # Too many faces in one cell to pair up cheaply, and a real
+            # pile is exactly what that looks like.  Count them.
+            dup += k - 1
+            continue
+        sets = [set(int(v) for v in Q[f]) for f in fs]
+        for i in range(k):
+            for j in range(i + 1, k):
+                if len(sets[i] & sets[j]) < 2:
+                    dup += 1
     if dup > tol * int(live.sum()):
         return False
 
@@ -1947,8 +2192,28 @@ def _assembly_ok(V, Q, tol=0.005):
             rj = _find(int(f[j]))
             if rj != r0:
                 parent[rj] = r0
-    roots = {_find(int(i)) for f in Q for i in f}
-    return len(roots) <= 1
+    # ESSENTIALLY one piece, not exactly one.  The failures this exists
+    # to catch are gross: H'-T's cell was a main body plus a 7020-vertex
+    # stray, and three of CLP's arrangements fell into two or three
+    # comparable pieces.  What defeats a strict count instead is the
+    # graded quadrature grid, which packs nodes ~1e-12 apart at each
+    # singular end -- assembled and welded, a dozen of those can end up
+    # as isolated specks ON a mirror plane (measured on S'-S'': 12 to 28
+    # vertices adrift out of 962440, 0.013%, all sitting at distance
+    # 4e-18 from the y = 0 mirror).  Those are quadrature litter, not a
+    # broken cell.
+    #
+    # So the largest component must hold all but `tol` of the faces.
+    # That still rejects everything above by a wide margin -- H'-T's
+    # stray was a third of its cell -- while ignoring specks.
+    from collections import Counter
+    sizes = Counter()
+    for f in Q:
+        sizes[_find(int(f[0]))] += 1
+    if not sizes:
+        return False
+    biggest = max(sizes.values())
+    return (len(Q) - biggest) <= tol * len(Q)
 
 
 def _weld_tol(key):
@@ -2243,6 +2508,30 @@ def spec_build(key, cells, res_per_cell, scale, theta,
     nv = max(24, int(round(res_per_cell)))
     named = abs(float(theta)) < 1e-9
     P = _spec_patch(key, nu, nv, None if named else float(theta))
+
+    # Brakke's route, where the spec names a cell word: declared mirrors,
+    # boundary projected onto them, and the datafile's own
+    # `transform_expr`.  Tried BEFORE `_assemble`, whose
+    # classify-and-close path cannot reach these surfaces -- it finds 3
+    # of S'-S"'s 5 generators, and three mirrors two of which are
+    # parallel generate a FRIEZE, so the "cell" came out 1 x 1 x 1.5 and
+    # grew along one axis only.
+    #
+    # It returns straight out rather than handing back a `built` triple,
+    # for two reasons.  The group here has no translations at all -- its
+    # mirrors share a common point -- so there is no lattice basis to
+    # report and the cx/cy/cz array below would have nothing to array.
+    # And the assembled path re-welds at `_weld_tol(key) * span`, 1.8e-4
+    # here, which is exactly the tolerance measured to break this cell
+    # into pieces; `spec_word_assemble` has already welded at the one
+    # that verifies.
+    if named and _SPECS[key].get('words'):
+        wa = spec_word_assemble(key, P)
+        if wa is not None:
+            Vw, Qw, _ncopy, _word = wa
+            Qw = _drop_degenerate(Vw, np.asarray(Qw))
+            return _fit(Vw, [tuple(int(x) for x in q) for q in Qw], scale)
+
     built = None
     if named and key == 'CLP' and arrangement.startswith('CONJ'):
         P, sets, B = clp_conjugate(nu, nv)
@@ -3063,6 +3352,33 @@ def _selftest():
     print("hexagonal: changing the modulus invalidates the cache "
           "(bbox moves %.4f) and returning to it hits again (%.1e) %s"
           % (moved, back, 'OK' if good else 'FAIL'))
+
+    # The cell-word route.  Three things are asserted, and the copy
+    # count is an EQUALITY because it is the order of the transform set
+    # Brakke's own word generates -- 16 for SSadj's "dcba", confirmed by
+    # running his datafile in Evolver 2.70.  A different number means the
+    # letters have been re-pointed at the wrong curves, which is a
+    # different surface, not a slightly worse mesh.
+    for key in sorted(k for k in _SPECS if _SPECS[k].get('words')):
+        want = _WORD_COPIES[key]
+        rows = []
+        good = True
+        for n in (60, 120):
+            Pw = _spec_patch(key, n, n)
+            got = spec_word_assemble(key, Pw)
+            if got is None:
+                good = False
+                rows.append("n=%d FAILED" % n)
+                continue
+            Vw, Qw, ncopy, word = got
+            bb = Vw.max(0) - Vw.min(0)
+            rows.append("n=%d %d copies %.4f x %.4f x %.4f"
+                        % (n, ncopy, bb[0], bb[1], bb[2]))
+            good = good and ncopy == want
+        ok &= good
+        print("hexagonal: %s cell word %r -> %s (Evolver %d) %s"
+              % (key, _SPECS[key]['words'][0], "; ".join(rows), want,
+                 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
