@@ -121,6 +121,18 @@ class CompliantFolder:
         self.assign = (np.asarray(frame.assignment, dtype="<U1")
                        if frame.assignment is not None
                        else np.array([""] * len(self.edges), dtype="<U1"))
+        # PER-CREASE TARGET ANGLES, when the pattern knows them.
+        #
+        # Without these every mountain is driven to -1 radian and every
+        # valley to +1, which is fine for "fold this pattern up" and
+        # WRONG for "fold this pattern into that specific shape".  A
+        # corrugation fitted to a surface knows the angle each crease
+        # must reach -- it was measured off the fitted 3-D form -- and
+        # ignoring it means folding a different object: measured on a
+        # corrugated plane, the intended form ranges -100 to +100
+        # degrees while the uniform target drives everything to 57.3.
+        self.target_angle = (np.asarray(frame.fold_angle, dtype=float)
+                             if frame.fold_angle is not None else None)
 
         self.l0 = np.linalg.norm(self.rest[self.edges[:, 1]] -
                                  self.rest[self.edges[:, 0]], axis=1)
@@ -185,12 +197,20 @@ class CompliantFolder:
             # unassigned crease is a place the paper bends rather than a
             # fold anybody designed -- it gets the facet stiffness and a
             # target of zero, so it resists bending but is not driven.
+            want = None
+            if self.target_angle is not None and k < len(self.target_angle):
+                a = float(self.target_angle[k])
+                want = None if a != a else a            # NaN means unknown
             if code in (MOUNTAIN, VALLEY):
                 self.cr_k.append(self.l0[k] * k_fold)
-                self.cr_target.append(-1.0 if code == MOUNTAIN else 1.0)
+                self.cr_target.append(
+                    want if want is not None
+                    else (-1.0 if code == MOUNTAIN else 1.0))
             else:                       # FLAT, UNASSIGNED, or unlabelled
                 self.cr_k.append(self.l0[k] * k_facet)
-                self.cr_target.append(0.0)
+                # An unassigned crease with a KNOWN angle is still known:
+                # the corrugation's added diagonals are exactly that.
+                self.cr_target.append(want if want is not None else 0.0)
 
         self.cr_edge = np.array(self.cr_edge, dtype=np.int64).reshape(-1, 2)
         self.cr_apex = np.array(self.cr_apex, dtype=np.int64).reshape(-1, 2)

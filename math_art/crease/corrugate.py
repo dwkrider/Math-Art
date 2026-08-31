@@ -416,16 +416,66 @@ def fit(kind="HYPAR", nu=16, nv=16, size=2.0, depth=0.6, amplitude=0.12,
                             max(tgt_w * tgt_h, 1e-12)),
     })
 
+    # THE FOLD ANGLE OF EVERY CREASE, measured off the fitted form.
+    #
+    # Without this the crease pattern says only "mountain here, valley
+    # there", and a solver folding it has to guess a uniform angle --
+    # which reproduces some other shape, not the surface that was
+    # fitted.  The angles are known here and cost nothing to record, so
+    # the pattern carries what it takes to fold back into the target.
+    angles = _fold_angles_of(verts, faces, edges)
+
     frame = Frame(
         verts=xy,
         edges=edges,
         assignment=assign,
+        fold_angle=angles,
         faces=faces,
         face_orders=None,
         meta={"frame_title": f"{kind.title()} corrugation",
               "corrugation": rep},
     )
     return frame, verts, rep
+
+
+def _fold_angles_of(verts, faces, edges):
+    """Signed fold angle at every edge of a 3-D triangulated mesh.
+
+    Valley positive, matching `compliant.fold_angles` and the rest of
+    the package.  Boundary edges, which have only one face, get NaN --
+    "no angle", as distinct from "an angle of zero".
+    """
+    V = np.asarray(verts, dtype=float)
+    ef = {}
+    for f in faces:
+        for t in range(len(f)):
+            a, b = int(f[t]), int(f[(t + 1) % len(f)])
+            ef.setdefault((min(a, b), max(a, b)), []).append(f)
+    out = np.full(len(edges), np.nan)
+    for k, (a, b) in enumerate(np.asarray(edges).reshape(-1, 2)):
+        key = (min(int(a), int(b)), max(int(a), int(b)))
+        fl = ef.get(key, [])
+        if len(fl) != 2:
+            continue
+        apex = []
+        for f in fl:
+            rest = [int(v) for v in f if v not in key]
+            if len(rest) != 1:
+                break
+            apex.append(rest[0])
+        if len(apex) != 2:
+            continue
+        p3, p4 = V[key[0]], V[key[1]]
+        p1, p2 = V[apex[0]], V[apex[1]]
+        e = p4 - p3
+        e = e / max(np.linalg.norm(e), 1e-12)
+        n1 = np.cross(p4 - p3, p1 - p3)
+        n2 = np.cross(p2 - p3, p4 - p3)
+        n1 = n1 / max(np.linalg.norm(n1), 1e-12)
+        n2 = n2 / max(np.linalg.norm(n2), 1e-12)
+        out[k] = float(np.arctan2(float(np.cross(n1, n2) @ e),
+                                  float(n1 @ n2)))
+    return out
 
 
 def report_summary(rep):
@@ -515,6 +565,40 @@ def _selftest():
     assert set(fr.assignment.tolist()) <= {"M", "V", "B"}
     assert len(folded) == fr.n_verts
     assert "x" in report_summary(rep)
+
+    # --- THE ROUND TRIP: fold the emitted pattern back --------------
+    #
+    # The check that actually validates this module, and the one it did
+    # not have.  Everything above measures the corrugation against
+    # itself; this folds the crease pattern the operator HANDS OUT and
+    # asks whether it reproduces the form it was fitted to.
+    #
+    # Run on the PLANE, because that is where the answer is knowable: a
+    # pleated plane is developable, so the pattern is exact and the fold
+    # must return the same shape.  It did not, until the frame started
+    # carrying per-crease target angles -- without them the solver drove
+    # every crease to a uniform 57.3 degrees while the intended form
+    # ranged over +/-100, and reproduced some other object entirely
+    # (16% rms deviation, on a case that should be exact).
+    from . import compliant as _compliant
+    fr, folded, _rep = fit("PLANE", nu=10, nv=10, amplitude=0.12,
+                           iters=1500)
+    assert fr.fold_angle is not None, (
+        "the emitted pattern must carry its fold angles, or a solver "
+        "cannot fold it into the surface it was fitted to")
+    cfx = _compliant.CompliantFolder(fr)
+    cfx.run(drive=1.0, steps=12000)
+    A = cfx.pos - cfx.pos.mean(0)
+    B = folded - folded.mean(0)
+    U_, _S, Vt_ = np.linalg.svd(A.T @ B)
+    dd = np.sign(np.linalg.det(Vt_.T @ U_.T))
+    R_ = Vt_.T @ np.diag([1.0, 1.0, dd]) @ U_.T
+    dev = np.linalg.norm((R_ @ A.T).T - B, axis=1)
+    sc = float(np.ptp(folded, axis=0).max())
+    assert float(dev.mean()) / sc < 0.02, (
+        f"folding the emitted pattern does not reproduce the intended "
+        f"form: {float(dev.mean()) / sc:.3f} rms of size. On a PLANE this "
+        f"must be near zero -- the pattern is exactly developable")
 
     try:
         sample_target("NOPE")
