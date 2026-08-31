@@ -61,6 +61,8 @@ import math
 
 import numpy as np
 
+SQRT3 = math.sqrt(3.0)
+
 try:
     from .. import geom_cache as _geom_cache
 except ImportError:  # flat import outside the package
@@ -772,6 +774,57 @@ _SPECS.update({
 # The declared normals also need 45-degree snapping, which `_snap_axis`'s
 # default 30-degree grid does not provide -- another reason the
 # classified route could not reach this surface.
+# The rest of the triangle-group series, by the same recipe.
+#
+# Their five boundary curves are always two lids plus the three sides of
+# the triangle, and MEASURING the normals settles both the exact planes
+# and the word without transcribing another datafile.  The three
+# verticals meet pairwise at angles that come out of the (r,s,t) data --
+#
+#   H'-T   (1,0,0) (0,1,0) (1,-sqrt3,0)   90, 30, 60 degrees
+#   H"-R   (sqrt3,1,0) (0,1,0) (-1,sqrt3,0)   90, 60, 30
+#   T'-R'  (1,sqrt3,0) (0,1,0) (1,0,0)     30, 90, 60
+#   S'-S"  (1,1,0) (0,1,0) (1,-1,0)        45, 45, 90
+#
+# -- and the PAIR at the smallest angle pi/n generates a dihedral group
+# of order 2n, which the lid doubles to 4n.  So the cell word is one lid
+# letter followed by the two verticals alternating, which is exactly the
+# shape of Brakke's own `full := { transform_expr "abcbcbc" }` in
+# HTadj.fe, HRadj.fe and TRadj.fe: 30 degrees, n = 6, 24 copies.  S'-S"
+# is the odd one at 45 degrees, n = 4, 16 copies, and keeps SSadj's own
+# "dcba" spelling of the same group.
+#
+# The third vertical is never a generator -- it is the wall the word
+# reflects the patch AGAINST, not one of the mirrors it reflects IN.
+_TRIGROUP_CELLS = {
+    'HT': dict(
+        tau_range=(0.20, 1.00, 0.40),
+        exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                      'y=1': (1.0, -SQRT3, 0.0), 'y=0#0': (1.0, 0.0, 0.0),
+                      'y=0#1': (0.0, 1.0, 0.0)},
+        letters={'a': 'x=0', 'b': 'y=1', 'c': 'y=0#1'},
+        words=('abcbcbc',)),
+    'H2R': dict(
+        tau_range=(0.08, 0.80, 0.15),
+        exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                      'y=1': (-1.0, SQRT3, 0.0), 'y=0#0': (SQRT3, 1.0, 0.0),
+                      'y=0#1': (0.0, 1.0, 0.0)},
+        letters={'a': 'x=0', 'b': 'y=1', 'c': 'y=0#1'},
+        words=('abcbcbc',)),
+    'TR': dict(
+        tau_range=(0.40, 2.00, 1.00),
+        exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                      'y=1': (1.0, 0.0, 0.0), 'y=0#0': (1.0, SQRT3, 0.0),
+                      'y=0#1': (0.0, 1.0, 0.0)},
+        letters={'a': 'x=0', 'b': 'y=0#0', 'c': 'y=0#1'},
+        words=('abcbcbc',)),
+}
+for _k, _v in _TRIGROUP_CELLS.items():
+    _SPECS[_k].update(_v)
+del _k, _v
+
+
+
 # S'-S" is a FAMILY, and `tau` picks the member: the cell comes out
 # 1.781 x 1 at 0.30, falls to a minimum 1.331 at 0.60, and rises again
 # (1.336 at 0.65, 1.385 at 0.80).  Brakke's `SSadj.fe` says asize = 2.4
@@ -897,6 +950,24 @@ _SPECS['I6'] = _prod_spec(
                           (-0.5 - 1j * a, -0.5)),
     nb="Schoen_I6.nb")
 
+
+
+# I-6 is not a triangle-group row, but its patch turns out to be a
+# reflection cell all the same: two lids and two vertical mirrors meeting
+# at 90 degrees, all four planar to 3e-5 or better.  That gives a group
+# of order 8 and the word closes at 8 whichever way it is spelled --
+# "abc", "abcbc" and "abcbcbc" all return exactly 8 copies -- so the
+# shortest is used.
+#
+# Brakke's own I-6.fe assembles it differently, with two TRANSLATIONS and
+# a half-turn (`layers := { transform_expr "abc" }`).  Both descriptions
+# are of the same surface; his suits a datafile whose contour is a
+# rosette, ours suits a patch integrated on a rectangle.
+_SPECS['I6'].update(
+    exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                  'y=1': (-1.0, 1.0, 0.0), 'y=0': (1.0, 1.0, 0.0)},
+    letters={'a': 'x=0', 'b': 'y=0', 'c': 'y=1'},
+    words=('abc',))
 
 def spec_period(key, t, n=3000):
     """Re of the period integral whose vanishing fixes a spec's modulus.
@@ -1222,9 +1293,20 @@ def spec_curves(key, P):
     return curves
 
 
-# Order of the transform set each cell word generates, as reported
-# by Evolver 2.70 running the matching datafile.
-_WORD_COPIES = {'SS': 16}
+# Order of the transform set each cell word generates, with WHERE the
+# number comes from -- the two are not the same kind of evidence and the
+# self-test says which it is printing.
+#
+# "Evolver" means Brakke's own datafile was run and reported that count.
+# "group" means it was derived here from the measured mirror angles: two
+# planes meeting at pi/n generate a dihedral group of order 2n, which a
+# perpendicular lid doubles.  I-6 is the second kind -- its datafile
+# assembles the surface a different way (translations and a half-turn),
+# so there is no Evolver count for THIS word to compare against, only
+# the group order, which the word reaches from three spellings alike.
+_WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
+                'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
+                'I6': (8, 'group')}
 
 
 def spec_modulus_range(key):
@@ -3259,14 +3341,21 @@ def _selftest():
         ok = False
         print("hexagonal: H'-T lattice FAIL (_assemble declined)")
 
+    # ...and H'-T no longer ships the bare piece, because the cell-word
+    # route reaches it where `_assemble` could not.  This assertion used
+    # to demand the OPPOSITE -- that the assembly stay refused, so that a
+    # future fix would surface here rather than slip by.  It has surfaced
+    # here.  The check is inverted rather than deleted: the row must now
+    # produce MORE than its patch, in one piece and with no over-shared
+    # edge, and the copy count is gated separately against Evolver.
     V, faces = spec_build('HT', 1, 60, 1.0, 0.0)
     Q = np.asarray([f for f in faces if len(f) == 4])
     over = _over_shared(Q) if len(Q) == len(faces) and len(Q) else -1
     npatch = len(_spec_patch('HT', 60, 60).reshape(-1, 3))
-    good = (over == 0 and np.all(np.isfinite(V)) and len(V) < npatch)
+    good = (over == 0 and np.all(np.isfinite(V)) and len(V) > npatch)
     ok &= good
-    print("hexagonal: H'-T ships the fundamental piece (%d verts < patch "
-          "%d), over-shared %d %s"
+    print("hexagonal: H'-T assembles its cell (%d verts > patch %d), "
+          "over-shared %d %s"
           % (len(V), npatch, over, 'OK' if good else 'FAIL'))
 
     # The component gate must CONVICT, not merely exist: every assembled
@@ -3396,7 +3485,7 @@ def _selftest():
     # letters have been re-pointed at the wrong curves, which is a
     # different surface, not a slightly worse mesh.
     for key in sorted(k for k in _SPECS if _SPECS[k].get('words')):
-        want = _WORD_COPIES[key]
+        want, source = _WORD_COPIES[key]
         rows = []
         good = True
         for n in (60, 120):
@@ -3412,9 +3501,9 @@ def _selftest():
                         % (n, ncopy, bb[0], bb[1], bb[2]))
             good = good and ncopy == want
         ok &= good
-        print("hexagonal: %s cell word %r -> %s (Evolver %d) %s"
-              % (key, _SPECS[key]['words'][0], "; ".join(rows), want,
-                 'OK' if good else 'FAIL'))
+        print("hexagonal: %s cell word %r -> %s (%s %d) %s"
+              % (key, _SPECS[key]['words'][0], "; ".join(rows), source,
+                 want, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
