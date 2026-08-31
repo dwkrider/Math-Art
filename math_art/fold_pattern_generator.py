@@ -330,6 +330,52 @@ def _paint_strain(obj, strain, clamp=None):
     return lim
 
 
+def _compliant_setup(obj):
+    """Build the compliant folder for `obj`, triangulating if needed.
+
+    Split out from `_compliant_fold` so a modal operator can own the
+    stepping: the solve has to be interruptible to show progress, and it
+    cannot be interruptible while it lives inside one blocking call.
+    """
+    import numpy as _np
+    frame = _frame_from_object(obj)
+    if frame.faces is None:
+        frame.faces = crease.build_faces(frame.verts, frame.edges)
+    added = 0
+    if any(len(f) != 3 for f in frame.faces):
+        tris, diags = crease.triangulate(frame.verts, frame.faces)
+        frame.faces = tris
+        if diags:
+            frame.edges = _np.vstack(
+                [frame.edges, _np.array(diags, dtype=_np.int64)])
+            frame.assignment = _np.concatenate(
+                [frame.assignment,
+                 _np.array([crease.UNASSIGNED] * len(diags), dtype="<U1")])
+            added = len(diags)
+    return crease.compliant.CompliantFolder(frame), added
+
+
+def _compliant_finish(obj, cf, states, added, drive, colour_strain):
+    """Apply a finished compliant solve to the object; return the report."""
+    import numpy as _np
+    if states:
+        _apply_states(obj, states)
+    else:
+        for v, p in zip(obj.data.vertices, cf.pos):
+            v.co = Vector(p)
+        obj.data.update()
+    obj["fold_is_flat"] = False
+    msg = (f"compliant fold to {drive * 100:.0f}% of target; "
+           f"max strain {float(_np.abs(cf.edge_strain()).max()):.2e}")
+    if added:
+        msg += f"; {added} panel diagonal(s) added to allow bending"
+    if colour_strain:
+        lim = _paint_strain(obj, cf.vertex_strain())
+        if lim is not None:
+            msg += f"; strain shown to +/-{lim:.2e}"
+    return msg
+
+
 def _compliant_fold(obj, drive, steps, animate, colour_strain,
                     progress=None):
     """Fold `obj` with the compliant solver.
@@ -685,25 +731,100 @@ class OBJECT_OT_fold_solve(bpy.types.Operator):
         L.prop(self, "animate")
         L.prop(self, "colour_strain")
 
+
+    # ---- the modal path, which is what makes progress VISIBLE -------
+    #
+    # `window_manager.progress_*` was the first attempt and it shows
+    # nothing: it only nudges the mouse cursor, and during a blocking
+    # `execute()` Blender never gets to redraw anyway, so the update
+    # calls land on a frozen UI.  Progress is not a reporting problem,
+    # it is a control-flow one -- the operator has to give control back
+    # between chunks of work.
+    #
+    # So the compliant solve runs from a timer: a slice of substeps per
+    # tick, the status bar rewritten after each, and Esc honoured
+    # between slices.  Cancelling is the part that actually matters on
+    # an 8-second solve that might be heading somewhere wrong.
+    #
+    # `execute()` still does the whole thing in one blocking call, and
+    # that is deliberate: scripts, the icon baker and the tests all call
+    # the operator directly and must not need an event loop.
+
+    _timer = None
+    _cf = None
+    _states = None
+    _i = 0
+    _n = 0
+    _per = 0
+    _added = 0
+
+    def invoke(self, context, event):
+        if self.solver != 'COMPLIANT':
+            return self.execute(context)
+        obj = context.active_object
+        try:
+            self._cf, self._added = _compliant_setup(obj)
+        except (crease.FoldError, crease.compliant.CompliantFailure) as exc:
+            self.report({'ERROR'}, str(exc))
+            return {'CANCELLED'}
+        self._obj = obj
+        self._states = [] if self.animate else None
+        self._n = max(2, int(self.steps)) if self.animate else 40
+        self._per = max(200, 12000 // self._n)
+        self._i = 0
+        wm = context.window_manager
+        self._timer = wm.event_timer_add(0.01, window=context.window)
+        wm.modal_handler_add(self)
+        context.workspace.status_text_set("Folding: 0%  (Esc to cancel)")
+        return {'RUNNING_MODAL'}
+
+    def _cleanup(self, context):
+        wm = context.window_manager
+        if self._timer is not None:
+            wm.event_timer_remove(self._timer)
+            self._timer = None
+        context.workspace.status_text_set(None)
+
+    def modal(self, context, event):
+        if event.type in {'ESC', 'RIGHTMOUSE'}:
+            self._cleanup(context)
+            self.report({'WARNING'}, "fold cancelled; the sheet is left "
+                                     "part-folded")
+            return {'CANCELLED'}
+        if event.type != 'TIMER':
+            return {'PASS_THROUGH'}
+
+        d = self.drive * (self._i + 1) / self._n
+        for _ in range(self._per):
+            self._cf.step(d)
+        if self._states is not None:
+            self._states.append(self._cf.pos.copy())
+        self._i += 1
+
+        pct = 100.0 * self._i / self._n
+        context.workspace.status_text_set(
+            f"Folding: {pct:.0f}%  (Esc to cancel)")
+
+        if self._i < self._n:
+            return {'RUNNING_MODAL'}
+
+        self._cleanup(context)
+        try:
+            msg = _compliant_finish(self._obj, self._cf, self._states,
+                                    self._added, self.drive,
+                                    self.colour_strain)
+        except Exception as exc:                      # noqa: BLE001
+            self.report({'ERROR'}, str(exc))
+            return {'CANCELLED'}
+        self.report({'INFO'}, msg)
+        return {'FINISHED'}
+
     def execute(self, context):
         obj = context.active_object
         try:
             if self.solver == 'COMPLIANT':
-                # The compliant solve is the only slow one here --
-                # measured at 7.5-8.5s against 0.2-1.5s for the rigid
-                # path -- so it is the one that needs to say it is
-                # still working.  `progress_*` moves the cursor; it does
-                # NOT make the operator cancellable, which would take a
-                # modal operator with a timer.
-                wm = context.window_manager
-                wm.progress_begin(0.0, 1.0)
-                try:
-                    msg = _compliant_fold(
-                        obj, self.drive, self.steps, self.animate,
-                        self.colour_strain,
-                        progress=lambda f: wm.progress_update(f))
-                finally:
-                    wm.progress_end()
+                msg = _compliant_fold(obj, self.drive, self.steps,
+                                      self.animate, self.colour_strain)
             else:
                 msg = _fold_object(obj, self.fold_angle, self.steps,
                                    self.animate)
@@ -723,12 +844,149 @@ class OBJECT_OT_fold_solve(bpy.types.Operator):
         return {'FINISHED'}
 
 
-_CLASSES = (MESH_OT_crease_pattern_add, OBJECT_OT_fold_solve)
+
+# --------------------------------------------------------------------
+# The fold panel
+# --------------------------------------------------------------------
+# WHY THE SETTINGS LEFT THE OPERATOR.  An Add-menu operator runs the
+# moment it is chosen, and Blender's redo panel then re-runs it on every
+# property change.  For the rigid solver that is fine -- a fifth of a
+# second -- but the compliant one takes eight, so choosing "Fold
+# Pattern" started an eight-second solve before the user had touched a
+# setting, and every subsequent tweak started another.  The redo panel
+# is the wrong control surface for anything expensive: it assumes
+# re-running is cheap.
+#
+# So the settings live on the scene, in a sidebar panel, and nothing
+# folds until the button is pressed.  `object.fold_solve` keeps its own
+# properties and stays scriptable -- the tests and the icon baker call
+# it directly -- but it is no longer in the Add menu, because an entry
+# there is a promise that choosing it is safe.
+
+
+class MathArtFoldSettings(bpy.types.PropertyGroup):
+    solver: EnumProperty(
+        name="Solver", default='RIGID',
+        items=[
+            ('RIGID', "Rigid Panels",
+             "Panels stay perfectly flat and only the creases bend. "
+             "Exact for rigid-foldable patterns like the Miura, and fast"),
+            ('COMPLIANT', "Bending Paper",
+             "Let the paper bend between creases, as real paper does. "
+             "Slower, and the only way to fold patterns that have no "
+             "rigid folding at all -- the pleated hypar is proved to be "
+             "one (Demaine et al. 2011)"),
+        ],
+        description="How the sheet is allowed to deform while folding")
+    fold_angle: FloatProperty(
+        name="Fold Angle", default=np.deg2rad(70.0),
+        min=np.deg2rad(-179.0), max=np.deg2rad(179.0), subtype='ANGLE',
+        description="Dihedral angle to drive the pattern to")
+    drive: FloatProperty(
+        name="Fold Amount", default=0.8, min=0.0, max=1.0, subtype='FACTOR',
+        description="How far toward each crease's target angle to drive "
+                    "the sheet, for the bending-paper solver")
+    steps: IntProperty(
+        name="Steps", default=12, min=1, max=120,
+        description="States solved along the fold path; each becomes a "
+                    "shape key, so this is also the animation resolution")
+    animate: BoolProperty(
+        name="Animate", default=True,
+        description="Cache the whole path as shape keys driven by a "
+                    "single Fold property, instead of only the end state")
+    colour_strain: BoolProperty(
+        name="Colour by Strain", default=False,
+        description="Paint each vertex by how much the paper is stretched "
+                    "there. Needs the bending-paper solver")
+
+
+class VIEW3D_PT_math_art_fold(bpy.types.Panel):
+    bl_label = "Origami Fold"
+    bl_idname = "VIEW3D_PT_math_art_fold"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Math Art"
+    bl_order = 4
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return (obj is not None and obj.type == 'MESH'
+                and obj.data.attributes.get("crease_assignment") is not None)
+
+    def draw_header(self, context):
+        self.layout.label(icon='MOD_SIMPLEDEFORM')
+
+    def draw(self, context):
+        st = context.scene.math_art_fold
+        lay = self.layout
+        lay.use_property_split = True
+
+        lay.prop(st, "solver")
+        if st.solver == 'RIGID':
+            lay.prop(st, "fold_angle")
+        else:
+            lay.prop(st, "drive")
+        lay.prop(st, "steps")
+        lay.prop(st, "animate")
+        lay.prop(st, "colour_strain")
+        if st.colour_strain and st.solver == 'RIGID':
+            # Say it here rather than after an eight-second solve.
+            lay.label(text="Strain needs Bending Paper", icon='INFO')
+
+        lay.separator()
+        row = lay.row()
+        row.scale_y = 1.5
+        row.operator("object.fold_run", icon='PLAY',
+                     text="Fold" if st.solver == 'RIGID'
+                     else "Fold (Esc cancels)")
+
+        obj = context.active_object
+        if obj is not None and "fold_t" in obj:
+            lay.separator()
+            lay.prop(obj, '["fold_t"]', text="Fold Progress", slider=True)
+
+
+class OBJECT_OT_fold_run(bpy.types.Operator):
+    """Fold the active crease pattern using the panel's settings"""
+
+    bl_idname = "object.fold_run"
+    bl_label = "Fold"
+    # NO properties of its own, deliberately: an operator with none has
+    # an empty redo panel, so Blender has nothing to re-run it for.  That
+    # is the whole reason this exists beside `object.fold_solve`.
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'MESH'
+
+    def invoke(self, context, event):
+        st = context.scene.math_art_fold
+        return bpy.ops.object.fold_solve(
+            'INVOKE_DEFAULT', solver=st.solver, fold_angle=st.fold_angle,
+            drive=st.drive, steps=st.steps, animate=st.animate,
+            colour_strain=st.colour_strain)
+
+    def execute(self, context):
+        st = context.scene.math_art_fold
+        return bpy.ops.object.fold_solve(
+            solver=st.solver, fold_angle=st.fold_angle, drive=st.drive,
+            steps=st.steps, animate=st.animate,
+            colour_strain=st.colour_strain)
+
+
+_CLASSES = (MESH_OT_crease_pattern_add, OBJECT_OT_fold_solve,
+            OBJECT_OT_fold_run, MathArtFoldSettings,
+            VIEW3D_PT_math_art_fold)
 
 
 def register():
     for cls in _CLASSES:
         bpy.utils.register_class(cls)
+    bpy.types.Scene.math_art_fold = bpy.props.PointerProperty(
+        type=MathArtFoldSettings)
 
 
 def unregister():
@@ -742,5 +1000,7 @@ def unregister():
             pass
         _fold_previews = None
     _pattern_items_cache.clear()
+    if hasattr(bpy.types.Scene, "math_art_fold"):
+        del bpy.types.Scene.math_art_fold
     for cls in reversed(_CLASSES):
         bpy.utils.unregister_class(cls)

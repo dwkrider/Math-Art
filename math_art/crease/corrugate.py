@@ -298,6 +298,142 @@ def make_developable(verts, faces, target, interior, rate=0.35, pull=0.05,
     return V
 
 
+
+def _flipped(xy, faces):
+    """Triangles whose 2-D winding disagrees with the majority.
+
+    The 3-D mesh is consistently wound, so a flattening that reverses
+    one triangle has folded it over -- geometry no sheet of paper can
+    take, and invisible to any measure based on edge length alone.
+    """
+    P = np.asarray(xy, dtype=float)[:, :2]
+    F = np.asarray([list(f) for f in faces], dtype=np.int64)
+    a = P[F[:, 1]] - P[F[:, 0]]
+    b = P[F[:, 2]] - P[F[:, 0]]
+    cz = a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]
+    return int(min((cz > 0).sum(), (cz < 0).sum()))
+
+
+def _face_frames(V, F):
+    """Each triangle laid out isometrically in its own 2-D frame.
+
+    The triangle's true shape, with no distortion at all -- flattening
+    is then the problem of agreeing on how to rotate these frames so
+    they fit together in one plane.
+    """
+    p0, p1, p2 = V[F[:, 0]], V[F[:, 1]], V[F[:, 2]]
+    e1 = p1 - p0
+    L1 = np.maximum(np.linalg.norm(e1, axis=1), 1e-12)
+    ex = e1 / L1[:, None]
+    e2 = p2 - p0
+    x2 = np.einsum('ij,ij->i', e2, ex)
+    ey = e2 - x2[:, None] * ex
+    y2 = np.maximum(np.linalg.norm(ey, axis=1), 1e-12)
+    U = np.zeros((len(F), 3, 2))
+    U[:, 1, 0] = L1
+    U[:, 2, 0] = x2
+    U[:, 2, 1] = y2
+    return U
+
+
+def _cotangents(V, F):
+    """Cotangent of each triangle's three interior angles."""
+    out = np.zeros((len(F), 3))
+    for t in range(3):
+        i, j, k = F[:, t], F[:, (t + 1) % 3], F[:, (t + 2) % 3]
+        u, w = V[j] - V[i], V[k] - V[i]
+        cs = np.einsum('ij,ij->i', u, w)
+        sn = np.maximum(np.linalg.norm(np.cross(u, w), axis=1), 1e-12)
+        out[:, t] = cs / sn
+    return out
+
+
+def arap_flatten(verts, faces, xy0, iters=40, cg_iters=200):
+    """As-rigid-as-possible flattening (Liu, Zhang, Xu, Gotsman, Wang 2008).
+
+    WHY NOT SPRING RELAXATION, which is what this used to be.  Pulling
+    on edge lengths knows nothing about orientation, so a triangle that
+    starts folded over stays folded over -- the springs are perfectly
+    happy with a mirrored triangle, since all three edges are the right
+    length.  Measured on the catenoid, whose annular grid gives the
+    relaxation the worst start: 5 of 288 triangles came out inverted,
+    and the resulting crease pattern had a ragged, lumpy boundary that
+    was visibly wrong before any number was consulted.
+
+    ARAP fits a ROTATION to each triangle and asks the layout to agree
+    with those rotations, so an inverted triangle is penalised rather
+    than accepted.  Local step: per face, the best rotation from its
+    true shape to its current layout, from a 2x2 SVD.  Global step: one
+    cotangent-weighted linear solve for all positions at once.
+
+    The global solve is matrix-free conjugate gradient -- the Laplacian
+    is applied by scatter-add rather than assembled -- because a dense
+    factorisation at the operator's maximum 80x80 grid would be a
+    6561-square matrix, and this add-on cannot assume scipy is present.
+    """
+    V = np.asarray(verts, dtype=float)
+    F = np.asarray([list(f) for f in faces], dtype=np.int64)
+    n = len(V)
+    U = _face_frames(V, F)
+    C = _cotangents(V, F)
+    # weight of the edge OPPOSITE each corner
+    W = np.stack([C[:, 2], C[:, 0], C[:, 1]], axis=1)
+    W = np.maximum(W, 1e-6)            # keep the system positive definite
+
+    ii = np.stack([F[:, 0], F[:, 1], F[:, 2]], axis=1)
+    jj = np.stack([F[:, 1], F[:, 2], F[:, 0]], axis=1)
+    du = np.stack([U[:, 1] - U[:, 0], U[:, 2] - U[:, 1],
+                   U[:, 0] - U[:, 2]], axis=1)
+
+    def laplacian(x):
+        out = np.zeros_like(x)
+        d = x[ii] - x[jj]
+        c = W[:, :, None] * d
+        np.add.at(out, ii, c)
+        np.add.at(out, jj, -c)
+        return out
+
+    x = np.asarray(xy0, dtype=float).copy()
+    for _ in range(iters):
+        # local: best rotation per face
+        d = x[ii] - x[jj]
+        S = np.einsum('fka,fkb,fk->fab', d, du, W)
+        a = S[:, 0, 0] + S[:, 1, 1]
+        b = S[:, 1, 0] - S[:, 0, 1]
+        r = np.maximum(np.hypot(a, b), 1e-12)
+        cos, sin = a / r, b / r
+        rot = np.zeros((len(F), 2, 2))
+        rot[:, 0, 0], rot[:, 0, 1] = cos, -sin
+        rot[:, 1, 0], rot[:, 1, 1] = sin, cos
+
+        # global: solve L x = b for the rotated edge targets
+        tgt = np.einsum('fab,fkb->fka', rot, du)
+        rhs = np.zeros_like(x)
+        c = W[:, :, None] * tgt
+        np.add.at(rhs, ii, c)
+        np.add.at(rhs, jj, -c)
+
+        res = rhs - laplacian(x)
+        res -= res.mean(0)             # the system is singular in translation
+        p = res.copy()
+        rs = float(np.sum(res * res))
+        for _cg in range(cg_iters):
+            if rs < 1e-18:
+                break
+            Ap = laplacian(p)
+            Ap -= Ap.mean(0)
+            den = float(np.sum(p * Ap))
+            if abs(den) < 1e-30:
+                break
+            al = rs / den
+            x += al * p
+            res -= al * Ap
+            rs2 = float(np.sum(res * res))
+            p = res + (rs2 / rs) * p
+            rs = rs2
+    return x
+
+
 def flatten(verts, edges, iters=600, seed=None):
     """Lay a 3-D mesh flat, preserving edge lengths as far as possible.
 
@@ -456,8 +592,27 @@ def _fit_one(kind, nu, nv, size, depth, amplitude, iters, develop, axis):
     xs = np.zeros(P.shape[:2])
     ys[1:, :] = np.cumsum(du, axis=0)
     xs[:, 1:] = np.cumsum(dv, axis=1)
-    xy, rep = flatten(verts, edges, iters=iters,
-                      seed=np.stack([xs.ravel(), ys.ravel()], axis=1))
+    seed = np.stack([xs.ravel(), ys.ravel()], axis=1)
+
+    # ARAP, THEN A SPRING POLISH ONLY IF IT DOES NO HARM.
+    #
+    # The polish optimises edge length directly, so it usually improves
+    # that number -- catenoid max error 0.335 to 0.269.  But springs are
+    # blind to orientation: all three edges of a MIRRORED triangle are
+    # exactly the right length, so a polish will happily flip one to buy
+    # a shorter edge somewhere else.  Measured, that is precisely what
+    # it did: ARAP alone leaves 0 inverted triangles on every target,
+    # and the polish introduced 2 on the catenoid.
+    #
+    # A few percent more edge error is approximation.  An inverted
+    # triangle is a crease pattern that cannot be cut out and folded, so
+    # it is not a trade worth making -- the polish is kept only when it
+    # costs no flips.
+    arap = arap_flatten(verts, faces, seed)
+    xy, rep = flatten(verts, edges, iters=max(60, iters // 6), seed=arap)
+    if _flipped(xy, faces) > _flipped(arap, faces):
+        xy, rep = flatten(verts, edges, iters=0, seed=arap)
+        rep["polish"] = "skipped: it inverted triangles"
 
     # HOW WELL THE PLEATED FORM TRACKS THE SURFACE -- measured BETWEEN
     # the samples, not at them.
@@ -491,6 +646,7 @@ def _fit_one(kind, nu, nv, size, depth, amplitude, iters, develop, axis):
     tgt_w = float(np.ptp(target[:, 0]))
     tgt_h = float(np.ptp(target[:, 1]))
     rep["axis"] = int(axis)
+    rep["flipped"] = _flipped(xy, faces)
     rep.update({
         "fit_max": float(fit_err.max()),
         "fit_rms": float(np.sqrt(np.mean(fit_err ** 2))),
@@ -613,6 +769,8 @@ def report_summary(rep):
             f"for a {rep['target_w']:.2f} x {rep['target_h']:.2f} target "
             f"({rep['area_ratio']:.2f}x the area); "
             f"unfolding residual {rep['max_edge_error']:.2g}"
+            + (f"; {rep['flipped']} INVERTED triangle(s)"
+               if rep.get("flipped") else "")
             + (f"; pleats along {'UV'[rep['axis']]}" if 'axis' in rep else "")
             + (f"; the pattern holds the shape to {rep['drift']:.2f} "
                f"of model size" if 'drift' in rep else ""))
@@ -662,6 +820,20 @@ def _selftest():
         f"a spherical cap should be HARDER to corrugate than a saddle "
         f"(positive curvature needs material removed, pleating adds it): "
         f"{errs}")
+
+    # --- no crease pattern may contain an inverted triangle ---------
+    #
+    # A flattening that folds a triangle over is not a pattern anyone
+    # can cut out, and nothing based on edge length can see it: all
+    # three edges of a mirrored triangle are exactly the right length.
+    # The spring relaxation used to produce them on the catenoid, which
+    # showed up as a visibly ragged, lumpy boundary long before any
+    # number complained.
+    for kind in ("HYPAR", "SCHERK", "SPHERE", "CATENOID", "PLANE"):
+        _fr, _f, r = fit(kind, nu=12, nv=12, amplitude=0.12, iters=1200)
+        assert r["flipped"] == 0, (
+            f"{kind}: {r['flipped']} inverted triangle(s) in the emitted "
+            f"crease pattern")
 
     # --- the developability projection is known NOT to help ---------
     #

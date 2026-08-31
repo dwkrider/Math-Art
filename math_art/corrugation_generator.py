@@ -111,16 +111,19 @@ class MESH_OT_corrugation_add(bpy.types.Operator):
 
     def execute(self, context):
         try:
-            wm = context.window_manager
-            wm.progress_begin(0.0, 1.0)
-            try:
-                ax = {'AUTO': None, 'U': 0, 'V': 1}[self.pleat_axis]
-                frame, folded, rep = crease.corrugate.fit(
-                    self.target, nu=self.nu, nv=self.nv, size=self.size,
-                    depth=self.depth, amplitude=self.amplitude,
-                    iters=self.relax, axis=ax)
-            finally:
-                wm.progress_end()
+            # No progress reporting here on purpose.  This operator is
+            # fast -- measured 0.15s to 0.68s from 10x10 to 24x24 -- and
+            # a progress indicator on a sub-second operation is noise.
+            # Automatic pleat direction costs two extra solves and is
+            # the one slow case; if that becomes a complaint, this needs
+            # the same modal treatment as Fold Pattern rather than
+            # `progress_*`, which draws nothing from inside a blocking
+            # execute().
+            ax = {'AUTO': None, 'U': 0, 'V': 1}[self.pleat_axis]
+            frame, folded, rep = crease.corrugate.fit(
+                self.target, nu=self.nu, nv=self.nv, size=self.size,
+                depth=self.depth, amplitude=self.amplitude,
+                iters=self.relax, axis=ax)
         except crease.corrugate.CorrugateError as exc:
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
@@ -132,10 +135,28 @@ class MESH_OT_corrugation_add(bpy.types.Operator):
         if self.make_pattern:
             flat = np.hstack([np.asarray(frame.verts, dtype=float)[:, :2],
                               np.zeros((frame.n_verts, 1))])
-            # Set the pattern beside the folded form rather than through
-            # it, so both are visible at once -- comparing them is the
-            # whole point of emitting both.
-            flat[:, 0] += 1.35 * (rep["sheet_w"] + rep["target_w"])
+            # BELOW the folded form, and far enough below to stay clear
+            # once it is folded too.
+            #
+            # The clearance is not a guess.  Folding this pattern is
+            # supposed to reproduce the corrugation, so the folded
+            # pattern will occupy the same HEIGHT as the corrugation --
+            # call it H.  The sheet starts flat at plane z = p and rises
+            # or falls from there depending on where the solver settles,
+            # so in the worst case it reaches all the way up to p + H.
+            # Requiring p + H to stay under the corrugation's underside
+            # gives p = z_min - H - margin, which holds whichever way
+            # the fold happens to go rather than only for the direction
+            # seen while testing.
+            fz = np.asarray(folded, dtype=float)
+            height = float(np.ptp(fz[:, 2])) or float(rep["target_w"]) * 0.25
+            margin = 0.15 * max(height, float(rep["target_w"]))
+            # Directly underneath, not offset sideways: lining the two up
+            # in x and y is what makes the crease pattern readable
+            # against the shape it produces.
+            flat[:, 0] += fz[:, 0].mean() - flat[:, 0].mean()
+            flat[:, 1] += fz[:, 1].mean() - flat[:, 1].mean()
+            flat[:, 2] += float(fz[:, 2].min()) - height - margin
             objs.append(self._mesh_object(
                 context, f"{self.target.title()} Crease Pattern", flat,
                 frame.faces, frame.edges, frame.assignment,

@@ -273,7 +273,6 @@ ORIGAMI = Menu(
         _e("mesh.fold_import", 'IMPORT', "Import Crease Pattern",
            builtin=True),
         SEP,
-        _e("object.fold_solve", 'MOD_SIMPLEDEFORM', builtin=True),
         _e("object.select_bad_creases", 'ERROR', builtin=True),
         _e("view3d.crease_view", 'HIDE_OFF', "Crease Pattern View",
            builtin=True),

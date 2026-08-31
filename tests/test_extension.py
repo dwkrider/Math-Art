@@ -34,6 +34,16 @@ print("[menu] VIEW3D_MT_math_art_add registered OK")
 # is missing whenever someone gets round to it.
 # --------------------------------------------------------------------
 PANEL_ONLY = {
+    # Folding is expensive -- the compliant solver takes ~8s -- and an
+    # Add-menu entry runs the moment it is chosen, with Blender's redo
+    # panel re-running it on every property tweak after that.  Its
+    # settings live in the Math Art sidebar instead, where nothing
+    # happens until the Fold button is pressed.  Still registered, and
+    # still scriptable: the tests and the icon baker call it directly.
+    "object.fold_solve": "Math Art sidebar; too slow to run on menu click",
+    # The panel's button. No properties of its own, so Blender has no
+    # redo panel to re-run it from.
+    "object.fold_run": "the sidebar's Fold button",
     # Superseded by mesh.icosahedron_stellation_add, which merged the two
     # stellation generators behind a seed selector. Kept registered for one
     # release so objects built with it stay live-editable, and deliberately
