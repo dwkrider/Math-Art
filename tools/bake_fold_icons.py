@@ -34,7 +34,8 @@ import bpy                                                # noqa: E402
 # registers math_art on import via render_docs.  Reuse it rather than
 # keeping a second studio that can drift.
 import bake_menu_icons as bmi                             # noqa: E402
-from math_art.fold_pattern_generator import _NATURAL_FOLD  # noqa: E402
+from math_art.fold_pattern_generator import (_NATURAL_FOLD,  # noqa: E402
+                                             _NATURAL_ROWS)
 
 OUT_DIR = os.path.join(ROOT, "math_art", "icons", "folds")
 
@@ -42,31 +43,27 @@ OUT_DIR = os.path.join(ROOT, "math_art", "icons", "folds")
 #: like the saddle solids rather than the menu icons' 64.
 RES = 128
 
-#: Per pattern: how many panels the thumbnail shows.  The FOLD ANGLE is
-#: not chosen here -- it comes from the operator's own `_NATURAL_FOLD`,
-#: so the icon shows the shape you actually get when you pick that
-#: pattern.  Only the framing (how many panels read well at 128 px) is
-#: an icon-specific choice.
+#: Per pattern: the icon-specific framing only.  The ring count comes
+#: from `_NATURAL_ROWS` and the fold angle from `_NATURAL_FOLD`, both
+#: owned by the operator -- so each thumbnail shows exactly what that
+#: pattern produces from its own defaults, and cannot drift from it.
+#: Only the column count is chosen here, for legibility at 128 px.
 CASES = {
-    'MIURA':     dict(rows=4, cols=6),
-    'ACCORDION': dict(rows=4, cols=8),
+    'MIURA':     dict(cols=6),
+    'ACCORDION': dict(cols=8),
     # 4x6, the operator's own defaults, NOT a smaller framing.  For a
     # waterbomb the column count is how many cells go round the
     # circumference, so 3x4 closed into a squat, faceted tube while the
     # default 4x6 is visibly cylindrical -- the icon undersold the
     # generator, which is the one thing an icon must not do.
-    'WATERBOMB': dict(rows=4, cols=6),
-    'YOSHIMURA': dict(rows=4, cols=6),
-    # 16 rings, folded hard -- the ring count and the depth were chosen
-    # by the user from a live viewport, and they are the right call for
-    # the reason Demaine, Demaine and Lubiw give: "the more concentric
-    # squares one folds, the closer the pleated hypar is to a true hypar
-    # surface".  At 6 rings the pleats read as a few steps; at 16 they
-    # read as the surface.  The sector count comes from `_PINNED_SIDES`
-    # via the operator, so these two differ only in which pattern is
-    # asked for -- 4 sectors and 6.
-    'HYPAR':     dict(rows=16, cols=4, steps=14),
-    'MONKEY':    dict(rows=16, cols=6, steps=14),
+    'WATERBOMB': dict(cols=6),
+    'YOSHIMURA': dict(cols=6),
+    # Sectors are pinned by the operator (`_PINNED_SIDES`), so `cols` is
+    # ignored for these two and they differ only in which pattern is
+    # asked for.  Their ring count and fold angle come from the operator
+    # tables, so each icon shows what its own defaults produce.
+    'HYPAR':     dict(cols=4, steps=14),
+    'MONKEY':    dict(cols=6, steps=14),
 }
 
 #: Three-quarter view.  A folded corrugation seen straight down reads as
@@ -81,7 +78,7 @@ def bake(key, path):
     bpy.ops.object.select_all(action='DESELECT')
     case = CASES[key]
     bpy.ops.mesh.crease_pattern_add(
-        pattern=key, rows=case['rows'], cols=case['cols'],
+        pattern=key, rows=_NATURAL_ROWS[key], cols=case['cols'],
         size=2.0, check=False,
         auto_fold=True,
         fold_angle=math.radians(_NATURAL_FOLD[key]),

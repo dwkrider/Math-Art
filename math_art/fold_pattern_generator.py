@@ -146,6 +146,25 @@ _NATURAL_FOLD = {
     'MONKEY': 150.0,
 }
 
+#: How many rows -- rings, for the concentric-pleat patterns -- each
+#: pattern wants by default.  Same reasoning as `_NATURAL_FOLD`: one
+#: shared number cannot suit all six.  Four rows is a readable sheet for
+#: the tessellations, but a hypar at four rings is a few coarse steps
+#: rather than a surface, and Demaine, Demaine and Lubiw say why --
+#: "the more concentric squares one folds, the closer the pleated hypar
+#: is to a true hypar surface".  Sixteen is where it reads as one.
+#:
+#: `tools/bake_fold_icons.py` takes its ring count from HERE, so the
+#: thumbnail and the default output cannot drift apart.
+_NATURAL_ROWS = {
+    'MIURA': 4,
+    'ACCORDION': 4,
+    'WATERBOMB': 4,
+    'YOSHIMURA': 4,
+    'HYPAR': 16,
+    'MONKEY': 16,
+}
+
 #: Patterns whose sector count is part of their identity rather than a
 #: free parameter.  The hypar and the monkey saddle are the SAME
 #: construction at four and six sectors, and the difference is a
@@ -155,10 +174,20 @@ _PINNED_SIDES = {'HYPAR': 4, 'MONKEY': 6}
 
 
 def _pattern_changed(self, context):
-    """Snap Fold Angle to the newly chosen pattern's natural angle."""
+    """Snap the per-pattern settings to the newly chosen pattern.
+
+    Both directions matter, which is why every pattern is in the tables
+    rather than only the ones that differ: switching TO the hypar has to
+    raise the ring count to 16, and switching AWAY from it has to put it
+    back, or the next Miura is built at sixteen rows because of a choice
+    made for a different pattern.
+    """
     nat = _NATURAL_FOLD.get(self.pattern)
     if nat is not None:
         self.fold_angle = np.deg2rad(nat)
+    rows = _NATURAL_ROWS.get(self.pattern)
+    if rows is not None:
+        self.rows = rows
 
 
 def _pattern_label(key):
