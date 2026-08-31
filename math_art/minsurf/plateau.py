@@ -1405,6 +1405,13 @@ CONJUGATE_SURFACES = {
         # `rhs6 := rhs3` in the datafile.  Not taken on trust: measured
         # independently here the two arcs give -0.14968 and -0.14965.
         'same': {5: 2},
+        # Brakke names one generator per constraint, a..f = arcs 0..5,
+        # and GW5adj.fe uses their MEASURED offsets directly -- unlike
+        # the hybrid files it never translates the surface to a
+        # canonical pose first, which is the proof that offsets can live
+        # inside the generators.
+        'letters': {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5},
+        'words': ('baca', 'adacada'),   # showwprism (12), showlayer (42)
     },
 }
 
@@ -1456,6 +1463,14 @@ for _k, _nm, _al in (
                     (0.5, -SQRT3 / 2.0, 0.0), (0.0, 0.0, 1.0),
                     (0.0, 1.0, 0.0)],
         'same': {2: 0},                       # rhs3 := rhs1
+        # HRHTadj.fe's five generators, in ITS order, mapped onto our
+        # arc indices: a = the z=rhs2 mirror (arc 1), b = y=rhs6 (arc 5),
+        # c = the slant mirror (arc 3), d = z=rhs5 (arc 4), e = x=rhs1
+        # (arc 0).  Brakke translates the surface so rhs2, rhs4 and rhs6
+        # vanish before declaring a, b, c; that is a change of pose, not
+        # of geometry, so the measured offsets are used here instead.
+        'letters': {'a': 1, 'b': 5, 'c': 3, 'd': 4, 'e': 0},
+        'words': ('abcbcbc', 'abcbcbcecbcbc'),      # full (24), seven
     }
 del _k, _nm, _al
 
@@ -1481,8 +1496,9 @@ def conjugate_patch(key, m=120, rings=20, iters=400):
     """Solve the Plateau problem, conjugate it, and land its boundary
     exactly on the mirror planes.
 
-    Returns `(V, quads, planes)`, `planes` being the distinct mirrors as
-    `(unit normal, offset)` pairs.
+    Returns `(V, quads, arc_planes)` with one `(unit normal, offset)`
+    per boundary arc, in the datafile's own constraint order -- the
+    assembly words index generators by that order.
     """
     spec = CONJUGATE_SURFACES[key]
     poly = np.asarray(spec['poly'], dtype=float)
@@ -1516,17 +1532,10 @@ def conjugate_patch(key, m=120, rings=20, iters=400):
                                  outer_iters=max(1, iters // 2)),
                    dtype=float)
 
-    planes = []
-    for n, c in zip(nrm, off):
-        dup = False
-        for n2, c2 in planes:
-            d = float(n @ n2)
-            if abs(d) > 1.0 - 1e-9 and abs(c - c2 * (1.0 if d > 0 else -1.0)) < 1e-9:
-                dup = True
-                break
-        if not dup:
-            planes.append((n, c))
-    return W, [tuple(f) for f in quads], planes
+    # One plane PER ARC, in datafile order -- not deduplicated.  The
+    # assembly words below index generators by arc, so collapsing
+    # coincident planes here would renumber the letters.
+    return W, [tuple(f) for f in quads], list(zip(nrm, off))
 
 
 def _reflection(n, c):
@@ -1536,134 +1545,164 @@ def _reflection(n, c):
     return M
 
 
-# `Reflections` -> how many copies to keep, nearest first.  Two choices
-# are baked in here and both were made after measuring the alternative.
-#
-# The growth rule is SPATIAL, not word-length.  Reflecting in two
-# parallel mirrors makes a translation, so a breadth-first ball in the
-# WORD metric runs away along whichever translation has the shortest
-# word: GW came out 6.0 x 5.4 x 16.8 that way -- a column, not a unit
-# cell, which is exactly what the published pictures are not.  Keeping
-# copies by distance instead gives 4.8 x 5.4 x 5.6, the compact chunk the
-# pictures show.
-#
-# And the budget is a COPY COUNT rather than a radius, because the groups
-# differ in order: at one patch diameter GW admits 47 copies and the
-# H"-R|T'-R' hybrid only 13, so a shared radius makes one row twenty
-# times heavier than another for no visible gain.  Counting copies keeps
-# the mesh predictable across rows.
-_CONJ_COPIES = (12, 32, 72, 144)
+# Order of the transform set each surface's own cell word produces,
+# measured by running Brakke's datafiles in Evolver 2.70.  Gated as an
+# equality in `_selftest`, because a change here means the letter-to-arc
+# mapping is wrong, not that the mesh got slightly worse.
+_CONJ_CELL_COPIES = {'GW': 12, 'HT_HR': 24, 'TR_HT': 24, 'HR_TR': 24}
 
 
-def conjugate_tile(V, quads, planes, depth=2, tol=1e-5, maxlen=14):
-    """Reflect the patch in its mirror planes, keeping the
-    `_CONJ_COPIES[depth-1]` copies whose centroids land nearest the
-    original.
+def _matkey(M):
+    return tuple(np.round(np.asarray(M)[:3, :].ravel(), 7) + 0.0)
 
-    Copies are deduplicated by IMAGE (the transformed centroid), not by
-    transform word: distinct words routinely place the patch identically,
-    and deduplicating on the word instead leaves the orbit full of exact
-    overlaps.
+
+def eval_transform_expr(gens, word):
+    """Evolver's `transform_expr`, which is how Brakke states a unit cell.
+
+    Each letter `g` denotes the SET {I, g}, and juxtaposition means all
+    ordered products, so scanning the word left to right the transform
+    set doubles:  S := S union S*g.  The result is every product of a
+    SUBSEQUENCE of the word, deduplicated as group elements -- which is
+    what keeps it small: "bcbcbc" is 12 transforms (the dihedral group
+    D6), not 2^6 = 64, and "adacada" is 42, not 128.
+
+    Composition is left to right, so the RIGHTMOST letter acts on points
+    first.  Read the word right to left and it says: reflect the patch in
+    the last letter's mirror, then double that cluster in the next, and
+    so on.
+
+    Verified against Evolver 2.70 itself, which reports 16 for SSadj's
+    "dcba", 24 for the hybrids' "abcbcbc" and 42 for GW's "adacada".
+    """
+    S = [np.eye(4)]
+    seen = {_matkey(S[0])}
+    for ch in word:
+        G = gens[ch]
+        for M in list(S):
+            N = M @ G
+            k = _matkey(N)
+            if k not in seen:
+                seen.add(k)
+                S.append(N)
+    return S
+
+
+def conjugate_tile(V, quads, arc_planes, spec, depth=2, tol=1e-5):
+    """Assemble the cell Brakke's datafile names, not a ball of copies.
+
+    `Reflections` selects: 1 the bare patch, 2 the surface's own cell
+    word, 3+ the next word it defines (a layer, or seven cells).
+
+    This replaced a nearest-N centroid ball, and the ball was wrong twice
+    over.  Its counts (12/32/72/144) missed the canonical ones -- 12, 24
+    and 42 for these surfaces -- and its SHAPE was wrong regardless:
+    GW's layer is a flat 6.2 x 6.5 x 1.9 hexagonal slab, which no ball
+    approximates.  An earlier attempt grew the orbit breadth-first in the
+    WORD metric instead, which is worse again: reflecting in two parallel
+    mirrors makes a translation, so the shortest-word translation runs
+    away and GW came out 6.0 x 5.4 x 16.8, a column.
+
+    The groups are infinite, but that never has to be dealt with: a word
+    of length L bounds the set at 2^L before dedup, and Brakke's longest
+    is 13 letters.
     """
     V = np.asarray(V, dtype=float)
+    words = spec.get('words') or ()
+    if int(depth) <= 1 or not words:
+        return V, list(quads), 1
+    word = words[min(int(depth) - 2, len(words) - 1)]
+    gens = {ch: _reflection(*arc_planes[k])
+            for ch, k in spec['letters'].items()}
+    mats = eval_transform_expr(gens, word)
+
+    # A second, IMAGE-level dedup on top of the matrix one: distinct
+    # group elements can still place this particular patch identically
+    # when the patch is stabilised by part of the group.
+    keep = []
+    seen = set()
     c0 = V.mean(0)
-    diam = float(np.linalg.norm(V.max(0) - V.min(0)))
-    want = _CONJ_COPIES[min(max(int(depth), 1), len(_CONJ_COPIES)) - 1]
-    # Search a generous ball and then take the nearest `want`; the ball
-    # only has to be big enough to contain them.
-    radius = 4.0 * diam
+    for M in mats:
+        k = tuple(np.round(c0 @ M[:3, :3].T + M[:3, 3], 5))
+        if k in seen:
+            continue
+        seen.add(k)
+        keep.append(M)
 
-    gens = [_reflection(n, c) for n, c in planes]
-    ident = np.eye(4)
-    found = [(0.0, 0, ident)]
-    seen = {tuple(np.round(c0, 4))}
-    frontier = [ident]
-    order = 1
-    for _ in range(int(maxlen)):
-        if len(found) > 8 * want:
-            break
-        nxt = []
-        for M in frontier:
-            for g in gens:
-                N = g @ M
-                cc = c0 @ N[:3, :3].T + N[:3, 3]
-                d = float(np.linalg.norm(cc - c0))
-                if d > radius:
-                    continue
-                k = tuple(np.round(cc, 4))
-                if k in seen:
-                    continue
-                seen.add(k)
-                nxt.append(N)
-                # `order` breaks ties deterministically -- two copies at
-                # equal distance must not depend on dict ordering.
-                found.append((d, order, N))
-                order += 1
-        frontier = nxt
-        if not nxt:
-            break
-    found.sort(key=lambda t: (t[0], t[1]))
-    mats = [t[2] for t in found[:want]]
-
-    pts = np.concatenate([V @ M[:3, :3].T + M[:3, 3] for M in mats])
+    pts = np.concatenate([V @ M[:3, :3].T + M[:3, 3] for M in keep])
     nV = len(V)
-    faces = [tuple(i + j * nV for i in f)
-             for j in range(len(mats)) for f in quads]
+    faces = []
+    for j, M in enumerate(keep):
+        flip = float(np.linalg.det(M[:3, :3])) < 0.0
+        for f in quads:
+            g = tuple(i + j * nV for i in f)
+            faces.append(g[::-1] if flip else g)
     W, wf = _weld_points(pts, faces, tol)
-    return W, wf, len(mats)
+    return W, wf, len(keep)
 
 
-def conjugate_tile_checked(V, quads, planes, depth=2):
-    """`conjugate_tile`, but only if the orbit verifies.
+def _orbit_defects(W, wf):
+    """(duplicate faces, over-shared edges, component count)."""
+    dup = len(wf) - len({frozenset(f) for f in wf})
+    ec = {}
+    for f in wf:
+        mm = len(f)
+        for t in range(mm):
+            x, y = f[t], f[(t + 1) % mm]
+            if x == y:
+                continue
+            e = (x, y) if x < y else (y, x)
+            ec[e] = ec.get(e, 0) + 1
+    over = sum(1 for v in ec.values() if v > 2)
+    parent = list(range(len(W)))
 
-    The gate is the R family's, and it is kept strict for the same
-    reason: an orbit that fails it is not a slightly-wrong surface, it is
-    a pile of coincident sheets that still renders as a plausible
-    picture.  Falling back to the bare patch is the correct answer, not a
-    consolation prize.
+    def _find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for f in wf:
+        r0 = _find(f[0])
+        for v in f[1:]:
+            r1 = _find(v)
+            if r0 != r1:
+                parent[r1] = r0
+    comps = len({_find(i) for i in range(len(W))})
+    return dup, over, comps
+
+
+def conjugate_tile_checked(V, quads, arc_planes, spec, depth=2):
+    """`conjugate_tile`, but only if the assembly verifies.
+
+    Tries the requested word FIRST and falls back through the shorter
+    ones, ending at the bare patch.  It used to count upwards from depth
+    1 and stop at the first failure, which silently disabled the whole
+    feature the moment depth 1 came to mean "the bare patch": that
+    returns one copy, the loop read one copy as a failed orbit, and every
+    surface fell back before the real word was ever tried.
+
+    The gate itself is the R family's and stays strict for the same
+    reason: an assembly that fails it is not a slightly-wrong surface but
+    a pile of coincident sheets, which still renders as a plausible
+    picture.  Falling back is the correct answer, not a consolation
+    prize.
     """
-    best = (np.asarray(V, dtype=float), list(quads), 1)
-    for d in range(1, max(int(depth), 0) + 1):
-        W, wf, n = conjugate_tile(V, quads, planes, depth=d)
+    for d in range(max(int(depth), 1), 1, -1):
+        W, wf, n = conjugate_tile(V, quads, arc_planes, spec, depth=d)
         if n <= 1:
-            break
-        if len(wf) != len({frozenset(f) for f in wf}):
-            break
-        ec = {}
-        for f in wf:
-            mm = len(f)
-            for t in range(mm):
-                x, y = f[t], f[(t + 1) % mm]
-                if x == y:
-                    continue
-                e = (x, y) if x < y else (y, x)
-                ec[e] = ec.get(e, 0) + 1
-        if any(v > 2 for v in ec.values()):
-            break
-        parent = list(range(len(W)))
-
-        def _find(i):
-            while parent[i] != i:
-                parent[i] = parent[parent[i]]
-                i = parent[i]
-            return i
-
-        for f in wf:
-            r0 = _find(f[0])
-            for v in f[1:]:
-                r1 = _find(v)
-                if r0 != r1:
-                    parent[r1] = r0
-        if len({_find(i) for i in range(len(W))}) != 1:
-            break
-        best = (W, wf, n)
-    return best
+            continue
+        dup, over, comps = _orbit_defects(W, wf)
+        if dup == 0 and over == 0 and comps == 1:
+            return W, wf, n
+    return np.asarray(V, dtype=float), list(quads), 1
 
 
 def conjugate_surface(key, m=120, rings=20, iters=400, depth=2):
     """Patch, orbit and patch area -- the headless entry point."""
-    V, quads, planes = conjugate_patch(key, m=m, rings=rings, iters=iters)
-    W, wf, n = conjugate_tile_checked(V, quads, planes, depth=depth)
+    V, quads, arc_planes = conjugate_patch(key, m=m, rings=rings,
+                                           iters=iters)
+    W, wf, n = conjugate_tile_checked(V, quads, arc_planes,
+                                      CONJUGATE_SURFACES[key], depth=depth)
     T = np.asarray(_quads_to_tris(quads))
     return W, wf, n, mesh_area(np.asarray(V, dtype=float), T)
 
@@ -1948,12 +1987,19 @@ def _selftest():
         offp = 0.0
         for i in bnd:
             offp = max(offp, min(abs(float(Vc[i] @ n) - c) for n, c in planes))
-        _W, _wf, ncopy = conjugate_tile_checked(Vc, quads, planes, depth=2)
-        good = drift < 0.01 and offp < 1e-9 and ncopy > 1 and areas[1] > 1e-6
+        _W, _wf, ncopy = conjugate_tile_checked(
+            Vc, quads, planes, CONJUGATE_SURFACES[key], depth=2)
+        # The copy count is not a soft quality measure -- it is the ORDER
+        # of the transform set Brakke's own word produces, checked
+        # against Evolver 2.70 running his datafile.  Anything else means
+        # the letter-to-arc mapping has drifted, so it is an equality.
+        want = _CONJ_CELL_COPIES[key]
+        good = (drift < 0.01 and offp < 1e-9 and ncopy == want
+                and areas[1] > 1e-6)
         ok &= good
         print("plateau: conjugate %-6s area %.6f -> %.6f (drift %.3f%%), "
-              "on-plane %.0e, %d copies %s"
-              % (key, areas[0], areas[1], 100.0 * drift, offp, ncopy,
+              "on-plane %.0e, %d copies (Evolver %d) %s"
+              % (key, areas[0], areas[1], 100.0 * drift, offp, ncopy, want,
                  'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
