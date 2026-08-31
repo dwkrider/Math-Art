@@ -158,6 +158,36 @@ class CompliantFolder:
         omega = float(np.sqrt(self.k_ax.max()))
         self.dt = (dt_safety / (2.0 * np.pi * omega)) if omega > 0 else 1e-3
 
+        #: How many steps a settled fold needs, derived from `dt` rather
+        #: than fixed.
+        #:
+        #: A FIXED STEP COUNT SILENTLY UNDER-SOLVES FINER MESHES.  `dt`
+        #: comes from the stiffest spring, and k_axial = 200/l0 -- so
+        #: refining the grid shortens l0, stiffens the springs and
+        #: shrinks dt, and the same number of steps then buys less
+        #: simulated time.  Measured on a hyperbolic paraboloid at
+        #: 12000 steps: a 10x10 grid reached fold depth 0.903 while a
+        #: 16x16 reached 0.623, purely because the second had 18.6 units
+        #: of simulated time against the first's 23.3.  Depth looked
+        #: like a mesh-resolution effect and was really a budget one.
+        #:
+        #: Both converge by about 80 units of simulated time, so the
+        #: budget is set from that and capped, since these are Python
+        #: loops and an unbounded budget is a hang.
+        #:
+        #: THE CAP IS A DELIBERATE TRADE, and worth stating because the
+        #: numbers behind it are unflattering.  Raising it does keep
+        #: buying depth, but slowly and expensively: on a hyperbolic
+        #: paraboloid, 41k steps reached 69% of the intended depth in
+        #: 39s, 45k reached 63% at 16x16 in 78s, and 45k reached 52% at
+        #: 20x20 in 104s.  Even an unbounded budget does not reach 100%,
+        #: because for a curved target the pattern's equilibrium is NOT
+        #: the intended shape -- that gap is the fitting problem, not
+        #: the solver's, and spending two minutes to close a third of it
+        #: is not a good exchange.  25000 keeps the common cases under
+        #: about half a minute, and the fold is cancellable.
+        self.settle_steps = int(min(25000, max(6000, 80.0 / self.dt)))
+
         self._face_rest = self._corner_angles(self.rest)
 
     # -- topology ---------------------------------------------------
@@ -378,7 +408,7 @@ class CompliantFolder:
         self.pos += self.vel * dt
         return float(np.abs(F).max())
 
-    def run(self, drive=1.0, steps=12000, ramp=0.35, tol=1e-6,
+    def run(self, drive=1.0, steps=None, ramp=0.35, tol=1e-6,
             progress=None):
         """Fold to `drive` (0 flat, 1 the full target angles).
 
@@ -388,6 +418,7 @@ class CompliantFolder:
         each panel should swing, and it settles into a tangle that is a
         perfectly good energy minimum and not the fold anyone wanted.
         """
+        steps = self.settle_steps if steps is None else int(steps)
         n_ramp = max(1, int(steps * ramp))
         last = 0.0
         # Report every ~1%: often enough to move a bar, rarely enough

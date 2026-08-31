@@ -154,13 +154,33 @@ class MESH_OT_corrugation_add(bpy.types.Operator):
             # Directly underneath, not offset sideways: lining the two up
             # in x and y is what makes the crease pattern readable
             # against the shape it produces.
-            flat[:, 0] += fz[:, 0].mean() - flat[:, 0].mean()
-            flat[:, 1] += fz[:, 1].mean() - flat[:, 1].mean()
-            flat[:, 2] += float(fz[:, 2].min()) - height - margin
-            objs.append(self._mesh_object(
+            #
+            # THE OFFSET GOES ON THE OBJECT, NOT INTO THE MESH.  Baking it
+            # into the vertices was the obvious thing and it broke
+            # folding: a sheet sitting at a constant z = -2.02 is planar
+            # but not FLAT, and the solver -- which quite reasonably wants
+            # to start from the plane -- refused it as "already folded".
+            # Placement is a transform, so it belongs in the transform.
+            # BOUNDING-BOX CENTRE, not the mean of the vertices.  The
+            # mean is the centre of MASS of the sample points, which
+            # only coincides with the middle of the shape when the shape
+            # is symmetric and evenly sampled.  The catenoid's flat
+            # pattern is neither -- it unrolls to a long curved strip --
+            # so centring on the mean pushed it sideways, visibly off to
+            # one side of the form it belongs under.
+            def _mid(a, i):
+                return 0.5 * (float(a[:, i].min()) + float(a[:, i].max()))
+
+            pattern_offset = (
+                _mid(fz, 0) - _mid(flat, 0),
+                _mid(fz, 1) - _mid(flat, 1),
+                float(fz[:, 2].min()) - height - margin)
+            pat = self._mesh_object(
                 context, f"{self.target.title()} Crease Pattern", flat,
                 frame.faces, frame.edges, frame.assignment,
-                frame.fold_angle))
+                frame.fold_angle)
+            pat.location = pattern_offset
+            objs.append(pat)
 
         for o in context.selected_objects:
             o.select_set(False)
