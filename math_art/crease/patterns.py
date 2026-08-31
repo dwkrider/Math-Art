@@ -123,10 +123,10 @@ def miura(rows=4, cols=6, panel_a=1.0, panel_b=1.0, alpha=np.deg2rad(60.0)):
     # guessed.  Evaluating Schenk and Guest's p(i, j) and measuring the
     # dihedral angle across each crease gives:
     #
-    #   straight row lines   sign alternates with (i + j) -- so it flips
-    #                        ALONG a row, segment by segment, not merely
-    #                        from one row to the next
-    #   zigzag columns       sign depends on j alone, constant down the
+    #   straight row lines   MOUNTAIN where (i + j) is ODD -- so the sign
+    #                        flips ALONG a row, segment by segment, not
+    #                        merely from one row to the next
+    #   zigzag columns       VALLEY where j is odd, constant down the
     #                        whole zigzag
     #
     # Maekawa then comes out at every interior vertex: the two row-line
@@ -142,6 +142,17 @@ def miura(rows=4, cols=6, panel_a=1.0, panel_b=1.0, alpha=np.deg2rad(60.0)):
     # folding like an accordion while the zigzags stay dead flat.  The
     # local conditions are necessary, not sufficient, and this is what
     # that costs in practice.
+    #
+    # THE ROW-LINE PARITY WAS ONCE THE OTHER WAY ROUND, and every check
+    # then in place passed anyway, which is why `_selftest` now measures
+    # the labels against the closed form directly.  Flipping that one
+    # family preserves the 1-1 at each vertex, so Maekawa still held;
+    # Kawasaki never looks at assignments at all; and the folded geometry
+    # still matched Schenk and Guest because the solver's corrector pulled
+    # it back onto the true branch despite being seeded the wrong way
+    # along the row creases.  The only visible symptom was in the
+    # viewport -- valleys drawn in mountain red and vice versa, on the
+    # shallower of the two families.
     # THE SEED, and why the assignment alone is not enough.  A crease
     # pattern's mountain/valley labels give the SIGN of each fold angle
     # but say nothing about relative MAGNITUDE, and the two Miura crease
@@ -157,11 +168,11 @@ def miura(rows=4, cols=6, panel_a=1.0, panel_b=1.0, alpha=np.deg2rad(60.0)):
     seed = []
     for i in range(rows + 1):
         for j in range(cols + 1):
-            # straight row line: alternates with (i + j)
+            # straight row line: mountain where (i + j) is odd
             if j < cols:
                 on_rim = i in (0, rows)
                 kind = BOUNDARY if on_rim else (
-                    MOUNTAIN if (i + j) % 2 == 0 else VALLEY)
+                    MOUNTAIN if (i + j) % 2 == 1 else VALLEY)
                 if B.e(idx[i][j], idx[i][j + 1], kind):
                     seed.append(0.0 if on_rim else
                                 (-1.0 if kind == MOUNTAIN else 1.0)
@@ -355,6 +366,90 @@ def _selftest():
         rep = validate(fr)
         assert rep.checked and rep.n_interior == 9, rep.summary()
         assert rep, f"alpha={deg}: {rep.summary()}"
+
+    # --- the LABELS themselves, against the closed-form folded state ---
+    #
+    # Maekawa and Kawasaki above cannot do this job: the row-line parity
+    # was once inverted and both still passed, because flipping a whole
+    # family preserves the 1-1 split at each vertex and Kawasaki never
+    # reads assignments at all.  So measure the real thing -- build
+    # Schenk and Guest's folded Miura, orient each panel by its CCW
+    # winding in the FLAT pattern, and ask which way the paper actually
+    # goes at every crease.
+    def _mv_oracle(R, C, gv, th=1.0, av=1.0, bv=1.0):
+        H = av * np.sin(th) * np.sin(gv)
+        ct, tg = np.cos(th), np.tan(gv)
+        Sc = bv * ct * tg / np.sqrt(1 + ct * ct * tg * tg)
+        L = av * np.sqrt(1 - np.sin(th) ** 2 * np.sin(gv) ** 2)
+        Vv = bv / np.sqrt(1 + ct * ct * tg * tg)
+        P = np.array([[i * Sc,
+                       j * L + (Vv / 2) * (1 - (-1) ** i),
+                       (H / 2) * (1 - (-1) ** j)]
+                      for i in range(R + 1) for j in range(C + 1)])
+        FL = np.array([[j * av + (i % 2) * bv * np.cos(gv), i * bv * np.sin(gv)]
+                       for i in range(R + 1) for j in range(C + 1)])
+
+        def vid(i, j):
+            return i * (C + 1) + j
+
+        quads = []
+        for i in range(R):
+            for j in range(C):
+                q = [vid(i, j), vid(i, j + 1), vid(i + 1, j + 1), vid(i + 1, j)]
+                p = FL[q]
+                cz = ((p[1][0] - p[0][0]) * (p[2][1] - p[0][1]) -
+                      (p[1][1] - p[0][1]) * (p[2][0] - p[0][0]))
+                quads.append(q[::-1] if cz < 0 else q)
+
+        ef = {}
+        for fi, q in enumerate(quads):
+            for t in range(4):
+                a2, b2 = q[t], q[(t + 1) % 4]
+                ef.setdefault((min(a2, b2), max(a2, b2)), []).append(fi)
+
+        def nrm(q):
+            p = P[q]
+            n = np.cross(p[1] - p[0], p[2] - p[0])
+            return n / np.linalg.norm(n)
+
+        out = {}
+        for key, fl in ef.items():
+            if len(fl) != 2:
+                out[key] = BOUNDARY
+                continue
+            nv = nrm(quads[fl[0]]) + nrm(quads[fl[1]])
+            nv = nv / np.linalg.norm(nv)
+            far = [w for q in (quads[fl[0]], quads[fl[1]])
+                   for w in q if w not in key]
+            d = P[far].mean(0) - P[list(key)].mean(0)
+            out[key] = VALLEY if float(d @ nv) > 0 else MOUNTAIN
+        return out
+
+    for (R, C, gd) in ((4, 6, 60.0), (3, 4, 45.0), (4, 4, 75.0)):
+        gv = np.deg2rad(gd)
+        fr = miura(rows=R, cols=C, alpha=gv)
+        truth = _mv_oracle(R, C, gv)
+        # map builder vertices back to (i, j) by position
+        pos = {}
+        for i in range(R + 1):
+            for j in range(C + 1):
+                w = (j * 1.0 + (i % 2) * np.cos(gv), i * np.sin(gv))
+                hit = np.nonzero((np.abs(fr.verts[:, 0] - w[0]) < 1e-9) &
+                                 (np.abs(fr.verts[:, 1] - w[1]) < 1e-9))[0]
+                pos[int(hit[0])] = i * (C + 1) + j
+        bad = []
+        for k, (a2, b2) in enumerate(fr.edges):
+            got = str(fr.assignment[k])
+            if got == BOUNDARY:
+                continue
+            key = (min(pos[int(a2)], pos[int(b2)]),
+                   max(pos[int(a2)], pos[int(b2)]))
+            want = truth.get(key)
+            if want is not None and want != BOUNDARY and want != got:
+                bad.append((k, got, want))
+        assert not bad, (
+            f"Miura {R}x{C} alpha={gd}: {len(bad)} crease(s) labelled the "
+            f"wrong way round vs the closed form, e.g. {bad[:5]}")
 
     # the flat pattern agrees with Schenk & Guest at their theta = 0
     a, b, g = 1.3, 0.9, np.deg2rad(55.0)
