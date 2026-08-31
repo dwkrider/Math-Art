@@ -50,7 +50,12 @@ RES = 128
 CASES = {
     'MIURA':     dict(rows=4, cols=6),
     'ACCORDION': dict(rows=4, cols=8),
-    'WATERBOMB': dict(rows=3, cols=4),
+    # 4x6, the operator's own defaults, NOT a smaller framing.  For a
+    # waterbomb the column count is how many cells go round the
+    # circumference, so 3x4 closed into a squat, faceted tube while the
+    # default 4x6 is visibly cylindrical -- the icon undersold the
+    # generator, which is the one thing an icon must not do.
+    'WATERBOMB': dict(rows=4, cols=6),
     'YOSHIMURA': dict(rows=4, cols=6),
     # Square (4 sides) is the classical hypar and the reading that shows
     # its saddle; its angle, like the rest, comes from _NATURAL_FOLD.

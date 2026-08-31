@@ -612,7 +612,16 @@ class RigidFolder:
             # array raises rather than returning a harmless zero, so the
             # size has to be checked before the magnitude.
             res = self.residual(step)
+            # A DIHEDRAL ANGLE BEYOND +/-180 DEGREES IS NOT PHYSICAL, and
+            # the closure residual will not say so: a rotation that winds
+            # past flat-folded closes just as exactly as one that does
+            # not, so a wound state is a perfectly good solution of the
+            # constraint and a hopeless piece of paper.  Continuation can
+            # wander there through a bifurcation -- the 3-sided hypar
+            # reached 1971 degrees, and the waterbomb overshot to 190 --
+            # so the bound is imposed here rather than hoped for.
             if not np.isfinite(step).all() or (
+                    float(np.abs(step).max()) > np.pi + 1e-9) or (
                     res.size and float(np.abs(res).max()) > _PATH_TOL):
                 trial *= 0.5
                 if trial < floor:
