@@ -52,7 +52,8 @@
 
 import numpy as np
 
-from .fold_io import BOUNDARY, MOUNTAIN, VALLEY, Frame
+from .fold_io import (ASSIGNMENTS, BOUNDARY, MOUNTAIN, UNASSIGNED, VALLEY,
+                      Frame)
 
 PATTERNS = ("MIURA", "ACCORDION", "WATERBOMB", "YOSHIMURA", "HYPAR")
 
@@ -338,6 +339,29 @@ def hypar(rings=6, sides=4, radius=1.0):
             # the diagonals: radial creases from the centre outwards
             lower = cen if k == 0 else ring_idx[k - 1][t]
             B.e(lower, u, MOUNTAIN if t % 2 else VALLEY)
+            # THE CELLS MUST BE TRIANGLES, or this does not fold at all.
+            #
+            # Between two rings each cell is a trapezoid, and a rigid
+            # solver holds a quad panel flat -- so with quads the pleats
+            # have nothing to bend with and the sheet merely cones,
+            # every ring crease sitting at almost zero while the whole
+            # thing stays a shallow dome.  That is the state this
+            # shipped in.
+            #
+            # It is also exactly what the theory predicts: the pleated
+            # hypar has NO proper folding with planar facets (Demaine,
+            # Demaine, Hart, Price and Tachi 2011, Corollary 14), and
+            # the same paper's Theorem 19 constructs proper foldings of
+            # the TRIANGULATED hypar.  So the triangulation is not a
+            # meshing convenience, it is the thing that makes the
+            # object foldable, and the header has said so all along.
+            #
+            # The diagonal is UNASSIGNED, not flat: it is not a designed
+            # crease -- real paper takes this up by bending smoothly --
+            # so the solver must be free to choose its angle.  Marking
+            # it F would freeze it and put us back where we started.
+            if k:
+                B.e(ring_idx[k - 1][(t + 1) % sides], u, UNASSIGNED)
     return B.frame("Pleated Hypar")
 
 
@@ -538,17 +562,39 @@ def _selftest():
             f"yoshimura {rc}: interior degrees "
             f"{sorted({deg[v] for v in inner})}, expected all 6")
 
-    # --- hypar builds, and is honest about not folding rigidly -------
+    # --- hypar: every cell must be a TRIANGLE ------------------------
+    #
+    # Not a meshing detail -- it is what makes the object foldable at
+    # all.  A rigid solver holds a quad panel flat, so with trapezoidal
+    # cells the concentric pleats cannot move: measured, every ring
+    # crease sat at exactly 0.00 degrees while only the radial creases
+    # folded, and the "hypar" came out a shallow cone.  Demaine et al.
+    # 2011 says the same thing from the other side: no proper folding
+    # with planar facets (Cor. 14), proper foldings of the TRIANGULATED
+    # hypar (Thm 19).
+    for rings, sides in ((3, 4), (4, 6), (5, 4)):
+        hp = hypar(rings=rings, sides=sides)
+        hp.faces = build_faces(hp.verts, hp.edges)
+        assert hp.n_faces > 0
+        bad = [f for f in hp.faces if len(f) != 3]
+        assert not bad, (
+            f"hypar {rings}x{sides}: {len(bad)} non-triangular cell(s), "
+            f"sizes {sorted({len(f) for f in bad})} -- a rigid solver "
+            f"holds those flat and the pleats will not fold")
     hp = hypar(rings=3, sides=4)
     hp.faces = build_faces(hp.verts, hp.edges)
-    assert hp.n_faces > 0
 
     # --- dispatch ----------------------------------------------------
     for name in PATTERNS:
         fr = build(name)
         assert fr.n_edges > 0 and fr.is_flat, name
-        # every edge carries one of the five legal assignments
-        assert set(fr.assignment.tolist()) <= {"M", "V", "B"}, name
+        # every edge carries one of the five legal assignments.  U is
+        # among them and is not a defect: the hypar's triangulation
+        # diagonals are deliberately unassigned, because real paper
+        # takes those up by bending and the solver must be free to pick
+        # the angle.  (This assertion used to allow only M/V/B, which
+        # contradicted its own comment and would have rejected that.)
+        assert set(fr.assignment.tolist()) <= set(ASSIGNMENTS), name
     try:
         build("NOPE")
     except ValueError as exc:

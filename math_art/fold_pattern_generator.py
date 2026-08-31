@@ -112,6 +112,42 @@ def _load_fold_icons():
             pass                     # a missing icon is non-fatal
 
 
+#: The fold angle at which each pattern becomes the thing it is named
+#: after.  These are NOT one shared default: the classical patterns
+#: reach their characteristic shape at genuinely different angles, and
+#: at the wrong one a pattern reads as a half-folded sheet rather than
+#: as itself.  The waterbomb and the Yoshimura both close into a
+#: cylinder -- the shape each is actually known for -- at roughly 43 and
+#: 37 degrees, and pushed past that they collapse again.  The hypar has
+#: no proper planar-facet folding at all (Demaine et al. 2011), so it is
+#: driven hard enough for its saddle to be unmistakable.
+#:
+#: Switching pattern in the redo panel resets Fold Angle to the new
+#: pattern's value, so the number on screen is always the one being
+#: folded to; adjust it afterwards and it stays until you switch again.
+_NATURAL_FOLD = {
+    'MIURA': 70.0,
+    'ACCORDION': 70.0,
+    'WATERBOMB': 43.0,
+    'YOSHIMURA': 37.0,
+    'HYPAR': 120.0,
+}
+
+
+def _pattern_changed(self, context):
+    """Snap Fold Angle to the newly chosen pattern's natural angle."""
+    nat = _NATURAL_FOLD.get(self.pattern)
+    if nat is not None:
+        self.fold_angle = np.deg2rad(nat)
+
+
+def _pattern_label(key):
+    for k, label, _desc in _PATTERN_ITEMS:
+        if k == key:
+            return label
+    return key
+
+
 def _pattern_items(self, context):
     """The five patterns, each with its folded thumbnail if one is baked.
 
@@ -206,13 +242,23 @@ def _fold_object(obj, fold_angle, steps, animate):
     path = folder.fold_path(float(fold_angle), steps=int(steps))
     states = [folder.place(r) for r in path]
 
+    # `fold_path` stops at the last state that genuinely satisfies the
+    # constraint, so a pattern asked to fold further than it can simply
+    # returns a shorter path.  Say so rather than let the user wonder
+    # why the slider stopped short.
+    want = abs(np.rad2deg(float(fold_angle)))
+    got = float(np.rad2deg(np.abs(path[-1]).max())) if len(path) else 0.0
+    short = "" if got >= want - 1.0 else (
+        f" (asked for {want:.0f} deg; this pattern stops folding rigidly "
+        f"at about {got:.0f})")
+
     me = obj.data
     if not animate:
         for v, p in zip(me.vertices, states[-1]):
             v.co = Vector(p)
         me.update()
         obj["fold_is_flat"] = False
-        return (f"folded to {np.rad2deg(fold_angle):.1f} deg; "
+        return (f"folded to {got:.1f} deg{short}; "
                 f"{folder.dof(path[-1])} degree(s) of freedom")
 
     # Cache the path: one shape key per solved state, blended by a hat
@@ -242,7 +288,7 @@ def _fold_object(obj, fold_angle, steps, animate):
         drv.expression = f"max(0.0, 1.0 - abs(t*{n} - {i}))"
 
     obj["fold_is_flat"] = False
-    return (f"folded to {np.rad2deg(fold_angle):.1f} deg over {n} steps; "
+    return (f"folded to {got:.1f} deg{short} over {n} steps; "
             f"keyframe the Fold T property to animate; "
             f"{folder.dof(path[-1])} degree(s) of freedom")
 
@@ -259,7 +305,7 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
     # enum -- and the default becomes "the first item", which is Miura
     # either way.
     pattern: EnumProperty(
-        name="Pattern", items=_pattern_items,
+        name="Pattern", items=_pattern_items, update=_pattern_changed,
         description="Which classical pattern to build")
     rows: IntProperty(
         name="Rows", default=4, min=1, max=64,
@@ -303,10 +349,21 @@ class MESH_OT_crease_pattern_add(bpy.types.Operator):
         # the full panel width rather than the right-hand column.
         L.template_icon_view(self, "pattern", show_labels=True,
                              scale=6.0, scale_popup=6.0)
+        # NAME THE THING.  `show_labels` only labels the cells inside
+        # the popup grid -- once it closes, the widget is a bare
+        # picture, so the panel never says which pattern is built.
+        # Centred under the thumbnail, where the popup's own label was.
+        row = L.row()
+        row.alignment = 'CENTER'
+        row.label(text=_pattern_label(self.pattern))
+
         L.use_property_split = True
-        r = L.row(align=True)
-        r.prop(self, "rows")
-        r.prop(self, "cols")
+        # Rows and Columns each get their own line.  Paired in one
+        # `row(align=True)` under use_property_split, Blender prints the
+        # first property's label and suppresses the second -- so it read
+        # "Rows [4] [6]", with the column count unlabelled.
+        L.prop(self, "rows")
+        L.prop(self, "cols")
         if self.pattern == 'MIURA':
             L.prop(self, "panel_angle")
         L.prop(self, "size")

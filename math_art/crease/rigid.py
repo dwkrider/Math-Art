@@ -116,6 +116,13 @@ class FoldFailure(RuntimeError):
     """Newton did not converge, or the pattern is not rigidly foldable."""
 
 
+#: Largest closure residual a state may carry and still count as folded.
+#: Converged states in this module sit at 1e-16 to 1e-13, so this is
+#: several orders of margin -- it separates "solved" from "diverged",
+#: not "accurate" from "less accurate".
+_PATH_TOL = 1e-6
+
+
 def _rx(t):
     c, s = np.cos(t), np.sin(t)
     return np.array([[1, 0, 0], [0, c, -s], [0, s, c]], dtype=float)
@@ -566,11 +573,55 @@ class RigidFolder:
         # short of the target.  Scaling by the tangent's largest
         # component makes each step advance the biggest angle by the same
         # amount whatever the size.
+        # ADAPTIVE STEP.  A CORRECTION THAT DID NOT CONVERGE IS NOT A
+        # STATE.
+        #
+        # `_correct` returns whatever Newton reached, converged or not,
+        # and this loop used to append that unconditionally -- so a
+        # diverged step entered the path, and because its magnitude is
+        # enormous it immediately satisfied the `>= target` test and
+        # became the state the caller animated.  The pleated hypar did
+        # exactly this near 179 degrees: fold angles of 2.3e5 degrees,
+        # closure residual 0.88, and the paper stretched by 400 per cent
+        # -- returned silently as if it were a fold.
+        #
+        # Rejecting the step is necessary but not sufficient: simply
+        # stopping made the deep targets WORSE than the shallow ones,
+        # because the step is target/steps, so asking for 179 takes a
+        # bigger first stride than asking for 150 -- and the first
+        # stride leaves the flat state, which is a bifurcation point and
+        # the most delicate part of the whole path.  A single failure
+        # there returned a flat sheet for the deepest fold requested.
+        #
+        # So halve on failure and grow back on success, which is what a
+        # continuation method is supposed to do: the step shrinks
+        # through the bifurcation and through any tight spot later,
+        # and the path stops only when even a very small step cannot be
+        # corrected -- a real limit of the pattern rather than an
+        # artefact of how far the caller asked to go.
         want = target / max(1, steps)
-        for _ in range(steps * 8):
+        trial = want
+        floor = want / 64.0
+        taken = 0
+        while taken < steps * 8:
             lead = float(np.abs(t).max()) or 1.0
-            rho = self._correct(rho + (want / lead) * t, t)
+            step = self._correct(rho + (trial / lead) * t, t)
+            # `res` is EMPTY for a pattern with no interior vertices --
+            # the accordion has none, so there is nothing to close and
+            # every state is trivially valid.  `.max()` on an empty
+            # array raises rather than returning a harmless zero, so the
+            # size has to be checked before the magnitude.
+            res = self.residual(step)
+            if not np.isfinite(step).all() or (
+                    res.size and float(np.abs(res).max()) > _PATH_TOL):
+                trial *= 0.5
+                if trial < floor:
+                    break            # a real limit, not a step-size problem
+                continue
+            rho = step
             out.append(rho.copy())
+            taken += 1
+            trial = min(want, trial * 1.5)
             if float(np.abs(rho).max()) >= target:
                 break
             nxt = self.tangent(rho, prev=t)
@@ -916,6 +967,50 @@ def _selftest():
         f"contract, a straight trough keeps its width")
     assert widths[0] > widths[-1], (
         f"yoshimura should keep curling as it folds: {widths}")
+
+    # --- no pattern may be handed back torn -------------------------
+    #
+    # `fold_path` used to append whatever `_correct` reached, converged
+    # or not.  The pleated hypar near 179 degrees came back with fold
+    # angles of 2.3e5 degrees, closure residual 0.88 and edges stretched
+    # by 400 per cent -- silently, as a fold.  Stretch is the check that
+    # cannot be argued with: paper does not stretch, so any state on the
+    # path with a stretched edge is not a folding of this sheet.
+    #
+    # Every pattern, across the whole angle range the operator allows,
+    # including the deep end where the step control has to shrink.
+    for name, kw in (('MIURA', dict(rows=4, cols=6)),
+                     ('ACCORDION', dict(count=8)),
+                     ('WATERBOMB', dict(rows=3, cols=4)),
+                     ('YOSHIMURA', dict(rows=4, cols=6)),
+                     ('HYPAR', dict(rings=4, sides=6))):
+        pf = patterns.build(name, **kw)
+        pf.faces = build_faces(pf.verts, pf.edges)
+        pfs = RigidFolder(pf)
+        f0 = np.linalg.norm(pf.verts[pfs.edges[:, 1]] -
+                            pf.verts[pfs.edges[:, 0]], axis=1)
+        for tgt in (20.0, 43.0, 70.0, 120.0, 179.0):
+            pp = pfs.fold_path(np.deg2rad(tgt), steps=12)
+            # EVERY state, not just the last: a torn intermediate is a
+            # torn frame of the animation.
+            for si, pr in enumerate(pp):
+                pv = pfs.place(pr)
+                f1 = np.linalg.norm(pv[pfs.edges[:, 1]] -
+                                    pv[pfs.edges[:, 0]], axis=1)
+                assert float(np.abs(f1 / f0 - 1.0).max()) < 1e-8, (
+                    f"{name} at {tgt} deg: state {si} of {len(pp)} stretches "
+                    f"the paper by "
+                    f"{float(np.abs(f1 / f0 - 1.0).max()):.2e}")
+            pres = pfs.residual(pp[-1])
+            assert not pres.size or float(np.abs(pres).max()) < 1e-6, (
+                f"{name} at {tgt} deg: final state does not close, "
+                f"residual {float(np.abs(pres).max()):.2e}")
+        # and it must actually get somewhere -- a guard that returns the
+        # flat state for every request would pass everything above
+        deep = pfs.fold_path(np.deg2rad(179.0), steps=12)[-1]
+        assert float(np.rad2deg(np.abs(deep).max())) > 150.0, (
+            f"{name}: asked to fold to 179 deg, reached only "
+            f"{float(np.rad2deg(np.abs(deep).max())):.1f}")
 
     print("RESULT: OK  crease.rigid")
 

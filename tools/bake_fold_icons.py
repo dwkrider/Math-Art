@@ -26,6 +26,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "docs"))
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
+sys.path.insert(0, ROOT)
 
 import bpy                                                # noqa: E402
 
@@ -33,6 +34,7 @@ import bpy                                                # noqa: E402
 # registers math_art on import via render_docs.  Reuse it rather than
 # keeping a second studio that can drift.
 import bake_menu_icons as bmi                             # noqa: E402
+from math_art.fold_pattern_generator import _NATURAL_FOLD  # noqa: E402
 
 OUT_DIR = os.path.join(ROOT, "math_art", "icons", "folds")
 
@@ -40,26 +42,19 @@ OUT_DIR = os.path.join(ROOT, "math_art", "icons", "folds")
 #: like the saddle solids rather than the menu icons' 64.
 RES = 128
 
-#: Per pattern: the build arguments and how far to fold.  These are not
-#: the operator defaults -- a thumbnail wants the reading that shows
-#: the pattern's character in one glance, which usually means fewer
-#: panels than a working sheet and a deeper fold than 70 degrees.
+#: Per pattern: how many panels the thumbnail shows.  The FOLD ANGLE is
+#: not chosen here -- it comes from the operator's own `_NATURAL_FOLD`,
+#: so the icon shows the shape you actually get when you pick that
+#: pattern.  Only the framing (how many panels read well at 128 px) is
+#: an icon-specific choice.
 CASES = {
-    'MIURA':     dict(rows=4, cols=6, fold=100.0),
-    'ACCORDION': dict(rows=4, cols=8, fold=110.0),
-    'WATERBOMB': dict(rows=3, cols=4, fold=90.0),
-    'YOSHIMURA': dict(rows=4, cols=6, fold=75.0),
-    # The hypar is the awkward one.  Its concentric pleats never show
-    # in a thumbnail: it has no planar-facet folding at all (Demaine et
-    # al. 2011), so what the solver returns is the gross SADDLE, and
-    # measuring it confirms the pleats contribute nothing to the
-    # silhouette -- 6, 8 and 10 rings all fold to the same
-    # 2.00 x 2.00 x 1.23 box.  So the icon is chosen to show the saddle,
-    # which is the hypar's actual signature and is what tells it apart
-    # from the other four here: square (4 sides, the classical one) and
-    # folded hard enough for the warp to be unmistakable.  A gentle fold
-    # reads as a flat slab and is worse than useless.
-    'HYPAR':     dict(rows=6, cols=4, fold=120.0),
+    'MIURA':     dict(rows=4, cols=6),
+    'ACCORDION': dict(rows=4, cols=8),
+    'WATERBOMB': dict(rows=3, cols=4),
+    'YOSHIMURA': dict(rows=4, cols=6),
+    # Square (4 sides) is the classical hypar and the reading that shows
+    # its saddle; its angle, like the rest, comes from _NATURAL_FOLD.
+    'HYPAR':     dict(rows=6, cols=4),
 }
 
 #: Three-quarter view.  A folded corrugation seen straight down reads as
@@ -76,7 +71,8 @@ def bake(key, path):
     bpy.ops.mesh.crease_pattern_add(
         pattern=key, rows=case['rows'], cols=case['cols'],
         size=2.0, check=False,
-        auto_fold=True, fold_angle=math.radians(case['fold']),
+        auto_fold=True,
+        fold_angle=math.radians(_NATURAL_FOLD[key]),
         steps=10, animate=False)
     obj = bpy.context.view_layer.objects.active
     if obj is None:
