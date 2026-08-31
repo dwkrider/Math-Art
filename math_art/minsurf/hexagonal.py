@@ -922,6 +922,28 @@ _SPECS['RII'] = _prod_spec(
                           (0.5 - 1j * a, 0.75)),
     nb="Schoen_RII.nb")
 
+
+# R-II is the first row to need a HALF-TURN generator.  Its x = 0 edge is
+# not a plane at all: it is a straight line along (1, 0, 0), exact to
+# 1.3e-10, i.e. a 2-fold rotation axis lying in the surface.  Brakke's
+# RII.fe says the same thing in its own words -- "view_transform_
+# generators 6 // one 180 degree rotation about each line".
+#
+# With that axis and the two clean mirrors (z = 0.5 and x = const) the
+# word `abc` closes at 8 copies, and repeating it STACKS: `abcabc` gives
+# 16 and doubles the height from 2.0 to 4.0, because a half-turn composed
+# with a parallel mirror is a translation.  That is why Brakke calls his
+# own version `layers`.  Both are offered, cell first.
+#
+# The count is a group order, not an Evolver one: his word is `fdfedfe`
+# over six generators, a different spelling over a different generating
+# set, so there is no like-for-like number to compare.
+_SPECS['RII'].update(
+    exact_planes={'x=1': (0.0, 0.0, 1.0), 'y=1': (1.0, 0.0, 0.0)},
+    exact_axes={'x=0': (1.0, 0.0, 0.0)},
+    letters={'a': 'x=0', 'b': 'x=1', 'c': 'y=1'},
+    words=('abc', 'abcabc'))
+
 # Schoen C(H), genus 7, the complement of Schwarz H.  Nineteen solved
 # (tau, ss) pairs in the notebook; this is the tau = 0.9i member.
 _CH_SS, _CH_TAU = 0.06956280256134074, 0.9j
@@ -1306,7 +1328,7 @@ def spec_curves(key, P):
 # the group order, which the word reaches from three spellings alike.
 _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
-                'I6': (8, 'group')}
+                'I6': (8, 'group'), 'RII': (8, 'group')}
 
 
 def spec_modulus_range(key):
@@ -1341,42 +1363,84 @@ def set_spec_modulus(key, value):
     _SPECS[key]['tau'] = complex(0.0, min(max(float(value), lo), hi))
 
 
-def spec_declared_planes(key, P):
-    """Exact mirror planes for a spec that DECLARES them.
+def spec_declared_elements(key, P):
+    """Exact symmetry elements for a spec that DECLARES them.
 
-    `spec_generators` classifies boundary curves and fits a plane to
-    each.  That works where the patch is accurate and fails where it is
-    not: two of S'-S"'s five curves miss planarity by 5.8e-3 and 2.6e-3,
-    the miss sits at the branch point, and it scales with the Gauss-map
-    exponent (r-1)/r across the family -- H'-T (1/2) 2.5e-5 and passes,
-    H"-R (2/3) 1.9e-3, S'-S" (3/4) 7.1e-3, T'-R' (5/6) 1.4e-2.  It also
-    GROWS with resolution, because a finer grid samples nearer the
-    singular corner.  So the classifier is the messenger: raising its
-    tolerance would admit the curves and their polluted planes together.
+    `spec_generators` classifies boundary curves and fits each one.  That
+    works where the patch is accurate and fails where it is not: two of
+    S'-S"'s five curves miss planarity by 5.8e-3 and 2.6e-3, the miss
+    sits at the branch point, and it scales with the Gauss-map exponent
+    (r-1)/r across the family -- H'-T (1/2) 2.5e-5 and passes, H"-R (2/3)
+    1.9e-3, S'-S" (3/4) 7.1e-3, T'-R' (5/6) 1.4e-2.  It also GROWS with
+    resolution, because a finer grid samples nearer the singular corner.
+    So the classifier is the messenger: raising its tolerance would admit
+    the curves and their polluted fits together.
 
-    Brakke does not classify anything.  Every `.fe` DECLARES its mirrors
-    (`view_transform_generators`), and only their offsets are read off
-    the surface.  A spec that gives `exact_planes` does the same here:
-    the normal is exact, and the offset is the MEDIAN of curve.n, median
-    rather than mean because the branch-point end of the curve is the
-    part that is wrong.
+    Brakke does not classify anything.  Every `.fe` DECLARES its
+    generators (`view_transform_generators`) and reads only their
+    placement off the surface.  A spec does the same here, through
+    either of two keys:
 
-    Returns None when the spec declares nothing.
+        exact_planes    {curve: normal}   reflection in a plane
+        exact_axes      {curve: axis}     half-turn about a line
+
+    The direction is exact; the placement is MEASURED as the median over
+    the curve -- median rather than mean because the branch-point end is
+    the part that is wrong.
+
+    Returns `{curve: (kind, direction, reference)}` where `reference` is
+    the plane offset for a mirror and a point on the line for a
+    half-turn, or None when the spec declares nothing.
     """
     sp = _SPECS[key]
-    decl = sp.get('exact_planes')
-    if not decl:
+    planes = sp.get('exact_planes') or {}
+    axes = sp.get('exact_axes') or {}
+    if not planes and not axes:
         return None
     curves = dict(spec_curves(key, P))
     out = {}
-    for name, raw in decl.items():
+    for name, raw in planes.items():
         C = curves.get(name)
         if C is None or len(C) < 3:
             return None
         n = np.asarray(raw, dtype=float)
         n = n / np.linalg.norm(n)
-        out[name] = (n, float(np.median(np.asarray(C, dtype=float) @ n)))
+        out[name] = ('mirror', n,
+                     float(np.median(np.asarray(C, dtype=float) @ n)))
+    for name, raw in axes.items():
+        C = curves.get(name)
+        if C is None or len(C) < 3:
+            return None
+        v = np.asarray(raw, dtype=float)
+        v = v / np.linalg.norm(v)
+        # A point ON the axis: the median of the curve, with any
+        # component along the axis left free (it does not move the line).
+        out[name] = ('halfturn', v,
+                     np.median(np.asarray(C, dtype=float), axis=0))
     return out
+
+
+def spec_declared_planes(key, P):
+    """Back-compatible view of `spec_declared_elements`: mirrors only."""
+    el = spec_declared_elements(key, P)
+    if el is None:
+        return None
+    return {k: (v, r) for k, (kind, v, r) in el.items() if kind == 'mirror'}
+
+
+def _element_matrix(kind, vec, ref):
+    if kind == 'mirror':
+        return _mirror(vec, ref)
+    return _halfturn(np.asarray(ref, dtype=float), vec)
+
+
+def _project_onto_element(pts, kind, vec, ref):
+    """Land points exactly on a plane, or exactly on a line."""
+    pts = np.asarray(pts, dtype=float)
+    if kind == 'mirror':
+        return pts - ((pts @ vec) - ref)[:, None] * vec
+    d = pts - np.asarray(ref, dtype=float)
+    return np.asarray(ref, dtype=float) + (d @ vec)[:, None] * vec
 
 
 # Which way each boundary curve of the grid faces, for the projection.
@@ -1420,13 +1484,12 @@ def spec_project_boundary(key, P, planes, iters=30):
     P = np.asarray(P, dtype=float).copy()
     idx = _curve_indices(key, P)
     for _ in range(int(iters)):
-        for name, (n, c) in planes.items():
+        for name, (kind, vec, ref) in planes.items():
             ii = idx.get(name)
             if ii is None:
                 continue
             a, b = ii
-            pts = P[a, b]
-            P[a, b] = pts - ((pts @ n) - c)[:, None] * n
+            P[a, b] = _project_onto_element(P[a, b], kind, vec, ref)
     return P
 
 
@@ -1442,7 +1505,7 @@ def spec_word_transforms(key, planes):
     lets = {}
     for ch, src in sp['letters'].items():
         if not isinstance(src, tuple):
-            lets[ch] = _mirror(*planes[src])
+            lets[ch] = _element_matrix(*planes[src])
     for ch, src in sp['letters'].items():
         if isinstance(src, tuple):
             M = np.eye(4)
@@ -1491,7 +1554,7 @@ def spec_word_assemble(key, P):
     sp = _SPECS[key]
     if not sp.get('words'):
         return None
-    planes = spec_declared_planes(key, P)
+    planes = spec_declared_elements(key, P)
     if planes is None:
         return None
     Pp = spec_project_boundary(key, P, planes)
