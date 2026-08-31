@@ -109,11 +109,13 @@ _PATTERN_ITEMS = (
      "Kresling with its bands inclined alternately left and right, so "
      "the creases zigzag and the diagonals mirror into Vs. The band "
      "twists cancel, so this tube pumps along its axis without turning"),
-    ('RESCH', "Ron Resch",
-     "Ron Resch's triangular tessellation, whose tucks hide surplus "
-     "material and leave a stiff sheet that takes curvature both ways. "
-     "The tuck is inscribed rather than counter-rotated here, so this "
-     "is the pattern's shape and not yet its full twist"),
+    ('RESCH', "Resch Triangular",
+     "Ron Resch's triangular tessellation: every grid vertex inflated "
+     "into a small triangular face, whose tucks hide surplus material "
+     "and leave a stiff sheet that takes curvature both ways. Rows and "
+     "Columns count inflated vertices. It does NOT fold flat -- a hub "
+     "carries three mountains and three valleys, so Maekawa fails there "
+     "by construction, and Report Checks will say so"),
 )
 
 # --------------------------------------------------------------------

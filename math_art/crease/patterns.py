@@ -733,69 +733,137 @@ def kresling_zigzag(rows=4, cols=6, alpha=np.deg2rad(72.0), radius=1.0):
                     stacking='ALTERNATE')
 
 
-def resch(rows=3, cols=3, cell=1.0, tuck=0.30):
+#: The Resch molecule, in units of the short mountain `u`.  Lattice
+#: neighbour directions are 30, 90, ... 330 degrees, and a hub points a
+#: MOUNTAIN at three of them and a VALLEY at the other three.
+_RESCH_DIRS = np.deg2rad(np.array([30.0, 90.0, 150.0, 210.0, 270.0,
+                                   330.0]))
+_RESCH_UNIT = np.stack([np.cos(_RESCH_DIRS), np.sin(_RESCH_DIRS)], axis=1)
+_RESCH_MOUNT = (1, 3, 5)                       # 90, 210, 330 degrees
+
+
+def resch(rows=3, cols=3, cell=1.0):
     """Ron Resch's triangular tessellation.
 
-    A triangular grid in which each cell carries a smaller,
-    counter-rotated triangle.  Folding tucks the surplus material behind
-    the surface and leaves a stiff faceted sheet that can take curvature
-    in both directions, which is what made it interesting to
-    architecture and, later, to the freeform-origami literature.
+    A triangular grid whose every vertex is INFLATED into a small
+    triangular face, with straight creases running from it to describe
+    triangular faces everywhere else.  Folding tucks the surplus
+    material behind the sheet and leaves a stiff faceted surface that
+    takes curvature both ways, which is what made it interesting to
+    architecture and later to the freeform-origami literature.
 
-    IN SCOPE BY EXCEPTION.  This project's rule sends named, published
-    tessellations to the importer rather than the generator, and this is
-    one of those.  It is here on request, and because the corrugation
-    work refers to it as the alternative to a generalised Miura, so
-    having it to hand is worth the exception.  The credit is Resch's and
-    is recorded rather than implied away.
+    `rows` and `cols` count HUBS -- inflated vertices -- so the sheet
+    grows by one molecule per step rather than one crease.
+
+    THE MOLECULE, read off Ghassaei's reference crease pattern rather
+    than reconstructed from a description.  There are exactly two
+    interior vertex figures, and between them they fix everything:
+
+      HUB, degree 6   mountains of length u at 90, 210, 330 degrees,
+                      valleys of length 2u at 30, 150, 270
+      TIP, degree 6   where a hub's short mountain ends: the valley
+                      carries straight on for 2u to the NEXT hub, and
+                      four mountains of sqrt(3) u leave at 0, 60, 120
+                      and 180 degrees from it
+
+    So hubs sit on a triangular lattice of spacing 3u, and every lattice
+    edge carries one tip -- 1u from the hub that points a mountain at
+    it, 2u from the one that points a valley.  That is consistent all
+    the way across precisely because each hub alternates three mountains
+    and three valleys around itself, so the two ends of every edge
+    always disagree about which it is.  The sqrt(3) mountains join tip
+    to tip and are what triangulate the sheet; in the reference they are
+    drawn as single strokes of 2 sqrt(3) that pass straight THROUGH an
+    intermediate tip, which is why that file also contains a handful of
+    sqrt(3) halves where a stroke happened to stop early.
+
+    IT DOES NOT FOLD FLAT, AND THAT IS THE POINT.  A hub carries three
+    mountains and three valleys, so |M - V| = 0 and Maekawa fails there
+    by construction.  Resch's pattern is not a flat packet; it collapses
+    to a stiff tucked sheet, and the surplus material disappearing
+    behind that sheet is the whole trick.  Reporting Maekawa failures at
+    every hub is therefore correct behaviour, not a defect to fix.
+
+    WHAT THIS REPLACED.  The first version was built from a verbal
+    description -- a triangular grid with a counter-rotated triangle
+    inscribed in each cell -- and every one of its 31 interior vertices
+    had ODD degree, which no folded state of any kind can have.  It
+    curled and stretched instead of folding (41 per cent out of plane,
+    2.3 per cent edge strain) because it was not a foldable pattern at
+    all.  The lesson is the same one the Kresling taught twice: a
+    pattern assembled from a description is a guess, and only reference
+    geometry settles it.
 
     References:
       R. D. Resch, "The topological design of sculptural and
-          architectural systems," AFIPS Conference Proceedings, 1973.
+          architectural systems," AFIPS Conference Proceedings 42, 1973
+          -- the tessellation and its architectural use.
       T. Tachi, "Designing Freeform Origami Tessellations by
           Generalizing Resch's Patterns," ASME J. Mech. Des. 135, 2013.
+      E. Vouga et al. / A. Ghassaei, Origami Simulator reference crease
+          patterns, `assets/Tessellations/reschTriTessellation.svg` --
+          the file the molecule above was measured from.
+      A. Koerner, "Computing Curved-Folded Tessellations through
+          Straight-Folding Approximation," SimAUD 2015 -- Resch's
+          "inflated vertices", and why a pattern whose creases all
+          converge on a point instead cannot be folded with straight
+          creases at all.
     """
-    B = _Builder()
-    h = cell * np.sqrt(3.0) / 2.0
-    grid = {}
-    for i in range(rows + 1):
-        for j in range(cols + 1):
-            grid[(i, j)] = B.v(j * cell + 0.5 * cell * i, i * h)
+    u = float(cell)
+    e1 = 3.0 * u * _RESCH_UNIT[0]
+    e2 = 3.0 * u * _RESCH_UNIT[1]
 
-    for i in range(rows + 1):
-        for j in range(cols + 1):
-            if j < cols:
-                B.e(grid[(i, j)], grid[(i, j + 1)],
-                    BOUNDARY if i in (0, rows) else MOUNTAIN)
-            if i < rows:
-                B.e(grid[(i, j)], grid[(i + 1, j)],
-                    BOUNDARY if j in (0, cols) else MOUNTAIN)
-                if j > 0:
-                    B.e(grid[(i, j)], grid[(i + 1, j - 1)], MOUNTAIN)
+    B = _Builder(tol=1e-7)
+    hub = {}
+    for i in range(int(rows) + 1):
+        for j in range(int(cols) + 1):
+            p = i * e1 + j * e2
+            hub[(i, j)] = (B.v(p[0], p[1]), p)
 
-    # THE TUCK is what distinguishes Resch from a plain triangular
-    # grid: a counter-rotated triangle inside each cell, joined to the
-    # cell's corners, holding the material the fold hides.
-    for i in range(rows):
-        for j in range(cols):
-            a = np.array([j * cell + 0.5 * cell * i, i * h])
-            b = np.array([(j + 1) * cell + 0.5 * cell * i, i * h])
-            c = np.array([j * cell + 0.5 * cell * (i + 1), (i + 1) * h])
-            cen = (a + b + c) / 3.0
-            # INSCRIBED, not counter-rotated.  Resch's tuck turns the
-            # inner triangle the other way, and connecting each inner
-            # vertex to its opposite corner then sends the connectors
-            # across the middle where they cross each other -- the graph
-            # stops being planar and `build_faces` refuses it.  Keeping
-            # the inner triangle in the same orientation makes every
-            # connector radial, so nothing crosses.  This is the tuck's
-            # shape, not yet its full twist.
-            iv = [B.v(*(cen + tuck * (p - cen))) for p in (a, b, c)]
-            for k in range(3):
-                B.e(iv[k], iv[(k + 1) % 3], VALLEY)
-            for k, corner in enumerate((a, b, c)):
-                B.e(iv[k], B.v(*corner), VALLEY)
-    return B.frame("Ron Resch")
+    # A tip belongs to the hub that points a mountain at it, so indexing
+    # them by (hub, direction) rather than by position keeps the two
+    # halves of each lattice edge from being built twice.
+    tip = {}
+    for (i, j), (hv, hp) in hub.items():
+        for k in _RESCH_MOUNT:
+            tp = hp + u * _RESCH_UNIT[k]
+            tv = B.v(tp[0], tp[1])
+            tip[(i, j, k)] = (tv, tp)
+            B.e(hv, tv, MOUNTAIN)
+            far = hp + 3.0 * u * _RESCH_UNIT[k]
+            for kk, (fv, fp) in hub.items():
+                if np.linalg.norm(fp - far) < 1e-7 * max(1.0, u):
+                    B.e(tv, fv, VALLEY)
+                    break
+
+    where = {(round(float(p[0]) / u, 5), round(float(p[1]) / u, 5)): v
+             for v, p in tip.values()}
+    for (i, j, k), (tv, tp) in tip.items():
+        for s in (-1.0, 1.0):
+            d = _RESCH_DIRS[k] + s * np.pi / 6.0
+            q = tp + np.sqrt(3.0) * u * np.array([np.cos(d), np.sin(d)])
+            other = where.get((round(float(q[0]) / u, 5),
+                               round(float(q[1]) / u, 5)))
+            if other is not None:
+                B.e(tv, other, MOUNTAIN)
+
+    fr = B.frame("Resch Triangular")
+
+    # The rim is whatever ended up with one face beside it.  Marking it
+    # by geometry rather than by index keeps the patch honest at any
+    # size: a crease with paper on one side only is not a crease.
+    from .graph import build_faces
+    fr.faces = build_faces(fr.verts, fr.edges)
+    seen = {}
+    for f in fr.faces:
+        for t in range(len(f)):
+            a, b = int(f[t]), int(f[(t + 1) % len(f)])
+            seen[(min(a, b), max(a, b))] = seen.get((min(a, b), max(a, b)),
+                                                    0) + 1
+    for e, (a, b) in enumerate(fr.edges):
+        if seen.get((min(int(a), int(b)), max(int(a), int(b))), 0) < 2:
+            fr.assignment[e] = BOUNDARY
+    return fr
 
 
 def monkey_saddle(rings=8, radius=1.0):
@@ -1216,6 +1284,56 @@ def _selftest():
         f"the bands are not actually mirrored")
     assert float(np.abs(cz.edge_strain()).max()) < 0.02, (
         "kresling_zigzag reached its tube by stretching")
+
+    # --- Resch: the reference molecule, vertex figure by figure ----
+    # THE PATTERN BEFORE THIS ONE WAS BUILT FROM A DESCRIPTION and every
+    # one of its 31 interior vertices had ODD degree -- which no folded
+    # state of any kind can have, so it curled and stretched (41 per cent
+    # out of plane, 2.3 per cent strain) instead of folding.  These check
+    # the two figures measured off Ghassaei's reference crease pattern,
+    # because that is the only thing that distinguishes this from another
+    # plausible-looking triangular grid.
+    fr = resch(rows=3, cols=3)
+    assert all(len(f) == 3 for f in fr.faces), (
+        "resch: Resch's creases describe TRIANGULAR faces; sizes "
+        f"{sorted({len(f) for f in fr.faces})}")
+
+    inc = {}
+    for k, (p, q) in enumerate(fr.edges):
+        for a, b in ((int(p), int(q)), (int(q), int(p))):
+            d = fr.verts[b] - fr.verts[a]
+            inc.setdefault(a, []).append(
+                (str(fr.assignment[k]),
+                 round(float(np.degrees(np.arctan2(d[1], d[0]))) % 360),
+                 round(float(np.linalg.norm(d)), 2)))
+
+    # A hub: three short mountains and three long valleys, alternating.
+    hub = tuple(sorted([(MOUNTAIN, 90, 1.0), (MOUNTAIN, 210, 1.0),
+                        (MOUNTAIN, 330, 1.0), (VALLEY, 30, 2.0),
+                        (VALLEY, 150, 2.0), (VALLEY, 270, 2.0)]))
+    # A tip: the hub's mountain arriving, the valley carrying on to the
+    # next hub, and four sqrt(3) mountains out to the neighbouring tips.
+    s3 = round(float(np.sqrt(3.0)), 2)
+    tip = tuple(sorted([(MOUNTAIN, 270, 1.0), (VALLEY, 90, 2.0),
+                        (MOUNTAIN, 0, s3), (MOUNTAIN, 60, s3),
+                        (MOUNTAIN, 120, s3), (MOUNTAIN, 180, s3)]))
+    figs = {tuple(sorted(v)) for v in inc.values()}
+    assert hub in figs, (
+        "resch: no vertex has the reference HUB figure -- three "
+        "mountains of u at 90/210/330 and three valleys of 2u at "
+        "30/150/270")
+    assert tip in figs, (
+        "resch: no vertex has the reference TIP figure -- a mountain of "
+        "u back to its hub, a valley of 2u on to the next, and four "
+        "mountains of sqrt(3) u to the neighbouring tips")
+
+    # NOT FLAT-FOLDABLE, and that is the pattern rather than a defect: a
+    # hub is 3 mountains and 3 valleys, so |M - V| = 0 and Maekawa fails
+    # there by construction.  Asserted so nobody "fixes" it later.
+    rep = validate(fr)
+    assert not rep and rep.n_interior, (
+        "resch should FAIL Maekawa at its hubs; if it passes, the hubs "
+        "are no longer 3 mountains and 3 valleys and this is not Resch")
 
     # --- dispatch ----------------------------------------------------
     for name in PATTERNS:
