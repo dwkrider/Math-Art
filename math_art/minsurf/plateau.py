@@ -1412,67 +1412,88 @@ CONJUGATE_SURFACES = {
         # inside the generators.
         'letters': {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5},
         'words': ('baca', 'adacada'),   # showwprism (12), showlayer (42)
+        'evolver_area': 1.551728181162,
     },
 }
 
 
-def _conj_alpha_poly(alpha):
-    """The hybrids' contour.  All three of Brakke's hybrid datafiles use
-    one shape with one parameter; only `alpha` and the constraints
-    differ."""
-    return [(0.0, 0.0, 0.0),
-            (-alpha, 0.0, 0.0),
-            (-alpha, 0.0, 1.0),
-            (-0.5, 0.0, 1.0),
-            (0.0, -SQRT3 / 2.0, 1.0),
-            (0.0, -SQRT3 / 2.0, 0.0)]
+# Brakke's three hybrids (HRHTadj.fe, HTTRadj.fe, TRHTadj.fe).
+#
+# THEY ARE NOT ONE PROBLEM WITH ONE PARAMETER.  That assumption was made
+# here first and it is wrong in three separate ways: the contours differ
+# (HRHT puts its free corner at (-alpha,0,*), HTTR at (0,-alpha,*), TRHT
+# at (-alpha/2, -(1-alpha)*sqrt(3)/2, *)), the six constraint normals
+# differ, and WHICH constraint each generator letter names differs.
+# Building all three from HRHT's geometry gave patch areas 0.9645 /
+# 0.9338 / 1.4064 against Evolver's 0.9657 / 0.6623 / 0.5893 -- the first
+# right and the other two not remotely.  Each is transcribed separately
+# below.
+#
+# The letter -> arc maps are not guesswork either.  Brakke's generators
+# are written for a pose in which some mirrors pass through the origin,
+# and his comments name those as "z=0 mirror" and "y=0 mirror" without
+# saying which constraint they are.  Running each datafile in Evolver and
+# printing rhs1..rhs6 after `adj` settles it, because exactly those
+# constraints come out zero:
+#
+#     HRHTadj  rhs = 2.1187  0  2.1187  0  0.8697  0
+#     HTTRadj  rhs = 1.6341  0  0       0  0.5056  0
+#     TRHTadj  rhs = 0       1.4858  0   0.4333  0  0
+#
+# so HRHT's origin mirrors are constraints 2/4/6, HTTR's are 2/3/4/6, and
+# TRHT's are 1/3/5/6.  Offsets are used as measured rather than
+# normalised away; GW5adj proves that works, since it never canonicalises
+# its pose at all.
 
+CONJUGATE_SURFACES['HT_HR'] = {
+    'name': 'Schoen H\'-T | H"-R hybrid',
+    'alpha': 0.12126744808636576,
+    'poly': [(0.0, 0.0, 0.0),
+             (-0.12126744808636576, 0.0, 0.0),
+             (-0.12126744808636576, 0.0, 1.0),
+             (-0.5, 0.0, 1.0),
+             (0.0, -SQRT3 / 2.0, 1.0),
+             (0.0, -SQRT3 / 2.0, 0.0)],
+    'normals': [(1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (1.0, 0.0, 0.0),
+                (0.5, -SQRT3 / 2.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)],
+    'same': {2: 0},                        # rhs3 := rhs1
+    'letters': {'a': 1, 'b': 5, 'c': 3, 'd': 4, 'e': 0},
+    'words': ('abcbcbc', 'abcbcbcecbcbc'),
+    'evolver_area': 0.965668985,
+}
 
-# The hybrids (HRHTadj.fe, HTTRadj.fe, TRHTadj.fe): one contour, one set
-# of six constraints, the surfaces separated by `alpha` alone.  Brakke
-# quotes it to 17 digits because the period condition is what pins it --
-# these are NOT free parameters to round, and the values below are his,
-# read from the datafiles rather than reconstructed.
-#
-# WHICH FILE IS WHICH SURFACE: the datafile headers and Brakke's own
-# catalogue page disagree, and the page is followed here.  Two of the
-# three headers claim the SAME pair -- HTTRadj.fe says "H'-T T'-R'" and
-# TRHTadj.fe says "T'-R' H'-T" -- which cannot both be right for two
-# distinct surfaces, so at least one header is a copy-paste slip.
-# `evolver/examples/periodic/hybrids.html` instead assigns
-#
-#     H'-T | H"-R   genus  8   HRHTadj.fe
-#     T'-R' | H'-T  genus  9   HTTRadj.fe
-#     H"-R | T'-R'  genus 10   TRHTadj.fe
-#
-# and that list is self-consistent in a way the headers are not: taking
-# the constituents' own genera from the same page (H'-T 4, H"-R 5,
-# T'-R' 6), every hybrid comes out at g1 + g2 - 1.  The measured areas
-# agree with the ordering too -- alpha 0.0756 gives a 0.9338 patch and
-# alpha 0.7312 a 1.4064 one, the larger surface being the higher genus.
-# If a future reader finds evidence the headers are right after all, the
-# fix is to swap the last two names below and nothing else.
-for _k, _nm, _al in (
-        ('HT_HR', 'Schoen H\'-T | H"-R hybrid', 0.12126744808636576),
-        ('TR_HT', 'Schoen T\'-R\' | H\'-T hybrid', 0.07562891619932040),
-        ('HR_TR', 'Schoen H"-R | T\'-R\' hybrid', 0.73119569743699331)):
-    CONJUGATE_SURFACES[_k] = {
-        'name': _nm,
-        'poly': _conj_alpha_poly(_al),
-        'normals': [(1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (1.0, 0.0, 0.0),
-                    (0.5, -SQRT3 / 2.0, 0.0), (0.0, 0.0, 1.0),
-                    (0.0, 1.0, 0.0)],
-        'same': {2: 0},                       # rhs3 := rhs1
-        # HRHTadj.fe's five generators, in ITS order, mapped onto our
-        # arc indices: a = the z=rhs2 mirror (arc 1), b = y=rhs6 (arc 5),
-        # c = the slant mirror (arc 3), d = z=rhs5 (arc 4), e = x=rhs1
-        # (arc 0).  Brakke translates the surface so rhs2, rhs4 and rhs6
-        # vanish before declaring a, b, c; that is a change of pose, not
-        # of geometry, so the measured offsets are used here instead.
-        'letters': {'a': 1, 'b': 5, 'c': 3, 'd': 4, 'e': 0},
-        'words': ('abcbcbc', 'abcbcbcecbcbc'),      # full (24), seven
-    }
-del _k, _nm, _al
+CONJUGATE_SURFACES['TR_HT'] = {
+    'name': 'Schoen T\'-R\' | H\'-T hybrid',
+    'alpha': 0.07562891619932040,
+    'poly': [(0.0, 0.0, 0.0),
+             (-0.5, 0.0, 0.0),
+             (-0.5, 0.0, 1.0),
+             (0.0, -SQRT3 / 2.0, 1.0),
+             (0.0, -0.07562891619932040, 1.0),
+             (0.0, -0.07562891619932040, 0.0)],
+    'normals': [(1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.5, -SQRT3 / 2.0, 0.0),
+                (0.0, 1.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)],
+    'letters': {'a': 1, 'b': 3, 'c': 2, 'd': 4, 'e': 0},
+    'words': ('abcbcbc', 'abcbcbcecbcbc'),
+    'evolver_area': 0.662341950,
+}
+
+_TRHT_A = 0.73119569743699331
+CONJUGATE_SURFACES['HR_TR'] = {
+    'name': 'Schoen H"-R | T\'-R\' hybrid',
+    'alpha': _TRHT_A,
+    'poly': [(0.0, 0.0, 0.0),
+             (0.0, 0.0, 1.0),
+             (-0.5, 0.0, 1.0),
+             (-0.5 * _TRHT_A, -(1.0 - _TRHT_A) * SQRT3 / 2.0, 1.0),
+             (-0.5 * _TRHT_A, -(1.0 - _TRHT_A) * SQRT3 / 2.0, 0.0),
+             (0.0, -SQRT3 / 2.0, 0.0)],
+    'normals': [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.5, -SQRT3 / 2.0, 0.0),
+                (0.0, 0.0, 1.0), (0.5, -SQRT3 / 2.0, 0.0), (0.0, 1.0, 0.0)],
+    'letters': {'a': 0, 'b': 5, 'c': 2, 'd': 3, 'e': 1},
+    'words': ('abcbcbc', 'abcbcbcecbcbc'),
+    'evolver_area': 0.589273118,
+}
 
 
 def _conj_segment_ids(P, poly):
@@ -1994,13 +2015,21 @@ def _selftest():
         # against Evolver 2.70 running his datafile.  Anything else means
         # the letter-to-arc mapping has drifted, so it is an equality.
         want = _CONJ_CELL_COPIES[key]
+        # Gated against EVOLVER, not against ourselves.  Brakke's own
+        # program was run on each datafile and its patch area recorded in
+        # the spec; agreement to 1% is what says the contour and the six
+        # constraint normals were transcribed correctly.  This is the
+        # check that would have caught building all three hybrids from
+        # one contour (0.9338 and 1.4064 against 0.6623 and 0.5893).
+        ev = CONJUGATE_SURFACES[key]['evolver_area']
+        aerr = abs(areas[1] - ev) / ev
         good = (drift < 0.01 and offp < 1e-9 and ncopy == want
-                and areas[1] > 1e-6)
+                and aerr < 0.01 and areas[1] > 1e-6)
         ok &= good
-        print("plateau: conjugate %-6s area %.6f -> %.6f (drift %.3f%%), "
-              "on-plane %.0e, %d copies (Evolver %d) %s"
-              % (key, areas[0], areas[1], 100.0 * drift, offp, ncopy, want,
-                 'OK' if good else 'FAIL'))
+        print("plateau: conjugate %-6s area %.6f (Evolver %.6f, %.2f%%), "
+              "drift %.3f%%, on-plane %.0e, %d copies (Evolver %d) %s"
+              % (key, areas[1], ev, 100.0 * aerr, 100.0 * drift, offp,
+                 ncopy, want, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
