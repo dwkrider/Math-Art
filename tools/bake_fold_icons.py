@@ -69,6 +69,7 @@ CASES = {
     'EGGBOX':    dict(cols=6),
     'CHEVRON':   dict(cols=6),
     'KRESLING':  dict(cols=6),
+    'KRESZIG':   dict(cols=6),
     'RESCH':     dict(cols=3),
 }
 

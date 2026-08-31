@@ -56,7 +56,8 @@ from .fold_io import (ASSIGNMENTS, BOUNDARY, MOUNTAIN, UNASSIGNED, VALLEY,
                       Frame)
 
 PATTERNS = ("MIURA", "ACCORDION", "WATERBOMB", "YOSHIMURA", "HYPAR",
-            "MONKEY", "EGGBOX", "CHEVRON", "KRESLING", "RESCH")
+            "MONKEY", "EGGBOX", "CHEVRON", "KRESLING", "KRESZIG",
+            "RESCH")
 
 
 class _Builder:
@@ -541,7 +542,8 @@ def _kresling_alpha(n, alpha, a, floor=0.05):
     return min(top, hi + 1e-3)
 
 
-def kresling(rows=3, cols=6, alpha=np.deg2rad(72.0), radius=1.0):
+def kresling(rows=3, cols=6, alpha=np.deg2rad(72.0), radius=1.0,
+             stacking='UNIFORM'):
     """The Kresling pattern: a tube that TWISTS as it deploys.
 
     A strip of inclined parallelograms, each cut by its LONG diagonal.
@@ -552,7 +554,23 @@ def kresling(rows=3, cols=6, alpha=np.deg2rad(72.0), radius=1.0):
 
     `cols` is the number of sides around the tube, `rows` the number of
     stacked bands, and `alpha` the panel angle: the lean of the
-    parallelogram's side away from the horizontal.  Small `alpha` gives
+    parallelogram's side away from the horizontal.
+
+    `stacking` is how the bands are piled up, and Kresling gives both:
+    a belt "may operate alone or be multiple, either in left-hand or
+    right-hand version, OR BE INCLINED ALTERNATELY TO LEFT AND RIGHT".
+
+      UNIFORM    every band leans the same way, so the sheet is one
+                 sheared lattice with every diagonal parallel and the
+                 band twists add up down the tube.  This is what the
+                 twist-buckling experiment produces, and what the
+                 published generators draw.
+      ALTERNATE  mirror every other band.  The side creases zigzag, the
+                 diagonals mirror into Vs, and the band twists cancel in
+                 pairs -- so the tube pumps along its axis instead of
+                 turning.  Kresling calls the result "similar to a
+                 Miura-ori"; it is the chevron-looking picture that
+                 usually comes up under the pattern's name.  Small `alpha` gives
     the strongly inclined, elongated cells of a deep twist; near a right
     angle the lean vanishes and the tube stops turning.
 
@@ -611,8 +629,18 @@ def kresling(rows=3, cols=6, alpha=np.deg2rad(72.0), radius=1.0):
         raise ValueError("kresling: no deployed module for these settings")
     R, h, off, phi, H = mod
 
+    # ONE SIGN PER BAND: +1 leans right, -1 leans left.  The lean,
+    # which diagonal is the long one, the winding and the tube's twist
+    # all follow from this list, so the two stackings stay one
+    # construction rather than becoming two that can drift apart.
+    alt = str(stacking).upper() == 'ALTERNATE'
+    sgn = [(-1.0 if (alt and i % 2) else 1.0) for i in range(rows)]
+    lean = [0.0]
+    for i in range(rows):
+        lean.append(lean[-1] + sgn[i] * off)
+
     B = _Builder()
-    idx = [[B.v(j * a + i * off, i * h) for j in range(n + 1)]
+    idx = [[B.v(j * a + lean[i], i * h) for j in range(n + 1)]
            for i in range(rows + 1)]
     faces = []
     for i in range(rows + 1):
@@ -624,26 +652,37 @@ def kresling(rows=3, cols=6, alpha=np.deg2rad(72.0), radius=1.0):
                 B.e(idx[i][j], idx[i + 1][j],
                     BOUNDARY if j in (0, n) else MOUNTAIN)
                 if j < n:
-                    # THE LONG DIAGONAL, bottom-left to top-right.  The
-                    # short one gives a convex antiprism instead, which
-                    # folds perfectly well and is not this pattern.
-                    B.e(idx[i][j], idx[i + 1][j + 1], VALLEY)
-                    # wound consistently, which is what makes the
-                    # measured dihedral signs below mean anything
-                    faces.append([idx[i][j], idx[i][j + 1],
-                                  idx[i + 1][j + 1]])
-                    faces.append([idx[i][j], idx[i + 1][j + 1],
-                                  idx[i + 1][j]])
+                    # THE LONG DIAGONAL of this band's cell, which
+                    # flips with the lean.  The short one gives a convex
+                    # antiprism instead -- it folds perfectly well and
+                    # is not this pattern.  Both windings below are
+                    # counter-clockwise, which is what makes the
+                    # measured dihedral signs mean anything.
+                    if sgn[i] > 0:
+                        B.e(idx[i][j], idx[i + 1][j + 1], VALLEY)
+                        faces.append([idx[i][j], idx[i][j + 1],
+                                      idx[i + 1][j + 1]])
+                        faces.append([idx[i][j], idx[i + 1][j + 1],
+                                      idx[i + 1][j]])
+                    else:
+                        B.e(idx[i][j + 1], idx[i + 1][j], VALLEY)
+                        faces.append([idx[i][j], idx[i][j + 1],
+                                      idx[i + 1][j]])
+                        faces.append([idx[i][j + 1], idx[i + 1][j + 1],
+                                      idx[i + 1][j]])
 
     fr = B.frame("Kresling")
     fr.faces = faces
     fr.fold_angle = np.full(fr.n_edges, np.nan)
 
     th = 2.0 * np.pi / n
+    turn = [0.0]
+    for i in range(rows):
+        turn.append(turn[-1] + sgn[i] * phi)
     tube = np.zeros((fr.n_verts, 3))
     for i in range(rows + 1):
         for j in range(n + 1):
-            ang = th * j + phi * i
+            ang = th * j + turn[i]
             tube[idx[i][j]] = (R * np.cos(ang), R * np.sin(ang), H * i)
 
     # MEASURED WITH THE SOLVER'S OWN FUNCTION, deliberately, rather than
@@ -667,7 +706,31 @@ def kresling(rows=3, cols=6, alpha=np.deg2rad(72.0), radius=1.0):
     # magnitudes are not a refinement, they choose the branch.
     fr.meta["fold_seed"] = np.nan_to_num(fr.fold_angle, nan=0.0)
     fr.meta["kresling"] = (R, h, off, phi, H, alpha)
+    fr.meta["kresling_signs"] = tuple(sgn)
     return fr
+
+
+def kresling_zigzag(rows=4, cols=6, alpha=np.deg2rad(72.0), radius=1.0):
+    """Kresling with its bands inclined alternately left and right.
+
+    The same construction as `kresling` and sharing all of its geometry
+    -- see that docstring -- mirrored band by band.  What changes is the
+    mechanism: the per-band twists cancel in pairs, so the tube extends
+    and contracts along its axis WITHOUT turning, where the uniform
+    stacking turns as it deploys.
+
+    Kresling notes that alternating belts give "a derived pattern
+    similar to a Miura-ori", and this is the zigzag picture that usually
+    appears under the pattern's name -- which is why it is worth having
+    both: they look nothing alike flat, and they do different things.
+
+    References:
+      B. Kresling, "Natural twist buckling in shells," Proc. IASS-IACM
+          2008, Ithaca, sec. 4 -- belts "inclined alternately to left
+          and right", and the cylindrical Miura-ori derived from them.
+    """
+    return kresling(rows=rows, cols=cols, alpha=alpha, radius=radius,
+                    stacking='ALTERNATE')
 
 
 def resch(rows=3, cols=3, cell=1.0, tuck=0.30):
@@ -768,6 +831,7 @@ _MAKERS = {
     "EGGBOX": eggbox,
     "CHEVRON": chevron,
     "KRESLING": kresling,
+    "KRESZIG": kresling_zigzag,
     "RESCH": resch,
     "ACCORDION": accordion,
     "WATERBOMB": waterbomb,
@@ -1106,6 +1170,52 @@ def _selftest():
 
     assert float(np.abs(cf.edge_strain()).max()) < 0.02, (
         "kresling reached its tube by stretching, not by folding")
+
+    # (5) THE ZIGZAG STACKING IS A DIFFERENT MECHANISM, not a different
+    # drawing.  Mirroring alternate bands cancels their twists in pairs,
+    # so an even stack must close into a tube that does NOT turn -- and
+    # that contrast with the check above is the whole reason both are
+    # shipped.  The assignment must survive the mirroring too: a band
+    # leaning the other way has its long diagonal the other way, and
+    # getting that wrong puts short diagonals in every second band.
+    fz = kresling_zigzag(rows=2, cols=5, alpha=np.deg2rad(70.0))
+    Rz, hz, offz, phiz, Hz, alz = fz.meta["kresling"]
+    assert fz.meta["kresling_signs"] == (1.0, -1.0), \
+        "kresling_zigzag: bands are not alternating"
+    az = 2.0 * Rz * np.sin(np.pi / 5)
+    lean = [0.0]
+    for sg in fz.meta["kresling_signs"]:
+        lean.append(lean[-1] + sg * offz)
+    posz = {(round(float(p[0]), 9), round(float(p[1]), 9)): k
+            for k, p in enumerate(fz.verts)}
+    nz = [[posz[(round(j * az + lean[i], 9), round(i * hz, 9))]
+           for j in range(6)] for i in range(3)]
+    for k, c in enumerate(fz.assignment):
+        assert c in (MOUNTAIN, VALLEY, BOUNDARY), (k, c)
+
+    cz = CompliantFolder(fz)
+    cz.run(drive=1.0)
+    Pz = cz.pos
+    seamz = float(np.mean([np.linalg.norm(Pz[nz[i][0]] - Pz[nz[i][5]])
+                           for i in range(3)])) / az
+    assert seamz < 0.15, (
+        f"kresling_zigzag does not close: seam {seamz:.2f} ring-edges")
+    b0 = Pz[[nz[0][j] for j in range(5)]]
+    t0 = Pz[[nz[2][j] for j in range(5)]]
+    c0, c1 = b0.mean(0), t0.mean(0)
+    axz = c1 - c0
+    axz = axz / np.linalg.norm(axz)
+    uz = b0[0] - c0
+    uz -= (uz @ axz) * axz
+    wz = t0[0] - c1
+    wz -= (wz @ axz) * axz
+    netz = abs(np.degrees(np.arctan2(np.cross(uz, wz) @ axz, uz @ wz)))
+    assert netz < 5.0, (
+        f"kresling_zigzag nets {netz:.1f} deg of twist over an even stack "
+        f"where the mirrored bands must cancel to zero -- if it turns, "
+        f"the bands are not actually mirrored")
+    assert float(np.abs(cz.edge_strain()).max()) < 0.02, (
+        "kresling_zigzag reached its tube by stretching")
 
     # --- dispatch ----------------------------------------------------
     for name in PATTERNS:

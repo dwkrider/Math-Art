@@ -97,6 +97,18 @@ _PATTERN_ITEMS = (
      "Biruta Kresling's twist-buckling pattern: inclined parallelograms "
      "cut by their long diagonal, which roll into a tube whose top ring "
      "turns as it deploys. Panel Angle sets the lean"),
+    # TWO KRESLINGS, because Kresling gives two.  Belts may be stacked
+    # all the same way or "inclined alternately to left and right", and
+    # the two are one construction apart -- but they look nothing alike
+    # flat, and they do different things: one turns as it deploys, the
+    # other pumps straight along its axis.  Two thumbnails tell that
+    # apart instantly where a Stacking dropdown would hide it, which is
+    # the same reasoning that gives the hypar and the monkey saddle
+    # separate entries.
+    ('KRESZIG', "Kresling Zigzag",
+     "Kresling with its bands inclined alternately left and right, so "
+     "the creases zigzag and the diagonals mirror into Vs. The band "
+     "twists cancel, so this tube pumps along its axis without turning"),
     ('RESCH', "Ron Resch",
      "Ron Resch's triangular tessellation, whose tucks hide surplus "
      "material and leave a stiff sheet that takes curvature both ways. "
@@ -170,6 +182,7 @@ _NATURAL_FOLD = {
     'EGGBOX': 90.0,
     'CHEVRON': 80.0,
     'KRESLING': 47.0,
+    'KRESZIG': 47.0,
     'RESCH': 70.0,
 }
 
@@ -195,6 +208,7 @@ _NATURAL_ROWS = {
     'EGGBOX': 4,
     'CHEVRON': 6,
     'KRESLING': 4,
+    'KRESZIG': 4,
     'RESCH': 3,
 }
 
@@ -209,6 +223,7 @@ _NATURAL_ANGLE = {
     'MIURA': 60.0,
     'EGGBOX': 60.0,
     'KRESLING': 72.0,
+    'KRESZIG': 72.0,
 }
 
 #: Which solver a pattern needs to become itself.  Rigid Panels is the
@@ -219,7 +234,7 @@ _NATURAL_ANGLE = {
 #: degrees, and under Rigid Panels the tube stalls half open (widest
 #: extent 7.65 -> 4.95) where Bending Paper closes it (-> 3.71, seam
 #: zero).  So the choice is per pattern rather than one global default.
-_NATURAL_SOLVER = {'KRESLING': 'COMPLIANT'}
+_NATURAL_SOLVER = {'KRESLING': 'COMPLIANT', 'KRESZIG': 'COMPLIANT'}
 
 #: Patterns whose sector count is part of their identity rather than a
 #: free parameter.  The hypar and the monkey saddle are the SAME
