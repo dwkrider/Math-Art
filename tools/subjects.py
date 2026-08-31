@@ -168,10 +168,15 @@ PARAMS = {
     # lines that reads as an empty rectangle at icon size -- and the
     # operator now folds by default anyway, so a flat figure would show
     # something the bare defaults no longer produce.
-    "mesh.crease_pattern_add": dict(pattern='MIURA', rows=4, cols=6,
+    # The MONKEY SADDLE is the hero: of the six patterns it is the one
+    # that reads as a sculpture rather than as a technical diagram, and
+    # the Origami menu entry has to sell the whole family from a single
+    # picture.  Its own defaults (12 rings, 150 degrees), so the menu
+    # icon, the gallery thumbnail and the bare operator all agree.
+    "mesh.crease_pattern_add": dict(pattern='MONKEY', rows=12,
                                     auto_fold=True,
-                                    fold_angle=1.7453292519943295,   # 100 deg
-                                    steps=10, animate=False),
+                                    fold_angle=2.6179938779914944,   # 150 deg
+                                    steps=14, animate=False),
     # The Clifford torus is a torus; the vesicle is the shape the
     # Willmore energy is famous for -- the biconcave discocyte that
     # the Helfrich model predicts and a red blood cell actually is.
@@ -271,6 +276,12 @@ import math                                              # noqa: E402
 GYROID_POSE = (-0.1967, 0.1944, -1.8216)
 
 ORIENT = {
+    # A pleated saddle seen straight down reads as concentric rings on a
+    # flat disc -- the one view that hides the warp the generator exists
+    # to show.  Same three-quarter angle the fold gallery uses, so the
+    # menu icon and the thumbnail show the object the same way up.
+    "mesh.crease_pattern_add": (1.0821, 0.0, 0.4887),
+
     # The diamond tetrahedron's 3-fold axis is vertical by
     # construction, and straight down it the four hexagons stack into a
     # flat hexagonal silhouette -- the one view that hides the saddle
