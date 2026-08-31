@@ -772,7 +772,16 @@ _SPECS.update({
 # The declared normals also need 45-degree snapping, which `_snap_axis`'s
 # default 30-degree grid does not provide -- another reason the
 # classified route could not reach this surface.
+# S'-S" is a FAMILY, and `tau` picks the member: the cell comes out
+# 1.781 x 1 at 0.30, falls to a minimum 1.331 at 0.60, and rises again
+# (1.336 at 0.65, 1.385 at 0.80).  Brakke's `SSadj.fe` says asize = 2.4
+# "gives about the smallest aspect ratio possible", so his published
+# figure IS the squattest member -- his 1.287 against our 1.331.  The
+# default therefore moved from 0.30 to 0.60, because the point of the
+# row is to be the surface he publishes.
 _SPECS['SS'].update(
+    tau=0.6j,
+    tau_range=(0.20, 1.20, 0.60),
     exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
                   'y=1': (1.0, -1.0, 0.0), 'y=0#0': (1.0, 1.0, 0.0),
                   'y=0#1': (0.0, 1.0, 0.0)},
@@ -1216,6 +1225,33 @@ def spec_curves(key, P):
 # Order of the transform set each cell word generates, as reported
 # by Evolver 2.70 running the matching datafile.
 _WORD_COPIES = {'SS': 16}
+
+
+def spec_modulus_range(key):
+    """(lo, hi, default) for a spec whose family a UI can walk, or None.
+
+    The triangle-group rows are one-parameter families in the torus
+    modulus `tau`, and which member you get is a real choice rather than
+    an implementation detail -- it is what decides whether the cell is
+    squat or elongated, and Brakke's published figures are particular
+    members.
+    """
+    r = _SPECS[key].get('tau_range')
+    return tuple(r) if r else None
+
+
+def set_spec_modulus(key, value):
+    """Pick the family member, the way `clp_params` picks CLP's.
+
+    The spec table is the only channel a TPMS_EXACT row has for a shape
+    parameter.  `_spec_state` already keys the build cache on `tau`, so
+    a change here invalidates it correctly.
+    """
+    rng = spec_modulus_range(key)
+    if rng is None:
+        return
+    lo, hi, _d = rng
+    _SPECS[key]['tau'] = complex(0.0, min(max(float(value), lo), hi))
 
 
 def spec_declared_planes(key, P):

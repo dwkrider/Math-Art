@@ -105,6 +105,7 @@ from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
 # the catalog module itself, for the self-test's CHM-modulus reference
 from .minsurf import zoo as _zoo
 from .minsurf import plateau as _plateau
+from .minsurf import hexagonal as _hex
 # the parametric module itself, to read back what the last equal-area
 # resample achieved (LAST_EQ_AREA_COV is rebound per build, so it has to
 # be read through the module rather than imported by value)
@@ -1032,6 +1033,12 @@ if _IN_BLENDER:
                         "catenoid necks, large ones give vertical sheets "
                         "with wide cross-tunnels.  0.5 is the member "
                         "Brakke publishes")
+        cell_proportion: FloatProperty(
+            name="Cell Proportion", default=0.6, min=0.2, max=1.2,
+            description="Which member of the surface's family to build.  "
+                        "Low values give a tall, drawn-out cell and high "
+                        "ones a wide flat cell; in between is the "
+                        "squattest, which is the member Brakke publishes")
         cells: IntProperty(
             name="Cells", default=0, min=0, max=8,
             description="Legacy uniform cell count (broadcasts to every "
@@ -1178,6 +1185,10 @@ if _IN_BLENDER:
                     # channel for one.
                     if surf == 'GW_CONJ':
                         _plateau.gw_params(self.prism_height)
+                    # Triangle-group rows are one-parameter families and
+                    # the member matters -- see `spec_modulus_range`.
+                    if _hex.spec_modulus_range(surf):
+                        _hex.set_spec_modulus(surf, self.cell_proportion)
                     verts, tris = build_tpms_exact(
                         surf, self.reflect_depth, self.resolution,
                         self.cell_size, self.assoc_angle,
@@ -1343,6 +1354,8 @@ if _IN_BLENDER:
                     lay.prop(self, 'reflect_depth')
                     if self.surface == 'GW_CONJ':
                         lay.prop(self, 'prism_height')
+                    if _hex.spec_modulus_range(self.surface):
+                        lay.prop(self, 'cell_proportion')
                     for k in ('resolution', 'cell_size', 'thickness',
                               'clip_sphere', 'clip_radius',
                               'shade_smooth'):
