@@ -60,6 +60,7 @@ _MODULE_NAMES = [
     'crochet_generator',
     'fold_generator',
     'fold_pattern_generator',
+    'fold_view',
     'dform_generator',
     'koman_generator',
     'space_curve_generator',
