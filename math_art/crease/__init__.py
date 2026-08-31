@@ -48,8 +48,8 @@ References:
       2007), ch. 11-14.
 """
 
-from . import (compliant, fold_io, graph, layers, oripa_io, patterns,
-               rigid, svg_io, validate)
+from . import (compliant, corrugate, fold_io, graph, layers, oripa_io,
+               patterns, rigid, svg_io, validate)
 from .fold_io import (ASSIGNMENTS, BOUNDARY, CREASES, FLAT, MOUNTAIN,
                       UNASSIGNED, VALLEY, FoldError, Frame, read_fold,
                       write_fold)
@@ -67,6 +67,7 @@ __all__ = [
     "read_layer_order", "triangulate", "vertex_rings", "write_fold",
     "patterns", "rigid", "svg_io", "read_svg", "SvgError",
     "oripa_io", "read_cp", "read_opx", "OripaError", "compliant",
+    "corrugate",
 ]
 
 

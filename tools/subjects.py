@@ -168,6 +168,13 @@ PARAMS = {
     # lines that reads as an empty rectangle at icon size -- and the
     # operator now folds by default anyway, so a flat figure would show
     # something the bare defaults no longer produce.
+    # A saddle, not the sphere: negative curvature is the case this
+    # technique is GOOD at, since pleating adds material and a saddle
+    # needs it added.  Showing the sphere would advertise the one target
+    # the Theorema Egregium guarantees it handles worst.
+    "mesh.corrugation_add": dict(target='HYPAR', nu=18, nv=18,
+                                 amplitude=0.12, relax=1500,
+                                 make_pattern=False),
     # The MONKEY SADDLE is the hero: of the six patterns it is the one
     # that reads as a sculpture rather than as a technical diagram, and
     # the Origami menu entry has to sell the whole family from a single
