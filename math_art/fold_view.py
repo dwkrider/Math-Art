@@ -47,19 +47,44 @@ _handle = None
 _shader = None
 
 
-def _crease_batches(obj):
-    """Build one line batch per assignment code, in world space."""
+def _crease_batches(obj, depsgraph=None):
+    """Build one line batch per assignment code, in world space.
+
+    POSITIONS COME FROM THE EVALUATED MESH, not the base one.  A folded
+    pattern is deformed by shape keys, which leave `obj.data` sitting in
+    the flat state -- so reading base coordinates draws the crease
+    pattern lying flat underneath a folded model, which is exactly the
+    wrong picture and was the first thing this overlay got wrong.
+
+    Topology and the assignment attribute still come from the base mesh:
+    shape keys do not change either, and reading them there avoids
+    depending on which attributes survive evaluation.  If a modifier HAS
+    changed the vertex count then the indices no longer correspond, so
+    the base positions are used and the overlay simply sits where the
+    unmodified cage is -- wrong-but-stable beats mismatched garbage.
+    """
     me = obj.data
     attr = me.attributes.get("crease_assignment")
     if attr is None:
         return None
+
+    coords = None
+    if depsgraph is not None:
+        try:
+            eval_me = obj.evaluated_get(depsgraph).data
+            if len(eval_me.vertices) == len(me.vertices):
+                coords = [v.co.copy() for v in eval_me.vertices]
+        except (AttributeError, ReferenceError, RuntimeError):
+            coords = None
+    if coords is None:
+        coords = [v.co.copy() for v in me.vertices]
+
     mw = obj.matrix_world
-    # Edge order matches the attribute's edge domain, so they zip.
     by_code = {}
     for e, d in zip(me.edges, attr.data):
         a, b = e.vertices
         by_code.setdefault(int(d.value), []).extend(
-            (mw @ me.vertices[a].co, mw @ me.vertices[b].co))
+            (mw @ coords[a], mw @ coords[b]))
     return by_code
 
 
@@ -77,11 +102,16 @@ def _draw():
     gpu.state.blend_set('ALPHA')
     gpu.state.depth_test_set('LESS_EQUAL')
 
+    try:
+        dg = ctx.evaluated_depsgraph_get()
+    except (AttributeError, RuntimeError):
+        dg = None
+
     for obj in ctx.view_layer.objects:
         if obj.type != 'MESH' or not obj.visible_get():
             continue
         try:
-            batches = _crease_batches(obj)
+            batches = _crease_batches(obj, dg)
         except (ReferenceError, AttributeError):
             continue                       # object went away mid-draw
         if not batches:
