@@ -48,11 +48,13 @@ References:
       2007), ch. 11-14.
 """
 
-from . import fold_io, graph, layers, patterns, rigid, svg_io, validate
+from . import (fold_io, graph, layers, oripa_io, patterns, rigid,
+               svg_io, validate)
 from .fold_io import (ASSIGNMENTS, BOUNDARY, CREASES, FLAT, MOUNTAIN,
                       UNASSIGNED, VALLEY, FoldError, Frame, read_fold,
                       write_fold)
 from .graph import GraphError, build_faces, triangulate, vertex_rings
+from .oripa_io import OripaError, read_cp, read_opx
 from .svg_io import SvgError, read_svg
 from .layers import LayerOrder, read_layer_order
 from .validate import Report, validate as check
@@ -64,6 +66,7 @@ __all__ = [
     "build_faces", "check", "load_pattern", "read_fold",
     "read_layer_order", "triangulate", "vertex_rings", "write_fold",
     "patterns", "rigid", "svg_io", "read_svg", "SvgError",
+    "oripa_io", "read_cp", "read_opx", "OripaError",
 ]
 
 
@@ -85,11 +88,14 @@ def load_pattern(path_or_text, frame=0, recover_faces=True, validate_it=True):
     # sets that expectation.  `stats` is None for FOLD, and the SVG
     # importer's report otherwise.
     stats = None
-    if isinstance(path_or_text, str) and (
-            path_or_text.lstrip().startswith("<svg")
-            or path_or_text.lstrip().startswith("<?xml")
-            or path_or_text.lower().endswith(".svg")):
+    low = path_or_text.lower() if isinstance(path_or_text, str) else ""
+    head = path_or_text.lstrip()[:200] if isinstance(path_or_text, str) else ""
+    if low.endswith(".svg") or head.startswith("<svg") or "<svg" in head:
         fr, stats = svg_io.read_svg(path_or_text)
+    elif low.endswith(".opx") or "<java" in head:
+        fr, stats = oripa_io.read_opx(path_or_text)
+    elif low.endswith(".cp"):
+        fr, stats = oripa_io.read_cp(path_or_text)
     else:
         fr, _frames = read_fold(path_or_text, frame=frame)
     if recover_faces and fr.faces is None and fr.verts is not None \

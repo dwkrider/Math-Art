@@ -437,6 +437,55 @@ def _split_crossings(verts, edges, kinds, tol):
     return V, E, K, len(marks)
 
 
+def frame_from_segments(segs, tol=1e-6, split_crossings=True, stats=None,
+                        title="crease pattern"):
+    """Turn assignment-tagged line segments into a flat `Frame`.
+
+    Shared by every line-based importer -- SVG, ORIPA `.cp`, Oriedita
+    `.opx` -- because they differ only in how a segment gets its
+    assignment.  Everything after that is the same problem: weld
+    endpoints that were written as separate coordinates, split the
+    crossings that a drawing program has no reason to mark, and hand
+    back a plane graph.
+
+    `segs` is a sequence of `(x1, y1, x2, y2, assignment)`.
+    """
+    if stats is None:
+        stats = {}
+    stats.setdefault("crossings", 0)
+    if not segs:
+        raise SvgError("no crease lines found in the file")
+
+    # Tolerance is relative to the drawing, since these formats carry
+    # no unit: a pattern 1000 units wide and one 1 unit wide need the
+    # same weld in *relative* terms.
+    xs = [v for s in segs for v in (s[0], s[2])]
+    ys = [v for s in segs for v in (s[1], s[3])]
+    extent = max(max(xs) - min(xs), max(ys) - min(ys)) or 1.0
+    weld = max(tol, extent * 1e-6)
+
+    verts, edges, kinds = _merge_vertices(segs, weld)
+    if split_crossings:
+        verts, edges, kinds, n = _split_crossings(verts, edges, kinds, weld)
+        stats["crossings"] = n
+        if n:
+            verts, edges, kinds = _merge_vertices(
+                [(verts[a][0], verts[a][1], verts[b][0], verts[b][1], k)
+                 for (a, b), k in zip(edges, kinds)], weld)
+
+    fr = Frame(
+        verts=np.array(verts, dtype=float),
+        edges=np.array(edges, dtype=np.int64).reshape(-1, 2),
+        assignment=np.array(kinds, dtype="<U1"),
+        faces=None,
+        face_orders=None,
+        meta={"frame_title": title},
+    )
+    stats["vertices"] = int(fr.n_verts)
+    stats["edges"] = int(len(fr.edges))
+    return fr
+
+
 def read_svg(path_or_text, tol=1e-6, split_crossings=True):
     """Read an SVG crease pattern into a flat `Frame`.
 
@@ -468,39 +517,15 @@ def read_svg(path_or_text, tol=1e-6, split_crossings=True):
             "colour -- mountain red, valley blue, boundary black -- so a "
             "drawing with only fills, text or curves imports as nothing")
 
-    # Tolerance is relative to the drawing, since SVG user units are
-    # arbitrary: a pattern 1000 units wide and one 1 unit wide need the
-    # same weld in *relative* terms.
-    xs = [v for s in raw for v in (s[0], s[2])]
-    ys = [v for s in raw for v in (s[1], s[3])]
-    extent = max(max(xs) - min(xs), max(ys) - min(ys)) or 1.0
-    weld = max(tol, extent * 1e-6)
-
-    verts, edges, kinds = _merge_vertices(raw, weld)
-    if split_crossings:
-        verts, edges, kinds, n = _split_crossings(verts, edges, kinds, weld)
-        stats["crossings"] = n
-        if n:
-            verts, edges, kinds = _merge_vertices(
-                [(verts[a][0], verts[a][1], verts[b][0], verts[b][1], k)
-                 for (a, b), k in zip(edges, kinds)], weld)
-
-    V = np.array(verts, dtype=float)
-    # SVG's y axis points DOWN.  Flipping it here means an imported
-    # pattern is not a mirror image of the same pattern in FOLD, which
-    # would silently swap every mountain and valley when folded.
-    V[:, 1] = -V[:, 1]
-
-    fr = Frame(
-        verts=V,
-        edges=np.array(edges, dtype=np.int64).reshape(-1, 2),
-        assignment=np.array(kinds, dtype="<U1"),
-        faces=None,
-        face_orders=None,
-        meta={"frame_title": "SVG crease pattern"},
-    )
-    stats["vertices"] = int(fr.n_verts)
-    stats["edges"] = int(len(fr.edges))
+    # SVG's y axis points DOWN, and this is the only importer that has
+    # to care.  Flipping here means an imported pattern is not a mirror
+    # image of the same pattern read from FOLD -- which would silently
+    # swap every mountain and valley the moment it was folded.  Done on
+    # the segments rather than the finished frame so the crossing split
+    # runs on the same coordinates the caller will see.
+    raw = [(x1, -y1, x2, -y2, k) for x1, y1, x2, y2, k in raw]
+    fr = frame_from_segments(raw, tol=tol, split_crossings=split_crossings,
+                             stats=stats, title="SVG crease pattern")
     return fr, stats
 
 

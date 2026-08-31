@@ -131,7 +131,7 @@ class MESH_OT_fold_import(bpy.types.Operator, ImportHelper):
     """Import a FOLD crease pattern or folded state"""
 
     bl_idname = "mesh.fold_import"
-    bl_label = "Crease Pattern (.fold/.svg)"
+    bl_label = "Crease Pattern (.fold/.svg/.cp)"
     bl_options = {'REGISTER', 'UNDO'}
 
     filename_ext = ".fold"
@@ -139,8 +139,8 @@ class MESH_OT_fold_import(bpy.types.Operator, ImportHelper):
     # with a crease pattern does not care which interchange format it
     # happens to be in, and the reference libraries are split across
     # both -- Origami Simulator ships its patterns as SVG only.
-    filter_glob: StringProperty(default="*.fold;*.json;*.svg",
-                                options={'HIDDEN'})
+    filter_glob: StringProperty(
+        default="*.fold;*.json;*.svg;*.cp;*.opx", options={'HIDDEN'})
 
     frame_index: FloatProperty(
         name="Frame", default=0, min=0, max=4096, precision=0,
@@ -172,7 +172,8 @@ class MESH_OT_fold_import(bpy.types.Operator, ImportHelper):
                 frame=int(self.frame_index),
                 recover_faces=self.recover_faces,
                 validate_it=self.report_checks)
-        except (crease.FoldError, crease.SvgError) as exc:
+        except (crease.FoldError, crease.SvgError,
+                crease.OripaError) as exc:
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
 
