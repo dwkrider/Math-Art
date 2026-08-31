@@ -273,6 +273,132 @@ def _frame_from_object(obj):
                         faces=faces or None)
 
 
+#: Vertex-colour attribute the strain display writes.  A colour
+#: attribute rather than a float one so it shows in the viewport without
+#: the user having to build a material first -- same choice, and the
+#: same name discipline, as `curvature_color.py`.
+_STRAIN_ATTR = "Fold Strain"
+
+
+def _paint_strain(obj, strain, clamp=None):
+    """Write per-vertex strain as a colour ramp; return the range used.
+
+    WHITE is unstrained, RED is stretched, BLUE is compressed.  Paper
+    does not stretch, so on a rigid-foldable pattern this should come
+    out essentially white everywhere -- and a hot band is the model
+    saying where the sheet is fighting itself: a jam, an
+    over-constrained vertex, or a target angle it cannot reach.
+    """
+    import numpy as _np
+    me = obj.data
+    s = _np.asarray(strain, dtype=float)
+    if len(s) != len(me.vertices):
+        return None
+    lim = float(clamp) if clamp else float(_np.abs(s).max())
+    if not _np.isfinite(lim) or lim <= 0.0:
+        lim = 1e-9
+    t = _np.clip(s / lim, -1.0, 1.0)
+    cols = _np.ones((len(s), 4))
+    tp = _np.clip(t, 0.0, None)[:, None]
+    tn = _np.clip(-t, 0.0, None)[:, None]
+    hot = _np.array([0.85, 0.12, 0.10])
+    cold = _np.array([0.12, 0.30, 0.85])
+    cols[:, :3] = 1.0 + tp * (hot - 1.0) + tn * (cold - 1.0)
+
+    attr = me.color_attributes.get(_STRAIN_ATTR)
+    if attr is not None and (attr.domain != 'POINT'
+                             or attr.data_type != 'FLOAT_COLOR'):
+        me.color_attributes.remove(attr)
+        attr = None
+    if attr is None:
+        attr = me.color_attributes.new(_STRAIN_ATTR, 'FLOAT_COLOR', 'POINT')
+    attr.data.foreach_set("color", cols.ravel())
+    me.color_attributes.active_color = attr
+    me.update()
+    return lim
+
+
+def _compliant_fold(obj, drive, steps, animate, colour_strain):
+    """Fold `obj` with the compliant solver.
+
+    Triangulates first when it has to.  A quad panel has no interior
+    bending freedom, so a compliant model would hold it just as flat as
+    the rigid one does -- which would make choosing this solver look
+    like it had done nothing.
+    """
+    import numpy as _np
+    frame = _frame_from_object(obj)
+    if frame.faces is None:
+        frame.faces = crease.build_faces(frame.verts, frame.edges)
+    added = 0
+    if any(len(f) != 3 for f in frame.faces):
+        tris, diags = crease.triangulate(frame.verts, frame.faces)
+        frame.faces = tris
+        if diags:
+            frame.edges = _np.vstack(
+                [frame.edges, _np.array(diags, dtype=_np.int64)])
+            frame.assignment = _np.concatenate(
+                [frame.assignment,
+                 _np.array([crease.UNASSIGNED] * len(diags), dtype="<U1")])
+            added = len(diags)
+
+    cf = crease.compliant.CompliantFolder(frame)
+    if animate:
+        # One shape key per sampled state, as the rigid path does, so
+        # the two solvers animate through the same `fold_t` dial.
+        n = max(2, int(steps))
+        states = []
+        per = max(200, 12000 // n)
+        for i in range(n):
+            d = drive * (i + 1) / n
+            for _ in range(per):
+                cf.step(d)
+            states.append(cf.pos.copy())
+        _apply_states(obj, states)
+    else:
+        cf.run(drive=drive, steps=12000)
+        for v, p in zip(obj.data.vertices, cf.pos):
+            v.co = Vector(p)
+        obj.data.update()
+
+    obj["fold_is_flat"] = False
+    msg = (f"compliant fold to {drive * 100:.0f}% of target; "
+           f"max strain {float(_np.abs(cf.edge_strain()).max()):.2e}")
+    if added:
+        msg += f"; {added} panel diagonal(s) added to allow bending"
+    if colour_strain:
+        lim = _paint_strain(obj, cf.vertex_strain())
+        if lim is not None:
+            msg += f"; strain shown to +/-{lim:.2e}"
+    return msg
+
+
+def _apply_states(obj, states):
+    """Cache a list of vertex-position arrays as driven shape keys."""
+    if obj.data.shape_keys:
+        obj.shape_key_clear()
+    obj.shape_key_add(name="Flat", from_mix=False)
+    for i, p in enumerate(states):
+        key = obj.shape_key_add(name=f"Fold {i:02d}", from_mix=False)
+        for kv, co in zip(key.data, p):
+            kv.co = Vector(co)
+        key.slider_min, key.slider_max = 0.0, 1.0
+    obj["fold_t"] = 0.0
+    obj.id_properties_ui("fold_t").update(
+        min=0.0, max=1.0, description="Fold progress, 0 flat to 1 folded")
+    n = len(states) - 1
+    for i, key in enumerate(obj.data.shape_keys.key_blocks[1:]):
+        fc = key.driver_add("value")
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        var = drv.variables.new()
+        var.name = "t"
+        var.type = 'SINGLE_PROP'
+        var.targets[0].id = obj
+        var.targets[0].data_path = '["fold_t"]'
+        drv.expression = f"max(0.0, 1.0 - abs(t*{n} - {i}))"
+
+
 def _fold_object(obj, fold_angle, steps, animate):
     """Fold `obj` in place; return a report string.
 
@@ -502,18 +628,67 @@ class OBJECT_OT_fold_solve(bpy.types.Operator):
         name="Animate", default=True,
         description="Cache the whole path as shape keys driven by a "
                     "single Fold property, instead of only the end state")
+    solver: EnumProperty(
+        name="Solver", default='RIGID',
+        items=[
+            ('RIGID', "Rigid Panels",
+             "Panels stay perfectly flat and only the creases bend. "
+             "Exact for rigid-foldable patterns like the Miura, and the "
+             "right choice when you want clean faceted geometry"),
+            ('COMPLIANT', "Bending Paper",
+             "Let the paper bend between creases, as real paper does. "
+             "Slower and approximate, but it is the only way to fold "
+             "patterns that have no rigid folding at all -- the pleated "
+             "hypar is proved to be one (Demaine et al. 2011)"),
+        ],
+        description="How the sheet is allowed to deform while folding")
+    drive: FloatProperty(
+        name="Fold Amount", default=0.8, min=0.0, max=1.0, subtype='FACTOR',
+        description="How far toward each crease's target angle to drive "
+                    "the sheet, for the bending-paper solver")
+    colour_strain: BoolProperty(
+        name="Colour by Strain", default=False,
+        description="Paint each vertex by how much the paper is stretched "
+                    "there -- white none, red stretched, blue compressed. "
+                    "Paper does not stretch, so a hot band shows where the "
+                    "pattern is fighting itself")
 
     @classmethod
     def poll(cls, context):
         obj = context.active_object
         return obj is not None and obj.type == 'MESH'
 
+    def draw(self, context):
+        L = self.layout
+        L.use_property_split = True
+        L.prop(self, "solver")
+        if self.solver == 'RIGID':
+            L.prop(self, "fold_angle")
+        else:
+            L.prop(self, "drive")
+        L.prop(self, "steps")
+        L.prop(self, "animate")
+        L.prop(self, "colour_strain")
+
     def execute(self, context):
         obj = context.active_object
         try:
-            msg = _fold_object(obj, self.fold_angle, self.steps,
-                               self.animate)
-        except (crease.FoldError, crease.rigid.FoldFailure) as exc:
+            if self.solver == 'COMPLIANT':
+                msg = _compliant_fold(obj, self.drive, self.steps,
+                                      self.animate, self.colour_strain)
+            else:
+                msg = _fold_object(obj, self.fold_angle, self.steps,
+                                   self.animate)
+                if self.colour_strain:
+                    # Strain is a compliant-solver quantity: the rigid
+                    # model asserts the panels do not deform, so there
+                    # is nothing to colour and pretending otherwise
+                    # would draw a field of exact zeros.
+                    msg += ("; strain colouring needs the bending-paper "
+                            "solver -- the rigid one holds panels exactly "
+                            "rigid, so its strain is zero by definition")
+        except (crease.FoldError, crease.rigid.FoldFailure,
+                crease.compliant.CompliantFailure) as exc:
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
         self.report({'INFO'}, msg)
