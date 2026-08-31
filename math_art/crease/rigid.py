@@ -122,6 +122,26 @@ class FoldFailure(RuntimeError):
 #: not "accurate" from "less accurate".
 _PATH_TOL = 1e-6
 
+#: Singular-value cutoff for the corrector's least-squares solve, as a
+#: fraction of the largest singular value.  Not a tolerance on the
+#: answer: it decides which directions the Jacobian is taken to control
+#: at all.  The flat state is a bifurcation with a large null space, so
+#: the pseudo-inverse is asked to divide by singular values that carry
+#: no information.
+#:
+#: MEASURED, because the obvious reasoning gives the wrong number.  A
+#: cutoff tight enough to look safe (1e-8, 1e-10) LOSES accuracy: on the
+#: hypar's first step off flat it leaves the residual at 2.2e-6 instead
+#: of 1.9e-13, because it discards directions the constraint really does
+#: control.  1e-12 keeps them and still converges.  The protection
+#: against divergence is the line search below, not this cutoff -- which
+#: is why the cutoff can afford to be generous.
+_RCOND = 1e-12
+
+#: How many times the corrector may halve a Newton step while looking
+#: for one that actually lowers the residual.
+_BACKTRACK = 40
+
 
 def _rx(t):
     c, s = np.cos(t), np.sin(t)
@@ -512,20 +532,65 @@ class RigidFolder:
         """Newton back onto the manifold, ORTHOGONAL to the tangent.
 
         A plain minimum-norm correction is orthogonal to the null space
-        at the current point -- which at the flat state is 8-dimensional
-        and includes the very mode being followed, so the correction
-        undoes the step.  Constraining it against the tangent keeps the
-        progress that the step just made.
+        at the current point -- which at the flat state is high
+        dimensional and includes the very mode being followed, so the
+        correction undoes the step.  Constraining it against the tangent
+        keeps the progress that the step just made.
+
+        TWO GUARDS, both of which this needed and neither of which it
+        had.  Undamped, with `rcond=None`, the corrector could return
+        3.1e6 degrees out of a 0.27-degree trial step -- measured, on the
+        pleated hypar with its correct crease assignment -- while leaving
+        the residual stuck near 0.9.  That looked like an unfoldable
+        pattern and was really an unguarded Newton.
+
+        `rcond` truncates the small singular values.  The flat state is a
+        bifurcation where the Jacobian is badly rank deficient (nullity
+        22 for a square hypar), so with the default cutoff the
+        pseudo-inverse divides the residual by singular values near
+        machine epsilon and manufactures an enormous step out of a
+        direction the constraint barely controls.  Truncating solves for
+        the part of the step the Jacobian actually determines.
+
+        The BACKTRACKING LINE SEARCH is the backstop: accept a step only
+        if it genuinely reduces the residual, halving until it does.  A
+        Newton step is a linear prediction, and near a bifurcation the
+        linear model is poor even when the solve is well conditioned --
+        so "the step was computed" and "the step helps" are different
+        claims, and only the second one is worth acting on.
         """
+        best = np.array(rho, dtype=float)
+        best_err = float(np.linalg.norm(self.residual(best)))
+        rho = best.copy()
         for _ in range(iters):
             r = self.residual(rho)
-            if np.linalg.norm(r) < tol:
-                break
+            err = float(np.linalg.norm(r))
+            if err < tol:
+                return rho
             A = np.vstack([self.jacobian(rho), t[None, :]])
             rhs = np.concatenate([-r, [0.0]])
-            d, *_ = np.linalg.lstsq(A, rhs, rcond=None)
-            rho = rho + d
-        return rho
+            d, *_ = np.linalg.lstsq(A, rhs, rcond=_RCOND)
+            if not np.isfinite(d).all():
+                break
+            scale = 1.0
+            for _ in range(_BACKTRACK):
+                trial = rho + scale * d
+                if np.isfinite(trial).all():
+                    e = float(np.linalg.norm(self.residual(trial)))
+                    if e < err:
+                        break
+                scale *= 0.5
+            else:
+                break                # no damping of this step helps
+            rho = trial
+            if e < best_err:
+                best, best_err = rho.copy(), e
+        # Hand back the best point actually reached, never a worse one
+        # than we started from -- `fold_path` judges the step by its
+        # residual, so returning a diverged iterate would have it reject
+        # a step that a shorter one could have made.
+        return best if best_err < float(
+            np.linalg.norm(self.residual(rho))) else rho
 
     def solve(self, rho, driver, target, iters=40, tol=1e-10):
         """Newton-project onto the constraint manifold at a driver angle."""
@@ -1020,6 +1085,90 @@ def _selftest():
         assert float(np.rad2deg(np.abs(deep).max())) > 150.0, (
             f"{name}: asked to fold to 179 deg, reached only "
             f"{float(np.rad2deg(np.abs(deep).max())):.1f}")
+
+    # --- the corrector must not diverge at the bifurcation ----------
+    #
+    # `_correct` had neither damping nor a singular-value cutoff, and on
+    # the hypar it returned 3.1e6 DEGREES out of a 0.27-degree trial
+    # step while leaving the residual near 0.9.  That reads as an
+    # unfoldable pattern and is really an unguarded Newton: the flat
+    # state is a bifurcation where the Jacobian is badly rank deficient,
+    # so the default pseudo-inverse divides by singular values near
+    # machine epsilon.
+    #
+    # Test it where it broke -- the first step off flat, which is the
+    # hardest point on the whole path.
+    for name, kw in (('HYPAR', dict(rings=6, sides=4)),
+                     ('HYPAR', dict(rings=4, sides=6)),
+                     ('MIURA', dict(rows=4, cols=6)),
+                     ('WATERBOMB', dict(rows=3, cols=4))):
+        cf = patterns.build(name, **kw)
+        cf.faces = build_faces(cf.verts, cf.edges)
+        cs = RigidFolder(cf)
+        z = np.zeros(cs.n_vars)
+        tg = cs.tangent(z, bias=cs.seed_direction())
+        assert tg is not None, f"{name} {kw}: no tangent at the flat state"
+        for trial in (np.deg2rad(8.5), np.deg2rad(1.0), np.deg2rad(0.27)):
+            lead = float(np.abs(tg).max()) or 1.0
+            got = cs._correct(z + (trial / lead) * tg, tg)
+            # the correction may legitimately fail to converge; what it
+            # may NOT do is run away
+            assert np.isfinite(got).all(), (
+                f"{name} {kw}: corrector returned non-finite values")
+            worst = float(np.rad2deg(np.abs(got).max()))
+            assert worst < 360.0, (
+                f"{name} {kw}: a {np.rad2deg(trial):.2f} deg step corrected "
+                f"to {worst:.1f} deg -- the corrector diverged")
+            cr = cs.residual(got)
+            if cr.size:
+                assert float(np.abs(cr).max()) < 1e-6, (
+                    f"{name} {kw}: corrector left residual "
+                    f"{float(np.abs(cr).max()):.2e} from a "
+                    f"{np.rad2deg(trial):.2f} deg step")
+
+    # --- and the hypar must actually make a saddle ------------------
+    #
+    # The square hypar's four rim corners alternate up, down, up, down.
+    # That is the whole shape, it is what "hyperbolic paraboloid" means
+    # here, and it is what the shipped pattern did NOT do: with the
+    # radial creases alternating by sector instead of by radius, the
+    # concentric pleats folded by exactly 0.00 degrees and the sheet
+    # coned.  So check the pleats move AND the rim alternates.
+    hf = patterns.build('HYPAR', rings=6, sides=4)
+    hf.faces = build_faces(hf.verts, hf.edges)
+    hs = RigidFolder(hf)
+    hrho = hs.fold_path(np.deg2rad(102.0), steps=14)[-1]
+    hp = hs.place(hrho)
+    hr = np.linalg.norm(hf.verts[:, :2], axis=1)
+    pleats = [abs(float(np.rad2deg(hrho[hs.var_of[k]])))
+              for k, (a, b) in enumerate(hs.edges)
+              if k in hs.var_of and str(hf.assignment[k]) in ('M', 'V')
+              and abs(hr[a] - hr[b]) < 1e-9]
+    assert pleats and float(np.mean(pleats)) > 15.0, (
+        f"hypar: the concentric pleats are not folding (mean "
+        f"{float(np.mean(pleats)):.2f} deg) -- this is a cone, not a hypar")
+    rim = [i for i in range(len(hp)) if abs(hr[i] - hr.max()) < 1e-9]
+    order = np.argsort(np.degrees(np.arctan2(hf.verts[rim, 1],
+                                             hf.verts[rim, 0])) % 360)
+    zc = [float(hp[rim[i], 2]) for i in order]
+    assert len(zc) == 4
+    assert (zc[0] - zc[1]) * (zc[2] - zc[3]) > 0 and \
+           (zc[0] - zc[1]) * (zc[1] - zc[2]) < 0, (
+        f"hypar rim does not alternate up/down: {[round(v, 3) for v in zc]} "
+        f"-- a saddle must, a cone or a bowl does not")
+
+    # the TRIANGULAR hypar stays flat.  Demaine, Demaine and Lubiw 1999,
+    # Figure 3: "The triangle crease pattern remains flat, but the
+    # others form a hypar shape."  An independent published statement
+    # this module can be checked against, so check it.
+    tf = patterns.build('HYPAR', rings=4, sides=3)
+    tf.faces = build_faces(tf.verts, tf.edges)
+    ts = RigidFolder(tf)
+    trho = ts.fold_path(np.deg2rad(102.0), steps=14)[-1]
+    tz = float(np.ptp(ts.place(trho)[:, 2]))
+    assert tz < 0.05, (
+        f"the triangular hypar should stay flat (Demaine et al. 1999, "
+        f"Fig. 3) but its z-extent is {tz:.3f}")
 
     print("RESULT: OK  crease.rigid")
 

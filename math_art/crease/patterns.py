@@ -336,9 +336,25 @@ def hypar(rings=6, sides=4, radius=1.0):
             w = ring[(t + 1) % sides]
             B.e(u, w, BOUNDARY if outer else
                 (MOUNTAIN if k % 2 else VALLEY))
-            # the diagonals: radial creases from the centre outwards
+            # THE DIAGONALS ALTERNATE ALONG THE RADIUS, not by sector.
+            #
+            # This shipped the other way round -- constant along each
+            # radial line, alternating from one sector to the next -- and
+            # the result was not a hypar: the concentric pleats folded by
+            # exactly 0.00 degrees for the square case, so only the
+            # radial creases moved and the sheet coned instead of
+            # saddling.
+            #
+            # The correct rule was read off an independent reference,
+            # Origami Simulator's own `assets/Origami/hypar.svg`.  Its
+            # mountain and valley strokes carry equal counts of
+            # 0/45/90/135-degree segments, and the diagonal segments run
+            # M at r=81, V at 90, M at 99, V at 108 ... -- alternating
+            # with the RADIUS, at the same pitch as the concentric
+            # polygons they cross.  With that assignment the pleats fold
+            # and the rim alternates up and down, which is the saddle.
             lower = cen if k == 0 else ring_idx[k - 1][t]
-            B.e(lower, u, MOUNTAIN if t % 2 else VALLEY)
+            B.e(lower, u, MOUNTAIN if k % 2 else VALLEY)
             # THE CELLS MUST BE TRIANGLES, or this does not fold at all.
             #
             # Between two rings each cell is a trapezoid, and a rigid
