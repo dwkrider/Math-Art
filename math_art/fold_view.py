@@ -93,8 +93,15 @@ def _draw():
     # `crease_assignment` attribute, so on anything else it is already
     # invisible -- a toggle for it was a menu entry that did nothing
     # ninety-nine times out of a hundred.
+    #
+    # `scene` is still needed below for the width and the boundary
+    # toggle.  Dropping the switch once deleted the line that binds it
+    # and left those two reads behind, and a NameError inside a draw
+    # handler is SILENT -- Blender swallows it, so the overlay simply
+    # vanished for every pattern with nothing said anywhere.
     ctx = bpy.context
-    if getattr(ctx, "scene", None) is None:
+    scene = getattr(ctx, "scene", None)
+    if scene is None:
         return
     global _shader
     if _shader is None:

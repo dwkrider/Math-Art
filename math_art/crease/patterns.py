@@ -696,6 +696,30 @@ _TWIST_EDGE = ((0, 1, BOUNDARY), (1, 2, MOUNTAIN), (2, 3, VALLEY),
                (11, 15, BOUNDARY))
 
 
+#: The reference's FOLDED form, kept so the self-test can check the
+#: fold and not merely the crease pattern.  This is the strongest
+#: oracle available anywhere in this module: the file states where
+#: every vertex ends up, and nothing about our solver was derived
+#: from it.
+_TWIST_FOLDED = (
+                 (0.0, 0.0, 0.0),
+                 (0.25, 0.0, 0.0),
+                 (0.25, 0.5, 0.0),
+                 (0.0, 0.5, 0.0),
+                 (0.466968, 0.0, -0.124197),
+                 (0.966968, 0.0, -0.124197),
+                 (0.966968, 0.25, -0.124197),
+                 (0.466968, 0.25, -0.124197),
+                 (0.716968, 0.354037, 0.103128),
+                 (0.966968, 0.354037, 0.103128),
+                 (0.966968, 0.854037, 0.103128),
+                 (0.716968, 0.854037, 0.103128),
+                 (0.0, 0.854037, 0.227324),
+                 (0.0, 0.604037, 0.227324),
+                 (0.5, 0.604037, 0.227324),
+                 (0.5, 0.854037, 0.227324))
+
+
 def square_twist(cell=1.0):
     """The square twist: a square that rotates as four pleats close.
 
@@ -1400,6 +1424,29 @@ def _selftest():
         f"({seq}).  The alternating square twist is the classical one "
         f"and is not rigidly foldable; this must be the variant whose "
         f"two mountains are adjacent, as the reference's is")
+
+    # IT FOLDS TO THE REFERENCE'S OWN FOLDED FORM.  Everything above
+    # checks the crease pattern; this checks the FOLD, against the very
+    # state the file stores, which no part of the construction was
+    # fitted to.  Driven to 62 degrees the rigid solver lands on it to
+    # 0.07 per cent of the model's size.
+    from . import rigid
+    folder = rigid.RigidFolder(fr)
+    path = folder.fold_path(np.deg2rad(62.0), steps=16)
+    P = folder.place(path[-1])
+    T = np.array(_TWIST_FOLDED, float)
+    P = P - P.mean(0)
+    T = T - T.mean(0)
+    P = P * (np.linalg.norm(T) / max(1e-12, np.linalg.norm(P)))
+    U, _s, Vt = np.linalg.svd(P.T @ T)
+    M = Vt.T @ np.diag([1.0, 1.0,
+                        np.sign(np.linalg.det(Vt.T @ U.T))]) @ U.T
+    rms = float(np.sqrt((((P @ M.T) - T) ** 2).sum(1).mean()))
+    rms /= max(1e-9, float(np.abs(T).max()))
+    assert rms < 0.01, (
+        f"square twist folds to something {rms * 100:.1f} per cent away "
+        f"from the reference's folded form; at 62 degrees it should be "
+        f"under 0.1 per cent")
 
     rep = validate(fr)
     assert rep and rep.n_interior == 4, (

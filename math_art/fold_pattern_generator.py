@@ -172,7 +172,7 @@ _NATURAL_FOLD = {
     'KRESLING': 47.0,
     'KRESZIG': 47.0,
     'RESCH': 70.0,
-    'TWIST': 90.0,
+    'TWIST': 62.0,
 }
 
 #: How many rows -- rings, for the concentric-pleat patterns -- each
