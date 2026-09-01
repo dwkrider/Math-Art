@@ -743,8 +743,15 @@ _SPECS.update({
     # (3,2,6) -- genus 5.
     # weld: as for H'-T, the shared 1e-4 default over-merges this patch
     # and leaves two over-shared edges; 3e-5 is clean.
+    # tau 0.40, not the 0.15 this row shipped with.  H"-R is a family
+    # and 0.15 is a degenerate, flattened member: its cell comes out
+    # 2.69 wide per unit height, and assembled it renders as a crinkled
+    # sheet rather than Brakke's hexagonal barrel.  The cell is squattest
+    # at 0.40 (1.56), and there it IS his barrel -- side tunnels, holes
+    # top and bottom.  Same lesson as S'-S'': the member matters as much
+    # as the surface.
     'H2R': _trigroup("Schoen H''-R (exact, hexagonal, genus 5)",
-                     3, 2, 6, 0.15j, weld=3e-5, nb="H_-R.nb"),
+                     3, 2, 6, 0.40j, weld=3e-5, nb="H_-R.nb"),
     # (6,3,2) -- genus 6.  Weber's notebook uses this member rather than
     # the (6,2,3) twin, i.e. p = 3/10 rather than 1/5; they are the same
     # surface upside down.
@@ -805,7 +812,7 @@ _TRIGROUP_CELLS = {
         letters={'a': 'x=0', 'b': 'y=1', 'c': 'y=0#1'},
         words=('abcbcbc',)),
     'H2R': dict(
-        tau_range=(0.08, 0.80, 0.15),
+        tau_range=(0.08, 1.00, 0.40),
         exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
                       'y=1': (-1.0, SQRT3, 0.0), 'y=0#0': (SQRT3, 1.0, 0.0),
                       'y=0#1': (0.0, 1.0, 0.0)},
@@ -1011,22 +1018,21 @@ _SPECS['I6'] = _prod_spec(
 
 
 
-# I-6 is not a triangle-group row, but its patch turns out to be a
-# reflection cell all the same: two lids and two vertical mirrors meeting
-# at 90 degrees, all four planar to 3e-5 or better.  That gives a group
-# of order 8 and the word closes at 8 whichever way it is spelled --
-# "abc", "abcbc" and "abcbcbc" all return exactly 8 copies -- so the
-# shortest is used.
+# I-6: cell NOT shipped.  Its patch does carry four clean symmetry
+# elements -- two lids and two vertical mirrors at 90 degrees, planar to
+# 3e-5 -- and a word over them closes at 8 copies from three different
+# spellings, so it looked settled.  Beside Brakke's figure it is not:
+# his I-6 is a LAYER, plates stacked with tunnels between them, built by
+# `layers := { transform_expr "abc" }` over two TRANSLATIONS and a
+# half-turn.  An order-8 mirror group is simply a different group, and
+# scanning the family (tau 0.5 to 1.8) leaves the copy count at 8
+# throughout, so it is not a wrong member either.
 #
-# Brakke's own I-6.fe assembles it differently, with two TRANSLATIONS and
-# a half-turn (`layers := { transform_expr "abc" }`).  Both descriptions
-# are of the same surface; his suits a datafile whose contour is a
-# rosette, ours suits a patch integrated on a rectangle.
-_SPECS['I6'].update(
-    exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
-                  'y=1': (-1.0, 1.0, 0.0), 'y=0': (1.0, 1.0, 0.0)},
-    letters={'a': 'x=0', 'b': 'y=0', 'c': 'y=1'},
-    words=('abc',))
+# Withdrawn until translation generators exist.  Note also that
+# `Schoen_I6.nb` carries TWO eight-factor theta blocks (lines 84 and
+# 596) -- the same shape as the trap that made R-II the wrong surface --
+# so the Gauss map wants auditing against the evaluated one before any
+# more work goes into the assembly.
 
 def spec_period(key, t, n=3000):
     """Re of the period integral whose vanishing fixes a spec's modulus.
@@ -1417,7 +1423,7 @@ def _split_vertical_edges(key, P, curves):
 # the group order, which the word reaches from three spellings alike.
 _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
-                'I6': (8, 'group'), 'RII': (64, 'Evolver x2')}
+                'RII': (64, 'Evolver x2')}
 
 
 def spec_modulus_range(key):
