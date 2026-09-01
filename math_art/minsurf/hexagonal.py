@@ -1458,6 +1458,58 @@ def set_spec_modulus(key, value):
     _SPECS[key]['tau'] = complex(0.0, min(max(float(value), lo), hi))
 
 
+def spec_periods(key, n=20000, base=None):
+    """The surface's translation lattice, straight from its Weierstrass
+    data rather than inferred from whichever boundary curves classify.
+
+    Re of the integral of phi around a cycle of the torus IS a
+    translation of the surface, so integrating along z -> z + 1 and
+    z -> z + tau gives two lattice vectors directly.  Returns them as a
+    pair of real 3-vectors.
+
+    Gated in `_selftest` on H'-T, whose z period comes out (0, 0, 1) to
+    1e-9 and matches the height of the cell the word route assembles.
+
+    This exists for the surfaces the cell-word route cannot reach.  I-6,
+    I-8, I-9 and R-III are LAYER surfaces in Brakke's datafiles, built
+    from translations and a screw rather than from mirrors, and our
+    patches yield only point groups -- no two of their vertical mirrors
+    are parallel, so no in-plane translation can be formed from them.
+    The lattice has to come from the data, and this is where it comes
+    from.  NOTE that having the vectors is not yet enough: adding one as
+    a generator letter to I-6 was tried and every word refused, so the
+    remaining piece is understanding how the translation and the point
+    group share a fundamental domain, not the arithmetic below.
+    """
+    sp = _SPECS[key]
+    tau = sp['tau']
+    a = float(sp['a'])
+    q = np.exp(1j * np.pi * tau)
+    ang = sp.get('theta', 0.0)
+    if base is None:
+        base = 0.25 + 0.25j * float(np.imag(tau))
+
+    def leg(delta):
+        u = (np.arange(int(n)) + 0.5) / float(n)
+        z = (base + delta * u)[None, :]
+        L = np.full(z.shape, complex(sp.get('const', 0)), dtype=complex)
+        for sh, c in sp['terms'](a, tau):
+            L = L + c * _log_theta(z - sh, q)
+        g = np.exp(L)
+        inv = 1.0 / g
+        dh = np.ones_like(g)
+        if 'dh_terms' in sp:
+            Ld = np.zeros(z.shape, dtype=complex)
+            for sh, c in sp['dh_terms'](a, tau):
+                Ld = Ld + c * _log_theta(z - sh, q)
+            dh = np.exp(Ld)
+        W = np.stack([0.5 * (inv - g) * dh, 0.5j * (inv + g) * dh, dh],
+                     axis=-1) * np.exp(1j * ang)
+        return np.real(np.sum(W[0], axis=0) * delta / float(n))
+
+    return leg(1.0 + 0j), leg(complex(tau))
+
+
 def spec_declared_elements(key, P):
     """Exact symmetry elements for a spec that DECLARES them.
 
@@ -3676,6 +3728,21 @@ def _selftest():
         print("hexagonal: %s cell word %r -> %s (%s %d) %s"
               % (key, _SPECS[key]['words'][0], "; ".join(rows), source,
                  want, 'OK' if good else 'FAIL'))
+
+    # The period lattice, computed from the Weierstrass data.  H'-T's
+    # z period must be exactly the height of the cell its word builds --
+    # two completely independent routes to the same number, one an
+    # integral around a torus cycle and the other a reflection group.
+    p1, p2 = spec_periods('HT', n=8000)
+    Vh, Qh, _n, _w = spec_word_assemble('HT', _spec_patch('HT', 60, 60))
+    hz = float((Vh.max(0) - Vh.min(0))[2])
+    err = abs(float(np.linalg.norm(p1)) - hz)
+    good = (abs(p1[0]) < 1e-9 and abs(p1[1]) < 1e-9 and err < 1e-6
+            and float(np.linalg.norm(p2)) > 1e-3)
+    ok &= good
+    print("hexagonal: H'-T period (%.6f, %.6f, %.6f) vs cell height "
+          "%.6f (diff %.1e) %s"
+          % (p1[0], p1[1], p1[2], hz, err, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
