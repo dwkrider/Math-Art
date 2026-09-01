@@ -17,7 +17,105 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
-    "note": "Isosceles right triangular prism cell."
+    "note": "Isosceles right triangular prism cell.",
+    "evolver_cell": {
+      "command": "layers",
+      "copies": 32,
+      "generators": {
+        "d": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.4,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "e": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.4,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "f": [
+          0.0,
+          -1.0,
+          0.0,
+          1.0,
+          -1.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.4,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "loops": [
+        [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.2
+          ],
+          [
+            1.0,
+            0.0,
+            0.2
+          ],
+          [
+            0.0,
+            1.0,
+            0.2
+          ]
+        ]
+      ],
+      "source": "RII.fe",
+      "word": "fdfedfe"
+    }
   },
   "curvature": {
     "condition": "minimal",

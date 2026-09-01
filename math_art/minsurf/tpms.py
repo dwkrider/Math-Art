@@ -1111,6 +1111,24 @@ TPMS_EXACT = {
                        _pl.conjugate_build('HR_TR', cells, res, scale, theta)),
 }
 
+# Rows read straight out of Ken Brakke's Evolver datafiles.  The contour,
+# the symmetry generators and the cell word all come from the `.fe`
+# itself (see `minsurf.fedata`, and `minsurf.fecells` for the baked
+# table), so there is no transcription step to get wrong -- which is what
+# went wrong repeatedly when these were done by hand.
+from .fecells import FE_CELLS as _FE_CELLS      # noqa: E402
+
+
+def _fe_row(key):
+    return (_FE_CELLS[key]['title'] + " (Evolver cell)",
+            lambda cells, res, scale, theta, _k=key:
+                _pl.fe_cell_build(_k, cells, res, scale, theta))
+
+
+for _k in sorted(_FE_CELLS):
+    TPMS_EXACT.setdefault('FE_' + _k, _fe_row(_k))
+del _k
+
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
 # the gyroid angle builds the fundamental piece.  CUSTOM (absent here) means
 # "use the raw Associate Angle slider".

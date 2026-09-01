@@ -27,7 +27,93 @@
       "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
     },
     "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
-    "level_function": "(3 * (cos(x) + cos(y) + cos(z)) + 4 * cos(x) * cos(y) * cos(z))"
+    "level_function": "(3 * (cos(x) + cos(y) + cos(z)) + 4 * cos(x) * cos(y) * cos(z))",
+    "evolver_cell": {
+      "command": "showcube",
+      "copies": 48,
+      "generators": {
+        "b": [
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "c": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "d": [
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "loops": [
+        [
+          [
+            0.5,
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.2,
+            1.0
+          ],
+          [
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.0,
+            0.0,
+            0.8
+          ]
+        ]
+      ],
+      "source": "neovius.fe",
+      "word": "bcdbcdbcd"
+    }
   },
   "curvature": {
     "condition": "minimal",

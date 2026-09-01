@@ -1379,6 +1379,90 @@ def _weld_points(V, faces, tol):
     return W, QQ
 
 
+def fe_cell_patch(key, m=96, rings=16, iters=300):
+    """Relax the datafile's contour, as a disk or an annulus.
+
+    One boundary loop is a disk; two are an annulus.  The distinction is
+    read off the datafile, not assumed: I-6's surface is the side wall of
+    a prism, so its boundary is a bottom rosette and a top one, and
+    spanning only the first gives a flat degenerate patch.
+    """
+    from .fecells import FE_CELLS
+    spec = FE_CELLS[key]
+    loops = [np.asarray(l, dtype=float) for l in spec['loops']]
+    if len(loops) == 1:
+        poly = loops[0]
+        lp = resample_loop(np.vstack([poly, poly[:1]]), m)
+        V, quads, fixed = build_disk_grid(lp, rings)
+    elif len(loops) == 2:
+        a, b = loops
+        la = resample_loop(np.vstack([a, a[:1]]), m)
+        lb = resample_loop(np.vstack([b, b[:1]]), m)
+        if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
+            la, lb = lb, la
+        j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
+        lb = np.roll(lb, -j, axis=0)
+        V, quads, fixed = build_annulus_grid(la, lb, rings)
+    else:
+        return None
+    V = np.asarray(V, dtype=float)
+    fixed = np.asarray(fixed, dtype=bool)
+    T = np.asarray(_quads_to_tris(quads))
+    V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
+                   dtype=float)
+    return V, [tuple(f) for f in quads]
+
+
+def fe_cell_assemble(key, V, quads, tol=1e-4):
+    """Assemble with the datafile's own generators and word.
+
+    Gated like every other route: duplicate faces, over-shared edges and
+    connectedness, and a refusal ships the bare patch rather than a pile
+    of sheets.
+    """
+    from .fecells import FE_CELLS
+    spec = FE_CELLS[key]
+    lets = {k: np.asarray(v, dtype=float)
+            for k, v in spec['letters'].items()}
+    mats = eval_transform_expr(lets, spec['word'])
+    V = np.asarray(V, dtype=float)
+    pts = np.concatenate([V @ M[:3, :3].T + M[:3, 3] for M in mats])
+    nV = len(V)
+    faces = []
+    for j, M in enumerate(mats):
+        flip = float(np.linalg.det(M[:3, :3])) < 0.0
+        for f in quads:
+            g = tuple(i + j * nV for i in f)
+            faces.append(g[::-1] if flip else g)
+    span = float(np.max(pts.max(0) - pts.min(0))) or 1.0
+    W, wf = _weld_points(pts, faces, tol * span)
+    dup, over, comps = _orbit_defects(W, wf)
+    if dup or over or comps != 1:
+        return None
+    return W, wf, len(mats)
+
+
+def fe_cell_build(key, cells, res_per_cell, scale, theta):
+    """TPMS_EXACT-compatible wrapper for a datafile-derived cell."""
+    res = max(8, int(res_per_cell))
+    V, quads = fe_cell_patch(key, m=max(48, 3 * res), rings=max(8, res // 2))
+    if int(cells) > 1 if np.isscalar(cells) else True:
+        got = fe_cell_assemble(key, V, quads)
+        if got is not None:
+            V, quads = got[0], got[1]
+    V = np.asarray(V, dtype=float)
+    if len(V):
+        V = V - 0.5 * (V.max(0) + V.min(0))
+        span = float(np.max(V.max(0) - V.min(0)))
+        if span > 1e-12:
+            V = V * (2.0 * scale / span)
+    if theta:
+        ct, st = math.cos(theta), math.sin(theta)
+        R = np.array([[ct, -st, 0.0], [st, ct, 0.0], [0.0, 0.0, 1.0]])
+        V = V @ R.T
+    return V, quads
+
+
 def ring_build(key, cells, res_per_cell, scale, theta):
     """TPMS_EXACT-compatible wrapper: relax, then centre and fit the
     result into the 2*scale cube the rest of the catalog uses.
@@ -2186,6 +2270,28 @@ def _selftest():
             print("plateau: ring cell %-3s word %-8s %2d copies (Brakke %d) "
                   "%.3f x %.3f x %.3f %s"
                   % (key, got[3], got[2], want, bb[0], bb[1], bb[2],
+                     'OK' if good else 'FAIL'))
+        ok &= good
+
+    # The datafile-derived cells.  Every number here was READ from a
+    # `.fe` by `fedata` rather than transcribed, so what is gated is that
+    # the pipeline still reproduces the copy count the datafile's own
+    # word gives, and that the result is one clean sheet.
+    from .fecells import FE_CELLS
+    for key in sorted(FE_CELLS):
+        spec = FE_CELLS[key]
+        Vf, Qf = fe_cell_patch(key, m=72, rings=12, iters=200)
+        got = fe_cell_assemble(key, Vf, Qf)
+        want = spec['copies']
+        good = got is not None and got[2] == want
+        if got is None:
+            print("plateau: fe cell %-14s %-10r REFUSED (wanted %d) FAIL"
+                  % (key, spec['word'], want))
+        else:
+            bb = np.asarray(got[0]).max(0) - np.asarray(got[0]).min(0)
+            print("plateau: fe cell %-14s %-10r %3d copies (file %d) "
+                  "%.2f x %.2f x %.2f %s"
+                  % (key, spec['word'], got[2], want, bb[0], bb[1], bb[2],
                      'OK' if good else 'FAIL'))
         ok &= good
 

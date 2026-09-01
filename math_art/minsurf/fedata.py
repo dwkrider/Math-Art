@@ -203,7 +203,7 @@ class FEFile(object):
 
     def _vertices(self, src):
         body = self._section(src, 'vertices',
-                             ['edges', 'faces', 'bodies', 'read'])
+                             ['edges', 'faces', 'facets', 'bodies', 'read'])
         out = {}
         for line in body.splitlines():
             t = line.split()
@@ -218,7 +218,8 @@ class FEFile(object):
         return out
 
     def _edges(self, src):
-        body = self._section(src, 'edges', ['faces', 'bodies', 'read'])
+        body = self._section(src, 'edges',
+                             ['faces', 'facets', 'bodies', 'read'])
         out = {}
         for line in body.splitlines():
             t = line.split()
@@ -231,7 +232,11 @@ class FEFile(object):
         return out
 
     def _faces(self, src):
-        body = self._section(src, 'faces', ['bodies', 'read'])
+        # Both spellings occur, and roughly a quarter of the collection
+        # uses `facets`; reading only `faces` silently yields a surface
+        # with no faces at all rather than an error.
+        body = (self._section(src, 'faces', ['bodies', 'read'])
+                or self._section(src, 'facets', ['bodies', 'read']))
         out = []
         for line in body.splitlines():
             t = line.split()
@@ -312,6 +317,70 @@ class FEFile(object):
                 return None
             pts.append(self.vertices[a])
         return np.asarray(pts, dtype=float)
+
+    def boundary_loops(self):
+        """Every closed chain of once-used edges, as point loops.
+
+        An edge used by exactly one face is on the outside; the rest are
+        interior seams.  The number of chains says what the complex IS:
+
+          1 loop   a disk, to be spanned by `build_disk_grid`
+          2 loops  an ANNULUS, for `build_annulus_grid`
+
+        The distinction is not academic.  I-6's surface is the side wall
+        of a prism -- eight faces between a bottom rosette and a top one
+        -- so its boundary is two loops, and reading only the first face
+        gives a four-point contour that relaxes to a flat degenerate
+        patch.  Several of the pinned datafiles are annuli this way.
+        """
+        use = {}
+        for face in self.faces:
+            for eid in face:
+                use[abs(eid)] = use.get(abs(eid), 0) + 1
+        rim = [e for e, k in use.items() if k == 1 and e in self.edges]
+        if len(rim) < 3:
+            return []
+        adj = {}
+        for e in rim:
+            a, b = self.edges[e]
+            adj.setdefault(a, []).append((b, e))
+            adj.setdefault(b, []).append((a, e))
+        # A rim vertex of degree 4 is normal, not a defect: a rosette
+        # contour pinches at the origin, where two petals meet, and
+        # I-6's rim has exactly two such vertices among twelve.  Chain
+        # greedily through them rather than refusing the whole complex.
+        loops = []
+        unused = set(rim)
+        while unused:
+            e0 = next(iter(unused))
+            unused.discard(e0)
+            v0, v1 = self.edges[e0]
+            order = [v0, v1]
+            while True:
+                cur = order[-1]
+                step = [(w, e) for w, e in adj.get(cur, []) if e in unused]
+                if not step:
+                    break
+                w, e = step[0]
+                unused.discard(e)
+                if w == order[0] and not [1 for _v, _e in adj.get(w, [])
+                                          if _e in unused]:
+                    break
+                order.append(w)
+            if len(order) >= 3 and all(v in self.vertices for v in order):
+                loops.append(np.asarray([self.vertices[v] for v in order],
+                                        dtype=float))
+        return loops
+
+    def boundary_loop(self):
+        """The single outer boundary, when there is exactly one."""
+        loops = self.boundary_loops()
+        return loops[0] if len(loops) == 1 else None
+
+    def span_loop(self):
+        """`boundary_loop` if the complex has one, else `contour`."""
+        loop = self.boundary_loop()
+        return loop if loop is not None else self.contour()
 
     def letters(self):
         """{letter: 4x4} for the declared generators."""
