@@ -46,11 +46,22 @@ import numpy as np
 _NUM = re.compile(r'(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?')
 _NAME = re.compile(r'[A-Za-z_]\w*')
 
-# Where the datafiles live on this machine.  A local archive, so its
-# absence makes the self-test skip rather than fail.
-MIRROR_DOWNLOADS = os.path.join(
-    'S:', os.sep, 'data', 'math_art', 'references', 'websites', 'brakke',
-    '_mirror', 'evolver', 'downloads')
+# Where the datafiles live.
+#
+# In the REPO, under `research/data/evolver-datafiles` -- which is
+# gitignored, so the files are on hand for authoring without being
+# committed.  Only `tools/bake_fe_cells.py` and this module's self-test
+# read them; the shipped extension carries `minsurf/fecells.py`, which is
+# generated from the surface database, and never needs the datafiles or
+# this path at all.  Their absence is therefore a SKIP, not a failure.
+#
+# `MATH_ART_FE_DIR` overrides, for a checkout that keeps them elsewhere.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_REPO = os.path.dirname(os.path.dirname(_HERE))       # math_art/minsurf -> repo
+
+MIRROR_DOWNLOADS = os.environ.get(
+    'MATH_ART_FE_DIR',
+    os.path.join(_REPO, 'research', 'data', 'evolver-datafiles'))
 
 
 class FEError(ValueError):
