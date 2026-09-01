@@ -211,6 +211,7 @@ _NATURAL_ANGLE = {
     'MIURA': 60.0,
     'KRESLING': 72.0,
     'KRESZIG': 72.0,
+    'TWIST': 60.0,
 }
 
 #: Which solver a pattern needs to become itself.  Rigid Panels is the
@@ -221,7 +222,19 @@ _NATURAL_ANGLE = {
 #: degrees, and under Rigid Panels the tube stalls half open (widest
 #: extent 7.65 -> 4.95) where Bending Paper closes it (-> 3.71, seam
 #: zero).  So the choice is per pattern rather than one global default.
-_NATURAL_SOLVER = {'KRESLING': 'COMPLIANT', 'KRESZIG': 'COMPLIANT'}
+#: The classical square twist is NOT rigidly foldable -- Silverberg
+#: et al. 2015 -- and the rigid solver simply refuses it, reaching
+#: 0.1 degrees at any target.  That is correct behaviour rather
+#: than a failure, and it is why it is here on Bending Paper.
+_NATURAL_SOLVER = {'KRESLING': 'COMPLIANT', 'KRESZIG': 'COMPLIANT',
+                   'TWIST': 'COMPLIANT'}
+
+#: How far to drive each pattern by default, for the ones folded by
+#: Bending Paper.  The square twist's creases want a near-flat 170
+#: degrees, so driving the whole way buries the twist in a flat
+#: packet; three quarters shows the square turned and the pleats
+#: still open, which is the picture people recognise.
+_NATURAL_DRIVE = {'TWIST': 0.75}
 
 #: Patterns whose sector count is part of their identity rather than a
 #: free parameter.  The hypar and the monkey saddle are the SAME
@@ -251,6 +264,8 @@ def _pattern_changed(self, context):
         self.panel_angle = np.deg2rad(ang)
     if hasattr(self, "solver"):
         self.solver = _NATURAL_SOLVER.get(self.pattern, 'RIGID')
+    if hasattr(self, "drive"):
+        self.drive = _NATURAL_DRIVE.get(self.pattern, 1.0)
 
 
 def _pattern_label(key):

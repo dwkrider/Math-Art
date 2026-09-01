@@ -673,118 +673,137 @@ _RESCH_UNIT = np.stack([np.cos(_RESCH_DIRS), np.sin(_RESCH_DIRS)], axis=1)
 _RESCH_MOUNT = (1, 3, 5)                       # 90, 210, 330 degrees
 
 
-#: The square twist, in units of `c` = a quarter of the twist square's
-#: side.  Vertex order and assignments are edemaine/fold's
-#: `examples/squaretwist.fold` exactly, unfolded from the folded form it
-#: stores; keeping the reference's own numbering means the self-test can
-#: compare against the file vertex for vertex.
-_TWIST_NODE = ((0, -4), (1, -3), (-1, -1), (-2, -2),
-               (2, -2), (4, 0), (3, 1), (1, -1),
-               (1, 1), (2, 2), (0, 4), (-1, 3),
-               (-4, 0), (-3, -1), (-1, 1), (-2, 2))
-_TWIST_EDGE = ((0, 1, BOUNDARY), (1, 2, MOUNTAIN), (2, 3, VALLEY),
-               (3, 0, BOUNDARY),
-               (4, 5, BOUNDARY), (5, 6, BOUNDARY), (6, 7, VALLEY),
-               (7, 4, VALLEY),
-               (8, 9, MOUNTAIN), (9, 10, BOUNDARY), (10, 11, BOUNDARY),
-               (11, 8, VALLEY),
-               (12, 13, BOUNDARY), (13, 14, MOUNTAIN), (14, 15, MOUNTAIN),
-               (15, 12, BOUNDARY),
-               (2, 7, VALLEY), (7, 8, MOUNTAIN), (8, 14, MOUNTAIN),
-               (14, 2, VALLEY),
-               (3, 13, BOUNDARY), (1, 4, BOUNDARY), (6, 9, BOUNDARY),
-               (11, 15, BOUNDARY))
-
-
-#: The reference's FOLDED form, kept so the self-test can check the
-#: fold and not merely the crease pattern.  This is the strongest
-#: oracle available anywhere in this module: the file states where
-#: every vertex ends up, and nothing about our solver was derived
-#: from it.
-_TWIST_FOLDED = (
-                 (0.0, 0.0, 0.0),
-                 (0.25, 0.0, 0.0),
-                 (0.25, 0.5, 0.0),
-                 (0.0, 0.5, 0.0),
-                 (0.466968, 0.0, -0.124197),
-                 (0.966968, 0.0, -0.124197),
-                 (0.966968, 0.25, -0.124197),
-                 (0.466968, 0.25, -0.124197),
-                 (0.716968, 0.354037, 0.103128),
-                 (0.966968, 0.354037, 0.103128),
-                 (0.966968, 0.854037, 0.103128),
-                 (0.716968, 0.854037, 0.103128),
-                 (0.0, 0.854037, 0.227324),
-                 (0.0, 0.604037, 0.227324),
-                 (0.5, 0.604037, 0.227324),
-                 (0.5, 0.854037, 0.227324))
-
-
-def square_twist(cell=1.0):
+def square_twist(cell=1.0, alpha=np.deg2rad(60.0)):
     """The square twist: a square that rotates as four pleats close.
 
     A central square with a pleat running off each of its sides.  Folding
-    the four pleats swings the square round through a right angle and
-    hides the surplus paper underneath -- the twist that gives the whole
-    family of twist tessellations its name.
+    the pleats swings the square round and hides the surplus paper
+    underneath -- the twist the whole family of twist tessellations is
+    named for.
 
-    ONE MOLECULE, NOT A TESSELLATION, and deliberately so: see the note
-    at the end.
+    `alpha` is the twist angle, strictly between 0 and 90 degrees; it
+    sets how far the inner square is rotated against the four outer ones
+    and so how far it turns when folded.
 
-    TAKEN FROM THE REFERENCE, NOT RECONSTRUCTED.  The source is
-    edemaine/fold's `examples/squaretwist.fold`, which stores the FOLDED
-    form (`frame_classes: ["foldedForm"]`) rather than the crease
-    pattern -- so the pattern here was recovered by unfolding it: lay the
-    central square out, then walk the dual graph placing each neighbour
-    so the shared edge lands on the edge already placed and the face
-    falls on the far side from its parent.  Folding is an isometry, so
-    that inverts it exactly; the worst edge-length error over the
-    recovered pattern is 8e-7.
+    TRANSCRIBED FROM THE PUBLISHED GENERATOR, not reconstructed.  The
+    source is OrigamiSimulator's own `SquareTwist.pde`, and the result is
+    checked edge for edge against the crease pattern it produces
+    (`assets/Origami/singlesquaretwist.svg`): 24 segments, 8 valley, 4
+    mountain, 12 boundary, all matching to 1e-3 of the sheet.  Writing
+    `d = cell/sqrt(2)` for the inner square's circumradius -- so the
+    inner square has the SAME side as the four outer ones -- its corners
+    are
 
-    What comes back is clean enough to state in closed form.  Writing `c`
-    for a quarter of the twist square's side, every one of the sixteen
-    vertices is an integer multiple of `c`, and the molecule has 4-fold
-    rotational symmetry about its centre in four orbits of four: the
-    twist square itself at (+-c, +-c), its corner extensions at
-    (+-2c, +-2c), and two orbits forming the twelve-sided rim.
+        P1 = d (sin(alpha - pi/4), -cos(alpha - pi/4))
+        P2 = d (sin(alpha + pi/4), -cos(alpha + pi/4))
 
-    THE ASSIGNMENT IS NOT 4-FOLD SYMMETRIC even though the geometry is.
-    Around the twist square the creases run valley, mountain, mountain,
-    valley rather than alternating, and the pleats follow suit.  That
-    asymmetry is the point: it is what makes THIS square twist rigidly
-    foldable, where the familiar all-alternating one is not.  The
-    reference calls its folded frame "Rigidly folded square twist" for
-    that reason.  Do not "tidy" the labels into a symmetric set -- it
-    would look neater and stop folding.
+    together with -P1 and -P2, the whole cell then being turned by
+    -alpha/2.  From each corner one crease leaves along an axis and one
+    along the other, and the four outer squares hang off those.
 
-    WHY NO ROWS AND COLUMNS.  The classical square twist TESSELLATION
-    tiles a molecule of this kind, but not this one by translation: the
-    rim is a twelve-sided pinwheel, and although its area is exactly 32
-    c^2 -- matching the determinant of the obvious (4c, 4c), (-4c, 4c)
-    lattice -- every translation lattice of that determinant makes
-    neighbouring copies overlap rather than interlock, which a pinwheel
-    generally does.  Tiling it wants a rotation, and that has not been
-    worked out here.  Shipping one verified molecule beats shipping a
-    guessed tessellation; that lesson cost this module three patterns.
+    THE COLOURS IN THE SOURCE ARE THE TRAP.  `SquareTwist.pde` defines
+    `setMountainColor()` to paint BLUE and `setValleyColor()` to paint
+    RED -- the reverse of this project's convention and of the usual one.
+    Following the FUNCTION NAMES inverts every crease in the pattern;
+    following the COLOURS, which is what the published figure shows,
+    gives what is built here: the inner square all VALLEY, and each of
+    its corners sending out one further valley and one mountain.  That
+    is 3 valleys against 1 mountain at every vertex, so Maekawa holds
+    with room to spare, and Kawasaki holds at all four.
+
+    A PREVIOUS VERSION OF THIS WAS THE OTHER SQUARE TWIST.  It came from
+    edemaine/fold's `squaretwist.fold`, whose frame is titled "Rigidly
+    folded square twist" -- a DIFFERENT and less familiar member of the
+    family, whose inner square carries two mountains and two valleys and
+    whose outline is a square rather than a pinwheel.  It was faithful to
+    its own reference and was not the pattern anybody means by "the
+    square twist".  Matching a reference is not enough; it has to be the
+    right reference.
+
+    ONE CELL, NOT A TESSELLATION -- but the lattice is now known rather
+    than guessed, so tiling is a small step and not a mystery.  The cell
+    is a twelve-sided pinwheel of area exactly 7 (in units of `cell`),
+    and translations by (2.598, 0.5)*cell and its 90-degree rotation --
+    the unique candidate whose determinant is also 7 -- tile it with
+    neither gap nor overlap: a 3x3 patch merges 24 vertices and all 36
+    of its full-degree vertices satisfy Maekawa and Kawasaki.  What is
+    missing is only the outline of a multi-cell patch, since the
+    tessellation drops the single cell's rim entirely.
 
     References:
-      E. D. Demaine et al., the FOLD file format and example library,
-          `github.com/edemaine/fold`, `examples/squaretwist.fold` --
-          the folded form this was unfolded from.
+      A. Ghassaei, Origami Simulator,
+          `CreasePatternScripts/SquareTwist/SquareTwist.pde` and
+          `assets/Origami/singlesquaretwist.svg` -- the construction
+          transcribed here and the figure it is checked against.
       J. L. Silverberg, J.-H. Na, A. A. Evans, B. Liu, T. C. Hull,
           C. D. Santangelo, R. J. Lang, R. C. Hayward, I. Cohen,
           "Origami structures with a critical transition to bistability
           arising from hidden degrees of freedom," Nature Materials 14,
-          2015 -- the square twist's bistability, and why the rigidly
-          foldable variant differs from the classical one.
+          2015 -- the square twist's bistability.
       T. C. Hull, "Origametry" (Cambridge, 2020), ch. 5-6.
     """
-    c = 0.25 * float(cell)
+    a = float(cell)
+    alpha = float(np.clip(alpha, np.deg2rad(5.0), np.deg2rad(85.0)))
+    d = a / np.sqrt(2.0)
+    P1 = np.array([d * np.sin(alpha - np.pi / 4),
+                   -d * np.cos(alpha - np.pi / 4)])
+    P2 = np.array([d * np.sin(alpha + np.pi / 4),
+                   -d * np.cos(alpha + np.pi / 4)])
+    ex = np.array([a, 0.0])
+    ey = np.array([0.0, a])
+
+    # Processing draws y DOWNWARDS and wraps the cell in rotate(-alpha/2).
+    # Undo both, so the sheet comes out in ordinary maths coordinates the
+    # same way up as the published figure.
+    c, s = np.cos(-alpha / 2), np.sin(-alpha / 2)
+
+    def place(p):
+        x, y = float(p[0]), float(p[1])
+        return (c * x - s * y, -(s * x + c * y))
+
     B = _Builder(tol=1e-9)
-    idx = [B.v(c * x, c * y) for x, y in _TWIST_NODE]
-    for a, b, kind in _TWIST_EDGE:
-        B.e(idx[a], idx[b], kind)
-    return B.frame("Square Twist")
+
+    def v(p):
+        return B.v(*place(p))
+
+    # The inner square: EVERY side a valley.  This is the single fact
+    # that most obviously separates this pattern from the rigidly
+    # foldable one, and the first thing to check against a picture.
+    for x, y in ((P1, P2), (P1, -P2), (-P1, P2), (-P1, -P2)):
+        B.e(v(x), v(y), VALLEY)
+
+    # One more valley and one mountain out of each corner, giving 3-1.
+    for p, val, mnt in ((P1, -ey, -ex), (-P1, ey, ex),
+                        (P2, ex, -ey), (-P2, -ex, ey)):
+        B.e(v(p), v(p + val), VALLEY)
+        B.e(v(p), v(p + mnt), MOUNTAIN)
+
+    # The rim: the twelve-sided pinwheel outline of the four squares.
+    for p, q in ((P1 - ex - ey, P1 - ex), (P1 - ex, -P2 - ex),
+                 (-P2 - ex, -P2 - ex + ey),
+                 (P1 - ey, P1 - ex - ey), (P1 - ey, P2 - ey),
+                 (P2 - ey, P2 + ex - ey),
+                 (P2 + ex - ey, P2 + ex), (P2 + ex, -P1 + ex),
+                 (-P1 + ex, -P1 + ex + ey),
+                 (-P1 + ex + ey, -P1 + ey), (-P1 + ey, -P2 + ey),
+                 (-P2 + ey, -P2 - ex + ey)):
+        B.e(v(p), v(q), BOUNDARY)
+
+    fr = B.frame("Square Twist")
+
+    # TARGETS, because the default ones are nowhere near deep enough.
+    # An unlabelled crease is driven to one radian, and at that depth the
+    # twist square turns 5 degrees -- the pattern looks like a slightly
+    # dented sheet rather than a twist.  This pattern is flat-foldable,
+    # so every crease genuinely wants +-180; 170 keeps the folded state
+    # off the degenerate flat packet while still turning the square
+    # through about 39 degrees.  Fold Amount then scales all of them
+    # together, which is what makes that slider mean something here.
+    want = np.deg2rad(170.0)
+    fr.fold_angle = np.array(
+        [want if c == VALLEY else (-want if c == MOUNTAIN else np.nan)
+         for c in fr.assignment], dtype=float)
+    return fr
 
 
 def resch(rows=3, cols=3, cell=1.0):
@@ -1379,79 +1398,67 @@ def _selftest():
         "resch should FAIL Maekawa at its hubs; if it passes, the hubs "
         "are no longer 3 mountains and 3 valleys and this is not Resch")
 
-    # --- Square twist: the reference file, vertex for vertex ------
-    # Recovered by unfolding edemaine/fold's FOLDED form, so the check
-    # that matters is that it reproduces that file: same sixteen
-    # vertices on the integer-c grid, same twenty-four assignments.
+    # --- Square twist: the published crease pattern ------------------
+    # THE FIRST VERSION OF THIS WAS A DIFFERENT SQUARE TWIST -- the
+    # "rigidly folded" one from edemaine/fold, whose inner square carries
+    # two mountains and two valleys and whose outline is a square rather
+    # than a pinwheel.  It matched its own reference exactly and was
+    # still not what anybody means by the square twist.  Matching a
+    # reference is not enough; it has to be the right reference.  So the
+    # check here is against the FAMILIAR pattern, and the single fact
+    # that separates the two is first: every side of the inner square is
+    # a valley.
     fr = square_twist()
     assert fr.n_verts == 16 and fr.n_edges == 24, (
         f"square twist: {fr.n_verts} verts, {fr.n_edges} edges; the "
-        f"reference has 16 and 24")
-    got = {(round(float(p[0]) * 4.0, 9), round(float(p[1]) * 4.0, 9))
-           for p in fr.verts}
-    assert got == {(float(x), float(y)) for x, y in _TWIST_NODE}, (
-        "square twist: vertices are not the reference's integer-c grid")
-
+        f"reference figure has 16 and 24")
     kinds = collections.Counter(str(a) for a in fr.assignment)
-    assert kinds == collections.Counter({BOUNDARY: 12, MOUNTAIN: 6,
-                                         VALLEY: 6}), (
-        f"square twist: assignment counts {dict(kinds)}; the reference "
-        f"has 12 boundary, 6 mountain, 6 valley")
+    assert kinds == collections.Counter({VALLEY: 8, MOUNTAIN: 4,
+                                         BOUNDARY: 12}), (
+        f"square twist: {dict(kinds)}; singlesquaretwist.svg has 8 blue, "
+        f"4 red and 12 black")
+
+    # The inner square's corners are the only vertices carrying four
+    # creases, so the creases joining two of them are its sides.
+    deg = collections.Counter()
+    for a, b in fr.edges:
+        deg[int(a)] += 1
+        deg[int(b)] += 1
+    corner = {v for v, n in deg.items() if n >= 4}
+    assert len(corner) == 4, (
+        f"square twist: {len(corner)} vertices of degree 4, wanted the "
+        f"inner square's four corners")
+    sides = [str(fr.assignment[k]) for k, (a, b) in enumerate(fr.edges)
+             if int(a) in corner and int(b) in corner]
+    assert len(sides) == 4 and set(sides) == {VALLEY}, (
+        f"square twist: the inner square reads {sides}.  Every side of "
+        f"it is a VALLEY -- a mountain there means this is the rigidly "
+        f"foldable variant, which is a different pattern")
+
+    for v in corner:
+        got = [str(fr.assignment[k]) for k, (a, b) in enumerate(fr.edges)
+               if v in (int(a), int(b))]
+        assert sorted(got) == sorted([VALLEY] * 3 + [MOUNTAIN]), (
+            f"square twist: a corner reads {sorted(got)}, wanted three "
+            f"valleys and one mountain")
 
     fr.faces = build_faces(fr.verts, fr.edges)
-    assert len(fr.faces) == 9 and all(len(f) == 4 for f in fr.faces), (
-        f"square twist: {len(fr.faces)} faces, sizes "
-        f"{sorted({len(f) for f in fr.faces})}; the reference has 9 quads")
-
-    # THE CREASES ROUND THE TWIST SQUARE ARE VALLEY, MOUNTAIN, MOUNTAIN,
-    # VALLEY -- not alternating.  That asymmetry is what makes this
-    # square twist rigidly foldable, so it is asserted rather than left
-    # to be tidied away by someone making the labels look symmetric.
-    mid = {}
-    for k, (a, b) in enumerate(fr.edges):
-        if str(fr.assignment[k]) == BOUNDARY:
-            continue
-        p, q = fr.verts[a], fr.verts[b]
-        if max(abs(p).max(), abs(q).max()) < 0.26:      # the twist square
-            mid[round(float(np.degrees(np.arctan2(
-                *(0.5 * (p + q))[::-1]))) % 360)] = str(fr.assignment[k])
-    seq = [mid[a] for a in (0, 90, 180, 270)]
-    assert sorted(seq) == [MOUNTAIN, MOUNTAIN, VALLEY, VALLEY], (
-        f"square twist: creases round the twist square are {seq}; two "
-        f"mountains and two valleys are needed")
-    assert seq[0] == seq[1] or seq[1] == seq[2], (
-        f"square twist: creases round the twist square ALTERNATE "
-        f"({seq}).  The alternating square twist is the classical one "
-        f"and is not rigidly foldable; this must be the variant whose "
-        f"two mountains are adjacent, as the reference's is")
-
-    # IT FOLDS TO THE REFERENCE'S OWN FOLDED FORM.  Everything above
-    # checks the crease pattern; this checks the FOLD, against the very
-    # state the file stores, which no part of the construction was
-    # fitted to.  Driven to 62 degrees the rigid solver lands on it to
-    # 0.07 per cent of the model's size.
-    from . import rigid
-    folder = rigid.RigidFolder(fr)
-    path = folder.fold_path(np.deg2rad(62.0), steps=16)
-    P = folder.place(path[-1])
-    T = np.array(_TWIST_FOLDED, float)
-    P = P - P.mean(0)
-    T = T - T.mean(0)
-    P = P * (np.linalg.norm(T) / max(1e-12, np.linalg.norm(P)))
-    U, _s, Vt = np.linalg.svd(P.T @ T)
-    M = Vt.T @ np.diag([1.0, 1.0,
-                        np.sign(np.linalg.det(Vt.T @ U.T))]) @ U.T
-    rms = float(np.sqrt((((P @ M.T) - T) ** 2).sum(1).mean()))
-    rms /= max(1e-9, float(np.abs(T).max()))
-    assert rms < 0.01, (
-        f"square twist folds to something {rms * 100:.1f} per cent away "
-        f"from the reference's folded form; at 62 degrees it should be "
-        f"under 0.1 per cent")
-
+    assert len(fr.faces) == 9, (
+        f"square twist: {len(fr.faces)} faces; the cell is four squares, "
+        f"four pleats and the twist square")
     rep = validate(fr)
     assert rep and rep.n_interior == 4, (
         f"square twist should be locally flat-foldable at all four "
         f"interior vertices: {rep.summary()}")
+
+    # The twist angle is a real parameter, not decoration: the whole
+    # family from a shallow twist to a deep one has to stay foldable.
+    for deg_ in (35.0, 50.0, 75.0):
+        f2 = square_twist(alpha=np.deg2rad(deg_))
+        f2.faces = build_faces(f2.verts, f2.edges)
+        r2 = validate(f2)
+        assert r2 and r2.n_interior == 4, (
+            f"square twist at alpha={deg_}: {r2.summary()}")
 
     # --- dispatch ----------------------------------------------------
     for name in PATTERNS:

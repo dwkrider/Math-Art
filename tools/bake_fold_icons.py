@@ -35,6 +35,7 @@ import bpy                                                # noqa: E402
 # keeping a second studio that can drift.
 import bake_menu_icons as bmi                             # noqa: E402
 from math_art.fold_pattern_generator import (_NATURAL_ANGLE,  # noqa: E402
+                                             _NATURAL_DRIVE,
                                              _NATURAL_FOLD,
                                              _NATURAL_ROWS,
                                              _NATURAL_SOLVER)
@@ -92,6 +93,7 @@ def bake(key, path):
         # tube under Bending Paper; baked rigid it reads as a half-open
         # crimp, which is the one thing an icon must not do.
         solver=_NATURAL_SOLVER.get(key, 'RIGID'),
+        drive=_NATURAL_DRIVE.get(key, 1.0),
         panel_angle=math.radians(_NATURAL_ANGLE.get(key, 60.0)),
         fold_angle=math.radians(_NATURAL_FOLD[key]),
         # more continuation steps where the fold is deep: the path is
