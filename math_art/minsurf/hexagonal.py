@@ -914,42 +914,72 @@ _SPECS['STESSMANN'] = _prod_spec(
 # Schoen R-II, genus 9.  Weber's notebook tabulates thirteen (a, tau)
 # pairs; this is the eighth, the member his own plots use.
 _RII_A, _RII_TAU = 0.5459942955818213, 1.8j
+# R-II's Gauss map was transcribed from the WRONG CELL of Weber's
+# notebook, and the surface it built was not R-II.
+#
+# `Schoen_RII.nb` defines G twice.  The evaluated definition (line 87)
+# puts the -3/4 branch points on the IMAGINARY axis at +-ia; a second,
+# unevaluated variant further down (line 140) puts them on the REAL axis
+# at +-a.  The engine took the real-axis one -- while taking its (a, tau)
+# from the solutions table at line 399, which the IMAGINARY-axis one
+# produced.  So a solution of one period problem was paired with a
+# different Gauss map.
+#
+# That is not a cosmetic difference.  With the old pairing the boundary
+# elements are individually genuine but generate two translations along
+# x whose lengths are in irrational ratio (1.4735 and 2.3199) -- a
+# non-discrete group, so no triply periodic surface exists with those
+# symmetries at all.  It also explains why a word over them could pass
+# every topology gate: there was nothing periodic for it to be wrong
+# about.
+#
+# Corrected below to the evaluated definition,
+#   G = th(z)^-1/2 th(z-ia)^-3/4 th(z+ia)^-3/4
+#       th(z-1/2)^1/2 th(z+1/2-ia)^3/4 th(z+1/2+ia)^3/4
+# which is what the tabulated (a, tau) = (0.5459942955818213, 1.8i)
+# actually solves.
 _SPECS['RII'] = _prod_spec(
     "Schoen R-II (exact, tetragonal, genus 9)",
     tau=_RII_TAU, a=_RII_A,
-    terms=lambda a, tau: ((0.0, -0.5), (a, -0.75), (-a, -0.75),
-                          (-0.5, 0.5), (0.5 + 1j * a, 0.75),
-                          (0.5 - 1j * a, 0.75)),
+    terms=lambda a, tau: ((0.0, -0.5), (1j * a, -0.75), (-1j * a, -0.75),
+                          (0.5, 0.5), (-0.5 + 1j * a, 0.75),
+                          (-0.5 - 1j * a, 0.75)),
     nb="Schoen_RII.nb")
 
 
-# R-II: half-turn machinery proven here, but the CELL IS NOT SHIPPED.
+# R-II's cell, once the Gauss map above was corrected.
 #
-# The machinery works and this row is what drove it: R-II's x = 0 edge is
-# not a plane but a straight line along (1, 0, 0), exact to 1.7e-10 -- a
-# 2-fold rotation axis lying in the surface.  Brakke's RII.fe says the
-# same, "one 180 degree rotation about each line".
+# Six elements on four curves, and the vertical edges are why this row
+# resisted for so long: each is TWO 2-fold axes meeting at the y = a
+# branch point, so read whole it is planar (both axes lie in z = const)
+# but not straight -- the classifier calls it a plane and both axes are
+# lost.  `vsplits` cuts them at the corner.
 #
-# What is NOT established is the cell.  A word over the axis and the two
-# clean mirrors closes at 8 copies and passes every gate, but rendered
-# beside Evolver's own assembly it is plainly wrong: Brakke's `layers`
-# word builds a flat LATTICE of triangular units, and 8 copies give a
-# couple of crossed triangles.  Passing the gate is not the same as
-# being right -- the gate only asks whether the copies form one clean
-# sheet.
+#     y=0, y=1     the SAME mirror x = 0   (planarity 9e-5 and 2e-9)
+#     x=0#0        2-fold axis (1,-1,0) at z = 0     straight to 1e-12
+#     x=0#1        2-fold axis (1, 0,0) at z = 0     straight to 5e-16
+#     x=1#0        2-fold axis (1,-1,0) at z = 1/2
+#     x=1#1        2-fold axis (1, 0,0) at z = 1/2
 #
-# The obstruction is the fourth edge.  Whole, it classifies as neither
-# (straight 3.4e-1, planar 3.6e-2).  Split at x = 1 - a = 0.454006 --
-# a real branch point, not a fitted one, since `a` = 0.545994 -- the
-# first half becomes a clean mirror (planar 5.6e-5, normal (1,1,0)) but
-# the second is still 1.4e-2, and scanning it for a second branch point
-# lands back at the same place, with a 9-node horizontal-plane fragment
-# and a 58-node vertical-plane one.  So the edge wants THREE elements,
-# not two, and until that decomposition is settled the row ships its
-# fundamental piece, which is honest.
+# Mapping onto Brakke's six half-turns: his d and f are our `x=1#0` and
+# `x=1#1`, and his e is d conjugated by the diagonal mirror, so it is
+# DERIVED as `mdm` rather than measured.  Our patch is HALF of his
+# triangular prism unit, cut by the mirror x = 0, so his `layers` word
+# needs the mirror appended to double the half-domain:
 #
-# Resume by establishing the third segment properly rather than fitting
-# it; the exact offsets should follow from `a` as the first one did.
+#     his   layers := "fdfedfe"     32 units
+#     ours  "fdfedfem"              64 copies of the half-unit
+#
+# `fdfedfe` alone is REFUSED here, which is the right answer: without
+# the mirror the copies tile only half of each unit.
+_SPECS['RII'].update(
+    vsplits=('x=0', 'x=1'),
+    exact_planes={'y=0': (1.0, 0.0, 0.0), 'y=1': (1.0, 0.0, 0.0)},
+    exact_axes={'x=0#0': (1.0, -1.0, 0.0), 'x=0#1': (1.0, 0.0, 0.0),
+                'x=1#0': (1.0, -1.0, 0.0), 'x=1#1': (1.0, 0.0, 0.0)},
+    letters={'m': 'y=0', 'd': 'x=1#0', 'f': 'x=1#1',
+             'e': ('derived', 'mdm')},
+    words=('fdfedfem',))
 
 # Schoen C(H), genus 7, the complement of Schwarz H.  Nineteen solved
 # (tau, ss) pairs in the notebook; this is the tau = 0.9i member.
@@ -1289,6 +1319,32 @@ _HACKMAN_DEFERRED = dict(
     nb="Hackman-Surfaces.nb")
 
 
+def _kink_index(curve, min_turn=30.0):
+    """Where a boundary curve turns a corner, or None.
+
+    Used to split an edge that is two symmetry elements meeting at a
+    branch point.  This is NOT a fit: on R-II's vertical edges the
+    turning angle is 135.000 degrees at exactly one node and 0.000 at
+    every other, and the node sits at the same fraction of the edge
+    (0.663) at every resolution tried.  A corner that sharp is a
+    structural feature of the surface, not a numerical artifact -- and
+    the split is gated afterwards by requiring both halves to come out
+    straight, so a wrong guess here cannot ship.
+    """
+    C = np.asarray(curve, dtype=float)
+    if len(C) < 5:
+        return None
+    d = np.diff(C, axis=0)
+    n = np.linalg.norm(d, axis=1, keepdims=True)
+    u = d / np.maximum(n, 1e-300)
+    cosang = np.clip(np.einsum('ij,ij->i', u[:-1], u[1:]), -1.0, 1.0)
+    turn = np.degrees(np.arccos(cosang))
+    j = int(np.argmax(turn))
+    if float(turn[j]) < min_turn:
+        return None
+    return j + 1
+
+
 def spec_curves(key, P):
     """The boundary curves of a spec patch, split where the spec says.
 
@@ -1305,7 +1361,7 @@ def spec_curves(key, P):
     splits = sp.get('splits', ())
     if not splits:
         curves.append(('y=0', P[:, 0]))
-        return curves
+        return _split_vertical_edges(key, P, curves)
     xs = _spec_nodes(key, P.shape[0])[0]
     x1 = sp['xlim'][1]
     edge = P[:, 0] if sp.get('split_edge', 'y0') == 'y0' else P[:, -1]
@@ -1322,6 +1378,32 @@ def spec_curves(key, P):
     return curves
 
 
+def _split_vertical_edges(key, P, curves):
+    """Split the x = const edges where they turn a corner.
+
+    R-II needs it: each of its vertical edges is TWO 2-fold axes meeting
+    at the y = a branch point, and read whole the pair is planar (it lies
+    in z = const) but not straight, so the classifier calls it a plane
+    and the two axes are lost.
+    """
+    names = _SPECS[key].get('vsplits') or ()
+    if not names:
+        return curves
+    out = [(nm, C) for nm, C in curves if nm not in names]
+    rows = {'x=0': P[0, :], 'x=1': P[-1, :]}
+    for nm in names:
+        row = rows.get(nm)
+        if row is None:
+            continue
+        j = _kink_index(row)
+        if j is None or j < 3 or len(row) - j < 3:
+            out.append((nm, row))
+            continue
+        out.append((nm + '#0', row[:j + 1]))
+        out.append((nm + '#1', row[j:]))
+    return out
+
+
 # Order of the transform set each cell word generates, with WHERE the
 # number comes from -- the two are not the same kind of evidence and the
 # self-test says which it is printing.
@@ -1335,7 +1417,7 @@ def spec_curves(key, P):
 # the group order, which the word reaches from three spellings alike.
 _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
-                'I6': (8, 'group')}
+                'I6': (8, 'group'), 'RII': (64, 'Evolver x2')}
 
 
 def spec_modulus_range(key):
@@ -1463,6 +1545,15 @@ def _curve_indices(key, P):
            'y=1': (np.arange(nu), np.full(nu, nv - 1))}
     splits = sp.get('splits', ())
     col = 0 if sp.get('split_edge', 'y0') == 'y0' else nv - 1
+    for nm in (_SPECS[key].get('vsplits') or ()):
+        row = P[0, :] if nm == 'x=0' else P[-1, :]
+        j = _kink_index(row)
+        i0 = 0 if nm == 'x=0' else nu - 1
+        if j is None or j < 3 or len(row) - j < 3:
+            continue
+        idx.pop(nm, None)
+        idx[nm + '#0'] = (np.full(j + 1, i0), np.arange(j + 1))
+        idx[nm + '#1'] = (np.full(nv - j, i0), np.arange(j, nv))
     if not splits:
         idx['y=0'] = (np.arange(nu), np.full(nu, col))
         return idx
