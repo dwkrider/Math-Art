@@ -202,6 +202,7 @@ class FEFile(object):
         self.faces = self._faces(src)
         self.generators, self.gen_names = self._generators(src)
         self.words = self._words(src)
+        self.constraints = self._constraints(src)
 
     # -- sections ---------------------------------------------------
     def _section(self, src, name, stop):
@@ -276,7 +277,7 @@ class FEFile(object):
         # than space separated, and a whitespace-only tokeniser swallows
         # each row as one unparsable token.
         toks = re.findall(r'[^\s,]+', tail)
-        vals, names, cur = [], [], []
+        vals, names, cur, exprs = [], [], [], []
         i = 0
         while i < len(toks) and len(vals) < n * 16:
             tok = toks[i]
@@ -290,6 +291,7 @@ class FEFile(object):
                 i += 1
                 continue
             vals.append(v)
+            exprs.append(''.join(cur))
             cur = []
             i += 1
         if len(vals) < n * 16:
@@ -297,6 +299,14 @@ class FEFile(object):
                           % (self.name, n * 16, len(vals)))
         mats = [np.asarray(vals[k * 16:(k + 1) * 16],
                            dtype=float).reshape(4, 4) for k in range(n)]
+        # The EXPRESSIONS are kept beside the values, because the adjoint
+        # files write their generators in terms of `rhs1`..`rhs6` --
+        # offsets Evolver only learns after conjugating.  Parsed with
+        # those still at their declared 0 the matrices are placeholders;
+        # `generators_with` re-evaluates them once the offsets have been
+        # measured off the conjugate.
+        self.generator_exprs = [exprs[k * 16:(k + 1) * 16]
+                                for k in range(n)]
         for k in range(n):
             names.append(chr(ord('a') + k))
         return mats, names
@@ -328,6 +338,93 @@ class FEFile(object):
                 return None
             pts.append(self.vertices[a])
         return np.asarray(pts, dtype=float)
+
+    def _constraints(self, src):
+        """{n: (formula, rhs name)} from the `constraint` blocks.
+
+        The adjoint files declare, for each boundary arc of the
+        CONJUGATE, the plane it lands in -- `formula: sqrt(3)*x - y =
+        rhs1`.  The left side is a linear form whose coefficients are the
+        plane normal; the right side names the offset Evolver measures
+        after conjugating.
+        """
+        out = {}
+        pat = (r'constraint\s+(\d+)\s*(?:formula)?\s*:?\s*'
+               r'(?:formula\s*:?\s*)?([^\n=]+?)\s*=\s*'
+               r'([A-Za-z_]\w*)')
+        for m in re.finditer(pat, src):
+            try:
+                out[int(m.group(1))] = (m.group(2).strip(), m.group(3))
+            except ValueError:
+                continue
+        return out
+
+    def constraint_normal(self, n):
+        """The unit normal of constraint `n`, from its linear form."""
+        c = self.constraints.get(n)
+        if c is None:
+            return None
+        form = c[0]
+        base = dict(self.params)
+        base.update({'x': 0.0, 'y': 0.0, 'z': 0.0})
+        try:
+            z0 = _expr(form, base)
+            v = []
+            for ax in ('x', 'y', 'z'):
+                e = dict(base)
+                e[ax] = 1.0
+                v.append(_expr(form, e) - z0)
+        except FEError:
+            return None
+        v = np.asarray(v, dtype=float)
+        nrm = float(np.linalg.norm(v))
+        return v / nrm if nrm > 1e-12 else None
+
+    def constraint_value(self, n, pts):
+        """Evaluate constraint `n`'s left-hand form at points.
+
+        The forms are UNNORMALISED -- `sqrt(3)*x - y` has length 2 -- so
+        the `rhs` Evolver stores is this value, not the distance along a
+        unit normal.  Measuring the offset with a normalised normal and
+        substituting it as `rhs` puts the mirror in the wrong place by
+        that factor.
+        """
+        c = self.constraints.get(n)
+        if c is None:
+            return None
+        form = c[0]
+        pts = np.atleast_2d(np.asarray(pts, dtype=float))
+        base = dict(self.params)
+        out = []
+        for p in pts:
+            e = dict(base)
+            e['x'], e['y'], e['z'] = float(p[0]), float(p[1]), float(p[2])
+            try:
+                out.append(_expr(form, e))
+            except FEError:
+                return None
+        return np.asarray(out, dtype=float)
+
+    def generators_with(self, env):
+        """Re-evaluate the generator matrices with extra names bound.
+
+        Used to substitute the measured `rhs` offsets into an adjoint
+        file's generators.
+        """
+        if not getattr(self, 'generator_exprs', None):
+            return list(self.generators)
+        full = dict(self.params)
+        full.update(env)
+        out = []
+        for rows in self.generator_exprs:
+            vals = []
+            for e in rows:
+                try:
+                    vals.append(_expr(e, full))
+                except FEError:
+                    vals.append(0.0)
+            out.append(np.asarray(vals, dtype=float).reshape(4, 4))
+        return out
 
     def boundary_loops(self):
         """Every closed chain of once-used edges, as point loops.
