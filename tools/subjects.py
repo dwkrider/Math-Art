@@ -408,6 +408,10 @@ SKIP = {
     # comes back empty.  Giving it faces just for the thumbnail would
     # show something the operator does not actually produce.
     "mesh.receptacle_add": "points-only mesh, nothing for Cycles to shade",
+    # A file importer (.fold/.svg/.cp): with no file it produces nothing,
+    # so there is no default hero to render.  Importing is documented in
+    # the crease pattern page.
+    "mesh.fold_import": "file importer, no default output to render",
 }
 
 
@@ -467,6 +471,8 @@ def slug_for(op):
 # (tools/check_variants.py re-checks them), not guessed: a stale name
 # here silently produces an empty gallery.
 VARIANT_SELECTOR = {
+    # -- origami --
+    "mesh.crease_pattern_add": "pattern",
     # -- surfaces --
     "mesh.scherk_collins_add": "preset",
     "mesh.seifert_surface_add": "preset",
@@ -1443,6 +1449,11 @@ if _IN_BLENDER:
     SELECTOR_RESOLVER = {
         "mesh.saddle_polyhedron_add": lambda: _pairs(
             _mod("saddle_polyhedron_generator")._solid_items(_Shim(), None)),
+        # The pattern enum is dynamic (its item callback loads icons), so
+        # the RNA type carries no static items -- resolve the gallery from
+        # the module's own pattern table instead.
+        "mesh.crease_pattern_add": lambda: _pairs(
+            _mod("fold_pattern_generator")._PATTERN_ITEMS),
     }
 
     def _static_enum_items(op, prop):

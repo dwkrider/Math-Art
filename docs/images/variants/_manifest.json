@@ -8079,5 +8079,43 @@
    "ANTIPRISM",
    "Antiprism"
   ]
+ ],
+ "crease_pattern": [
+  [
+   "MIURA",
+   "Miura-ori"
+  ],
+  [
+   "ACCORDION",
+   "Accordion Pleat"
+  ],
+  [
+   "WATERBOMB",
+   "Waterbomb"
+  ],
+  [
+   "YOSHIMURA",
+   "Yoshimura Diamond"
+  ],
+  [
+   "HYPAR",
+   "Pleated Hypar"
+  ],
+  [
+   "MONKEY",
+   "Monkey Saddle"
+  ],
+  [
+   "KRESZIG",
+   "Kresling Zigzag"
+  ],
+  [
+   "TWIST",
+   "Square Twist"
+  ],
+  [
+   "RESCH",
+   "Resch Triangular"
+  ]
  ]
 }

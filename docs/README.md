@@ -89,6 +89,12 @@ shown with a consistent studio render (regenerate them with
 | [<img src="images/spidron_rosette.png" width="240">](generators/spidron_rosette.md)<br>**[Spidron Rosette](generators/spidron_rosette.md)** | [<img src="images/islamic_pattern.png" width="240">](generators/islamic_pattern.md)<br>**[Islamic Star Pattern](generators/islamic_pattern.md)** | [<img src="images/celtic_knot_2d.png" width="240">](generators/celtic_knot_2d.md)<br>**[Celtic Knot 2D](generators/celtic_knot_2d.md)** |
 | [<img src="images/over_under_screen.png" width="240">](generators/over_under_screen.md)<br>**[Over-Under Screen](generators/over_under_screen.md)** | [<img src="images/knot_carpet.png" width="240">](generators/knot_carpet.md)<br>**[Knot Carpet](generators/knot_carpet.md)** | [<img src="images/hyperbolic_tiling.png" width="240">](generators/hyperbolic_tiling.md)<br>**[Hyperbolic Tiling](generators/hyperbolic_tiling.md)** |
 
+## Origami
+
+| | | |
+|:--:|:--:|:--:|
+| [<img src="images/crease_pattern.png" width="240">](generators/crease_pattern.md)<br>**[Crease Pattern](generators/crease_pattern.md)** |  |  |
+
 ## Rollers
 
 | | | |

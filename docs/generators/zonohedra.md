@@ -28,21 +28,57 @@ A **zonohedron** is a convex solid whose every face is centrally symmetric (a po
 | Glue Tabs | On | Add a glue tab along one edge of every cut pair, narrowed or dropped where the net leaves no room for it |
 | Tab Size | 0.1 | Depth of the glue tabs, as a fraction of the edge they stand on Range 0.02-0.9. |
 | Edge Numbers | On | Print a matching number beside each cut edge and on its glue tab, so the edges that join can be found while building |
-| Star | Rhombic Spirallohedron | Vector star the zonohedron is built from. Polar Zonohedron, Rhombic Spirallohedron, Rhombic Dodecahedron, Rhombic Triacontahedron, Rhombic Enneacontahedron, Random Star, Rhombic Rose. |
-| Vectors | 12 | Number of star vectors (polar/spiral/random) Range 3-64. |
+| Star | Rhombic Spirallohedron | Vector star the zonohedron is built from. Polar Zonohedron, Rhombic Spirallohedron, Rhombic Dodecahedron, Rhombic Triacontahedron, Rhombic Enneacontahedron, Cube, Random Star, From Active Object, and 2 more. |
+| Output | Solid | The solid itself, its rhombohedral dissection, its extruded surface helices, or flat templates. Solid, Dissection, Extruded Helices, Flat Templates. |
+| Vectors | 12 | Number of star vectors (polar / spiral / random / rose) Range 3-64. |
+| Star Step | 1 | Offset polygon for the polar star (Antiprism's zono -P n/d). A step sharing a factor with the vector count splits the model into that many separate lobes Range 1-31. |
 | Spiral Width | 4 | Spirallohedron spiral width (zono -P n,w) Range 1-31. |
-| Pitch | 55 | Polar star pitch angle from the axis (degrees) Range 5-85. |
+| Pitch | 55 | Tilt of the star's ribs, in degrees, measured from whichever reference Angle From selects Range 1-89. |
+| Angle From | Axis | Which reference the Pitch angle is measured from. The two differ by 90 degrees, and the literature uses the horizontal. Axis, Horizontal. |
+| Pitch Preset | Custom | Pick the pitch for a mathematical reason rather than by eye; anything but Custom overrides the Pitch dial. Custom, Volume-optimal, Area-optimal, 45 degrees, Congruent Levels. |
+| Congruent Level A | 1 | First of the two levels the Congruent Levels preset makes identical Range 1-63. |
+| Congruent Level B | 2 | Second of the two levels. The two must satisfy A + B > n/2, or no pitch can make them congruent Range 1-63. |
 | Random Seed | 1 | Seed for the random star vectors |
-| Style | Solid | How the zonohedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
+| Zones From | Vertices | Which of the object's directions become zones, matching Antiprism's -m methods. Vertices, Vertex Pairs, Edges, Face Normals. |
+| Measured From | Object Origin | What the vertex directions are measured from (Antiprism's -c); only used by the Vertices method. Object Origin, Centroid, 3D Cursor. |
+| Unit Zones | On | Normalise every zone to unit length (Antiprism's -u). Turning it off keeps the object's own lengths, which changes the solid and not just its scale |
+| Ellipticity | 1 | Scale the star's X coordinate, turning the circular footprint into an ellipse. It is a linear map, so every face stays planar and every pair of opposite edges stays parallel -- the rhombi merely open into parallelograms Range 0.1-5. |
+| Levels | 0 | Keep only this many levels of faces, leaving a dome (0 = the whole solid) Range 0-63. |
+| Cap Rim | Off | Close a truncated dome's zig-zag rim, turning it into a bell |
+| Lobes | 1 | Stack this many copies pole onto pole. The surface helices are congruent, so they run straight through the seams -- a finite piece of the complete polar zonohedron Range 1-8. |
+| Axial Zone | 0 | Add one extra zone along the axis, of this length (0 = none). It keeps the n-fold symmetry but breaks the surface helices; on the 5-fold rhombic icosahedron it builds the rhombic triacontahedron Range 0-5. |
+| Zone Lengths | Uniform | Vary the zones' lengths. Unequal zones turn the rhombi into general parallelograms. Uniform, Ramp, Wave, Random. |
+| Length Spread | 0.4 | How far the zone lengths stray from equal Range 0-0.95. |
+| Chain A Steps | 10 | Vectors in the first chain Range 2-64. |
+| Chain A Step | 1 | Star-polygon step for the first chain Range 1-31. |
+| Chain A Radius | 1 | Size of the first chain Range 0.01-10. |
+| Chain A Tilt | 0 | Tip the first chain's plane, in degrees Range -90-90. |
+| Chain B | Polygon | Shape of the second chain. Polygon, Helix. |
+| Chain B Steps | 6 | Vectors in the second chain Range 2-64. |
+| Chain B Step | 1 | Star-polygon step for the second chain Range 1-31. |
+| Chain B Radius | 0.35 | Size of the second chain Range 0.01-10. |
+| Chain B Tilt | 90 | Tip the second chain's plane, in degrees Range -90-90. |
+| Chain B Rise | 0.25 | Height gained per step when the second chain is a helix Range -2-2. |
+| Chain B Turns | 1 | Revolutions the helix makes Range 0.1-8. |
+| Bites | 0 | Take this many wedges out of the rose's rim. Towle's bitten zonogons are the flat shadows of his spirallohedra; the wedges here are the general construction, not his specific space-filling pair Range 0-8. |
+| Bite Width | 3 | Rhombi across each bite at the rim Range 1-15. |
+| Bite Depth | 2 | Rings each bite cuts inward Range 1-15. |
+| Handedness | Clockwise | Which of the two mirror families of surface helices to extrude. Clockwise, Counter-clockwise. |
+| Helix Depth | 0.8 | How far each helix is extruded down the axis, in edge lengths. At 1 the extruded faces are rhombi; past the rise of one edge the walls start to collide Range 0.02-5. |
+| Explode | 0 | Push the dissection's blocks out along their own centres, opening the solid up to show how it is built Range 0-4. |
+| Separate Blocks | Off | One object per block instead of a single mesh |
+| Face Opening | 0 | Open a proportional hole in every face, leaving a rim. Unlike the Leonardo border this scales with the face, so small faces near the poles keep the same look as big ones at the equator Range 0-0.95. |
+| Colour By | None | What the face colours mean. None, Zone Pair, Level, Face Size, Block, Ring. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
+| Style | Solid | Finish for the shell: solid, Leonardo panels, struts, ball-and-stick, wireframe, face segments, or an unfolded net. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments, Papercraft Net. |
 | Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
-| Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
+| Thickness | 0.05 | Panel / strut thickness for the Leonardo and Struts styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
-| Depth | 0.15 | Face Segments inward depth Range 0.01-2. |
-| Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
-| Explode | 0.1 | Move segments outward Range 0-5. |
-| Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Overall size multiplier Range 0.01-100. |
+| Depth | 0.15 | How far each face is extruded inward (Face Segments style) Range 0.01-2. |
+| Bevel Gap | 0 | Shift the mitre bevels inward to open a gap between neighbouring segments (0 = flush) Range 0-0.5. |
+| Explode | 0 | Move each face segment outward along its own normal Range 0-5. |
+| Separate Meshes | Off | Output each face segment as its own mesh instead of one combined object |
 
 <!-- /options -->
 

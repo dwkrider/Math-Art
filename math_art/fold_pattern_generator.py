@@ -26,14 +26,14 @@
 # render time.
 #
 # References:
-#   K. Miura, "Method of Packaging and Deployment of Large Membranes in
-#       Space," ISAS report 618, 1985.
-#   M. Schenk, S. D. Guest, "Geometry of Miura-folded metamaterials,"
-#       PNAS 110(9), 2013.
-#   T. Tachi, "Simulation of Rigid Origami," Origami^4, 2009.
-#   E. D. Demaine, M. L. Demaine, V. Hart, G. N. Price, T. Tachi,
-#       "(Non)existence of Pleated Folds," Graphs and Combinatorics
-#       27(3), 2011 -- why the hypar folds only faceted.
+# - K. Miura, "Method of Packaging and Deployment of Large Membranes in
+#   Space," ISAS report 618, 1985.
+# - M. Schenk, S. D. Guest, "Geometry of Miura-folded metamaterials,"
+#   PNAS 110(9), 2013.
+# - T. Tachi, "Simulation of Rigid Origami," Origami^4, 2009.
+# - E. D. Demaine, M. L. Demaine, V. Hart, G. N. Price, T. Tachi,
+#   "(Non)existence of Pleated Folds," Graphs and Combinatorics
+#   27(3), 2011 -- why the hypar folds only faceted.
 
 import os as _os
 

@@ -21,7 +21,7 @@ Three classic surfaces from the geometry literature: Fresnel's **elasticity surf
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Fresnel Elasticity Surface | Which classic surface to build. Fresnel Elasticity Surface, Paper Bag Surface, Trihyperboloid, Bohemian Dome, Astroidal Ellipsoid, Bouguer Dome, Hanging Drop of Water, Neiloid, and 8 more. |
+| Surface | Fresnel Elasticity Surface | Which classic surface to build. Fresnel Elasticity Surface, Paper Bag Surface, Trihyperboloid, Bohemian Dome, Astroidal Ellipsoid, Bouguer Dome, Hanging Drop of Water, Neiloid, and 12 more. |
 | Semi-Axis A | 1 | Fresnel semi-axis along X Range 0.01-10. |
 | Semi-Axis B | 1.5 | Fresnel semi-axis along Y Range 0.01-10. |
 | Semi-Axis C | 2 | Fresnel semi-axis along Z Range 0.01-10. |
@@ -29,8 +29,12 @@ Three classic surfaces from the geometry literature: Fresnel's **elasticity surf
 | Crimp Coefficient | -1.26 | Coefficient b in y = (v + b u) sin u (-1.26 in the classic plot) Range -10-10. |
 | Swept Circle | 0.7 | Radius c of the moving circle (Bohemian dome only) Range 0.01-10. |
 | Horn Length | 6 | Upper limit L of x in y = 1/x; the enclosed volume tends to pi as L grows while the lateral area diverges (Gabriel's horn only) Range 1.2-200. |
-| Scale a | 1 | The a in Bouguer's a^2 y'' = x sqrt(1 + y'^2), and the a in the neiloid's a rho^2 = z^3 Range 0.05-10. |
-| Base Radius | 1.6 | How far out the dome's profile runs (Bouguer dome only) Range 0.2-6. |
+| Tube Radius | 0.35 | Radius of the revolved circle, against a centre circle of radius 1: below 1 a ring torus, 1 a horn torus, above 1 a spindle torus (torus only) Range 0.02-3. |
+| Beads | 3 | How many onion-dome beads of the revolved sinusoid to build, one per half-period (revolution of the sinusoid only) Range 1-12. |
+| Bead Aspect | 1 | Amplitude-to-period ratio a/b of the meridian x = a cos(z/b): larger is fatter beads (revolution of the sinusoid only) Range 0.1-6. |
+| Profile Reach | 3 | How far along the tractrix the meridian runs from its cusp, in the curve's parameter; the rim creeps toward the asymptote plane as it grows (second tractroid only) Range 0.5-8. |
+| Scale a | 1 | The a in Bouguer's a^2 y'' = x sqrt(1 + y'^2), in the neiloid's a rho^2 = z^3, in the revolved catenary's z = a cosh(rho/a) and in the second tractroid's tractrix Range 0.05-10. |
+| Base Radius | 1.6 | How far out the profile runs (Bouguer dome and revolution of the catenary) Range 0.2-6. |
 | Capillary Length | 1 | The a in 2H = z / a^2: large a is a nearly spherical drop, small a a long pendant one (hanging drop only) Range 0.1-6. |
 | Apex Height | 1 | Height of the drop's lowest point above the zero-curvature plane (hanging drop only) Range 0.05-6. |
 | Profile Length | 2.2 | How far the profile is integrated along its own arc before the neck is cut (hanging drop only) Range 0.3-8. |

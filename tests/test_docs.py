@@ -37,6 +37,10 @@ UNDOCUMENTED = {
     # seed points as a points-only mesh, consumed by other generators.
     # It is covered inside the phyllotaxis page instead.
     "mesh.receptacle_add": "points-only helper, covered by phyllotaxis",
+    # A file importer (.fold/.svg/.cp) with no default output to photograph:
+    # its result is whatever pattern the file holds.  Importing is covered
+    # inside the crease pattern page instead.
+    "mesh.fold_import": "file importer, covered by crease_pattern",
 }
 
 
