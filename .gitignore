@@ -29,3 +29,6 @@ data/polyhedra/HANDOFF.md
 # at deploy time, and web/serve.py routes to it directly for local dev.
 # Either way the copy is derived, never committed.
 web/data/
+
+# generated locally by tools/corrugation_report.py
+corrugation_report.html

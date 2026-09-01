@@ -162,6 +162,20 @@ PARAMS = {
     # reads as a twist rather than as a bent triangle.
     "mesh.platonic_twist_add": dict(kind='DODECA'),
     "mesh.twisted_torus_add": dict(n=6, twist_steps=6),
+    # The Miura is the crease pattern everyone recognises, and its
+    # zigzag reads at icon size where a waterbomb grid does not.
+    # Folded, not flat.  A crease pattern lying flat is a grid of thin
+    # lines that reads as an empty rectangle at icon size -- and the
+    # operator now folds by default anyway, so a flat figure would show
+    # something the bare defaults no longer produce.
+    # A saddle, not the sphere: negative curvature is the case this
+    # technique is GOOD at, since pleating adds material and a saddle
+    # needs it added.  Showing the sphere would advertise the one target
+    # the Theorema Egregium guarantees it handles worst.
+    "mesh.crease_pattern_add": dict(pattern='MONKEY', rows=12,
+                                    auto_fold=True,
+                                    fold_angle=2.6179938779914944,   # 150 deg
+                                    steps=14, animate=False),
     # The Clifford torus is a torus; the vesicle is the shape the
     # Willmore energy is famous for -- the biconcave discocyte that
     # the Helfrich model predicts and a red blood cell actually is.
@@ -261,6 +275,12 @@ import math                                              # noqa: E402
 GYROID_POSE = (-0.1967, 0.1944, -1.8216)
 
 ORIENT = {
+    # A pleated saddle seen straight down reads as concentric rings on a
+    # flat disc -- the one view that hides the warp the generator exists
+    # to show.  Same three-quarter angle the fold gallery uses, so the
+    # menu icon and the thumbnail show the object the same way up.
+    "mesh.crease_pattern_add": (1.0821, 0.0, 0.4887),
+
     # The diamond tetrahedron's 3-fold axis is vertical by
     # construction, and straight down it the four hexagons stack into a
     # flat hexagonal silhouette -- the one view that hides the saddle
