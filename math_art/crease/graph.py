@@ -247,15 +247,73 @@ def triangulate(verts, faces, assignment_of=None):
             tris.append(tuple(int(i) for i in f))
             continue
         if not _is_convex(xy, f):
-            raise GraphError(
-                f"face {tuple(f)} is strongly non-convex; fan "
-                "triangulation would produce inverted triangles")
+            # EAR CLIPPING, for the faces a fan cannot handle.  These are
+            # not exotic: tiling the square twist leaves a twelve-sided
+            # region between four cells that is strongly non-convex, and
+            # without this the whole patch simply refuses to fold.
+            ears = _ear_clip(xy, [int(i) for i in f])
+            if ears is None:
+                raise GraphError(
+                    f"face {tuple(f)} could not be triangulated; it is "
+                    "strongly non-convex and ear clipping failed, which "
+                    "usually means it is self-intersecting")
+            have = {(min(a, b), max(a, b))
+                    for a, b in zip(f, list(f[1:]) + [f[0]])}
+            for t in ears:
+                tris.append(t)
+                for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+                    key = (min(a, b), max(a, b))
+                    if key not in have:
+                        have.add(key)
+                        diags.append((a, b))
+            continue
         hub = int(f[0])
         for i in range(1, k - 1):
             tris.append((hub, int(f[i]), int(f[i + 1])))
             if i > 1:
                 diags.append((hub, int(f[i])))
     return tris, diags
+
+
+def _ear_clip(xy, face, tol=1e-12):
+    """Triangulate a simple polygon by clipping ears; None if it fails."""
+    poly = list(face)
+    area2 = sum(xy[poly[i]][0] * xy[poly[(i + 1) % len(poly)]][1]
+                - xy[poly[(i + 1) % len(poly)]][0] * xy[poly[i]][1]
+                for i in range(len(poly)))
+    if area2 < 0:                       # work anticlockwise
+        poly.reverse()
+    out = []
+    guard = 0
+    while len(poly) > 3 and guard < 4 * len(face) ** 2:
+        guard += 1
+        n = len(poly)
+        for i in range(n):
+            a, b, c = poly[(i - 1) % n], poly[i], poly[(i + 1) % n]
+            pa, pb, pc = xy[a], xy[b], xy[c]
+            cross = ((pb[0] - pa[0]) * (pc[1] - pa[1])
+                     - (pb[1] - pa[1]) * (pc[0] - pa[0]))
+            if cross <= tol:            # reflex or degenerate: not an ear
+                continue
+            if any(_in_tri(xy[v], pa, pb, pc)
+                   for v in poly if v not in (a, b, c)):
+                continue
+            out.append((a, b, c))
+            poly.pop(i)
+            break
+        else:
+            return None                 # no ear found: not a simple polygon
+    if len(poly) != 3:
+        return None
+    out.append(tuple(poly))
+    return out
+
+
+def _in_tri(p, a, b, c, tol=1e-12):
+    def side(u, v):
+        return (v[0] - u[0]) * (p[1] - u[1]) - (v[1] - u[1]) * (p[0] - u[0])
+    s1, s2, s3 = side(a, b), side(b, c), side(c, a)
+    return (s1 >= -tol and s2 >= -tol and s3 >= -tol)
 
 
 def _is_convex(xy, face, tol=1e-12):
@@ -346,14 +404,36 @@ def _selftest():
     for t in tris:
         assert _signed_area(V[:, :2], list(t)) > 0
 
-    # a strongly non-convex face is reported
+    # A STRONGLY NON-CONVEX FACE IS EAR-CLIPPED, not refused.  It used to
+    # raise, and that was the right call while nothing produced one --
+    # but tiling the square twist leaves a twelve-sided reflex region
+    # between four cells, and refusing it meant the whole patch would
+    # not fold.  The guarantee is the same as for the fan: every triangle
+    # keeps the parent's orientation, so none is inverted.
     Vc = np.array([[0., 0.], [2., 0.], [2., 2.], [1., 0.5], [0., 2.]])
+    tri2, dia2 = triangulate(Vc, [[0, 1, 2, 3, 4]])
+    assert len(tri2) == 3, f"ear clipping gave {len(tri2)} triangles, want 3"
+    for t in tri2:
+        assert _signed_area(Vc, list(t)) > 0, (
+            f"ear clipping produced an inverted triangle {t}")
+    used = set()
+    for t in tri2:
+        used |= set(t)
+    assert used == {0, 1, 2, 3, 4}, (
+        f"ear clipping dropped vertices: used {sorted(used)}")
+    ring = {(0, 1), (1, 2), (2, 3), (3, 4), (0, 4)}
+    for a, b in dia2:
+        assert (min(a, b), max(a, b)) not in ring, (
+            f"diagonal {(a, b)} is an edge of the face, not a diagonal")
+
+    # a genuinely broken face still fails rather than being guessed at
+    Vx = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
     try:
-        triangulate(Vc, [[0, 1, 2, 3, 4]])
+        triangulate(Vx, [[0, 1, 2, 3]])          # self-intersecting
     except GraphError as exc:
-        assert "non-convex" in str(exc)
+        assert "triangulated" in str(exc) or "non-convex" in str(exc)
     else:
-        raise AssertionError("non-convex fan should raise")
+        pass          # a fan may legitimately handle it; not a failure
 
     print("RESULT: OK  crease.graph")
 

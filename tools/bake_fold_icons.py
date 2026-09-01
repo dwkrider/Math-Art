@@ -70,7 +70,7 @@ CASES = {
     'KRESLING':  dict(cols=6),
     'KRESZIG':   dict(cols=6),
     'RESCH':     dict(cols=3),
-    'TWIST':     dict(cols=1),
+    'TWIST':     dict(cols=2),
 }
 
 #: Three-quarter view.  A folded corrugation seen straight down reads as

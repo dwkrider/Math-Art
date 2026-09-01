@@ -94,9 +94,9 @@ _PATTERN_ITEMS = (
     ('TWIST', "Square Twist",
      "A central square with a pleat off each side; folding the pleats "
      "swings the square through a right angle and hides the surplus "
-     "underneath. One molecule, not a tessellation, and the rigidly "
-     "foldable variant -- its creases are not symmetric, which is what "
-     "lets it fold"),
+     "underneath. Rows and Columns tile the twist across the sheet, and "
+     "Panel Angle sets how far it turns. Not rigidly foldable, so it "
+     "wants Bending Paper"),
     ('RESCH', "Resch Triangular",
      "Ron Resch's triangular tessellation: every grid vertex inflated "
      "into a small triangular face, whose tucks hide surplus material "
@@ -197,7 +197,7 @@ _NATURAL_ROWS = {
     'KRESLING': 4,
     'KRESZIG': 4,
     'RESCH': 3,
-    'TWIST': 1,
+    'TWIST': 2,
 }
 
 #: The panel angle each pattern wants, for the patterns the angle means

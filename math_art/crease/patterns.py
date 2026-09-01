@@ -673,7 +673,8 @@ _RESCH_UNIT = np.stack([np.cos(_RESCH_DIRS), np.sin(_RESCH_DIRS)], axis=1)
 _RESCH_MOUNT = (1, 3, 5)                       # 90, 210, 330 degrees
 
 
-def square_twist(cell=1.0, alpha=np.deg2rad(60.0)):
+def square_twist(rows=1, cols=1, cell=1.0,
+                 alpha=np.deg2rad(60.0)):
     """The square twist: a square that rotates as four pleats close.
 
     A central square with a pleat running off each of its sides.  Folding
@@ -683,7 +684,8 @@ def square_twist(cell=1.0, alpha=np.deg2rad(60.0)):
 
     `alpha` is the twist angle, strictly between 0 and 90 degrees; it
     sets how far the inner square is rotated against the four outer ones
-    and so how far it turns when folded.
+    and so how far it turns when folded.  `rows` and `cols` count
+    TWISTS, tiling the molecule across the sheet.
 
     TRANSCRIBED FROM THE PUBLISHED GENERATOR, not reconstructed.  The
     source is OrigamiSimulator's own `SquareTwist.pde`, and the result is
@@ -720,15 +722,15 @@ def square_twist(cell=1.0, alpha=np.deg2rad(60.0)):
     square twist".  Matching a reference is not enough; it has to be the
     right reference.
 
-    ONE CELL, NOT A TESSELLATION -- but the lattice is now known rather
-    than guessed, so tiling is a small step and not a mystery.  The cell
-    is a twelve-sided pinwheel of area exactly 7 (in units of `cell`),
-    and translations by (2.598, 0.5)*cell and its 90-degree rotation --
-    the unique candidate whose determinant is also 7 -- tile it with
-    neither gap nor overlap: a 3x3 patch merges 24 vertices and all 36
-    of its full-degree vertices satisfy Maekawa and Kawasaki.  What is
-    missing is only the outline of a multi-cell patch, since the
-    tessellation drops the single cell's rim entirely.
+    THE TILING.  One cell is a twelve-sided pinwheel, and translating
+    it by `2*ex + (P2 - P1)` -- two square widths along, plus one side of
+    the twist square -- sets it exactly against its neighbour; the
+    90-degree rotation of that closes the lattice.  Inside a patch every
+    rim segment gets drawn twice, once by each of the two cells meeting
+    along it, and the paper is continuous there rather than creased, so
+    those are dropped and only the segments seen once survive as the
+    patch's outer edge.  That is why the source's tessellation draws no
+    rim at all.
 
     References:
       A. Ghassaei, Origami Simulator,
@@ -744,6 +746,7 @@ def square_twist(cell=1.0, alpha=np.deg2rad(60.0)):
     """
     a = float(cell)
     alpha = float(np.clip(alpha, np.deg2rad(5.0), np.deg2rad(85.0)))
+    rows, cols = max(1, int(rows)), max(1, int(cols))
     d = a / np.sqrt(2.0)
     P1 = np.array([d * np.sin(alpha - np.pi / 4),
                    -d * np.cos(alpha - np.pi / 4)])
@@ -759,35 +762,75 @@ def square_twist(cell=1.0, alpha=np.deg2rad(60.0)):
 
     def place(p):
         x, y = float(p[0]), float(p[1])
-        return (c * x - s * y, -(s * x + c * y))
+        return np.array([c * x - s * y, -(s * x + c * y)])
 
-    B = _Builder(tol=1e-9)
+    # THE TILING LATTICE, chosen by measurement.  Translating a cell by
+    # 2*ex + 2*P2 and by the 90-degree rotation of that sets neighbouring
+    # twists against each other so their crease ends MEET: a 3x3 patch
+    # merges twelve vertices and not one vertex in it fails Maekawa.
+    #
+    # The obvious denser candidate does not work, which is worth
+    # recording.  2*ex + (P2 - P1) has determinant equal to the cell's
+    # own area, so it tiles with neither gap nor overlap -- and where the
+    # crease ends meet, a valley from one cell runs head-on into a
+    # mountain from the next.  A degree-2 vertex needs both creases the
+    # same to fold flat, so that lattice fails Maekawa at 24 vertices
+    # despite fitting perfectly.  Fitting the paper is not the same as
+    # fitting the creases.
+    L1 = place(2.0 * ex + 2.0 * P2)
+    L2 = np.array([-L1[1], L1[0]])
 
-    def v(p):
-        return B.v(*place(p))
+    B = _Builder(tol=1e-7)
+    RIM = ((P1 - ex - ey, P1 - ex), (P1 - ex, -P2 - ex),
+           (-P2 - ex, -P2 - ex + ey),
+           (P1 - ey, P1 - ex - ey), (P1 - ey, P2 - ey),
+           (P2 - ey, P2 + ex - ey),
+           (P2 + ex - ey, P2 + ex), (P2 + ex, -P1 + ex),
+           (-P1 + ex, -P1 + ex + ey),
+           (-P1 + ex + ey, -P1 + ey), (-P1 + ey, -P2 + ey),
+           (-P2 + ey, -P2 - ex + ey))
 
-    # The inner square: EVERY side a valley.  This is the single fact
-    # that most obviously separates this pattern from the rigidly
-    # foldable one, and the first thing to check against a picture.
-    for x, y in ((P1, P2), (P1, -P2), (-P1, P2), (-P1, -P2)):
-        B.e(v(x), v(y), VALLEY)
+    # The rim is the outline of ONE cell, so inside a patch every rim
+    # segment is drawn twice -- once by each of the two cells that meet
+    # along it -- and the paper is continuous across it.  Count them
+    # first and keep only the ones seen once; those are the patch's real
+    # outer edge.  (The tessellation in the source draws no rim at all,
+    # for exactly this reason.)
+    seen = {}
+    for i in range(rows):
+        for j in range(cols):
+            o = i * L1 + j * L2
+            for p, q in RIM:
+                u, v = place(p) + o, place(q) + o
+                k = tuple(sorted((tuple(np.round(u, 6)),
+                                  tuple(np.round(v, 6)))))
+                seen[k] = seen.get(k, 0) + 1
 
-    # One more valley and one mountain out of each corner, giving 3-1.
-    for p, val, mnt in ((P1, -ey, -ex), (-P1, ey, ex),
-                        (P2, ex, -ey), (-P2, -ex, ey)):
-        B.e(v(p), v(p + val), VALLEY)
-        B.e(v(p), v(p + mnt), MOUNTAIN)
+    for i in range(rows):
+        for j in range(cols):
+            o = i * L1 + j * L2
 
-    # The rim: the twelve-sided pinwheel outline of the four squares.
-    for p, q in ((P1 - ex - ey, P1 - ex), (P1 - ex, -P2 - ex),
-                 (-P2 - ex, -P2 - ex + ey),
-                 (P1 - ey, P1 - ex - ey), (P1 - ey, P2 - ey),
-                 (P2 - ey, P2 + ex - ey),
-                 (P2 + ex - ey, P2 + ex), (P2 + ex, -P1 + ex),
-                 (-P1 + ex, -P1 + ex + ey),
-                 (-P1 + ex + ey, -P1 + ey), (-P1 + ey, -P2 + ey),
-                 (-P2 + ey, -P2 - ex + ey)):
-        B.e(v(p), v(q), BOUNDARY)
+            def v(p):
+                q = place(p) + o
+                return B.v(q[0], q[1])
+
+            # The inner square: EVERY side a valley.  This is the single
+            # fact that most obviously separates this pattern from the
+            # rigidly foldable one, and the first thing to check against
+            # a picture.
+            for x, y in ((P1, P2), (P1, -P2), (-P1, P2), (-P1, -P2)):
+                B.e(v(x), v(y), VALLEY)
+            # One more valley and one mountain out of each corner, 3-1.
+            for p, val, mnt in ((P1, -ey, -ex), (-P1, ey, ex),
+                                (P2, ex, -ey), (-P2, -ex, ey)):
+                B.e(v(p), v(p + val), VALLEY)
+                B.e(v(p), v(p + mnt), MOUNTAIN)
+            for p, q in RIM:
+                pu, qu = place(p) + o, place(q) + o
+                k = tuple(sorted((tuple(np.round(pu, 6)),
+                                  tuple(np.round(qu, 6)))))
+                if seen[k] == 1:
+                    B.e(v(p), v(q), BOUNDARY)
 
     fr = B.frame("Square Twist")
 
@@ -797,7 +840,7 @@ def square_twist(cell=1.0, alpha=np.deg2rad(60.0)):
     # dented sheet rather than a twist.  This pattern is flat-foldable,
     # so every crease genuinely wants +-180; 170 keeps the folded state
     # off the degenerate flat packet while still turning the square
-    # through about 39 degrees.  Fold Amount then scales all of them
+    # through about 35 degrees.  Fold Amount then scales all of them
     # together, which is what makes that slider mean something here.
     want = np.deg2rad(170.0)
     fr.fold_angle = np.array(
@@ -1450,6 +1493,18 @@ def _selftest():
     assert rep and rep.n_interior == 4, (
         f"square twist should be locally flat-foldable at all four "
         f"interior vertices: {rep.summary()}")
+
+    # THE TILING HAS TO STAY FOLDABLE TOO, and that is not automatic:
+    # the denser lattice fits the paper perfectly and still runs a valley
+    # into a mountain where two cells meet.  Four interior vertices per
+    # twist, all passing, is the check.
+    for r, cl in ((2, 2), (3, 2)):
+        ft = square_twist(rows=r, cols=cl)
+        ft.faces = build_faces(ft.verts, ft.edges)
+        rt = validate(ft)
+        assert rt and rt.n_interior == 4 * r * cl, (
+            f"square twist {r}x{cl}: {rt.summary()}; expected "
+            f"{4 * r * cl} interior vertices, all flat-foldable")
 
     # The twist angle is a real parameter, not decoration: the whole
     # family from a shallow twist to a deep one has to stay foldable.
