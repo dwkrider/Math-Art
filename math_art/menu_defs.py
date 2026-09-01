@@ -269,12 +269,7 @@ ROLLERS = Menu(
 ORIGAMI = Menu(
     "VIEW3D_MT_math_art_origami", "Origami", 'MOD_SIMPLIFY', [
         _e("mesh.crease_pattern_add", 'MESH_GRID'),
-        _e("mesh.corrugation_add", 'MOD_WAVE'),
         _e("mesh.fold_import", 'IMPORT', "Import Crease Pattern",
-           builtin=True),
-        SEP,
-        _e("object.select_bad_creases", 'ERROR', builtin=True),
-        _e("view3d.crease_view", 'HIDE_OFF', "Crease Pattern View",
            builtin=True),
     ])
 

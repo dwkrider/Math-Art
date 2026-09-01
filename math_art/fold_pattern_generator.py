@@ -79,24 +79,6 @@ _PATTERN_ITEMS = (
     ('MONKEY', "Monkey Saddle",
      "Six sectors of concentric pleats: the hexagonal hypar, whose rim "
      "repeats every third sector instead of simply alternating"),
-    # THE FOUR BELOW ARE PROVISIONAL.  Each builds, passes the local
-    # conditions where they apply, and folds without tearing -- but none
-    # yet has a check that it does the thing it is named for, the way
-    # the Miura is checked against Schenk and Guest's closed form and
-    # the Yoshimura is required to curl.  Their descriptions say what is
-    # unverified rather than implying it works.
-    ('EGGBOX', "Eggbox",
-     "The Miura's opposite number: it domes instead of shearing, and "
-     "its Poisson ratio is positive where the Miura's is negative. Not "
-     "flat-foldable, which is correct. The Poisson behaviour is NOT yet "
-     "verified"),
-    ('CHEVRON', "Chevron Pleat",
-     "A herringbone pleat, and the simplest thing here that folds "
-     "unconditionally -- useful mainly as a control"),
-    ('KRESLING', "Kresling",
-     "Biruta Kresling's twist-buckling pattern: inclined parallelograms "
-     "cut by their long diagonal, which roll into a tube whose top ring "
-     "turns as it deploys. Panel Angle sets the lean"),
     # TWO KRESLINGS, because Kresling gives two.  Belts may be stacked
     # all the same way or "inclined alternately to left and right", and
     # the two are one construction apart -- but they look nothing alike
@@ -109,6 +91,12 @@ _PATTERN_ITEMS = (
      "Kresling with its bands inclined alternately left and right, so "
      "the creases zigzag and the diagonals mirror into Vs. The band "
      "twists cancel, so this tube pumps along its axis without turning"),
+    ('TWIST', "Square Twist",
+     "A central square with a pleat off each side; folding the pleats "
+     "swings the square through a right angle and hides the surplus "
+     "underneath. One molecule, not a tessellation, and the rigidly "
+     "foldable variant -- its creases are not symmetric, which is what "
+     "lets it fold"),
     ('RESCH', "Resch Triangular",
      "Ron Resch's triangular tessellation: every grid vertex inflated "
      "into a small triangular face, whose tucks hide surplus material "
@@ -181,11 +169,10 @@ _NATURAL_FOLD = {
     'YOSHIMURA': 37.0,
     'HYPAR': 150.0,
     'MONKEY': 150.0,
-    'EGGBOX': 90.0,
-    'CHEVRON': 80.0,
     'KRESLING': 47.0,
     'KRESZIG': 47.0,
     'RESCH': 70.0,
+    'TWIST': 90.0,
 }
 
 #: How many rows -- rings, for the concentric-pleat patterns -- each
@@ -207,11 +194,10 @@ _NATURAL_ROWS = {
     'YOSHIMURA': 4,
     'HYPAR': 12,
     'MONKEY': 12,
-    'EGGBOX': 4,
-    'CHEVRON': 6,
     'KRESLING': 4,
     'KRESZIG': 4,
     'RESCH': 3,
+    'TWIST': 1,
 }
 
 #: The panel angle each pattern wants, for the patterns the angle means
@@ -223,7 +209,6 @@ _NATURAL_ROWS = {
 #: degenerate edge at six sides, so switching pattern has to move it.
 _NATURAL_ANGLE = {
     'MIURA': 60.0,
-    'EGGBOX': 60.0,
     'KRESLING': 72.0,
     'KRESZIG': 72.0,
 }
@@ -1063,11 +1048,12 @@ class OBJECT_OT_fold_run(bpy.types.Operator):
     # never ticked, and no progress appeared.  An operator cannot
     # delegate being modal.
     #
-    # `progress_begin/update` is what draws the bar in the status bar,
-    # and it only works from here for the same reason: it needs the UI
-    # to get a chance to redraw between updates, which is exactly what
-    # returning RUNNING_MODAL provides and a blocking execute() never
-    # does.
+    # PROGRESS IS REPORTED IN THE STATUS BAR, NOT ON THE CURSOR.
+    # `wm.progress_begin/update` replaces the mouse pointer with a
+    # spinning number, which is unpleasant to work under and hides the
+    # pointer just when you might want to click Esc.  The status text
+    # says the same thing without commandeering the cursor, and it needs
+    # the same modal loop to be visible at all.
 
     _timer = None
     _cf = None
@@ -1130,7 +1116,6 @@ class OBJECT_OT_fold_run(bpy.types.Operator):
         self._i = 0
 
         wm = context.window_manager
-        wm.progress_begin(0.0, 1.0)
         self._timer = wm.event_timer_add(0.01, window=context.window)
         wm.modal_handler_add(self)
         context.workspace.status_text_set("Folding 0%  |  Esc to cancel")
@@ -1141,7 +1126,6 @@ class OBJECT_OT_fold_run(bpy.types.Operator):
         if self._timer is not None:
             wm.event_timer_remove(self._timer)
             self._timer = None
-        wm.progress_end()
         context.workspace.status_text_set(None)
 
     def modal(self, context, event):
@@ -1161,7 +1145,6 @@ class OBJECT_OT_fold_run(bpy.types.Operator):
         self._i += 1
 
         frac = self._i / self._n
-        context.window_manager.progress_update(frac)
         context.workspace.status_text_set(
             f"Folding {frac * 100:.0f}%  |  Esc to cancel")
 

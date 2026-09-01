@@ -172,14 +172,6 @@ PARAMS = {
     # technique is GOOD at, since pleating adds material and a saddle
     # needs it added.  Showing the sphere would advertise the one target
     # the Theorema Egregium guarantees it handles worst.
-    "mesh.corrugation_add": dict(target='HYPAR', nu=18, nv=18,
-                                 amplitude=0.12, relax=1500,
-                                 make_pattern=False),
-    # The MONKEY SADDLE is the hero: of the six patterns it is the one
-    # that reads as a sculpture rather than as a technical diagram, and
-    # the Origami menu entry has to sell the whole family from a single
-    # picture.  Its own defaults (12 rings, 150 degrees), so the menu
-    # icon, the gallery thumbnail and the bare operator all agree.
     "mesh.crease_pattern_add": dict(pattern='MONKEY', rows=12,
                                     auto_fold=True,
                                     fold_angle=2.6179938779914944,   # 150 deg

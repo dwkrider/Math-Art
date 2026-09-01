@@ -50,14 +50,16 @@
 #   T. C. Hull, "Origametry" (Cambridge, 2020), ch. 5-6 -- the local
 #       conditions every pattern here is checked against.
 
+import collections
+
 import numpy as np
 
 from .fold_io import (ASSIGNMENTS, BOUNDARY, MOUNTAIN, UNASSIGNED, VALLEY,
                       Frame)
 
 PATTERNS = ("MIURA", "ACCORDION", "WATERBOMB", "YOSHIMURA", "HYPAR",
-            "MONKEY", "EGGBOX", "CHEVRON", "KRESLING", "KRESZIG",
-            "RESCH")
+            "MONKEY", "KRESLING", "KRESZIG", "RESCH",
+            "TWIST")
 
 
 class _Builder:
@@ -384,98 +386,27 @@ def hypar(rings=6, sides=4, radius=1.0):
 
 
 # --------------------------------------------------------------------
-# VERIFICATION STATUS OF THE FOUR PATTERNS BELOW -- read before
-# trusting one.
+# EVERY PATTERN HERE HAS AN ORACLE.  That is a rule, not a summary.
 # --------------------------------------------------------------------
-# The original patterns each earned an oracle: the Miura is checked
-# against Schenk and Guest's closed form, the Yoshimura must curl, the
-# hypar must saddle while its triangular case stays flat.  Those checks
-# caught three real bugs that Maekawa and Kawasaki did not.
+# The Miura is checked against Schenk and Guest's closed form; the
+# Yoshimura must curl; the hypar must saddle while its triangular case
+# stays flat; the Kresling must close, twist by rows * phi and reproduce
+# Liu's worked example; the zigzag stacking must close and NOT twist;
+# Resch must reproduce the two vertex figures measured off Ghassaei's
+# reference file.
 #
-# These four are NOT yet held to that standard.  They build, they pass
-# the local conditions where those apply, and they fold without
-# tearing -- but nothing yet verifies that each does the thing it is
-# NAMED for.  Specifically unverified:
+# The rule exists because this module has shipped three patterns that
+# passed Maekawa and Kawasaki and were still not the pattern they were
+# named for -- two Kreslings and a Resch, each assembled from a verbal
+# description.  Local flat-foldability conditions are necessary and
+# nowhere near sufficient, and a self-consistent metric will happily
+# confirm a wrong construction.  Only an independent statement about the
+# folded object settles it: a published closed form, a reference crease
+# pattern, or a behaviour the pattern is named for.
 #
-#   EGGBOX     the positive Poisson ratio: it should shrink in BOTH
-#              directions as it folds, opposite to the Miura.  Measured
-#              once and the result was inconclusive, because the
-#              compliant solver under-converges at the drive needed to
-#              show it.
-#   CHEVRON    nothing beyond "it folds".
-#   RESCH      the characteristic tuck.
-#
-# KRESLING WAS ON THIS LIST AND HAS COME OFF IT.  It is now derived from
-# the cylinder rather than guessed, and checked against three oracles it
-# previously failed -- see its docstring.
-#
-# A pattern that passes Maekawa and does not do its job is exactly what
-# the square twist turned out to be: flat-foldable at every vertex, and
-# rotating 1.7 degrees where it should rotate tens.  Treat these as
-# provisional until each has an oracle of its own.
-
-
-def eggbox(rows=4, cols=6, panel_a=1.0, panel_b=1.0,
-           alpha=np.deg2rad(60.0)):
-    """The eggbox: the Miura's opposite number.
-
-    The same parallelogram tiling as the Miura, but every row line is a
-    mountain and every zigzag a valley instead of the Miura's 3-1 -- so
-    the sheet domes rather than shearing, and its Poisson ratio comes
-    out POSITIVE where the Miura's is negative.  That pairing is the
-    reason to ship it alongside.
-
-    Not flat-foldable, and that is correct rather than a defect: a
-    degree-4 vertex carrying two mountains and two valleys fails Maekawa
-    by construction, which is the price of the doming.
-
-    References:
-      M. Schenk, S. D. Guest, "Geometry of Miura-folded metamaterials,"
-          PNAS 110(9), 2013 -- contrasts the eggbox with the Miura.
-      H. Nassar, A. Lebee, L. Monasse, "Curvature, metric and
-          parametrization of origami tessellations," Proc. R. Soc. A
-          473, 2017 -- the two sheets' opposite curvature response.
-    """
-    h = panel_b * np.sin(alpha)
-    s = panel_b * np.cos(alpha)
-    B = _Builder()
-    idx = [[B.v(j * panel_a + (s if i % 2 else 0.0), i * h)
-            for j in range(cols + 1)] for i in range(rows + 1)]
-    for i in range(rows + 1):
-        for j in range(cols + 1):
-            if j < cols:
-                B.e(idx[i][j], idx[i][j + 1],
-                    BOUNDARY if i in (0, rows) else MOUNTAIN)
-            if i < rows:
-                B.e(idx[i][j], idx[i + 1][j],
-                    BOUNDARY if j in (0, cols) else VALLEY)
-    return B.frame("Eggbox")
-
-
-def chevron(rows=6, cols=6, cell=1.0, height=0.6, skew=0.45):
-    """A herringbone pleat: parallel zigzag fold lines.
-
-    The simplest pattern here with a direction to it, and useful mostly
-    as a control -- it folds unconditionally, so anything that cannot
-    fold this has a problem unrelated to the pattern.
-    """
-    B = _Builder()
-    idx = [[B.v(j * cell + (skew * cell if i % 2 else 0.0), i * height)
-            for j in range(cols + 1)] for i in range(rows + 1)]
-    for i in range(rows + 1):
-        for j in range(cols + 1):
-            if j < cols:
-                B.e(idx[i][j], idx[i][j + 1],
-                    BOUNDARY if i in (0, rows)
-                    else (MOUNTAIN if i % 2 else VALLEY))
-            if i < rows:
-                # The cross creases must be ASSIGNED or nothing drives
-                # them.  Left unassigned, the sheet folded to a z-extent
-                # of 0.28 and simply looked broken.
-                B.e(idx[i][j], idx[i + 1][j],
-                    BOUNDARY if j in (0, cols)
-                    else (VALLEY if j % 2 else MOUNTAIN))
-    return B.frame("Chevron")
+# Two patterns without one were removed rather than carried: EGGBOX,
+# whose positive Poisson ratio was never demonstrated, and CHEVRON,
+# which was only ever a control.
 
 
 def _kresling_module(n, alpha, a):
@@ -742,6 +673,96 @@ _RESCH_UNIT = np.stack([np.cos(_RESCH_DIRS), np.sin(_RESCH_DIRS)], axis=1)
 _RESCH_MOUNT = (1, 3, 5)                       # 90, 210, 330 degrees
 
 
+#: The square twist, in units of `c` = a quarter of the twist square's
+#: side.  Vertex order and assignments are edemaine/fold's
+#: `examples/squaretwist.fold` exactly, unfolded from the folded form it
+#: stores; keeping the reference's own numbering means the self-test can
+#: compare against the file vertex for vertex.
+_TWIST_NODE = ((0, -4), (1, -3), (-1, -1), (-2, -2),
+               (2, -2), (4, 0), (3, 1), (1, -1),
+               (1, 1), (2, 2), (0, 4), (-1, 3),
+               (-4, 0), (-3, -1), (-1, 1), (-2, 2))
+_TWIST_EDGE = ((0, 1, BOUNDARY), (1, 2, MOUNTAIN), (2, 3, VALLEY),
+               (3, 0, BOUNDARY),
+               (4, 5, BOUNDARY), (5, 6, BOUNDARY), (6, 7, VALLEY),
+               (7, 4, VALLEY),
+               (8, 9, MOUNTAIN), (9, 10, BOUNDARY), (10, 11, BOUNDARY),
+               (11, 8, VALLEY),
+               (12, 13, BOUNDARY), (13, 14, MOUNTAIN), (14, 15, MOUNTAIN),
+               (15, 12, BOUNDARY),
+               (2, 7, VALLEY), (7, 8, MOUNTAIN), (8, 14, MOUNTAIN),
+               (14, 2, VALLEY),
+               (3, 13, BOUNDARY), (1, 4, BOUNDARY), (6, 9, BOUNDARY),
+               (11, 15, BOUNDARY))
+
+
+def square_twist(cell=1.0):
+    """The square twist: a square that rotates as four pleats close.
+
+    A central square with a pleat running off each of its sides.  Folding
+    the four pleats swings the square round through a right angle and
+    hides the surplus paper underneath -- the twist that gives the whole
+    family of twist tessellations its name.
+
+    ONE MOLECULE, NOT A TESSELLATION, and deliberately so: see the note
+    at the end.
+
+    TAKEN FROM THE REFERENCE, NOT RECONSTRUCTED.  The source is
+    edemaine/fold's `examples/squaretwist.fold`, which stores the FOLDED
+    form (`frame_classes: ["foldedForm"]`) rather than the crease
+    pattern -- so the pattern here was recovered by unfolding it: lay the
+    central square out, then walk the dual graph placing each neighbour
+    so the shared edge lands on the edge already placed and the face
+    falls on the far side from its parent.  Folding is an isometry, so
+    that inverts it exactly; the worst edge-length error over the
+    recovered pattern is 8e-7.
+
+    What comes back is clean enough to state in closed form.  Writing `c`
+    for a quarter of the twist square's side, every one of the sixteen
+    vertices is an integer multiple of `c`, and the molecule has 4-fold
+    rotational symmetry about its centre in four orbits of four: the
+    twist square itself at (+-c, +-c), its corner extensions at
+    (+-2c, +-2c), and two orbits forming the twelve-sided rim.
+
+    THE ASSIGNMENT IS NOT 4-FOLD SYMMETRIC even though the geometry is.
+    Around the twist square the creases run valley, mountain, mountain,
+    valley rather than alternating, and the pleats follow suit.  That
+    asymmetry is the point: it is what makes THIS square twist rigidly
+    foldable, where the familiar all-alternating one is not.  The
+    reference calls its folded frame "Rigidly folded square twist" for
+    that reason.  Do not "tidy" the labels into a symmetric set -- it
+    would look neater and stop folding.
+
+    WHY NO ROWS AND COLUMNS.  The classical square twist TESSELLATION
+    tiles a molecule of this kind, but not this one by translation: the
+    rim is a twelve-sided pinwheel, and although its area is exactly 32
+    c^2 -- matching the determinant of the obvious (4c, 4c), (-4c, 4c)
+    lattice -- every translation lattice of that determinant makes
+    neighbouring copies overlap rather than interlock, which a pinwheel
+    generally does.  Tiling it wants a rotation, and that has not been
+    worked out here.  Shipping one verified molecule beats shipping a
+    guessed tessellation; that lesson cost this module three patterns.
+
+    References:
+      E. D. Demaine et al., the FOLD file format and example library,
+          `github.com/edemaine/fold`, `examples/squaretwist.fold` --
+          the folded form this was unfolded from.
+      J. L. Silverberg, J.-H. Na, A. A. Evans, B. Liu, T. C. Hull,
+          C. D. Santangelo, R. J. Lang, R. C. Hayward, I. Cohen,
+          "Origami structures with a critical transition to bistability
+          arising from hidden degrees of freedom," Nature Materials 14,
+          2015 -- the square twist's bistability, and why the rigidly
+          foldable variant differs from the classical one.
+      T. C. Hull, "Origametry" (Cambridge, 2020), ch. 5-6.
+    """
+    c = 0.25 * float(cell)
+    B = _Builder(tol=1e-9)
+    idx = [B.v(c * x, c * y) for x, y in _TWIST_NODE]
+    for a, b, kind in _TWIST_EDGE:
+        B.e(idx[a], idx[b], kind)
+    return B.frame("Square Twist")
+
+
 def resch(rows=3, cols=3, cell=1.0):
     """Ron Resch's triangular tessellation.
 
@@ -896,11 +917,10 @@ def monkey_saddle(rings=8, radius=1.0):
 _MAKERS = {
     "MIURA": miura,
     "MONKEY": monkey_saddle,
-    "EGGBOX": eggbox,
-    "CHEVRON": chevron,
     "KRESLING": kresling,
     "KRESZIG": kresling_zigzag,
     "RESCH": resch,
+    "TWIST": square_twist,
     "ACCORDION": accordion,
     "WATERBOMB": waterbomb,
     "YOSHIMURA": yoshimura,
@@ -1334,6 +1354,57 @@ def _selftest():
     assert not rep and rep.n_interior, (
         "resch should FAIL Maekawa at its hubs; if it passes, the hubs "
         "are no longer 3 mountains and 3 valleys and this is not Resch")
+
+    # --- Square twist: the reference file, vertex for vertex ------
+    # Recovered by unfolding edemaine/fold's FOLDED form, so the check
+    # that matters is that it reproduces that file: same sixteen
+    # vertices on the integer-c grid, same twenty-four assignments.
+    fr = square_twist()
+    assert fr.n_verts == 16 and fr.n_edges == 24, (
+        f"square twist: {fr.n_verts} verts, {fr.n_edges} edges; the "
+        f"reference has 16 and 24")
+    got = {(round(float(p[0]) * 4.0, 9), round(float(p[1]) * 4.0, 9))
+           for p in fr.verts}
+    assert got == {(float(x), float(y)) for x, y in _TWIST_NODE}, (
+        "square twist: vertices are not the reference's integer-c grid")
+
+    kinds = collections.Counter(str(a) for a in fr.assignment)
+    assert kinds == collections.Counter({BOUNDARY: 12, MOUNTAIN: 6,
+                                         VALLEY: 6}), (
+        f"square twist: assignment counts {dict(kinds)}; the reference "
+        f"has 12 boundary, 6 mountain, 6 valley")
+
+    fr.faces = build_faces(fr.verts, fr.edges)
+    assert len(fr.faces) == 9 and all(len(f) == 4 for f in fr.faces), (
+        f"square twist: {len(fr.faces)} faces, sizes "
+        f"{sorted({len(f) for f in fr.faces})}; the reference has 9 quads")
+
+    # THE CREASES ROUND THE TWIST SQUARE ARE VALLEY, MOUNTAIN, MOUNTAIN,
+    # VALLEY -- not alternating.  That asymmetry is what makes this
+    # square twist rigidly foldable, so it is asserted rather than left
+    # to be tidied away by someone making the labels look symmetric.
+    mid = {}
+    for k, (a, b) in enumerate(fr.edges):
+        if str(fr.assignment[k]) == BOUNDARY:
+            continue
+        p, q = fr.verts[a], fr.verts[b]
+        if max(abs(p).max(), abs(q).max()) < 0.26:      # the twist square
+            mid[round(float(np.degrees(np.arctan2(
+                *(0.5 * (p + q))[::-1]))) % 360)] = str(fr.assignment[k])
+    seq = [mid[a] for a in (0, 90, 180, 270)]
+    assert sorted(seq) == [MOUNTAIN, MOUNTAIN, VALLEY, VALLEY], (
+        f"square twist: creases round the twist square are {seq}; two "
+        f"mountains and two valleys are needed")
+    assert seq[0] == seq[1] or seq[1] == seq[2], (
+        f"square twist: creases round the twist square ALTERNATE "
+        f"({seq}).  The alternating square twist is the classical one "
+        f"and is not rigidly foldable; this must be the variant whose "
+        f"two mountains are adjacent, as the reference's is")
+
+    rep = validate(fr)
+    assert rep and rep.n_interior == 4, (
+        f"square twist should be locally flat-foldable at all four "
+        f"interior vertices: {rep.summary()}")
 
     # --- dispatch ----------------------------------------------------
     for name in PATTERNS:

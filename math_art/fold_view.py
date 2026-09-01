@@ -89,9 +89,12 @@ def _crease_batches(obj, depsgraph=None):
 
 
 def _draw():
+    # NO ON/OFF SWITCH.  The overlay only ever draws on a mesh carrying a
+    # `crease_assignment` attribute, so on anything else it is already
+    # invisible -- a toggle for it was a menu entry that did nothing
+    # ninety-nine times out of a hundred.
     ctx = bpy.context
-    scene = getattr(ctx, "scene", None)
-    if scene is None or not getattr(scene, "math_art_show_creases", False):
+    if getattr(ctx, "scene", None) is None:
         return
     global _shader
     if _shader is None:
@@ -131,101 +134,13 @@ def _draw():
     gpu.state.depth_test_set('NONE')
 
 
-class VIEW3D_OT_crease_view(bpy.types.Operator):
-    """Show mountain and valley creases in the viewport"""
-
-    bl_idname = "view3d.crease_view"
-    bl_label = "Crease Pattern View"
-    bl_options = {'REGISTER'}
-
-    enable: BoolProperty(
-        name="Show Creases", default=True,
-        description="Draw mountain red and valley blue over every mesh "
-                    "carrying a crease assignment")
-
-    def execute(self, context):
-        context.scene.math_art_show_creases = bool(self.enable)
-        for area in context.screen.areas:
-            if area.type == 'VIEW_3D':
-                area.tag_redraw()
-        n = sum(1 for o in context.view_layer.objects
-                if o.type == 'MESH'
-                and o.data.attributes.get("crease_assignment") is not None)
-        self.report({'INFO'},
-                    f"crease view {'on' if self.enable else 'off'}; "
-                    f"{n} pattern(s) in view")
-        return {'FINISHED'}
-
-
-class OBJECT_OT_select_bad_vertices(bpy.types.Operator):
-    """Select the vertices that fail the flat-foldability checks"""
-
-    bl_idname = "object.select_bad_creases"
-    bl_label = "Select Failing Vertices"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        return (obj is not None and obj.type == 'MESH'
-                and obj.data.attributes.get("crease_assignment") is not None)
-
-    def execute(self, context):
-        try:
-            from . import crease
-        except ImportError:
-            import crease
-        import numpy as np
-
-        obj = context.active_object
-        me = obj.data
-        code_to_char = {0: "M", 1: "V", 2: "F", 3: "U", 4: "B"}
-        attr = me.attributes["crease_assignment"]
-        frame = crease.Frame(
-            verts=np.array([(v.co.x, v.co.y, v.co.z) for v in me.vertices]),
-            edges=np.array([tuple(e.vertices) for e in me.edges],
-                           dtype=np.int64).reshape(-1, 2),
-            assignment=np.array([code_to_char.get(int(d.value), "U")
-                                 for d in attr.data], dtype="<U1"),
-            faces=[list(p.vertices) for p in me.polygons] or None)
-        rep = crease.check(frame)
-        if not rep.checked:
-            self.report({'WARNING'},
-                        "not a flat crease pattern, so the checks were "
-                        "skipped -- unfold it first")
-            return {'CANCELLED'}
-
-        bad = rep.vertices()
-        # A report you cannot act on is a dead end, so put the answer in
-        # the selection rather than only in the status bar.
-        bpy.ops.object.mode_set(mode='OBJECT')
-        for v in me.vertices:
-            v.select = False
-        for e in me.edges:
-            e.select = False
-        for p in me.polygons:
-            p.select = False
-        for i in bad:
-            me.vertices[i].select = True
-        me.update()
-        if bad:
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_mode(type='VERT')
-
-        self.report({'INFO'} if not bad else {'WARNING'}, rep.summary())
-        return {'FINISHED'}
-
-
-_CLASSES = (VIEW3D_OT_crease_view, OBJECT_OT_select_bad_vertices)
+_CLASSES = ()
 
 
 def register():
     global _handle
     for cls in _CLASSES:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.math_art_show_creases = BoolProperty(
-        name="Show Creases", default=True,
-        description="Draw crease patterns with mountain red, valley blue")
     bpy.types.Scene.math_art_crease_boundary = BoolProperty(
         name="Show Boundary", default=True,
         description="Include the sheet's boundary edges in the overlay")
@@ -242,8 +157,7 @@ def unregister():
     if _handle is not None:
         bpy.types.SpaceView3D.draw_handler_remove(_handle, 'WINDOW')
         _handle = None
-    for attr in ("math_art_show_creases", "math_art_crease_boundary",
-                 "math_art_crease_width"):
+    for attr in ("math_art_crease_boundary", "math_art_crease_width"):
         if hasattr(bpy.types.Scene, attr):
             delattr(bpy.types.Scene, attr)
     for cls in reversed(_CLASSES):
