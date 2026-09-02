@@ -185,31 +185,18 @@ def is_flat(V):
 
 
 def relax_from(fe, m=72, rings=12, iters=250):
-    loops = fe.boundary_loops()
-    if len(loops) == 1:
-        poly = loops[0]
-        lp = pl.resample_loop(np.vstack([poly, poly[:1]]), m)
-        V, quads, fixed = pl.build_disk_grid(lp, rings)
-    elif len(loops) == 2:
-        a, b = loops
-        la = pl.resample_loop(np.vstack([a, a[:1]]), m)
-        lb = pl.resample_loop(np.vstack([b, b[:1]]), m)
-        if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
-            la, lb = lb, la
-        j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
-        lb = np.roll(lb, -j, axis=0)
-        V, quads, fixed = pl.build_annulus_grid(la, lb, rings)
-    else:
-        return None
-    V = np.asarray(V, dtype=float)
-    fixed = np.asarray(fixed, dtype=bool)
-    T = np.asarray(pl._quads_to_tris(quads))
-    # Honour the datafile's own boundary conditions rather than pinning
-    # the polygon it happens to start from -- see `plateau.fe_slide_planes`.
-    got = pl.fe_pinned_patch(fe, m=m, rings=rings, iters=iters)
-    if got is None:
-        return None
-    return got[0], got[1], loops
+    """The solved patch and the boundary it actually ended on.
+
+    Both parts matter.  `fe_pinned_patch` honours the datafile's own
+    boundary conditions rather than pinning the polygon it starts from
+    (see `plateau.fe_slide_planes`), and the loops returned are the ones
+    the SOLVE produced -- which for a sliding boundary is a different
+    curve from the one declared.  Baking the declared loops instead put
+    the flat starting quadrilateral into the record, and the shipped code
+    re-spans that at runtime, so the whole solve was thrown away and
+    Schwarz P came back a flat plate however well it had been solved.
+    """
+    return pl.fe_pinned_patch(fe, m=m, rings=rings, iters=iters)
 
 
 def verify(V, quads, lets, word):

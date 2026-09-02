@@ -1738,7 +1738,7 @@ def fe_pinned_patch(source, m=96, rings=14, iters=300):
     got = fe_grid(fe, m=m, rings=rings)
     if got is None:
         return None
-    V, quads, fixed, arc_of, corners, _rims = got
+    V, quads, fixed, arc_of, corners, rims = got
     V = np.asarray(V, dtype=float)
     fixed = np.asarray(fixed, dtype=bool)
     T = np.asarray(_quads_to_tris(quads))
@@ -1757,7 +1757,14 @@ def fe_pinned_patch(source, m=96, rings=14, iters=300):
     else:
         V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
                        dtype=float)
-    return V, [tuple(f) for f in quads], fe.boundary_loops()
+    # The SOLVED boundary, not the datafile's.  For a file whose boundary
+    # slides, the loop it starts from is not the loop it ends on -- it is
+    # the flat quadrilateral the solve exists to curve -- so baking the
+    # declared loops and re-spanning them at runtime threw the whole
+    # solve away and handed back the flat plate again.  Schwarz P, D,
+    # Neovius, I-WP and C(D) all shipped that way even after the solver
+    # itself was right.
+    return V, [tuple(f) for f in quads], [np.array(V[a:b]) for a, b in rims]
 
 
 def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
@@ -2997,6 +3004,20 @@ def _selftest():
     for key in sorted(FE_CELLS):
         spec = FE_CELLS[key]
         Vf, Qf = fe_cell_patch(key, m=72, rings=12, iters=200)
+        # Flatness FIRST, and at runtime rather than at bake time.  The
+        # shipped cell re-spans its recorded boundary, so a cell can be
+        # solved correctly and still come back a flat plate if what was
+        # recorded was the contour the solve started from instead of the
+        # one it ended on.  Schwarz P, Schwarz D, Neovius, I-WP and C(D)
+        # all shipped exactly that way, assembling into clean faceted
+        # stars that every other check here was happy with.
+        _u, _sv, _vt = np.linalg.svd(np.asarray(Vf) - np.asarray(Vf).mean(0),
+                                     full_matrices=False)
+        flat = float(_sv[2] / max(_sv[0], 1e-30))
+        if flat < 0.02:
+            print("plateau: fe cell %-14s FLAT (%.4f) -- the recorded "
+                  "boundary spans a plate  FAIL" % (key, flat))
+            ok = False
         got = fe_cell_assemble(key, Vf, Qf)
         want = spec['copies']
         good = got is not None and got[2] == want

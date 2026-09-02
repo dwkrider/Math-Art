@@ -75,16 +75,25 @@ void main() {
   vec3 base = front ? uFront : uBack;
   if (!front) n = -n;
 
-  vec3 key  = normalize(vec3( 0.45, 0.35, 0.82));
-  vec3 fill = normalize(vec3(-0.62, 0.18, 0.42));
-  vec3 rim  = normalize(vec3( 0.10, -0.85, 0.30));
-  float l = uAmbient
-          + 0.72 * max(dot(n, key), 0.0)
-          + 0.26 * max(dot(n, fill), 0.0)
-          + 0.16 * max(dot(n, rim), 0.0);
+  // WRAPPED lighting, and a hemisphere term, so that nothing ever falls
+  // to black.  With three plain lambert lights every face pointing away
+  // from all of them dropped to ambient alone, and on a surface as
+  // folded as these that is most of what you see from any given angle --
+  // half the object read as a black silhouette and the detail in it was
+  // simply gone.  Wrapping keeps a lit gradient right round the terminator.
+  vec3 key  = normalize(vec3( 0.42, 0.36, 0.83));
+  vec3 fill = normalize(vec3(-0.66, 0.16, 0.38));
+  vec3 rim  = normalize(vec3( 0.08, -0.88, 0.26));
+  float w = 0.45;
+  float lk = clamp((dot(n, key)  + w) / (1.0 + w), 0.0, 1.0);
+  float lf = clamp((dot(n, fill) + w) / (1.0 + w), 0.0, 1.0);
+  float lr = clamp((dot(n, rim)  + w) / (1.0 + w), 0.0, 1.0);
+  float sky = 0.5 + 0.5 * n.y;            // soft top-to-bottom gradient
+  float l = uAmbient + 0.16 * sky + 0.46 * lk + 0.20 * lf + 0.12 * lr;
+
   // A touch of specular keeps curvature readable on a matte palette.
   vec3 h = normalize(key + vec3(0.0, 0.0, 1.0));
-  float s = pow(max(dot(n, h), 0.0), 28.0) * 0.30;
+  float s = pow(max(dot(n, h), 0.0), 26.0) * 0.22;
   outColor = vec4(base * l + vec3(s), 1.0);
 }`;
 
@@ -237,11 +246,15 @@ export function decodeMesh(packed) {
 
 // --------------------------------------------------------------- viewer
 
+// Both defaults are LIGHT.  The two sides of a sheet have to be told
+// apart, but a dark second colour does it by throwing away the shading
+// that carries the shape, and a surface with one bright side and one
+// near-black one reads as half a surface.
 const DEFAULTS = {
-  front: [0.80, 0.64, 0.32],
-  back: [0.30, 0.46, 0.52],
+  front: [0.88, 0.72, 0.42],       // warm sand
+  back: [0.52, 0.70, 0.80],        // cool sky
   background: [0, 0, 0, 0],
-  ambient: 0.22,
+  ambient: 0.30,
   wireframe: false,
   autoRotate: false,
   distance: 2.7,
