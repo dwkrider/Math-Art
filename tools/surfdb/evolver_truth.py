@@ -93,3 +93,30 @@ EVOLVER_ADJOINT = {
     'triplane5adj.fe': {'facets': 512, 'area': 0.455314000,
         'bbox': (1.000000, 0.146000, 0.887000)},
 }
+
+
+# The same measurement for the datafiles that are NOT adjoints.
+# These define their surface directly, but most of them still have a
+# free boundary sliding on constraint planes, so "span the polygon"
+# is just as wrong for them -- and just as invisible to a
+# topological check.
+EVOLVER_PINNED = {
+    '3.fe': {'facets': 4992, 'area': 38.204141337},
+    '4.fe': {'facets': 7168, 'area': 49.745128798},
+    '4d.fe': {'facets': 256, 'area': 9.268268575},
+    'CLP.fe': {'facets': 384, 'area': 1.783975018},
+    'CScell.fe': {'facets': 512, 'area': 0.196224335},
+    'I-6.fe': {'facets': 2048, 'area': 5.267984013},
+    'I-8.fe': {'facets': 2048, 'area': 2.601626872},
+    'I-9.fe': {'facets': 3072, 'area': 5.050949183},
+    'IWP.fe': {'facets': 256, 'area': 0.289406534},
+    'RII.fe': {'facets': 768, 'area': 0.610187610},
+    'RIII.fe': {'facets': 768, 'area': 3.589169840},
+    'cd.fe': {'facets': 896, 'area': 1.326588515},
+    'dcell.fe': {'facets': 64, 'area': 0.320266526},
+    'disphenoid19.fe': {'facets': 256, 'area': 1.319952882},
+    'hcell.fe': {'facets': 768, 'area': 8.846655518},
+    'neovius.fe': {'facets': 256, 'area': 0.293167067},
+    'pcell.fe': {'facets': 256, 'area': 0.195588650},
+    'ycell.fe': {'facets': 384, 'area': 0.160953365},
+}

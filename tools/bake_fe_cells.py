@@ -64,7 +64,8 @@ sys.path.insert(0, os.path.join(ROOT, 'math_art'))
 sys.path.insert(0, HERE)
 
 from minsurf import fedata, plateau as pl      # noqa: E402
-from surfdb.evolver_truth import EVOLVER_ADJOINT      # noqa: E402
+from surfdb.evolver_truth import (EVOLVER_ADJOINT,   # noqa: E402
+                                  EVOLVER_PINNED)
 
 CURATION_OUT = os.path.join(HERE, 'surfdb', 'fecells.py')
 MODULE_OUT = os.path.join(ROOT, 'math_art', 'minsurf', 'fecells.py')
@@ -233,6 +234,17 @@ def harvest():
                   % (fn, len(fe.boundary_loops())))
             continue
         V, quads, loops = got
+        # The same gate the adjoint route uses.  These files were trusted
+        # on topology alone until Schwarz P turned out to be a set of
+        # flat panels that assembled perfectly.
+        truth = EVOLVER_PINNED.get(fn)
+        if truth is not None:
+            T = np.asarray(pl._quads_to_tris(quads))
+            area = float(pl.mesh_area(np.asarray(V, dtype=float), T))
+            ratio = area / truth['area']
+            if abs(ratio - 1.0) > AREA_TOL:
+                print("  %-14s HELD: area %.3f x Evolver" % (fn, ratio))
+                continue
         if is_flat(V):
             print("  %-14s HELD: patch stayed flat -- its boundary is free "
                   "on planes and the volume-constrained solve is not "
