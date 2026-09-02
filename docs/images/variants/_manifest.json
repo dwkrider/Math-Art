@@ -2447,16 +2447,16 @@
    "Borromean Crest"
   ],
   [
-   "TORUS",
-   "Torus Link (p,q)"
-  ],
-  [
    "CHAIN",
    "Chain"
   ],
   [
    "CONNECT_SUM",
    "Connect Sum"
+  ],
+  [
+   "TORUS",
+   "Torus Link (2, 6)"
   ]
  ],
  "polylinks": [
@@ -6776,16 +6776,8 @@
    "Golden Triangle"
   ],
   [
-   "ISO_SS",
-   "Isosceles, side-to-side (B = C)"
-  ],
-  [
    "ISO_SB",
    "Isosceles, side-to-base (A = B)"
-  ],
-  [
-   "ISO_BS",
-   "Isosceles, base-to-side (A = C)"
   ],
   [
    "RIGHT_LH",
@@ -6920,10 +6912,6 @@
   [
    "TUSK",
    "Tusk Shell"
-  ],
-  [
-   "SE_SPHERE",
-   "Ellipsoid"
   ],
   [
    "SE_CUBE",

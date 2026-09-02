@@ -48,16 +48,14 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/spiral_tiling__EQUILATERAL.png" width="200"><br><sub>Equilateral (plastic number)</sub></td>
 <td align="center"><img src="../images/variants/spiral_tiling__GOLDEN.png" width="200"><br><sub>Golden Triangle</sub></td>
-<td align="center"><img src="../images/variants/spiral_tiling__ISO_SS.png" width="200"><br><sub>Isosceles, side-to-side (B = C)</sub></td>
-</tr>
-<tr>
 <td align="center"><img src="../images/variants/spiral_tiling__ISO_SB.png" width="200"><br><sub>Isosceles, side-to-base (A = B)</sub></td>
-<td align="center"><img src="../images/variants/spiral_tiling__ISO_BS.png" width="200"><br><sub>Isosceles, base-to-side (A = C)</sub></td>
-<td align="center"><img src="../images/variants/spiral_tiling__RIGHT_LH.png" width="200"><br><sub>Right, leg-to-hypotenuse (C = 90)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/spiral_tiling__RIGHT_LH.png" width="200"><br><sub>Right, leg-to-hypotenuse (C = 90)</sub></td>
 <td align="center"><img src="../images/variants/spiral_tiling__RIGHT_HL.png" width="200"><br><sub>Right, hypotenuse-to-leg (B = 90)</sub></td>
 <td align="center"><img src="../images/variants/spiral_tiling__ISO_ANY.png" width="200"><br><sub>Any Isosceles (m = n = 2)</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/spiral_tiling__GENERAL.png" width="200"><br><sub>General / Custom</sub></td>
 </tr>
 </table>

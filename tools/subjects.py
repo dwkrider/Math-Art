@@ -689,11 +689,6 @@ VARIANT_SKIP = {
     # default generation count cannot build it (see VARIANT_EXTRA,
     # which renders it at two generations instead).
     "mesh.fractal_polyhedron_add": {"DODECA"},
-    # The polygonal spiral needs its own n/arms/angle triple: at the
-    # shared defaults the operator reports the angles degenerate
-    # (A=50, B=310, C=-180).  It wants a hand-tuned VARIANT_EXTRA
-    # entry from someone who knows the family, not a broken thumbnail.
-    "mesh.spiral_tiling_add": {"POLY"},
     # UVMESH reads its lattice off the selected mesh, which in a
     # headless render is nothing -- same class as ACTIVE below.
     "mesh.knot_carpet_add": {"UVMESH"},
@@ -705,6 +700,24 @@ VARIANT_SKIP = {
     # icosidodecahedron does it.  Skipped so the gallery is
     # renderable at all; the crash is a generator bug (BACKLOG).
     "mesh.zonish_add": {"TID"},
+    # The torus preset defaults to (p,q) = (2,4), and the (2,4)
+    # torus link IS Solomon's link -- the two entries rendered
+    # identically because they are the same object.  It returns as
+    # a VARIANT_EXTRA at (2,6), still a torus link and visibly a
+    # different one.
+    "curve.math_link_add": {"TORUS"},
+    # SE_SPHERE is the superellipsoid family's sphere case, so it
+    # renders identically to the SPHERE preset beside it.  The
+    # family is already represented by SE_CUBE, SE_OCTAHEDRON,
+    # SE_STAR and SE_PILLOW; re-parameterising a preset named
+    # "sphere" into something else would misrepresent it.
+    "mesh.supershape_add": {"SE_SPHERE"},
+    # ISO_SS and ISO_BS render identically to GOLDEN and
+    # EQUILATERAL.  They are meant to be angle-parameterised
+    # families, but `angle` does not reach the geometry -- checked
+    # at 50 and 65 degrees, every family unchanged -- so there is
+    # no setting that separates them.  Generator bug (BACKLOG).
+    "mesh.spiral_tiling_add": {"POLY", "ISO_SS", "ISO_BS"},
     # PGD is the Bonnet P-Gyroid-D family, and its three named ends are
     # exactly the P, G and D entries already in this gallery: at the P
     # preset it renders pixel-identical to P, and at the gyroid preset
@@ -773,6 +786,11 @@ VARIANT_MAX = {
 # one enum, so there is nothing to introspect.  Same 3-tuple shape the
 # renderer builds internally: (id, label, kwargs).
 VARIANT_EXTRA = {
+    # (2,4) is Solomon's link, already in this gallery; (2,6) is the
+    # next torus link along and is plainly a different picture.
+    "curve.math_link_add": [
+        ("TORUS", "Torus Link (2, 6)", dict(preset='TORUS', p=2, q=6)),
+    ],
     # The three weaves live under the ribbon surface (VARIANT_COMMON);
     # these two put the other two surface forms back in the gallery, so
     # it covers both axes rather than only the weave.
