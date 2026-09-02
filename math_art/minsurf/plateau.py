@@ -61,6 +61,32 @@ def resample_loop(pts, m):
     return out
 
 
+def resample_indexed(poly, m):
+    """`resample_loop` that also reports where each sample came from.
+
+    Returns `(pts, arc, corner)`: `arc[i]` is the polyline segment
+    sample `i` lies on and `corner[k]` is the sample nearest corner `k`.
+    The plain resampler throws both away, and they are exactly what a
+    datafile's `frame` command asks for -- it names its planes by
+    ORIGINAL EDGE and reads distances off ORIGINAL VERTICES, neither of
+    which survives a uniform-arclength resample unless carried along.
+    """
+    poly = np.asarray(poly, dtype=np.float64)
+    n = len(poly)
+    seg = np.linalg.norm(np.roll(poly, -1, axis=0) - poly, axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    total = float(s[-1])
+    if total <= 0.0:
+        raise ValueError("degenerate contour")
+    t = np.linspace(0.0, total, m, endpoint=False)
+    idx = np.clip(np.searchsorted(s, t, side='right') - 1, 0, n - 1)
+    f = (t - s[idx]) / np.maximum(seg[idx], 1e-12)
+    closed = np.vstack([poly, poly[:1]])
+    pts = closed[idx] * (1.0 - f)[:, None] + closed[idx + 1] * f[:, None]
+    corner = (np.round(s[:n] / total * m).astype(np.int64)) % m
+    return pts, idx, corner
+
+
 def align_loops(A, B):
     """Cyclic shift + optional reversal of B minimizing sum |A_i - B_i|^2."""
     m = len(A)
@@ -162,6 +188,86 @@ def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
         if move < 1e-6 * max(1.0, np.max(np.abs(V))):
             break
     return V
+
+
+def minimize_area_sliding(V, T, fixed, slide, outer_iters=60, inner=10,
+                          step=0.6, tol=1e-6):
+    """Area minimisation with some boundary arcs free to slide on planes.
+
+    Twenty-four of Brakke's forty-three adjoint datafiles pin only part
+    of their contour and let one arc run free on a plane.  The minimal
+    surface then meets that plane at a RIGHT ANGLE and the arc's shape is
+    an output of the solve, not an input to it; spanning the polygon as
+    if it were pinned gives a different surface -- for Schoen's batwing,
+    half again too much area, on a cell that still welded into one clean
+    sheet and passed every topological check.
+
+    Freeing those rows inside the Laplace solve does not work: they are
+    unknowns in three dimensions there, so the solve pulls them into the
+    interior and re-projecting afterwards restores only the normal
+    component, leaving the arc a little further in each round until the
+    patch collapses.  (Measured: the conjugate's area ratio drifted from
+    1.07 to 1.58 as that loop was given more rounds, away from the truth
+    rather than toward it.)
+
+    So the interior is solved exactly with the arc held, and the arc is
+    then stepped along the IN-PLANE part of the Dirichlet gradient, which
+    vanishes exactly when the surface meets the plane orthogonally.
+    `slide` is a list of `(rows, normal, offset)`; the normal need not be
+    a unit vector, and the plane is `normal . p = offset`.
+    """
+    V = np.asarray(V, dtype=float)
+    if not slide:
+        return minimize_area(V, T, fixed, outer_iters=outer_iters * inner)
+    hold = np.asarray(fixed, dtype=bool).copy()
+    units = [(rows, np.asarray(vec, dtype=float),
+              np.asarray(vec, dtype=float) / float(np.linalg.norm(vec)),
+              float(off)) for rows, vec, off in slide]
+    for rows, _v, _u, _o in units:
+        hold[rows] = True
+    V = np.asarray(minimize_area(V, T, hold, outer_iters=inner), dtype=float)
+    best = float(mesh_area(V, T))
+    for _it in range(outer_iters):
+        E, W = _cotan_weights(V, T)
+        g = np.zeros_like(V)
+        deg = np.zeros(len(V))
+        d = V[E[:, 0]] - V[E[:, 1]]
+        np.add.at(g, E[:, 0], W[:, None] * d)
+        np.add.at(g, E[:, 1], -W[:, None] * d)
+        np.add.at(deg, E[:, 0], W)
+        np.add.at(deg, E[:, 1], W)
+        worst = 0.0
+        for rows, _v, unit, _o in units:
+            gg = g[rows] / np.maximum(deg[rows], 1e-30)[:, None]
+            gg -= (gg @ unit)[:, None] * unit
+            worst = max(worst, float(np.max(np.linalg.norm(gg, axis=1))))
+        if not np.isfinite(worst) or \
+                worst < tol * max(1.0, float(np.max(np.abs(V)))):
+            break
+        # Backtrack on area.  Without it this loop diverges on about a
+        # third of the sliding cases -- the arc overshoots, the triangles
+        # touching it invert, and the "minimal" patch comes out an order
+        # of magnitude too big while still assembling into a clean cell.
+        lam = step
+        while lam > 1e-4:
+            X = V.copy()
+            for rows, vec, unit, off in units:
+                gg = g[rows] / np.maximum(deg[rows], 1e-30)[:, None]
+                gg -= (gg @ unit)[:, None] * unit
+                X[rows] -= lam * gg
+                X[rows] -= ((X[rows] @ vec - off)
+                            / float(vec @ vec))[:, None] * vec
+            X = np.asarray(minimize_area(X, T, hold, outer_iters=inner),
+                           dtype=float)
+            a = float(mesh_area(X, T))
+            if np.isfinite(a) and a <= best + 1e-12:
+                V, best = X, a
+                break
+            lam *= 0.5
+        else:
+            break
+    return np.asarray(minimize_area(V, T, hold, outer_iters=inner * 2),
+                      dtype=float)
 
 
 def minimize_area_lbfgs(V, T, fixed, outer_iters=200, m=8, step_cap=4.0,
@@ -1379,6 +1485,224 @@ def _weld_points(V, faces, tol):
     return W, QQ
 
 
+def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
+    """Rebuild an ADJOINT datafile's cell the way the datafile does it.
+
+    Roughly half of Brakke's periodic collection is written as an
+    adjoint: the datafile pins a polygon, and the surface you want is the
+    CONJUGATE of the disk that polygon spans.  Conjugating is only the
+    first step, though, and the steps after it are what a static reading
+    of the file misses.  The conjugate is minimal but arrives at an
+    arbitrary position and scale, so each file carries a `frame` command
+    that moves it -- reads a corner height here, a minimum there,
+    translates, rescales -- and only then declares which boundary arc
+    lies on which mirror plane.
+
+    So this runs the file: span, conjugate, execute `frame`, land each
+    arc on the plane `frame` assigned it, and relax the interior back.
+    Reproducing the placement by inspection instead, or matching arcs to
+    constraints by their order, is what left most of this collection
+    coming out as disjoint sheets -- Evolver evolves all of these
+    without complaint, so a refusal was always a defect here.
+
+    Returns `(points, quads, letters, env, loops)`; `loops` is the
+    conjugate's own boundary, which is what gets baked, because a
+    contour is all the shipped code needs to span the patch again.
+    """
+    from . import fedata
+    fe = fedata.read(source) if isinstance(source, str) else source
+    chains = fe.boundary_chains()
+    if not chains or len(chains) > 2:
+        return None
+    lps, arcs, cors = [], [], []
+    for vids, eids in chains:
+        poly = np.asarray([fe.vertices[v] for v in vids], dtype=float)
+        pts, idx, cor = resample_indexed(poly, m)
+        lps.append(pts)
+        arcs.append(np.asarray([eids[i] for i in idx], dtype=np.int64))
+        cors.append({vids[k]: int(cor[k]) for k in range(len(vids))})
+    if len(lps) == 1:
+        V, quads, fixed = build_disk_grid(lps[0], rings)
+        arc_of = np.full(len(V), -1, dtype=np.int64)
+        arc_of[:m] = arcs[0]
+        corners = cors[0]
+        rims = [(0, m)]
+    else:
+        (la, lb), (aa, ab), (ca, cb) = lps, arcs, cors
+        if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
+            la, lb, aa, ab, ca, cb = lb, la, ab, aa, cb, ca
+        j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
+        lb, ab = np.roll(lb, -j, axis=0), np.roll(ab, -j)
+        cb = {v: (i - j) % m for v, i in cb.items()}
+        V, quads, fixed = build_annulus_grid(la, lb, rings)
+        nb = len(V) - m
+        arc_of = np.full(len(V), -1, dtype=np.int64)
+        arc_of[:m], arc_of[nb:] = aa, ab
+        corners = dict(ca)
+        corners.update({v: nb + i for v, i in cb.items()})
+        rims = [(0, m), (nb, nb + m)]
+    V = np.asarray(V, dtype=float)
+    fixed = np.asarray(fixed, dtype=bool)
+    T = np.asarray(_quads_to_tris(quads))
+
+    # Arcs the datafile leaves FREE on a plane are not part of the given
+    # contour -- their shape comes out of the solve, and a minimal
+    # surface meets such a plane at a right angle.  Pinning them instead
+    # spans a different surface entirely: for Schoen's batwing that put
+    # the patch half again too large in area, on a cell that still welded
+    # into one clean sheet and passed every topological check.
+    slide = []
+    at_corner = np.zeros(len(V), dtype=bool)
+    at_corner[list(corners.values())] = True
+    for eid, cons in sorted(getattr(fe, 'edge_constraints', {}).items()):
+        if eid in getattr(fe, 'edge_fixed', ()):
+            continue
+        rows = np.nonzero((arc_of == eid) & ~at_corner)[0]
+        if not len(rows):
+            continue
+        for n in cons:
+            pl = fe.constraint_plane(n, fe.params)
+            if pl is not None and pl[2] is None:
+                slide.append((rows, pl[0], pl[1]))
+    for vid, row in sorted(corners.items()):
+        if vid in getattr(fe, 'vertex_fixed', ()):
+            continue
+        for n in getattr(fe, 'vertex_constraints', {}).get(vid, ()):
+            pl = fe.constraint_plane(n, fe.params)
+            if pl is not None and pl[2] is None:
+                slide.append((np.array([row]), pl[0], pl[1]))
+    if slide:
+        V = minimize_area_sliding(V.copy(), T, fixed, slide,
+                                  outer_iters=max(20, iters // 8))
+    else:
+        V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
+                       dtype=float)
+    W0 = np.asarray(discrete_adjoint(V, T, bangle=90.0, mode='corner'),
+                    dtype=float)
+
+    # The discrete conjugate is fixed only up to a TRANSLATION and a
+    # SIGN, and the datafiles assume Evolver's choice of both.
+    #
+    # The translation, because Polthier's construction propagates from a
+    # seed edge that is simply declared to sit at the origin, and Evolver
+    # picks that seed by mesh numbering after refinement.  Several frames
+    # lean on it -- the first three triplanes normalise only `z - x` and
+    # then divide by `max(z)`, which still depends on where x happens to
+    # sit -- so inheriting an arbitrary origin made those patches come
+    # out several times too large while still assembling cleanly.
+    #
+    # The sign, because a Bonnet rotation through 90 and through 270
+    # degrees give point reflections of each other, both minimal and both
+    # congruent to the conjugate.  The frames measure a signed length and
+    # divide by it, so the wrong choice divides by a NEGATIVE number: the
+    # tell for Schoen's mantas and the disphenoids, which came out
+    # mirrored and mis-scaled.
+    #
+    # Neither has to be guessed.  By Schwarz each straight segment of the
+    # pinned contour conjugates to an arc in the plane perpendicular to
+    # it, and the datafile says which plane; the planes through the
+    # origin are scale-free and fix the translation on their own, and of
+    # the two signs the right one is the one whose boundary then actually
+    # lands on the planes.
+    best = None
+    for sign in (1.0, -1.0):
+        W = sign * W0
+        _junk, econ, _junk2 = fe.run_frame(W.copy(), corners, arc_of)
+        rows_a, rows_b = [], []
+        for eid, cons in sorted(econ.items()):
+            rows = np.nonzero(arc_of == eid)[0]
+            if not len(rows):
+                continue
+            for n in cons:
+                pl = fe.constraint_plane(n, fe.params)
+                if pl is None or pl[2] is not None or abs(pl[1]) > 1e-12:
+                    continue
+                rows_a.append(pl[0])
+                rows_b.append(-float(np.mean(W[rows] @ pl[0])))
+        if rows_a:
+            shift, _r, _rk, _s = np.linalg.lstsq(
+                np.asarray(rows_a), np.asarray(rows_b), rcond=None)
+            W = W + shift
+        W, econ, env = fe.run_frame(W, corners, arc_of)
+        if not np.all(np.isfinite(W)):
+            # A frame divides by a quantity it measures off the
+            # conjugate.  If that came out zero the placement is
+            # meaningless, and going on would only launder NaNs into a
+            # shipped surface.
+            continue
+
+        # Land each arc on the plane `frame` gave it.  Where the datafile
+        # leaves the offset to be measured it says so by naming it, and
+        # the name is bound here from the conjugate itself -- the one
+        # number Evolver could not know before conjugating either.
+        planes = {}
+        for eid, cons in sorted(econ.items()):
+            rows = np.nonzero(arc_of == eid)[0]
+            if not len(rows):
+                continue
+            for n in cons:
+                pl = fe.constraint_plane(n, env)
+                if pl is None:
+                    continue
+                vec, const, name = pl
+                if name is None:
+                    off = const
+                elif name in env:
+                    off = float(env[name]) + const
+                else:
+                    off = float(np.median(W[rows] @ vec))
+                    env[name] = off - const
+                planes[n] = (vec, off)
+
+        # How far the conjugate already sits from the planes it is meant
+        # to meet.  This is the honest measure of whether the whole
+        # reconstruction worked: the conjugate of a minimal surface is
+        # minimal, and if the framing put it in the right place its
+        # boundary is ALREADY on those planes.  A large residual means
+        # the placement, the sign or the arc-to-plane mapping is wrong,
+        # and projecting anyway would hide that by deforming a correct
+        # surface into a plausible-looking wrong one.
+        span = float(np.max(W.max(0) - W.min(0))) or 1.0
+        resid = 0.0
+        for eid, cons in sorted(econ.items()):
+            rows = np.nonzero(arc_of == eid)[0]
+            if not len(rows):
+                continue
+            for n in cons:
+                if n not in planes:
+                    continue
+                vec, off = planes[n]
+                d = np.abs(W[rows] @ vec - off) / float(np.linalg.norm(vec))
+                resid = max(resid, float(np.max(d)) / span)
+        if best is None or resid < best[0]:
+            best = (resid, W, econ, env, planes)
+    if best is None:
+        return None
+    resid, W, econ, env, planes = best
+
+    if planes:
+        # An arc named by two constraints belongs on the LINE where they
+        # meet, and alternating the two projections converges to it.
+        for _ in range(40):
+            for eid, cons in sorted(econ.items()):
+                rows = np.nonzero(arc_of == eid)[0]
+                if not len(rows):
+                    continue
+                for n in cons:
+                    if n not in planes:
+                        continue
+                    vec, off = planes[n]
+                    W[rows] -= (((W[rows] @ vec) - off)
+                                / float(vec @ vec))[:, None] * vec
+        W = np.asarray(minimize_area(W.copy(), T, fixed,
+                                     outer_iters=relax_iters), dtype=float)
+    lets = dict(zip(fe.gen_names, fe.generators_with(env)))
+    loops = [np.array(W[a:b], dtype=float) for a, b in rims]
+    env = dict(env)
+    env['_plane_residual'] = resid
+    return W, [tuple(f) for f in quads], lets, env, loops
+
+
 def fe_cell_patch(key, m=96, rings=16, iters=300):
     """Relax the datafile's contour, as a disk or an annulus.
 
@@ -1413,7 +1737,153 @@ def fe_cell_patch(key, m=96, rings=16, iters=300):
     return V, [tuple(f) for f in quads]
 
 
-def fe_cell_assemble(key, V, quads, tol=1e-4):
+def dedupe_placements(V, mats):
+    """Group elements that put THIS patch in the same place, kept once.
+
+    Not the same question as which matrices are distinct, and the two
+    part company whenever the patch is stabilised by part of its own
+    group.  Fischer and Koch's S cell is the extreme case: its twelve
+    generators give 380 distinct elements but far fewer distinct
+    positions for the fundamental piece, so one copy per element laid
+    181,870 faces exactly on top of one another -- a pile of sheets that
+    every check then reported as broken.
+
+    Two probes rather than one, because a rotation about the patch's own
+    centroid moves the patch while leaving the centroid where it was,
+    and a centroid-only key would merge two genuinely different copies.
+    """
+    V = np.asarray(V, dtype=float)
+    if not len(V):
+        return list(mats)
+    c0 = V.mean(0)
+    far = V[int(np.argmax(np.linalg.norm(V - c0, axis=1)))]
+    seen, keep = set(), []
+    for M in mats:
+        R, t = M[:3, :3], M[:3, 3]
+        k = (tuple(np.round(c0 @ R.T + t, 6))
+             + tuple(np.round(far @ R.T + t, 6)))
+        if k in seen:
+            continue
+        seen.add(k)
+        keep.append(M)
+    return keep
+
+
+def assemble_orbit(V, quads, mats, tol=1e-4):
+    """Lay the patch down under every group element and weld the result.
+
+    A negative determinant reverses the copy's faces, so the assembled
+    sheet keeps one consistent orientation instead of alternating with
+    each reflection.
+
+    The group elements are deduplicated a second time, by WHERE THEY PUT
+    THIS PATCH rather than by what matrix they are.  The two are not the
+    same question whenever the patch is stabilised by part of its own
+    group, and for Fischer and Koch's cells they differ enormously:
+    S has twelve generators whose 380 distinct elements place the patch
+    in only a fraction of that many positions, so assembling one copy per
+    element laid 181,870 faces exactly on top of each other.
+    """
+    V = np.asarray(V, dtype=float)
+    mats = dedupe_placements(V, mats)
+    pts = np.concatenate([V @ M[:3, :3].T + M[:3, 3] for M in mats])
+    nV = len(V)
+    faces = []
+    for j, M in enumerate(mats):
+        flip = float(np.linalg.det(M[:3, :3])) < 0.0
+        for f in quads:
+            g = tuple(i + j * nV for i in f)
+            faces.append(g[::-1] if flip else g)
+    span = float(np.max(pts.max(0) - pts.min(0))) or 1.0
+    return _weld_points(pts, faces, tol * span)
+
+
+# Weld tolerances to try, tightest first.
+#
+# The tolerance is doing two jobs at once and they pull opposite ways.
+# Copies joined across an arc the transform fixes POINTWISE -- a mirror
+# --- meet to machine precision, so a tight weld is correct there; copies
+# joined by a translation meet arc-to-arc between samples that were laid
+# down independently, and need a loose one.  A single value cannot serve
+# both: at 1e-4 several of the triplane cells fused sheets that merely
+# pass close through the middle of the cell, reporting edges shared by
+# four faces on a surface that is perfectly sound.  So the tightest weld
+# that closes is the one taken, and the gate decides whether it closed.
+FE_WELD_LADDER = (1e-8, 1e-7, 1e-6, 1e-5, 1e-4)
+
+# Datafile commands that show a whole cell, best first.
+FE_WORD_PREFER = ('showcube', 'cube', 'full', 'showrhombic', 'showcubelet',
+                  'showwprism', 'showgprism', 'layers', 'showlayer', 'seven',
+                  'showfour', 'showsix', 'stack8', 'stack6', 'stack4',
+                  'stack12')
+
+
+def fe_word_order(words):
+    """The datafile's cell commands, best first."""
+    return ([k for k in FE_WORD_PREFER if k in words]
+            + sorted(k for k in words if k not in FE_WORD_PREFER))
+
+
+def fe_words_with_fallback(fe):
+    """The datafile's cell words, plus the one it leaves implicit.
+
+    Fischer and Koch's C(S) and Y cells declare their generators and no
+    `transform_expr` at all: the datafile's instructions say to turn
+    `transforms on`, which shows the orbit under EVERY declared
+    generator.  That implicit word is the concatenation of all the
+    letters, and without it those two surfaces have no cell to build.
+    """
+    words = dict(fe.words)
+    if not words and fe.gen_names:
+        words['transforms on'] = ''.join(fe.gen_names)
+    return words
+
+
+def fe_orbit_ok(W, wf):
+    """One clean, closed, non-degenerate sheet?"""
+    dup, over, comps = _orbit_defects(W, wf)
+    bb = np.asarray(W).max(0) - np.asarray(W).min(0)
+    return (dup == 0 and over == 0 and comps == 1
+            and float(np.min(bb)) > 1e-6)
+
+
+def fe_adjoint_cell(source, m=96, rings=14, iters=300):
+    """Run an adjoint datafile end to end and return the cell that closes.
+
+    Tries the file's own cell commands in turn and, for each, the weld
+    ladder; the first combination that welds into a single clean sheet
+    wins.  Returns None rather than a guess -- a heap of disjoint sheets
+    is worse than no row at all.
+    """
+    from . import fedata
+    fe = fedata.read(source) if isinstance(source, str) else source
+    got = fe_adjoint_patch(fe, m=m, rings=rings, iters=iters)
+    if got is None:
+        return None
+    V, quads, lets, env, loops = got
+    words = fe_words_with_fallback(fe)
+    for name in fe_word_order(words):
+        word = words[name]
+        if any(c not in lets for c in word):
+            continue
+        mats = eval_transform_expr(lets, word)
+        if len(mats) > 2048:
+            continue
+        mats = dedupe_placements(V, mats)
+        if not (1 < len(mats) <= 256):
+            continue
+        for tol in FE_WELD_LADDER:
+            W, wf = assemble_orbit(V, quads, mats, tol)
+            if fe_orbit_ok(W, wf):
+                return {'fe': fe, 'patch': V, 'quads': quads,
+                        'letters': lets, 'env': env, 'loops': loops,
+                        'command': name, 'word': word, 'copies': len(mats),
+                        'tol': tol, 'cell': (W, wf),
+                        'bbox': np.asarray(W).max(0) - np.asarray(W).min(0)}
+    return None
+
+
+def fe_cell_assemble(key, V, quads, tol=None):
     """Assemble with the datafile's own generators and word.
 
     Gated like every other route: duplicate faces, over-shared edges and
@@ -1425,19 +1895,9 @@ def fe_cell_assemble(key, V, quads, tol=1e-4):
     lets = {k: np.asarray(v, dtype=float)
             for k, v in spec['letters'].items()}
     mats = eval_transform_expr(lets, spec['word'])
-    V = np.asarray(V, dtype=float)
-    pts = np.concatenate([V @ M[:3, :3].T + M[:3, 3] for M in mats])
-    nV = len(V)
-    faces = []
-    for j, M in enumerate(mats):
-        flip = float(np.linalg.det(M[:3, :3])) < 0.0
-        for f in quads:
-            g = tuple(i + j * nV for i in f)
-            faces.append(g[::-1] if flip else g)
-    span = float(np.max(pts.max(0) - pts.min(0))) or 1.0
-    W, wf = _weld_points(pts, faces, tol * span)
-    dup, over, comps = _orbit_defects(W, wf)
-    if dup or over or comps != 1:
+    W, wf = assemble_orbit(V, quads, mats,
+                           spec.get('tol', 1e-4) if tol is None else tol)
+    if not fe_orbit_ok(W, wf):
         return None
     return W, wf, len(mats)
 

@@ -92,7 +92,9 @@
           ]
         ]
       ],
+      "record_slug": "iwp-surface",
       "source": "IWP.fe",
+      "weld_tol": 1e-08,
       "word": "bdb"
     }
   },

@@ -112,7 +112,9 @@
           ]
         ]
       ],
+      "record_slug": "schwarz-p",
       "source": "pcell.fe",
+      "weld_tol": 1e-08,
       "word": "dcbdcbdcb"
     }
   },

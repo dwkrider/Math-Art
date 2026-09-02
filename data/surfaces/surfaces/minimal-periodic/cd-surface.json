@@ -26,7 +26,113 @@
       "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
     },
     "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
-    "level_function": "(cos(3 * x + y) * cos(z) - sin(3 * x - y) * sin(z) + cos(x + 3 * y) * cos(z) + sin(x - 3 * y) * sin(z) + cos(x - y) * cos(3 * z) - sin(x + y) * sin(3 * z))"
+    "level_function": "(cos(3 * x + y) * cos(z) - sin(3 * x - y) * sin(z) + cos(x + 3 * y) * cos(z) + sin(x - 3 * y) * sin(z) + cos(x - y) * cos(3 * z) - sin(x + y) * sin(3 * z))",
+    "evolver_cell": {
+      "command": "showsix",
+      "copies": 24,
+      "generators": {
+        "a": [
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "b": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "c": [
+          0.0,
+          0.0,
+          -1.0,
+          2.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "d": [
+          -1.0,
+          0.0,
+          0.0,
+          2.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "loops": [
+        [
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            -0.25,
+            0.25,
+            0.25
+          ],
+          [
+            0.0,
+            0.0,
+            2.0
+          ],
+          [
+            1.0,
+            0.0,
+            1.0
+          ]
+        ]
+      ],
+      "record_slug": "cd-surface",
+      "source": "cd.fe",
+      "weld_tol": 1e-08,
+      "word": "babcd"
+    }
   },
   "curvature": {
     "condition": "minimal",

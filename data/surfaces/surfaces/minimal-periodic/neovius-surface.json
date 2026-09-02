@@ -111,7 +111,9 @@
           ]
         ]
       ],
+      "record_slug": "neovius-surface",
       "source": "neovius.fe",
+      "weld_tol": 1e-08,
       "word": "bcdbcdbcd"
     }
   },

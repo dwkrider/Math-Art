@@ -94,7 +94,9 @@
           ]
         ]
       ],
+      "record_slug": "h-exact",
       "source": "hcell.fe",
+      "weld_tol": 1e-08,
       "word": "ad"
     },
     "note": "No (g, dh) pair is stored: the Gauss map is a product of powers of Jacobi theta functions on the hexagonal/square torus, continued along an unwrapped branch (math_art/minsurf/hexagonal.py); theta functions are outside the exact expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."

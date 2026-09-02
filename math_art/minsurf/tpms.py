@@ -1125,8 +1125,14 @@ def _fe_row(key):
                 _pl.fe_cell_build(_k, cells, res, scale, theta))
 
 
+# Only the cells for surfaces with no generator of their own become rows.
+# Schoen's GW, H'-T and the rest already ship from exact Weierstrass
+# rows, and for those the datafile cell is DEFINITION DATA for the
+# record -- what the surface is, in Brakke's own numbers -- not a second
+# way to draw the same surface in the Add menu.
 for _k in sorted(_FE_CELLS):
-    TPMS_EXACT.setdefault('FE_' + _k, _fe_row(_k))
+    if _FE_CELLS[_k].get('new_row', True):
+        TPMS_EXACT.setdefault(_k, _fe_row(_k))
 del _k
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;

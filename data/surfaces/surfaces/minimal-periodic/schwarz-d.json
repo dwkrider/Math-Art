@@ -124,7 +124,9 @@
           ]
         ]
       ],
+      "record_slug": "schwarz-d",
       "source": "dcell.fe",
+      "weld_tol": 1e-08,
       "word": "abcabcg"
     }
   },
