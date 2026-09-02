@@ -502,10 +502,63 @@ export class SurfaceViewer {
     }
   }
 
+  /**
+   * Release the viewer and its WebGL context.
+   *
+   * Explicitly losing the context matters on a page with many viewers:
+   * browsers cap live WebGL contexts at around sixteen and silently drop
+   * the oldest, so a long gallery has to recycle them rather than leak
+   * them.  `ViewerPool` below does exactly that.
+   */
   destroy() {
     if (this.observer) this.observer.disconnect();
     if (this.group) this.group.remove(this);
+    const gl = this.gl;
     this.gl = null;
+    this.mesh = null;
+    if (gl) {
+      const lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+    }
+  }
+}
+
+/**
+ * Keep at most `limit` viewers alive, oldest recycled first.
+ *
+ * For a page that shows dozens of surfaces: build viewers as cards come
+ * into view, and let the pool retire the ones that have scrolled away
+ * before the browser starts dropping contexts on its own.
+ */
+export class ViewerPool {
+  constructor(limit = 12) {
+    this.limit = limit;
+    this.live = new Map();          // key -> {viewers, teardown}
+  }
+
+  /** `make()` must return an array of viewers; it runs only if needed. */
+  acquire(key, make) {
+    if (this.live.has(key)) {
+      const entry = this.live.get(key);
+      this.live.delete(key);
+      this.live.set(key, entry);    // refresh recency
+      return entry.viewers;
+    }
+    const viewers = make() || [];
+    this.live.set(key, { viewers });
+    while (this.live.size > this.limit) {
+      const oldest = this.live.keys().next().value;
+      if (oldest === key) break;
+      this.release(oldest);
+    }
+    return viewers;
+  }
+
+  release(key) {
+    const entry = this.live.get(key);
+    if (!entry) return;
+    this.live.delete(key);
+    entry.viewers.forEach((v) => v && v.destroy());
   }
 }
 

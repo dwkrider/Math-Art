@@ -7,8 +7,13 @@ thing being discussed, and no computation happens anywhere but the
 reader's own machine.
 
 One module is live — **Polyhedra**, covering all 448 solids in
-[`data/polyhedra/`](../data/polyhedra/). Surfaces, Patterns, Knots and
-Fractals are listed on the landing page as planned.
+[`data/polyhedra/`](../data/polyhedra/). Patterns, Knots and Fractals are
+listed on the landing page as planned.
+
+**Surfaces** is a viewer rather than a catalogue so far:
+[`modules/surfaces.html`](modules/surfaces.html) demonstrates
+[`js/surface-viewer.js`](js/surface-viewer.js), which is written to be
+used on its own (see below).
 
 ## Running it
 
@@ -28,6 +33,7 @@ web/
   index.html            landing page -- the module cards
   modules/
     polyhedra.html      the Polyhedra module
+    surfaces.html       the surface viewer, demonstrated
   js/
     data.js             database access, caching and the facet queries
     tessellate.js       face cycles -> triangles (see below)
@@ -36,6 +42,7 @@ web/
     catalog.js          faceted browsing over the whole database
     detail.js           the mathematics panel
     polyhedra.js        page entry point and hash routing
+    surface-viewer.js   standalone mesh viewer -- no dependencies at all
   css/site.css
   vendor/three/         three.js r169 (MIT), vendored -- no CDN at runtime
   thumbs/               448 catalogue tiles, one per solid (Git LFS)
@@ -116,3 +123,45 @@ the bare specifiers the modules use, and that nothing fetches from a
 third-party host at runtime. With no bundler there is no other safety
 net: a renamed file fails silently, and only for the reader who opens
 that page.
+
+
+## `surface-viewer.js`
+
+A triangle-mesh viewer with **no dependencies** — not even three.js. It
+is raw WebGL 2 in one file, so it runs from a plain
+`<script type="module">` and also inlines cleanly into a single-page
+document; the minimal-surface validation report embeds it that way, with
+sixty-odd surfaces on one page and no network access at all.
+
+It is written for **surfaces** rather than solids, which is what makes it
+a separate thing from `viewer.js` next door:
+
+- **Two-sided shading.** An open sheet has no inside to cull to, so the
+  two faces are given different colours. On a minimal surface that is the
+  only way to read which way the sheet folds through itself.
+- **No normals.** Flat shading is recovered per-fragment from screen-space
+  derivatives, so a mesh needs nothing but positions and indices — which
+  halves what an embedded payload has to carry.
+- **Linked viewers.** `linkViewers([a, b])` makes several viewers share
+  one orientation: drag either and both turn. Two reconstructions of the
+  same surface can then be compared without a difference in viewpoint
+  hiding a difference in shape.
+- **A context pool.** Browsers keep only around sixteen live WebGL
+  contexts and silently drop the oldest, so `ViewerPool` builds viewers
+  as cards scroll into view and retires them afterwards.
+
+```js
+import { SurfaceViewer, linkViewers } from './js/surface-viewer.js';
+
+const a = new SurfaceViewer(canvasA);
+const b = new SurfaceViewer(canvasB, { front: [0.55, 0.63, 0.70] });
+a.setMesh({ verts, faces });        // polygonal faces are triangulated
+b.setMesh({ positions, indices });  // or typed arrays
+linkViewers([a, b]);
+```
+
+`setMesh` also accepts a packed payload — positions quantised to uint16
+over the mesh's own bounding box — for pages that embed geometry as
+base64; `decodeMesh` unpacks it. Meshes are centred and scaled to a unit
+ball on load, so a single cell and a block of eight are comparable
+without either being a speck.
