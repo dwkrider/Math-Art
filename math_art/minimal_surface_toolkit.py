@@ -909,10 +909,11 @@ if _IN_BLENDER:
             _rim.draw_rim(lay, self)
 
     class MESH_OT_periodic_minimal_add(bpy.types.Operator):
-        """Add a periodic minimal surface.  Pick the Periodicity
-        (singly / doubly / triply), then a Surface within it.  Singly and
-        doubly periodic surfaces come from the Weierstrass-Enneper
-        catalog; triply periodic are the nodal TPMS approximations."""
+        """Add a periodic minimal surface.  Pick the Family (singly /
+        doubly / triply periodic, or the exact Weierstrass set), then a
+        Surface within it.  Singly and doubly periodic surfaces come from
+        the Weierstrass-Enneper catalog; triply periodic are the nodal
+        TPMS approximations."""
         bl_idname = "mesh.periodic_minimal_add"
         bl_label = "Periodic Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
@@ -924,17 +925,18 @@ if _IN_BLENDER:
         rim_reeds: _rim.rim_reeds_prop()
 
         periodicity: EnumProperty(
-            name="Periodicity",
+            name="Family",
             items=_PERIODICITY_ITEMS,
-            description="Translational symmetry of the surface: singly / "
-                        "doubly periodic (Weierstrass-Enneper) or triply "
-                        "periodic (TPMS); filters the Surface list")
+            description="Which family to choose the surface from: singly "
+                        "or doubly periodic (Weierstrass-Enneper), triply "
+                        "periodic (nodal TPMS), or the exact set; filters "
+                        "the Surface list")
         surface: EnumProperty(
             name="Surface",
             items=_periodic_surface_items,
             update=_snap_order,
             description="The specific periodic surface to build, from the "
-                        "chosen Periodicity")
+                        "chosen Family")
         arrangement: EnumProperty(
             name="Arrangement",
             items=[('PATCH', "Fundamental Piece",

@@ -84,9 +84,6 @@ SLUGS = {
     'I-8.fe': 'schoen-i8',
     'I-9.fe': 'schoen-i9',
     'IWP.fe': 'iwp-surface',
-    'N14.fe': 'neovius-n14',
-    'N26.fe': 'neovius-n26',
-    'N38.fe': 'neovius-n38',
     'RII.fe': 'schoen-rii',
     'RIII.fe': 'schoen-riii',
     'Scell.fe': 'fk-s-surface',
@@ -117,6 +114,12 @@ AREA_TOL = 0.10         # patch area against Evolver's own framed adjoint
 # its first line, and `hybrid-1adj.fe` announces itself as `hybrid-1.fe`.
 ADJOINT = {
     'FRDadj.fe': ('frd-surface', "Schoen F-RD", None),
+    # Adjoint files despite the names -- their headers read `CPDadj.fe`,
+    # `CPDXadj.fe`, `CPDadj-hole.fe`.  Their symmetry lives in the shared
+    # `cube_transforms.inc` and their cell word in `cube_views.cmd`.
+    'N14.fe': ('neovius-n14', "Neovius N14", None),
+    'N26.fe': ('neovius-n26', "Neovius N26", None),
+    'N38.fe': ('neovius-n38', "Neovius N38", None),
     'GW5adj.fe': ('schoen-gw', "Schoen GW (graphite-wurtzite)", None),
     'HRHTadj.fe': ('schoen-hybrid-ht-h2r', "Schoen H''-R | H'-T", None),
     'HRadj.fe': ('weber-h2r', "Schoen H''-R", None),
@@ -185,8 +188,14 @@ def is_flat(V):
     return float(s[2] / max(s[0], 1e-30)) < FLAT_TOL
 
 
-def relax_from(fe, m=72, rings=12, iters=250):
+def relax_from(fe, m=96, rings=16, iters=400):
     """The solved patch and the boundary it actually ended on.
+
+    Resolution matters here, not just for accuracy.  Schoen's I-WP has a
+    fully free boundary and no usable volume constraint, and on a coarse
+    grid a converged area descent slides it into a collapse -- 0.72 of
+    Evolver's area at m=72, 1.015 at m=96.  The finer grid is what makes
+    the difference between a surface and a puddle.
 
     Both parts matter.  `fe_pinned_patch` honours the datafile's own
     boundary conditions rather than pinning the polygon it starts from
@@ -283,6 +292,42 @@ def harvest():
     return out
 
 
+def runtime_ok(loops, letters, word, tol, m=72, rings=12, iters=200):
+    """Does the SHIPPED path reproduce this cell?
+
+    The bake solves the patch and then records its boundary; the
+    extension re-spans that boundary and assembles.  Those are different
+    computations, and a cell that assembles during the bake can still
+    fall apart at runtime -- Neovius N14 and N38 welded cleanly here and
+    came out as twelve and twenty-four disconnected pieces there.  So the
+    bake now checks the runtime path before accepting anything, which is
+    the only way the two can be kept honest with each other.
+    """
+    lp = [np.asarray(l, dtype=float) for l in loops]
+    if len(lp) == 1:
+        poly = lp[0]
+        grid = pl.build_disk_grid(
+            pl.resample_loop(np.vstack([poly, poly[:1]]), m), rings)
+    elif len(lp) == 2:
+        a, b = lp
+        la = pl.resample_loop(np.vstack([a, a[:1]]), m)
+        lb = pl.resample_loop(np.vstack([b, b[:1]]), m)
+        if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
+            la, lb = lb, la
+        j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
+        grid = pl.build_annulus_grid(la, np.roll(lb, -j, axis=0), rings)
+    else:
+        return False
+    V, quads, fixed = grid
+    T = np.asarray(pl._quads_to_tris(quads))
+    V = np.asarray(pl.minimize_area(np.asarray(V, float), T,
+                                    np.asarray(fixed, bool),
+                                    outer_iters=iters), dtype=float)
+    mats = pl.dedupe_placements(V, pl.eval_transform_expr(letters, word))
+    Wv, wf = pl.assemble_orbit(V, [tuple(f) for f in quads], mats, tol)
+    return pl.fe_orbit_ok(Wv, wf)
+
+
 def slug_for(title):
     """The slug `surfdb_build` will derive from a row title."""
     s = title.lower()
@@ -343,6 +388,11 @@ def harvest_adjoint(m=96, rings=16, iters=400):
             held.append((fn, "no word assembles"))
             continue
         name, word, ncopy, tol = pick
+        rt_loops = [[[float(c) for c in p] for p in lp] for lp in loops]
+        if not runtime_ok(rt_loops, lets, word, tol):
+            held.append((fn, "assembles here but not from its recorded "
+                             "boundary -- the shipped path refuses it"))
+            continue
         # Two names, because they answer two questions.  `key` is the
         # generator row this cell becomes -- in the house style of the
         # rows beside it (`SS`, `H2R`, `TR`), not a slug.  `record_slug`

@@ -2014,9 +2014,28 @@ def fe_grid(fe, m=96, rings=14):
     (la, lb), (aa, ab), (ca, cb) = lps, arcs, cors
     if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
         la, lb, aa, ab, ca, cb = lb, la, ab, aa, cb, ca
-    j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
-    lb, ab = np.roll(lb, -j, axis=0), np.roll(ab, -j)
-    cb = {v: (i - j) % m for v, i in cb.items()}
+    # Pair the two rims by trying every shift AND both directions.
+    #
+    # A single nearest-point match is not enough.  The two boundary
+    # circuits of an oriented surface run in OPPOSITE senses, so pairing
+    # them index-wise as they come rules the annulus with a half-twist:
+    # for Schoen I-6 that turned one annulus into two independent square
+    # tubes past their stability limit, which then collapsed onto the
+    # axis and rendered as flat sheets.  Minimising the total pairing
+    # distance over shifts and reversal picks the ruling that does not
+    # twist.
+    best, flip, roll = None, False, 0
+    for rev in (False, True):
+        cand = lb[::-1] if rev else lb
+        for j in range(m):
+            d = float(np.sum((la - np.roll(cand, -j, axis=0)) ** 2))
+            if best is None or d < best:
+                best, flip, roll = d, rev, j
+    if flip:
+        lb, ab = lb[::-1], ab[::-1]
+        cb = {v: (m - 1 - i) % m for v, i in cb.items()}
+    lb, ab = np.roll(lb, -roll, axis=0), np.roll(ab, -roll)
+    cb = {v: (i - roll) % m for v, i in cb.items()}
     V, quads, fixed = build_annulus_grid(la, lb, rings)
     nb = len(V) - m
     arc_of = np.full(len(V), -1, dtype=np.int64)
@@ -2397,11 +2416,27 @@ FE_WORD_PREFER = ('showcube', 'cube', 'full', 'showrhombic', 'showcubelet',
                   'showfour', 'showsix', 'stack8', 'stack6', 'stack4',
                   'stack12')
 
+# Commands that show SEVERAL cells by construction.  `cube_views.cmd`
+# defines `cube2`, `cube4` and `cube8` as two, four and eight cubes, so
+# falling through to one of them yields a block and calls it a cell --
+# Neovius N26 came out at 192 copies that way when its own `cube` is 48.
+FE_WORD_MULTI = ('cube2', 'cube4', 'cube8', 'four', 'showfour', 'stack4',
+                 'stack6', 'stack8', 'stack12')
+
 
 def fe_word_order(words):
-    """The datafile's cell commands, best first."""
-    return ([k for k in FE_WORD_PREFER if k in words]
-            + sorted(k for k in words if k not in FE_WORD_PREFER))
+    """The datafile's cell commands, best first.
+
+    Multi-cell commands are EXCLUDED, not merely ranked last.  Ranking
+    was not enough: when Neovius N26's own `cube` came out as six
+    disconnected pieces at the bake's resolution, the search fell through
+    to `cube4` -- four cubes -- and shipped 192 copies as a unit cell.
+    A block presented as a cell is worse than no cell, so if the real
+    one will not assemble the answer is to hold the surface.
+    """
+    single = [k for k in words if k not in FE_WORD_MULTI]
+    return ([k for k in FE_WORD_PREFER if k in single]
+            + sorted(k for k in single if k not in FE_WORD_PREFER))
 
 
 def fe_words_with_fallback(fe):

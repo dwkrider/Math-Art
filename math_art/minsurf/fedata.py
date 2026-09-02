@@ -246,6 +246,34 @@ def _statements(body):
     return [' '.join(s.split()) for s in out if s.strip()]
 
 
+def _read_with_includes(path, depth=0):
+    """Read a datafile, splicing in whatever it `#include`s.
+
+    Neovius' N14, N26 and N38 keep their symmetry in a shared
+    `cube_transforms.inc` -- twenty-two generators for the cube group --
+    and declare none of their own.  Read without following the include
+    they look like files with no symmetry at all, so N26's own
+    `othercube := transform_expr "jhflal"` refers to letters that do not
+    exist and the surface has no cell to build.  The include sits beside
+    the datafile in the same mirror.
+    """
+    text = open(path, encoding='utf-8', errors='replace').read()
+    if depth > 4:
+        return text
+    base = os.path.dirname(os.path.abspath(path))
+
+    def splice(m):
+        name = m.group(1)
+        for cand in (name, name + '.txt'):
+            p = os.path.join(base, cand)
+            if os.path.exists(p):
+                return _read_with_includes(p, depth + 1)
+        return ''            # absent include: read what we can
+
+    return re.sub(r'^[ \t]*#include\s+"([^"]+)"[^\n]*$', splice, text,
+                  flags=re.M)
+
+
 def _strip(src):
     """Remove // and /* */ comments and join continued lines."""
     src = re.sub(r'/\*.*?\*/', ' ', src, flags=re.S)
@@ -270,7 +298,7 @@ class FEFile(object):
     def __init__(self, path):
         self.path = path
         self.name = os.path.basename(path)
-        src = _strip(open(path, encoding='utf-8', errors='replace').read())
+        src = _strip(_read_with_includes(path))
         self.src = src
         self.params = {}
         for m in re.finditer(r'^\s*(?:parameter|#define)\s+(\w+)\s*='
@@ -447,6 +475,46 @@ class FEFile(object):
         for m in re.finditer(r'(\w+)\s*:=\s*\{[^}]*?transform_expr\s+'
                              r'"([A-Za-z]+)"', src, re.S):
             out[m.group(1)] = m.group(2)
+        out.update(self._shared_words(src))
+        return out
+
+    def _shared_words(self, src):
+        """Cell words from Evolver's own `cube_views.cmd`.
+
+        Neovius' N14, N26 and N38 keep their symmetry in the shared
+        `cube_transforms.inc` and their cell words in the companion
+        `cube_views.cmd`, which the datafiles do not `#include` -- a user
+        reads it in at the prompt.  So the file names only the odd extra
+        (N26 defines `othercube` itself) and the CANONICAL cell, `cube`,
+        is not in the datafile at all.
+
+        `cube_views.cmd` picks its block by the datafile's declared
+        `cube_symmetry_type`, so that is what is matched here rather than
+        taking the first block and hoping.  All three N-files declare
+        `quadri_full`, whose `cube` is `cdelal`: 48 copies in the side-2
+        cube the include documents, which is what Brakke draws.
+        """
+        m = re.search(r'^\s*(?:parameter|#define)\s+cube_symmetry_type\s*=?'
+                      r'\s*(\w+)', src, re.M)
+        if not m:
+            return {}
+        want = m.group(1)
+        path = os.path.join(os.path.dirname(os.path.abspath(self.path)),
+                            'cube_views.cmd')
+        if not os.path.exists(path):
+            return {}
+        text = _strip(open(path, encoding='utf-8', errors='replace').read())
+        # The block guarded by `cube_symmetry_type == <want>`, up to the
+        # next `else if` or the closing brace.
+        b = re.search(r'cube_symmetry_type\s*==\s*%s\s*then\s*\{(.*?)\n\s*\}'
+                      % re.escape(want), text, re.S)
+        if not b:
+            return {}
+        out = {}
+        for w in re.finditer(r'(\w+)\s*:=\s*\{\s*transform_expr\s+"([A-Za-z]*)"',
+                             b.group(1)):
+            if w.group(2):
+                out[w.group(1)] = w.group(2)
         return out
 
     # -- derived ----------------------------------------------------
@@ -745,34 +813,77 @@ class FEFile(object):
         rim = [e for e, k in use.items() if k == 1 and e in self.edges]
         if len(rim) < 3:
             return []
-        adj = {}
-        for e in rim:
-            a, b = self.edges[e]
-            adj.setdefault(a, []).append((b, e))
-            adj.setdefault(b, []).append((a, e))
-        # A rim vertex of degree 4 is normal, not a defect: a rosette
-        # contour pinches at the origin, where two petals meet, and
-        # I-6's rim has exactly two such vertices among twelve.  Chain
-        # greedily through them rather than refusing the whole complex.
+        # WALK THE RIM AS THE FACES ORIENT IT, not by adjacency order.
+        #
+        # At a vertex where the rim PINCHES -- two petals of a rosette
+        # meeting at the origin, which I-6 has twice -- the rim graph
+        # alone is ambiguous: two different annuli span the very same
+        # pair of loops, and an adjacency walk picks whichever edge it
+        # happens to meet first.  For I-6 it picked the wrong one, giving
+        # two independent square tubes 0.8 apart, past their stability
+        # limit; area flow then does what it must and collapses them onto
+        # the axis.  That was the "bunch of flat sheets" -- the panels of
+        # a Goldschmidt collapse, 4264 self-intersections and a waist of
+        # radius 1e-4, not a solver failure at all.
+        #
+        # The faces resolve it.  A rim edge belongs to exactly one face,
+        # which orients it; following those directions reproduces the
+        # boundary circuit the datafile's own complex has.
+        head, face_of = {}, {}
+        for fi, face in enumerate(self.faces):
+            for eid in face:
+                e = self.edges.get(abs(eid))
+                if e is None or use.get(abs(eid)) != 1:
+                    continue
+                a, b = e if eid > 0 else (e[1], e[0])
+                head.setdefault(a, []).append((b, abs(eid)))
+                face_of[abs(eid)] = fi
+        # Two rim edges continue the same circuit when their faces touch.
+        # At a pinch the vertex has two outgoing rim edges belonging to
+        # different petals, and taking whichever comes first splits the
+        # figure-eight in half; following the FACE FAN keeps it whole.
+        touch = {}
+        for i, fa in enumerate(self.faces):
+            for j, fb in enumerate(self.faces):
+                if i < j and {abs(x) for x in fa} & {abs(x) for x in fb}:
+                    touch.setdefault(i, set()).add(j)
+                    touch.setdefault(j, set()).add(i)
+
+        def pick(cands, came):
+            if len(cands) < 2 or came is None:
+                return cands[0]
+            fi = face_of.get(came)
+            near = [c for c in cands
+                    if face_of.get(c[1]) in touch.get(fi, ())]
+            return near[0] if near else cands[0]
+
         loops = []
         unused = set(rim)
         while unused:
             e0 = min(unused)
-            unused.discard(e0)
-            v0, v1 = self.edges[e0]
-            order, eord = [v0, v1], [e0]
+            start = next((v for v, outs in head.items()
+                          if any(e == e0 for _w, e in outs)), None)
+            if start is None:                 # edge in no face's cycle
+                unused.discard(e0)
+                continue
+            order, eord = [start], []
+            cur, came = start, None
             while True:
-                cur = order[-1]
-                step = [(w, e) for w, e in adj.get(cur, []) if e in unused]
+                step = [(w, e) for w, e in head.get(cur, []) if e in unused]
                 if not step:
                     break
-                w, e = step[0]
+                w, e = pick(step, came)
+                came = e
                 unused.discard(e)
                 eord.append(e)
-                if w == order[0] and not [1 for _v, _e in adj.get(w, [])
+                # A figure-eight rim returns to its pinch vertex halfway
+                # round, so returning to the start is only the end of the
+                # circuit when nothing leaves that vertex any more.
+                if w == order[0] and not [1 for _w, _e in head.get(w, ())
                                           if _e in unused]:
                     break
                 order.append(w)
+                cur = w
             if len(order) >= 3 and all(v in self.vertices for v in order):
                 loops.append((order, eord[:len(order)]))
         return loops
