@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surfaces — Math Art</title>
+<link rel="stylesheet" href="../css/site.css">
+<style>
+  .sv-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+  .sv-lede { max-width: 66ch; color: var(--muted, #666); }
+  .sv-row { display: grid; gap: 16px; margin-top: 26px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .sv-cell { border: 1px solid rgba(128,128,128,.28); border-radius: 10px;
+             overflow: hidden; }
+  .sv-cell canvas { width: 100%; aspect-ratio: 1; display: block; }
+  .sv-cell h3 { margin: 0; padding: 10px 14px; font-size: .95rem;
+                border-bottom: 1px solid rgba(128,128,128,.22); }
+  .sv-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+            margin-top: 20px; font-size: .9rem; }
+  .sv-bar button, .sv-bar label {
+    border: 1px solid rgba(128,128,128,.4); background: transparent;
+    color: inherit; border-radius: 7px; padding: 5px 11px; cursor: pointer;
+    font: inherit; font-size: .85rem;
+  }
+  .sv-bar label { display: inline-flex; gap: 7px; align-items: center; }
+  .surface-viewer-error { padding: 14px; color: #b04a1c; font-size: .9rem; }
+</style>
+</head>
+<body>
+<div class="sv-wrap">
+  <p><a href="../index.html">&larr; Math Art</a></p>
+  <h1>Surfaces</h1>
+  <p class="sv-lede">A live triangle-mesh viewer for the surfaces the Math
+  Art extension generates. Drag to turn, scroll to zoom, double-click to
+  reset. The two panels below are <strong>linked</strong>: turning either
+  turns both, which is how two reconstructions of the same surface are
+  compared without a difference in viewpoint hiding a difference in shape.
+  Front and back faces are shaded differently, because on an open surface
+  that is the only way to read which way the sheet folds.</p>
+
+  <div class="sv-bar">
+    <button data-view="home">Home</button>
+    <button data-view="front">Front</button>
+    <button data-view="top">Top</button>
+    <button data-view="side">Side</button>
+    <label><input type="checkbox" id="sv-wire"> Wireframe</label>
+    <label><input type="checkbox" id="sv-spin"> Auto-rotate</label>
+    <label><input type="checkbox" id="sv-link" checked> Link views</label>
+  </div>
+
+  <div class="sv-row">
+    <div class="sv-cell"><h3>Gyroid patch</h3><canvas id="cv-a"></canvas></div>
+    <div class="sv-cell"><h3>Catenoid</h3><canvas id="cv-b"></canvas></div>
+  </div>
+</div>
+
+<script type="module">
+import { SurfaceViewer, linkViewers } from '../js/surface-viewer.js';
+
+// Two sample meshes generated here rather than fetched, so the page is a
+// self-contained demonstration of the viewer's interface.
+function grid(f, nu, nv, closedU) {
+  const verts = [], faces = [];
+  for (let i = 0; i <= nu; i++) {
+    for (let j = 0; j <= nv; j++) verts.push(f(i / nu, j / nv));
+  }
+  const at = (i, j) => i * (nv + 1) + j;
+  for (let i = 0; i < nu; i++) {
+    for (let j = 0; j < nv; j++) {
+      const i2 = closedU && i === nu - 1 ? 0 : i + 1;
+      faces.push([at(i, j), at(i2, j), at(i2, j + 1), at(i, j + 1)]);
+    }
+  }
+  return { verts, faces };
+}
+
+const TAU = Math.PI * 2;
+// Enneper-like saddle: a clean open surface with a visible front/back.
+const saddle = grid((u, v) => {
+  const r = 0.2 + 1.5 * u, t = v * TAU;
+  const x = r * Math.cos(t) - (r ** 3 / 3) * Math.cos(3 * t);
+  const y = -r * Math.sin(t) - (r ** 3 / 3) * Math.sin(3 * t);
+  const z = r * r * Math.cos(2 * t);
+  return [x, y, z];
+}, 56, 84, true);
+
+const catenoid = grid((u, v) => {
+  const t = -1.6 + 3.2 * u, a = v * TAU;
+  return [Math.cosh(t) * Math.cos(a), Math.cosh(t) * Math.sin(a), t];
+}, 48, 72, true);
+
+const a = new SurfaceViewer(document.getElementById('cv-a'));
+const b = new SurfaceViewer(document.getElementById('cv-b'),
+                            { front: [0.42, 0.62, 0.72],
+                              back: [0.76, 0.55, 0.34] });
+a.setMesh(saddle);
+b.setMesh(catenoid);
+
+let group = linkViewers([a, b]);
+document.querySelectorAll('[data-view]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    a.setView(btn.dataset.view);
+    if (!group) b.setView(btn.dataset.view);
+    else group.broadcast(a, a.rotation);
+  });
+});
+document.getElementById('sv-wire').addEventListener('change', (e) => {
+  a.set('wireframe', e.target.checked);
+  b.set('wireframe', e.target.checked);
+});
+document.getElementById('sv-spin').addEventListener('change', (e) => {
+  a.set('autoRotate', e.target.checked);
+  b.set('autoRotate', e.target.checked);
+});
+document.getElementById('sv-link').addEventListener('change', (e) => {
+  if (e.target.checked) { group = linkViewers([a, b]); }
+  else { group.remove(a); group.remove(b); group = null; }
+});
+</script>
+</body>
+</html>

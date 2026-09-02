@@ -476,9 +476,14 @@ class FEFile(object):
         collection puts `formula:` on the line after `constraint N`.
         """
         out = {}
+        # `formula` and `function` are the same keyword to Evolver, and
+        # the collection uses both spellings in both cases -- Neovius'
+        # datafile writes `CONSTRAINT 1` / `FUNCTION:  X3  = 1`.  Reading
+        # only lowercase `formula` left that file with no constraints at
+        # all, and its whole boundary is constrained.
         pat = (r'^[ \t]*constraint[ \t]+(\d+)\b[^\n]*(?:\n[ \t]*)?'
-               r'formula[ \t]*:?[ \t]*([^\n]+)')
-        for m in re.finditer(pat, src, re.M):
+               r'(?:formula|function)[ \t]*:?[ \t]*([^\n]+)')
+        for m in re.finditer(pat, src, re.M | re.I):
             body = m.group(2).strip().rstrip(';')
             if '=' not in body:
                 continue
@@ -488,16 +493,26 @@ class FEFile(object):
         return out
 
     def _linear_form(self, form, env):
-        """(gradient, value at the origin) if `form` is linear in x,y,z."""
+        """(gradient, value at the origin) if `form` is linear in x,y,z.
+
+        `x1`/`x2`/`x3` are Evolver's other names for the coordinates and
+        are bound alongside them, because the same collection uses both
+        spellings -- Neovius' constraints are written `X3 = 1`.
+        """
         base = dict(self.params)
         base.update(env or {})
-        base.update({'x': 0.0, 'y': 0.0, 'z': 0.0})
+        base.update({'x': 0.0, 'y': 0.0, 'z': 0.0,
+                     'x1': 0.0, 'x2': 0.0, 'x3': 0.0,
+                     'X1': 0.0, 'X2': 0.0, 'X3': 0.0})
+        alias = {'x': ('x', 'x1', 'X1'), 'y': ('y', 'x2', 'X2'),
+                 'z': ('z', 'x3', 'X3')}
         try:
             f0 = _expr(form, base)
             grad = []
             for ax in ('x', 'y', 'z'):
                 e = dict(base)
-                e[ax] = 1.0
+                for nm in alias[ax]:
+                    e[nm] = 1.0
                 grad.append(_expr(form, e) - f0)
             # A quadratic form differences to something plausible at 1
             # and wrong at 2; I-WP's datafile really does constrain a
@@ -505,7 +520,8 @@ class FEFile(object):
             # arc somewhere it never goes.
             for k, ax in enumerate(('x', 'y', 'z')):
                 e = dict(base)
-                e[ax] = 2.0
+                for nm in alias[ax]:
+                    e[nm] = 2.0
                 if abs(_expr(form, e) - f0 - 2.0 * grad[k]) > 1e-9:
                     return None
         except FEError:
@@ -539,6 +555,60 @@ class FEFile(object):
         if float(np.linalg.norm(v)) <= 1e-12:
             return None
         return v, const, name
+
+    def body_volume(self):
+        """The volume a `bodies` section fixes, or None.
+
+        Four of these surfaces cannot be found by minimising area at all.
+        Schwarz P's fundamental piece has its whole boundary free on four
+        mirror planes, and area alone would slide it into a corner and
+        collapse it -- so the datafile pins the volume instead, with
+        Brakke's own note saying why: "Surface is stabilized with a
+        volume constraint, since we know the P-surface equipartitions
+        volume."  Schwarz D, Neovius and Schoen's I-WP are the same.
+        """
+        m = re.search(r'^\s*bodies\s*$(.*?)(?=^\s*\w+\s*$|\Z)',
+                      self.src, re.M | re.S | re.I)
+        if m:
+            v = re.search(r'\bvolume\s+([^\n]+)', m.group(1), re.I)
+            if v:
+                try:
+                    return _expr(v.group(1).strip().rstrip(';'), self.params)
+                except FEError:
+                    pass
+        # Neovius states the same thing as a named quantity instead.
+        q = re.search(r'^\s*quantity\s+\w+\s+fixed\s*=\s*([^\n]+?)\s*'
+                      r'(?:method|global_method|$)', self.src, re.M | re.I)
+        if q:
+            try:
+                return _expr(q.group(1).strip(), self.params)
+            except FEError:
+                pass
+        return None
+
+    def constraint_content(self, n):
+        """A constraint's `content` integrand `(c1, c2, c3)`, or None.
+
+        Evolver closes an open body over its constraint planes with a
+        line integral round the boundary, and this is the vector field it
+        integrates.  Without it the enclosed volume is only the cone from
+        the origin over the surface, which is not what the datafile
+        fixes.
+        """
+        blocks = re.split(r'^\s*constraint\s+(\d+)\b', self.src,
+                          flags=re.M | re.I)
+        for i in range(1, len(blocks) - 1, 2):
+            if int(blocks[i]) != n:
+                continue
+            body = blocks[i + 1]
+            got = []
+            for k in (1, 2, 3):
+                mm = re.search(r'^\s*c%d\s*:\s*([^\n]+)' % k, body, re.M | re.I)
+                if not mm:
+                    return None
+                got.append(mm.group(1).strip().rstrip(';'))
+            return tuple(got)
+        return None
 
     def constraint_normal(self, n, env=None):
         """The unit normal of constraint `n`'s plane."""

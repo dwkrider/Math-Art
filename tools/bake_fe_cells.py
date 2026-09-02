@@ -161,6 +161,29 @@ ADJOINT = {
 }
 
 
+FLAT_TOL = 0.02      # a patch this planar has not been solved, only spanned
+
+
+def is_flat(V):
+    """Is this patch essentially the flat disk that spans its boundary?
+
+    The detector for a whole class of silent failure.  Four datafiles --
+    Schwarz P, Schwarz D, Neovius and Schoen's I-WP -- pin no boundary
+    edge at all: they hand you a FLAT quadrilateral (pcell's four corners
+    all have x = 0.5) and expect the solve to curve it while every edge
+    slides in its own mirror plane, holding the volume the `bodies`
+    section fixes.  Spanning it as a contour hands the flat square
+    straight back, and 48 copies of a flat square still weld into one
+    clean closed sheet and pass every topological check.  It is a
+    faceted star, and it shipped.
+    """
+    V = np.asarray(V, dtype=float)
+    if len(V) < 4:
+        return True
+    _u, s, _vt = np.linalg.svd(V - V.mean(0), full_matrices=False)
+    return float(s[2] / max(s[0], 1e-30)) < FLAT_TOL
+
+
 def relax_from(fe, m=72, rings=12, iters=250):
     loops = fe.boundary_loops()
     if len(loops) == 1:
@@ -181,9 +204,12 @@ def relax_from(fe, m=72, rings=12, iters=250):
     V = np.asarray(V, dtype=float)
     fixed = np.asarray(fixed, dtype=bool)
     T = np.asarray(pl._quads_to_tris(quads))
-    V = np.asarray(pl.minimize_area(V.copy(), T, fixed, outer_iters=iters),
-                   dtype=float)
-    return V, [tuple(f) for f in quads], loops
+    # Honour the datafile's own boundary conditions rather than pinning
+    # the polygon it happens to start from -- see `plateau.fe_slide_planes`.
+    got = pl.fe_pinned_patch(fe, m=m, rings=rings, iters=iters)
+    if got is None:
+        return None
+    return got[0], got[1], loops
 
 
 def verify(V, quads, lets, word):
@@ -220,6 +246,11 @@ def harvest():
                   % (fn, len(fe.boundary_loops())))
             continue
         V, quads, loops = got
+        if is_flat(V):
+            print("  %-14s HELD: patch stayed flat -- its boundary is free "
+                  "on planes and the volume-constrained solve is not "
+                  "converging yet" % fn)
+            continue
         lets = fe.letters()
         words = pl.fe_words_with_fallback(fe)
         order = ([k for k in PREFER if k in words]

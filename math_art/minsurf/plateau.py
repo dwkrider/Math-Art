@@ -190,6 +190,168 @@ def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
     return V
 
 
+def cone_volume(V, T):
+    """Signed volume of the cone from the origin over the mesh.
+
+    The divergence-theorem term Evolver computes as a facet integral of
+    (x/3, y/3, z/3); for a closed surface it is the enclosed volume, and
+    for an open one it is that volume minus whatever the boundary caps
+    contribute.
+    """
+    V = np.asarray(V, dtype=float)
+    P = V[np.asarray(T)]
+    return float(np.sum(np.einsum('ij,ij->i', P[:, 0],
+                                  np.cross(P[:, 1], P[:, 2]))) / 6.0)
+
+
+def cone_volume_grad(V, T):
+    """d(cone_volume)/dp, vertex by vertex."""
+    V = np.asarray(V, dtype=float)
+    T = np.asarray(T)
+    g = np.zeros_like(V)
+    P = V[T]
+    for a, b, c in ((0, 1, 2), (1, 2, 0), (2, 0, 1)):
+        np.add.at(g, T[:, a], np.cross(P[:, b], P[:, c]) / 6.0)
+    return g
+
+
+def boundary_content(fe, V, arc_of):
+    """The line integral that closes an open body over its constraints.
+
+    Evolver's `content:` integrand, integrated round each boundary arc
+    that lies on a constraint declaring one.  Arcs on a plane through the
+    origin contribute nothing, which is why only some constraints carry
+    the field at all.
+    """
+    from .fedata import _expr, FEError
+    V = np.asarray(V, dtype=float)
+    total = 0.0
+    for eid, cons in sorted(getattr(fe, 'edge_constraints', {}).items()):
+        rows = np.nonzero(arc_of == eid)[0]
+        if len(rows) < 2:
+            continue
+        for n in cons:
+            field = fe.constraint_content(n)
+            if field is None:
+                continue
+            P = V[rows]
+            mid = 0.5 * (P[:-1] + P[1:])
+            seg = P[1:] - P[:-1]
+            for j in range(len(mid)):
+                env = dict(fe.params)
+                env.update({'x': mid[j, 0], 'y': mid[j, 1], 'z': mid[j, 2],
+                            'x1': mid[j, 0], 'x2': mid[j, 1], 'x3': mid[j, 2],
+                            'X1': mid[j, 0], 'X2': mid[j, 1], 'X3': mid[j, 2]})
+                try:
+                    c = [_expr(e, env) for e in field]
+                except FEError:
+                    break
+                total += float(np.dot(c, seg[j]))
+    return total
+
+
+def minimize_area_volume(V, T, fixed, slide, target, content=None,
+                         outer_iters=90, inner=8, step=0.5):
+    """Minimise area at FIXED VOLUME, with boundary arcs free on planes.
+
+    Area alone is the wrong problem for a surface whose entire boundary
+    slides: it has no minimum, and the patch simply shrinks into a corner
+    of the constraint planes.  Schwarz P, Schwarz D, Neovius and Schoen's
+    I-WP are all posed this way, and all four came out as flat plates
+    until the volume was held.
+
+    The volume is restored after each area step by moving along its own
+    gradient, projected into the constraint planes so the boundary stays
+    where the datafile put it.  `content` is a callable returning the
+    boundary line integral that closes the body over those planes.
+    """
+    V = np.asarray(V, dtype=float).copy()
+    T = np.asarray(T)
+    hold = np.asarray(fixed, dtype=bool).copy()
+    units = [(rows, np.asarray(vec, float),
+              np.asarray(vec, float) / float(np.linalg.norm(vec)), float(off))
+             for rows, vec, off in slide]
+    for rows, _v, _u, _o in units:
+        hold[rows] = True
+    movable = ~hold
+    for rows, _v, _u, _o in units:
+        movable[rows] = True
+
+    def project(X):
+        for rows, vec, _u, off in units:
+            X[rows] -= ((X[rows] @ vec - off)
+                        / float(vec @ vec))[:, None] * vec
+        return X
+
+    def volume(X):
+        v = cone_volume(X, T)
+        return v + (content(X) if content else 0.0)
+
+    span0 = float(np.max(V.max(0) - V.min(0))) or 1.0
+
+    def restore(X):
+        # Newton on the volume, but with the step CAPPED.  Near a flat
+        # start the volume gradient is small and an uncapped step throws
+        # the patch across the cell -- Schwarz P came out with 500 times
+        # its own area that way.
+        cap = 0.05 * span0
+        for _ in range(60):
+            err = target - volume(X)
+            if abs(err) <= 1e-12 * max(1.0, abs(target)):
+                break
+            g = cone_volume_grad(X, T)
+            g[~movable] = 0.0
+            for rows, _v, unit, _o in units:
+                g[rows] -= (g[rows] @ unit)[:, None] * unit
+            denom = float(np.sum(g * g))
+            if denom <= 1e-30:
+                break
+            d = (err / denom) * g
+            big = float(np.max(np.linalg.norm(d, axis=1)))
+            if big > cap:
+                d *= cap / big
+            X += d
+            project(X)
+        return X
+
+    # A patch that starts flat encloses nothing, and the volume gradient
+    # of a flat plate is orthogonal to it everywhere -- fine in
+    # direction, but the plate has to be lifted off its own plane before
+    # the Newton step has a well-conditioned quantity to work with.
+    # pcell's four corners all have x = 0.5, so this is not a corner case
+    # here; it is the normal one.
+    V = project(V)
+    if abs(volume(V) - target) > 0.25 * abs(target):
+        C = V - V.mean(0)
+        _u, _s, vt = np.linalg.svd(C, full_matrices=False)
+        V[movable] += (0.12 * span0) * vt[2]
+        V = project(V)
+    V = restore(V)
+    for _ in range(outer_iters):
+        X = np.asarray(minimize_area(V.copy(), T, hold, outer_iters=inner),
+                       dtype=float)
+        E, W = _cotan_weights(X, T)
+        g = np.zeros_like(X)
+        deg = np.zeros(len(X))
+        d = X[E[:, 0]] - X[E[:, 1]]
+        np.add.at(g, E[:, 0], W[:, None] * d)
+        np.add.at(g, E[:, 1], -W[:, None] * d)
+        np.add.at(deg, E[:, 0], W)
+        np.add.at(deg, E[:, 1], W)
+        for rows, _v, unit, _o in units:
+            gg = g[rows] / np.maximum(deg[rows], 1e-30)[:, None]
+            gg -= (gg @ unit)[:, None] * unit
+            X[rows] -= step * gg
+        X = restore(project(X))
+        if not np.all(np.isfinite(X)):
+            break
+        moved = float(np.max(np.linalg.norm(X - V, axis=1)))
+        V = X
+        if moved < 1e-7 * max(1.0, float(np.max(np.abs(V)))):
+            break
+    return V
+
+
 def minimize_area_sliding(V, T, fixed, slide, outer_iters=60, inner=10,
                           step=0.6, tol=1e-6):
     """Area minimisation with some boundary arcs free to slide on planes.
@@ -1485,6 +1647,119 @@ def _weld_points(V, faces, tol):
     return W, QQ
 
 
+def fe_slide_planes(fe, arc_of, corners, nrows):
+    """Boundary rows that are FREE on a plane, and the plane they run on.
+
+    A datafile's boundary is not automatically a given contour.  An edge
+    written `4  3 2 constraint 1` slides on the plane of constraint 1
+    while the surface minimises, and a vertex written `1 ... constraints
+    1 3` slides along the line where two planes cross.  Both are outputs
+    of the solve, not inputs to it.
+
+    Whole datafiles are built this way, not just the odd arc: Schwarz P,
+    Schwarz D, Neovius and Schoen's I-WP pin NOTHING.  Each starts life
+    as a flat quadrilateral -- pcell's four corners all have x = 0.5 --
+    and every edge slides in its own mirror plane until the surface
+    curves into shape.  Spanning that quadrilateral as if it were the
+    contour returns the flat square it already is, which is exactly what
+    those four cells were: a faceted plate, assembled 48 times into a
+    star, passing every topological check.
+    """
+    slide = []
+    at_corner = np.zeros(nrows, dtype=bool)
+    at_corner[list(corners.values())] = True
+    for eid, cons in sorted(getattr(fe, 'edge_constraints', {}).items()):
+        if eid in getattr(fe, 'edge_fixed', ()):
+            continue
+        rows = np.nonzero((arc_of == eid) & ~at_corner)[0]
+        if not len(rows):
+            continue
+        for n in cons:
+            pl = fe.constraint_plane(n, fe.params)
+            if pl is not None and pl[2] is None:
+                slide.append((rows, pl[0], pl[1]))
+    for vid, row in sorted(corners.items()):
+        if vid in getattr(fe, 'vertex_fixed', ()):
+            continue
+        for n in getattr(fe, 'vertex_constraints', {}).get(vid, ()):
+            pl = fe.constraint_plane(n, fe.params)
+            if pl is not None and pl[2] is None:
+                slide.append((np.array([row]), pl[0], pl[1]))
+    return slide
+
+
+def fe_grid(fe, m=96, rings=14):
+    """Span the datafile's boundary, carrying its arc and corner labels.
+
+    Returns `(V, quads, fixed, arc_of, corners, rims)`.  One boundary
+    loop is a disk and two are an annulus; the labels are what let the
+    constraints reach the right part of the boundary afterwards.
+    """
+    chains = fe.boundary_chains()
+    if not chains or len(chains) > 2:
+        return None
+    lps, arcs, cors = [], [], []
+    for vids, eids in chains:
+        poly = np.asarray([fe.vertices[v] for v in vids], dtype=float)
+        pts, idx, cor = resample_indexed(poly, m)
+        lps.append(pts)
+        arcs.append(np.asarray([eids[i] for i in idx], dtype=np.int64))
+        cors.append({vids[k]: int(cor[k]) for k in range(len(vids))})
+    if len(lps) == 1:
+        V, quads, fixed = build_disk_grid(lps[0], rings)
+        arc_of = np.full(len(V), -1, dtype=np.int64)
+        arc_of[:m] = arcs[0]
+        return (V, quads, fixed, arc_of, cors[0], [(0, m)])
+    (la, lb), (aa, ab), (ca, cb) = lps, arcs, cors
+    if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
+        la, lb, aa, ab, ca, cb = lb, la, ab, aa, cb, ca
+    j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
+    lb, ab = np.roll(lb, -j, axis=0), np.roll(ab, -j)
+    cb = {v: (i - j) % m for v, i in cb.items()}
+    V, quads, fixed = build_annulus_grid(la, lb, rings)
+    nb = len(V) - m
+    arc_of = np.full(len(V), -1, dtype=np.int64)
+    arc_of[:m], arc_of[nb:] = aa, ab
+    corners = dict(ca)
+    corners.update({v: nb + i for v, i in cb.items()})
+    return (V, quads, fixed, arc_of, corners, [(0, m), (nb, nb + m)])
+
+
+def fe_pinned_patch(source, m=96, rings=14, iters=300):
+    """Relax a NON-adjoint datafile's surface, honouring its constraints.
+
+    The counterpart of `fe_adjoint_patch` for the files that define their
+    surface directly rather than as a conjugate.  It is not simply "span
+    the polygon": see `fe_slide_planes` for why four of these datafiles
+    hand you a flat square and expect the solve to curve it.
+    """
+    from . import fedata
+    fe = fedata.read(source) if isinstance(source, str) else source
+    got = fe_grid(fe, m=m, rings=rings)
+    if got is None:
+        return None
+    V, quads, fixed, arc_of, corners, _rims = got
+    V = np.asarray(V, dtype=float)
+    fixed = np.asarray(fixed, dtype=bool)
+    T = np.asarray(_quads_to_tris(quads))
+    # The sliding solve alone, deliberately, even for the datafiles that
+    # also fix a volume.  Measured against Evolver's own patch: Schwarz D
+    # comes out 0.8% high and Schoen's I-WP 3.5% high with the free
+    # boundary and nothing else, because the arrangement of their mirror
+    # planes already pins the surface down.  Driving the volume as well
+    # made Schwarz P a hundred times too large -- the volume machinery in
+    # `minimize_area_volume` is kept, and is what Neovius still needs,
+    # but it is not the default until it converges.
+    slide = fe_slide_planes(fe, arc_of, corners, len(V))
+    if slide:
+        V = minimize_area_sliding(V.copy(), T, fixed, slide,
+                                  outer_iters=max(30, iters // 6))
+    else:
+        V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
+                       dtype=float)
+    return V, [tuple(f) for f in quads], fe.boundary_loops()
+
+
 def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
     """Rebuild an ADJOINT datafile's cell the way the datafile does it.
 
@@ -1551,26 +1826,7 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
     # spans a different surface entirely: for Schoen's batwing that put
     # the patch half again too large in area, on a cell that still welded
     # into one clean sheet and passed every topological check.
-    slide = []
-    at_corner = np.zeros(len(V), dtype=bool)
-    at_corner[list(corners.values())] = True
-    for eid, cons in sorted(getattr(fe, 'edge_constraints', {}).items()):
-        if eid in getattr(fe, 'edge_fixed', ()):
-            continue
-        rows = np.nonzero((arc_of == eid) & ~at_corner)[0]
-        if not len(rows):
-            continue
-        for n in cons:
-            pl = fe.constraint_plane(n, fe.params)
-            if pl is not None and pl[2] is None:
-                slide.append((rows, pl[0], pl[1]))
-    for vid, row in sorted(corners.items()):
-        if vid in getattr(fe, 'vertex_fixed', ()):
-            continue
-        for n in getattr(fe, 'vertex_constraints', {}).get(vid, ()):
-            pl = fe.constraint_plane(n, fe.params)
-            if pl is not None and pl[2] is None:
-                slide.append((np.array([row]), pl[0], pl[1]))
+    slide = fe_slide_planes(fe, arc_of, corners, len(V))
     if slide:
         V = minimize_area_sliding(V.copy(), T, fixed, slide,
                                   outer_iters=max(20, iters // 8))
