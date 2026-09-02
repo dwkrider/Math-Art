@@ -375,7 +375,10 @@ def fe_volume(fe, V, T, arc_of, want_grad=False):
     an incorrect one begins by throwing the patch across the cell.
     """
     sym = bool(re.search(r'^\s*symmetric_content\b', fe.src, re.M | re.I))
-    v = facet_volume(V, T, symmetric=sym)
+    # `volconst` seeds the body's volume sum; leaving it out shifts the
+    # target by a fixed amount, so the constraint would hold the surface
+    # in the wrong place rather than not at all.
+    v = facet_volume(V, T, symmetric=sym) + float(fe.body_volconst())
     if want_grad:
         c, gc = boundary_content(fe, V, arc_of, want_grad=True)
         return v + c, facet_volume_grad(V, T, symmetric=sym) + gc
@@ -585,7 +588,7 @@ def minimize_area_volume(V, T, fixed, slide, target, content=None,
     return V
 
 
-def minimize_area_sliding(V, T, fixed, slide, outer_iters=60, inner=10,
+def minimize_area_sliding(V, T, fixed, slide, outer_iters=1500, inner=10,
                           step=0.6, tol=1e-6):
     """Area minimisation with some boundary arcs free to slide on planes.
 
@@ -2055,12 +2058,19 @@ def fe_pinned_patch(source, m=96, rings=14, iters=300):
         v0 = fe_volume(fe, V, T, arc_of)
         if abs(v0 - target) <= 1e-3 * max(1.0, abs(target)):
             V = minimize_area_at_volume(fe, V, T, fixed, slide, arc_of,
-                                        float(target))
+                                        float(target),
+                                        outer_iters=max(1600, iters * 5))
             return (V, [tuple(f) for f in quads],
                     [np.array(V[a:b]) for a, b in rims])
     if slide:
+        # Generous, because this loop exits as soon as the line search
+        # stops improving.  The old cap of `iters // 6` was stopping the
+        # descent while it was still moving: Schwarz P needed about 1500
+        # passes to reach Evolver's answer and was being given 50, which
+        # left it 14% high with visibly flat panels.  Schoen's I-WP,
+        # Schwarz D and Neovius were all short in the same way.
         V = minimize_area_sliding(V.copy(), T, fixed, slide,
-                                  outer_iters=max(30, iters // 6))
+                                  outer_iters=max(1500, iters * 4))
     else:
         V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
                        dtype=float)

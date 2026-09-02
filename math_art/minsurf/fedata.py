@@ -581,7 +581,15 @@ class FEFile(object):
         m = re.search(r'^\s*bodies\s*$(.*?)(?=^\s*\w+\s*$|\Z)',
                       self.src, re.M | re.S | re.I)
         if m:
-            v = re.search(r'\bvolume\s+([^\n]+)', m.group(1), re.I)
+            # Stop at the next keyword.  Schoen's I-WP writes
+            # `volume 1/(1+sqrt(.75))/6  volconst -1/3`, and swallowing
+            # the `volconst` clause into the expression made the whole
+            # target unparseable -- so I-WP had no volume constraint at
+            # all, and with a fully free boundary its area then descends
+            # to a collapse (measured: 0.72 of Evolver's once the
+            # iteration cap stopped hiding it).
+            v = re.search(r'\bvolume\s+(.+?)(?=\bvolconst\b|\n|$)',
+                          m.group(1), re.I | re.S)
             if v:
                 try:
                     return _expr(v.group(1).strip().rstrip(';'), self.params)
@@ -596,6 +604,26 @@ class FEFile(object):
             except FEError:
                 pass
         return None
+
+    def body_volconst(self):
+        """The constant Evolver seeds a body's volume sum with.
+
+        `volconst` is not decoration: the body's volume is this plus the
+        facet and content integrals, so leaving it out shifts the target
+        by a fixed amount and the constraint holds the surface in the
+        wrong place.
+        """
+        m = re.search(r'^\s*bodies\s*$(.*?)(?=^\s*\w+\s*$|\Z)',
+                      self.src, re.M | re.S | re.I)
+        if not m:
+            return 0.0
+        v = re.search(r'\bvolconst\s+([^\n]+)', m.group(1), re.I)
+        if not v:
+            return 0.0
+        try:
+            return _expr(v.group(1).strip().rstrip(';'), self.params)
+        except FEError:
+            return 0.0
 
     def constraint_content(self, n):
         """A constraint's `content` integrand `(c1, c2, c3)`, or None.

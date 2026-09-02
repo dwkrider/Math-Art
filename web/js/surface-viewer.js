@@ -261,9 +261,29 @@ const DEFAULTS = {
   fov: 32,
 };
 
+/**
+ * A canvas that can take a NEW WebGL context.
+ *
+ * A canvas whose context has been lost hands back that same dead context
+ * from `getContext` forever after -- every shader then fails to compile
+ * and `getShaderInfoLog` returns null, which is where "shader: null"
+ * comes from.  The only cure is a fresh element, so a canvas that has
+ * been through a viewer is replaced by a clone before being reused.
+ */
+export function freshCanvas(canvas) {
+  if (!canvas.dataset.svUsed || !canvas.parentNode) {
+    canvas.dataset.svUsed = '1';
+    return canvas;
+  }
+  const next = canvas.cloneNode(false);
+  next.dataset.svUsed = '1';
+  canvas.parentNode.replaceChild(next, canvas);
+  return next;
+}
+
 export class SurfaceViewer {
   constructor(canvas, options = {}) {
-    this.canvas = canvas;
+    this.canvas = canvas = freshCanvas(canvas);
     this.opts = Object.assign({}, DEFAULTS, options);
     this.rotation = quatNormalize(options.rotation
       || quatMultiply(quatFromAxisAngle([1, 0, 0], -0.42),
@@ -298,11 +318,17 @@ export class SurfaceViewer {
   }
 
   fail(message) {
+    if (this.error) return;              // one message, not one per shader
     this.error = message;
-    const p = document.createElement('p');
-    p.className = 'surface-viewer-error';
-    p.textContent = message;
-    if (this.canvas.parentNode) this.canvas.parentNode.appendChild(p);
+    const host = this.canvas.parentNode;
+    if (host) {
+      const old = host.querySelector(':scope > .surface-viewer-error');
+      if (old) old.remove();
+      const p = document.createElement('p');
+      p.className = 'surface-viewer-error';
+      p.textContent = message;
+      host.appendChild(p);
+    }
     this.canvas.style.display = 'none';
   }
 
@@ -313,7 +339,13 @@ export class SurfaceViewer {
       gl.shaderSource(s, src);
       gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        this.fail('shader: ' + gl.getShaderInfoLog(s));
+        // A null log almost always means the context is already gone
+        // rather than that the source is bad; say so, because "shader:
+        // null" tells the reader nothing.
+        const log = gl.getShaderInfoLog(s);
+        this.fail(log ? 'shader: ' + log
+                      : (gl.isContextLost() ? 'graphics context was lost'
+                                            : 'shader failed to compile'));
         return null;
       }
       return s;
