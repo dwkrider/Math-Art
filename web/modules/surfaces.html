@@ -49,13 +49,28 @@
   </div>
 
   <div class="sv-row">
-    <div class="sv-cell"><h3>Gyroid patch</h3><canvas id="cv-a"></canvas></div>
+    <div class="sv-cell"><h3>Enneper patch</h3><canvas id="cv-a"></canvas></div>
     <div class="sv-cell"><h3>Catenoid</h3><canvas id="cv-b"></canvas></div>
+  </div>
+
+  <h2 style="margin-top:44px">Instancing</h2>
+  <p class="sv-lede">A periodic surface's unit cell is one patch repeated
+  under a symmetry group. Pass <code>instances</code> — a flat
+  <code>Float32Array</code> of column-major 4&times;4 matrices — and the
+  patch is uploaded once and drawn instanced, so a cell of two hundred
+  copies costs one patch of geometry rather than two hundred. Reflected
+  copies are handled: the shader flips the facing test by the sign of
+  each instance's determinant, so a mirrored copy still shows its front
+  face to the viewer.</p>
+  <div class="sv-row">
+    <div class="sv-cell"><h3>Catenoid &times; 24, instanced</h3>
+      <canvas id="cv-c"></canvas></div>
   </div>
 </div>
 
 <script type="module">
-import { SurfaceViewer, linkViewers } from '../js/surface-viewer.js';
+import { SurfaceViewer, linkViewers, triangulate }
+  from '../js/surface-viewer.js';
 
 // Two sample meshes generated here rather than fetched, so the page is a
 // self-contained demonstration of the viewer's interface.
@@ -96,25 +111,44 @@ const b = new SurfaceViewer(document.getElementById('cv-b'),
 a.setMesh(saddle);
 b.setMesh(catenoid);
 
-let group = linkViewers([a, b]);
+// A 4 x 3 x 2 block, every other column mirrored, to show that reflected
+// instances shade correctly rather than turning inside out.
+const inst = [];
+for (let i = 0; i < 4; i++) {
+  for (let j = 0; j < 3; j++) {
+    for (let k = 0; k < 2; k++) {
+      const m = (i + j) % 2 ? -1 : 1;      // mirror in x on alternate cells
+      inst.push(
+        0.9 * m, 0, 0, 0,
+        0, 0.9, 0, 0,
+        0, 0, 0.9, 0,
+        (i - 1.5) * 2.6, (j - 1) * 2.6, (k - 0.5) * 3.6, 1);
+    }
+  }
+}
+const c = new SurfaceViewer(document.getElementById('cv-c'),
+                            { front: [0.72, 0.58, 0.36],
+                              back: [0.34, 0.48, 0.55] });
+c.setMesh({ ...triangulate(catenoid.verts, catenoid.faces),
+            instances: new Float32Array(inst) });
+
+let group = linkViewers([a, b, c]);
 document.querySelectorAll('[data-view]').forEach((btn) => {
   btn.addEventListener('click', () => {
     a.setView(btn.dataset.view);
-    if (!group) b.setView(btn.dataset.view);
-    else group.broadcast(a, a.rotation);
+    if (group) group.broadcast(a, a.rotation);
+    else { b.setView(btn.dataset.view); c.setView(btn.dataset.view); }
   });
 });
 document.getElementById('sv-wire').addEventListener('change', (e) => {
-  a.set('wireframe', e.target.checked);
-  b.set('wireframe', e.target.checked);
+  [a, b, c].forEach((v) => v.set('wireframe', e.target.checked));
 });
 document.getElementById('sv-spin').addEventListener('change', (e) => {
-  a.set('autoRotate', e.target.checked);
-  b.set('autoRotate', e.target.checked);
+  [a, b, c].forEach((v) => v.set('autoRotate', e.target.checked));
 });
 document.getElementById('sv-link').addEventListener('change', (e) => {
-  if (e.target.checked) { group = linkViewers([a, b]); }
-  else { group.remove(a); group.remove(b); group = null; }
+  if (e.target.checked) { group = linkViewers([a, b, c]); }
+  else { [a, b, c].forEach((v) => group.remove(v)); group = null; }
 });
 </script>
 </body>

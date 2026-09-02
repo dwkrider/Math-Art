@@ -28,15 +28,33 @@
 // polygonal faces (they are fan-triangulated), or a packed payload from
 // `decodeMesh` for pages that embed geometry as base64.
 
+// One draw call per mesh, instanced.
+//
+// A periodic surface's unit cell is one patch repeated under a symmetry
+// group -- up to 192 times here -- so sending the assembled cell sends
+// the same few hundred triangles nearly two hundred times over.  Sending
+// the patch once and the group as instance transforms is two orders of
+// magnitude smaller, and it means a page can afford the patch at FULL
+// resolution instead of throwing triangles away to fit.
+//
+// `aFlip` carries the sign of each instance's determinant.  A reflected
+// copy has its winding reversed, which instancing cannot fix by
+// re-ordering indices, so the shader flips the facing test instead.
 const VERT_SRC = `#version 300 es
 precision highp float;
 in vec3 aPos;
+in mat4 aInst;
+in float aFlip;
 uniform mat4 uMVP;
 uniform mat4 uModel;
+uniform int uInstanced;
 out vec3 vWorld;
+flat out float vFlip;
 void main() {
-  vWorld = (uModel * vec4(aPos, 1.0)).xyz;
-  gl_Position = uMVP * vec4(aPos, 1.0);
+  vec4 p = uInstanced == 1 ? aInst * vec4(aPos, 1.0) : vec4(aPos, 1.0);
+  vFlip = uInstanced == 1 ? aFlip : 1.0;
+  vWorld = (uModel * p).xyz;
+  gl_Position = uMVP * p;
 }`;
 
 // Flat shading from derivatives: the facet normal is recovered from how
@@ -45,20 +63,15 @@ void main() {
 const FRAG_SRC = `#version 300 es
 precision highp float;
 in vec3 vWorld;
+flat in float vFlip;
 uniform vec3 uFront;
 uniform vec3 uBack;
 uniform float uAmbient;
-uniform int uSmooth;
 out vec4 outColor;
 
 void main() {
   vec3 n = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
-  if (uSmooth == 1) {
-    // A cheap smooth-ish look: soften the facet normal toward the view
-    // direction so large flat triangles stop reading as a polyhedron.
-    n = normalize(mix(n, normalize(vWorld - vec3(0.0, 0.0, -3.0)), 0.0));
-  }
-  bool front = gl_FrontFacing;
+  bool front = (vFlip < 0.0) ? !gl_FrontFacing : gl_FrontFacing;
   vec3 base = front ? uFront : uBack;
   if (!front) n = -n;
 
@@ -78,9 +91,12 @@ void main() {
 const EDGE_VERT = `#version 300 es
 precision highp float;
 in vec3 aPos;
+in mat4 aInst;
 uniform mat4 uMVP;
+uniform int uInstanced;
 void main() {
-  gl_Position = uMVP * vec4(aPos, 1.0);
+  vec4 p = uInstanced == 1 ? aInst * vec4(aPos, 1.0) : vec4(aPos, 1.0);
+  gl_Position = uMVP * p;
   gl_Position.z -= 0.0006 * gl_Position.w;   // lift wires off the surface
 }`;
 
@@ -214,7 +230,9 @@ export function decodeMesh(packed) {
   }
   const raw = bytes(packed.i).buffer;
   const indices = packed.w === 4 ? new Uint32Array(raw) : new Uint16Array(raw);
-  return { positions, indices };
+  const out = { positions, indices };
+  if (packed.m) out.instances = new Float32Array(bytes(packed.m).buffer);
+  return out;
 }
 
 // --------------------------------------------------------------- viewer
@@ -293,7 +311,11 @@ export class SurfaceViewer {
     const p = gl.createProgram();
     gl.attachShader(p, v);
     gl.attachShader(p, f);
+    // Fixed slots: a mat4 attribute occupies four consecutive ones, so
+    // aInst takes 1-4 and aFlip has to start at 5.
     gl.bindAttribLocation(p, 0, 'aPos');
+    gl.bindAttribLocation(p, 1, 'aInst');
+    gl.bindAttribLocation(p, 5, 'aFlip');
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
       this.fail('link: ' + gl.getProgramInfoLog(p));
@@ -321,35 +343,122 @@ export class SurfaceViewer {
               : new Uint16Array(mesh.indices) };
     }
     const P = m.positions;
+    const inst = m.instances || null;
+    const count = inst ? inst.length / 16 : 1;
+
+    // Fit the WHOLE assembly, not the patch: with instancing the patch
+    // is a fraction of what is on screen, and framing on it alone would
+    // put the cell far outside the view.
     const lo = [Infinity, Infinity, Infinity];
     const hi = [-Infinity, -Infinity, -Infinity];
+    const bump = (x, y, z) => {
+      if (x < lo[0]) lo[0] = x; if (x > hi[0]) hi[0] = x;
+      if (y < lo[1]) lo[1] = y; if (y > hi[1]) hi[1] = y;
+      if (z < lo[2]) lo[2] = z; if (z > hi[2]) hi[2] = z;
+    };
     for (let i = 0; i < P.length; i += 3) {
-      for (let k = 0; k < 3; k++) {
-        if (P[i + k] < lo[k]) lo[k] = P[i + k];
-        if (P[i + k] > hi[k]) hi[k] = P[i + k];
+      if (!inst) { bump(P[i], P[i + 1], P[i + 2]); continue; }
+      for (let j = 0; j < count; j++) {
+        const M = inst.subarray(j * 16, j * 16 + 16);   // column-major
+        bump(M[0] * P[i] + M[4] * P[i + 1] + M[8] * P[i + 2] + M[12],
+             M[1] * P[i] + M[5] * P[i + 1] + M[9] * P[i + 2] + M[13],
+             M[2] * P[i] + M[6] * P[i + 1] + M[10] * P[i + 2] + M[14]);
       }
     }
     const c = [0, 1, 2].map((k) => (lo[k] + hi[k]) / 2);
     const span = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) || 1;
     const s = 2 / span;
-    const N = new Float32Array(P.length);
-    for (let i = 0; i < P.length; i += 3) {
-      for (let k = 0; k < 3; k++) N[i + k] = (P[i + k] - c[k]) * s;
-    }
+
     const gl = this.gl;
+    let positions = P;
+    let instances = inst;
+    if (inst) {
+      // Fold the centring and scaling into the instance transforms so
+      // the patch data stays untouched and shared.
+      instances = new Float32Array(inst);
+      for (let j = 0; j < count; j++) {
+        const o = j * 16;
+        for (let k = 0; k < 12; k++) instances[o + k] *= s;
+        instances[o + 12] = (inst[o + 12] - c[0]) * s;
+        instances[o + 13] = (inst[o + 13] - c[1]) * s;
+        instances[o + 14] = (inst[o + 14] - c[2]) * s;
+      }
+    } else {
+      positions = new Float32Array(P.length);
+      for (let i = 0; i < P.length; i += 3) {
+        for (let k = 0; k < 3; k++) positions[i + k] = (P[i + k] - c[k]) * s;
+      }
+    }
+
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
-    gl.bufferData(gl.ARRAY_BUFFER, N, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.indices, gl.STATIC_DRAW);
+
+    if (instances) {
+      if (!this.ibuf) this.ibuf = gl.createBuffer();
+      if (!this.fbuf) this.fbuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.ibuf);
+      gl.bufferData(gl.ARRAY_BUFFER, instances, gl.STATIC_DRAW);
+      const flip = new Float32Array(count);
+      for (let j = 0; j < count; j++) {
+        const M = instances.subarray(j * 16, j * 16 + 16);
+        // det of the upper-left 3x3, column-major
+        flip[j] = Math.sign(
+          M[0] * (M[5] * M[10] - M[9] * M[6])
+          - M[4] * (M[1] * M[10] - M[9] * M[2])
+          + M[8] * (M[1] * M[6] - M[5] * M[2])) || 1;
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.fbuf);
+      gl.bufferData(gl.ARRAY_BUFFER, flip, gl.STATIC_DRAW);
+    }
+
     this.mesh = {
       count: m.indices.length,
       u32: m.indices instanceof Uint32Array,
-      vertexCount: N.length / 3,
+      vertexCount: positions.length / 3,
       indices: m.indices,
+      instances: instances ? count : 0,
     };
     this.edges = null;
     this.dirty = true;
     return this;
+  }
+
+  /** Bind aPos, and the per-instance mat4 + flip when there is one. */
+  bindAttribs(prog, withFlip) {
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
+    const aPos = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribDivisor(aPos, 0);
+
+    const aInst = gl.getAttribLocation(prog, 'aInst');
+    if (aInst >= 0) {
+      if (this.mesh.instances) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.ibuf);
+        for (let k = 0; k < 4; k++) {
+          gl.enableVertexAttribArray(aInst + k);
+          gl.vertexAttribPointer(aInst + k, 4, gl.FLOAT, false, 64, k * 16);
+          gl.vertexAttribDivisor(aInst + k, 1);
+        }
+      } else {
+        for (let k = 0; k < 4; k++) gl.disableVertexAttribArray(aInst + k);
+      }
+    }
+    const aFlip = withFlip ? gl.getAttribLocation(prog, 'aFlip') : -1;
+    if (aFlip >= 0) {
+      if (this.mesh.instances) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.fbuf);
+        gl.enableVertexAttribArray(aFlip);
+        gl.vertexAttribPointer(aFlip, 1, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribDivisor(aFlip, 1);
+      } else {
+        gl.disableVertexAttribArray(aFlip);
+        gl.vertexAttrib1f(aFlip, 1.0);
+      }
+    }
   }
 
   buildEdges() {
@@ -467,11 +576,11 @@ export class SurfaceViewer {
                                  w / h, 0.05, 100);
     const mvp = mat4Multiply(proj, mat4Multiply(view, model));
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.buf);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    const n = this.mesh.instances;
+    const type = this.mesh.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
 
     gl.useProgram(this.prog);
+    this.bindAttribs(this.prog, true);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.prog, 'uMVP'), false, mvp);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.prog, 'uModel'),
                         false, model);
@@ -481,23 +590,33 @@ export class SurfaceViewer {
                   new Float32Array(this.opts.back));
     gl.uniform1f(gl.getUniformLocation(this.prog, 'uAmbient'),
                  this.opts.ambient);
-    gl.uniform1i(gl.getUniformLocation(this.prog, 'uSmooth'), 0);
+    gl.uniform1i(gl.getUniformLocation(this.prog, 'uInstanced'), n ? 1 : 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-    gl.drawElements(gl.TRIANGLES, this.mesh.count,
-                    this.mesh.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
+    if (n) {
+      gl.drawElementsInstanced(gl.TRIANGLES, this.mesh.count, type, 0, n);
+    } else {
+      gl.drawElements(gl.TRIANGLES, this.mesh.count, type, 0);
+    }
 
     if (this.opts.wireframe) {
       this.buildEdges();
       gl.useProgram(this.edgeProg);
+      this.bindAttribs(this.edgeProg, false);
       gl.uniformMatrix4fv(gl.getUniformLocation(this.edgeProg, 'uMVP'),
                           false, mvp);
+      gl.uniform1i(gl.getUniformLocation(this.edgeProg, 'uInstanced'),
+                   n ? 1 : 0);
       gl.uniform4f(gl.getUniformLocation(this.edgeProg, 'uColor'),
                    0, 0, 0, 0.28);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo);
-      gl.drawElements(gl.LINES, this.edges.count,
-                      this.edges.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
+      const etype = this.edges.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+      if (n) {
+        gl.drawElementsInstanced(gl.LINES, this.edges.count, etype, 0, n);
+      } else {
+        gl.drawElements(gl.LINES, this.edges.count, etype, 0);
+      }
       gl.disable(gl.BLEND);
     }
   }
