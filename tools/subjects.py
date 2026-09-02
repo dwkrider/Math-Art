@@ -570,6 +570,16 @@ VARIANT_SELECTOR = {
     # `preset` carries a CUSTOM entry and duplicates; the packing is
     # the actual family of stick arrangements.
     "mesh.polystix_add": "packing",
+    # -- generators added by later merges -------------------
+    "mesh.spidron_ball_add": "seed",
+    # NO gallery for mesh.spidron_nest_add: its only plausible
+    # selector, fold_mode (PRO/ANTI/PLEATS), produces the same mesh
+    # for all three values, so a gallery would claim a difference
+    # that is not there.  Wants a generator fix first (BACKLOG).
+    "mesh.spidron_rosette_add": "layout_kind",
+    "mesh.twelve_faced_add": "solid",
+    "mesh.zonish_add": "seed",
+    "mesh.spherical_surface_add": "preset",
     "curve.celtic_knot_add": "source",
     # -- patterns --
     "mesh.frieze_add": "group",
@@ -588,7 +598,11 @@ VARIANT_SELECTOR = {
     "mesh.transpolyhedron_add": "seed",
     "mesh.slide_together_add": "model",
     "mesh.over_under_screen_add": "weave",
-    "mesh.knot_carpet_add": "source",
+    # `source` only reaches the geometry under the CURVILINEAR
+    # lattice -- under SQUARE and TRIANGULAR every source rendered
+    # the same carpet.  The lattice is the structural choice, and
+    # the sources appear as VARIANT_EXTRA under CURVILINEAR.
+    "mesh.knot_carpet_add": "lattice",
     "mesh.modular_screen_add": "preset",
     "mesh.relief_panel_add": "preset",
     "mesh.relief_solid_add": "preset",
@@ -647,6 +661,25 @@ VARIANT_COMMON = {
     "mesh.sphericon_add": dict(coloring='NONE'),
     "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', cells=1),
     "mesh.spherical_harmonic_add": dict(degree=4, order=2),
+
+    # -- selectors that another property was overriding ------------
+    # Each of these four galleries rendered every thumbnail identical
+    # until the property below was pinned.  A declared selector proves
+    # nothing on its own: tools/check_variant_dupes.py is what catches
+    # it, by comparing decoded pixels rather than file bytes.
+    #
+    # `preset` defaults to PENCILS and its update callback copies that
+    # preset's settings over `packing`, so the gallery's packing was
+    # overwritten before the build ran.  CUSTOM is the "leave my
+    # settings alone" branch.
+    "mesh.polystix_add": dict(preset='CUSTOM'),
+    # The asymmetric membrane is plain-weave only -- the operator says
+    # so in its own status line -- so `weave` does nothing until the
+    # surface is the ribbon form.
+    "mesh.over_under_screen_add": dict(surface='RIBBONS'),
+    # `tiling` only reaches the mesh in TILING mode; the default RING
+    # mode builds a prism/antiprism ring that has no tiling to speak of.
+    "mesh.polyhedral_torus_add": dict(mode='TILING'),
 }
 
 # Enum ids to leave out of a gallery, with a reason.  Keep this short:
@@ -661,6 +694,26 @@ VARIANT_SKIP = {
     # (A=50, B=310, C=-180).  It wants a hand-tuned VARIANT_EXTRA
     # entry from someone who knows the family, not a broken thumbnail.
     "mesh.spiral_tiling_add": {"POLY"},
+    # UVMESH reads its lattice off the selected mesh, which in a
+    # headless render is nothing -- same class as ACTIVE below.
+    "mesh.knot_carpet_add": {"UVMESH"},
+    # mesh.zonish_add(mode='DISSECTION', seed='TID') aborts
+    # Blender outright -- "Calloc array aborted due to integer
+    # overflow", i.e. an allocation computed as a negative size,
+    # not a Python exception the renderer could catch.  Every one
+    # of the other 21 seeds builds; only the truncated
+    # icosidodecahedron does it.  Skipped so the gallery is
+    # renderable at all; the crash is a generator bug (BACKLOG).
+    "mesh.zonish_add": {"TID"},
+    # PGD is the Bonnet P-Gyroid-D family, and its three named ends are
+    # exactly the P, G and D entries already in this gallery: at the P
+    # preset it renders pixel-identical to P, and at the gyroid preset
+    # pixel-identical to G (both checked).  Showing it would repeat a
+    # thumbnail; an intermediate associate angle would be a genuinely
+    # new picture, and wants a chosen angle rather than a preset.
+    # LIDINOID_1 is likewise identical to LIDINOID -- a duplicate pair
+    # in the operator's own enum (BACKLOG).
+    "mesh.periodic_minimal_add": {"PGD", "LIDINOID_1"},
     # "From Active Object" reads its star off whatever mesh is selected,
     # which in a headless render is nothing: the operator correctly
     # refuses.  Same reason as GENERIC_SKIP_IDS' "ACTIVE", under this
@@ -720,6 +773,25 @@ VARIANT_MAX = {
 # one enum, so there is nothing to introspect.  Same 3-tuple shape the
 # renderer builds internally: (id, label, kwargs).
 VARIANT_EXTRA = {
+    # The three weaves live under the ribbon surface (VARIANT_COMMON);
+    # these two put the other two surface forms back in the gallery, so
+    # it covers both axes rather than only the weave.
+    "mesh.over_under_screen_add": [
+        ("MEMBRANE", "Membrane (asymmetric, plain weave)",
+         dict(surface='MEMBRANE')),
+        ("MINIMAL", "Minimal surface", dict(surface='MINIMAL')),
+    ],
+    # The lattice is the gallery (VARIANT_SELECTOR); these show what the
+    # `source` field does, which is only visible on the curvilinear one.
+    "mesh.knot_carpet_add": [
+        (s.lower(), lbl, dict(lattice='CURVILINEAR', source=s))
+        # WAVY_PLAID is the source the CURVILINEAR lattice already uses
+        # by default, so listing it here would repeat that thumbnail.
+        for s, lbl in (("POLAR", "Polar (curvilinear)"),
+                       ("ROSE", "Rose (curvilinear)"),
+                       ("GUILLOCHE", "Guilloche (curvilinear)"),
+                       ("LISSAJOUS", "Lissajous (curvilinear)"))
+    ],
     "mesh.fractal_polyhedron_add": [
         ("DODECA", "Dodecahedron", dict(kind='DODECA', generations=2)),
     ],
@@ -751,7 +823,11 @@ VARIANT_EXTRA = {
                        ("BOURKE", "Bourke Family"))
     ],
     "mesh.ruled_surface_add": [
-        ("HYPERBOLOID", "Stick Hyperboloid", dict(mode='HYPERBOLOID')),
+        # output must be named explicitly: PARAMS pins RODS for the
+        # hero, and params_for merges it in, so without this the plain
+        # hyperboloid rendered identically to the rulings entry below.
+        ("HYPERBOLOID", "Stick Hyperboloid",
+         dict(mode='HYPERBOLOID', output='SURFACE')),
         ("HYPERBOLOID_RODS", "Stick Hyperboloid (Rulings)",
          dict(mode='HYPERBOLOID', output='RODS', family='BOTH')),
         ("HELICAL_CONE", "Compound Helical Cone",

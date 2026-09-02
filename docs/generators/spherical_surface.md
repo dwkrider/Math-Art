@@ -40,6 +40,21 @@ These are the surfaces of **constant positive Gaussian curvature** ($K = +1$). *
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/spherical_surface__SPHERE.png" width="200"><br><sub>Sphere (K = +1)</sub></td>
+<td align="center"><img src="../images/variants/spherical_surface__SPINDLE.png" width="200"><br><sub>Spherical Spindle (K = +1)</sub></td>
+<td align="center"><img src="../images/variants/spherical_surface__BULGE.png" width="200"><br><sub>Spherical Bulge (K = +1)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/spherical_surface__SIEVERT.png" width="200"><br><sub>Sievert's Surface (K = +1)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** *Gaussian curvature* measures how a surface bends in two directions at once: a sphere curves the same way all over (positive curvature), a saddle curves opposite ways (negative), a rolled sheet of paper does not really curve at all (zero). Demanding the *same* positive curvature at every single point is a stiff requirement. If, on top of that, you insist the surface be made by spinning a curve around an axis — like shaping clay on a potter's wheel — there turn out to be only three answers: the sphere itself, a pointed "lemon" if you spin a shallower arc, and an open "barrel" if you spin a fuller one. Drop the spinning requirement and stranger shapes with the very same even curvature appear; Sievert's surface is one, with no axis of symmetry anywhere. The rest of this section turns "same curvature everywhere" into the equation the profile curve must satisfy, and then integrates it.

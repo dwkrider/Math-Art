@@ -5622,40 +5622,48 @@
  ],
  "knot_carpet": [
   [
-   "WAVY_PLAID",
-   "Wavy Plaid"
+   "SQUARE",
+   "Square"
   ],
   [
-   "WARPED_GRID",
-   "Warped Grid"
+   "TRIANGULAR",
+   "Triangular"
   ],
   [
-   "POLAR",
-   "Polar Rosette"
+   "CURVILINEAR",
+   "Curvilinear"
   ],
   [
-   "GUILLOCHE",
-   "Guilloche"
+   "SPHERE",
+   "Sphere"
   ],
   [
-   "SMOOTH_PLAIT",
-   "Smooth Plait"
+   "POLYHEDRAL",
+   "Polyhedral"
   ],
   [
-   "ROSE",
-   "Rose / Rhodonea"
+   "TILING",
+   "Tiling"
   ],
   [
-   "SPIRAL_NET",
-   "Spiral Net"
+   "TORUS",
+   "Torus"
   ],
   [
-   "LISSAJOUS",
-   "Lissajous Net"
+   "polar",
+   "Polar (curvilinear)"
   ],
   [
-   "MOIRE",
-   "Moire Bands"
+   "rose",
+   "Rose (curvilinear)"
+  ],
+  [
+   "guilloche",
+   "Guilloche (curvilinear)"
+  ],
+  [
+   "lissajous",
+   "Lissajous (curvilinear)"
   ]
  ],
  "koman": [
@@ -6038,6 +6046,14 @@
   [
    "BASKET",
    "Basket 2/2"
+  ],
+  [
+   "MEMBRANE",
+   "Membrane (asymmetric, plain weave)"
+  ],
+  [
+   "MINIMAL",
+   "Minimal surface"
   ]
  ],
  "phyllotaxis": [
@@ -8116,6 +8132,192 @@
   [
    "RESCH",
    "Resch Triangular"
+  ]
+ ],
+ "spherical_surface": [
+  [
+   "SPHERE",
+   "Sphere (K = +1)"
+  ],
+  [
+   "SPINDLE",
+   "Spherical Spindle (K = +1)"
+  ],
+  [
+   "BULGE",
+   "Spherical Bulge (K = +1)"
+  ],
+  [
+   "SIEVERT",
+   "Sievert's Surface (K = +1)"
+  ]
+ ],
+ "spidron_ball": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "TRUNC_ICOSA",
+   "Truncated Icosahedron"
+  ],
+  [
+   "RHOMB_TRIACONTA",
+   "Rhombic Triacontahedron"
+  ]
+ ],
+ "spidron_rosette": [
+  [
+   "NEST",
+   "Named Nest"
+  ],
+  [
+   "FIGURE",
+   "Full Figure"
+  ],
+  [
+   "ARM",
+   "Single Arm"
+  ],
+  [
+   "ROSETTE",
+   "Rosette"
+  ],
+  [
+   "TILING",
+   "Tiling"
+  ]
+ ],
+ "twelve_faced": [
+  [
+   "PYRITOHEDRON",
+   "Pyritohedron"
+  ],
+  [
+   "TETARTOID",
+   "Tetartoid"
+  ],
+  [
+   "SCALENOHEDRON",
+   "Hexagonal Scalenohedron"
+  ],
+  [
+   "DITRIGONAL",
+   "Ditrigonal Dipyramid"
+  ],
+  [
+   "HEX_DIPYRAMID",
+   "Hexagonal Dipyramid"
+  ],
+  [
+   "ELONGATED",
+   "Elongated Dodecahedron"
+  ],
+  [
+   "TRAPEZO_RHOMBIC",
+   "Trapezo-Rhombic Dodecahedron"
+  ]
+ ],
+ "zonish": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "TT",
+   "Truncated Tetrahedron"
+  ],
+  [
+   "CO",
+   "Cuboctahedron"
+  ],
+  [
+   "TC",
+   "Truncated Cube"
+  ],
+  [
+   "TO",
+   "Truncated Octahedron"
+  ],
+  [
+   "RCO",
+   "Rhombicuboctahedron"
+  ],
+  [
+   "TCO",
+   "Truncated Cuboctahedron"
+  ],
+  [
+   "SC",
+   "Snub Cube"
+  ],
+  [
+   "ID",
+   "Icosidodecahedron"
+  ],
+  [
+   "TD",
+   "Truncated Dodecahedron"
+  ],
+  [
+   "TI",
+   "Truncated Icosahedron"
+  ],
+  [
+   "RID",
+   "Rhombicosidodecahedron"
+  ],
+  [
+   "SD",
+   "Snub Dodecahedron"
+  ],
+  [
+   "RD",
+   "Rhombic Dodecahedron"
+  ],
+  [
+   "RT",
+   "Rhombic Triacontahedron"
+  ],
+  [
+   "KTC",
+   "Triakis Octahedron"
+  ],
+  [
+   "PKD",
+   "Pentakis Dodecahedron"
   ]
  ]
 }

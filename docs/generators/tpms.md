@@ -177,12 +177,8 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/tpms__PGD.png" width="200"><br><sub>Schwarz P-Gyroid-D (exact, Bonnet angle)</sub></td>
 <td align="center"><img src="../images/variants/tpms__H.png" width="200"><br><sub>Schwarz H (exact, hexagonal)</sub></td>
 <td align="center"><img src="../images/variants/tpms__CLP_HANDLE.png" width="200"><br><sub>CLP with Handle (exact, genus 4)</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="../images/variants/tpms__LIDINOID_1.png" width="200"><br><sub>Lidinoid (exact)</sub></td>
 <td align="center"><img src="../images/variants/tpms__RPD.png" width="200"><br><sub>rPD deformation (exact, rhombohedral)</sub></td>
 </tr>
 </table>

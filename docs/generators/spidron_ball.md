@@ -40,6 +40,26 @@ A **spidroball** is a polyhedron whose every face has been replaced by a spidron
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/spidron_ball__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/spidron_ball__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/spidron_ball__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/spidron_ball__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/spidron_ball__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/spidron_ball__TRUNC_ICOSA.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/spidron_ball__RHOMB_TRIACONTA.png" width="200"><br><sub>Rhombic Triacontahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Start with a solid — say a dodecahedron. On one of its flat faces, draw a copy of that face shrunk a bit and spun a bit, then draw the copy inside *that*, and so on: a nest of shrinking, turning polygons spiralling into the middle, with the ring between each pair filled by triangles. That is a spidron nest, and you glue one onto every face. So far it is flat decoration. The magic is in pushing it out of the surface: lift the corners of each face up and the dips down, and the spiral arms of neighbouring faces climb over the shared edges and lace together into a spiky, woven ball. Which points you push, and in which direction, is the whole difference between a beautiful interlocked ball and a heap of loose spikes — and that is what the maths below pins down.
