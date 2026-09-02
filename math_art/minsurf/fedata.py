@@ -103,12 +103,6 @@ def _expr(text, env, fns=None):
                 raise FEError("unbalanced ( in %r" % text)
             pos[0] += 1
             return v
-        if c == '-':
-            pos[0] += 1
-            return -atom()
-        if c == '+':
-            pos[0] += 1
-            return atom()
         m = _NUM.match(s, pos[0])
         if m:
             pos[0] = m.end()
@@ -135,11 +129,28 @@ def _expr(text, env, fns=None):
             raise FEError("unknown name %r in %r" % (name, text))
         raise FEError("cannot parse %r at %d" % (text, pos[0]))
 
+    # `^` BINDS TIGHTER THAN UNARY MINUS, as it does in Evolver's own
+    # grammar, where `'^'` is declared after `UMINUS_TOK`.  Folding the
+    # minus into `atom()` instead -- which is what this did -- makes
+    # `-x^2` parse as `(-x)^2`, and the sign of the result is simply
+    # wrong.  Schwarz P's fourth constraint carries the content
+    # integrand `c2: -x^2/3`, so its boundary integral came out
+    # +1/24 instead of -1/24 and the enclosed volume with it.
+    def unary():
+        c = peek()
+        if c == '-':
+            pos[0] += 1
+            return -unary()
+        if c == '+':
+            pos[0] += 1
+            return unary()
+        return power()
+
     def power():
         v = atom()
         if peek() == '^':
             pos[0] += 1
-            return v ** power()
+            return v ** unary()      # right-assoc, and `x^-2` still parses
         return v
 
     # The accumulators below are deliberately NOT `+=` / `-=` / `*=`.
@@ -151,15 +162,15 @@ def _expr(text, env, fns=None):
     # silently put two boundary arcs of half this collection into planes
     # the datafile never mentions, on a patch that still looked minimal.
     def term():
-        v = power()
+        v = unary()
         while True:
             c = peek()
             if c == '*':
                 pos[0] += 1
-                v = v * power()
+                v = v * unary()
             elif c == '/':
                 pos[0] += 1
-                v = v / power()
+                v = v / unary()
             else:
                 return v
 
@@ -1000,7 +1011,12 @@ def _selftest():
              ("sqrt(3)/2", math.sqrt(3.0) / 2.0),
              ("3*sqrt(3)/2", 3.0 * math.sqrt(3.0) / 2.0),
              ("-sqrt(.75)", -math.sqrt(0.75)), ("2*HT", 1.0),
-             ("(1+a)*2", 6.0), ("-.5", -0.5), ("2^3", 8.0)]
+             ("(1+a)*2", 6.0), ("-.5", -0.5), ("2^3", 8.0),
+             # `^` binds tighter than unary minus, as in Evolver's own
+             # grammar.  Getting this backwards silently flips the sign
+             # of a content integrand and with it an enclosed volume.
+             ("-2^2", -4.0), ("2^-1", 0.5), ("2^3^2", 512.0),
+             ("-a^2/3", -4.0 / 3.0), ("-a*2", -4.0)]
     worst = 0.0
     for txt, want in cases:
         worst = max(worst, abs(_expr(txt, env) - want))

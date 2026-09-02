@@ -22,6 +22,7 @@
 #       TVCG 12(4) (2006).
 
 import math
+import re
 from collections import defaultdict
 
 import numpy as np
@@ -190,6 +191,57 @@ def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
     return V
 
 
+def facet_volume(V, T, symmetric=False):
+    """The volume Evolver's facets carry, in Evolver's own convention.
+
+    By DEFAULT that is the `z dx dy` form -- (z1+z2+z3)/6 times twice the
+    signed area of the triangle's projection on the xy plane -- and only
+    under a datafile's `symmetric_content` is it the symmetric
+    triple-product (the cone from the origin).  The distinction is not
+    cosmetic: Brakke's `content:` integrands are the Green's-theorem
+    closures for the FIRST form, which is why the two vertical planes of
+    Schwarz P carry no content at all while `x = z`, a plane through the
+    origin, does.  Adding those integrands to a cone term computes
+    neither quantity, and for pcell it put the flat starting square 0.118
+    away from a volume it in fact satisfies exactly.
+    """
+    V = np.asarray(V, dtype=float)
+    P = V[np.asarray(T)]
+    if symmetric:
+        return float(np.sum(np.einsum('ij,ij->i', P[:, 0],
+                                      np.cross(P[:, 1], P[:, 2]))) / 6.0)
+    zbar = (P[:, 0, 2] + P[:, 1, 2] + P[:, 2, 2]) / 6.0
+    twice = ((P[:, 1, 0] - P[:, 0, 0]) * (P[:, 2, 1] - P[:, 0, 1])
+             - (P[:, 1, 1] - P[:, 0, 1]) * (P[:, 2, 0] - P[:, 0, 0]))
+    return float(np.sum(zbar * twice))
+
+
+def facet_volume_grad(V, T, symmetric=False):
+    """d(facet_volume)/dp, vertex by vertex."""
+    V = np.asarray(V, dtype=float)
+    T = np.asarray(T)
+    g = np.zeros_like(V)
+    if symmetric:
+        P = V[T]
+        for a, b, c in ((0, 1, 2), (1, 2, 0), (2, 0, 1)):
+            np.add.at(g, T[:, a], np.cross(P[:, b], P[:, c]) / 6.0)
+        return g
+    P = V[T]
+    x1, y1 = P[:, 0, 0], P[:, 0, 1]
+    x2, y2 = P[:, 1, 0], P[:, 1, 1]
+    x3, y3 = P[:, 2, 0], P[:, 2, 1]
+    twice = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
+    zbar = (P[:, 0, 2] + P[:, 1, 2] + P[:, 2, 2]) / 6.0
+    # d(twice)/d(each corner), and d(zbar)/dz = 1/6 at every corner.
+    dx = np.stack([y2 - y3, y3 - y1, y1 - y2], axis=1)
+    dy = np.stack([x3 - x2, x1 - x3, x2 - x1], axis=1)
+    for k in range(3):
+        np.add.at(g[:, 0], T[:, k], zbar * dx[:, k])
+        np.add.at(g[:, 1], T[:, k], zbar * dy[:, k])
+        np.add.at(g[:, 2], T[:, k], twice / 6.0)
+    return g
+
+
 def cone_volume(V, T):
     """Signed volume of the cone from the origin over the mesh.
 
@@ -215,17 +267,17 @@ def cone_volume_grad(V, T):
     return g
 
 
-def boundary_content(fe, V, arc_of):
-    """The line integral that closes an open body over its constraints.
+def content_segments(fe, arc_of, nrows):
+    """[(field, rows)] -- the boundary runs that carry a content field.
 
-    Evolver's `content:` integrand, integrated round each boundary arc
-    that lies on a constraint declaring one.  Arcs on a plane through the
-    origin contribute nothing, which is why only some constraints carry
-    the field at all.
+    Each run is closed THROUGH its following corner.  Leaving the last
+    segment out drops 1/m of every integral, which at m = 96 is a whole
+    percent of the enclosed volume and quietly biases the constraint.
     """
-    from .fedata import _expr, FEError
-    V = np.asarray(V, dtype=float)
-    total = 0.0
+    out = []
+    order = np.nonzero(arc_of >= 0)[0]
+    if not len(order):
+        return out
     for eid, cons in sorted(getattr(fe, 'edge_constraints', {}).items()):
         rows = np.nonzero(arc_of == eid)[0]
         if len(rows) < 2:
@@ -234,20 +286,201 @@ def boundary_content(fe, V, arc_of):
             field = fe.constraint_content(n)
             if field is None:
                 continue
-            P = V[rows]
-            mid = 0.5 * (P[:-1] + P[1:])
-            seg = P[1:] - P[:-1]
-            for j in range(len(mid)):
-                env = dict(fe.params)
-                env.update({'x': mid[j, 0], 'y': mid[j, 1], 'z': mid[j, 2],
-                            'x1': mid[j, 0], 'x2': mid[j, 1], 'x3': mid[j, 2],
-                            'X1': mid[j, 0], 'X2': mid[j, 1], 'X3': mid[j, 2]})
-                try:
-                    c = [_expr(e, env) for e in field]
-                except FEError:
-                    break
-                total += float(np.dot(c, seg[j]))
-    return total
+            # The row after this arc's last, wrapping inside the loop the
+            # arc belongs to, so the run reaches the corner.
+            lo = order[0]
+            hi = order[-1]
+            nxt = rows[-1] + 1
+            if nxt > hi or arc_of[nxt] < 0:
+                nxt = lo
+            out.append((field, np.append(rows, nxt)))
+    return out
+
+
+def _content_field(fe, field, P):
+    """Evaluate a content integrand at points, with its gradient."""
+    from .fedata import _expr, FEError
+    C = np.zeros_like(P)
+    G = np.zeros((len(P), 3, 3))
+    base = dict(fe.params)
+    names = (('x', 'x1', 'X1'), ('y', 'x2', 'X2'), ('z', 'x3', 'X3'))
+    for j, p in enumerate(P):
+        env = dict(base)
+        for k, nm in enumerate(names):
+            for a in nm:
+                env[a] = float(p[k])
+        try:
+            C[j] = [_expr(e, env) for e in field]
+        except FEError:
+            return None, None
+        # Central differences: the integrands are low-order polynomials,
+        # so this is exact to round-off and saves writing a symbolic
+        # differentiator for three expressions.
+        for k, nm in enumerate(names):
+            h = 1e-5 * max(1.0, abs(float(p[k])))
+            up, dn = dict(env), dict(env)
+            for a in nm:
+                up[a] = float(p[k]) + h
+                dn[a] = float(p[k]) - h
+            try:
+                cu = np.array([_expr(e, up) for e in field])
+                cd = np.array([_expr(e, dn) for e in field])
+            except FEError:
+                return None, None
+            G[j, :, k] = (cu - cd) / (2.0 * h)
+    return C, G
+
+
+def boundary_content(fe, V, arc_of, want_grad=False):
+    """The line integral that closes an open body over its constraints.
+
+    Evolver's `content:` integrand, integrated round each boundary run
+    that lies on a constraint declaring one.  Arcs on a plane through the
+    origin contribute nothing, which is why only some constraints carry
+    the field at all.
+
+    With `want_grad`, also returns d(content)/dp.  The gradient matters
+    more than it looks: for Schwarz P the facet term starts at exactly
+    zero and the whole volume IS the content, so a restore step driven by
+    the facet gradient alone is pushing on something it does not control.
+    """
+    V = np.asarray(V, dtype=float)
+    total = 0.0
+    grad = np.zeros_like(V) if want_grad else None
+    for field, rows in content_segments(fe, arc_of, len(V)):
+        P = V[rows]
+        mid = 0.5 * (P[:-1] + P[1:])
+        seg = P[1:] - P[:-1]
+        C, G = _content_field(fe, field, mid)
+        if C is None:
+            continue
+        total += float(np.sum(C * seg))
+        if want_grad:
+            # d/dp of C(m).s with m = (a+b)/2 and s = b - a:
+            #   tail  <-  0.5 G^T s - C      head  <-  0.5 G^T s + C
+            gs = 0.5 * np.einsum('jki,jk->ji', G, seg)
+            np.add.at(grad, rows[:-1], gs - C)
+            np.add.at(grad, rows[1:], gs + C)
+    return (total, grad) if want_grad else total
+
+
+def fe_volume(fe, V, T, arc_of, want_grad=False):
+    """The body volume the datafile fixes, Evolver's way.
+
+    Facet term plus the content line integrals, in the convention the
+    datafile actually declares.  For `pcell.fe` this returns exactly 1/12
+    at the flat starting square -- which is the point: Brakke's initial
+    configuration already satisfies its own volume constraint, so a
+    correct implementation has nothing to restore before it starts, and
+    an incorrect one begins by throwing the patch across the cell.
+    """
+    sym = bool(re.search(r'^\s*symmetric_content\b', fe.src, re.M | re.I))
+    v = facet_volume(V, T, symmetric=sym)
+    if want_grad:
+        c, gc = boundary_content(fe, V, arc_of, want_grad=True)
+        return v + c, facet_volume_grad(V, T, symmetric=sym) + gc
+    return v + boundary_content(fe, V, arc_of)
+
+
+def minimize_area_at_volume(fe, V, T, fixed, slide, arc_of, target,
+                            outer_iters=260, step=0.9):
+    """Minimise area at FIXED VOLUME, the way Evolver does it.
+
+    Area alone is the wrong functional for a surface whose whole boundary
+    slides, and for Schwarz P demonstrably so: its constraint planes
+    admit a family of flat squares at x = c whose area is c(1-c), maximal
+    exactly at the datafile's start and falling to zero at either end.
+    The infimum is a collapse into a corner, the true P patch is a saddle
+    of area alone, and a descent simply slides past it -- which is what
+    produced a patch 14% too large made of a few big panels.  Brakke's
+    own comment says as much: "Surface is stabilized with a volume
+    constraint, since we know the P-surface equipartitions volume".
+
+    So the motion is Evolver's: one velocity field over all movable
+    vertices, `-(gA - lambda gV)` with `lambda = <gA,gV>/<gV,gV>`, which
+    is volume-preserving to first order, both gradients projected into
+    the joint tangent space of each vertex's constraints BEFORE the
+    vertex moves.  A backtracking line search on area follows, then a
+    couple of Newton steps along `gV` to mop up second-order drift.  The
+    earlier attempt moved first and projected afterwards, drove the
+    restore with a gradient that did not match its own functional, and
+    diverged.
+    """
+    V = np.array(V, dtype=float)
+    T = np.asarray(T)
+    hold = np.asarray(fixed, dtype=bool).copy()
+    groups = group_slide_planes(slide, len(V)) if slide else []
+    for rows, _p in groups:
+        hold[rows] = True
+    movable = ~hold
+    for rows, _p in groups:
+        movable[rows] = True
+
+    def tangent(g):
+        g = np.array(g, dtype=float)
+        g[~movable] = 0.0
+        return project_rows_tangent(g, groups) if groups else g
+
+    def volume(X):
+        return fe_volume(fe, X, T, arc_of)
+
+    def vgrad(X):
+        _v, g = fe_volume(fe, X, T, arc_of, want_grad=True)
+        return tangent(g)
+
+    def restore(X, rounds=6):
+        for _ in range(rounds):
+            err = target - volume(X)
+            if abs(err) <= 1e-11 * max(1.0, abs(target)):
+                break
+            gv = vgrad(X)
+            d = float(np.sum(gv * gv))
+            if d <= 1e-30:
+                break
+            X = X + (err / d) * gv
+            if groups:
+                X = project_rows(X, groups)
+        return X
+
+    def area_grad(X):
+        E, W = _cotan_weights(X, T)
+        g = np.zeros_like(X)
+        deg = np.zeros(len(X))
+        d = X[E[:, 0]] - X[E[:, 1]]
+        np.add.at(g, E[:, 0], W[:, None] * d)
+        np.add.at(g, E[:, 1], -W[:, None] * d)
+        np.add.at(deg, E[:, 0], W)
+        np.add.at(deg, E[:, 1], W)
+        return tangent(g / np.maximum(deg, 1e-30)[:, None])
+
+    if groups:
+        V = project_rows(V, groups)
+    V = restore(V)
+    best = float(mesh_area(V, T))
+    for _it in range(outer_iters):
+        gA = area_grad(V)
+        gV = vgrad(V)
+        d = float(np.sum(gV * gV))
+        lam = float(np.sum(gA * gV)) / d if d > 1e-30 else 0.0
+        v = gA - lam * gV
+        big = float(np.max(np.linalg.norm(v, axis=1)))
+        if not np.isfinite(big) or big < 1e-9:
+            break
+        lam_step = step
+        moved = False
+        while lam_step > 1e-5:
+            X = V - lam_step * v
+            if groups:
+                X = project_rows(X, groups)
+            X = restore(X)
+            a = float(mesh_area(X, T))
+            if np.isfinite(a) and a < best - 1e-13:
+                V, best, moved = X, a, True
+                break
+            lam_step *= 0.5
+        if not moved:
+            break
+    return V
 
 
 def minimize_area_volume(V, T, fixed, slide, target, content=None,
@@ -382,11 +615,11 @@ def minimize_area_sliding(V, T, fixed, slide, outer_iters=60, inner=10,
     if not slide:
         return minimize_area(V, T, fixed, outer_iters=outer_iters * inner)
     hold = np.asarray(fixed, dtype=bool).copy()
-    units = [(rows, np.asarray(vec, dtype=float),
-              np.asarray(vec, dtype=float) / float(np.linalg.norm(vec)),
-              float(off)) for rows, vec, off in slide]
-    for rows, _v, _u, _o in units:
+    groups = group_slide_planes(slide, len(V))
+    for rows, _planes in groups:
         hold[rows] = True
+    moving = np.unique(np.concatenate([r for r, _p in groups]))
+    V = project_rows(np.array(V, dtype=float), groups)
     V = np.asarray(minimize_area(V, T, hold, outer_iters=inner), dtype=float)
     best = float(mesh_area(V, T))
     for _it in range(outer_iters):
@@ -398,11 +631,9 @@ def minimize_area_sliding(V, T, fixed, slide, outer_iters=60, inner=10,
         np.add.at(g, E[:, 1], -W[:, None] * d)
         np.add.at(deg, E[:, 0], W)
         np.add.at(deg, E[:, 1], W)
-        worst = 0.0
-        for rows, _v, unit, _o in units:
-            gg = g[rows] / np.maximum(deg[rows], 1e-30)[:, None]
-            gg -= (gg @ unit)[:, None] * unit
-            worst = max(worst, float(np.max(np.linalg.norm(gg, axis=1))))
+        g = g / np.maximum(deg, 1e-30)[:, None]
+        g = project_rows_tangent(g, groups)
+        worst = float(np.max(np.linalg.norm(g[moving], axis=1)))
         if not np.isfinite(worst) or \
                 worst < tol * max(1.0, float(np.max(np.abs(V)))):
             break
@@ -413,12 +644,8 @@ def minimize_area_sliding(V, T, fixed, slide, outer_iters=60, inner=10,
         lam = step
         while lam > 1e-4:
             X = V.copy()
-            for rows, vec, unit, off in units:
-                gg = g[rows] / np.maximum(deg[rows], 1e-30)[:, None]
-                gg -= (gg @ unit)[:, None] * unit
-                X[rows] -= lam * gg
-                X[rows] -= ((X[rows] @ vec - off)
-                            / float(vec @ vec))[:, None] * vec
+            X[moving] -= lam * g[moving]
+            X = project_rows(X, groups)
             X = np.asarray(minimize_area(X, T, hold, outer_iters=inner),
                            dtype=float)
             a = float(mesh_area(X, T))
@@ -1647,6 +1874,77 @@ def _weld_points(V, faces, tol):
     return W, QQ
 
 
+def group_slide_planes(slide, nrows):
+    """Regroup per-plane slide entries by the ROWS they act on.
+
+    A corner vertex constrained to two planes is one point on the LINE
+    where they cross, not two independent single-plane problems.  Handled
+    as the latter -- projecting onto one plane and then the other -- the
+    two projections undo each other whenever the planes are oblique, and
+    for these datafiles they meet at 45 degrees.  Evolver solves the
+    whole set at a vertex jointly, through one small Gram system
+    (`constr_proj` in its `cnstrnt.c`), and so does `project_rows` below.
+
+    Returns `[(rows, [(vec, off), ...]), ...]`, one entry per distinct
+    set of rows.
+    """
+    by_rows = {}
+    for rows, vec, off in slide:
+        key = (int(rows[0]), int(rows[-1]), len(rows))
+        by_rows.setdefault(key, [np.asarray(rows), []])[1].append(
+            (np.asarray(vec, dtype=float), float(off)))
+    return [(v[0], v[1]) for v in by_rows.values()]
+
+
+def project_rows(X, groups):
+    """Put each row group on ALL of its planes at once.
+
+    One Newton step on the joint system: with normals `n_i` and offsets
+    `c_i`, solve `G a = r` where `G_ij = n_i . n_j` and `r_i = c_i -
+    n_i . x`, then move by `sum a_i n_i`.  Linear constraints, so one
+    step lands exactly; a couple more cost nothing and cover round-off.
+    """
+    for rows, planes in groups:
+        if len(planes) == 1:
+            vec, off = planes[0]
+            X[rows] -= ((X[rows] @ vec - off)
+                        / float(vec @ vec))[:, None] * vec
+            continue
+        N = np.array([p[0] for p in planes], dtype=float)
+        c = np.array([p[1] for p in planes], dtype=float)
+        G = N @ N.T
+        for _ in range(3):
+            r = c[None, :] - X[rows] @ N.T
+            try:
+                a = np.linalg.solve(G, r.T).T
+            except np.linalg.LinAlgError:
+                a = np.linalg.lstsq(G, r.T, rcond=None)[0].T
+            X[rows] += a @ N
+    return X
+
+
+def project_rows_tangent(g, groups):
+    """Remove from `g` the component normal to each group's planes.
+
+    The velocity has to be tangent to EVERY constraint at that vertex
+    before the vertex moves, which for two planes means along their
+    intersection line -- not tangent to one and then the other.
+    """
+    for rows, planes in groups:
+        N = np.array([p[0] for p in planes], dtype=float)
+        N = N / np.linalg.norm(N, axis=1, keepdims=True)
+        if len(planes) == 1:
+            g[rows] -= (g[rows] @ N[0])[:, None] * N[0]
+            continue
+        G = N @ N.T
+        try:
+            a = np.linalg.solve(G, (g[rows] @ N.T).T).T
+        except np.linalg.LinAlgError:
+            a = np.linalg.lstsq(G, (g[rows] @ N.T).T, rcond=None)[0].T
+        g[rows] -= a @ N
+    return g
+
+
 def fe_slide_planes(fe, arc_of, corners, nrows):
     """Boundary rows that are FREE on a plane, and the plane they run on.
 
@@ -1742,15 +2040,24 @@ def fe_pinned_patch(source, m=96, rings=14, iters=300):
     V = np.asarray(V, dtype=float)
     fixed = np.asarray(fixed, dtype=bool)
     T = np.asarray(_quads_to_tris(quads))
-    # The sliding solve alone, deliberately, even for the datafiles that
-    # also fix a volume.  Measured against Evolver's own patch: Schwarz D
-    # comes out 0.8% high and Schoen's I-WP 3.5% high with the free
-    # boundary and nothing else, because the arrangement of their mirror
-    # planes already pins the surface down.  Driving the volume as well
-    # made Schwarz P a hundred times too large -- the volume machinery in
-    # `minimize_area_volume` is kept, and is what Neovius still needs,
-    # but it is not the default until it converges.
+    # Hold the volume, but ONLY where our volume functional can be shown
+    # to be the one the datafile means.  The test is the datafile's own
+    # starting configuration: Brakke sets these up already satisfying
+    # their volume constraint, so if our number does not reproduce the
+    # declared target there, we are computing some other quantity and
+    # driving it would do more harm than leaving it alone.  pcell
+    # reproduces 1/12 exactly; Neovius states its volume through a custom
+    # `quantity` integrand we do not model yet, and misses, so it stays
+    # on the sliding solve -- where it is already within 5% of Evolver.
     slide = fe_slide_planes(fe, arc_of, corners, len(V))
+    target = fe.body_volume() if slide else None
+    if target is not None:
+        v0 = fe_volume(fe, V, T, arc_of)
+        if abs(v0 - target) <= 1e-3 * max(1.0, abs(target)):
+            V = minimize_area_at_volume(fe, V, T, fixed, slide, arc_of,
+                                        float(target))
+            return (V, [tuple(f) for f in quads],
+                    [np.array(V[a:b]) for a, b in rims])
     if slide:
         V = minimize_area_sliding(V.copy(), T, fixed, slide,
                                   outer_iters=max(30, iters // 6))
