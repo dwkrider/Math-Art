@@ -131,13 +131,21 @@ AREA_TOL = 0.10         # patch area against Evolver's own framed adjoint
 #
 # Nothing is entered here on a hunch.  The reason string is the evidence,
 # and it says who judged it and against what.
+# Every figure below is against the CORRECTED truth table (each
+# datafile's own `gogo`).  The numbers this list originally carried were
+# measured against a generic post-frame descent that had drifted off the
+# critical point, by as much as 41% for disphenoid 55 -- so the list was
+# partly waiving the measurement rather than the surface.  Two entries
+# disappeared entirely once that was fixed: Schoen manta genus 35 now
+# passes at 1.050, and Schoen p.14, which had actually been RETRACTED
+# from the extension at a spurious 1.109, is back at 1.000 unaided.
 ACCEPTED = {
-    'disphenoid31adj.fe': "matches Brakke's figure on review (area 1.31x)",
-    'disphenoid55adj.fe': "matches Brakke's figure on review (area 2.51x)",
-    'disphenoid67adj.fe': "matches Brakke's figure on review (area 1.40x)",
-    'manta35adj.fe': "matches Brakke's figure on review (residual 0.15)",
-    'manta51adj.fe': "matches Brakke's figure on review (area 0.88x)",
-    'triplane0adj.fe': "matches Brakke's figure on review (residual 0.28)",
+    'disphenoid31adj.fe': "matches Brakke's figure on review (area 1.347x)",
+    'disphenoid55adj.fe': "matches Brakke's figure on review (area 0.623x)",
+    'disphenoid67adj.fe': "matches Brakke's figure on review (area 1.219x)",
+    'manta51adj.fe': "matches Brakke's figure on review (area 0.899x)",
+    'triplane0adj.fe': "matches Brakke's figure on review "
+                       "(area 1.024x, but boundary residual 0.28)",
 }
 
 # Adjoint datafile -> record slug, and the title to give a surface that
@@ -410,11 +418,19 @@ def harvest_adjoint(m=96, rings=16, iters=400):
             # disphenoids that converge to the wrong surface entirely.
             note = "%s; accepted on review: %s" % (why, ACCEPTED[fn])
             print("  %-19s ACCEPTED: %s" % (fn, note))
-            ok, resid = True, min(resid, RESID_TOL)
+            # Waive the gate, but do NOT touch `resid`: clamping it to
+            # the tolerance wrote the tolerance itself into the record,
+            # so the database reported triplane 0's boundary error as
+            # 0.15 when it is 0.28.  A waived row has to keep its real
+            # measurement -- that number is the reason the waiver exists,
+            # and overwriting it hides what was waived.
+            ok, accepted = True, True
+        else:
+            accepted = False
         if not ok:
             held.append((fn, why))
             continue
-        if resid > RESID_TOL:
+        if resid > RESID_TOL and not accepted:
             held.append((fn, "residual %.1e" % resid))
             continue
         pick = None

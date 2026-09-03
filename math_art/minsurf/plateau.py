@@ -2169,10 +2169,21 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
     # spans a different surface entirely: for Schoen's batwing that put
     # the patch half again too large in area, on a cell that still welded
     # into one clean sheet and passed every topological check.
+    # A sliding solve needs the SAME budget as a pinned one, not an
+    # eighth of it.  What the free arcs have to reach is perpendicularity
+    # -- a minimal surface meets its constraint plane at a right angle --
+    # and that is the last thing to converge, long after the area has
+    # stopped moving visibly.  At 50 outer iterations Schoen's manta met
+    # its plane 31 degrees off square, and the conjugate of an arc that
+    # is not perpendicular is not the straight line the frame expects,
+    # so the framing mis-landed and the patch came out at twice
+    # Evolver's area.  Its genus-35 sibling had the identical defect
+    # five times milder (9 degrees, and a correspondingly milder
+    # symptom), which is what identified the cause.
     slide = fe_slide_planes(fe, arc_of, corners, len(V))
     if slide:
         V = minimize_area_sliding(V.copy(), T, fixed, slide,
-                                  outer_iters=max(20, iters // 8))
+                                  outer_iters=max(20, iters * 4))
     else:
         V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
                        dtype=float)

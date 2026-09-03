@@ -970,19 +970,36 @@ class FEFile(object):
                 prog.append(('while', m.group(1),
                              self._parse_frame(m.group(2))))
                 continue
-            m = re.match(r'^foreach\s+edges?\s+(\w+)\s+where\s+original\s*'
-                         r'==\s*(\w+)\s+do\s*\{(.*)\}$', s, re.S)
+            # `where original==2 or original == 5` selects TWO arcs, and
+            # the disjunction has to be read or the statement is dropped
+            # whole.  Matching a single id here cost three surfaces:
+            # N26 and N38 kept one of their four constraint groups and
+            # N14 three of four, so the frame never learned which arc
+            # lies on which mirror plane.  With too few planes left to
+            # test against, the Bonnet sign is chosen on a residual that
+            # both signs satisfy, the wrong conjugate wins, and the
+            # frame then measures its scale off that -- N38 came out at
+            # 21x Evolver's area.  These are the only three datafiles in
+            # the collection that use the disjunction in a `frame`; the
+            # parsed program is bit-identical for the other 93.
+            m = re.match(r'^foreach\s+edges?\s+(\w+)\s+where\s+(original\s*'
+                         r'==\s*\w+(?:\s+or\s+original\s*==\s*\w+)*)'
+                         r'\s+do\s*\{(.*)\}$', s, re.S)
             if m:
+                ids = re.findall(r'original\s*==\s*(\w+)', m.group(2))
                 seen = []
                 for c in re.finditer(r'constraint\s*\(?\s*(\w+)', m.group(3)):
                     if c.group(1) not in seen:
                         seen.append(c.group(1))
-                        prog.append(('constraint', m.group(2), c.group(1)))
+                        for orig in ids:
+                            prog.append(('constraint', orig, c.group(1)))
                 continue
             m = re.match(r'^set\s+edges?\s+constraint\s+\(?(\w+)\)?\s+where'
-                         r'\s+original\s*==\s*(\w+)$', s)
+                         r'\s+(original\s*==\s*\w+'
+                         r'(?:\s+or\s+original\s*==\s*\w+)*)$', s)
             if m:
-                prog.append(('constraint', m.group(2), m.group(1)))
+                for orig in re.findall(r'original\s*==\s*(\w+)', m.group(2)):
+                    prog.append(('constraint', orig, m.group(1)))
                 continue
             m = re.match(r'^set\s+vertex\s+([xyz])\s+(.+)$', s)
             if m:
