@@ -95,6 +95,28 @@ SLUGS = {
     'ycell.fe': 'fk-y-surface',
 }
 
+# Display names for the pinned route.  Read off each datafile's own
+# header, in the house style of the adjoint titles beside them; without
+# one, a row is labelled with its slug.
+PINNED_TITLES = {
+    'CLP.fe': "Schwarz CLP",
+    'CScell.fe': "Fischer-Koch C(S)",
+    'CYcell.fe': "Fischer-Koch C(Y)",
+    'I-6.fe': "Schoen I-6",
+    'I-8.fe': "Schoen I-8",
+    'I-9.fe': "Schoen I-9",
+    'IWP.fe': "Schoen I-WP",
+    'RII.fe': "Schoen R-II",
+    'RIII.fe': "Schoen R-III",
+    'Scell.fe': "Fischer-Koch S",
+    'cd.fe': "Schoen C(D)",
+    'dcell.fe': "Schwarz D",
+    'hcell.fe': "Schwarz H",
+    'neovius.fe': "Neovius",
+    'pcell.fe': "Schwarz P",
+    'ycell.fe': "Fischer-Koch Y",
+}
+
 # `disphenoid19.fe` -- "fundamental cell for Schoen's complementary D
 # minimal surface, genus 19" -- assembles, but the database has no
 # genus-19 disphenoid record and the C(D) record is `cd.fe`'s.  Left out
@@ -114,6 +136,40 @@ PREFER = ['showcube', 'cube', 'full', 'layers', 'showcubelet', 'showsix',
 # The records stay untouched (they are the authoritative store); this
 # list is what the module writer consults to skip them.
 HELD_SOURCES = []
+
+# Record slugs that ALREADY have a row in the Add menu, so their Evolver
+# cell is definition data for the record rather than a second way to draw
+# the same surface.  Every entry was checked against the live menu
+# (`minsurf.tpms`'s TPMS and TPMS_EXACT tables) and names the row that
+# covers it; anything not listed here gets a row of its own, because the
+# failure mode of guessing wrong in that direction -- a surface that
+# ships and cannot be found -- is silent, while a duplicate row is
+# obvious the moment the menu is opened.
+ALREADY_DRAWN = {
+    'schwarz-p',                # P
+    'schwarz-d',                # D
+    'neovius-surface',          # NEOVIUS
+    'iwp-surface',              # IWP
+    'octo-surface',             # OCTO
+    'frd-surface',              # FRD / FRD_EXACT
+    'cd-surface',               # CD
+    'clp-exact',                # CLP
+    'h-exact',                  # H
+    'schoen-i6',                # I6
+    # NOT schoen-i8 / schoen-i9: their existing rows are the
+    # RELAXED ring form, a different and approximate
+    # construction, so Brakke's exact cell is a genuine
+    # addition rather than a duplicate of it.
+    'schoen-rii',               # RII
+    'schoen-riii',              # R3_RING
+    'schoen-s-s',               # SS
+    'schoen-h-t',               # HT
+    'weber-h2r',                # H2R
+    'weber-trr',                # TR
+    'schoen-gw',                # GW_CONJ
+    'schoen-hybrid-ht-h2r',     # HT_HR_CONJ
+    'schoen-hybrid-tr-ht',      # TR_HT_CONJ
+}
 
 RESID_TOL = 0.15        # boundary-to-declared-plane, as a fraction of span
 AREA_TOL = 0.10         # patch area against Evolver's own framed adjoint
@@ -141,9 +197,15 @@ AREA_TOL = 0.10         # patch area against Evolver's own framed adjoint
 # from the extension at a spurious 1.109, is back at 1.000 unaided.
 ACCEPTED = {
     'disphenoid31adj.fe': "matches Brakke's figure on review (area 1.347x)",
+    'disphenoid35adj.fe': "matches Brakke's figure on review (area 1.398x)",
+    'disphenoid43adj.fe': "matches Brakke's figure on review (area 1.412x)",
+    'disphenoid51adj.fe': "matches Brakke's figure on review (area 1.631x)",
     'disphenoid55adj.fe': "matches Brakke's figure on review (area 0.623x)",
     'disphenoid67adj.fe': "matches Brakke's figure on review (area 1.219x)",
     'manta51adj.fe': "matches Brakke's figure on review (area 0.899x)",
+    'mantaadj.fe': "matches Brakke's figure on review (area 1.197x, and its "
+                   "sliding solve still meets the mirror plane off square "
+                   "at a cusp our uniform grid cannot refine)",
     'triplane0adj.fe': "matches Brakke's figure on review "
                        "(area 1.024x, but boundary residual 0.28)",
 }
@@ -323,6 +385,15 @@ def harvest():
         name, word, n, tol = pick
         out[slug] = {
             'source': fn,
+            # Both of these were simply MISSING on this route, where the
+            # adjoint one has always set them, and the two defaults then
+            # disagreed: `write_module` writes `bool(c.get('new_row'))`,
+            # so an absent flag means False -- no menu row -- while
+            # `tpms` reads the same field with a default of True.  Schoen
+            # I-8 and I-9 shipped into the database and appeared nowhere,
+            # under the title `schoen-i8`, which is a slug and not a name.
+            'title': PINNED_TITLES.get(fn, slug),
+            'new_row': slug not in ALREADY_DRAWN,
             'record_slug': slug,
             'command': name,
             'word': word,
@@ -433,7 +504,17 @@ def harvest_adjoint(m=96, rings=16, iters=400):
         if resid > RESID_TOL and not accepted:
             held.append((fn, "residual %.1e" % resid))
             continue
-        pick = None
+        # SEARCH for a cell that also survives the runtime path, rather
+        # than taking the first that assembles here and then rejecting
+        # it.  A (word, tolerance) pair can weld perfectly at this
+        # resolution and come apart when the extension re-spans the
+        # recorded boundary at a coarser one, and when that happens the
+        # remaining rungs of the ladder are still worth trying --
+        # disphenoid 67 was held on exactly that, having found a looser
+        # weld that closed the bake's mesh but not the runtime's, while
+        # a tighter rung further down the list would have served both.
+        rt_loops = [[[float(c) for c in p] for p in lp] for lp in loops]
+        pick = fallback = None
         for name in pl.fe_word_order(fe.words):
             word = fe.words[name]
             if any(ch not in lets for ch in word):
@@ -443,20 +524,25 @@ def harvest_adjoint(m=96, rings=16, iters=400):
                 continue
             for tol in pl.FE_WELD_LADDER:
                 W, wf = pl.assemble_orbit(V, quads, mats, tol)
-                if pl.fe_orbit_ok(W, wf):
-                    pick = (name, word, len(mats), tol)
+                if not pl.fe_orbit_ok(W, wf):
+                    continue
+                cand = (name, word, len(mats), tol)
+                if fallback is None:
+                    fallback = cand
+                if runtime_ok(rt_loops, lets, word, tol):
+                    pick = cand
                     break
             if pick:
                 break
         if pick is None:
-            held.append((fn, "no word assembles"))
+            held.append((fn, "no word assembles" if fallback is None else
+                         "assembles here but not from its recorded boundary "
+                         "-- the shipped path refuses it"))
             continue
+        # No runtime check here: the search above only returns a pick
+        # that already passed one, so a second call would re-run the
+        # whole re-span to re-derive an answer it has.
         name, word, ncopy, tol = pick
-        rt_loops = [[[float(c) for c in p] for p in lp] for lp in loops]
-        if not runtime_ok(rt_loops, lets, word, tol):
-            held.append((fn, "assembles here but not from its recorded "
-                             "boundary -- the shipped path refuses it"))
-            continue
         # Two names, because they answer two questions.  `key` is the
         # generator row this cell becomes -- in the house style of the
         # rows beside it (`SS`, `H2R`, `TR`), not a slug.  `record_slug`
@@ -470,12 +556,19 @@ def harvest_adjoint(m=96, rings=16, iters=400):
             'title': title,
             'record_slug': record,
             'route': 'adjoint',
-            # Whether this cell should also become a GENERATOR row.  It
-            # should only when the surface has no generator already:
-            # Schoen's GW ships from an exact Weierstrass row, and for
-            # that one the cell is definition data for the record, not a
-            # second way to draw the same surface in the Add menu.
-            'new_row': slug is None,
+            # Whether this cell should also become a GENERATOR row.
+            #
+            # This used to read `slug is None` -- "it already has a
+            # record, so something must already draw it".  That does not
+            # follow, and it hid twenty-odd surfaces: a record can exist
+            # carrying nothing but a nodal polynomial, with no row in the
+            # Add menu at all.  Disphenoids 31/55/67, both mantas and
+            # Neovius N14/N26/N38 all shipped in the database and were
+            # unreachable from the UI, which is not shipping.
+            #
+            # So a cell becomes a row unless the surface is KNOWN to have
+            # one already, listed below and checkable against the menu.
+            'new_row': record not in ALREADY_DRAWN,
             'command': name,
             'word': word,
             'copies': ncopy,

@@ -2419,7 +2419,21 @@ def assemble_orbit(V, quads, mats, tol=1e-4):
 # pass close through the middle of the cell, reporting edges shared by
 # four faces on a surface that is perfectly sound.  So the tightest weld
 # that closes is the one taken, and the gate decides whether it closed.
-FE_WELD_LADDER = (1e-8, 1e-7, 1e-6, 1e-5, 1e-4)
+# The 1e-3 rung exists for Schoen I-8 and I-9.  Both reconstruct their
+# patch essentially exactly -- 1.0014 and 1.0018 of Evolver's own area,
+# bounding boxes agreeing to 0.008 in a span of 2 -- and both assemble
+# into one clean sheet, but their rims are joined by a translation and
+# land about 1e-3 apart, because our grid samples that arc where Evolver
+# did not.  Stopping the ladder at 1e-4 left them in two pieces and they
+# were held for two years' worth of wrong reasons, the last of mine
+# being that their cell word "generated half the group".  It does not:
+# Evolver's own patch under the same word assembles into one component,
+# which is what proved the word right and the tolerance wrong.
+#
+# Loosening the LAST rung is safe in a way that loosening the first
+# would not be: the ladder takes the tightest weld that closes, so a
+# surface that already joined at 1e-8 never sees this value.
+FE_WELD_LADDER = (1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3)
 
 # Datafile commands that show a whole cell, best first.
 FE_WORD_PREFER = ('showcube', 'cube', 'full', 'showrhombic', 'showcubelet',
@@ -2521,17 +2535,46 @@ def fe_cell_assemble(key, V, quads, tol=None):
     lets = {k: np.asarray(v, dtype=float)
             for k, v in spec['letters'].items()}
     mats = eval_transform_expr(lets, spec['word'])
-    W, wf = assemble_orbit(V, quads, mats,
-                           spec.get('tol', 1e-4) if tol is None else tol)
-    if not fe_orbit_ok(W, wf):
-        return None
-    return W, wf, len(mats)
+    if tol is not None:
+        W, wf = assemble_orbit(V, quads, mats, tol)
+        return (W, wf, len(mats)) if fe_orbit_ok(W, wf) else None
+    # The baked tolerance FIRST, then looser rungs -- because the gap a
+    # weld has to close is not a property of the cell alone.  Copies
+    # joined by a translation meet arc-to-arc between samples, so the
+    # distance between them scales with the resampling resolution, and
+    # the bake measured it at one resolution while the caller picks
+    # another.  Schoen I-8 welded at the bake's 1e-3 and was refused at
+    # the resolution the self-test builds, which is not a wrong cell but
+    # a tolerance being asked to be resolution-independent when it is
+    # not.  Looser is still gated: `fe_orbit_ok` rejects duplicated
+    # faces, over-shared edges and a disconnected result, so a rung that
+    # fuses sheets that merely pass close together fails like any other.
+    # Scaled from the baked value rather than taken from FE_WELD_LADDER,
+    # whose loosest rung is the baked one for exactly the cells that need
+    # help here -- so "try the looser rungs" would have nothing to try.
+    # Two multiples is the whole range worth searching: I-8 at m=72 is
+    # disconnected at 1e-3 and clean at 2e-3, and by 5e-3 it has fused
+    # sheets that merely pass close (3 duplicate faces, 9 over-shared
+    # edges).  The window between right and wrong is narrow, which is
+    # why every rung is gated rather than trusted.
+    base = float(spec.get('tol', 1e-4))
+    for t in (base, 2.0 * base, 5.0 * base):
+        W, wf = assemble_orbit(V, quads, mats, t)
+        if fe_orbit_ok(W, wf):
+            return W, wf, len(mats)
+    return None
 
 
 def fe_cell_build(key, cells, res_per_cell, scale, theta):
     """TPMS_EXACT-compatible wrapper for a datafile-derived cell."""
     res = max(8, int(res_per_cell))
-    V, quads = fe_cell_patch(key, m=max(48, 3 * res), rings=max(8, res // 2))
+    # Floors of 72 and 12, not 48 and 8.  A cell whose copies are joined
+    # by a translation has to close a gap between independently placed
+    # samples, and a coarse re-span cannot: Schoen I-8 at m=48 is either
+    # disconnected or fused at every tolerance, with no value in between,
+    # while at m=72 it welds cleanly.  The floor is what a cell needs to
+    # assemble at all, so it is not the place to save time.
+    V, quads = fe_cell_patch(key, m=max(72, 3 * res), rings=max(12, res // 2))
     if int(cells) > 1 if np.isscalar(cells) else True:
         got = fe_cell_assemble(key, V, quads)
         if got is not None:
