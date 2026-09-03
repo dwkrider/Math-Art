@@ -104,6 +104,17 @@ PREFER = ['showcube', 'cube', 'full', 'layers', 'showcubelet', 'showsix',
           'showfour', 'showrhombic', 'stack8', 'stack6', 'stack4',
           'showcube_alt', 'seven', 'stack12']
 
+# Datafiles this run REFUSED.  Recorded rather than merely printed,
+# because a held surface has to be actively kept out of the shipped
+# module: `write_module` reads the surface RECORDS, a record keeps the
+# `evolver_cell` written into it by any earlier bake, and nothing ever
+# removed one.  So holding a cell used to have no effect on what
+# shipped -- Schoen p.14 stayed in the extension after Evolver's own
+# area disqualified it, because it had passed a bake months before.
+# The records stay untouched (they are the authoritative store); this
+# list is what the module writer consults to skip them.
+HELD_SOURCES = []
+
 RESID_TOL = 0.15        # boundary-to-declared-plane, as a fraction of span
 AREA_TOL = 0.10         # patch area against Evolver's own framed adjoint
 
@@ -263,6 +274,7 @@ def harvest():
         if got is None:
             print("  %-14s boundary is %d loops, skipped"
                   % (fn, len(fe.boundary_loops())))
+            HELD_SOURCES.append(fn)
             continue
         V, quads, loops = got
         # The same gate the adjoint route uses.  These files were trusted
@@ -275,11 +287,13 @@ def harvest():
             ratio = area / truth['area']
             if abs(ratio - 1.0) > AREA_TOL:
                 print("  %-14s HELD: area %.3f x Evolver" % (fn, ratio))
+                HELD_SOURCES.append(fn)
                 continue
         if is_flat(V):
             print("  %-14s HELD: patch stayed flat -- its boundary is free "
                   "on planes and the volume-constrained solve is not "
                   "converging yet" % fn)
+            HELD_SOURCES.append(fn)
             continue
         lets = fe.letters()
         words = pl.fe_words_with_fallback(fe)
@@ -296,6 +310,7 @@ def harvest():
                 break
         if pick is None:
             print("  %-14s no word assembles, skipped" % fn)
+            HELD_SOURCES.append(fn)
             continue
         name, word, n, tol = pick
         out[slug] = {
@@ -460,6 +475,7 @@ def harvest_adjoint(m=96, rings=16, iters=400):
               % (fn, key, name, word, ncopy, why))
     for fn, why in held:
         print("  %-19s HELD: %s" % (fn, why))
+        HELD_SOURCES.append(fn)
     print("  %d cells, %d held" % (len(out), len(held)))
     return out
 
@@ -479,8 +495,19 @@ def write_curation(data):
         # NameError the moment the module is imported.
         fh.write("import json\n\nFE_CELLS = json.loads(r'''")
         fh.write(json.dumps(data, indent=1, sort_keys=True))
-        fh.write("''')\n\n"
-                 "# The table is keyed by GENERATOR ROW; records are looked\n"
+        fh.write("''')\n\n")
+        # Carried into the generated file so `write_module` can see it on
+        # a later, separate `--module` run.  Without it a held surface
+        # keeps shipping: the module is built from the RECORDS, and a
+        # record holds on to whatever cell an earlier bake wrote there.
+        fh.write("# Datafiles this bake REFUSED.  `write_module` skips any\n"
+                 "# record still carrying a cell from one of these, because\n"
+                 "# records keep what earlier bakes wrote and nothing else\n"
+                 "# removes it -- Schoen p.14 went on shipping for exactly\n"
+                 "# that reason after Evolver's area disqualified it.\n")
+        fh.write("FE_HELD = %s\n\n"
+                 % json.dumps(sorted(set(HELD_SOURCES)), indent=1))
+        fh.write("# The table is keyed by GENERATOR ROW; records are looked\n"
                  "# up by the slug each row's record carries, which for the\n"
                  "# surfaces the database already knew is its existing slug.\n"
                  "_BY_SLUG = {c.get('record_slug', k): c\n"
@@ -506,18 +533,36 @@ def write_module():
     """
     cells, by_slug = {}, {}
     from surfdb.fecells import FE_CELLS as _BAKED
+    try:
+        from surfdb.fecells import FE_HELD as _HELD
+    except ImportError:          # curation file predates the held ledger
+        _HELD = []
+    held = set(_HELD)
     for key, cell in sorted(_BAKED.items()):
         cells[key] = (cell.get('title') or key, cell)
         by_slug[cell.get('record_slug', key)] = key
+    dropped = []
     for root, _d, files in os.walk(RECORDS):
         for fn in files:
             if not fn.endswith('.json'):
                 continue
             rec = json.load(io.open(os.path.join(root, fn), encoding='utf-8'))
             cell = (rec.get('definition') or {}).get('evolver_cell')
-            if cell:
-                key = by_slug.get(rec['slug'], rec['slug'])
-                cells[key] = (cell.get('title') or rec['name'], cell)
+            if not cell:
+                continue
+            # A record keeps the cell an earlier bake wrote into it, and
+            # nothing removes it, so without this test a surface the
+            # CURRENT bake refused would still ship on the strength of a
+            # run from months ago.  The record itself is left alone: it
+            # is the authoritative store, and the datafile may well pass
+            # again once the solver improves.
+            if cell.get('source') in held:
+                dropped.append((rec['slug'], cell.get('source')))
+                continue
+            key = by_slug.get(rec['slug'], rec['slug'])
+            cells[key] = (cell.get('title') or rec['name'], cell)
+    for slug, src in sorted(dropped):
+        print("  held, so NOT shipped: %-24s (%s)" % (slug, src))
     with io.open(MODULE_OUT, 'w', encoding='utf-8') as fh:
         fh.write('"""Evolver cells, generated FROM the surface database.\n\n'
                  'GENERATED by `python tools/bake_fe_cells.py --module` -- do\n'

@@ -92,6 +92,24 @@ EVOLVER_ADJOINT = {
         'bbox': (1.000000, 0.221000, 0.890000)},
     'triplane5adj.fe': {'facets': 512, 'area': 0.455314000,
         'bbox': (1.000000, 0.146000, 0.887000)},
+
+# Measured only after EVOLVERPATH was set.  These eleven were the
+# "Evolver did not finish" rows, and it had not: each pulls in a stock
+# script from the distribution's `fe/` directory (`multiplicate.cmd`
+# and friends), Evolver could not find it without a search path, and
+# it fell back to its interactive prompt and printed there until the
+# harness killed it.  With the path set they finish in a second or two.
+    'N14.fe': {'facets': 320, 'area': 0.308036039},
+    'N26.fe': {'facets': 448, 'area': 0.385495175},
+    'N38.fe': {'facets': 576, 'area': 0.412937881},
+    'mantaadj.fe': {'facets': 256, 'area': 0.194351625},
+    'octoadj.fe': {'facets': 320, 'area': 0.305697697},
+    's14adj.fe': {'facets': 384, 'area': 0.676482314},
+    'c21padj.fe': {'facets': 256, 'area': 0.607538274},
+    'c27padj.fe': {'facets': 320, 'area': 0.616598681},
+    'c33padj.fe': {'facets': 320, 'area': 0.613904076},
+    'c39padj.fe': {'facets': 384, 'area': 0.612422648},
+    'c45padj.fe': {'facets': 384, 'area': 0.622374822},
 }
 
 
@@ -119,4 +137,6 @@ EVOLVER_PINNED = {
     'neovius.fe': {'facets': 256, 'area': 0.293167067},
     'pcell.fe': {'facets': 256, 'area': 0.195588650},
     'ycell.fe': {'facets': 384, 'area': 0.160953365},
+    'CYcell.fe': {'facets': 576, 'area': 0.276697417},
+    'Scell.fe': {'facets': 768, 'area': 0.339798203},
 }
