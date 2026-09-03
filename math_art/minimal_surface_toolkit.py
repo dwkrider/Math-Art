@@ -369,6 +369,45 @@ if _IN_BLENDER:
     # non-periodic Minimal Surface generator's family list.
     PERIODIC_FAMILIES = ('SINGLY', 'DOUBLY')
 
+    # Words that describe HOW WE BUILT a surface rather than what it is.
+    # They are stripped from every menu label: a reader picking a shape
+    # has no use for "(Evolver cell)" or "(nodal approximation)", and
+    # the lattice words go too because the family heading now carries
+    # that.  Anything that names the surface -- a genus, a ring form, a
+    # Bonnet angle, a named variant -- is kept.
+    _PROVENANCE = ('evolver cell', 'nodal approximation', 'nodal',
+                   'relaxed', 'exact', 'cubic', 'hexagonal', 'tetragonal',
+                   'trigonal', 'rhombohedral', 'orthorhombic')
+
+    def _clean_label(label):
+        """Drop provenance and lattice words from a menu label."""
+        import re as _re
+
+        def _fix(m):
+            lead, inner = m.group(1), m.group(2)
+            keep = [p.strip() for p in inner.split(',')
+                    if p.strip()
+                    and p.strip().lower() not in _PROVENANCE]
+            if not keep:
+                return ''
+            # Put back the spacing the name had.  Without this every
+            # parenthesis gains a space in front of it and names that
+            # OWN their brackets come apart: Fischer-Koch C(S) turns
+            # into "Fischer-Koch C (S)", and C(I2-Y**) into "C (I2-Y**)".
+            return '%s(%s)' % (lead, ', '.join(keep))
+
+        out = _re.sub(r'(\s*)\(([^()]*)\)', _fix, label)
+        return _re.sub(r'\s{2,}', ' ', out).strip()
+
+    def _lattice_of(key):
+        """CUBIC / NONCUBIC / ... for a surface row, or None."""
+        try:
+            from .minsurf.surface_class import SURFACE_CLASS
+        except Exception:                          # noqa: BLE001
+            return None
+        row = SURFACE_CLASS.get(key)
+        return row[0] if row else None
+
     _FAMILY_ITEMS = []
     _SURF_ITEMS_ALL = []
     _SURF_ITEMS_FAM = {}
@@ -416,18 +455,27 @@ if _IN_BLENDER:
         # periodic Scherk tower is the WE SCHERK_TOWER under Singly, so it
         # is dropped from this list (still reachable via mesh.tpms_add).
         _NOT_TRIPLY = {'SCHERKT'}
-        # the nodal approximations lead the Triply list; the exact
-        # Weierstrass P/Gyroid/D (Bonnet angle) is listed LAST
+        # The triply periodic surfaces are split by the LATTICE THEY
+        # REPEAT ON, and listed alphabetically inside each.
+        #
+        # They used to be split by where they came from -- an "Exact
+        # (Weierstrass)" list beside a nodal one, with rows tagged
+        # "(Evolver cell)" or "(relaxed)".  That is a fact about this
+        # pipeline, not about the surface: whether we reached Schwarz P
+        # by integrating its Weierstrass data or by a level set is not
+        # something a reader choosing a shape has any use for, and it
+        # put one surface in two different families depending on route.
+        # `minsurf.surface_class` carries the lattice instead, derived
+        # per row (see `tools/classify_surfaces.py` for the evidence
+        # behind each entry).
         exact_items = [(k, v[0], v[0]) for k, v in TPMS_EXACT.items()]
         tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()
                       if k not in _NOT_TRIPLY]
-        if tpms_items:
-            _PERIODIC_ITEMS['TRIPLY'] = tpms_items
-            _PERIODIC_ALL.extend(tpms_items)
-            _PERIODICITY_ITEMS.append(
-                ('TRIPLY', "Triply Periodic (TPMS)",
-                 f"{len(tpms_items)} triply periodic minimal surfaces "
-                 f"as published nodal (level-set) approximations"))
+        _CUBIC_HELP = ("triply periodic minimal surfaces on a CUBIC "
+                       "lattice -- the unit cell is a cube")
+        _NONCUBIC_HELP = ("triply periodic minimal surfaces on a "
+                          "hexagonal, tetragonal, trigonal or "
+                          "rhombohedral lattice")
         # A FOURTH entry, beside singly / doubly / triply: the surfaces
         # built by integrating the Weierstrass representation instead of
         # approximating it with a trigonometric polynomial.  They differ
@@ -443,30 +491,37 @@ if _IN_BLENDER:
         # count.  Sharing a dropdown entry with the fixed surfaces would
         # mean showing its two shape sliders on rows that have no such
         # parameters.
-        fam_items = [it for it in exact_items
-                     if it[0] in TPMS_EXACT_ARRANGEMENTS]
-        fixed_items = [it for it in exact_items
-                       if it[0] not in TPMS_EXACT_ARRANGEMENTS]
-        if fixed_items:
-            _PERIODIC_ITEMS['EXACT'] = fixed_items
-            _PERIODIC_ALL.extend(fixed_items)
+        # One surface, one row.  A name reached by both routes -- the
+        # nodal Schwarz P and the exact one -- would otherwise appear
+        # twice in the same family now that the two are no longer kept
+        # apart, so the exact row wins and the nodal one is dropped from
+        # the menu (still reachable through `mesh.tpms_add`).
+        _seen = set()
+        merged = []
+        for it in exact_items + tpms_items:
+            name = _clean_label(it[1])
+            if name in _seen:
+                continue
+            _seen.add(name)
+            merged.append((it[0], name, name))
+        cubic = sorted((it for it in merged
+                        if _lattice_of(it[0]) == 'CUBIC'),
+                       key=lambda it: it[1].lower())
+        other = sorted((it for it in merged
+                        if _lattice_of(it[0]) != 'CUBIC'),
+                       key=lambda it: it[1].lower())
+        for key, label, help_txt, items in (
+                ('CUBIC', "Cubic", _CUBIC_HELP, cubic),
+                ('NONCUBIC', "Non-Cubic", _NONCUBIC_HELP, other)):
+            if not items:
+                continue
+            _PERIODIC_ITEMS[key] = items
+            _PERIODIC_ALL.extend(items)
             _PERIODICITY_ITEMS.append(
-                ('EXACT', "Exact (Weierstrass)",
-                 f"{len(fixed_items)} surfaces integrated exactly from "
-                 f"their Weierstrass data and assembled by reflection, "
-                 f"rather than approximated by a nodal polynomial"))
-        if fam_items:
-            _PERIODIC_ITEMS['EXACT_FAMILY'] = fam_items
-            _PERIODIC_ALL.extend(fam_items)
-            _PERIODICITY_ITEMS.append(
-                ('EXACT_FAMILY', "Exact (Deformable)",
-                 f"{len(fam_items)} exact surfaces that are FAMILIES "
-                 f"rather than single surfaces: their shape is driven "
-                 f"by moduli, and they are built at named assemblies "
-                 f"instead of a cell count"))
+                (key, label, f"{len(items)} {help_txt}"))
         if not _PERIODICITY_ITEMS:
             _PERIODICITY_ITEMS.append(
-                ('TRIPLY', "Triply Periodic (TPMS)", "TPMS"))
+                ('CUBIC', "Cubic", "TPMS"))
 
     _build_surface_items()
 
@@ -1198,6 +1253,18 @@ if _IN_BLENDER:
                                      if surf in TPMS_EXACT_ARRANGEMENTS
                                      else None))
                     label = TPMS_EXACT[surf][0]
+                    # Tile these on the lattice too.  The count used to
+                    # act only on the nodal rows, so the same X/Y/Z
+                    # fields did something on Schwarz P and nothing on
+                    # Schwarz H.  `tile_periodic` checks that two copies
+                    # actually join before laying the rest down, so a row
+                    # that is a fundamental piece rather than a whole
+                    # cell -- where the bounding box is not a period --
+                    # comes back as the single piece instead of a
+                    # scattered copy of it.
+                    if max(cu, cv, cw) > 1 and len(tris):
+                        verts, tris, _n = _plateau.tile_periodic(
+                            verts, [tuple(t) for t in tris], (cu, cv, cw))
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty surface")
                     return {'CANCELLED'}

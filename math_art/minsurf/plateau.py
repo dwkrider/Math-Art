@@ -2565,6 +2565,67 @@ def fe_cell_assemble(key, V, quads, tol=None):
     return None
 
 
+def tile_periodic(V, faces, counts, tol=None):
+    """Repeat a unit cell on its own lattice, counts times per axis.
+
+    The period is the cell's bounding box, which is the right vector for
+    a mesh that IS a unit cell and the wrong one for a fundamental piece
+    -- a piece can be any shape, and translating it by its extent leaves
+    gaps or overlaps.  So the result is CHECKED rather than assumed: two
+    copies must join without duplicating a face or over-sharing an edge,
+    and if they do not the original is returned unchanged.  A caller
+    therefore never gets a broken tiling, only a tiling or none.
+
+    Returns (V, faces, actual_counts) -- `actual_counts` is (1, 1, 1)
+    when the check refused.
+    """
+    V = np.asarray(V, dtype=float)
+    cu, cv, cw = (max(1, int(c)) for c in counts)
+    if not len(V) or (cu, cv, cw) == (1, 1, 1):
+        return V, faces, (1, 1, 1)
+    period = V.max(0) - V.min(0)
+    if float(np.min(period)) <= 1e-9:
+        return V, faces, (1, 1, 1)
+    if tol is None:
+        tol = 1e-4 * float(np.max(period))
+
+    def _lay(nu, nv, nw):
+        Vs, Fs = [], []
+        for i in range(nu):
+            for j in range(nv):
+                for k in range(nw):
+                    off = len(Vs) and sum(len(x) for x in Vs)
+                    Vs.append(V + np.array([i * period[0], j * period[1],
+                                            k * period[2]]))
+                    Fs.extend([[int(x) + off for x in f] for f in faces])
+        return np.vstack(Vs), Fs
+
+    # Two cells along the longest axis is the cheapest honest test of
+    # whether this mesh tiles at all.
+    ax = int(np.argmax(period))
+    probe = [1, 1, 1]
+    probe[ax] = 2
+    Wp, wp = _lay(*probe)
+    # A ladder, for the same reason the orbit weld needs one: cells meet
+    # here by TRANSLATION, between samples that were never placed
+    # together, so how close they land depends on the resolution the
+    # caller asked for.  A single tolerance refused to tile Schoen I-8 at
+    # the default resolution while tiling it happily at a finer one.
+    span = float(np.max(period))
+    good = None
+    for t in (tol, 2.0 * tol, 5.0 * tol, 10.0 * tol):
+        W, wf = _weld_points(Wp, wp, t)
+        dup, over, comps = _orbit_defects(W, wf)
+        if not dup and not over and comps == 1:
+            good = t
+            break
+    if good is None:
+        return V, faces, (1, 1, 1)
+    W, wf = _lay(cu, cv, cw)
+    W, wf = _weld_points(W, wf, good)
+    return W, wf, (cu, cv, cw)
+
+
 def fe_cell_build(key, cells, res_per_cell, scale, theta):
     """TPMS_EXACT-compatible wrapper for a datafile-derived cell."""
     res = max(8, int(res_per_cell))
@@ -2575,10 +2636,21 @@ def fe_cell_build(key, cells, res_per_cell, scale, theta):
     # while at m=72 it welds cleanly.  The floor is what a cell needs to
     # assemble at all, so it is not the place to save time.
     V, quads = fe_cell_patch(key, m=max(72, 3 * res), rings=max(12, res // 2))
-    if int(cells) > 1 if np.isscalar(cells) else True:
-        got = fe_cell_assemble(key, V, quads)
-        if got is not None:
-            V, quads = got[0], got[1]
+    got = fe_cell_assemble(key, V, quads)
+    if got is not None:
+        V, quads = got[0], got[1]
+    # `cells` used to decide only WHETHER to assemble the cell -- a count
+    # above one meant "assemble", and any larger number meant the same
+    # thing, so these rows had no tiling at all while the nodal ones
+    # arrayed on a lattice.  Now the cell is always assembled and the
+    # count does what it says on every other row: repeats it.  Per-axis
+    # counts arrive as a triple; the old scalar still broadcasts.
+    if np.isscalar(cells):
+        counts = (int(cells) or 1,) * 3
+    else:
+        counts = tuple(int(c) or 1 for c in tuple(cells)[:3])
+    if max(counts) > 1:
+        V, quads, _n = tile_periodic(V, quads, counts)
     V = np.asarray(V, dtype=float)
     if len(V):
         V = V - 0.5 * (V.max(0) + V.min(0))
