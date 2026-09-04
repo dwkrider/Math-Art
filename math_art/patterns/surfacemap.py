@@ -494,6 +494,30 @@ def surface_prisms(verts, faces, mats, polys2d, surf, off_top, off_bot,
         mats.extend([mat] * len(new))
 
 
+def warp_cells(cells, surf):
+    """Map already-built flat cells onto a surface in place of rebuilding
+    them: (x, y, z) becomes the surface point at (x, y), displaced z
+    along the normal there.
+
+    `surface_patch` and `surface_prisms` are the right tools when the
+    caller still has 2D polygons, because they can refine the rings
+    before mapping.  Some builders -- strapwork ribbons, woven bands --
+    emit 3D cells directly from polylines that are ALREADY finely
+    sampled, and for those a post-hoc warp is both simpler and
+    sufficient.  The caveat is exactly that: this adds no vertices, so a
+    coarse cell will chord through the surface.  Pass it dense input."""
+    out = []
+    for cv, cf, cm in cells:
+        V = np.asarray(cv, float).reshape(-1, 3)
+        if not len(V):
+            out.append((cv, cf, cm))
+            continue
+        P, nrm = surf.at(V[:, :2])
+        Q = P + nrm * V[:, 2:3]
+        out.append(([tuple(p) for p in Q], cf, cm))
+    return out
+
+
 def make_surface(kind, width, height, major=1.0, minor=0.4, radius=1.0):
     """Build a surface by name: 'PLANE', 'TORUS' or 'SPHERE'.
 
@@ -695,6 +719,30 @@ def _selftest():
     ok &= good
     print(f"surfacemap: curved prism closed V={len(v)} F={len(f)} "
           f"every-edge-twice={closed} {'OK' if good else 'FAIL'}")
+
+    # warp_cells must agree with surface_patch where both apply: a flat
+    # cell whose ring is already dense maps to the same points.
+    ring = refine_poly(sq, 0.05)
+    flat = [([(float(x), float(y), 0.0) for x, y in ring],
+             [tuple(range(len(ring)))], [0])]
+    warped = warp_cells(flat, sph)
+    W = np.asarray(warped[0][0], float)
+    direct = sph.at(ring)[0]
+    good = (np.allclose(W, direct, atol=1e-12)
+            and warped[0][1] == flat[0][1] and warped[0][2] == flat[0][2])
+    ok &= good
+    print(f"surfacemap: warp_cells matches a direct map, faces/mats kept "
+          f"{'OK' if good else 'FAIL'}")
+
+    # and relief must ride along the normal, not +Z
+    lifted = [([(float(x), float(y), 0.3) for x, y in ring],
+               [tuple(range(len(ring)))], [0])]
+    L = np.asarray(warp_cells(lifted, sph)[0][0], float)
+    rad = float(np.max(np.abs(np.linalg.norm(L, axis=1) - (1.7 + 0.3))))
+    good = rad < 1e-12
+    ok &= good
+    print(f"surfacemap: warp_cells offsets relief along the normal "
+          f"({rad:.1e}) {'OK' if good else 'FAIL'}")
 
     # A patch is single-sided, and with zero offset its vertices lie ON
     # the surface -- the property the whole module exists to provide.

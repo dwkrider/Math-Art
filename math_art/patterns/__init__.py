@@ -76,7 +76,7 @@ from .surfacemap import (DEFAULT_MAX_EDGE, LatticeTorusSurface,
                          StereographicSurface, Surface,
                          TorusSurface, canonicalize_corners, edge_points,
                          make_surface, refine_poly, refine_segment,
-                         surface_patch, surface_prisms)
+                         surface_patch, surface_prisms, warp_cells)
 
 __all__ = [
     # orbifold signatures
@@ -150,6 +150,7 @@ __all__ = [
     "canonicalize_corners",
     "surface_patch",
     "surface_prisms",
+    "warp_cells",
     "DEFAULT_MAX_EDGE",
 ]
 

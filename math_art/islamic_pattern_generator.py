@@ -1548,6 +1548,29 @@ if _IN_BLENDER:
         base: FloatProperty(
             name="Base Thickness", default=0.08, min=0.01, max=1.0,
             description="Thickness of the backing slab behind the strapwork")
+        surface: EnumProperty(
+            name="Surface",
+            items=[('PLANE', "Plane",
+                    "Lay the strapwork flat in the plane"),
+                   ('SPHERE', "Sphere (Stereographic)",
+                    "Project the strapwork conformally onto a sphere. "
+                    "Angles are exact, so the bands keep their crossing "
+                    "geometry; band widths are not preserved")],
+            default='PLANE',
+            description="Lay the strapwork flat, or project it onto a "
+                        "sphere. There is no Torus option: a torus "
+                        "needs the bands to close across the seam, and "
+                        "the band tracing here runs on an open patch")
+        sphere_radius: FloatProperty(
+            name="Sphere Radius", default=1.0, min=0.1, max=10.0,
+            description="Radius of the sphere (only affects the Sphere "
+                        "surface)")
+        sphere_spread: FloatProperty(
+            name="Spread", default=1.0, min=0.1, max=4.0,
+            description="How far round the sphere the pattern reaches: "
+                        "1 puts the patch edge on the equator, higher "
+                        "wraps further toward the north-pole puncture "
+                        "(only affects the Sphere surface)")
         separate: BoolProperty(
             name="Separate Motifs", default=False,
             description="Output each tile's motif as its own mesh "
@@ -1584,6 +1607,19 @@ if _IN_BLENDER:
                 self.smoothness, motif, star_d, self.rosette_frac,
                 self.interlace, self.interlace_mode, self.weave_height,
                 self.girih_gens)
+            if self.surface == 'SPHERE' and cells:
+                allv = np.vstack([np.asarray(cv, float)
+                                  for cv, _cf, _cm in cells if cv])
+                lo, hi = allv[:, :2].min(axis=0), allv[:, :2].max(axis=0)
+                half = 0.5 * float(max(hi - lo))
+                surf = pc.StereographicSurface(
+                    self.sphere_radius,
+                    max(half / max(self.sphere_spread, 1e-6), 1e-9),
+                    0.5 * (lo + hi))
+                # the bands are already densely sampled (mitred, and
+                # Catmull-Rom subdivided when curved), so a post-hoc warp
+                # needs no extra refinement -- see warp_cells' docstring
+                cells = pc.warp_cells(cells, surf)
             obj = pc.emit(context, "Islamic Star", cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -1623,6 +1659,10 @@ if _IN_BLENDER:
             lay.prop(self, 'curved')
             if self.curved:
                 lay.prop(self, 'smoothness')
+            lay.prop(self, 'surface')
+            if self.surface == 'SPHERE':
+                lay.prop(self, 'sphere_radius')
+                lay.prop(self, 'sphere_spread')
             lay.prop(self, 'output')
             if self.output == 'RIBBON':
                 lay.prop(self, 'color_by')
