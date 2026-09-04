@@ -36,6 +36,11 @@ operators stay in their flat generator modules.  Layout follows
                 of +Z.  The torus is a genuine quotient (so a
                 lattice-commensurate tiling is seamless); the sphere is a
                 chart, and says so.
+    spherical_kites  the spherical kite lattices (deltoidal
+                icositetrahedron and hexecontahedron) and the search for
+                a spherical analogue of the hat.  Not re-exported below:
+                it is a research module with a self-test, reached as
+                `patterns.spherical_kites`.
     substitution  prototiles + inflation rules over planar similarities
                 (z -> Az + B conj z + C, so reflections are expressible
                 and the hat is representable).  Expansion returns
