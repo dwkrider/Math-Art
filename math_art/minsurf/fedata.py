@@ -247,7 +247,7 @@ def _statements(body):
 
 
 def _read_with_includes(path, depth=0):
-    """Read a datafile, splicing in whatever it `#include`s.
+    """Read a datafile, splicing in whatever it `#include`s or `read`s.
 
     Neovius' N14, N26 and N38 keep their symmetry in a shared
     `cube_transforms.inc` -- twenty-two generators for the cube group --
@@ -256,6 +256,21 @@ def _read_with_includes(path, depth=0):
     `othercube := transform_expr "jhflal"` refers to letters that do not
     exist and the surface has no cell to build.  The include sits beside
     the datafile in the same mirror.
+
+    Evolver's own `read "file.cmd"` is followed too.  Six of the eight
+    starfish keep their cell words (`cube`, `cubelet`, `rhomb`) ONLY in
+    the shared `starfish_transforms.cmd`; the two that also define them
+    inline were the only ones getting a cell.  Only a `read` at column 0
+    counts: the reads buried in command bodies are indented or mid-line
+    (`  read "params.txt";` in the disphenoids,
+    `search := { read "param31.cmd"; ...` in the starfish), refer to
+    files the run itself writes, and would splice text into the middle
+    of a command; and the bare `read` that opens the command section has
+    no quoted name, so it never matches.  `cube_views.cmd` is left out
+    on purpose: it is branch-conditional on `cube_symmetry_type`, the
+    flat word regex would harvest every branch (its last branch's
+    `pair`/`tetra` are wrong for the Neovius files), and `_shared_words`
+    already reads the RIGHT branch.
     """
     text = open(path, encoding='utf-8', errors='replace').read()
     if depth > 4:
@@ -270,7 +285,14 @@ def _read_with_includes(path, depth=0):
                 return _read_with_includes(p, depth + 1)
         return ''            # absent include: read what we can
 
-    return re.sub(r'^[ \t]*#include\s+"([^"]+)"[^\n]*$', splice, text,
+    def splice_read(m):
+        if m.group(1).lower() == 'cube_views.cmd':
+            return ''
+        return splice(m)
+
+    text = re.sub(r'^[ \t]*#include\s+"([^"]+)"[^\n]*$', splice, text,
+                  flags=re.M)
+    return re.sub(r'^read[ \t]+"([^"]+)"[ \t]*$', splice_read, text,
                   flags=re.M)
 
 
