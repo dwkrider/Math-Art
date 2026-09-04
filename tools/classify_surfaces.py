@@ -112,6 +112,18 @@ def system_of(axes, bbox):
     square prism does not -- so that test comes first and does not care
     what the bounding box looks like.
     """
+    # THE ASSEMBLED CELL DECIDES FIRST.  A cell whose three spans agree
+    # is built on a cube, and that is the whole question being asked --
+    # "does this surface have a cubic unit cell" -- so it beats any
+    # inference from the point group.  Running the axis test first
+    # classified Schwarz P, Schwarz D, Neovius, p.14, the batwing and
+    # all eight starfish as non-cubic while their cells measure exactly
+    # cubic, because the 3-fold diagonal that names a cubic lattice is
+    # not always reachable from the word's own generators.
+    if bbox is not None:
+        a, b, c = sorted(float(x) for x in bbox)
+        if c > 0 and (c - a) <= 0.03 * c:
+            return 'CUBIC'
     if not axes:
         return None
     def is_diag(a):

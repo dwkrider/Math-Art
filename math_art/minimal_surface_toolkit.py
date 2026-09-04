@@ -537,6 +537,30 @@ if _IN_BLENDER:
             return _SURF_ITEMS_ALL
         return _SURF_ITEMS_FAM.get(self.family, _SURF_ITEMS_ALL)
 
+    # Where each family lands when you switch to it.  A dynamic enum has
+    # no `default=` -- Blender takes the first item, which under
+    # alphabetical order would open TPMS Cubic on "Brakke
+    # Pseudo-Batwing".  The gyroid is the surface people come to that
+    # family for, so switching lands there while the LIST stays
+    # alphabetical; the two would otherwise be in conflict.
+    _FAMILY_HOME = {'CUBIC': 'G'}
+
+    def _on_family(self, context):
+        want = _FAMILY_HOME.get(self.periodicity)
+        if not want:
+            return
+        items = _PERIODIC_ITEMS.get(self.periodicity) or ()
+        keys = [it[0] for it in items]
+        if want not in keys or self.surface in keys:
+            return          # already inside this family: leave the choice
+        try:
+            # by INDEX: a dynamic enum stores its value positionally, and
+            # assigning the identifier can raise while the callback that
+            # builds the list is itself mid-flight.
+            self['surface'] = keys.index(want)
+        except Exception:   # noqa: BLE001
+            pass
+
     def _periodic_surface_items(self, context):
         # Same context=None -> full-union fallback contract as above, so
         # scripted mesh.periodic_minimal_add(surface='G') keeps working.
@@ -982,6 +1006,7 @@ if _IN_BLENDER:
         periodicity: EnumProperty(
             name="Family",
             items=_PERIODICITY_ITEMS,
+            update=_on_family,
             description="Which family to choose the surface from: singly "
                         "or doubly periodic (Weierstrass-Enneper), triply "
                         "periodic (nodal TPMS), or the exact set; filters "
@@ -1074,8 +1099,13 @@ if _IN_BLENDER:
         # legacy scalar alias (not shown): scripted
         # periodic_minimal_add(surface=..., cells=3) still works and
         # broadcasts to every tiling axis left at its default (1).
+        # Default 4, not 2: nothing in the UI sets this any more, so it
+        # has to arrive at the value that grows the most complete cell
+        # by itself.  The builder stops on its own once the orbit no
+        # longer verifies as a single sheet, so asking for the maximum
+        # costs nothing on a row that closes earlier.
         reflect_depth: IntProperty(
-            name="Reflections", default=2, min=1, max=4,
+            name="Reflections", default=4, min=1, max=4,
             description="How far to reflect the fundamental piece in "
                         "its own boundary symmetry planes.  1 shows the "
                         "bare piece; each step up adds another round of "
@@ -1415,23 +1445,21 @@ if _IN_BLENDER:
                     lay.prop(self, 'cells_u', text="Cells X")
                     lay.prop(self, 'cells_v', text="Cells Y")
                     lay.prop(self, 'cells_w', text="Cells Z")
-                    # Reflections stays, because for these rows it is a
-                    # DIFFERENT control rather than the same one twice.
-                    # Most cannot close a full unit cell, and there is
-                    # nothing to array until they do: reflecting in the
-                    # boundary curves that are symmetry elements is what
-                    # grows the fundamental piece into a recognisable
-                    # part of the surface in the first place, and the
-                    # builder backs off by itself once the orbit stops
-                    # verifying.  Reflections builds the cell; the
-                    # counts repeat it.
+                    # Reflections is NOT shown.  It was a second way to
+                    # say "more surface", from when these rows could not
+                    # close a unit cell and had to be grown by reflecting
+                    # the fundamental piece.  They close one now, so the
+                    # question a reader has is only how many cells to
+                    # lay down, and two controls for that invite the
+                    # wrong one.  The property still exists and scripted
+                    # calls still honour it; the builder just runs it up
+                    # to its own limit on its own.
                     #
                     # Level Offset and Cell Aspect stay hidden: both are
                     # properties of a NODAL field (the constant c in
                     # F = c, and the c/a ratio of the sampling cell) and
                     # neither exists for a surface integrated from its
                     # Weierstrass data.
-                    lay.prop(self, 'reflect_depth')
                     if self.surface == 'GW_CONJ':
                         lay.prop(self, 'prism_height')
                     if _hex.spec_modulus_range(self.surface):
