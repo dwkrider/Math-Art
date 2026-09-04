@@ -1129,6 +1129,239 @@ def _tag_of(color_by, typ, cluster, level):
     return int(typ)
 
 
+# --------------------------------------------------------------------
+# Periodic layout: the hat-family members that DO tile a torus
+# --------------------------------------------------------------------
+#
+# A defect-free tiling of a flat torus lifts to a lattice-periodic tiling
+# of the plane, so an aperiodic tile set can never tile any torus -- for
+# the hat and the turtle and the curved Spectre this is not a hard case,
+# it is the Smith-Myers-Kaplan-Goodman-Strauss theorem.
+#
+# The Tile(a,b) continuum has exactly three exceptions, and they are the
+# reason a torus mode is worth building at all:
+#
+#   CHEVRON  Tile(0,1), the b-only degenerate endpoint.  With a = 0 the
+#       eight a-edges vanish and the 14-gon collapses to a hexagon with a
+#       single reflex vertex -- a four-triangle POLYIAMOND on the
+#       triangular lattice spanned by (sqrt3/2, 1/2) and (0, 1).  One
+#       tile, rotated 60 degrees, tiles the torus R^2/Lambda for
+#       Lambda = Z(sqrt3/2, 1/2) + Z(0, 2).
+#
+#   COMET  Tile(1,0), the a-only endpoint: an eight-triangle polyiamond
+#       on the triangular lattice spanned by (1, 0) and (1/2, sqrt3/2).
+#       One REFLECTED tile, rotated -120 degrees, tiles the torus for
+#       Lambda = Z(2, 0) + Z(0, sqrt3).
+#
+#   SPECTRE (straight)  Tile(1,1), the equilateral member.  Periodic only
+#       because reflections are allowed; curving its edges removes that
+#       freedom and is exactly what makes the curved Spectre a strict
+#       chiral aperiodic monotile.
+#
+# Both lattices below were found by exact cover on the triangular lattice
+# (the members are polyiamonds, so the search is finite and exact) and
+# are re-verified here at import-test time by `_torus_coverage`: gapless,
+# overlap-free, and area-exact against |det Lambda|.  Neither is an
+# approximation and neither has a seam.
+#
+# The lattices are SKEW, which is why the surface layer carries
+# `LatticeTorusSurface`: shearing the plane to make Lambda rectangular
+# would deform every tile, so the donut is parameterised by lattice
+# coordinates instead.
+
+_PERIODIC = {
+    'CHEVRON': {
+        'v1': (_SQ3 / 2.0, 0.5),
+        'v2': (0.0, 2.0),
+        'tiles': ((60.0, False, (0.0, 0.0)),),
+    },
+    'COMET': {
+        'v1': (2.0, 0.0),
+        'v2': (0.0, _SQ3),
+        'tiles': ((-120.0, True, (1.0, 0.0)),),
+    },
+}
+
+
+# CUSTOM lands on a periodic member only at the three exact semi-angles.
+_CUSTOM_PERIODIC = {0.0: 'COMET', 45.0: 'SPECTRE', 90.0: 'CHEVRON'}
+
+
+def _place_tile(base, deg, mirror, t):
+    """Rigid image of a base outline: optional mirror in x, then rotation
+    by `deg` degrees, then translation."""
+    P = np.asarray(base, float)
+    if mirror:
+        P = P * np.array([-1.0, 1.0])
+    a = radians(deg)
+    c, s = cos(a), sin(a)
+    R = np.array([[c, -s], [s, c]])
+    return P @ R.T + np.asarray(t, float)
+
+
+def periodic_member(kind, semi_angle=60.0, spectre_curved=True):
+    """The periodic-layout key for a kind, or None if this member
+    provably cannot tile a torus.
+
+    CUSTOM resolves to a preset only at the three exact semi-angles; the
+    curved Spectre resolves to None, because the S-curve is precisely
+    what destroys the reflected matings the straight tile needs."""
+    if kind == 'SPECTRE':
+        return None if spectre_curved else 'SPECTRE'
+    if kind == 'CUSTOM':
+        for ang, member in _CUSTOM_PERIODIC.items():
+            if abs(float(semi_angle) - ang) < 1e-6:
+                return member
+        return None
+    return kind if kind in _PERIODIC else None
+
+
+def torus_status(kind, semi_angle=60.0, spectre_curved=True):
+    """How this member stands with respect to tiling a torus.
+
+    'EXACT'       a verified lattice is in `_PERIODIC`; the torus closes.
+    'IMPOSSIBLE'  the member is aperiodic, so NO torus tiling exists --
+                  a theorem, not a gap in this add-on.
+    'PENDING'     a periodic tiling is known to exist but this add-on
+                  does not carry its lattice yet.
+
+    The distinction between the last two is the whole point of having
+    three states: reporting "impossible" for the straight Tile(1,1),
+    which demonstrably does tile periodically, would be a false claim
+    about the mathematics rather than an honest admission about the
+    code."""
+    member = periodic_member(kind, semi_angle, spectre_curved)
+    if member is None:
+        return 'IMPOSSIBLE'
+    return 'EXACT' if member in _PERIODIC else 'PENDING'
+
+
+def tiles_a_torus(kind, semi_angle=60.0, spectre_curved=True):
+    """Whether this member can be laid on a torus by this add-on today.
+
+    False covers both the provably impossible members and the ones whose
+    lattice is merely not implemented; use `torus_status` when the
+    difference matters, which for anything user-facing it does."""
+    return torus_status(kind, semi_angle, spectre_curved) == 'EXACT'
+
+
+def periodic_lattice(kind, semi_angle=60.0, spectre_curved=True):
+    """(v1, v2, placements) for a member that tiles a torus, else None.
+
+    `placements` is a tuple of (rotation degrees, mirrored, translation),
+    each applied to the member's own deduped outline."""
+    member = periodic_member(kind, semi_angle, spectre_curved)
+    if member not in _PERIODIC:
+        return None
+    spec = _PERIODIC[member]
+    return (np.array(spec['v1'], float), np.array(spec['v2'], float),
+            spec['tiles'])
+
+
+def _periodic_base(member):
+    """The deduped outline of a periodic member, at its exact (a, b)."""
+    a, b = _TILE_PRESETS[member]
+    return np.asarray(_dedupe_poly(_tile_ab_outline(a, b)), float)
+
+
+def periodic_tiles(kind, nx=1, ny=1, semi_angle=60.0,
+                   spectre_curved=True):
+    """Tagged 4-tuples (type, poly, cluster, level) for an nx x ny block
+    of fundamental domains, or None if the member cannot tile a torus.
+
+    The 4-tuple shape is deliberately the one `_hatfamily_tiles` emits,
+    so this drops into `aperiodic_patch`'s existing tagged branch and
+    inherits colouring, winding and the whole downstream engine."""
+    member = periodic_member(kind, semi_angle, spectre_curved)
+    if member not in _PERIODIC:
+        return None
+    v1, v2, placements = periodic_lattice(kind, semi_angle, spectre_curved)
+    base = _periodic_base(member)
+    out = []
+    for i in range(int(nx)):
+        for j in range(int(ny)):
+            off = i * v1 + j * v2
+            for k, (deg, mirror, t) in enumerate(placements):
+                poly = _place_tile(base, deg, mirror, np.asarray(t) + off)
+                out.append((1 if mirror else 0, poly, k, 0))
+    return out
+
+
+# --------------------------------------------------------------------
+# Torus verification and seam measurement
+# --------------------------------------------------------------------
+
+def _wrap_polys(polys, v1, v2):
+    """Translate every tile by the lattice vector carrying its centroid
+    into the fundamental domain.  Tiles stay WHOLE -- a tile straddling
+    the identification sticks out on one side and its image covers the
+    other, which is exactly the behaviour a real torus tiling has."""
+    B = np.array([v1, v2], float).T
+    Binv = np.linalg.inv(B)
+    out = []
+    for p in polys:
+        P = np.asarray(p, float)
+        st = Binv @ P.mean(axis=0)
+        out.append(P - B @ np.floor(st))
+    return out
+
+
+def _torus_coverage(polys, v1, v2, samples=24, off=(0.0137, 0.0071)):
+    """Coverage of the torus R^2/(v1, v2) by a tile list: for each sample
+    point of the fundamental domain, how many tiles cover it once every
+    lattice image is taken into account.
+
+    Returns (n_gap, n_over, seam) -- points covered by no tile, points
+    covered by more than one, and the set of tile indices caught
+    overlapping.  An exact torus tiling has both counts zero and an empty
+    seam set.  The grid is nudged by `off` so samples do not land on tile
+    edges, the same tolerance strategy `_coverage` uses for the planar
+    patches.
+
+    The nine lattice images are built once up front: rebuilding them per
+    sample point turns the bounding-box prune into the slowest part of
+    the check rather than the fastest."""
+    wrapped = _wrap_polys(polys, v1, v2)
+    v1 = np.asarray(v1, float)
+    v2 = np.asarray(v2, float)
+    images = []                       # (poly, lo, hi, originating tile)
+    for i in (-1, 0, 1):
+        for j in (-1, 0, 1):
+            d = i * v1 + j * v2
+            for idx, P in enumerate(wrapped):
+                Q = P + d
+                images.append((Q, Q.min(axis=0), Q.max(axis=0), idx))
+
+    gaps = over = 0
+    seam = set()
+    for si in range(samples):
+        for sj in range(samples):
+            s = (si + off[0]) / samples
+            t = (sj + off[1]) / samples
+            px, py = s * v1 + t * v2
+            hits = []
+            for Q, lo, hi, idx in images:
+                if (lo[0] <= px <= hi[0] and lo[1] <= py <= hi[1]
+                        and tg._pip(Q, px, py)):
+                    hits.append(idx)
+            if not hits:
+                gaps += 1
+            elif len(hits) > 1:
+                over += 1
+                seam.update(hits)
+    return gaps, over, seam
+
+
+def torus_defect(polys, v1, v2, samples=24):
+    """(gaps, overlaps) of a tile list laid on the torus R^2/(v1, v2).
+
+    Zero and zero means the tiling closes up.  Anything else is the
+    measured size of the fault -- which for an aperiodic member is not a
+    bug to fix but the theorem showing itself."""
+    gaps, over, _ = _torus_coverage(polys, v1, v2, samples)
+    return gaps, over
+
+
 def aperiodic_patch(kind, generations, seed='SUN', phase=0.0,
                     asymmetry=0.0, semi_angle=60.0, spectre_curved=True,
                     color_by='TYPE'):
@@ -1182,6 +1415,102 @@ def aperiodic_patch(kind, generations, seed='SUN', phase=0.0,
     return polys, types
 
 
+# Material index reserved for tiles that fail to mate across a seam.
+SEAM_MAT = 7
+
+
+def aperiodic_torus(kind, nx=1, ny=1, generations=3, seed='SUN',
+                    semi_angle=60.0, spectre_curved=True,
+                    color_by='TYPE', allow_seam=False, samples=24,
+                    window=0.5):
+    """Return (polys, types, info) for a tiling laid on a flat torus.
+
+    For a member that admits a periodic tiling -- chevron, comet, the
+    straight Tile(1,1) -- this is exact: the tiles descend to the torus
+    R^2/Lambda with no seam and no defect, and `info['gaps']` and
+    `info['overlaps']` are both zero.
+
+    For every other member the tiling is IMPOSSIBLE, not merely hard, and
+    the default is to refuse.  With `allow_seam` the substitution patch is
+    wrapped onto the torus spanned by its own bounding box anyway; the
+    fault is then measured rather than hidden, and the tiles caught
+    overlapping are recoloured to `SEAM_MAT` so the fault line is visible
+    in the result.  A seamed wrap that reported no defect would be a
+    refutation of the aperiodicity theorem, so the count is worth
+    reading.
+
+    `window` is the fraction of the patch bounding box used as the
+    imposed torus domain in the seamed case; it is ignored when the
+    member is genuinely periodic.
+
+    info keys: 'v1', 'v2' (the torus lattice), 'periodic' (bool),
+    'gaps', 'overlaps', 'seam' (number of tiles recoloured), 'tiles'.
+    """
+    member = periodic_member(kind, semi_angle, spectre_curved)
+    tagged = periodic_tiles(kind, nx, ny, semi_angle, spectre_curved)
+
+    if tagged is not None:
+        v1, v2, _ = periodic_lattice(kind, semi_angle, spectre_curved)
+        lv1, lv2 = v1 * float(nx), v2 * float(ny)
+        polys, types = [], []
+        for t, poly, cluster, level in tagged:
+            polys.append(_ensure_ccw(np.asarray(poly, float)))
+            types.append(_tag_of(color_by, t, cluster, level))
+        gaps, over, _seam = _torus_coverage(polys, lv1, lv2, samples)
+        info = {'v1': lv1, 'v2': lv2, 'periodic': True, 'gaps': gaps,
+                'overlaps': over, 'seam': 0, 'tiles': len(polys),
+                'member': member}
+        return polys, types, info
+
+    status = torus_status(kind, semi_angle, spectre_curved)
+    if not allow_seam:
+        if status == 'PENDING':
+            raise ValueError(
+                "the straight Tile(1,1) does tile a torus -- it is "
+                "periodic once reflected copies are allowed -- but this "
+                "add-on does not carry its lattice yet. Enable Allow "
+                "Seam to wrap a patch in the meantime.")
+        raise ValueError(
+            "%s admits no periodic tiling, so it cannot tile a torus: a "
+            "torus tiling lifts to a lattice-periodic tiling of the "
+            "plane, and this tile set has none. Enable Allow Seam to "
+            "wrap a patch anyway and see the fault." % kind)
+
+    # The seamed wrap.  No lattice exists, so a rectangle is imposed on
+    # the patch and its opposite sides are identified regardless.  The
+    # window is taken STRICTLY INSIDE the patch: wrapping the full
+    # bounding box would report the ragged corners outside the blob as
+    # "gaps", measuring the patch's outline rather than the fault we care
+    # about.  Tiles are kept whole when their centroid falls in the
+    # window, so a tile overhanging the right edge wraps round and lands
+    # on top of one already at the left -- and that collision is the
+    # honest measure of what a non-periodic tile does to a torus.
+    polys, types = aperiodic_patch(
+        kind, generations, seed, 0.0, 0.0, semi_angle, spectre_curved,
+        color_by)
+    if not polys:
+        raise ValueError("no tiling generated")
+    allp = np.vstack(polys)
+    lo, hi = allp.min(axis=0), allp.max(axis=0)
+    mid = 0.5 * (lo + hi)
+    half = 0.5 * (hi - lo) * float(window)
+    rlo, rhi = mid - half, mid + half
+    keep = [i for i, p in enumerate(polys)
+            if np.all(p.mean(axis=0) >= rlo) and np.all(p.mean(axis=0) <= rhi)]
+    if not keep:
+        raise ValueError("seam window kept no tiles; raise generations")
+    polys = [np.asarray(polys[i], float) - rlo for i in keep]
+    types = [types[i] for i in keep]
+    lv1 = np.array([2.0 * half[0], 0.0])
+    lv2 = np.array([0.0, 2.0 * half[1]])
+    gaps, over, seam = _torus_coverage(polys, lv1, lv2, samples)
+    types = [SEAM_MAT if i in seam else t for i, t in enumerate(types)]
+    info = {'v1': lv1, 'v2': lv2, 'periodic': False, 'gaps': gaps,
+            'overlaps': over, 'seam': len(seam), 'tiles': len(polys),
+            'member': member}
+    return polys, types, info
+
+
 # --------------------------------------------------------------------
 # Blender operator
 # --------------------------------------------------------------------
@@ -1225,6 +1554,22 @@ P2_SEED_ITEMS = [
      "Deflate from Conway's cartwheel -- a central decagon hub ringed by "
      "ten spokes (the sun grown by two coronas)"),
 ]
+
+
+LAYOUT_ITEMS = [
+    ('PATCH', "Plane Patch",
+     "A finite patch of the tiling, laid flat in the plane"),
+    ('TORUS', "Flat Torus",
+     "Lay the tiling on a flat torus, drawn as a donut. Exact for the "
+     "hat-family members that admit a periodic tiling; impossible for "
+     "every aperiodic one"),
+]
+
+
+# The kinds for which a torus layout is even offered: the hat family and
+# the Spectre.  The Penrose and Ammann-Beenker backends have no periodic
+# member at all, so a Layout selector there would promise nothing.
+_TORUS_KINDS = _HAT_FAMILY + ('SPECTRE',)
 
 
 try:
@@ -1305,19 +1650,80 @@ if _IN_BLENDER:
             description="Replace each Spectre edge with the standard "
                         "S-curve, giving the strictly chiral tile (only "
                         "affects Spectre)")
+        layout_mode: EnumProperty(
+            name="Layout", items=LAYOUT_ITEMS, default='PATCH',
+            description="Lay the tiles as a flat patch of the plane, or "
+                        "on a flat torus (only the hat-family members "
+                        "that admit a periodic tiling can close up)")
+        torus_nx: IntProperty(
+            name="Domains Around", default=3, min=1, max=24,
+            description="Fundamental domains around the torus's major "
+                        "circle (only affects the Torus layout)")
+        torus_ny: IntProperty(
+            name="Domains Through", default=2, min=1, max=24,
+            description="Fundamental domains around the torus's minor "
+                        "circle (only affects the Torus layout)")
+        torus_major: FloatProperty(
+            name="Major Radius", default=1.0, min=0.1, max=10.0,
+            description="Distance from the torus centre to the tube "
+                        "centre (only affects the Torus layout)")
+        torus_minor: FloatProperty(
+            name="Minor Radius", default=0.4, min=0.01, max=5.0,
+            description="Radius of the torus tube (only affects the "
+                        "Torus layout)")
+        allow_seam: BoolProperty(
+            name="Allow Seam", default=False,
+            description="Wrap a patch of an APERIODIC member onto the "
+                        "torus anyway, accepting a fault line. No "
+                        "aperiodic tile set can tile a torus, so the "
+                        "result has genuine gaps and overlaps; the tiles "
+                        "that fail to mate are recoloured and counted")
 
-        def execute(self, context):
-            polys, types = aperiodic_patch(
-                self.kind, self.generations, self.seed, self.phase,
-                self.asymmetry, self.semi_angle, self.spectre_curved,
-                self.color_by)
-            # CLUSTER / SUPERTILE_LEVEL are already baked into `types`, so
-            # feed cells_from_polys plain TYPE coloring (or UNIFORM).
+        def _build_torus(self):
+            """(cells, label suffix, report string) for the torus layout."""
+            polys, types, info = aperiodic_torus(
+                self.kind, self.torus_nx, self.torus_ny,
+                self.generations, self.seed, self.semi_angle,
+                self.spectre_curved, self.color_by, self.allow_seam)
+            surf = pc.LatticeTorusSurface(
+                info['v1'], info['v2'], self.torus_major,
+                self.torus_minor)
             cb = 'UNIFORM' if self.color_by == 'UNIFORM' else 'TYPE'
             cells = tg.cells_from_polys(
                 lambda a, b: (polys, types), 1, 1, cb,
-                self.margin, self.height, self.trim)
+                self.margin, self.height, False, surf=surf)
+            if info['periodic']:
+                msg = ("torus closes: %d tiles, no gaps, no overlaps"
+                       % info['tiles'])
+            else:
+                msg = ("SEAMED: %d tiles, %d gap and %d overlap samples, "
+                       "%d tiles recoloured -- %s admits no periodic "
+                       "tiling" % (info['tiles'], info['gaps'],
+                                   info['overlaps'], info['seam'],
+                                   self.kind))
+            return cells, msg, info
+
+        def execute(self, context):
             label = dict((k, v) for k, v, _ in KIND_ITEMS)[self.kind]
+            extra = ""
+            if self.layout_mode == 'TORUS':
+                try:
+                    cells, extra, _info = self._build_torus()
+                except ValueError as exc:
+                    self.report({'ERROR'}, str(exc))
+                    return {'CANCELLED'}
+            else:
+                polys, types = aperiodic_patch(
+                    self.kind, self.generations, self.seed, self.phase,
+                    self.asymmetry, self.semi_angle, self.spectre_curved,
+                    self.color_by)
+                # CLUSTER / SUPERTILE_LEVEL are already baked into
+                # `types`, so feed cells_from_polys plain TYPE coloring
+                # (or UNIFORM).
+                cb = 'UNIFORM' if self.color_by == 'UNIFORM' else 'TYPE'
+                cells = tg.cells_from_polys(
+                    lambda a, b: (polys, types), 1, 1, cb,
+                    self.margin, self.height, self.trim)
             obj = pc.emit(context, "Aperiodic %s" % label, cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -1325,12 +1731,11 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             obj["math_art_pattern"] = True
             if obj.type == 'MESH':
-                self.report({'INFO'}, "%s  V=%d F=%d" %
-                            (label, len(obj.data.vertices),
-                             len(obj.data.polygons)))
+                head = "%s  V=%d F=%d" % (label, len(obj.data.vertices),
+                                          len(obj.data.polygons))
             else:
-                self.report({'INFO'}, "%s  %d tiles" %
-                            (label, len(obj.children)))
+                head = "%s  %d tiles" % (label, len(obj.children))
+            self.report({'INFO'}, head + ("  |  " + extra if extra else ""))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -1346,9 +1751,32 @@ if _IN_BLENDER:
                 lay.prop(self, 'semi_angle')
             if self.kind == 'SPECTRE':
                 lay.prop(self, 'spectre_curved')
+            if self.kind in _TORUS_KINDS:
+                lay.prop(self, 'layout_mode')
+            if self.layout_mode == 'TORUS' and self.kind in _TORUS_KINDS:
+                status = torus_status(self.kind, self.semi_angle,
+                                      self.spectre_curved)
+                box = lay.box()
+                if status == 'EXACT':
+                    box.label(text="This member tiles the torus exactly",
+                              icon='CHECKMARK')
+                elif status == 'PENDING':
+                    box.label(text="Periodic, but no lattice yet",
+                              icon='INFO')
+                    box.label(text="straight Tile(1,1) does tile a torus")
+                    box.prop(self, 'allow_seam')
+                else:
+                    box.label(text="No periodic tiling exists",
+                              icon='ERROR')
+                    box.label(text="a torus tiling would be periodic")
+                    box.prop(self, 'allow_seam')
+                for p in ('torus_nx', 'torus_ny', 'torus_major',
+                          'torus_minor'):
+                    lay.prop(self, p)
             for p in ('generations', 'color_by', 'margin', 'height'):
                 lay.prop(self, p)
-            lay.prop(self, 'trim')
+            if self.layout_mode != 'TORUS':
+                lay.prop(self, 'trim')
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
 
@@ -1516,6 +1944,97 @@ def _mono_half(polys, frac=0.20):
     return frac * ext
 
 
+def _torus_selftest():
+    """The torus layout, in two halves that have to BOTH hold.
+
+    Positive: every member that claims a periodic tiling really has one
+    -- gapless, overlap-free, and area-exact against |det Lambda|.
+
+    Negative: every member that does not must REFUSE by default, and
+    under allow_seam must report a NON-ZERO defect.  The second half
+    matters as much as the first: a seamed wrap reporting no fault would
+    be either a broken detector or a refutation of the aperiodicity
+    theorem, and neither should pass quietly."""
+    ok = True
+
+    for member in sorted(_PERIODIC):
+        v1, v2, placements = periodic_lattice(member)
+        base = _periodic_base(member)
+        area = abs(_signed_area(base)) * len(placements)
+        det = abs(float(v1[0] * v2[1] - v1[1] * v2[0]))
+        polys, _types, info = aperiodic_torus(member, nx=2, ny=2)
+        exact = (info['gaps'] == 0 and info['overlaps'] == 0)
+        area_ok = abs(area - det) < 1e-9
+        good = exact and area_ok
+        ok = ok and good
+        print("%-16s tiles=%-3d gaps=%d over=%d  area %.6f == |det| "
+              "%.6f  %s" % ("  torus " + member.lower(), info['tiles'],
+                            info['gaps'], info['overlaps'], area, det,
+                            "OK" if good else "BAD"))
+
+    # CUSTOM must reach the same two members at the exact semi-angles,
+    # and must NOT claim a torus anywhere between them.
+    hits = [(ang, periodic_member('CUSTOM', ang))
+            for ang in (0.0, 45.0, 90.0)]
+    between = [ang for ang in (10.0, 30.0, 60.0, 75.0)
+               if tiles_a_torus('CUSTOM', ang)]
+    good = (hits == [(0.0, 'COMET'), (45.0, 'SPECTRE'),
+                     (90.0, 'CHEVRON')] and not between)
+    ok = ok and good
+    print("%-16s exact angles %s, none between  %s"
+          % ("  torus custom", [h[1] for h in hits],
+             "OK" if good else "BAD"))
+
+    # The three-way classification must not blur "no such tiling exists"
+    # into "we have not built it".  The curved Spectre is IMPOSSIBLE; its
+    # straight twin is PENDING -- periodic in the mathematics, lattice
+    # not carried here yet.  Same 14 edges, same angles; only the S-curve
+    # decides which side of that line the tile falls on.
+    cases = {
+        ('CHEVRON', True): 'EXACT',
+        ('COMET', True): 'EXACT',
+        ('HAT', True): 'IMPOSSIBLE',
+        ('TURTLE', True): 'IMPOSSIBLE',
+        ('SPECTRE', True): 'IMPOSSIBLE',      # curved
+        ('SPECTRE', False): 'PENDING',        # straight
+    }
+    bad = {k: torus_status(k[0], spectre_curved=k[1])
+           for k in cases
+           if torus_status(k[0], spectre_curved=k[1]) != cases[k]}
+    good = not bad
+    ok = ok and good
+    print("%-16s curved=IMPOSSIBLE straight=PENDING  %s"
+          % ("  torus status", "OK" if good else "BAD %s" % bad))
+
+    # Negative half A: refusal is the default.
+    refused = []
+    for kind in ('HAT', 'TURTLE', 'SPECTRE'):
+        try:
+            aperiodic_torus(kind, generations=1)
+            refused.append((kind, False))
+        except ValueError:
+            refused.append((kind, True))
+    good = all(r for _k, r in refused)
+    ok = ok and good
+    print("%-16s hat/turtle/curved-spectre refuse  %s"
+          % ("  torus refuse", "OK" if good else "BAD"))
+
+    # Negative half B: with allow_seam the fault must be MEASURED, not
+    # zero.  A gapless, overlap-free seamed wrap would refute SMKG 2023.
+    for kind in ('HAT', 'SPECTRE'):
+        _p, _t, info = aperiodic_torus(kind, generations=3,
+                                       allow_seam=True)
+        broken = (info['gaps'] > 0 or info['overlaps'] > 0)
+        tagged = info['seam'] > 0
+        good = broken and tagged and not info['periodic']
+        ok = ok and good
+        print("%-16s tiles=%-3d gaps=%d over=%d seam-tiles=%d  %s"
+              % ("  seam " + kind.lower(), info['tiles'], info['gaps'],
+                 info['overlaps'], info['seam'],
+                 "OK" if good else "BAD"))
+    return ok
+
+
 def _selftest():
     all_ok = True
     n_samples = _COV_SAMPLES * _COV_SAMPLES      # _coverage grid size
@@ -1598,5 +2117,7 @@ def _selftest():
                   % ("  spectre curve", c_cov, c_over, curved_more,
                      "OK" if cur_ok else "BAD"))
             all_ok = all_ok and cur_ok
+
+    all_ok = _torus_selftest() and all_ok
     print("RESULT:", "OK" if all_ok else "BAD")
     assert all_ok

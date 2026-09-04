@@ -170,6 +170,54 @@ class TorusSurface(Surface):
         return pos, nrm
 
 
+class LatticeTorusSurface(Surface):
+    """The flat torus R^2 / Lambda for an arbitrary (possibly skew)
+    lattice Lambda = Z v1 + Z v2, drawn as a torus of revolution.
+
+    `TorusSurface` handles the special case where the lattice is the
+    axis-aligned rectangle (width, 0), (0, height).  Real tiling lattices
+    are rarely axis-aligned -- the chevron's is (sqrt3/2, 1/2), (0, 2) --
+    and shearing a tiling to make its lattice rectangular would deform
+    every tile.  Instead the domain point is expressed in LATTICE
+    coordinates (s, t), which are exactly the torus angles:
+
+        (s, t) = Lambda^-1 (p - origin),  u = 2 pi s,  v = 2 pi t
+
+    so p and p + m v1 + n v2 land on the same point of the donut for all
+    integers m, n.  The quotient is therefore exact for any lattice; only
+    the embedding distorts, which it must (see the module header).
+    """
+
+    def __init__(self, v1, v2, major=1.0, minor=0.4, origin=(0.0, 0.0)):
+        self.v1 = np.asarray(v1, float)
+        self.v2 = np.asarray(v2, float)
+        basis = np.array([self.v1, self.v2]).T
+        det = float(np.linalg.det(basis))
+        if abs(det) < 1e-12:
+            raise ValueError("torus lattice vectors are degenerate")
+        self._inv = np.linalg.inv(basis)
+        self.origin = np.asarray(origin, float)
+        self.major = float(major)
+        self.minor = float(minor)
+        self.periods = (None, None)          # not axis-aligned
+
+    def lattice_coords(self, pts):
+        """Domain points in lattice coordinates (s, t)."""
+        P = np.asarray(pts, float).reshape(-1, 2) - self.origin
+        return P @ self._inv.T
+
+    def at(self, pts):
+        st = self.lattice_coords(pts)
+        u = 2.0 * pi * st[:, 0]
+        v = 2.0 * pi * st[:, 1]
+        cu, su = np.cos(u), np.sin(u)
+        cv, sv = np.cos(v), np.sin(v)
+        ring = self.major + self.minor * cv
+        pos = np.column_stack([ring * cu, ring * su, self.minor * sv])
+        nrm = np.column_stack([cv * cu, cv * su, sv])
+        return pos, nrm
+
+
 class SphereSurface(Surface):
     """The sphere under the equirectangular chart: domain x is longitude
     over `width`, domain y is latitude over `height`.
@@ -487,6 +535,30 @@ def _selftest():
     ok &= good
     print("surfacemap: TORUS normal offset is the r+d torus "
           f"{'OK' if good else 'FAIL'}")
+
+    # A skew lattice torus must identify p with p + m v1 + n v2 exactly,
+    # or a tiling laid on its own lattice would not close up.
+    lv1, lv2 = (0.8660254037844386, 0.5), (0.0, 2.0)
+    lt = LatticeTorusSurface(lv1, lv2, 1.4, 0.5)
+    base = lt.at(dom)[0]
+    drift = 0.0
+    for m, n in ((1, 0), (0, 1), (2, -3)):
+        shifted = dom + m * np.asarray(lv1) + n * np.asarray(lv2)
+        drift = max(drift, float(np.max(np.abs(lt.at(shifted)[0] - base))))
+    good = drift < 1e-11
+    ok &= good
+    print(f"surfacemap: skew LATTICE torus identifies p ~ p + m v1 + n v2, "
+          f"max drift {drift:.1e} {'OK' if good else 'FAIL'}")
+
+    # ... and must agree with the axis-aligned torus when the lattice IS
+    # axis-aligned, or the two classes disagree about the same surface.
+    rect = LatticeTorusSurface((3.0, 0.0), (0.0, 2.0), R, r)
+    plain = TorusSurface(3.0, 2.0, R, r)
+    diff = float(np.max(np.abs(rect.at(dom)[0] - plain.at(dom)[0])))
+    good = diff < 1e-12
+    ok &= good
+    print(f"surfacemap: LATTICE torus matches TorusSurface on a rectangular "
+          f"lattice ({diff:.1e}) {'OK' if good else 'FAIL'}")
 
     # SPHERE: radius exact, normal radial.
     sph = SphereSurface(4.0, 2.0, 1.7)

@@ -71,10 +71,11 @@ from .overunder import ParityDSU, weave_zoff
 from .substitution import Similarity, Substitution, penrose_p3
 from .prisms import (center_scale, center_xy, merge_cells, prisms,
                      ribbon_polys, slab)
-from .surfacemap import (DEFAULT_MAX_EDGE, PlaneSurface, SphereSurface,
-                         Surface, TorusSurface, canonicalize_corners,
-                         edge_points, make_surface, refine_poly,
-                         refine_segment, surface_patch, surface_prisms)
+from .surfacemap import (DEFAULT_MAX_EDGE, LatticeTorusSurface,
+                         PlaneSurface, SphereSurface, Surface,
+                         TorusSurface, canonicalize_corners, edge_points,
+                         make_surface, refine_poly, refine_segment,
+                         surface_patch, surface_prisms)
 
 __all__ = [
     # orbifold signatures
@@ -138,6 +139,7 @@ __all__ = [
     "Surface",
     "PlaneSurface",
     "TorusSurface",
+    "LatticeTorusSurface",
     "SphereSurface",
     "make_surface",
     "refine_poly",
