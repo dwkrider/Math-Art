@@ -46,6 +46,48 @@ This operator offers that construction and two relatives that share the same sta
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/zonish__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/zonish__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/zonish__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__TT.png" width="200"><br><sub>Truncated Tetrahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/zonish__CO.png" width="200"><br><sub>Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__TC.png" width="200"><br><sub>Truncated Cube</sub></td>
+<td align="center"><img src="../images/variants/zonish__TO.png" width="200"><br><sub>Truncated Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/zonish__RCO.png" width="200"><br><sub>Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__TCO.png" width="200"><br><sub>Truncated Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__SC.png" width="200"><br><sub>Snub Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/zonish__ID.png" width="200"><br><sub>Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__TD.png" width="200"><br><sub>Truncated Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__TI.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/zonish__RID.png" width="200"><br><sub>Rhombicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__SD.png" width="200"><br><sub>Snub Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__RD.png" width="200"><br><sub>Rhombic Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/zonish__RT.png" width="200"><br><sub>Rhombic Triacontahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__KTC.png" width="200"><br><sub>Triakis Octahedron</sub></td>
+<td align="center"><img src="../images/variants/zonish__PKD.png" width="200"><br><sub>Pentakis Dodecahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Take a handful of drinking straws pointing in various directions. Lay copies of them out tip-to-tail in every possible combination and mark every point you can reach; the solid boundary of all those reachable points is a **zonohedron**. Every flat face on it is a little parallelogram spanned by two of the straws, which is why a zonohedron always looks like it is tiled with slanted diamonds. The seed polyhedron does just one job here — it supplies the *directions* of the straws (its vertices pointing outward, say). Choose a different seed, or take the straws along the seed's edges or face-normals instead of its vertices, and you get a different zonohedron. Everything below turns that straw picture into the sum-of-segments the code actually computes, and then reads off how many faces and corners it must have.

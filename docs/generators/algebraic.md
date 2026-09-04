@@ -23,9 +23,10 @@ Classical **algebraic surfaces** — the shapes carved out by a single polynomia
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Family | Classical | Which group of surfaces to choose from; filters the Preset list. Classical, Hauser Gallery, Record Nodal Surfaces, Named Implicit Surfaces, Encyclopedia Surfaces, Goursat (Octahedral), Goursat (Tetrahedral), Goursat (Dodecahedral). |
+| Family | Classical | Which group of surfaces to choose from; filters the Preset list. Classical, Hauser Gallery, Record Nodal Surfaces, Many-Nodal Octics, Named Implicit Surfaces, Encyclopedia Surfaces, MathWorld Gallery, Goursat (Octahedral), and 2 more. |
 | Preset |  | The surface to build; the tooltip gives its defining equation where one is printed |
-| Resolution | 120 | Sample grid resolution per axis. Algebraic surfaces need more of it than the periodic ones: their interest is usually a cusp, a self-intersection or a double point, and a coarse grid rounds exactly those away Range 16-256. |
+| Resolution | 120 | Base sample grid per axis -- it decides what the extractor FINDS, so thin sheets or small components need it raised. How finely the surface is then meshed is Refinement's job: cells near the surface are subdivided that many times beyond this grid Range 16-256. |
+| Refinement | 1 | Extra subdivision rounds applied only to the cells the surface passes near, each doubling the effective resolution there at a cost that grows with surface area, not volume. Nodes and cusps sharpen accordingly; triangle count roughly quadruples per step Range 0-3. |
 | Scale | 1 | Overall size of the result Range 0.01-100. |
 | Node Sharpness | 1.3 | Kummer quartic parameter (node sharpness) Range 1.05-2. |
 | Folds | 3 | Saddle fold count: 2 = ordinary saddle, 3 = monkey saddle, higher = n-fold saddles Range 2-8. |
@@ -34,6 +35,19 @@ Classical **algebraic surfaces** — the shapes carved out by a single polynomia
 | k'' | 0 | Family coefficient Range -100-100. |
 | k''' | 0 | Family coefficient Range -200-200. |
 | Size | 1 | The length the family's coefficients are measured against; it changes how much of the surface the clip ball shows, not the size of the finished object Range 0.05-10. |
+| Coefficient a | 0 | Family coefficient Range -8-8. |
+| Coefficient b | 0 | Family coefficient Range -8-8. |
+| Coefficient c | 0 | Family coefficient Range -8-8. |
+| Coefficient d | 0 | Family coefficient Range -8-8. |
+| Coefficient e | 0 | Family coefficient Range -8-8. |
+| Family Ratio | 2 | Pencil parameter Range 1.1-6. |
+| Middle Semi-axis | 1.2 | Middle semi-axis Range 1.02-1.48. |
+| Long Semi-axis | 1.5 | Long semi-axis Range 1.5-3. |
+| Skew | 0.9 | Cubic-term coefficient of x Range -1.2-1.2. |
+| Lean | 0 | Cubic-term coefficient of y Range -1.2-1.2. |
+| Rise | 0 | Cubic-term coefficient of z Range -1.2-1.2. |
+| Ring Radius | 1 | Radius of the carrying circle Range 0.4-1.2. |
+| Tube Radius | 0.45 | Radius of the tube Range 0.05-0.7. |
 | Clip Override | 0 | Clip ball radius / box half-extent; 0 uses the preset default Range 0-20. |
 | Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
 | Smooth Shading | On | Shade the surface smooth |

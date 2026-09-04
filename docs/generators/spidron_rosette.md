@@ -45,6 +45,22 @@ A **spidron** is a plane figure made of an ever-shrinking, alternating chain of 
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/spidron_rosette__NEST.png" width="200"><br><sub>Named Nest</sub></td>
+<td align="center"><img src="../images/variants/spidron_rosette__FIGURE.png" width="200"><br><sub>Full Figure</sub></td>
+<td align="center"><img src="../images/variants/spidron_rosette__ARM.png" width="200"><br><sub>Single Arm</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/spidron_rosette__ROSETTE.png" width="200"><br><sub>Rosette</sub></td>
+<td align="center"><img src="../images/variants/spidron_rosette__TILING.png" width="200"><br><sub>Tiling</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Draw a regular polygon and join every *other* corner. A smaller polygon, turned a little, appears inside — and the star-shaped ring left between the big polygon and the small one splits neatly into triangles. Now do the same thing to the small polygon, and to the one inside that, and so on: you get a spiral staircase of triangles winding tighter and tighter toward the centre, each ring a shrunk, rotated copy of the one outside it. That spiral is the spidron figure. A single "arm" is one column of that staircase followed inward; the whole figure is several arms interlocked, and a rosette is just a ring of arms stood up around a polygon. The rest of this section turns "join alternate corners" into the exact shrink factor and turn angle, because those two numbers are all the code needs to draw every ring.

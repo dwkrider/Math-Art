@@ -38,12 +38,12 @@ This generator builds triply-periodic minimal surfaces (TPMS) — the space-fill
 | Resolution V | 64 | Mesh sample count across the V parameter direction Range 8-512. |
 | Control Points U | 24 | NURBS control grid size in U Range 6-128. |
 | Control Points V | 24 | NURBS control grid size in V Range 6-128. |
-| Order / Count | 1 | Period count / lattice modulus where the surface uses it (e.g. saddle-tower wing count) Range 1-12. |
+| Order / Count | 1 | Period count / lattice modulus where the surface uses it (e.g. saddle-tower wing count). Surfaces that only support a sub-range snap the slider into it Range 1-12. |
 | Cells | 1 | Copies along the 1st period axis (singly: the single period; doubly: lattice vector 1; triply: x) Range 1-8. |
 | Cells V | 1 | Copies along the 2nd period axis (doubly: lattice vector 2; triply: y) Range 1-8. |
 | Cells W | 1 | Copies along the 3rd period axis (triply: z) Range 1-8. |
 | Cells | 0 | Legacy uniform cell count (broadcasts to every period axis); 0 = use the per-axis Cells controls Range 0-8. |
-| Domain Radius | 1.2 | Extent of the parameter domain Range 0.2-4. |
+| Domain Radius | 1.2 | Extent of the parameter domain (for the k-noid family, how close the domain reaches its ends).  The slider drags to 4; type larger values (up to 20) for extreme end reach Range 0.2-4. |
 | Associate Angle | 0 | Bonnet associate family angle; for the Karcher saddle tower it is the wing-clustering angle alpha Range 0-1.5708. |
 | Preset | Schwarz P | Iconic P / Gyroid / D by name, or Custom to drive the raw Bonnet angle. Schwarz P, Gyroid, Schwarz D, Custom angle. |
 | Resolution / Cell | 50 | Sample grid resolution per unit cell. Cost is cubic in this and the extraction runs over the whole block, so a 3x3x3 array at 300 is a very different proposition from a single cell at 300 Range 8-200. |
@@ -177,12 +177,8 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/tpms__PGD.png" width="200"><br><sub>Schwarz P-Gyroid-D (exact, Bonnet angle)</sub></td>
 <td align="center"><img src="../images/variants/tpms__H.png" width="200"><br><sub>Schwarz H (exact, hexagonal)</sub></td>
 <td align="center"><img src="../images/variants/tpms__CLP_HANDLE.png" width="200"><br><sub>CLP with Handle (exact, genus 4)</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="../images/variants/tpms__LIDINOID_1.png" width="200"><br><sub>Lidinoid (exact)</sub></td>
 <td align="center"><img src="../images/variants/tpms__RPD.png" width="200"><br><sub>rPD deformation (exact, rhombohedral)</sub></td>
 </tr>
 </table>

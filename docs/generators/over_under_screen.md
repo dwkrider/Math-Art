@@ -55,6 +55,10 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/over_under_screen__TWILL.png" width="200"><br><sub>Twill 2/2</sub></td>
 <td align="center"><img src="../images/variants/over_under_screen__BASKET.png" width="200"><br><sub>Basket 2/2</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/over_under_screen__MEMBRANE.png" width="200"><br><sub>Membrane (asymmetric, plain weave)</sub></td>
+<td align="center"><img src="../images/variants/over_under_screen__MINIMAL.png" width="200"><br><sub>Minimal surface</sub></td>
+</tr>
 </table>
 
 ## How it works

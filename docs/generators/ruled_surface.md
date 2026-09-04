@@ -59,7 +59,7 @@ two opposite-handed families of rods cross to weave the same surface.
 | Option | Default | Description |
 | --- | --- | --- |
 | Surface | Stick Hyperboloid | Which ruled-surface family to build. Stick Hyperboloid, Compound Helical Cone, Spiral Ruled, Conoid, Tangent Developable, Helicoid, Twisted Strip, Hyperbolic Paraboloid, and 6 more. |
-| Conoid | Plucker Cylindroid | Which right conoid to build (Conoid mode). Plucker Cylindroid, n-Fold Conoid, Wallis Conical Edge, Zindler Conoid, Whitney Umbrella. |
+| Conoid | Plucker Cylindroid | Which right conoid to build (Conoid mode). Plucker Cylindroid, n-Fold Conoid, Wallis Conical Edge, Zindler Conoid, Whitney Umbrella, Parabolic Conoid, Sinusoidal Cone, Helicoidal Cone. |
 | Radius | 1 | Radius of the base circle or helix the rulings spring from Range 0.01-20. |
 | Half Height | 1 | Half the axial height (rings sit at +-this) Range 0.05-20. |
 | Twist | 120 | Rotation of the top ring in degrees; waist radius = R cos(twist/2) Range 0-179. |

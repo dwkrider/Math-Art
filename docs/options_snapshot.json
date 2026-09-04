@@ -448,6 +448,7 @@
    "Family",
    "Preset",
    "Resolution",
+   "Refinement",
    "Scale",
    "Node Sharpness",
    "Folds",
@@ -706,6 +707,23 @@
    "Scale"
   ]
  },
+ "mesh.crease_pattern_add": {
+  "label": "Crease Pattern",
+  "options": [
+   "Pattern",
+   "Rows",
+   "Columns",
+   "Panel Angle",
+   "Sheet Size",
+   "Report Checks",
+   "Fold",
+   "Solver",
+   "Fold Angle",
+   "Fold Amount",
+   "Steps",
+   "Animate"
+  ]
+ },
  "mesh.crochet_add": {
   "label": "Crochet/Coral",
   "options": [
@@ -744,6 +762,10 @@
    "Crimp Coefficient",
    "Swept Circle",
    "Horn Length",
+   "Tube Radius",
+   "Beads",
+   "Bead Aspect",
+   "Profile Reach",
    "Scale a",
    "Base Radius",
    "Capillary Length",
@@ -830,6 +852,16 @@
    "Sharp Seam",
    "Seam Curvature Attribute",
    "Shade Smooth"
+  ]
+ },
+ "mesh.fold_import": {
+  "label": "Import Crease Pattern",
+  "options": [
+   "Frame",
+   "Sheet Size",
+   "Recover Faces",
+   "Triangulate Cells",
+   "Report Checks"
   ]
  },
  "mesh.fractal_knotwork_add": {
@@ -2726,6 +2758,11 @@
   "label": "Topological Surface",
   "options": [
    "Surface",
+   "Rendition",
+   "Length",
+   "Width",
+   "Tube Radius",
+   "Taper",
    "Resolution U",
    "Resolution V",
    "Order",

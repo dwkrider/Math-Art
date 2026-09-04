@@ -39,9 +39,9 @@ This generator produces the classic gallery of parametric minimal surfaces — E
 | Resolution V | 64 | Mesh sample count across the V parameter direction Range 8-512. |
 | Control Points U | 24 | NURBS control grid size in U Range 6-128. |
 | Control Points V | 24 | NURBS control grid size in V Range 6-128. |
-| Order / Count | 1 | Enneper order; helicoid half-turns; Jorge-Meeks end count n (>= 3); ignored for the rest Range 1-12. |
+| Order / Count | 1 | Enneper order; helicoid half-turns; Jorge-Meeks end count n (>= 3); ignored for the rest. Surfaces that only support a sub-range snap the slider into it Range 1-12. |
 | Storeys | 3 | Number of periodic fundamental domains to stack (saddle tower); ignored for the rest Range 1-8. |
-| Domain Radius | 1.2 | Extent of the parameter domain (for the k-noid, how close the disk reaches its ends) Range 0.2-4. |
+| Domain Radius | 1.2 | Extent of the parameter domain (for the k-noid family, how close the domain reaches its ends -- bigger grows the bells).  The slider drags to 4; type larger values (up to 20) for extreme end reach, which saturates at what the resolution can carry Range 0.2-4. |
 | Associate Angle | 0 | Bonnet associate family (0 = catenoid, pi/2 = helicoid); for the Karcher saddle tower it is the wing-clustering angle alpha (0 = symmetric) Range 0-1.5708. |
 | Scale | 1 | Multiplier on the normalized size (1.0 = a 2 m cube, centered on the origin) Range 0.01-100. |
 | Cell Size | 0.12 | Fraction of the surface's triangles kept before taking the dual: lower leaves fewer, larger cells Range 0.005-1. |

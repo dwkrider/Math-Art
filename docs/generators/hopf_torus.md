@@ -26,7 +26,7 @@ These are the surfaces Ulrich Pinkall used in 1985 to construct Willmore tori of
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Curve on S^2 | Wavy (m-lobed) | Closed curve on S^2 whose Hopf preimage is built. Circle, Wavy (m-lobed), Ellipse, Trefoil-like, Elastica (Willmore), Constrained Elastica, Hopf Band. |
+| Curve on S^2 | Wavy (m-lobed) | Closed curve on S^2 whose Hopf preimage is built. Circle, Wavy (m-lobed), Ellipse, Trefoil-like, Bianchi-Pinkall Flat Torus, Elastica (Willmore), Constrained Elastica, Hopf Band. |
 | Curve Samples | 200 | Samples along gamma (the torus meridians) Range 12-2000. |
 | Fibre Samples | 64 | Samples around each Hopf fibre (the torus longitudes) Range 6-512. |
 | Mean Colatitude | 90 | Mean colatitude of gamma on S^2 (deg) Range 10-170. |

@@ -55,11 +55,11 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/link__BORROMEAN.png" width="200"><br><sub>Borromean Rings</sub></td>
 <td align="center"><img src="../images/variants/link__BORROMEAN_CREST.png" width="200"><br><sub>Borromean Crest</sub></td>
-<td align="center"><img src="../images/variants/link__TORUS.png" width="200"><br><sub>Torus Link (p,q)</sub></td>
+<td align="center"><img src="../images/variants/link__CHAIN.png" width="200"><br><sub>Chain</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/link__CHAIN.png" width="200"><br><sub>Chain</sub></td>
 <td align="center"><img src="../images/variants/link__CONNECT_SUM.png" width="200"><br><sub>Connect Sum</sub></td>
+<td align="center"><img src="../images/variants/link__TORUS.png" width="200"><br><sub>Torus Link (2, 6)</sub></td>
 </tr>
 </table>
 

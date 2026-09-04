@@ -22,7 +22,12 @@ The classic **topology menagerie**: Klein bottles, the two $\mathbb{RP}^2$ immer
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Klein Bottle | Which topological surface to build. Klein Bottle, Klein Bottle (Figure-8), Sudanese Mobius Band, Cross-Cap, Roman Surface, Steiner Surface (Veronese shadow), Boy's Surface, Morin's Surface, and 3 more. |
+| Surface | Klein Bottle | Which topological surface to build. Klein Bottle, Klein Bottle (Figure-8), Moebius Strip, Sudanese Mobius Band, Cross-Cap, Roman Surface, Steiner Surface (Veronese shadow), Boy's Surface, and 4 more. |
+| Rendition | Dumbbell Tube (closed) | How the classical bottle shape is built (Klein Bottle preset only). Dumbbell Tube (closed), Piriform Tube (open at the cusp), Polynomial Immersion. |
+| Length | 20 | Length of the directrix the tube is swept along -- the bottle's height (the paper's a, default 20) Range 4-60. |
+| Width | 8 | Sideways spread of the directrix -- how far the neck swings out before diving back through the wall (the paper's b, default 8) Range 0.5-40. |
+| Tube Radius | 5.5 | Overall radius of the swept tube, before the taper varies it (the paper's c, default 11/2) Range 0.5-20. |
+| Taper | 0.4 | Spread between the tube's minimum and maximum radius: 0 keeps the tube uniform, larger values fatten the bulb and tighten the neck (the paper's d, default 2/5) Range 0-1.2. |
 | Resolution U | 96 | Samples along u (around); for the genus surface, implicit grid density Range 8-512. |
 | Resolution V | 48 | Samples along v (across / radial) Range 4-512. |
 | Order | 2 | Order n of Apery's family, and the surface's rotational symmetry.  EVEN n gives an immersed sphere -- 2 is Morin's own surface -- and ODD n an immersed projective plane, 3 being Boy's (Morin's surface only) Range 2-12. |

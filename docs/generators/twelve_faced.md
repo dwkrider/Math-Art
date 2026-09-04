@@ -53,6 +53,26 @@ These are worth having because a single dial slides continuously between named s
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/twelve_faced__PYRITOHEDRON.png" width="200"><br><sub>Pyritohedron</sub></td>
+<td align="center"><img src="../images/variants/twelve_faced__TETARTOID.png" width="200"><br><sub>Tetartoid</sub></td>
+<td align="center"><img src="../images/variants/twelve_faced__SCALENOHEDRON.png" width="200"><br><sub>Hexagonal Scalenohedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/twelve_faced__DITRIGONAL.png" width="200"><br><sub>Ditrigonal Dipyramid</sub></td>
+<td align="center"><img src="../images/variants/twelve_faced__HEX_DIPYRAMID.png" width="200"><br><sub>Hexagonal Dipyramid</sub></td>
+<td align="center"><img src="../images/variants/twelve_faced__ELONGATED.png" width="200"><br><sub>Elongated Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/twelve_faced__TRAPEZO_RHOMBIC.png" width="200"><br><sub>Trapezo-Rhombic Dodecahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** When you think "twelve-sided solid" you probably picture the regular dodecahedron, with its dozen matching pentagons. But nature makes twelve-faced crystals in many other shapes: pyrite grows squashed pentagonal ones, cobaltite grows skewed lopsided ones, calcite grows sharp triangle-faced ones, and stacking spheres as tightly as possible carves out twelve-faced "packing cells." This generator builds a family of these, and most come with a slider or two so you can watch one shape flow into another — for instance nudging the pyrite form's dial takes it smoothly from a plain cube, through the perfect dodecahedron, to a diamond-faced solid.

@@ -87,15 +87,12 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/supershape__TUSK.png" width="200"><br><sub>Tusk Shell</sub></td>
-<td align="center"><img src="../images/variants/supershape__SE_SPHERE.png" width="200"><br><sub>Ellipsoid</sub></td>
 <td align="center"><img src="../images/variants/supershape__SE_CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/supershape__SE_CYLINDER.png" width="200"><br><sub>Cylinder</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/supershape__SE_CYLINDER.png" width="200"><br><sub>Cylinder</sub></td>
 <td align="center"><img src="../images/variants/supershape__SE_OCTAHEDRON.png" width="200"><br><sub>Octahedron</sub></td>
 <td align="center"><img src="../images/variants/supershape__SE_STAR.png" width="200"><br><sub>Star (Superquad)</sub></td>
-</tr>
-<tr>
 <td align="center"><img src="../images/variants/supershape__SE_PILLOW.png" width="200"><br><sub>Pillow</sub></td>
 </tr>
 </table>

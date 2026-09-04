@@ -162,6 +162,20 @@ PARAMS = {
     # reads as a twist rather than as a bent triangle.
     "mesh.platonic_twist_add": dict(kind='DODECA'),
     "mesh.twisted_torus_add": dict(n=6, twist_steps=6),
+    # The Miura is the crease pattern everyone recognises, and its
+    # zigzag reads at icon size where a waterbomb grid does not.
+    # Folded, not flat.  A crease pattern lying flat is a grid of thin
+    # lines that reads as an empty rectangle at icon size -- and the
+    # operator now folds by default anyway, so a flat figure would show
+    # something the bare defaults no longer produce.
+    # A saddle, not the sphere: negative curvature is the case this
+    # technique is GOOD at, since pleating adds material and a saddle
+    # needs it added.  Showing the sphere would advertise the one target
+    # the Theorema Egregium guarantees it handles worst.
+    "mesh.crease_pattern_add": dict(pattern='MONKEY', rows=12,
+                                    auto_fold=True,
+                                    fold_angle=2.6179938779914944,   # 150 deg
+                                    steps=14, animate=False),
     # The Clifford torus is a torus; the vesicle is the shape the
     # Willmore energy is famous for -- the biconcave discocyte that
     # the Helfrich model predicts and a red blood cell actually is.
@@ -261,6 +275,12 @@ import math                                              # noqa: E402
 GYROID_POSE = (-0.1967, 0.1944, -1.8216)
 
 ORIENT = {
+    # A pleated saddle seen straight down reads as concentric rings on a
+    # flat disc -- the one view that hides the warp the generator exists
+    # to show.  Same three-quarter angle the fold gallery uses, so the
+    # menu icon and the thumbnail show the object the same way up.
+    "mesh.crease_pattern_add": (1.0821, 0.0, 0.4887),
+
     # The diamond tetrahedron's 3-fold axis is vertical by
     # construction, and straight down it the four hexagons stack into a
     # flat hexagonal silhouette -- the one view that hides the saddle
@@ -388,6 +408,10 @@ SKIP = {
     # comes back empty.  Giving it faces just for the thumbnail would
     # show something the operator does not actually produce.
     "mesh.receptacle_add": "points-only mesh, nothing for Cycles to shade",
+    # A file importer (.fold/.svg/.cp): with no file it produces nothing,
+    # so there is no default hero to render.  Importing is documented in
+    # the crease pattern page.
+    "mesh.fold_import": "file importer, no default output to render",
 }
 
 
@@ -447,6 +471,8 @@ def slug_for(op):
 # (tools/check_variants.py re-checks them), not guessed: a stale name
 # here silently produces an empty gallery.
 VARIANT_SELECTOR = {
+    # -- origami --
+    "mesh.crease_pattern_add": "pattern",
     # -- surfaces --
     "mesh.scherk_collins_add": "preset",
     "mesh.seifert_surface_add": "preset",
@@ -544,6 +570,16 @@ VARIANT_SELECTOR = {
     # `preset` carries a CUSTOM entry and duplicates; the packing is
     # the actual family of stick arrangements.
     "mesh.polystix_add": "packing",
+    # -- generators added by later merges -------------------
+    "mesh.spidron_ball_add": "seed",
+    # NO gallery for mesh.spidron_nest_add: its only plausible
+    # selector, fold_mode (PRO/ANTI/PLEATS), produces the same mesh
+    # for all three values, so a gallery would claim a difference
+    # that is not there.  Wants a generator fix first (BACKLOG).
+    "mesh.spidron_rosette_add": "layout_kind",
+    "mesh.twelve_faced_add": "solid",
+    "mesh.zonish_add": "seed",
+    "mesh.spherical_surface_add": "preset",
     "curve.celtic_knot_add": "source",
     # -- patterns --
     "mesh.frieze_add": "group",
@@ -562,7 +598,11 @@ VARIANT_SELECTOR = {
     "mesh.transpolyhedron_add": "seed",
     "mesh.slide_together_add": "model",
     "mesh.over_under_screen_add": "weave",
-    "mesh.knot_carpet_add": "source",
+    # `source` only reaches the geometry under the CURVILINEAR
+    # lattice -- under SQUARE and TRIANGULAR every source rendered
+    # the same carpet.  The lattice is the structural choice, and
+    # the sources appear as VARIANT_EXTRA under CURVILINEAR.
+    "mesh.knot_carpet_add": "lattice",
     "mesh.modular_screen_add": "preset",
     "mesh.relief_panel_add": "preset",
     "mesh.relief_solid_add": "preset",
@@ -621,6 +661,25 @@ VARIANT_COMMON = {
     "mesh.sphericon_add": dict(coloring='NONE'),
     "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', cells=1),
     "mesh.spherical_harmonic_add": dict(degree=4, order=2),
+
+    # -- selectors that another property was overriding ------------
+    # Each of these four galleries rendered every thumbnail identical
+    # until the property below was pinned.  A declared selector proves
+    # nothing on its own: tools/check_variant_dupes.py is what catches
+    # it, by comparing decoded pixels rather than file bytes.
+    #
+    # `preset` defaults to PENCILS and its update callback copies that
+    # preset's settings over `packing`, so the gallery's packing was
+    # overwritten before the build ran.  CUSTOM is the "leave my
+    # settings alone" branch.
+    "mesh.polystix_add": dict(preset='CUSTOM'),
+    # The asymmetric membrane is plain-weave only -- the operator says
+    # so in its own status line -- so `weave` does nothing until the
+    # surface is the ribbon form.
+    "mesh.over_under_screen_add": dict(surface='RIBBONS'),
+    # `tiling` only reaches the mesh in TILING mode; the default RING
+    # mode builds a prism/antiprism ring that has no tiling to speak of.
+    "mesh.polyhedral_torus_add": dict(mode='TILING'),
 }
 
 # Enum ids to leave out of a gallery, with a reason.  Keep this short:
@@ -630,11 +689,44 @@ VARIANT_SKIP = {
     # default generation count cannot build it (see VARIANT_EXTRA,
     # which renders it at two generations instead).
     "mesh.fractal_polyhedron_add": {"DODECA"},
-    # The polygonal spiral needs its own n/arms/angle triple: at the
-    # shared defaults the operator reports the angles degenerate
-    # (A=50, B=310, C=-180).  It wants a hand-tuned VARIANT_EXTRA
-    # entry from someone who knows the family, not a broken thumbnail.
-    "mesh.spiral_tiling_add": {"POLY"},
+    # UVMESH reads its lattice off the selected mesh, which in a
+    # headless render is nothing -- same class as ACTIVE below.
+    "mesh.knot_carpet_add": {"UVMESH"},
+    # mesh.zonish_add(mode='DISSECTION', seed='TID') aborts
+    # Blender outright -- "Calloc array aborted due to integer
+    # overflow", i.e. an allocation computed as a negative size,
+    # not a Python exception the renderer could catch.  Every one
+    # of the other 21 seeds builds; only the truncated
+    # icosidodecahedron does it.  Skipped so the gallery is
+    # renderable at all; the crash is a generator bug (BACKLOG).
+    "mesh.zonish_add": {"TID"},
+    # The torus preset defaults to (p,q) = (2,4), and the (2,4)
+    # torus link IS Solomon's link -- the two entries rendered
+    # identically because they are the same object.  It returns as
+    # a VARIANT_EXTRA at (2,6), still a torus link and visibly a
+    # different one.
+    "curve.math_link_add": {"TORUS"},
+    # SE_SPHERE is the superellipsoid family's sphere case, so it
+    # renders identically to the SPHERE preset beside it.  The
+    # family is already represented by SE_CUBE, SE_OCTAHEDRON,
+    # SE_STAR and SE_PILLOW; re-parameterising a preset named
+    # "sphere" into something else would misrepresent it.
+    "mesh.supershape_add": {"SE_SPHERE"},
+    # ISO_SS and ISO_BS render identically to GOLDEN and
+    # EQUILATERAL.  They are meant to be angle-parameterised
+    # families, but `angle` does not reach the geometry -- checked
+    # at 50 and 65 degrees, every family unchanged -- so there is
+    # no setting that separates them.  Generator bug (BACKLOG).
+    "mesh.spiral_tiling_add": {"POLY", "ISO_SS", "ISO_BS"},
+    # PGD is the Bonnet P-Gyroid-D family, and its three named ends are
+    # exactly the P, G and D entries already in this gallery: at the P
+    # preset it renders pixel-identical to P, and at the gyroid preset
+    # pixel-identical to G (both checked).  Showing it would repeat a
+    # thumbnail; an intermediate associate angle would be a genuinely
+    # new picture, and wants a chosen angle rather than a preset.
+    # LIDINOID_1 is likewise identical to LIDINOID -- a duplicate pair
+    # in the operator's own enum (BACKLOG).
+    "mesh.periodic_minimal_add": {"PGD", "LIDINOID_1"},
     # "From Active Object" reads its star off whatever mesh is selected,
     # which in a headless render is nothing: the operator correctly
     # refuses.  Same reason as GENERIC_SKIP_IDS' "ACTIVE", under this
@@ -694,6 +786,30 @@ VARIANT_MAX = {
 # one enum, so there is nothing to introspect.  Same 3-tuple shape the
 # renderer builds internally: (id, label, kwargs).
 VARIANT_EXTRA = {
+    # (2,4) is Solomon's link, already in this gallery; (2,6) is the
+    # next torus link along and is plainly a different picture.
+    "curve.math_link_add": [
+        ("TORUS", "Torus Link (2, 6)", dict(preset='TORUS', p=2, q=6)),
+    ],
+    # The three weaves live under the ribbon surface (VARIANT_COMMON);
+    # these two put the other two surface forms back in the gallery, so
+    # it covers both axes rather than only the weave.
+    "mesh.over_under_screen_add": [
+        ("MEMBRANE", "Membrane (asymmetric, plain weave)",
+         dict(surface='MEMBRANE')),
+        ("MINIMAL", "Minimal surface", dict(surface='MINIMAL')),
+    ],
+    # The lattice is the gallery (VARIANT_SELECTOR); these show what the
+    # `source` field does, which is only visible on the curvilinear one.
+    "mesh.knot_carpet_add": [
+        (s.lower(), lbl, dict(lattice='CURVILINEAR', source=s))
+        # WAVY_PLAID is the source the CURVILINEAR lattice already uses
+        # by default, so listing it here would repeat that thumbnail.
+        for s, lbl in (("POLAR", "Polar (curvilinear)"),
+                       ("ROSE", "Rose (curvilinear)"),
+                       ("GUILLOCHE", "Guilloche (curvilinear)"),
+                       ("LISSAJOUS", "Lissajous (curvilinear)"))
+    ],
     "mesh.fractal_polyhedron_add": [
         ("DODECA", "Dodecahedron", dict(kind='DODECA', generations=2)),
     ],
@@ -725,7 +841,11 @@ VARIANT_EXTRA = {
                        ("BOURKE", "Bourke Family"))
     ],
     "mesh.ruled_surface_add": [
-        ("HYPERBOLOID", "Stick Hyperboloid", dict(mode='HYPERBOLOID')),
+        # output must be named explicitly: PARAMS pins RODS for the
+        # hero, and params_for merges it in, so without this the plain
+        # hyperboloid rendered identically to the rulings entry below.
+        ("HYPERBOLOID", "Stick Hyperboloid",
+         dict(mode='HYPERBOLOID', output='SURFACE')),
         ("HYPERBOLOID_RODS", "Stick Hyperboloid (Rulings)",
          dict(mode='HYPERBOLOID', output='RODS', family='BOTH')),
         ("HELICAL_CONE", "Compound Helical Cone",
@@ -1423,6 +1543,11 @@ if _IN_BLENDER:
     SELECTOR_RESOLVER = {
         "mesh.saddle_polyhedron_add": lambda: _pairs(
             _mod("saddle_polyhedron_generator")._solid_items(_Shim(), None)),
+        # The pattern enum is dynamic (its item callback loads icons), so
+        # the RNA type carries no static items -- resolve the gallery from
+        # the module's own pattern table instead.
+        "mesh.crease_pattern_add": lambda: _pairs(
+            _mod("fold_pattern_generator")._PATTERN_ITEMS),
     }
 
     def _static_enum_items(op, prop):

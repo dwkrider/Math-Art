@@ -30,16 +30,22 @@ Each is built by a pure-Python parametrization; seams where a parameter wraps ar
 | Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
 | Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
 | Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
-| Surface | Hyperbolic Helicoid | Which swept surface to build. Darboux Surface, Hyperbolic Helicoid, Seashell, Corkscrew, Helico-Conical Surface, Egg Box, Sine Torus. |
-| Motion | General Darboux Motion | How the rigid curve is carried through space (Darboux surface only). General Darboux Motion, Translation, Revolution, Helicoidal. |
+| Surface | Hyperbolic Helicoid | Which swept surface to build. Darboux Surface, Hyperbolic Helicoid, Seashell, Corkscrew, Helico-Conical Surface, Egg Box, Sine Torus, Coil, and 1 more. |
+| Style | Solid | Build the surface as a solid sheet or as an openwork lattice of struts along its dual. Solid, Cell Lattice. |
+| Cell Size | 0.12 | Fraction of the surface's triangles kept before taking the dual: lower leaves fewer, larger cells Range 0.005-1. |
+| Strut Thickness | 0.03 | Thickness of the lattice struts, in the unscaled surface's units Range 0.001-1. |
+| Smoothing | 1 | Subdivision levels rounding the struts Range 0-4. |
+| Keep Boundaries | On | Keep the rim of the swept sheet intact when taking the dual; without it the boundary cells are eaten away. Most swept surfaces are open sheets, so this matters here |
+| Even Thickness | Off | Maintain strut width at sharp corners. Off by default: the correction grows without bound as a corner gets more acute |
+| Motion | General Darboux Motion | How the rigid curve is carried through space (Darboux surface only). General Darboux Motion, Translation, Revolution, Helicoidal, Rotoid (along a helix). |
 | Generatrix | Circle | The rigid curve that is swept (Darboux only). Circle, Ellipse, Gerono Lemniscate, Astroid, Segment. |
 | Curve Size | 0.45 | Size of the swept curve (Darboux only) Range 0.02-5. |
 | Curve Ratio | 0.5 | Minor-to-major ratio of an elliptical generatrix (Darboux only) Range 0.02-5. |
 | Path Radius | 1 | Radius of the circle the curve's centre rides (Darboux only) Range 0-10. |
-| Pitch | 0.4 | Rise per radian for the translation and screw motions (Darboux only) Range -5-5. |
-| Tumble | 0.6 | How far the curve tips out of its plane as it goes round; 0 collapses the general motion back to a plain revolution (Darboux only) Range 0-3.14. |
+| Pitch | 0.4 | Rise per radian for the translation, screw and rotoid motions, and of the coil's helix bore: positive right-handed, negative left-handed, 0 flattens the coil to a torus Range -5-5. |
+| Tumble | 0.6 | How far the curve tips out of its plane as it goes round; 0 collapses the general motion back to a plain revolution.  For the rotoid motion: how many turns the curve makes per turn of the helical spine, 0 giving a plain tube (Darboux only) Range 0-3.14. |
 | Tumbles | 3 | How many times the curve tips back and forth per revolution (Darboux only) Range 1-24. |
-| Turns | 1 | How far the motion runs, in revolutions. A whole number closes the sweep and welds the seam; anything else leaves it open (Darboux only) Range 0.05-12. |
+| Turns | 1 | How far the motion runs, in revolutions. For the Darboux surface a whole number closes the sweep and welds the seam; anything else leaves it open (Darboux, helico-conical and spherical helicoid) Range 0.05-12. |
 | Torsion | 2.5 | Torsion tau of the hyperbolic helicoid (turns per unit of the spine parameter) Range 0-20. |
 | Extent | 4 | Half-range of both parameters of the hyperbolic helicoid Range 0.5-10. |
 | Whorls | 2 | Number of turns of the shell spiral Range 1-8. |
@@ -49,6 +55,8 @@ Each is built by a pure-Python parametrization; seams where a parameter wraps ar
 | Profile Power | 2 | Generatrix z = 1 - \|u\|^p; 2 is the parabola of the source's figure and higher powers flatten it (helico-conical surface only) Range 1-8. |
 | Wavelength | 1 | b in sin(x/b): the spacing of the bumps (egg box only) Range 0.05-10. |
 | Modulation k | 0.5 | k in z = b sin(v) cos(k u).  Whole numbers give a torus; halves of odd numbers bring the tube back inside out and give a KLEIN BOTTLE, and k = 1/2 with the two radii equal closes the hole into a CROSS-CAP (sine torus only) Range 0-4. |
+| Meridian Bulge | 0.85 | Family parameter a of the K = +1 helicoid: with no rise, 1 is the round sphere, smaller values pinch it toward a spindle and larger ones bulge it into a barrel ending on singular rims (spherical helicoid only) Range 0.3-3. |
+| Screw Rise | 0.25 | Rise h per radian of turn; 0 gives a K = +1 surface of revolution.  Clamped below the bulge so the meridian exists (spherical helicoid only) Range 0-2. |
 | Sphere Radius | 0.5 | Radius a of the twisted sphere Range 0.01-10. |
 | Twist Rise | 0.3 | Axial rise b per radian of twist Range 0-5. |
 | Resolution | 96 | Segments along each parametric direction Range 8-512. |

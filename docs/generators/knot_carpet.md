@@ -82,19 +82,23 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/knot_carpet__WAVY_PLAID.png" width="200"><br><sub>Wavy Plaid</sub></td>
-<td align="center"><img src="../images/variants/knot_carpet__WARPED_GRID.png" width="200"><br><sub>Warped Grid</sub></td>
-<td align="center"><img src="../images/variants/knot_carpet__POLAR.png" width="200"><br><sub>Polar Rosette</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__SQUARE.png" width="200"><br><sub>Square</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__TRIANGULAR.png" width="200"><br><sub>Triangular</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__CURVILINEAR.png" width="200"><br><sub>Curvilinear</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/knot_carpet__GUILLOCHE.png" width="200"><br><sub>Guilloche</sub></td>
-<td align="center"><img src="../images/variants/knot_carpet__SMOOTH_PLAIT.png" width="200"><br><sub>Smooth Plait</sub></td>
-<td align="center"><img src="../images/variants/knot_carpet__ROSE.png" width="200"><br><sub>Rose / Rhodonea</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__SPHERE.png" width="200"><br><sub>Sphere</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__POLYHEDRAL.png" width="200"><br><sub>Polyhedral</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__TILING.png" width="200"><br><sub>Tiling</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/knot_carpet__SPIRAL_NET.png" width="200"><br><sub>Spiral Net</sub></td>
-<td align="center"><img src="../images/variants/knot_carpet__LISSAJOUS.png" width="200"><br><sub>Lissajous Net</sub></td>
-<td align="center"><img src="../images/variants/knot_carpet__MOIRE.png" width="200"><br><sub>Moire Bands</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__TORUS.png" width="200"><br><sub>Torus</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__polar.png" width="200"><br><sub>Polar (curvilinear)</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__rose.png" width="200"><br><sub>Rose (curvilinear)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/knot_carpet__guilloche.png" width="200"><br><sub>Guilloche (curvilinear)</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__lissajous.png" width="200"><br><sub>Lissajous (curvilinear)</sub></td>
 </tr>
 </table>
 
