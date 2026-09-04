@@ -31,6 +31,11 @@ operators stay in their flat generator modules.  Layout follows
                 pattern generator and reached into by four others.
     overunder   the over/under solver: union-find with parity, and the
                 smoothstep z-offset that makes a strand pass under.
+    surfacemap  curved-surface mapping: lay a flat tiling on a torus or a
+                sphere, offsetting relief along the surface normal instead
+                of +Z.  The torus is a genuine quotient (so a
+                lattice-commensurate tiling is seamless); the sphere is a
+                chart, and says so.
     substitution  prototiles + inflation rules over planar similarities
                 (z -> Az + B conj z + C, so reflections are expressible
                 and the hat is representable).  Expansion returns
@@ -66,6 +71,10 @@ from .overunder import ParityDSU, weave_zoff
 from .substitution import Similarity, Substitution, penrose_p3
 from .prisms import (center_scale, center_xy, merge_cells, prisms,
                      ribbon_polys, slab)
+from .surfacemap import (DEFAULT_MAX_EDGE, PlaneSurface, SphereSurface,
+                         Surface, TorusSurface, canonicalize_corners,
+                         edge_points, make_surface, refine_poly,
+                         refine_segment, surface_patch, surface_prisms)
 
 __all__ = [
     # orbifold signatures
@@ -125,6 +134,19 @@ __all__ = [
     "center_scale",
     "center_xy",
     "merge_cells",
+    # curved-surface mapping
+    "Surface",
+    "PlaneSurface",
+    "TorusSurface",
+    "SphereSurface",
+    "make_surface",
+    "refine_poly",
+    "refine_segment",
+    "edge_points",
+    "canonicalize_corners",
+    "surface_patch",
+    "surface_prisms",
+    "DEFAULT_MAX_EDGE",
 ]
 
 __version__ = "1.0.0"

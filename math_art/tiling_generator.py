@@ -422,19 +422,32 @@ def build_cells(name, nx, ny, color_by='SIDES', margin=0.0,
 
 
 def cells_from_polys(build_fn, nx, ny, color_by='SIDES', margin=0.0,
-                     height=0.0, trim=False, pad=2):
+                     height=0.0, trim=False, pad=2, surf=None,
+                     max_edge=None):
     """Shared tiling->cells assembly, reused by the k-uniform and
     monohedral generators.  `build_fn(nx, ny)` returns (polys, types)
     for a patch; this applies optional trim (over-build + clip to a
     clean rectangle), per-tile color, margin inset and relief height,
-    and returns one (verts, faces, mats) cell per surviving tile."""
+    and returns one (verts, faces, mats) cell per surviving tile.
+
+    With `surf` (a `patterns.surfacemap.Surface`) the tiles are laid on
+    that curved surface instead of the plane: every ring is subdivided to
+    `max_edge` and mapped, and relief is offset along the surface normal
+    rather than +Z.  Tiles are corner-canonicalised first, so neighbours
+    share exact edge samples and the result is watertight -- that pass is
+    skipped when `margin` separates the tiles anyway.
+
+    `trim` and `surf` are not meant to be combined: trimming leaves
+    partial tiles at a rectangular frame, which is exactly the seam a
+    closed surface is supposed to not have."""
     if trim:
         polys, types = build_fn(nx + pad, ny + pad)
         rect = _trim_rect(polys, nx, ny, pad)
     else:
         polys, types = build_fn(nx, ny)
         rect = None
-    cells = []
+
+    kept, kinds = [], []
     for poly, typ in zip(polys, types):
         p = np.asarray(poly, float)
         n0 = len(p)                              # original side count
@@ -448,19 +461,37 @@ def cells_from_polys(build_fn, nx, ny, color_by='SIDES', margin=0.0,
             p = _clip_rect(p, rect)
             if len(p) < 3:
                 continue
+        kept.append(p)
+        kinds.append(kind)
+
+    # Shared corners must agree exactly before they are subdivided and
+    # mapped, or adjacent tiles open hairline cracks on the surface.
+    if surf is not None and margin <= 0.0:
+        kept = pc.canonicalize_corners(kept)
+
+    cells = []
+    for p, kind in zip(kept, kinds):
         if margin > 0.0:
             c = p.mean(axis=0)
             p = c + (p - c) * (1.0 - margin)
         n = len(p)
         cv, cf, cm = [], [], []
-        if height > 0.0:
+        if surf is not None:
+            me = pc.DEFAULT_MAX_EDGE if max_edge is None else float(max_edge)
+            if height > 0.0:
+                pc.surface_prisms(cv, cf, cm, [p], surf, height, 0.0,
+                                  kind, me)
+            else:
+                pc.surface_patch(cv, cf, cm, [p], surf, 0.0, kind, me)
+        elif height > 0.0:
             pc.prisms(cv, cf, cm, [p], height, 0.0, kind)
         else:
             for x, y in p:
                 cv.append((float(x), float(y), 0.0))
             cf.append(tuple(range(n)))
             cm.append(kind)
-        cells.append((cv, cf, cm))
+        if cf:
+            cells.append((cv, cf, cm))
     return cells
 
 
