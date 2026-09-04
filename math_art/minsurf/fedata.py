@@ -325,7 +325,12 @@ class FEFile(object):
         self.params = {}
         for m in re.finditer(r'^\s*(?:parameter|#define)\s+(\w+)\s*='
                              r'?\s*([^\n]+)$', src, re.M):
-            key, rhs = m.group(1), m.group(2).strip()
+            # Evolver accepts `parameter rhs2 = 1;` -- the starfish
+            # files write the trailing semicolon, and swallowing it into
+            # the expression silently dropped every rhs* declaration,
+            # which is what left the Bonnet-sign tiebreak in
+            # fe_adjoint_patch with no declared value to break the tie.
+            key, rhs = m.group(1), m.group(2).strip().rstrip(';').strip()
             try:
                 self.params[key] = _expr(rhs, self.params)
             except FEError:
@@ -333,7 +338,7 @@ class FEFile(object):
         # a second pass resolves anything that referred to a later name
         for m in re.finditer(r'^\s*(?:parameter|#define)\s+(\w+)\s*='
                              r'?\s*([^\n]+)$', src, re.M):
-            key, rhs = m.group(1), m.group(2).strip()
+            key, rhs = m.group(1), m.group(2).strip().rstrip(';').strip()
             if key not in self.params:
                 try:
                     self.params[key] = _expr(rhs, self.params)

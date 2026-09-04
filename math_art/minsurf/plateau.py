@@ -1989,6 +1989,93 @@ def fe_slide_planes(fe, arc_of, corners, nrows):
     return slide
 
 
+def _gg_warm_boundary(fe, V, arc_of, corners, rims):
+    """Warm-start the free boundary from the datafile's own evolution.
+
+    A fixed-connectivity sliding solve can settle into the wrong
+    discrete basin: on the Schoen starfish family the sliding corner
+    stalls on a ridge (in-plane gradient ~2e-5 against a raw gradient
+    of 0.31, no descent direction along the valley), 0.4% high in area
+    but far enough out of position that the framed adjoint misses its
+    constraint planes and the assembled cell falls apart into pieces.
+    Evolver's `gg` scripts escape by interleaving descent with
+    remeshing -- refine, equiangulate, vertex-average -- which our
+    structured grid cannot do.
+
+    So run the datafile's own `gg` with `minsurf.evolve` (a port of
+    exactly that solver path) on its own coarse-to-fine mesh, and copy
+    the SOLVED free arcs and sliding corners onto this grid's rim.
+    Warm-started this way the fixed-grid solve provably stays in the
+    good basin (measured before the port existed, with Evolver's output
+    as the source: discrete area 11.3263 < 11.3533 at the stall, and
+    the solve does not slide back).
+
+    Rows on fixed arcs are left untouched.  Returns the warmed copy of
+    `V`, or None when the port does not apply (no `gg`, nonlinear
+    constraints, an arc that failed to chain) -- the caller then simply
+    runs the cold solve it always ran.
+    """
+    try:
+        from . import evolve
+    except ImportError:                  # flat headless import
+        import evolve
+    try:
+        got = evolve.gg_arc_positions(fe)
+    except Exception:
+        return None
+    if got is None:
+        return None
+    arcs, cpos = got
+    # the free arcs: exactly the ones fe_slide_planes lets slide
+    free_eids = []
+    for eid, cons in sorted(getattr(fe, 'edge_constraints', {}).items()):
+        if eid in getattr(fe, 'edge_fixed', ()):
+            continue
+        for n in cons:
+            pl = fe.constraint_plane(n, fe.params)
+            if pl is not None and pl[2] is None:
+                free_eids.append(eid)
+                break
+    if not free_eids:
+        return None
+    V = np.array(V, dtype=float)
+    corner_rows = set(corners.values())
+    for eid in free_eids:
+        poly = arcs.get(eid)
+        if poly is None or len(poly) < 2:
+            return None
+        va, vb = fe.edges[eid]
+        pa = np.asarray(fe.vertices[va], float)
+        pb = np.asarray(fe.vertices[vb], float)
+        chord = float(np.linalg.norm(pb - pa))
+        if chord <= 0.0:
+            return None
+        seg = np.linalg.norm(np.diff(poly, axis=0), axis=1)
+        s = np.concatenate([[0.0], np.cumsum(seg)])
+        if s[-1] <= 0.0:
+            return None
+        for lo, hi in rims:
+            rows = [r for r in range(lo, hi)
+                    if arc_of[r] == eid and r not in corner_rows]
+            for r in rows:
+                # the initial rim samples lie ON the straight datafile
+                # segment, so the sample's fraction along the arc is
+                # exact -- no index bookkeeping to get subtly wrong
+                f = float(np.linalg.norm(V[r] - pa)) / chord
+                f = min(max(f, 0.0), 1.0)
+                t = f * s[-1]
+                for a in range(3):
+                    V[r, a] = np.interp(t, s, poly[:, a])
+    for vid, row in corners.items():
+        if vid in getattr(fe, 'vertex_fixed', ()):
+            continue
+        if not getattr(fe, 'vertex_constraints', {}).get(vid):
+            continue
+        if vid in cpos:
+            V[row] = cpos[vid]
+    return V
+
+
 def fe_grid(fe, m=96, rings=14):
     """Span the datafile's boundary, carrying its arc and corner labels.
 
@@ -2182,6 +2269,19 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
     # symptom), which is what identified the cause.
     slide = fe_slide_planes(fe, arc_of, corners, len(V))
     if slide:
+        # Where the datafile ships its own evolution script, run it
+        # first (minsurf.evolve, the ported Evolver solver path) and
+        # start this grid's free boundary from ITS answer: the
+        # fixed-connectivity solve below cannot remesh, and without the
+        # warm start it stalls in a wrong basin on the starfish family
+        # -- 0.4% high in area, far out of position, and the assembled
+        # cell then falls apart at the constraint planes.
+        Vw = _gg_warm_boundary(fe, V, arc_of, corners, rims)
+        if Vw is not None:
+            groups = group_slide_planes(slide, len(V))
+            Vw = project_rows(Vw, groups)
+            V = np.asarray(minimize_area(Vw, T, fixed, outer_iters=200),
+                           dtype=float)
         V = minimize_area_sliding(V.copy(), T, fixed, slide,
                                   outer_iters=max(20, iters * 4))
     else:
@@ -2246,6 +2346,7 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
         # the name is bound here from the conjugate itself -- the one
         # number Evolver could not know before conjugating either.
         planes = {}
+        declared = {}
         for eid, cons in sorted(econ.items()):
             rows = np.nonzero(arc_of == eid)[0]
             if not len(rows):
@@ -2263,6 +2364,15 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
                     off = float(np.median(W[rows] @ vec))
                     env[name] = off - const
                 planes[n] = (vec, off)
+                # the same plane with the datafile's DECLARED parameter
+                # values (`parameter rhs2 = 1`) instead of the measured
+                # ones -- the sign tiebreak below compares the two
+                pld = fe.constraint_plane(n, fe.params)
+                if pld is not None and pld[2] is None:
+                    declared[n] = float(pld[1])
+                elif (pld is not None and pld[2] is not None
+                        and pld[2] in fe.params):
+                    declared[n] = float(fe.params[pld[2]]) + float(pld[1])
 
         # How far the conjugate already sits from the planes it is meant
         # to meet.  This is the honest measure of whether the whole
@@ -2284,11 +2394,29 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
                 vec, off = planes[n]
                 d = np.abs(W[rows] @ vec - off) / float(np.linalg.norm(vec))
                 resid = max(resid, float(np.max(d)) / span)
-        if best is None or resid < best[0]:
-            best = (resid, W, econ, env, planes)
+
+        # How far each MEASURED offset sits from the value the datafile
+        # DECLARES for its parameter (`parameter rhs2 = 1`).  The plane
+        # residual alone cannot tell the two Bonnet signs apart when
+        # every fixed plane passes through the origin -- a point
+        # reflection maps that whole plane set to itself, so both signs
+        # land their arcs equally well and the choice used to fall to
+        # numeric noise.  It fell wrong on three of the eight starfish:
+        # their frames measured rhs = -0.98..-1.05 where the datafile
+        # declares +1, the cell's generators assume the declared side,
+        # and the 96 copies assembled into 24 disconnected pieces.  The
+        # declared value is Brakke's own statement of which side the
+        # surface lives on, so it breaks the tie.
+        pen = 0.0
+        for n, want in declared.items():
+            vec, off = planes[n]
+            pen = max(pen, abs(off - want)
+                      / float(np.linalg.norm(vec)) / span)
+        if best is None or (resid + pen) < (best[0] + best[1]):
+            best = (resid, pen, W, econ, env, planes)
     if best is None:
         return None
-    resid, W, econ, env, planes = best
+    resid, _pen, W, econ, env, planes = best
 
     if planes:
         # An arc named by two constraints belongs on the LINE where they
