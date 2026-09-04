@@ -572,11 +572,14 @@
           ]
         ]
       ],
+      "new_row": false,
       "record_slug": "schwarz-p",
       "source": "pcell.fe",
+      "title": "Schwarz P",
       "weld_tol": 1e-08,
       "word": "dcbdcbdcb"
-    }
+    },
+    "nodal_polynomial": "cos(x) + cos(y) + cos(z)"
   },
   "curvature": {
     "condition": "minimal",

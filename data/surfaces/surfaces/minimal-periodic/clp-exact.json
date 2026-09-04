@@ -542,10 +542,63 @@
           ]
         ]
       ],
+      "new_row": false,
       "record_slug": "clp-exact",
       "source": "CLP.fe",
+      "title": "Schwarz CLP",
       "weld_tol": 1e-08,
       "word": "af"
+    },
+    "weierstrass": {
+      "branch_points": [
+        {
+          "exponent": -0.5,
+          "point": [
+            0.15,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.15,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            0.15,
+            -1.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            -0.15,
+            -1.0
+          ]
+        }
+      ],
+      "constant": [
+        0.0,
+        0.7853981633974483
+      ],
+      "domain": {
+        "x": [
+          0.0,
+          0.5
+        ],
+        "y": [
+          0.0,
+          0.5
+        ]
+      },
+      "moduli_a": 0.15,
+      "modulus_tau": [
+        0.0,
+        2.0
+      ]
     },
     "note": "No (g, dh) pair is stored: the Gauss map is a product of powers of Jacobi theta functions on the hexagonal/square torus, continued along an unwrapped branch (math_art/minsurf/hexagonal.py); theta functions are outside the exact expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },

@@ -511,8 +511,8 @@ if _IN_BLENDER:
                         if _lattice_of(it[0]) != 'CUBIC'),
                        key=lambda it: it[1].lower())
         for key, label, help_txt, items in (
-                ('CUBIC', "Cubic", _CUBIC_HELP, cubic),
-                ('NONCUBIC', "Non-Cubic", _NONCUBIC_HELP, other)):
+                ('CUBIC', "TPMS Cubic", _CUBIC_HELP, cubic),
+                ('NONCUBIC', "TPMS Non-Cubic", _NONCUBIC_HELP, other)):
             if not items:
                 continue
             _PERIODIC_ITEMS[key] = items
@@ -521,7 +521,7 @@ if _IN_BLENDER:
                 (key, label, f"{len(items)} {help_txt}"))
         if not _PERIODICITY_ITEMS:
             _PERIODICITY_ITEMS.append(
-                ('CUBIC', "Cubic", "TPMS"))
+                ('CUBIC', "TPMS Cubic", "TPMS"))
 
     _build_surface_items()
 
@@ -1403,17 +1403,28 @@ if _IN_BLENDER:
                         lay.prop(self, 'clp_tau')
                         lay.prop(self, 'clp_branch')
                 if self.surface in TPMS_EXACT:
-                    # Still no X/Y/Z cell counts -- these are grown from
-                    # a fundamental piece by their own symmetry group
-                    # rather than arrayed on a lattice.  But Reflections
-                    # DOES act on them: most of these rows cannot close
-                    # a full unit cell, and shipping the bare
-                    # quadrilateral patch made them unrecognisable
-                    # against the published pictures.  Reflecting in the
-                    # boundary curves that do classify as symmetry
-                    # elements shows a real piece of the surface, and
-                    # the builder backs off by itself the moment the
-                    # orbit stops verifying.
+                    # Cell counts FIRST, and on every row.  Which of
+                    # these controls appeared used to depend on how the
+                    # surface was built -- Reflections on the rows
+                    # integrated from Weierstrass data, Cells X/Y/Z on
+                    # the nodal ones -- so two surfaces sitting next to
+                    # each other in the same family offered different
+                    # controls for the same idea, "show me more of it".
+                    # `tile_periodic` arrays any of them that closes a
+                    # unit cell, so the count belongs on all of them.
+                    lay.prop(self, 'cells_u', text="Cells X")
+                    lay.prop(self, 'cells_v', text="Cells Y")
+                    lay.prop(self, 'cells_w', text="Cells Z")
+                    # Reflections stays, because for these rows it is a
+                    # DIFFERENT control rather than the same one twice.
+                    # Most cannot close a full unit cell, and there is
+                    # nothing to array until they do: reflecting in the
+                    # boundary curves that are symmetry elements is what
+                    # grows the fundamental piece into a recognisable
+                    # part of the surface in the first place, and the
+                    # builder backs off by itself once the orbit stops
+                    # verifying.  Reflections builds the cell; the
+                    # counts repeat it.
                     #
                     # Level Offset and Cell Aspect stay hidden: both are
                     # properties of a NODAL field (the constant c in

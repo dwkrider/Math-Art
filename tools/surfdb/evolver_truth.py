@@ -76,6 +76,18 @@ EVOLVER_ADJOINT = {
     'c33padj.fe': {'facets': 2810, 'area': 0.621486010},
     'c39padj.fe': {'facets': 3851, 'area': 0.623528729},
     'c45padj.fe': {'facets': 3432, 'area': 0.626047633},
+
+# Schoen's starfish family, measured with each datafile's own `gogo`.
+# The areas rise monotonically with genus (1.570 at 31 to 1.783 at 87),
+# which is the shape a family of increasingly handled surfaces should have.
+    'starfish31adj.fe': {'facets': 2592, 'area': 1.569914497},
+    'starfish43adj.fe': {'facets': 3104, 'area': 1.615992416},
+    'starfish47adj.fe': {'facets': 3136, 'area': 1.687130500},
+    'starfish55adj.fe': {'facets': 3680, 'area': 1.652774872},
+    'starfish59adj.fe': {'facets': 3648, 'area': 1.714460561},
+    'starfish63adj.fe': {'facets': 3648, 'area': 1.749135887},
+    'starfish75adj.fe': {'facets': 4160, 'area': 1.771100845},
+    'starfish87adj.fe': {'facets': 4800, 'area': 1.782673090},
 }
 
 
@@ -129,4 +141,7 @@ EVOLVER_PINNED = {
     'spiral.fe': {'facets': 9302, 'area': 1.727411798},
     'tankex.fe': {'facets': 448, 'area': 3.498090612},
     'twointor.fe': {'facets': 1152, 'area': 3.343153075},
+
+# Lord and Mackay's P3a, measured with the datafile's own `gogo`.
+    'p3a.fe': {'facets': 520, 'area': 1.544039620},
 }

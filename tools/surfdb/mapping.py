@@ -49,6 +49,15 @@
 # ---------------------------------------------------------------------------
 
 MERGE = {
+    # Brakke's datafile cells for Schoen I-8 and I-9.  The ring-form
+    # rows emit those records, and these are the SAME SURFACES built a
+    # different way, so they merge in as a second construction.  Listing
+    # them in ALIAS instead makes two rows claim one slug, which the
+    # build correctly calls a collision and resolves by inventing
+    # `schoen-i8-tpms-exact` -- a second record for a surface that
+    # already had one.
+    "tpms_exact:SCHOEN_I8": "schoen-i8",
+    "tpms_exact:SCHOEN_I9": "schoen-i9",
     # The box-symmetry series is ONE template selected by a sign vector,
     # so its three shipped members are three constructions of the same
     # catalogued family rather than three surfaces.  MERGE, not ALIAS:
@@ -243,6 +252,33 @@ ALIAS = {
     "tpms_exact:I6": "schoen-i6",
     "tpms_exact:FRD_EXACT": "weber-fr-d",
     "tpms_exact:FRDR": "schoen-frd-r",
+    # The datafile cells that BECAME rows when the menu stopped being
+    # organised by provenance.  Each of these surfaces already had a
+    # record; without an entry here the build mints a second one under
+    # `<slug>-exact` and the database ends up with an empty twin beside
+    # the real thing -- which is what happened, 22 times, the first time
+    # these rows appeared.  The right-hand side is the cell's own
+    # `record_slug`, so this table and the bake agree by construction.
+    "tpms_exact:BRAKKE_PSEUDO_BATWING": "brakke-pseudo-batwing",
+    "tpms_exact:DISPHENOID_FAMILY_A_GENUS_31": "disphenoid-family-a-genus-31",
+    "tpms_exact:DISPHENOID_FAMILY_A_GENUS_43": "disphenoid-family-a-genus-43",
+    "tpms_exact:DISPHENOID_FAMILY_A_GENUS_55": "disphenoid-family-a-genus-55",
+    "tpms_exact:DISPHENOID_FAMILY_B_GENUS_35": "disphenoid-family-b-genus-35",
+    "tpms_exact:DISPHENOID_FAMILY_B_GENUS_51": "disphenoid-family-b-genus-51",
+    "tpms_exact:DISPHENOID_FAMILY_B_GENUS_67": "disphenoid-family-b-genus-67",
+    "tpms_exact:NEOVIUS_N14": "neovius-n14",
+    "tpms_exact:NEOVIUS_N26": "neovius-n26",
+    "tpms_exact:NEOVIUS_N38": "neovius-n38",
+    "tpms_exact:SCHOEN_BATWING_41": "schoen-batwing-41",
+    "tpms_exact:SCHOEN_BATWING_57": "schoen-batwing-57",
+    "tpms_exact:SCHOEN_C27_P": "schoen-c27-p",
+    "tpms_exact:SCHOEN_C33_P": "schoen-c33-p",
+    "tpms_exact:SCHOEN_C39_P": "schoen-c39-p",
+    "tpms_exact:SCHOEN_C45_P": "schoen-c45-p",
+    "tpms_exact:SCHOEN_HYBRID_SS_P": "schoen-hybrid-ss-p",
+    "tpms_exact:SCHOEN_MANTA_GENUS_19": "schoen-manta-genus-19",
+    "tpms_exact:SCHOEN_MANTA_GENUS_35": "schoen-manta-genus-35",
+    "tpms_exact:SCHOEN_MANTA_GENUS_51": "schoen-manta-genus-51",
     "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
     "tpms_exact:SIMOES_BATISTA": "simoes-batista-surface",
     "tpms_exact:R3_RING": "schoen-riii",

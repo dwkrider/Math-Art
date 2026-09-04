@@ -1052,6 +1052,21 @@ class FEFile(object):
                 a = _expr(rec(args[0]), env)
                 b = _expr(rec(args[1]), env)
                 v = min(a, b) if head == 'minimum' else max(a, b)
+            elif len(args) == 2 and re.match(r'^\w+\.vertex$',
+                                             args[0].strip()):
+                # `max(ee.vertex, x+z)` -- the same aggregate as
+                # `max(vertex, ...)`, qualified by the loop variable of
+                # the `foreach edge ee` it sits inside.  Brakke's
+                # starfish files write it this way throughout, and
+                # matching only the bare form raised "unknown name 'ee'"
+                # and took the whole bake down with it.  The qualifier
+                # names the element being iterated, which is the set the
+                # aggregate already runs over, so it is dropped.
+                e = dict(env)
+                e.update(cols)
+                col = np.atleast_1d(_vexpr(rec(args[1]), e))
+                v = {'min': np.min, 'max': np.max,
+                     'avg': np.mean, 'sum': np.sum}[head](col)
             elif len(args) == 2 and args[0].strip() == 'vertex':
                 e = dict(env)
                 e.update(cols)
@@ -1071,7 +1086,15 @@ class FEFile(object):
                 # it off rather than recursing, which would try to read
                 # `ee.vertex` as a point set.
                 inner = args[1].strip()
-                mm = re.match(r'^(?:avg|sum)\s*\(\s*\w+\s*\.\s*'
+                # min/max as well as avg/sum.  The inner aggregate runs
+                # over the two ends of ONE edge, and for a resampled arc
+                # every one of those is a sample of the same arc, so
+                # which reduction it asks for does not change the set --
+                # only `avg|sum` were listed, and Brakke's starfish
+                # files write `max(ee.vertex, x+z)`, which fell through
+                # to the scalar evaluator and died on the name `ee`.
+                mm = re.match(r'^(?:avg|sum|min|max|minimum|maximum)\s*'
+                              r'\(\s*\w+\s*\.\s*'
                               r'vertex(?:es)?\s*,(.*)\)$', inner, re.S)
                 if mm:
                     inner = mm.group(1)

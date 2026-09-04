@@ -571,11 +571,14 @@
           ]
         ]
       ],
+      "new_row": false,
       "record_slug": "neovius-surface",
       "source": "neovius.fe",
+      "title": "Neovius",
       "weld_tol": 1e-08,
       "word": "bcdbcdbcd"
-    }
+    },
+    "nodal_polynomial": "3 * (cos(x) + cos(y) + cos(z)) + 4 * cos(x) * cos(y) * cos(z)"
   },
   "curvature": {
     "condition": "minimal",

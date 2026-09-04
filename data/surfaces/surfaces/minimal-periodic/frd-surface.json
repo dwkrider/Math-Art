@@ -30,7 +30,7 @@
     "evolver_cell": {
       "command": "showcube",
       "copies": 192,
-      "evolver_area": 2.524345,
+      "evolver_area": 2.521517,
       "generators": {
         "a": [
           0.0,

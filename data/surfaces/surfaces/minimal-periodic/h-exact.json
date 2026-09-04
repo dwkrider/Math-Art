@@ -1024,8 +1024,10 @@
           ]
         ]
       ],
+      "new_row": false,
       "record_slug": "h-exact",
       "source": "hcell.fe",
+      "title": "Schwarz H",
       "weld_tol": 1e-08,
       "word": "ad"
     },

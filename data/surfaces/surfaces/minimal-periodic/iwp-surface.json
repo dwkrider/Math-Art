@@ -552,8 +552,10 @@
           ]
         ]
       ],
+      "new_row": false,
       "record_slug": "iwp-surface",
       "source": "IWP.fe",
+      "title": "Schoen I-WP",
       "weld_tol": 1e-08,
       "word": "bdb"
     }

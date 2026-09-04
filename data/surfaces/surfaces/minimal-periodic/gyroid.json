@@ -28,7 +28,8 @@
       "note": "Measured: the level set's mean curvature over 120 on-surface samples. A nodal fit is a truncated Fourier series, not the minimal surface."
     },
     "note": "Standard nodal approximation as shipped in math_art/minsurf/tpms.py. No exact definition is stored for this surface, so this approximation is all the record has; `approximates` is null rather than pointing at itself.",
-    "level_function": "(sin(x) * cos(y) + sin(y) * cos(z) + sin(z) * cos(x))"
+    "level_function": "(sin(x) * cos(y) + sin(y) * cos(z) + sin(z) * cos(x))",
+    "nodal_polynomial": "sin(x) * cos(y) + sin(y) * cos(z) + sin(z) * cos(x)"
   },
   "curvature": {
     "condition": "minimal",

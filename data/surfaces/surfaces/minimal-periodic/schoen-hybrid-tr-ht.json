@@ -20,7 +20,7 @@
     "evolver_cell": {
       "command": "full",
       "copies": 24,
-      "evolver_area": 0.601121,
+      "evolver_area": 0.589273,
       "generators": {
         "a": [
           1.0,

@@ -91,6 +91,12 @@ SLUGS = {
     'dcell.fe': 'schwarz-d',
     'hcell.fe': 'h-exact',
     'neovius.fe': 'neovius-surface',
+    # Lord and Mackay's P3a.  Its header: "Fundamental region - one
+    # quarter of a tetragonal disphenoid.  Much like my disphenoid31,
+    # but uses the two equal length C2 axes instead of unequal C2 axes"
+    # -- which is what the record already said about it, written from
+    # the literature before the datafile was found.
+    'p3a.fe': 'lord-mackay-p3a',
     'pcell.fe': 'schwarz-p',
     'ycell.fe': 'fk-y-surface',
 }
@@ -113,6 +119,7 @@ PINNED_TITLES = {
     'dcell.fe': "Schwarz D",
     'hcell.fe': "Schwarz H",
     'neovius.fe': "Neovius",
+    'p3a.fe': "Lord-Mackay P3a",
     'pcell.fe': "Schwarz P",
     'ycell.fe': "Fischer-Koch Y",
 }
@@ -217,6 +224,35 @@ ACCEPTED = {
 # its first line, and `hybrid-1adj.fe` announces itself as `hybrid-1.fe`.
 ADJOINT = {
     'FRDadj.fe': ('frd-surface', "Schoen F-RD", None),
+    # Schoen's STARFISH family, from Brakke's starfish.tar.  Eight of
+    # the sixteen starfish records have a datafile; the other eight
+    # (genus 67, 71, 79, 83, 91, 99, 103, 115) are on his page as
+    # pictures only, so those records stay unimplemented rather than
+    # being filled from a guess.
+    #
+    # Paired by GENUS, which every header states -- except
+    # `starfish43adj.fe`, whose header reads "genus 87", the same genus
+    # `starfish87adj.fe` claims.  Two files cannot both be that surface
+    # and the other seven headers agree with their filenames, so this
+    # one is read as a copy-paste slip in the header and filed under 43.
+    # It is the single pairing here NOT taken from the header, which is
+    # why it is called out.
+    'starfish31adj.fe': ('starfish-2-1-genus-31',
+                         "Starfish 2-1 (genus 31)", None),
+    'starfish43adj.fe': ('starfish-3-1-genus-43',
+                         "Starfish 3-1 (genus 43)", None),
+    'starfish47adj.fe': ('starfish-2-2-genus-47',
+                         "Starfish 2-2 (genus 47)", None),
+    'starfish55adj.fe': ('starfish-4-1-genus-55',
+                         "Starfish 4-1 (genus 55)", None),
+    'starfish59adj.fe': ('starfish-3-2-genus-59',
+                         "Starfish 3-2 (genus 59)", None),
+    'starfish63adj.fe': ('starfish-2-3-genus-63',
+                         "Starfish 2-3 (genus 63)", None),
+    'starfish75adj.fe': ('starfish-3-3-genus-75',
+                         "Starfish 3-3 (genus 75)", None),
+    'starfish87adj.fe': ('starfish-4-3-genus-87',
+                         "Starfish 4-3 (genus 87)", None),
     # Adjoint files despite the names -- their headers read `CPDadj.fe`,
     # `CPDXadj.fe`, `CPDadj-hole.fe`.  Their symmetry lives in the shared
     # `cube_transforms.inc` and their cell word in `cube_views.cmd`.

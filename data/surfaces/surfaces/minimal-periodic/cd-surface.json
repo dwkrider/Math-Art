@@ -588,8 +588,10 @@
           ]
         ]
       ],
+      "new_row": false,
       "record_slug": "cd-surface",
       "source": "cd.fe",
+      "title": "Schoen C(D)",
       "weld_tol": 1e-08,
       "word": "babcd"
     }
