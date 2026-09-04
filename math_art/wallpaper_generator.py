@@ -40,8 +40,10 @@ bl_info = {
 import numpy as np
 
 try:
+    from . import tiling_generator as tg
     from .patterns import common as pc
 except Exception:
+    import tiling_generator as tg
     from patterns import common as pc
 
 
@@ -253,10 +255,15 @@ if _IN_BLENDER:
                    ('TORUS', "Flat Torus",
                     "Wrap the pattern onto a flat torus. Exact: a "
                     "wallpaper group is periodic, so the pattern "
-                    "descends to the torus with no seam")],
+                    "descends to the torus with no seam"),
+                   ('SPHERE', "Sphere (Stereographic)",
+                    "Project the pattern conformally onto a sphere. "
+                    "Angles are exact, but copies are no longer "
+                    "congruent and shrink into a north-pole puncture")],
             default='PLANE',
             description="Lay the pattern flat, or wrap it onto a flat "
-                        "torus (exact -- wallpaper groups are periodic)")
+                        "torus (exact -- wallpaper groups are periodic) "
+                        "or a sphere")
         torus_major: FloatProperty(
             name="Major Radius", default=1.0, min=0.1, max=10.0,
             description="Distance from the torus centre to the tube "
@@ -265,6 +272,16 @@ if _IN_BLENDER:
             name="Minor Radius", default=0.4, min=0.01, max=5.0,
             description="Radius of the torus tube (only affects the "
                         "Torus surface)")
+        sphere_radius: FloatProperty(
+            name="Sphere Radius", default=1.0, min=0.1, max=10.0,
+            description="Radius of the sphere (only affects the Sphere "
+                        "surface)")
+        sphere_spread: FloatProperty(
+            name="Spread", default=1.0, min=0.1, max=4.0,
+            description="How far round the sphere the pattern reaches: "
+                        "1 puts the patch edge on the equator, higher "
+                        "wraps further toward the north-pole puncture "
+                        "(only affects the Sphere surface)")
         separate: BoolProperty(
             name="Separate Cells", default=False,
             description="Output each unit as its own mesh object "
@@ -303,11 +320,12 @@ if _IN_BLENDER:
                 kind = 'ARROW' if self.motif_kind == 'ACTIVE' \
                     else self.motif_kind
                 surf = None
-                if self.surface == 'TORUS':
+                if self.surface != 'PLANE':
                     b1, b2 = group_lattice(self.group)
-                    surf = pc.LatticeTorusSurface(
-                        b1 * self.nx, b2 * self.ny,
-                        self.torus_major, self.torus_minor)
+                    surf = tg.surface_for(
+                        self.surface, b1, b2, self.nx, self.ny,
+                        self.torus_major, self.torus_minor,
+                        self.sphere_radius, self.sphere_spread)
                 cells = build_cells(
                     self.group, kind, self.nx, self.ny,
                     self.color_by, self.height, self.margin, surf=surf)
@@ -339,6 +357,9 @@ if _IN_BLENDER:
                 if self.surface == 'TORUS':
                     lay.prop(self, 'torus_major')
                     lay.prop(self, 'torus_minor')
+                elif self.surface == 'SPHERE':
+                    lay.prop(self, 'sphere_radius')
+                    lay.prop(self, 'sphere_spread')
             if self.motif_kind != 'ACTIVE':     # active mesh is 3D
                 lay.prop(self, 'height')
             lay.prop(self, 'separate')

@@ -72,7 +72,8 @@ from .substitution import Similarity, Substitution, penrose_p3
 from .prisms import (center_scale, center_xy, merge_cells, prisms,
                      ribbon_polys, slab)
 from .surfacemap import (DEFAULT_MAX_EDGE, LatticeTorusSurface,
-                         PlaneSurface, SphereSurface, Surface,
+                         PlaneSurface, SphereSurface,
+                         StereographicSurface, Surface,
                          TorusSurface, canonicalize_corners, edge_points,
                          make_surface, refine_poly, refine_segment,
                          surface_patch, surface_prisms)
@@ -141,6 +142,7 @@ __all__ = [
     "TorusSurface",
     "LatticeTorusSurface",
     "SphereSurface",
+    "StereographicSurface",
     "make_surface",
     "refine_poly",
     "refine_segment",

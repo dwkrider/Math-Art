@@ -255,6 +255,44 @@ class SphereSurface(Surface):
 # Refinement
 # --------------------------------------------------------------------
 
+class StereographicSurface(Surface):
+    """The plane mapped CONFORMALLY onto the sphere, by inverse
+    stereographic projection from the north pole.
+
+        u = (x - x0)/k,  v = (y - y0)/k,  s = u^2 + v^2
+        P = R (2u/(s+1), 2v/(s+1), (s-1)/(s+1))
+
+    Unlike the torus this is not a quotient and unlike the
+    equirectangular chart it is not merely a relabelling: it is the one
+    map of the plane to the sphere that preserves ANGLES exactly.  Every
+    tile keeps its shape infinitesimally and only its size changes, which
+    is why an aperiodic patch survives it recognisably when no periodic
+    structure is available at all.
+
+    The costs are honest and unavoidable.  The whole plane maps to the
+    sphere minus a single point -- the north pole -- so tiles shrink
+    without bound as they approach it and the patch must be truncated;
+    and tiles are no longer congruent to one another, since conformality
+    buys shape at the price of scale.  `k` is the plane radius that lands
+    on the equator: the disc of radius k fills the southern hemisphere.
+    """
+
+    def __init__(self, radius=1.0, scale=1.0, origin=(0.0, 0.0)):
+        self.radius = float(radius)
+        self.scale = max(float(scale), 1e-9)
+        self.origin = np.asarray(origin, float)
+        self.periods = (None, None)
+
+    def at(self, pts):
+        P = (np.asarray(pts, float).reshape(-1, 2) - self.origin)
+        P = P / self.scale
+        s = P[:, 0] ** 2 + P[:, 1] ** 2
+        d = s + 1.0
+        nrm = np.column_stack([2.0 * P[:, 0] / d, 2.0 * P[:, 1] / d,
+                               (s - 1.0) / d])
+        return nrm * self.radius, nrm
+
+
 def _ordered(a, b):
     """The pair (a, b) in a deterministic order, plus whether it was
     swapped.  Keying subdivision on the UNORDERED pair is what makes two
@@ -469,6 +507,8 @@ def make_surface(kind, width, height, major=1.0, minor=0.4, radius=1.0):
         return TorusSurface(width, height, major, minor)
     if kind == 'SPHERE':
         return SphereSurface(width, height, radius)
+    if kind == 'STEREOGRAPHIC':
+        return StereographicSurface(radius, 0.5 * max(width, height))
     raise ValueError("unknown surface %r" % (kind,))
 
 
@@ -569,6 +609,37 @@ def _selftest():
     ok &= good
     print(f"surfacemap: SPHERE radius {rad:.1e} and radial normal "
           f"{radial:.1e} {'OK' if good else 'FAIL'}")
+
+    # STEREOGRAPHIC: on the sphere exactly, and CONFORMAL -- the whole
+    # reason to prefer it.  Conformality means the Jacobian is a scalar
+    # times a rotation, i.e. J^T J is a multiple of the identity: equal
+    # column norms and orthogonal columns.  Checked by central
+    # differences, whose truncation error sets the tolerance.
+    st = StereographicSurface(2.1, 1.3)
+    P, N = st.at(dom)
+    rad = float(np.max(np.abs(np.linalg.norm(P, axis=1) - 2.1)))
+    radial = float(np.max(np.abs(P - N * 2.1)))
+    dx = (st.at(dom + [h, 0.0])[0] - st.at(dom - [h, 0.0])[0]) / (2 * h)
+    dy = (st.at(dom + [0.0, h])[0] - st.at(dom - [0.0, h])[0]) / (2 * h)
+    nx_ = np.linalg.norm(dx, axis=1)
+    ny_ = np.linalg.norm(dy, axis=1)
+    equal = float(np.max(np.abs(nx_ - ny_) / np.maximum(nx_, 1e-12)))
+    orth = float(np.max(np.abs(np.sum(dx * dy, axis=1))
+                        / np.maximum(nx_ * ny_, 1e-12)))
+    good = rad < 1e-12 and radial < 1e-12 and equal < 1e-6 and orth < 1e-6
+    ok &= good
+    print(f"surfacemap: STEREOGRAPHIC on-sphere ({rad:.1e}) and conformal "
+          f"(scale {equal:.1e}, orth {orth:.1e}) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # The origin lands on the south pole and the far field approaches the
+    # north pole -- the puncture the docstring warns about.
+    south = st.at([[0.0, 0.0]])[0][0]
+    far = st.at([[1e6, 0.0]])[0][0]
+    good = (abs(south[2] + 2.1) < 1e-12 and abs(far[2] - 2.1) < 1e-6)
+    ok &= good
+    print(f"surfacemap: STEREOGRAPHIC origin -> south pole, infinity -> "
+          f"north {'OK' if good else 'FAIL'}")
 
     # refine_poly inserts collinear points only: no edge over max_edge,
     # and the area is untouched.

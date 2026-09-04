@@ -519,6 +519,10 @@ SURFACE_ITEMS = [
      "Lay the tiling on a flat torus, drawn as a donut. Exact: the "
      "tiling is periodic, so it descends to the torus with no seam. "
      "The donut embedding still stretches the outer equator"),
+    ('SPHERE', "Sphere (Stereographic)",
+     "Project the tiling conformally onto a sphere. Angles are exact "
+     "and every tile keeps its shape, but tiles are no longer congruent "
+     "and the pattern shrinks into a single puncture at the north pole"),
 ]
 
 
@@ -608,6 +612,36 @@ def torus_surface(b1, b2, nx, ny, major=1.0, minor=0.4):
     return pc.LatticeTorusSurface(np.asarray(b1, float) * float(nx),
                                   np.asarray(b2, float) * float(ny),
                                   major, minor)
+
+
+def sphere_surface(b1, b2, nx, ny, radius=1.0, spread=1.0):
+    """A stereographic sphere sized to an nx x ny block of the lattice.
+
+    The block's centre lands on the south pole; `spread` sets how far
+    round the sphere the block reaches, 1.0 putting its half-extent on
+    the equator.  Unlike the torus this makes no periodicity demand at
+    all, which is why it is the one surface every backend can use --
+    including the aperiodic ones."""
+    a = np.asarray(b1, float) * float(nx)
+    b = np.asarray(b2, float) * float(ny)
+    origin = 0.5 * (a + b)
+    half = 0.5 * max(float(np.linalg.norm(a)), float(np.linalg.norm(b)))
+    return pc.StereographicSurface(
+        radius, max(half / max(float(spread), 1e-6), 1e-9), origin)
+
+
+def surface_for(kind, b1, b2, nx, ny, torus_major=1.0, torus_minor=0.4,
+                sphere_radius=1.0, sphere_spread=1.0):
+    """The Surface for a `SURFACE_ITEMS` value, or None for 'PLANE'.
+
+    One place for the branch, so the four periodic generators stay in
+    step instead of each growing its own copy."""
+    if kind == 'TORUS':
+        return torus_surface(b1, b2, nx, ny, torus_major, torus_minor)
+    if kind == 'SPHERE':
+        return sphere_surface(b1, b2, nx, ny, sphere_radius,
+                              sphere_spread)
+    return None
 
 
 def torus_area_ok(polys, b1, b2, nx, ny, tol=1e-9):
@@ -716,12 +750,25 @@ if _IN_BLENDER:
             name="Minor Radius", default=0.4, min=0.01, max=5.0,
             description="Radius of the torus tube (only affects the "
                         "Torus surface)")
+        sphere_radius: FloatProperty(
+            name="Sphere Radius", default=1.0, min=0.1, max=10.0,
+            description="Radius of the sphere (only affects the "
+                        "Sphere surface)")
+        sphere_spread: FloatProperty(
+            name="Spread", default=1.0, min=0.1, max=4.0,
+            description="How far round the sphere the pattern "
+                        "reaches: 1 puts the patch edge on the "
+                        "equator, higher wraps further toward the "
+                        "north-pole puncture (only affects the "
+                        "Sphere surface)")
 
         def execute(self, context):
-            if self.surface == 'TORUS':
+            if self.surface != 'PLANE':
                 b1, b2 = base_lattice(self.tiling)
-                surf = torus_surface(b1, b2, self.nx, self.ny,
-                                     self.torus_major, self.torus_minor)
+                surf = surface_for(
+                    self.surface, b1, b2, self.nx, self.ny,
+                    self.torus_major, self.torus_minor,
+                    self.sphere_radius, self.sphere_spread)
                 cells = cells_from_polys(
                     lambda a, b: build_patch_torus(self.tiling, a, b),
                     self.nx, self.ny, self.color_by, self.margin,
@@ -754,9 +801,12 @@ if _IN_BLENDER:
             if self.surface == 'TORUS':
                 lay.prop(self, 'torus_major')
                 lay.prop(self, 'torus_minor')
+            elif self.surface == 'SPHERE':
+                lay.prop(self, 'sphere_radius')
+                lay.prop(self, 'sphere_spread')
             for p in ('color_by', 'margin', 'height'):
                 lay.prop(self, p)
-            if self.surface != 'TORUS':
+            if self.surface == 'PLANE':
                 lay.prop(self, 'trim')
             lay.prop(self, 'separate')
             lay.prop(self, 'align')

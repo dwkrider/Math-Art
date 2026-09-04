@@ -1422,7 +1422,7 @@ SEAM_MAT = 7
 def aperiodic_torus(kind, nx=1, ny=1, generations=3, seed='SUN',
                     semi_angle=60.0, spectre_curved=True,
                     color_by='TYPE', allow_seam=False, samples=24,
-                    window=0.5):
+                    window=0.5, phase=0.0, asymmetry=0.0):
     """Return (polys, types, info) for a tiling laid on a flat torus.
 
     For a member that admits a periodic tiling -- chevron, comet, the
@@ -1486,8 +1486,8 @@ def aperiodic_torus(kind, nx=1, ny=1, generations=3, seed='SUN',
     # on top of one already at the left -- and that collision is the
     # honest measure of what a non-periodic tile does to a torus.
     polys, types = aperiodic_patch(
-        kind, generations, seed, 0.0, 0.0, semi_angle, spectre_curved,
-        color_by)
+        kind, generations, seed, phase, asymmetry, semi_angle,
+        spectre_curved, color_by)
     if not polys:
         raise ValueError("no tiling generated")
     allp = np.vstack(polys)
@@ -1562,14 +1562,13 @@ LAYOUT_ITEMS = [
     ('TORUS', "Flat Torus",
      "Lay the tiling on a flat torus, drawn as a donut. Exact for the "
      "hat-family members that admit a periodic tiling; impossible for "
-     "every aperiodic one"),
+     "every aperiodic one, which includes Penrose and Ammann-Beenker"),
+    ('SPHERE', "Sphere (Stereographic)",
+     "Project the patch conformally onto a sphere. Works for EVERY "
+     "tiling here, aperiodic ones included, because it asks nothing of "
+     "periodicity -- at the price of tiles that shrink into a puncture "
+     "at the north pole and are no longer congruent"),
 ]
-
-
-# The kinds for which a torus layout is even offered: the hat family and
-# the Spectre.  The Penrose and Ammann-Beenker backends have no periodic
-# member at all, so a Layout selector there would promise nothing.
-_TORUS_KINDS = _HAT_FAMILY + ('SPECTRE',)
 
 
 try:
@@ -1671,6 +1670,16 @@ if _IN_BLENDER:
             name="Minor Radius", default=0.4, min=0.01, max=5.0,
             description="Radius of the torus tube (only affects the "
                         "Torus layout)")
+        sphere_radius: FloatProperty(
+            name="Sphere Radius", default=1.0, min=0.1, max=10.0,
+            description="Radius of the sphere (only affects the Sphere "
+                        "layout)")
+        sphere_spread: FloatProperty(
+            name="Spread", default=1.0, min=0.1, max=4.0,
+            description="How far round the sphere the patch reaches: 1 "
+                        "puts the patch edge on the equator, higher "
+                        "wraps further toward the north-pole puncture "
+                        "(only affects the Sphere layout)")
         allow_seam: BoolProperty(
             name="Allow Seam", default=False,
             description="Wrap a patch of an APERIODIC member onto the "
@@ -1680,11 +1689,12 @@ if _IN_BLENDER:
                         "that fail to mate are recoloured and counted")
 
         def _build_torus(self):
-            """(cells, label suffix, report string) for the torus layout."""
+            """(cells, report string, info) for the torus layout."""
             polys, types, info = aperiodic_torus(
                 self.kind, self.torus_nx, self.torus_ny,
                 self.generations, self.seed, self.semi_angle,
-                self.spectre_curved, self.color_by, self.allow_seam)
+                self.spectre_curved, self.color_by, self.allow_seam,
+                phase=self.phase, asymmetry=self.asymmetry)
             surf = pc.LatticeTorusSurface(
                 info['v1'], info['v2'], self.torus_major,
                 self.torus_minor)
@@ -1703,12 +1713,43 @@ if _IN_BLENDER:
                                    self.kind))
             return cells, msg, info
 
+        def _build_sphere(self):
+            """(cells, report string) for the stereographic layout.
+
+            No periodicity is required, so every kind reaches this --
+            Penrose and Ammann-Beenker included."""
+            polys, types = aperiodic_patch(
+                self.kind, self.generations, self.seed, self.phase,
+                self.asymmetry, self.semi_angle, self.spectre_curved,
+                self.color_by)
+            if not polys:
+                raise ValueError("no tiling generated")
+            allp = np.vstack(polys)
+            lo, hi = allp.min(axis=0), allp.max(axis=0)
+            origin = 0.5 * (lo + hi)
+            half = 0.5 * float(max(hi - lo))
+            surf = pc.StereographicSurface(
+                self.sphere_radius,
+                max(half / max(self.sphere_spread, 1e-6), 1e-9), origin)
+            cb = 'UNIFORM' if self.color_by == 'UNIFORM' else 'TYPE'
+            cells = tg.cells_from_polys(
+                lambda a, b: (polys, types), 1, 1, cb,
+                self.margin, self.height, False, surf=surf)
+            return cells, ("sphere: %d tiles, conformal (shapes exact, "
+                           "sizes not)" % len(polys))
+
         def execute(self, context):
             label = dict((k, v) for k, v, _ in KIND_ITEMS)[self.kind]
             extra = ""
             if self.layout_mode == 'TORUS':
                 try:
                     cells, extra, _info = self._build_torus()
+                except ValueError as exc:
+                    self.report({'ERROR'}, str(exc))
+                    return {'CANCELLED'}
+            elif self.layout_mode == 'SPHERE':
+                try:
+                    cells, extra = self._build_sphere()
                 except ValueError as exc:
                     self.report({'ERROR'}, str(exc))
                     return {'CANCELLED'}
@@ -1751,9 +1792,11 @@ if _IN_BLENDER:
                 lay.prop(self, 'semi_angle')
             if self.kind == 'SPECTRE':
                 lay.prop(self, 'spectre_curved')
-            if self.kind in _TORUS_KINDS:
-                lay.prop(self, 'layout_mode')
-            if self.layout_mode == 'TORUS' and self.kind in _TORUS_KINDS:
+            lay.prop(self, 'layout_mode')
+            if self.layout_mode == 'SPHERE':
+                lay.prop(self, 'sphere_radius')
+                lay.prop(self, 'sphere_spread')
+            if self.layout_mode == 'TORUS':
                 status = torus_status(self.kind, self.semi_angle,
                                       self.spectre_curved)
                 box = lay.box()
