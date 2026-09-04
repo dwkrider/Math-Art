@@ -124,10 +124,12 @@ except ImportError:                   # flat import (test runner)
 
 
 try:
+    from .patterns import spherical_substrate as ssub
     from .patterns import common as pc
     from . import tiling_generator as tg
     from . import aperiodic_generator as ap
 except Exception:                       # legacy single-file / CLI use
+    from patterns import spherical_substrate as ssub
     from patterns import common as pc
     import tiling_generator as tg
     import aperiodic_generator as ap
@@ -1332,6 +1334,173 @@ def _interlaced_cells(substrate, nx, ny, contact_deg, ribbon_width,
     return cells
 
 
+# --------------------------------------------------------------------
+# Strapwork on a spherical substrate
+# --------------------------------------------------------------------
+#
+# Stereographic projection of a flat patch can only ever reach a cap
+# (see `patterns/surfacemap.StereographicSurface`).  To cover a WHOLE
+# sphere the pattern has to be built on a spherical substrate instead:
+# the faces of a radially projected Platonic or Archimedean solid, which
+# are exactly the spherical regular and Archimedean tilings.
+#
+# Each face is carried into its own tangent plane by the log map, where
+# the existing per-tile builder `_tile_segments` runs UNCHANGED, and the
+# resulting segments are carried back by the exponential map.  Distances
+# from the face centre become angles, so straight strapwork rays become
+# geodesics.
+#
+# The one thing that needs care is where bands cross from face to face.
+# `_tile_segments` puts its contact points at the PLANAR midpoints of
+# the planar polygon, and exp of a planar midpoint is NOT the geodesic
+# midpoint of the two sphere vertices -- log and exp preserve distance
+# only along rays from the face centre, not across them.  Two adjacent
+# faces would therefore place "the same" contact point at two slightly
+# different points of the sphere, the arrangement would fail to weld
+# them, and every band would stop dead at every edge.  So each planar
+# contact point is snapped, in the plane and before exp, onto
+# log(geodesic midpoint).  Both faces compute that same midpoint as
+# unit(v_k + v_k+1), bit for bit, so the weld is exact.
+
+def _unit3(v):
+    v = np.asarray(v, float)
+    return v / max(float(np.linalg.norm(v)), 1e-300)
+
+def sphere_motifs(solid, contact_deg, motif='PIC', star_d=2,
+                  rosette_frac=0.0):
+    """(segments3, orders): the strapwork of a spherical substrate as 3D
+    segments on the unit sphere, plus the side count of the face each
+    came from (for colouring)."""
+    faces = ssub.solid_faces(solid)
+    segments, orders = [], []
+    for face in faces:
+        c, e1, e2 = ssub.face_frame(face)
+        flat = ssub.log_map(c, e1, e2, face)
+        n = len(flat)
+        # planar contact points, and where they must really land
+        want = {}
+        for k in range(n):
+            pm = 0.5 * (flat[k] + flat[(k + 1) % n])
+            gm = ssub.log_map(
+                c, e1, e2,
+                [_unit3(face[k] + face[(k + 1) % n])])[0]
+            want[(round(float(pm[0]), 9), round(float(pm[1]), 9))] = gm
+
+        def fix(p):
+            key = (round(float(p[0]), 9), round(float(p[1]), 9))
+            return want.get(key, np.asarray(p, float))
+
+        segs2 = _tile_segments(flat, contact_deg, motif, star_d,
+                              rosette_frac)
+        if not segs2:
+            continue
+        pts = np.array([q for a, b in segs2 for q in (fix(a), fix(b))])
+        pts3 = ssub.exp_map(c, e1, e2, pts)
+        for i in range(0, len(pts3), 2):
+            segments.append((pts3[i], pts3[i + 1]))
+            orders.append(n)
+    return segments, orders
+
+
+def sphere_bands(solid, contact_deg, ribbon_width, curved=False,
+                 subdiv=8, motif='PIC', star_d=2, rosette_frac=0.0,
+                 radius=1.0, max_edge=0.12):
+    """Traced strapwork bands on a spherical substrate.
+
+    Uses the SAME band tracer as the flat path -- `trace_bands` is purely
+    combinatorial and never looks at a coordinate -- over a 3D
+    arrangement, so the band topology is identical and only the geometry
+    is spherical."""
+    segments, orders = sphere_motifs(solid, contact_deg, motif, star_d,
+                                     rosette_frac)
+    if not segments:
+        return [], orders
+    pts, seg_nodes, pair = ssub.build_arrangement_3d(segments)
+    bands = []
+    for node_path, seg_path in trace_bands(seg_nodes, pair):
+        closed = len(node_path) >= 4 and node_path[0] == node_path[-1]
+        poly = [pts[i] for i in node_path]
+        if closed:
+            poly = poly[:-1]
+        if len(poly) < 2:
+            continue
+        path = ssub.refine_geodesic(np.array(poly), max_edge, closed)
+        left, right = ssub.sphere_ribbon(path, ribbon_width, closed,
+                                         radius)
+        bands.append((left, right, closed, seg_path, path))
+    return bands, orders
+
+
+def sphere_cells(solid, contact_deg, ribbon_width, color_by='UNIFORM',
+                 height=0.0, curved=False, subdiv=8, motif='PIC',
+                 star_d=2, rosette_frac=0.0, radius=1.0):
+    """One cell per band, on a spherical substrate.  Relief is pushed
+    RADIALLY (the sphere's normal), matching how the torus scaffolds
+    push relief along the tube normal."""
+    bands, orders = sphere_bands(solid, contact_deg, ribbon_width,
+                                 curved, subdiv, motif, star_d,
+                                 rosette_frac, radius)
+    cells = []
+    for bi, (left, right, closed, seg_path, _path) in enumerate(bands):
+        if height > 0.0:
+            lo = np.asarray(left, float)
+            ro = np.asarray(right, float)
+            lu = lo / np.linalg.norm(lo, axis=1, keepdims=True)
+            ru = ro / np.linalg.norm(ro, axis=1, keepdims=True)
+            cv, cf = _shell_ribbon(lo + lu * height, ro + ru * height,
+                                   lo, ro, closed)
+        else:
+            # NOT band_ribbon_faces: that builder is planar and keeps
+            # only x and y, which silently flattens a spherical ribbon
+            # onto z = 0.
+            cv, cf = _flat_ribbon3(left, right, closed)
+        if not cf:
+            continue
+        kind = _band_kind(color_by, bi, seg_path, orders)
+        cells.append((cv, cf, [kind] * len(cf)))
+    return cells
+
+
+def _flat_ribbon3(left, right, closed):
+    """A single-sided ribbon strip between two 3D boundaries.
+
+    The planar `band_ribbon_faces` reads only x and y from its inputs,
+    so handing it spherical boundaries flattens the whole ribbon onto
+    z = 0 -- geometry that still looks plausible in a vertex count and
+    is completely wrong on screen."""
+    L = np.asarray(left, float)
+    R = np.asarray(right, float)
+    n = len(L)
+    verts = [tuple(p) for p in L] + [tuple(p) for p in R]
+    faces = []
+    last = n if closed else n - 1
+    for i in range(last):
+        j = (i + 1) % n
+        faces.append((i, j, n + j, n + i))
+    return verts, faces
+
+
+def _shell_ribbon(lt, rt, lb, rb, closed):
+    """A closed ribbon solid between an outer (lt, rt) and inner (lb, rb)
+    pair of boundaries: top, reversed bottom, and side walls."""
+    n = len(lt)
+    verts = ([tuple(p) for p in lt] + [tuple(p) for p in rt]
+             + [tuple(p) for p in lb] + [tuple(p) for p in rb])
+    LT, RT, LB, RB = 0, n, 2 * n, 3 * n
+    faces = []
+    last = n if closed else n - 1
+    for i in range(last):
+        j = (i + 1) % n
+        faces.append((LT + i, LT + j, RT + j, RT + i))       # top
+        faces.append((LB + j, LB + i, RB + i, RB + j))       # bottom
+        faces.append((LT + j, LT + i, LB + i, LB + j))       # left wall
+        faces.append((RT + i, RT + j, RB + j, RB + i))       # right wall
+    if not closed:
+        faces.append((LT, RT, RB, LB))
+        faces.append((LT + n - 1, LB + n - 1, RB + n - 1, RT + n - 1))
+    return verts, faces
+
+
 def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
                 color_by='UNIFORM', trim=False, height=0.0,
                 backing=False, base=0.08, curved=False, subdiv=8,
@@ -1552,15 +1721,29 @@ if _IN_BLENDER:
             name="Surface",
             items=[('PLANE', "Plane",
                     "Lay the strapwork flat in the plane"),
+                   ('SPHERE_SOLID', "Sphere (Polyhedral)",
+                    "Build the strapwork ON a spherical substrate -- the "
+                    "faces of a radially projected Platonic or "
+                    "Archimedean solid, which ARE the spherical uniform "
+                    "tilings. Covers the WHOLE sphere uniformly, with "
+                    "every band closed and no polar seam"),
                    ('SPHERE', "Sphere (Stereographic)",
-                    "Project the strapwork conformally onto a sphere. "
-                    "Angles are exact, so the bands keep their crossing "
-                    "geometry; band widths are not preserved")],
+                    "Project a flat patch conformally onto a sphere. "
+                    "Angles are exact, but a finite patch can only reach "
+                    "a CAP, never the whole sphere -- use Polyhedral for "
+                    "complete coverage")],
             default='PLANE',
-            description="Lay the strapwork flat, or project it onto a "
-                        "sphere. There is no Torus option: a torus "
-                        "needs the bands to close across the seam, and "
-                        "the band tracing here runs on an open patch")
+            description="Lay the strapwork flat, build it on a spherical "
+                        "substrate (complete sphere), or project a flat "
+                        "patch stereographically (a cap). There is no "
+                        "Torus option: a torus needs the bands to close "
+                        "across the seam, and the flat band tracing runs "
+                        "on an open patch")
+        base_solid: EnumProperty(
+            name="Base Solid", items=ssub.solid_items(), default='TI',
+            description="The spherical substrate: each face of this "
+                        "solid, radially projected, carries one patch of "
+                        "strapwork (only affects the Polyhedral sphere)")
         sphere_radius: FloatProperty(
             name="Sphere Radius", default=1.0, min=0.1, max=10.0,
             description="Radius of the sphere (only affects the Sphere "
@@ -1607,6 +1790,12 @@ if _IN_BLENDER:
                 self.smoothness, motif, star_d, self.rosette_frac,
                 self.interlace, self.interlace_mode, self.weave_height,
                 self.girih_gens)
+            if self.surface == 'SPHERE_SOLID':
+                cells = sphere_cells(
+                    self.base_solid, contact, self.ribbon_width,
+                    self.color_by, self.height, self.curved,
+                    self.smoothness, motif, star_d, self.rosette_frac,
+                    self.sphere_radius)
             if self.surface == 'SPHERE' and cells:
                 allv = np.vstack([np.asarray(cv, float)
                                   for cv, _cf, _cm in cells if cv])
@@ -1660,7 +1849,10 @@ if _IN_BLENDER:
             if self.curved:
                 lay.prop(self, 'smoothness')
             lay.prop(self, 'surface')
-            if self.surface == 'SPHERE':
+            if self.surface == 'SPHERE_SOLID':
+                lay.prop(self, 'base_solid')
+                lay.prop(self, 'sphere_radius')
+            elif self.surface == 'SPHERE':
                 lay.prop(self, 'sphere_radius')
                 lay.prop(self, 'sphere_spread')
             lay.prop(self, 'output')
