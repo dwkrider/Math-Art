@@ -491,11 +491,32 @@ if _IN_BLENDER:
                         "(parented to an empty) so tiles can be edited "
                         "individually")
 
+        surface: EnumProperty(
+            name="Surface", items=tg.SURFACE_ITEMS, default='PLANE',
+            description="Lay the tiling flat, or wrap it onto a flat "
+                        "torus. Exact even with the shape slider: the "
+                        "edge deformation is applied in lattice "
+                        "coordinates, so a deformed tile stays periodic")
+        torus_major: FloatProperty(
+            name="Major Radius", default=1.0, min=0.1, max=10.0,
+            description="Distance from the torus centre to the tube "
+                        "centre (only affects the Torus surface)")
+        torus_minor: FloatProperty(
+            name="Minor Radius", default=0.4, min=0.01, max=5.0,
+            description="Radius of the torus tube (only affects the "
+                        "Torus surface)")
+
         def execute(self, context):
+            surf = None
+            if self.surface == 'TORUS':
+                _l, _n, b1, b2, _c, _p = _DEFS[self.tiling]()
+                surf = tg.torus_surface(b1, b2, self.nx, self.ny,
+                                        self.torus_major,
+                                        self.torus_minor)
             cells = tg.cells_from_polys(
                 lambda a, b: build_patch(self.tiling, a, b, self.shape),
                 self.nx, self.ny, self.color_by, self.margin,
-                self.height, self.trim)
+                self.height, self.trim and surf is None, surf=surf)
             label = _label(self.tiling)
             obj = pc.emit(context, "Isohedral %s" % label, cells,
                           self.separate, fit=True, operator=self)
@@ -526,9 +547,14 @@ if _IN_BLENDER:
                                "shape has no effect", icon='INFO')
             else:
                 lay.prop(self, 'shape')
+            lay.prop(self, 'surface')
+            if self.surface == 'TORUS':
+                lay.prop(self, 'torus_major')
+                lay.prop(self, 'torus_minor')
             for p in ('color_by', 'margin', 'height'):
                 lay.prop(self, p)
-            lay.prop(self, 'trim')
+            if self.surface != 'TORUS':
+                lay.prop(self, 'trim')
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
 

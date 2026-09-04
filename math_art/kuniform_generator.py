@@ -244,12 +244,31 @@ if _IN_BLENDER:
         separate: BoolProperty(
             name="Separate Tiles", default=False,
             description="Output each tile as its own mesh object")
+        surface: EnumProperty(
+            name="Surface", items=tg.SURFACE_ITEMS, default='PLANE',
+            description="Lay the tiling flat, or wrap it onto a flat "
+                        "torus (exact -- the tiling is periodic)")
+        torus_major: FloatProperty(
+            name="Major Radius", default=1.0, min=0.1, max=10.0,
+            description="Distance from the torus centre to the tube "
+                        "centre (only affects the Torus surface)")
+        torus_minor: FloatProperty(
+            name="Minor Radius", default=0.4, min=0.01, max=5.0,
+            description="Radius of the torus tube (only affects the "
+                        "Torus surface)")
 
         def execute(self, context):
+            surf = None
+            if self.surface == 'TORUS':
+                b1, b2, _t = _cell(self.tiling)
+                surf = tg.torus_surface(b1, b2, self.nx, self.ny,
+                                        self.torus_major,
+                                        self.torus_minor)
             cells = tg.cells_from_polys(
                 lambda a, b: build_patch(self.tiling, a, b),
                 self.nx, self.ny, self.color_by,
-                self.margin, self.height, self.trim)
+                self.margin, self.height,
+                self.trim and surf is None, surf=surf)
             label = _LABEL[self.tiling]
             obj = pc.emit(context, "k-Uniform %s" % label, cells,
                           self.separate, fit=True, operator=self)
@@ -269,10 +288,15 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for p in ('tiling', 'nx', 'ny', 'color_by', 'margin',
-                      'height'):
+            for p in ('tiling', 'nx', 'ny', 'surface'):
                 lay.prop(self, p)
-            lay.prop(self, 'trim')
+            if self.surface == 'TORUS':
+                lay.prop(self, 'torus_major')
+                lay.prop(self, 'torus_minor')
+            for p in ('color_by', 'margin', 'height'):
+                lay.prop(self, p)
+            if self.surface != 'TORUS':
+                lay.prop(self, 'trim')
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
 

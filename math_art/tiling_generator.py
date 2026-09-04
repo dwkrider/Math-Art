@@ -496,6 +496,137 @@ def cells_from_polys(build_fn, nx, ny, color_by='SIDES', margin=0.0,
 
 
 # --------------------------------------------------------------------
+# Flat-torus layout, shared by the periodic tiling generators
+# --------------------------------------------------------------------
+#
+# A flat torus is R^2 / Lambda, so a tiling that is periodic under a
+# sublattice of Lambda descends to it EXACTLY -- no seam, no defect, no
+# approximation.  For every generator here the lattice is explicit
+# already (`_base_cell`, `kuniform._cell`, `isohedral._DEFS`,
+# `patterns.groups.wallpaper_group`), so torus mode is a matter of
+# handing that lattice to the surface layer rather than deriving
+# anything new.
+#
+# The donut embedding is not isometric -- it cannot be, by Gauss's
+# Theorema Egregium -- so tiles stretch on the outer equator and
+# compress on the inner one.  That is a property of the picture, not of
+# the tiling; see the header of `patterns/surfacemap.py`.
+
+SURFACE_ITEMS = [
+    ('PLANE', "Plane",
+     "Lay the tiling flat in the plane"),
+    ('TORUS', "Flat Torus",
+     "Lay the tiling on a flat torus, drawn as a donut. Exact: the "
+     "tiling is periodic, so it descends to the torus with no seam. "
+     "The donut embedding still stretches the outer equator"),
+]
+
+
+def base_lattice(name):
+    """The translation lattice (b1, b2) of any of the 19 tilings.
+
+    A dual has the SAME translation lattice as the tiling it comes from
+    -- dualising moves faces to vertices and back but leaves the
+    periodicity alone -- so the Laves names resolve through `LAVES_OF`."""
+    b1, b2, _tiles = _base_cell(LAVES_OF.get(name, name))
+    return np.asarray(b1, float), np.asarray(b2, float)
+
+
+def _dual_torus(polys, v1, v2):
+    """The dual of a patch, welded MODULO the lattice (v1, v2).
+
+    `_dual` skips boundary vertices, because in an open patch they have
+    unmatched edges and no complete cycle of surrounding faces.  On a
+    torus there is no boundary: welding vertices modulo the lattice makes
+    every edge meet exactly two faces, so every vertex yields a dual
+    tile and the dual covers the torus exactly.  That is the whole
+    difference, and it is why the flat path over-builds by two cells
+    while this one does not need to.
+
+    Face centroids are gathered around ONE representative position of
+    each welded vertex, offsetting each incident face by the lattice
+    vector that brought its own copy of the vertex there -- otherwise a
+    vertex on the seam would collect centroids from opposite sides of
+    the domain and the dual tile would span it."""
+    B = np.array([np.asarray(v1, float), np.asarray(v2, float)]).T
+    Binv = np.linalg.inv(B)
+
+    def key(p):
+        st = Binv @ np.asarray(p, float)
+        st = st - np.floor(st)
+        k = [round(float(c), 6) for c in st]
+        return tuple(0.0 if abs(c - 1.0) < 1e-9 else c for c in k)
+
+    cents = [np.mean(np.asarray(p, float), axis=0) for p in polys]
+    occur = defaultdict(list)                 # welded vertex -> (poly, pos)
+    for pi_, poly in enumerate(polys):
+        for p in np.asarray(poly, float):
+            occur[key(p)].append((pi_, p))
+
+    duals = []
+    for _v, items in occur.items():
+        anchor = items[0][1]
+        around = []
+        for pi_, pos in items:
+            around.append(cents[pi_] + (anchor - pos))
+        # one entry per incident face; a face touching the vertex twice
+        # would be degenerate, and none of these tilings has that
+        uniq = {}
+        for c in around:
+            uniq[(round(float(c[0]), 6), round(float(c[1]), 6))] = c
+        pts = list(uniq.values())
+        if len(pts) < 3:
+            continue
+        pts.sort(key=lambda c: atan2(c[1] - anchor[1], c[0] - anchor[0]))
+        duals.append(np.array(pts))
+    return duals
+
+
+def build_patch_torus(name, nx, ny):
+    """(polys, types) for an nx x ny block laid out for the torus.
+
+    Differs from `_build_tiling` only for the Laves duals, which are
+    dualised on the torus (see `_dual_torus`) rather than from an
+    over-built open patch."""
+    if name in LAVES_OF:
+        base_name = LAVES_OF[name]
+        b1, b2, _t = _base_cell(base_name)
+        polys = [p for p, _ in _base_iter(base_name, nx, ny)]
+        duals = _dual_torus(polys, np.asarray(b1, float) * nx,
+                            np.asarray(b2, float) * ny)
+        return duals, [len(d) for d in duals]
+    return _build_tiling(name, nx, ny)
+
+
+def torus_surface(b1, b2, nx, ny, major=1.0, minor=0.4):
+    """The flat torus spanned by an nx x ny block of the lattice.
+
+    The lattice is generally SKEW, so this is `LatticeTorusSurface` (which
+    parameterises the donut by lattice coordinates) and not the
+    axis-aligned `TorusSurface`: shearing the plane to make the lattice
+    rectangular would deform every tile in it."""
+    return pc.LatticeTorusSurface(np.asarray(b1, float) * float(nx),
+                                  np.asarray(b2, float) * float(ny),
+                                  major, minor)
+
+
+def torus_area_ok(polys, b1, b2, nx, ny, tol=1e-9):
+    """The area invariant for a torus tiling: the tiles laid over an
+    nx x ny block must have total area exactly |det(b1, b2)| nx ny.
+
+    Cheap, tolerance-friendly, and it catches a wrong lattice or a
+    miscounted unit cell immediately -- which sampling coverage does too,
+    but far more slowly."""
+    det = abs(float(b1[0] * b2[1] - b1[1] * b2[0])) * float(nx) * float(ny)
+    tot = 0.0
+    for p in polys:
+        P = np.asarray(p, float)
+        tot += abs(float(np.dot(P[:, 0], np.roll(P[:, 1], -1))
+                         - np.dot(np.roll(P[:, 0], -1), P[:, 1]))) / 2.0
+    return abs(tot - det) <= tol * max(1.0, det), tot, det
+
+
+# --------------------------------------------------------------------
 # Blender operator
 # --------------------------------------------------------------------
 
@@ -573,11 +704,32 @@ if _IN_BLENDER:
             description="Output each tile as its own mesh object "
                         "(parented to an empty) so tiles can be edited "
                         "individually")
+        surface: EnumProperty(
+            name="Surface", items=SURFACE_ITEMS, default='PLANE',
+            description="Lay the tiling flat, or wrap it onto a flat "
+                        "torus (exact -- the tiling is periodic)")
+        torus_major: FloatProperty(
+            name="Major Radius", default=1.0, min=0.1, max=10.0,
+            description="Distance from the torus centre to the tube "
+                        "centre (only affects the Torus surface)")
+        torus_minor: FloatProperty(
+            name="Minor Radius", default=0.4, min=0.01, max=5.0,
+            description="Radius of the torus tube (only affects the "
+                        "Torus surface)")
 
         def execute(self, context):
-            cells = build_cells(
-                self.tiling, self.nx, self.ny, self.color_by,
-                self.margin, self.height, self.trim)
+            if self.surface == 'TORUS':
+                b1, b2 = base_lattice(self.tiling)
+                surf = torus_surface(b1, b2, self.nx, self.ny,
+                                     self.torus_major, self.torus_minor)
+                cells = cells_from_polys(
+                    lambda a, b: build_patch_torus(self.tiling, a, b),
+                    self.nx, self.ny, self.color_by, self.margin,
+                    self.height, False, surf=surf)
+            else:
+                cells = build_cells(
+                    self.tiling, self.nx, self.ny, self.color_by,
+                    self.margin, self.height, self.trim)
             label = dict((k, v) for k, v, _ in TILING_ITEMS)[self.tiling]
             obj = pc.emit(context, "Tiling %s" % label, cells,
                           self.separate, fit=True, operator=self)
@@ -597,10 +749,15 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for p in ('tiling', 'nx', 'ny', 'color_by', 'margin',
-                      'height'):
+            for p in ('tiling', 'nx', 'ny', 'surface'):
                 lay.prop(self, p)
-            lay.prop(self, 'trim')
+            if self.surface == 'TORUS':
+                lay.prop(self, 'torus_major')
+                lay.prop(self, 'torus_minor')
+            for p in ('color_by', 'margin', 'height'):
+                lay.prop(self, p)
+            if self.surface != 'TORUS':
+                lay.prop(self, 'trim')
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
 
@@ -693,5 +850,45 @@ def _selftest():
                "OK" if ok else "BAD"))
         if not ok:
             bad.append(name)
+
+    bad += _torus_selftest()
     print("RESULT:", "OK" if not bad else "BAD %s" % bad)
     assert not bad
+
+
+def _torus_selftest():
+    """The torus layout is exact, so it is checked by an EXACT invariant:
+    the tiles laid over an nx x ny block must have total area precisely
+    |det Lambda| nx ny.  Anything else means the lattice and the patch
+    disagree -- a mis-set lattice, a miscounted unit cell, or a dual
+    built with the open-patch rule instead of the wrapped one.
+
+    All 19 tilings are covered, and the eight Laves duals are the point:
+    `_dual` drops boundary vertices and so under-covers its block, which
+    is right for an open patch and wrong for a torus."""
+    bad = []
+    for name in _ORDER:
+        b1, b2 = base_lattice(name)
+        polys, _types = build_patch_torus(name, 2, 3)
+        ok, tot, det = torus_area_ok(polys, b1, b2, 2, 3)
+        print("  torus %-13s tiles=%3d area %11.6f == |det| %11.6f  %s"
+              % (name, len(polys), tot, det, "OK" if ok else "BAD"))
+        if not ok:
+            bad.append("torus:" + name)
+
+    # A surface cell must actually leave the plane, and must land on the
+    # torus it claims: every vertex within [R-r, R+r] of the axis.
+    surf = torus_surface(*base_lattice('SQUARE'), 2, 3, 1.4, 0.5)
+    cells = cells_from_polys(
+        lambda a, b: build_patch_torus('SQUARE', a, b), 2, 3,
+        'SIDES', 0.0, 0.0, False, surf=surf)
+    V = np.vstack([np.asarray(cv, float) for cv, _cf, _cm in cells])
+    rad = np.hypot(V[:, 0], V[:, 1])
+    res = np.abs((rad - 1.4) ** 2 + V[:, 2] ** 2 - 0.25)
+    on = float(np.max(res)) < 1e-9
+    curved = float(np.max(np.abs(V[:, 2]))) > 0.1
+    print("  torus cells   V=%d on-surface=%s curved=%s  %s"
+          % (len(V), on, curved, "OK" if (on and curved) else "BAD"))
+    if not (on and curved):
+        bad.append("torus:cells")
+    return bad
