@@ -1013,7 +1013,8 @@ if _IN_BLENDER:
                     "Zoll's 1903 answer to Tannery: smooth, not a "
                     "round sphere, and still every geodesic closes"),
                    ('EGUCHI_HANSON', "Eguchi-Hanson Space",
-                    "An exact slice of the first Ricci-flat "
+                    "An exact slice of the simplest non-compact "
+                    "Calabi-Yau 2-fold: the first Ricci-flat "
                     "asymptotically locally Euclidean metric, on "
                     "T*S^2. The tip closes smoothly only because the "
                     "angle runs over half of the three-sphere; the "
@@ -1025,10 +1026,12 @@ if _IN_BLENDER:
                     "projection. Its bounded complement is the K3 "
                     "polytope, in the Notable Polyhedron generator"),
                    ('CONIFOLD', "Conifold Transition",
-                    "The two-dimensional model of the conifold, "
-                    "u^2 - v^2 - z^2 = delta: a node at delta = 0, "
-                    "replaced by a sphere of radius sqrt(-delta) "
-                    "below it and separating into two sheets above")],
+                    "How one Calabi-Yau turns into a topologically "
+                    "different one. Shown in the two-dimensional model "
+                    "of the conifold, u^2 - v^2 - z^2 = delta: a node "
+                    "at delta = 0, replaced by a sphere of radius "
+                    "sqrt(-delta) below it and separating into two "
+                    "sheets above")],
             default='FRESNEL',
             description="Which classic surface to build")
         semi_a: FloatProperty(

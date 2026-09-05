@@ -1290,23 +1290,37 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
          # Calabi-Yau.  Duality then carries one Calabi-Yau family to
          # another, which is Batyrev's mirror construction, so each
          # entry below is a MIRROR PAIR built as one object.
-         ("CY_MIRROR_CUBE", "Reflexive Mirror Pair: Cube & Octahedron",
-          "the cube (P1 x P1 x P1) beside its polar dual; the two "
-          "carry mirror families of K3 surfaces"),
-         ("CY_MIRROR_QUARTIC", "Reflexive Mirror Pair: Quartic K3",
-          "4 Delta_3, the Newton polytope of the quartic surface in "
-          "P^3, beside the fan polytope of P^3 that is its mirror"),
-         ("CY_MIRROR_PRISM", "Reflexive Mirror Pair: Prism & Bipyramid",
-          "the triangular prism (P2 x P1) beside its polar dual"),
+         ("CY_MIRROR_CUBE",
+          "Calabi-Yau Mirror Pair: Cube & Octahedron",
+          "Reflexive polytopes. The cube (P1 x P1 x P1) beside its "
+          "polar dual, the octahedron. The Calabi-Yaus are not these "
+          "solids but the anticanonical hypersurfaces of the toric "
+          "varieties they define -- two families of K3 surfaces, and "
+          "polar duality makes the two families mirrors of each other"),
+         ("CY_MIRROR_QUARTIC",
+          "Calabi-Yau Mirror Pair: Quartic K3 and P^3",
+          "Reflexive polytopes. 4 Delta_3, the Newton polytope of the "
+          "quartic surface in P^3 -- so its Calabi-Yau hypersurfaces "
+          "are the quartic K3s -- beside the fan polytope of P^3 that "
+          "is its Batyrev mirror"),
+         ("CY_MIRROR_PRISM",
+          "Calabi-Yau Mirror Pair: Prism & Bipyramid",
+          "Reflexive polytopes. The triangular prism (P2 x P1) beside "
+          "its polar dual; their anticanonical hypersurfaces are "
+          "mirror families of K3 surfaces"),
          ("CY_MIRROR_WP1113",
-          "Reflexive Mirror Pair: Weighted P(1,1,1,3)",
-          "a reflexive simplex beside its dual; every reflexive "
-          "simplex is self-dual"),
-         ("CY_K3_POLYTOPE", "K3 Polytope (64 vertices)",
-          "the bounded region of the complement of a smooth tropical "
-          "quartic surface (Balletti-Panizzut-Sturmfels Example 4): "
-          "simple, with the largest f-vector (64, 96, 34) their "
-          "classification allows")] + list(_hgm.ITEMS)
+          "Calabi-Yau Mirror Pair: Weighted P(1,1,1,3)",
+          "A reflexive simplex beside its dual. Every reflexive "
+          "simplex is self-dual, so this Calabi-Yau family is its own "
+          "mirror"),
+         ("CY_K3_POLYTOPE",
+          "Calabi-Yau K3 Polytope (64 vertices)",
+          "The bounded region of the complement of a smooth tropical "
+          "quartic surface -- a tropical K3, the large-complex-"
+          "structure limit of a quartic in P^3 "
+          "(Balletti-Panizzut-Sturmfels Example 4). Simple, with the "
+          "largest f-vector (64, 96, 34) their classification "
+          "allows")] + list(_hgm.ITEMS)
 
 
 def build(kind, flex=0.0):
