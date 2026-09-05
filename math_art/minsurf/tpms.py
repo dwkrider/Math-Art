@@ -960,6 +960,26 @@ from . import plateau as _pl
 # Rows that offer named assemblies, and the names they offer.
 TPMS_EXACT_ARRANGEMENTS = {'CLP': _we_hex.CLP_ARRANGEMENTS}
 
+# Exact rows whose builder takes the Cells X/Y/Z counts DIRECTLY, as a
+# (cx, cy, cz) tuple, and arrays the assembled cell on its own true
+# lattice.  For these the operator must NOT run `tile_periodic`
+# afterwards: the builder's lattice is exact (solved wall spacings, or
+# H's derived hexagonal basis) where `tile_periodic`'s bounding-box
+# period is polluted by the corner overhang and its weld tolerance
+# collapses the graded grids.  Rows outside this set still get the
+# `tile_periodic` attempt, which now probes EVERY requested axis and
+# clamps the ones that do not join -- the trigroup rows and R-II tile
+# fully that way, CLP along z only (its bbox is half the true period
+# in x and y; see BACKLOG).
+# PGD is NOT here, deliberately: its P/D "unit cell" mesh spans 1.49a
+# along y and 0.98a along x/z against its own period a, so translated
+# copies neither touch nor weld -- a pre-existing defect in
+# `_pgd_tile_cell`'s assembly, recorded in the backlog rather than
+# half-fixed here.
+TPMS_EXACT_CELL_ROWS = frozenset({
+    'H', 'FRD_EXACT', 'FRDR',
+    'BOX_1001', 'BOX_1010', 'BOX_1011', 'SIMOES_BATISTA'})
+
 TPMS_EXACT = {
     'PGD': ("Schwarz P-Gyroid-D (exact, Bonnet angle)", _we_pgd.pgd_build),
     # Schwarz H has no published nodal formula at all -- it is the one

@@ -98,7 +98,8 @@ from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
 from .minsurf.hexagonal import clp_params as _clp_params
 from .minsurf.tpms import clip_to_sphere as _clip_to_sphere
 from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
-                           TPMS_EXACT_ARRANGEMENTS, TPMS_FE_ROWS,
+                           TPMS_EXACT_ARRANGEMENTS, TPMS_EXACT_CELL_ROWS,
+                           TPMS_FE_ROWS,
                            _PGD_PRESET_ANGLE, _f_p, build_tpms,
                            build_tpms_exact, marching_tets,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
@@ -1305,7 +1306,13 @@ if _IN_BLENDER:
                     # explicit tiling below.  One parameter, two
                     # meanings; the cell rows get the count they are
                     # actually being asked for.
-                    _grow = ((cu, cv, cw) if surf in TPMS_FE_ROWS
+                    # The cell-closing exact rows take the counts
+                    # the same way: their builders array the assembled
+                    # cell on its own true lattice, which the bbox
+                    # tiling below cannot reproduce (overhang, weld).
+                    _grow = ((cu, cv, cw)
+                             if surf in TPMS_FE_ROWS
+                             or surf in TPMS_EXACT_CELL_ROWS
                              else self.reflect_depth)
                     verts, tris = build_tpms_exact(
                         surf, _grow, self.resolution,
@@ -1323,8 +1330,9 @@ if _IN_BLENDER:
                     # cell -- where the bounding box is not a period --
                     # comes back as the single piece instead of a
                     # scattered copy of it.
-                    if (surf not in TPMS_FE_ROWS and max(cu, cv, cw) > 1
-                            and len(tris)):
+                    if (surf not in TPMS_FE_ROWS
+                            and surf not in TPMS_EXACT_CELL_ROWS
+                            and max(cu, cv, cw) > 1 and len(tris)):
                         # Cell rows already tiled inside the builder.
                         verts, tris, _n = _plateau.tile_periodic(
                             verts, [tuple(t) for t in tris], (cu, cv, cw))

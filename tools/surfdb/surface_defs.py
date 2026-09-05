@@ -910,7 +910,7 @@ WEIERSTRASS = json.loads(r'''{
   "domain": {
    "x": [
     -0.5,
-    1.5
+    0.0
    ],
    "y": [
     0.0,
