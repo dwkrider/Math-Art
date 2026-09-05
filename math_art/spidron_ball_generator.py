@@ -541,47 +541,16 @@ def face_conflict_graph(faces):
 def colour_regions(nregions, adj, ncolors):
     """Colour the conflict graph, using no more than `ncolors`.
 
-    Plain greedy is not good enough here: on a dodecahedron it wants
-    seven colours where five suffice, and five is the lower bound (a
-    pentagon's five edges are mutually in conflict).  DSATUR first --
-    colour the most-constrained region next -- then randomised restarts,
-    which finds the optimum on every seed this generator offers.  If
-    `ncolors` really is below what the solid needs the fallback is
-    modular, so the build still succeeds and the caller can raise it.
+    The DSATUR-plus-restarts solver this used to carry now lives in
+    `styles.face_colors`, which is where the shared colouring belongs
+    (the geodesic generator's map colouring wants the same solver); the
+    name and the (colour_by_region, ok) return stay exactly as they were.
     """
-    import random
-
-    def attempt(order):
-        col = {}
-        for v in order:
-            used = {col[u] for u in adj.get(v, ()) if u in col}
-            c = next((c for c in range(ncolors) if c not in used), None)
-            if c is None:
-                return None
-            col[v] = c
-        return col
-
-    col = {}
-    while len(col) < nregions:
-        best = max((v for v in range(nregions) if v not in col),
-                   key=lambda v: (len({col[u] for u in adj.get(v, ())
-                                       if u in col}),
-                                  len(adj.get(v, ()))))
-        used = {col[u] for u in adj.get(best, ()) if u in col}
-        c = next((c for c in range(ncolors) if c not in used), None)
-        if c is None:
-            col = None
-            break
-        col[best] = c
-    if col is not None:
-        return col, True
-    order = list(range(nregions))
-    for seed in range(400):
-        random.Random(seed).shuffle(order)
-        got = attempt(order)
-        if got is not None:
-            return got, True
-    return {v: v % ncolors for v in range(nregions)}, False
+    try:
+        from .styles import face_colors
+    except ImportError:                    # flat import (test runner)
+        from styles import face_colors
+    return face_colors.colour_regions(nregions, adj, ncolors)
 
 
 def min_colours(nregions, adj, cap=12):

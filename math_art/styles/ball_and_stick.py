@@ -100,23 +100,36 @@ def edges_from_faces(faces):
 
 
 def build_mesh(verts_in, edges, strut_radius=0.02, node_radius=0.035,
-               nseg=8):
+               nseg=8, groups=None):
     """Build a ball-and-stick mesh from vertices and edges.
 
     `verts_in` is a list of 3-tuples; `edges` is a list of (a, b) index
     pairs.  Returns (verts, faces) with a cylinder per edge and a sphere
     per vertex that is actually used by an edge.  Isolated vertices get
-    no node."""
+    no node.
+
+    A caller that wants to colour the struts or the nodes cannot work
+    back from the returned face list -- the cylinders and spheres have
+    been flattened into it and their boundaries are gone -- so pass a
+    list as `groups` and it is filled with one provenance tag per face:
+    ('E', edge_index) for a strut, ('V', vertex_index) for a node.  It
+    stays in step with `faces` including when nodes are suppressed."""
     verts, faces = [], []
     used = set()
-    for a, b in edges:
+    for ei, (a, b) in enumerate(edges):
+        before = len(faces)
         _add_strut(verts, faces, verts_in[a], verts_in[b],
                    strut_radius, nseg)
+        if groups is not None:
+            groups.extend([('E', ei)] * (len(faces) - before))
         used.add(a)
         used.add(b)
     if node_radius > 0.0:
         for i in sorted(used):
+            before = len(faces)
             _add_node(verts, faces, verts_in[i], node_radius)
+            if groups is not None:
+                groups.extend([('V', i)] * (len(faces) - before))
     return verts, faces
 
 
@@ -205,3 +218,21 @@ def _selftest():
     if len(v2) != 12 * 16:
         raise AssertionError(
             f"12 struts should give {12 * 16} verts, got {len(v2)}")
+
+    # the optional provenance tags stay in step with the face list, and
+    # cover every strut and every node exactly once -- with nodes off,
+    # they must not claim any node faces
+    g = []
+    _v, f3 = build_mesh(V, edges, 0.05, 0.08, nseg=8, groups=g)
+    if len(g) != len(f3):
+        raise AssertionError(f"groups {len(g)} != faces {len(f3)}")
+    if {t for t, _ in g} != {'E', 'V'}:
+        raise AssertionError("groups should tag both struts and nodes")
+    if len({i for t, i in g if t == 'E'}) != 12:
+        raise AssertionError("every edge should be tagged")
+    if len({i for t, i in g if t == 'V'}) != 8:
+        raise AssertionError("every node should be tagged")
+    g0 = []
+    _v, f4 = build_mesh(V, edges, 0.05, 0.0, groups=g0)
+    if len(g0) != len(f4) or any(t == 'V' for t, _ in g0):
+        raise AssertionError("no nodes -> no node tags")
