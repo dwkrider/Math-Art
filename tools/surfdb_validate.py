@@ -559,13 +559,70 @@ def check_index(records, rep):
                           % (idx.get("implemented_count"), impl))
 
 
+# Records that are NOT open work, and must not be counted as gaps.
+#
+# "Not implemented" ran together three different things: a surface we
+# have not built yet, a surface that CANNOT be built because it does not
+# exist, and a record that is bookkeeping rather than a surface.  Counted
+# together they overstate the backlog and, worse, they put proofs of
+# non-existence on a to-do list -- `horgan-surface` is not waiting for
+# an implementation, it is waiting for nobody.
+#
+# Each entry says which kind it is and why, so the ledger states the
+# mathematics instead of hiding it behind a percentage.
+NOT_A_GAP = {
+    # PROVED OR BELIEVED NOT TO EXIST.  The record is the finding.
+    "horgan-surface":
+        ("terminal", "Horgan's surface does not exist -- the numerical "
+                     "example fails to close; no such minimal surface."),
+    "catenoid-with-handle":
+        ("terminal", "Proved not to exist: R. Schoen (1983) -- the "
+                     "catenoid is the only complete embedded minimal "
+                     "annulus of finite total curvature."),
+    "dihedralized-wohlgemuth-with-handle":
+        ("terminal", "Believed not to exist; no construction published."),
+    "labs-sextic-35-cusps":
+        ("terminal", "Its coefficients are non-real, so the real locus is "
+                     "not a surface -- there is nothing to mesh."),
+    # BOOKKEEPING.  Real records, but their surfaces ship elsewhere.
+    "delaunay-surface":
+        ("bookkeeping", "Family record; its MEMBERS ship via "
+                        "mesh.delaunay_surface_add."),
+    "dyck-surface":
+        ("bookkeeping", "k = 3 of the shipped non-orientable genus-k row."),
+    # EXISTENCE UNSETTLED.  Research questions, not implementation work.
+    "starfish-4-2-genus-71":
+        ("contingent", "Brakke annotates this one 'not quite' -- it fails "
+                       "to period-kill.  Whether the surface exists is "
+                       "open, so it is not a target."),
+    "starfish-5-2-genus-83":
+        ("contingent", "Brakke annotates this one as failing to "
+                       "period-kill; existence unsettled."),
+    "starfish-5-3-genus-99":
+        ("contingent", "Brakke annotates this one as failing to "
+                       "period-kill; existence unsettled."),
+}
+
+
 def coverage(records):
     total = len(records)
     impl = [s for s, (r, _) in records.items()
             if any(c.get("implemented") for c in r["construction"])]
-    missing = sorted(set(records) - set(impl))
-    print("COVERAGE  %d records, %d implemented, %d not (%.0f%%)"
-          % (total, len(impl), len(missing), 100.0 * len(impl) / max(total, 1)))
+    closed = sorted(set(records) - set(impl))
+    excluded = [s for s in closed if s in NOT_A_GAP]
+    missing = [s for s in closed if s not in NOT_A_GAP]
+    countable = total - len(excluded)
+    print("COVERAGE  %d records, %d implemented, %d open (%.0f%% of %d "
+          "buildable)"
+          % (total, len(impl), len(missing),
+             100.0 * len(impl) / max(countable, 1), countable))
+    if excluded:
+        print("          %d excluded from the denominator: %s"
+              % (len(excluded),
+                 ", ".join("%d %s" % (
+                     sum(1 for x in excluded if NOT_A_GAP[x][0] == k), k)
+                     for k in ("terminal", "bookkeeping", "contingent")
+                     if any(NOT_A_GAP[x][0] == k for x in excluded))))
     print()
     byfam = {}
     for slug, (rec, _) in records.items():
@@ -579,7 +636,13 @@ def coverage(records):
         t, i = byfam[fam]
         print("%-22s %6d %6d%s" % (fam, t, i, "" if t == i else "   <-- gap"))
     print()
-    print("NOT IMPLEMENTED (%d):" % len(missing))
+    if excluded:
+        print("NOT A GAP (%d) -- excluded from the count above:" % len(excluded))
+        for slug in sorted(excluded):
+            kind, why = NOT_A_GAP[slug]
+            print("  %-34s [%s] %s" % (slug, kind, why.split(". ")[0][:74]))
+        print()
+    print("OPEN (%d):" % len(missing))
     for slug in missing:
         rec = records[slug][0]
         why = None
