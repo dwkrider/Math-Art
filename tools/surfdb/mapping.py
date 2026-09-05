@@ -241,6 +241,18 @@ ALIAS = {
     "tpms_exact:CLP": "clp-exact",
     "tpms_exact:CLP_HANDLE": "clp-handle-exact",
     "tpms_exact:LIDINOID": "lidinoid-exact",
+    # These three shipped as TWO records each: a curated one holding the
+    # Evolver cell but reading `implemented: False`, and a row record
+    # under `<slug>-exact` reading implemented but carrying none of the
+    # curation.  That split is what made the ledger report eleven
+    # shipping surfaces as gaps.  Aliased onto the curated record so
+    # each surface is ONE record that is both curated and implemented.
+    # (LIDINOID above keeps its own `-exact` record deliberately: the
+    # unsuffixed `lidinoid` is the NODAL route, a different construction
+    # of the same surface rather than the same row twice.)
+    "tpms_exact:LORD_MACKAY_P3A": "lord-mackay-p3a",
+    "tpms_exact:SCHOEN_BATWING": "schoen-batwing",
+    "tpms_exact:SCHOEN_HYBRID_1": "schoen-hybrid-1",
     "tpms_exact:RPD": "rpd-exact",
     "tpms_exact:HT": "schoen-h-t",
     "tpms_exact:SS": "schoen-s-s",

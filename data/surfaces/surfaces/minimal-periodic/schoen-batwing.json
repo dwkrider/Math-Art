@@ -1,21 +1,22 @@
 {
   "schema_version": "0.1.0",
   "slug": "schoen-batwing",
-  "name": "Schoen Batwing Surface",
+  "name": "SCHOEN_BATWING (exact)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-crystallographic",
     "triply-periodic"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
     "evolver_cell": {
       "command": "showcube",
       "copies": 96,
@@ -696,7 +697,7 @@
       "weld_tol": 1e-08,
       "word": "efjdbcb"
     },
-    "note": "No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula from the literature would be worse than a null. See construction.blocked_by."
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -717,21 +718,29 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "No published nodal formula, and no exact Weierstrass tiling has been built. One of ~18 second-tier TPMS in the same position.",
-      "resume": "K. Brakke's Surface Evolver periodic-surface collection; A. H. Schoen's own site. See research/missing-surfaces-catalog.md Part D2."
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "SCHOEN_BATWING",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below.",
       "A. H. Schoen, NASA TN D-5541 (1970) and later web listings; K. Brakke's Surface Evolver collection."
     ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
   },
   "tradition": [
     "crystallographic"
   ],
-  "named_after": "Schoen",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

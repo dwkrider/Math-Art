@@ -80,7 +80,7 @@
     "swept",
     "topological"
   ],
-  "count": 482,
+  "count": 479,
   "implemented_count": 413,
   "entries": [
     {
@@ -8159,41 +8159,8 @@
     },
     {
       "slug": "lord-mackay-p3a",
-      "name": "Lord-Mackay P3a Surface",
-      "path": "surfaces/minimal-periodic/lord-mackay-p3a.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "minimal",
-        "minimal-periodic",
-        "not-implemented",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": true,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
-    },
-    {
-      "slug": "lord-mackay-p3a-exact",
       "name": "LORD_MACKAY_P3A (exact)",
-      "path": "surfaces/minimal-periodic/lord-mackay-p3a-exact.json",
+      "path": "surfaces/minimal-periodic/lord-mackay-p3a.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
@@ -8210,7 +8177,7 @@
       "periodicity_rank": 3,
       "genus": null,
       "genus_per_cell": null,
-      "orientable": null,
+      "orientable": true,
       "ends": 0,
       "embedding": "immersed",
       "symmetry": {
@@ -10912,15 +10879,15 @@
     },
     {
       "slug": "schoen-batwing",
-      "name": "Schoen Batwing Surface",
+      "name": "SCHOEN_BATWING (exact)",
       "path": "surfaces/minimal-periodic/schoen-batwing.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
@@ -10939,8 +10906,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -10982,41 +10951,6 @@
       "slug": "schoen-batwing-57",
       "name": "SCHOEN_BATWING_57 (exact)",
       "path": "surfaces/minimal-periodic/schoen-batwing-57.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "implemented",
-        "minimal",
-        "minimal-periodic",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
-      ],
-      "specimen_count": 0
-    },
-    {
-      "slug": "schoen-batwing-exact",
-      "name": "SCHOEN_BATWING (exact)",
-      "path": "surfaces/minimal-periodic/schoen-batwing-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
@@ -11330,41 +11264,8 @@
     },
     {
       "slug": "schoen-hybrid-1",
-      "name": "Schoen Hybrid-1 [P, F-RD] Surface",
-      "path": "surfaces/minimal-periodic/schoen-hybrid-1.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "minimal",
-        "minimal-periodic",
-        "not-implemented",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": true,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
-    },
-    {
-      "slug": "schoen-hybrid-1-exact",
       "name": "SCHOEN_HYBRID_1 (exact)",
-      "path": "surfaces/minimal-periodic/schoen-hybrid-1-exact.json",
+      "path": "surfaces/minimal-periodic/schoen-hybrid-1.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
@@ -11381,7 +11282,7 @@
       "periodicity_rank": 3,
       "genus": null,
       "genus_per_cell": null,
-      "orientable": null,
+      "orientable": true,
       "ends": 0,
       "embedding": "immersed",
       "symmetry": {
