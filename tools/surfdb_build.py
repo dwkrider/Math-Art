@@ -505,7 +505,16 @@ class Builder:
             slug = self.place(
                 "minsurf", key, label, family,
                 {"generator": "math_art.minsurf.parametric",
-                 "operator_id": ("mesh.periodic_minimal_add"
+                 # SCHERKT is the exception: minimal_surface_toolkit drops
+                 # it from mesh.periodic_minimal_add's list on purpose (it
+                 # is singly periodic and rode in the TPMS dict
+                 # historically), and its own comment says it stays
+                 # "reachable via mesh.tpms_add" -- which is where it is,
+                 # and where it builds. Pointing the record at the operator
+                 # that omits it made the drive stage conclude no operator
+                 # offered it at all.
+                 "operator_id": ("mesh.tpms_add" if key == "SCHERKT" else
+                                 "mesh.periodic_minimal_add"
                                  if fam_key in ("SINGLY", "DOUBLY")
                                  else "mesh.parametric_minimal_add"),
                  "family": fam_key, "key": key,
@@ -1685,6 +1694,15 @@ SINGLETONS = [
      "scherk_collins_generator", "mesh.scherk_collins_add", "none"),
     ("seifert-surface", "Seifert Surface", "topological",
      "seifert_surface_generator", "mesh.seifert_surface_add", "none"),
+    # The surface every "Calabi-Yau manifold" picture actually shows.
+    # Filed `topological` rather than `algebraic`: it IS a complex
+    # algebraic curve, but the folder's rule is to file by the property
+    # the literature names it for, and what identifies this one is its
+    # topology -- the Milnor fibre of a Brieskorn singularity, spanning
+    # a torus link.  `algebraic` here also means an implicit polynomial
+    # in three REAL variables, which this is not.
+    ("calabi-yau-cross-section", "Calabi-Yau Cross-Section", "topological",
+     "calabi_yau_generator", "mesh.calabi_yau_add", "none"),
     ("plateau-span", "Plateau Soap-Film Span", "physical",
      "minimal_surface_toolkit", "object.minimal_span", "minimal"),
     ("bubble-cluster", "Bubble Cluster", "physical", "bubble_generator",

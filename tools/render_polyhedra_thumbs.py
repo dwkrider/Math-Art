@@ -54,7 +54,7 @@ import subjects as subject_cfg                                # noqa: E402
 from polyhedra_tessellate import tessellate_face              # noqa: E402
 
 DB = os.path.join(PROJ, "data", "polyhedra")
-OUT = os.path.join(PROJ, "web", "thumbs")
+OUT = os.path.join(PROJ, "web", "thumbs", "polyhedra")
 
 # Matches the documentation's variant galleries: the catalogue shows
 # these small, and the site's live viewer is there for a closer look.

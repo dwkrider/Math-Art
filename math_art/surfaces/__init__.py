@@ -12,6 +12,11 @@ follows `math_art/seifert/`, `minsurf/`, `knots/`, `patterns/`,
     harmonics   spherical harmonics as radial displacement.
     algebraic   the classical algebraic surfaces -- Cayley, Clebsch,
                 Kummer, Barth -- as zero sets of polynomials.
+    calabi_yau  combinatorial skeletons of Calabi-Yau geometry: Ruan's
+                SYZ discriminant graph and the Hanson-Sha tessellation
+                of the Fermat surfaces in CP3.  Deliberately has no
+                operator over it -- see the module header -- so nothing
+                is re-exported here; import it by name.
 
 WHY THIS IS SEPARATE FROM `minsurf/`.  Minimal surfaces are surfaces,
 so two sibling packages reads oddly, and the split is historical rather

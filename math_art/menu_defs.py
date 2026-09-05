@@ -68,6 +68,19 @@ SURFACES = Menu(
         _e("object.minimal_span", 'OUTLINER_OB_SURFACE'),
         _e("mesh.seifert_surface_add", 'MOD_SIMPLIFY', "Seifert Surface"),
         _e("mesh.algebraic_surface_add", 'SURFACE_NSURFACE'),
+        # A Calabi-Yau threefold is six real dimensions and does
+        # not fit here; these say, in their labels and their
+        # descriptions, which honest 2- or 3-dimensional shadow of
+        # one they are drawing.  (The two Ricci-flat metric slices
+        # are presets of Miscellaneous Surface, above, as is the
+        # tropical Calabi-Yau surface, while Batyrev's reflexive
+        # mirror pairs and the K3 polytope are entries of Notable
+        # Polyhedron; the SYZ
+        # discriminant graph and the Hanson-Sha tessellation of the
+        # Fermat surfaces have no entry at all -- they are correct
+        # and they do not make a picture, so their mathematics
+        # lives in surfaces/calabi_yau.py with no operator over it.)
+        _e("mesh.calabi_yau_add", 'SURFACE_NSURFACE'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
         _e("mesh.minimal_surface_polyhedron_add", 'MESH_UVSPHERE'),
         _e("mesh.squeeze_add", 'MOD_SIMPLEDEFORM'),
@@ -221,6 +234,7 @@ PATTERNS = Menu(
         _e("mesh.tiling_add", 'MESH_GRID'),
         _e("mesh.kuniform_add", 'MESH_GRID'),
         _e("mesh.monohedral_add", 'MESH_PLANE'),
+        _e("mesh.soft_cell_add", 'META_BALL'),
         _e("mesh.isohedral_add", 'MOD_UVPROJECT'),
         _e("mesh.aperiodic_add", 'MESH_ICOSPHERE'),
         _e("mesh.reptile_add", 'MESH_GRID'),

@@ -113,11 +113,13 @@ try:
     from .polyhedra import canonical as _canon
     from .polyhedra import hull as _hull
     from .polyhedra import seeds as _seeds
+    from .polyhedra import toric as _toric
 except ImportError:                                   # flat import
     from polyhedra import _highgenus_maps_data as _hgm
     from polyhedra import canonical as _canon
     from polyhedra import hull as _hull
     from polyhedra import seeds as _seeds
+    from polyhedra import toric as _toric
 
 PHI = (1 + 5 ** 0.5) / 2
 _SQRT3 = math.sqrt(3.0)
@@ -1279,7 +1281,46 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
          ("MAP64", "Regular Map {6,4} (genus 6)",
           "Schulte-Wills; 20 hexagons"),
          ("MAP46", "Regular Map {4,6} (genus 6)",
-          "dual of {6,4}; 30 squares")] + list(_hgm.ITEMS)
+          "dual of {6,4}; 30 squares"),
+         # Batyrev's reflexive polytopes.  A lattice polytope whose
+         # facets all lie at integral distance 1 from an interior
+         # origin, so that its polar dual is a lattice polytope too --
+         # exactly the condition for the toric variety to be
+         # Gorenstein Fano and its anticanonical hypersurfaces to be
+         # Calabi-Yau.  Duality then carries one Calabi-Yau family to
+         # another, which is Batyrev's mirror construction, so each
+         # entry below is a MIRROR PAIR built as one object.
+         ("CY_MIRROR_CUBE",
+          "Calabi-Yau Mirror Pair: Cube & Octahedron",
+          "Reflexive polytopes. The cube (P1 x P1 x P1) beside its "
+          "polar dual, the octahedron. The Calabi-Yaus are not these "
+          "solids but the anticanonical hypersurfaces of the toric "
+          "varieties they define -- two families of K3 surfaces, and "
+          "polar duality makes the two families mirrors of each other"),
+         ("CY_MIRROR_QUARTIC",
+          "Calabi-Yau Mirror Pair: Quartic K3 and P^3",
+          "Reflexive polytopes. 4 Delta_3, the Newton polytope of the "
+          "quartic surface in P^3 -- so its Calabi-Yau hypersurfaces "
+          "are the quartic K3s -- beside the fan polytope of P^3 that "
+          "is its Batyrev mirror"),
+         ("CY_MIRROR_PRISM",
+          "Calabi-Yau Mirror Pair: Prism & Bipyramid",
+          "Reflexive polytopes. The triangular prism (P2 x P1) beside "
+          "its polar dual; their anticanonical hypersurfaces are "
+          "mirror families of K3 surfaces"),
+         ("CY_MIRROR_WP1113",
+          "Calabi-Yau Mirror Pair: Weighted P(1,1,1,3)",
+          "A reflexive simplex beside its dual. Every reflexive "
+          "simplex is self-dual, so this Calabi-Yau family is its own "
+          "mirror"),
+         ("CY_K3_POLYTOPE",
+          "Calabi-Yau K3 Polytope (64 vertices)",
+          "The bounded region of the complement of a smooth tropical "
+          "quartic surface -- a tropical K3, the large-complex-"
+          "structure limit of a quartic in P^3 "
+          "(Balletti-Panizzut-Sturmfels Example 4). Simple, with the "
+          "largest f-vector (64, 96, 34) their classification "
+          "allows")] + list(_hgm.ITEMS)
 
 
 def build(kind, flex=0.0):
@@ -1305,6 +1346,12 @@ def build(kind, flex=0.0):
         V, F = self_dual_16()
     elif kind == 'PSEUDO_GRCO':
         V, F = pseudo_great_rhombicuboctahedron()
+    elif kind.startswith('CY_MIRROR_'):
+        V, F = _toric.mirror_pair(
+            {'CUBE': 'CUBE', 'QUARTIC': 'QUARTIC', 'PRISM': 'PRISM',
+             'WP1113': 'WP1113'}[kind[len('CY_MIRROR_'):]])
+    elif kind == 'CY_K3_POLYTOPE':
+        V, F = _toric.k3_polytope()
     else:
         S = GALLERY[kind]
         V = [tuple(float(c) for c in v) for v in S["V"]]
@@ -1322,7 +1369,9 @@ def build(kind, flex=0.0):
 # start.
 _ASSERTED = {'SHARP', 'TETRA_STELLATED_ICOSA', 'TETRA_TRUNCATED_DODECA',
              'SELF_DUAL_16', 'PSEUDO_GRCO',
-             'BREHM_BOY', 'BRICARD', 'STEFFEN', 'TRIACONTAHEXA'}
+             'BREHM_BOY', 'BRICARD', 'STEFFEN', 'TRIACONTAHEXA',
+             'CY_MIRROR_CUBE', 'CY_MIRROR_QUARTIC', 'CY_MIRROR_PRISM',
+             'CY_MIRROR_WP1113', 'CY_K3_POLYTOPE'}
 
 
 def _self_test():
@@ -1341,7 +1390,17 @@ def _self_test():
             'BREHM_BOY': (9, 18, 10, 1),        # projective plane, chi = 1
             'BRICARD': (6, 12, 8, 2),
             'STEFFEN': (9, 21, 14, 2),
-            'TRIACONTAHEXA': (38, 72, 36, 2)}
+            'TRIACONTAHEXA': (38, 72, 36, 2),
+            # A mirror pair is two closed polyhedra in one mesh, so
+            # chi is 4 rather than 2 -- and that IS the check: a pair
+            # whose halves had fused or dropped would not sum.
+            'CY_MIRROR_CUBE': (14, 24, 14, 4),
+            'CY_MIRROR_QUARTIC': (8, 12, 8, 4),
+            'CY_MIRROR_PRISM': (11, 18, 11, 4),
+            'CY_MIRROR_WP1113': (8, 12, 8, 4),
+            # Balletti-Panizzut-Sturmfels give this f-vector; it is
+            # rebuilt here from the tropical quartic, not quoted.
+            'CY_K3_POLYTOPE': (64, 96, 34, 2)}
     want.update(_hgm.WANT)
     for kind, _lbl, _d in ITEMS:
         V, F = build(kind)

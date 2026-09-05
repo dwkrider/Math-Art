@@ -20,8 +20,11 @@ import sys
 
 WEB = os.path.dirname(os.path.abspath(__file__))
 PROJ = os.path.dirname(WEB)
-DB_PREFIX = "/data/polyhedra/"
-DB_ROOT = os.path.join(PROJ, "data", "polyhedra")
+# Both databases, by the same rule: anything under /data/<name>/ is served
+# from the repository's own data/<name>/. Named explicitly rather than
+# exposing all of data/, which holds more than the site should publish.
+DB_NAMES = ("polyhedra", "surfaces")
+DB_ROOT = os.path.join(PROJ, "data")
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -30,11 +33,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def translate_path(self, path):
         clean = path.split("?", 1)[0].split("#", 1)[0]
-        if clean.startswith(DB_PREFIX):
-            rel = clean[len(DB_PREFIX):]
+        for name in DB_NAMES:
+            prefix = "/data/%s/" % name
+            if not clean.startswith(prefix):
+                continue
+            root = os.path.join(DB_ROOT, name)
+            target = os.path.normpath(os.path.join(root, clean[len(prefix):]))
             # Refuse to walk out of the database directory.
-            target = os.path.normpath(os.path.join(DB_ROOT, rel))
-            if os.path.commonpath([target, DB_ROOT]) == DB_ROOT:
+            if os.path.commonpath([target, root]) == root:
                 return target
         return super().translate_path(path)
 
@@ -52,12 +58,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-    if not os.path.isdir(DB_ROOT):
-        print("warning: %s not found -- the catalogue will be empty" % DB_ROOT)
+    for name in DB_NAMES:
+        d = os.path.join(DB_ROOT, name)
+        if not os.path.isdir(d):
+            print("warning: %s not found -- that catalogue will be empty" % d)
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
     print("Math Art companion site: http://localhost:%d/" % port)
-    print("  polyhedra module:      http://localhost:%d/modules/polyhedra.html"
-          % port)
+    for name in ("polyhedra", "surfaces"):
+        print("  %-9s module:     http://localhost:%d/modules/%s.html"
+              % (name, port, name))
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

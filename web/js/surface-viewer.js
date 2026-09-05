@@ -75,25 +75,54 @@ void main() {
   vec3 base = front ? uFront : uBack;
   if (!front) n = -n;
 
+  // The documentation studio's lamps, in CAMERA space.
+  //
+  // docs/render_docs.py lights every figure in the repository with a fixed
+  // four-light rig. Its lamps sit at fixed positions in the Blender world
+  // and so does its camera, which means they are fixed relative to the
+  // camera -- and this shader's normals are in the viewer's camera frame.
+  // So each direction below is the lamp's Blender unit vector resolved
+  // onto the studio camera basis (right, up, toward-camera) built in
+  // STUDIO_VIEW above: key (1.8,-1.9,1.6), fill (-2.4,-0.8,0.5), rims
+  // (-1.7,1.9,1.1) and (1.9,1.7,0.8), top (0,0.3,2.6).
+  //
+  // Weights are the studio's own energies: key 320, rims 750 each scaled
+  // by subjects.STUDIO_RIM_SCALE = 0.35, top 150, fill 70.
+  vec3 key  = normalize(vec3( 0.176,  0.201,  0.964));
+  vec3 fill = normalize(vec3(-0.956,  0.259, -0.142));
+  vec3 rimL = normalize(vec3(-0.164,  0.684, -0.711));
+  vec3 rimR = normalize(vec3( 0.939,  0.340, -0.057));
+  vec3 top  = normalize(vec3( 0.060,  0.966,  0.251));
+
   // WRAPPED lighting, and a hemisphere term, so that nothing ever falls
-  // to black.  With three plain lambert lights every face pointing away
-  // from all of them dropped to ambient alone, and on a surface as
-  // folded as these that is most of what you see from any given angle --
-  // half the object read as a black silhouette and the detail in it was
-  // simply gone.  Wrapping keeps a lit gradient right round the terminator.
-  vec3 key  = normalize(vec3( 0.42, 0.36, 0.83));
-  vec3 fill = normalize(vec3(-0.66, 0.16, 0.38));
-  vec3 rim  = normalize(vec3( 0.08, -0.88, 0.26));
-  float w = 0.45;
+  // to black.  With plain lambert lights every face pointing away from
+  // all of them dropped to ambient alone, and on a surface as folded as
+  // these that is most of what you see from any given angle -- half the
+  // object read as a black silhouette and the detail in it was simply
+  // gone.  Cycles never has that problem because the studio's dome
+  // bounces light back; wrapping is the cheap stand-in for that bounce.
+  float w = 0.25;
   float lk = clamp((dot(n, key)  + w) / (1.0 + w), 0.0, 1.0);
   float lf = clamp((dot(n, fill) + w) / (1.0 + w), 0.0, 1.0);
-  float lr = clamp((dot(n, rim)  + w) / (1.0 + w), 0.0, 1.0);
-  float sky = 0.5 + 0.5 * n.y;            // soft top-to-bottom gradient
-  float l = uAmbient + 0.16 * sky + 0.46 * lk + 0.20 * lf + 0.12 * lr;
+  float ll = clamp((dot(n, rimL) + w) / (1.0 + w), 0.0, 1.0);
+  float lr = clamp((dot(n, rimR) + w) / (1.0 + w), 0.0, 1.0);
+  float lt = clamp((dot(n, top)  + w) / (1.0 + w), 0.0, 1.0);
+  float sky = 0.5 + 0.5 * n.y;            // the dome, softly
+  float l = uAmbient + 0.10 * sky
+          + 0.44 * lk + 0.10 * lf + 0.13 * ll + 0.13 * lr + 0.20 * lt;
 
-  // A touch of specular keeps curvature readable on a matte palette.
+  // NOTE for anyone tempted to dim back faces as a stand-in for the
+  // shadows this renderer does not have: it does not work here. Winding
+  // on an open sheet is whatever its generator happened to emit, not
+  // "outside", so gl_FrontFacing does not mean what it means on a closed
+  // solid -- the compound helical cone is wound entirely the "back" way
+  // and simply went dark all over. Any occlusion approximation has to be
+  // geometric (screen-space depth), not topological.
+
+  // The studio's White Plastic is roughness 0.38, which is tighter and
+  // brighter than the broad sheen this had before.
   vec3 h = normalize(key + vec3(0.0, 0.0, 1.0));
-  float s = pow(max(dot(n, h), 0.0), 26.0) * 0.22;
+  float s = pow(max(dot(n, h), 0.0), 42.0) * 0.30;
   outColor = vec4(base * l + vec3(s), 1.0);
 }`;
 
@@ -246,13 +275,52 @@ export function decodeMesh(packed) {
 
 // --------------------------------------------------------------- viewer
 
-// Both defaults are LIGHT.  The two sides of a sheet have to be told
-// apart, but a dark second colour does it by throwing away the shading
-// that carries the shape, and a surface with one bright side and one
-// near-black one reads as half a surface.
+/**
+ * The documentation studio's material: White Plastic at base colour
+ * (0.84, 0.84, 0.86) -- see docs/render_docs.py.
+ */
+export const STUDIO_PLASTIC = [0.84, 0.84, 0.86];
+
+/**
+ * The studio's LENS and camera distance.
+ *
+ * Matching the orientation is not enough to make a viewer agree with a
+ * thumbnail; the projection has to match too. The studio shoots on an
+ * 84 mm lens (subjects.STUDIO_LENS) on Blender's default 36 mm sensor,
+ * which is 24.2 degrees, from 7.75 units away (render_docs puts the
+ * camera at rr * 5.0 with rr = 1.55). This viewer was on 32 degrees at
+ * 4.1 -- much closer and much wider, so the near part of a surface was
+ * enlarged against the far part and the shape read as though seen from a
+ * different angle even though it was turned exactly right. On the
+ * ding-dong that showed as a teardrop far too large for its skirt.
+ *
+ * The two normalisations already agree: docs/render_docs.py fits every
+ * subject into a 2 m cube, and setMesh scales every mesh's longest span
+ * to 2. Both leave a half-extent of 1, so the studio's numbers can be
+ * used here directly.
+ */
+export const STUDIO_FOV = 2 * Math.atan(36 / 2 / 84) * 180 / Math.PI;
+export const STUDIO_DISTANCE = 1.55 * 5.0;
+
+// ONE material on both sides, as the studio has it. Cycles renders these
+// surfaces with a single material and simply flips the normal on a back
+// face, and the sheets still read: the fold is carried by the shading and
+// the silhouette, not by a colour change.
+//
+// An earlier version tinted the back face to tell the sides apart. That
+// is a genuinely useful thing to do -- it is the quickest way to see
+// which way a minimal surface passes through itself -- but it makes the
+// viewer disagree with every thumbnail and documentation figure of the
+// same surface, and matching those matters more here. It remains one
+// option away: pass `back` to get it.
+//
+// Whatever you pass, keep it LIGHT. A dark second colour tells the sides
+// apart by throwing away the shading that carries the shape, and a
+// surface with one bright side and one near-black one reads as half a
+// surface.
 const DEFAULTS = {
-  front: [0.88, 0.72, 0.42],       // warm sand
-  back: [0.52, 0.70, 0.80],        // cool sky
+  front: STUDIO_PLASTIC,
+  back: STUDIO_PLASTIC,
   background: [0, 0, 0, 0],
   ambient: 0.30,
   wireframe: false,
@@ -270,6 +338,59 @@ const DEFAULTS = {
  * comes from.  The only cure is a fresh element, so a canvas that has
  * been through a viewer is replaced by a clone before being reused.
  */
+/**
+ * The orientation the documentation studio shoots from.
+ *
+ * docs/render_docs.py puts its camera on the direction (1.35, -2.2, 0.95)
+ * in Blender's Z-up world, aimed at the origin with world +Z as up. Every
+ * hero figure, every variant tile and every surface thumbnail in
+ * web/thumbs/ is taken from there, so a viewer that opens on the same
+ * orientation shows the reader the picture they just clicked.
+ *
+ * NO axis remap belongs here. The meshes in web/surfaces/ are exported
+ * straight out of Blender, so their coordinates are already Z-up: the
+ * rotation below has to convert that convention AND aim the camera, and
+ * doing both at once is exactly what a frame built from the Blender
+ * camera vector and Blender's world up does. Remapping the camera vector
+ * first converts twice, which put the catenoid's axis down the line of
+ * sight instead of standing it up as the thumbnail has it.
+ */
+export const STUDIO_VIEW = (() => {
+  const norm = (v) => {
+    const L = Math.hypot(v[0], v[1], v[2]) || 1;
+    return [v[0] / L, v[1] / L, v[2] / L];
+  };
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1],
+                           a[2] * b[0] - a[0] * b[2],
+                           a[0] * b[1] - a[1] * b[0]];
+  const f = norm([1.35, -2.2, 0.95]);       // toward the studio camera
+  const r = norm(cross([0, 0, 1], f));      // camera right (Blender up)
+  const u = cross(f, r);                    // camera up, orthogonalised
+  // Rows r, u, f: the matrix sending the camera frame to x, y, z.
+  const m = [r, u, f];
+  const tr = m[0][0] + m[1][1] + m[2][2];
+  let q;
+  if (tr > 0) {
+    const s = Math.sqrt(tr + 1) * 2;
+    q = [(m[2][1] - m[1][2]) / s, (m[0][2] - m[2][0]) / s,
+         (m[1][0] - m[0][1]) / s, 0.25 * s];
+  } else if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) {
+    const s = Math.sqrt(1 + m[0][0] - m[1][1] - m[2][2]) * 2;
+    q = [0.25 * s, (m[0][1] + m[1][0]) / s, (m[0][2] + m[2][0]) / s,
+         (m[2][1] - m[1][2]) / s];
+  } else if (m[1][1] > m[2][2]) {
+    const s = Math.sqrt(1 + m[1][1] - m[0][0] - m[2][2]) * 2;
+    q = [(m[0][1] + m[1][0]) / s, 0.25 * s, (m[1][2] + m[2][1]) / s,
+         (m[0][2] - m[2][0]) / s];
+  } else {
+    const s = Math.sqrt(1 + m[2][2] - m[0][0] - m[1][1]) * 2;
+    q = [(m[0][2] + m[2][0]) / s, (m[1][2] + m[2][1]) / s, 0.25 * s,
+         (m[1][0] - m[0][1]) / s];
+  }
+  const L = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+  return [q[0] / L, q[1] / L, q[2] / L, q[3] / L];
+})();
+
 export function freshCanvas(canvas) {
   if (!canvas.dataset.svUsed || !canvas.parentNode) {
     canvas.dataset.svUsed = '1';
@@ -285,9 +406,15 @@ export class SurfaceViewer {
   constructor(canvas, options = {}) {
     this.canvas = canvas = freshCanvas(canvas);
     this.opts = Object.assign({}, DEFAULTS, options);
+    // `home` is wherever the viewer was OPENED, so the Home button and a
+    // double-click return to the orientation the page actually chose
+    // rather than to a fixed one it never used. The Surfaces module opens
+    // on STUDIO_VIEW; without this, Home threw the reader out of the
+    // studio pose and into an arbitrary three-quarter view.
     this.rotation = quatNormalize(options.rotation
       || quatMultiply(quatFromAxisAngle([1, 0, 0], -0.42),
                       quatFromAxisAngle([0, 1, 0], 0.62)));
+    this.homeRotation = this.rotation;
     this.zoom = 1;
     this.group = null;
     this.dragging = false;
@@ -525,8 +652,7 @@ export class SurfaceViewer {
   /** Face the surface down one of its axes; handy for a "top" button. */
   setView(name) {
     const views = {
-      home: quatMultiply(quatFromAxisAngle([1, 0, 0], -0.42),
-                         quatFromAxisAngle([0, 1, 0], 0.62)),
+      home: this.homeRotation,
       front: [0, 0, 0, 1],
       top: quatFromAxisAngle([1, 0, 0], -Math.PI / 2),
       side: quatFromAxisAngle([0, 1, 0], Math.PI / 2),

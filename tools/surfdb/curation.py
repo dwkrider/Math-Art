@@ -947,6 +947,101 @@ FACTS = {
 
     # ---------------- topological ----------------
 
+    # The object every "Calabi-Yau manifold" picture actually shows.
+    # A Calabi-Yau threefold has six real dimensions; what is drawn is a
+    # two-real-dimensional cross-section of one, projected R^4 -> R^3.
+    # Saying so is the whole point of the record.
+    "calabi-yau-cross-section": {
+        "discovered_by": "Andrew J. Hanson",
+        "year": 1994,
+        "alternate_names": ["Fermat surface cross-section",
+                            "Calabi-Yau quintic cross-section",
+                            "Milnor fibre of a Brieskorn singularity"],
+        "primary_family": "topological",
+        "tradition": ["gallery", "sculptural"],
+        "definition": {
+            "mode": "parametric",
+            "fidelity": "exact",
+            "note":
+                "z1^p + z2^q = 1 in C^2 = R^4, projected to R^3. For the "
+                "quintic threefold z0^5 + ... + z4^5 = 0 in CP^4, fixing "
+                "two coordinates and normalising leaves z1^5 + z2^5 = 1: "
+                "a complex curve, so a real 2-manifold. Hanson's charts "
+                "are z1 = exp(2 pi i k1/p) u1^(2/p), z2 = exp(2 pi i "
+                "k2/q) u2^(2/q) with u1 = cosh(xi + i theta) and "
+                "u2 = -i sinh(xi + i theta), over 0 <= theta <= pi/2 and "
+                "|xi| <= xi_max; u1^2 + u2^2 = 1 makes the defining "
+                "equation an identity. NO SINGLE x,y,z CHART IS STORED, "
+                "and not for the usual reason: the surface is p*q charts "
+                "related by roots of unity, not one, and the projection "
+                "(Re z1, Re z2, cos a Im z1 + sin a Im z2) depends on a "
+                "chosen angle a. The shipped implementation is "
+                "authoritative and checks its own residual "
+                "max |z1^p + z2^q - 1| at build time.",
+        },
+        "curvature": {"condition": "none"},
+        "topology": {
+            # All three vary with (p, q) and are resolved on every
+            # specimen: chi = 1 - (p-1)(q-1), gcd(p,q) boundary circles,
+            # genus ((p-1)(q-1) - gcd(p,q) + 1)/2.  These are the Milnor
+            # fibre's invariants, and the generator's self-test measures
+            # them off the welded mesh rather than asserting them.
+            "euler_characteristic": "varies",
+            "genus": "varies",
+            "boundary_components": "varies",
+            "orientable": True,
+            "one_sided": False,
+            "compact": False,
+            "complete": False,
+        },
+        "symmetry": {"kind": "point", "periodicity_rank": 0},
+        "embedding": {
+            "quality": "self-intersecting",
+            "self_intersecting": True,
+        },
+        "metrics": {
+            "measures_note":
+                "Clip-dependent, so left null. The affine curve is "
+                "unbounded -- it runs out to gcd(p,q) points at "
+                "projective infinity -- and the mesh is a truncation at "
+                "a chosen |xi| <= xi_max, so its area is a property of "
+                "the cut, not of the surface.",
+        },
+        "specimens": [
+            {"label": "quintic cross-section (n = 5)",
+             "parameters": {"family": "FERMAT", "degree": 5},
+             "topology": {"euler_characteristic": -15, "genus": 6,
+                          "boundary_components": 5}},
+            {"label": "cubic cross-section (n = 3)",
+             "parameters": {"family": "FERMAT", "degree": 3},
+             "topology": {"euler_characteristic": -3, "genus": 1,
+                          "boundary_components": 3}},
+            {"label": "conic cross-section (n = 2)",
+             "parameters": {"family": "FERMAT", "degree": 2},
+             "topology": {"euler_characteristic": 0, "genus": 0,
+                          "boundary_components": 2}},
+            {"label": "trefoil Milnor fibre (p, q) = (2, 3)",
+             "parameters": {"family": "BRIESKORN", "power_p": 2,
+                            "power_q": 3},
+             "topology": {"euler_characteristic": -1, "genus": 1,
+                          "boundary_components": 1}},
+        ],
+        "notes": {"caveats": [
+            "It is NOT a Calabi-Yau manifold. A Calabi-Yau threefold is "
+            "six real dimensions; this is a two-real-dimensional "
+            "cross-section of one. Every popular treatment blurs this.",
+            "The self-intersections belong to the R^4 -> R^3 projection, "
+            "not to the surface, and they move when the projection angle "
+            "is turned. In R^4 the surface is embedded.",
+            "As a complex curve it is the Milnor fibre of the "
+            "Brieskorn-Pham singularity z1^p + z2^q, so its boundary is "
+            "the (p, q) torus link and it is a genus-minimising Seifert "
+            "surface of that link -- but not the same object as the "
+            "`seifert-surface` record, which is built from braid words "
+            "and comes out embedded.",
+        ]},
+    },
+
     "klein-bottle": {
         "discovered_by": "Felix Klein", "year": 1882,
         "primary_family": "topological", "tradition": ["classical",
@@ -1741,12 +1836,17 @@ def polyhedral_analogue(slug):
 # actually observed rather than from reading the code. Both are findings
 # ABOUT math_art, which is the point of driving the generators at all.
 FACTS["scherkt-surface"] = {
-    "notes": {"known_issue":
-              "FOUND BY THE DRIVE STAGE. 'SCHERKT' is a row in "
-              "math_art/minsurf/tpms.py's TPMS registry and builds fine "
-              "through minsurf.build_tpms, but NO operator offers it: "
-              "mesh.periodic_minimal_add's surface enum omits it under "
-              "every one of its five periodicity settings (SINGLY, DOUBLY, "
-              "TRIPLY, EXACT, EXACT_FAMILY). The surface is reachable from "
-              "the engine and not from the user interface."},
+    "notes": {"construction":
+              "mesh.periodic_minimal_add's surface enum omits 'SCHERKT' "
+              "under every one of its five periodicity settings, and does "
+              "so deliberately: minimal_surface_toolkit drops it because it "
+              "is singly periodic and merely rode in the TPMS field dict "
+              "historically, the proper singly-periodic tower being the WE "
+              "SCHERK_TOWER. Its comment records that the surface stays "
+              "'reachable via mesh.tpms_add', and it is -- that operator "
+              "builds it. An earlier note here concluded from the one "
+              "operator that NO operator offered it, which was too strong: "
+              "the drive stage only ever tries the operator the record "
+              "names, so pointing the record at the wrong one is "
+              "indistinguishable from the surface being unreachable."},
 }

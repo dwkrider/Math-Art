@@ -594,3 +594,57 @@ figcaption {
 }
 
 .sources li { margin-bottom: 0.25rem; }
+
+/* ------------------------------------------------- surfaces module */
+
+/* A surface's definition is a formula, not a value, so it gets its own
+ * row shape: a narrow label and the expression running full width under
+ * it if need be. The deflist's two rigid columns would either truncate a
+ * parametrisation or force the labels absurdly wide. */
+.formula {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr;
+  gap: 0.15rem 0.5rem;
+  align-items: baseline;
+  padding: 0.16rem 0;
+  font-size: 0.86rem;
+}
+
+.formula-label {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-family: var(--serif);
+}
+
+.formula code {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Said plainly, because an empty stage otherwise reads as a page that
+ * failed to load rather than a surface nothing builds yet. */
+.notice {
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-dim);
+  border-radius: 6px;
+  background: var(--bg-sunken);
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+}
+
+#stage.empty { opacity: 0.25; }
+
+/* Stands in for a tile whose surface no generator builds, so the grid
+ * keeps its rhythm instead of collapsing those cards to a line of text. */
+.tile-blank {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(45deg, #0d1013 0 6px, #101419 6px 12px);
+}
