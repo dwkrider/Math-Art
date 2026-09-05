@@ -1085,17 +1085,31 @@ if _IN_BLENDER:
         # dimension, shown by periodicity (singly -> u only; doubly ->
         # u, v; triply -> u, v, w = x, y, z).  The array's dimensionality
         # follows the surface's periodicity.
+        # For a triply periodic cell the three counts run along the
+        # cell's own lattice vectors.  Those are the world axes for
+        # every simple-cubic cell, but a centred lattice can run
+        # off-axis -- Schoen C(D)'s is face-centred cubic, rotated 45
+        # degrees, so its 2x1x1 block is a diagonal slab, not a box.
+        # That is the correct meaning for a rotated lattice, and the
+        # descriptions below say "lattice vector" rather than
+        # promising world x/y/z.
         cells_u: IntProperty(
             name="Cells", default=1, min=1, max=8,
             description="Copies along the 1st period axis (singly: the "
-                        "single period; doubly: lattice vector 1; triply: x)")
+                        "single period; doubly: lattice vector 1; triply: "
+                        "the cell's 1st lattice vector -- world X for a "
+                        "cubic cell, a diagonal for a rotated lattice "
+                        "such as Schoen C(D)'s)")
         cells_v: IntProperty(
             name="Cells V", default=1, min=1, max=8,
             description="Copies along the 2nd period axis (doubly: lattice "
-                        "vector 2; triply: y)")
+                        "vector 2; triply: the cell's 2nd lattice vector "
+                        "-- world Y for a cubic cell)")
         cells_w: IntProperty(
             name="Cells W", default=1, min=1, max=8,
-            description="Copies along the 3rd period axis (triply: z)")
+            description="Copies along the 3rd period axis (triply: the "
+                        "cell's 3rd lattice vector -- world Z for a cubic "
+                        "cell)")
         # legacy scalar alias (not shown): scripted
         # periodic_minimal_add(surface=..., cells=3) still works and
         # broadcasts to every tiling axis left at its default (1).

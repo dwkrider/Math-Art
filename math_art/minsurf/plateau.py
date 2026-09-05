@@ -3046,6 +3046,48 @@ def _pure_translations(lets, tmax, depth=12):
     return out
 
 
+def _lattice_basis(lets, tmax, depth=12):
+    """The translation lattice of the cell's letters, as three rows.
+
+    The three shortest linearly independent PURE translations among
+    products of the generators -- greedy shortest-first independence,
+    which is sufficient for these lattices (no Minkowski reduction
+    needed).  The letters are the record's FULL alphabet, which matters:
+    a cell's lattice can live in letters its assembly word never uses.
+
+    For a simple-cubic cell the basis comes out axis-aligned and the
+    tiler built on it reduces to the historical per-axis search.  For a
+    centred lattice it does not: Schoen C(D) is face-centred cubic,
+    rotated 45 degrees relative to x/y/z, so every shortest translation
+    is of the (+-p, +-p, 0) face-diagonal kind and an axis-aligned
+    search has nothing to find.
+
+    Returns None when the letters reach fewer than three independent
+    translations (Lord-Mackay P3a's group has no pure translations at
+    all within reach).
+    """
+    ts = _pure_translations(lets, tmax, depth)
+    ts.sort(key=lambda v: float(np.linalg.norm(v)))
+    basis = []
+    for v in ts:
+        A = np.asarray(basis + [v], dtype=float)
+        sv = np.linalg.svd(A, compute_uv=False)
+        if float(sv[-1]) > 1e-6:
+            basis.append(v)
+            if len(basis) == 3:
+                break
+    if len(basis) < 3:
+        return None
+    # Canonical presentation: each vector with its largest component
+    # positive, ordered by the axis that component lies on -- so an
+    # axis-aligned basis reads (x, y, z), and for a rotated lattice the
+    # order is still deterministic.
+    basis = [(-v if v[int(np.argmax(np.abs(v)))] < 0.0 else v)
+             for v in basis]
+    basis.sort(key=lambda v: int(np.argmax(np.abs(v))))
+    return np.asarray(basis, dtype=float)
+
+
 def fe_cell_tile_group(key, Vpatch, quads, counts, max_placements=1200):
     """Tile a datafile cell BY ITS GROUP rather than by moving the mesh.
 
@@ -3067,13 +3109,27 @@ def fe_cell_tile_group(key, Vpatch, quads, counts, max_placements=1200):
     why translating the MESH can never work there: the +x neighbour of
     a starfish cell is not a translate of it.  So tile by ENLARGING THE
     ORBIT: find, for each cell of the requested block, a group element
-    whose rotation part maps the axis-aligned cell box to itself (a
-    signed permutation) and whose action moves the cell centre onto
-    that lattice site, and place the fundamental patch under
+    whose rotation part maps the cell onto a cell (a signed
+    permutation) and whose action moves the cell centre onto that
+    lattice site, and place the fundamental patch under
     `element x word element`.  Every seam -- inside a cell and between
     cells -- is then the same patch-against-patch contact that already
     welds at the baked tolerance, because coincident copies of the same
     mesh weld exactly.
+
+    The lattice SITES are not assumed to run along x/y/z.  The world
+    axes are tried first (the right frame for every simple-cubic cell
+    in the catalog), and when they reach no neighbour the basis is
+    taken from the group itself: the three shortest independent pure
+    translations among products of the letters (`_lattice_basis`).
+    Schoen C(D) is why: its lattice is face-centred cubic rotated 45
+    degrees, every shortest translation a (+-p, +-p, 0) face diagonal,
+    so stepping along x by the bounding-box width lands cells in the
+    wrong place and the axis-aligned search rejects the very elements
+    that place them correctly.  Cell (i, j, k) then sits at
+    i*b1 + j*b2 + k*b3 -- for a rotated lattice a "2x1x1 block" is a
+    diagonal slab, not a box, and the cell-count controls mean "cells
+    along the k-th lattice vector", not "along world x/y/z".
 
     Returns `(V, faces)` or None (the letters reach no neighbour cell,
     the block would exceed `max_placements` copies, or the weld gate
@@ -3099,36 +3155,25 @@ def fe_cell_tile_group(key, Vpatch, quads, counts, max_placements=1200):
     span = float(np.max(period))
     if span <= 1e-9 or float(np.min(period)) <= 1e-9:
         return None
-    # every group element that maps the cell box onto a cell box: the
-    # rotation is a signed permutation and the centre moves by a
-    # lattice displacement.  The mesh's bounding box slightly overhangs
-    # the true cell (boundary arcs bulge past the walls), so the
-    # per-axis period is read off the group's own displacement set --
-    # the smallest axis-aligned centre displacement -- never off the
-    # bbox.
-    reach = float(np.linalg.norm([cu * period[0], cv * period[1],
-                                  cw * period[2]]))
-    cands = []
-    for C in _group_elements(lets, tmax=reach + 2.0 * span):
-        R = C[:3, :3]
-        if not np.allclose(np.abs(R) @ np.ones(3), np.ones(3), atol=1e-9):
-            continue
-        if not np.allclose(R @ R.T, np.eye(3), atol=1e-9):
-            continue
-        d = R @ c0 + C[:3, 3] - c0
-        cands.append((d, C))
-    # Per-axis lattice step: decided by the WELD GATE, not guessed.
-    # The candidate steps are the axis-aligned centre displacements;
-    # among them sit half-period symmetries (a TPMS typically maps to
-    # itself under half a translation composed with a point
-    # transformation), which lay a cell on top of its neighbour, and
-    # multi-period ones, which leave a gap.  Neither the smallest
-    # candidate nor the one nearest the bounding box is reliable -- the
-    # mesh overhangs its true cell by however far the boundary arcs
-    # bulge, 50% for Schwarz D -- so each candidate is tried in
-    # ascending order and the first whose two-cell block welds into one
-    # clean sheet is the step.  Overlap fails on duplicated faces, a
-    # gap fails on components, so the gate cannot pick a wrong one.
+    # every group element that maps the cell onto a cell: the rotation
+    # is a signed permutation and the centre moves by a lattice
+    # displacement.  The mesh's bounding box slightly overhangs the
+    # true cell (boundary arcs bulge past the walls), so the lattice
+    # step is read off the group's own displacement set -- never off
+    # the bbox.
+    def cands_within(tmax):
+        out = []
+        for C in _group_elements(lets, tmax=tmax):
+            R = C[:3, :3]
+            if not np.allclose(np.abs(R) @ np.ones(3), np.ones(3),
+                               atol=1e-9):
+                continue
+            if not np.allclose(R @ R.T, np.eye(3), atol=1e-9):
+                continue
+            d = R @ c0 + C[:3, 3] - c0
+            out.append((d, C))
+        return out
+
     base = float(spec.get('tol', 1e-4) or 1e-4)
     Vp = np.asarray(Vpatch, float)
     faces = [tuple(f) for f in quads]
@@ -3141,27 +3186,84 @@ def fe_cell_tile_group(key, Vpatch, quads, counts, max_placements=1200):
                 return True
         return False
 
-    step = [None, None, None]
-    for a in range(3):
-        by_step = {}
-        for d, C in cands:
-            o1, o2 = (a + 1) % 3, (a + 2) % 3
-            if (abs(d[a]) > 0.25 * period[a]
-                    and abs(d[a]) < 1.6 * period[a]
-                    and abs(d[o1]) < 1e-6 * span
-                    and abs(d[o2]) < 1e-6 * span):
-                by_step.setdefault(round(abs(d[a]), 6), (d, C))
-        for cand in sorted(by_step):
-            d, C = by_step[cand]
-            if welds(list(mats) + [C @ M for M in mats]):
-                step[a] = cand
-                break
-    if any(s is None for s in step):
+    def gate_steps(B, cands):
+        """Per-direction lattice step, decided by the WELD GATE, not
+        guessed.  `B` is a 3x3 array of direction rows; the candidate
+        steps are the centre displacements parallel to each row.
+        Among them sit half-period symmetries (a TPMS typically maps
+        to itself under half a translation composed with a point
+        transformation), which lay a cell on top of its neighbour, and
+        multi-period ones, which leave a gap.  Neither the smallest
+        candidate nor the one nearest the row's length is reliable --
+        the mesh overhangs its true cell by however far the boundary
+        arcs bulge, 50% for Schwarz D -- so each candidate is tried in
+        ascending order and the first whose two-cell block welds into
+        one clean sheet is the step.  Overlap fails on duplicated
+        faces, a gap fails on components, so the gate cannot pick a
+        wrong one.  Returns the three step vectors as rows, or None.
+        """
+        steps = []
+        for a in range(3):
+            L = float(np.linalg.norm(B[a]))
+            if L <= 1e-9:
+                return None
+            u = B[a] / L
+            by_step = {}
+            for d, C in cands:
+                proj = float(d @ u)
+                if not 0.25 * L < abs(proj) < 1.6 * L:
+                    continue
+                if float(np.linalg.norm(d - proj * u)) > 1e-6 * span:
+                    continue
+                by_step.setdefault(round(abs(proj), 6), (d, C))
+            got = None
+            for cand in sorted(by_step):
+                d, C = by_step[cand]
+                if welds(list(mats) + [C @ M for M in mats]):
+                    # step vector along +u regardless of which of the
+                    # two mirror-image candidates the gate happened to
+                    # test: C itself carries the pair {cell, C^-1 cell}
+                    # onto {C cell, cell}, an isometry, so the weld
+                    # verdict holds for both signs.
+                    got = d if d @ u > 0.0 else -d
+                    break
+            if got is None:
+                return None
+            steps.append(got)
+        return np.asarray(steps, dtype=float)
+
+    # The world axes first -- with the bbox extents as the length
+    # scale, exactly the historical search, which is the right frame
+    # for every axis-aligned lattice in the catalog.  Only when that
+    # reaches no neighbour is the basis taken from the group's own
+    # pure translations (C(D)'s face-centred lattice lives there).
+    reach = float(np.linalg.norm([cu * period[0], cv * period[1],
+                                  cw * period[2]]))
+    cands = cands_within(reach + 2.0 * span)
+    steps = gate_steps(np.diag(period), cands)
+    if steps is None:
+        lat = _lattice_basis(lets, tmax=2.5 * span)
+        if lat is None:
+            return None
+        # Block reach along a non-orthogonal basis: the sum bound, not
+        # the norm -- |i*b1 + j*b2 + k*b3| can approach the sum of the
+        # parts when the basis vectors lean together.
+        Ln = np.linalg.norm(lat, axis=1)
+        reach2 = float(cu * Ln[0] + cv * Ln[1] + cw * Ln[2])
+        if reach2 > reach:
+            cands = cands_within(reach2 + 2.0 * span)
+        steps = gate_steps(lat, cands)
+    if steps is None:
         return None
-    step = np.asarray(step, dtype=float)
+    # cell (i, j, k) sits at i*s1 + j*s2 + k*s3; the element laying it
+    # is any candidate whose displacement is that integer combination.
+    try:
+        Sinv = np.linalg.inv(np.asarray(steps, dtype=float).T)
+    except np.linalg.LinAlgError:
+        return None
     cell_of = {}
     for d, C in cands:
-        idx = d / step
+        idx = Sinv @ d
         ridx = np.round(idx)
         if not np.allclose(idx, ridx, atol=1e-6):
             continue
@@ -4121,9 +4223,12 @@ def _selftest():
     # neighbouring cells meet along curves that the two sides sample as
     # images of DIFFERENT fundamental arcs, so no weld tolerance can
     # join them vertex-to-vertex -- the open remainder of this defect,
-    # tracked in the backlog.)
+    # tracked in the backlog.)  C(D) is the off-axis case: its lattice
+    # is face-centred cubic, every shortest translation a (+-p, +-p, 0)
+    # face diagonal, so its block is laid on the basis recovered from
+    # the group rather than on x/y/z and comes out a diagonal slab.
     for key in ('SCHWARZ_D', 'DISPHENOID_FAMILY_B_GENUS_67',
-                'STARFISH_2_1_GENUS_31'):
+                'STARFISH_2_1_GENUS_31', 'CD_SURFACE'):
         try:
             V1 = np.asarray(fe_cell_build(key, (1, 1, 1), 12, 1.0, 0.0)[0])
             V2, q2 = fe_cell_build(key, (2, 2, 1), 12, 1.0, 0.0)[:2]
