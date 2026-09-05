@@ -196,12 +196,13 @@ a separate thing from `viewer.js` next door:
   `{ rotation: STUDIO_VIEW }` shows a surface in the same pose as its
   thumbnail and its documentation figure. `home` follows whatever
   orientation the page opened at.
-- **Two-sided shading.** An open sheet has no inside to cull to, so the
-  two faces are given slightly different colours — the same plastic,
-  cooled and stepped down. On a minimal surface that is the only way to
-  read which way the sheet folds through itself, and it is the one place
-  the viewer departs from the studio, which never needed it because a
-  solid is closed.
+- **One material, both sides.** An open sheet has no inside to cull to,
+  so both faces are drawn in the studio's White Plastic and the normal is
+  simply flipped on a back face — which is exactly what Cycles does when
+  rendering the thumbnails. Tinting the back face is a genuinely useful
+  thing to do, and the quickest way to see which way a minimal surface
+  passes through itself, but it makes the viewer disagree with every
+  figure of the same surface. It is one option away: pass `back`.
 - **No normals.** Flat shading is recovered per-fragment from screen-space
   derivatives, so a mesh needs nothing but positions and indices — which
   halves what an embedded payload has to carry.

@@ -267,24 +267,31 @@ export function decodeMesh(packed) {
 
 // --------------------------------------------------------------- viewer
 
-// The documentation studio's material, which is a White Plastic at base
-// colour (0.84, 0.84, 0.86) -- see docs/render_docs.py.  Using it here is
-// what makes a surface on screen read as the same object as its
-// thumbnail and its documentation figure.
+/**
+ * The documentation studio's material: White Plastic at base colour
+ * (0.84, 0.84, 0.86) -- see docs/render_docs.py.
+ */
+export const STUDIO_PLASTIC = [0.84, 0.84, 0.86];
+
+// ONE material on both sides, as the studio has it. Cycles renders these
+// surfaces with a single material and simply flips the normal on a back
+// face, and the sheets still read: the fold is carried by the shading and
+// the silhouette, not by a colour change.
 //
-// The one deliberate departure: the two sides are not quite identical.
-// The studio never needed a distinction because a solid is closed and you
-// only ever see its outside, but these sheets are open and the only way
-// to read which way one folds through itself is for its two faces to
-// differ.  So the back is the same plastic cooled and darkened slightly
-// -- enough to tell apart, not enough to read as a second material.
+// An earlier version tinted the back face to tell the sides apart. That
+// is a genuinely useful thing to do -- it is the quickest way to see
+// which way a minimal surface passes through itself -- but it makes the
+// viewer disagree with every thumbnail and documentation figure of the
+// same surface, and matching those matters more here. It remains one
+// option away: pass `back` to get it.
 //
-// Both defaults stay LIGHT.  A dark second colour tells the sides apart
-// by throwing away the shading that carries the shape, and a surface with
-// one bright side and one near-black one reads as half a surface.
+// Whatever you pass, keep it LIGHT. A dark second colour tells the sides
+// apart by throwing away the shading that carries the shape, and a
+// surface with one bright side and one near-black one reads as half a
+// surface.
 const DEFAULTS = {
-  front: [0.84, 0.84, 0.86],       // studio White Plastic
-  back: [0.62, 0.67, 0.74],        // the same, cooled and stepped down
+  front: STUDIO_PLASTIC,
+  back: STUDIO_PLASTIC,
   background: [0, 0, 0, 0],
   ambient: 0.30,
   wireframe: false,
