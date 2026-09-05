@@ -406,9 +406,15 @@ export class SurfaceViewer {
   constructor(canvas, options = {}) {
     this.canvas = canvas = freshCanvas(canvas);
     this.opts = Object.assign({}, DEFAULTS, options);
+    // `home` is wherever the viewer was OPENED, so the Home button and a
+    // double-click return to the orientation the page actually chose
+    // rather than to a fixed one it never used. The Surfaces module opens
+    // on STUDIO_VIEW; without this, Home threw the reader out of the
+    // studio pose and into an arbitrary three-quarter view.
     this.rotation = quatNormalize(options.rotation
       || quatMultiply(quatFromAxisAngle([1, 0, 0], -0.42),
                       quatFromAxisAngle([0, 1, 0], 0.62)));
+    this.homeRotation = this.rotation;
     this.zoom = 1;
     this.group = null;
     this.dragging = false;
@@ -646,8 +652,7 @@ export class SurfaceViewer {
   /** Face the surface down one of its axes; handy for a "top" button. */
   setView(name) {
     const views = {
-      home: quatMultiply(quatFromAxisAngle([1, 0, 0], -0.42),
-                         quatFromAxisAngle([0, 1, 0], 0.62)),
+      home: this.homeRotation,
       front: [0, 0, 0, 1],
       top: quatFromAxisAngle([1, 0, 0], -Math.PI / 2),
       side: quatFromAxisAngle([0, 1, 0], Math.PI / 2),
