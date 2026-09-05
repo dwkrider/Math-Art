@@ -82,7 +82,7 @@
           [
             -1.5237616346141396,
             -0.14902550890385302,
-            -1.0489136907240209
+            -1.0495358455614858
           ],
           [
             -1.5237616346141396,
@@ -101,7 +101,7 @@
           ],
           [
             -1.5237616346141396,
-            -0.014612473701738793,
+            0.0,
             -0.8937811949006237
           ],
           [
@@ -191,7 +191,7 @@
           ],
           [
             -1.2594320390112486,
-            -0.0008137856290857393,
+            0.0,
             0.0
           ],
           [
@@ -282,7 +282,7 @@
           [
             -1.52279749874699,
             -0.879208225441724,
-            -0.015916059310339237
+            0.0
           ],
           [
             -1.52279749874699,
@@ -346,7 +346,7 @@
           ],
           [
             -1.52279749874699,
-            -1.5105756839395272,
+            -1.52279749874699,
             -0.24515532744277213
           ],
           [
@@ -472,7 +472,7 @@
           [
             -0.889239199980841,
             -0.889239199980841,
-            -1.0344385084789802
+            -1.0495358455614858
           ],
           [
             -0.9180161248047467,
@@ -562,15 +562,14 @@
         ]
       ],
       "new_row": true,
-      "patch_area": 1.287031,
+      "patch_area": 1.288254,
       "plane_residual": 0.00041,
       "record_slug": "schoen-hybrid-ss-p",
       "route": "adjoint",
       "source": "pssadj.fe",
       "title": "Schoen P | S'-S''",
       "weld_tol": 1e-08,
-      "word": "abcbcbc",
-      "res_floor": 8
+      "word": "abcbcbc"
     },
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },

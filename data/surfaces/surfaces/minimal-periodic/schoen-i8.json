@@ -1048,8 +1048,7 @@
       "source": "I-8.fe",
       "title": "Schoen I-8",
       "weld_tol": 0.001,
-      "word": "bac",
-      "res_floor": 20
+      "word": "bac"
     }
   },
   "curvature": {

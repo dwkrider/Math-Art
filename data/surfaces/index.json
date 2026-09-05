@@ -80,8 +80,8 @@
     "swept",
     "topological"
   ],
-  "count": 462,
-  "implemented_count": 401,
+  "count": 478,
+  "implemented_count": 409,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -13144,6 +13144,550 @@
       "embedding": "singular",
       "symmetry": {
         "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-2-1-genus-31",
+      "name": "STARFISH_2_1_GENUS_31 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-2-1-genus-31.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-2-2-genus-47",
+      "name": "STARFISH_2_2_GENUS_47 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-2-2-genus-47.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-2-3-genus-63",
+      "name": "STARFISH_2_3_GENUS_63 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-2-3-genus-63.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-2-4-genus-79",
+      "name": "Starfish 2-4 Surface (genus 79)",
+      "path": "surfaces/minimal-periodic/starfish-2-4-genus-79.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 79,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-3-1-genus-43",
+      "name": "STARFISH_3_1_GENUS_43 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-3-1-genus-43.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-3-2-genus-59",
+      "name": "STARFISH_3_2_GENUS_59 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-3-2-genus-59.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-3-3-genus-75",
+      "name": "STARFISH_3_3_GENUS_75 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-3-3-genus-75.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-3-4-genus-91",
+      "name": "Starfish 3-4 Surface (genus 91)",
+      "path": "surfaces/minimal-periodic/starfish-3-4-genus-91.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 91,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-4-1-genus-55",
+      "name": "STARFISH_4_1_GENUS_55 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-4-1-genus-55.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-4-2-genus-71",
+      "name": "Starfish 4-2 Surface (genus 71)",
+      "path": "surfaces/minimal-periodic/starfish-4-2-genus-71.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 71,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-4-3-genus-87",
+      "name": "STARFISH_4_3_GENUS_87 (exact)",
+      "path": "surfaces/minimal-periodic/starfish-4-3-genus-87.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "minimal-periodic",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "space",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-4-4-genus-103",
+      "name": "Starfish 4-4 Surface (genus 103)",
+      "path": "surfaces/minimal-periodic/starfish-4-4-genus-103.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 103,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-5-1-genus-67",
+      "name": "Starfish 5-1 Surface (genus 67)",
+      "path": "surfaces/minimal-periodic/starfish-5-1-genus-67.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 67,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-5-2-genus-83",
+      "name": "Starfish 5-2 Surface (genus 83)",
+      "path": "surfaces/minimal-periodic/starfish-5-2-genus-83.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 83,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-5-3-genus-99",
+      "name": "Starfish 5-3 Surface (genus 99)",
+      "path": "surfaces/minimal-periodic/starfish-5-3-genus-99.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 99,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": false,
+      "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "starfish-5-4-genus-115",
+      "name": "Starfish 5-4 Surface (genus 115)",
+      "path": "surfaces/minimal-periodic/starfish-5-4-genus-115.json",
+      "primary_family": "minimal-periodic",
+      "families": [
+        "def-parametric",
+        "embedded",
+        "minimal",
+        "minimal-periodic",
+        "not-implemented",
+        "tradition-crystallographic",
+        "triply-periodic"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 3,
+      "genus": 115,
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "embedded",
+      "symmetry": {
+        "kind": "crystallographic",
         "symbol": null,
         "ita_number": null,
         "order": null

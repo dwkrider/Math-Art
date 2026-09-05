@@ -40,6 +40,24 @@
           0.0,
           1.0
         ],
+        "b": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          -2.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
         "c": [
           1.0,
           0.0,
@@ -53,6 +71,24 @@
           0.0,
           -1.0,
           0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "d": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          2.0,
           0.0,
           0.0,
           0.0,
@@ -80,7 +116,7 @@
       "loops": [
         [
           [
-            0.0027086723266193688,
+            0.0,
             -0.8183744094733391,
             0.0
           ],
@@ -357,7 +393,7 @@
           [
             0.0,
             -0.49240441821799874,
-            0.9859581167231313
+            1.0
           ],
           [
             -0.028257288348349525,
@@ -427,7 +463,7 @@
           [
             -0.21348195682797136,
             -1.0,
-            0.9925776712459405
+            1.0
           ],
           [
             -0.2141130733971601,
@@ -525,7 +561,7 @@
             0.20244780432144988
           ],
           [
-            0.0012911425283874344,
+            0.0,
             -1.0,
             0.19575665555934343
           ],
@@ -562,15 +598,14 @@
         ]
       ],
       "new_row": true,
-      "patch_area": 0.750008,
+      "patch_area": 0.7503,
       "plane_residual": 0.020725,
       "record_slug": "schoen14-exact",
       "route": "adjoint",
       "source": "s14adj.fe",
       "title": "Schoen p.14 Surface",
       "weld_tol": 1e-08,
-      "word": "aceae",
-      "res_floor": 16
+      "word": "aceae"
     },
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },

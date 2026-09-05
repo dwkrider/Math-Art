@@ -117,8 +117,8 @@
         [
           [
             0.0,
-            0.9469151095131534,
-            -0.9469151095131534
+            1.0,
+            -1.0
           ],
           [
             0.0,
@@ -458,11 +458,11 @@
           [
             0.9622131683511226,
             0.9622131683511226,
-            -0.983291445547331
+            -1.0
           ],
           [
             0.9600846120894091,
-            0.9879543663578506,
+            1.0,
             -1.0
           ],
           [
@@ -537,7 +537,7 @@
           ],
           [
             0.40346135815106604,
-            0.9688361702067554,
+            1.0,
             -1.0
           ],
           [
@@ -563,7 +563,7 @@
           [
             0.2563134691032778,
             1.0,
-            -0.9984742865815655
+            -1.0
           ],
           [
             0.24471964054044212,
@@ -598,15 +598,14 @@
         ]
       ],
       "new_row": true,
-      "patch_area": 0.621461,
+      "patch_area": 0.626404,
       "plane_residual": 0.066489,
       "record_slug": "schoen-c39-p",
       "route": "adjoint",
       "source": "c39padj.fe",
       "title": "Schoen C39(P)",
       "weld_tol": 1e-08,
-      "word": "cdeababab",
-      "res_floor": 12
+      "word": "cdeababab"
     },
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },

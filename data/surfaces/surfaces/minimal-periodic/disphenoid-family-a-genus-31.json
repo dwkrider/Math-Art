@@ -22,6 +22,24 @@
       "copies": 48,
       "evolver_area": 1.46403,
       "generators": {
+        "a": [
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
         "b": [
           0.0,
           -1.0,
@@ -98,9 +116,9 @@
       "loops": [
         [
           [
-            -0.0,
             0.0,
-            -0.0
+            0.0,
+            0.0
           ],
           [
             0.0,
@@ -180,7 +198,7 @@
           [
             0.0,
             0.0,
-            -1.4464839158609852
+            -1.0
           ],
           [
             0.17070627468050634,
@@ -273,9 +291,9 @@
             -1.4388138735454703
           ],
           [
-            -0.22466863998054742,
+            5.551115123125783e-17,
             1.0224108597245896,
-            -1.2246686399805475
+            -1.0
           ],
           [
             -0.16606781030068868,
@@ -363,9 +381,9 @@
             -0.4624068420507167
           ],
           [
-            1.05976079645445,
-            1.9184050365337983,
-            -0.9184050365337983
+            0.4076502411289511,
+            1.592349758871049,
+            -0.5923497588710489
           ],
           [
             0.9911620842409786,
@@ -518,8 +536,8 @@
             0.26832452652759947
           ],
           [
-            -0.7399754308893934,
-            0.7399754308893934,
+            -1.0,
+            1.0,
             0.0
           ],
           [
@@ -580,15 +598,14 @@
         ]
       ],
       "new_row": true,
-      "patch_area": 1.972075,
+      "patch_area": 2.050602,
       "plane_residual": 0.351044,
       "record_slug": "disphenoid-family-a-genus-31",
       "route": "adjoint",
       "source": "disphenoid31adj.fe",
       "title": "Disphenoid 31",
       "weld_tol": 1e-08,
-      "word": "cdecdeb",
-      "res_floor": 12
+      "word": "cdecdeb"
     },
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },

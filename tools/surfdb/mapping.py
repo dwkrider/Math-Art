@@ -279,6 +279,22 @@ ALIAS = {
     "tpms_exact:SCHOEN_MANTA_GENUS_19": "schoen-manta-genus-19",
     "tpms_exact:SCHOEN_MANTA_GENUS_35": "schoen-manta-genus-35",
     "tpms_exact:SCHOEN_MANTA_GENUS_51": "schoen-manta-genus-51",
+    # Schoen's starfish.  The generator ROW key is upper-case
+    # (`STARFISH_2_1_GENUS_31`) while the record slug is not, and
+    # without an entry the build slugifies the row to
+    # `<slug>-exact` and mints a SECOND record beside the one the
+    # surface already has -- the empty-twin problem the entries
+    # above exist to prevent.  Pointing them at the existing
+    # unsuffixed records also clears eight of the sixteen starfish
+    # orphans `surfdb_validate.py` reports.
+    "tpms_exact:STARFISH_2_1_GENUS_31": "starfish-2-1-genus-31",
+    "tpms_exact:STARFISH_2_2_GENUS_47": "starfish-2-2-genus-47",
+    "tpms_exact:STARFISH_2_3_GENUS_63": "starfish-2-3-genus-63",
+    "tpms_exact:STARFISH_3_1_GENUS_43": "starfish-3-1-genus-43",
+    "tpms_exact:STARFISH_3_2_GENUS_59": "starfish-3-2-genus-59",
+    "tpms_exact:STARFISH_3_3_GENUS_75": "starfish-3-3-genus-75",
+    "tpms_exact:STARFISH_4_1_GENUS_55": "starfish-4-1-genus-55",
+    "tpms_exact:STARFISH_4_3_GENUS_87": "starfish-4-3-genus-87",
     "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
     "tpms_exact:SIMOES_BATISTA": "simoes-batista-surface",
     "tpms_exact:R3_RING": "schoen-riii",

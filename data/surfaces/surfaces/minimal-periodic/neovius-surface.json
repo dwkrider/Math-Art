@@ -32,6 +32,24 @@
       "command": "showcube",
       "copies": 48,
       "generators": {
+        "a": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -1.0,
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
         "b": [
           0.0,
           1.0,
@@ -576,8 +594,7 @@
       "source": "neovius.fe",
       "title": "Neovius",
       "weld_tol": 1e-08,
-      "word": "bcdbcdbcd",
-      "res_floor": 8
+      "word": "bcdbcdbcd"
     },
     "nodal_polynomial": "3 * (cos(x) + cos(y) + cos(z)) + 4 * cos(x) * cos(y) * cos(z)"
   },

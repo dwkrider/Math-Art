@@ -18,8 +18,8 @@
     "exactness": "numerical-integral",
     "scale": "unit_cell",
     "evolver_cell": {
-      "command": "showrhombic",
-      "copies": 96,
+      "command": "showcube",
+      "copies": 48,
       "evolver_area": 1.56676,
       "generators": {
         "a": [
@@ -116,9 +116,9 @@
       "loops": [
         [
           [
-            -0.0,
             0.0,
-            -0.0
+            0.0,
+            0.0
           ],
           [
             0.0,
@@ -168,7 +168,7 @@
           [
             0.0,
             0.0,
-            -0.9834913202887257
+            -1.0
           ],
           [
             -0.015002853095583553,
@@ -296,9 +296,9 @@
             -0.5474219633369741
           ],
           [
-            -1.8267690924675444,
-            -0.47626166348490795,
-            -0.5145700632632209
+            -1.8298251835515014,
+            -0.4823738456528221,
+            -0.517626154347178
           ],
           [
             -1.794063687168315,
@@ -391,9 +391,9 @@
             -0.4067769526373848
           ],
           [
-            -1.7510457458519704,
-            0.8733420981906612,
-            -0.4388467166476469
+            -1.7476389776066306,
+            0.8665285616999815,
+            -0.43543994840230704
           ],
           [
             -1.7068806548052446,
@@ -496,9 +496,9 @@
             -0.06474674078227889
           ],
           [
-            -1.0744373972346433,
-            1.2817823018312506,
-            -0.020186208271037683
+            -1.3019685101022884,
+            1.3019685101022884,
+            0.0
           ],
           [
             -0.9944327903257534,
@@ -598,15 +598,14 @@
         ]
       ],
       "new_row": true,
-      "patch_area": 2.190087,
+      "patch_area": 2.216149,
       "plane_residual": 0.039253,
       "record_slug": "disphenoid-family-b-genus-35",
       "route": "adjoint",
       "source": "disphenoid35adj.fe",
       "title": "Disphenoid 35",
       "weld_tol": 1e-08,
-      "word": "ecdecdab",
-      "res_floor": 8
+      "word": "decdecb"
     },
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },
