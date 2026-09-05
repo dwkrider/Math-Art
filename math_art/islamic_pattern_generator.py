@@ -1367,11 +1367,11 @@ def _unit3(v):
     return v / max(float(np.linalg.norm(v)), 1e-300)
 
 def sphere_motifs(solid, contact_deg, motif='PIC', star_d=2,
-                  rosette_frac=0.0):
+                  rosette_frac=0.0, freq=3):
     """(segments3, orders): the strapwork of a spherical substrate as 3D
     segments on the unit sphere, plus the side count of the face each
     came from (for colouring)."""
-    faces = ssub.solid_faces(solid)
+    faces = ssub.substrate_faces(solid, freq)
     segments, orders = [], []
     for face in faces:
         c, e1, e2 = ssub.face_frame(face)
@@ -1404,7 +1404,7 @@ def sphere_motifs(solid, contact_deg, motif='PIC', star_d=2,
 
 def sphere_bands(solid, contact_deg, ribbon_width, curved=False,
                  subdiv=8, motif='PIC', star_d=2, rosette_frac=0.0,
-                 radius=1.0, max_edge=0.12):
+                 radius=1.0, max_edge=0.12, freq=3):
     """Traced strapwork bands on a spherical substrate.
 
     Uses the SAME band tracer as the flat path -- `trace_bands` is purely
@@ -1412,7 +1412,7 @@ def sphere_bands(solid, contact_deg, ribbon_width, curved=False,
     arrangement, so the band topology is identical and only the geometry
     is spherical."""
     segments, orders = sphere_motifs(solid, contact_deg, motif, star_d,
-                                     rosette_frac)
+                                     rosette_frac, freq)
     if not segments:
         return [], orders
     pts, seg_nodes, pair = ssub.build_arrangement_3d(segments)
@@ -1433,13 +1433,13 @@ def sphere_bands(solid, contact_deg, ribbon_width, curved=False,
 
 def sphere_cells(solid, contact_deg, ribbon_width, color_by='UNIFORM',
                  height=0.0, curved=False, subdiv=8, motif='PIC',
-                 star_d=2, rosette_frac=0.0, radius=1.0):
+                 star_d=2, rosette_frac=0.0, radius=1.0, freq=3):
     """One cell per band, on a spherical substrate.  Relief is pushed
     RADIALLY (the sphere's normal), matching how the torus scaffolds
     push relief along the tube normal."""
     bands, orders = sphere_bands(solid, contact_deg, ribbon_width,
                                  curved, subdiv, motif, star_d,
-                                 rosette_frac, radius)
+                                 rosette_frac, radius, freq=freq)
     cells = []
     for bi, (left, right, closed, seg_path, _path) in enumerate(bands):
         if height > 0.0:
@@ -1458,6 +1458,186 @@ def sphere_cells(solid, contact_deg, ribbon_width, color_by='UNIFORM',
             continue
         kind = _band_kind(color_by, bi, seg_path, orders)
         cells.append((cv, cf, [kind] * len(cf)))
+    return cells
+
+
+def _cut_band3(path3, closed, cut_idx, half):
+    """Break a 3D band centreline, removing a gap of half-length `half`
+    centred on each of the `cut_idx` control points.
+
+    `patterns.ribbon.cut_band` does this in the plane, but it
+    interpolates its cut endpoints using x and y only, so on a sphere it
+    returns a mix of 3-vectors and 2-tuples.  This is the same operation
+    done in 3D."""
+    P = np.asarray(path3, float)
+    n = len(P)
+    seg = np.linalg.norm(np.diff(P, axis=0, append=P[:1]), axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)[:-1]])
+    total = float(np.sum(seg)) if closed else float(np.sum(seg[:-1]))
+
+    def point_at(arc):
+        arc = max(0.0, min(arc, total))
+        k = int(np.searchsorted(s, arc) - 1)
+        k = max(0, min(k, n - 2 if not closed else n - 1))
+        d = seg[k]
+        t = 0.0 if d < 1e-12 else (arc - s[k]) / d
+        return P[k] * (1.0 - t) + P[(k + 1) % n] * t
+
+    gaps = []
+    for i in cut_idx:
+        gaps.append((s[i] - half, s[i] + half))
+    keep = []
+    lo = 0.0 if not closed else (gaps[0][1] if gaps else 0.0)
+    order = sorted(gaps)
+    for gi, (ga, gb) in enumerate(order):
+        if ga > lo:
+            keep.append((lo, ga))
+        lo = max(lo, gb)
+    if lo < total:
+        keep.append((lo, total))
+    if closed and keep and order:
+        # wrap the last surviving run into the first
+        first_start = order[0][0]
+        if first_start < 0.0 and keep:
+            keep[0] = (keep[0][0], keep[0][1])
+
+    out = []
+    for a, b in keep:
+        if b - a < 1e-9:
+            continue
+        pts = [point_at(a)]
+        pts += [P[k] for k in range(n) if a < s[k] < b]
+        pts.append(point_at(b))
+        if len(pts) >= 2:
+            out.append(np.asarray(pts, float))
+    return out
+
+
+def _refine_with_scalar(path3, scal, max_edge, closed):
+    """Geodesic-refine a spherical polyline, carrying a per-vertex scalar
+    along by linear interpolation so the two stay index-aligned.
+
+    The weave offset is solved at the arrangement's NODES, but the ribbon
+    has to be refined to follow the sphere; refining the path alone would
+    leave the offsets attached to the wrong vertices."""
+    P = np.asarray(path3, float)
+    z = np.asarray(scal, float)
+    n = len(P)
+    outp, outz = [], []
+    last = n if closed else n - 1
+    for k in range(last):
+        a, b = P[k], P[(k + 1) % n]
+        za, zb = z[k], z[(k + 1) % n]
+        ang = float(np.arccos(np.clip(np.dot(_unit3(a), _unit3(b)),
+                                      -1.0, 1.0)))
+        m = int(min(64, max(1, np.ceil(ang / max(max_edge, 1e-9)))))
+        for i in range(m):
+            t = i / float(m)
+            if ang < 1e-12:
+                outp.append(a)
+            else:
+                s = np.sin(ang)
+                outp.append((np.sin((1 - t) * ang) * a
+                             + np.sin(t * ang) * b) / s)
+            outz.append((1.0 - t) * za + t * zb)
+    if not closed:
+        outp.append(P[-1])
+        outz.append(z[-1])
+    return np.array(outp), np.array(outz)
+
+
+def sphere_interlaced_cells(solid, contact_deg, ribbon_width,
+                            color_by='UNIFORM', height=0.0,
+                            motif='PIC', star_d=2, rosette_frac=0.0,
+                            mode='FLAT', weave_height=0.05, radius=1.0,
+                            freq=3, max_edge=0.12):
+    """Interlaced strapwork on a spherical substrate.
+
+    The over/under solver is reused wholesale -- `_find_crossings`,
+    `_ref_pairs` and `_solve_over` are combinatorial, and `weave_zoff`
+    works off arclength, which is dimension-agnostic -- so the sphere
+    gets exactly the same globally consistent alternating diagram as the
+    plane.  Only the ribbon geometry differs: "over" becomes the LARGER
+    SPHERE RADIUS, matching how the knot ball weaves.
+    """
+    segments, orders = sphere_motifs(solid, contact_deg, motif, star_d,
+                                     rosette_frac, freq)
+    if not segments:
+        return []
+    pts, seg_nodes, pair = ssub.build_arrangement_3d(segments)
+    crossings = _find_crossings(pair)
+    ref, other = _ref_pairs(crossings)
+
+    bands, band_seqs = [], []
+    for node_path, seg_path in trace_bands(seg_nodes, pair):
+        # NOTE: take `poly`, not `path`.  _band_geometry's `path` is
+        # hard-truncated to (x, y) for the planar renderer, which on a
+        # sphere would flatten every band onto the equatorial plane;
+        # `poly` is the untouched 3D control polyline, and with subdiv 1
+        # the crossing indices line up with it exactly.
+        closed, poly, _flat, stations, pair_here = _band_geometry(
+            pts, node_path, seg_path, False, 1)
+        if len(poly) < 2:
+            continue
+        cross = []
+        for k, nd in enumerate(stations):
+            ph = pair_here[k]
+            if nd in crossings and ph is not None and ph in crossings[nd]:
+                cross.append((nd, ph, k))
+        band_seqs.append(([(nd, 1 if ph == ref[nd] else 0)
+                           for nd, ph, _pi in cross], closed))
+        bands.append((closed, np.asarray(poly, float), seg_path, cross))
+
+    over = _solve_over(crossings, ref, other, band_seqs)
+
+    cells = []
+    for bi, (closed, path, seg_path, cross) in enumerate(bands):
+        kind = _band_kind(color_by, bi, seg_path, orders)
+        signed = [(pi, 1 if ph == over[nd] else -1)
+                  for nd, ph, pi in cross]
+        if mode == 'WOVEN':
+            # "over" is the larger radius, exactly as the knot ball weaves
+            zoff = _weave_zoff(path, closed, signed, weave_height)
+            strands = [_refine_with_scalar(path, zoff, max_edge, closed)]
+            shut = closed
+        else:
+            # FLAT: BREAK the under band at each of its under-crossings,
+            # leaving a gap the over band reads on top of.  Without this
+            # the flat mode would be a silent no-op -- every band drawn
+            # whole, nothing passing under anything.
+            under = [pi for pi, sg in signed if sg < 0]
+            if under:
+                margin = max(0.02, 0.25 * ribbon_width)
+                half = 0.5 * (ribbon_width + margin)
+                pieces = _cut_band3(path, closed,
+                                    sorted(set(under)), half)
+            else:
+                pieces = [path]
+            strands = []
+            for piece in pieces:
+                P = np.asarray(piece, float)
+                if len(P) < 2:
+                    continue
+                strands.append(_refine_with_scalar(
+                    P, np.zeros(len(P)), max_edge, False))
+            shut = False if under else closed
+
+        for rp, rz in strands:
+            if len(rp) < 2:
+                continue
+            left, right = ssub.sphere_ribbon(rp, ribbon_width, shut, 1.0)
+            scale = (radius + rz)[:, None]
+            left, right = left * scale, right * scale
+            if height > 0.0:
+                lu = left / np.linalg.norm(left, axis=1, keepdims=True)
+                ru = right / np.linalg.norm(right, axis=1, keepdims=True)
+                cv, cf = _shell_ribbon(left + lu * height,
+                                       right + ru * height,
+                                       left, right, shut)
+            else:
+                cv, cf = _flat_ribbon3(left, right, shut)
+            if cf:
+                cells.append((cv, cf, [kind] * len(cf)))
     return cells
 
 
@@ -1659,7 +1839,7 @@ if _IN_BLENDER:
             description="Clip the strapwork to a clean central "
                         "rectangle, removing the ragged edge")
         ribbon_width: FloatProperty(
-            name="Ribbon Width", default=0.14, min=0.01, max=0.6,
+            name="Ribbon Width", default=0.10, min=0.01, max=0.6,
             description="Width of the strapwork ribbons (edge units)")
         color_by: EnumProperty(
             name="Color By",
@@ -1739,8 +1919,14 @@ if _IN_BLENDER:
                         "Torus option: a torus needs the bands to close "
                         "across the seam, and the flat band tracing runs "
                         "on an open patch")
+        geodesic_freq: IntProperty(
+            name="Frequency", default=2, min=1, max=8,
+            description="Subdivision frequency of the geodesic sphere / "
+                        "Goldberg dual: 20f^2 triangles, or 10f^2+2 "
+                        "cells of which twelve are always pentagons "
+                        "(only affects the Geodesic and Goldberg bases)")
         base_solid: EnumProperty(
-            name="Base Solid", items=ssub.solid_items(), default='TI',
+            name="Base Solid", items=ssub.solid_items(), default='GOLDBERG',
             description="The spherical substrate: each face of this "
                         "solid, radially projected, carries one patch of "
                         "strapwork (only affects the Polyhedral sphere)")
@@ -1791,11 +1977,20 @@ if _IN_BLENDER:
                 self.interlace, self.interlace_mode, self.weave_height,
                 self.girih_gens)
             if self.surface == 'SPHERE_SOLID':
-                cells = sphere_cells(
-                    self.base_solid, contact, self.ribbon_width,
-                    self.color_by, self.height, self.curved,
-                    self.smoothness, motif, star_d, self.rosette_frac,
-                    self.sphere_radius)
+                if self.interlace:
+                    cells = sphere_interlaced_cells(
+                        self.base_solid, contact, self.ribbon_width,
+                        self.color_by, self.height, motif, star_d,
+                        self.rosette_frac, self.interlace_mode,
+                        self.weave_height, self.sphere_radius,
+                        self.geodesic_freq)
+                else:
+                    cells = sphere_cells(
+                        self.base_solid, contact, self.ribbon_width,
+                        self.color_by, self.height, self.curved,
+                        self.smoothness, motif, star_d,
+                        self.rosette_frac, self.sphere_radius,
+                        self.geodesic_freq)
             if self.surface == 'SPHERE' and cells:
                 allv = np.vstack([np.asarray(cv, float)
                                   for cv, _cf, _cm in cells if cv])
@@ -1851,6 +2046,8 @@ if _IN_BLENDER:
             lay.prop(self, 'surface')
             if self.surface == 'SPHERE_SOLID':
                 lay.prop(self, 'base_solid')
+                if self.base_solid in ssub.SUBDIVIDED:
+                    lay.prop(self, 'geodesic_freq')
                 lay.prop(self, 'sphere_radius')
             elif self.surface == 'SPHERE':
                 lay.prop(self, 'sphere_radius')

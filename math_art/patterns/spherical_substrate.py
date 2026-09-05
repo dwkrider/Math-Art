@@ -59,15 +59,60 @@ def _unit(v):
     return v / np.maximum(n, 1e-300)
 
 
+# Substrates that are subdivided rather than named: the geodesic sphere
+# and its Goldberg dual.  Unlike the 18 fixed solids these take a
+# frequency, so the cell count is a dial rather than a menu choice.
+SUBDIVIDED = ('GEODESIC', 'GOLDBERG')
+
+
+def geodesic_faces(freq=3, base='ICOSA', dual=False):
+    """Faces of a geodesic sphere, or of its Goldberg dual.
+
+    The Class-I geodesic subdivision of the icosahedron gives 20 freq^2
+    triangles; its dual gives 10 freq^2 + 2 faces, all hexagons except
+    for exactly TWELVE pentagons -- Euler's formula again, the same
+    twelve defects a football has.  The dual is usually the better
+    substrate for strapwork, since a hexagonal cell carries a six-fold
+    rosette the way the classical patterns do, while a triangular cell
+    can only carry a three-fold one."""
+    try:
+        from .. import geodesic_generator as gg
+    except ImportError:
+        import geodesic_generator as gg
+    V, F = gg.build_sphere(base, max(1, int(freq)), 'I')
+    if dual:
+        V, F = gg.goldberg_dual(V, F)
+    V = _unit(np.asarray(V, float))
+    return [V[list(f)] for f in F]
+
+
+def substrate_faces(kind='TI', freq=3):
+    """The spherical substrate for a base-solid id: a named Platonic or
+    Archimedean solid, or a geodesic sphere / Goldberg dual at `freq`."""
+    if kind == 'GEODESIC':
+        return geodesic_faces(freq, dual=False)
+    if kind == 'GOLDBERG':
+        return geodesic_faces(freq, dual=True)
+    return solid_faces(kind)
+
+
 def solid_items():
-    """(id, label, description) for every Platonic and Archimedean solid,
-    as Blender enum items.  Radially projected, each IS a spherical
-    uniform tiling."""
+    """(id, label, description) for every substrate: the geodesic pair
+    first, then every Platonic and Archimedean solid.  Radially
+    projected, each IS a spherical uniform tiling."""
     try:
         from .. import regular_solids_generator as rs
     except ImportError:
         import regular_solids_generator as rs
-    out = []
+    out = [
+        ('GOLDBERG', "Goldberg (Geodesic Dual)",
+         "Hexagons plus exactly twelve pentagons, at the chosen "
+         "frequency -- the football generalised. Usually the best "
+         "strapwork substrate: hexagonal cells carry six-fold rosettes"),
+        ('GEODESIC', "Geodesic Icosahedron",
+         "20 x frequency^2 triangles, subdivided and projected to the "
+         "sphere. Triangular cells, so three-fold rosettes"),
+    ]
     for fam, kind in ((rs.PLATONIC, 'regular'),
                       (rs.ARCHIMEDEAN, 'Archimedean')):
         for sid, label, _nota in fam:
@@ -289,6 +334,30 @@ def _selftest():
         print(f"spherical_substrate: {sid} -> {len(faces)} spherical faces "
               f"(want {want}), on-sphere {onsphere:.1e} "
               f"{'OK' if good else 'FAIL'}")
+
+    # The geodesic pair: face counts are 20 f^2 triangles, and its dual
+    # has 10 f^2 + 2 faces of which EXACTLY twelve are pentagons --
+    # Euler's theorem, at every frequency.
+    for f in (1, 2, 3):
+        tri = substrate_faces('GEODESIC', f)
+        gol = substrate_faces('GOLDBERG', f)
+        pent = sum(1 for x in gol if len(x) == 5)
+        hexa = sum(1 for x in gol if len(x) == 6)
+        good = (len(tri) == 20 * f * f and len(gol) == 10 * f * f + 2
+                and pent == 12 and pent + hexa == len(gol))
+        ok &= good
+        print(f"spherical_substrate: freq {f} -> {len(tri)} triangles "
+              f"(want {20*f*f}), dual {len(gol)} faces = {hexa} hexagons "
+              f"+ {pent} pentagons {'OK' if good else 'FAIL'}")
+
+    # Both must also close the sphere exactly.
+    from .spherical_kites import spherical_area as _sa
+    for kind in ('GEODESIC', 'GOLDBERG'):
+        tot = sum(_sa(x) for x in substrate_faces(kind, 2))
+        good = abs(tot - 4.0 * np.pi) < 1e-9
+        ok &= good
+        print(f"spherical_substrate: {kind} freq 2 covers the sphere "
+              f"({tot:.9f}) {'OK' if good else 'FAIL'}")
 
     # The faces must cover the WHOLE sphere -- the property stereographic
     # projection of a finite patch can never have.
