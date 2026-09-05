@@ -212,6 +212,21 @@ if _IN_BLENDER:
 
         two_materials: BoolProperty(name="Two Materials", default=True)
 
+        shade_smooth: BoolProperty(
+            name="Smooth Shading", description="Shade the curved faces "
+            "smoothly.  Turn off to see the mesh facets, which is the "
+            "honest view of how finely the cell is sampled",
+            default=True)
+
+        crease_angle: FloatProperty(
+            name="Crease Angle", description="Edges meeting at more than "
+            "this angle stay sharp instead of being smoothed over.  A soft "
+            "cell is smooth ACROSS its nodes but still creased ALONG its "
+            "edges, so blanket smooth shading rounds off detail that is "
+            "really there",
+            default=math.radians(25.0), min=0.0, max=math.pi,
+            subtype='ANGLE')
+
         honeycomb: EnumProperty(
             name="Honeycomb",
             items=[('CUBIC', "Cubes",
@@ -286,8 +301,28 @@ if _IN_BLENDER:
                                               (0.22, 0.45, 0.72)))
                 me.polygons.foreach_set('material_index', tags)
             me.update()
+            # A soft cell is smooth across its NODES -- that is the whole
+            # point -- but its faces still meet along its EDGES at a real
+            # dihedral angle, and the polyhedral (e2) cell is creased
+            # everywhere.  Smoothing the lot rounds away geometry that is
+            # genuinely there, so creases are kept by angle.
             for p in me.polygons:
-                p.use_smooth = True
+                p.use_smooth = self.shade_smooth
+            if self.shade_smooth:
+                import bmesh
+                bm = bmesh.new()
+                bm.from_mesh(me)
+                sharp = 0
+                for e in bm.edges:
+                    if len(e.link_faces) == 2:
+                        if e.calc_face_angle(0.0) > self.crease_angle:
+                            e.smooth = False
+                            sharp += 1
+                    else:
+                        e.smooth = False
+                bm.to_mesh(me)
+                bm.free()
+                me.update()
 
             obj = bpy.data.objects.new(f"Soft Cell {label}", me)
             context.collection.objects.link(obj)
@@ -311,8 +346,11 @@ if _IN_BLENDER:
             lay.prop(self, 'mode')
             if self.mode == 'SOFTEN':
                 for k in ('honeycomb', 'nx', 'subdivisions',
-                          'bend_radius', 'bend_depth', 'scale'):
+                          'bend_radius', 'bend_depth', 'scale',
+                          'shade_smooth'):
                     lay.prop(self, k)
+                if self.shade_smooth:
+                    lay.prop(self, 'crease_angle')
                 return
             lay.prop(self, 'cell')
             if self.cell == 'CUSTOM':
@@ -327,8 +365,11 @@ if _IN_BLENDER:
             lay.prop(self, 'face_style')
             if self.face_style == 'MINIMAL':
                 lay.prop(self, 'relax_iterations')
-            for k in ('nx', 'ny', 'nz', 'gap', 'scale', 'two_materials'):
+            for k in ('nx', 'ny', 'nz', 'gap', 'scale', 'two_materials',
+                      'shade_smooth'):
                 lay.prop(self, k)
+            if self.shade_smooth:
+                lay.prop(self, 'crease_angle')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.soft_cell_add", icon='META_BALL')

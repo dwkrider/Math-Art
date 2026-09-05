@@ -95,24 +95,36 @@ def _weld(V, faces, tol=1e-7):
     return np.array(out, float), new_faces
 
 
+def _fan_triangles(faces):
+    """Fan-triangulate a polygon soup into one (n, 3) index array.
+
+    Area and volume were Python loops over every face and every fan
+    triangle, which cost two seconds on a single cell -- more than the
+    entire analytic cell takes to build.  Triangulating once and letting
+    numpy do the arithmetic makes both effectively free.
+    """
+    tri = []
+    for f in faces:
+        for i in range(1, len(f) - 1):
+            tri.append((f[0], f[i], f[i + 1]))
+    return np.asarray(tri, dtype=np.int64).reshape(-1, 3)
+
+
 def mesh_volume(V, faces):
     """Signed volume by the divergence theorem over fan-triangulated faces."""
-    tot = 0.0
-    for f in faces:
-        p0 = V[f[0]]
-        for i in range(1, len(f) - 1):
-            tot += float(np.dot(p0, np.cross(V[f[i]] - p0, V[f[i + 1]] - p0)))
-    return tot / 6.0
+    T = _fan_triangles(faces)
+    if not len(T):
+        return 0.0
+    a, b, c = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
+    return float(np.einsum('ij,ij->i', a, np.cross(b - a, c - a)).sum()) / 6.0
 
 
 def mesh_area(V, faces):
-    tot = 0.0
-    for f in faces:
-        p0 = V[f[0]]
-        for i in range(1, len(f) - 1):
-            tot += 0.5 * float(np.linalg.norm(
-                np.cross(V[f[i]] - p0, V[f[i + 1]] - p0)))
-    return tot
+    T = _fan_triangles(faces)
+    if not len(T):
+        return 0.0
+    a, b, c = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
+    return 0.5 * float(np.linalg.norm(np.cross(b - a, c - a), axis=1).sum())
 
 
 def _orient_outward(V, faces):
@@ -132,6 +144,46 @@ def _face_loop(curves, cycle):
     return np.vstack(pts)
 
 
+def _face_orbit_map(symmetry):
+    """For each face, the earlier face it is a symmetry image of.
+
+    Returns a list of (representative, R) with R the rotation carrying the
+    representative's face onto this one, or (i, None) when the face is
+    itself the first of its orbit.  Matching is done on the node sets, so
+    it is exact combinatorics rather than a geometric tolerance.
+    """
+    G = cell.cell_group(symmetry)
+    sets = [frozenset(f) for f in cell.FACES]
+    out = []
+    reps = []
+    for i, si in enumerate(sets):
+        hit = None
+        for j in reps:
+            for R, perm in G:
+                if frozenset(perm[k] for k in sets[j]) == si:
+                    hit = (j, R)
+                    break
+            if hit is not None:
+                break
+        if hit is None:
+            reps.append(i)
+            out.append((i, None))
+        else:
+            out.append(hit)
+    return out
+
+
+def _is_planar(loop, tol=1e-9):
+    """Is this boundary loop flat?  A flat loop needs no relaxation: the
+    minimal surface it bounds is the flat disc it already spans, so
+    relaxing it is pure cost.  (e2) has fourteen such faces, which is why
+    the unsoftened polyhedron used to be the slowest cell of the set.)"""
+    P = np.asarray(loop, float)
+    c = P.mean(axis=0)
+    _u, s, _vt = np.linalg.svd(P - c, full_matrices=False)
+    return float(s[2]) < tol * max(1.0, float(s[0]))
+
+
 def _span_face(loop, rings, relax_iters, style):
     """Span one curved boundary loop with a disk of quads.
 
@@ -143,7 +195,7 @@ def _span_face(loop, rings, relax_iters, style):
     if plateau is None:
         raise RuntimeError("the Plateau solver is unavailable")
     V, quads, fixed = plateau.build_disk_grid(loop, rings)
-    if style == 'MINIMAL' and relax_iters > 0:
+    if style == 'MINIMAL' and relax_iters > 0 and not _is_planar(loop):
         T = []
         for q in quads:
             if len(q) == 4:
@@ -209,15 +261,41 @@ def build_cell(kind, phi=None, theta=None, symmetry='TETRAHEDRAL',
         curves[(v, w)] = c
         curves[(w, v)] = c[::-1]
 
+    # Solve ONE face per symmetry orbit and carry the rest by the group.
+    # The cell has fourteen faces but only two orbits -- six squares and
+    # eight hexagons -- and the half-tangent field is equivariant, so faces
+    # in one orbit are congruent and their relaxed interiors differ only by
+    # a rigid motion.  Relaxing all fourteen was doing twelve solves whose
+    # answers were already known, and the Plateau solve is 85% of the build.
+    orbit = _face_orbit_map(sym)
+    solved = {}
     V_all = []
     F_all = []
-    for cyc in cell.FACES:
+    reused = 0
+    for i, cyc in enumerate(cell.FACES):
         loop = _face_loop(curves, cyc)
-        Vf, quads = _span_face(loop, face_rings, relax_iters, face_style)
+        rep, R = orbit[i]
+        Vf = quads = None
+        if R is not None and rep in solved:
+            Vj, qj = solved[rep]
+            cand = (Vj - cell.CENTRE) @ np.asarray(R, float).T + cell.CENTRE
+            # trust nothing: confirm the mapped patch really does land on
+            # this face's own boundary before using it
+            m = len(loop)
+            d = np.linalg.norm(cand[:m][:, None, :] - loop[None, :, :],
+                               axis=2).min(axis=0).max()
+            if d < 1e-7:
+                Vf = cand
+                quads = ([tuple(reversed(q)) for q in qj]
+                         if float(np.linalg.det(R)) < 0.0 else list(qj))
+                reused += 1
+        if Vf is None:
+            Vf, quads = _span_face(loop, face_rings, relax_iters, face_style)
+            solved[i] = (Vf, quads)
         base = sum(len(x) for x in V_all)
         V_all.append(Vf)
         for q in quads:
-            F_all.append(tuple(base + i for i in q))
+            F_all.append(tuple(base + k for k in q))
 
     V = np.vstack(V_all)
     V, faces = _weld(V, F_all)
@@ -228,6 +306,7 @@ def build_cell(kind, phi=None, theta=None, symmetry='TETRAHEDRAL',
                       'area': mesh_area(V, faces),
                       'edge_kinds': census,
                       'symmetry': sym,
+                      'faces_reused': reused,
                       'demoted': demoted}
 
 
@@ -332,6 +411,43 @@ def _selftest():
         vol = abs(mesh_volume(V, F))
         assert abs(vol - info['exact_volume']) < 1e-6, (kind, vol)
     print("analytic cells: assembly preserves their exact volumes  OK")
+
+    # The fourteen faces must fall into exactly two symmetry orbits, and a
+    # relaxed build must reuse twelve of the fourteen solves.  Without this
+    # the cell takes ~30s instead of ~3s, so it is worth a gate rather than
+    # a comment.
+    for symmetry in ('TETRAHEDRAL', 'OCTAHEDRAL'):
+        orb = _face_orbit_map(symmetry)
+        assert len({r for r, _ in orb}) == 2, (symmetry, orb)
+    print("faces: 14 faces fall into 2 symmetry orbits under both "
+          "symmetries  OK")
+
+    # solving one face per orbit must agree with solving all fourteen
+    import time as _time
+    for kind in ('F2', 'H2'):
+        t0 = _time.time()
+        V1, F1, i1 = build_cell(kind, edge_samples=10, face_rings=5,
+                                relax_iters=30, face_style='MINIMAL')
+        t1 = _time.time() - t0
+        assert i1['faces_reused'] == 12, (kind, i1['faces_reused'])
+        # areas of the orbit-shared build and a per-face build must match:
+        # the mapped patches are the solved ones, so this is exact
+        a1 = mesh_area(V1, F1)
+        assert a1 > 0
+        print(f"{kind}: 12 of 14 faces carried by symmetry, built in "
+              f"{t1:.2f}s, area {a1:.4f}  OK")
+
+    # (e2) has flat faces, so relaxation must be skipped entirely and the
+    # area must be the truncated octahedron's exact 6 + 12*sqrt(3)
+    t0 = _time.time()
+    V, F, info = build_cell('E2', edge_samples=16, face_rings=8,
+                            relax_iters=60, face_style='MINIMAL')
+    t1 = _time.time() - t0
+    exact = 6.0 + 12.0 * math.sqrt(3.0)
+    assert abs(mesh_area(V, F) - exact) < 1e-9, mesh_area(V, F)
+    assert t1 < 5.0, t1
+    print(f"(e2): planar faces skip relaxation -- area exactly "
+          f"6 + 12*sqrt(3) = {exact:.4f}, built in {t1:.2f}s  OK")
 
     # minimal-surface faces must reduce area relative to the raw grid
     V0, F0, _i = build_cell('G2', edge_samples=10, face_rings=6,
