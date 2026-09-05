@@ -311,15 +311,22 @@ def _prism_cell(kind, m, rings, height=1.0, hex_scheme='TILING'):
         faces.append((bot + k, bot + k2, top + k2, top + k))
 
     if kind == 'TRIPRISM':
-        # equilateral triangle of circumradius 2, so side a = 2*sqrt(3)
-        # and area 3*sqrt(3).  A triangle tiles the plane by translation
-        # only in 180-degree-rotated PAIRS, so the translational unit cell
-        # holds TWO prisms and det(basis) = 2 * cell volume.  That factor
-        # is deliberate, not a slip; `_cells_per_lattice_cell` records it.
-        a = 2.0 * _SQRT3
+        # Equilateral triangle A(-1,-sqrt3), B(2,0), C(-1,sqrt3): side
+        # 2*sqrt(3), area 3*sqrt(3).  A triangle tiles only in mirrored
+        # PAIRS, so the translational cell holds TWO prisms and det(basis)
+        # is twice the cell volume -- see `placements`.
+        #
+        # The basis must be the triangle's OWN SIDE VECTORS.  An earlier
+        # version used (a, 0) and (a/2, a*sqrt3/2), which has exactly the
+        # right determinant and exactly the right vector lengths but is
+        # rotated 30 degrees off: solving those rows in units of the real
+        # sides gives (1.1547, -0.5774), not integers, so they are not
+        # lattice vectors at all and no two cells ever met.  Determinant
+        # and length checks are both blind to a rotation, which is why the
+        # test below compares boundary CURVES instead.
         area = 3.0 * _SQRT3
-        basis = np.array([[a, 0.0, 0.0],
-                          [a / 2.0, a * _SQRT3 / 2.0, 0.0],
+        basis = np.array([[3.0, _SQRT3, 0.0],
+                          [0.0, 2.0 * _SQRT3, 0.0],
                           [0.0, 0.0, height]])
     else:
         # regular hexagon of circumradius R = sqrt(3): area (3*sqrt(3)/2) R^2,
@@ -522,6 +529,35 @@ def _selftest():
             f"the base cell, so the two do not meet along a wall")
         print(f"{kind}: mirror partner shares {shared} boundary points with "
               f"the base cell -- they meet along a wall  OK")
+
+    # THE REAL TILING TEST: every point of a cell's boundary curve must be
+    # shared with SOME neighbour.  Sharing "some" points proves nothing --
+    # isolated corners coincide under almost any wrong lattice -- so the
+    # measure is coverage of the whole curve.  This is the check that
+    # catches a basis with the right determinant and the wrong rotation,
+    # which both earlier prism bugs were.
+    import itertools as _it
+    for kind in ('TRIPRISM', 'HEXPRISM'):
+        _V, _F, B, _vol = build(kind, resolution=36, rings=4,
+                                hex_scheme='TILING')
+        G = (_tri_leading_curve(36) if kind == 'TRIPRISM'
+             else _hex_leading_curve(36, 'TILING'))
+        covered = set()
+        for R, t in placements(kind):
+            Gm = G @ np.asarray(R, float).T + t
+            for i, j in _it.product(range(-2, 3), repeat=2):
+                sh = i * B[0] + j * B[1]
+                if np.allclose(R, np.eye(3)) and i == 0 and j == 0:
+                    continue                      # the cell itself
+                d = np.linalg.norm((Gm + sh)[:, None, :] - G[None, :, :],
+                                   axis=2).min(axis=1)
+                covered |= set(np.where(d < 1e-7)[0].tolist())
+        frac = len(covered) / len(G)
+        assert frac > 0.999, (
+            f"{kind}: only {frac:.1%} of the boundary curve is shared with a "
+            f"neighbour -- the cells do not close up")
+        print(f"{kind}: {len(covered)}/{len(G)} boundary points shared with "
+              f"neighbours -- all three walls meet  OK")
 
     # every lattice cell must be exactly filled by its placements
     for kind in KINDS:
