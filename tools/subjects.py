@@ -25,13 +25,6 @@ dicts); the rig helpers at the bottom appear only when bpy is present.
 # should show what you get when you click the entry -- so only the ones
 # whose defaults under-sell them are listed.
 PARAMS = {
-    # The Fermat surface in CP3 is the payoff of the scaffold
-    # generator: at n = 4 it is a K3 surface, an honest Calabi-Yau
-    # 2-fold, where the SYZ graph is "only" the base of a fibration it
-    # sits over.
-    "mesh.calabi_yau_scaffold_add": dict(mode='FERMAT_CP3', degree=4,
-                                         radius=0.016,
-                                         node_radius=0.03),
     # A bare noble faceting is a self-intersecting wireframe-ish solid
     # and reads as mush when shaded; the great dodecahedron -- faceting
     # 1 of the icosahedral vertex set -- has big obvious pentagons and

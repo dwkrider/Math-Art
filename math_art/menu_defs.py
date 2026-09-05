@@ -72,9 +72,12 @@ SURFACES = Menu(
         # not fit here; these say, in their labels and their
         # descriptions, which honest 2- or 3-dimensional shadow of
         # one they are drawing.  (The two Ricci-flat metric slices
-        # are presets of Miscellaneous Surface, above.)
+        # are presets of Miscellaneous Surface, above; the SYZ
+        # discriminant graph and the Hanson-Sha tessellation of the
+        # Fermat surfaces have no entry at all -- they are correct
+        # and they do not make a picture, so their mathematics
+        # lives in surfaces/calabi_yau.py with no operator over it.)
         _e("mesh.calabi_yau_add", 'SURFACE_NSURFACE'),
-        _e("mesh.calabi_yau_scaffold_add", 'MOD_WIREFRAME'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
         _e("mesh.minimal_surface_polyhedron_add", 'MESH_UVSPHERE'),
         _e("mesh.squeeze_add", 'MOD_SIMPLEDEFORM'),

@@ -1,9 +1,25 @@
 
-# Calabi-Yau Scaffold Generator for Blender
+# Combinatorial skeletons of Calabi-Yau geometry.
 #
-# Two combinatorial skeletons of Calabi-Yau geometry, both of which
-# are honestly one- or two-dimensional and so can be built without
-# faking a projection of a six-dimensional manifold.
+# Part of the Math Art surfaces engine (`math_art/surfaces/`).  Python
+# and numpy only -- no `bpy` -- so the module imports and self-tests
+# headlessly.
+#
+# NO OPERATOR REGISTERS THIS.  Both constructions below are correct and
+# checkable, and neither makes a picture worth an Add-menu entry.
+# Ruan's discriminant graph is twenty nodes and thirty legs; that is the
+# whole object, and it draws as a stick figure.  The Hanson-Sha
+# tessellation is of a real 4-manifold, so any projection of it to R^3
+# is a tangle -- 192 edges through 24 vertices at n = 4 -- and filling
+# its 8n^2 + 4n^3 two-cells is worse rather than better, because the
+# outermost triangles occlude the rest and it reads as a crumpled lump.
+# That is presumably why Hanson and Sha's own Figure 13 draws edges
+# only.  What the code is good for is the arithmetic: the cell counts
+# and the Euler characteristic are rebuilt here from the papers' index
+# rules and checked against the theorems, which is a real result even
+# without a render.  The mesh helpers are kept so that a future
+# generator -- or a one-off study -- can build geometry from either
+# structure without reconstructing the combinatorics.
 #
 # THE SYZ DISCRIMINANT GRAPH.  Strominger, Yau and Zaslow conjectured
 # that a Calabi-Yau threefold near its large complex structure limit
@@ -68,26 +84,6 @@ import itertools
 import math
 
 import numpy as np
-
-bl_info = {
-    "name": "Calabi-Yau Scaffolds",
-    "author": "Math Art project (after Ruan / Hanson & Sha)",
-    "version": (1, 0, 0),
-    "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Calabi-Yau Scaffolds",
-    "description": "The SYZ discriminant graph and the Hanson-Sha "
-                   "tessellation of the Fermat surfaces in CP3",
-    "category": "Add Mesh",
-}
-
-try:
-    import bpy
-    from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
-                           IntProperty)
-    _IN_BLENDER = True
-except ImportError:
-    _IN_BLENDER = False
-
 
 # --------------------------------------------------------------------
 # The SYZ discriminant graph
@@ -332,139 +328,6 @@ def fit(pts, scale=1.0):
     ext = float((hi - lo).max())
     s = (2.0 * scale / ext) if ext > 1e-12 else 1.0
     return [tuple(v) for v in (A - 0.5 * (lo + hi)) * s]
-
-
-# --------------------------------------------------------------------
-# Blender layer
-# --------------------------------------------------------------------
-
-if _IN_BLENDER:
-
-    class MESH_OT_calabi_yau_scaffold_add(bpy.types.Operator):
-        """Add an SYZ discriminant graph or a Fermat surface
-        tessellation"""
-        bl_idname = "mesh.calabi_yau_scaffold_add"
-        bl_label = "Calabi-Yau Scaffolds"
-        bl_options = {'REGISTER', 'UNDO'}
-
-        mode: EnumProperty(
-            name="Scaffold",
-            description="Which skeleton to build",
-            items=[('SYZ', "SYZ Discriminant Graph",
-                    "Where the special Lagrangian 3-torus fibration of "
-                    "the Fermat quintic degenerates: a trivalent graph "
-                    "of 20 nodes and 30 legs inside the base "
-                    "three-sphere"),
-                   ('FERMAT_CP3', "Fermat Surface in CP3",
-                    "The Hanson-Sha tessellation of z0^n + z1^n + z2^n "
-                    "+ z3^n = 0, a real 4-manifold; at n = 4 it is a K3 "
-                    "surface. Drawn as its edges, projected from the "
-                    "embedding of CP3 in R^16")],
-            default='SYZ')
-        projection: EnumProperty(
-            name="Projection",
-            description="How to bring the base three-sphere to R^3",
-            items=[('SCHLEGEL', "Simplex",
-                    "Drop one dimension: the familiar diagram of the "
-                    "4-simplex boundary"),
-                   ('SPHERE', "Stereographic",
-                    "Normalise onto the three-sphere the fibration is "
-                    "based on, then project stereographically")],
-            default='SCHLEGEL')
-        degree: IntProperty(
-            name="Degree", default=4, min=1, max=8,
-            description="Degree n of the Fermat surface. n = 4 is the "
-                        "K3 surface")
-        seed: IntProperty(
-            name="View", default=0, min=0, max=64,
-            description="0 is the symmetric projection out of R^16; any "
-                        "other value picks a different reproducible "
-                        "frame, which is how a readable view of a "
-                        "4-manifold gets found")
-        radius: FloatProperty(
-            name="Strut Radius", default=0.02, min=0.001, max=0.2,
-            description="Radius of the tubes along the legs")
-        node_radius: FloatProperty(
-            name="Node Radius", default=0.045, min=0.0, max=0.2,
-            description="Radius of a ball at each node (0 = none)")
-        sides: IntProperty(
-            name="Strut Sides", default=6, min=3, max=24,
-            description="Cross-section of each tube")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0,
-                             description="Overall size multiplier")
-
-        def execute(self, context):
-            if self.mode == 'SYZ':
-                pts4, edges, kinds = syz_graph()
-                pts = to_r3(pts4, self.projection)
-                name = "SYZ Discriminant Graph"
-                deg = {}
-                for a, b in edges:
-                    deg[a] = deg.get(a, 0) + 1
-                    deg[b] = deg.get(b, 0) + 1
-                msg = (f"discriminant graph: {len(pts)} nodes, "
-                       f"{len(edges)} legs, all trivalent "
-                       f"{set(deg.values()) == {3}}")
-            else:
-                n = self.degree
-                verts, edges, tris = fermat_cells(n)
-                pts = fermat_points(n, self.seed)
-                name = f"Fermat Surface F{n}"
-                msg = (f"F_{n}: {len(verts)} vertices (6n), "
-                       f"{len(edges)} edges (12n^2), "
-                       f"{len(tris)} triangles (8n^2 + 4n^3); "
-                       f"chi = {euler_characteristic(n)}"
-                       + (" -- a K3 surface" if n == 4 else ""))
-
-            pts = fit(pts, 1.0)
-            v, f = struts(pts, edges, self.radius, self.sides,
-                          self.node_radius)
-            me = bpy.data.meshes.new(name)
-            me.from_pydata(fit(v, self.scale), [], f)
-            me.validate(clean_customdata=True)
-            me.polygons.foreach_set('use_smooth',
-                                    [True] * len(me.polygons))
-            me.update()
-            obj = bpy.data.objects.new(name, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report({'INFO'}, msg)
-            return {'FINISHED'}
-
-        def draw(self, context):
-            lay = self.layout
-            lay.use_property_split = True
-            lay.prop(self, 'mode')
-            if self.mode == 'SYZ':
-                lay.prop(self, 'projection')
-            else:
-                lay.prop(self, 'degree')
-                lay.prop(self, 'seed')
-            lay.prop(self, 'radius')
-            lay.prop(self, 'node_radius')
-            lay.prop(self, 'sides')
-            lay.prop(self, 'scale')
-
-    def _menu_func(self, context):
-        self.layout.operator("mesh.calabi_yau_scaffold_add",
-                             icon='MOD_WIREFRAME')
-
-    ADD_MENU = True
-
-    def register():
-        bpy.utils.register_class(MESH_OT_calabi_yau_scaffold_add)
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
-
-    def unregister():
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_calabi_yau_scaffold_add)
 
 
 # --------------------------------------------------------------------
