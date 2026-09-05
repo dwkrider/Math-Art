@@ -281,6 +281,27 @@ export function decodeMesh(packed) {
  */
 export const STUDIO_PLASTIC = [0.84, 0.84, 0.86];
 
+/**
+ * The studio's LENS and camera distance.
+ *
+ * Matching the orientation is not enough to make a viewer agree with a
+ * thumbnail; the projection has to match too. The studio shoots on an
+ * 84 mm lens (subjects.STUDIO_LENS) on Blender's default 36 mm sensor,
+ * which is 24.2 degrees, from 7.75 units away (render_docs puts the
+ * camera at rr * 5.0 with rr = 1.55). This viewer was on 32 degrees at
+ * 4.1 -- much closer and much wider, so the near part of a surface was
+ * enlarged against the far part and the shape read as though seen from a
+ * different angle even though it was turned exactly right. On the
+ * ding-dong that showed as a teardrop far too large for its skirt.
+ *
+ * The two normalisations already agree: docs/render_docs.py fits every
+ * subject into a 2 m cube, and setMesh scales every mesh's longest span
+ * to 2. Both leave a half-extent of 1, so the studio's numbers can be
+ * used here directly.
+ */
+export const STUDIO_FOV = 2 * Math.atan(36 / 2 / 84) * 180 / Math.PI;
+export const STUDIO_DISTANCE = 1.55 * 5.0;
+
 // ONE material on both sides, as the studio has it. Cycles renders these
 // surfaces with a single material and simply flips the normal on a back
 // face, and the sheets still read: the fold is carried by the shading and

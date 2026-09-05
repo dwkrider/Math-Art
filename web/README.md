@@ -188,14 +188,19 @@ sixty-odd surfaces on one page and no network access at all.
 It is written for **surfaces** rather than solids, which is what makes it
 a separate thing from `viewer.js` next door:
 
-- **The documentation studio's light.** The shader carries
+- **The documentation studio, reproduced.** The shader carries
   `docs/render_docs.py`'s four-lamp rig — each lamp's Blender vector
   resolved onto the studio camera basis, at the studio's own relative
-  energies — and its White Plastic base colour. `STUDIO_VIEW` is the
-  orientation that studio shoots from, so a viewer opened with
-  `{ rotation: STUDIO_VIEW }` shows a surface in the same pose as its
-  thumbnail and its documentation figure. `home` follows whatever
-  orientation the page opened at.
+  energies — and its White Plastic base colour. `STUDIO_VIEW`,
+  `STUDIO_FOV` and `STUDIO_DISTANCE` reproduce its camera: the
+  orientation it shoots from, its 84 mm lens and its distance. All three
+  are needed. Orientation alone leaves a surface turned correctly but
+  drawn through a different lens, and perspective enlarges whatever is
+  nearest, so the shape still reads as though seen from somewhere else.
+  Measured over 36 random surfaces, matching only the orientation gave a
+  median silhouette agreement of 0.86 against the thumbnails; matching
+  the lens as well gives 0.98, with nothing below 0.93. `home` follows
+  whatever orientation the page opened at.
 - **One material, both sides.** An open sheet has no inside to cull to,
   so both faces are drawn in the studio's White Plastic and the normal is
   simply flipped on a back face — which is exactly what Cycles does when

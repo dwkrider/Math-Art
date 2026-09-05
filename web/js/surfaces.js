@@ -11,8 +11,8 @@
 import { loadIndex, loadRecord, loadMesh, loadMeshManifest, filterEntries, SORTS,
          FAMILY_ORDER, FAMILY_LABELS, MODE_LABELS, countBy, thumbUrl }
   from './surface-data.js';
-import { SurfaceViewer, freshCanvas, STUDIO_VIEW }
-  from './surface-viewer.js';
+import { SurfaceViewer, freshCanvas, STUDIO_VIEW, STUDIO_FOV,
+         STUDIO_DISTANCE } from './surface-viewer.js';
 import { renderSurfaceDetail } from './surface-detail.js';
 
 const VIEWS = 1;
@@ -36,18 +36,16 @@ async function main() {
   // What was actually baked, rather than what the database predicts.
   const baked = await loadMeshManifest();
 
-  // Pulled back from the shared default. setMesh normalises a surface into
-  // the unit ball, and at the viewer's 32-degree field of view a distance
-  // of 2.7 puts the half-frame at 0.77 -- so a surface that really fills
-  // that ball is cropped. This is passed per-module rather than changed in
-  // surface-viewer.js, because the validation report frames its cards
-  // deliberately tight and should keep doing so.
-  // STUDIO_VIEW opens the viewer on the orientation the documentation
-  // studio shoots from, which is where this surface's thumbnail was taken:
-  // the model a reader clicks is the model they get, in the same pose.
-  // Home and double-click return here.
-  let viewer = new SurfaceViewer(freshCanvas($('#stage')),
-                                 { distance: 4.1, rotation: STUDIO_VIEW });
+  // The studio's own camera: its orientation, its 84 mm lens and its
+  // distance. Orientation alone was not enough -- with a wider, closer
+  // lens a surface turned exactly right still reads as though seen from
+  // somewhere else, because perspective enlarges whatever is nearest.
+  // See STUDIO_FOV in surface-viewer.js.
+  let viewer = new SurfaceViewer(freshCanvas($('#stage')), {
+    rotation: STUDIO_VIEW,
+    fov: STUDIO_FOV,
+    distance: STUDIO_DISTANCE,
+  });
   const detail = $('#detail');
 
   // -- catalogue ------------------------------------------------------
