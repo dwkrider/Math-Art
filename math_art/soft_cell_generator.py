@@ -171,7 +171,7 @@ if _IN_BLENDER:
                  "Arcs repeat with period three, so neighbours agree and "
                  "the cells pack -- at the cost of two of the six vertices "
                  "staying sharp.  A SOFTENED rather than a soft cell")],
-            default='ALTERNATE')
+            default='TILING')
 
         colatitude: FloatProperty(
             name="Colatitude", description="Angle of the generating "

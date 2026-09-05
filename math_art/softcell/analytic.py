@@ -69,6 +69,16 @@ KINDS = ('SADDLE', 'TRIPRISM', 'HEXPRISM')
 # honeycomb's vertex figure is a TRIANGLE, an odd cycle, and odd cycles are
 # not two-colourable.
 #
+# Rotating alternate cells does not rescue it, though it very nearly does.
+# Turn one neighbour by an ODD multiple of 60 degrees and the shared wall
+# agrees exactly -- measured, 49 of 49 boundary samples coincide for
+# rotations of 1, 3 and 5 sixths of a turn, and for no even one.  The pair
+# tiles.  But three hexagons meet at every vertex, and all three pairs would
+# have to differ by an odd rotation at once, which is asking a 3-cycle to
+# alternate.  An exhaustive search over all 6^3 rotations x 2^3 half-height
+# z-shifts of such a triple finds none of the 1728 assignments works.  The
+# triangle defeats it again, in a second disguise.
+#
 # So the wall scheme is a user choice, and each option is honest about what
 # it gives up:
 #
@@ -194,7 +204,7 @@ def _tri_leading_curve(m):
     return G
 
 
-def _hex_leading_curve(m, scheme='ALTERNATE'):
+def _hex_leading_curve(m, scheme='TILING'):
     """The hexagonal leading curve of SI equations (11)-(12).
 
     The prototype gamma' is fitted to the 1st, 3rd and 5th edges of a
@@ -233,7 +243,7 @@ def _hex_leading_curve(m, scheme='ALTERNATE'):
     return G
 
 
-def _prism_cell(kind, m, rings, height=1.0, hex_scheme='ALTERNATE'):
+def _prism_cell(kind, m, rings, height=1.0, hex_scheme='TILING'):
     """Sweep a leading curve to the axis, stack two copies, wall them in.
 
     The cap is the quadratic-Bezier surface of SI equation (9),
@@ -369,7 +379,7 @@ _cells_per_lattice_cell = {'SADDLE': 1, 'TRIPRISM': 2, 'HEXPRISM': 1}
 # public entry point
 # ------------------------------------------------------------------
 
-def build(kind, resolution=24, rings=8, hex_scheme='ALTERNATE'):
+def build(kind, resolution=24, rings=8, hex_scheme='TILING'):
     """Return (verts, faces, lattice_basis, exact_volume) for one cell.
 
     `verts` is an (N,3) float array, `faces` a list of index tuples,

@@ -214,7 +214,7 @@ def _span_face(loop, rings, relax_iters, style):
 def build_cell(kind, phi=None, theta=None, symmetry='TETRAHEDRAL',
                edge_samples=16, face_rings=8, relax_iters=60,
                face_style='MINIMAL', resolution=24,
-               hex_scheme='ALTERNATE'):
+               hex_scheme='TILING'):
     """One soft cell, centred at the origin.
 
     Returns (V, faces, info).  `info` carries the exact cell volume where it
