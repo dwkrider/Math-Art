@@ -547,7 +547,8 @@
       "source": "CLP.fe",
       "title": "Schwarz CLP",
       "weld_tol": 1e-08,
-      "word": "af"
+      "word": "af",
+      "res_floor": 8
     },
     "weierstrass": {
       "branch_points": [

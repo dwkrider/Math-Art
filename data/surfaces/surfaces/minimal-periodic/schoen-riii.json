@@ -1048,7 +1048,8 @@
       "source": "RIII.fe",
       "title": "Schoen R-III",
       "weld_tol": 1e-08,
-      "word": "fdfedfe"
+      "word": "fdfedfe",
+      "res_floor": 8
     }
   },
   "curvature": {

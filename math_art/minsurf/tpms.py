@@ -1135,6 +1135,15 @@ for _k in sorted(_FE_CELLS):
         TPMS_EXACT.setdefault(_k, _fe_row(_k))
 del _k
 
+# The Evolver-cell rows, for callers that must know which TPMS_EXACT
+# rows take a PER-AXIS CELL COUNT triple as `cells`.  On every other
+# exact row `cells` is a reflection/word depth -- a small scalar whose
+# cost is bounded by the builder -- but an fe row TILES by it, so a
+# depth-like default of 4 handed to one of these builds a 4x4x4
+# 64-cell block (Neovius N14: 22.6 million triangles) where the
+# caller meant "grow the cell fully".
+TPMS_FE_ROWS = frozenset(_FE_CELLS)
+
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
 # the gyroid angle builds the fundamental piece.  CUSTOM (absent here) means
 # "use the raw Associate Angle slider".

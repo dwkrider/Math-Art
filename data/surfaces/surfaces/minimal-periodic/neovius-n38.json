@@ -606,7 +606,8 @@
       "source": "N38.fe",
       "title": "Neovius N38",
       "weld_tol": 1e-08,
-      "word": "cdelal"
+      "word": "cdelal",
+      "res_floor": 8
     }
   },
   "curvature": {

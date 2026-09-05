@@ -1048,7 +1048,8 @@
       "source": "I-6.fe",
       "title": "Schoen I-6",
       "weld_tol": 1e-08,
-      "word": "abc"
+      "word": "abc",
+      "res_floor": 24
     },
     "weierstrass": {
       "branch_points": [

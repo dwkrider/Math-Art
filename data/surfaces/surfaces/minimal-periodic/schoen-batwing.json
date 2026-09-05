@@ -622,7 +622,8 @@
       "source": "batwingadj.fe",
       "title": "Schoen Batwing",
       "weld_tol": 1e-08,
-      "word": "efjdbcb"
+      "word": "efjdbcb",
+      "res_floor": 8
     },
     "note": "No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula from the literature would be worse than a null. See construction.blocked_by."
   },

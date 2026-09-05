@@ -577,7 +577,8 @@
       "source": "pcell.fe",
       "title": "Schwarz P",
       "weld_tol": 1e-08,
-      "word": "dcbdcbdcb"
+      "word": "dcbdcbdcb",
+      "res_floor": 8
     },
     "nodal_polynomial": "cos(x) + cos(y) + cos(z)"
   },

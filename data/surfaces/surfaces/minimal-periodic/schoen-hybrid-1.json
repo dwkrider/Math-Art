@@ -623,7 +623,8 @@
       "source": "hybrid-1adj.fe",
       "title": "Schoen Hybrid P | F-RD",
       "weld_tol": 1e-08,
-      "word": "defabcabc"
+      "word": "defabcabc",
+      "res_floor": 8
     }
   },
   "curvature": {

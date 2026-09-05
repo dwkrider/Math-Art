@@ -570,7 +570,8 @@
       "source": "HTadj.fe",
       "title": "Schoen H'-T",
       "weld_tol": 1e-08,
-      "word": "abcbcbc"
+      "word": "abcbcbc",
+      "res_floor": 8
     },
     "weierstrass": {
       "branch_points": [

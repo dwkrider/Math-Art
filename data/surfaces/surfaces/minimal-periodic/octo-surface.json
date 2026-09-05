@@ -578,7 +578,8 @@
       "source": "octoadj.fe",
       "title": "Schoen O,C-TO",
       "weld_tol": 1e-08,
-      "word": "aceaceace"
+      "word": "aceaceace",
+      "res_floor": 8
     }
   },
   "curvature": {

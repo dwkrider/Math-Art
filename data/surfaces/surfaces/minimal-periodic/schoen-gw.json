@@ -570,7 +570,8 @@
       "source": "GW5adj.fe",
       "title": "Schoen GW (graphite-wurtzite)",
       "weld_tol": 1e-08,
-      "word": "baca"
+      "word": "baca",
+      "res_floor": 8
     }
   },
   "curvature": {

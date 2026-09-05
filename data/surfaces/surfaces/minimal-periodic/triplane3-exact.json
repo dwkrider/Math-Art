@@ -569,7 +569,8 @@
       "source": "triplane3adj.fe",
       "title": "Triplane 3",
       "weld_tol": 1e-08,
-      "word": "abcabc"
+      "word": "abcabc",
+      "res_floor": 16
     },
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },

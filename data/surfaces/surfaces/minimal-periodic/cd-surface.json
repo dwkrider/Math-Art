@@ -593,7 +593,8 @@
       "source": "cd.fe",
       "title": "Schoen C(D)",
       "weld_tol": 1e-08,
-      "word": "babcd"
+      "word": "babcd",
+      "res_floor": 8
     }
   },
   "curvature": {

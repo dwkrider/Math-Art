@@ -565,7 +565,8 @@
       "source": "p3a.fe",
       "title": "Lord-Mackay P3a",
       "weld_tol": 1e-08,
-      "word": "bcacba"
+      "word": "bcacba",
+      "res_floor": 8
     }
   },
   "curvature": {

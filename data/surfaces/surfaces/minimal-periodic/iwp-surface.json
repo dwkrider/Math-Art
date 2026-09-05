@@ -557,7 +557,8 @@
       "source": "IWP.fe",
       "title": "Schoen I-WP",
       "weld_tol": 1e-08,
-      "word": "bdb"
+      "word": "bdb",
+      "res_floor": 8
     }
   },
   "curvature": {

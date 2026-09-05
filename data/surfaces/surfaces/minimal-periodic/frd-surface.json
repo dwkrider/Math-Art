@@ -633,7 +633,8 @@
       "source": "FRDadj.fe",
       "title": "Schoen F-RD",
       "weld_tol": 1e-08,
-      "word": "dfhabcabc"
+      "word": "dfhabcabc",
+      "res_floor": 8
     }
   },
   "curvature": {

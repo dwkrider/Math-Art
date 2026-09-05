@@ -606,7 +606,8 @@
       "source": "manta35adj.fe",
       "title": "Schoen Manta (genus 35)",
       "weld_tol": 1e-08,
-      "word": "gfecdcdcd"
+      "word": "gfecdcdcd",
+      "res_floor": 8
     }
   },
   "curvature": {

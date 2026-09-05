@@ -606,7 +606,8 @@
       "source": "N26.fe",
       "title": "Neovius N26",
       "weld_tol": 1e-08,
-      "word": "cdelal"
+      "word": "cdelal",
+      "res_floor": 10
     }
   },
   "curvature": {

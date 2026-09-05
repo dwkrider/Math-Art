@@ -588,7 +588,8 @@
       "source": "SSadj.fe",
       "title": "Schoen S'-S''",
       "weld_tol": 1e-08,
-      "word": "dcba"
+      "word": "dcba",
+      "res_floor": 10
     },
     "weierstrass": {
       "branch_points": [

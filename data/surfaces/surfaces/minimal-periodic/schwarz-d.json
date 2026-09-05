@@ -594,7 +594,8 @@
       "source": "dcell.fe",
       "title": "Schwarz D",
       "weld_tol": 1e-08,
-      "word": "abcabcg"
+      "word": "abcabcg",
+      "res_floor": 8
     },
     "nodal_polynomial": "sin(x) * sin(y) * sin(z) + sin(x) * cos(y) * cos(z) + cos(x) * sin(y) * cos(z) + cos(x) * cos(y) * sin(z)"
   },

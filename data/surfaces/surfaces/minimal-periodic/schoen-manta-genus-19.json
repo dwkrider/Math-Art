@@ -606,7 +606,8 @@
       "source": "mantaadj.fe",
       "title": "Schoen Manta",
       "weld_tol": 1e-08,
-      "word": "hfebdbdbd"
+      "word": "hfebdbdbd",
+      "res_floor": 8
     }
   },
   "curvature": {

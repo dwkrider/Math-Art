@@ -98,7 +98,7 @@ from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
 from .minsurf.hexagonal import clp_params as _clp_params
 from .minsurf.tpms import clip_to_sphere as _clip_to_sphere
 from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
-                           TPMS_EXACT_ARRANGEMENTS,
+                           TPMS_EXACT_ARRANGEMENTS, TPMS_FE_ROWS,
                            _PGD_PRESET_ANGLE, _f_p, build_tpms,
                            build_tpms_exact, marching_tets,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
@@ -1276,8 +1276,21 @@ if _IN_BLENDER:
                     # the member matters -- see `spec_modulus_range`.
                     if _hex.spec_modulus_range(surf):
                         _hex.set_spec_modulus(surf, self.cell_proportion)
+                    # An Evolver-CELL row takes a TILE COUNT here, not a
+                    # reflection depth.  `build_tpms_exact` passes this
+                    # argument straight through as `cells`, and for the
+                    # reflection-grown rows that is how far to reflect
+                    # the fundamental piece -- but `fe_cell_build` reads
+                    # it as how many cells to lay down.  Feeding it
+                    # `reflect_depth` built a 4x4x4 block of 64 cells
+                    # with the Cells fields all at 1, on top of the
+                    # explicit tiling below.  One parameter, two
+                    # meanings; the cell rows get the count they are
+                    # actually being asked for.
+                    _grow = ((cu, cv, cw) if surf in TPMS_FE_ROWS
+                             else self.reflect_depth)
                     verts, tris = build_tpms_exact(
-                        surf, self.reflect_depth, self.resolution,
+                        surf, _grow, self.resolution,
                         self.cell_size, self.assoc_angle,
                         arrangement=(self.arrangement
                                      if surf in TPMS_EXACT_ARRANGEMENTS
@@ -1292,7 +1305,9 @@ if _IN_BLENDER:
                     # cell -- where the bounding box is not a period --
                     # comes back as the single piece instead of a
                     # scattered copy of it.
-                    if max(cu, cv, cw) > 1 and len(tris):
+                    if (surf not in TPMS_FE_ROWS and max(cu, cv, cw) > 1
+                            and len(tris)):
+                        # Cell rows already tiled inside the builder.
                         verts, tris, _n = _plateau.tile_periodic(
                             verts, [tuple(t) for t in tris], (cu, cv, cw))
                 if len(tris) == 0:

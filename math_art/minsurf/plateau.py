@@ -1912,26 +1912,96 @@ def ring_tile_checked(V, quads, key, depth=2):
     return W, QQ, n
 
 
+def _weld_remap(V, tol):
+    """(kept coordinates, old->new index map) for a `tol` weld.
+
+    Vectorized, with the dict pass's exact semantics: the key is
+    round(V/tol), the FIRST occurrence of a key keeps both its
+    coordinates and its output rank.  np.lexsort is stable, so equal
+    keys stay in original order and each sorted run's head IS the
+    first occurrence."""
+    V = np.asarray(V, dtype=float)
+    n = len(V)
+    if n == 0:
+        return V, np.empty(0, dtype=np.int64)
+    keys = np.round(V / max(tol, 1e-30)).astype(np.int64)
+    idx = np.lexsort((keys[:, 2], keys[:, 1], keys[:, 0]))
+    sk = keys[idx]
+    new = np.empty(n, dtype=bool)
+    new[0] = True
+    new[1:] = np.any(sk[1:] != sk[:-1], axis=1)
+    gid_sorted = np.cumsum(new) - 1
+    first = idx[new]                          # first original index per group
+    order = np.argsort(first, kind='stable')  # groups by first appearance
+    rank = np.empty(len(first), dtype=np.int64)
+    rank[order] = np.arange(len(first))
+    remap = np.empty(n, dtype=np.int64)
+    remap[idx] = rank[gid_sorted]
+    return V[first[order]], remap
+
+
+def _remap_faces(faces, remap):
+    """Reindex faces, collapsing consecutive duplicate corners.
+
+    Same output, in the same order, as the historical per-face loop
+    (keep corner i iff it differs from corner (i+1) mod n; drop faces
+    left with fewer than 3 corners) -- but faces of equal arity are
+    remapped and screened as single array operations, because this
+    loop over 11.5 million faces was most of what made tiling a block
+    slow.  `faces` may be a list of tuples (mixed arity welcome;
+    output order preserved), a single 2-D integer array, or a list of
+    2-D integer arrays (one block per arity, output in block order --
+    the internal fast path `tile_periodic` uses, where face order has
+    no consumer)."""
+    def _one_block(F0):
+        if not len(F0):
+            return []
+        F = remap[np.asarray(F0, dtype=np.int64)]
+        keep = F != np.roll(F, -1, axis=1)
+        cnt = keep.sum(axis=1)
+        clean = cnt == F.shape[1]
+        if bool(np.all(clean)):
+            return [tuple(r) for r in F.tolist()]
+        got = [None] * len(F)
+        for p in np.flatnonzero(clean).tolist():
+            got[p] = tuple(F[p].tolist())
+        # the rare degenerate rows: collapse per row, old semantics
+        for j in np.flatnonzero(~clean & (cnt >= 3)).tolist():
+            got[j] = tuple(F[j][keep[j]].tolist())
+        return [f for f in got if f is not None]
+
+    if isinstance(faces, np.ndarray) and faces.ndim == 2:
+        return _one_block(faces)
+    if (isinstance(faces, list) and faces
+            and isinstance(faces[0], np.ndarray)
+            and getattr(faces[0], 'ndim', 0) == 2):
+        out = []
+        for F0 in faces:
+            out.extend(_one_block(F0))
+        return out
+    by_len = {}
+    for i, f in enumerate(faces):
+        by_len.setdefault(len(f), []).append(i)
+    out = [None] * len(faces)
+    for where in by_len.values():
+        F0 = np.asarray([faces[i] for i in where], dtype=np.int64)
+        F = remap[F0]
+        keep = F != np.roll(F, -1, axis=1)
+        cnt = keep.sum(axis=1)
+        clean = cnt == F.shape[1]
+        pos = np.asarray(where, dtype=np.int64)
+        for p, row in zip(pos[clean].tolist(), F[clean].tolist()):
+            out[p] = tuple(row)
+        # the rare degenerate rows: collapse per row, old semantics
+        for j in np.flatnonzero(~clean & (cnt >= 3)).tolist():
+            out[where[j]] = tuple(F[j][keep[j]].tolist())
+    return [f for f in out if f is not None]
+
+
 def _weld_points(V, faces, tol):
     """Merge vertices within `tol` and reindex."""
-    keys = np.round(np.asarray(V, float) / max(tol, 1e-30)).astype(np.int64)
-    uniq = {}
-    remap = np.empty(len(V), dtype=np.int64)
-    out = []
-    for i, k in enumerate(map(tuple, keys)):
-        j = uniq.get(k)
-        if j is None:
-            j = uniq[k] = len(out)
-            out.append(V[i])
-        remap[i] = j
-    W = np.asarray(out, dtype=float)
-    QQ = []
-    for f in faces:
-        g = [int(remap[i]) for i in f]
-        d = [g[i] for i in range(len(g)) if g[i] != g[(i + 1) % len(g)]]
-        if len(d) >= 3:
-            QQ.append(tuple(d))
-    return W, QQ
+    W, remap = _weld_remap(V, tol)
+    return W, _remap_faces(faces, remap)
 
 
 def group_slide_planes(slide, nrows):
@@ -2572,6 +2642,17 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
     return W, [tuple(f) for f in quads], lets, env, loops
 
 
+# Relaxed patches, keyed by (key, m, rings, iters).  The patch is a
+# pure function of those four values -- the contour comes out of the
+# baked table -- so re-running the operator while the user drags a
+# Cells count re-relaxes an identical patch from scratch.  A handful of
+# entries suffices (one per surface the user is currently poking at);
+# entries are copied OUT, never handed back by reference, because
+# fe_cell_build recentres and rescales V in place.
+_FE_PATCH_CACHE = {}
+_FE_PATCH_CACHE_MAX = 8
+
+
 def fe_cell_patch(key, m=96, rings=16, iters=300):
     """Relax the datafile's contour, as a disk or an annulus.
 
@@ -2581,6 +2662,10 @@ def fe_cell_patch(key, m=96, rings=16, iters=300):
     spanning only the first gives a flat degenerate patch.
     """
     from .fecells import FE_CELLS
+    ck = (key, int(m), int(rings), int(iters))
+    hit = _FE_PATCH_CACHE.get(ck)
+    if hit is not None:
+        return hit[0].copy(), list(hit[1])
     spec = FE_CELLS[key]
     loops = [np.asarray(l, dtype=float) for l in spec['loops']]
     # Corner-preserving re-span: the recorded boundary's sharp vertices
@@ -2607,7 +2692,11 @@ def fe_cell_patch(key, m=96, rings=16, iters=300):
     T = np.asarray(_quads_to_tris(quads))
     V = np.asarray(minimize_area(V.copy(), T, fixed, outer_iters=iters),
                    dtype=float)
-    return V, [tuple(f) for f in quads]
+    quads = [tuple(f) for f in quads]
+    if len(_FE_PATCH_CACHE) >= _FE_PATCH_CACHE_MAX:
+        _FE_PATCH_CACHE.pop(next(iter(_FE_PATCH_CACHE)))
+    _FE_PATCH_CACHE[ck] = (V.copy(), list(quads))
+    return V, quads
 
 
 def dedupe_placements(V, mats):
@@ -2852,16 +2941,28 @@ def tile_periodic(V, faces, counts, tol=None):
     if tol is None:
         tol = 1e-4 * float(np.max(period))
 
+    # Faces grouped by arity ONCE, so laying a block is array adds
+    # rather than millions of small Python list comprehensions (a
+    # 4x4x4 block of N14 spent most of its 35s of tiling there and in
+    # the welding loop this feeds).  `_lay` returns the faces in the
+    # arity-block form `_remap_faces` takes directly; face order
+    # within the block has no consumer.
+    _by_len = {}
+    for _f in faces:
+        _by_len.setdefault(len(_f), []).append(_f)
+    _fblocks = [np.asarray(fs, dtype=np.int64) for fs in _by_len.values()]
+
     def _lay(nu, nv, nw):
-        Vs, Fs = [], []
-        for i in range(nu):
-            for j in range(nv):
-                for k in range(nw):
-                    off = len(Vs) and sum(len(x) for x in Vs)
-                    Vs.append(V + np.array([i * period[0], j * period[1],
-                                            k * period[2]]))
-                    Fs.extend([[int(x) + off for x in f] for f in faces])
-        return np.vstack(Vs), Fs
+        shifts = np.array([[i * period[0], j * period[1], k * period[2]]
+                           for i in range(nu)
+                           for j in range(nv)
+                           for k in range(nw)])
+        ncopy = len(shifts)
+        Vs = (V[None, :, :] + shifts[:, None, :]).reshape(-1, 3)
+        offs = np.arange(ncopy, dtype=np.int64) * len(V)
+        Fs = [(F0[None, :, :] + offs[:, None, None]).reshape(-1, F0.shape[1])
+              for F0 in _fblocks]
+        return Vs, Fs
 
     # Two cells along the longest axis is the cheapest honest test of
     # whether this mesh tiles at all.
@@ -3088,18 +3189,8 @@ def fe_cell_tile_group(key, Vpatch, quads, counts, max_placements=1200):
 
 def fe_cell_build(key, cells, res_per_cell, scale, theta):
     """TPMS_EXACT-compatible wrapper for a datafile-derived cell."""
+    from .fecells import FE_CELLS
     res = max(8, int(res_per_cell))
-    # Floors of 72 and 12, not 48 and 8.  A cell whose copies are joined
-    # by a translation has to close a gap between independently placed
-    # samples, and a coarse re-span cannot: Schoen I-8 at m=48 is either
-    # disconnected or fused at every tolerance, with no value in between,
-    # while at m=72 it welds cleanly.  The floor is what a cell needs to
-    # assemble at all, so it is not the place to save time.
-    V, quads = fe_cell_patch(key, m=max(72, 3 * res), rings=max(12, res // 2))
-    Vpatch, qpatch = V, quads
-    got = fe_cell_assemble(key, V, quads)
-    if got is not None:
-        V, quads = got[0], got[1]
     # `cells` used to decide only WHETHER to assemble the cell -- a count
     # above one meant "assemble", and any larger number meant the same
     # thing, so these rows had no tiling at all while the nodal ones
@@ -3110,6 +3201,45 @@ def fe_cell_build(key, cells, res_per_cell, scale, theta):
         counts = (int(cells) or 1,) * 3
     else:
         counts = tuple(int(c) or 1 for c in tuple(cells)[:3])
+    # THE SLIDER BUYS TRIANGLES FOR THE FINISHED OBJECT, not for the
+    # patch.  The patch is laid down once per group element and then
+    # once per cell of the block, so patch triangles multiply by
+    # `copies * cells` before the user sees them -- N14 is 48 copies,
+    # the starfish words are 96 -- and sizing the patch directly from
+    # the slider made a 96-copy cell twelve times the mesh of an
+    # 8-copy one at the same slider value, with no way to ask for
+    # less.  A patch spans ~3*r^2 triangles at resolution r (boundary
+    # 3r, r/2 rings), so holding `copies * ncells * 3r^2` at the
+    # budget an 8-copy single cell spends means r scales by
+    # sqrt(8 / (copies * ncells)) -- square root, not cube root,
+    # because these are surface patches whose triangle count is
+    # quadratic in linear resolution (the nodal rows, sampling a
+    # volume, are the cubic case).  The slider keeps its meaning of
+    # "more detail" -- the finished object carries ~24*res^2 triangles
+    # at every copy count and block size -- and it is capped at the
+    # old per-patch sizing so a low-copy cell never comes out FINER
+    # than the slider asked.
+    spec = FE_CELLS[key]
+    copies = max(1, int(spec.get('copies', 8)))
+    ncells = max(1, counts[0] * counts[1] * counts[2])
+    r = min(res, int(round(res * math.sqrt(8.0 / (copies * ncells)))))
+    # The floor is what a cell needs to ASSEMBLE at all, so it is not
+    # the place to save time -- a cell whose copies are joined by a
+    # translation has to close a gap between independently placed
+    # samples, and a coarse re-span cannot (Schoen I-8 at m=48 is
+    # either disconnected or fused at every tolerance, with no value
+    # in between, while at m=72 it welds cleanly).  But 72/12 as a
+    # GLOBAL floor priced every cell at I-8's requirement, so the
+    # bake now measures each cell's own coarsest viable resolution
+    # (`res_floor`, tools/bake_fe_cells.py --floors): the runtime can
+    # scale down to that floor and no further.  A cell without a
+    # measured floor keeps the historical global one.
+    r = max(r, int(spec.get('res_floor', 24)), 8)
+    V, quads = fe_cell_patch(key, m=3 * r, rings=max(4, r // 2))
+    Vpatch, qpatch = V, quads
+    got = fe_cell_assemble(key, V, quads)
+    if got is not None:
+        V, quads = got[0], got[1]
     if max(counts) > 1:
         V, quads, done = tile_periodic(V, quads, counts)
         if done == (1, 1, 1) and got is not None:
