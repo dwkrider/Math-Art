@@ -107,6 +107,7 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/tpms__SP_2ENN_2ANN.png" width="200"><br><sub>Torus with 2 Enneper + 2 Annular Ends</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_HALF_TWISTED_SCHERK.png" width="200"><br><sub>Half-Twisted Scherk Surface</sub></td>
 </tr>
 </table>
 
@@ -130,64 +131,111 @@ Renders of each selectable option:
 </tr>
 </table>
 
-### Triply Periodic (TPMS)
+### TPMS Cubic
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/tpms__P.png" width="200"><br><sub>Schwarz P</sub></td>
-<td align="center"><img src="../images/variants/tpms__D.png" width="200"><br><sub>Schwarz D</sub></td>
-<td align="center"><img src="../images/variants/tpms__G.png" width="200"><br><sub>Gyroid</sub></td>
+<td align="center"><img src="../images/variants/tpms__BRAKKE_PSEUDO_BATWING.png" width="200"><br><sub>Brakke Pseudo-Batwing</sub></td>
+<td align="center"><img src="../images/variants/tpms__CI2Y.png" width="200"><br><sub>C(I2-Y**) Rod Packing</sub></td>
+<td align="center"><img src="../images/variants/tpms__CD.png" width="200"><br><sub>Complementary D</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__CG.png" width="200"><br><sub>Complementary Gyroid</sub></td>
+<td align="center"><img src="../images/variants/tpms__DPRIME.png" width="200"><br><sub>D'</sub></td>
+<td align="center"><img src="../images/variants/tpms__DISPHENOID_FAMILY_A_GENUS_31.png" width="200"><br><sub>Disphenoid 31</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__DISPHENOID_FAMILY_B_GENUS_35.png" width="200"><br><sub>Disphenoid 35</sub></td>
+<td align="center"><img src="../images/variants/tpms__DISPHENOID_FAMILY_A_GENUS_43.png" width="200"><br><sub>Disphenoid 43</sub></td>
+<td align="center"><img src="../images/variants/tpms__DISPHENOID_FAMILY_B_GENUS_51.png" width="200"><br><sub>Disphenoid 51</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__DISPHENOID_FAMILY_A_GENUS_55.png" width="200"><br><sub>Disphenoid 55</sub></td>
+<td align="center"><img src="../images/variants/tpms__DISPHENOID_FAMILY_B_GENUS_67.png" width="200"><br><sub>Disphenoid 67</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_PMY.png" width="200"><br><sub>Fischer-Koch +-Y</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__FK_CPMY.png" width="200"><br><sub>Fischer-Koch C(+-Y)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_CS.png" width="200"><br><sub>Fischer-Koch C(S)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_CY.png" width="200"><br><sub>Fischer-Koch C(Y)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__FK_S.png" width="200"><br><sub>Fischer-Koch S</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_Y.png" width="200"><br><sub>Fischer-Koch Y</sub></td>
+<td align="center"><img src="../images/variants/tpms__GPRIME.png" width="200"><br><sub>G' Alternating Gyroid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__G.png" width="200"><br><sub>Gyroid</sub></td>
+<td align="center"><img src="../images/variants/tpms__HEXPLANE1.png" width="200"><br><sub>Hexplane 1</sub></td>
+<td align="center"><img src="../images/variants/tpms__HEXPLANE2.png" width="200"><br><sub>Hexplane 2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__HEXPLANE3.png" width="200"><br><sub>Hexplane 3</sub></td>
+<td align="center"><img src="../images/variants/tpms__HEXPLANE4.png" width="200"><br><sub>Hexplane 4</sub></td>
+<td align="center"><img src="../images/variants/tpms__HEXPLANE5.png" width="200"><br><sub>Hexplane 5</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__KSURF.png" width="200"><br><sub>Karcher K</sub></td>
+<td align="center"><img src="../images/variants/tpms__LORD_MACKAY_P3A.png" width="200"><br><sub>Lord-Mackay P3a</sub></td>
 <td align="center"><img src="../images/variants/tpms__NEOVIUS.png" width="200"><br><sub>Neovius</sub></td>
-<td align="center"><img src="../images/variants/tpms__IWP.png" width="200"><br><sub>Schoen I-WP</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__NEOVIUS_N14.png" width="200"><br><sub>Neovius N14</sub></td>
+<td align="center"><img src="../images/variants/tpms__NEOVIUS_N26.png" width="200"><br><sub>Neovius N26</sub></td>
+<td align="center"><img src="../images/variants/tpms__NEOVIUS_N38.png" width="200"><br><sub>Neovius N38</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_BATWING.png" width="200"><br><sub>Schoen Batwing</sub></td>
+<td align="center"><img src="../images/variants/tpms__C21P.png" width="200"><br><sub>Schoen C21(P)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_C27_P.png" width="200"><br><sub>Schoen C27(P)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_C33_P.png" width="200"><br><sub>Schoen C33(P)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_C39_P.png" width="200"><br><sub>Schoen C39(P)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_BATWING_41.png" width="200"><br><sub>Schoen C41-4(P)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_C45_P.png" width="200"><br><sub>Schoen C45(P)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_BATWING_57.png" width="200"><br><sub>Schoen C57-4(P)</sub></td>
 <td align="center"><img src="../images/variants/tpms__FRD.png" width="200"><br><sub>Schoen F-RD</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/tpms__LIDINOID.png" width="200"><br><sub>Lidinoid</sub></td>
+<td align="center"><img src="../images/variants/tpms__FRD_EXACT.png" width="200"><br><sub>Schoen F-RD (genus 6)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FRD2.png" width="200"><br><sub>Schoen F-RD (Wohlgemuth variant)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_HYBRID_1.png" width="200"><br><sub>Schoen Hybrid P | F-RD</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__IWP.png" width="200"><br><sub>Schoen I-WP</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_MANTA_GENUS_19.png" width="200"><br><sub>Schoen Manta</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_MANTA_GENUS_35.png" width="200"><br><sub>Schoen Manta (genus 35)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_MANTA_GENUS_51.png" width="200"><br><sub>Schoen Manta (genus 57)</sub></td>
+<td align="center"><img src="../images/variants/tpms__OCTO.png" width="200"><br><sub>Schoen O,C-TO</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN14.png" width="200"><br><sub>Schoen p.14 Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__D.png" width="200"><br><sub>Schwarz D</sub></td>
+<td align="center"><img src="../images/variants/tpms__P.png" width="200"><br><sub>Schwarz P</sub></td>
 <td align="center"><img src="../images/variants/tpms__SPLITP.png" width="200"><br><sub>Split P</sub></td>
-<td align="center"><img src="../images/variants/tpms__OCTO.png" width="200"><br><sub>Schoen O,C-TO (nodal approximation)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/tpms__FK_S.png" width="200"><br><sub>Fischer-Koch S (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__FK_CS.png" width="200"><br><sub>Fischer-Koch C(S) (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__FK_Y.png" width="200"><br><sub>Fischer-Koch Y (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_2_1_GENUS_31.png" width="200"><br><sub>Starfish 2-1 (genus 31)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_2_2_GENUS_47.png" width="200"><br><sub>Starfish 2-2 (genus 47)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_2_3_GENUS_63.png" width="200"><br><sub>Starfish 2-3 (genus 63)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/tpms__FK_PMY.png" width="200"><br><sub>Fischer-Koch +-Y (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__FK_CPMY.png" width="200"><br><sub>Fischer-Koch C(+-Y) (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__FK_CY.png" width="200"><br><sub>Fischer-Koch C(Y) (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_3_1_GENUS_43.png" width="200"><br><sub>Starfish 3-1 (genus 43)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_3_2_GENUS_59.png" width="200"><br><sub>Starfish 3-2 (genus 59)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_3_3_GENUS_75.png" width="200"><br><sub>Starfish 3-3 (genus 75)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/tpms__CD.png" width="200"><br><sub>Complementary D (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__CG.png" width="200"><br><sub>Complementary Gyroid (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__GPRIME.png" width="200"><br><sub>G' Alternating Gyroid (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_4_1_GENUS_55.png" width="200"><br><sub>Starfish 4-1 (genus 55)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_4_3_GENUS_87.png" width="200"><br><sub>Starfish 4-3 (genus 87)</sub></td>
+<td align="center"><img src="../images/variants/tpms__TRIPLANE0.png" width="200"><br><sub>Triplane 0</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/tpms__DPRIME.png" width="200"><br><sub>D' (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__KSURF.png" width="200"><br><sub>Karcher K (nodal approximation)</sub></td>
-<td align="center"><img src="../images/variants/tpms__CI2Y.png" width="200"><br><sub>C(I2-Y**) Rod Packing (nodal approximation)</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="../images/variants/tpms__FRD2.png" width="200"><br><sub>Schoen F-RD (Wohlgemuth variant, nodal)</sub></td>
-</tr>
-</table>
-
-### Exact (Weierstrass)
-
-<table>
-<tr>
-<td align="center"><img src="../images/variants/tpms__H.png" width="200"><br><sub>Schwarz H (exact, hexagonal)</sub></td>
-<td align="center"><img src="../images/variants/tpms__CLP_HANDLE.png" width="200"><br><sub>CLP with Handle (exact, genus 4)</sub></td>
-<td align="center"><img src="../images/variants/tpms__RPD.png" width="200"><br><sub>rPD deformation (exact, rhombohedral)</sub></td>
-</tr>
-</table>
-
-### Exact (Deformable)
-
-<table>
-<tr>
-<td align="center"><img src="../images/variants/tpms__CLP.png" width="200"><br><sub>Schwarz CLP (exact)</sub></td>
+<td align="center"><img src="../images/variants/tpms__TRIPLANE1.png" width="200"><br><sub>Triplane 1</sub></td>
 </tr>
 </table>
 

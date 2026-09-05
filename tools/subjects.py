@@ -198,7 +198,7 @@ PARAMS = {
     # rather than one: a single cell is a fragment, while the 2x2x2
     # block shows the channels threading through one another, which is
     # the thing about a gyroid.
-    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G',
+    "mesh.periodic_minimal_add": dict(periodicity='CUBIC', surface='G',
                                       cells=2),
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
     # Hand-picked hero: the dodecahedral seed dented inward to the full
@@ -659,7 +659,7 @@ VARIANT_COMMON = {
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.bubble_cluster_add": dict(separate=True, color=True),
     "mesh.sphericon_add": dict(coloring='NONE'),
-    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', cells=1),
+    "mesh.periodic_minimal_add": dict(periodicity='CUBIC', cells=1),
     "mesh.spherical_harmonic_add": dict(degree=4, order=2),
 
     # -- selectors that another property was overriding ------------
