@@ -1638,12 +1638,17 @@ def polyhedral_analogue(slug):
 # actually observed rather than from reading the code. Both are findings
 # ABOUT math_art, which is the point of driving the generators at all.
 FACTS["scherkt-surface"] = {
-    "notes": {"known_issue":
-              "FOUND BY THE DRIVE STAGE. 'SCHERKT' is a row in "
-              "math_art/minsurf/tpms.py's TPMS registry and builds fine "
-              "through minsurf.build_tpms, but NO operator offers it: "
-              "mesh.periodic_minimal_add's surface enum omits it under "
-              "every one of its five periodicity settings (SINGLY, DOUBLY, "
-              "TRIPLY, EXACT, EXACT_FAMILY). The surface is reachable from "
-              "the engine and not from the user interface."},
+    "notes": {"construction":
+              "mesh.periodic_minimal_add's surface enum omits 'SCHERKT' "
+              "under every one of its five periodicity settings, and does "
+              "so deliberately: minimal_surface_toolkit drops it because it "
+              "is singly periodic and merely rode in the TPMS field dict "
+              "historically, the proper singly-periodic tower being the WE "
+              "SCHERK_TOWER. Its comment records that the surface stays "
+              "'reachable via mesh.tpms_add', and it is -- that operator "
+              "builds it. An earlier note here concluded from the one "
+              "operator that NO operator offered it, which was too strong: "
+              "the drive stage only ever tries the operator the record "
+              "names, so pointing the record at the wrong one is "
+              "indistinguishable from the surface being unreachable."},
 }

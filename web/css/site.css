@@ -637,3 +637,14 @@ figcaption {
 }
 
 #stage.empty { opacity: 0.25; }
+
+/* Stands in for a tile whose surface no generator builds, so the grid
+ * keeps its rhythm instead of collapsing those cards to a line of text. */
+.tile-blank {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background:
+    repeating-linear-gradient(45deg, #0d1013 0 6px, #101419 6px 12px);
+}

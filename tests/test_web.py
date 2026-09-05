@@ -75,6 +75,20 @@ def check_thumbnails(fail):
     return len(slugs), len(have), len(missing)
 
 
+# Surfaces that are implemented but cannot be baked, with the reason.
+# Same idea as PANEL_ONLY in tests/test_extension.py: an exception has to
+# be written down and justified, not silently tolerated. Anything here
+# still appears in the catalogue with its mathematics; it just has no
+# mesh, exactly like a record no generator implements.
+UNDRIVEABLE = {
+    "plateau-span":
+        "object.minimal_span spans the curves that are SELECTED, so it "
+        "cannot be driven from an empty scene -- its poll() fails. It is "
+        "a tool applied to a user's own boundary, not a surface with a "
+        "canonical shape to bake.",
+}
+
+
 def check_surfaces(fail):
     """Every surface a generator implements must have a mesh and a tile.
 
@@ -88,7 +102,8 @@ def check_surfaces(fail):
         return 0, 0
     with open(path, encoding="utf-8") as fh:
         entries = json.load(fh)["entries"]
-    want = {e["slug"] for e in entries if e.get("implemented")}
+    want = {e["slug"] for e in entries
+            if e.get("implemented") and e["slug"] not in UNDRIVEABLE}
     all_slugs = {e["slug"] for e in entries}
 
     meshes = {fn[:-5] for fn in os.listdir(SURF_MESHES)

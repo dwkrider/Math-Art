@@ -131,15 +131,24 @@ async function main() {
     card.type = 'button';
     card.dataset.slug = e.slug;
     if (e.slug === selected) card.classList.add('on');
-    const img = el('img');
-    img.loading = 'lazy';
-    img.decoding = 'async';
-    img.width = 320;
-    img.height = 320;
-    img.alt = e.name;
-    img.src = thumbUrl(e.slug);
-    img.addEventListener('error', () => img.classList.add('missing'));
-    card.append(img);
+    if (e.implemented) {
+      const img = el('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.width = 320;
+      img.height = 320;
+      img.alt = e.name;
+      img.src = thumbUrl(e.slug);
+      // Still guarded: a handful of implemented surfaces cannot be baked
+      // (see UNDRIVEABLE in tests/test_web.py).
+      img.addEventListener('error', () => img.classList.add('missing'));
+      card.append(img);
+    } else {
+      // No generator builds this one, so there is no tile to ask for.
+      // Requesting it anyway would 404 once per unimplemented record --
+      // 61 of them -- on every page load, for an image we know is absent.
+      card.append(el('span', 'tile-blank'));
+    }
     card.append(el('span', 'tile-name', e.name));
     // Genus and periodicity are the two numbers that tell surfaces apart
     // at a glance, the way V/E/F does for solids.
