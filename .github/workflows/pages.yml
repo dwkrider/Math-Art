@@ -54,7 +54,7 @@ jobs:
       # 130-byte pointer file, which is why the size check below is not
       # decoration.
       - name: Fetch the catalogue thumbnails
-        run: git lfs pull --include="web/thumbs/*"
+        run: git lfs pull --include="web/thumbs/**"
 
       - uses: actions/setup-python@v5
         with:
@@ -63,16 +63,20 @@ jobs:
       - name: Gate the site
         run: python tests/test_web.py
 
-      - name: Stage the database
+      - name: Stage the databases
         run: |
           mkdir -p web/data
           cp -r data/polyhedra web/data/polyhedra
+          cp -r data/surfaces  web/data/surfaces
 
       - name: Check the staged tree
         run: |
           test -f web/data/polyhedra/index.json
-          echo "thumbnails: $(ls web/thumbs/*.png | wc -l)"
-          echo "records:    $(find web/data/polyhedra/solids -name '*.json' | wc -l)"
+          test -f web/data/surfaces/index.json
+          echo "thumbnails: $(find web/thumbs -name '*.png' | wc -l)"
+          echo "solids:     $(find web/data/polyhedra/solids -name '*.json' | wc -l)"
+          echo "surfaces:   $(find web/data/surfaces/surfaces -name '*.json' | wc -l)"
+          echo "meshes:     $(ls web/surfaces/*.json 2>/dev/null | wc -l)"
           echo "payload:    $(du -sh web | cut -f1)"
           # An unresolved LFS pointer is ~130 bytes and still deploys
           # happily, so the failure would be a gallery of broken tiles

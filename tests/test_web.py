@@ -11,9 +11,10 @@
 #
 # What it enforces:
 #
-#   coverage    every solid in the database has a thumbnail, and every
-#               thumbnail belongs to a solid (an orphan means a slug was
-#               renamed and the tile was left behind)
+#   coverage    every solid has a thumbnail and every thumbnail a solid;
+#               every IMPLEMENTED surface has a baked mesh and a tile.
+#               An orphan either way means a slug was renamed and the
+#               artifact was left behind
 #   links       every local href/src in the HTML resolves on disk, and
 #               every relative import in the JS resolves too
 #   importmap   the bare specifiers the modules import are declared, and
@@ -34,8 +35,11 @@ import sys
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(PROJ, "web")
-THUMBS = os.path.join(WEB, "thumbs")
+THUMBS = os.path.join(WEB, "thumbs", "polyhedra")
 DB = os.path.join(PROJ, "data", "polyhedra")
+SURF_DB = os.path.join(PROJ, "data", "surfaces")
+SURF_THUMBS = os.path.join(WEB, "thumbs", "surfaces")
+SURF_MESHES = os.path.join(WEB, "surfaces")
 
 # Hosts are never contacted at runtime; the only absolute URLs allowed
 # are ones a reader clicks.
@@ -67,8 +71,70 @@ def check_thumbnails(fail):
     for s in missing:
         fail("no thumbnail for %s (run tools/render_polyhedra_thumbs.py)" % s)
     for s in sorted(have - slugs):
-        fail("orphan thumbnail web/thumbs/%s.png names no solid" % s)
+        fail("orphan thumbnail web/thumbs/polyhedra/%s.png names no solid" % s)
     return len(slugs), len(have), len(missing)
+
+
+# Surfaces that are implemented but cannot be baked, with the reason.
+# Same idea as PANEL_ONLY in tests/test_extension.py: an exception has to
+# be written down and justified, not silently tolerated. Anything here
+# still appears in the catalogue with its mathematics; it just has no
+# mesh, exactly like a record no generator implements.
+UNDRIVEABLE = {
+    "plateau-span":
+        "object.minimal_span spans the curves that are SELECTED, so it "
+        "cannot be driven from an empty scene -- its poll() fails. It is "
+        "a tool applied to a user's own boundary, not a surface with a "
+        "canonical shape to bake.",
+}
+
+
+def check_surfaces(fail):
+    """Every surface a generator implements must have a mesh and a tile.
+
+    Scoped to `implemented`, because 61 records describe surfaces no
+    generator builds: those legitimately have neither, and the module
+    says so rather than showing an empty stage as a failure.
+    """
+    path = os.path.join(SURF_DB, "index.json")
+    if not os.path.exists(path):
+        fail("no surface database at %s" % SURF_DB)
+        return 0, 0
+    with open(path, encoding="utf-8") as fh:
+        entries = json.load(fh)["entries"]
+    want = {e["slug"] for e in entries
+            if e.get("implemented") and e["slug"] not in UNDRIVEABLE}
+    all_slugs = {e["slug"] for e in entries}
+
+    meshes = {fn[:-5] for fn in os.listdir(SURF_MESHES)
+              if fn.endswith(".json")} if os.path.isdir(SURF_MESHES) else set()
+    thumbs = {fn[:-4] for fn in os.listdir(SURF_THUMBS)
+              if fn.endswith(".png")} if os.path.isdir(SURF_THUMBS) else set()
+
+    for s in sorted(want - meshes):
+        fail("no mesh for %s (run tools/surfdb_export.py)" % s)
+    for s in sorted(want - thumbs):
+        fail("no thumbnail for %s (run tools/surfdb_export.py)" % s)
+    # An artifact for a slug the database does not know is a rename that
+    # left its files behind.
+    for s in sorted(meshes - all_slugs):
+        fail("orphan mesh web/surfaces/%s.json names no surface" % s)
+    for s in sorted(thumbs - all_slugs):
+        fail("orphan thumbnail web/thumbs/surfaces/%s.png names no surface" % s)
+
+    # The page reads this manifest instead of guessing from `implemented`,
+    # so a stale one would mislabel tiles. It has to agree with the disk.
+    mpath = os.path.join(WEB, "surface-meshes.json")
+    if not os.path.exists(mpath):
+        fail("no web/surface-meshes.json (run tools/surfdb_export.py)")
+    else:
+        with open(mpath, encoding="utf-8") as fh:
+            listed = set(json.load(fh).get("meshes") or [])
+        for s in sorted(listed - meshes):
+            fail("surface-meshes.json lists %s, which has no mesh file" % s)
+        for s in sorted(meshes - listed):
+            fail("%s has a mesh but surface-meshes.json omits it" % s)
+    return len(want), len(meshes)
 
 
 def check_html_links(fail):
@@ -193,6 +259,7 @@ def main(argv):
         return 1
 
     n_slugs, n_thumbs, n_missing = check_thumbnails(fail)
+    n_surf, n_mesh = check_surfaces(fail)
     n_links = check_html_links(fail)
     n_map = check_import_map(fail)
     n_imports = check_js_relative_imports(fail)
@@ -202,6 +269,8 @@ def main(argv):
     if not quiet:
         print("thumbnails : %d of %d solids (%d missing)"
               % (n_thumbs - max(0, n_thumbs - n_slugs), n_slugs, n_missing))
+        print("surfaces   : %d meshes for %d implemented surfaces"
+              % (n_mesh, n_surf))
         print("html links : %d local references resolved" % n_links)
         print("import map : %d specifier(s)" % n_map)
         print("js imports : %d relative import(s) resolved" % n_imports)
