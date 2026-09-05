@@ -134,6 +134,32 @@
 #        singularity, so the two entries are one geometry told
 #        metrically and algebraically.
 #
+# 10. The tropical Calabi-Yau surface.  Over the tropical semiring
+#    (min, +) a polynomial f = min_v (c_v + v.x) has a hypersurface
+#    T(f): the set where the minimum is attained at least twice.  It is
+#    a piecewise linear 2-complex in R^3 -- an honest polyhedral
+#    surface, with no projection anywhere in it -- and it is the
+#    large-complex-structure limit of the classical hypersurface with
+#    the same Newton polytope.  Take that polytope to be the fourth
+#    dilate of the standard tetrahedron and the classical surface is a
+#    quartic in P^3, that is a K3: so this is the one Calabi-Yau in the
+#    add-on that really lives in three dimensions rather than being a
+#    shadow of something six-dimensional.  Its bounded complement is
+#    the K3 polytope, which is an entry of the Notable Polyhedron
+#    generator; the mathematics of both is in polyhedra/toric.py.
+#    Unbounded, so it is clipped to a box quoted as a multiple of that
+#    bounded region's radius.
+#
+# References for 10: G. Balletti, M. Panizzut and B. Sturmfels, "K3
+#   polytopes and their quartic surfaces", Advances in Geometry 21
+#   (2021) 85-98 -- the tropical quartic of their Example 4, used as
+#   the coefficients here;  D. Maclagan and B. Sturmfels,
+#   "Introduction to Tropical Geometry", Graduate Studies in
+#   Mathematics 161, AMS (2015) -- tropical hypersurfaces and their
+#   duality with regular subdivisions;  V. V. Batyrev, "Dual polyhedra
+#   and mirror symmetry for Calabi-Yau hypersurfaces in toric
+#   varieties", Journal of Algebraic Geometry 3 (1994) 493-535.
+#
 # References for 9: T. Eguchi and A. J. Hanson, "Asymptotically flat
 #   self-dual solutions to Euclidean gravity", Physics Letters 74B
 #   (1978) 249-251 -- the metric (their solution II, Eqs. (9) and
@@ -241,9 +267,14 @@ import math
 try:
     from .surfaces.encyclopedia import build_zoll
     from .sharp_creases import mark_sharp
+    # The tropical Calabi-Yau surface is built by clipping halfspaces
+    # and shares its lattice data with the K3 polytope that bounds it,
+    # so both live in the polyhedron engine rather than being split.
+    from .polyhedra.toric import bounded_radius, tropical_surface
 except ImportError:                       # flat import outside the package
     from surfaces.encyclopedia import build_zoll
     from sharp_creases import mark_sharp
+    from polyhedra.toric import bounded_radius, tropical_surface
 
 try:
     import bpy
@@ -988,6 +1019,11 @@ if _IN_BLENDER:
                     "angle runs over half of the three-sphere; the "
                     "two-sphere it is named for sits there, of radius "
                     "a/4"),
+                   ('TROPICAL_CY', "Tropical Calabi-Yau Surface",
+                    "The tropical hypersurface of a tropical quartic: "
+                    "a piecewise linear K3, living in R^3 with no "
+                    "projection. Its bounded complement is the K3 "
+                    "polytope, in the Notable Polyhedron generator"),
                    ('CONIFOLD', "Conifold Transition",
                     "The two-dimensional model of the conifold, "
                     "u^2 - v^2 - z^2 = delta: a node at delta = 0, "
@@ -1119,6 +1155,13 @@ if _IN_BLENDER:
                         "that replaces the node; zero is the singular "
                         "cone; positive separates the two sheets "
                         "(conifold only)")
+        tropical_box: FloatProperty(
+            name="Clip Radius", default=1.25, min=0.6, max=4.0,
+            description="The tropical surface is unbounded. This cuts "
+                        "it to a box, as a multiple of the radius of "
+                        "the bounded K3 polytope inside it -- below "
+                        "about 1.0 the cut starts eating that polytope "
+                        "(tropical Calabi-Yau only)")
         resolution: IntProperty(
             name="Resolution", default=48, min=6, max=256,
             description="Rings across the surface (twice as "
@@ -1219,6 +1262,10 @@ if _IN_BLENDER:
                     eguchi_hanson_profile(self.dome_a, self.bolt_reach,
                                           4 * res), 2 * res)
                 name = "Eguchi-Hanson Space"
+            elif self.surface == 'TROPICAL_CY':
+                verts, faces = tropical_surface(
+                    box=self.tropical_box * bounded_radius())
+                name = "Tropical Calabi-Yau Surface"
             elif self.surface == 'CONIFOLD':
                 verts, faces = [], []
                 for prof in conifold_profiles(self.conifold_delta,
@@ -1741,5 +1788,16 @@ def _selftest():
     print("conifold: every vertex on u^2 - v^2 - z^2 = delta to 1e-12; "
           "one sheet at and below the node, two above; throat radius "
           "exactly sqrt(-delta)")
+
+    # The tropical quartic is the dual complex of a unimodular
+    # triangulation of 4 Delta_3, so it has one 2-cell per edge of that
+    # triangulation: 35 - E + 160 - 64 = 1 gives E = 130.  (The
+    # geometry itself is checked in polyhedra/toric.py; this is the
+    # wiring.)
+    V, F = tropical_surface()
+    assert len(F) == 130, len(F)
+    assert _finite(V)
+    print("tropical calabi-yau: 130 two-cells, one per edge of the "
+          "triangulation it is dual to")
 
     print("miscellaneous surfaces standalone tests passed")

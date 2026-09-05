@@ -94,7 +94,6 @@ _MODULE_NAMES = [
     'hyperbolic_honeycomb_generator',
     'algebraic_surface_generator',
     'calabi_yau_generator',
-    'toric_calabi_yau_generator',
     'invariant_manifold_generator',
     'spacefill_generator',
     'spidron_ball_generator',

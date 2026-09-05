@@ -72,7 +72,10 @@ SURFACES = Menu(
         # not fit here; these say, in their labels and their
         # descriptions, which honest 2- or 3-dimensional shadow of
         # one they are drawing.  (The two Ricci-flat metric slices
-        # are presets of Miscellaneous Surface, above; the SYZ
+        # are presets of Miscellaneous Surface, above, as is the
+        # tropical Calabi-Yau surface, while Batyrev's reflexive
+        # mirror pairs and the K3 polytope are entries of Notable
+        # Polyhedron; the SYZ
         # discriminant graph and the Hanson-Sha tessellation of the
         # Fermat surfaces have no entry at all -- they are correct
         # and they do not make a picture, so their mathematics
@@ -126,11 +129,6 @@ POLYHEDRA = Menu(
         # a deprecated shim, deliberately absent from the menu.)
         _e("mesh.icosahedron_stellation_add", 'MESH_ICOSPHERE'),
         _e("mesh.noble_faceting_add", 'MESH_ICOSPHERE'),
-        # Batyrev's reflexive polytopes and the tropical
-        # Calabi-Yau surfaces dual to their triangulations: the
-        # one route on which the object in the viewport really is
-        # a Calabi-Yau rather than a shadow of one.
-        _e("mesh.toric_calabi_yau_add", 'MESH_ICOSPHERE'),
         _e("mesh.star_prism_add", 'MESH_CYLINDER'),
         _e("mesh.conway_add", 'MESH_ICOSPHERE'),
         _e("mesh.zonohedron_add", 'MESH_UVSPHERE'),
