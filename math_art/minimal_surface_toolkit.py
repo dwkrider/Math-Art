@@ -1113,13 +1113,17 @@ if _IN_BLENDER:
         # legacy scalar alias (not shown): scripted
         # periodic_minimal_add(surface=..., cells=3) still works and
         # broadcasts to every tiling axis left at its default (1).
-        # Default 4, not 2: nothing in the UI sets this any more, so it
-        # has to arrive at the value that grows the most complete cell
-        # by itself.  The builder stops on its own once the orbit no
-        # longer verifies as a single sheet, so asking for the maximum
-        # costs nothing on a row that closes earlier.
+        # Back to 2.  Raising this to 4 when the control was hidden was
+        # reasoning about the CELL rows -- "grow the fullest cell, the
+        # builder stops when the orbit stops verifying" -- and those
+        # rows do not read this property at all any more; they take the
+        # Cells counts.  What still reads it is the REFLECTION-grown
+        # rows, where it means literal rounds of reflection, and two
+        # extra rounds turned Schoen F-RD from a cell into a stretched
+        # column six units tall.  2 is the value those rows were
+        # designed and rendered against.
         reflect_depth: IntProperty(
-            name="Reflections", default=4, min=1, max=4,
+            name="Reflections", default=2, min=1, max=4,
             description="How far to reflect the fundamental piece in "
                         "its own boundary symmetry planes.  1 shows the "
                         "bare piece; each step up adds another round of "
