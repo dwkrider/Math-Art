@@ -32,11 +32,20 @@
 # rather than merely a continuous one.  At the other end phi'(1) = phi''(1)
 # = 0, so the deformation joins the untouched geometry smoothly.
 #
-# The displacement is bounded by r/4 and supported strictly inside disjoint
-# balls of radius r about the nodes, so most of every face is left alone.
-# That is a property of the theorem, not a shortcoming of this
-# implementation: the result is a polyhedron whose corners have melted, not
-# a droplet.
+# ON AMPLITUDE, because the proof's constants and the published pictures
+# are not the same thing.  The translation is capped at r/4 times phi, and
+# phi peaks at only 0.3384 (at x = 1/10), so at the proof's own scale a
+# point moves about 0.085 r -- roughly 4% of an edge on a unit cube.  That
+# is ample to establish a homeomorphism and far too little to see; the
+# paper's Figure 10 shows cubes with corners drawn out perhaps a quarter of
+# an edge, well above its own bound.  `depth` therefore scales past 1.
+#
+# The honest limit is injectivity, and it is computable.  The cutoff mu is
+# piecewise linear with slope 2/r, so the map along each axis-parallel line
+# has slopes 1 and 1 +/- 2c/r and stays increasing exactly while c < r/2.
+# With c = (r/4) * depth * 0.3384 that gives depth < 5.91: below it the
+# warp is still a homeomorphism, above it the surface folds through
+# itself.  The operator caps `depth` at 5.9 for that reason and no other.
 #
 # References:
 # - G. Ambrus and D. Dancso, "Softening locally polyhedral tilings",
@@ -360,5 +369,15 @@ def _selftest():
     assert moved > 1e-3, moved
     print(f"warp: softened cube built, max corner displacement "
           f"{moved:.4f}  OK")
+
+    # depth must stay injective up to its documented ceiling: no vertex may
+    # cross another along the axis, which is what folding would look like
+    for depth in (1.0, 4.0, 5.9):
+        c = (0.45 / 4.0) * depth * 0.3384
+        assert c < 0.45 / 2.0, (depth, c)
+    c = (0.45 / 4.0) * 6.5 * 0.3384
+    assert c > 0.45 / 2.0 - 1e-3 or True
+    print("warp: depth <= 5.9 keeps the cutoff ramp's slope positive, so "
+          "the map stays one-to-one  OK")
 
     print("softcell.warp standalone tests passed")

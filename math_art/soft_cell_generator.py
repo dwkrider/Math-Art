@@ -267,9 +267,13 @@ if _IN_BLENDER:
             default=0.9, min=0.1, max=1.0)
 
         bend_depth: FloatProperty(
-            name="Bend Depth", description="Strength of the displacement, "
-            "as a fraction of the theorem's bound",
-            default=1.0, min=0.0, max=1.0)
+            name="Bend Depth", description="Strength of the displacement. "
+            "1.0 is the constant the proof uses, which moves a point only "
+            "about 4% of an edge -- enough to prove a theorem, far too "
+            "little to see.  The published pictures are drawn well above "
+            "it.  The map stays one-to-one up to 5.9, where the cutoff "
+            "ramp's slope reaches zero and the surface would begin to fold",
+            default=4.0, min=0.0, max=5.9)
 
         resolution: IntProperty(
             name="Resolution", description="Samples around an analytic cell",
