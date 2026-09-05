@@ -1396,9 +1396,24 @@ def frdr_geometry(n=8000):
 #   G0 = prod_k theta11(z - p_k)^(e_k/2) theta11(z + p_k)^(-e_k/2)
 #        * theta11(z - (d + tau/2))^(e4/2)
 #        * theta11(z + (d - tau/2))^(-e4/2),
-#   d  = -1/2 - p1 + p2 + p3   (Abel's theorem),
 #
 # and G = G0 / G0(0), a Lopez-Ros normalisation folded into `const`.
+# The fourth point d is FIXED by Abel's theorem, but its formula
+# depends on the SIGN VECTOR -- the divisor sums with the exponents'
+# signs -- and each notebook writes its own `qq1`:
+#
+#   (-1,1, 1,-1)   d = -1/2 - p1 + p2 + p3     Box_Type ... 1_0_0_1
+#   (-1,1,-1, 1)   d =        p1 - p2 + p3     Box_Type ... 1_0_1_0
+#   (-1,1,-1,-1)   d =  1/2 - p1 + p2 - p3     Box_Type ... 1_0_1_1
+#
+# This engine originally derived d from the FIRST formula for all
+# three rows.  For (+-|+) that is correct; for the other two it put
+# the fourth branch point in the wrong place, which is a different
+# (non-closing) surface: built and measured, their top-edge mirror
+# arcs came out rotated 44.7 and 21.6 degrees against the axis-aligned
+# bottom ones -- no discrete group contains both -- while (+-|+)'s
+# mirrors formed a perfect box.  So d is now transcribed per row from
+# the notebook's own qq1, exactly like every other solved constant.
 # Every exponent appears with both signs, so the sum is zero by
 # construction rather than by luck.
 #
@@ -1412,14 +1427,15 @@ def frdr_geometry(n=8000):
 # - V. Ramos Batista and collaborators, for the (+++|-) member; see the
 #   triply-periodic Costa row.
 
-def _box_spec(label, e, p1, p2, p3, tau, nb=None):
+def _box_spec(label, e, p1, p2, p3, tau, d, nb=None):
     """One member of the box-symmetry series, from its sign vector.
 
-    `d` is DERIVED from Abel's theorem rather than passed, because it is
-    not free: the divisor has to sum correctly for g to exist at all.
+    `d` is REQUIRED, not derived: it is fixed by Abel's theorem, but
+    the relation is sign-vector-dependent (see the qq1 table above),
+    and deriving it here from one formula is exactly the mistake that
+    shipped two wrong surfaces.  Pass the notebook's own expression.
     """
     e1, e2, e3, e4 = (float(x) for x in e)
-    d = -0.5 - p1 + p2 + p3
 
     def terms(a, tau, _p=(p1, p2, p3), _e=(e1, e2, e3, e4), _d=d):
         q1, q2, q3 = _p
@@ -1442,18 +1458,150 @@ def _box_spec(label, e, p1, p2, p3, tau, nb=None):
     return sp
 
 
+# The (p1, p2, p3, tau) of each row are the notebook's own solved
+# member -- (+-|+) states its 4-tuple outright, the other two set
+# tau = 0.8i and tabulate (p2, p3) against p1, and the rows below are
+# the table entries at p1 = 0.13 and 0.06.  d follows each notebook's
+# qq1, per the table above.
 _SPECS['BOX_1001'] = _box_spec(
     "Box Type (+-|+) (exact, genus 5)", (-1, 1, 1, -1),
     0.1, 0.2, 0.46802126852411385, 0.42287483495076733j,
+    d=-0.5 - 0.1 + 0.2 + 0.46802126852411385,
     nb="Box_Type_g_5_-_1_0_0_1_.nb")
 _SPECS['BOX_1010'] = _box_spec(
     "Box Type (+-+|-) (exact, genus 5)", (-1, 1, -1, 1),
     0.13, 0.2540625168102844, 0.40751143412603386, 0.8j,
+    d=0.13 - 0.2540625168102844 + 0.40751143412603386,
     nb="Box_Type_g_5_-_1_0_1_0_.nb")
 _SPECS['BOX_1011'] = _box_spec(
     "Box Type (+-+|+) (exact, genus 5)", (-1, 1, -1, -1),
     0.06, 0.25007414956744817, 0.43994933834214295, 0.8j,
+    d=0.5 - 0.06 + 0.25007414956744817 - 0.43994933834214295,
     nb="Box_Type_g_5_-_1_0_1_1_.nb")
+
+# The box cells.  Same defect as F-RD and F-RD(r), same cure: the
+# bottom edge runs through all three branch points +-p1, +-p2, +-p3
+# and the top edge through the fourth at d + tau/2, so read whole both
+# classified as 'neither', only the lids survived, and all three rows
+# grew as z columns.  Split, the eight arcs are planar to 1e-8 and --
+# with d corrected -- land on the axis-aligned walls the series is
+# named for: the patch is the chamber of a pmm prism over the
+# rectangle [xL, xR] x [yT, 0], and reflecting it through three walls
+# (word 'emn', 8 copies) closes the ORTHORHOMBIC translational cell
+# 2(xR - xL) x 2|yT| x 1, which tiles by pure translation.
+#
+# Which arc lies on which wall differs per sign vector -- (+-|+) puts
+# its second x-wall arc on the bottom edge where the other two put
+# both bottom x-arcs on the SAME wall -- so the maps below are per
+# row, read off the classified patch.  The wall offsets are SOLVED by
+# the same 1D path integrals as F-RD's and F-RD(r)'s (`box_geometry`),
+# and the redundancy is the consistency check: two independent arcs
+# land on one wall to 1.4e-9 or better, and the y = 0 wall's second
+# arc closes to 7e-10, all three rows.  No Evolver datafile or nodal
+# row exists for any box type, so the checks are internal, as for
+# F-RD(r).  (BOX_1011's cell comes out 0.758817 x 0.758674 x 1 --
+# nearly but measurably NOT square: nothing in its symmetry forces
+# equality, unlike F-RD(r)'s quarter twist.)
+_BOX_WALLS = {
+    # key: (xL, xR, yT); yB = 0 exactly (the base corner sits on it)
+    'BOX_1001': (-0.0680466833118, 0.1187855301121, -0.2179935317806),
+    'BOX_1010': (-0.0767466285526, 0.2905562716677, -0.3867431090808),
+    'BOX_1011': (-0.0537367583924, 0.3256717836098, -0.3793368720094),
+}
+_BOX_TOPMAP = {
+    # which wall each TOP arc lies on: (y=1#0, y=1#1)
+    'BOX_1001': ('xR', 'yT'),
+    'BOX_1010': ('yT', 'xR'),
+    'BOX_1011': ('xR', 'yT'),
+}
+_BOX_BOT3 = {'BOX_1001': 'xR', 'BOX_1010': 'xL', 'BOX_1011': 'xL'}
+for _k in ('BOX_1001', 'BOX_1010', 'BOX_1011'):
+    _sp = _SPECS[_k]
+    _p1 = float(_sp['a'])
+    _shifts = [s for s, _c in _sp['terms'](_p1, _sp['tau'])]
+    _reals = sorted({round(float(np.real(s)), 12) for s in _shifts
+                     if abs(np.imag(s)) < 1e-12 and np.real(s) > 0})
+    _dcut = sorted({round(float(np.real(s)), 12) for s in _shifts
+                    if abs(np.imag(s)) > 1e-12
+                    and 0.0 < np.real(s) < 0.5})[0]
+    _xL, _xR, _yT = _BOX_WALLS[_k]
+    _off = {'xL': _xL, 'xR': _xR, 'yT': _yT}
+    _nrm = {'xL': (1.0, 0.0, 0.0), 'xR': (1.0, 0.0, 0.0),
+            'yT': (0.0, 1.0, 0.0)}
+    _t0, _t1 = _BOX_TOPMAP[_k]
+    _b3 = _BOX_BOT3[_k]
+    _sp['splits'] = tuple(_reals)
+    _sp['split_edge'] = 'y0'
+    _sp.update(
+        tsplits=(_dcut,),
+        exact_planes={
+            'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+            'y=0#0': (0.0, 1.0, 0.0), 'y=0#2': (0.0, 1.0, 0.0),
+            'y=0#1': (1.0, 0.0, 0.0), 'y=0#3': _nrm[_b3],
+            'y=1#0': _nrm[_t0], 'y=1#1': _nrm[_t1]},
+        exact_offsets={
+            'x=0': 0.0, 'x=1': 0.5,
+            'y=0#0': 0.0, 'y=0#2': 0.0,
+            'y=0#1': _xL, 'y=0#3': _off[_b3],
+            'y=1#0': _off[_t0], 'y=1#1': _off[_t1]},
+        letters={'e': 'x=1',
+                 'm': ('y=0#3' if _b3 == 'xR'
+                       else ('y=1#0' if _t0 == 'xR' else 'y=1#1')),
+                 'n': 'y=1#0' if _t0 == 'yT' else 'y=1#1'},
+        words=('emn',))
+del _k, _sp, _p1, _shifts, _reals, _dcut, _xL, _xR, _yT, _off, _nrm
+del _t0, _t1, _b3
+
+
+def box_geometry(key, n=8000):
+    """Re-derive a box row's wall offsets from the Weierstrass data.
+
+    Returns {arc name: (x1, x2)} for one probe point on each of the
+    five split arcs (both bottom x-wall arcs, the bottom y = 0 return
+    arc, and the two top arcs), by the same interior 1D path integrals
+    as `frd_geometry` / `frdr_geometry`.  Probing every arc rather
+    than every wall is what makes the redundancy testable: two arcs
+    that claim one wall must integrate to the same offset, and the
+    y = 0 return arc must come back to zero.
+    """
+    sp = _SPECS[key]
+    p1 = float(sp['a'])
+    tau = sp['tau']
+    terms = sp['terms'](p1, tau)
+    q = np.exp(1j * np.pi * tau)
+    shifts = [s for s, _c in terms]
+    p1_, p2_, p3_ = sorted({round(float(np.real(s)), 12) for s in shifts
+                            if abs(np.imag(s)) < 1e-12
+                            and np.real(s) > 0})
+    d = sorted({round(float(np.real(s)), 12) for s in shifts
+                if abs(np.imag(s)) > 1e-12
+                and 0.0 < np.real(s) < 0.5})[0]
+
+    def logA(z):
+        L = np.zeros(z.shape, dtype=complex)
+        for sh, c in terms:
+            lg = np.log(_theta11(z - sh, q))
+            L = L + c * (np.real(lg) + 1j * np.unwrap(np.imag(lg)))
+        return L
+
+    def at(zst):
+        mid = tau / 4.0
+        xr = float(np.real(zst))
+        p = np.concatenate([np.linspace(0.0, mid, n + 1),
+                            np.linspace(mid, xr + mid, n + 1)[1:],
+                            np.linspace(xr + mid, zst, n + 1)[1:]])
+        mids = 0.5 * (p[:-1] + p[1:])
+        L = logA(mids) + complex(sp['const'])
+        g, inv = np.exp(L), np.exp(-L)
+        dz = np.diff(p)
+        return (float(np.real(np.sum(0.5 * (inv - g) * dz))),
+                float(np.real(np.sum(0.5j * (inv + g) * dz))))
+
+    return {'y=0#1': at(0.5 * (p1_ + p2_)),
+            'y=0#2': at(0.5 * (p2_ + p3_)),
+            'y=0#3': at(0.5 * (p3_ + 0.5)),
+            'y=1#0': at(0.5 * d + tau / 2.0),
+            'y=1#1': at(0.5 * (d + 0.5) + tau / 2.0)}
 
 
 def _cluster_path(z0, z1, n=2000):
@@ -1703,7 +1851,12 @@ _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 # through three of its walls.  No Evolver datafile
                 # exists for the quarter-twisted variant, so the count
                 # is group order, not an Evolver run.
-                'FRDR': (8, 'group')}
+                'FRDR': (8, 'group'),
+                # The box types are the same chamber-through-three-
+                # walls construction; no Evolver datafiles exist.
+                'BOX_1001': (8, 'group'),
+                'BOX_1010': (8, 'group'),
+                'BOX_1011': (8, 'group')}
 
 
 def spec_modulus_range(key):
@@ -3868,6 +4021,41 @@ def _selftest():
     print("hexagonal: F-RD(r) assembles its tetragonal cell "
           "%.6f x %.6f x %.6f (%d copies) %s"
           % (bbr[0], bbr[1], bbr[2], nr_, 'OK' if good else 'FAIL'))
+
+    # The box rows.  Every solved wall offset is re-derived and checked
+    # against the arc's DECLARED plane, one probe point per arc -- five
+    # residuals per row.  This is what convicts a wrong fourth branch
+    # point: with the one-formula d this engine first shipped, the top
+    # arcs of (+-+|-) and (+-+|+) sit 0.1-0.2 off any declared wall
+    # (their planes were rotated 44.7 and 21.6 degrees), while at the
+    # notebook's own qq1 every residual is under 2e-9.
+    for bkey in ('BOX_1001', 'BOX_1010', 'BOX_1011'):
+        probes = box_geometry(bkey)
+        bsp = _SPECS[bkey]
+        worst_b = 0.0
+        for nm, (px1, px2) in probes.items():
+            v = np.asarray(bsp['exact_planes'][nm], dtype=float)
+            v = v / np.linalg.norm(v)
+            r = float(bsp['exact_offsets'][nm])
+            worst_b = max(worst_b, abs(px1 * v[0] + px2 * v[1] - r))
+        Vb, Qb, nb_, wb_ = spec_word_assemble(bkey, _spec_patch(
+            bkey, 60, 60))
+        bbb = Vb.max(0) - Vb.min(0)
+        xLb, xRb, yTb = _BOX_WALLS[bkey]
+        # 5e-3, not 1e-3: only the boundary ARCS are projected onto
+        # the declared walls, and (+-+|-)'s quadrature-polluted far
+        # corner overhangs its y wall by 3.2e-3 at n = 60 (5.9e-3 at
+        # 24, converging as the patch does).  The walls themselves are
+        # gated at 1e-6 above; this check is about the assembly.
+        good = (worst_b < 1e-6 and nb_ == 8
+                and abs(bbb[0] - 2.0 * (xRb - xLb)) < 5e-3
+                and abs(bbb[1] + 2.0 * yTb) < 5e-3
+                and abs(bbb[2] - 1.0) < 1e-6)
+        ok &= good
+        print("hexagonal: %s walls re-derive onto the declared box "
+              "(worst %.1e), cell %.4f x %.4f x %.4f (%d copies) %s"
+              % (bkey, worst_b, bbb[0], bbb[1], bbb[2], nb_,
+                 'OK' if good else 'FAIL'))
 
     # ...then each member must build a converging minimal patch.
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',

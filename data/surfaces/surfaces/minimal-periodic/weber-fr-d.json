@@ -22,57 +22,57 @@
         {
           "exponent": -0.5,
           "point": [
-            0.11,
+            0.0930966253175575,
             0.0
           ]
         },
         {
           "exponent": 0.5,
           "point": [
-            -0.11,
+            -0.0930966253175575,
             0.0
           ]
         },
         {
           "exponent": -0.75,
           "point": [
-            0.26,
+            0.2712689164549617,
             0.0
           ]
         },
         {
           "exponent": 0.75,
           "point": [
-            -0.26,
+            -0.2712689164549617,
             0.0
           ]
         },
         {
           "exponent": 0.75,
           "point": [
-            0.24,
-            0.2048805819802034
+            0.2287310835450383,
+            0.19874855082560777
           ]
         },
         {
           "exponent": -0.75,
           "point": [
-            -0.24,
-            0.2048805819802034
+            -0.2287310835450383,
+            0.19874855082560777
           ]
         },
         {
           "exponent": 0.5,
           "point": [
-            0.39,
-            0.2048805819802034
+            0.40690337468244253,
+            0.19874855082560777
           ]
         },
         {
           "exponent": -0.5,
           "point": [
-            -0.39,
-            0.2048805819802034
+            -0.40690337468244253,
+            0.19874855082560777
           ]
         }
       ],
@@ -87,13 +87,13 @@
         ],
         "y": [
           0.0,
-          0.2048805819802034
+          0.19874855082560777
         ]
       },
-      "moduli_a": 0.11,
+      "moduli_a": 0.0930966253175575,
       "modulus_tau": [
         0.0,
-        0.4097611639604068
+        0.39749710165121555
       ]
     },
     "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
