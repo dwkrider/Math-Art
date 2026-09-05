@@ -213,7 +213,8 @@ def _span_face(loop, rings, relax_iters, style):
 
 def build_cell(kind, phi=None, theta=None, symmetry='TETRAHEDRAL',
                edge_samples=16, face_rings=8, relax_iters=60,
-               face_style='MINIMAL', resolution=24):
+               face_style='MINIMAL', resolution=24,
+               hex_scheme='ALTERNATE'):
     """One soft cell, centred at the origin.
 
     Returns (V, faces, info).  `info` carries the exact cell volume where it
@@ -221,7 +222,8 @@ def build_cell(kind, phi=None, theta=None, symmetry='TETRAHEDRAL',
     """
     if kind in ANALYTIC:
         V, faces, basis, exact = analytic.build(
-            kind, resolution=resolution, rings=max(2, face_rings))
+            kind, resolution=resolution, rings=max(2, face_rings),
+            hex_scheme=hex_scheme)
         V = V - V.mean(axis=0)
         faces = _orient_outward(V, faces)
         return V, faces, {'exact_volume': exact, 'basis': basis,

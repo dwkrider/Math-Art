@@ -71,6 +71,7 @@ except ImportError:
 _LABEL = {
     'SADDLE': "Saddle Prism Cell",
     'TRIPRISM': "Soft Triangular Prism",
+    'HEXPRISM': "Soft Hexagonal Prism",
     'E2': "Truncated Octahedron",
     'F2': "Soft Cell (f2)",
     'G2': "Schwarz P Cell (g2)",
@@ -122,6 +123,10 @@ if _IN_BLENDER:
                  "all, and the simplest corner-free space-filler known"),
                 ('TRIPRISM', "Soft Triangular Prism",
                  "Triangular prism whose caps meet the walls tangentially"),
+                ('HEXPRISM', "Soft Hexagonal Prism",
+                 "Hexagonal prism whose caps meet the walls tangentially. "
+                 "It cannot be both corner-free and space-filling -- see "
+                 "Wall Scheme, which chooses which of the two you get"),
                 None,
                 ('E2', "Truncated Octahedron",
                  "The unsoftened polyhedron the family is built from: the "
@@ -153,6 +158,20 @@ if _IN_BLENDER:
                  "below.  Every direction gives a valid space-filling cell"),
             ],
             default='F2')
+
+        hex_scheme: EnumProperty(
+            name="Wall Scheme",
+            items=[
+                ('ALTERNATE', "Soft (does not tile)",
+                 "Arcs alternate up and down around the hexagon, so all "
+                 "six vertices are smoothed -- but neighbouring cells then "
+                 "disagree about the wall they share, and the cells do not "
+                 "pack"),
+                ('TILING', "Space-filling (two corners remain)",
+                 "Arcs repeat with period three, so neighbours agree and "
+                 "the cells pack -- at the cost of two of the six vertices "
+                 "staying sharp.  A SOFTENED rather than a soft cell")],
+            default='ALTERNATE')
 
         colatitude: FloatProperty(
             name="Colatitude", description="Angle of the generating "
@@ -290,7 +309,8 @@ if _IN_BLENDER:
                 face_rings=self.face_rings,
                 relax_iters=(self.relax_iterations
                              if self.face_style == 'MINIMAL' else 0),
-                face_style=self.face_style, resolution=self.resolution)
+                face_style=self.face_style, resolution=self.resolution,
+                hex_scheme=self.hex_scheme)
             places = softcell.cell_placements(
                 self.cell, self.nx, self.ny, self.nz, info['basis'])
 
@@ -309,10 +329,14 @@ if _IN_BLENDER:
             me.update()
             self._shade(me)
             if self.two_materials:
+                # ONE slot, not two.  The mesh is shared by every object, so
+                # a polygon's material_index is shared too and writing it
+                # per object just overwrites the previous one -- which is
+                # why all the cells came out the same colour.  A single
+                # OBJECT-linked slot is the mechanism that lets identical
+                # geometry carry different materials.
                 me.materials.append(_material("Soft Cell A",
                                               (0.90, 0.55, 0.20)))
-                me.materials.append(_material("Soft Cell B",
-                                              (0.22, 0.45, 0.72)))
 
             for o in context.selected_objects:
                 o.select_set(False)
@@ -329,18 +353,11 @@ if _IN_BLENDER:
                     f"Soft Cell {_LABEL[self.cell]}", me)
                 obj.matrix_world = M
                 context.collection.objects.link(obj)
-                if self.two_materials and len(obj.material_slots) >= 2:
-                    # the mesh is shared, so colour the OBJECT rather than
-                    # its faces: object-linked slots let identical geometry
-                    # carry different materials
-                    for sl in obj.material_slots:
-                        sl.link = 'OBJECT'
-                    obj.material_slots[0].material = _material(
-                        "Soft Cell A", (0.90, 0.55, 0.20))
-                    obj.material_slots[1].material = _material(
-                        "Soft Cell B", (0.22, 0.45, 0.72))
-                    for pgon in me.polygons:
-                        pgon.material_index = tag
+                if self.two_materials and obj.material_slots:
+                    sl = obj.material_slots[0]
+                    sl.link = 'OBJECT'
+                    sl.material = _material(
+                        "Soft Cell B", (0.22, 0.45, 0.72)) if tag else                         _material("Soft Cell A", (0.90, 0.55, 0.20))
                 obj.select_set(True)
                 last = obj
             if last is not None:
@@ -375,7 +392,8 @@ if _IN_BLENDER:
                         relax_iters=(self.relax_iterations
                                      if self.face_style == 'MINIMAL' else 0),
                         face_style=self.face_style,
-                        resolution=self.resolution)
+                        resolution=self.resolution,
+                        hex_scheme=self.hex_scheme)
                     label = _LABEL[self.cell]
                     if info.get('demoted'):
                         notes.append("octahedral symmetry unavailable for "
@@ -440,6 +458,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'colatitude')
                 lay.prop(self, 'azimuth')
                 lay.prop(self, 'symmetry')
+            if self.cell == 'HEXPRISM':
+                lay.prop(self, 'hex_scheme')
             if self.cell in softcell.ANALYTIC:
                 lay.prop(self, 'resolution')
             else:

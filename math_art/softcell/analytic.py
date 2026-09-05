@@ -48,27 +48,37 @@ import numpy as np
 TAU = 2.0 * math.pi
 
 # The analytic cells, in the order they appear in the operator's enum.
+KINDS = ('SADDLE', 'TRIPRISM', 'HEXPRISM')
+
+# THE HEXAGONAL PRISM CANNOT BE BOTH SOFT AND SPACE-FILLING, and the
+# tension is worth stating because the cell is offered anyway -- with the
+# choice exposed rather than made silently.  Write s(k) for the up/down
+# sense of the arc carried by wall k of the hexagon:
 #
-# The SOFT HEXAGONAL PRISM is deliberately absent, and the reason is a proof
-# rather than an omission.  Sketch the two requirements on the up/down sense
-# of the arc carried by each of a hexagon's six walls:
-#
-#   * TILING.  Two hexagons meeting across a wall must agree on the curve
-#     that lies in it.  Hexagons tile by translation, and wall k of one cell
-#     is wall k+3 of its neighbour, so agreement forces sign(k) = sign(k+3):
+#   * TILING needs neighbouring cells to agree on the curve lying in the
+#     wall they share.  Hexagons tile by translation and wall k of one cell
+#     is wall k+3 of its neighbour, so agreement forces s(k) = s(k+3):
 #     period three around the hexagon.
-#   * SOFTNESS.  At a hexagon vertex two walls meet, and their half-tangents
-#     are antiparallel -- the corner is smoothed -- only if one arc rises
-#     where the other falls, so sign(k) != sign(k+1): period two.
+#   * SOFTNESS needs the two half-tangents at each hexagon vertex to be
+#     antiparallel, so one arc must rise where its neighbour falls:
+#     s(k) != s(k+1), period two.
 #
-# Period three and alternation cannot hold together; an exhaustive search
-# over all 2^6 sign patterns returns none.  The obstruction is the same one
-# the softening theorem turns on: the honeycomb's vertex figure is a
-# triangle, an odd cycle, so its walls cannot be two-coloured.  A hexagonal
-# prism can be soft, or it can tile, but not both by this construction --
-# so shipping one as a space-filling cell would have been a false claim.
-# `_selftest` re-runs that search so the reasoning stays checked.
-KINDS = ('SADDLE', 'TRIPRISM')
+# Period three and alternation cannot hold together -- an exhaustive search
+# over all 2^6 sign patterns finds none, and `_selftest` re-runs it.  The
+# obstruction is the one the whole softening theory turns on: the
+# honeycomb's vertex figure is a TRIANGLE, an odd cycle, and odd cycles are
+# not two-colourable.
+#
+# So the wall scheme is a user choice, and each option is honest about what
+# it gives up:
+#
+#   ALTERNATE  s = (+,-,+,-,+,-).  Soft at all six vertices; does NOT tile.
+#   TILING     s = (+,+,-,+,+,-).  Tiles; soft at four of six vertices, so
+#              two corners survive.  In the paper's vocabulary that makes it
+#              a SOFTENED cell rather than a soft one -- the interesting
+#              middle category, 0 < v* < 4.
+HEX_SCHEMES = {'ALTERNATE': (1, -1, 1, -1, 1, -1),
+               'TILING': (1, 1, -1, 1, 1, -1)}
 
 _SQRT3 = math.sqrt(3.0)
 
@@ -184,7 +194,7 @@ def _tri_leading_curve(m):
     return G
 
 
-def _hex_leading_curve(m):
+def _hex_leading_curve(m, scheme='ALTERNATE'):
     """The hexagonal leading curve of SI equations (11)-(12).
 
     The prototype gamma' is fitted to the 1st, 3rd and 5th edges of a
@@ -209,10 +219,11 @@ def _hex_leading_curve(m):
     w = (R / 2.0) * np.sin(t)
 
     pieces = []
+    signs = HEX_SCHEMES[scheme]
     for k in range(6):
         p0, p1 = V[k], V[(k + 1) % 6]
         e = (p1 - p0) / np.linalg.norm(p1 - p0)
-        sign = 1.0 if k % 2 == 0 else -1.0
+        sign = float(signs[k])
         arc = (p0[None, :] + u[:, None] * e[None, :])
         arc[:, 2] = sign * w
         pieces.append(arc)
@@ -222,7 +233,7 @@ def _hex_leading_curve(m):
     return G
 
 
-def _prism_cell(kind, m, rings, height=1.0):
+def _prism_cell(kind, m, rings, height=1.0, hex_scheme='ALTERNATE'):
     """Sweep a leading curve to the axis, stack two copies, wall them in.
 
     The cap is the quadratic-Bezier surface of SI equation (9),
@@ -234,7 +245,7 @@ def _prism_cell(kind, m, rings, height=1.0):
     with a horizontal tangent plane instead of a cone point.
     """
     G = (_tri_leading_curve(m) if kind == 'TRIPRISM'
-         else _hex_leading_curve(m))
+         else _hex_leading_curve(m, hex_scheme))
     n = len(G)
 
     verts = []
@@ -351,14 +362,14 @@ def placements(kind):
 
 
 # How many cells fit in one translational lattice cell.
-_cells_per_lattice_cell = {'SADDLE': 1, 'TRIPRISM': 2}
+_cells_per_lattice_cell = {'SADDLE': 1, 'TRIPRISM': 2, 'HEXPRISM': 1}
 
 
 # ------------------------------------------------------------------
 # public entry point
 # ------------------------------------------------------------------
 
-def build(kind, resolution=24, rings=8):
+def build(kind, resolution=24, rings=8, hex_scheme='ALTERNATE'):
     """Return (verts, faces, lattice_basis, exact_volume) for one cell.
 
     `verts` is an (N,3) float array, `faces` a list of index tuples,
@@ -369,7 +380,8 @@ def build(kind, resolution=24, rings=8):
     if kind == 'SADDLE':
         return _saddle_cell(max(4, resolution))
     if kind in ('TRIPRISM', 'HEXPRISM'):
-        return _prism_cell(kind, max(6, resolution), max(2, rings))
+        return _prism_cell(kind, max(6, resolution), max(2, rings),
+                           hex_scheme=hex_scheme)
     raise ValueError(f"unknown analytic cell {kind!r}")
 
 
@@ -510,14 +522,43 @@ def _selftest():
         print(f"{kind}: {n} placement(s) x volume {vol:.5f} = lattice "
               f"determinant {det:.5f}  OK")
 
-    # the hexagonal prism is excluded for a reason; keep the reason checked
+    # the hexagonal prism's two schemes each keep their own promise, and
+    # the impossibility of having both stays checked
     import itertools as _it
     good = [b for b in _it.product((1, -1), repeat=6)
             if all(b[k] == b[(k + 3) % 6] for k in range(6))
             and all(b[k] != b[(k + 1) % 6] for k in range(6))]
     assert not good, good
-    assert 'HEXPRISM' not in KINDS
     print("hexagonal prism: no sign pattern is both tiling-consistent and "
-          "soft (0 of 64) -- correctly excluded  OK")
+          "soft (0 of 64) -- hence the two schemes  OK")
+
+    for scheme, sg in HEX_SCHEMES.items():
+        tiles = all(sg[k] == sg[(k + 3) % 6] for k in range(6))
+        soft_vertices = sum(1 for k in range(6)
+                            if sg[k] != sg[(k + 1) % 6])
+        # a wall arc is symmetric about the wall's midpoint, so the two
+        # cells sharing a wall agree exactly when their signs agree
+        G = _hex_leading_curve(24, scheme)
+        _V, _F, B, _vol = _prism_cell('HEXPRISM', 24, 4,
+                                      hex_scheme=scheme)
+        shared = 0
+        for t in (B[0], -B[0], B[1], -B[1]):
+            Gt = G + t
+            d = np.linalg.norm(Gt[:, None, :] - G[None, :, :],
+                               axis=2).min(axis=1)
+            shared += int((d < 1e-9).sum())
+        # Isolated hexagon CORNERS coincide with a neighbour's whatever the
+        # scheme -- they sit on the lattice -- so the test is whether a whole
+        # WALL is shared, not whether anything is.  A wall carries `m` = 24
+        # samples; touching at a handful of points is exactly the failure
+        # mode, not a partial success.
+        if tiles:
+            assert shared > 50, (scheme, shared)
+        else:
+            assert shared < 20, (scheme, shared)
+        print(f"HEXPRISM/{scheme}: tiles={tiles} (shares {shared} boundary "
+              f"points with its neighbours -- "
+              f"{'whole walls' if tiles else 'isolated corners only'}), "
+              f"soft at {soft_vertices}/6 vertices  OK")
 
     print("softcell.analytic standalone tests passed")
