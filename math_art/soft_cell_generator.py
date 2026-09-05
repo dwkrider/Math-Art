@@ -71,7 +71,6 @@ except ImportError:
 _LABEL = {
     'SADDLE': "Saddle Prism Cell",
     'TRIPRISM': "Soft Triangular Prism",
-    'HEXPRISM': "Soft Hexagonal Prism",
     'E2': "Truncated Octahedron",
     'F2': "Soft Cell (f2)",
     'G2': "Schwarz P Cell (g2)",
@@ -123,8 +122,6 @@ if _IN_BLENDER:
                  "all, and the simplest corner-free space-filler known"),
                 ('TRIPRISM', "Soft Triangular Prism",
                  "Triangular prism whose caps meet the walls tangentially"),
-                ('HEXPRISM', "Soft Hexagonal Prism",
-                 "Hexagonal prism whose caps meet the walls tangentially"),
                 None,
                 ('E2', "Truncated Octahedron",
                  "The unsoftened polyhedron the family is built from: the "
@@ -212,6 +209,12 @@ if _IN_BLENDER:
 
         two_materials: BoolProperty(name="Two Materials", default=True)
 
+        separate_objects: BoolProperty(
+            name="Separate Objects", description="Make each cell its own "
+            "object sharing one mesh, instead of welding the whole block "
+            "into a single mesh",
+            default=False)
+
         shade_smooth: BoolProperty(
             name="Smooth Shading", description="Shade the curved faces "
             "smoothly.  Turn off to see the mesh facets, which is the "
@@ -253,6 +256,100 @@ if _IN_BLENDER:
             name="Resolution", description="Samples around an analytic cell",
             default=24, min=6, max=64)
 
+        def _shade(self, me):
+            """Smooth shading with creases kept above the crease angle."""
+            for p in me.polygons:
+                p.use_smooth = self.shade_smooth
+            if not self.shade_smooth:
+                return
+            import bmesh
+            bm = bmesh.new()
+            bm.from_mesh(me)
+            for e in bm.edges:
+                if len(e.link_faces) == 2:
+                    if e.calc_face_angle(0.0) > self.crease_angle:
+                        e.smooth = False
+                else:
+                    e.smooth = False
+            bm.to_mesh(me)
+            bm.free()
+            me.update()
+
+        def _build_separate(self, context):
+            """One object per cell, all sharing a single mesh datablock.
+
+            Cheaper than welding the block into one mesh and far easier to
+            pull apart afterwards, which is the usual reason for wanting a
+            packing as separate solids in the first place.
+            """
+            from mathutils import Matrix
+
+            V, faces, info = softcell.build_cell(
+                self.cell, phi=self.colatitude, theta=self.azimuth,
+                symmetry=self.symmetry, edge_samples=self.edge_samples,
+                face_rings=self.face_rings,
+                relax_iters=(self.relax_iterations
+                             if self.face_style == 'MINIMAL' else 0),
+                face_style=self.face_style, resolution=self.resolution)
+            places = softcell.cell_placements(
+                self.cell, self.nx, self.ny, self.nz, info['basis'])
+
+            cen = V.mean(axis=0)
+            Vg = cen + (V - cen) * self.gap
+            allp = np.vstack([Vg @ np.asarray(R, float).T + t
+                              for R, t, _tag in places])
+            lo, hi = allp.min(axis=0), allp.max(axis=0)
+            span = float(np.max(hi - lo)) or 1.0
+            mid = (lo + hi) / 2.0
+            s = 2.0 * self.scale / span
+
+            me = bpy.data.meshes.new("SoftCell")
+            me.from_pydata([tuple(p) for p in Vg], [], list(faces))
+            me.validate(clean_customdata=True)
+            me.update()
+            self._shade(me)
+            if self.two_materials:
+                me.materials.append(_material("Soft Cell A",
+                                              (0.90, 0.55, 0.20)))
+                me.materials.append(_material("Soft Cell B",
+                                              (0.22, 0.45, 0.72)))
+
+            for o in context.selected_objects:
+                o.select_set(False)
+            origin = context.scene.cursor.location
+            last = None
+            for R, t, tag in places:
+                M = Matrix.Identity(4)
+                Rm = np.asarray(R, float)
+                for i in range(3):
+                    for j in range(3):
+                        M[i][j] = s * float(Rm[i][j])
+                    M[i][3] = s * float(t[i] - mid[i]) + origin[i]
+                obj = bpy.data.objects.new(
+                    f"Soft Cell {_LABEL[self.cell]}", me)
+                obj.matrix_world = M
+                context.collection.objects.link(obj)
+                if self.two_materials and len(obj.material_slots) >= 2:
+                    # the mesh is shared, so colour the OBJECT rather than
+                    # its faces: object-linked slots let identical geometry
+                    # carry different materials
+                    for sl in obj.material_slots:
+                        sl.link = 'OBJECT'
+                    obj.material_slots[0].material = _material(
+                        "Soft Cell A", (0.90, 0.55, 0.20))
+                    obj.material_slots[1].material = _material(
+                        "Soft Cell B", (0.22, 0.45, 0.72))
+                    for pgon in me.polygons:
+                        pgon.material_index = tag
+                obj.select_set(True)
+                last = obj
+            if last is not None:
+                context.view_layer.objects.active = last
+            self.report({'INFO'},
+                        f"{_LABEL[self.cell]}: {len(places)} separate cells, "
+                        f"V={len(me.vertices)} F={len(me.polygons)} each")
+            return {'FINISHED'}
+
         def execute(self, context):
             notes = []
             try:
@@ -265,6 +362,8 @@ if _IN_BLENDER:
                     tags = [0] * len(faces)
                     info = {}
                     label = "Softened Cubes"
+                elif self.separate_objects and self.mode == 'CELLS':
+                    return self._build_separate(context)
                 else:
                     V, faces, tags, info = softcell.build_block(
                         self.cell, nx=self.nx, ny=self.ny, nz=self.nz,
@@ -306,23 +405,7 @@ if _IN_BLENDER:
             # dihedral angle, and the polyhedral (e2) cell is creased
             # everywhere.  Smoothing the lot rounds away geometry that is
             # genuinely there, so creases are kept by angle.
-            for p in me.polygons:
-                p.use_smooth = self.shade_smooth
-            if self.shade_smooth:
-                import bmesh
-                bm = bmesh.new()
-                bm.from_mesh(me)
-                sharp = 0
-                for e in bm.edges:
-                    if len(e.link_faces) == 2:
-                        if e.calc_face_angle(0.0) > self.crease_angle:
-                            e.smooth = False
-                            sharp += 1
-                    else:
-                        e.smooth = False
-                bm.to_mesh(me)
-                bm.free()
-                me.update()
+            self._shade(me)
 
             obj = bpy.data.objects.new(f"Soft Cell {label}", me)
             context.collection.objects.link(obj)
@@ -365,8 +448,8 @@ if _IN_BLENDER:
             lay.prop(self, 'face_style')
             if self.face_style == 'MINIMAL':
                 lay.prop(self, 'relax_iterations')
-            for k in ('nx', 'ny', 'nz', 'gap', 'scale', 'two_materials',
-                      'shade_smooth'):
+            for k in ('nx', 'ny', 'nz', 'gap', 'scale', 'separate_objects',
+                      'two_materials', 'shade_smooth'):
                 lay.prop(self, k)
             if self.shade_smooth:
                 lay.prop(self, 'crease_angle')

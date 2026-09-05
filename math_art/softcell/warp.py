@@ -243,6 +243,25 @@ def soften_cubic(n=1, subdiv=12, bend_radius=0.9, depth=1.0):
                                           b + (p + 1) * (subdiv + 1) + q))
     V = np.array(verts, float)
 
+    # Weld the six face grids into one surface.  They are built separately
+    # and share their border vertices only by coincidence of coordinates,
+    # so without this every cube edge is a mesh boundary -- which the crease
+    # pass then marks sharp, drawing a hard line along all twelve edges of a
+    # shape whose whole point is that its corners are smooth.
+    key = np.round(V / 1e-7).astype(np.int64)
+    seen = {}
+    remap = np.empty(len(V), dtype=np.int64)
+    out = []
+    for i, k in enumerate(map(tuple, key)):
+        j = seen.get(k)
+        if j is None:
+            j = len(out)
+            seen[k] = j
+            out.append(V[i])
+        remap[i] = j
+    V = np.array(out, float)
+    faces = [tuple(int(remap[i]) for i in f) for f in faces]
+
     # warp about every lattice node the block touches
     rng = np.random.default_rng(3)
     axis = generic_axis(dirs, rng)
@@ -319,7 +338,23 @@ def _selftest():
     # a softened cube block builds, stays closed in count, and actually
     # moved something
     V, F = soften_cubic(n=1, subdiv=6)
-    assert len(V) == 6 * 49 and len(F) == 6 * 36, (len(V), len(F))
+    assert len(F) == 6 * 36, len(F)
+    # the six face grids must be WELDED into one closed surface.  Left
+    # loose they share their border vertices only by coincidence of
+    # coordinates, and the crease pass then treats every cube edge as a
+    # mesh boundary and draws a hard line along all twelve -- on a shape
+    # whose entire point is that its corners are smooth.
+    assert len(V) < 6 * 49, len(V)
+    und = {}
+    for f in F:
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            k = (min(a, b), max(a, b))
+            und[k] = und.get(k, 0) + 1
+    bad = [k for k, c in und.items() if c != 2]
+    assert not bad, f"{len(bad)} edges are not shared by exactly two faces"
+    print(f"warp: cube welded to {len(V)} vertices (from {6 * 49} loose), "
+          f"every edge shared by two faces  OK")
     V0, _F = soften_cubic(n=1, subdiv=6, depth=0.0)
     moved = float(np.abs(V - V0).max())
     assert moved > 1e-3, moved

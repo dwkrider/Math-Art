@@ -310,27 +310,51 @@ def build_cell(kind, phi=None, theta=None, symmetry='TETRAHEDRAL',
                       'demoted': demoted}
 
 
+def cell_placements(kind, nx=1, ny=1, nz=1, basis=None):
+    """Every (rotation, translation) placing one cell of the block.
+
+    A lattice cell does not always hold a single copy: the triangular prism
+    needs its mirror partner, so det(basis) is twice the cell volume and a
+    block that placed one cell per lattice point left every second triangle
+    empty.  `analytic.placements` supplies the partners.
+    """
+    B = np.asarray(basis, float)
+    if kind in ANALYTIC:
+        inner = analytic.placements(kind)
+    else:
+        inner = [(np.eye(3), np.zeros(3))]
+    out = []
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                t = i * B[0] + j * B[1] + k * B[2]
+                for s, (R, u) in enumerate(inner):
+                    out.append((R, t + u, (i + j + k + s) % 2))
+    return out
+
+
 def build_block(kind, nx=1, ny=1, nz=1, gap=0.92, **kw):
     """A block of cells on the cell's own lattice, each shrunk by `gap`
     about its own centroid."""
     V, faces, info = build_cell(kind, **kw)
     B = np.asarray(info['basis'], float)
     cen = V.mean(axis=0)
+    places = cell_placements(kind, nx, ny, nz, B)
+    info['placements'] = places
 
     verts = []
     out = []
     tags = []
     n = 0
-    for i in range(nx):
-        for j in range(ny):
-            for k in range(nz):
-                t = i * B[0] + j * B[1] + k * B[2]
-                P = cen + (V - cen) * gap + t
-                verts.append(P)
-                for f in faces:
-                    out.append(tuple(n + q for q in f))
-                    tags.append((i + j + k) % 2)
-                n += len(V)
+    for R, t, tag in places:
+        P = ((cen + (V - cen) * gap) @ np.asarray(R, float).T) + t
+        verts.append(P)
+        flip = float(np.linalg.det(R)) < 0.0
+        for f in faces:
+            g = tuple(reversed(f)) if flip else f
+            out.append(tuple(n + q for q in g))
+            tags.append(tag)
+        n += len(V)
     W = np.vstack(verts)
     W = W - W.mean(axis=0)
     return W, out, tags, info

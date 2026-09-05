@@ -25,11 +25,7 @@
 #             rising and falling as a sine in the wall's own coordinates; a
 #             quadratic Bezier sweep carries it to the axis to make the cap.
 #
-#   HEXPRISM  the same construction on a regular hexagon (SI section 2B.3),
-#             built from the two prototype arcs gamma' and gamma'' fitted
-#             alternately to the six edges.
-#
-# All three are SOFT Z-CELLS: a prism segmented by a smooth manifold and its
+# Both are SOFT Z-CELLS: a prism segmented by a smooth manifold and its
 # own z-translate.  That is also why they are the right thing to build first --
 # they exercise the replication, gap-scaling and watertightness machinery
 # against shapes whose volume and lattice are known exactly.
@@ -51,8 +47,28 @@ import numpy as np
 
 TAU = 2.0 * math.pi
 
-# The three analytic cells, in the order they appear in the operator's enum.
-KINDS = ('SADDLE', 'TRIPRISM', 'HEXPRISM')
+# The analytic cells, in the order they appear in the operator's enum.
+#
+# The SOFT HEXAGONAL PRISM is deliberately absent, and the reason is a proof
+# rather than an omission.  Sketch the two requirements on the up/down sense
+# of the arc carried by each of a hexagon's six walls:
+#
+#   * TILING.  Two hexagons meeting across a wall must agree on the curve
+#     that lies in it.  Hexagons tile by translation, and wall k of one cell
+#     is wall k+3 of its neighbour, so agreement forces sign(k) = sign(k+3):
+#     period three around the hexagon.
+#   * SOFTNESS.  At a hexagon vertex two walls meet, and their half-tangents
+#     are antiparallel -- the corner is smoothed -- only if one arc rises
+#     where the other falls, so sign(k) != sign(k+1): period two.
+#
+# Period three and alternation cannot hold together; an exhaustive search
+# over all 2^6 sign patterns returns none.  The obstruction is the same one
+# the softening theorem turns on: the honeycomb's vertex figure is a
+# triangle, an odd cycle, so its walls cannot be two-coloured.  A hexagonal
+# prism can be soft, or it can tile, but not both by this construction --
+# so shipping one as a space-filling cell would have been a false claim.
+# `_selftest` re-runs that search so the reasoning stays checked.
+KINDS = ('SADDLE', 'TRIPRISM')
 
 _SQRT3 = math.sqrt(3.0)
 
@@ -290,16 +306,52 @@ def _prism_cell(kind, m, rings, height=1.0):
         R = _SQRT3
         area = 1.5 * _SQRT3 * R * R
         d = R * _SQRT3
-        basis = np.array([[d, 0.0, 0.0],
-                          [d / 2.0, d * _SQRT3 / 2.0, 0.0],
-                          [0.0, 0.0, height]])
+        # neighbour centres sit at twice the EDGE MIDPOINTS, i.e. rotated 30
+        # degrees from the vertices.  The first version used the vertex
+        # directions; the determinant is identical either way, so the volume
+        # check could not see the error and the cells simply missed.
+        a30 = math.radians(30.0)
+        e0 = np.array([math.cos(a30), math.sin(a30), 0.0])
+        e1 = np.array([math.cos(a30 + math.radians(60.0)),
+                       math.sin(a30 + math.radians(60.0)), 0.0])
+        basis = np.array([d * e0, d * e1, [0.0, 0.0, height]])
     return np.array(verts, float), faces, basis, area * height
 
 
-# How many cells fit in one translational lattice cell.  One for the cells
-# that tile by translation alone; two for the triangular prism, whose
-# partner is a 180-degree rotate.
-_cells_per_lattice_cell = {'SADDLE': 1, 'TRIPRISM': 2, 'HEXPRISM': 1}
+def placements(kind):
+    """The rigid motions filling ONE lattice cell with cells.
+
+    The saddle prism tiles by translation alone, so its lattice cell holds
+    a single copy.  A triangle does not: the triangular tiling needs its
+    mirror partner, and det(basis) is accordingly twice the cell volume.
+    Returning that partner here -- rather than leaving the factor of two as
+    a remark in a comment, which is what the first version did -- is what
+    makes the block actually fill space instead of leaving every second
+    triangle empty.
+
+    The partner is the REFLECTION across the vertical plane of a wall, not
+    a 180-degree rotation about the wall's midpoint.  Both put a triangle
+    in the right place, but only the reflection carries the wall's curve
+    onto itself: the curve lies inside that plane, so the reflection fixes
+    it pointwise, whereas the rotation swaps the wall's raised half onto
+    its lowered half and the two cells then disagree about their shared
+    boundary.
+    """
+    I = np.eye(3)
+    if kind != 'TRIPRISM':
+        return [(I, np.zeros(3))]
+    A = np.array([-1.0, -_SQRT3, 0.0])
+    B = np.array([2.0, 0.0, 0.0])
+    d = B - A
+    d = d / np.linalg.norm(d)
+    n = np.array([d[1], -d[0], 0.0])          # in-plane normal of the wall
+    M = I - 2.0 * np.outer(n, n)
+    t = 2.0 * float(A @ n) * n
+    return [(I, np.zeros(3)), (M, t)]
+
+
+# How many cells fit in one translational lattice cell.
+_cells_per_lattice_cell = {'SADDLE': 1, 'TRIPRISM': 2}
 
 
 # ------------------------------------------------------------------
@@ -422,5 +474,50 @@ def _selftest():
             V, F, B, vol = build(kind, resolution=m, rings=4)
             ne = check_closed(V, F)
         print(f"{kind}: closed and consistently oriented, {ne} edges  OK")
+
+    # THE TILING TEST.  A cell that does not share its wall curves with its
+    # neighbours is not space-filling, however exact its volume -- and the
+    # volume and lattice-determinant checks above cannot see the difference.
+    # Both of the bugs this test was written for were invisible to them: the
+    # triangular prism placed one cell per lattice cell when the lattice
+    # holds two, and the hexagonal basis pointed at the hexagon's vertices
+    # instead of its edge midpoints, which leaves the determinant identical
+    # and rotates every neighbour out of contact.
+    for kind in KINDS:
+        V, F, B, vol = build(kind, resolution=24, rings=6)
+        G = (_tri_leading_curve(24) if kind == 'TRIPRISM'
+             else None)
+        if G is None:
+            continue
+        shared = 0
+        for R, t in placements(kind)[1:]:
+            Gt = G @ np.asarray(R, float).T + t
+            d = np.linalg.norm(Gt[:, None, :] - G[None, :, :],
+                               axis=2).min(axis=1)
+            shared += int((d < 1e-9).sum())
+        assert shared > 0, (
+            f"{kind}: the partner placement shares no boundary curve with "
+            f"the base cell, so the two do not meet along a wall")
+        print(f"{kind}: mirror partner shares {shared} boundary points with "
+              f"the base cell -- they meet along a wall  OK")
+
+    # every lattice cell must be exactly filled by its placements
+    for kind in KINDS:
+        V, F, B, vol = build(kind, resolution=16, rings=4)
+        det = abs(float(np.linalg.det(B)))
+        n = len(placements(kind))
+        assert abs(det - n * vol) < 1e-9 * det, (kind, det, n, vol)
+        print(f"{kind}: {n} placement(s) x volume {vol:.5f} = lattice "
+              f"determinant {det:.5f}  OK")
+
+    # the hexagonal prism is excluded for a reason; keep the reason checked
+    import itertools as _it
+    good = [b for b in _it.product((1, -1), repeat=6)
+            if all(b[k] == b[(k + 3) % 6] for k in range(6))
+            and all(b[k] != b[(k + 1) % 6] for k in range(6))]
+    assert not good, good
+    assert 'HEXPRISM' not in KINDS
+    print("hexagonal prism: no sign pattern is both tiling-consistent and "
+          "soft (0 of 64) -- correctly excluded  OK")
 
     print("softcell.analytic standalone tests passed")
