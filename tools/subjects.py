@@ -198,7 +198,7 @@ PARAMS = {
     # rather than one: a single cell is a fragment, while the 2x2x2
     # block shows the channels threading through one another, which is
     # the thing about a gyroid.
-    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G',
+    "mesh.periodic_minimal_add": dict(periodicity='CUBIC', surface='G',
                                       cells=2),
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
     # Hand-picked hero: the dodecahedral seed dented inward to the full
@@ -659,7 +659,7 @@ VARIANT_COMMON = {
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.bubble_cluster_add": dict(separate=True, color=True),
     "mesh.sphericon_add": dict(coloring='NONE'),
-    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', cells=1),
+    "mesh.periodic_minimal_add": dict(periodicity='CUBIC', cells=1),
     "mesh.spherical_harmonic_add": dict(degree=4, order=2),
 
     # -- selectors that another property was overriding ------------
@@ -759,7 +759,10 @@ VARIANT_MAX = {
     # Minimal surfaces are what this project is chiefly about, and the
     # families are the point of the page; do not truncate them.
     "mesh.parametric_minimal_add": 96,
-    "mesh.periodic_minimal_add": 96,
+    # 132 across Singly (26), Doubly (9), TPMS Cubic (66) and TPMS
+    # Non-Cubic (31): the cap must clear the total or it silently drops
+    # whole trailing groups -- Non-Cubic went missing at 96.
+    "mesh.periodic_minimal_add": 144,
     "mesh.canonical_polyhedron_add": 96,
     # 132 presets across ten named families: 10 classical, 63 Hauser,
     # 4 record-nodal, 5 many-nodal octics, 7 named implicit, 11
