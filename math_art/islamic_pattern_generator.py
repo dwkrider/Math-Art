@@ -1977,6 +1977,15 @@ if _IN_BLENDER:
                 self.interlace, self.interlace_mode, self.weave_height,
                 self.girih_gens)
             if self.surface == 'SPHERE_SOLID':
+                # A preset bundles a SUBSTRATE with a MOTIF.  On a
+                # spherical substrate the substrate half cannot apply --
+                # Base Solid is the substrate -- so the motif half is
+                # taken straight from the live controls instead of
+                # through the preset, and every control the panel shows
+                # in this mode is one that actually drives the result.
+                contact = self.contact_angle
+                motif = self.motif
+                star_d = self.star_d
                 if self.interlace:
                     cells = sphere_interlaced_cells(
                         self.base_solid, contact, self.ribbon_width,
@@ -2023,38 +2032,15 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            lay.prop(self, 'preset')
-            sub, _c, motif, _d = self._resolved()
-            # On the polyhedral sphere the substrate IS the base solid --
-            # a spherical uniform tiling -- so the flat Substrate enum
-            # and its patch extent do nothing.  Hide them rather than
-            # leave controls on the panel that silently change nothing.
-            on_solid = self.surface == 'SPHERE_SOLID'
-            if self.preset == 'CUSTOM':
-                if not on_solid:
-                    lay.prop(self, 'substrate')
-                lay.prop(self, 'motif')
-                lay.prop(self, 'contact_angle')
-            if motif == 'STAR':                       # shown for presets too
-                lay.prop(self, 'star_d')
-            if motif == 'ROSETTE':
-                lay.prop(self, 'rosette_frac')
-            if on_solid:
-                lay.label(text="Base Solid replaces Substrate on a sphere",
-                          icon='INFO')
-            elif sub == 'GIRIH':                      # quasiperiodic patch
-                lay.prop(self, 'girih_gens')
-            else:
-                lay.prop(self, 'nx')
-                lay.prop(self, 'ny')
-            if not on_solid:
-                lay.prop(self, 'trim')
-            lay.prop(self, 'ribbon_width')
-            lay.prop(self, 'curved')
-            if self.curved:
-                lay.prop(self, 'smoothness')
+
+            # SURFACE FIRST: it is a mode selector, not a modifier.  It
+            # decides whether the pattern is built on a flat patch or on
+            # a spherical substrate, and therefore which of the controls
+            # below apply at all -- so it belongs above the things it
+            # governs rather than buried among them.
             lay.prop(self, 'surface')
-            if self.surface == 'SPHERE_SOLID':
+            on_solid = self.surface == 'SPHERE_SOLID'
+            if on_solid:
                 lay.prop(self, 'base_solid')
                 if self.base_solid in ssub.SUBDIVIDED:
                     lay.prop(self, 'geodesic_freq')
@@ -2062,6 +2048,41 @@ if _IN_BLENDER:
             elif self.surface == 'SPHERE':
                 lay.prop(self, 'sphere_radius')
                 lay.prop(self, 'sphere_spread')
+
+            lay.separator()
+            if on_solid:
+                # Base Solid IS the substrate here, so Preset and
+                # Substrate have nothing to act on and are not shown.
+                # The motif controls are shown live instead, because on
+                # this surface they are what defines the pattern.
+                motif = self.motif
+                lay.prop(self, 'motif')
+                lay.prop(self, 'contact_angle')
+            else:
+                lay.prop(self, 'preset')
+                sub, _c, motif, _d = self._resolved()
+                if self.preset == 'CUSTOM':
+                    lay.prop(self, 'substrate')
+                    lay.prop(self, 'motif')
+                    lay.prop(self, 'contact_angle')
+            if motif == 'STAR':                       # shown for presets too
+                lay.prop(self, 'star_d')
+            if motif == 'ROSETTE':
+                lay.prop(self, 'rosette_frac')
+            if not on_solid:
+                # patch extent and trimming: a closed sphere has neither
+                if sub == 'GIRIH':                    # quasiperiodic patch
+                    lay.prop(self, 'girih_gens')
+                else:
+                    lay.prop(self, 'nx')
+                    lay.prop(self, 'ny')
+                lay.prop(self, 'trim')
+
+            lay.separator()
+            lay.prop(self, 'ribbon_width')
+            lay.prop(self, 'curved')
+            if self.curved:
+                lay.prop(self, 'smoothness')
             lay.prop(self, 'output')
             if self.output == 'RIBBON':
                 lay.prop(self, 'color_by')
@@ -2071,9 +2092,12 @@ if _IN_BLENDER:
                     if self.interlace_mode == 'WOVEN':
                         lay.prop(self, 'weave_height')
                 lay.prop(self, 'height')
-                lay.prop(self, 'backing')
-                if self.backing:
-                    lay.prop(self, 'base')
+                if not on_solid:
+                    # a flat backing slab under a closed sphere is
+                    # meaningless
+                    lay.prop(self, 'backing')
+                    if self.backing:
+                        lay.prop(self, 'base')
                 lay.prop(self, 'separate')
             lay.prop(self, 'align')
 
