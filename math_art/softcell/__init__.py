@@ -32,20 +32,17 @@
 #   https://doi.org/10.1093/pnasnexus/pgae311
 # - G. Domokos, A. Goriely, A. G. Horvath and K. Regos, "Soft cells, Kelvin's
 #   foam and the minimal surfaces of Schwarz", arXiv:2412.04491 (2025).
-# - G. Ambrus and D. Dancso, "Softening locally polyhedral tilings",
-#   arXiv:2604.18545 (2026) -- the node warp used by `warp.py`.
 
 import math
 
 import numpy as np
 
 try:
-    from . import analytic, cell, edges, warp
+    from . import analytic, cell, edges
 except ImportError:                        # flat import outside the package
     import analytic
     import cell
     import edges
-    import warp
 
 try:
     from ..minsurf import plateau
@@ -379,7 +376,6 @@ def _selftest():
     analytic._selftest()
     cell._selftest()
     edges._selftest()
-    warp._selftest()
 
     if plateau is None:
         print("softcell: Plateau solver unavailable, skipping face tests")

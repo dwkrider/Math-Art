@@ -24,12 +24,6 @@
 # surfaces, and another is Kelvin's foam cell, so sweeping the two angles
 # carries a minimal surface continuously into a foam.
 #
-# SOFTEN mode instead applies the general theorem that every locally
-# polyhedral tiling can be completely softened, as an explicit displacement
-# field around each node.  Its effect is deliberately local -- a polyhedron
-# whose corners have melted, not a droplet -- because the theorem's
-# deformation is supported only inside small balls about the nodes.
-#
 # References:
 # - G. Domokos, A. Goriely, A. G. Horvath and K. Regos, "Soft cells and the
 #   geometry of seashells", PNAS Nexus 3(9):pgae311 (2024).
@@ -40,9 +34,6 @@
 # - G. Domokos, A. G. Horvath and K. Regos, "A two-vertex theorem for normal
 #   tilings", Aequationes Mathematicae 97(1):185-197 (2023) -- the saddle
 #   prism, the first corner-free space-filler.
-# - G. Ambrus and D. Dancso, "Softening locally polyhedral tilings",
-#   arXiv:2604.18545 (2026) -- every locally polyhedral tiling of space can
-#   be completely softened.  https://arxiv.org/abs/2604.18545
 # - L. E. Dubins, "On curves of minimal length with a constraint on average
 #   curvature, and with prescribed initial and terminal positions and
 #   tangents", American Journal of Mathematics 79(3):497-516 (1957) -- the
@@ -68,10 +59,8 @@ except ImportError:
     _IN_BLENDER = False
 
 
-# a six-way palette, so cell colouring still reads when a honeycomb needs
-# more than two colours to separate face-neighbours
-_PALETTE = [(0.90, 0.55, 0.20), (0.22, 0.45, 0.72), (0.32, 0.70, 0.42),
-            (0.86, 0.28, 0.24), (0.60, 0.40, 0.75), (0.95, 0.80, 0.30)]
+# colours for the two sublattices of a block
+_PALETTE = [(0.90, 0.55, 0.20), (0.22, 0.45, 0.72)]
 
 _LABEL = {
     'SADDLE': "Saddle Prism Cell",
@@ -109,16 +98,6 @@ if _IN_BLENDER:
         bl_idname = "mesh.soft_cell_add"
         bl_label = "Soft Cells"
         bl_options = {'REGISTER', 'UNDO'}
-
-        mode: EnumProperty(
-            name="Mode",
-            items=[('CELLS', "Named Cells",
-                    "Build one of the soft cells of the literature, or a "
-                    "custom point of the morphospace"),
-                   ('SOFTEN', "Soften Honeycomb",
-                    "Melt the corners off a polyhedral honeycomb using the "
-                    "general softening theorem")],
-            default='CELLS')
 
         cell: EnumProperty(
             name="Cell",
@@ -254,54 +233,6 @@ if _IN_BLENDER:
             default=math.radians(25.0), min=0.0, max=math.pi,
             subtype='ANGLE')
 
-        honeycomb: EnumProperty(
-            name="Honeycomb",
-            items=[('CUBIC', "Cubes",
-                    "The cubic grid -- the worked example of the theorem"),
-                   ('TRUNCOCT', "Truncated Octahedra",
-                    "The bitruncated cubic honeycomb on the BCC lattice: "
-                    "the same polyhedron the Named Cells soften by bending "
-                    "its edges instead"),
-                   ('RHOMBDODEC', "Rhombic Dodecahedra",
-                    "On the FCC lattice"),
-                   ('HEXPRISM', "Hexagonal Prisms",
-                    "The honeycomb proper"),
-                   ('ELONGDODEC', "Elongated Dodecahedra",
-                    "On the body-centred tetragonal lattice"),
-                   ('OCTET', "Octahedra + Tetrahedra",
-                    "The octet truss: two cell shapes, so the colouring "
-                    "shows the two families")],
-            default='TRUNCOCT')
-
-        cell_colors: IntProperty(
-            name="Cell Colours", description="Colour the cells so that "
-            "face-neighbours differ, which is the only way to see where "
-            "one cell ends and the next begins once the corners have "
-            "melted together.  Four is the default because four is what it "
-            "takes: two colours leave 16 of 36 shared faces matching on the "
-            "FCC rhombic dodecahedra, while four separate every neighbour "
-            "on all six honeycombs",
-            default=4, min=1, max=6)
-
-        subdivisions: IntProperty(
-            name="Subdivisions", description="Grid density on each face",
-            default=12, min=4, max=32)
-
-        bend_radius: FloatProperty(
-            name="Bend Radius", description="Size of the bending "
-            "neighbourhood around each node, as a fraction of the largest "
-            "that keeps them disjoint",
-            default=0.9, min=0.1, max=1.0)
-
-        bend_depth: FloatProperty(
-            name="Bend Depth", description="Strength of the displacement. "
-            "1.0 is the constant the proof uses, which moves a point only "
-            "about 4% of an edge -- enough to prove a theorem, far too "
-            "little to see.  The published pictures are drawn well above "
-            "it.  The map stays one-to-one up to 5.9, where the cutoff "
-            "ramp's slope reaches zero and the surface would begin to fold",
-            default=4.0, min=0.0, max=5.9)
-
         resolution: IntProperty(
             name="Resolution", description="Samples around an analytic cell",
             default=24, min=6, max=64)
@@ -401,41 +332,24 @@ if _IN_BLENDER:
         def execute(self, context):
             notes = []
             try:
-                if self.mode == 'SOFTEN':
-                    V, faces, tags, info = softcell.warp.soften_honeycomb(
-                        self.honeycomb, self.nx, self.ny, self.nz,
-                        subdiv=self.subdivisions,
-                        bend_radius=self.bend_radius,
-                        depth=self.bend_depth,
-                        colors=self.cell_colors, gap=self.gap)
-                    label = "Softened " + dict(
-                        CUBIC="Cubes", TRUNCOCT="Truncated Octahedra",
-                        RHOMBDODEC="Rhombic Dodecahedra",
-                        HEXPRISM="Hexagonal Prisms",
-                        ELONGDODEC="Elongated Dodecahedra",
-                        OCTET="Octet")[self.honeycomb]
-                    notes.append(
-                        f"{info['warped']} of {info['nodes']} nodes softened "
-                        f"({info['interior']} with a complete vertex figure)")
-                elif self.separate_objects and self.mode == 'CELLS':
+                if self.separate_objects:
                     return self._build_separate(context)
-                else:
-                    V, faces, tags, info = softcell.build_block(
-                        self.cell, nx=self.nx, ny=self.ny, nz=self.nz,
-                        gap=self.gap,
-                        phi=self.colatitude, theta=self.azimuth,
-                        symmetry=self.symmetry,
-                        edge_samples=self.edge_samples,
-                        face_rings=self.face_rings,
-                        relax_iters=(self.relax_iterations
-                                     if self.face_style == 'MINIMAL' else 0),
-                        face_style=self.face_style,
-                        resolution=self.resolution,
-                        hex_scheme=self.hex_scheme)
-                    label = _LABEL[self.cell]
-                    if info.get('demoted'):
-                        notes.append("octahedral symmetry unavailable for "
-                                     "this direction, used tetrahedral")
+                V, faces, tags, info = softcell.build_block(
+                    self.cell, nx=self.nx, ny=self.ny, nz=self.nz,
+                    gap=self.gap,
+                    phi=self.colatitude, theta=self.azimuth,
+                    symmetry=self.symmetry,
+                    edge_samples=self.edge_samples,
+                    face_rings=self.face_rings,
+                    relax_iters=(self.relax_iterations
+                                 if self.face_style == 'MINIMAL' else 0),
+                    face_style=self.face_style,
+                    resolution=self.resolution,
+                    hex_scheme=self.hex_scheme)
+                label = _LABEL[self.cell]
+                if info.get('demoted'):
+                    notes.append("octahedral symmetry unavailable for "
+                                 "this direction, used tetrahedral")
             except (ValueError, RuntimeError) as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -454,8 +368,7 @@ if _IN_BLENDER:
             # Doing it afterwards compared a shortened polygon list against
             # the original tags, the counts disagreed, and the colouring
             # was silently skipped altogether.
-            want = ((self.two_materials and self.mode == 'CELLS')
-                    or self.mode == 'SOFTEN')
+            want = self.two_materials
             if want and len(me.polygons) == len(tags) and tags:
                 for ci in range(max(tags) + 1):
                     me.materials.append(_material(
@@ -489,15 +402,6 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            lay.prop(self, 'mode')
-            if self.mode == 'SOFTEN':
-                for k in ('honeycomb', 'nx', 'ny', 'nz', 'subdivisions',
-                          'bend_radius', 'bend_depth', 'gap', 'scale',
-                          'cell_colors', 'shade_smooth'):
-                    lay.prop(self, k)
-                if self.shade_smooth:
-                    lay.prop(self, 'crease_angle')
-                return
             lay.prop(self, 'cell')
             if self.cell == 'CUSTOM':
                 lay.prop(self, 'colatitude')
