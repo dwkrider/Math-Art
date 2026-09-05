@@ -31,6 +31,16 @@ operators stay in their flat generator modules.  Layout follows
                 pattern generator and reached into by four others.
     overunder   the over/under solver: union-find with parity, and the
                 smoothstep z-offset that makes a strand pass under.
+    surfacemap  curved-surface mapping: lay a flat tiling on a torus or a
+                sphere, offsetting relief along the surface normal instead
+                of +Z.  The torus is a genuine quotient (so a
+                lattice-commensurate tiling is seamless); the sphere is a
+                chart, and says so.
+    spherical_kites  the spherical kite lattices (deltoidal
+                icositetrahedron and hexecontahedron) and the search for
+                a spherical analogue of the hat.  Not re-exported below:
+                it is a research module with a self-test, reached as
+                `patterns.spherical_kites`.
     substitution  prototiles + inflation rules over planar similarities
                 (z -> Az + B conj z + C, so reflections are expressible
                 and the hat is representable).  Expansion returns
@@ -66,6 +76,12 @@ from .overunder import ParityDSU, weave_zoff
 from .substitution import Similarity, Substitution, penrose_p3
 from .prisms import (center_scale, center_xy, merge_cells, prisms,
                      ribbon_polys, slab)
+from .surfacemap import (DEFAULT_MAX_EDGE, LatticeTorusSurface,
+                         PlaneSurface, SphereSurface,
+                         StereographicSurface, Surface,
+                         TorusSurface, canonicalize_corners, edge_points,
+                         make_surface, refine_poly, refine_segment,
+                         surface_patch, surface_prisms, warp_cells)
 
 __all__ = [
     # orbifold signatures
@@ -125,6 +141,22 @@ __all__ = [
     "center_scale",
     "center_xy",
     "merge_cells",
+    # curved-surface mapping
+    "Surface",
+    "PlaneSurface",
+    "TorusSurface",
+    "LatticeTorusSurface",
+    "SphereSurface",
+    "StereographicSurface",
+    "make_surface",
+    "refine_poly",
+    "refine_segment",
+    "edge_points",
+    "canonicalize_corners",
+    "surface_patch",
+    "surface_prisms",
+    "warp_cells",
+    "DEFAULT_MAX_EDGE",
 ]
 
 __version__ = "1.0.0"
