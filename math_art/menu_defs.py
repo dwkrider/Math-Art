@@ -221,6 +221,7 @@ PATTERNS = Menu(
         _e("mesh.tiling_add", 'MESH_GRID'),
         _e("mesh.kuniform_add", 'MESH_GRID'),
         _e("mesh.monohedral_add", 'MESH_PLANE'),
+        _e("mesh.soft_cell_add", 'META_BALL'),
         _e("mesh.isohedral_add", 'MOD_UVPROJECT'),
         _e("mesh.aperiodic_add", 'MESH_ICOSPHERE'),
         _e("mesh.reptile_add", 'MESH_GRID'),
