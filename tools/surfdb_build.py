@@ -1657,7 +1657,26 @@ CURATED_ONLY = {
     "delaunay-surface": "The family record. Its MEMBERS ship "
                         "(mesh.delaunay_surface_add), so the family itself "
                         "has no row of its own.",
+    # Schoen's starfish family: sixteen surfaces on Brakke's page, EIGHT
+    # of which he published a datafile for.  Those eight ship and carry
+    # their Evolver cell.  The eight below appear on that page as
+    # pictures only -- there is no datafile anywhere in the mirror or the
+    # tarball -- so there is nothing to build them from and nothing to
+    # verify against.  They are recorded rather than dropped because the
+    # surfaces are real and named in the literature; the record states
+    # that we do not build them, and why.
 }
+_STARFISH_NO_DATAFILE = (
+    "Schoen starfish surface with no datafile. Brakke's starfish page "
+    "shows it, but publishes datafiles for only eight of the sixteen "
+    "(genus 31, 43, 47, 55, 59, 63, 75, 87) -- those eight ship. There "
+    "is no .fe for this one in the mirror or in starfish.tar, so it "
+    "cannot be built or checked against Evolver."
+)
+for _g in ("2-4-genus-79", "3-4-genus-91", "4-2-genus-71", "4-4-genus-103",
+           "5-1-genus-67", "5-2-genus-83", "5-3-genus-99", "5-4-genus-115"):
+    CURATED_ONLY["starfish-" + _g] = _STARFISH_NO_DATAFILE
+del _g
 
 # Operators that build exactly ONE surface, so they have no enum to read.
 # (slug, name, primary family, module, operator id, curvature condition)

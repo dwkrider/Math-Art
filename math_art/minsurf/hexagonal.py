@@ -525,12 +525,12 @@ def _apply(M, V):
 #       an explicit chain as `clp_assembly` does.  The period problem is
 #       already solved -- `_CLP_HANDLE_SOLVED` carries Weber's converged
 #       (rho, a) against tau.
-#   rPD  three of its four edges are exact mirrors, at 1e-13 to 1e-18.
-#       The fourth -- the right edge, the far end of a domain two unit
-#       cells wide -- is at 2.2e-2 and falls only like 1/n (5.0e-2,
-#       3.5e-2, 2.2e-2, 1.5e-2, 1.1e-2 for n = 60..340), so it does not
-#       reach the 1e-3 the classifier wants at any usable resolution.
-#       The fundamental piece ships; the cell does not.
+#   rPD  NOW ASSEMBLES its hexagonal-prism cell -- see the block next
+#       to F-RD(r)'s.  The old story here ("the far edge classifies at
+#       2.2e-2, falling like 1/n") was true of a domain that was FOUR
+#       chambers wide: one extra torus period, times one internal
+#       mirror.  On the quarter domain the walls are declared and the
+#       word closes 12 copies.
 #   Lidinoid  its edge residuals PLATEAU at 2.4e-2 and do not fall with
 #       the grid at all, which says this is not quadrature error.  It is
 #       the same situation as the gyroid: at a generic associate angle
@@ -602,7 +602,7 @@ _SPECS = {
         theta=-math.pi / 2.0,
         nb="Triply_SchwarzCLP.nb"),
     'LIDINOID': dict(
-        label="Lidinoid (exact)",
+        label="Lidinoid (exact fundamental piece)",
         tau=1j * math.tan(math.radians(90.0 - 64.2098)),
         a=0.25,
         terms=lambda a, tau: ((0.0, 2.0 / 3.0), (0.5, -2.0 / 3.0)),
@@ -620,7 +620,7 @@ _SPECS = {
     # the singly periodic Scherk surface, tau = 0.2i near the doubly
     # periodic one.
     'CLP_HANDLE': dict(
-        label="CLP with Handle (exact, genus 4)",
+        label="CLP with Handle (exact fundamental piece, genus 4)",
         tau=1.5j, a=0.2423350072589261, rho=0.9999597719688196,
         terms=lambda a, tau: ((a, 0.5), (0.0, -0.5), (-a, 0.5),
                               (0.5, -0.5), (tau / 2.0, -0.5),
@@ -641,6 +641,8 @@ _SPECS = {
         xlim=(-0.5, 1.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
         theta=math.pi / 2.0,
         nb="Triply_Gyroid_AssociateRPD.nb"),
+    # rPD's cell is declared AFTER the module's machinery exists --
+    # see the block next to F-RD(r)'s, which it follows.
     # Schoen's H'-T, genus 4, the hexagonal-graph/triangle-graph surface
     # of the 1970 NASA catalogue.  This is the FIRST row of the
     # triangle-group series below to be added, and the one that needed no
@@ -909,7 +911,7 @@ def _prod_spec(label, tau, a, terms, const=0j, theta=0.0,
 # degrees and needs no separate code path -- the same trick CLP uses.
 _STESS_B0 = 1.0 / 3.0
 _SPECS['STESSMANN'] = _prod_spec(
-    "Stessmann's Surface (exact, conjugate to I-WP)",
+    "Stessmann's Surface (exact fundamental piece, conjugate to I-WP)",
     tau=1j / math.sqrt(3.0), a=1.0 / 6.0,
     terms=lambda a, tau, _b=_STESS_B0: (
         (a, 0.75), (-a, -0.75),
@@ -1007,7 +1009,7 @@ _SPECS['CH'] = _prod_spec(
 # pattern Weber calls "completely unexplored".
 _I6_A, _I6_TAU = 0.44116403887207395, 0.93j
 _SPECS['I6'] = _prod_spec(
-    "Schoen I-6 (exact, genus 5)",
+    "Schoen I-6 (exact fundamental piece, genus 5)",
     tau=_I6_TAU, a=_I6_A,
     terms=lambda a, tau: ((0.0, -0.5), (1j * a, 0.5), (tau / 2.0, 0.5),
                           (-1j * a, 0.5), (-0.5, 0.5),
@@ -1099,17 +1101,159 @@ def solve_spec_tau(key, lo, hi, steps=40):
 # it is the standard one with G replaced by G e^(i pi/4), i.e. a
 # rotation of the Gauss map, so it is folded into `const` here and the
 # ordinary combination applies.
-_FRD_A = 0.11
+#
+# (a, tau) below is the SOLVED CUBIC MEMBER, not the notebook's demo
+# pair.  `FR-D.nb` says "Choose conformal parameter a between 0.07 and
+# .2": its period condition ties tau to a but leaves a itself free, so
+# the notebook data is a one-parameter family -- the tetragonal tF-RD
+# deformation -- and the demo member a = 0.11 that this row first
+# shipped with is a generic member of it, not F-RD.  Built and
+# measured, a = 0.11's five boundary mirrors close a 1.074 : 1.074 : 1
+# tetragonal cell; worse, with the horizontal edges unsplit only the
+# two parallel z lids ever classified, so the shipped reflection group
+# was a frieze and the row grew as a column along z.
+#
+# F-RD is the member whose cell is a CUBE.  Every boundary curve of
+# the patch is a planar geodesic -- lids z = 0 and z = 1/2, diagonal
+# mirrors x = y and x + y = c_u, and the face mirror x = x_m -- so the
+# patch is the chamber of a (4,4,2)-kaleidoscope prism and the cell is
+# cubic exactly when the in-plane cube edge matches the z one:
+#
+#     2 x_m(a) - c_u(a) = 1/2.
+#
+# Solving that together with the period condition (both as 1D
+# theta-product path integrals, `frd_geometry` below -- the meshed
+# patch cannot be used for this because its singular corners pollute
+# the mirror offsets at O(1/n)) gives
+#
+#     a   = 0.0930966253175575     tau = 0.39749710165121555 i
+#     x_m = 0.1895435558205375     cubic residual 4e-13
+#
+# and the self-test re-derives all three.  Ground truth agrees: the
+# patch area converges to Brakke's FRDadj.fe cell (192 copies, 4.84 per
+# unit cell) and the nodal F-RD (4.87), and the assembled cell sits a
+# median 1.4% of the edge from the nodal one -- including under the
+# face-centring shift (1/2, 1/2, 0), which maps F-RD to itself.
+_FRD_A = 0.0930966253175575
 _FRD_B = (1.0 - 2.0 * _FRD_A) / 3.0
+_FRD_XM = 0.1895435558205375        # the x = x_m face mirror, solved
 _SPECS['FRD_EXACT'] = _prod_spec(
     "Schoen F-RD (exact, cubic, genus 6)",
-    tau=0.4097611639604068j, a=_FRD_A,
+    tau=0.39749710165121555j, a=_FRD_A,
     terms=lambda a, tau, _b=_FRD_B: (
         (a, -0.5), (-a, 0.5), (_b, -0.75), (-_b, 0.75),
         (0.5 - _b + tau / 2.0, 0.75), (-(0.5 - _b) + tau / 2.0, -0.75),
         (0.5 - a + tau / 2.0, 0.5), (-(0.5 - a) + tau / 2.0, -0.5)),
     const=0.25j * math.pi,
+    splits=(_FRD_A, _FRD_B),
     nb="FR-D.nb")
+
+# F-RD's cell.  Both horizontal edges of the domain run through TWO
+# branch points each -- +-a and +-b sit on y = 0, their tau/2-row
+# partners at x = 1/2 - b and 1/2 - a on the top edge -- so each edge
+# is THREE symmetry elements, and read whole both classified as
+# 'neither'.  That is the whole failure: the in-plane generators were
+# never found, the two z lids alone make a frieze, and the "cubic" row
+# grew as a column.  Split, the eight arcs land two per in-plane
+# mirror (once near each lid) plus the lids themselves:
+#
+#     x=0, x=1        the lids           z = 0   and  z = 1/2
+#     y=0#0, y=1#1    the diagonal       x - y = 0
+#     y=0#1, y=1#2    the diagonal       x + y = 2 x_m - 1/2
+#     y=0#2, y=1#0    the face           x = x_m
+#
+# Directions are declared (the polluted arcs cannot be trusted to fit
+# their own planes -- same argument as S'-S''), and so are the OFFSETS:
+# unlike the trigroup rows, F-RD's quadrature error displaces two whole
+# arcs off their true planes by O(1/n) (a bulk shift, not a wobble --
+# the arc y=0#1 fits a plane to 4e-8 at n = 121 while sitting 6e-3 from
+# the right one), so the median-measured offset would bend the cell.
+# All the offsets follow from x_m and the exactly-known z span.
+#
+# The word is Brakke's dfh(abcabc) idea in this frame: {1,a,b,ab} is
+# the 2mm point group at the cube centre's vertical axis, filling the
+# mirror-bounded half-cell cube [x_m-1/2, x_m]^2 x [0, 1/2] with 4
+# copies; m, n (= ama, the y = x_m face, declared derived exactly as
+# S'-S'' derives its d) and e then reflect that cube through three of
+# its faces.  32 copies, the conventional cubic cell, edge 1 = twice
+# the mirror spacing, which tiles by pure translation.
+_SPECS['FRD_EXACT'].update(
+    tsplits=(0.5 - _FRD_B, 0.5 - _FRD_A),
+    exact_planes={
+        'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+        'y=0#0': (1.0, -1.0, 0.0), 'y=0#1': (1.0, 1.0, 0.0),
+        'y=0#2': (1.0, 0.0, 0.0),
+        'y=1#0': (1.0, 0.0, 0.0), 'y=1#1': (1.0, -1.0, 0.0),
+        'y=1#2': (1.0, 1.0, 0.0)},
+    exact_offsets={
+        'x=0': 0.0, 'x=1': 0.5,
+        'y=0#0': 0.0, 'y=1#1': 0.0,
+        'y=0#2': _FRD_XM, 'y=1#0': _FRD_XM,
+        'y=0#1': (2.0 * _FRD_XM - 0.5) / math.sqrt(2.0),
+        'y=1#2': (2.0 * _FRD_XM - 0.5) / math.sqrt(2.0)},
+    letters={'e': 'x=1', 'm': 'y=1#0', 'a': 'y=0#0', 'b': 'y=0#1',
+             'n': ('derived', 'ama')},
+    words=('emnab',),
+    cell_basis=(1.0, 1.0, 1.0))
+
+
+def frd_geometry(a=None, t=None, n=6000):
+    """Re-derive F-RD's solved constants from the Weierstrass data.
+
+    Returns (period, x_m, c_u): the period residual `FR-D.nb` bisects
+    to zero (Weber's tst -- the y displacement along the diagonal from
+    the branch point a to its tau/2-row partner, on the RAW Gauss map,
+    with the cos substitution clustering into both singular endpoints),
+    and the two in-plane mirror positions as 1D path integrals -- x_m
+    up the smooth left edge to the corner tau/2, c_u = x1 + x2 at the
+    midpoint of the [a, b] arc, reached through the interior so no
+    branch point sits on the path.  1D because the meshed patch cannot
+    provide these: its singular corners displace whole boundary arcs
+    by O(1/n), which is exactly the pollution that hid the tetragonal
+    cell in the first place.
+
+    The cubic member satisfies period = 0 and 2 x_m - c_u = 1/2.
+    """
+    sp = _SPECS['FRD_EXACT']
+    if a is None:
+        a = float(sp['a'])
+    tau = sp['tau'] if t is None else 1j * float(t)
+    q = np.exp(1j * np.pi * tau)
+    terms = sp['terms'](a, tau)
+
+    def logA(z):
+        L = np.zeros(z.shape, dtype=complex)
+        for sh, c in terms:
+            lg = np.log(_theta11(z - sh, q))
+            L = L + c * (np.real(lg) + 1j * np.unwrap(np.imag(lg)))
+        return L
+
+    # Weber's tst: Re int (i/2)(A + 1/A) dz, endpoints both theta zeros
+    z0, z1 = complex(a), 0.5 - a + tau / 2.0
+    u = (np.arange(n) + 0.5) / n
+    s = 0.5 * (1.0 - np.cos(np.pi * u))
+    ds = 0.5 * np.pi * np.sin(np.pi * u) / n
+    L = logA(z0 + (z1 - z0) * s)
+    period = float(np.real(np.sum(
+        0.5j * (np.exp(L) + np.exp(-L)) * (z1 - z0) * ds)))
+
+    def leg(zs):
+        mids = 0.5 * (zs[:-1] + zs[1:])
+        L = logA(mids) + complex(sp['const'])
+        g, inv = np.exp(L), np.exp(-L)
+        dz = np.diff(zs)
+        return (float(np.real(np.sum(0.5 * (inv - g) * dz))),
+                float(np.real(np.sum(0.5j * (inv + g) * dz))))
+
+    x_m = leg(np.linspace(0.0, tau / 2.0, n + 1))[0]
+    b = (1.0 - 2.0 * a) / 3.0
+    zst = 0.5 * (a + b)
+    mid = tau / 4.0                       # clear of both singular rows
+    p = np.concatenate([np.linspace(0.0, mid, n + 1),
+                        np.linspace(mid, zst + mid, n + 1)[1:],
+                        np.linspace(zst + mid, zst, n + 1)[1:]])
+    dx1, dx2 = leg(p)
+    return period, x_m, dx1 + dx2
 
 # Schoen's unnamed surface 12, later named F-RD(r) -- the quarter-twisted
 # relative of F-RD, genus 5.  Divisor constraints a + a' = 1/2 = b + b'
@@ -1120,18 +1264,130 @@ _SPECS['FRD_EXACT'] = _prod_spec(
 # without printing a value.  `solve_spec_tau('FRDR', 0.10, 0.45)`
 # recovers 0.3947862928575998 with a residual of 6e-17, and the
 # self-test re-runs that bisection against the stored constant.
+#
+# a = 0.07 is Weber's own member -- unlike F-RD, where the notebook's
+# demo value was a generic member of a family whose distinguished
+# (cubic) member had to be solved for, `Unnamed-12.nb` itself sets
+# `a = .07` for its plots, and F-RD(r) is a family with no cubic
+# member to prefer: it is the quarter-twisted TETRAGONAL relative and
+# correctly sits under Non-Cubic.
 _FRDR_A = 0.07
+_FRDR_B = 0.25 - _FRDR_A
 _SPECS['FRDR'] = _prod_spec(
     "Schoen F-RD(r) (exact, quarter-twisted, genus 5)",
     tau=0.3947862928575998j, a=_FRDR_A,
-    terms=lambda a, tau, _b=0.25 - _FRDR_A: (
+    terms=lambda a, tau, _b=_FRDR_B: (
         (a, 0.5), (_b, 0.5), (-a, -0.5), (-_b, -0.5),
         (0.5 - a - tau / 2.0, -0.5), (0.5 - _b - tau / 2.0, -0.5),
         (-0.5 + a - tau / 2.0, 0.5), (-0.5 + _b - tau / 2.0, 0.5)),
     const=0.25j * math.pi,
+    splits=(_FRDR_A, _FRDR_B),
     nb="Unnamed-12.nb")
 _SPECS['FRDR']['period'] = (
     lambda a, tau: (complex(a), complex(0.5 - a - tau / 2.0)))
+
+# F-RD(r)'s cell.  The same defect F-RD had, the same cure: both
+# horizontal edges run through two branch points (+-a, +-b below;
+# their -tau/2-row partners at 1/2 - b, 1/2 - a above), so read whole
+# both classified as 'neither', only the two parallel lids survived,
+# and the row grew as a z column.  Split, the eight arcs are all
+# planar to 1e-7 -- far cleaner than F-RD, every exponent here is
+# +-1/2 -- and land on AXIS-ALIGNED mirrors, two parallel pairs plus
+# the lids:
+#
+#     x=0, x=1        the lids       z = 0    and  z = 1/2
+#     y=0#0, y=1#1    the wall       x = 0
+#     y=0#1, y=1#2    the wall       y = c1
+#     y=0#2           the wall       x = c2
+#     y=1#0           the wall       y = y0
+#
+# so the patch is the chamber of a pmm PRISM -- the box
+# [0, c2] x [y0, c1] x [0, 1/2] -- and the quarter twist is exactly
+# what pairs the two wall families: the surface's S4 element maps
+# x = const mirrors to y = const mirrors, which forces the in-plane
+# chamber SQUARE, c2 = c1 - y0.  The offsets are solved by the same
+# 1D path integrals as F-RD's (`frdr_geometry`):
+#
+#     y0 = -0.1552897711479544      c2 = 0.23939048974052432
+#     c1 = c2 + y0                  c2 - (c1 - y0) = 9e-11
+#
+# and the square closing to 1e-10 is the twist-consistency check, not
+# an assumption -- c1 and c2 are measured independently.  The word
+# reflects the chamber through three of its walls: 8 copies, the
+# tetragonal translational cell 2 c2 x 2 c2 x 1 (0.479 x 0.479 x 1),
+# which tiles by pure translation.  No Evolver datafile or nodal row
+# exists for the quarter-twisted variant (FRD2 is Wohlgemuth's
+# UNTWISTED F-RD relative), so the cross-checks here are internal:
+# the solved offsets against the meshed patch, the square residual,
+# the watertightness of the assembled cell -- and the twist itself,
+# measured on the finished cell: the rotoreflection by 90 degrees
+# about the vertical line (0, c1) with z -> 1/2 - z maps the mesh to
+# itself to a median 9e-4 of the edge, while any wrong axis or wrong
+# z-map is 40x worse.
+_FRDR_Y0 = -0.1552897711479544
+_FRDR_C2 = 0.23939048974052432
+_SPECS['FRDR'].update(
+    tsplits=(0.5 - _FRDR_B, 0.5 - _FRDR_A),
+    exact_planes={
+        'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+        'y=0#0': (1.0, 0.0, 0.0), 'y=0#1': (0.0, 1.0, 0.0),
+        'y=0#2': (1.0, 0.0, 0.0),
+        'y=1#0': (0.0, 1.0, 0.0), 'y=1#1': (1.0, 0.0, 0.0),
+        'y=1#2': (0.0, 1.0, 0.0)},
+    exact_offsets={
+        'x=0': 0.0, 'x=1': 0.5,
+        'y=0#0': 0.0, 'y=1#1': 0.0,
+        'y=0#1': _FRDR_C2 + _FRDR_Y0, 'y=1#2': _FRDR_C2 + _FRDR_Y0,
+        'y=0#2': _FRDR_C2, 'y=1#0': _FRDR_Y0},
+    letters={'e': 'x=1', 'm': 'y=0#2', 'n': 'y=0#1'},
+    words=('emn',),
+    cell_basis=(2.0 * _FRDR_C2, 2.0 * _FRDR_C2, 1.0))
+
+
+def frdr_geometry(n=8000):
+    """Re-derive F-RD(r)'s mirror offsets from the Weierstrass data.
+
+    Returns (y0, c1, c2): the y = y0 wall through the top-left corner
+    (up the smooth left edge to tau/2), and the y = c1 and x = c2
+    walls at midpoints of the [a, b] and [b, 1/2] arcs, reached
+    through the interior so no branch point sits on the path.  The
+    quarter twist forces c2 = c1 - y0 (the square chamber), which the
+    self-test checks rather than assumes.
+    """
+    sp = _SPECS['FRDR']
+    a = float(sp['a'])
+    b = 0.25 - a
+    tau = sp['tau']
+    q = np.exp(1j * np.pi * tau)
+    terms = sp['terms'](a, tau)
+
+    def logA(z):
+        L = np.zeros(z.shape, dtype=complex)
+        for sh, c in terms:
+            lg = np.log(_theta11(z - sh, q))
+            L = L + c * (np.real(lg) + 1j * np.unwrap(np.imag(lg)))
+        return L
+
+    def leg(zs):
+        mids = 0.5 * (zs[:-1] + zs[1:])
+        L = logA(mids) + complex(sp['const'])
+        g, inv = np.exp(L), np.exp(-L)
+        dz = np.diff(zs)
+        return (float(np.real(np.sum(0.5 * (inv - g) * dz))),
+                float(np.real(np.sum(0.5j * (inv + g) * dz))))
+
+    y0 = leg(np.linspace(0.0, tau / 2.0, n + 1))[1]
+
+    def at(zst):
+        mid = tau / 4.0
+        p = np.concatenate([np.linspace(0.0, mid, n + 1),
+                            np.linspace(mid, zst + mid, n + 1)[1:],
+                            np.linspace(zst + mid, zst, n + 1)[1:]])
+        return leg(p)
+
+    c1 = at(0.5 * (a + b))[1]
+    c2 = at(0.5 * (b + 0.5))[0]
+    return y0, c1, c2
 
 
 # --------------------------------------------------------------------
@@ -1144,9 +1400,24 @@ _SPECS['FRDR']['period'] = (
 #   G0 = prod_k theta11(z - p_k)^(e_k/2) theta11(z + p_k)^(-e_k/2)
 #        * theta11(z - (d + tau/2))^(e4/2)
 #        * theta11(z + (d - tau/2))^(-e4/2),
-#   d  = -1/2 - p1 + p2 + p3   (Abel's theorem),
 #
 # and G = G0 / G0(0), a Lopez-Ros normalisation folded into `const`.
+# The fourth point d is FIXED by Abel's theorem, but its formula
+# depends on the SIGN VECTOR -- the divisor sums with the exponents'
+# signs -- and each notebook writes its own `qq1`:
+#
+#   (-1,1, 1,-1)   d = -1/2 - p1 + p2 + p3     Box_Type ... 1_0_0_1
+#   (-1,1,-1, 1)   d =        p1 - p2 + p3     Box_Type ... 1_0_1_0
+#   (-1,1,-1,-1)   d =  1/2 - p1 + p2 - p3     Box_Type ... 1_0_1_1
+#
+# This engine originally derived d from the FIRST formula for all
+# three rows.  For (+-|+) that is correct; for the other two it put
+# the fourth branch point in the wrong place, which is a different
+# (non-closing) surface: built and measured, their top-edge mirror
+# arcs came out rotated 44.7 and 21.6 degrees against the axis-aligned
+# bottom ones -- no discrete group contains both -- while (+-|+)'s
+# mirrors formed a perfect box.  So d is now transcribed per row from
+# the notebook's own qq1, exactly like every other solved constant.
 # Every exponent appears with both signs, so the sum is zero by
 # construction rather than by luck.
 #
@@ -1160,14 +1431,15 @@ _SPECS['FRDR']['period'] = (
 # - V. Ramos Batista and collaborators, for the (+++|-) member; see the
 #   triply-periodic Costa row.
 
-def _box_spec(label, e, p1, p2, p3, tau, nb=None):
+def _box_spec(label, e, p1, p2, p3, tau, d, nb=None):
     """One member of the box-symmetry series, from its sign vector.
 
-    `d` is DERIVED from Abel's theorem rather than passed, because it is
-    not free: the divisor has to sum correctly for g to exist at all.
+    `d` is REQUIRED, not derived: it is fixed by Abel's theorem, but
+    the relation is sign-vector-dependent (see the qq1 table above),
+    and deriving it here from one formula is exactly the mistake that
+    shipped two wrong surfaces.  Pass the notebook's own expression.
     """
     e1, e2, e3, e4 = (float(x) for x in e)
-    d = -0.5 - p1 + p2 + p3
 
     def terms(a, tau, _p=(p1, p2, p3), _e=(e1, e2, e3, e4), _d=d):
         q1, q2, q3 = _p
@@ -1190,18 +1462,151 @@ def _box_spec(label, e, p1, p2, p3, tau, nb=None):
     return sp
 
 
+# The (p1, p2, p3, tau) of each row are the notebook's own solved
+# member -- (+-|+) states its 4-tuple outright, the other two set
+# tau = 0.8i and tabulate (p2, p3) against p1, and the rows below are
+# the table entries at p1 = 0.13 and 0.06.  d follows each notebook's
+# qq1, per the table above.
 _SPECS['BOX_1001'] = _box_spec(
     "Box Type (+-|+) (exact, genus 5)", (-1, 1, 1, -1),
     0.1, 0.2, 0.46802126852411385, 0.42287483495076733j,
+    d=-0.5 - 0.1 + 0.2 + 0.46802126852411385,
     nb="Box_Type_g_5_-_1_0_0_1_.nb")
 _SPECS['BOX_1010'] = _box_spec(
     "Box Type (+-+|-) (exact, genus 5)", (-1, 1, -1, 1),
     0.13, 0.2540625168102844, 0.40751143412603386, 0.8j,
+    d=0.13 - 0.2540625168102844 + 0.40751143412603386,
     nb="Box_Type_g_5_-_1_0_1_0_.nb")
 _SPECS['BOX_1011'] = _box_spec(
     "Box Type (+-+|+) (exact, genus 5)", (-1, 1, -1, -1),
     0.06, 0.25007414956744817, 0.43994933834214295, 0.8j,
+    d=0.5 - 0.06 + 0.25007414956744817 - 0.43994933834214295,
     nb="Box_Type_g_5_-_1_0_1_1_.nb")
+
+# The box cells.  Same defect as F-RD and F-RD(r), same cure: the
+# bottom edge runs through all three branch points +-p1, +-p2, +-p3
+# and the top edge through the fourth at d + tau/2, so read whole both
+# classified as 'neither', only the lids survived, and all three rows
+# grew as z columns.  Split, the eight arcs are planar to 1e-8 and --
+# with d corrected -- land on the axis-aligned walls the series is
+# named for: the patch is the chamber of a pmm prism over the
+# rectangle [xL, xR] x [yT, 0], and reflecting it through three walls
+# (word 'emn', 8 copies) closes the ORTHORHOMBIC translational cell
+# 2(xR - xL) x 2|yT| x 1, which tiles by pure translation.
+#
+# Which arc lies on which wall differs per sign vector -- (+-|+) puts
+# its second x-wall arc on the bottom edge where the other two put
+# both bottom x-arcs on the SAME wall -- so the maps below are per
+# row, read off the classified patch.  The wall offsets are SOLVED by
+# the same 1D path integrals as F-RD's and F-RD(r)'s (`box_geometry`),
+# and the redundancy is the consistency check: two independent arcs
+# land on one wall to 1.4e-9 or better, and the y = 0 wall's second
+# arc closes to 7e-10, all three rows.  No Evolver datafile or nodal
+# row exists for any box type, so the checks are internal, as for
+# F-RD(r).  (BOX_1011's cell comes out 0.758817 x 0.758674 x 1 --
+# nearly but measurably NOT square: nothing in its symmetry forces
+# equality, unlike F-RD(r)'s quarter twist.)
+_BOX_WALLS = {
+    # key: (xL, xR, yT); yB = 0 exactly (the base corner sits on it)
+    'BOX_1001': (-0.0680466833118, 0.1187855301121, -0.2179935317806),
+    'BOX_1010': (-0.0767466285526, 0.2905562716677, -0.3867431090808),
+    'BOX_1011': (-0.0537367583924, 0.3256717836098, -0.3793368720094),
+}
+_BOX_TOPMAP = {
+    # which wall each TOP arc lies on: (y=1#0, y=1#1)
+    'BOX_1001': ('xR', 'yT'),
+    'BOX_1010': ('yT', 'xR'),
+    'BOX_1011': ('xR', 'yT'),
+}
+_BOX_BOT3 = {'BOX_1001': 'xR', 'BOX_1010': 'xL', 'BOX_1011': 'xL'}
+for _k in ('BOX_1001', 'BOX_1010', 'BOX_1011'):
+    _sp = _SPECS[_k]
+    _p1 = float(_sp['a'])
+    _shifts = [s for s, _c in _sp['terms'](_p1, _sp['tau'])]
+    _reals = sorted({round(float(np.real(s)), 12) for s in _shifts
+                     if abs(np.imag(s)) < 1e-12 and np.real(s) > 0})
+    _dcut = sorted({round(float(np.real(s)), 12) for s in _shifts
+                    if abs(np.imag(s)) > 1e-12
+                    and 0.0 < np.real(s) < 0.5})[0]
+    _xL, _xR, _yT = _BOX_WALLS[_k]
+    _off = {'xL': _xL, 'xR': _xR, 'yT': _yT}
+    _nrm = {'xL': (1.0, 0.0, 0.0), 'xR': (1.0, 0.0, 0.0),
+            'yT': (0.0, 1.0, 0.0)}
+    _t0, _t1 = _BOX_TOPMAP[_k]
+    _b3 = _BOX_BOT3[_k]
+    _sp['splits'] = tuple(_reals)
+    _sp['split_edge'] = 'y0'
+    _sp.update(
+        cell_basis=(2.0 * (_xR - _xL), 2.0 * abs(_yT), 1.0),
+        tsplits=(_dcut,),
+        exact_planes={
+            'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+            'y=0#0': (0.0, 1.0, 0.0), 'y=0#2': (0.0, 1.0, 0.0),
+            'y=0#1': (1.0, 0.0, 0.0), 'y=0#3': _nrm[_b3],
+            'y=1#0': _nrm[_t0], 'y=1#1': _nrm[_t1]},
+        exact_offsets={
+            'x=0': 0.0, 'x=1': 0.5,
+            'y=0#0': 0.0, 'y=0#2': 0.0,
+            'y=0#1': _xL, 'y=0#3': _off[_b3],
+            'y=1#0': _off[_t0], 'y=1#1': _off[_t1]},
+        letters={'e': 'x=1',
+                 'm': ('y=0#3' if _b3 == 'xR'
+                       else ('y=1#0' if _t0 == 'xR' else 'y=1#1')),
+                 'n': 'y=1#0' if _t0 == 'yT' else 'y=1#1'},
+        words=('emn',))
+del _k, _sp, _p1, _shifts, _reals, _dcut, _xL, _xR, _yT, _off, _nrm
+del _t0, _t1, _b3
+
+
+def box_geometry(key, n=8000):
+    """Re-derive a box row's wall offsets from the Weierstrass data.
+
+    Returns {arc name: (x1, x2)} for one probe point on each of the
+    five split arcs (both bottom x-wall arcs, the bottom y = 0 return
+    arc, and the two top arcs), by the same interior 1D path integrals
+    as `frd_geometry` / `frdr_geometry`.  Probing every arc rather
+    than every wall is what makes the redundancy testable: two arcs
+    that claim one wall must integrate to the same offset, and the
+    y = 0 return arc must come back to zero.
+    """
+    sp = _SPECS[key]
+    p1 = float(sp['a'])
+    tau = sp['tau']
+    terms = sp['terms'](p1, tau)
+    q = np.exp(1j * np.pi * tau)
+    shifts = [s for s, _c in terms]
+    p1_, p2_, p3_ = sorted({round(float(np.real(s)), 12) for s in shifts
+                            if abs(np.imag(s)) < 1e-12
+                            and np.real(s) > 0})
+    d = sorted({round(float(np.real(s)), 12) for s in shifts
+                if abs(np.imag(s)) > 1e-12
+                and 0.0 < np.real(s) < 0.5})[0]
+
+    def logA(z):
+        L = np.zeros(z.shape, dtype=complex)
+        for sh, c in terms:
+            lg = np.log(_theta11(z - sh, q))
+            L = L + c * (np.real(lg) + 1j * np.unwrap(np.imag(lg)))
+        return L
+
+    def at(zst):
+        mid = tau / 4.0
+        xr = float(np.real(zst))
+        p = np.concatenate([np.linspace(0.0, mid, n + 1),
+                            np.linspace(mid, xr + mid, n + 1)[1:],
+                            np.linspace(xr + mid, zst, n + 1)[1:]])
+        mids = 0.5 * (p[:-1] + p[1:])
+        L = logA(mids) + complex(sp['const'])
+        g, inv = np.exp(L), np.exp(-L)
+        dz = np.diff(p)
+        return (float(np.real(np.sum(0.5 * (inv - g) * dz))),
+                float(np.real(np.sum(0.5j * (inv + g) * dz))))
+
+    return {'y=0#1': at(0.5 * (p1_ + p2_)),
+            'y=0#2': at(0.5 * (p2_ + p3_)),
+            'y=0#3': at(0.5 * (p3_ + 0.5)),
+            'y=1#0': at(0.5 * d + tau / 2.0),
+            'y=1#1': at(0.5 * (d + 0.5) + tau / 2.0)}
 
 
 def _cluster_path(z0, z1, n=2000):
@@ -1247,7 +1652,7 @@ def _tpc_terms(a, tau):
 
 
 _SPECS['TRIPLY_COSTA'] = _prod_spec(
-    "Triply Periodic Costa (Batista, exact, genus 5)",
+    "Triply Periodic Costa (Batista, exact fundamental piece, genus 5)",
     tau=_TPC_TAU, a=_TPC_A, terms=_tpc_terms,
     const=0.25j * math.pi,
     nb="Triply_Costa_g_4_straight.nb")
@@ -1274,6 +1679,171 @@ _SPECS['SIMOES_BATISTA'] = _prod_spec(
     const=0.25j * math.pi,
     nb="Sim-es-Batista-g-7.nb")
 _SPECS['SIMOES_BATISTA']['test_res'] = (60, 90)
+
+
+# --------------------------------------------------------------------
+# Three more cells by the F-RD recipe: rPD, C(H), Simoes-Batista
+# --------------------------------------------------------------------
+# The closure tell (see the F-RD block) convicted these three of the
+# same defect: faces grow with reflection depth while the in-plane
+# extent collapses -- a frieze, not a cell.  Split at their branch
+# points and probed by the same 1D path integrals (`spec_wall_probes`),
+# every boundary arc is a planar geodesic on a small set of walls, so
+# each patch is a kaleidoscope prism chamber and a word closes it.
+#
+#   rPD   was built on a domain TWO torus periods wide, xlim
+#       (-0.5, 1.5) -- its Gauss map has x-period 1, so the patch
+#       contained a translated copy of itself (both vertical edges
+#       probe to the same x1, offset by the pure in-plane translation
+#       (0, -1.135, 0)), and every reflection of it partially
+#       OVERLAPPED it: 1064 duplicate faces from the very first word
+#       tried.  The domain is now halved to one period, (-0.5, 0.5),
+#       whose right edge is the midline fixed by z -> 1 - conj(z):
+#       probed, it lies in the vertical plane y = c to an exact zero
+#       singular value.  The half patch is a true chamber: lids z = 0
+#       and z = -Im(tau)/2 on the horizontal edges (theta = pi/2 puts
+#       the height on -Im z; no split needed, the branch point on the
+#       bottom edge does not break the plane), the -30 degree wall
+#       through the base corner (probe residual 8e-17) on x=0, and
+#       the y = c wall on x=1 -- normals 120 degrees apart, a (3,3,3)
+#       wedge, so the word is a lid times the fan: 12 copies, a
+#       hexagonal prism cell.
+#   C(H)  is the trigonal twin of the trigroup rows: two hexagonal
+#       diagonals plus an x wall bound a (3,3,3) triangle -- probed
+#       equilateral to 1e-9, though that is forced by the directions
+#       -- and the real consistency checks are the two wall PAIRS:
+#       the x wall carries two independent arcs agreeing to 2.6e-10,
+#       and the zero-offset diagonal carries two agreeing to 3e-10.
+#   Simoes-Batista  is the square pmm box of its F-RD(r) kinship:
+#       three arcs on the x = xR wall agree to 9e-10, three on y = 0
+#       to 9e-10, and the solved box comes out SQUARE to 3.3e-10
+#       (xR - xL = yT), which its S4 symmetry forces -- measured, not
+#       assumed, since the three walls are solved independently.
+_RPD_C = -0.9710767107707       # the +30 degree wall, solved
+_SPECS['RPD'].update(
+    # QUARTER of the original domain.  One halving removes the torus
+    # period the old two-period domain wrapped (its Gauss map has
+    # x-period 1); the second halving removes the internal mirror
+    # fixed by z -> -conj(z): the line x = 0 probes onto the +30
+    # degree wall with an exactly zero third singular value, so
+    # [-0.5, 0] is the true chamber, bounded by the -30 wall through
+    # the base corner, the +30 wall at _RPD_C, and the two lids.
+    xlim=(-0.5, 0.0),
+    # weld: 1e-7, far below the shared ladder's entries.  The graded
+    # rows hug the walls so closely here that a 1e-5 weld STITCHES a
+    # copy to its mirror image one row in from the arc -- 355 over-
+    # shared edges at n = 100, 980 at 160 -- while the true seams are
+    # projected-exact and merge at any tolerance at all.
+    weld=1e-7,
+    exact_planes={
+        'y=0': (0.0, 0.0, 1.0), 'y=1': (0.0, 0.0, 1.0),
+        'x=0': (SQRT3, -1.0, 0.0), 'x=1': (SQRT3, 1.0, 0.0)},
+    exact_offsets={
+        'y=0': 0.0, 'y=1': -2.0 * 0.3908504810515956,
+        'x=0': 0.0, 'x=1': _RPD_C},
+    letters={'a': 'y=0', 'b': 'x=0', 'c': 'x=1'},
+    words=('abcbcbc',))
+
+_CH_C1 = 0.3840920157           # the second diagonal wall, solved
+_CH_C2 = -0.4221592879          # the x wall, solved (two-arc pair)
+_SPECS['CH'].update(
+    splits=(0.25 - _CH_SS, 0.25 + _CH_SS), split_edge='y0',
+    tsplits=(0.25,),
+    exact_planes={
+        'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+        'y=0#0': (1.0, SQRT3, 0.0), 'y=1#1': (1.0, SQRT3, 0.0),
+        'y=0#1': (1.0, -SQRT3, 0.0),
+        'y=0#2': (1.0, 0.0, 0.0), 'y=1#0': (1.0, 0.0, 0.0)},
+    exact_offsets={
+        'x=0': 0.0, 'x=1': 0.5,
+        'y=0#0': 0.0, 'y=1#1': 0.0,
+        'y=0#1': _CH_C1,
+        'y=0#2': _CH_C2, 'y=1#0': _CH_C2},
+    letters={'e': 'x=1', 'b': 'y=0#0', 'c': 'y=0#1'},
+    words=('ebcbcbc',))
+
+_SB_XR = 0.0438544112295
+_SB_XL = -0.9275193665379
+_SB_YT = 0.9713737774419
+_SPECS['SIMOES_BATISTA'].update(
+    splits=(_SB_A, 0.25, 0.5 - _SB_A), split_edge='y0',
+    tsplits=(_SB_B, 0.25, 0.5 - _SB_B),
+    exact_planes={
+        'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+        'y=0#0': (0.0, 1.0, 0.0), 'y=0#2': (0.0, 1.0, 0.0),
+        'y=1#0': (0.0, 1.0, 0.0),
+        'y=0#1': (1.0, 0.0, 0.0), 'y=0#3': (1.0, 0.0, 0.0),
+        'y=1#3': (1.0, 0.0, 0.0),
+        'y=1#1': (1.0, 0.0, 0.0), 'y=1#2': (0.0, 1.0, 0.0)},
+    exact_offsets={
+        'x=0': 0.0, 'x=1': 0.5,
+        'y=0#0': 0.0, 'y=0#2': 0.0, 'y=1#0': 0.0,
+        'y=0#1': _SB_XR, 'y=0#3': _SB_XR, 'y=1#3': _SB_XR,
+        'y=1#1': _SB_XL, 'y=1#2': _SB_YT},
+    letters={'e': 'x=1', 'm': 'y=1#1', 'n': 'y=1#2'},
+    words=('emn',),
+    cell_basis=(2.0 * (_SB_XR - _SB_XL), 2.0 * _SB_YT, 1.0))
+
+
+def spec_wall_probes(key, n=8000):
+    """One interior 1D path-integral probe per boundary arc.
+
+    The generic form of `frd_geometry` / `frdr_geometry` /
+    `box_geometry`'s wall solver: cuts are read off the spec's own
+    singularities, the path starts at the patch's true base corner
+    (xlim[0], 0), routes through the interior at quarter height, and
+    the associate angle is applied -- rPD needs that, its theta of
+    pi/2 is what puts the lids on the horizontal edges.  Returns
+    {arc name: (x1, x2, x3)}, with 'x=0'/'x=1' probed at mid height.
+    """
+    sp = _SPECS[key]
+    a = float(sp['a'])
+    tau = sp['tau']
+    terms = sp['terms'](a, tau)
+    q = np.exp(1j * np.pi * tau)
+    x0, x1l = sp['xlim']
+    y1 = sp['ylim'](tau)[1]
+    rot = np.exp(1j * float(sp.get('theta', 0.0)))
+    sing = spec_singularities(key)
+    bot = sorted(px for (px, py) in sing if abs(py) < 1e-9
+                 and x0 + 1e-9 < px < x1l - 1e-9)
+    top = sorted(px for (px, py) in sing if abs(py - y1) < 1e-9
+                 and x0 + 1e-9 < px < x1l - 1e-9)
+
+    def logA(z):
+        L = np.zeros(z.shape, dtype=complex)
+        for sh, c in terms:
+            lg = np.log(_theta11(z - sh, q))
+            L = L + c * (np.real(lg) + 1j * np.unwrap(np.imag(lg)))
+        return L
+
+    def at(zst):
+        z00 = complex(x0, 0.0)
+        Y = 1j * y1 / 4.0
+        xr = float(np.real(zst))
+        legs = [np.linspace(z00, z00 + Y, n + 1),
+                np.linspace(z00 + Y, xr + Y, n + 1)[1:]]
+        if abs(float(np.imag(zst)) - float(np.imag(Y))) > 1e-12:
+            legs.append(np.linspace(xr + Y, zst, n + 1)[1:])
+        p = np.concatenate(legs)
+        mids = 0.5 * (p[:-1] + p[1:])
+        L = logA(mids) + complex(sp['const'])
+        g, inv = np.exp(L), np.exp(-L)
+        dz = np.diff(p)
+        return (float(np.real(np.sum(0.5 * (inv - g) * rot * dz))),
+                float(np.real(np.sum(0.5j * (inv + g) * rot * dz))),
+                float(np.real(np.sum(rot * dz))))
+
+    out = {}
+    cuts_b = [x0] + bot + [x1l]
+    for k in range(len(cuts_b) - 1):
+        out['y=0#%d' % k] = at(0.5 * (cuts_b[k] + cuts_b[k + 1]))
+    cuts_t = [x0] + top + [x1l]
+    for k in range(len(cuts_t) - 1):
+        out['y=1#%d' % k] = at(0.5 * (cuts_t[k] + cuts_t[k + 1]) + 1j * y1)
+    out['x=0'] = at(complex(x0) + 1j * y1 / 2.0)
+    out['x=1'] = at(complex(x1l) + 1j * y1 / 2.0)
+    return out
 
 
 # --------------------------------------------------------------------
@@ -1363,24 +1933,40 @@ def spec_curves(key, P):
     be assembled at all.
     """
     sp = _SPECS[key]
-    curves = [('x=0', P[0, :]), ('x=1', P[-1, :]), ('y=1', P[:, -1])]
+    curves = [('x=0', P[0, :]), ('x=1', P[-1, :])]
     splits = sp.get('splits', ())
+    tsplits = sp.get('tsplits', ())
+    if not tsplits:
+        curves.append(('y=1', P[:, -1]))
     if not splits:
         curves.append(('y=0', P[:, 0]))
-        return _split_vertical_edges(key, P, curves)
+        if not tsplits:
+            return _split_vertical_edges(key, P, curves)
     xs = _spec_nodes(key, P.shape[0])[0]
     x1 = sp['xlim'][1]
-    edge = P[:, 0] if sp.get('split_edge', 'y0') == 'y0' else P[:, -1]
-    # Named by SEGMENT INDEX, not by formatted coordinates: the graded
-    # nodes put the first one at -2.8e-17 rather than 0, which formats
-    # as "-2.78e-17" and silently stopped matching the spec's element
-    # list -- dropping a generator and with it the whole assembly.
-    lo = 0
-    for k, c in enumerate(list(splits) + [x1]):
-        hi = int(np.argmin(np.abs(xs - c)))
-        if hi - lo >= 3:
-            curves.append(('y=0#%d' % k, edge[lo:hi + 1]))
-        lo = hi
+
+    def _cut(edge, cuts, fmt):
+        # Named by SEGMENT INDEX, not by formatted coordinates: the
+        # graded nodes put the first one at -2.8e-17 rather than 0,
+        # which formats as "-2.78e-17" and silently stopped matching
+        # the spec's element list -- dropping a generator and with it
+        # the whole assembly.
+        lo = 0
+        for k, c in enumerate(list(cuts) + [x1]):
+            hi = int(np.argmin(np.abs(xs - c)))
+            if hi - lo >= 3:
+                curves.append((fmt % k, edge[lo:hi + 1]))
+            lo = hi
+
+    if splits:
+        edge = P[:, 0] if sp.get('split_edge', 'y0') == 'y0' else P[:, -1]
+        _cut(edge, splits, 'y=0#%d')
+    # A spec may split the TOP edge too.  F-RD needs it: both of its
+    # horizontal edges run through two branch points each, so each is
+    # three symmetry elements, and read whole both classify as
+    # 'neither' -- which is how its in-plane generators got lost.
+    if tsplits:
+        _cut(P[:, -1], tsplits, 'y=1#%d')
     return curves
 
 
@@ -1423,7 +2009,33 @@ def _split_vertical_edges(key, P, curves):
 # the group order, which the word reaches from three spellings alike.
 _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
-                'RII': (64, 'Evolver x2')}
+                'RII': (64, 'Evolver x2'),
+                # {1,e}{1,m}{1,n}{1,a,b,ab}: 2mm at the cube centre's
+                # vertical axis times three face reflections.  Cross-
+                # checked against Brakke: FRDadj.fe fills the same
+                # conventional cell with 192 copies of a patch that is
+                # a SIXTH of this one (his is 1/192 of the cell, ours
+                # 1/32 -- one chamber of the (4,4,2) prism).
+                'FRD_EXACT': (32, 'group'),
+                # {1,e}{1,m}{1,n}: the pmm prism chamber reflected
+                # through three of its walls.  No Evolver datafile
+                # exists for the quarter-twisted variant, so the count
+                # is group order, not an Evolver run.
+                'FRDR': (8, 'group'),
+                # The box types are the same chamber-through-three-
+                # walls construction; no Evolver datafiles exist.
+                'BOX_1001': (8, 'group'),
+                'BOX_1010': (8, 'group'),
+                'BOX_1011': (8, 'group'),
+                # A lid times a (3,3,3) fan: 2 x 6.  rPD's hexagonal
+                # prism and C(H)'s are the same shape of word the
+                # trigroup rows use, with the fan order falling out of
+                # the 60-degree wall pair.
+                'RPD': (12, 'group'),
+                'CH': (12, 'group'),
+                # Simoes-Batista is the square pmm box of its F-RD(r)
+                # kinship: chamber through three walls.
+                'SIMOES_BATISTA': (8, 'group')}
 
 
 def spec_modulus_range(key):
@@ -1533,7 +2145,13 @@ def spec_declared_elements(key, P):
 
     The direction is exact; the placement is MEASURED as the median over
     the curve -- median rather than mean because the branch-point end is
-    the part that is wrong.
+    the part that is wrong.  A spec may go further and DECLARE the
+    placement too, through `exact_offsets` ({curve: plane offset along
+    the unit normal}).  F-RD needs that: its quadrature error displaces
+    two whole boundary arcs off their true planes by O(1/n) -- a bulk
+    shift the median faithfully reports -- so a measured offset would
+    bend the assembled cell, while the true offsets are known exactly
+    from the solved cubic geometry.
 
     Returns `{curve: (kind, direction, reference)}` where `reference` is
     the plane offset for a mirror and a point on the line for a
@@ -1542,6 +2160,7 @@ def spec_declared_elements(key, P):
     sp = _SPECS[key]
     planes = sp.get('exact_planes') or {}
     axes = sp.get('exact_axes') or {}
+    offs = sp.get('exact_offsets') or {}
     if not planes and not axes:
         return None
     curves = dict(spec_curves(key, P))
@@ -1553,6 +2172,7 @@ def spec_declared_elements(key, P):
         n = np.asarray(raw, dtype=float)
         n = n / np.linalg.norm(n)
         out[name] = ('mirror', n,
+                     float(offs[name]) if name in offs else
                      float(np.median(np.asarray(C, dtype=float) @ n)))
     for name, raw in axes.items():
         C = curves.get(name)
@@ -1602,6 +2222,7 @@ def _curve_indices(key, P):
            'x=1': (np.full(nv, nu - 1), np.arange(nv)),
            'y=1': (np.arange(nu), np.full(nu, nv - 1))}
     splits = sp.get('splits', ())
+    tsplits = sp.get('tsplits', ())
     col = 0 if sp.get('split_edge', 'y0') == 'y0' else nv - 1
     for nm in (_SPECS[key].get('vsplits') or ()):
         row = P[0, :] if nm == 'x=0' else P[-1, :]
@@ -1614,16 +2235,25 @@ def _curve_indices(key, P):
         idx[nm + '#1'] = (np.full(nv - j, i0), np.arange(j, nv))
     if not splits:
         idx['y=0'] = (np.arange(nu), np.full(nu, col))
-        return idx
+        if not tsplits:
+            return idx
     xs = _spec_nodes(key, nu)[0]
     x1 = sp['xlim'][1]
-    lo = 0
-    for k, c in enumerate(list(splits) + [x1]):
-        hi = int(np.argmin(np.abs(xs - c)))
-        if hi - lo >= 3:
-            idx['y=0#%d' % k] = (np.arange(lo, hi + 1),
-                                 np.full(hi + 1 - lo, col))
-        lo = hi
+
+    def _cut(cuts, fmt, jcol):
+        lo = 0
+        for k, c in enumerate(list(cuts) + [x1]):
+            hi = int(np.argmin(np.abs(xs - c)))
+            if hi - lo >= 3:
+                idx[fmt % k] = (np.arange(lo, hi + 1),
+                                np.full(hi + 1 - lo, jcol))
+            lo = hi
+
+    if splits:
+        _cut(splits, 'y=0#%d', col)
+    if tsplits:
+        idx.pop('y=1', None)
+        _cut(tsplits, 'y=1#%d', nv - 1)
     return idx
 
 
@@ -1729,7 +2359,17 @@ def spec_word_assemble(key, P):
         V = np.concatenate(Vs, 0)
         Q = np.concatenate(Qs, 0)
         span = float(np.max(V.max(0) - V.min(0))) or 1.0
-        for tol in (1e-5, 3e-5, 1e-4, 3e-4, 1e-6):
+        # A spec whose declared weld is FINER than the ladder's first
+        # rung gets it tried first.  rPD needs that: its graded rows
+        # hug the walls so closely that 1e-5 stitches copies to their
+        # mirror images one row in from the arc, while the projected
+        # seams themselves merge at any tolerance.  Rows with weld
+        # at or above 1e-5 (H'-T's 3e-5) keep the ladder exactly as
+        # it was, so nothing already shipped moves.
+        ladder = (1e-5, 3e-5, 1e-4, 3e-4, 1e-6)
+        if _weld_tol(key) < 1e-5:
+            ladder = (_weld_tol(key),) + ladder
+        for tol in ladder:
             Vw, Qw = _weld(V, Q, tol * span)
             Qw = np.asarray(Qw)
             if _assembly_ok(Vw, Qw):
@@ -2040,7 +2680,7 @@ def _spec_axes(key, nu, nv):
     # a spec may also FORCE a cut that is not singular, so that a
     # boundary curve splits exactly on a node (CLP's y = 0 edge is two
     # different symmetry elements either side of x = a)
-    for c in sp.get('splits', ()):
+    for c in tuple(sp.get('splits', ())) + tuple(sp.get('tsplits', ())):
         xsing.setdefault(round(float(c), 12), 0.0)
 
     ysing = {}
@@ -2052,8 +2692,34 @@ def _spec_axes(key, nu, nv):
     return xs, wx, xspan, ys, wy, yspan
 
 
+# The x axes actually USED to build each patch, keyed by spec state and
+# node count.  `spec_curves` and `_curve_indices` receive only the
+# point grid P, so they used to RE-DERIVE the axis from P.shape[0] --
+# but the graded allocator does not return exactly the node count it is
+# asked for, so a patch built at nu = 60 has 59 rows, and re-gradings
+# at 59 lands on a DIFFERENT grid (F-RD: 51 nodes, 0.11 max
+# displacement).  Every split index found against that wrong axis was
+# wrong: F-RD's bottom edge lost its last eight rows to no curve at
+# all, which left them unprojected and opened slit-shaped seams in the
+# assembled cell, and S'-S'' and R-II mis-cut their edges at the
+# default resolution 30.  Recording the real axis closes the loop.
+_AXES_SEEN = {}
+
+
+def _record_axes(key, xs, wx):
+    _AXES_SEEN.setdefault((key, _spec_state(key)), {})[len(xs)] = (xs, wx)
+
+
 def _spec_nodes(key, nu):
-    """The x nodes and their dx/du weights for a spec patch."""
+    """The x nodes and their dx/du weights for a spec patch.
+
+    Prefers the axis a patch of this length was actually BUILT with
+    (see `_AXES_SEEN` above); re-grading is only a fallback for the
+    cold-cache case, where the old behaviour is the best available.
+    """
+    rec = _AXES_SEEN.get((key, _spec_state(key)), {}).get(int(nu))
+    if rec is not None:
+        return rec
     xs, wx, _xspan, _ys, _wy, _yspan = _spec_axes(key, nu, 8)
     return xs, wx
 
@@ -2099,6 +2765,7 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     # and it is not cosmetic: the sub-curves either side of a split are
     # different symmetry elements, and a node has to separate them.
     xs, wts, xspan, ys, wys, yspan = _spec_axes(key, nu, nv)
+    _record_axes(key, xs, wts)
 
     # BOTH ends of the y range are held off the edge, not just the
     # bottom.  The theta factors vanish on the lattice, and for the
@@ -2468,9 +3135,28 @@ def _assembly_ok(V, Q, tol=0.005):
     live = area > 1e-9 * float(np.median(area[area > 0.0]) or 1.0)
     if not live.any():
         return False
-    cen = P[live].mean(axis=1)
+    # The DUPLICATE census additionally ignores faces THINNER than its
+    # own dedup cell.  rPD's graded rows hug its walls so closely that
+    # a hairline face one row in from the arc and its mirror image
+    # are, geometrically, almost the same face -- centroids and
+    # vertices within a cell of each other while sharing none -- and
+    # no proximity test can tell that apart from a genuinely stacked
+    # sheet AT THAT SCALE.  Thickness can, and it is the exact
+    # criterion: only a face thinner than the cell can land in its
+    # neighbour's cell while merely abutting, while the leopard-spot
+    # failure this census exists for is made of FULL-SIZE faces
+    # (thickness ~ an edge length, thousands of cells).  The
+    # over-share and connectivity checks above still see every face.
     span = float(np.max(V.max(0) - V.min(0))) if len(V) else 1.0
-    key = np.round(cen / max(span * 1e-5, 1e-12)).astype(np.int64)
+    cellsz = max(span * 1e-5, 1e-12)
+    per = (np.linalg.norm(P[:, 1] - P[:, 0], axis=-1)
+           + np.linalg.norm(P[:, 2] - P[:, 1], axis=-1)
+           + np.linalg.norm(P[:, 3] - P[:, 2], axis=-1)
+           + np.linalg.norm(P[:, 0] - P[:, 3], axis=-1))
+    thickness = 2.0 * area / np.maximum(per, 1e-300)
+    dup_live = live & (thickness > 2.0 * cellsz)
+    cen = P[dup_live].mean(axis=1)
+    key = np.round(cen / cellsz).astype(np.int64)
     _u, inv, cnt = np.unique(key, axis=0, return_inverse=True,
                              return_counts=True)
     # A shared centroid CELL is not yet a duplicate.  The cell is a fixed
@@ -2486,7 +3172,7 @@ def _assembly_ok(V, Q, tol=0.005):
     # copies, or all 4 once welded.  Never exactly 2.  So requiring
     # NON-ADJACENCY separates the real failure from the meshing artifact
     # without touching the threshold.
-    live_idx = np.nonzero(live)[0]
+    live_idx = np.nonzero(dup_live)[0]
     dup = 0
     for cell in np.nonzero(cnt > 1)[0]:
         fs = live_idx[inv == cell]
@@ -2501,7 +3187,7 @@ def _assembly_ok(V, Q, tol=0.005):
             for j in range(i + 1, k):
                 if len(sets[i] & sets[j]) < 2:
                     dup += 1
-    if dup > tol * int(live.sum()):
+    if dup > tol * int(dup_live.sum()):
         return False
 
     # CONNECTEDNESS.  The docstring above has always said a component
@@ -2583,8 +3269,11 @@ def _spec_state(key, *_a, **_k):
     modulus changes.
     """
     sp = _SPECS[key]
+    # xlim too: rPD's domain was halved to one torus period, which
+    # changes the mesh without touching tau/a/const, and a cache keyed
+    # only on those would have handed back the old two-period patch.
     return (complex(sp['tau']), float(sp['a']),
-            complex(sp.get('const', 0)))
+            complex(sp.get('const', 0)), tuple(sp.get('xlim', ())))
 
 
 def _orbit_ok(V, Q):
@@ -2808,7 +3497,66 @@ def spec_reflect_tile(key, P, depth):
     return best[0], best[1]
 
 
-@_geom_cache.memoise(version=2, extra=_spec_state)
+def _array_cell(V, Q, basis, counts):
+    """Array a word-assembled cell on its own solved diagonal lattice.
+
+    The seams are exact -- opposite faces of these cells carry the
+    same projected arcs, vertex for vertex, because a reflection
+    restricted to its own plane IS the translation between opposite
+    faces -- so the weld tolerance is 1e-7 of the span, which merges
+    the seams and nothing else.  This is what `tile_periodic` cannot
+    do for these meshes: its period is the bbox (off by the corner
+    overhang) and its 1e-4 weld collapses the graded grid's clustered
+    vertices.  The result is verified: if a seam failed to weld or the
+    block is not one piece, the single cell is returned, never a pile.
+    """
+    cx, cy, cz = (int(max(1, c)) for c in counts)
+    B = np.asarray(basis, dtype=float)
+    Vs, Qs, base = [], [], 0
+    for i in range(cx):
+        for j in range(cy):
+            for k in range(cz):
+                off = np.array([(i - 0.5 * (cx - 1)) * B[0],
+                                (j - 0.5 * (cy - 1)) * B[1],
+                                (k - 0.5 * (cz - 1)) * B[2]])
+                Vs.append(V + off)
+                Qs.append(np.asarray(Q) + base)
+                base += len(V)
+    ncopy = len(Vs)
+    if ncopy == 1:
+        return V, Q
+    Vb = np.concatenate(Vs, 0)
+    Qb = np.concatenate(Qs, 0)
+    span = float(np.max(Vb.max(0) - Vb.min(0))) or 1.0
+    Vw, Qw = _weld(Vb, Qb, 1e-7 * span)
+    if len(Vw) >= ncopy * len(V):        # nothing welded: refuse
+        return V, Q
+    par = list(range(len(Vw)))
+
+    def _f(i):
+        while par[i] != i:
+            par[i] = par[par[i]]
+            i = par[i]
+        return i
+
+    for f in Qw:
+        r0 = _f(int(f[0]))
+        for x in f[1:]:
+            t = _f(int(x))
+            if t != r0:
+                par[t] = r0
+    if len({_f(int(i)) for f in Qw for i in f}) != 1:
+        return V, Q                      # not one piece: refuse
+    return Vw, Qw
+
+
+# version 3: split indices are now found against the axis the patch
+# was BUILT with (`_AXES_SEEN`), which changes the meshes wherever the
+# re-graded axis used to disagree with it.
+# version 5: the word ladder honours a sub-1e-5 declared weld and the
+# assembly rejector's duplicate census ignores hairline slivers --
+# neither enters `_spec_state`, so the version must carry the change.
+@_geom_cache.memoise(version=6, extra=_spec_state)
 def spec_build(key, cells, res_per_cell, scale, theta,
                arrangement='UNIT'):
     """Builder for one theta-family row, matching the TPMS_EXACT
@@ -2872,6 +3620,21 @@ def spec_build(key, cells, res_per_cell, scale, theta,
         if wa is not None:
             Vw, Qw, _ncopy, _word = wa
             Qw = _drop_degenerate(Vw, np.asarray(Qw))
+            # Cells X/Y/Z, for the rows whose cell sits on an
+            # AXIS-ALIGNED lattice with the periods solved (see
+            # `cell_basis`).  This is what `tile_periodic` cannot do
+            # for these meshes: its bbox period is off by the corner
+            # overhang and its 1e-4 weld collapses the graded grid's
+            # clustered vertices.  Here the periods are the DECLARED
+            # wall spacings -- and because opposite cell faces carry
+            # boundary arcs that are exact translates of each other
+            # (a reflection restricted to its own plane is the
+            # translation), the seams weld at 1e-7 of the span, far
+            # below any real feature.
+            basis = _SPECS[key].get('cell_basis')
+            if basis is not None and (cx > 1 or cy > 1 or cz > 1):
+                Vw, Qw = _array_cell(Vw, np.asarray(Qw), basis,
+                                     (cx, cy, cz))
             return _fit(Vw, [tuple(int(x) for x in q) for q in Qw], scale)
 
     built = None
@@ -3057,7 +3820,13 @@ def h_build(cells, res_per_cell, scale, theta):
     if isinstance(cells, (tuple, list)):
         cx, cy, cz = (int(max(1, c)) for c in (list(cells) + [1, 1, 1])[:3])
     else:
-        cx = cy = cz = max(1, int(cells))
+        # A SCALAR is the Reflections depth, same contract as
+        # `spec_build`: H closes its cell, so depth is inert.  It used
+        # to be read as a per-axis lattice count, which made the
+        # Reflections control silently build depth-cubed blocks --
+        # 8 cells at 2, 27 at 3 -- while the Cells fields did nothing.
+        # A lattice count arrives as a TUPLE.
+        cx = cy = cz = 1
     nu = max(24, int(round(res_per_cell)))
     nv = max(48, int(round(res_per_cell * 2.0)))
 
@@ -3460,6 +4229,151 @@ def _selftest():
           % (got_t if got_t is not None else float('nan'), want_t, resid,
              'OK' if good else 'FAIL'))
 
+    # F-RD's (a, tau) is a SOLVED PAIR -- the cubic member of the
+    # tF-RD family, not the notebook's demo values -- so both solved
+    # conditions are re-evaluated from the Weierstrass data.  Three
+    # residuals at the stored point: Weber's period condition, the
+    # cubic condition 2 x_m - c_u = 1/2, and the stored x_m itself;
+    # plus a bracket check that tau is an actual root, not a flat spot.
+    per0, xm0, cu0 = frd_geometry()
+    t0 = float(np.imag(_SPECS['FRD_EXACT']['tau']))
+    plo = frd_geometry(t=t0 - 0.01)[0]
+    phi = frd_geometry(t=t0 + 0.01)[0]
+    cubic = 2.0 * xm0 - cu0 - 0.5
+    good = (abs(per0) < 1e-8 and plo * phi < 0.0
+            and abs(cubic) < 1e-6 and abs(xm0 - _FRD_XM) < 1e-6)
+    ok &= good
+    print("hexagonal: F-RD cubic member -- period %.1e (sign change "
+          "%s), 2*x_m - c_u - 1/2 = %.1e, x_m %.10f (stored %.10f) %s"
+          % (per0, 'yes' if plo * phi < 0 else 'NO', cubic, xm0,
+             _FRD_XM, 'OK' if good else 'FAIL'))
+
+    # ...and the PATCH must agree with the declared planes, because the
+    # word route projects the boundary onto them: if the stored member
+    # drifted, the projection would silently bend the surface into the
+    # declared cube rather than fail.  The mid-arc offsets of the raw
+    # (unprojected) patch convict, and n = 181 is where they separate
+    # cleanly: quadrature drift on the worst arc is 4.5e-3 there, while
+    # the demo member a = 0.11 -- the pair this row used to ship, with
+    # its 7% tetragonal cell -- measures 1.6e-2.  (At n = 121 the two
+    # sit at 1.1e-2 and 1.7e-2, too close to gate on.)
+    Pf = _spec_patch('FRD_EXACT', 181, 181)
+    fcurves = dict(spec_curves('FRD_EXACT', Pf))
+    fdecl = spec_declared_elements('FRD_EXACT', Pf)
+    worst, worst_nm = 0.0, ''
+    for nm, (kind, v, r) in fdecl.items():
+        C = np.asarray(fcurves[nm], float)
+        m = len(C)
+        t_ = max(2, m // 5)
+        gap = abs(float(np.median(C[t_:m - t_] @ v)) - r)
+        if gap > worst:
+            worst, worst_nm = gap, nm
+    good = worst < 1.0e-2
+    ok &= good
+    print("hexagonal: F-RD raw patch sits on the declared mirrors "
+          "(worst arc %s at %.1e) %s"
+          % (worst_nm, worst, 'OK' if good else 'FAIL'))
+
+    # The assembled cell must actually be the CUBE the label promises.
+    Vf, Qf, nf, wf = spec_word_assemble('FRD_EXACT', _spec_patch(
+        'FRD_EXACT', 60, 60))
+    bbf = Vf.max(0) - Vf.min(0)
+    good = (nf == 32 and abs(bbf[0] / bbf[2] - 1.0) < 1e-3
+            and abs(bbf[1] / bbf[2] - 1.0) < 1e-3)
+    ok &= good
+    print("hexagonal: F-RD assembles a cubic cell %.6f x %.6f x %.6f "
+          "(%d copies) %s"
+          % (bbf[0], bbf[1], bbf[2], nf, 'OK' if good else 'FAIL'))
+
+    # F-RD(r)'s wall offsets are SOLVED constants too, so they are
+    # re-derived the same way, and the square-chamber residual is the
+    # quarter-twist consistency check: c1 and c2 are measured
+    # independently, and only the twist forces c2 = c1 - y0.
+    ry0, rc1, rc2 = frdr_geometry()
+    sq = rc2 - (rc1 - ry0)
+    good = (abs(ry0 - _FRDR_Y0) < 1e-6 and abs(rc2 - _FRDR_C2) < 1e-6
+            and abs(sq) < 1e-6)
+    ok &= good
+    print("hexagonal: F-RD(r) walls re-derive to y0 %.10f c2 %.10f "
+          "(stored %.10f %.10f), square residual %.1e %s"
+          % (ry0, rc2, _FRDR_Y0, _FRDR_C2, sq, 'OK' if good else 'FAIL'))
+
+    # ...and the assembled cell must be the square tetragonal prism.
+    Vr_, Qr_, nr_, wr_ = spec_word_assemble('FRDR', _spec_patch(
+        'FRDR', 60, 60))
+    bbr = Vr_.max(0) - Vr_.min(0)
+    good = (nr_ == 8 and abs(bbr[0] / bbr[1] - 1.0) < 1e-3
+            and abs(bbr[0] - 2.0 * _FRDR_C2) < 1e-3
+            and abs(bbr[2] - 1.0) < 1e-6)
+    ok &= good
+    print("hexagonal: F-RD(r) assembles its tetragonal cell "
+          "%.6f x %.6f x %.6f (%d copies) %s"
+          % (bbr[0], bbr[1], bbr[2], nr_, 'OK' if good else 'FAIL'))
+
+    # The box rows.  Every solved wall offset is re-derived and checked
+    # against the arc's DECLARED plane, one probe point per arc -- five
+    # residuals per row.  This is what convicts a wrong fourth branch
+    # point: with the one-formula d this engine first shipped, the top
+    # arcs of (+-+|-) and (+-+|+) sit 0.1-0.2 off any declared wall
+    # (their planes were rotated 44.7 and 21.6 degrees), while at the
+    # notebook's own qq1 every residual is under 2e-9.
+    for bkey in ('BOX_1001', 'BOX_1010', 'BOX_1011'):
+        probes = box_geometry(bkey)
+        bsp = _SPECS[bkey]
+        worst_b = 0.0
+        for nm, (px1, px2) in probes.items():
+            v = np.asarray(bsp['exact_planes'][nm], dtype=float)
+            v = v / np.linalg.norm(v)
+            r = float(bsp['exact_offsets'][nm])
+            worst_b = max(worst_b, abs(px1 * v[0] + px2 * v[1] - r))
+        Vb, Qb, nb_, wb_ = spec_word_assemble(bkey, _spec_patch(
+            bkey, 60, 60))
+        bbb = Vb.max(0) - Vb.min(0)
+        xLb, xRb, yTb = _BOX_WALLS[bkey]
+        # 5e-3, not 1e-3: only the boundary ARCS are projected onto
+        # the declared walls, and (+-+|-)'s quadrature-polluted far
+        # corner overhangs its y wall by 3.2e-3 at n = 60 (5.9e-3 at
+        # 24, converging as the patch does).  The walls themselves are
+        # gated at 1e-6 above; this check is about the assembly.
+        good = (worst_b < 1e-6 and nb_ == 8
+                and abs(bbb[0] - 2.0 * (xRb - xLb)) < 5e-3
+                and abs(bbb[1] + 2.0 * yTb) < 5e-3
+                and abs(bbb[2] - 1.0) < 1e-6)
+        ok &= good
+        print("hexagonal: %s walls re-derive onto the declared box "
+              "(worst %.1e), cell %.4f x %.4f x %.4f (%d copies) %s"
+              % (bkey, worst_b, bbb[0], bbb[1], bbb[2], nb_,
+                 'OK' if good else 'FAIL'))
+
+    # rPD, C(H) and Simoes-Batista: same recipe, same gate shape.  One
+    # probe per boundary arc, re-derived from the Weierstrass data and
+    # checked against the arc's DECLARED plane in full 3D (rPD's lids
+    # live on x3).  The copy counts are gated by the word loop below;
+    # here the geometry is convicted or acquitted.
+    for wkey, expect in (('RPD', 12), ('CH', 12), ('SIMOES_BATISTA', 8)):
+        wsp = _SPECS[wkey]
+        probesw = spec_wall_probes(wkey)
+        worst_w = 0.0
+        for nm, (px1, px2, px3) in probesw.items():
+            dnm = nm if nm in wsp['exact_planes'] else nm.split('#')[0]
+            if dnm not in wsp['exact_planes']:
+                continue
+            v = np.asarray(wsp['exact_planes'][dnm], dtype=float)
+            v = v / np.linalg.norm(v)
+            r = float(wsp['exact_offsets'][dnm])
+            worst_w = max(worst_w, abs(px1 * v[0] + px2 * v[1]
+                                       + px3 * v[2] - r))
+        Vw_, Qw_, nw_, ww_ = spec_word_assemble(wkey, _spec_patch(
+            wkey, 60, 60))
+        bbw = Vw_.max(0) - Vw_.min(0)
+        good = (worst_w < 1e-6 and nw_ == expect
+                and float(min(bbw) / max(bbw)) > 0.2)
+        ok &= good
+        print("hexagonal: %s walls re-derive onto the declared prism "
+              "(worst %.1e), cell %.4f x %.4f x %.4f (%d copies) %s"
+              % (wkey, worst_w, bbw[0], bbw[1], bbw[2], nw_,
+                 'OK' if good else 'FAIL'))
+
     # ...then each member must build a converging minimal patch.
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
                 'FRD_EXACT', 'FRDR',
@@ -3517,16 +4431,19 @@ def _selftest():
     # whose full generator sets produce overlapping copies while proper
     # subsets tile.  Gating growth here stops a future change quietly
     # returning them to a bare patch.
+    # Rows that assemble cells through the word route (F-RD, F-RD(r),
+    # the boxes, rPD, C(H), Simoes-Batista) are no longer here: like
+    # H'-T they never reach `spec_reflect_tile`.
     bad = []
-    for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
-                'FRD_EXACT', 'FRDR', 'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+    for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'I6',
+                'TRIPLY_COSTA'):
         P = _spec_patch(key, 40, 40)
         base = (P.shape[0] - 1) * (P.shape[1] - 1)
         Vr, Qr = spec_reflect_tile(key, P, 2)
         if len(Qr) <= base or not _orbit_ok(np.asarray(Vr), Qr):
             bad.append('%s:%d/%d' % (key, len(Qr), base))
     ok &= not bad
-    print("hexagonal: all 11 fundamental-piece rows tile under "
+    print("hexagonal: all 7 fundamental-piece rows tile under "
           "Reflections %s" % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     # Schoen H'-T does NOT assemble, and the gate records why rather

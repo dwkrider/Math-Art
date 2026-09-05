@@ -2964,30 +2964,54 @@ def tile_periodic(V, faces, counts, tol=None):
               for F0 in _fblocks]
         return Vs, Fs
 
-    # Two cells along the longest axis is the cheapest honest test of
-    # whether this mesh tiles at all.
-    ax = int(np.argmax(period))
-    probe = [1, 1, 1]
-    probe[ax] = 2
-    Wp, wp = _lay(*probe)
-    # A ladder, for the same reason the orbit weld needs one: cells meet
-    # here by TRANSLATION, between samples that were never placed
-    # together, so how close they land depends on the resolution the
-    # caller asked for.  A single tolerance refused to tile Schoen I-8 at
-    # the default resolution while tiling it happily at a finer one.
-    span = float(np.max(period))
+    # Two cells along EVERY axis actually requested, not just the
+    # longest one.  Probing one axis and trusting the rest is how CLP
+    # shipped silently broken blocks: its z faces join, so the single
+    # probe passed, while its bounding box is only HALF the true
+    # period along x and y -- translated copies there neither touch
+    # nor overlap, which the duplicate and over-share checks cannot
+    # see, and a 2x2x2 "tiling" fell into four pieces.  Non-touching
+    # copies are exactly the failure the docstring promises to refuse.
+    #
+    # A tolerance ladder per probe, for the same reason the orbit weld
+    # needs one: cells meet here by TRANSLATION, between samples that
+    # were never placed together, so how close they land depends on
+    # the resolution the caller asked for.  A single tolerance refused
+    # to tile Schoen I-8 at the default resolution while tiling it
+    # happily at a finer one.  All requested axes must verify at ONE
+    # common tolerance, which is then used for the full block.
+    # An axis that fails its probe is CLAMPED to one cell rather than
+    # sinking the whole request: CLP genuinely stacks along z while its
+    # bounding box is only half the x and y periods, and I-8's plate
+    # tiles in-plane while a z stack of it never joins.  The caller
+    # gets the tiling that verifies, and the returned counts say which.
+    axes = [ax for ax in range(3) if (cu, cv, cw)[ax] > 1]
     good = None
+    okax = {}
     for t in (tol, 2.0 * tol, 5.0 * tol, 10.0 * tol):
-        W, wf = _weld_points(Wp, wp, t)
-        dup, over, comps = _orbit_defects(W, wf)
-        if not dup and not over and comps == 1:
+        okax = {}
+        for ax in axes:
+            probe = [1, 1, 1]
+            probe[ax] = 2
+            Wp, wp = _lay(*probe)
+            W, wf = _weld_points(Wp, wp, t)
+            dup, over, comps = _orbit_defects(W, wf)
+            okax[ax] = not dup and not over and comps == 1
+        if all(okax.values()):
             good = t
             break
+    if good is None and any(okax.values()):
+        # the largest ladder tolerance decides which axes survive
+        good = 10.0 * tol
     if good is None:
         return V, faces, (1, 1, 1)
-    W, wf = _lay(cu, cv, cw)
+    counts = tuple((c if okax.get(ax, True) else 1)
+                   for ax, c in enumerate((cu, cv, cw)))
+    if counts == (1, 1, 1):
+        return V, faces, (1, 1, 1)
+    W, wf = _lay(*counts)
     W, wf = _weld_points(W, wf, good)
-    return W, wf, (cu, cv, cw)
+    return W, wf, counts
 
 
 def _group_elements(lets, tmax, depth=12):

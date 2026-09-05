@@ -1048,8 +1048,7 @@
       "source": "I-9.fe",
       "title": "Schoen I-9",
       "weld_tol": 0.001,
-      "word": "abc",
-      "res_floor": 16
+      "word": "abc"
     }
   },
   "curvature": {
