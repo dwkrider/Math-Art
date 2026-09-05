@@ -535,6 +535,11 @@
    "Singly Periodic"
   ],
   [
+   "SP_HALF_TWISTED_SCHERK",
+   "Half-Twisted Scherk Surface",
+   "Singly Periodic"
+  ],
+  [
    "SCHERK1",
    "Scherk (doubly periodic)",
    "Doubly Periodic"
@@ -580,144 +585,484 @@
    "Doubly Periodic"
   ],
   [
-   "P",
-   "Schwarz P",
-   "Triply Periodic (TPMS)"
+   "BRAKKE_PSEUDO_BATWING",
+   "Brakke Pseudo-Batwing",
+   "TPMS Cubic"
   ],
   [
-   "D",
-   "Schwarz D",
-   "Triply Periodic (TPMS)"
+   "CI2Y",
+   "C(I2-Y**) Rod Packing",
+   "TPMS Cubic"
+  ],
+  [
+   "CD",
+   "Complementary D",
+   "TPMS Cubic"
+  ],
+  [
+   "CG",
+   "Complementary Gyroid",
+   "TPMS Cubic"
+  ],
+  [
+   "DPRIME",
+   "D'",
+   "TPMS Cubic"
+  ],
+  [
+   "DISPHENOID_FAMILY_A_GENUS_31",
+   "Disphenoid 31",
+   "TPMS Cubic"
+  ],
+  [
+   "DISPHENOID_FAMILY_B_GENUS_35",
+   "Disphenoid 35",
+   "TPMS Cubic"
+  ],
+  [
+   "DISPHENOID_FAMILY_A_GENUS_43",
+   "Disphenoid 43",
+   "TPMS Cubic"
+  ],
+  [
+   "DISPHENOID_FAMILY_B_GENUS_51",
+   "Disphenoid 51",
+   "TPMS Cubic"
+  ],
+  [
+   "DISPHENOID_FAMILY_A_GENUS_55",
+   "Disphenoid 55",
+   "TPMS Cubic"
+  ],
+  [
+   "DISPHENOID_FAMILY_B_GENUS_67",
+   "Disphenoid 67",
+   "TPMS Cubic"
+  ],
+  [
+   "FK_PMY",
+   "Fischer-Koch +-Y",
+   "TPMS Cubic"
+  ],
+  [
+   "FK_CPMY",
+   "Fischer-Koch C(+-Y)",
+   "TPMS Cubic"
+  ],
+  [
+   "FK_CS",
+   "Fischer-Koch C(S)",
+   "TPMS Cubic"
+  ],
+  [
+   "FK_CY",
+   "Fischer-Koch C(Y)",
+   "TPMS Cubic"
+  ],
+  [
+   "FK_S",
+   "Fischer-Koch S",
+   "TPMS Cubic"
+  ],
+  [
+   "FK_Y",
+   "Fischer-Koch Y",
+   "TPMS Cubic"
+  ],
+  [
+   "GPRIME",
+   "G' Alternating Gyroid",
+   "TPMS Cubic"
   ],
   [
    "G",
    "Gyroid",
-   "Triply Periodic (TPMS)"
+   "TPMS Cubic"
+  ],
+  [
+   "HEXPLANE1",
+   "Hexplane 1",
+   "TPMS Cubic"
+  ],
+  [
+   "HEXPLANE2",
+   "Hexplane 2",
+   "TPMS Cubic"
+  ],
+  [
+   "HEXPLANE3",
+   "Hexplane 3",
+   "TPMS Cubic"
+  ],
+  [
+   "HEXPLANE4",
+   "Hexplane 4",
+   "TPMS Cubic"
+  ],
+  [
+   "HEXPLANE5",
+   "Hexplane 5",
+   "TPMS Cubic"
+  ],
+  [
+   "KSURF",
+   "Karcher K",
+   "TPMS Cubic"
+  ],
+  [
+   "LORD_MACKAY_P3A",
+   "Lord-Mackay P3a",
+   "TPMS Cubic"
   ],
   [
    "NEOVIUS",
    "Neovius",
-   "Triply Periodic (TPMS)"
+   "TPMS Cubic"
   ],
   [
-   "IWP",
-   "Schoen I-WP",
-   "Triply Periodic (TPMS)"
+   "NEOVIUS_N14",
+   "Neovius N14",
+   "TPMS Cubic"
+  ],
+  [
+   "NEOVIUS_N26",
+   "Neovius N26",
+   "TPMS Cubic"
+  ],
+  [
+   "NEOVIUS_N38",
+   "Neovius N38",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_BATWING",
+   "Schoen Batwing",
+   "TPMS Cubic"
+  ],
+  [
+   "C21P",
+   "Schoen C21(P)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_C27_P",
+   "Schoen C27(P)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_C33_P",
+   "Schoen C33(P)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_C39_P",
+   "Schoen C39(P)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_BATWING_41",
+   "Schoen C41-4(P)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_C45_P",
+   "Schoen C45(P)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_BATWING_57",
+   "Schoen C57-4(P)",
+   "TPMS Cubic"
   ],
   [
    "FRD",
    "Schoen F-RD",
-   "Triply Periodic (TPMS)"
+   "TPMS Cubic"
   ],
   [
-   "LIDINOID",
-   "Lidinoid",
-   "Triply Periodic (TPMS)"
+   "FRD_EXACT",
+   "Schoen F-RD (genus 6)",
+   "TPMS Cubic"
+  ],
+  [
+   "FRD2",
+   "Schoen F-RD (Wohlgemuth variant)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_HYBRID_1",
+   "Schoen Hybrid P | F-RD",
+   "TPMS Cubic"
+  ],
+  [
+   "IWP",
+   "Schoen I-WP",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_MANTA_GENUS_19",
+   "Schoen Manta",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_MANTA_GENUS_35",
+   "Schoen Manta (genus 35)",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN_MANTA_GENUS_51",
+   "Schoen Manta (genus 57)",
+   "TPMS Cubic"
+  ],
+  [
+   "OCTO",
+   "Schoen O,C-TO",
+   "TPMS Cubic"
+  ],
+  [
+   "SCHOEN14",
+   "Schoen p.14 Surface",
+   "TPMS Cubic"
+  ],
+  [
+   "D",
+   "Schwarz D",
+   "TPMS Cubic"
+  ],
+  [
+   "P",
+   "Schwarz P",
+   "TPMS Cubic"
   ],
   [
    "SPLITP",
    "Split P",
-   "Triply Periodic (TPMS)"
+   "TPMS Cubic"
   ],
   [
-   "OCTO",
-   "Schoen O,C-TO (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_2_1_GENUS_31",
+   "Starfish 2-1 (genus 31)",
+   "TPMS Cubic"
   ],
   [
-   "FK_S",
-   "Fischer-Koch S (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_2_2_GENUS_47",
+   "Starfish 2-2 (genus 47)",
+   "TPMS Cubic"
   ],
   [
-   "FK_CS",
-   "Fischer-Koch C(S) (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_2_3_GENUS_63",
+   "Starfish 2-3 (genus 63)",
+   "TPMS Cubic"
   ],
   [
-   "FK_Y",
-   "Fischer-Koch Y (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_3_1_GENUS_43",
+   "Starfish 3-1 (genus 43)",
+   "TPMS Cubic"
   ],
   [
-   "FK_PMY",
-   "Fischer-Koch +-Y (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_3_2_GENUS_59",
+   "Starfish 3-2 (genus 59)",
+   "TPMS Cubic"
   ],
   [
-   "FK_CPMY",
-   "Fischer-Koch C(+-Y) (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_3_3_GENUS_75",
+   "Starfish 3-3 (genus 75)",
+   "TPMS Cubic"
   ],
   [
-   "FK_CY",
-   "Fischer-Koch C(Y) (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_4_1_GENUS_55",
+   "Starfish 4-1 (genus 55)",
+   "TPMS Cubic"
   ],
   [
-   "CD",
-   "Complementary D (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "STARFISH_4_3_GENUS_87",
+   "Starfish 4-3 (genus 87)",
+   "TPMS Cubic"
   ],
   [
-   "CG",
-   "Complementary Gyroid (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "TRIPLANE0",
+   "Triplane 0",
+   "TPMS Cubic"
   ],
   [
-   "GPRIME",
-   "G' Alternating Gyroid (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "TRIPLANE1",
+   "Triplane 1",
+   "TPMS Cubic"
   ],
   [
-   "DPRIME",
-   "D' (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "TRIPLANE2",
+   "Triplane 2",
+   "TPMS Cubic"
   ],
   [
-   "KSURF",
-   "Karcher K (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "TRIPLANE3",
+   "Triplane 3",
+   "TPMS Cubic"
   ],
   [
-   "CI2Y",
-   "C(I2-Y**) Rod Packing (nodal approximation)",
-   "Triply Periodic (TPMS)"
+   "TRIPLANE4",
+   "Triplane 4",
+   "TPMS Cubic"
   ],
   [
-   "FRD2",
-   "Schoen F-RD (Wohlgemuth variant, nodal)",
-   "Triply Periodic (TPMS)"
+   "TRIPLANE5",
+   "Triplane 5",
+   "TPMS Cubic"
   ],
   [
-   "PGD",
-   "Schwarz P-Gyroid-D (exact, Bonnet angle)",
-   "Exact (Weierstrass)"
+   "BOX_1011",
+   "Box Type (+-+|+) (genus 5)",
+   "TPMS Non-Cubic"
   ],
   [
-   "H",
-   "Schwarz H (exact, hexagonal)",
-   "Exact (Weierstrass)"
+   "BOX_1010",
+   "Box Type (+-+|-) (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "BOX_1001",
+   "Box Type (+-|+) (genus 5)",
+   "TPMS Non-Cubic"
   ],
   [
    "CLP_HANDLE",
-   "CLP with Handle (exact, genus 4)",
-   "Exact (Weierstrass)"
+   "CLP with Handle (genus 4)",
+   "TPMS Non-Cubic"
   ],
   [
-   "LIDINOID_1",
-   "Lidinoid (exact)",
-   "Exact (Weierstrass)"
+   "LIDINOID",
+   "Lidinoid",
+   "TPMS Non-Cubic"
   ],
   [
    "RPD",
-   "rPD deformation (exact, rhombohedral)",
-   "Exact (Weierstrass)"
+   "rPD deformation",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "CH",
+   "Schoen C(H) (genus 7)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "FRDR",
+   "Schoen F-RD(r) (quarter-twisted, genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "GW_CONJ",
+   "Schoen GW (graphite-wurtzite)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HR_TR_CONJ",
+   "Schoen H\"-R | T'-R' hybrid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "H2R",
+   "Schoen H''-R (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HT",
+   "Schoen H'-T (genus 4)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HT_HR_CONJ",
+   "Schoen H'-T | H\"-R hybrid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HT_TR",
+   "Schoen H'-T | T'-R'",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "I6",
+   "Schoen I-6 (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN_I8",
+   "Schoen I-8",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "I8_RING",
+   "Schoen I-8 (ring form)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN_I9",
+   "Schoen I-9",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "I9_RING",
+   "Schoen I-9 (ring form)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN_HYBRID_SS_P",
+   "Schoen P | S'-S''",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN12",
+   "Schoen p.12 Surface",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "RII",
+   "Schoen R-II (genus 9)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "R3_RING",
+   "Schoen R-III (ring form, genus 13)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SS",
+   "Schoen S'-S'' (genus 4)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TR",
+   "Schoen T'-R' (genus 6)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TR_HT_CONJ",
+   "Schoen T'-R' | H'-T hybrid",
+   "TPMS Non-Cubic"
   ],
   [
    "CLP",
-   "Schwarz CLP (exact)",
-   "Exact (Deformable)"
+   "Schwarz CLP",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "H",
+   "Schwarz H",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SIMOES_BATISTA",
+   "Simoes-Batista Surface (genus 7)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "STESSMANN",
+   "Stessmann's Surface (conjugate to I-WP)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TRIPLY_COSTA",
+   "Triply Periodic Costa (Batista, genus 5)",
+   "TPMS Non-Cubic"
   ]
  ],
  "seifert": [

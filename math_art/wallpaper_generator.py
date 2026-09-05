@@ -40,8 +40,10 @@ bl_info = {
 import numpy as np
 
 try:
+    from . import tiling_generator as tg
     from .patterns import common as pc
 except Exception:
+    import tiling_generator as tg
     from patterns import common as pc
 
 
@@ -72,9 +74,21 @@ def build(group='p4m', motif_kind='F', nx=3, ny=3, color_by='COPY',
                                       color_by, height, margin))
 
 
+def group_lattice(group):
+    """The translation lattice (b1, b2) of a wallpaper group."""
+    b1, b2, _cosets = pc.wallpaper_group(_SIG[group])
+    return np.asarray(b1, float), np.asarray(b2, float)
+
+
 def build_cells(group='p4m', motif_kind='F', nx=3, ny=3,
-                color_by='COPY', height=0.0, margin=0.0):
-    """One (verts, faces, mats) cell per replicated motif copy."""
+                color_by='COPY', height=0.0, margin=0.0, surf=None):
+    """One (verts, faces, mats) cell per replicated motif copy.
+
+    With `surf` the copies are laid on that curved surface instead of the
+    plane.  A wallpaper pattern is periodic by construction, so on the
+    flat torus spanned by the nx x ny lattice block it closes up exactly:
+    the copies that run off one side are the copies arriving on the
+    other, because they are the same group elements."""
     sig = _SIG[group]
     b1, b2, cosets = pc.wallpaper_group(sig)
     polys = motif(motif_kind)
@@ -92,7 +106,14 @@ def build_cells(group='p4m', motif_kind='F', nx=3, ny=3,
                 cv, cf, cm = [], [], []
                 for p in polys:
                     q = pc.apply(M, p)
-                    if height > 0.0:
+                    if surf is not None:
+                        if height > 0.0:
+                            pc.surface_prisms(cv, cf, cm, [q], surf,
+                                              height, 0.0, kind)
+                        else:
+                            pc.surface_patch(cv, cf, cm, [q], surf,
+                                             0.0, kind)
+                    elif height > 0.0:
                         pc.prisms(cv, cf, cm, [q], height, 0.0, kind)
                     else:
                         b0 = len(cv)
@@ -100,7 +121,8 @@ def build_cells(group='p4m', motif_kind='F', nx=3, ny=3,
                             cv.append((float(x), float(y), 0.0))
                         cf.append(tuple(range(b0, b0 + len(q))))
                         cm.append(kind)
-                cells.append((cv, cf, cm))
+                if cf:
+                    cells.append((cv, cf, cm))
     return cells
 
 
@@ -226,6 +248,40 @@ if _IN_BLENDER:
             name="Relief Height", default=0.0, min=0.0, max=1.0,
             description="0 = flat 2D mesh; > 0 extrudes the faces "
                         "into a relief")
+        surface: EnumProperty(
+            name="Surface",
+            items=[('PLANE', "Plane",
+                    "Lay the pattern flat in the plane"),
+                   ('TORUS', "Flat Torus",
+                    "Wrap the pattern onto a flat torus. Exact: a "
+                    "wallpaper group is periodic, so the pattern "
+                    "descends to the torus with no seam"),
+                   ('SPHERE', "Sphere (Stereographic)",
+                    "Project the pattern conformally onto a sphere. "
+                    "Angles are exact, but copies are no longer "
+                    "congruent and shrink into a north-pole puncture")],
+            default='PLANE',
+            description="Lay the pattern flat, or wrap it onto a flat "
+                        "torus (exact -- wallpaper groups are periodic) "
+                        "or a sphere")
+        torus_major: FloatProperty(
+            name="Major Radius", default=1.0, min=0.1, max=10.0,
+            description="Distance from the torus centre to the tube "
+                        "centre (only affects the Torus surface)")
+        torus_minor: FloatProperty(
+            name="Minor Radius", default=0.4, min=0.01, max=5.0,
+            description="Radius of the torus tube (only affects the "
+                        "Torus surface)")
+        sphere_radius: FloatProperty(
+            name="Sphere Radius", default=1.0, min=0.1, max=10.0,
+            description="Radius of the sphere (only affects the Sphere "
+                        "surface)")
+        sphere_spread: FloatProperty(
+            name="Spread", default=1.0, min=0.1, max=4.0,
+            description="How far round the sphere the pattern reaches: "
+                        "1 puts the patch edge on the equator, higher "
+                        "wraps further toward the north-pole puncture "
+                        "(only affects the Sphere surface)")
         separate: BoolProperty(
             name="Separate Cells", default=False,
             description="Output each unit as its own mesh object "
@@ -263,9 +319,16 @@ if _IN_BLENDER:
                 # is chosen with no suitable mesh selected
                 kind = 'ARROW' if self.motif_kind == 'ACTIVE' \
                     else self.motif_kind
+                surf = None
+                if self.surface != 'PLANE':
+                    b1, b2 = group_lattice(self.group)
+                    surf = tg.surface_for(
+                        self.surface, b1, b2, self.nx, self.ny,
+                        self.torus_major, self.torus_minor,
+                        self.sphere_radius, self.sphere_spread)
                 cells = build_cells(
                     self.group, kind, self.nx, self.ny,
-                    self.color_by, self.height, self.margin)
+                    self.color_by, self.height, self.margin, surf=surf)
             obj = pc.emit(context, "Wallpaper %s" % self.group, cells,
                           self.separate, fit=fit, operator=self)
             if obj is None:
@@ -289,6 +352,14 @@ if _IN_BLENDER:
                 lay.prop(self, p)
             if self.motif_kind == 'ACTIVE':
                 lay.prop_search(self, 'source', bpy.data, 'objects')
+            else:
+                lay.prop(self, 'surface')
+                if self.surface == 'TORUS':
+                    lay.prop(self, 'torus_major')
+                    lay.prop(self, 'torus_minor')
+                elif self.surface == 'SPHERE':
+                    lay.prop(self, 'sphere_radius')
+                    lay.prop(self, 'sphere_spread')
             if self.motif_kind != 'ACTIVE':     # active mesh is 3D
                 lay.prop(self, 'height')
             lay.prop(self, 'separate')

@@ -57,6 +57,13 @@ from .orbifold import (IUC_ORDER, SIG_OF, WALLPAPER_NAMES,
 from .placed import Tiling
 from .prisms import (center_scale, center_xy, merge_cells, prisms,
                               ribbon_polys, slab)
+from .surfacemap import (DEFAULT_MAX_EDGE, LatticeTorusSurface,
+                                   PlaneSurface, SphereSurface,
+                                   StereographicSurface, Surface,
+                                   TorusSurface, canonicalize_corners,
+                                   edge_points, make_surface, refine_poly,
+                                   refine_segment, surface_patch,
+                                   surface_prisms, warp_cells)
 
 # private names some generators still reach for
 from .groups import _cyclic, _dihedral, _HEX, _SQ      # noqa: F401
