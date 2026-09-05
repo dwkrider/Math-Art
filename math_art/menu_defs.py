@@ -69,11 +69,11 @@ SURFACES = Menu(
         _e("mesh.seifert_surface_add", 'MOD_SIMPLIFY', "Seifert Surface"),
         _e("mesh.algebraic_surface_add", 'SURFACE_NSURFACE'),
         # A Calabi-Yau threefold is six real dimensions and does
-        # not fit here; these four say, in their labels and their
+        # not fit here; these say, in their labels and their
         # descriptions, which honest 2- or 3-dimensional shadow of
-        # one they are drawing.
+        # one they are drawing.  (The two Ricci-flat metric slices
+        # are presets of Miscellaneous Surface, above.)
         _e("mesh.calabi_yau_add", 'SURFACE_NSURFACE'),
-        _e("mesh.calabi_yau_metric_add", 'MOD_SIMPLEDEFORM'),
         _e("mesh.calabi_yau_scaffold_add", 'MOD_WIREFRAME'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
         _e("mesh.minimal_surface_polyhedron_add", 'MESH_UVSPHERE'),

@@ -334,6 +334,51 @@ def fit(pts, scale=1.0):
 
 if _IN_BLENDER:
 
+    _ATTR = "patch"
+    _MAT = "Calabi-Yau Patch"
+
+    def ensure_material():
+        """A material that shows the patch color attribute.
+
+        Writing a color attribute is not enough to see anything: with
+        no material the viewport shades the mesh a flat grey in every
+        mode, so the Color setting looks like it does nothing.  This
+        is the same Attribute -> Base Color wiring `curvature_color`
+        uses, in one shared material.
+        """
+        mat = bpy.data.materials.get(_MAT)
+        if mat is None:
+            mat = bpy.data.materials.new(_MAT)
+        mat.use_nodes = True
+        nt = mat.node_tree
+        bsdf = attr = out = None
+        for node in nt.nodes:
+            if node.type == 'BSDF_PRINCIPLED' and bsdf is None:
+                bsdf = node
+            elif node.type == 'ATTRIBUTE' and attr is None:
+                attr = node
+            elif node.type == 'OUTPUT_MATERIAL' and out is None:
+                out = node
+        if out is None:
+            out = nt.nodes.new('ShaderNodeOutputMaterial')
+        if bsdf is None:
+            bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
+            bsdf.location = (out.location.x - 280, out.location.y)
+        # == not `is`: bpy hands back a fresh wrapper on every access
+        if not any(lk.to_node == out and lk.from_node == bsdf
+                   for lk in nt.links):
+            nt.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+        if attr is None:
+            attr = nt.nodes.new('ShaderNodeAttribute')
+            attr.location = (bsdf.location.x - 280, bsdf.location.y)
+        attr.attribute_type = 'GEOMETRY'
+        attr.attribute_name = _ATTR
+        if not any(lk.from_node == attr and lk.to_node == bsdf
+                   for lk in nt.links):
+            nt.links.new(attr.outputs['Color'],
+                         bsdf.inputs['Base Color'])
+        return mat
+
     _PALETTE = ((0.90, 0.24, 0.22), (0.95, 0.55, 0.15),
                 (0.92, 0.82, 0.20), (0.35, 0.72, 0.30),
                 (0.20, 0.62, 0.78), (0.28, 0.35, 0.72),
@@ -386,7 +431,7 @@ if _IN_BLENDER:
                         "one another and the surface returns to itself "
                         "at phase = 1")
         extent: FloatProperty(
-            name="Extent", default=1.0, min=0.1, max=3.0,
+            name="Extent", default=1.5, min=0.1, max=3.0,
             description="How far the barbs run out towards the curve's "
                         "points at infinity. The surface is unbounded; "
                         "this is where it is cut off")
@@ -398,19 +443,19 @@ if _IN_BLENDER:
             description="Samples along each patch. Forced odd so the "
                         "surface passes through the fixed points at "
                         "the middle of every patch")
-        colour: EnumProperty(
-            name="Colour",
+        color: EnumProperty(
+            name="Color",
             description="What to paint on the surface",
             items=[('NONE', "None", "Leave the mesh unpainted"),
                    ('PATCH', "Patch",
-                    "One colour per (k1, k2) patch: shows the "
+                    "One color per (k1, k2) patch: shows the "
                     "complex phase of each patch relative to the "
                     "basis patch"),
                    ('SYMMETRY', "Symmetry",
-                    "Colour by (k1 + k2) mod n, which makes the "
+                    "Color by (k1 + k2) mod n, which makes the "
                     "n-fold symmetry of the surface obvious"),
                    ('FOURTH', "Fourth Dimension",
-                    "Colour by the coordinate the projection throws "
+                    "Color by the coordinate the projection throws "
                     "away -- the only way it survives into the render")],
             default='PATCH')
         weld: BoolProperty(
@@ -456,11 +501,11 @@ if _IN_BLENDER:
             att = me.attributes.new("fourth_coordinate", 'FLOAT', 'POINT')
             att.data.foreach_set('value', w)
 
-            if self.colour != 'NONE':
-                col = me.color_attributes.new(name="patch",
+            if self.color != 'NONE':
+                col = me.color_attributes.new(name=_ATTR,
                                               type='FLOAT_COLOR',
                                               domain='CORNER')
-                if self.colour == 'FOURTH':
+                if self.color == 'FOURTH':
                     lo, hi = min(w), max(w)
                     rng = (hi - lo) or 1.0
                     buf = []
@@ -473,13 +518,15 @@ if _IN_BLENDER:
                     buf = []
                     for f_i, poly in enumerate(me.polygons):
                         k = pid[f_i]
-                        if self.colour == 'SYMMETRY':
+                        if self.color == 'SYMMETRY':
                             k = ((k % p) + (k // p)) % max(p, q)
                         r, g, b = _PALETTE[k % len(_PALETTE)]
                         shade = 0.72 + 0.28 * (((k * 7) % 5) / 4.0)
                         buf += [r * shade, g * shade, b * shade, 1.0] * \
                             len(poly.vertices)
                 col.data.foreach_set('color', buf)
+                me.color_attributes.active_color = col
+                me.materials.append(ensure_material())
 
             me.update()
             obj = bpy.data.objects.new("Calabi-Yau Cross-Section", me)
@@ -543,7 +590,7 @@ if _IN_BLENDER:
             lay.prop(self, 'extent')
             lay.prop(self, 'theta_steps')
             lay.prop(self, 'xi_steps')
-            lay.prop(self, 'colour')
+            lay.prop(self, 'color')
             lay.prop(self, 'weld')
             lay.prop(self, 'boundary_curve')
             lay.prop(self, 'thickness')

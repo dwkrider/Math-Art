@@ -95,7 +95,6 @@ _MODULE_NAMES = [
     'algebraic_surface_generator',
     'calabi_yau_generator',
     'toric_calabi_yau_generator',
-    'calabi_yau_metric_generator',
     'calabi_yau_scaffold_generator',
     'invariant_manifold_generator',
     'spacefill_generator',
