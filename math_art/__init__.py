@@ -93,6 +93,7 @@ _MODULE_NAMES = [
     'stereographic_projection_generator',
     'hyperbolic_honeycomb_generator',
     'algebraic_surface_generator',
+    'calabi_yau_generator',
     'invariant_manifold_generator',
     'spacefill_generator',
     'spidron_ball_generator',

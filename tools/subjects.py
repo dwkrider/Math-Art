@@ -37,7 +37,7 @@ PARAMS = {
     "mesh.polyhedron_compound_add": dict(family='CLASSICAL',
                                          compound='5TETRA'),
     # -- spidrons -------------------------------------------------
-    # The whole hexagonal subdivision coloured BY ARM: six spiral
+    # The whole hexagonal subdivision colored BY ARM: six spiral
     # limbs meeting at the centre, which is the picture the word
     # "spidron" means.  Six rings keep the outer triangles big enough
     # to read at icon size (the deeper rings are invisible anyway),
@@ -67,7 +67,7 @@ PARAMS = {
                                   color_by='PAIR', colors=5),
     # The two-cell repeat unit IS the subject: on a single decatrihedron
     # the space-filling's CW-meets-CCW rule is invisible, and the pair
-    # of opposite-winding polyhedra (coloured by form) is the paper's
+    # of opposite-winding polyhedra (colored by form) is the paper's
     # own Figure 3.  A small gap keeps the two solids readable as two.
     # Pearce's diamond tetrahedron is the famous one: four REGULAR
     # skew hexagons, the interstitial domain of the diamond net, and
@@ -101,16 +101,16 @@ PARAMS = {
     # The bare default is a rhombic triacontahedron, which the zonohedra
     # entry above already shows.  The dissection is what this operator
     # adds that nothing else has: Kowalewski's twenty golden rhombohedra,
-    # colour-matched by zone triple.  Assembled rather than exploded --
+    # color-matched by zone triple.  Assembled rather than exploded --
     # the blocks close up into the solid exactly, so the icon reads as a
-    # polyhedron whose faces are colour-coded by the block behind them,
+    # polyhedron whose faces are color-coded by the block behind them,
     # which is the point; exploded it reads as debris at 64 px.
     "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
                             explode=0.0, color='BLOCK'),
     # The dodecahedron's cluster is Webster's original -- twelve 5-fold
     # units -- and exploding it a little is what makes the separate
     # zonohedra legible at icon size; assembled, the cluster reads as one
-    # lumpy ball.  Coloured by unit order, as Webster draws them.
+    # lumpy ball.  Colored by unit order, as Webster draws them.
     "mesh.zonohedra_cluster_add": dict(family='PLATONIC', platonic='DODECA',
                                        explode=0.25, color='ORDER'),
     # Halfway is the whole point of the operator -- either end
@@ -123,7 +123,7 @@ PARAMS = {
     # value it becomes the pyrite crystal form, which is the point.
     "mesh.twelve_faced_add": dict(solid='PYRITOHEDRON', shape=0.35),
     # Thirty squares is the slide-together everyone recognises, and the
-    # colour rotation is how the paper models are actually made.
+    # color rotation is how the paper models are actually made.
     # The twenty triangles, not the thirty squares.  Once the squares
     # were placed correctly on the rhombidodecadodecahedron they pack
     # almost closed, and at 128 px the icon became a pale ball with no
@@ -237,8 +237,8 @@ PARAMS = {
     # generator's point lives -- three films meeting at 120 degrees
     # along a Plateau border.
     "mesh.relaxed_bubble_add": dict(bubbles='TRIPLE'),
-    # Uncoloured, a gasket is a heap of white spheres and the nesting
-    # is invisible; colouring by radius separates the generations.
+    # Uncolored, a gasket is a heap of white spheres and the nesting
+    # is invisible; coloring by radius separates the generations.
     "mesh.apollonian_add": dict(color_by='SIZE'),
 
     # -- patterns -------------------------------------------------
@@ -248,7 +248,7 @@ PARAMS = {
     # "panel", which is the distinction against the relief panel.
     "mesh.relief_solid_add": dict(preset='TURING_SPHERE', regime='MAZE'),
     # {7,3} is regular, so every face has the same side count and the
-    # default by-sides colouring yields exactly one material.  Parity
+    # default by-sides coloring yields exactly one material.  Parity
     # gives the classic two-tone (with a seam, since q=3 is odd).
     "mesh.hyperbolic_tiling_add": dict(color_by='PARITY'),
     # The bubble is the whole point, and it is localised: too many
@@ -275,6 +275,11 @@ import math                                              # noqa: E402
 GYROID_POSE = (-0.1967, 0.1944, -1.8216)
 
 ORIENT = {
+    # Hanson renders the cross-section from ViewPoint {2.9, 1.0, 1.4},
+    # well off any symmetry axis: down one of the five-fold axes the
+    # patches stack and the barbs hide behind one another.  Roughly
+    # that view.
+    "mesh.calabi_yau_add": (0.45, 0.0, 0.95),
     # A pleated saddle seen straight down reads as concentric rings on a
     # flat disc -- the one view that hides the warp the generator exists
     # to show.  Same three-quarter angle the fold gallery uses, so the
@@ -371,7 +376,7 @@ PLAN_VIEW = {
     "curve.substitution_knot_add", "mesh.fractal_knotwork_add",
     "mesh.snowflake_add",
     # a phyllotaxis head is a flat disc: at 3/4 it foreshortens to a
-    # pale ellipse and the parastichy colouring is wasted
+    # pale ellipse and the parastichy coloring is wasted
     "mesh.phyllotaxis_add",
     # a leaf is a blade with venation -- the outline and the veins are
     # the subject, and both are only legible face-on
@@ -1103,9 +1108,9 @@ if _IN_BLENDER:
     # Exposure for the plan-view shots.  Lighting a flat panel head-on
     # and dropping AgX's highlight rolloff drove these to the clipping
     # point -- measured mean value 0.99, with 41% of the hyperbolic
-    # tiling's pixels pinned at white, which is what washed the colour
+    # tiling's pixels pinned at white, which is what washed the color
     # out.  -1.8 is where clipping reaches exactly zero across the
-    # coloured subjects; darker only dims the icon without recovering
+    # colored subjects; darker only dims the icon without recovering
     # saturation the pale generator palettes do not have.
     # Exposure and light level for the plan view.  The rig lifts five
     # lights -- two of them 750 W rim lights -- to nearly overhead, and
@@ -1128,7 +1133,7 @@ if _IN_BLENDER:
     # The 3/4 studio look.  Khronos PBR Neutral is a tone curve built to
     # roll highlights off WITHOUT the desaturation and hue shift a
     # filmic curve introduces, which is exactly what was wanted here:
-    # under AgX the subjects clipped, and the saddle palette -- colours
+    # under AgX the subjects clipped, and the saddle palette -- colors
     # like (0.85, 0.30, 0.24) -- measured 0.21 mean saturation against
     # 0.43 under this curve.
     #
@@ -1196,7 +1201,7 @@ if _IN_BLENDER:
         with no rotation looks along -Z).  The lights are lifted with
         it: the studio rig lights a solid from the side, which across a
         flat panel is grazing light -- it rakes the surface, blows the
-        highlights and leaves the colours pale.  Each light keeps its
+        highlights and leaves the colors pale.  Each light keeps its
         distance but only a quarter of its horizontal offset, so a
         panel is lit nearly head-on.
         """
@@ -1241,7 +1246,7 @@ if _IN_BLENDER:
             # lit nearly head-on picks up a broad white sheen across
             # its whole surface, and white added equally to every
             # channel is precisely what destroys saturation: the
-            # pattern palette is strongly coloured -- (0.85, 0.30,
+            # pattern palette is strongly colored -- (0.85, 0.30,
             # 0.24) is a 0.72-saturation red -- yet measured 0.08 in
             # the render.  Note this cannot be fixed with exposure:
             # saturation is a ratio between channels, so scaling them
@@ -1252,7 +1257,7 @@ if _IN_BLENDER:
             if base is not None:
                 ob.data.energy = base * (PLAN_LIGHT_SCALE if plan else 1.0)
 
-        # Colour management, and for the 3/4 view the light ratio with
+        # Color management, and for the 3/4 view the light ratio with
         # it.  Both are set HERE because aim_rig is the one call every
         # render path makes -- hero figures, gallery variants and menu
         # icons alike -- so this is the only place they cannot drift

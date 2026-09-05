@@ -94,6 +94,87 @@
 #      Neiloid -- a rho^2 = z^3, the revolution of Neile's semicubical
 #        parabola, checked against its closed-form volume.
 #
+# 9. Two Ricci-flat geometries, sliced.  Yau's theorem gives a
+#    Ricci-flat Kaehler metric on every compact Calabi-Yau and no
+#    formula for it; the non-compact ones are the exception, and these
+#    are the two whose metrics are known in closed form.  Both are
+#    surfaces of revolution, and both are EXACT: the geometry built is
+#    isometric to the slice, not a sketch of it.
+#      Eguchi-Hanson space -- the first asymptotically locally
+#        Euclidean Ricci-flat Kaehler metric, on T*S^2, the resolution
+#        of C^2/Z2:
+#            ds^2 = (1 - (a/r)^4)^-1 dr^2
+#                   + (r^2/4)[sx^2 + sy^2 + (1 - (a/r)^4) sz^2].
+#        Freezing the two-sphere directions leaves the (r, psi) slice,
+#        which embeds isometrically as the revolution of
+#            rho(r) = sqrt(r^4 - a^4)/(2r),
+#            dz/dr  = sqrt(3 r^4 + a^4)/(2 r^2),
+#        because rho'^2 + z'^2 collapses to 4r^8/(4r^4(r^4 - a^4)),
+#        which is exactly g_rr.  The point is the tip: drho/ds ->
+#        (r^4 + a^4)/(2r^4) -> 1 as r -> a, so the circle closes off
+#        smoothly -- but only if psi runs over 2 pi.  Eguchi and
+#        Hanson's psi runs to 4 pi on S^3, and the metric is smooth
+#        only after halving that range, which leaves RP(3) = SO(3) at
+#        infinity.  Keep the full range and the tip is a cone of angle
+#        4 pi, which no surface in R^3 can carry: the Z2 quotient is
+#        the difference between a smooth cap and an impossible one.
+#        The two-sphere the space is named for -- the "bolt" -- sits at
+#        the tip with radius a/4.
+#      The conifold -- the quadric cone sum (w^A)^2 = 0 in C^4, six
+#        real dimensions, a cone over S^2 x S^3, whose node can be
+#        repaired either by deformation (replacing it with an S^3) or
+#        by a small resolution (an S^2), passing between two
+#        topologically different Calabi-Yaus.  None of that fits in
+#        R^3.  What does, and is the same story one complex dimension
+#        down, is the A_1 surface x y = z^2, whose real points
+#        u^2 - v^2 - z^2 = delta give the double cone at delta = 0, a
+#        throat of radius sqrt(-delta) below it -- the real slice of
+#        the sphere that replaces the node -- and two separated sheets
+#        above.  Eguchi-Hanson space is the resolution of exactly this
+#        singularity, so the two entries are one geometry told
+#        metrically and algebraically.
+#
+# 10. The tropical Calabi-Yau surface.  Over the tropical semiring
+#    (min, +) a polynomial f = min_v (c_v + v.x) has a hypersurface
+#    T(f): the set where the minimum is attained at least twice.  It is
+#    a piecewise linear 2-complex in R^3 -- an honest polyhedral
+#    surface, with no projection anywhere in it -- and it is the
+#    large-complex-structure limit of the classical hypersurface with
+#    the same Newton polytope.  Take that polytope to be the fourth
+#    dilate of the standard tetrahedron and the classical surface is a
+#    quartic in P^3, that is a K3: so this is the one Calabi-Yau in the
+#    add-on that really lives in three dimensions rather than being a
+#    shadow of something six-dimensional.  Its bounded complement is
+#    the K3 polytope, which is an entry of the Notable Polyhedron
+#    generator; the mathematics of both is in polyhedra/toric.py.
+#    Unbounded, so it is clipped to a box quoted as a multiple of that
+#    bounded region's radius.
+#
+# References for 10: G. Balletti, M. Panizzut and B. Sturmfels, "K3
+#   polytopes and their quartic surfaces", Advances in Geometry 21
+#   (2021) 85-98 -- the tropical quartic of their Example 4, used as
+#   the coefficients here;  D. Maclagan and B. Sturmfels,
+#   "Introduction to Tropical Geometry", Graduate Studies in
+#   Mathematics 161, AMS (2015) -- tropical hypersurfaces and their
+#   duality with regular subdivisions;  V. V. Batyrev, "Dual polyhedra
+#   and mirror symmetry for Calabi-Yau hypersurfaces in toric
+#   varieties", Journal of Algebraic Geometry 3 (1994) 493-535.
+#
+# References for 9: T. Eguchi and A. J. Hanson, "Asymptotically flat
+#   self-dual solutions to Euclidean gravity", Physics Letters 74B
+#   (1978) 249-251 -- the metric (their solution II, Eqs. (9) and
+#   (17)), and the "corner" footnote on the half-range of S^3;
+#   T. Eguchi, P. B. Gilkey and A. J. Hanson, "Gravitation, gauge
+#   theories and differential geometry", Physics Reports 66 (1980)
+#   213-393 -- the review, including the T*S^2 topology;
+#   P. Candelas and X. C. de la Ossa, "Comments on conifolds", Nuclear
+#   Physics B342 (1990) 246-268 -- the conifold, its deformation
+#   Eq. (1.2), its small resolution Eq. (1.4) and the Ricci-flat
+#   metrics on both;  E. Brieskorn, "Ueber die Aufloesung gewisser
+#   Singularitaeten von holomorphen Abbildungen", Mathematische
+#   Annalen 166 (1966) 76-102 -- the A_1 singularity C^2/Z2 and its
+#   resolution.
+#
 # References for 8: Pierre Bouguer (1734), studied by Charles Bossut
 #    (1778); see E. Benvenuto, "An Introduction to the History of
 #    Structural Mechanics", part II, 344-348.  William Neile (1637-1670)
@@ -176,7 +257,8 @@ bl_info = {
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
     "description": "Fresnel's elasticity surface, the paper bag "
                    "surface, the trihyperboloid, the Dupin "
-                   "cyclides and the Zoll surfaces",
+                   "cyclides, the Zoll surfaces, and slices of the "
+                   "Eguchi-Hanson and conifold metrics",
     "category": "Add Mesh",
 }
 
@@ -185,9 +267,14 @@ import math
 try:
     from .surfaces.encyclopedia import build_zoll
     from .sharp_creases import mark_sharp
+    # The tropical Calabi-Yau surface is built by clipping halfspaces
+    # and shares its lattice data with the K3 polytope that bounds it,
+    # so both live in the polyhedron engine rather than being split.
+    from .polyhedra.toric import bounded_radius, tropical_surface
 except ImportError:                       # flat import outside the package
     from surfaces.encyclopedia import build_zoll
     from sharp_creases import mark_sharp
+    from polyhedra.toric import bounded_radius, tropical_surface
 
 try:
     import bpy
@@ -571,6 +658,77 @@ def pendant_drop_profile(a=1.0, apex=1.0, steps=600, span=2.6):
     return out
 
 
+def eh_rho(r, a=1.0):
+    """Radius of the psi-circle of the Eguchi-Hanson metric."""
+    return math.sqrt(max(r ** 4 - a ** 4, 0.0)) / (2.0 * r)
+
+
+def eh_drho(r, a=1.0):
+    """d rho / d r."""
+    return (r ** 4 + a ** 4) / (2.0 * r ** 2 *
+                                math.sqrt(max(r ** 4 - a ** 4, 1e-300)))
+
+
+def eh_dz(r, a=1.0):
+    """d z / d r for the isometric surface of revolution.
+
+    Fixed by rho'^2 + z'^2 = g_rr; the algebra collapses to a perfect
+    square, 4 r^8 over the numerator, so no radical is left over.
+    """
+    return math.sqrt(3.0 * r ** 4 + a ** 4) / (2.0 * r ** 2)
+
+
+def eh_grr(r, a=1.0):
+    """The metric coefficient the embedding has to reproduce."""
+    return 1.0 / (1.0 - (a / r) ** 4)
+
+
+def eguchi_hanson_profile(a=1.0, reach=3.0, steps=160):
+    """(rho, z) along the Eguchi-Hanson bolt slice, z from the tip.
+
+    z'(r) is finite everywhere including r = a -- it is rho' that
+    blows up there, and rho is known in closed form -- so the height
+    integrates with the plain trapezium rule.
+    """
+    a = max(a, 1e-6)
+    r_max = max(reach, 1.05) * a
+    h = (r_max - a) / max(steps - 1, 1)
+    out, z = [], 0.0
+    prev = eh_dz(a, a)
+    for i in range(steps):
+        r = a + i * h
+        cur = eh_dz(r, a)
+        if i:
+            z += 0.5 * h * (prev + cur)
+        prev = cur
+        out.append((eh_rho(r, a), z))
+    return out
+
+
+def conifold_profiles(delta=-0.25, extent=1.5, steps=96):
+    """Profiles of the real points of u^2 - v^2 - z^2 = delta.
+
+    Revolving about the u-axis, the radius is sqrt(u^2 - delta).
+    Below zero that never reaches the axis and the surface is one
+    hyperboloid with a throat of radius sqrt(-delta) -- the real slice
+    of the sphere that replaces the node.  At zero the radius is |u|
+    and the profile passes through the axis, which `_revolve` closes
+    to the single point of the node.  Above zero the radius is real
+    only for |u| >= sqrt(delta), and the surface falls into two
+    separate sheets, so two profiles come back instead of one.
+    """
+    n = max(3, int(steps))
+    if delta <= 0.0:
+        return [[(math.sqrt(u * u - delta), u)
+                 for u in (-extent + 2.0 * extent * i / (2 * n)
+                           for i in range(2 * n + 1))]]
+    u0 = math.sqrt(delta)
+    span = max(extent - u0, 1e-6)
+    half = [(math.sqrt(max((u0 + span * i / n) ** 2 - delta, 0.0)),
+             u0 + span * i / n) for i in range(n + 1)]
+    return [half, [(rho, -u) for rho, u in half]]
+
+
 def neiloid_profile(a=1.0, z0=0.15, z1=1.0, steps=96):
     """[(rho, z)] of the NEILOID, a rho^2 = z^3.
 
@@ -853,7 +1011,27 @@ if _IN_BLENDER:
                     "half of it: two pears meeting tip to tip"),
                    ('ZOLL', "Zoll's Surface",
                     "Zoll's 1903 answer to Tannery: smooth, not a "
-                    "round sphere, and still every geodesic closes")],
+                    "round sphere, and still every geodesic closes"),
+                   ('EGUCHI_HANSON', "Eguchi-Hanson Space",
+                    "An exact slice of the simplest non-compact "
+                    "Calabi-Yau 2-fold: the first Ricci-flat "
+                    "asymptotically locally Euclidean metric, on "
+                    "T*S^2. The tip closes smoothly only because the "
+                    "angle runs over half of the three-sphere; the "
+                    "two-sphere it is named for sits there, of radius "
+                    "a/4"),
+                   ('TROPICAL_CY', "Tropical Calabi-Yau Surface",
+                    "The tropical hypersurface of a tropical quartic: "
+                    "a piecewise linear K3, living in R^3 with no "
+                    "projection. Its bounded complement is the K3 "
+                    "polytope, in the Notable Polyhedron generator"),
+                   ('CONIFOLD', "Conifold Transition",
+                    "How one Calabi-Yau turns into a topologically "
+                    "different one. Shown in the two-dimensional model "
+                    "of the conifold, u^2 - v^2 - z^2 = delta: a node "
+                    "at delta = 0, replaced by a sphere of radius "
+                    "sqrt(-delta) below it and separating into two "
+                    "sheets above")],
             default='FRESNEL',
             description="Which classic surface to build")
         semi_a: FloatProperty(
@@ -910,8 +1088,9 @@ if _IN_BLENDER:
             name="Scale a", default=1.0, min=0.05, max=10.0,
             description="The a in Bouguer's a^2 y'' = x sqrt(1 + y'^2), "
                         "in the neiloid's a rho^2 = z^3, in the "
-                        "revolved catenary's z = a cosh(rho/a) and in "
-                        "the second tractroid's tractrix")
+                        "revolved catenary's z = a cosh(rho/a), in "
+                        "the second tractroid's tractrix, and the bolt "
+                        "size a of Eguchi-Hanson space")
         dome_extent: FloatProperty(
             name="Base Radius", default=1.6, min=0.2, max=6.0,
             description="How far out the profile runs (Bouguer dome "
@@ -967,6 +1146,25 @@ if _IN_BLENDER:
             name="Inversion Radius", default=1.6, min=0.05, max=10.0,
             description="Radius of the sphere of inversion "
                         "(Dupin cyclides only)")
+        bolt_reach: FloatProperty(
+            name="Reach", default=3.0, min=1.05, max=12.0,
+            description="How far out along r to build Eguchi-Hanson "
+                        "space, in units of the bolt size a. Far out "
+                        "the metric is flat (Eguchi-Hanson only)")
+        conifold_delta: FloatProperty(
+            name="Deformation", default=-0.25, min=-1.0, max=1.0,
+            description="Negative opens a throat of radius "
+                        "sqrt(-delta), the real slice of the sphere "
+                        "that replaces the node; zero is the singular "
+                        "cone; positive separates the two sheets "
+                        "(conifold only)")
+        tropical_box: FloatProperty(
+            name="Clip Radius", default=1.25, min=0.6, max=4.0,
+            description="The tropical surface is unbounded. This cuts "
+                        "it to a box, as a multiple of the radius of "
+                        "the bounded K3 polytope inside it -- below "
+                        "about 1.0 the cut starts eating that polytope "
+                        "(tropical Calabi-Yau only)")
         resolution: IntProperty(
             name="Resolution", default=48, min=6, max=256,
             description="Rings across the surface (twice as "
@@ -1062,6 +1260,25 @@ if _IN_BLENDER:
                     self.cyclide_centre, self.cyclide_power,
                     2 * res, res)
                 name = "Dupin Cyclide (%s)" % kind.lower()
+            elif self.surface == 'EGUCHI_HANSON':
+                verts, faces, rims = _revolve(
+                    eguchi_hanson_profile(self.dome_a, self.bolt_reach,
+                                          4 * res), 2 * res)
+                name = "Eguchi-Hanson Space"
+            elif self.surface == 'TROPICAL_CY':
+                verts, faces = tropical_surface(
+                    box=self.tropical_box * bounded_radius())
+                name = "Tropical Calabi-Yau Surface"
+            elif self.surface == 'CONIFOLD':
+                verts, faces = [], []
+                for prof in conifold_profiles(self.conifold_delta,
+                                              self.dome_extent,
+                                              2 * res):
+                    v, f, _ = _revolve(prof, 2 * res)
+                    off = len(verts)
+                    verts.extend(v)
+                    faces.extend([tuple(i + off for i in fc) for fc in f])
+                name = "Conifold"
             elif self.surface in ('TANNERY_PEAR', 'TANNERY_HOURGLASS',
                                   'ZOLL'):
                 V, faces = build_zoll(self.surface, a=self.semi_a,
@@ -1533,5 +1750,57 @@ def _selftest():
             assert abs(rho - a_ * (t - math.tanh(t))) < 1e-7
     print("second tractroid: every vertex on the revolved tractrix "
           "(rho, z) = a(t - tanh t, sech t)")
+
+    # Eguchi-Hanson: the embedding is isometric, and the tip closes.
+    for a_ in (0.5, 1.0, 2.3):
+        worst = 0.0
+        for i in range(1, 2000):
+            r = a_ * (1.000001 + 0.01 * i)
+            worst = max(worst, abs(eh_drho(r, a_) ** 2
+                                   + eh_dz(r, a_) ** 2
+                                   - eh_grr(r, a_)) / eh_grr(r, a_))
+        assert worst < 1e-9, worst
+        tip = eh_drho(a_ * (1 + 1e-7), a_) / math.sqrt(
+            eh_grr(a_ * (1 + 1e-7), a_))
+        assert abs(tip - 1.0) < 1e-6, tip
+    print("eguchi-hanson: rho'^2 + z'^2 = g_rr to 1e-9 relative, and "
+          "drho/ds -> 1 at the bolt, so the tip closes smoothly for a "
+          "psi period of 2 pi -- the Z2 quotient, made visible")
+    # Asymptotically flat: the psi-circle tends to r/2.
+    assert abs(eh_rho(1e5, 1.0) / 5e4 - 1.0) < 1e-6
+    V, F, _r = _revolve(eguchi_hanson_profile(1.0, 3.0, 96), 48)
+    assert _finite(V) and _valid(V, F)
+    assert min(math.hypot(x, y) for x, y, _z in V) < 1e-12
+    print("eguchi-hanson: mesh closes on the axis at the bolt")
+
+    # The conifold model sits exactly on its quadric, and the throat
+    # is exactly the vanishing cycle.
+    for delta, sheets in ((-0.36, 1), (0.0, 1), (0.25, 2)):
+        profs = conifold_profiles(delta, 1.5, 48)
+        assert len(profs) == sheets, (delta, len(profs))
+        allv = []
+        for prof in profs:
+            V, F, _r = _revolve(prof, 48)
+            assert _finite(V) and _valid(V, F)
+            allv.extend(V)
+        res = max(abs(z * z - x * x - y * y - delta) for x, y, z in allv)
+        assert res < 1e-12, res
+        if delta < 0.0:
+            waist = min(math.hypot(x, y) for x, y, _z in allv)
+            assert abs(waist - math.sqrt(-delta)) < 1e-9, waist
+    print("conifold: every vertex on u^2 - v^2 - z^2 = delta to 1e-12; "
+          "one sheet at and below the node, two above; throat radius "
+          "exactly sqrt(-delta)")
+
+    # The tropical quartic is the dual complex of a unimodular
+    # triangulation of 4 Delta_3, so it has one 2-cell per edge of that
+    # triangulation: 35 - E + 160 - 64 = 1 gives E = 130.  (The
+    # geometry itself is checked in polyhedra/toric.py; this is the
+    # wiring.)
+    V, F = tropical_surface()
+    assert len(F) == 130, len(F)
+    assert _finite(V)
+    print("tropical calabi-yau: 130 two-cells, one per edge of the "
+          "triangulation it is dual to")
 
     print("miscellaneous surfaces standalone tests passed")
