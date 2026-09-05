@@ -75,25 +75,41 @@ void main() {
   vec3 base = front ? uFront : uBack;
   if (!front) n = -n;
 
+  // The documentation studio, transposed.  docs/render_docs.py lights
+  // every figure in the repository with a fixed four-light rig, and these
+  // are its lamps: the Blender positions carried over from Z-up into this
+  // viewer's Y-up frame ((x, y, z) -> (x, z, -y)), at the studio's own
+  // relative energies -- key 320, the two rims 750 scaled by
+  // subjects.STUDIO_RIM_SCALE = 0.35, top 150, fill 70.  Matching the rig
+  // is what makes a surface on screen look like the same surface in its
+  // thumbnail and on its documentation page.
+  vec3 key  = normalize(vec3( 0.59,  0.52,  0.62));
+  vec3 fill = normalize(vec3(-0.93,  0.19,  0.31));
+  vec3 rimL = normalize(vec3(-0.61,  0.39, -0.68));
+  vec3 rimR = normalize(vec3( 0.71,  0.30, -0.63));
+  vec3 top  = normalize(vec3( 0.00,  0.99, -0.11));
+
   // WRAPPED lighting, and a hemisphere term, so that nothing ever falls
-  // to black.  With three plain lambert lights every face pointing away
-  // from all of them dropped to ambient alone, and on a surface as
-  // folded as these that is most of what you see from any given angle --
-  // half the object read as a black silhouette and the detail in it was
-  // simply gone.  Wrapping keeps a lit gradient right round the terminator.
-  vec3 key  = normalize(vec3( 0.42, 0.36, 0.83));
-  vec3 fill = normalize(vec3(-0.66, 0.16, 0.38));
-  vec3 rim  = normalize(vec3( 0.08, -0.88, 0.26));
+  // to black.  With plain lambert lights every face pointing away from
+  // all of them dropped to ambient alone, and on a surface as folded as
+  // these that is most of what you see from any given angle -- half the
+  // object read as a black silhouette and the detail in it was simply
+  // gone.  Cycles never has that problem because the studio's dome
+  // bounces light back; wrapping is the cheap stand-in for that bounce.
   float w = 0.45;
   float lk = clamp((dot(n, key)  + w) / (1.0 + w), 0.0, 1.0);
   float lf = clamp((dot(n, fill) + w) / (1.0 + w), 0.0, 1.0);
-  float lr = clamp((dot(n, rim)  + w) / (1.0 + w), 0.0, 1.0);
-  float sky = 0.5 + 0.5 * n.y;            // soft top-to-bottom gradient
-  float l = uAmbient + 0.16 * sky + 0.46 * lk + 0.20 * lf + 0.12 * lr;
+  float ll = clamp((dot(n, rimL) + w) / (1.0 + w), 0.0, 1.0);
+  float lr = clamp((dot(n, rimR) + w) / (1.0 + w), 0.0, 1.0);
+  float lt = clamp((dot(n, top)  + w) / (1.0 + w), 0.0, 1.0);
+  float sky = 0.5 + 0.5 * n.y;            // the dome, softly
+  float l = uAmbient + 0.10 * sky
+          + 0.44 * lk + 0.10 * lf + 0.13 * ll + 0.13 * lr + 0.20 * lt;
 
-  // A touch of specular keeps curvature readable on a matte palette.
+  // The studio's White Plastic is roughness 0.38, which is tighter and
+  // brighter than the broad sheen this had before.
   vec3 h = normalize(key + vec3(0.0, 0.0, 1.0));
-  float s = pow(max(dot(n, h), 0.0), 26.0) * 0.22;
+  float s = pow(max(dot(n, h), 0.0), 42.0) * 0.30;
   outColor = vec4(base * l + vec3(s), 1.0);
 }`;
 
@@ -246,13 +262,24 @@ export function decodeMesh(packed) {
 
 // --------------------------------------------------------------- viewer
 
-// Both defaults are LIGHT.  The two sides of a sheet have to be told
-// apart, but a dark second colour does it by throwing away the shading
-// that carries the shape, and a surface with one bright side and one
-// near-black one reads as half a surface.
+// The documentation studio's material, which is a White Plastic at base
+// colour (0.84, 0.84, 0.86) -- see docs/render_docs.py.  Using it here is
+// what makes a surface on screen read as the same object as its
+// thumbnail and its documentation figure.
+//
+// The one deliberate departure: the two sides are not quite identical.
+// The studio never needed a distinction because a solid is closed and you
+// only ever see its outside, but these sheets are open and the only way
+// to read which way one folds through itself is for its two faces to
+// differ.  So the back is the same plastic cooled and darkened slightly
+// -- enough to tell apart, not enough to read as a second material.
+//
+// Both defaults stay LIGHT.  A dark second colour tells the sides apart
+// by throwing away the shading that carries the shape, and a surface with
+// one bright side and one near-black one reads as half a surface.
 const DEFAULTS = {
-  front: [0.88, 0.72, 0.42],       // warm sand
-  back: [0.52, 0.70, 0.80],        // cool sky
+  front: [0.84, 0.84, 0.86],       // studio White Plastic
+  back: [0.62, 0.67, 0.74],        // the same, cooled and stepped down
   background: [0, 0, 0, 0],
   ambient: 0.30,
   wireframe: false,

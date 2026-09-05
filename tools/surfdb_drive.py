@@ -692,4 +692,12 @@ def main():
     return 0
 
 
-main()
+# Guarded so this module can be IMPORTED for run_op(), which is the one
+# piece of it that knows how to select a record's surface on a
+# multi-surface operator. Without the guard, importing it silently drove
+# every implemented generator in the database -- a bare main() at the
+# bottom is indistinguishable from a hang when the caller only wanted a
+# function. (The no-__main__ rule in CLAUDE.md is about the shipped
+# math_art/ package, which Blender only ever imports; tools/ are run.)
+if __name__ == "__main__":
+    main()
