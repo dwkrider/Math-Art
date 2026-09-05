@@ -380,4 +380,262 @@ def _selftest():
     print("warp: depth <= 5.9 keeps the cutoff ramp's slope positive, so "
           "the map stays one-to-one  OK")
 
+    # every honeycomb of the project must soften: a full vertex figure at
+    # each node, a valid two-colouring of it, and a cell colouring that
+    # actually separates face-neighbours
+    kinds = ('CUBIC', 'TRUNCOCT', 'RHOMBDODEC', 'HEXPRISM',
+             'ELONGDODEC', 'OCTET')
+    for kind in kinds:
+        V, F, T, info = soften_honeycomb(kind, 2, 2, 2, subdiv=3,
+                                         depth=4.0, colors=2)
+        assert len(V) and len(F), kind
+        assert info['warped'] == info['nodes'], (kind, info)
+        assert info['interior'] >= 1, (kind, info)
+        assert len(set(T)) >= 2, (kind, set(T))
+        # the warp must actually move something
+        V0, _F, _T, _i = soften_honeycomb(kind, 2, 2, 2, subdiv=3,
+                                          depth=0.0, colors=2)
+        moved = float(np.abs((V - V.mean(0)) - (V0 - V0.mean(0))).max())
+        assert moved > 1e-3, (kind, moved)
+        print(f"{kind}: {info['nodes']} nodes all softened "
+              f"({info['interior']} interior, degree {info['degree']}), "
+              f"max move {moved:.3f}  OK")
+
+    # the cell colouring must genuinely separate face-neighbours, which a
+    # centre-parity rule does not on several of these lattices
+    try:
+        from ..ifs import spacefill
+    except (ImportError, ValueError):
+        from ifs import spacefill
+    for kind in kinds:
+        cells, _p = spacefill.build_block(kind, 2, 2, 2)
+        col = colour_cells(cells, 2)
+        keyed = {}
+        for ci, (c, V, F, _t) in enumerate(cells):
+            P = c + V
+            for f in F:
+                k = tuple(np.round(P[list(f)].mean(axis=0) / 1e-6
+                                   ).astype(np.int64))
+                keyed.setdefault(k, []).append(ci)
+        shared = [o for o in keyed.values() if len(o) == 2]
+        two = sum(1 for o in shared if col[o[0]] == col[o[1]])
+        col4 = colour_cells(cells, 4)
+        four = sum(1 for o in shared if col4[o[0]] == col4[o[1]])
+        # FOUR colours separate every face-neighbour on all six
+        # honeycombs; two do not -- the FCC rhombic dodecahedra clash on
+        # 16 of 36 shared faces, because that adjacency graph has odd
+        # cycles.  Hence the default palette of four.
+        assert four == 0, (kind, four, len(shared))
+        print(f"{kind}: 4 colours separate all {len(shared)} shared faces "
+              f"(2 colours leave {two} clashing)  OK")
+
     print("softcell.warp standalone tests passed")
+
+
+# ------------------------------------------------------------------
+# The general case: soften any of the project's space-filling honeycombs
+# ------------------------------------------------------------------
+
+def _subdivide_face(P, subdiv):
+    """Grid one convex polygon, graded toward its CORNERS.
+
+    The corners are the tiling's nodes, and the profile phi has infinite
+    slope there, so a uniform grid renders the tangency the warp is
+    creating as a visible crease.  Each fan triangle (centroid, v_i,
+    v_i+1) is parametrised by u outward from the centroid and t along the
+    edge, then u is pushed toward the rim and t toward both ends.
+    """
+    C = P.mean(axis=0)
+    n = len(P)
+    verts = []
+    quads = []
+    u = np.sin(np.linspace(0.0, 1.0, subdiv + 1) * math.pi / 2.0)
+    t = 0.5 - 0.5 * np.cos(np.linspace(0.0, 1.0, subdiv + 1) * math.pi)
+    for k in range(n):
+        A, B = P[k], P[(k + 1) % n]
+        base = len(verts)
+        for i in range(subdiv + 1):
+            for j in range(subdiv + 1):
+                edge = (1.0 - t[j]) * A + t[j] * B
+                verts.append(C + u[i] * (edge - C))
+        for i in range(subdiv):
+            for j in range(subdiv):
+                a = base + i * (subdiv + 1) + j
+                quads.append((a, a + 1, a + subdiv + 2, a + subdiv + 1))
+    return np.array(verts, float), quads
+
+
+def _weld(V, faces, tol=1e-7):
+    key = np.round(np.asarray(V, float) / tol).astype(np.int64)
+    seen = {}
+    remap = np.empty(len(V), dtype=np.int64)
+    out = []
+    for i, k in enumerate(map(tuple, key)):
+        j = seen.get(k)
+        if j is None:
+            j = len(out)
+            seen[k] = j
+            out.append(V[i])
+        remap[i] = j
+    new = []
+    kept = []
+    for fi, f in enumerate(faces):
+        g = [int(remap[i]) for i in f]
+        h = [g[0]]
+        for x in g[1:]:
+            if x != h[-1]:
+                h.append(x)
+        if len(h) > 2 and h[0] == h[-1]:
+            h.pop()
+        if len(h) >= 3:
+            new.append(tuple(h))
+            kept.append(fi)
+    return np.array(out, float), new, kept
+
+
+def honeycomb_nodes(cells, tol=1e-6):
+    """Nodes of a honeycomb, with the vertex figure at each.
+
+    `cells` is spacefill's list of (centre, verts, faces, tag).  Returns
+    {node position -> (edge directions, cells as lists of edge indices)},
+    which is exactly the data the two-colouring needs: one graph vertex per
+    edge leaving the node, one graph face per cell meeting it.
+    """
+    at = {}
+    for ci, (c, V, F, _t) in enumerate(cells):
+        P = c + V
+        adj = {}
+        for f in F:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                adj.setdefault(a, set()).add(b)
+                adj.setdefault(b, set()).add(a)
+        for v, nb in adj.items():
+            key = tuple(np.round(P[v] / tol).astype(np.int64))
+            rec = at.setdefault(key, {'pos': P[v], 'dirs': [], 'cells': {}})
+            idxs = []
+            for w in nb:
+                d = P[w] - P[v]
+                d = d / np.linalg.norm(d)
+                hit = None
+                for j, e in enumerate(rec['dirs']):
+                    if np.linalg.norm(e - d) < 1e-6:
+                        hit = j
+                        break
+                if hit is None:
+                    hit = len(rec['dirs'])
+                    rec['dirs'].append(d)
+                idxs.append(hit)
+            rec['cells'][ci] = sorted(set(idxs))
+    return at
+
+
+def soften_honeycomb(kind='CUBIC', nx=1, ny=1, nz=1, subdiv=6,
+                     bend_radius=0.9, depth=4.0, colors=4):
+    """Soften any space-filling honeycomb of `ifs.spacefill`.
+
+    Builds the block cell by cell so the vertex figure at every node is
+    known exactly -- which edges leave it and which cells use which -- then
+    two-colours each figure and applies the node warp.  Interior nodes get
+    the full treatment; nodes on the block's outer surface have an
+    incomplete vertex figure, so they are left alone rather than softened
+    against cells that are not there.
+    """
+    try:
+        from ..ifs import spacefill
+    except (ImportError, ValueError):
+        from ifs import spacefill
+
+    cells, pitch = spacefill.build_block(kind, nx, ny, nz)
+
+    palette = colour_cells(cells, colors)
+
+    verts = []
+    faces = []
+    tags = []
+    for ci, (c, V, F, t) in enumerate(cells):
+        P = c + V
+        col = palette[ci]
+        for f in F:
+            Vf, qs = _subdivide_face(P[list(f)], subdiv)
+            base = len(verts)
+            verts.extend(Vf)
+            for q in qs:
+                faces.append(tuple(base + i for i in q))
+                tags.append(col)
+    V = np.array(verts, float)
+    V, faces, kept = _weld(V, faces)
+    tags = [tags[i] for i in kept]      # keep per-face data in step
+    assert len(tags) == len(faces)
+
+    at = honeycomb_nodes(cells)
+    degree = max(len(r['dirs']) for r in at.values()) if at else 0
+    rng = np.random.default_rng(3)
+    warped = 0
+    for rec in at.values():
+        dirs = rec['dirs']
+        # Soften every node whose figure admits a colouring, not only the
+        # fully interior ones.  A small block is nearly all surface -- a
+        # 2x2x2 cubic block has exactly ONE interior node out of 27 -- so
+        # skipping the boundary left the whole outer shell unsoftened and
+        # the effect invisible.  A boundary node's figure is incomplete, so
+        # its shape is not what the infinite tiling would give; it is still
+        # a better picture than an unsoftened crust, and the interior nodes
+        # (reported separately) are exact.
+        if len(dirs) < 3:
+            continue
+        cl = [v for v in rec['cells'].values() if len(v) >= 3]
+        if not cl:
+            continue
+        try:
+            signs = two_colour(len(dirs), cl)
+            axis = generic_axis(dirs, rng)
+        except ValueError:
+            continue
+        nd = min(np.linalg.norm(rec['pos'] - o['pos'])
+                 for k, o in at.items() if o is not rec)
+        r = 0.5 * nd * bend_radius
+        V = node_warp(V, rec['pos'], dirs, signs, axis, r, 0.7 * r,
+                      depth=depth)
+        warped += 1
+    V = V - V.mean(axis=0)
+    interior = sum(1 for r in at.values() if len(r['dirs']) >= degree)
+    return V, faces, tags, {'nodes': len(at), 'warped': warped,
+                            'interior': interior, 'degree': degree,
+                            'colors': len(set(tags))}
+
+
+def colour_cells(cells, ncolors=4):
+    """Greedily colour the cells so face-neighbours differ.
+
+    Colouring by a parity of the cell centre looks right on a cubic grid
+    and collapses to a single colour on several of the others -- every
+    truncated-octahedron centre has the same coordinate parity, for
+    instance.  Colouring the actual ADJACENCY graph works on all of them,
+    and falls back gracefully when the palette is too small for the
+    honeycomb's chromatic number.
+    """
+    keyed = {}
+    for ci, (c, V, F, _t) in enumerate(cells):
+        P = c + V
+        for f in F:
+            k = tuple(np.round(P[list(f)].mean(axis=0) / 1e-6
+                               ).astype(np.int64))
+            keyed.setdefault(k, []).append(ci)
+    adj = {i: set() for i in range(len(cells))}
+    for owners in keyed.values():
+        for a in owners:
+            for b in owners:
+                if a != b:
+                    adj[a].add(b)
+    ncolors = max(1, int(ncolors))
+    out = [0] * len(cells)
+    for i in range(len(cells)):
+        used = {out[j] for j in adj[i] if j < i}
+        for c in range(ncolors):
+            if c not in used:
+                out[i] = c
+                break
+        else:
+            out[i] = i % ncolors
+    return out

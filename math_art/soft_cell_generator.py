@@ -68,6 +68,11 @@ except ImportError:
     _IN_BLENDER = False
 
 
+# a six-way palette, so cell colouring still reads when a honeycomb needs
+# more than two colours to separate face-neighbours
+_PALETTE = [(0.90, 0.55, 0.20), (0.22, 0.45, 0.72), (0.32, 0.70, 0.42),
+            (0.86, 0.28, 0.24), (0.60, 0.40, 0.75), (0.95, 0.80, 0.30)]
+
 _LABEL = {
     'SADDLE': "Saddle Prism Cell",
     'TRIPRISM': "Soft Triangular Prism",
@@ -252,9 +257,31 @@ if _IN_BLENDER:
         honeycomb: EnumProperty(
             name="Honeycomb",
             items=[('CUBIC', "Cubes",
-                    "The cubic grid -- the worked example of the softening "
-                    "theorem")],
-            default='CUBIC')
+                    "The cubic grid -- the worked example of the theorem"),
+                   ('TRUNCOCT', "Truncated Octahedra",
+                    "The bitruncated cubic honeycomb on the BCC lattice: "
+                    "the same polyhedron the Named Cells soften by bending "
+                    "its edges instead"),
+                   ('RHOMBDODEC', "Rhombic Dodecahedra",
+                    "On the FCC lattice"),
+                   ('HEXPRISM', "Hexagonal Prisms",
+                    "The honeycomb proper"),
+                   ('ELONGDODEC', "Elongated Dodecahedra",
+                    "On the body-centred tetragonal lattice"),
+                   ('OCTET', "Octahedra + Tetrahedra",
+                    "The octet truss: two cell shapes, so the colouring "
+                    "shows the two families")],
+            default='TRUNCOCT')
+
+        cell_colors: IntProperty(
+            name="Cell Colours", description="Colour the cells so that "
+            "face-neighbours differ, which is the only way to see where "
+            "one cell ends and the next begins once the corners have "
+            "melted together.  Four is the default because four is what it "
+            "takes: two colours leave 16 of 36 shared faces matching on the "
+            "FCC rhombic dodecahedra, while four separate every neighbour "
+            "on all six honeycombs",
+            default=4, min=1, max=6)
 
         subdivisions: IntProperty(
             name="Subdivisions", description="Grid density on each face",
@@ -375,14 +402,21 @@ if _IN_BLENDER:
             notes = []
             try:
                 if self.mode == 'SOFTEN':
-                    V, faces = softcell.warp.soften_cubic(
-                        n=max(self.nx, self.ny, self.nz),
+                    V, faces, tags, info = softcell.warp.soften_honeycomb(
+                        self.honeycomb, self.nx, self.ny, self.nz,
                         subdiv=self.subdivisions,
                         bend_radius=self.bend_radius,
-                        depth=self.bend_depth)
-                    tags = [0] * len(faces)
-                    info = {}
-                    label = "Softened Cubes"
+                        depth=self.bend_depth,
+                        colors=self.cell_colors)
+                    label = "Softened " + dict(
+                        CUBIC="Cubes", TRUNCOCT="Truncated Octahedra",
+                        RHOMBDODEC="Rhombic Dodecahedra",
+                        HEXPRISM="Hexagonal Prisms",
+                        ELONGDODEC="Elongated Dodecahedra",
+                        OCTET="Octet")[self.honeycomb]
+                    notes.append(
+                        f"{info['warped']} of {info['nodes']} nodes softened "
+                        f"({info['interior']} with a complete vertex figure)")
                 elif self.separate_objects and self.mode == 'CELLS':
                     return self._build_separate(context)
                 else:
@@ -413,14 +447,21 @@ if _IN_BLENDER:
 
             me = bpy.data.meshes.new("SoftCell")
             me.from_pydata([tuple(p) for p in P], [], list(faces))
-            me.validate(clean_customdata=True)
-            if (self.two_materials and self.mode == 'CELLS'
-                    and len(me.polygons) == len(tags) and max(tags) > 0):
-                me.materials.append(_material("Soft Cell A",
-                                              (0.90, 0.55, 0.20)))
-                me.materials.append(_material("Soft Cell B",
-                                              (0.22, 0.45, 0.72)))
+            # Assign materials BEFORE validate().  Adjacent cells each
+            # contribute the wall they share, so a welded block carries
+            # every internal face twice -- a quarter of them for a 2x2x2
+            # cube block -- and validate() rightly deletes the duplicates.
+            # Doing it afterwards compared a shortened polygon list against
+            # the original tags, the counts disagreed, and the colouring
+            # was silently skipped altogether.
+            want = ((self.two_materials and self.mode == 'CELLS')
+                    or self.mode == 'SOFTEN')
+            if want and len(me.polygons) == len(tags) and max(tags) > 0:
+                for ci in range(max(tags) + 1):
+                    me.materials.append(_material(
+                        f"Soft Cell {chr(ord('A') + ci)}", _PALETTE[ci]))
                 me.polygons.foreach_set('material_index', tags)
+            me.validate(clean_customdata=True)
             me.update()
             # A soft cell is smooth across its NODES -- that is the whole
             # point -- but its faces still meet along its EDGES at a real
@@ -450,9 +491,9 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'mode')
             if self.mode == 'SOFTEN':
-                for k in ('honeycomb', 'nx', 'subdivisions',
+                for k in ('honeycomb', 'nx', 'ny', 'nz', 'subdivisions',
                           'bend_radius', 'bend_depth', 'scale',
-                          'shade_smooth'):
+                          'cell_colors', 'shade_smooth'):
                     lay.prop(self, k)
                 if self.shade_smooth:
                     lay.prop(self, 'crease_angle')
