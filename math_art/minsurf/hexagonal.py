@@ -1261,18 +1261,129 @@ def frd_geometry(a=None, t=None, n=6000):
 # without printing a value.  `solve_spec_tau('FRDR', 0.10, 0.45)`
 # recovers 0.3947862928575998 with a residual of 6e-17, and the
 # self-test re-runs that bisection against the stored constant.
+#
+# a = 0.07 is Weber's own member -- unlike F-RD, where the notebook's
+# demo value was a generic member of a family whose distinguished
+# (cubic) member had to be solved for, `Unnamed-12.nb` itself sets
+# `a = .07` for its plots, and F-RD(r) is a family with no cubic
+# member to prefer: it is the quarter-twisted TETRAGONAL relative and
+# correctly sits under Non-Cubic.
 _FRDR_A = 0.07
+_FRDR_B = 0.25 - _FRDR_A
 _SPECS['FRDR'] = _prod_spec(
     "Schoen F-RD(r) (exact, quarter-twisted, genus 5)",
     tau=0.3947862928575998j, a=_FRDR_A,
-    terms=lambda a, tau, _b=0.25 - _FRDR_A: (
+    terms=lambda a, tau, _b=_FRDR_B: (
         (a, 0.5), (_b, 0.5), (-a, -0.5), (-_b, -0.5),
         (0.5 - a - tau / 2.0, -0.5), (0.5 - _b - tau / 2.0, -0.5),
         (-0.5 + a - tau / 2.0, 0.5), (-0.5 + _b - tau / 2.0, 0.5)),
     const=0.25j * math.pi,
+    splits=(_FRDR_A, _FRDR_B),
     nb="Unnamed-12.nb")
 _SPECS['FRDR']['period'] = (
     lambda a, tau: (complex(a), complex(0.5 - a - tau / 2.0)))
+
+# F-RD(r)'s cell.  The same defect F-RD had, the same cure: both
+# horizontal edges run through two branch points (+-a, +-b below;
+# their -tau/2-row partners at 1/2 - b, 1/2 - a above), so read whole
+# both classified as 'neither', only the two parallel lids survived,
+# and the row grew as a z column.  Split, the eight arcs are all
+# planar to 1e-7 -- far cleaner than F-RD, every exponent here is
+# +-1/2 -- and land on AXIS-ALIGNED mirrors, two parallel pairs plus
+# the lids:
+#
+#     x=0, x=1        the lids       z = 0    and  z = 1/2
+#     y=0#0, y=1#1    the wall       x = 0
+#     y=0#1, y=1#2    the wall       y = c1
+#     y=0#2           the wall       x = c2
+#     y=1#0           the wall       y = y0
+#
+# so the patch is the chamber of a pmm PRISM -- the box
+# [0, c2] x [y0, c1] x [0, 1/2] -- and the quarter twist is exactly
+# what pairs the two wall families: the surface's S4 element maps
+# x = const mirrors to y = const mirrors, which forces the in-plane
+# chamber SQUARE, c2 = c1 - y0.  The offsets are solved by the same
+# 1D path integrals as F-RD's (`frdr_geometry`):
+#
+#     y0 = -0.1552897711479544      c2 = 0.23939048974052432
+#     c1 = c2 + y0                  c2 - (c1 - y0) = 9e-11
+#
+# and the square closing to 1e-10 is the twist-consistency check, not
+# an assumption -- c1 and c2 are measured independently.  The word
+# reflects the chamber through three of its walls: 8 copies, the
+# tetragonal translational cell 2 c2 x 2 c2 x 1 (0.479 x 0.479 x 1),
+# which tiles by pure translation.  No Evolver datafile or nodal row
+# exists for the quarter-twisted variant (FRD2 is Wohlgemuth's
+# UNTWISTED F-RD relative), so the cross-checks here are internal:
+# the solved offsets against the meshed patch, the square residual,
+# the watertightness of the assembled cell -- and the twist itself,
+# measured on the finished cell: the rotoreflection by 90 degrees
+# about the vertical line (0, c1) with z -> 1/2 - z maps the mesh to
+# itself to a median 9e-4 of the edge, while any wrong axis or wrong
+# z-map is 40x worse.
+_FRDR_Y0 = -0.1552897711479544
+_FRDR_C2 = 0.23939048974052432
+_SPECS['FRDR'].update(
+    tsplits=(0.5 - _FRDR_B, 0.5 - _FRDR_A),
+    exact_planes={
+        'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+        'y=0#0': (1.0, 0.0, 0.0), 'y=0#1': (0.0, 1.0, 0.0),
+        'y=0#2': (1.0, 0.0, 0.0),
+        'y=1#0': (0.0, 1.0, 0.0), 'y=1#1': (1.0, 0.0, 0.0),
+        'y=1#2': (0.0, 1.0, 0.0)},
+    exact_offsets={
+        'x=0': 0.0, 'x=1': 0.5,
+        'y=0#0': 0.0, 'y=1#1': 0.0,
+        'y=0#1': _FRDR_C2 + _FRDR_Y0, 'y=1#2': _FRDR_C2 + _FRDR_Y0,
+        'y=0#2': _FRDR_C2, 'y=1#0': _FRDR_Y0},
+    letters={'e': 'x=1', 'm': 'y=0#2', 'n': 'y=0#1'},
+    words=('emn',))
+
+
+def frdr_geometry(n=8000):
+    """Re-derive F-RD(r)'s mirror offsets from the Weierstrass data.
+
+    Returns (y0, c1, c2): the y = y0 wall through the top-left corner
+    (up the smooth left edge to tau/2), and the y = c1 and x = c2
+    walls at midpoints of the [a, b] and [b, 1/2] arcs, reached
+    through the interior so no branch point sits on the path.  The
+    quarter twist forces c2 = c1 - y0 (the square chamber), which the
+    self-test checks rather than assumes.
+    """
+    sp = _SPECS['FRDR']
+    a = float(sp['a'])
+    b = 0.25 - a
+    tau = sp['tau']
+    q = np.exp(1j * np.pi * tau)
+    terms = sp['terms'](a, tau)
+
+    def logA(z):
+        L = np.zeros(z.shape, dtype=complex)
+        for sh, c in terms:
+            lg = np.log(_theta11(z - sh, q))
+            L = L + c * (np.real(lg) + 1j * np.unwrap(np.imag(lg)))
+        return L
+
+    def leg(zs):
+        mids = 0.5 * (zs[:-1] + zs[1:])
+        L = logA(mids) + complex(sp['const'])
+        g, inv = np.exp(L), np.exp(-L)
+        dz = np.diff(zs)
+        return (float(np.real(np.sum(0.5 * (inv - g) * dz))),
+                float(np.real(np.sum(0.5j * (inv + g) * dz))))
+
+    y0 = leg(np.linspace(0.0, tau / 2.0, n + 1))[1]
+
+    def at(zst):
+        mid = tau / 4.0
+        p = np.concatenate([np.linspace(0.0, mid, n + 1),
+                            np.linspace(mid, zst + mid, n + 1)[1:],
+                            np.linspace(zst + mid, zst, n + 1)[1:]])
+        return leg(p)
+
+    c1 = at(0.5 * (a + b))[1]
+    c2 = at(0.5 * (b + 0.5))[0]
+    return y0, c1, c2
 
 
 # --------------------------------------------------------------------
@@ -1587,7 +1698,12 @@ _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 # conventional cell with 192 copies of a patch that is
                 # a SIXTH of this one (his is 1/192 of the cell, ours
                 # 1/32 -- one chamber of the (4,4,2) prism).
-                'FRD_EXACT': (32, 'group')}
+                'FRD_EXACT': (32, 'group'),
+                # {1,e}{1,m}{1,n}: the pmm prism chamber reflected
+                # through three of its walls.  No Evolver datafile
+                # exists for the quarter-twisted variant, so the count
+                # is group order, not an Evolver run.
+                'FRDR': (8, 'group')}
 
 
 def spec_modulus_range(key):
@@ -2234,8 +2350,34 @@ def _spec_axes(key, nu, nv):
     return xs, wx, xspan, ys, wy, yspan
 
 
+# The x axes actually USED to build each patch, keyed by spec state and
+# node count.  `spec_curves` and `_curve_indices` receive only the
+# point grid P, so they used to RE-DERIVE the axis from P.shape[0] --
+# but the graded allocator does not return exactly the node count it is
+# asked for, so a patch built at nu = 60 has 59 rows, and re-gradings
+# at 59 lands on a DIFFERENT grid (F-RD: 51 nodes, 0.11 max
+# displacement).  Every split index found against that wrong axis was
+# wrong: F-RD's bottom edge lost its last eight rows to no curve at
+# all, which left them unprojected and opened slit-shaped seams in the
+# assembled cell, and S'-S'' and R-II mis-cut their edges at the
+# default resolution 30.  Recording the real axis closes the loop.
+_AXES_SEEN = {}
+
+
+def _record_axes(key, xs, wx):
+    _AXES_SEEN.setdefault((key, _spec_state(key)), {})[len(xs)] = (xs, wx)
+
+
 def _spec_nodes(key, nu):
-    """The x nodes and their dx/du weights for a spec patch."""
+    """The x nodes and their dx/du weights for a spec patch.
+
+    Prefers the axis a patch of this length was actually BUILT with
+    (see `_AXES_SEEN` above); re-grading is only a fallback for the
+    cold-cache case, where the old behaviour is the best available.
+    """
+    rec = _AXES_SEEN.get((key, _spec_state(key)), {}).get(int(nu))
+    if rec is not None:
+        return rec
     xs, wx, _xspan, _ys, _wy, _yspan = _spec_axes(key, nu, 8)
     return xs, wx
 
@@ -2281,6 +2423,7 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     # and it is not cosmetic: the sub-curves either side of a split are
     # different symmetry elements, and a node has to separate them.
     xs, wts, xspan, ys, wys, yspan = _spec_axes(key, nu, nv)
+    _record_axes(key, xs, wts)
 
     # BOTH ends of the y range are held off the edge, not just the
     # bottom.  The theta factors vanish on the lattice, and for the
@@ -2990,7 +3133,10 @@ def spec_reflect_tile(key, P, depth):
     return best[0], best[1]
 
 
-@_geom_cache.memoise(version=2, extra=_spec_state)
+# version 3: split indices are now found against the axis the patch
+# was BUILT with (`_AXES_SEEN`), which changes the meshes wherever the
+# re-graded axis used to disagree with it.
+@_geom_cache.memoise(version=3, extra=_spec_state)
 def spec_build(key, cells, res_per_cell, scale, theta,
                arrangement='UNIT'):
     """Builder for one theta-family row, matching the TPMS_EXACT
@@ -3698,6 +3844,31 @@ def _selftest():
           "(%d copies) %s"
           % (bbf[0], bbf[1], bbf[2], nf, 'OK' if good else 'FAIL'))
 
+    # F-RD(r)'s wall offsets are SOLVED constants too, so they are
+    # re-derived the same way, and the square-chamber residual is the
+    # quarter-twist consistency check: c1 and c2 are measured
+    # independently, and only the twist forces c2 = c1 - y0.
+    ry0, rc1, rc2 = frdr_geometry()
+    sq = rc2 - (rc1 - ry0)
+    good = (abs(ry0 - _FRDR_Y0) < 1e-6 and abs(rc2 - _FRDR_C2) < 1e-6
+            and abs(sq) < 1e-6)
+    ok &= good
+    print("hexagonal: F-RD(r) walls re-derive to y0 %.10f c2 %.10f "
+          "(stored %.10f %.10f), square residual %.1e %s"
+          % (ry0, rc2, _FRDR_Y0, _FRDR_C2, sq, 'OK' if good else 'FAIL'))
+
+    # ...and the assembled cell must be the square tetragonal prism.
+    Vr_, Qr_, nr_, wr_ = spec_word_assemble('FRDR', _spec_patch(
+        'FRDR', 60, 60))
+    bbr = Vr_.max(0) - Vr_.min(0)
+    good = (nr_ == 8 and abs(bbr[0] / bbr[1] - 1.0) < 1e-3
+            and abs(bbr[0] - 2.0 * _FRDR_C2) < 1e-3
+            and abs(bbr[2] - 1.0) < 1e-6)
+    ok &= good
+    print("hexagonal: F-RD(r) assembles its tetragonal cell "
+          "%.6f x %.6f x %.6f (%d copies) %s"
+          % (bbr[0], bbr[1], bbr[2], nr_, 'OK' if good else 'FAIL'))
+
     # ...then each member must build a converging minimal patch.
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
                 'FRD_EXACT', 'FRDR',
@@ -3755,18 +3926,19 @@ def _selftest():
     # whose full generator sets produce overlapping copies while proper
     # subsets tile.  Gating growth here stops a future change quietly
     # returning them to a bare patch.
-    # F-RD is no longer here: it assembles its cell through the word
-    # route now, so like H'-T it never reaches `spec_reflect_tile`.
+    # F-RD and F-RD(r) are no longer here: they assemble their cells
+    # through the word route now, so like H'-T they never reach
+    # `spec_reflect_tile`.
     bad = []
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
-                'FRDR', 'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+                'TRIPLY_COSTA', 'SIMOES_BATISTA'):
         P = _spec_patch(key, 40, 40)
         base = (P.shape[0] - 1) * (P.shape[1] - 1)
         Vr, Qr = spec_reflect_tile(key, P, 2)
         if len(Qr) <= base or not _orbit_ok(np.asarray(Vr), Qr):
             bad.append('%s:%d/%d' % (key, len(Qr), base))
     ok &= not bad
-    print("hexagonal: all 10 fundamental-piece rows tile under "
+    print("hexagonal: all 9 fundamental-piece rows tile under "
           "Reflections %s" % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     # Schoen H'-T does NOT assemble, and the gate records why rather
