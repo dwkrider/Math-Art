@@ -954,6 +954,7 @@ def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
 
 from . import weierstrass as _we_pgd
 from . import hexagonal as _we_hex
+from . import plateau as _pl
 
 # key -> (menu label, builder(cells, res_per_cell, scale, theta))
 # Rows that offer named assemblies, and the names they offer.
@@ -989,7 +990,159 @@ TPMS_EXACT = {
     'RPD': (_we_hex._SPECS['RPD']['label'],
             lambda cells, res, scale, theta:
                 _we_hex.spec_build('RPD', cells, res, scale, theta)),
+    # Schoen H'-T.  Unlike the three rows above it assembles into a full
+    # watertight cell rather than shipping the fundamental piece: its
+    # boundary curves all classify as mirrors, the reflection group
+    # closes, and the period lattice it derives is hexagonal.  Like
+    # Schwarz H it is a surface with no published nodal formula, so this
+    # route is the only one that reaches it.
+    'HT': (_we_hex._SPECS['HT']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('HT', cells, res, scale, theta)),
+    # The rest of the Euclidean-triangle-group series (see the block
+    # above `_trigroup` in hexagonal).  These three ship the exact
+    # fundamental PIECE rather than an assembled cell: some of their
+    # boundary curves classify as neither a straight line nor a planar
+    # geodesic, so there is no reflection generator to find and
+    # `_assemble` is right to decline -- the same contract the Lidinoid
+    # and rPD rows already ship under.  None of the three has a
+    # published nodal formula either, so this is the only route to them.
+    'SS': (_we_hex._SPECS['SS']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('SS', cells, res, scale, theta)),
+    'H2R': (_we_hex._SPECS['H2R']['label'],
+            lambda cells, res, scale, theta:
+                _we_hex.spec_build('H2R', cells, res, scale, theta)),
+    'TR': (_we_hex._SPECS['TR']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('TR', cells, res, scale, theta)),
+    # Rows whose period problem Weber solved and tabulated; the
+    # constants are transcribed from his notebooks.  See the block above
+    # `_prod_spec` in hexagonal.
+    'STESSMANN': (_we_hex._SPECS['STESSMANN']['label'],
+                  lambda cells, res, scale, theta:
+                      _we_hex.spec_build('STESSMANN', cells, res, scale,
+                                         theta)),
+    'RII': (_we_hex._SPECS['RII']['label'],
+            lambda cells, res, scale, theta:
+                _we_hex.spec_build('RII', cells, res, scale, theta)),
+    'CH': (_we_hex._SPECS['CH']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('CH', cells, res, scale, theta)),
+    'I6': (_we_hex._SPECS['I6']['label'],
+           lambda cells, res, scale, theta:
+               _we_hex.spec_build('I6', cells, res, scale, theta)),
+    'FRD_EXACT': (_we_hex._SPECS['FRD_EXACT']['label'],
+                  lambda cells, res, scale, theta:
+                      _we_hex.spec_build('FRD_EXACT', cells, res, scale,
+                                         theta)),
+    'FRDR': (_we_hex._SPECS['FRDR']['label'],
+             lambda cells, res, scale, theta:
+                 _we_hex.spec_build('FRDR', cells, res, scale, theta)),
+    # The box-symmetry series: one template, selected by a sign vector.
+    'BOX_1001': (_we_hex._SPECS['BOX_1001']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('BOX_1001', cells, res, scale,
+                                        theta)),
+    'BOX_1010': (_we_hex._SPECS['BOX_1010']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('BOX_1010', cells, res, scale,
+                                        theta)),
+    'BOX_1011': (_we_hex._SPECS['BOX_1011']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('BOX_1011', cells, res, scale,
+                                        theta)),
+    'TRIPLY_COSTA': (_we_hex._SPECS['TRIPLY_COSTA']['label'],
+                     lambda cells, res, scale, theta:
+                         _we_hex.spec_build('TRIPLY_COSTA', cells, res,
+                                            scale, theta)),
+    'SIMOES_BATISTA': (_we_hex._SPECS['SIMOES_BATISTA']['label'],
+                       lambda cells, res, scale, theta:
+                           _we_hex.spec_build('SIMOES_BATISTA', cells,
+                                              res, scale, theta)),
+    # Schoen R-III, by RELAXATION rather than by integrating an exact
+    # Weierstrass representation -- see the block above `RING_SURFACES`
+    # in plateau.  It is the only route that reaches this surface:
+    # Karcher records that R-III "is not cut by planar symmetry lines
+    # into simply connected pieces", so the conjugate-Plateau method his
+    # own paper uses for the rest of the family does not apply, and no
+    # notebook for it exists in Weber's archive either.  The fidelity
+    # claim is correspondingly weaker and the row says so in its label.
+    'R3_RING': (_pl.RING_SURFACES['R3'][0] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.ring_build('R3', cells, res, scale, theta)),
+    # Schoen's I-8 and I-9, by the same route and for the same reason:
+    # neither has a notebook in Weber's archive, and both are stated by
+    # Brakke's datafiles as pinned-boundary Plateau problems over
+    # rosette contours.  I-6 is deliberately NOT offered here -- it
+    # already ships as an exact Weierstrass row, and two routes to one
+    # surface would be two rows for one thing; it stays in
+    # RING_SURFACES as a cross-check between the routes.
+    'I8_RING': (_pl.RING_SURFACES['I8'][0] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.ring_build('I8', cells, res, scale, theta)),
+    'I9_RING': (_pl.RING_SURFACES['I9'][0] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.ring_build('I9', cells, res, scale, theta)),
+    # Conjugate-Plateau rows.  These come by a THIRD route: solve a
+    # pinned Plateau problem, take its conjugate, then reflect in the
+    # planes the conjugate's boundary lands in (see the block above
+    # `CONJUGATE_SURFACES` in plateau).  It is the route Brakke's
+    # `*adj.fe` datafiles state, and unlike the exact Weierstrass rows it
+    # needs no theta-function data -- which is what makes it reach
+    # surfaces with no known closed form.
+    #
+    # The three hybrids are one contour separated by one constant, and
+    # Brakke's value for it is quoted to 17 digits in `plateau` because
+    # the period condition is what pins it.  Their patch areas come out
+    # 0.9645 / 0.9338 / 1.4064, so they are genuinely three surfaces and
+    # not one row entered three times.
+    'GW_CONJ': (_pl.CONJUGATE_SURFACES['GW']['name'] + " (relaxed)",
+                lambda cells, res, scale, theta:
+                    _pl.conjugate_build('GW', cells, res, scale, theta)),
+    'HT_HR_CONJ': (_pl.CONJUGATE_SURFACES['HT_HR']['name'] + " (relaxed)",
+                   lambda cells, res, scale, theta:
+                       _pl.conjugate_build('HT_HR', cells, res, scale, theta)),
+    'TR_HT_CONJ': (_pl.CONJUGATE_SURFACES['TR_HT']['name'] + " (relaxed)",
+                   lambda cells, res, scale, theta:
+                       _pl.conjugate_build('TR_HT', cells, res, scale, theta)),
+    'HR_TR_CONJ': (_pl.CONJUGATE_SURFACES['HR_TR']['name'] + " (relaxed)",
+                   lambda cells, res, scale, theta:
+                       _pl.conjugate_build('HR_TR', cells, res, scale, theta)),
 }
+
+# Rows read straight out of Ken Brakke's Evolver datafiles.  The contour,
+# the symmetry generators and the cell word all come from the `.fe`
+# itself (see `minsurf.fedata`, and `minsurf.fecells` for the baked
+# table), so there is no transcription step to get wrong -- which is what
+# went wrong repeatedly when these were done by hand.
+from .fecells import FE_CELLS as _FE_CELLS      # noqa: E402
+
+
+def _fe_row(key):
+    return (_FE_CELLS[key]['title'] + " (Evolver cell)",
+            lambda cells, res, scale, theta, _k=key:
+                _pl.fe_cell_build(_k, cells, res, scale, theta))
+
+
+# Only the cells for surfaces with no generator of their own become rows.
+# Schoen's GW, H'-T and the rest already ship from exact Weierstrass
+# rows, and for those the datafile cell is DEFINITION DATA for the
+# record -- what the surface is, in Brakke's own numbers -- not a second
+# way to draw the same surface in the Add menu.
+for _k in sorted(_FE_CELLS):
+    if _FE_CELLS[_k].get('new_row', True):
+        TPMS_EXACT.setdefault(_k, _fe_row(_k))
+del _k
+
+# The Evolver-cell rows, for callers that must know which TPMS_EXACT
+# rows take a PER-AXIS CELL COUNT triple as `cells`.  On every other
+# exact row `cells` is a reflection/word depth -- a small scalar whose
+# cost is bounded by the builder -- but an fe row TILES by it, so a
+# depth-like default of 4 handed to one of these builds a 4x4x4
+# 64-cell block (Neovius N14: 22.6 million triangles) where the
+# caller meant "grow the cell fully".
+TPMS_FE_ROWS = frozenset(_FE_CELLS)
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
 # the gyroid angle builds the fundamental piece.  CUSTOM (absent here) means

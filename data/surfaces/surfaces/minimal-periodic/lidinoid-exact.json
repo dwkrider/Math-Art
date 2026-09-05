@@ -17,6 +17,44 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
+    "nodal_polynomial": "0.5 * (sin(2 * x) * cos(y) * sin(z) + sin(2 * y) * cos(z) * sin(x) + sin(2 * z) * cos(x) * sin(y) - cos(2 * x) * cos(2 * y) - cos(2 * y) * cos(2 * z) - cos(2 * z) * cos(2 * x)) + 0.15",
+    "weierstrass": {
+      "branch_points": [
+        {
+          "exponent": 0.6666666666666666,
+          "point": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.6666666666666666,
+          "point": [
+            0.5,
+            0.0
+          ]
+        }
+      ],
+      "constant": [
+        0.0,
+        1.0471975511965976
+      ],
+      "domain": {
+        "x": [
+          0.0,
+          1.0
+        ],
+        "y": [
+          0.0,
+          0.4832078917182825
+        ]
+      },
+      "moduli_a": 0.25,
+      "modulus_tau": [
+        0.0,
+        0.4832078917182825
+      ]
+    },
     "note": "No (g, dh) pair is stored: the Gauss map is a product of powers of Jacobi theta functions on the hexagonal/square torus, continued along an unwrapped branch (math_art/minsurf/hexagonal.py); theta functions are outside the exact expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {

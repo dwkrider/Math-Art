@@ -1,0 +1,992 @@
+"""Read Ken Brakke's Evolver datafiles and write what they define into
+the surface database.
+
+THE DATAFILES ARE NOT IN THIS REPO and must not be.  They are a local
+mirror of kenbrakke.com; this script reads them where they sit and
+records the DEFINING DATA -- the boundary contour, the symmetry
+generator matrices, and the word that assembles the cell -- into the
+matching record under `data/surfaces`, which is where a surface's
+definition belongs.
+
+The chain is therefore:
+
+    .fe (external mirror)  ->  tools/surfdb/fecells.py  ->  records
+                           ->  math_art/minsurf/fecells.py (shipped)
+
+Run this only when the datafiles change or a new surface is added.  The
+generated Python is not to be hand-edited: hand transcription of exactly
+these numbers is what produced several wrong surfaces before this
+pipeline existed.
+
+    python tools/bake_fe_cells.py            # rewrite tools/surfdb/fecells.py
+    python tools/bake_fe_cells.py --module   # rewrite the shipped module
+                                             # FROM the database
+"""
+
+# ADJOINT DATAFILES
+#
+# Half of Brakke's collection defines its surface as the CONJUGATE of the
+# disk spanning a pinned polygon, and the conjugate is only the first
+# step: each file then carries a short script that moves the result into
+# place before declaring which boundary arc lies on which mirror plane.
+# `minsurf.plateau.fe_adjoint_patch` runs that script; what is harvested
+# here is the conjugate's own boundary, because a contour is all the
+# shipped code needs to span the patch again.
+#
+# WHAT IS GATED, and why it is not the topology.  A wrong subgroup, a
+# wrong family member and a wrong Gauss map have each, in this project,
+# produced a cell that welded into one clean sheet and was still wrong.
+# So a cell ships only if it also agrees with SURFACE EVOLVER'S OWN
+# framed adjoint -- area within `AREA_TOL` of the number Evolver reports
+# for the same datafile -- or, for the nine datafiles Evolver did not
+# finish inside the time limit, if its boundary lands on the planes the
+# datafile declares to within `RESID_TOL` of the patch's own size.  That
+# residual is the intrinsic form of the same question: the conjugate of a
+# minimal surface is minimal, so if the framing put it in the right place
+# its boundary is ALREADY on those planes, and no projection is needed to
+# get it there.
+#
+# The measured numbers are recorded beside each cell rather than kept in
+# a scratch file, so the claim is auditable from the database alone.
+
+import argparse
+import io
+import json
+import os
+import re
+import sys
+
+import numpy as np
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, os.path.join(ROOT, 'math_art'))
+sys.path.insert(0, HERE)
+
+from minsurf import fedata, plateau as pl      # noqa: E402
+from surfdb.evolver_truth import (EVOLVER_ADJOINT,   # noqa: E402
+                                  EVOLVER_PINNED)
+
+CURATION_OUT = os.path.join(HERE, 'surfdb', 'fecells.py')
+MODULE_OUT = os.path.join(ROOT, 'math_art', 'minsurf', 'fecells.py')
+RECORDS = os.path.join(ROOT, 'data', 'surfaces', 'surfaces')
+
+# datafile -> record slug, for the files that pin their contour outright
+# (no conjugation step).  As with ADJOINT below, every pairing is read
+# off the datafile's own header comment: `N14.fe` calls itself
+# `CPDadj.fe` in its first line, so the filename alone would have filed
+# it under the wrong surface entirely.
+SLUGS = {
+    'CLP.fe': 'clp-exact',
+    'CScell.fe': 'fischer-koch-cs',       # "minimal surface C(S) from
+    'CYcell.fe': 'fischer-koch-cy',       #  Fischer and Koch"
+    'I-6.fe': 'schoen-i6',
+    'I-8.fe': 'schoen-i8',
+    'I-9.fe': 'schoen-i9',
+    'IWP.fe': 'iwp-surface',
+    'RII.fe': 'schoen-rii',
+    'RIII.fe': 'schoen-riii',
+    'Scell.fe': 'fk-s-surface',
+    'cd.fe': 'cd-surface',
+    'dcell.fe': 'schwarz-d',
+    'hcell.fe': 'h-exact',
+    'neovius.fe': 'neovius-surface',
+    # Lord and Mackay's P3a.  Its header: "Fundamental region - one
+    # quarter of a tetragonal disphenoid.  Much like my disphenoid31,
+    # but uses the two equal length C2 axes instead of unequal C2 axes"
+    # -- which is what the record already said about it, written from
+    # the literature before the datafile was found.
+    'p3a.fe': 'lord-mackay-p3a',
+    'pcell.fe': 'schwarz-p',
+    'ycell.fe': 'fk-y-surface',
+}
+
+# Display names for the pinned route.  Read off each datafile's own
+# header, in the house style of the adjoint titles beside them; without
+# one, a row is labelled with its slug.
+PINNED_TITLES = {
+    'CLP.fe': "Schwarz CLP",
+    'CScell.fe': "Fischer-Koch C(S)",
+    'CYcell.fe': "Fischer-Koch C(Y)",
+    'I-6.fe': "Schoen I-6",
+    'I-8.fe': "Schoen I-8",
+    'I-9.fe': "Schoen I-9",
+    'IWP.fe': "Schoen I-WP",
+    'RII.fe': "Schoen R-II",
+    'RIII.fe': "Schoen R-III",
+    'Scell.fe': "Fischer-Koch S",
+    'cd.fe': "Schoen C(D)",
+    'dcell.fe': "Schwarz D",
+    'hcell.fe': "Schwarz H",
+    'neovius.fe': "Neovius",
+    'p3a.fe': "Lord-Mackay P3a",
+    'pcell.fe': "Schwarz P",
+    'ycell.fe': "Fischer-Koch Y",
+}
+
+# `disphenoid19.fe` -- "fundamental cell for Schoen's complementary D
+# minimal surface, genus 19" -- assembles, but the database has no
+# genus-19 disphenoid record and the C(D) record is `cd.fe`'s.  Left out
+# rather than filed under a guess.
+
+PREFER = ['showcube', 'cube', 'full', 'layers', 'showcubelet', 'showsix',
+          'showfour', 'showrhombic', 'stack8', 'stack6', 'stack4',
+          'showcube_alt', 'seven', 'stack12']
+
+# Datafiles this run REFUSED.  Recorded rather than merely printed,
+# because a held surface has to be actively kept out of the shipped
+# module: `write_module` reads the surface RECORDS, a record keeps the
+# `evolver_cell` written into it by any earlier bake, and nothing ever
+# removed one.  So holding a cell used to have no effect on what
+# shipped -- Schoen p.14 stayed in the extension after Evolver's own
+# area disqualified it, because it had passed a bake months before.
+# The records stay untouched (they are the authoritative store); this
+# list is what the module writer consults to skip them.
+HELD_SOURCES = []
+
+# Record slugs that ALREADY have a row in the Add menu, so their Evolver
+# cell is definition data for the record rather than a second way to draw
+# the same surface.  Every entry was checked against the live menu
+# (`minsurf.tpms`'s TPMS and TPMS_EXACT tables) and names the row that
+# covers it; anything not listed here gets a row of its own, because the
+# failure mode of guessing wrong in that direction -- a surface that
+# ships and cannot be found -- is silent, while a duplicate row is
+# obvious the moment the menu is opened.
+ALREADY_DRAWN = {
+    'schwarz-p',                # P
+    'schwarz-d',                # D
+    'neovius-surface',          # NEOVIUS
+    'iwp-surface',              # IWP
+    'octo-surface',             # OCTO
+    'frd-surface',              # FRD / FRD_EXACT
+    'cd-surface',               # CD
+    'clp-exact',                # CLP
+    'h-exact',                  # H
+    'schoen-i6',                # I6
+    # NOT schoen-i8 / schoen-i9: their existing rows are the
+    # RELAXED ring form, a different and approximate
+    # construction, so Brakke's exact cell is a genuine
+    # addition rather than a duplicate of it.
+    'schoen-rii',               # RII
+    'schoen-riii',              # R3_RING
+    'schoen-s-s',               # SS
+    'schoen-h-t',               # HT
+    'weber-h2r',                # H2R
+    'weber-trr',                # TR
+    'schoen-gw',                # GW_CONJ
+    'schoen-hybrid-ht-h2r',     # HT_HR_CONJ
+    'schoen-hybrid-tr-ht',      # TR_HT_CONJ
+}
+
+RESID_TOL = 0.15        # boundary-to-declared-plane, as a fraction of span
+AREA_TOL = 0.10         # patch area against Evolver's own framed adjoint
+
+# Datafiles that ship DESPITE failing the numbers above, because the cell
+# they produce was compared against Brakke's published figure and judged
+# to be the right surface.
+#
+# This is a deliberate second opinion, not a hole in the gate.  The area
+# test asks whether our patch matches Evolver's to 10%, which is a proxy
+# for the real question -- is this the surface Brakke drew -- and a proxy
+# can fail in both directions.  Every entry here still has to assemble
+# into one clean sheet AND survive `runtime_ok`; what is waived is only
+# the agreement in area, and only for the file named.
+#
+# Nothing is entered here on a hunch.  The reason string is the evidence,
+# and it says who judged it and against what.
+# Every figure below is against the CORRECTED truth table (each
+# datafile's own `gogo`).  The numbers this list originally carried were
+# measured against a generic post-frame descent that had drifted off the
+# critical point, by as much as 41% for disphenoid 55 -- so the list was
+# partly waiving the measurement rather than the surface.  Two entries
+# disappeared entirely once that was fixed: Schoen manta genus 35 now
+# passes at 1.050, and Schoen p.14, which had actually been RETRACTED
+# from the extension at a spurious 1.109, is back at 1.000 unaided.
+ACCEPTED = {
+    'disphenoid31adj.fe': "matches Brakke's figure on review (area 1.347x)",
+    'disphenoid35adj.fe': "matches Brakke's figure on review (area 1.398x)",
+    'disphenoid43adj.fe': "matches Brakke's figure on review (area 1.412x)",
+    'disphenoid51adj.fe': "matches Brakke's figure on review (area 1.631x)",
+    'disphenoid55adj.fe': "matches Brakke's figure on review (area 0.623x)",
+    'disphenoid67adj.fe': "matches Brakke's figure on review (area 1.219x)",
+    'manta51adj.fe': "matches Brakke's figure on review (area 0.899x)",
+    'mantaadj.fe': "matches Brakke's figure on review (area 1.197x, and its "
+                   "sliding solve still meets the mirror plane off square "
+                   "at a cusp our uniform grid cannot refine)",
+    'triplane0adj.fe': "matches Brakke's figure on review "
+                       "(area 1.024x, but boundary residual 0.28)",
+}
+
+# Adjoint datafile -> record slug, and the title to give a surface that
+# has no record yet.  Every pairing below is read off the datafile's own
+# header comment ("Adjoint of Schoen's C41-4(P) surface."), never guessed
+# from the filename: `manta51adj.fe` calls itself the genus 57 manta in
+# its first line, and `hybrid-1adj.fe` announces itself as `hybrid-1.fe`.
+ADJOINT = {
+    'FRDadj.fe': ('frd-surface', "Schoen F-RD", None),
+    # Schoen's STARFISH family, from Brakke's starfish.tar.  Eight of
+    # the sixteen starfish records have a datafile; the other eight
+    # (genus 67, 71, 79, 83, 91, 99, 103, 115) are on his page as
+    # pictures only, so those records stay unimplemented rather than
+    # being filled from a guess.
+    #
+    # Paired by GENUS, which every header states -- except
+    # `starfish43adj.fe`, whose header reads "genus 87", the same genus
+    # `starfish87adj.fe` claims.  Two files cannot both be that surface
+    # and the other seven headers agree with their filenames, so this
+    # one is read as a copy-paste slip in the header and filed under 43.
+    # It is the single pairing here NOT taken from the header, which is
+    # why it is called out.
+    'starfish31adj.fe': ('starfish-2-1-genus-31',
+                         "Starfish 2-1 (genus 31)", None),
+    'starfish43adj.fe': ('starfish-3-1-genus-43',
+                         "Starfish 3-1 (genus 43)", None),
+    'starfish47adj.fe': ('starfish-2-2-genus-47',
+                         "Starfish 2-2 (genus 47)", None),
+    'starfish55adj.fe': ('starfish-4-1-genus-55',
+                         "Starfish 4-1 (genus 55)", None),
+    'starfish59adj.fe': ('starfish-3-2-genus-59',
+                         "Starfish 3-2 (genus 59)", None),
+    'starfish63adj.fe': ('starfish-2-3-genus-63',
+                         "Starfish 2-3 (genus 63)", None),
+    'starfish75adj.fe': ('starfish-3-3-genus-75',
+                         "Starfish 3-3 (genus 75)", None),
+    'starfish87adj.fe': ('starfish-4-3-genus-87',
+                         "Starfish 4-3 (genus 87)", None),
+    # Adjoint files despite the names -- their headers read `CPDadj.fe`,
+    # `CPDXadj.fe`, `CPDadj-hole.fe`.  Their symmetry lives in the shared
+    # `cube_transforms.inc` and their cell word in `cube_views.cmd`.
+    'N14.fe': ('neovius-n14', "Neovius N14", None),
+    'N26.fe': ('neovius-n26', "Neovius N26", None),
+    'N38.fe': ('neovius-n38', "Neovius N38", None),
+    'GW5adj.fe': ('schoen-gw', "Schoen GW (graphite-wurtzite)", None),
+    'HRHTadj.fe': ('schoen-hybrid-ht-h2r', "Schoen H''-R | H'-T", None),
+    'HRadj.fe': ('weber-h2r', "Schoen H''-R", None),
+    'HTTRadj.fe': (None, "Schoen H'-T | T'-R'", 'HT_TR'),
+    'HTadj.fe': ('schoen-h-t', "Schoen H'-T", None),
+    'SSadj.fe': ('schoen-s-s', "Schoen S'-S''", None),
+    'TRHTadj.fe': ('schoen-hybrid-tr-ht', "Schoen T'-R' | H'-T", None),
+    'TRadj.fe': ('weber-trr', "Schoen T'-R'", None),
+    'batwing41adj.fe': ('schoen-batwing-41', "Schoen C41-4(P)", None),
+    'batwing57adj.fe': ('schoen-batwing-57', "Schoen C57-4(P)", None),
+    'batwingadj.fe': ('schoen-batwing', "Schoen Batwing", None),
+    'c21padj.fe': (None, "Schoen C21(P)", 'C21P'),
+    'c27padj.fe': ('schoen-c27-p', "Schoen C27(P)", None),
+    'c33padj.fe': ('schoen-c33-p', "Schoen C33(P)", None),
+    'c39padj.fe': ('schoen-c39-p', "Schoen C39(P)", None),
+    'c45padj.fe': ('schoen-c45-p', "Schoen C45(P)", None),
+    'disphenoid31adj.fe': ('disphenoid-family-a-genus-31', "Disphenoid 31", None),
+    'disphenoid35adj.fe': ('disphenoid-family-b-genus-35', "Disphenoid 35", None),
+    'disphenoid43adj.fe': ('disphenoid-family-a-genus-43', "Disphenoid 43", None),
+    'disphenoid51adj.fe': ('disphenoid-family-b-genus-51', "Disphenoid 51", None),
+    'disphenoid55adj.fe': ('disphenoid-family-a-genus-55', "Disphenoid 55", None),
+    'disphenoid67adj.fe': ('disphenoid-family-b-genus-67', "Disphenoid 67", None),
+    'hexplane1adj.fe': (None, "Hexplane 1", 'HEXPLANE1'),
+    'hexplane2adj.fe': (None, "Hexplane 2", 'HEXPLANE2'),
+    'hexplane3adj.fe': (None, "Hexplane 3", 'HEXPLANE3'),
+    'hexplane4adj.fe': (None, "Hexplane 4", 'HEXPLANE4'),
+    'hexplane5adj.fe': (None, "Hexplane 5", 'HEXPLANE5'),
+    'hybrid-1adj.fe': ('schoen-hybrid-1', "Schoen Hybrid P | F-RD", None),
+    'manta35adj.fe': ('schoen-manta-genus-35', "Schoen Manta (genus 35)", None),
+    'manta51adj.fe': ('schoen-manta-genus-51', "Schoen Manta (genus 57)", None),
+    'mantaadj.fe': ('schoen-manta-genus-19', "Schoen Manta", None),
+    'octoadj.fe': ('octo-surface', "Schoen O,C-TO", None),
+    'pbatadj.fe': ('brakke-pseudo-batwing', "Brakke Pseudo-Batwing", None),
+    'pssadj.fe': ('schoen-hybrid-ss-p', "Schoen P | S'-S''", None),
+    's12adj.fe': (None, "Schoen p.12 Surface", 'SCHOEN12'),
+    's14adj.fe': (None, "Schoen p.14 Surface", 'SCHOEN14'),
+    'triplane0adj.fe': (None, "Triplane 0", 'TRIPLANE0'),
+    'triplane1adj.fe': (None, "Triplane 1", 'TRIPLANE1'),
+    'triplane2adj.fe': (None, "Triplane 2", 'TRIPLANE2'),
+    'triplane3adj.fe': (None, "Triplane 3", 'TRIPLANE3'),
+    'triplane4adj.fe': (None, "Triplane 4", 'TRIPLANE4'),
+    'triplane5adj.fe': (None, "Triplane 5", 'TRIPLANE5'),
+}
+
+
+FLAT_TOL = 0.02      # a patch this planar has not been solved, only spanned
+
+
+def is_flat(V):
+    """Is this patch essentially the flat disk that spans its boundary?
+
+    The detector for a whole class of silent failure.  Four datafiles --
+    Schwarz P, Schwarz D, Neovius and Schoen's I-WP -- pin no boundary
+    edge at all: they hand you a FLAT quadrilateral (pcell's four corners
+    all have x = 0.5) and expect the solve to curve it while every edge
+    slides in its own mirror plane, holding the volume the `bodies`
+    section fixes.  Spanning it as a contour hands the flat square
+    straight back, and 48 copies of a flat square still weld into one
+    clean closed sheet and pass every topological check.  It is a
+    faceted star, and it shipped.
+    """
+    V = np.asarray(V, dtype=float)
+    if len(V) < 4:
+        return True
+    _u, s, _vt = np.linalg.svd(V - V.mean(0), full_matrices=False)
+    return float(s[2] / max(s[0], 1e-30)) < FLAT_TOL
+
+
+def relax_from(fe, m=96, rings=16, iters=400):
+    """The solved patch and the boundary it actually ended on.
+
+    Resolution matters here, not just for accuracy.  Schoen's I-WP has a
+    fully free boundary and no usable volume constraint, and on a coarse
+    grid a converged area descent slides it into a collapse -- 0.72 of
+    Evolver's area at m=72, 1.015 at m=96.  The finer grid is what makes
+    the difference between a surface and a puddle.
+
+    Both parts matter.  `fe_pinned_patch` honours the datafile's own
+    boundary conditions rather than pinning the polygon it starts from
+    (see `plateau.fe_slide_planes`), and the loops returned are the ones
+    the SOLVE produced -- which for a sliding boundary is a different
+    curve from the one declared.  Baking the declared loops instead put
+    the flat starting quadrilateral into the record, and the shipped code
+    re-spans that at runtime, so the whole solve was thrown away and
+    Schwarz P came back a flat plate however well it had been solved.
+    """
+    return pl.fe_pinned_patch(fe, m=m, rings=rings, iters=iters)
+
+
+def verify(V, quads, lets, word):
+    """(copies, weld tolerance) if this word closes the cell, else None.
+
+    The tolerance is searched rather than fixed at 1e-4: that single
+    value fused sheets that merely pass close together, which is what
+    made I-6's cell -- perfectly sound at 1e-8 -- look broken.
+    """
+    mats = pl.eval_transform_expr(lets, word)
+    if len(mats) > 2048:
+        return None
+    mats = pl.dedupe_placements(V, mats)
+    if not (1 < len(mats) <= 256):
+        return None
+    for tol in pl.FE_WELD_LADDER:
+        W, wf = pl.assemble_orbit(V, quads, mats, tol)
+        if pl.fe_orbit_ok(W, wf):
+            return len(mats), tol
+    return None
+
+
+def harvest():
+    out = {}
+    for fn, slug in sorted(SLUGS.items()):
+        path = os.path.join(fedata.MIRROR_DOWNLOADS, fn)
+        if not os.path.exists(path):
+            print("  %-14s datafile absent, skipped" % fn)
+            continue
+        fe = fedata.read(path)
+        got = relax_from(fe)
+        if got is None:
+            print("  %-14s boundary is %d loops, skipped"
+                  % (fn, len(fe.boundary_loops())))
+            HELD_SOURCES.append(fn)
+            continue
+        V, quads, loops = got
+        # The same gate the adjoint route uses.  These files were trusted
+        # on topology alone until Schwarz P turned out to be a set of
+        # flat panels that assembled perfectly.
+        truth = EVOLVER_PINNED.get(fn)
+        if truth is not None:
+            T = np.asarray(pl._quads_to_tris(quads))
+            area = float(pl.mesh_area(np.asarray(V, dtype=float), T))
+            ratio = area / truth['area']
+            if abs(ratio - 1.0) > AREA_TOL:
+                print("  %-14s HELD: area %.3f x Evolver" % (fn, ratio))
+                HELD_SOURCES.append(fn)
+                continue
+        if is_flat(V):
+            print("  %-14s HELD: patch stayed flat -- its boundary is free "
+                  "on planes and the volume-constrained solve is not "
+                  "converging yet" % fn)
+            HELD_SOURCES.append(fn)
+            continue
+        lets = fe.letters()
+        words = pl.fe_words_with_fallback(fe)
+        order = ([k for k in PREFER if k in words]
+                 + sorted(k for k in words if k not in PREFER))
+        pick = None
+        for name in order:
+            word = words[name]
+            if any(ch not in lets for ch in word):
+                continue
+            got_v = verify(V, quads, lets, word)
+            if got_v:
+                pick = (name, word) + got_v
+                break
+        if pick is None:
+            print("  %-14s no word assembles, skipped" % fn)
+            HELD_SOURCES.append(fn)
+            continue
+        name, word, n, tol = pick
+        out[slug] = {
+            'source': fn,
+            # Both of these were simply MISSING on this route, where the
+            # adjoint one has always set them, and the two defaults then
+            # disagreed: `write_module` writes `bool(c.get('new_row'))`,
+            # so an absent flag means False -- no menu row -- while
+            # `tpms` reads the same field with a default of True.  Schoen
+            # I-8 and I-9 shipped into the database and appeared nowhere,
+            # under the title `schoen-i8`, which is a slug and not a name.
+            'title': PINNED_TITLES.get(fn, slug),
+            'new_row': slug not in ALREADY_DRAWN,
+            'record_slug': slug,
+            'command': name,
+            'word': word,
+            'copies': n,
+            'weld_tol': tol,
+            'loops': [[[float(c) for c in p] for p in lp] for lp in loops],
+            # ALL the datafile's letters, not just the word's.  The
+            # word letters rebuild the cell; the full set is what
+            # carries the LATTICE -- p3a's cube word uses only its
+            # three point mirrors, and the two affine C2 axes that
+            # generate its translations are elsewhere in the alphabet.
+            # fe_cell_tile_group needs those to tile the cell at all.
+            'generators': {c: [float(x) for x in np.ravel(lets[c])]
+                           for c in sorted(lets)},
+        }
+        print("  %-14s -> %-20s %-14s %3d copies (weld %.0e)"
+              % (fn, slug, "%s=%s" % (name, word), n, tol))
+    return out
+
+
+def runtime_ok(loops, letters, word, tol, m=72, rings=12, iters=200):
+    """Does the SHIPPED path reproduce this cell?
+
+    The bake solves the patch and then records its boundary; the
+    extension re-spans that boundary and assembles.  Those are different
+    computations, and a cell that assembles during the bake can still
+    fall apart at runtime -- Neovius N14 and N38 welded cleanly here and
+    came out as twelve and twenty-four disconnected pieces there.  So the
+    bake now checks the runtime path before accepting anything, which is
+    the only way the two can be kept honest with each other.
+    """
+    lp = [np.asarray(l, dtype=float) for l in loops]
+    # Mirror the shipped re-span exactly: fe_cell_patch keeps the
+    # recorded boundary's sharp corners as samples (they sit on the
+    # symmetry axes where the copies meet; cutting them opens pinholes).
+    if len(lp) == 1:
+        poly = lp[0]
+        grid = pl.build_disk_grid(
+            pl.resample_loop_corners(np.vstack([poly, poly[:1]]), m), rings)
+    elif len(lp) == 2:
+        a, b = lp
+        la = pl.resample_loop_corners(np.vstack([a, a[:1]]), m)
+        lb = pl.resample_loop_corners(np.vstack([b, b[:1]]), m)
+        if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
+            la, lb = lb, la
+        j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
+        grid = pl.build_annulus_grid(la, np.roll(lb, -j, axis=0), rings)
+    else:
+        return False
+    V, quads, fixed = grid
+    T = np.asarray(pl._quads_to_tris(quads))
+    V = np.asarray(pl.minimize_area(np.asarray(V, float), T,
+                                    np.asarray(fixed, bool),
+                                    outer_iters=iters), dtype=float)
+    mats = pl.dedupe_placements(V, pl.eval_transform_expr(letters, word))
+    Wv, wf = pl.assemble_orbit(V, [tuple(f) for f in quads], mats, tol)
+    return pl.fe_orbit_ok(Wv, wf)
+
+
+def slug_for(title):
+    """The slug `surfdb_build` will derive from a row title."""
+    s = title.lower()
+    # Titles here are ASCII (H''-R, not a prime glyph); the split
+    # below drops every non-alphanumeric anyway, so this only has to
+    # agree with what `surfdb_build` does to a row label.
+    return '-'.join(p for p in re.split(r'[^a-z0-9]+', s) if p)
+
+
+def harvest_adjoint(m=96, rings=16, iters=400):
+    """Run every adjoint datafile and keep the cells that check out."""
+    out, held = {}, []
+    for fn in sorted(ADJOINT):
+        slug, title, row_key = ADJOINT[fn]
+        path = os.path.join(fedata.MIRROR_DOWNLOADS, fn)
+        if not os.path.exists(path):
+            print("  %-19s datafile absent, skipped" % fn)
+            continue
+        fe = fedata.read(path)
+        got = pl.fe_adjoint_patch(fe, m=m, rings=rings, iters=iters)
+        if got is None:
+            held.append((fn, "no patch"))
+            continue
+        V, quads, lets, env, loops = got
+        resid = float(env.get('_plane_residual', 1.0))
+        T = np.asarray(pl._quads_to_tris(quads))
+        area = float(pl.mesh_area(np.asarray(V), T))
+        truth = EVOLVER_ADJOINT.get(fn)
+        if truth is not None:
+            ratio = area / truth['area']
+            why = "area %.3f x Evolver" % ratio
+            ok = abs(ratio - 1.0) <= AREA_TOL
+        else:
+            ratio, why = None, "residual %.1e (Evolver did not finish)" % resid
+            ok = resid <= RESID_TOL
+        if fn in ACCEPTED and not (ok and resid <= RESID_TOL):
+            # Shipped on review against Brakke's own figure, not on the
+            # measurement.  The numeric gate answers "does this match
+            # Evolver", and for these it does not; the eye answered the
+            # prior question -- "is this the right surface" -- and said
+            # yes.  Recorded per file rather than as a wider AREA_TOL,
+            # because a looser threshold would also readmit the
+            # disphenoids that converge to the wrong surface entirely.
+            note = "%s; accepted on review: %s" % (why, ACCEPTED[fn])
+            print("  %-19s ACCEPTED: %s" % (fn, note))
+            # Waive the gate, but do NOT touch `resid`: clamping it to
+            # the tolerance wrote the tolerance itself into the record,
+            # so the database reported triplane 0's boundary error as
+            # 0.15 when it is 0.28.  A waived row has to keep its real
+            # measurement -- that number is the reason the waiver exists,
+            # and overwriting it hides what was waived.
+            ok, accepted = True, True
+        else:
+            accepted = False
+        if not ok:
+            held.append((fn, why))
+            continue
+        if resid > RESID_TOL and not accepted:
+            held.append((fn, "residual %.1e" % resid))
+            continue
+        # SEARCH for a cell that also survives the runtime path, rather
+        # than taking the first that assembles here and then rejecting
+        # it.  A (word, tolerance) pair can weld perfectly at this
+        # resolution and come apart when the extension re-spans the
+        # recorded boundary at a coarser one, and when that happens the
+        # remaining rungs of the ladder are still worth trying --
+        # disphenoid 67 was held on exactly that, having found a looser
+        # weld that closed the bake's mesh but not the runtime's, while
+        # a tighter rung further down the list would have served both.
+        rt_loops = [[[float(c) for c in p] for p in lp] for lp in loops]
+        pick = fallback = None
+        for name in pl.fe_word_order(fe.words):
+            word = fe.words[name]
+            if any(ch not in lets for ch in word):
+                continue
+            mats = pl.eval_transform_expr(lets, word)
+            if not (1 < len(mats) <= 256):
+                continue
+            for tol in pl.FE_WELD_LADDER:
+                W, wf = pl.assemble_orbit(V, quads, mats, tol)
+                if not pl.fe_orbit_ok(W, wf):
+                    continue
+                cand = (name, word, len(mats), tol)
+                if fallback is None:
+                    fallback = cand
+                if runtime_ok(rt_loops, lets, word, tol):
+                    pick = cand
+                    break
+            if pick:
+                break
+        if pick is None:
+            held.append((fn, "no word assembles" if fallback is None else
+                         "assembles here but not from its recorded boundary "
+                         "-- the shipped path refuses it"))
+            continue
+        # No runtime check here: the search above only returns a pick
+        # that already passed one, so a second call would re-run the
+        # whole re-span to re-derive an answer it has.
+        name, word, ncopy, tol = pick
+        # Two names, because they answer two questions.  `key` is the
+        # generator row this cell becomes -- in the house style of the
+        # rows beside it (`SS`, `H2R`, `TR`), not a slug.  `record_slug`
+        # is the database record it belongs to, which for a surface the
+        # database already knows is that record, and for a new one is
+        # whatever `surfdb_build` will derive from the row.
+        key = slug or row_key
+        record = slug or ('%s-exact' % row_key.lower().replace('_', '-'))
+        out[key] = {
+            'source': fn,
+            'title': title,
+            'record_slug': record,
+            'route': 'adjoint',
+            # Whether this cell should also become a GENERATOR row.
+            #
+            # This used to read `slug is None` -- "it already has a
+            # record, so something must already draw it".  That does not
+            # follow, and it hid twenty-odd surfaces: a record can exist
+            # carrying nothing but a nodal polynomial, with no row in the
+            # Add menu at all.  Disphenoids 31/55/67, both mantas and
+            # Neovius N14/N26/N38 all shipped in the database and were
+            # unreachable from the UI, which is not shipping.
+            #
+            # So a cell becomes a row unless the surface is KNOWN to have
+            # one already, listed below and checkable against the menu.
+            'new_row': record not in ALREADY_DRAWN,
+            'command': name,
+            'word': word,
+            'copies': ncopy,
+            'weld_tol': tol,
+            'plane_residual': round(resid, 6),
+            'patch_area': round(area, 6),
+            'evolver_area': (round(truth['area'], 6) if truth else None),
+            'loops': [[[float(c) for c in p] for p in lp] for lp in loops],
+            # ALL the datafile's letters, not just the word's.  The
+            # word letters rebuild the cell; the full set is what
+            # carries the LATTICE -- p3a's cube word uses only its
+            # three point mirrors, and the two affine C2 axes that
+            # generate its translations are elsewhere in the alphabet.
+            # fe_cell_tile_group needs those to tile the cell at all.
+            'generators': {c: [float(x) for x in np.ravel(lets[c])]
+                           for c in sorted(lets)},
+        }
+        print("  %-19s -> %-32s %s=%r %3d copies  %s"
+              % (fn, key, name, word, ncopy, why))
+    for fn, why in held:
+        print("  %-19s HELD: %s" % (fn, why))
+        HELD_SOURCES.append(fn)
+    print("  %d cells, %d held" % (len(out), len(held)))
+    return out
+
+
+def write_curation(data, held=None):
+    held = sorted(set(HELD_SOURCES if held is None else held))
+    with io.open(CURATION_OUT, 'w', encoding='utf-8') as fh:
+        fh.write('"""Cell definitions read out of Surface Evolver datafiles.\n\n'
+                 'GENERATED by tools/bake_fe_cells.py -- do not hand-edit.\n\n'
+                 "The datafiles themselves are NOT in this repo; they are a\n"
+                 'local mirror of kenbrakke.com.  What a surface IS -- its\n'
+                 'boundary contour, its symmetry generators and the word that\n'
+                 'assembles its cell -- belongs in the surface record, so the\n'
+                 'build merges this into `definition.evolver_cell`.\n"""\n\n')
+        # Emitted as JSON and parsed at import rather than written as a
+        # Python literal: the table carries booleans and nulls, and
+        # `json.dumps` spells those `true` and `null`, which are a
+        # NameError the moment the module is imported.
+        fh.write("import json\n\nFE_CELLS = json.loads(r'''")
+        fh.write(json.dumps(data, indent=1, sort_keys=True))
+        fh.write("''')\n\n")
+        # Carried into the generated file so `write_module` can see it on
+        # a later, separate `--module` run.  Without it a held surface
+        # keeps shipping: the module is built from the RECORDS, and a
+        # record holds on to whatever cell an earlier bake wrote there.
+        fh.write("# Datafiles this bake REFUSED.  `write_module` skips any\n"
+                 "# record still carrying a cell from one of these, because\n"
+                 "# records keep what earlier bakes wrote and nothing else\n"
+                 "# removes it -- Schoen p.14 went on shipping for exactly\n"
+                 "# that reason after Evolver's area disqualified it.\n")
+        fh.write("FE_HELD = %s\n\n" % json.dumps(held, indent=1))
+        fh.write("# The table is keyed by GENERATOR ROW; records are looked\n"
+                 "# up by the slug each row's record carries, which for the\n"
+                 "# surfaces the database already knew is its existing slug.\n"
+                 "_BY_SLUG = {c.get('record_slug', k): c\n"
+                 "            for k, c in FE_CELLS.items()}\n"
+                 "\n\ndef facts_for(slug):\n"
+                 '    """`definition` fragment for a slug, or {}."""\n'
+                 "    cell = _BY_SLUG.get(slug)\n"
+                 "    if not cell:\n"
+                 "        return {}\n"
+                 "    return {'definition': {'evolver_cell': cell}}\n")
+    print("wrote %s (%d surfaces)" % (CURATION_OUT, len(data)))
+
+
+def write_module():
+    """Regenerate the shipped module FROM the database records.
+
+    With one deliberate exception, because the two feed each other: a
+    surface the database has no record for gets that record from the
+    generator row, and the generator row comes from this module.  So a
+    freshly harvested cell is taken from the bake the first time round,
+    and from its record on every pass after that -- the record stays
+    authoritative wherever one exists.
+    """
+    cells, by_slug = {}, {}
+    from surfdb.fecells import FE_CELLS as _BAKED
+    try:
+        from surfdb.fecells import FE_HELD as _HELD
+    except ImportError:          # curation file predates the held ledger
+        _HELD = []
+    held = set(_HELD)
+    by_source = {}
+    for key, cell in sorted(_BAKED.items()):
+        cells[key] = (cell.get('title') or key, cell)
+        by_slug[cell.get('record_slug', key)] = key
+        if cell.get('source'):
+            by_source[cell['source']] = cell
+    dropped = []
+    for root, _d, files in os.walk(RECORDS):
+        for fn in files:
+            if not fn.endswith('.json'):
+                continue
+            rec = json.load(io.open(os.path.join(root, fn), encoding='utf-8'))
+            cell = (rec.get('definition') or {}).get('evolver_cell')
+            if not cell:
+                continue
+            # A record keeps the cell an earlier bake wrote into it, and
+            # nothing removes it, so without this test a surface the
+            # CURRENT bake refused would still ship on the strength of a
+            # run from months ago.  The record itself is left alone: it
+            # is the authoritative store, and the datafile may well pass
+            # again once the solver improves.
+            if cell.get('source') in held:
+                dropped.append((rec['slug'], cell.get('source')))
+                continue
+            # The record is authoritative for WHAT ships, but its
+            # letter table can lag the bake: records written before the
+            # bake started storing the datafile's FULL alphabet carry
+            # only the word's letters, and the letters outside the word
+            # are exactly the ones fe_cell_tile_group needs (p3a's cube
+            # word uses its three point mirrors; the affine C2 axes
+            # that generate its lattice are the other two).  Overlay
+            # the current bake's generators for the same source file.
+            fresh = by_source.get(cell.get('source'))
+            if fresh and fresh.get('generators') and \
+                    set(cell.get('generators', {})) < \
+                    set(fresh['generators']):
+                cell = dict(cell)
+                cell['generators'] = fresh['generators']
+            key = by_slug.get(rec['slug'], rec['slug'])
+            cells[key] = (cell.get('title') or rec['name'], cell)
+    for slug, src in sorted(dropped):
+        print("  held, so NOT shipped: %-24s (%s)" % (slug, src))
+    with io.open(MODULE_OUT, 'w', encoding='utf-8') as fh:
+        fh.write('"""Evolver cells, generated FROM the surface database.\n\n'
+                 'GENERATED by `python tools/bake_fe_cells.py --module` -- do\n'
+                 'not hand-edit.  The defining data lives in the records under\n'
+                 '`data/surfaces`; this module exists only so the shipped\n'
+                 'extension carries the numbers without needing the database\n'
+                 'or the original datafiles.\n"""\n\n'
+                 'import numpy as np\n\nFE_CELLS = {\n')
+        for src in sorted(cells):
+            name, c = cells[src]
+            key = src.upper().replace('-', '_')
+            fh.write("    %r: {\n        'title': %r,\n        'slug': %r,\n"
+                     % (key, name, c.get('record_slug', src)))
+            fh.write("        'source': %r,\n        'word': %r,\n"
+                     "        'copies': %d,\n        'tol': %g,\n"
+                     "        'new_row': %r,\n"
+                     % (c['source'], c['word'], c['copies'],
+                        c.get('weld_tol', 1e-4), bool(c.get('new_row'))))
+            # the measured per-cell resolution floor (--floors); a cell
+            # without one keeps the global floor at runtime
+            if c.get('res_floor'):
+                fh.write("        'res_floor': %d,\n" % int(c['res_floor']))
+            fh.write("        'loops': (\n")
+            for lp in c['loops']:
+                flat = [x for p in lp for x in p]
+                fh.write("            np.array([%s]).reshape(-1, 3),\n"
+                         % ", ".join("%.12g" % v for v in flat))
+            fh.write("        ),\n        'letters': {\n")
+            for ch in sorted(c['generators']):
+                fh.write("            %r: np.array([%s]).reshape(4, 4),\n"
+                         % (ch, ", ".join("%.12g" % v
+                                          for v in c['generators'][ch])))
+            fh.write("        },\n    },\n")
+        fh.write("}\n")
+    print("wrote %s (%d cells from the database)" % (MODULE_OUT, len(cells)))
+
+
+# -------------------------------------------------------------- floors
+#
+# The runtime patch floor used to be GLOBAL: m=72 / rings=12
+# (resolution 24), because Schoen I-8's translation-joined rims are
+# disconnected or fused at every tolerance below it.  That priced
+# every cell at I-8's requirement -- a 48- or 96-copy cell multiplies
+# whatever the floor allows, so N14's single cell could never drop
+# under ~80k triangles however far the user turned Resolution down.
+# `--floors` measures each cell's OWN coarsest viable resolution with
+# the exact machinery the extension runs (fe_cell_patch ->
+# fe_cell_assemble -> the tiling fallbacks) and records it on the
+# cell, so the runtime can scale down to that floor and no further.
+#
+# A rung of the ladder is accepted only if, at that resolution,
+#   * the cell assembles into one clean sheet with the datafile's own
+#     copy count (fe_orbit_ok, via fe_cell_assemble);
+#   * the patch area stays within FLOOR_AREA_TOL of the reference
+#     resolution's -- a coarse span that still welds can still be a
+#     visibly different surface, and area is the invariant every
+#     other gate in this pipeline trusts;
+#   * the assembled cell has the SAME number of boundary loops as the
+#     reference.  This is the pinhole gate: a re-span too coarse to
+#     keep every recorded corner (resample_loop_corners skips a
+#     corner when two land on the same sample) opens a small hole at
+#     each image of that corner's symmetry axis, and each hole is an
+#     extra boundary loop;
+#   * a (2,1,1) block still tiles, by either route, wherever the
+#     reference tiles.  The selftest asserts 2x2x1 blocks for Schwarz
+#     D and the starfish family, and a floor that welds one cell but
+#     not two would pass every other gate and fail those.
+# The descent stops at the first refusal rather than skipping past it.
+#
+# Run it AFTER a harvest (it reads the shipped module's table, which
+# is self-contained -- no datafiles needed) and follow with --module
+# so the records' floors reach the shipped table.
+
+FLOOR_REF = 24
+FLOOR_LADDER = (20, 16, 12, 10, 8)
+FLOOR_AREA_TOL = 0.015
+
+
+def _boundary_loops(W, wf):
+    """Number of boundary loops (edges on exactly one face)."""
+    ec = {}
+    for f in wf:
+        L = len(f)
+        for t in range(L):
+            x, y = f[t], f[(t + 1) % L]
+            if x == y:
+                continue
+            e = (x, y) if x < y else (y, x)
+            ec[e] = ec.get(e, 0) + 1
+    bnd = [e for e, c in ec.items() if c == 1]
+    if not bnd:
+        return 0
+    parent = {}
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for x, y in bnd:
+        parent.setdefault(x, x)
+        parent.setdefault(y, y)
+        rx, ry = find(x), find(y)
+        if rx != ry:
+            parent[ry] = rx
+    return len({find(x) for e in bnd for x in e})
+
+
+def _floor_probe(key, r):
+    """(patch area, assembled cell or None, tiles?, boundary loops)."""
+    V, quads = pl.fe_cell_patch(key, m=3 * r, rings=max(4, r // 2))
+    area = float(pl.mesh_area(np.asarray(V),
+                              np.asarray(pl._quads_to_tris(quads))))
+    got = pl.fe_cell_assemble(key, V, quads)
+    if got is None:
+        return area, None, False, -1
+    W, wf = got[0], got[1]
+    loops = _boundary_loops(W, wf)
+    # (2, 2, 1), not (2, 1, 1): the shipped selftest asserts 2x2x1
+    # blocks, and a cell can in principle step cleanly along one axis
+    # and not the other -- gate on what is actually promised.
+    _W2, _wf2, done = pl.tile_periodic(W, wf, (2, 2, 1))
+    tiled = done != (1, 1, 1)
+    if not tiled:
+        tiled = pl.fe_cell_tile_group(key, V, quads, (2, 2, 1)) is not None
+    return area, got, tiled, loops
+
+
+def measure_floors(keys=None):
+    from minsurf.fecells import FE_CELLS
+    floors = {}
+    for key in (keys or sorted(FE_CELLS)):
+        spec = FE_CELLS[key]
+        try:
+            a_ref, ref, tiled_ref, loops_ref = _floor_probe(key, FLOOR_REF)
+        except Exception as e:
+            print("  %-28s reference FAILED: %s" % (key, e))
+            continue
+        if ref is None or ref[2] != spec['copies']:
+            print("  %-28s reference at %d refuses -- floor stays %d"
+                  % (key, FLOOR_REF, FLOOR_REF))
+            floors[key] = FLOOR_REF
+            continue
+        best = FLOOR_REF
+        why = "ladder exhausted"
+        for r in FLOOR_LADDER:
+            try:
+                a, got, tiled, loops = _floor_probe(key, r)
+            except Exception as e:
+                why = "r=%d raised %s" % (r, e)
+                break
+            if got is None or got[2] != spec['copies']:
+                why = "r=%d does not assemble" % r
+                break
+            if abs(a / a_ref - 1.0) > FLOOR_AREA_TOL:
+                why = "r=%d area drifts %.3f" % (r, a / a_ref)
+                break
+            if loops != loops_ref:
+                why = ("r=%d boundary loops %d != %d (pinholes)"
+                       % (r, loops, loops_ref))
+                break
+            if tiled_ref and not tiled:
+                why = "r=%d no longer tiles (2,1,1)" % r
+                break
+            best = r
+        floors[key] = best
+        print("  %-28s floor %2d (ref %2d, tiles %s; stopped: %s)"
+              % (key, best, FLOOR_REF, 'yes' if tiled_ref else 'no', why))
+    return floors
+
+
+def write_floors(floors):
+    """Write measured floors into the records' evolver_cell blocks."""
+    from minsurf.fecells import FE_CELLS
+    by_slug = {FE_CELLS[k]['slug']: v for k, v in floors.items()
+               if k in FE_CELLS}
+    hit = 0
+    for root, _d, files in os.walk(RECORDS):
+        for fn in files:
+            if not fn.endswith('.json'):
+                continue
+            path = os.path.join(root, fn)
+            with io.open(path, encoding='utf-8') as fh:
+                rec = json.load(fh)
+            cell = (rec.get('definition') or {}).get('evolver_cell')
+            if not cell:
+                continue
+            r = by_slug.get(rec.get('slug'))
+            if r is None or cell.get('res_floor') == r:
+                continue
+            cell['res_floor'] = int(r)
+            with open(path, 'w', encoding='utf-8') as fh:
+                json.dump(rec, fh, indent=2, ensure_ascii=False)
+                fh.write("\n")
+            hit += 1
+            del by_slug[rec['slug']]
+    print("res_floor written into %d records" % hit)
+    if not by_slug:
+        return
+    # Cells with no database record yet -- write_module takes those
+    # from the CURATION file (`surfdb/fecells.py`, "a freshly
+    # harvested cell is taken from the bake the first time round"), so
+    # their floors have to land there or --module never sees them.
+    # The curation table is keyed by slug for surfaces the database
+    # knows and by row key otherwise; the shipped module uppercases
+    # either, so match through the same transform.
+    from surfdb.fecells import FE_CELLS as _BAKED
+    try:
+        from surfdb.fecells import FE_HELD as _HELD
+    except ImportError:
+        _HELD = []
+    edited = 0
+    for bk, cell in _BAKED.items():
+        slug = cell.get('record_slug', bk)
+        r = by_slug.get(slug)
+        if r is not None and cell.get('res_floor') != int(r):
+            cell['res_floor'] = int(r)
+            edited += 1
+    if edited:
+        write_curation(_BAKED, held=_HELD)
+        print("res_floor written into %d curation cells (no record yet)"
+              % edited)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--module', action='store_true',
+                    help="regenerate the shipped module from the database")
+    ap.add_argument('--floors', action='store_true',
+                    help="measure each cell's coarsest viable resolution "
+                         "and write it into the records (follow with "
+                         "--module)")
+    ap.add_argument('--keys', nargs='*', default=None,
+                    help="with --floors: only these FE_CELLS keys")
+    args = ap.parse_args()
+    if args.floors:
+        write_floors(measure_floors(args.keys))
+        return
+    if args.module:
+        write_module()
+        return
+    print("reading datafiles from %s" % fedata.MIRROR_DOWNLOADS)
+    data = harvest()
+    print("adjoint datafiles:")
+    data.update(harvest_adjoint())
+    write_curation(data)
+
+
+main()

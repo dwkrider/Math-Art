@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "starfish-4-2-genus-71",
+  "name": "Starfish 4-2 Surface (genus 71)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "minimal",
+    "minimal-periodic",
+    "not-implemented",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "polynomial": null,
+    "note": "Member (4,2) of Brakke's two-parameter starfish family, where p counts holes along the cubelet edge and q along its diagonal.  The kaleidoscopic cell is a tetragonal disphenoid with two C2 axes; cubelets assemble on a face-centred cubic lattice.  No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula would be worse than a null."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false,
+    "genus": 71
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "implemented": false,
+      "blocked_by": "NOT KNOWN TO EXIST -- fails to period kill by 0.005.  Needs constraint-plane support in the area minimiser (vertices sliding on planes rather than pinned) plus the discrete adjoint/Bonnet transform. math_art/minsurf/plateau.py has neither; its `minimize_area` only pins vertices. Brakke's datafile for this surface is an ADJOINT file and cannot be used without that step.",
+      "resume": "K. Brakke's adjoint.cmd (mirrored in starfish.tar) is the algorithm, and U. Pinkall and K. Polthier, 'Computing discrete minimal surfaces and their conjugates', Experimental Mathematics 2(1) (1993) -- converted at research/papers/minimal-surfaces/ -- is the method. See BACKLOG.md.  Establish existence before treating this as a target."
+    }
+  ],
+  "provenance": {
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "sources": [
+      "K. A. Brakke, 'Triply Periodic Minimal Surfaces', Surface Evolver example collection, kenbrakke.com/evolver/examples/periodic/periodic.html (local mirror: brakke/book/evolver/). Starfish family page ch020_starfish.md.",
+      "Surface Evolver datafiles: starfish.tar (mirrored)."
+    ]
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "named_after": "Brakke",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  },
+  "notes": {
+    "known_issue": "NOT KNOWN TO EXIST. Brakke reports the period problem does not close for this member. It must not be treated as an implementation target until that is resolved."
+  }
+}

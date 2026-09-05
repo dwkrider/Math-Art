@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "half-twisted-scherk-surface",
+  "name": "Half-Twisted Scherk Surface",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "singly-periodic",
+    "tradition-classical"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "domain": "disk |z| < 1.56866",
+    "punctures": [
+      "z = 1 (radius 0.3)",
+      "z = -1 (radius 0.3)"
+    ],
+    "note": "No (g, dh) pair is stored: not a closed-form expression: phi (_sp_hts_phi) is an algorithm, not a single closed-form expression (call to full_like()). The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "rod",
+    "periodicity_rank": 1
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "SP_HALF_TWISTED_SCHERK",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. F. Scherk, \"Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen\", J. reine angew. Math. 13 (1835) 185-208 -- the fourth surface of that paper.",
+      "M. Weber, \"The half-twisted Scherk surface\", \"Scherk's fourth surface\", \"Plane with catenoids\", minimalsurfaces.blog (Indiana University) -- the closed-form Weierstrass pairs transcribed here.",
+      "H. Karcher, \"Construction of minimal surfaces\", Surveys in Geometry, Univ. of Tokyo (1989), and Lecture Notes No. 12, SFB 256, Bonn (1989)",
+      "- the half-catenoid chain and field.",
+      "The 3DXM Consortium, \"Chain of Half-Catenoids and Field of Half-Catenoids\", Virtual Math Museum, virtualmathmuseum.org."
+    ]
+  },
+  "tradition": [
+    "classical"
+  ],
+  "named_after": "Scherk",
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

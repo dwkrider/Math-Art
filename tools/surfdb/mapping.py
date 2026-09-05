@@ -49,6 +49,23 @@
 # ---------------------------------------------------------------------------
 
 MERGE = {
+    # Brakke's datafile cells for Schoen I-8 and I-9.  The ring-form
+    # rows emit those records, and these are the SAME SURFACES built a
+    # different way, so they merge in as a second construction.  Listing
+    # them in ALIAS instead makes two rows claim one slug, which the
+    # build correctly calls a collision and resolves by inventing
+    # `schoen-i8-tpms-exact` -- a second record for a surface that
+    # already had one.
+    "tpms_exact:SCHOEN_I8": "schoen-i8",
+    "tpms_exact:SCHOEN_I9": "schoen-i9",
+    # The box-symmetry series is ONE template selected by a sign vector,
+    # so its three shipped members are three constructions of the same
+    # catalogued family rather than three surfaces.  MERGE, not ALIAS:
+    # an alias is one-to-one and three rows aliased to one slug collide.
+    "tpms_exact:BOX_1001": "weber-pqr-series",
+    "tpms_exact:BOX_1010": "weber-pqr-series",
+    "tpms_exact:BOX_1011": "weber-pqr-series",
+
     # Catalan's minimal surface is the Bjorling surface of a cycloid.
     # The zoo row's own label reads "Bjorling: Cycloid (Catalan)", so the
     # identity is asserted by the shipped code, not inferred by us.
@@ -215,6 +232,68 @@ ALIAS = {
     "minsurf:MEEKS_MOBIUS": "meeks-mobius-strip",
     "minsurf:BJ_CIRCLE": "bjorling-twisted-band",
     "tpms_exact:PGD": "pgd-associate-family",
+    # The exact-Weierstrass rows added on the minimal-periodic branch.
+    # These MUST live here rather than being hand-edited into the record
+    # files: `data/surfaces` is regenerated from the registries, so a
+    # hand-flipped record is reverted the moment anyone rebuilds -- which
+    # is exactly what happened once, silently, in a merge.
+    "tpms_exact:H": "h-exact",
+    "tpms_exact:CLP": "clp-exact",
+    "tpms_exact:CLP_HANDLE": "clp-handle-exact",
+    "tpms_exact:LIDINOID": "lidinoid-exact",
+    "tpms_exact:RPD": "rpd-exact",
+    "tpms_exact:HT": "schoen-h-t",
+    "tpms_exact:SS": "schoen-s-s",
+    "tpms_exact:H2R": "weber-h2r",
+    "tpms_exact:TR": "weber-trr",
+    "tpms_exact:STESSMANN": "stessmann-surface",
+    "tpms_exact:RII": "schoen-rii",
+    "tpms_exact:CH": "schoen-c-h",
+    "tpms_exact:I6": "schoen-i6",
+    "tpms_exact:FRD_EXACT": "weber-fr-d",
+    "tpms_exact:FRDR": "schoen-frd-r",
+    # The datafile cells that BECAME rows when the menu stopped being
+    # organised by provenance.  Each of these surfaces already had a
+    # record; without an entry here the build mints a second one under
+    # `<slug>-exact` and the database ends up with an empty twin beside
+    # the real thing -- which is what happened, 22 times, the first time
+    # these rows appeared.  The right-hand side is the cell's own
+    # `record_slug`, so this table and the bake agree by construction.
+    "tpms_exact:BRAKKE_PSEUDO_BATWING": "brakke-pseudo-batwing",
+    "tpms_exact:DISPHENOID_FAMILY_A_GENUS_31": "disphenoid-family-a-genus-31",
+    "tpms_exact:DISPHENOID_FAMILY_A_GENUS_43": "disphenoid-family-a-genus-43",
+    "tpms_exact:DISPHENOID_FAMILY_A_GENUS_55": "disphenoid-family-a-genus-55",
+    "tpms_exact:DISPHENOID_FAMILY_B_GENUS_35": "disphenoid-family-b-genus-35",
+    "tpms_exact:DISPHENOID_FAMILY_B_GENUS_51": "disphenoid-family-b-genus-51",
+    "tpms_exact:DISPHENOID_FAMILY_B_GENUS_67": "disphenoid-family-b-genus-67",
+    "tpms_exact:NEOVIUS_N14": "neovius-n14",
+    "tpms_exact:NEOVIUS_N26": "neovius-n26",
+    "tpms_exact:NEOVIUS_N38": "neovius-n38",
+    "tpms_exact:SCHOEN_BATWING_41": "schoen-batwing-41",
+    "tpms_exact:SCHOEN_BATWING_57": "schoen-batwing-57",
+    "tpms_exact:SCHOEN_C27_P": "schoen-c27-p",
+    "tpms_exact:SCHOEN_C33_P": "schoen-c33-p",
+    "tpms_exact:SCHOEN_C39_P": "schoen-c39-p",
+    "tpms_exact:SCHOEN_C45_P": "schoen-c45-p",
+    "tpms_exact:SCHOEN_HYBRID_SS_P": "schoen-hybrid-ss-p",
+    "tpms_exact:SCHOEN_MANTA_GENUS_19": "schoen-manta-genus-19",
+    "tpms_exact:SCHOEN_MANTA_GENUS_35": "schoen-manta-genus-35",
+    "tpms_exact:SCHOEN_MANTA_GENUS_51": "schoen-manta-genus-51",
+    "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
+    "tpms_exact:SIMOES_BATISTA": "simoes-batista-surface",
+    "tpms_exact:R3_RING": "schoen-riii",
+    "tpms_exact:I8_RING": "schoen-i8",
+    "tpms_exact:I9_RING": "schoen-i9",
+    # Conjugate-Plateau rows (Brakke's `*adj.fe`).  The three hybrids are
+    # matched to records by Brakke's catalogue page rather than by his
+    # datafile headers, which contradict it -- see the note above
+    # `CONJUGATE_SURFACES` in `math_art/minsurf/plateau.py`.  The genera
+    # the records already carry (8, 9, 10) are what the page's pairing
+    # predicts, which is the independent check on the match.
+    "tpms_exact:GW_CONJ": "schoen-gw",
+    "tpms_exact:HT_HR_CONJ": "schoen-hybrid-ht-h2r",
+    "tpms_exact:TR_HT_CONJ": "schoen-hybrid-tr-ht",
+    "tpms_exact:HR_TR_CONJ": "schoen-hybrid-h2r-tr",
     "tpms:LIDINOID": "lidinoid",
     "tpms:NEOVIUS": "neovius-surface",
     "tpms:FK_CS": "fischer-koch-cs",

@@ -17,6 +17,71 @@
     "fidelity": "exact",
     "exactness": "numerical-integral",
     "scale": "unit_cell",
+    "weierstrass": {
+      "branch_points": [
+        {
+          "exponent": 0.5,
+          "point": [
+            0.2423350072589261,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.2423350072589261,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.5,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.0,
+            0.75
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            0.5,
+            0.75
+          ]
+        }
+      ],
+      "constant": [
+        0.0,
+        0.0
+      ],
+      "domain": {
+        "x": [
+          0.0,
+          0.5
+        ],
+        "y": [
+          0.0,
+          0.75
+        ]
+      },
+      "moduli_a": 0.2423350072589261,
+      "modulus_tau": [
+        0.0,
+        1.5
+      ]
+    },
     "note": "No (g, dh) pair is stored: the Gauss map is a product of powers of Jacobi theta functions on the hexagonal/square torus, continued along an unwrapped branch (math_art/minsurf/hexagonal.py); theta functions are outside the exact expression language. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {

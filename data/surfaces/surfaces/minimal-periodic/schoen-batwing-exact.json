@@ -1,0 +1,69 @@
+{
+  "schema_version": "0.1.0",
+  "slug": "schoen-batwing-exact",
+  "name": "SCHOEN_BATWING (exact)",
+  "primary_family": "minimal-periodic",
+  "families": [
+    "def-weierstrass",
+    "immersed",
+    "implemented",
+    "minimal",
+    "minimal-periodic",
+    "tradition-crystallographic",
+    "triply-periodic"
+  ],
+  "definition": {
+    "mode": "weierstrass",
+    "fidelity": "exact",
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
+  },
+  "curvature": {
+    "condition": "minimal",
+    "also_satisfies": [
+      "weingarten"
+    ]
+  },
+  "topology": {
+    "complete": true,
+    "compact": false
+  },
+  "symmetry": {
+    "kind": "space",
+    "periodicity_rank": 3
+  },
+  "embedding": {
+    "quality": "immersed"
+  },
+  "construction": [
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "SCHOEN_BATWING",
+      "definition_index": 0,
+      "implemented": true
+    }
+  ],
+  "provenance": {
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "sources": [
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
+    ]
+  },
+  "metrics": {
+    "normalization": "unit_cell"
+  },
+  "tradition": [
+    "crystallographic"
+  ],
+  "fabrication": {
+    "developable": false,
+    "printable_watertight": false,
+    "requires_thickening": true,
+    "sliceable": false
+  }
+}

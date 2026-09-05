@@ -61,6 +61,8 @@ import math
 
 import numpy as np
 
+SQRT3 = math.sqrt(3.0)
+
 try:
     from .. import geom_cache as _geom_cache
 except ImportError:  # flat import outside the package
@@ -639,7 +641,714 @@ _SPECS = {
         xlim=(-0.5, 1.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
         theta=math.pi / 2.0,
         nb="Triply_Gyroid_AssociateRPD.nb"),
+    # Schoen's H'-T, genus 4, the hexagonal-graph/triangle-graph surface
+    # of the 1970 NASA catalogue.  This is the FIRST row of the
+    # triangle-group series below to be added, and the one that needed no
+    # new machinery at all: its four boundary curves classify as mirrors
+    # straight off the patch, `_assemble` closes the group, and the
+    # period lattice comes out hexagonal as a measured result --
+    #     (0, 0, 1)  (-1.2754, 0, 0)  (-0.6377, 1.1046, 0)
+    # two equal in-plane generators at 120 degrees (0.6377 = 1.2754/2,
+    # 1.1046 = 1.2754 * sqrt(3)/2) perpendicular to the third.  That is
+    # the same check Schwarz H gates on, and getting it out rather than
+    # putting it in is the evidence the data is right.
+    #
+    # Both independent sources agree on the constants.  Weber's notebook
+    # `H_-T.nb` gives tau = 0.4i, a0 = 1/6 and the exponent 1/2 directly.
+    # Fujimori-Weber (2009) Section 3 derives the whole triangle-group
+    # family in closed form -- g = (theta(z-p)/theta(z+p))^a with
+    # a = (r-1)/r and p = (-r-s+rs)/(2(r-1)s) on the Euclidean triangle
+    # group Delta(r,s,t) -- and H'-T is its (2,3,6) member, giving
+    # a = 1/2 and p = 1/6.  Identical.
 }
+
+
+# --------------------------------------------------------------------
+# The Euclidean-triangle-group series
+# --------------------------------------------------------------------
+# Weber states outright that P, H, H'-T, H''-R, S'-S'' and T'-R' "share
+# enough properties so that a SINGLE PIECE OF CODE can be used to compute
+# all of them": each has a reflectional fundamental cell that is a right
+# prism over a triangle of type (3,3,3), (2,4,4) or (2,3,6).  This is
+# that single piece of code.
+#
+# Fujimori and Weber (2009), section 3, give the family in closed form.
+# On C/<1, tau> with tau in i R+,
+#
+#     g(z) = (theta11(z - p) / theta11(z + p))^a ,   dh = dz ,
+#     a = (r - 1)/r ,   p = (-r - s + r s) / (2 (r - 1) s) ,
+#
+# where Delta(r,s,t) is the Euclidean triangle group with angles pi/r,
+# pi/s, pi/t.  Ten (r,s,t) choices give six distinct surfaces, because
+# (r,s,t) and (r,t,s) are the same surface turned upside down.
+#
+# The formula is checked, not trusted.  It reproduces every constant
+# recovered independently from Weber's notebooks -- exponent 1/2 for
+# H'-T, 3/4 for S'-S'', 2/3 for H''-R, 5/6 for T'-R', and branch values
+# 1/6, 1/6, 1/8, 3/10 -- and it reproduces SCHWARZ H's shipped data
+# (a = 2/3, p = 1/4), which this module has been self-testing since long
+# before the family was recognised.  Weber's own page gives the branch
+# value in the different form p = s / (2(s + t)); the two expressions
+# agree on every member (they coincide under 1/r + 1/s + 1/t = 1), which
+# is two independent derivations landing on the same numbers.
+#
+# References:
+# - S. Fujimori and M. Weber, "A construction method for triply periodic
+#   minimal surfaces", OCAMI Studies 3 (2009) 79-90 -- the closed form
+#   and the (r,s,t) table transcribed here.
+# - A. H. Schoen, "Infinite periodic minimal surfaces without
+#   self-intersections", NASA TN D-5541 (1970) -- H'-T, S'-S'', H''-R and
+#   T'-R' as entries of the original catalogue, with their genera.
+# - M. Weber, "Alan Schoen's NASA report 1970", minimalsurfaces.blog --
+#   the observation that one program computes the whole family.
+
+def _trigroup(label, r, s, t, tau, weld=None, nb=None):
+    """One member of the triangle-group series, from (r, s, t).
+
+    `a` in the returned spec is the BRANCH value p of the paper, not its
+    exponent -- the spec schema calls the shape parameter `a` and the
+    exponent lives inside `terms`.  Mixing those two up silently builds a
+    different surface, so both are derived here rather than typed in.
+    """
+    expo = (r - 1.0) / r
+    p = (-r - s + r * s) / (2.0 * (r - 1.0) * s)
+    sp = dict(
+        label=label,
+        tau=complex(tau), a=float(p),
+        terms=(lambda a, tau, _e=expo: ((a, _e), (-a, -_e))),
+        const=0j,
+        xlim=(0.0, 0.5), ylim=lambda tt: (0.0, np.imag(tt) / 2.0),
+        # The y = 0 edge runs THROUGH the branch point at x = p, exactly
+        # as CLP's does, and the two halves are different symmetry
+        # elements.  Read as one curve it contributes one generator
+        # instead of two and the group cannot close.
+        splits=(float(p),), split_edge='y0',
+        theta=0.0,
+        trigroup=(r, s, t))
+    if weld is not None:
+        sp['weld'] = weld
+    if nb is not None:
+        sp['nb'] = nb
+    return sp
+
+
+_SPECS.update({
+    # (2,3,6) -- genus 4.  The one member that ASSEMBLES: its boundary
+    # curves all classify as mirrors and the derived lattice is hexagonal.
+    'HT': _trigroup("Schoen H'-T (exact, hexagonal, genus 4)",
+                    2, 3, 6, 0.4j, weld=3e-5, nb="H_-T.nb"),
+    # (4,2,4) -- genus 4, tetragonal.
+    'SS': _trigroup("Schoen S'-S'' (exact, tetragonal, genus 4)",
+                    4, 2, 4, 0.3j, nb="S_-S_.nb"),
+    # (3,2,6) -- genus 5.
+    # weld: as for H'-T, the shared 1e-4 default over-merges this patch
+    # and leaves two over-shared edges; 3e-5 is clean.
+    # tau 0.40, not the 0.15 this row shipped with.  H"-R is a family
+    # and 0.15 is a degenerate, flattened member: its cell comes out
+    # 2.69 wide per unit height, and assembled it renders as a crinkled
+    # sheet rather than Brakke's hexagonal barrel.  The cell is squattest
+    # at 0.40 (1.56), and there it IS his barrel -- side tunnels, holes
+    # top and bottom.  Same lesson as S'-S'': the member matters as much
+    # as the surface.
+    'H2R': _trigroup("Schoen H''-R (exact, hexagonal, genus 5)",
+                     3, 2, 6, 0.40j, weld=3e-5, nb="H_-R.nb"),
+    # (6,3,2) -- genus 6.  Weber's notebook uses this member rather than
+    # the (6,2,3) twin, i.e. p = 3/10 rather than 1/5; they are the same
+    # surface upside down.
+    'TR': _trigroup("Schoen T'-R' (exact, hexagonal, genus 6)",
+                    6, 3, 2, 1.0j, nb="T_-R_.nb"),
+})
+
+# S'-S" assembles by Brakke's own recipe rather than by classification.
+#
+# SSadj.fe declares four generators -- a: the x = z mirror, b: x = 0,
+# c: y = 0, d: z = 0 -- and its cell is `cube := { transform_expr
+# "dcba" }`, sixteen transforms.  Its `d` is a*b*a, a derived mirror he
+# lists only because it shortens the word.
+#
+# His matrices do NOT transfer literally.  Both his patch and ours are
+# the (4,4,2)-kaleidoscope prism -- a 45-45-90 triangle times an
+# interval, five mirror boundary planes -- but ours sits rotated 45
+# degrees in-plane, with the legs on the diagonal planes and the
+# hypotenuse axis-aligned where his are the other way round.  The WORD
+# transfers; the letters are re-pointed at our own curves:
+#
+#     a  the hypotenuse mirror      curve y=0#1,  normal (0, 1, 0)
+#     b  the leg mirror             curve y=0#0,  normal (1, 1, 0)
+#     c  the lid mirror             curve x=0,    normal (0, 0, 1)
+#     d  a*b*a, derived
+#
+# The declared normals also need 45-degree snapping, which `_snap_axis`'s
+# default 30-degree grid does not provide -- another reason the
+# classified route could not reach this surface.
+# The rest of the triangle-group series, by the same recipe.
+#
+# Their five boundary curves are always two lids plus the three sides of
+# the triangle, and MEASURING the normals settles both the exact planes
+# and the word without transcribing another datafile.  The three
+# verticals meet pairwise at angles that come out of the (r,s,t) data --
+#
+#   H'-T   (1,0,0) (0,1,0) (1,-sqrt3,0)   90, 30, 60 degrees
+#   H"-R   (sqrt3,1,0) (0,1,0) (-1,sqrt3,0)   90, 60, 30
+#   T'-R'  (1,sqrt3,0) (0,1,0) (1,0,0)     30, 90, 60
+#   S'-S"  (1,1,0) (0,1,0) (1,-1,0)        45, 45, 90
+#
+# -- and the PAIR at the smallest angle pi/n generates a dihedral group
+# of order 2n, which the lid doubles to 4n.  So the cell word is one lid
+# letter followed by the two verticals alternating, which is exactly the
+# shape of Brakke's own `full := { transform_expr "abcbcbc" }` in
+# HTadj.fe, HRadj.fe and TRadj.fe: 30 degrees, n = 6, 24 copies.  S'-S"
+# is the odd one at 45 degrees, n = 4, 16 copies, and keeps SSadj's own
+# "dcba" spelling of the same group.
+#
+# The third vertical is never a generator -- it is the wall the word
+# reflects the patch AGAINST, not one of the mirrors it reflects IN.
+_TRIGROUP_CELLS = {
+    'HT': dict(
+        tau_range=(0.20, 1.00, 0.40),
+        exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                      'y=1': (1.0, -SQRT3, 0.0), 'y=0#0': (1.0, 0.0, 0.0),
+                      'y=0#1': (0.0, 1.0, 0.0)},
+        letters={'a': 'x=0', 'b': 'y=1', 'c': 'y=0#1'},
+        words=('abcbcbc',)),
+    'H2R': dict(
+        tau_range=(0.08, 1.00, 0.40),
+        exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                      'y=1': (-1.0, SQRT3, 0.0), 'y=0#0': (SQRT3, 1.0, 0.0),
+                      'y=0#1': (0.0, 1.0, 0.0)},
+        letters={'a': 'x=0', 'b': 'y=1', 'c': 'y=0#1'},
+        words=('abcbcbc',)),
+    'TR': dict(
+        tau_range=(0.40, 2.00, 1.00),
+        exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                      'y=1': (1.0, 0.0, 0.0), 'y=0#0': (1.0, SQRT3, 0.0),
+                      'y=0#1': (0.0, 1.0, 0.0)},
+        letters={'a': 'x=0', 'b': 'y=0#0', 'c': 'y=0#1'},
+        words=('abcbcbc',)),
+}
+for _k, _v in _TRIGROUP_CELLS.items():
+    _SPECS[_k].update(_v)
+del _k, _v
+
+
+
+# S'-S" is a FAMILY, and `tau` picks the member: the cell comes out
+# 1.781 x 1 at 0.30, falls to a minimum 1.331 at 0.60, and rises again
+# (1.336 at 0.65, 1.385 at 0.80).  Brakke's `SSadj.fe` says asize = 2.4
+# "gives about the smallest aspect ratio possible", so his published
+# figure IS the squattest member -- his 1.287 against our 1.331.  The
+# default therefore moved from 0.30 to 0.60, because the point of the
+# row is to be the surface he publishes.
+_SPECS['SS'].update(
+    tau=0.6j,
+    tau_range=(0.20, 1.20, 0.60),
+    exact_planes={'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+                  'y=1': (1.0, -1.0, 0.0), 'y=0#0': (1.0, 1.0, 0.0),
+                  'y=0#1': (0.0, 1.0, 0.0)},
+    letters={'a': 'y=0#1', 'b': 'y=0#0', 'c': 'x=0',
+             'd': ('derived', 'aba')},
+    words=('dcba',),
+)
+
+
+
+# --------------------------------------------------------------------
+# Surfaces with a SOLVED period problem
+# --------------------------------------------------------------------
+# Beyond the triangle-group series the Gauss map stops being a single
+# theta quotient and becomes a product of six, eight or twelve factors
+# whose shifts depend on one or two free parameters, fixed by requiring
+# a period integral to vanish.  Weber solved those period problems and
+# TABULATED the answers against the modulus, so the constants below are
+# transcribed from his notebooks rather than re-derived.
+#
+# Nothing in the spec schema needed widening for this.  `terms` is called
+# as terms(a, tau) and `a` carries the primary shape parameter, so any
+# further parameters are closed over in the lambda -- which is why these
+# rows are data and not new machinery.
+#
+# The exponents of every product below SUM TO ZERO.  That is not
+# decoration: g is exp(sum c_k log theta11(z - s_k)), and a non-zero sum
+# makes it multivalued on the torus, so a mistyped exponent shows up
+# there first.  `_selftest` checks it for every row.
+#
+# References:
+# - A. H. Schoen, "Infinite periodic minimal surfaces without
+#   self-intersections", NASA TN D-5541 (1970) -- R-II (genus 9), I-6
+#   (genus 5), C(H) (genus 7) and F-RD (genus 6) as catalogue entries.
+# - B. Stessmann, "Periodische Minimalflaechen", Mathematische
+#   Zeitschrift 38 (1934) 417-442 -- the surface conjugate to Schoen's
+#   I-WP, found forty years before it.
+# - M. Weber, "Schoen's R2 surface", "Schoen's I6 surface", "Schoen
+#   C(H)", "Stessmann's surface", minimalsurfaces.blog -- the
+#   Weierstrass data and the solved parameter tables transcribed here.
+
+def _prod_spec(label, tau, a, terms, const=0j, theta=0.0,
+               xlim=(0.0, 0.5), ylim=None, splits=None, weld=None,
+               nb=None, note=None):
+    """A spec whose Gauss map is a bare theta product, with any extra
+    parameters already closed over in `terms`."""
+    sp = dict(label=label, tau=complex(tau), a=float(a), terms=terms,
+              const=const, theta=theta, xlim=xlim,
+              ylim=ylim or (lambda t: (0.0, np.imag(t) / 2.0)))
+    if splits is not None:
+        sp['splits'] = tuple(splits)
+        sp['split_edge'] = 'y0'
+    if weld is not None:
+        sp['weld'] = weld
+    if nb is not None:
+        sp['nb'] = nb
+    if note is not None:
+        sp['note'] = note
+    return sp
+
+
+# Stessmann: tau = i/sqrt(3), a0 = 1/6, b0 = 1/3, every exponent 3/4,
+# and a sqrt(i) prefactor.  Weber plots it from the IMAGINARY part, and
+# Im(int w) = Re(int e^(-i pi/2) w), so that is the associate at -90
+# degrees and needs no separate code path -- the same trick CLP uses.
+_STESS_B0 = 1.0 / 3.0
+_SPECS['STESSMANN'] = _prod_spec(
+    "Stessmann's Surface (exact, conjugate to I-WP)",
+    tau=1j / math.sqrt(3.0), a=1.0 / 6.0,
+    terms=lambda a, tau, _b=_STESS_B0: (
+        (a, 0.75), (-a, -0.75),
+        (-_b - tau / 2.0, 0.75), (_b - tau / 2.0, -0.75)),
+    const=0.25j * math.pi,          # log sqrt(i)
+    theta=-math.pi / 2.0,
+    nb="Ste_mann.nb")
+
+# Schoen R-II, genus 9.  Weber's notebook tabulates thirteen (a, tau)
+# pairs; this is the eighth, the member his own plots use.
+_RII_A, _RII_TAU = 0.5459942955818213, 1.8j
+# R-II's Gauss map was transcribed from the WRONG CELL of Weber's
+# notebook, and the surface it built was not R-II.
+#
+# `Schoen_RII.nb` defines G twice.  The evaluated definition (line 87)
+# puts the -3/4 branch points on the IMAGINARY axis at +-ia; a second,
+# unevaluated variant further down (line 140) puts them on the REAL axis
+# at +-a.  The engine took the real-axis one -- while taking its (a, tau)
+# from the solutions table at line 399, which the IMAGINARY-axis one
+# produced.  So a solution of one period problem was paired with a
+# different Gauss map.
+#
+# That is not a cosmetic difference.  With the old pairing the boundary
+# elements are individually genuine but generate two translations along
+# x whose lengths are in irrational ratio (1.4735 and 2.3199) -- a
+# non-discrete group, so no triply periodic surface exists with those
+# symmetries at all.  It also explains why a word over them could pass
+# every topology gate: there was nothing periodic for it to be wrong
+# about.
+#
+# Corrected below to the evaluated definition,
+#   G = th(z)^-1/2 th(z-ia)^-3/4 th(z+ia)^-3/4
+#       th(z-1/2)^1/2 th(z+1/2-ia)^3/4 th(z+1/2+ia)^3/4
+# which is what the tabulated (a, tau) = (0.5459942955818213, 1.8i)
+# actually solves.
+_SPECS['RII'] = _prod_spec(
+    "Schoen R-II (exact, tetragonal, genus 9)",
+    tau=_RII_TAU, a=_RII_A,
+    terms=lambda a, tau: ((0.0, -0.5), (1j * a, -0.75), (-1j * a, -0.75),
+                          (0.5, 0.5), (-0.5 + 1j * a, 0.75),
+                          (-0.5 - 1j * a, 0.75)),
+    nb="Schoen_RII.nb")
+
+
+# R-II's cell, once the Gauss map above was corrected.
+#
+# Six elements on four curves, and the vertical edges are why this row
+# resisted for so long: each is TWO 2-fold axes meeting at the y = a
+# branch point, so read whole it is planar (both axes lie in z = const)
+# but not straight -- the classifier calls it a plane and both axes are
+# lost.  `vsplits` cuts them at the corner.
+#
+#     y=0, y=1     the SAME mirror x = 0   (planarity 9e-5 and 2e-9)
+#     x=0#0        2-fold axis (1,-1,0) at z = 0     straight to 1e-12
+#     x=0#1        2-fold axis (1, 0,0) at z = 0     straight to 5e-16
+#     x=1#0        2-fold axis (1,-1,0) at z = 1/2
+#     x=1#1        2-fold axis (1, 0,0) at z = 1/2
+#
+# Mapping onto Brakke's six half-turns: his d and f are our `x=1#0` and
+# `x=1#1`, and his e is d conjugated by the diagonal mirror, so it is
+# DERIVED as `mdm` rather than measured.  Our patch is HALF of his
+# triangular prism unit, cut by the mirror x = 0, so his `layers` word
+# needs the mirror appended to double the half-domain:
+#
+#     his   layers := "fdfedfe"     32 units
+#     ours  "fdfedfem"              64 copies of the half-unit
+#
+# `fdfedfe` alone is REFUSED here, which is the right answer: without
+# the mirror the copies tile only half of each unit.
+_SPECS['RII'].update(
+    vsplits=('x=0', 'x=1'),
+    exact_planes={'y=0': (1.0, 0.0, 0.0), 'y=1': (1.0, 0.0, 0.0)},
+    exact_axes={'x=0#0': (1.0, -1.0, 0.0), 'x=0#1': (1.0, 0.0, 0.0),
+                'x=1#0': (1.0, -1.0, 0.0), 'x=1#1': (1.0, 0.0, 0.0)},
+    letters={'m': 'y=0', 'd': 'x=1#0', 'f': 'x=1#1',
+             'e': ('derived', 'mdm')},
+    words=('fdfedfem',))
+
+# Schoen C(H), genus 7, the complement of Schwarz H.  Nineteen solved
+# (tau, ss) pairs in the notebook; this is the tau = 0.9i member.
+_CH_SS, _CH_TAU = 0.06956280256134074, 0.9j
+_SPECS['CH'] = _prod_spec(
+    "Schoen C(H) (exact, trigonal, genus 7)",
+    tau=_CH_TAU, a=_CH_SS,
+    terms=lambda a, tau: ((0.25 - a, 2.0 / 3.0), (0.25 + a, 2.0 / 3.0),
+                          (-(0.25 - a), -2.0 / 3.0),
+                          (-(0.25 + a), -2.0 / 3.0),
+                          (0.25 + tau / 2.0, -2.0 / 3.0),
+                          (-0.25 + tau / 2.0, 2.0 / 3.0)),
+    const=1j * math.pi / 6.0,
+    nb="Schoen_C_H_.nb")
+
+# Schoen I-6, genus 5.  Nine solved (tau, a) pairs; tau = 0.93i member.
+# Note the branch points sit on the IMAGINARY axis (shifts +-a i), the
+# pattern Weber calls "completely unexplored".
+_I6_A, _I6_TAU = 0.44116403887207395, 0.93j
+_SPECS['I6'] = _prod_spec(
+    "Schoen I-6 (exact, genus 5)",
+    tau=_I6_TAU, a=_I6_A,
+    terms=lambda a, tau: ((0.0, -0.5), (1j * a, 0.5), (tau / 2.0, 0.5),
+                          (-1j * a, 0.5), (-0.5, 0.5),
+                          (-0.5 + 1j * a, -0.5),
+                          (-0.5 + tau / 2.0, -0.5),
+                          (-0.5 - 1j * a, -0.5)),
+    nb="Schoen_I6.nb")
+
+
+
+# I-6: cell NOT shipped.  Its patch does carry four clean symmetry
+# elements -- two lids and two vertical mirrors at 90 degrees, planar to
+# 3e-5 -- and a word over them closes at 8 copies from three different
+# spellings, so it looked settled.  Beside Brakke's figure it is not:
+# his I-6 is a LAYER, plates stacked with tunnels between them, built by
+# `layers := { transform_expr "abc" }` over two TRANSLATIONS and a
+# half-turn.  An order-8 mirror group is simply a different group, and
+# scanning the family (tau 0.5 to 1.8) leaves the copy count at 8
+# throughout, so it is not a wrong member either.
+#
+# Withdrawn until translation generators exist.  Note also that
+# `Schoen_I6.nb` carries TWO eight-factor theta blocks (lines 84 and
+# 596) -- the same shape as the trap that made R-II the wrong surface --
+# so the Gauss map wants auditing against the evaluated one before any
+# more work goes into the assembly.
+
+def spec_period(key, t, n=3000):
+    """Re of the period integral whose vanishing fixes a spec's modulus.
+
+    Only rows carrying a `period` entry have one.  That entry names the
+    two ends of a straight path in the torus, as functions of (a, tau),
+    and both of them are theta ZEROS -- so the integrand diverges like
+    s^(-1/2) along the way.  That is integrable, but only with a
+    quadrature that clusters into the ends: s = (1 - cos(pi u))/2 makes
+    ds vanish at exactly the rate the integrand blows up, leaving a
+    bounded transformed integrand.  Sampling the path uniformly instead
+    returns nan, because the very first node sits on a zero of theta.
+    """
+    sp = _SPECS[key]
+    a = float(sp['a'])
+    tau = 1j * float(t)
+    z0, z1 = sp['period'](a, tau)
+    q = np.exp(1j * np.pi * tau)
+    u = (np.arange(n) + 0.5) / n
+    s = 0.5 * (1.0 - np.cos(np.pi * u))
+    ds = 0.5 * np.pi * np.sin(np.pi * u) / n
+    z = z0 + (z1 - z0) * s
+    L = np.full(z.shape, complex(sp['const']), dtype=complex)
+    for sh, e in sp['terms'](a, tau):
+        L = L + e * np.log(_theta11(z - sh, q))
+    g = np.exp(L)
+    return float(np.real(np.sum(0.5 * (1.0 / g - g) * (z1 - z0) * ds)))
+
+
+def solve_spec_tau(key, lo, hi, steps=40):
+    """Bisect `spec_period` for the modulus, returning t with tau = i t.
+
+    Used as a GATE rather than at import: each row below stores the
+    solved value, and the self-test re-solves from a bracket and checks
+    it lands on the stored one.  That makes the stored constant testable
+    instead of merely asserted, which is the whole point of keeping the
+    solver -- a transcribed number that nothing re-derives is a number
+    nobody can check.
+    """
+    ts = np.linspace(lo, hi, steps)
+    vals = [spec_period(key, float(t)) for t in ts]
+    for i in range(len(ts) - 1):
+        if vals[i] * vals[i + 1] < 0.0:
+            a_, b_, fa = float(ts[i]), float(ts[i + 1]), vals[i]
+            for _ in range(80):
+                m = 0.5 * (a_ + b_)
+                fm = spec_period(key, m)
+                if fa * fm <= 0.0:
+                    b_ = m
+                else:
+                    a_, fa = m, fm
+            return 0.5 * (a_ + b_)
+    return None
+
+
+# Schoen F-RD, genus 6.  Weber: "I neither know an algebraic equation
+# for this surface, nor a simple polyhedral approximation."  Its
+# conjugate solves the Plateau problem for a quadrilateral in a
+# 1 x 1 x sqrt(2) box with angles 90/90/60/45, and was known to
+# Stessmann.  Divisor constraints b = (1-2a)/3, c = 1/2 - b, d = 1/2 - a.
+#
+# The notebook forms Omega1 as (phi2/sqrt(i) - sqrt(i) phi1)/2 rather
+# than the standard (phi2 - phi1)/2.  That is not a different formula:
+# it is the standard one with G replaced by G e^(i pi/4), i.e. a
+# rotation of the Gauss map, so it is folded into `const` here and the
+# ordinary combination applies.
+_FRD_A = 0.11
+_FRD_B = (1.0 - 2.0 * _FRD_A) / 3.0
+_SPECS['FRD_EXACT'] = _prod_spec(
+    "Schoen F-RD (exact, cubic, genus 6)",
+    tau=0.4097611639604068j, a=_FRD_A,
+    terms=lambda a, tau, _b=_FRD_B: (
+        (a, -0.5), (-a, 0.5), (_b, -0.75), (-_b, 0.75),
+        (0.5 - _b + tau / 2.0, 0.75), (-(0.5 - _b) + tau / 2.0, -0.75),
+        (0.5 - a + tau / 2.0, 0.5), (-(0.5 - a) + tau / 2.0, -0.5)),
+    const=0.25j * math.pi,
+    nb="FR-D.nb")
+
+# Schoen's unnamed surface 12, later named F-RD(r) -- the quarter-twisted
+# relative of F-RD, genus 5.  Divisor constraints a + a' = 1/2 = b + b'
+# and a + b = 1/4, the last of which is what produces the quarter twist;
+# one period condition then fixes tau in terms of a.
+#
+# tau below is SOLVED, not transcribed: Weber's notebook plots solper(a)
+# without printing a value.  `solve_spec_tau('FRDR', 0.10, 0.45)`
+# recovers 0.3947862928575998 with a residual of 6e-17, and the
+# self-test re-runs that bisection against the stored constant.
+_FRDR_A = 0.07
+_SPECS['FRDR'] = _prod_spec(
+    "Schoen F-RD(r) (exact, quarter-twisted, genus 5)",
+    tau=0.3947862928575998j, a=_FRDR_A,
+    terms=lambda a, tau, _b=0.25 - _FRDR_A: (
+        (a, 0.5), (_b, 0.5), (-a, -0.5), (-_b, -0.5),
+        (0.5 - a - tau / 2.0, -0.5), (0.5 - _b - tau / 2.0, -0.5),
+        (-0.5 + a - tau / 2.0, 0.5), (-0.5 + _b - tau / 2.0, 0.5)),
+    const=0.25j * math.pi,
+    nb="Unnamed-12.nb")
+_SPECS['FRDR']['period'] = (
+    lambda a, tau: (complex(a), complex(0.5 - a - tau / 2.0)))
+
+
+# --------------------------------------------------------------------
+# The box-symmetry series
+# --------------------------------------------------------------------
+# Thirteen of Weber's notebooks share ONE template, selected by a small
+# sign vector.  With {e1,e2,e3,e4} in {-1,+1}^4 and three free branch
+# values p1, p2, p3,
+#
+#   G0 = prod_k theta11(z - p_k)^(e_k/2) theta11(z + p_k)^(-e_k/2)
+#        * theta11(z - (d + tau/2))^(e4/2)
+#        * theta11(z + (d - tau/2))^(-e4/2),
+#   d  = -1/2 - p1 + p2 + p3   (Abel's theorem),
+#
+# and G = G0 / G0(0), a Lopez-Ros normalisation folded into `const`.
+# Every exponent appears with both signs, so the sum is zero by
+# construction rather than by luck.
+#
+# This is the structure `research/missing-surfaces-catalog.md` D4 hoped
+# for -- one row plus a selector rather than thirteen transcriptions --
+# found as a fact in the sources rather than imposed on them.
+#
+# References:
+# - M. Weber, "Box type (g=5)" series, minimalsurfaces.blog -- the
+#   template, the sign vectors and the solved parameter tables.
+# - V. Ramos Batista and collaborators, for the (+++|-) member; see the
+#   triply-periodic Costa row.
+
+def _box_spec(label, e, p1, p2, p3, tau, nb=None):
+    """One member of the box-symmetry series, from its sign vector.
+
+    `d` is DERIVED from Abel's theorem rather than passed, because it is
+    not free: the divisor has to sum correctly for g to exist at all.
+    """
+    e1, e2, e3, e4 = (float(x) for x in e)
+    d = -0.5 - p1 + p2 + p3
+
+    def terms(a, tau, _p=(p1, p2, p3), _e=(e1, e2, e3, e4), _d=d):
+        q1, q2, q3 = _p
+        f1, f2, f3, f4 = _e
+        return ((q1, f1 / 2.0), (-q1, -f1 / 2.0),
+                (q2, f2 / 2.0), (-q2, -f2 / 2.0),
+                (q3, f3 / 2.0), (-q3, -f3 / 2.0),
+                (_d + tau / 2.0, f4 / 2.0),
+                (-_d + tau / 2.0, -f4 / 2.0))
+
+    # G0(0) is a plain number, so the Lopez-Ros normalisation G/G0(0) is
+    # a constant shift of log g -- computed once here rather than left
+    # out, because it is what orients the surface in its own cell.
+    q = np.exp(1j * np.pi * complex(tau))
+    L0 = sum(ex * np.log(_theta11(np.array([0.0 + 0j]) - sh, q))[0]
+             for sh, ex in terms(p1, complex(tau)))
+    sp = _prod_spec(label, tau=tau, a=p1, terms=terms,
+                    const=complex(-L0), nb=nb)
+    sp['boxtype'] = tuple(int(x) for x in e)
+    return sp
+
+
+_SPECS['BOX_1001'] = _box_spec(
+    "Box Type (+-|+) (exact, genus 5)", (-1, 1, 1, -1),
+    0.1, 0.2, 0.46802126852411385, 0.42287483495076733j,
+    nb="Box_Type_g_5_-_1_0_0_1_.nb")
+_SPECS['BOX_1010'] = _box_spec(
+    "Box Type (+-+|-) (exact, genus 5)", (-1, 1, -1, 1),
+    0.13, 0.2540625168102844, 0.40751143412603386, 0.8j,
+    nb="Box_Type_g_5_-_1_0_1_0_.nb")
+_SPECS['BOX_1011'] = _box_spec(
+    "Box Type (+-+|+) (exact, genus 5)", (-1, 1, -1, -1),
+    0.06, 0.25007414956744817, 0.43994933834214295, 0.8j,
+    nb="Box_Type_g_5_-_1_0_1_1_.nb")
+
+
+def _cluster_path(z0, z1, n=2000):
+    """Nodes and weights along a straight path whose ENDS are theta
+    zeros.  Same substitution as `spec_period`, for the same reason."""
+    u = (np.arange(n) + 0.5) / n
+    s = 0.5 * (1.0 - np.cos(np.pi * u))
+    return z0 + (z1 - z0) * s, 0.5 * np.pi * np.sin(np.pi * u) / n * (z1 - z0)
+
+
+def _lopez_ros(terms, const, a, tau, z0, z1):
+    """Solve for the Lopez-Ros factor rho that makes a surface close.
+
+    Weber's notebooks set rho = sqrt(Int phi2 / conj(Int phi1)) along a
+    path between two branch points.  It is a genuine unknown, not a
+    cosmetic scale: it is what makes the horizontal period condition
+    Int G dh = conj(Int dh/G) hold, and dropping it gives a surface that
+    does not close up.
+    """
+    q = np.exp(1j * np.pi * tau)
+    z, w = _cluster_path(complex(z0), complex(z1))
+    L = np.full(z.shape, complex(const), dtype=complex)
+    for sh, e in terms(a, tau):
+        L = L + e * np.log(_theta11(z - sh, q))
+    g = np.exp(L)
+    i1 = np.sum(g * w)
+    i2 = np.sum((1.0 / g) * w)
+    return np.sqrt(i2 / np.conj(i1))
+
+
+# Batista's triply periodic Costa surface, genus 5 -- the (+++|-) box
+# type, and the surface Weber also calls a triply periodic
+# Costa-Hoffman-Meeks.  Three (tau, a) pairs are tabulated; this is the
+# tau = 0.8i member.  Note the DATABASE records `triply-periodic-costa`
+# and `horgan-surface` as distinct objects, and they are: the finite
+# Horgan surface is proved not to exist, while this one does.
+_TPC_A, _TPC_TAU = 0.2723060550713618, 0.8j
+
+
+def _tpc_terms(a, tau):
+    return ((0.0, -0.5), (a, 0.5), (-a, 0.5), (0.5, 0.5),
+            (tau / 2.0, -0.5), (0.5 - tau / 2.0, -0.5))
+
+
+_SPECS['TRIPLY_COSTA'] = _prod_spec(
+    "Triply Periodic Costa (Batista, exact, genus 5)",
+    tau=_TPC_TAU, a=_TPC_A, terms=_tpc_terms,
+    const=0.25j * math.pi,
+    nb="Triply_Costa_g_4_straight.nb")
+# rho is solved, not guessed -- see `_lopez_ros`.
+_SPECS['TRIPLY_COSTA']['const'] = (
+    0.25j * math.pi
+    + np.log(_lopez_ros(_tpc_terms, 0.25j * math.pi, _TPC_A, _TPC_TAU,
+                        0.0, _TPC_A)))
+
+# The Simoes-Batista surface, genus 7: Batista's triply periodic Costa
+# with a handle added.  Twelve theta factors on a rectangular lattice,
+# with a two-parameter period problem Weber solved; this is the
+# tau = 0.97i member.
+_SB_A, _SB_B, _SB_TAU = (0.04631108617540206, 0.19605836826545586, 0.97j)
+_SPECS['SIMOES_BATISTA'] = _prod_spec(
+    "Simoes-Batista Surface (exact, genus 7)",
+    tau=_SB_TAU, a=_SB_A,
+    terms=lambda a, tau, _b=_SB_B: (
+        (a, -0.5), (-a, 0.5), (0.25, 0.5), (-0.25, -0.5),
+        (0.5 - a, -0.5), (-(0.5 - a), 0.5),
+        (0.25 - tau / 2.0, -0.5), (-(0.25 + tau / 2.0), 0.5),
+        (_b - tau / 2.0, -0.5), (-(_b + tau / 2.0), 0.5),
+        (0.5 - _b - tau / 2.0, -0.5), (-(0.5 - _b + tau / 2.0), 0.5)),
+    const=0.25j * math.pi,
+    nb="Sim-es-Batista-g-7.nb")
+_SPECS['SIMOES_BATISTA']['test_res'] = (60, 90)
+
+
+# --------------------------------------------------------------------
+# Hackman's toroidal 1-noid -- DEFERRED, and exactly why
+# --------------------------------------------------------------------
+# This is the row that `dh_terms` was built for, and the data is right:
+#
+#     k = 1/3,   tau = t + 2i,
+#     g  = theta11(z + k/2) / theta11(z - k/2),
+#     dh = sigma(z - k/2) sigma(z + k/2) / sigma(z)^2
+#        = const * theta11(z - k/2) theta11(z + k/2) / theta11(z)^2,
+#
+# the sigma-to-theta step being exact because the eta-exponentials cancel
+# (see the note in `_spec_patch`), with the constant folding into the
+# Bonnet phase.  Driven through the spec engine on a domain clear of the
+# origin it converges cleanly to minimal -- median |H| * diam
+# 6.67e-4 -> 2.29e-4 -> 1.04e-4 over n = 45/75/110, better than an order
+# of magnitude under any shipped row.
+#
+# It does NOT ship, because of what sits at the origin.  The exponents
+# there are p = 0 from g and d = -2 from dh, so the integrand goes like
+# s^-2: an order-two POLE, which is the catenoid end of the 1-noid, not
+# a branch point.  Grading cannot absorb that -- s^-2 is not integrable
+# -- and the rectangle domain has no way to excise a puncture at one of
+# its own corners.  Truncating the domain to avoid the origin does give
+# a minimal patch, but it is a patch with the surface's defining feature
+# cut out, which would be a misleading thing to ship under this name.
+#
+# Resume: the row needs end trimming (a masked puncture, as the zoo's
+# disk domains have) plus the screw-motion assembly of 2 pi k per storey,
+# and the modulus t solved from the notebook's 1-D FindRoot on
+# period(k, tau) with the seed t in [0.15, 0.25].  The Bonnet phase does
+# NOT need its transcendental closed form transcribed -- it is the
+# associate angle, already a spec field, so it can be solved for by the
+# same closure condition rather than typed in.
+#
+# References:
+# - M. Hackman, thesis; toroidal 1-Noids on every conformal type of
+#   torus.  Reported at M. Weber, "Hackman surfaces",
+#   minimalsurfaces.blog, whose notebook `Hackman-Surfaces.nb` carries
+#   the data transcribed above.
+_HACKMAN_DEFERRED = dict(
+    label="Hackman Surface (toroidal 1-noid)",
+    tau=0.2 + 2.0j, a=1.0 / 6.0,          # a = k/2, k = 1/3
+    terms=lambda a, tau: ((a, -1.0), (-a, 1.0)),
+    dh_terms=lambda a, tau: ((a, 1.0), (-a, 1.0), (0.0, -2.0)),
+    const=0j, theta=0.0,
+    xlim=(0.0, 0.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
+    nb="Hackman-Surfaces.nb")
+
+
+def _kink_index(curve, min_turn=30.0):
+    """Where a boundary curve turns a corner, or None.
+
+    Used to split an edge that is two symmetry elements meeting at a
+    branch point.  This is NOT a fit: on R-II's vertical edges the
+    turning angle is 135.000 degrees at exactly one node and 0.000 at
+    every other, and the node sits at the same fraction of the edge
+    (0.663) at every resolution tried.  A corner that sharp is a
+    structural feature of the surface, not a numerical artifact -- and
+    the split is gated afterwards by requiring both halves to come out
+    straight, so a wrong guess here cannot ship.
+    """
+    C = np.asarray(curve, dtype=float)
+    if len(C) < 5:
+        return None
+    d = np.diff(C, axis=0)
+    n = np.linalg.norm(d, axis=1, keepdims=True)
+    u = d / np.maximum(n, 1e-300)
+    cosang = np.clip(np.einsum('ij,ij->i', u[:-1], u[1:]), -1.0, 1.0)
+    turn = np.degrees(np.arccos(cosang))
+    j = int(np.argmax(turn))
+    if float(turn[j]) < min_turn:
+        return None
+    return j + 1
 
 
 def spec_curves(key, P):
@@ -658,7 +1367,7 @@ def spec_curves(key, P):
     splits = sp.get('splits', ())
     if not splits:
         curves.append(('y=0', P[:, 0]))
-        return curves
+        return _split_vertical_edges(key, P, curves)
     xs = _spec_nodes(key, P.shape[0])[0]
     x1 = sp['xlim'][1]
     edge = P[:, 0] if sp.get('split_edge', 'y0') == 'y0' else P[:, -1]
@@ -673,6 +1382,362 @@ def spec_curves(key, P):
             curves.append(('y=0#%d' % k, edge[lo:hi + 1]))
         lo = hi
     return curves
+
+
+def _split_vertical_edges(key, P, curves):
+    """Split the x = const edges where they turn a corner.
+
+    R-II needs it: each of its vertical edges is TWO 2-fold axes meeting
+    at the y = a branch point, and read whole the pair is planar (it lies
+    in z = const) but not straight, so the classifier calls it a plane
+    and the two axes are lost.
+    """
+    names = _SPECS[key].get('vsplits') or ()
+    if not names:
+        return curves
+    out = [(nm, C) for nm, C in curves if nm not in names]
+    rows = {'x=0': P[0, :], 'x=1': P[-1, :]}
+    for nm in names:
+        row = rows.get(nm)
+        if row is None:
+            continue
+        j = _kink_index(row)
+        if j is None or j < 3 or len(row) - j < 3:
+            out.append((nm, row))
+            continue
+        out.append((nm + '#0', row[:j + 1]))
+        out.append((nm + '#1', row[j:]))
+    return out
+
+
+# Order of the transform set each cell word generates, with WHERE the
+# number comes from -- the two are not the same kind of evidence and the
+# self-test says which it is printing.
+#
+# "Evolver" means Brakke's own datafile was run and reported that count.
+# "group" means it was derived here from the measured mirror angles: two
+# planes meeting at pi/n generate a dihedral group of order 2n, which a
+# perpendicular lid doubles.  I-6 is the second kind -- its datafile
+# assembles the surface a different way (translations and a half-turn),
+# so there is no Evolver count for THIS word to compare against, only
+# the group order, which the word reaches from three spellings alike.
+_WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
+                'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
+                'RII': (64, 'Evolver x2')}
+
+
+def spec_modulus_range(key):
+    """(lo, hi, default) for a spec whose family a UI can walk, or None.
+
+    The triangle-group rows are one-parameter families in the torus
+    modulus `tau`, and which member you get is a real choice rather than
+    an implementation detail -- it is what decides whether the cell is
+    squat or elongated, and Brakke's published figures are particular
+    members.
+    """
+    # `.get` on the OUTER lookup too: this is called with any
+    # TPMS_EXACT row id, including the relaxation and conjugate-Plateau
+    # ones that have no `_SPECS` entry at all.  Indexing directly here
+    # raised KeyError and took out R-III, I-8 and I-9.
+    sp = _SPECS.get(key)
+    r = sp.get('tau_range') if sp else None
+    return tuple(r) if r else None
+
+
+def set_spec_modulus(key, value):
+    """Pick the family member, the way `clp_params` picks CLP's.
+
+    The spec table is the only channel a TPMS_EXACT row has for a shape
+    parameter.  `_spec_state` already keys the build cache on `tau`, so
+    a change here invalidates it correctly.
+    """
+    rng = spec_modulus_range(key)
+    if rng is None:
+        return
+    lo, hi, _d = rng
+    _SPECS[key]['tau'] = complex(0.0, min(max(float(value), lo), hi))
+
+
+def spec_periods(key, n=20000, base=None):
+    """The surface's translation lattice, straight from its Weierstrass
+    data rather than inferred from whichever boundary curves classify.
+
+    Re of the integral of phi around a cycle of the torus IS a
+    translation of the surface, so integrating along z -> z + 1 and
+    z -> z + tau gives two lattice vectors directly.  Returns them as a
+    pair of real 3-vectors.
+
+    Gated in `_selftest` on H'-T, whose z period comes out (0, 0, 1) to
+    1e-9 and matches the height of the cell the word route assembles.
+
+    This exists for the surfaces the cell-word route cannot reach.  I-6,
+    I-8, I-9 and R-III are LAYER surfaces in Brakke's datafiles, built
+    from translations and a screw rather than from mirrors, and our
+    patches yield only point groups -- no two of their vertical mirrors
+    are parallel, so no in-plane translation can be formed from them.
+    The lattice has to come from the data, and this is where it comes
+    from.  NOTE that having the vectors is not yet enough: adding one as
+    a generator letter to I-6 was tried and every word refused, so the
+    remaining piece is understanding how the translation and the point
+    group share a fundamental domain, not the arithmetic below.
+    """
+    sp = _SPECS[key]
+    tau = sp['tau']
+    a = float(sp['a'])
+    q = np.exp(1j * np.pi * tau)
+    ang = sp.get('theta', 0.0)
+    if base is None:
+        base = 0.25 + 0.25j * float(np.imag(tau))
+
+    def leg(delta):
+        u = (np.arange(int(n)) + 0.5) / float(n)
+        z = (base + delta * u)[None, :]
+        L = np.full(z.shape, complex(sp.get('const', 0)), dtype=complex)
+        for sh, c in sp['terms'](a, tau):
+            L = L + c * _log_theta(z - sh, q)
+        g = np.exp(L)
+        inv = 1.0 / g
+        dh = np.ones_like(g)
+        if 'dh_terms' in sp:
+            Ld = np.zeros(z.shape, dtype=complex)
+            for sh, c in sp['dh_terms'](a, tau):
+                Ld = Ld + c * _log_theta(z - sh, q)
+            dh = np.exp(Ld)
+        W = np.stack([0.5 * (inv - g) * dh, 0.5j * (inv + g) * dh, dh],
+                     axis=-1) * np.exp(1j * ang)
+        return np.real(np.sum(W[0], axis=0) * delta / float(n))
+
+    return leg(1.0 + 0j), leg(complex(tau))
+
+
+def spec_declared_elements(key, P):
+    """Exact symmetry elements for a spec that DECLARES them.
+
+    `spec_generators` classifies boundary curves and fits each one.  That
+    works where the patch is accurate and fails where it is not: two of
+    S'-S"'s five curves miss planarity by 5.8e-3 and 2.6e-3, the miss
+    sits at the branch point, and it scales with the Gauss-map exponent
+    (r-1)/r across the family -- H'-T (1/2) 2.5e-5 and passes, H"-R (2/3)
+    1.9e-3, S'-S" (3/4) 7.1e-3, T'-R' (5/6) 1.4e-2.  It also GROWS with
+    resolution, because a finer grid samples nearer the singular corner.
+    So the classifier is the messenger: raising its tolerance would admit
+    the curves and their polluted fits together.
+
+    Brakke does not classify anything.  Every `.fe` DECLARES its
+    generators (`view_transform_generators`) and reads only their
+    placement off the surface.  A spec does the same here, through
+    either of two keys:
+
+        exact_planes    {curve: normal}   reflection in a plane
+        exact_axes      {curve: axis}     half-turn about a line
+
+    The direction is exact; the placement is MEASURED as the median over
+    the curve -- median rather than mean because the branch-point end is
+    the part that is wrong.
+
+    Returns `{curve: (kind, direction, reference)}` where `reference` is
+    the plane offset for a mirror and a point on the line for a
+    half-turn, or None when the spec declares nothing.
+    """
+    sp = _SPECS[key]
+    planes = sp.get('exact_planes') or {}
+    axes = sp.get('exact_axes') or {}
+    if not planes and not axes:
+        return None
+    curves = dict(spec_curves(key, P))
+    out = {}
+    for name, raw in planes.items():
+        C = curves.get(name)
+        if C is None or len(C) < 3:
+            return None
+        n = np.asarray(raw, dtype=float)
+        n = n / np.linalg.norm(n)
+        out[name] = ('mirror', n,
+                     float(np.median(np.asarray(C, dtype=float) @ n)))
+    for name, raw in axes.items():
+        C = curves.get(name)
+        if C is None or len(C) < 3:
+            return None
+        v = np.asarray(raw, dtype=float)
+        v = v / np.linalg.norm(v)
+        # A point ON the axis: the median of the curve, with any
+        # component along the axis left free (it does not move the line).
+        out[name] = ('halfturn', v,
+                     np.median(np.asarray(C, dtype=float), axis=0))
+    return out
+
+
+def spec_declared_planes(key, P):
+    """Back-compatible view of `spec_declared_elements`: mirrors only."""
+    el = spec_declared_elements(key, P)
+    if el is None:
+        return None
+    return {k: (v, r) for k, (kind, v, r) in el.items() if kind == 'mirror'}
+
+
+def _element_matrix(kind, vec, ref):
+    if kind == 'mirror':
+        return _mirror(vec, ref)
+    return _halfturn(np.asarray(ref, dtype=float), vec)
+
+
+def _project_onto_element(pts, kind, vec, ref):
+    """Land points exactly on a plane, or exactly on a line."""
+    pts = np.asarray(pts, dtype=float)
+    if kind == 'mirror':
+        return pts - ((pts @ vec) - ref)[:, None] * vec
+    d = pts - np.asarray(ref, dtype=float)
+    return np.asarray(ref, dtype=float) + (d @ vec)[:, None] * vec
+
+
+# Which way each boundary curve of the grid faces, for the projection.
+_CURVE_ROWS = {'x=0': ('i', 0), 'x=1': ('i', -1), 'y=1': ('j', -1)}
+
+
+def _curve_indices(key, P):
+    """Grid indices of each boundary curve `spec_curves` returns."""
+    nu, nv = P.shape[0], P.shape[1]
+    sp = _SPECS[key]
+    idx = {'x=0': (np.zeros(nv, int), np.arange(nv)),
+           'x=1': (np.full(nv, nu - 1), np.arange(nv)),
+           'y=1': (np.arange(nu), np.full(nu, nv - 1))}
+    splits = sp.get('splits', ())
+    col = 0 if sp.get('split_edge', 'y0') == 'y0' else nv - 1
+    for nm in (_SPECS[key].get('vsplits') or ()):
+        row = P[0, :] if nm == 'x=0' else P[-1, :]
+        j = _kink_index(row)
+        i0 = 0 if nm == 'x=0' else nu - 1
+        if j is None or j < 3 or len(row) - j < 3:
+            continue
+        idx.pop(nm, None)
+        idx[nm + '#0'] = (np.full(j + 1, i0), np.arange(j + 1))
+        idx[nm + '#1'] = (np.full(nv - j, i0), np.arange(j, nv))
+    if not splits:
+        idx['y=0'] = (np.arange(nu), np.full(nu, col))
+        return idx
+    xs = _spec_nodes(key, nu)[0]
+    x1 = sp['xlim'][1]
+    lo = 0
+    for k, c in enumerate(list(splits) + [x1]):
+        hi = int(np.argmin(np.abs(xs - c)))
+        if hi - lo >= 3:
+            idx['y=0#%d' % k] = (np.arange(lo, hi + 1),
+                                 np.full(hi + 1 - lo, col))
+        lo = hi
+    return idx
+
+
+def spec_project_boundary(key, P, planes, iters=30):
+    """Land each boundary curve exactly on its declared plane.
+
+    This is the discrete form of Brakke's `frame`, which pins the
+    conjugate's boundary edges to their constraint planes before showing
+    any transforms.  It matters more than it looks: reflected copies of a
+    boundary that is only ~1e-3 from its mirror do not weld, so the cell
+    never closes.  Alternating projection converges the corner nodes,
+    which belong to two planes at once, onto their intersection line.
+    """
+    P = np.asarray(P, dtype=float).copy()
+    idx = _curve_indices(key, P)
+    for _ in range(int(iters)):
+        for name, (kind, vec, ref) in planes.items():
+            ii = idx.get(name)
+            if ii is None:
+                continue
+            a, b = ii
+            P[a, b] = _project_onto_element(P[a, b], kind, vec, ref)
+    return P
+
+
+def spec_word_transforms(key, planes):
+    """The transform set the spec's cell word generates.
+
+    `letters` maps a letter to a curve name, or to `('derived', word)`
+    for a mirror Brakke declares as a product of others -- S'-S"'s
+    `d` is `a*b*a`, the image of one leg mirror in the diagonal, which he
+    lists only because it shortens the word.
+    """
+    sp = _SPECS[key]
+    lets = {}
+    for ch, src in sp['letters'].items():
+        if not isinstance(src, tuple):
+            lets[ch] = _element_matrix(*planes[src])
+    for ch, src in sp['letters'].items():
+        if isinstance(src, tuple):
+            M = np.eye(4)
+            for d in src[1]:
+                M = M @ lets[d]
+            lets[ch] = M
+    return [(w, eval_transform_expr(lets, w)) for w in sp['words']]
+
+
+def eval_transform_expr(gens, word):
+    """Evolver's `transform_expr`.
+
+    Each letter g denotes the SET {I, g}, so scanning left to right the
+    transform set doubles: S := S union S*g.  The result is every product
+    of a SUBSEQUENCE of the word, deduplicated as group elements, which
+    is what keeps it small -- `dcba` is 16, not 2^4 by accident but
+    because the dedup happens to be trivial there, while `bcbcbc` is 12
+    (the dihedral group D6) rather than 2^6 = 64.  Composition runs left
+    to right, so the RIGHTMOST letter acts on points first.
+
+    Confirmed against Evolver 2.70 on Brakke's own datafiles.
+    """
+    S = [np.eye(4)]
+    seen = {tuple(np.round(S[0][:3, :].ravel(), 7) + 0.0)}
+    for ch in word:
+        G = gens[ch]
+        for M in list(S):
+            N = M @ G
+            k = tuple(np.round(N[:3, :].ravel(), 7) + 0.0)
+            if k not in seen:
+                seen.add(k)
+                S.append(N)
+    return S
+
+
+def spec_word_assemble(key, P):
+    """Assemble the cell the spec's datafile names, or None.
+
+    Returns `(V, quads, transform_count, word)`.  Weld tolerance runs
+    down a LADDER and the first that verifies wins -- the same pattern
+    `spec_reflect_tile` uses, and for the same reason: pass/fail is not
+    monotone in the tolerance, because too loose merges vertices either
+    side of a mirror and too tight leaves the graded grid's clustered
+    nodes as separate copies.
+    """
+    sp = _SPECS[key]
+    if not sp.get('words'):
+        return None
+    planes = spec_declared_elements(key, P)
+    if planes is None:
+        return None
+    Pp = spec_project_boundary(key, P, planes)
+    V0 = Pp.reshape(-1, 3)
+    Q0 = _patch_quads(Pp.shape[0], Pp.shape[1])
+    best = None
+    for word, mats in spec_word_transforms(key, planes):
+        Vs, Qs, base = [], [], 0
+        for M in mats:
+            Vs.append(_apply(M, V0))
+            q = Q0 + base
+            if np.linalg.det(M[:3, :3]) < 0.0:
+                q = q[:, ::-1]
+            Qs.append(q)
+            base += len(V0)
+        V = np.concatenate(Vs, 0)
+        Q = np.concatenate(Qs, 0)
+        span = float(np.max(V.max(0) - V.min(0))) or 1.0
+        for tol in (1e-5, 3e-5, 1e-4, 3e-4, 1e-6):
+            Vw, Qw = _weld(V, Q, tol * span)
+            Qw = np.asarray(Qw)
+            if _assembly_ok(Vw, Qw):
+                best = (Vw, Qw, len(mats), word)
+                break
+        if best is not None:
+            break
+    return best
 
 
 def spec_generators(key, P, tol=1e-3):
@@ -786,7 +1851,14 @@ def spec_singularities(key):
     y0, y1 = sp['ylim'](tau)
     ty = float(np.imag(tau))
     pad = 1e-9
+    # g and dh are accumulated SEPARATELY.  With g ~ s^p and dh ~ s^d at
+    # a point, the three integrand components go like s^(p+d), s^(d-p)
+    # and s^d, so the worst power is d - |p| and the point is singular
+    # exactly when that is negative.  With no dh_terms, d = 0 and this
+    # reduces to -|p|, which is what the old single-accumulator code
+    # computed -- so every existing row grades identically.
     acc = {}
+    accd = {}
     for shift, c in sp['terms'](a, tau):
         sx, sy = float(np.real(shift)), float(np.imag(shift))
         # every lattice translate that can land in the rectangle
@@ -804,7 +1876,28 @@ def spec_singularities(key):
                     continue
                 k = (round(px, 12), round(py, 12))
                 acc[k] = acc.get(k, 0.0) + float(c)
-    return {k: v for k, v in acc.items() if abs(v) > 1e-12}
+    for shift, c in (sp['dh_terms'](a, tau) if 'dh_terms' in sp else ()):
+        sx, sy = float(np.real(shift)), float(np.imag(shift))
+        for n in range(int(math.floor((y0 - sy) / ty)) - 1,
+                       int(math.ceil((y1 - sy) / ty)) + 2):
+            py = sy + n * ty
+            if not (y0 - pad <= py <= y1 + pad):
+                continue
+            for m in range(int(math.floor(x0 - sx - n * float(np.real(tau))))
+                           - 1,
+                           int(math.ceil(x1 - sx - n * float(np.real(tau))))
+                           + 2):
+                px = sx + m + n * float(np.real(tau))
+                if not (x0 - pad <= px <= x1 + pad):
+                    continue
+                k = (round(px, 12), round(py, 12))
+                accd[k] = accd.get(k, 0.0) + float(c)
+    out = {}
+    for k in set(acc) | set(accd):
+        eff = accd.get(k, 0.0) - abs(acc.get(k, 0.0))
+        if eff < -1e-12:
+            out[k] = eff
+    return out
 
 
 def _graded_axis(lo, hi, sing, n, tiny=1e-6):
@@ -1024,8 +2117,23 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
         L = L + c * _log_theta(Z - shift, q)
     g = np.exp(L)
     inv = 1.0 / g
-    W = np.stack([0.5 * (inv - g), 0.5j * (inv + g),
-                  np.ones_like(g)], axis=-1) * np.exp(1j * ang)
+    # dh defaults to dz, which is what every row above uses.  A row may
+    # instead give `dh_terms`, a second theta product -- Hackman's height
+    # differential is sigma(z-k/2) sigma(z+k/2) / sigma(z)^2, and the
+    # Weierstrass sigma quotient IS a theta quotient here because the
+    # eta-exponentials cancel identically:
+    #     sigma(z-a) sigma(z+a) / sigma(z)^2
+    #       = const * theta11(z-a) theta11(z+a) / theta11(z)^2,
+    # the constant coming out of exp(eta1 * 2a^2 / (2 omega1)), which is
+    # independent of z and so folds into the Bonnet phase.
+    dh = np.ones_like(g)
+    if 'dh_terms' in sp:
+        Ld = np.zeros(Z.shape, dtype=complex)
+        for shift, c in sp['dh_terms'](a, tau):
+            Ld = Ld + c * _log_theta(Z - shift, q)
+        dh = np.exp(Ld)
+    W = np.stack([0.5 * (inv - g) * dh, 0.5j * (inv + g) * dh,
+                  dh], axis=-1) * np.exp(1j * ang)
 
     F = np.zeros((len(xs), len(ys), 3), dtype=complex)
     # The left-edge column integrates up in y (dz = i dy), then every
@@ -1363,9 +2471,107 @@ def _assembly_ok(V, Q, tol=0.005):
     cen = P[live].mean(axis=1)
     span = float(np.max(V.max(0) - V.min(0))) if len(V) else 1.0
     key = np.round(cen / max(span * 1e-5, 1e-12)).astype(np.int64)
-    _u, cnt = np.unique(key, axis=0, return_counts=True)
-    dup = int(cnt.sum() - len(cnt))
-    return dup <= tol * int(live.sum())
+    _u, inv, cnt = np.unique(key, axis=0, return_inverse=True,
+                             return_counts=True)
+    # A shared centroid CELL is not yet a duplicate.  The cell is a fixed
+    # fraction of the whole span, while the graded quadrature grid packs
+    # nodes exponentially towards each singular end -- so at high
+    # resolution two ADJACENT faces there are thin enough that their
+    # centroids land in one cell and the raw count reads 4-7.5% duplicate
+    # on assemblies that are perfectly clean.  Measured on S'-S'': every
+    # such pair shares exactly 2 vertices, i.e. an edge.
+    #
+    # Coincident sheets -- the thing this test exists to catch, CLP with
+    # a handle's leopard spots -- share 0 vertices when they are separate
+    # copies, or all 4 once welded.  Never exactly 2.  So requiring
+    # NON-ADJACENCY separates the real failure from the meshing artifact
+    # without touching the threshold.
+    live_idx = np.nonzero(live)[0]
+    dup = 0
+    for cell in np.nonzero(cnt > 1)[0]:
+        fs = live_idx[inv == cell]
+        k = len(fs)
+        if k > 8:
+            # Too many faces in one cell to pair up cheaply, and a real
+            # pile is exactly what that looks like.  Count them.
+            dup += k - 1
+            continue
+        sets = [set(int(v) for v in Q[f]) for f in fs]
+        for i in range(k):
+            for j in range(i + 1, k):
+                if len(sets[i] & sets[j]) < 2:
+                    dup += 1
+    if dup > tol * int(live.sum()):
+        return False
+
+    # CONNECTEDNESS.  The docstring above has always said a component
+    # count was added after three of CLP's arrangements came out
+    # manifold, plausible-looking and in several pieces -- but the check
+    # itself was not here, and Schoen H'-T went out through the gap: its
+    # assembled cell is TWO pieces that abut without joining, the larger
+    # ending at x = -0.318 and a 7020-vertex stray starting at -0.313.
+    # The 0.005 gap is 0.4% of the cell span, far too wide for any weld
+    # tolerance to close and not a lattice vector either, so it is a
+    # misplaced copy rather than a missing generator.
+    #
+    # A triply periodic minimal surface separates two labyrinths and is
+    # connected; a cell that falls apart is wrong however clean its
+    # edges are.  Rejecting here makes the caller fall back to the exact
+    # fundamental piece, which is what the surfaces that never assembled
+    # have always shipped.
+    nv = len(V)
+    parent = np.arange(nv)
+
+    def _find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for f in Q:
+        r0 = _find(int(f[0]))
+        for j in range(1, len(f)):
+            rj = _find(int(f[j]))
+            if rj != r0:
+                parent[rj] = r0
+    # ESSENTIALLY one piece, not exactly one.  The failures this exists
+    # to catch are gross: H'-T's cell was a main body plus a 7020-vertex
+    # stray, and three of CLP's arrangements fell into two or three
+    # comparable pieces.  What defeats a strict count instead is the
+    # graded quadrature grid, which packs nodes ~1e-12 apart at each
+    # singular end -- assembled and welded, a dozen of those can end up
+    # as isolated specks ON a mirror plane (measured on S'-S'': 12 to 28
+    # vertices adrift out of 962440, 0.013%, all sitting at distance
+    # 4e-18 from the y = 0 mirror).  Those are quadrature litter, not a
+    # broken cell.
+    #
+    # So the largest component must hold all but `tol` of the faces.
+    # That still rejects everything above by a wide margin -- H'-T's
+    # stray was a third of its cell -- while ignoring specks.
+    from collections import Counter
+    sizes = Counter()
+    for f in Q:
+        sizes[_find(int(f[0]))] += 1
+    if not sizes:
+        return False
+    biggest = max(sizes.values())
+    return (len(Q) - biggest) <= tol * len(Q)
+
+
+def _weld_tol(key):
+    """Vertex-weld tolerance for a spec, as a fraction of the cell span.
+
+    1e-4 is right for every row that predates H'-T and stays the default,
+    so nothing already shipped moves.  It is NOT right for all of them:
+    the weld is a single distance threshold applied to a patch whose
+    feature spacing varies per surface, and H'-T packs its copies closer
+    than CLP or Schwarz H do.  At 1e-4 it merges vertices either side of
+    a symmetry plane and leaves six over-shared edges at z = 0.5 -+ 0.105;
+    at 3e-5 there are none.  The failure is quiet -- 0.0036% of edges,
+    which sails through `_assembly_ok`'s 0.5% threshold while the rows
+    known to be right sit at exactly 0.000%.
+    """
+    return float(_SPECS[key].get('weld', 1e-4))
 
 
 def _spec_state(key, *_a, **_k):
@@ -1381,6 +2587,227 @@ def _spec_state(key, *_a, **_k):
             complex(sp.get('const', 0)))
 
 
+def _orbit_ok(V, Q):
+    """Connected, no duplicate faces, no over-shared edges."""
+    if not len(Q):
+        return False
+    ec = {}
+    for f in Q:
+        m = len(f)
+        for t in range(m):
+            a, b = int(f[t]), int(f[(t + 1) % m])
+            e = (a, b) if a < b else (b, a)
+            ec[e] = ec.get(e, 0) + 1
+    if any(c > 2 for c in ec.values()):
+        return False
+    cen = {}
+    for f in Q:
+        c = tuple(np.round(V[list(f)].mean(0), 6))
+        cen[c] = cen.get(c, 0) + 1
+    if any(v > 1 for v in cen.values()):
+        return False
+    par = list(range(len(V)))
+
+    def _f(i):
+        while par[i] != i:
+            par[i] = par[par[i]]
+            i = par[i]
+        return i
+
+    for f in Q:
+        r0 = _f(int(f[0]))
+        for j in range(1, len(f)):
+            rj = _f(int(f[j]))
+            if rj != r0:
+                par[rj] = r0
+    return len({_f(int(i)) for f in Q for i in f}) <= 1
+
+
+def spec_reflect_tile(key, P, depth):
+    """Reflect a fundamental patch in the boundary curves that ARE
+    symmetry elements, as far as the result stays a surface.
+
+    Most spec rows ship their fundamental piece because `_assemble`
+    cannot close their reflection group on a rank-3 lattice -- some
+    boundary curve classifies as neither a straight line nor a planar
+    geodesic, so there is no generator for it.  But the OTHER edges
+    usually do classify, and reflecting in just those already shows a
+    recognisable piece of the surface instead of a lone quadrilateral.
+    S'-S'' has three such mirrors, H''-R four.
+
+    So this closes the group generated by whatever `spec_generators`
+    found, to `depth` words, and keeps the LARGEST orbit that still
+    passes `_orbit_ok` -- connected, no duplicate faces, no over-shared
+    edges.  It backs off rather than failing, so the worst case is the
+    patch itself and there is no way for this to ship a broken mesh.
+
+    It is deliberately NOT presented as the unit cell: it is a partial
+    reflection orbit, and for these rows a true cell is not available.
+
+    Three rows get no growth from this and the reasons differ.  R-II and
+    Stessmann produce copies that PARTIALLY OVERLAP -- 21 and 70
+    duplicate faces at the first step, with the copies connected and in
+    one piece, so it is not a placement bug but genuine overlap of the
+    reflected sheets -- and they correctly fall back to the patch.  I-6
+    grows once and then closes, which is the orbit finishing rather than
+    failing.
+    """
+    V0 = P.reshape(-1, 3)
+    Q0 = _patch_quads(P.shape[0], P.shape[1])
+    gens = spec_generators(key, P)[0]
+    if not gens or depth < 1:
+        return V0, Q0
+    span = float(np.max(V0.max(0) - V0.min(0))) or 1.0
+
+    # Deduplicate the orbit by the IMAGE, not by the matrix.
+    #
+    # Two different words can place the patch in exactly the same spot,
+    # whenever they differ by an isometry that happens to stabilise the
+    # patch, and keying the orbit on the matrix keeps both -- so the
+    # weld then reports duplicate faces and `_orbit_ok` rejects an
+    # otherwise correct tiling.  That is what made Reflections inert on
+    # R-II, H''-R and Stessmann while working on the other nine rows.
+    #
+    # It is NOT that their generators are degenerate: measured, every one
+    # moves the patch (centroid shifts 0.29 to 1.10, point-set overlap
+    # 1-7%).  They are fine individually and collide only in
+    # composition, which is why filtering the generators does nothing
+    # and only the image test catches it.
+    def _imgkey(V):
+        q = np.round(V / (1e-4 * span)).astype(np.int64)
+        return (tuple(q.min(0)), tuple(q.max(0)),
+                tuple(np.round(V.mean(0) / (1e-4 * span)).astype(np.int64)))
+
+    # Use the largest generator SUBSET that actually tiles -- chosen at
+    # the requested depth, and never allowed to do worse than the full
+    # set.
+    #
+    # Taking all the generators is wrong when two conflict.  R-II tiles
+    # cleanly on generators {0, 2} -- 3279 faces against a 1296-face
+    # patch -- and Stessmann on {0} alone (2558), while all three
+    # together make their copies partially overlap and the orbit is
+    # rejected, so refusing everything discards a correct tiling.
+    #
+    # Two things make this safe, both learned by getting it wrong first.
+    # Choosing the subset at DEPTH 1 regressed rows that already worked
+    # (C(H) fell from 9471 faces to 2250, F-RD from 8218 to 1816),
+    # because the subset that tiles best one step out is not the one
+    # that closes best three steps out -- so candidates are scored at
+    # the depth actually requested.  And the full set is scored too and
+    # wins ties, so this can only add faces, never remove them.
+    def _orbit(gs, dep):
+        seen = {tuple(np.round(np.eye(4).ravel(), 7)): np.eye(4)}
+        frontier = [np.eye(4)]
+        out = None
+        for _ in range(int(dep)):
+            nxt = []
+            for M0 in frontier:
+                for G in gs:
+                    M = np.asarray(G, float) @ M0
+                    kk = tuple(np.round(M.ravel(), 7))
+                    if kk not in seen:
+                        seen[kk] = M
+                        nxt.append(M)
+            frontier = nxt
+            if not frontier:
+                break
+            Vs, Qs, base, placed = [], [], 0, set()
+            for M in seen.values():
+                W = V0 @ M[:3, :3].T + M[:3, 3]
+                if _imgkey(W) in placed:
+                    continue
+                placed.add(_imgkey(W))
+                Vs.append(W)
+                flip = np.linalg.det(M[:3, :3]) < 0.0
+                for qq in Q0:
+                    ff = tuple(int(i) + base for i in qq)
+                    Qs.append(ff[::-1] if flip else ff)
+                base += len(V0)
+            cand = None
+            for tol in (_weld_tol(key), 3e-5, 1e-4, 3e-4):
+                Vv, Qq = _weld(np.concatenate(Vs, 0), np.asarray(Qs),
+                               tol * span)
+                Qq = [tuple(int(i) for i in q) for q in Qq]
+                if _orbit_ok(Vv, Qq):
+                    cand = (Vv, Qq)
+                    break
+            if cand is None:
+                break
+            out = cand
+        return out
+
+    if len(gens) > 1:
+        import itertools as _it
+        best_res = _orbit(gens, depth)
+        best_n = len(best_res[1]) if best_res else 0
+        for r in range(len(gens) - 1, 0, -1):
+            for sub in _it.combinations(range(len(gens)), r):
+                cand = _orbit([gens[i] for i in sub], depth)
+                if cand is not None and len(cand[1]) > best_n:
+                    best_res, best_n = cand, len(cand[1])
+        if best_res is not None and best_n > len(Q0):
+            return best_res[0], best_res[1]
+
+    best = (V0, Q0)
+    seen = {}
+    ident = np.eye(4)
+    seen[tuple(np.round(ident.ravel(), 7))] = ident
+    frontier = [ident]
+    for d in range(int(depth)):
+        nxt = []
+        for M0 in frontier:
+            for G in gens:
+                M = np.asarray(G, float) @ M0
+                k = tuple(np.round(M.ravel(), 7))
+                if k not in seen:
+                    seen[k] = M
+                    nxt.append(M)
+        frontier = nxt
+        if not frontier:
+            break
+        Vs, Qs, base, placed = [], [], 0, set()
+        for M in seen.values():
+            W = V0 @ M[:3, :3].T + M[:3, 3]
+            ik = _imgkey(W)
+            if ik in placed:            # same placement by a longer word
+                continue
+            placed.add(ik)
+            Vs.append(W)
+            flip = np.linalg.det(M[:3, :3]) < 0.0
+            for q in Q0:
+                f = tuple(int(i) + base for i in q)
+                Qs.append(f[::-1] if flip else f)
+            base += len(V0)
+        # A LADDER of weld tolerances, first that verifies wins.
+        #
+        # No single tolerance is right here, and that is a measured fact
+        # rather than a guess.  H''-R's five-copy orbit fails at 1e-6
+        # through 1e-4 and passes at 3e-4 when built at resolution 40,
+        # while at resolution 50 it passes at 3e-5, fails at 6e-5, and
+        # passes again at 1e-4.  The pass/fail is not monotone in the
+        # tolerance because the orbit carries vertices that are nearly
+        # but not exactly coincident -- copies that almost meet -- so a
+        # single global threshold either leaves a seam or merges across
+        # one.
+        #
+        # The ACCEPTANCE TEST is untouched: every candidate still has to
+        # pass `_orbit_ok` in full.  All the ladder does is stop an
+        # arbitrary choice of tolerance from being what decides.
+        raw = np.concatenate(Vs, 0)
+        rawq = np.asarray(Qs)
+        got = None
+        for tol in (_weld_tol(key), 3e-5, 1e-4, 3e-4):
+            Vv, Qq = _weld(raw, rawq, tol * span)
+            Qq = [tuple(int(i) for i in q) for q in Qq]
+            if _orbit_ok(Vv, Qq):
+                got = (Vv, Qq)
+                break
+        if got is None:
+            break
+        best = got
+    return best[0], best[1]
+
+
 @_geom_cache.memoise(version=2, extra=_spec_state)
 def spec_build(key, cells, res_per_cell, scale, theta,
                arrangement='UNIT'):
@@ -1389,14 +2816,64 @@ def spec_build(key, cells, res_per_cell, scale, theta,
     reflection group does not close on a rank-3 period lattice, which is
     the same rule the P/Gyroid/D builder follows for its non-periodic
     angles."""
+    # `cells` carries the REFLECTION DEPTH, not a lattice cell count.
+    #
+    # The two are different operations and conflating them breaks the
+    # rows that DO assemble a cell: arraying Schwarz H's or CLP's cell
+    # 2x2x2 gives eight disconnected copies (and 4x4x4 gives
+    # sixty-four), because a cell tiled by pure translation only joins
+    # if its boundary matches its neighbour's, and theirs does not.
+    # That path was unreachable from the UI until Reflections was
+    # exposed, so exposing it turned a latent problem into a visible one.
+    #
+    # The lattice count is therefore pinned at 1 and the incoming number
+    # is used only as the reflection depth.  Arraying an assembled cell
+    # is a separate capability needing its own control and its own seam
+    # handling.
+    # A TUPLE means lattice cell counts, a SCALAR means reflection
+    # depth.  They are different operations and the type says which.
+    #
+    # Arraying is right for the rows that close a cell (Schwarz H, CLP)
+    # and wrong for the rest: tiling an unassembled patch by pure
+    # translation gives disconnected copies, and tiling an assembled
+    # cell 2x2x2 from the operator's scalar gave eight of them (4x4x4
+    # gave sixty-four) once Reflections started feeding that path.
+    # Reflection depth is right for the rows that ship a fundamental
+    # piece and meaningless for the others.
     if isinstance(cells, (tuple, list)):
         cx, cy, cz = (int(max(1, c)) for c in (list(cells) + [1, 1, 1])[:3])
+        depth = 1
     else:
-        cx = cy = cz = max(1, int(cells))
+        cx = cy = cz = 1
+        depth = max(1, int(cells))
     nu = max(24, int(round(res_per_cell)))
     nv = max(24, int(round(res_per_cell)))
     named = abs(float(theta)) < 1e-9
     P = _spec_patch(key, nu, nv, None if named else float(theta))
+
+    # Brakke's route, where the spec names a cell word: declared mirrors,
+    # boundary projected onto them, and the datafile's own
+    # `transform_expr`.  Tried BEFORE `_assemble`, whose
+    # classify-and-close path cannot reach these surfaces -- it finds 3
+    # of S'-S"'s 5 generators, and three mirrors two of which are
+    # parallel generate a FRIEZE, so the "cell" came out 1 x 1 x 1.5 and
+    # grew along one axis only.
+    #
+    # It returns straight out rather than handing back a `built` triple,
+    # for two reasons.  The group here has no translations at all -- its
+    # mirrors share a common point -- so there is no lattice basis to
+    # report and the cx/cy/cz array below would have nothing to array.
+    # And the assembled path re-welds at `_weld_tol(key) * span`, 1.8e-4
+    # here, which is exactly the tolerance measured to break this cell
+    # into pieces; `spec_word_assemble` has already welded at the one
+    # that verifies.
+    if named and _SPECS[key].get('words'):
+        wa = spec_word_assemble(key, P)
+        if wa is not None:
+            Vw, Qw, _ncopy, _word = wa
+            Qw = _drop_degenerate(Vw, np.asarray(Qw))
+            return _fit(Vw, [tuple(int(x) for x in q) for q in Qw], scale)
+
     built = None
     if named and key == 'CLP' and arrangement.startswith('CONJ'):
         P, sets, B = clp_conjugate(nu, nv)
@@ -1437,9 +2914,21 @@ def spec_build(key, cells, res_per_cell, scale, theta,
             # how the bad cell shipped in the first place.
             Vv, Qq, Bb = built
             sp = float(np.max(np.linalg.norm(Bb, axis=1)))
-            Vv, Qq = _weld(Vv, Qq, 1e-4 * sp)
+            Vv, Qq = _weld(Vv, Qq, _weld_tol(key) * sp)
             built = (Vv, Qq, Bb) if _assembly_ok(Vv, Qq) else None
     if built is None:
+        # No closed cell, so ship the fundamental piece -- but reflect it
+        # in whichever boundary curves ARE symmetry elements first, as
+        # far as that verifies.  `cells` drives the depth, so the control
+        # does something on these rows instead of being inert.
+        if named and depth > 1:
+            Vr, Qr = spec_reflect_tile(key, P, depth - 1)
+            if len(Qr) > (P.shape[0] - 1) * (P.shape[1] - 1):
+                span = float(np.max(Vr.max(0) - Vr.min(0))) or 1.0
+                Vr, Qr = _weld(Vr, np.asarray(Qr), 1e-7 * span)
+                Qr = _drop_degenerate(Vr, Qr)
+                return _fit(Vr, [tuple(int(x) for x in q) for q in Qr],
+                            scale)
         # The piece is WELDED before it is returned, which the assembled
         # path already did and this one did not.  Grading the quadrature
         # into a singular point drives consecutive nodes to within
@@ -1454,7 +2943,7 @@ def spec_build(key, cells, res_per_cell, scale, theta,
         return _fit(V, [tuple(int(x) for x in q) for q in Q], scale)
     V, Q, B = built
     span = float(np.max(np.linalg.norm(B, axis=1)))
-    V, Q = _weld(V, Q, 1e-4 * span)
+    V, Q = _weld(V, Q, _weld_tol(key) * span)
     if cx > 1 or cy > 1 or cz > 1:
         Vp, Qp, base = [], [], 0
         for i in range(cx):
@@ -1468,7 +2957,7 @@ def spec_build(key, cells, res_per_cell, scale, theta,
                     base += len(V)
         V = np.concatenate(Vp, axis=0)
         Q = np.concatenate(Qp, axis=0)
-        V, Q = _weld(V, Q, 1e-4 * span)
+        V, Q = _weld(V, Q, _weld_tol(key) * span)
     return _fit(V, [tuple(int(x) for x in q) for q in Q], scale)
 
 
@@ -1910,6 +3399,217 @@ def _selftest():
         print("hexagonal: %s builds clean at res 50/100/160 %s"
               % (key, 'OK' if not bad else 'FAIL ' + ','.join(bad)))
 
+    # The triangle-group series is generated from (r, s, t) rather than
+    # typed in, so the first thing to gate is the GENERATOR: every member
+    # must reproduce the constants recovered independently from Weber's
+    # notebooks.  If `_trigroup`'s algebra drifts, this catches it before
+    # any geometry is built.  Schwarz H is included deliberately -- it is
+    # not one of the rows built through `_trigroup`, so it is an
+    # out-of-sample check on the formula.
+    want = {'HT': (2, 3, 6, 0.5, 1.0 / 6.0),
+            'SS': (4, 2, 4, 0.75, 1.0 / 6.0),
+            'H2R': (3, 2, 6, 2.0 / 3.0, 0.125),
+            'TR': (6, 3, 2, 5.0 / 6.0, 0.3)}
+    bad = []
+    for key, (r, s, t, expo, p) in want.items():
+        sp = _SPECS[key]
+        got_p = float(sp['a'])
+        got_e = float(sp['terms'](got_p, sp['tau'])[0][1])
+        if sp['trigroup'] != (r, s, t):
+            bad.append('%s:rst' % key)
+        if abs(got_e - expo) > 1e-12 or abs(got_p - p) > 1e-12:
+            bad.append('%s:a=%.6f p=%.6f' % (key, got_e, got_p))
+    # Schwarz H is (3,3,3): a = 2/3, p = 1/4, which is what this module's
+    # own header records for the surface it has shipped all along.
+    hr, hs = 3.0, 3.0
+    h_e = (hr - 1.0) / hr
+    h_p = (-hr - hs + hr * hs) / (2.0 * (hr - 1.0) * hs)
+    if abs(h_e - 2.0 / 3.0) > 1e-12 or abs(h_p - _A0) > 1e-12:
+        bad.append('H(3,3,3):a=%.6f p=%.6f vs shipped _A0=%.6f'
+                   % (h_e, h_p, _A0))
+    ok &= not bad
+    print("hexagonal: triangle-group closed form reproduces all four "
+          "members and Schwarz H %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # g = exp(sum c_k log theta11(z - s_k)) is single-valued on the torus
+    # only if the exponents sum to zero, so a mistyped exponent in any
+    # product row shows up here before it shows up as geometry.  Cheap,
+    # and it covers every spec at once rather than the ones remembered.
+    bad = [k for k, sp in _SPECS.items()
+           if abs(sum(e for _s, e in sp['terms'](sp['a'], sp['tau'])))
+           > 1e-12]
+    ok &= not bad
+    print("hexagonal: theta exponents sum to zero on all %d spec rows %s"
+          % (len(_SPECS), 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # A transcribed constant that nothing re-derives is a constant
+    # nobody can check.  F-RD(r)'s modulus was SOLVED rather than copied
+    # -- Weber's notebook plots solper(a) without printing a value -- so
+    # the gate re-runs that bisection from a bracket and requires it to
+    # land on the stored number, and requires the period residual there
+    # to vanish.
+    want_t = float(np.imag(_SPECS['FRDR']['tau']))
+    got_t = solve_spec_tau('FRDR', 0.10, 0.45)
+    resid = abs(spec_period('FRDR', want_t))
+    good = (got_t is not None and abs(got_t - want_t) < 1e-9
+            and resid < 1e-10)
+    ok &= good
+    print("hexagonal: F-RD(r) modulus re-solves to %.16f (stored %.16f), "
+          "period residual %.1e %s"
+          % (got_t if got_t is not None else float('nan'), want_t, resid,
+             'OK' if good else 'FAIL'))
+
+    # ...then each member must build a converging minimal patch.
+    for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
+                'FRD_EXACT', 'FRDR',
+                'BOX_1001', 'BOX_1010', 'BOX_1011',
+                'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+        rows = []
+        # 45/75 suits most rows.  A few need a finer pair -- at 45 the
+        # Simoes-Batista patch is still coarse enough that its diameter
+        # moves 5.2% to 75, which would fail the settling gate for being
+        # under-resolved rather than wrong; by 60/90 it is at 1.6% and
+        # falling.  Declaring that per row beats loosening the gate for
+        # everyone.
+        for n in _SPECS[key].get('test_res', (45, 75)):
+            xs, _a, _b, ys, _c, _d = _spec_axes(key, n, n)
+            P = _spec_patch(key, n, n)
+            Pu = np.gradient(P, xs, axis=0)
+            Pv = np.gradient(P, ys, axis=1)
+            nn = np.cross(Pu, Pv)
+            nn = nn / np.maximum(np.linalg.norm(nn, axis=-1, keepdims=True),
+                                 1e-300)
+            E = np.sum(Pu * Pu, -1)
+            F = np.sum(Pu * Pv, -1)
+            G = np.sum(Pv * Pv, -1)
+            L = np.sum(np.gradient(Pu, xs, axis=0) * nn, -1)
+            M = np.sum(np.gradient(Pu, ys, axis=1) * nn, -1)
+            N = np.sum(np.gradient(Pv, ys, axis=1) * nn, -1)
+            den = 2.0 * (E * G - F * F)
+            Hc = (E * N - 2.0 * F * M + G * L) / np.where(
+                np.abs(den) < 1e-300, 1e-300, den)
+            fl = P.reshape(-1, 3)
+            diam = float(np.linalg.norm(fl.max(0) - fl.min(0)))
+            k = max(4, n // 8)
+            sv = np.linalg.svd(fl - fl.mean(0), compute_uv=False)
+            rows.append((diam,
+                         float(np.median(np.abs(Hc[k:-k, k:-k]))) * diam,
+                         float(sv[2] / sv[0])))
+        (d0, h0, n0), (d1, h1, n1) = rows
+        # a PLANE is minimal, so non-planarity is gated too -- see the
+        # note on the CLP curvature check above
+        # The |H| ceiling is 0.20, not 2e-2: R-II and I-6 legitimately
+        # sit near the shipped rPD row's 0.195 at this resolution, and a
+        # tighter bound would fail them for being large rather than for
+        # being wrong.  What actually convicts is h1 < h0 -- falling --
+        # together with the diameter settling and non-planarity.
+        good = (abs(d1 - d0) / max(d1, 1e-30) < 0.05 and h1 < h0
+                and h1 < 0.20 and n1 > 0.05)
+        ok &= good
+        print("hexagonal: %s diam %.4f -> %.4f, med|H|*d %.2e -> %.2e, "
+              "nonplanar %.4f %s"
+              % (key, d0, d1, h0, h1, n1, 'OK' if good else 'FAIL'))
+
+    # Every fundamental-piece row must GROW under Reflections, and grow
+    # to a clean surface.  Two of them did not until the generator
+    # subset was chosen at the requested depth -- R-II and Stessmann,
+    # whose full generator sets produce overlapping copies while proper
+    # subsets tile.  Gating growth here stops a future change quietly
+    # returning them to a bare patch.
+    bad = []
+    for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
+                'FRD_EXACT', 'FRDR', 'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+        P = _spec_patch(key, 40, 40)
+        base = (P.shape[0] - 1) * (P.shape[1] - 1)
+        Vr, Qr = spec_reflect_tile(key, P, 2)
+        if len(Qr) <= base or not _orbit_ok(np.asarray(Vr), Qr):
+            bad.append('%s:%d/%d' % (key, len(Qr), base))
+    ok &= not bad
+    print("hexagonal: all 11 fundamental-piece rows tile under "
+          "Reflections %s" % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # Schoen H'-T does NOT assemble, and the gate records why rather
+    # than just asserting the fallback.  Its reflection group closes on
+    # a rank-3 lattice that is correctly hexagonal, so the Weierstrass
+    # data and the boundary classification are both right -- but the
+    # resulting cell is TWO PIECES: the main body ends at x = -0.318 and
+    # a 7020-vertex stray begins at -0.313, a gap of 0.005, which is
+    # 0.4% of the cell span and not a lattice vector.  That is a
+    # misplaced copy, not a weld tolerance (it is two pieces at every
+    # tolerance from 1e-5 to 4e-4 of the span).
+    #
+    # This shipped once, looking plausible, because `_assembly_ok` had
+    # no component count despite its docstring claiming one.  Both halves
+    # are checked here: the lattice must still come out hexagonal, and
+    # the assembly must still be REFUSED, so that a future fix to the
+    # copy placement shows up as a failure here rather than silently.
+    P = _spec_patch('HT', 70, 70)
+    gens, kinds = spec_generators('HT', P)
+    built = _assemble(P, gens=gens)
+    good = built is not None
+    if good:
+        _Vv, _Qq, B = built
+        a, b, c = B[1], B[2], B[0]
+        la, lb = float(np.linalg.norm(a)), float(np.linalg.norm(b))
+        ang = math.degrees(math.acos(
+            float(np.dot(a, b)) / max(la * lb, 1e-30)))
+        perp = max(abs(float(np.dot(c, a))), abs(float(np.dot(c, b))))
+        good = (abs(la / lb - 1.0) < 1e-3 and perp < 1e-9
+                and min(abs(ang - 60.0), abs(ang - 120.0)) < 0.5)
+        ok &= good
+        print("hexagonal: H'-T lattice |a|/|b| %.6f, angle %.3f deg, "
+              "c.a/c.b %.1e %s"
+              % (la / lb, ang, perp, 'OK' if good else 'FAIL'))
+    else:
+        ok = False
+        print("hexagonal: H'-T lattice FAIL (_assemble declined)")
+
+    # ...and H'-T no longer ships the bare piece, because the cell-word
+    # route reaches it where `_assemble` could not.  This assertion used
+    # to demand the OPPOSITE -- that the assembly stay refused, so that a
+    # future fix would surface here rather than slip by.  It has surfaced
+    # here.  The check is inverted rather than deleted: the row must now
+    # produce MORE than its patch, in one piece and with no over-shared
+    # edge, and the copy count is gated separately against Evolver.
+    V, faces = spec_build('HT', 1, 60, 1.0, 0.0)
+    Q = np.asarray([f for f in faces if len(f) == 4])
+    over = _over_shared(Q) if len(Q) == len(faces) and len(Q) else -1
+    npatch = len(_spec_patch('HT', 60, 60).reshape(-1, 3))
+    good = (over == 0 and np.all(np.isfinite(V)) and len(V) > npatch)
+    ok &= good
+    print("hexagonal: H'-T assembles its cell (%d verts > patch %d), "
+          "over-shared %d %s"
+          % (len(V), npatch, over, 'OK' if good else 'FAIL'))
+
+    # The component gate must CONVICT, not merely exist: every assembled
+    # row has to come out in one piece.
+    bad = []
+    for key in ('H', 'CLP'):
+        Vv, ff = (h_build(1, 40, 1.0, 0.0) if key == 'H'
+                  else spec_build('CLP', 1, 40, 1.0, 0.0))
+        Vv = np.asarray(Vv)
+        par = list(range(len(Vv)))
+
+        def _f(i, _p=par):
+            while _p[i] != i:
+                _p[i] = _p[_p[i]]
+                i = _p[i]
+            return i
+
+        for face in ff:
+            r0 = _f(int(face[0]))
+            for j in range(1, len(face)):
+                rj = _f(int(face[j]))
+                if rj != r0:
+                    par[rj] = r0
+        n = len({_f(int(i)) for face in ff for i in face})
+        if n != 1:
+            bad.append('%s:%d' % (key, n))
+    ok &= not bad
+    print("hexagonal: assembled cells are connected %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
     # ...and the rejector itself must not be vacuous: it has to ACCEPT
     # the two assemblies that are known to be right.  Without this the
     # gate above would pass just as well if `_assembly_ok` returned
@@ -2001,6 +3701,48 @@ def _selftest():
     print("hexagonal: changing the modulus invalidates the cache "
           "(bbox moves %.4f) and returning to it hits again (%.1e) %s"
           % (moved, back, 'OK' if good else 'FAIL'))
+
+    # The cell-word route.  Three things are asserted, and the copy
+    # count is an EQUALITY because it is the order of the transform set
+    # Brakke's own word generates -- 16 for SSadj's "dcba", confirmed by
+    # running his datafile in Evolver 2.70.  A different number means the
+    # letters have been re-pointed at the wrong curves, which is a
+    # different surface, not a slightly worse mesh.
+    for key in sorted(k for k in _SPECS if _SPECS[k].get('words')):
+        want, source = _WORD_COPIES[key]
+        rows = []
+        good = True
+        for n in (60, 120):
+            Pw = _spec_patch(key, n, n)
+            got = spec_word_assemble(key, Pw)
+            if got is None:
+                good = False
+                rows.append("n=%d FAILED" % n)
+                continue
+            Vw, Qw, ncopy, word = got
+            bb = Vw.max(0) - Vw.min(0)
+            rows.append("n=%d %d copies %.4f x %.4f x %.4f"
+                        % (n, ncopy, bb[0], bb[1], bb[2]))
+            good = good and ncopy == want
+        ok &= good
+        print("hexagonal: %s cell word %r -> %s (%s %d) %s"
+              % (key, _SPECS[key]['words'][0], "; ".join(rows), source,
+                 want, 'OK' if good else 'FAIL'))
+
+    # The period lattice, computed from the Weierstrass data.  H'-T's
+    # z period must be exactly the height of the cell its word builds --
+    # two completely independent routes to the same number, one an
+    # integral around a torus cycle and the other a reflection group.
+    p1, p2 = spec_periods('HT', n=8000)
+    Vh, Qh, _n, _w = spec_word_assemble('HT', _spec_patch('HT', 60, 60))
+    hz = float((Vh.max(0) - Vh.min(0))[2])
+    err = abs(float(np.linalg.norm(p1)) - hz)
+    good = (abs(p1[0]) < 1e-9 and abs(p1[1]) < 1e-9 and err < 1e-6
+            and float(np.linalg.norm(p2)) > 1e-3)
+    ok &= good
+    print("hexagonal: H'-T period (%.6f, %.6f, %.6f) vs cell height "
+          "%.6f (diff %.1e) %s"
+          % (p1[0], p1[1], p1[2], hz, err, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

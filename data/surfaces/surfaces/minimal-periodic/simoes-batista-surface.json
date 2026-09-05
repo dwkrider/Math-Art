@@ -1,22 +1,130 @@
 {
   "schema_version": "0.1.0",
   "slug": "simoes-batista-surface",
-  "name": "Simoes-Batista Surface",
+  "name": "SIMOES_BATISTA (exact)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-crystallographic",
     "triply-periodic"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "Genus-7 triply periodic 1-parameter family with rectangular period lattice, obtained by adding a handle to Batista's triply periodic Costa surface; limits are the singly periodic CHM(1,3) surface and the doubly periodic Scherk surface."
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
+    "note": "Genus-7 triply periodic 1-parameter family with rectangular period lattice, obtained by adding a handle to Batista's triply periodic Costa surface; limits are the singly periodic CHM(1,3) surface and the doubly periodic Scherk surface.",
+    "weierstrass": {
+      "branch_points": [
+        {
+          "exponent": -0.5,
+          "point": [
+            0.04631108617540206,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.04631108617540206,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            0.25,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            -0.25,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.4536889138245979,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.4536889138245979,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.25,
+            -0.485
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.25,
+            -0.485
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.19605836826545586,
+            -0.485
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.19605836826545586,
+            -0.485
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.30394163173454414,
+            -0.485
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.30394163173454414,
+            -0.485
+          ]
+        }
+      ],
+      "constant": [
+        0.0,
+        0.7853981633974483
+      ],
+      "domain": {
+        "x": [
+          0.0,
+          0.5
+        ],
+        "y": [
+          0.0,
+          0.485
+        ]
+      },
+      "moduli_a": 0.04631108617540206,
+      "modulus_tau": [
+        0.0,
+        0.97
+      ]
+    }
   },
   "curvature": {
     "condition": "minimal",
@@ -37,14 +145,23 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
-      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "SIMOES_BATISTA",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "H. G. von Schnering and R. Nesper, \"Nodal surfaces of Fourier series: fundamental invariants of structured matter\",",
+      "Z. Phys. B Condensed Matter 83 (1991) 407-412. doi:10.1007/BF01313411  [C(D), C(Y), +-Y, C(+-Y), S nodal forms]",
+      "H. G. von Schnering, M. Oehme, G. Rudolf, \"Three-dimensional periodic nodal surfaces which envelope the threefold and fourfold cubic rod packings\", Acta Chem. Scand. 45 (1991) 873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]",
+      "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
+      "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
+      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]",
       "M. Weber, 'The Simoes-Batista Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch408_the_simoes_batista_surface.md).",
       "P. Simoes and V. Ramos Batista, arXiv:0806.3088 (2008), the paper the mirrored page links."
     ]
@@ -58,7 +175,6 @@
   "ids": {
     "msblog": "ch408_the_simoes_batista_surface"
   },
-  "named_after": "Batista, Simoes",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

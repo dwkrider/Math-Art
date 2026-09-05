@@ -98,12 +98,14 @@ from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
 from .minsurf.hexagonal import clp_params as _clp_params
 from .minsurf.tpms import clip_to_sphere as _clip_to_sphere
 from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
-                           TPMS_EXACT_ARRANGEMENTS,
+                           TPMS_EXACT_ARRANGEMENTS, TPMS_FE_ROWS,
                            _PGD_PRESET_ANGLE, _f_p, build_tpms,
                            build_tpms_exact, marching_tets,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
 # the catalog module itself, for the self-test's CHM-modulus reference
 from .minsurf import zoo as _zoo
+from .minsurf import plateau as _plateau
+from .minsurf import hexagonal as _hex
 # the parametric module itself, to read back what the last equal-area
 # resample achieved (LAST_EQ_AREA_COV is rebound per build, so it has to
 # be read through the module rather than imported by value)
@@ -367,6 +369,45 @@ if _IN_BLENDER:
     # non-periodic Minimal Surface generator's family list.
     PERIODIC_FAMILIES = ('SINGLY', 'DOUBLY')
 
+    # Words that describe HOW WE BUILT a surface rather than what it is.
+    # They are stripped from every menu label: a reader picking a shape
+    # has no use for "(Evolver cell)" or "(nodal approximation)", and
+    # the lattice words go too because the family heading now carries
+    # that.  Anything that names the surface -- a genus, a ring form, a
+    # Bonnet angle, a named variant -- is kept.
+    _PROVENANCE = ('evolver cell', 'nodal approximation', 'nodal',
+                   'relaxed', 'exact', 'cubic', 'hexagonal', 'tetragonal',
+                   'trigonal', 'rhombohedral', 'orthorhombic')
+
+    def _clean_label(label):
+        """Drop provenance and lattice words from a menu label."""
+        import re as _re
+
+        def _fix(m):
+            lead, inner = m.group(1), m.group(2)
+            keep = [p.strip() for p in inner.split(',')
+                    if p.strip()
+                    and p.strip().lower() not in _PROVENANCE]
+            if not keep:
+                return ''
+            # Put back the spacing the name had.  Without this every
+            # parenthesis gains a space in front of it and names that
+            # OWN their brackets come apart: Fischer-Koch C(S) turns
+            # into "Fischer-Koch C (S)", and C(I2-Y**) into "C (I2-Y**)".
+            return '%s(%s)' % (lead, ', '.join(keep))
+
+        out = _re.sub(r'(\s*)\(([^()]*)\)', _fix, label)
+        return _re.sub(r'\s{2,}', ' ', out).strip()
+
+    def _lattice_of(key):
+        """CUBIC / NONCUBIC / ... for a surface row, or None."""
+        try:
+            from .minsurf.surface_class import SURFACE_CLASS
+        except Exception:                          # noqa: BLE001
+            return None
+        row = SURFACE_CLASS.get(key)
+        return row[0] if row else None
+
     _FAMILY_ITEMS = []
     _SURF_ITEMS_ALL = []
     _SURF_ITEMS_FAM = {}
@@ -414,18 +455,27 @@ if _IN_BLENDER:
         # periodic Scherk tower is the WE SCHERK_TOWER under Singly, so it
         # is dropped from this list (still reachable via mesh.tpms_add).
         _NOT_TRIPLY = {'SCHERKT'}
-        # the nodal approximations lead the Triply list; the exact
-        # Weierstrass P/Gyroid/D (Bonnet angle) is listed LAST
+        # The triply periodic surfaces are split by the LATTICE THEY
+        # REPEAT ON, and listed alphabetically inside each.
+        #
+        # They used to be split by where they came from -- an "Exact
+        # (Weierstrass)" list beside a nodal one, with rows tagged
+        # "(Evolver cell)" or "(relaxed)".  That is a fact about this
+        # pipeline, not about the surface: whether we reached Schwarz P
+        # by integrating its Weierstrass data or by a level set is not
+        # something a reader choosing a shape has any use for, and it
+        # put one surface in two different families depending on route.
+        # `minsurf.surface_class` carries the lattice instead, derived
+        # per row (see `tools/classify_surfaces.py` for the evidence
+        # behind each entry).
         exact_items = [(k, v[0], v[0]) for k, v in TPMS_EXACT.items()]
         tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()
                       if k not in _NOT_TRIPLY]
-        if tpms_items:
-            _PERIODIC_ITEMS['TRIPLY'] = tpms_items
-            _PERIODIC_ALL.extend(tpms_items)
-            _PERIODICITY_ITEMS.append(
-                ('TRIPLY', "Triply Periodic (TPMS)",
-                 f"{len(tpms_items)} triply periodic minimal surfaces "
-                 f"as published nodal (level-set) approximations"))
+        _CUBIC_HELP = ("triply periodic minimal surfaces on a CUBIC "
+                       "lattice -- the unit cell is a cube")
+        _NONCUBIC_HELP = ("triply periodic minimal surfaces on a "
+                          "hexagonal, tetragonal, trigonal or "
+                          "rhombohedral lattice")
         # A FOURTH entry, beside singly / doubly / triply: the surfaces
         # built by integrating the Weierstrass representation instead of
         # approximating it with a trigonometric polynomial.  They differ
@@ -441,30 +491,37 @@ if _IN_BLENDER:
         # count.  Sharing a dropdown entry with the fixed surfaces would
         # mean showing its two shape sliders on rows that have no such
         # parameters.
-        fam_items = [it for it in exact_items
-                     if it[0] in TPMS_EXACT_ARRANGEMENTS]
-        fixed_items = [it for it in exact_items
-                       if it[0] not in TPMS_EXACT_ARRANGEMENTS]
-        if fixed_items:
-            _PERIODIC_ITEMS['EXACT'] = fixed_items
-            _PERIODIC_ALL.extend(fixed_items)
+        # One surface, one row.  A name reached by both routes -- the
+        # nodal Schwarz P and the exact one -- would otherwise appear
+        # twice in the same family now that the two are no longer kept
+        # apart, so the exact row wins and the nodal one is dropped from
+        # the menu (still reachable through `mesh.tpms_add`).
+        _seen = set()
+        merged = []
+        for it in exact_items + tpms_items:
+            name = _clean_label(it[1])
+            if name in _seen:
+                continue
+            _seen.add(name)
+            merged.append((it[0], name, name))
+        cubic = sorted((it for it in merged
+                        if _lattice_of(it[0]) == 'CUBIC'),
+                       key=lambda it: it[1].lower())
+        other = sorted((it for it in merged
+                        if _lattice_of(it[0]) != 'CUBIC'),
+                       key=lambda it: it[1].lower())
+        for key, label, help_txt, items in (
+                ('CUBIC', "TPMS Cubic", _CUBIC_HELP, cubic),
+                ('NONCUBIC', "TPMS Non-Cubic", _NONCUBIC_HELP, other)):
+            if not items:
+                continue
+            _PERIODIC_ITEMS[key] = items
+            _PERIODIC_ALL.extend(items)
             _PERIODICITY_ITEMS.append(
-                ('EXACT', "Exact (Weierstrass)",
-                 f"{len(fixed_items)} surfaces integrated exactly from "
-                 f"their Weierstrass data and assembled by reflection, "
-                 f"rather than approximated by a nodal polynomial"))
-        if fam_items:
-            _PERIODIC_ITEMS['EXACT_FAMILY'] = fam_items
-            _PERIODIC_ALL.extend(fam_items)
-            _PERIODICITY_ITEMS.append(
-                ('EXACT_FAMILY', "Exact (Deformable)",
-                 f"{len(fam_items)} exact surfaces that are FAMILIES "
-                 f"rather than single surfaces: their shape is driven "
-                 f"by moduli, and they are built at named assemblies "
-                 f"instead of a cell count"))
+                (key, label, f"{len(items)} {help_txt}"))
         if not _PERIODICITY_ITEMS:
             _PERIODICITY_ITEMS.append(
-                ('TRIPLY', "Triply Periodic (TPMS)", "TPMS"))
+                ('CUBIC', "TPMS Cubic", "TPMS"))
 
     _build_surface_items()
 
@@ -479,6 +536,30 @@ if _IN_BLENDER:
         if context is None or getattr(context, 'area', None) is None:
             return _SURF_ITEMS_ALL
         return _SURF_ITEMS_FAM.get(self.family, _SURF_ITEMS_ALL)
+
+    # Where each family lands when you switch to it.  A dynamic enum has
+    # no `default=` -- Blender takes the first item, which under
+    # alphabetical order would open TPMS Cubic on "Brakke
+    # Pseudo-Batwing".  The gyroid is the surface people come to that
+    # family for, so switching lands there while the LIST stays
+    # alphabetical; the two would otherwise be in conflict.
+    _FAMILY_HOME = {'CUBIC': 'G'}
+
+    def _on_family(self, context):
+        want = _FAMILY_HOME.get(self.periodicity)
+        if not want:
+            return
+        items = _PERIODIC_ITEMS.get(self.periodicity) or ()
+        keys = [it[0] for it in items]
+        if want not in keys or self.surface in keys:
+            return          # already inside this family: leave the choice
+        try:
+            # by INDEX: a dynamic enum stores its value positionally, and
+            # assigning the identifier can raise while the callback that
+            # builds the list is itself mid-flight.
+            self['surface'] = keys.index(want)
+        except Exception:   # noqa: BLE001
+            pass
 
     def _periodic_surface_items(self, context):
         # Same context=None -> full-union fallback contract as above, so
@@ -907,10 +988,11 @@ if _IN_BLENDER:
             _rim.draw_rim(lay, self)
 
     class MESH_OT_periodic_minimal_add(bpy.types.Operator):
-        """Add a periodic minimal surface.  Pick the Periodicity
-        (singly / doubly / triply), then a Surface within it.  Singly and
-        doubly periodic surfaces come from the Weierstrass-Enneper
-        catalog; triply periodic are the nodal TPMS approximations."""
+        """Add a periodic minimal surface.  Pick the Family (singly /
+        doubly / triply periodic, or the exact Weierstrass set), then a
+        Surface within it.  Singly and doubly periodic surfaces come from
+        the Weierstrass-Enneper catalog; triply periodic are the nodal
+        TPMS approximations."""
         bl_idname = "mesh.periodic_minimal_add"
         bl_label = "Periodic Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
@@ -922,17 +1004,19 @@ if _IN_BLENDER:
         rim_reeds: _rim.rim_reeds_prop()
 
         periodicity: EnumProperty(
-            name="Periodicity",
+            name="Family",
             items=_PERIODICITY_ITEMS,
-            description="Translational symmetry of the surface: singly / "
-                        "doubly periodic (Weierstrass-Enneper) or triply "
-                        "periodic (TPMS); filters the Surface list")
+            update=_on_family,
+            description="Which family to choose the surface from: singly "
+                        "or doubly periodic (Weierstrass-Enneper), triply "
+                        "periodic (nodal TPMS), or the exact set; filters "
+                        "the Surface list")
         surface: EnumProperty(
             name="Surface",
             items=_periodic_surface_items,
             update=_snap_order,
             description="The specific periodic surface to build, from the "
-                        "chosen Periodicity")
+                        "chosen Family")
         arrangement: EnumProperty(
             name="Arrangement",
             items=[('PATCH', "Fundamental Piece",
@@ -1001,20 +1085,61 @@ if _IN_BLENDER:
         # dimension, shown by periodicity (singly -> u only; doubly ->
         # u, v; triply -> u, v, w = x, y, z).  The array's dimensionality
         # follows the surface's periodicity.
+        # For a triply periodic cell the three counts run along the
+        # cell's own lattice vectors.  Those are the world axes for
+        # every simple-cubic cell, but a centred lattice can run
+        # off-axis -- Schoen C(D)'s is face-centred cubic, rotated 45
+        # degrees, so its 2x1x1 block is a diagonal slab, not a box.
+        # That is the correct meaning for a rotated lattice, and the
+        # descriptions below say "lattice vector" rather than
+        # promising world x/y/z.
         cells_u: IntProperty(
             name="Cells", default=1, min=1, max=8,
             description="Copies along the 1st period axis (singly: the "
-                        "single period; doubly: lattice vector 1; triply: x)")
+                        "single period; doubly: lattice vector 1; triply: "
+                        "the cell's 1st lattice vector -- world X for a "
+                        "cubic cell, a diagonal for a rotated lattice "
+                        "such as Schoen C(D)'s)")
         cells_v: IntProperty(
             name="Cells V", default=1, min=1, max=8,
             description="Copies along the 2nd period axis (doubly: lattice "
-                        "vector 2; triply: y)")
+                        "vector 2; triply: the cell's 2nd lattice vector "
+                        "-- world Y for a cubic cell)")
         cells_w: IntProperty(
             name="Cells W", default=1, min=1, max=8,
-            description="Copies along the 3rd period axis (triply: z)")
+            description="Copies along the 3rd period axis (triply: the "
+                        "cell's 3rd lattice vector -- world Z for a cubic "
+                        "cell)")
         # legacy scalar alias (not shown): scripted
         # periodic_minimal_add(surface=..., cells=3) still works and
         # broadcasts to every tiling axis left at its default (1).
+        # Default 4, not 2: nothing in the UI sets this any more, so it
+        # has to arrive at the value that grows the most complete cell
+        # by itself.  The builder stops on its own once the orbit no
+        # longer verifies as a single sheet, so asking for the maximum
+        # costs nothing on a row that closes earlier.
+        reflect_depth: IntProperty(
+            name="Reflections", default=4, min=1, max=4,
+            description="How far to reflect the fundamental piece in "
+                        "its own boundary symmetry planes.  1 shows the "
+                        "bare piece; each step up adds another round of "
+                        "reflections, and the surface stops growing on "
+                        "its own once the orbit closes or stops "
+                        "verifying as a single clean sheet")
+        prism_height: FloatProperty(
+            name="Prism Height", default=0.5, min=0.05, max=4.0,
+            description="Height of the hexagonal prism the GW surface "
+                        "spans.  GW is a one-parameter family: small "
+                        "values give parallel sheets joined by narrow "
+                        "catenoid necks, large ones give vertical sheets "
+                        "with wide cross-tunnels.  0.5 is the member "
+                        "Brakke publishes")
+        cell_proportion: FloatProperty(
+            name="Cell Proportion", default=0.6, min=0.2, max=1.2,
+            description="Which member of the surface's family to build.  "
+                        "Low values give a tall, drawn-out cell and high "
+                        "ones a wide flat cell; in between is the "
+                        "squattest, which is the member Brakke publishes")
         cells: IntProperty(
             name="Cells", default=0, min=0, max=8,
             description="Legacy uniform cell count (broadcasts to every "
@@ -1148,13 +1273,57 @@ if _IN_BLENDER:
                 else:                                   # CUSTOM: exact morph
                     if surf == 'CLP':
                         _clp_params(self.clp_tau, self.clp_branch)
+                    # `cells` used to be meaningless for these rows --
+                    # they are grown from a fundamental piece rather than
+                    # arrayed on a lattice, so an X/Y/Z count had nothing
+                    # to act on.  It has something to act on now: the
+                    # rows that cannot close a full cell reflect their
+                    # piece in whichever boundary curves ARE symmetry
+                    # elements, as far as that stays one clean sheet.
+                    # GW is a FAMILY.  Its shape parameter reaches the
+                    # builder through the spec table, the way CLP's
+                    # moduli do, because a TPMS_EXACT row has no other
+                    # channel for one.
+                    if surf == 'GW_CONJ':
+                        _plateau.gw_params(self.prism_height)
+                    # Triangle-group rows are one-parameter families and
+                    # the member matters -- see `spec_modulus_range`.
+                    if _hex.spec_modulus_range(surf):
+                        _hex.set_spec_modulus(surf, self.cell_proportion)
+                    # An Evolver-CELL row takes a TILE COUNT here, not a
+                    # reflection depth.  `build_tpms_exact` passes this
+                    # argument straight through as `cells`, and for the
+                    # reflection-grown rows that is how far to reflect
+                    # the fundamental piece -- but `fe_cell_build` reads
+                    # it as how many cells to lay down.  Feeding it
+                    # `reflect_depth` built a 4x4x4 block of 64 cells
+                    # with the Cells fields all at 1, on top of the
+                    # explicit tiling below.  One parameter, two
+                    # meanings; the cell rows get the count they are
+                    # actually being asked for.
+                    _grow = ((cu, cv, cw) if surf in TPMS_FE_ROWS
+                             else self.reflect_depth)
                     verts, tris = build_tpms_exact(
-                        surf, cxyz, self.resolution, self.cell_size,
-                        self.assoc_angle,
+                        surf, _grow, self.resolution,
+                        self.cell_size, self.assoc_angle,
                         arrangement=(self.arrangement
                                      if surf in TPMS_EXACT_ARRANGEMENTS
                                      else None))
                     label = TPMS_EXACT[surf][0]
+                    # Tile these on the lattice too.  The count used to
+                    # act only on the nodal rows, so the same X/Y/Z
+                    # fields did something on Schwarz P and nothing on
+                    # Schwarz H.  `tile_periodic` checks that two copies
+                    # actually join before laying the rest down, so a row
+                    # that is a fundamental piece rather than a whole
+                    # cell -- where the bounding box is not a period --
+                    # comes back as the single piece instead of a
+                    # scattered copy of it.
+                    if (surf not in TPMS_FE_ROWS and max(cu, cv, cw) > 1
+                            and len(tris)):
+                        # Cell rows already tiled inside the builder.
+                        verts, tris, _n = _plateau.tile_periodic(
+                            verts, [tuple(t) for t in tris], (cu, cv, cw))
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty surface")
                     return {'CANCELLED'}
@@ -1293,15 +1462,37 @@ if _IN_BLENDER:
                         lay.prop(self, 'clp_tau')
                         lay.prop(self, 'clp_branch')
                 if self.surface in TPMS_EXACT:
-                    # No cell counts here.  These are grown from a
-                    # fundamental piece by their own symmetry group, not
-                    # arrayed on a lattice, so an X/Y/Z count has
-                    # nothing to act on -- the Arrangement above is what
-                    # sets the size.  Level Offset and Cell Aspect go
-                    # too: both are properties of a NODAL field (the
-                    # constant c in F = c, and the c/a ratio of the
-                    # sampling cell) and neither exists for a surface
-                    # integrated from its Weierstrass data.
+                    # Cell counts FIRST, and on every row.  Which of
+                    # these controls appeared used to depend on how the
+                    # surface was built -- Reflections on the rows
+                    # integrated from Weierstrass data, Cells X/Y/Z on
+                    # the nodal ones -- so two surfaces sitting next to
+                    # each other in the same family offered different
+                    # controls for the same idea, "show me more of it".
+                    # `tile_periodic` arrays any of them that closes a
+                    # unit cell, so the count belongs on all of them.
+                    lay.prop(self, 'cells_u', text="Cells X")
+                    lay.prop(self, 'cells_v', text="Cells Y")
+                    lay.prop(self, 'cells_w', text="Cells Z")
+                    # Reflections is NOT shown.  It was a second way to
+                    # say "more surface", from when these rows could not
+                    # close a unit cell and had to be grown by reflecting
+                    # the fundamental piece.  They close one now, so the
+                    # question a reader has is only how many cells to
+                    # lay down, and two controls for that invite the
+                    # wrong one.  The property still exists and scripted
+                    # calls still honour it; the builder just runs it up
+                    # to its own limit on its own.
+                    #
+                    # Level Offset and Cell Aspect stay hidden: both are
+                    # properties of a NODAL field (the constant c in
+                    # F = c, and the c/a ratio of the sampling cell) and
+                    # neither exists for a surface integrated from its
+                    # Weierstrass data.
+                    if self.surface == 'GW_CONJ':
+                        lay.prop(self, 'prism_height')
+                    if _hex.spec_modulus_range(self.surface):
+                        lay.prop(self, 'cell_proportion')
                     for k in ('resolution', 'cell_size', 'thickness',
                               'clip_sphere', 'clip_radius',
                               'shade_smooth'):

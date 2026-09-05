@@ -1,22 +1,22 @@
 {
   "schema_version": "0.1.0",
   "slug": "weber-pqr-series",
-  "name": "Weber (p,q,r) Triangle-Group Series",
+  "name": "BOX_1001 (exact)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-crystallographic",
     "triply-periodic"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "Five series (series1..series5), each with members indexed by a (p,q,r) triangle group.",
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
     "parameters": [
       {
         "name": "series",
@@ -43,7 +43,87 @@
         "default": 6,
         "integer": true
       }
-    ]
+    ],
+    "note": "Five series (series1..series5), each with members indexed by a (p,q,r) triangle group.",
+    "weierstrass": {
+      "branch_points": [
+        {
+          "exponent": -0.5,
+          "point": [
+            0.06,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.06,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            0.25007414956744817,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            -0.25007414956744817,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.43994933834214295,
+            0.0
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.43994933834214295,
+            0.0
+          ]
+        },
+        {
+          "exponent": -0.5,
+          "point": [
+            0.13002348790959106,
+            0.4
+          ]
+        },
+        {
+          "exponent": 0.5,
+          "point": [
+            -0.13002348790959106,
+            0.4
+          ]
+        }
+      ],
+      "constant": [
+        -0.0,
+        1.162315492384004
+      ],
+      "domain": {
+        "x": [
+          0.0,
+          0.5
+        ],
+        "y": [
+          0.0,
+          0.4
+        ]
+      },
+      "moduli_a": 0.06,
+      "modulus_tau": [
+        0.0,
+        0.8
+      ]
+    }
   },
   "curvature": {
     "condition": "minimal",
@@ -64,14 +144,39 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built. Weber's archive holds five systematic series indexed by triangle group -- roughly 40 surfaces in total.",
-      "resume": "Implement as ONE row plus a triangle-group selector, not forty rows; flagged in research/missing-surfaces-catalog.md Part D4 as the structurally interesting item of that survey."
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "BOX_1001",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "BOX_1010",
+      "definition_index": 0,
+      "implemented": true
+    },
+    {
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "BOX_1011",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "H. G. von Schnering and R. Nesper, \"Nodal surfaces of Fourier series: fundamental invariants of structured matter\",",
+      "Z. Phys. B Condensed Matter 83 (1991) 407-412. doi:10.1007/BF01313411  [C(D), C(Y), +-Y, C(+-Y), S nodal forms]",
+      "H. G. von Schnering, M. Oehme, G. Rudolf, \"Three-dimensional periodic nodal surfaces which envelope the threefold and fourfold cubic rod packings\", Acta Chem. Scand. 45 (1991) 873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]",
+      "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
+      "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
+      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]",
       "M. Weber, https://minimalsurfaces.blog/ and the archive formerly at indiana.edu/~minimal/archive/ (the site is dead; 280 surface folders were recovered from the Wayback CDX index)."
     ]
   },
@@ -115,7 +220,6 @@
       }
     }
   ],
-  "named_after": "Weber",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
