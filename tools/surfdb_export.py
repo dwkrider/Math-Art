@@ -39,6 +39,7 @@ rather than building meshes from data.
     blender --background --python tools/surfdb_export.py -- --list
 """
 import base64
+import glob
 import json
 import os
 import struct
@@ -57,6 +58,9 @@ import surfdb_drive as DRIVE                                  # noqa: E402
 DB = os.path.join(PROJ, "data", "surfaces")
 MESH_OUT = os.path.join(PROJ, "web", "surfaces")
 THUMB_OUT = os.path.join(PROJ, "web", "thumbs", "surfaces")
+# Outside web/surfaces/ so it escapes that directory's LFS glob and
+# cannot collide with a slug.
+MANIFEST = os.path.join(PROJ, "web", "surface-meshes.json")
 
 # A triangle budget, not a resolution. The generators produce anything
 # from a few hundred to a few hundred thousand triangles; at ~12 bytes per
@@ -307,6 +311,23 @@ def main():
             problems.append((slug, "thumbnail: " + repr(exc)[:96]))
             print("FAIL %-46s thumbnail %r" % (slug, exc))
         sys.stdout.flush()
+
+    # A manifest of what actually got baked.
+    #
+    # The database's `implemented` flag very nearly answers "is there a
+    # mesh?" -- it is right for 461 of the 462 records -- but not quite: a
+    # surface can be implemented as an OPERATOR and still not be bakeable,
+    # which is the case for plateau-span, whose operator spans a selection
+    # and cannot run in an empty scene. Rather than have the page carry a
+    # copy of that exception -- two lists that must agree, and one day
+    # will not -- the exporter writes down what it produced and the page
+    # reads it.
+    have = sorted(os.path.basename(f)[:-5]
+                  for f in glob.glob(os.path.join(MESH_OUT, "*.json")))
+    with open(MANIFEST, "w", encoding="utf-8") as fh:
+        json.dump({"meshes": have}, fh, separators=(",", ":"))
+    print("manifest: %d meshes -> %s"
+          % (len(have), os.path.relpath(MANIFEST, PROJ)))
 
     print("\nmeshes=%d thumbnails=%d skipped=%d failed=%d"
           % (done, shot, skipped, failed))

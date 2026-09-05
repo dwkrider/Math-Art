@@ -101,7 +101,7 @@ void main() {
   // object read as a black silhouette and the detail in it was simply
   // gone.  Cycles never has that problem because the studio's dome
   // bounces light back; wrapping is the cheap stand-in for that bounce.
-  float w = 0.45;
+  float w = 0.25;
   float lk = clamp((dot(n, key)  + w) / (1.0 + w), 0.0, 1.0);
   float lf = clamp((dot(n, fill) + w) / (1.0 + w), 0.0, 1.0);
   float ll = clamp((dot(n, rimL) + w) / (1.0 + w), 0.0, 1.0);
@@ -110,6 +110,14 @@ void main() {
   float sky = 0.5 + 0.5 * n.y;            // the dome, softly
   float l = uAmbient + 0.10 * sky
           + 0.44 * lk + 0.10 * lf + 0.13 * ll + 0.13 * lr + 0.20 * lt;
+
+  // NOTE for anyone tempted to dim back faces as a stand-in for the
+  // shadows this renderer does not have: it does not work here. Winding
+  // on an open sheet is whatever its generator happened to emit, not
+  // "outside", so gl_FrontFacing does not mean what it means on a closed
+  // solid -- the compound helical cone is wound entirely the "back" way
+  // and simply went dark all over. Any occlusion approximation has to be
+  // geometric (screen-space depth), not topological.
 
   // The studio's White Plastic is roughness 0.38, which is tighter and
   // brighter than the broad sheen this had before.

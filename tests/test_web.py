@@ -121,6 +121,19 @@ def check_surfaces(fail):
         fail("orphan mesh web/surfaces/%s.json names no surface" % s)
     for s in sorted(thumbs - all_slugs):
         fail("orphan thumbnail web/thumbs/surfaces/%s.png names no surface" % s)
+
+    # The page reads this manifest instead of guessing from `implemented`,
+    # so a stale one would mislabel tiles. It has to agree with the disk.
+    mpath = os.path.join(WEB, "surface-meshes.json")
+    if not os.path.exists(mpath):
+        fail("no web/surface-meshes.json (run tools/surfdb_export.py)")
+    else:
+        with open(mpath, encoding="utf-8") as fh:
+            listed = set(json.load(fh).get("meshes") or [])
+        for s in sorted(listed - meshes):
+            fail("surface-meshes.json lists %s, which has no mesh file" % s)
+        for s in sorted(meshes - listed):
+            fail("%s has a mesh but surface-meshes.json omits it" % s)
     return len(want), len(meshes)
 
 

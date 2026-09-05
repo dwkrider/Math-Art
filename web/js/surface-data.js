@@ -17,6 +17,28 @@
 const DB = new URL('../data/surfaces/', import.meta.url);
 const MESHES = new URL('../surfaces/', import.meta.url);
 
+let manifestPromise = null;
+
+/**
+ * Which surfaces actually have a baked mesh.
+ *
+ * The database's `implemented` flag nearly answers this -- it is right
+ * for 461 of the 462 records -- but a surface can be implemented as an
+ * OPERATOR and still not be bakeable: plateau-span's operator spans a
+ * selection and cannot run in an empty scene. tools/surfdb_export.py
+ * writes down what it actually produced, so the page never has to keep
+ * its own copy of that exception in step.
+ */
+export function loadMeshManifest() {
+  if (!manifestPromise) {
+    manifestPromise = fetch(new URL('../surface-meshes.json', import.meta.url))
+      .then((r) => (r.ok ? r.json() : { meshes: [] }))
+      .then((d) => new Set(d.meshes || []))
+      .catch(() => new Set());
+  }
+  return manifestPromise;
+}
+
 let indexPromise = null;
 const records = new Map();
 const meshes = new Map();

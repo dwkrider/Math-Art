@@ -84,11 +84,18 @@ export function renderSurfaceDetail(rec, entry, host) {
   head.append(tags);
   host.append(head);
 
-  if (!entry?.implemented) {
+  if (entry && entry.hasMesh === false) {
     // Say it plainly rather than leaving an empty stage looking broken.
+    // Two different reasons land here: no generator builds the surface at
+    // all, or one does but it cannot be driven headlessly (an operator
+    // that spans a selection has no canonical shape to bake).
     host.append($('p', 'notice',
-      'No generator builds this surface yet, so there is no mesh to show. '
-      + 'Everything below is what the database records about it.'));
+      entry.implemented
+        ? 'This surface is built by an operator that works on geometry you '
+          + 'select, so it has no single shape to show here. Everything '
+          + 'below is what the database records about it.'
+        : 'No generator builds this surface yet, so there is no mesh to '
+          + 'show. Everything below is what the database records about it.'));
   }
 
   const panels = $('div', 'panel-grid');

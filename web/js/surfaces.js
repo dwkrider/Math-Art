@@ -8,7 +8,7 @@
 // multi-view capability stays a capability, and this module does not use
 // it: `VIEWS` below is the single point where that choice lives.
 
-import { loadIndex, loadRecord, loadMesh, filterEntries, SORTS,
+import { loadIndex, loadRecord, loadMesh, loadMeshManifest, filterEntries, SORTS,
          FAMILY_ORDER, FAMILY_LABELS, MODE_LABELS, countBy, thumbUrl }
   from './surface-data.js';
 import { SurfaceViewer, freshCanvas, STUDIO_VIEW }
@@ -33,6 +33,8 @@ async function main() {
   });
   const entries = index.entries;
   const byslug = new Map(entries.map((e) => [e.slug, e]));
+  // What was actually baked, rather than what the database predicts.
+  const baked = await loadMeshManifest();
 
   // Pulled back from the shared default. setMesh normalises a surface into
   // the unit ball, and at the viewer's 32-degree field of view a distance
@@ -131,7 +133,7 @@ async function main() {
     card.type = 'button';
     card.dataset.slug = e.slug;
     if (e.slug === selected) card.classList.add('on');
-    if (e.implemented) {
+    if (baked.has(e.slug)) {
       const img = el('img');
       img.loading = 'lazy';
       img.decoding = 'async';
@@ -155,7 +157,7 @@ async function main() {
     const bits = [];
     if (e.genus !== null && e.genus !== undefined) bits.push(`g${e.genus}`);
     if (e.periodicity_rank) bits.push(`${e.periodicity_rank}-periodic`);
-    if (!e.implemented) bits.push('no mesh');
+    if (!baked.has(e.slug)) bits.push('no mesh');
     card.append(el('span', 'tile-meta', bits.join(' · ')));
     card.addEventListener('click', () => { location.hash = e.slug; });
     return card;
@@ -180,7 +182,7 @@ async function main() {
       t.classList.toggle('on', t.dataset.slug === slug);
     }
     const [rec, mesh] = await Promise.all([loadRecord(slug), loadMesh(slug)]);
-    renderSurfaceDetail(rec, entry, detail);
+    renderSurfaceDetail(rec, { ...entry, hasMesh: baked.has(slug) }, detail);
     document.title = `${rec.name} — Math Art`;
     $('#stage-caption').textContent = rec.name;
 
