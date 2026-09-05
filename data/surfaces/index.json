@@ -80,8 +80,8 @@
     "swept",
     "topological"
   ],
-  "count": 462,
-  "implemented_count": 401,
+  "count": 463,
+  "implemented_count": 402,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -1243,6 +1243,42 @@
         "mesh.periodic_minimal_add"
       ],
       "specimen_count": 0
+    },
+    {
+      "slug": "calabi-yau-cross-section",
+      "name": "Calabi-Yau Cross-Section",
+      "path": "surfaces/topological/calabi-yau-cross-section.json",
+      "primary_family": "topological",
+      "families": [
+        "aperiodic",
+        "def-parametric",
+        "implemented",
+        "noncompact",
+        "self-intersecting",
+        "topological",
+        "tradition-gallery",
+        "tradition-sculptural"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": "varies",
+      "genus_per_cell": null,
+      "orientable": true,
+      "ends": 0,
+      "embedding": "self-intersecting",
+      "symmetry": {
+        "kind": "point",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.calabi_yau_add"
+      ],
+      "specimen_count": 4
     },
     {
       "slug": "callahan-hoffman-meeks-chm-1-2-genus-4",
