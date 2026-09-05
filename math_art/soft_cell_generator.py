@@ -407,7 +407,7 @@ if _IN_BLENDER:
                         subdiv=self.subdivisions,
                         bend_radius=self.bend_radius,
                         depth=self.bend_depth,
-                        colors=self.cell_colors)
+                        colors=self.cell_colors, gap=self.gap)
                     label = "Softened " + dict(
                         CUBIC="Cubes", TRUNCOCT="Truncated Octahedra",
                         RHOMBDODEC="Rhombic Dodecahedra",
@@ -456,7 +456,7 @@ if _IN_BLENDER:
             # was silently skipped altogether.
             want = ((self.two_materials and self.mode == 'CELLS')
                     or self.mode == 'SOFTEN')
-            if want and len(me.polygons) == len(tags) and max(tags) > 0:
+            if want and len(me.polygons) == len(tags) and tags:
                 for ci in range(max(tags) + 1):
                     me.materials.append(_material(
                         f"Soft Cell {chr(ord('A') + ci)}", _PALETTE[ci]))
@@ -492,7 +492,7 @@ if _IN_BLENDER:
             lay.prop(self, 'mode')
             if self.mode == 'SOFTEN':
                 for k in ('honeycomb', 'nx', 'ny', 'nz', 'subdivisions',
-                          'bend_radius', 'bend_depth', 'scale',
+                          'bend_radius', 'bend_depth', 'gap', 'scale',
                           'cell_colors', 'shade_smooth'):
                     lay.prop(self, k)
                 if self.shade_smooth:

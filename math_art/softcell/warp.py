@@ -131,11 +131,18 @@ def generic_axis(dirs, rng=None):
     raise ValueError("could not find a generic axis")
 
 
-def node_warp(P, node, dirs, signs, axis, r, kappa, delta=0.35, depth=1.0):
-    """Displace the points `P` that lie near one node.  Equation (11).
+def node_displacement(P, node, dirs, signs, axis, r, kappa, delta=0.35,
+                      depth=1.0):
+    """The displacement equation (11) applies near one node.
 
-    Returns a new array; points outside the bending neighbourhood are
-    returned unchanged, so the caller can apply this node by node.
+    Returns the delta, not the moved points, because the deltas from
+    different nodes MUST be evaluated on the original positions and then
+    summed.  Applying the nodes one after another -- feeding each the
+    output of the last -- is not the same map: a point pushed by one node
+    can land inside the next node's neighbourhood and be pushed again, and
+    the theorem's guarantee (disjoint supports, one displacement each)
+    quietly stops holding.  That double-warping is what produced the
+    slivers where cells meet.
     """
     P = np.asarray(P, float)
     z = axis / np.linalg.norm(axis)
@@ -185,7 +192,14 @@ def node_warp(P, node, dirs, signs, axis, r, kappa, delta=0.35, depth=1.0):
 
     T = np.where(eps > kappa, 0.0, T)
     disp = cutoff(h, r) * T
-    return P + disp[:, None] * z[None, :]
+    return disp[:, None] * z[None, :]
+
+
+def node_warp(P, node, dirs, signs, axis, r, kappa, delta=0.35, depth=1.0):
+    """`P` displaced by one node.  Use `node_displacement` and sum when
+    more than one node is involved."""
+    return P + node_displacement(P, node, dirs, signs, axis, r, kappa,
+                                 delta, depth)
 
 
 def cube_vertex_figure():
@@ -274,12 +288,14 @@ def soften_cubic(n=1, subdiv=12, bend_radius=0.9, depth=1.0):
     # warp about every lattice node the block touches
     rng = np.random.default_rng(3)
     axis = generic_axis(dirs, rng)
+    D = np.zeros_like(V)
     for i in range(n + 1):
         for j in range(n + 1):
             for k in range(n + 1):
                 node = np.array([i, j, k], float)
-                V = node_warp(V, node, dirs, signs, axis, r, kappa,
-                              depth=depth)
+                D += node_displacement(V, node, dirs, signs, axis, r, kappa,
+                                       depth=depth)
+    V = V + D
     V = V - V.mean(axis=0)
     return V, faces
 
@@ -391,7 +407,14 @@ def _selftest():
         assert len(V) and len(F), kind
         assert info['warped'] == info['nodes'], (kind, info)
         assert info['interior'] >= 1, (kind, info)
-        assert len(set(T)) >= 2, (kind, set(T))
+        # With the cells fused, only the outer shell survives, and a cell
+        # that is wholly interior cannot show its colour however it is
+        # tagged -- every octahedron of the octet truss is interior, so
+        # that block's shell is all tetrahedra.  Separate the cells and
+        # both kinds appear.
+        Vs, Fs, Ts, _i = soften_honeycomb(kind, 2, 2, 2, subdiv=3,
+                                          depth=4.0, colors=2, gap=0.85)
+        assert len(set(Ts)) >= 2, (kind, set(Ts))
         # the warp must actually move something
         V0, _F, _T, _i = soften_honeycomb(kind, 2, 2, 2, subdiv=3,
                                           depth=0.0, colors=2)
@@ -531,7 +554,7 @@ def honeycomb_nodes(cells, tol=1e-6):
 
 
 def soften_honeycomb(kind='CUBIC', nx=1, ny=1, nz=1, subdiv=6,
-                     bend_radius=0.9, depth=4.0, colors=4):
+                     bend_radius=0.9, depth=4.0, colors=4, gap=1.0):
     """Soften any space-filling honeycomb of `ifs.spacefill`.
 
     Builds the block cell by cell so the vertex figure at every node is
@@ -553,6 +576,7 @@ def soften_honeycomb(kind='CUBIC', nx=1, ny=1, nz=1, subdiv=6,
     verts = []
     faces = []
     tags = []
+    owner = []
     for ci, (c, V, F, t) in enumerate(cells):
         P = c + V
         col = palette[ci]
@@ -563,15 +587,59 @@ def soften_honeycomb(kind='CUBIC', nx=1, ny=1, nz=1, subdiv=6,
             for q in qs:
                 faces.append(tuple(base + i for i in q))
                 tags.append(col)
+                owner.append(ci)
     V = np.array(verts, float)
-    V, faces, kept = _weld(V, faces)
-    tags = [tags[i] for i in kept]      # keep per-face data in step
+    if gap >= 1.0:
+        V, faces, kept = _weld(V, faces)
+        tags = [tags[i] for i in kept]      # keep per-face data in step
+        owner = [owner[i] for i in kept]
+    else:
+        # Weld WITHIN each cell only.  A global weld makes neighbouring
+        # cells share vertices, and shrinking them about their own
+        # centroids then writes the same vertex twice -- last cell wins, the
+        # cells never actually separate, and their duplicated shared walls
+        # survive to be deduped later, taking one cell's colour with them.
+        blocks = {}
+        for f, ci in zip(faces, owner):
+            blocks.setdefault(ci, []).append(f)
+        Vo, Fo, To, Oo = [], [], [], []
+        for ci, fs in blocks.items():
+            idx = sorted({i for f in fs for i in f})
+            remap = {i: k for k, i in enumerate(idx)}
+            base = len(Vo)
+            Vo.extend(V[i] for i in idx)
+            for f in fs:
+                Fo.append(tuple(base + remap[i] for i in f))
+                To.append(palette[ci])
+                Oo.append(ci)
+        V = np.array(Vo, float)
+        faces, tags, owner = Fo, To, Oo
+
+    # Drop the INTERNAL walls.  Two cells sharing a wall each contribute
+    # it, so the welded block carries every internal face twice.  Keeping
+    # one copy -- which is what letting Blender's validate() dedupe them
+    # amounts to -- leaves a wall sitting inside the solid, and where the
+    # softening pinches a cell inward that wall pokes through the surface
+    # as a dark sliver.  Discarding BOTH copies leaves the outer shell,
+    # which is the only part of a fused block that can be seen anyway, and
+    # each shell face still carries the colour of the cell that owns it.
+    seen = {}
+    for fi, f in enumerate(faces):
+        k = tuple(sorted(f))
+        seen.setdefault(k, []).append(fi)
+    keep = [fi for v in seen.values() if len(v) == 1 for fi in v]
+    keep.sort()
+    if gap >= 1.0:
+        faces = [faces[i] for i in keep]
+        tags = [tags[i] for i in keep]
+        owner = [owner[i] for i in keep]
     assert len(tags) == len(faces)
 
     at = honeycomb_nodes(cells)
     degree = max(len(r['dirs']) for r in at.values()) if at else 0
     rng = np.random.default_rng(3)
     warped = 0
+    D = np.zeros_like(V)
     for rec in at.values():
         dirs = rec['dirs']
         # Soften every node whose figure admits a colouring, not only the
@@ -595,9 +663,28 @@ def soften_honeycomb(kind='CUBIC', nx=1, ny=1, nz=1, subdiv=6,
         nd = min(np.linalg.norm(rec['pos'] - o['pos'])
                  for k, o in at.items() if o is not rec)
         r = 0.5 * nd * bend_radius
-        V = node_warp(V, rec['pos'], dirs, signs, axis, r, 0.7 * r,
-                      depth=depth)
+        D += node_displacement(V, rec['pos'], dirs, signs, axis, r, 0.7 * r,
+                               depth=depth)
         warped += 1
+    V = V + D
+
+    if gap < 1.0:
+        # Shrink each cell about its own centroid, as the Named Cells do.
+        # Without it a fused block shows only its outer shell, and cells
+        # that are wholly interior are invisible however they are coloured
+        # -- in the octet truss EVERY octahedron is interior, so a solid
+        # block can only ever show tetrahedra.  Separating them is the only
+        # way to see the structure the colouring is describing.
+        cen = {}
+        for f, ci in zip(faces, owner):
+            cen.setdefault(ci, []).extend(f)
+        Vg = V.copy()
+        for ci, idx in cen.items():
+            idx = np.unique(np.asarray(idx, dtype=np.int64))
+            c = V[idx].mean(axis=0)
+            Vg[idx] = c + (V[idx] - c) * gap
+        V = Vg
+
     V = V - V.mean(axis=0)
     interior = sum(1 for r in at.values() if len(r['dirs']) >= degree)
     return V, faces, tags, {'nodes': len(at), 'warped': warped,
@@ -615,6 +702,26 @@ def colour_cells(cells, ncolors=4):
     and falls back gracefully when the palette is too small for the
     honeycomb's chromatic number.
     """
+    ncolors = max(1, int(ncolors))
+
+    # When the honeycomb has more than one KIND of cell -- the octet truss
+    # is octahedra and tetrahedra -- the useful distinction is the kind,
+    # not an arbitrary graph colouring.  spacefill already tags each cell
+    # with it, and adjacency colouring actively obscures it: on a 2x2x2
+    # octet block the greedy pass produced eight cells of one colour and
+    # one of the other, which says nothing about the structure.
+    # Key on the cell's SHAPE, not on spacefill's tag.  That tag means
+    # different things per honeycomb -- cell type for the octet truss, but
+    # merely orientation for the hexagonal prisms and the spirals -- so
+    # keying on it coloured by orientation and left face-neighbours
+    # matching.  A shape signature only splits genuinely different cells.
+    shape = [(len(V), len(F), tuple(sorted(len(f) for f in F)))
+             for _c, V, F, _t in cells]
+    kinds = sorted(set(shape))
+    if len(kinds) > 1:
+        idx = {k: i for i, k in enumerate(kinds)}
+        return [idx[k] % ncolors for k in shape]
+
     keyed = {}
     for ci, (c, V, F, _t) in enumerate(cells):
         P = c + V
@@ -628,7 +735,6 @@ def colour_cells(cells, ncolors=4):
             for b in owners:
                 if a != b:
                     adj[a].add(b)
-    ncolors = max(1, int(ncolors))
     out = [0] * len(cells)
     for i in range(len(cells)):
         used = {out[j] for j in adj[i] if j < i}
