@@ -1099,17 +1099,158 @@ def solve_spec_tau(key, lo, hi, steps=40):
 # it is the standard one with G replaced by G e^(i pi/4), i.e. a
 # rotation of the Gauss map, so it is folded into `const` here and the
 # ordinary combination applies.
-_FRD_A = 0.11
+#
+# (a, tau) below is the SOLVED CUBIC MEMBER, not the notebook's demo
+# pair.  `FR-D.nb` says "Choose conformal parameter a between 0.07 and
+# .2": its period condition ties tau to a but leaves a itself free, so
+# the notebook data is a one-parameter family -- the tetragonal tF-RD
+# deformation -- and the demo member a = 0.11 that this row first
+# shipped with is a generic member of it, not F-RD.  Built and
+# measured, a = 0.11's five boundary mirrors close a 1.074 : 1.074 : 1
+# tetragonal cell; worse, with the horizontal edges unsplit only the
+# two parallel z lids ever classified, so the shipped reflection group
+# was a frieze and the row grew as a column along z.
+#
+# F-RD is the member whose cell is a CUBE.  Every boundary curve of
+# the patch is a planar geodesic -- lids z = 0 and z = 1/2, diagonal
+# mirrors x = y and x + y = c_u, and the face mirror x = x_m -- so the
+# patch is the chamber of a (4,4,2)-kaleidoscope prism and the cell is
+# cubic exactly when the in-plane cube edge matches the z one:
+#
+#     2 x_m(a) - c_u(a) = 1/2.
+#
+# Solving that together with the period condition (both as 1D
+# theta-product path integrals, `frd_geometry` below -- the meshed
+# patch cannot be used for this because its singular corners pollute
+# the mirror offsets at O(1/n)) gives
+#
+#     a   = 0.0930966253175575     tau = 0.39749710165121555 i
+#     x_m = 0.1895435558205375     cubic residual 4e-13
+#
+# and the self-test re-derives all three.  Ground truth agrees: the
+# patch area converges to Brakke's FRDadj.fe cell (192 copies, 4.84 per
+# unit cell) and the nodal F-RD (4.87), and the assembled cell sits a
+# median 1.4% of the edge from the nodal one -- including under the
+# face-centring shift (1/2, 1/2, 0), which maps F-RD to itself.
+_FRD_A = 0.0930966253175575
 _FRD_B = (1.0 - 2.0 * _FRD_A) / 3.0
+_FRD_XM = 0.1895435558205375        # the x = x_m face mirror, solved
 _SPECS['FRD_EXACT'] = _prod_spec(
     "Schoen F-RD (exact, cubic, genus 6)",
-    tau=0.4097611639604068j, a=_FRD_A,
+    tau=0.39749710165121555j, a=_FRD_A,
     terms=lambda a, tau, _b=_FRD_B: (
         (a, -0.5), (-a, 0.5), (_b, -0.75), (-_b, 0.75),
         (0.5 - _b + tau / 2.0, 0.75), (-(0.5 - _b) + tau / 2.0, -0.75),
         (0.5 - a + tau / 2.0, 0.5), (-(0.5 - a) + tau / 2.0, -0.5)),
     const=0.25j * math.pi,
+    splits=(_FRD_A, _FRD_B),
     nb="FR-D.nb")
+
+# F-RD's cell.  Both horizontal edges of the domain run through TWO
+# branch points each -- +-a and +-b sit on y = 0, their tau/2-row
+# partners at x = 1/2 - b and 1/2 - a on the top edge -- so each edge
+# is THREE symmetry elements, and read whole both classified as
+# 'neither'.  That is the whole failure: the in-plane generators were
+# never found, the two z lids alone make a frieze, and the "cubic" row
+# grew as a column.  Split, the eight arcs land two per in-plane
+# mirror (once near each lid) plus the lids themselves:
+#
+#     x=0, x=1        the lids           z = 0   and  z = 1/2
+#     y=0#0, y=1#1    the diagonal       x - y = 0
+#     y=0#1, y=1#2    the diagonal       x + y = 2 x_m - 1/2
+#     y=0#2, y=1#0    the face           x = x_m
+#
+# Directions are declared (the polluted arcs cannot be trusted to fit
+# their own planes -- same argument as S'-S''), and so are the OFFSETS:
+# unlike the trigroup rows, F-RD's quadrature error displaces two whole
+# arcs off their true planes by O(1/n) (a bulk shift, not a wobble --
+# the arc y=0#1 fits a plane to 4e-8 at n = 121 while sitting 6e-3 from
+# the right one), so the median-measured offset would bend the cell.
+# All the offsets follow from x_m and the exactly-known z span.
+#
+# The word is Brakke's dfh(abcabc) idea in this frame: {1,a,b,ab} is
+# the 2mm point group at the cube centre's vertical axis, filling the
+# mirror-bounded half-cell cube [x_m-1/2, x_m]^2 x [0, 1/2] with 4
+# copies; m, n (= ama, the y = x_m face, declared derived exactly as
+# S'-S'' derives its d) and e then reflect that cube through three of
+# its faces.  32 copies, the conventional cubic cell, edge 1 = twice
+# the mirror spacing, which tiles by pure translation.
+_SPECS['FRD_EXACT'].update(
+    tsplits=(0.5 - _FRD_B, 0.5 - _FRD_A),
+    exact_planes={
+        'x=0': (0.0, 0.0, 1.0), 'x=1': (0.0, 0.0, 1.0),
+        'y=0#0': (1.0, -1.0, 0.0), 'y=0#1': (1.0, 1.0, 0.0),
+        'y=0#2': (1.0, 0.0, 0.0),
+        'y=1#0': (1.0, 0.0, 0.0), 'y=1#1': (1.0, -1.0, 0.0),
+        'y=1#2': (1.0, 1.0, 0.0)},
+    exact_offsets={
+        'x=0': 0.0, 'x=1': 0.5,
+        'y=0#0': 0.0, 'y=1#1': 0.0,
+        'y=0#2': _FRD_XM, 'y=1#0': _FRD_XM,
+        'y=0#1': (2.0 * _FRD_XM - 0.5) / math.sqrt(2.0),
+        'y=1#2': (2.0 * _FRD_XM - 0.5) / math.sqrt(2.0)},
+    letters={'e': 'x=1', 'm': 'y=1#0', 'a': 'y=0#0', 'b': 'y=0#1',
+             'n': ('derived', 'ama')},
+    words=('emnab',))
+
+
+def frd_geometry(a=None, t=None, n=6000):
+    """Re-derive F-RD's solved constants from the Weierstrass data.
+
+    Returns (period, x_m, c_u): the period residual `FR-D.nb` bisects
+    to zero (Weber's tst -- the y displacement along the diagonal from
+    the branch point a to its tau/2-row partner, on the RAW Gauss map,
+    with the cos substitution clustering into both singular endpoints),
+    and the two in-plane mirror positions as 1D path integrals -- x_m
+    up the smooth left edge to the corner tau/2, c_u = x1 + x2 at the
+    midpoint of the [a, b] arc, reached through the interior so no
+    branch point sits on the path.  1D because the meshed patch cannot
+    provide these: its singular corners displace whole boundary arcs
+    by O(1/n), which is exactly the pollution that hid the tetragonal
+    cell in the first place.
+
+    The cubic member satisfies period = 0 and 2 x_m - c_u = 1/2.
+    """
+    sp = _SPECS['FRD_EXACT']
+    if a is None:
+        a = float(sp['a'])
+    tau = sp['tau'] if t is None else 1j * float(t)
+    q = np.exp(1j * np.pi * tau)
+    terms = sp['terms'](a, tau)
+
+    def logA(z):
+        L = np.zeros(z.shape, dtype=complex)
+        for sh, c in terms:
+            lg = np.log(_theta11(z - sh, q))
+            L = L + c * (np.real(lg) + 1j * np.unwrap(np.imag(lg)))
+        return L
+
+    # Weber's tst: Re int (i/2)(A + 1/A) dz, endpoints both theta zeros
+    z0, z1 = complex(a), 0.5 - a + tau / 2.0
+    u = (np.arange(n) + 0.5) / n
+    s = 0.5 * (1.0 - np.cos(np.pi * u))
+    ds = 0.5 * np.pi * np.sin(np.pi * u) / n
+    L = logA(z0 + (z1 - z0) * s)
+    period = float(np.real(np.sum(
+        0.5j * (np.exp(L) + np.exp(-L)) * (z1 - z0) * ds)))
+
+    def leg(zs):
+        mids = 0.5 * (zs[:-1] + zs[1:])
+        L = logA(mids) + complex(sp['const'])
+        g, inv = np.exp(L), np.exp(-L)
+        dz = np.diff(zs)
+        return (float(np.real(np.sum(0.5 * (inv - g) * dz))),
+                float(np.real(np.sum(0.5j * (inv + g) * dz))))
+
+    x_m = leg(np.linspace(0.0, tau / 2.0, n + 1))[0]
+    b = (1.0 - 2.0 * a) / 3.0
+    zst = 0.5 * (a + b)
+    mid = tau / 4.0                       # clear of both singular rows
+    p = np.concatenate([np.linspace(0.0, mid, n + 1),
+                        np.linspace(mid, zst + mid, n + 1)[1:],
+                        np.linspace(zst + mid, zst, n + 1)[1:]])
+    dx1, dx2 = leg(p)
+    return period, x_m, dx1 + dx2
 
 # Schoen's unnamed surface 12, later named F-RD(r) -- the quarter-twisted
 # relative of F-RD, genus 5.  Divisor constraints a + a' = 1/2 = b + b'
@@ -1363,24 +1504,40 @@ def spec_curves(key, P):
     be assembled at all.
     """
     sp = _SPECS[key]
-    curves = [('x=0', P[0, :]), ('x=1', P[-1, :]), ('y=1', P[:, -1])]
+    curves = [('x=0', P[0, :]), ('x=1', P[-1, :])]
     splits = sp.get('splits', ())
+    tsplits = sp.get('tsplits', ())
+    if not tsplits:
+        curves.append(('y=1', P[:, -1]))
     if not splits:
         curves.append(('y=0', P[:, 0]))
-        return _split_vertical_edges(key, P, curves)
+        if not tsplits:
+            return _split_vertical_edges(key, P, curves)
     xs = _spec_nodes(key, P.shape[0])[0]
     x1 = sp['xlim'][1]
-    edge = P[:, 0] if sp.get('split_edge', 'y0') == 'y0' else P[:, -1]
-    # Named by SEGMENT INDEX, not by formatted coordinates: the graded
-    # nodes put the first one at -2.8e-17 rather than 0, which formats
-    # as "-2.78e-17" and silently stopped matching the spec's element
-    # list -- dropping a generator and with it the whole assembly.
-    lo = 0
-    for k, c in enumerate(list(splits) + [x1]):
-        hi = int(np.argmin(np.abs(xs - c)))
-        if hi - lo >= 3:
-            curves.append(('y=0#%d' % k, edge[lo:hi + 1]))
-        lo = hi
+
+    def _cut(edge, cuts, fmt):
+        # Named by SEGMENT INDEX, not by formatted coordinates: the
+        # graded nodes put the first one at -2.8e-17 rather than 0,
+        # which formats as "-2.78e-17" and silently stopped matching
+        # the spec's element list -- dropping a generator and with it
+        # the whole assembly.
+        lo = 0
+        for k, c in enumerate(list(cuts) + [x1]):
+            hi = int(np.argmin(np.abs(xs - c)))
+            if hi - lo >= 3:
+                curves.append((fmt % k, edge[lo:hi + 1]))
+            lo = hi
+
+    if splits:
+        edge = P[:, 0] if sp.get('split_edge', 'y0') == 'y0' else P[:, -1]
+        _cut(edge, splits, 'y=0#%d')
+    # A spec may split the TOP edge too.  F-RD needs it: both of its
+    # horizontal edges run through two branch points each, so each is
+    # three symmetry elements, and read whole both classify as
+    # 'neither' -- which is how its in-plane generators got lost.
+    if tsplits:
+        _cut(P[:, -1], tsplits, 'y=1#%d')
     return curves
 
 
@@ -1423,7 +1580,14 @@ def _split_vertical_edges(key, P, curves):
 # the group order, which the word reaches from three spellings alike.
 _WORD_COPIES = {'SS': (16, 'Evolver'), 'HT': (24, 'Evolver'),
                 'H2R': (24, 'Evolver'), 'TR': (24, 'Evolver'),
-                'RII': (64, 'Evolver x2')}
+                'RII': (64, 'Evolver x2'),
+                # {1,e}{1,m}{1,n}{1,a,b,ab}: 2mm at the cube centre's
+                # vertical axis times three face reflections.  Cross-
+                # checked against Brakke: FRDadj.fe fills the same
+                # conventional cell with 192 copies of a patch that is
+                # a SIXTH of this one (his is 1/192 of the cell, ours
+                # 1/32 -- one chamber of the (4,4,2) prism).
+                'FRD_EXACT': (32, 'group')}
 
 
 def spec_modulus_range(key):
@@ -1533,7 +1697,13 @@ def spec_declared_elements(key, P):
 
     The direction is exact; the placement is MEASURED as the median over
     the curve -- median rather than mean because the branch-point end is
-    the part that is wrong.
+    the part that is wrong.  A spec may go further and DECLARE the
+    placement too, through `exact_offsets` ({curve: plane offset along
+    the unit normal}).  F-RD needs that: its quadrature error displaces
+    two whole boundary arcs off their true planes by O(1/n) -- a bulk
+    shift the median faithfully reports -- so a measured offset would
+    bend the assembled cell, while the true offsets are known exactly
+    from the solved cubic geometry.
 
     Returns `{curve: (kind, direction, reference)}` where `reference` is
     the plane offset for a mirror and a point on the line for a
@@ -1542,6 +1712,7 @@ def spec_declared_elements(key, P):
     sp = _SPECS[key]
     planes = sp.get('exact_planes') or {}
     axes = sp.get('exact_axes') or {}
+    offs = sp.get('exact_offsets') or {}
     if not planes and not axes:
         return None
     curves = dict(spec_curves(key, P))
@@ -1553,6 +1724,7 @@ def spec_declared_elements(key, P):
         n = np.asarray(raw, dtype=float)
         n = n / np.linalg.norm(n)
         out[name] = ('mirror', n,
+                     float(offs[name]) if name in offs else
                      float(np.median(np.asarray(C, dtype=float) @ n)))
     for name, raw in axes.items():
         C = curves.get(name)
@@ -1602,6 +1774,7 @@ def _curve_indices(key, P):
            'x=1': (np.full(nv, nu - 1), np.arange(nv)),
            'y=1': (np.arange(nu), np.full(nu, nv - 1))}
     splits = sp.get('splits', ())
+    tsplits = sp.get('tsplits', ())
     col = 0 if sp.get('split_edge', 'y0') == 'y0' else nv - 1
     for nm in (_SPECS[key].get('vsplits') or ()):
         row = P[0, :] if nm == 'x=0' else P[-1, :]
@@ -1614,16 +1787,25 @@ def _curve_indices(key, P):
         idx[nm + '#1'] = (np.full(nv - j, i0), np.arange(j, nv))
     if not splits:
         idx['y=0'] = (np.arange(nu), np.full(nu, col))
-        return idx
+        if not tsplits:
+            return idx
     xs = _spec_nodes(key, nu)[0]
     x1 = sp['xlim'][1]
-    lo = 0
-    for k, c in enumerate(list(splits) + [x1]):
-        hi = int(np.argmin(np.abs(xs - c)))
-        if hi - lo >= 3:
-            idx['y=0#%d' % k] = (np.arange(lo, hi + 1),
-                                 np.full(hi + 1 - lo, col))
-        lo = hi
+
+    def _cut(cuts, fmt, jcol):
+        lo = 0
+        for k, c in enumerate(list(cuts) + [x1]):
+            hi = int(np.argmin(np.abs(xs - c)))
+            if hi - lo >= 3:
+                idx[fmt % k] = (np.arange(lo, hi + 1),
+                                np.full(hi + 1 - lo, jcol))
+            lo = hi
+
+    if splits:
+        _cut(splits, 'y=0#%d', col)
+    if tsplits:
+        idx.pop('y=1', None)
+        _cut(tsplits, 'y=1#%d', nv - 1)
     return idx
 
 
@@ -2040,7 +2222,7 @@ def _spec_axes(key, nu, nv):
     # a spec may also FORCE a cut that is not singular, so that a
     # boundary curve splits exactly on a node (CLP's y = 0 edge is two
     # different symmetry elements either side of x = a)
-    for c in sp.get('splits', ()):
+    for c in tuple(sp.get('splits', ())) + tuple(sp.get('tsplits', ())):
         xsing.setdefault(round(float(c), 12), 0.0)
 
     ysing = {}
@@ -3460,6 +3642,62 @@ def _selftest():
           % (got_t if got_t is not None else float('nan'), want_t, resid,
              'OK' if good else 'FAIL'))
 
+    # F-RD's (a, tau) is a SOLVED PAIR -- the cubic member of the
+    # tF-RD family, not the notebook's demo values -- so both solved
+    # conditions are re-evaluated from the Weierstrass data.  Three
+    # residuals at the stored point: Weber's period condition, the
+    # cubic condition 2 x_m - c_u = 1/2, and the stored x_m itself;
+    # plus a bracket check that tau is an actual root, not a flat spot.
+    per0, xm0, cu0 = frd_geometry()
+    t0 = float(np.imag(_SPECS['FRD_EXACT']['tau']))
+    plo = frd_geometry(t=t0 - 0.01)[0]
+    phi = frd_geometry(t=t0 + 0.01)[0]
+    cubic = 2.0 * xm0 - cu0 - 0.5
+    good = (abs(per0) < 1e-8 and plo * phi < 0.0
+            and abs(cubic) < 1e-6 and abs(xm0 - _FRD_XM) < 1e-6)
+    ok &= good
+    print("hexagonal: F-RD cubic member -- period %.1e (sign change "
+          "%s), 2*x_m - c_u - 1/2 = %.1e, x_m %.10f (stored %.10f) %s"
+          % (per0, 'yes' if plo * phi < 0 else 'NO', cubic, xm0,
+             _FRD_XM, 'OK' if good else 'FAIL'))
+
+    # ...and the PATCH must agree with the declared planes, because the
+    # word route projects the boundary onto them: if the stored member
+    # drifted, the projection would silently bend the surface into the
+    # declared cube rather than fail.  The mid-arc offsets of the raw
+    # (unprojected) patch convict, and n = 181 is where they separate
+    # cleanly: quadrature drift on the worst arc is 4.5e-3 there, while
+    # the demo member a = 0.11 -- the pair this row used to ship, with
+    # its 7% tetragonal cell -- measures 1.6e-2.  (At n = 121 the two
+    # sit at 1.1e-2 and 1.7e-2, too close to gate on.)
+    Pf = _spec_patch('FRD_EXACT', 181, 181)
+    fcurves = dict(spec_curves('FRD_EXACT', Pf))
+    fdecl = spec_declared_elements('FRD_EXACT', Pf)
+    worst, worst_nm = 0.0, ''
+    for nm, (kind, v, r) in fdecl.items():
+        C = np.asarray(fcurves[nm], float)
+        m = len(C)
+        t_ = max(2, m // 5)
+        gap = abs(float(np.median(C[t_:m - t_] @ v)) - r)
+        if gap > worst:
+            worst, worst_nm = gap, nm
+    good = worst < 1.0e-2
+    ok &= good
+    print("hexagonal: F-RD raw patch sits on the declared mirrors "
+          "(worst arc %s at %.1e) %s"
+          % (worst_nm, worst, 'OK' if good else 'FAIL'))
+
+    # The assembled cell must actually be the CUBE the label promises.
+    Vf, Qf, nf, wf = spec_word_assemble('FRD_EXACT', _spec_patch(
+        'FRD_EXACT', 60, 60))
+    bbf = Vf.max(0) - Vf.min(0)
+    good = (nf == 32 and abs(bbf[0] / bbf[2] - 1.0) < 1e-3
+            and abs(bbf[1] / bbf[2] - 1.0) < 1e-3)
+    ok &= good
+    print("hexagonal: F-RD assembles a cubic cell %.6f x %.6f x %.6f "
+          "(%d copies) %s"
+          % (bbf[0], bbf[1], bbf[2], nf, 'OK' if good else 'FAIL'))
+
     # ...then each member must build a converging minimal patch.
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
                 'FRD_EXACT', 'FRDR',
@@ -3517,16 +3755,18 @@ def _selftest():
     # whose full generator sets produce overlapping copies while proper
     # subsets tile.  Gating growth here stops a future change quietly
     # returning them to a bare patch.
+    # F-RD is no longer here: it assembles its cell through the word
+    # route now, so like H'-T it never reaches `spec_reflect_tile`.
     bad = []
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
-                'FRD_EXACT', 'FRDR', 'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+                'FRDR', 'TRIPLY_COSTA', 'SIMOES_BATISTA'):
         P = _spec_patch(key, 40, 40)
         base = (P.shape[0] - 1) * (P.shape[1] - 1)
         Vr, Qr = spec_reflect_tile(key, P, 2)
         if len(Qr) <= base or not _orbit_ok(np.asarray(Vr), Qr):
             bad.append('%s:%d/%d' % (key, len(Qr), base))
     ok &= not bad
-    print("hexagonal: all 11 fundamental-piece rows tile under "
+    print("hexagonal: all 10 fundamental-piece rows tile under "
           "Reflections %s" % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     # Schoen H'-T does NOT assemble, and the gate records why rather
