@@ -68,6 +68,13 @@ SURFACES = Menu(
         _e("object.minimal_span", 'OUTLINER_OB_SURFACE'),
         _e("mesh.seifert_surface_add", 'MOD_SIMPLIFY', "Seifert Surface"),
         _e("mesh.algebraic_surface_add", 'SURFACE_NSURFACE'),
+        # A Calabi-Yau threefold is six real dimensions and does
+        # not fit here; these four say, in their labels and their
+        # descriptions, which honest 2- or 3-dimensional shadow of
+        # one they are drawing.
+        _e("mesh.calabi_yau_add", 'SURFACE_NSURFACE'),
+        _e("mesh.calabi_yau_metric_add", 'MOD_SIMPLEDEFORM'),
+        _e("mesh.calabi_yau_scaffold_add", 'MOD_WIREFRAME'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
         _e("mesh.minimal_surface_polyhedron_add", 'MESH_UVSPHERE'),
         _e("mesh.squeeze_add", 'MOD_SIMPLEDEFORM'),
@@ -116,6 +123,11 @@ POLYHEDRA = Menu(
         # a deprecated shim, deliberately absent from the menu.)
         _e("mesh.icosahedron_stellation_add", 'MESH_ICOSPHERE'),
         _e("mesh.noble_faceting_add", 'MESH_ICOSPHERE'),
+        # Batyrev's reflexive polytopes and the tropical
+        # Calabi-Yau surfaces dual to their triangulations: the
+        # one route on which the object in the viewport really is
+        # a Calabi-Yau rather than a shadow of one.
+        _e("mesh.toric_calabi_yau_add", 'MESH_ICOSPHERE'),
         _e("mesh.star_prism_add", 'MESH_CYLINDER'),
         _e("mesh.conway_add", 'MESH_ICOSPHERE'),
         _e("mesh.zonohedron_add", 'MESH_UVSPHERE'),

@@ -25,6 +25,18 @@ dicts); the rig helpers at the bottom appear only when bpy is present.
 # should show what you get when you click the entry -- so only the ones
 # whose defaults under-sell them are listed.
 PARAMS = {
+    # The Calabi-Yau cross-section's barbs -- the parts that run out
+    # towards the curve's five points at infinity -- are what make the
+    # picture recognisable.  At the bare default extent they are stubs
+    # and the surface reads as a lumpy ball, so open it out.
+    "mesh.calabi_yau_add": dict(extent=1.7),
+    # The Fermat surface in CP3 is the payoff of the scaffold
+    # generator: at n = 4 it is a K3 surface, an honest Calabi-Yau
+    # 2-fold, where the SYZ graph is "only" the base of a fibration it
+    # sits over.
+    "mesh.calabi_yau_scaffold_add": dict(mode='FERMAT_CP3', degree=4,
+                                         radius=0.016,
+                                         node_radius=0.03),
     # A bare noble faceting is a self-intersecting wireframe-ish solid
     # and reads as mush when shaded; the great dodecahedron -- faceting
     # 1 of the icosahedral vertex set -- has big obvious pentagons and
@@ -275,6 +287,11 @@ import math                                              # noqa: E402
 GYROID_POSE = (-0.1967, 0.1944, -1.8216)
 
 ORIENT = {
+    # Hanson renders the cross-section from ViewPoint {2.9, 1.0, 1.4},
+    # well off any symmetry axis: down one of the five-fold axes the
+    # patches stack and the barbs hide behind one another.  Roughly
+    # that view.
+    "mesh.calabi_yau_add": (0.45, 0.0, 0.95),
     # A pleated saddle seen straight down reads as concentric rings on a
     # flat disc -- the one view that hides the warp the generator exists
     # to show.  Same three-quarter angle the fold gallery uses, so the
