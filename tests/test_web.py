@@ -34,7 +34,7 @@ import sys
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(PROJ, "web")
-THUMBS = os.path.join(WEB, "thumbs")
+THUMBS = os.path.join(WEB, "thumbs", "polyhedra")
 DB = os.path.join(PROJ, "data", "polyhedra")
 
 # Hosts are never contacted at runtime; the only absolute URLs allowed
@@ -67,7 +67,7 @@ def check_thumbnails(fail):
     for s in missing:
         fail("no thumbnail for %s (run tools/render_polyhedra_thumbs.py)" % s)
     for s in sorted(have - slugs):
-        fail("orphan thumbnail web/thumbs/%s.png names no solid" % s)
+        fail("orphan thumbnail web/thumbs/polyhedra/%s.png names no solid" % s)
     return len(slugs), len(have), len(missing)
 
 

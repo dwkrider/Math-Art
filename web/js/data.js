@@ -41,7 +41,7 @@ export async function loadRecord(slug) {
 }
 
 export function thumbUrl(slug) {
-  return new URL(`../thumbs/${slug}.png`, import.meta.url).href;
+  return new URL(`../thumbs/polyhedra/${slug}.png`, import.meta.url).href;
 }
 
 // -- facets -----------------------------------------------------------
