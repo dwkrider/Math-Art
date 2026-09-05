@@ -11,7 +11,8 @@
 import { loadIndex, loadRecord, loadMesh, filterEntries, SORTS,
          FAMILY_ORDER, FAMILY_LABELS, MODE_LABELS, countBy, thumbUrl }
   from './surface-data.js';
-import { SurfaceViewer, freshCanvas } from './surface-viewer.js';
+import { SurfaceViewer, freshCanvas, STUDIO_VIEW }
+  from './surface-viewer.js';
 import { renderSurfaceDetail } from './surface-detail.js';
 
 const VIEWS = 1;
@@ -39,7 +40,12 @@ async function main() {
   // that ball is cropped. This is passed per-module rather than changed in
   // surface-viewer.js, because the validation report frames its cards
   // deliberately tight and should keep doing so.
-  let viewer = new SurfaceViewer(freshCanvas($('#stage')), { distance: 4.1 });
+  // STUDIO_VIEW opens the viewer on the orientation the documentation
+  // studio shoots from, which is where this surface's thumbnail was taken:
+  // the model a reader clicks is the model they get, in the same pose.
+  // Home and double-click return here.
+  let viewer = new SurfaceViewer(freshCanvas($('#stage')),
+                                 { distance: 4.1, rotation: STUDIO_VIEW });
   const detail = $('#detail');
 
   // -- catalogue ------------------------------------------------------

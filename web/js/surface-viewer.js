@@ -75,19 +75,24 @@ void main() {
   vec3 base = front ? uFront : uBack;
   if (!front) n = -n;
 
-  // The documentation studio, transposed.  docs/render_docs.py lights
-  // every figure in the repository with a fixed four-light rig, and these
-  // are its lamps: the Blender positions carried over from Z-up into this
-  // viewer's Y-up frame ((x, y, z) -> (x, z, -y)), at the studio's own
-  // relative energies -- key 320, the two rims 750 scaled by
-  // subjects.STUDIO_RIM_SCALE = 0.35, top 150, fill 70.  Matching the rig
-  // is what makes a surface on screen look like the same surface in its
-  // thumbnail and on its documentation page.
-  vec3 key  = normalize(vec3( 0.59,  0.52,  0.62));
-  vec3 fill = normalize(vec3(-0.93,  0.19,  0.31));
-  vec3 rimL = normalize(vec3(-0.61,  0.39, -0.68));
-  vec3 rimR = normalize(vec3( 0.71,  0.30, -0.63));
-  vec3 top  = normalize(vec3( 0.00,  0.99, -0.11));
+  // The documentation studio's lamps, in CAMERA space.
+  //
+  // docs/render_docs.py lights every figure in the repository with a fixed
+  // four-light rig. Its lamps sit at fixed positions in the Blender world
+  // and so does its camera, which means they are fixed relative to the
+  // camera -- and this shader's normals are in the viewer's camera frame.
+  // So each direction below is the lamp's Blender unit vector resolved
+  // onto the studio camera basis (right, up, toward-camera) built in
+  // STUDIO_VIEW above: key (1.8,-1.9,1.6), fill (-2.4,-0.8,0.5), rims
+  // (-1.7,1.9,1.1) and (1.9,1.7,0.8), top (0,0.3,2.6).
+  //
+  // Weights are the studio's own energies: key 320, rims 750 each scaled
+  // by subjects.STUDIO_RIM_SCALE = 0.35, top 150, fill 70.
+  vec3 key  = normalize(vec3( 0.176,  0.201,  0.964));
+  vec3 fill = normalize(vec3(-0.956,  0.259, -0.142));
+  vec3 rimL = normalize(vec3(-0.164,  0.684, -0.711));
+  vec3 rimR = normalize(vec3( 0.939,  0.340, -0.057));
+  vec3 top  = normalize(vec3( 0.060,  0.966,  0.251));
 
   // WRAPPED lighting, and a hemisphere term, so that nothing ever falls
   // to black.  With plain lambert lights every face pointing away from
@@ -297,6 +302,59 @@ const DEFAULTS = {
  * comes from.  The only cure is a fresh element, so a canvas that has
  * been through a viewer is replaced by a clone before being reused.
  */
+/**
+ * The orientation the documentation studio shoots from.
+ *
+ * docs/render_docs.py puts its camera on the direction (1.35, -2.2, 0.95)
+ * in Blender's Z-up world, aimed at the origin with world +Z as up. Every
+ * hero figure, every variant tile and every surface thumbnail in
+ * web/thumbs/ is taken from there, so a viewer that opens on the same
+ * orientation shows the reader the picture they just clicked.
+ *
+ * NO axis remap belongs here. The meshes in web/surfaces/ are exported
+ * straight out of Blender, so their coordinates are already Z-up: the
+ * rotation below has to convert that convention AND aim the camera, and
+ * doing both at once is exactly what a frame built from the Blender
+ * camera vector and Blender's world up does. Remapping the camera vector
+ * first converts twice, which put the catenoid's axis down the line of
+ * sight instead of standing it up as the thumbnail has it.
+ */
+export const STUDIO_VIEW = (() => {
+  const norm = (v) => {
+    const L = Math.hypot(v[0], v[1], v[2]) || 1;
+    return [v[0] / L, v[1] / L, v[2] / L];
+  };
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1],
+                           a[2] * b[0] - a[0] * b[2],
+                           a[0] * b[1] - a[1] * b[0]];
+  const f = norm([1.35, -2.2, 0.95]);       // toward the studio camera
+  const r = norm(cross([0, 0, 1], f));      // camera right (Blender up)
+  const u = cross(f, r);                    // camera up, orthogonalised
+  // Rows r, u, f: the matrix sending the camera frame to x, y, z.
+  const m = [r, u, f];
+  const tr = m[0][0] + m[1][1] + m[2][2];
+  let q;
+  if (tr > 0) {
+    const s = Math.sqrt(tr + 1) * 2;
+    q = [(m[2][1] - m[1][2]) / s, (m[0][2] - m[2][0]) / s,
+         (m[1][0] - m[0][1]) / s, 0.25 * s];
+  } else if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) {
+    const s = Math.sqrt(1 + m[0][0] - m[1][1] - m[2][2]) * 2;
+    q = [0.25 * s, (m[0][1] + m[1][0]) / s, (m[0][2] + m[2][0]) / s,
+         (m[2][1] - m[1][2]) / s];
+  } else if (m[1][1] > m[2][2]) {
+    const s = Math.sqrt(1 + m[1][1] - m[0][0] - m[2][2]) * 2;
+    q = [(m[0][1] + m[1][0]) / s, 0.25 * s, (m[1][2] + m[2][1]) / s,
+         (m[0][2] - m[2][0]) / s];
+  } else {
+    const s = Math.sqrt(1 + m[2][2] - m[0][0] - m[1][1]) * 2;
+    q = [(m[0][2] + m[2][0]) / s, (m[1][2] + m[2][1]) / s, 0.25 * s,
+         (m[1][0] - m[0][1]) / s];
+  }
+  const L = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+  return [q[0] / L, q[1] / L, q[2] / L, q[3] / L];
+})();
+
 export function freshCanvas(canvas) {
   if (!canvas.dataset.svUsed || !canvas.parentNode) {
     canvas.dataset.svUsed = '1';
