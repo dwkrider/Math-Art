@@ -62,6 +62,63 @@ def resample_loop(pts, m):
     return out
 
 
+def resample_loop_corners(pts, m, angle=25.0):
+    """`resample_loop` that keeps the polyline's sharp vertices as samples.
+
+    A uniform-arclength resample almost never lands a sample ON a corner
+    of the input polyline -- it misses by up to half a sample spacing --
+    and for the Evolver cells that is not a cosmetic loss: the recorded
+    boundary's corners lie exactly on the symmetry axes where up to
+    eight copies of the patch meet, so a re-span that cuts the corner
+    opens a small polygonal hole around every image of that axis.
+    Measured across the shipped collection at the runtime resolution,
+    about two thirds of the cells had such pinholes, extent 3-20% of a
+    sample spacing's worth of geometry (0.03-0.2 absolute), all centred
+    on corner images.
+
+    So: resample uniformly, then move the nearest sample of each sharp
+    vertex (turning angle above `angle` degrees) onto that vertex
+    exactly.  Every copy of the patch contains the transformed corner
+    point, and the copies weld shut around the axis again.  Smooth
+    loops have no sharp vertices and come out identical to
+    `resample_loop`.
+    """
+    pts = np.asarray(pts, dtype=np.float64)
+    if len(pts) > 1 and np.allclose(pts[0], pts[-1]):
+        pts = pts[:-1]
+    n = len(pts)
+    if n < 3 or m < 3:
+        return resample_loop(pts, m)
+    seg = np.linalg.norm(np.roll(pts, -1, axis=0) - pts, axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    total = float(s[-1])
+    if total <= 0.0:
+        return resample_loop(pts, m)
+    va = pts - np.roll(pts, 1, axis=0)
+    vb = np.roll(pts, -1, axis=0) - pts
+    na = np.linalg.norm(va, axis=1)
+    nb = np.linalg.norm(vb, axis=1)
+    ok = (na > 1e-12) & (nb > 1e-12)
+    cosang = np.ones(n)
+    cosang[ok] = np.einsum('ij,ij->i', va[ok], vb[ok]) / (na[ok] * nb[ok])
+    sharp = np.nonzero(cosang < math.cos(math.radians(angle)))[0]
+    t = np.linspace(0.0, total, m, endpoint=False)
+    taken = set()
+    for i in sharp:
+        j = int(np.argmin(np.minimum(np.abs(t - s[i]),
+                                     total - np.abs(t - s[i]))))
+        if j in taken:
+            continue
+        t[j] = s[i]
+        taken.add(j)
+    t = np.sort(t % total)
+    closed = np.vstack([pts, pts[:1]])
+    out = np.empty((m, 3))
+    for a in range(3):
+        out[:, a] = np.interp(t, s, closed[:, a])
+    return out
+
+
 def resample_indexed(poly, m):
     """`resample_loop` that also reports where each sample came from.
 
@@ -2418,7 +2475,72 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
         return None
     resid, _pen, W, econ, env, planes = best
 
+    # Snap each named offset to the value the datafile's own `gogo`
+    # assigns after `frame` -- and ONLY those.  The starfish files all
+    # run `rhs2 := 1.0  // get constraints exactly right` and repolish:
+    # their generators are numeric matrices written against the planes
+    # at exactly 1, so a patch left at the measured offsets assembles
+    # against mirrors that sit a few percent away -- one component, but
+    # with a pinhole at every symmetry axis.  Schoen's GW is the
+    # counterexample that fixes the gate: its rhs are DECLARED as 0
+    # (placeholders), its generators are expressions in the measured
+    # rhs, and its gogo never reassigns them -- the measured offsets ARE
+    # its cell, and snapping them toward the declaration deformed the
+    # patch to 0.865 of Evolver.  So the authorization to snap is the
+    # datafile's own post-frame assignment, read off the gogo verbatim.
+    # The distance guard keeps a failed frame (measured nowhere near
+    # the snap target) from being dragged onto planes it never reached.
+    gogo_sets = {}
+    for _m in re.finditer(r'\b(\w+)\s*:=\s*([-+]?\d+(?:\.\d*)?'
+                          r'(?:[eE][-+]?\d+)?)\s*[;\n]',
+                          fe.command('gogo') or ''):
+        gogo_sets[_m.group(1)] = float(_m.group(2))
+    span = float(np.max(W.max(0) - W.min(0))) or 1.0
+    for n in sorted(planes):
+        # The offset NAME has to come from the raw constraint text:
+        # once `frame` has bound rhs3 in env, constraint_plane resolves
+        # it to a number and reports no name at all.
+        c_pair = getattr(fe, 'constraints', {}).get(n)
+        if not c_pair:
+            continue
+        nm = c_pair[1].strip()
+        if not re.fullmatch(r'[A-Za-z_]\w*', nm) or nm not in gogo_sets:
+            continue
+        pl0 = fe.constraint_plane(n, {nm: 0.0})
+        if pl0 is None or pl0[2] is not None:
+            continue
+        const = float(pl0[1])
+        vec, off = planes[n]
+        want = gogo_sets[nm] + const
+        if abs(off - want) / float(np.linalg.norm(vec)) <= 0.05 * span:
+            planes[n] = (vec, want)
+            env[nm] = want - const
+
     if planes:
+        # A corner where two arcs meet belongs on EVERY plane of both
+        # arcs at once -- their intersection, which for the starfish is
+        # a symmetry axis or a cell vertex (x=0, y=0, x+z=1 meet at
+        # (0,0,1)).  The per-arc projection below only ever lands the
+        # corner on its own arc's planes, and the ~0.05 it then misses
+        # the third plane by is what opened the octagonal pinholes:
+        # eight copies meet around the axis, each corner off it by the
+        # same margin (measured: every hole centre in the starfish31
+        # cell sits at an image of (0,0,+-1), extent 0.103 = twice the
+        # corner's miss).  Evolver never has this problem because its
+        # frame puts BOTH constraints on the shared vertex.
+        corner_planes = {}
+        for vids, eids in fe.boundary_chains():
+            ne = len(eids)
+            for k, vid in enumerate(vids):
+                if vid not in corners:
+                    continue
+                pls = {}
+                for e in (eids[k % ne], eids[(k - 1) % ne]):
+                    for n in econ.get(e, ()):
+                        if n in planes:
+                            pls[n] = planes[n]
+                if len(pls) >= 2:
+                    corner_planes[corners[vid]] = list(pls.values())
         # An arc named by two constraints belongs on the LINE where they
         # meet, and alternating the two projections converges to it.
         for _ in range(40):
@@ -2432,6 +2554,15 @@ def fe_adjoint_patch(source, m=96, rings=14, iters=300, relax_iters=120):
                     vec, off = planes[n]
                     W[rows] -= (((W[rows] @ vec) - off)
                                 / float(vec @ vec))[:, None] * vec
+            for row, pls in sorted(corner_planes.items()):
+                N = np.asarray([p[0] for p in pls], dtype=float)
+                c = np.asarray([p[1] for p in pls], dtype=float)
+                G = N @ N.T
+                r = c - N @ W[row]
+                # least squares, because two arcs can share a plane and
+                # a redundant normal makes the Gram matrix singular
+                lam, _r, _rk, _s = np.linalg.lstsq(G, r, rcond=None)
+                W[row] = W[row] + N.T @ lam
         W = np.asarray(minimize_area(W.copy(), T, fixed,
                                      outer_iters=relax_iters), dtype=float)
     lets = dict(zip(fe.gen_names, fe.generators_with(env)))
@@ -2452,14 +2583,18 @@ def fe_cell_patch(key, m=96, rings=16, iters=300):
     from .fecells import FE_CELLS
     spec = FE_CELLS[key]
     loops = [np.asarray(l, dtype=float) for l in spec['loops']]
+    # Corner-preserving re-span: the recorded boundary's sharp vertices
+    # sit exactly on the symmetry axes where the assembled copies meet,
+    # and a plain uniform resample cuts every one of them, opening a
+    # pinhole at each axis image (see resample_loop_corners).
     if len(loops) == 1:
         poly = loops[0]
-        lp = resample_loop(np.vstack([poly, poly[:1]]), m)
+        lp = resample_loop_corners(np.vstack([poly, poly[:1]]), m)
         V, quads, fixed = build_disk_grid(lp, rings)
     elif len(loops) == 2:
         a, b = loops
-        la = resample_loop(np.vstack([a, a[:1]]), m)
-        lb = resample_loop(np.vstack([b, b[:1]]), m)
+        la = resample_loop_corners(np.vstack([a, a[:1]]), m)
+        lb = resample_loop_corners(np.vstack([b, b[:1]]), m)
         if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
             la, lb = lb, la
         j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
@@ -2754,6 +2889,203 @@ def tile_periodic(V, faces, counts, tol=None):
     return W, wf, (cu, cv, cw)
 
 
+def _group_elements(lets, tmax, depth=12):
+    """The cell group's elements with translation within `tmax`.
+
+    Breadth-first over products of the generators and their inverses.
+    The state space is finite (a point group times the lattice points
+    inside the ball), so with the ball bound the search terminates on
+    its own; `depth` caps the word length considered.
+    """
+    gens = []
+    for M in lets.values():
+        M = np.asarray(M, dtype=float)
+        if M.shape != (4, 4):
+            continue
+        gens.append(M)
+        try:
+            gens.append(np.linalg.inv(M))
+        except np.linalg.LinAlgError:
+            pass
+
+    def mkey(M):
+        return tuple(np.round(np.ravel(M[:3]), 6))
+
+    eye = np.eye(4)
+    seen = {mkey(eye)}
+    out = [eye]
+    frontier = [eye]
+    for _ in range(depth):
+        nxt = []
+        for A in frontier:
+            for B in gens:
+                C = A @ B
+                if float(np.linalg.norm(C[:3, 3])) > tmax:
+                    continue
+                k = mkey(C)
+                if k in seen:
+                    continue
+                seen.add(k)
+                nxt.append(C)
+                out.append(C)
+        frontier = nxt
+        if not frontier:
+            break
+    return out
+
+
+def _pure_translations(lets, tmax, depth=12):
+    """Pure translations in the group the cell's letters generate."""
+    out = []
+    for C in _group_elements(lets, tmax, depth):
+        if np.allclose(C[:3, :3], np.eye(3), atol=1e-9):
+            t = C[:3, 3]
+            if float(np.linalg.norm(t)) > 1e-9:
+                out.append(np.array(t))
+    return out
+
+
+def fe_cell_tile_group(key, Vpatch, quads, counts, max_placements=1200):
+    """Tile a datafile cell BY ITS GROUP rather than by moving the mesh.
+
+    `tile_periodic` translates the assembled mesh by its bounding box
+    and requires the two copies to weld -- which they only do when the
+    opposite walls happen to carry coincident sample points.  Nothing
+    guarantees that: the walls are images of different patch arcs under
+    different group elements, so on twenty-odd cells (Schwarz D among
+    them -- the textbook cubic TPMS) the samples land at unrelated
+    positions and the tiling is refused even though the surface itself
+    tiles perfectly.
+
+    The group knows better.  The cell's own letters generate every
+    element that carries the cell onto a neighbouring cell -- for a
+    simple lattice that element is a pure translation (two parallel
+    mirrors multiplied), and for a centred lattice like the starfish
+    family's (shortest translations of the (p,0,p) face-centred kind)
+    it is a translation composed with a point transformation, which is
+    why translating the MESH can never work there: the +x neighbour of
+    a starfish cell is not a translate of it.  So tile by ENLARGING THE
+    ORBIT: find, for each cell of the requested block, a group element
+    whose rotation part maps the axis-aligned cell box to itself (a
+    signed permutation) and whose action moves the cell centre onto
+    that lattice site, and place the fundamental patch under
+    `element x word element`.  Every seam -- inside a cell and between
+    cells -- is then the same patch-against-patch contact that already
+    welds at the baked tolerance, because coincident copies of the same
+    mesh weld exactly.
+
+    Returns `(V, faces)` or None (the letters reach no neighbour cell,
+    the block would exceed `max_placements` copies, or the weld gate
+    refused).
+    """
+    from .fecells import FE_CELLS
+    spec = FE_CELLS[key]
+    lets = {k: np.asarray(v, dtype=float)
+            for k, v in spec['letters'].items()}
+    mats = dedupe_placements(np.asarray(Vpatch, float),
+                             eval_transform_expr(lets, spec['word']))
+    if not mats:
+        return None
+    cu, cv, cw = (max(1, int(c)) for c in counts)
+    total = cu * cv * cw * len(mats)
+    if total > max_placements:
+        return None
+    # the assembled cell's own box: its centre and per-axis period
+    pts = np.concatenate([np.asarray(Vpatch, float) @ M[:3, :3].T + M[:3, 3]
+                          for M in mats])
+    c0 = 0.5 * (pts.max(0) + pts.min(0))
+    period = pts.max(0) - pts.min(0)
+    span = float(np.max(period))
+    if span <= 1e-9 or float(np.min(period)) <= 1e-9:
+        return None
+    # every group element that maps the cell box onto a cell box: the
+    # rotation is a signed permutation and the centre moves by a
+    # lattice displacement.  The mesh's bounding box slightly overhangs
+    # the true cell (boundary arcs bulge past the walls), so the
+    # per-axis period is read off the group's own displacement set --
+    # the smallest axis-aligned centre displacement -- never off the
+    # bbox.
+    reach = float(np.linalg.norm([cu * period[0], cv * period[1],
+                                  cw * period[2]]))
+    cands = []
+    for C in _group_elements(lets, tmax=reach + 2.0 * span):
+        R = C[:3, :3]
+        if not np.allclose(np.abs(R) @ np.ones(3), np.ones(3), atol=1e-9):
+            continue
+        if not np.allclose(R @ R.T, np.eye(3), atol=1e-9):
+            continue
+        d = R @ c0 + C[:3, 3] - c0
+        cands.append((d, C))
+    # Per-axis lattice step: decided by the WELD GATE, not guessed.
+    # The candidate steps are the axis-aligned centre displacements;
+    # among them sit half-period symmetries (a TPMS typically maps to
+    # itself under half a translation composed with a point
+    # transformation), which lay a cell on top of its neighbour, and
+    # multi-period ones, which leave a gap.  Neither the smallest
+    # candidate nor the one nearest the bounding box is reliable -- the
+    # mesh overhangs its true cell by however far the boundary arcs
+    # bulge, 50% for Schwarz D -- so each candidate is tried in
+    # ascending order and the first whose two-cell block welds into one
+    # clean sheet is the step.  Overlap fails on duplicated faces, a
+    # gap fails on components, so the gate cannot pick a wrong one.
+    base = float(spec.get('tol', 1e-4) or 1e-4)
+    Vp = np.asarray(Vpatch, float)
+    faces = [tuple(f) for f in quads]
+
+    def welds(placements):
+        placements = dedupe_placements(Vp, placements)
+        for t in (base, 2.0 * base, 5.0 * base):
+            W, wf = assemble_orbit(Vp, faces, placements, t)
+            if fe_orbit_ok(W, wf):
+                return True
+        return False
+
+    step = [None, None, None]
+    for a in range(3):
+        by_step = {}
+        for d, C in cands:
+            o1, o2 = (a + 1) % 3, (a + 2) % 3
+            if (abs(d[a]) > 0.25 * period[a]
+                    and abs(d[a]) < 1.6 * period[a]
+                    and abs(d[o1]) < 1e-6 * span
+                    and abs(d[o2]) < 1e-6 * span):
+                by_step.setdefault(round(abs(d[a]), 6), (d, C))
+        for cand in sorted(by_step):
+            d, C = by_step[cand]
+            if welds(list(mats) + [C @ M for M in mats]):
+                step[a] = cand
+                break
+    if any(s is None for s in step):
+        return None
+    step = np.asarray(step, dtype=float)
+    cell_of = {}
+    for d, C in cands:
+        idx = d / step
+        ridx = np.round(idx)
+        if not np.allclose(idx, ridx, atol=1e-6):
+            continue
+        k = tuple(int(x) for x in ridx)
+        if k not in cell_of:
+            cell_of[k] = C
+    placed = []
+    for i in range(cu):
+        for j in range(cv):
+            for k in range(cw):
+                g = cell_of.get((i, j, k))
+                if g is None:
+                    return None
+                for M in mats:
+                    placed.append(g @ M)
+    placed = dedupe_placements(np.asarray(Vpatch, float), placed)
+    base = float(spec.get('tol', 1e-4) or 1e-4)
+    for t in (base, 2.0 * base, 5.0 * base):
+        W, wf = assemble_orbit(np.asarray(Vpatch, float),
+                               [tuple(f) for f in quads], placed, t)
+        if fe_orbit_ok(W, wf):
+            return W, wf
+    return None
+
+
 def fe_cell_build(key, cells, res_per_cell, scale, theta):
     """TPMS_EXACT-compatible wrapper for a datafile-derived cell."""
     res = max(8, int(res_per_cell))
@@ -2764,6 +3096,7 @@ def fe_cell_build(key, cells, res_per_cell, scale, theta):
     # while at m=72 it welds cleanly.  The floor is what a cell needs to
     # assemble at all, so it is not the place to save time.
     V, quads = fe_cell_patch(key, m=max(72, 3 * res), rings=max(12, res // 2))
+    Vpatch, qpatch = V, quads
     got = fe_cell_assemble(key, V, quads)
     if got is not None:
         V, quads = got[0], got[1]
@@ -2778,7 +3111,14 @@ def fe_cell_build(key, cells, res_per_cell, scale, theta):
     else:
         counts = tuple(int(c) or 1 for c in tuple(cells)[:3])
     if max(counts) > 1:
-        V, quads, _n = tile_periodic(V, quads, counts)
+        V, quads, done = tile_periodic(V, quads, counts)
+        if done == (1, 1, 1) and got is not None:
+            # The mesh-translation tiling refused: opposite walls do
+            # not carry coincident samples.  The group-based tiling
+            # does not need them to -- see fe_cell_tile_group.
+            tiled = fe_cell_tile_group(key, Vpatch, qpatch, counts)
+            if tiled is not None:
+                V, quads = tiled
     V = np.asarray(V, dtype=float)
     if len(V):
         V = V - 0.5 * (V.max(0) + V.min(0))
@@ -3636,6 +3976,39 @@ def _selftest():
                   "%.2f x %.2f x %.2f %s"
                   % (key, spec['word'], got[2], want, bb[0], bb[1], bb[2],
                      'OK' if good else 'FAIL'))
+        ok &= good
+
+    # Known-cubic, known-periodic cells MUST tile -- as a COUNT, not an
+    # exception.  `tile_periodic` refuses politely (it returns the
+    # single cell unchanged), which is the correct behaviour for a
+    # mesh that cannot tile and exactly the failure mode that hid a
+    # real defect for four rounds of review: 23 of the shipped cells
+    # silently would not tile, Schwarz D -- the textbook cubic TPMS --
+    # among them.  A (2,2,1) block must therefore come back with
+    # roughly four cells' worth of vertices (shared walls make it a
+    # touch less), one component, no duplicated faces, no over-shared
+    # edges.  (Lord-Mackay P3a is deliberately NOT on this list: its
+    # neighbouring cells meet along curves that the two sides sample as
+    # images of DIFFERENT fundamental arcs, so no weld tolerance can
+    # join them vertex-to-vertex -- the open remainder of this defect,
+    # tracked in the backlog.)
+    for key in ('SCHWARZ_D', 'DISPHENOID_FAMILY_B_GENUS_67',
+                'STARFISH_2_1_GENUS_31'):
+        try:
+            V1 = np.asarray(fe_cell_build(key, (1, 1, 1), 12, 1.0, 0.0)[0])
+            V2, q2 = fe_cell_build(key, (2, 2, 1), 12, 1.0, 0.0)[:2]
+            V2 = np.asarray(V2)
+        except KeyError:
+            print("plateau: tile %-24s MISSING from FE_CELLS FAIL" % key)
+            ok = False
+            continue
+        grew = len(V2) > 2.5 * len(V1)
+        dup, over, comps = _orbit_defects(V2, q2)
+        good = grew and dup == 0 and over == 0 and comps == 1
+        print("plateau: tile %-24s %6d -> %6d verts (x%.2f) "
+              "dup %d over %d comps %d %s"
+              % (key, len(V1), len(V2), len(V2) / max(len(V1), 1),
+                 dup, over, comps, 'OK' if good else 'FAIL'))
         ok &= good
 
     print("RESULT:", "OK" if ok else "FAIL")

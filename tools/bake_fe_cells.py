@@ -436,8 +436,14 @@ def harvest():
             'copies': n,
             'weld_tol': tol,
             'loops': [[[float(c) for c in p] for p in lp] for lp in loops],
+            # ALL the datafile's letters, not just the word's.  The
+            # word letters rebuild the cell; the full set is what
+            # carries the LATTICE -- p3a's cube word uses only its
+            # three point mirrors, and the two affine C2 axes that
+            # generate its translations are elsewhere in the alphabet.
+            # fe_cell_tile_group needs those to tile the cell at all.
             'generators': {c: [float(x) for x in np.ravel(lets[c])]
-                           for c in sorted(set(word))},
+                           for c in sorted(lets)},
         }
         print("  %-14s -> %-20s %-14s %3d copies (weld %.0e)"
               % (fn, slug, "%s=%s" % (name, word), n, tol))
@@ -456,14 +462,17 @@ def runtime_ok(loops, letters, word, tol, m=72, rings=12, iters=200):
     the only way the two can be kept honest with each other.
     """
     lp = [np.asarray(l, dtype=float) for l in loops]
+    # Mirror the shipped re-span exactly: fe_cell_patch keeps the
+    # recorded boundary's sharp corners as samples (they sit on the
+    # symmetry axes where the copies meet; cutting them opens pinholes).
     if len(lp) == 1:
         poly = lp[0]
         grid = pl.build_disk_grid(
-            pl.resample_loop(np.vstack([poly, poly[:1]]), m), rings)
+            pl.resample_loop_corners(np.vstack([poly, poly[:1]]), m), rings)
     elif len(lp) == 2:
         a, b = lp
-        la = pl.resample_loop(np.vstack([a, a[:1]]), m)
-        lb = pl.resample_loop(np.vstack([b, b[:1]]), m)
+        la = pl.resample_loop_corners(np.vstack([a, a[:1]]), m)
+        lb = pl.resample_loop_corners(np.vstack([b, b[:1]]), m)
         if float(np.mean(la[:, 2])) > float(np.mean(lb[:, 2])):
             la, lb = lb, la
         j = int(np.argmin(np.linalg.norm(lb - la[0], axis=1)))
@@ -613,8 +622,14 @@ def harvest_adjoint(m=96, rings=16, iters=400):
             'patch_area': round(area, 6),
             'evolver_area': (round(truth['area'], 6) if truth else None),
             'loops': [[[float(c) for c in p] for p in lp] for lp in loops],
+            # ALL the datafile's letters, not just the word's.  The
+            # word letters rebuild the cell; the full set is what
+            # carries the LATTICE -- p3a's cube word uses only its
+            # three point mirrors, and the two affine C2 axes that
+            # generate its translations are elsewhere in the alphabet.
+            # fe_cell_tile_group needs those to tile the cell at all.
             'generators': {c: [float(x) for x in np.ravel(lets[c])]
-                           for c in sorted(set(word))},
+                           for c in sorted(lets)},
         }
         print("  %-19s -> %-32s %s=%r %3d copies  %s"
               % (fn, key, name, word, ncopy, why))
@@ -683,9 +698,12 @@ def write_module():
     except ImportError:          # curation file predates the held ledger
         _HELD = []
     held = set(_HELD)
+    by_source = {}
     for key, cell in sorted(_BAKED.items()):
         cells[key] = (cell.get('title') or key, cell)
         by_slug[cell.get('record_slug', key)] = key
+        if cell.get('source'):
+            by_source[cell['source']] = cell
     dropped = []
     for root, _d, files in os.walk(RECORDS):
         for fn in files:
@@ -704,6 +722,20 @@ def write_module():
             if cell.get('source') in held:
                 dropped.append((rec['slug'], cell.get('source')))
                 continue
+            # The record is authoritative for WHAT ships, but its
+            # letter table can lag the bake: records written before the
+            # bake started storing the datafile's FULL alphabet carry
+            # only the word's letters, and the letters outside the word
+            # are exactly the ones fe_cell_tile_group needs (p3a's cube
+            # word uses its three point mirrors; the affine C2 axes
+            # that generate its lattice are the other two).  Overlay
+            # the current bake's generators for the same source file.
+            fresh = by_source.get(cell.get('source'))
+            if fresh and fresh.get('generators') and \
+                    set(cell.get('generators', {})) < \
+                    set(fresh['generators']):
+                cell = dict(cell)
+                cell['generators'] = fresh['generators']
             key = by_slug.get(rec['slug'], rec['slug'])
             cells[key] = (cell.get('title') or rec['name'], cell)
     for slug, src in sorted(dropped):
