@@ -96,6 +96,7 @@ _MODULE_NAMES = [
     'calabi_yau_generator',
     'invariant_manifold_generator',
     'spacefill_generator',
+    'soft_cell_generator',
     'spidron_ball_generator',
     'saddle_polyhedron_generator',
     'interlocking_generator',

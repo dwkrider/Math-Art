@@ -85,6 +85,9 @@ PARAMS = {
     # says "saddle polyhedron".  The tetrahedral decahedron keeps ten
     # faces around the same symmetry, so its silhouette stays closed
     # from every direction and the saddle curvature is legible.
+    "mesh.soft_cell_add": dict(cell='G2', nx=2, ny=2, nz=1,
+                               gap=0.90, face_rings=8,
+                               relax_iterations=40),
     "mesh.saddle_polyhedron_add": dict(solid='TETRAHEDRAL_DECAHEDRON',
                                        face_style='MINIMAL',
                                        density=4, smoothness=40),
@@ -441,6 +444,7 @@ SLUG_OVERRIDE = {
     "mesh.regular_solid_add": "regular_solids",
     "mesh.seifert_surface_add": "seifert",
     "curve.space_filling_add": "space_filling_curve",
+    "mesh.soft_cell_add": "soft_cells",
     "mesh.spacefill_add": "spacefill_solids",
     "mesh.topological_surface_add": "topological",
     "mesh.woven_polyhedron_add": "twisted_polyhedron",
@@ -511,6 +515,7 @@ VARIANT_SELECTOR = {
     "mesh.polytope4d_add": "kind",
     "mesh.spiked_polyhedron_add": "preset",
     "mesh.hyperbolic_honeycomb_add": "preset",
+    "mesh.soft_cell_add": "cell",
     "mesh.spacefill_add": "kind",
     "mesh.symmetrohedron_add": "group",
     "mesh.conway_add": "example",
