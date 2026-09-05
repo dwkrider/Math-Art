@@ -2025,20 +2025,30 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'preset')
             sub, _c, motif, _d = self._resolved()
+            # On the polyhedral sphere the substrate IS the base solid --
+            # a spherical uniform tiling -- so the flat Substrate enum
+            # and its patch extent do nothing.  Hide them rather than
+            # leave controls on the panel that silently change nothing.
+            on_solid = self.surface == 'SPHERE_SOLID'
             if self.preset == 'CUSTOM':
-                lay.prop(self, 'substrate')
+                if not on_solid:
+                    lay.prop(self, 'substrate')
                 lay.prop(self, 'motif')
                 lay.prop(self, 'contact_angle')
             if motif == 'STAR':                       # shown for presets too
                 lay.prop(self, 'star_d')
             if motif == 'ROSETTE':
                 lay.prop(self, 'rosette_frac')
-            if sub == 'GIRIH':                        # quasiperiodic patch
+            if on_solid:
+                lay.label(text="Base Solid replaces Substrate on a sphere",
+                          icon='INFO')
+            elif sub == 'GIRIH':                      # quasiperiodic patch
                 lay.prop(self, 'girih_gens')
             else:
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
-            lay.prop(self, 'trim')
+            if not on_solid:
+                lay.prop(self, 'trim')
             lay.prop(self, 'ribbon_width')
             lay.prop(self, 'curved')
             if self.curved:
