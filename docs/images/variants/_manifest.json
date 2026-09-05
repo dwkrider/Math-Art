@@ -888,6 +888,181 @@
    "TRIPLANE1",
    "Triplane 1",
    "TPMS Cubic"
+  ],
+  [
+   "TRIPLANE2",
+   "Triplane 2",
+   "TPMS Cubic"
+  ],
+  [
+   "TRIPLANE3",
+   "Triplane 3",
+   "TPMS Cubic"
+  ],
+  [
+   "TRIPLANE4",
+   "Triplane 4",
+   "TPMS Cubic"
+  ],
+  [
+   "TRIPLANE5",
+   "Triplane 5",
+   "TPMS Cubic"
+  ],
+  [
+   "BOX_1011",
+   "Box Type (+-+|+) (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "BOX_1010",
+   "Box Type (+-+|-) (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "BOX_1001",
+   "Box Type (+-|+) (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "CLP_HANDLE",
+   "CLP with Handle (genus 4)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "LIDINOID",
+   "Lidinoid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "RPD",
+   "rPD deformation",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "CH",
+   "Schoen C(H) (genus 7)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "FRDR",
+   "Schoen F-RD(r) (quarter-twisted, genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "GW_CONJ",
+   "Schoen GW (graphite-wurtzite)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HR_TR_CONJ",
+   "Schoen H\"-R | T'-R' hybrid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "H2R",
+   "Schoen H''-R (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HT",
+   "Schoen H'-T (genus 4)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HT_HR_CONJ",
+   "Schoen H'-T | H\"-R hybrid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "HT_TR",
+   "Schoen H'-T | T'-R'",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "I6",
+   "Schoen I-6 (genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN_I8",
+   "Schoen I-8",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "I8_RING",
+   "Schoen I-8 (ring form)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN_I9",
+   "Schoen I-9",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "I9_RING",
+   "Schoen I-9 (ring form)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN_HYBRID_SS_P",
+   "Schoen P | S'-S''",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SCHOEN12",
+   "Schoen p.12 Surface",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "RII",
+   "Schoen R-II (genus 9)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "R3_RING",
+   "Schoen R-III (ring form, genus 13)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SS",
+   "Schoen S'-S'' (genus 4)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TR",
+   "Schoen T'-R' (genus 6)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TR_HT_CONJ",
+   "Schoen T'-R' | H'-T hybrid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "CLP",
+   "Schwarz CLP",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "H",
+   "Schwarz H",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "SIMOES_BATISTA",
+   "Simoes-Batista Surface (genus 7)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "STESSMANN",
+   "Stessmann's Surface (conjugate to I-WP)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TRIPLY_COSTA",
+   "Triply Periodic Costa (Batista, genus 5)",
+   "TPMS Non-Cubic"
   ]
  ],
  "seifert": [

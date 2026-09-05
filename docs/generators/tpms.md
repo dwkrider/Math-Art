@@ -236,6 +236,70 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/tpms__TRIPLANE1.png" width="200"><br><sub>Triplane 1</sub></td>
+<td align="center"><img src="../images/variants/tpms__TRIPLANE2.png" width="200"><br><sub>Triplane 2</sub></td>
+<td align="center"><img src="../images/variants/tpms__TRIPLANE3.png" width="200"><br><sub>Triplane 3</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__TRIPLANE4.png" width="200"><br><sub>Triplane 4</sub></td>
+<td align="center"><img src="../images/variants/tpms__TRIPLANE5.png" width="200"><br><sub>Triplane 5</sub></td>
+</tr>
+</table>
+
+### TPMS Non-Cubic
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/tpms__BOX_1011.png" width="200"><br><sub>Box Type (+-+|+) (genus 5)</sub></td>
+<td align="center"><img src="../images/variants/tpms__BOX_1010.png" width="200"><br><sub>Box Type (+-+|-) (genus 5)</sub></td>
+<td align="center"><img src="../images/variants/tpms__BOX_1001.png" width="200"><br><sub>Box Type (+-|+) (genus 5)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__CLP_HANDLE.png" width="200"><br><sub>CLP with Handle (genus 4)</sub></td>
+<td align="center"><img src="../images/variants/tpms__LIDINOID.png" width="200"><br><sub>Lidinoid</sub></td>
+<td align="center"><img src="../images/variants/tpms__RPD.png" width="200"><br><sub>rPD deformation</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__CH.png" width="200"><br><sub>Schoen C(H) (genus 7)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FRDR.png" width="200"><br><sub>Schoen F-RD(r) (quarter-twisted, genus 5)</sub></td>
+<td align="center"><img src="../images/variants/tpms__GW_CONJ.png" width="200"><br><sub>Schoen GW (graphite-wurtzite)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__HR_TR_CONJ.png" width="200"><br><sub>Schoen H"-R | T'-R' hybrid</sub></td>
+<td align="center"><img src="../images/variants/tpms__H2R.png" width="200"><br><sub>Schoen H''-R (genus 5)</sub></td>
+<td align="center"><img src="../images/variants/tpms__HT.png" width="200"><br><sub>Schoen H'-T (genus 4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__HT_HR_CONJ.png" width="200"><br><sub>Schoen H'-T | H"-R hybrid</sub></td>
+<td align="center"><img src="../images/variants/tpms__HT_TR.png" width="200"><br><sub>Schoen H'-T | T'-R'</sub></td>
+<td align="center"><img src="../images/variants/tpms__I6.png" width="200"><br><sub>Schoen I-6 (genus 5)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_I8.png" width="200"><br><sub>Schoen I-8</sub></td>
+<td align="center"><img src="../images/variants/tpms__I8_RING.png" width="200"><br><sub>Schoen I-8 (ring form)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_I9.png" width="200"><br><sub>Schoen I-9</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__I9_RING.png" width="200"><br><sub>Schoen I-9 (ring form)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN_HYBRID_SS_P.png" width="200"><br><sub>Schoen P | S'-S''</sub></td>
+<td align="center"><img src="../images/variants/tpms__SCHOEN12.png" width="200"><br><sub>Schoen p.12 Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__RII.png" width="200"><br><sub>Schoen R-II (genus 9)</sub></td>
+<td align="center"><img src="../images/variants/tpms__R3_RING.png" width="200"><br><sub>Schoen R-III (ring form, genus 13)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SS.png" width="200"><br><sub>Schoen S'-S'' (genus 4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__TR.png" width="200"><br><sub>Schoen T'-R' (genus 6)</sub></td>
+<td align="center"><img src="../images/variants/tpms__TR_HT_CONJ.png" width="200"><br><sub>Schoen T'-R' | H'-T hybrid</sub></td>
+<td align="center"><img src="../images/variants/tpms__CLP.png" width="200"><br><sub>Schwarz CLP</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__H.png" width="200"><br><sub>Schwarz H</sub></td>
+<td align="center"><img src="../images/variants/tpms__SIMOES_BATISTA.png" width="200"><br><sub>Simoes-Batista Surface (genus 7)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STESSMANN.png" width="200"><br><sub>Stessmann's Surface (conjugate to I-WP)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__TRIPLY_COSTA.png" width="200"><br><sub>Triply Periodic Costa (Batista, genus 5)</sub></td>
 </tr>
 </table>
 
