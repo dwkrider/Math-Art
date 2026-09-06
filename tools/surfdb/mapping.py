@@ -267,6 +267,9 @@ ALIAS = {
     # The toroidal Karcher-Scherk tower, one solved (tau1, a1) member
     # per wing order from the notebook's tables.
     "minsurf:SP_TOROIDAL_KS": "toroidal-karcher-scherk",
+    "minsurf:SP_HACKMAN": "hackman-surfaces",
+    "minsurf:DP_LUBECK_BATISTA": "lubeck-batista-surface",
+    "minsurf:SP_SCHERK4": "scherks-fourth-surface",
     # The catenoid field, from the ends backend + J_F theta quotient.
     "minsurf:DP_CATENOID_FIELD": "catenoid-field",
     "minsurf:DP_PLANE_CATENOIDS": "plane-with-catenoids",

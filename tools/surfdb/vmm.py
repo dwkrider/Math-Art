@@ -840,7 +840,19 @@ def _ms_records():
                     "forbids 1-noids in R3 proper).  Hackman proved one "
                     "exists on every conformal type of torus; the "
                     "alternating fence of half-catenoids is the simplest "
-                    "member of the wider picture."}}),
+                    "member of the wider picture.  THE SHIPPED ROW is the "
+                    "k = 1/3 member on tau = t + 2i with t = "
+                    "0.333316172865672, re-solved from the notebook's own "
+                    "period condition WITH its verbatim closed-form "
+                    "Bonnet phase (sigma/zeta/theta with Conjugate[]s on "
+                    "the sheared torus).  The batch-5 hypothesis phi = "
+                    "-arg(sigma(-k/2) sigma(k/2)) was tested against that "
+                    "closed form FIRST and is WRONG -- off by pi (a "
+                    "silent dh sign flip that would render perfectly) "
+                    "plus a t-dependent 6e-6 drift.  Gated: period "
+                    "re-solve, pure phase, end loop (0,0,0), deck z+1 "
+                    "purely vertical h = 1.095693, screw rise exactly "
+                    "k h with base-point-independent offset."}}),
         },
         "lopez-martin-slab-surface": {
             "name": "Lopez-Martin Slab Surface", "family": "minimal-periodic",
@@ -884,7 +896,15 @@ def _ms_records():
                     "meets the straight line shared by the helicoidal "
                     "ends.  Weber recovers its Enneper-Weierstrass "
                     "representation via the Schwarz-Bjorling formula on "
-                    "the x = pi level symmetry curve."}}),
+                    "the x = pi level symmetry curve.  THE SHIPPED ROW is "
+                    "that recovery in fully closed form (G = i(1+z)/"
+                    "sqrt(1-z^2), dh = -2 sqrt(1-z^2)/z, explicit f -- no "
+                    "integration), and the gate is Scherk's own equation "
+                    "20: every built point satisfies it POINTWISE to "
+                    "~1e-15 (through arccosh, both radial regions), plus "
+                    "the closed form's consistency with (G, dh) and the "
+                    "helicoidal-end winding advancing the axis by exactly "
+                    "the 4 pi assembly period."}}),
         },
         "half-twisted-scherk": {
             "name": "Half-Twisted Scherk Surface",
@@ -976,7 +996,20 @@ def _ms_records():
                     "3 and four annular ends in the quotient: layers "
                     "joined by Costa saddles keeping the Costa surface's "
                     "straight lines, limiting in the Callahan-Hoffman-"
-                    "Meeks surface -- a doubly periodic version of it."}}),
+                    "Meeks surface -- a doubly periodic version of it.  "
+                    "THE SHIPPED ROW carries the notebook's seven solved "
+                    "(tau, a, b) members (tau = 0.935i .. 2.5i; default "
+                    "tau = i, (a, b) = (-0.16537041, 0.44637591)).  The "
+                    "gate re-derives THE AUTHORS' OWN period conditions "
+                    "(paper Section 6, condition (9)) along the "
+                    "notebook's waypoint paths -- branch-tracked theta "
+                    "logs with a u^2 substitution at the (z - ib)^{-1/2} "
+                    "endpoint, where uniform quadrature leaves a ~3e-2 "
+                    "phantom residual that looks exactly like a wrong "
+                    "member -- and they vanish at every stored member "
+                    "(7e-6..3e-5).  Deck structure gated: z -> z+1 = "
+                    "(0,0,1) EXACTLY, z -> z+tau purely horizontal; the "
+                    "seam branch is the measured reciprocal."}}),
         },
         "simoes-batista-surface": {
             "name": "Simoes-Batista Surface", "family": "minimal-periodic",

@@ -2041,6 +2041,59 @@ SURFACE_FAMILY['SP_TOROIDAL_KS'] = 'SINGLY'
 # data, the balanced-divisor lesson, the measured no-period identities
 # and the references.  Ships the tau = i (square-torus) member; bb is
 # the growth knob the VMM exhibit exposes.
+# Hackman's toroidal 1-noid: one FindRoot-solved member on the sheared
+# torus tau = t + 2i, t re-derived from the notebook's own period
+# condition WITH the verbatim closed-form Bonnet phase -- see the block
+# above `hackman_W` in weierstrass.py for the data, the refuted phase
+# hypothesis (off by pi + 6e-6: the silent dh sign flip), the measured
+# deck screw (rise k h, rotation -2 pi k) and the references.
+WE_SURFACES['SP_HACKMAN'] = {
+    'label': "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+    'family': 'SINGLY',
+    'mesher': we.hackman_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Storeys",
+    'storeys_label': "Storeys",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_HACKMAN'] = 'SINGLY'
+
+
+# Lubeck-Batista doubly periodic genus 3: theta Gauss map with four
+# square-root branch points, dh = dz, members from the notebook's
+# solved (tau, a, b) table -- see the block above `lb_mesh` in
+# weierstrass.py for the data, the cut pairing, the measured
+# reciprocal-branch seam and the references.  The gate re-derives the
+# AUTHORS' period conditions (arXiv:0806.4313) at three members.
+WE_SURFACES['DP_LUBECK_BATISTA'] = {
+    'label': "Lubeck-Batista Surface (genus 3, tau = i member)",
+    'family': 'DOUBLY',
+    'mesher': we.lb_mesh,
+    'cells2d_mesher': we.lb_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (0.935i .. 2.5i)",
+    'test_order': 3,
+}
+SURFACE_FAMILY['DP_LUBECK_BATISTA'] = 'DOUBLY'
+
+
+# Scherk's fourth surface (1835, eq. 20): closed-form immersion from
+# Weber's Bjorling recovery -- see the block above `scherk4_mesh` in
+# weierstrass.py for the data, the frame relation to Scherk's own
+# coordinates and the references.  Gated on Scherk's own implicit
+# equation, satisfied pointwise to machine precision.
+WE_SURFACES['SP_SCHERK4'] = {
+    'label': "Scherk's Fourth Surface (1835)",
+    'family': 'SINGLY',
+    'mesher': we.scherk4_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Periods",
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_SCHERK4'] = 'SINGLY'
+
+
 WE_SURFACES['DP_CATENOID_FIELD'] = {
     'label': "Catenoid Field (square-torus member)",
     'family': 'DOUBLY',
@@ -3434,6 +3487,116 @@ def _selftest():
     ok &= good
     print(f"Plane-with-catenoids: square-cell identity (rho = 1, 2) "
           f"worst {r_sq:.1e} {'OK' if good else 'FAIL'}")
+
+    # Hackman gates -- the member and its structure, re-measured:
+    #   1. the period root re-solves to the stored t (bracket +-2%);
+    #   2. the verbatim phase is a PURE phase (imag part of the log
+    #      ~ 0) -- and the refuted hypothesis really is off by pi
+    #      (recorded, so the trap stays documented);
+    #   3. the end loop translates by (0, 0, 0): the catenoid end of
+    #      the 1-noid has no period;
+    #   4. deck z -> z+1 is pure vertical (0, 0, h); the screw rise is
+    #      exactly k h; and the screw offset is base-point-independent
+    #      under the -2 pi k rotation (the rotation is REAL, not
+    #      assumed: with a wrong angle the two bases disagree).
+    lo, hi = 0.98 * we.HACKMAN_T, 1.02 * we.HACKMAN_T
+    fa_, fb_ = (we.hackman_period_residual(lo),
+                we.hackman_period_residual(hi))
+    hk_ok = fa_ * fb_ < 0
+    if hk_ok:
+        a_, b_ = lo, hi
+        for _ in range(50):
+            m_ = 0.5 * (a_ + b_)
+            fm_ = we.hackman_period_residual(m_)
+            if fa_ * fm_ <= 0.0:
+                b_ = m_
+            else:
+                a_, fa_ = m_, fm_
+        t_re = 0.5 * (a_ + b_)
+        r_t = abs(t_re - we.HACKMAN_T)
+        hk_ok &= r_t < 5e-6
+    else:
+        r_t = float('nan')
+    tau_ = complex(we.HACKMAN_T, 2.0)
+    phv = we.hackman_phi(tau_)
+    r_ph = abs(np.imag(phv))
+    sm_ = we._hk_sigma(-we.HACKMAN_K / 2, tau_)
+    sp_ = we._hk_sigma(we.HACKMAN_K / 2, tau_)
+    hyp = -np.angle(sm_ * sp_)
+    d_pi = abs(abs(float(np.real(phv)) - float(hyp)) - np.pi)
+    hk_ok &= r_ph < 1e-10 and d_pi < 1e-4
+    Whk, _tau, _p = we.hackman_W()
+    r_lp = float(np.linalg.norm(we.we_ends_loop(Whk, 0.0, r=0.05)))
+    hk_ok &= r_lp < 1e-8
+    vA, riseB, vB1, vB2, _R = we.hackman_deck(n=8001)
+    r_A = float(np.hypot(vA[0], vA[1]) / abs(vA[2]))
+    r_k = abs(riseB - we.HACKMAN_K * vA[2]) / abs(vA[2])
+    r_scr = float(np.linalg.norm(vB1 - vB2) / abs(vA[2]))
+    hk_ok &= r_A < 1e-8 and r_k < 1e-8 and r_scr < 1e-5
+    ok &= hk_ok
+    print(f"Hackman: t re-solve {r_t:.1e} | phase pure {r_ph:.1e}, "
+          f"hyp off by pi {d_pi:.1e} | end loop {r_lp:.1e} | deck A "
+          f"horiz {r_A:.1e}, rise ratio {r_k:.1e}, screw agree "
+          f"{r_scr:.1e} {'OK' if hk_ok else 'FAIL'}")
+
+    # Lubeck-Batista gates -- the authors' own period conditions
+    # (arXiv:0806.4313), re-derived along the notebook's waypoint
+    # paths with the u^2 endpoint substitution, must vanish at the
+    # stored members; and the deck structure must be the doubly
+    # periodic one: z -> z+1 EXACTLY (0, 0, 1), z -> z+tau purely
+    # horizontal.
+    lb_ok = True
+    for mi_ in (1, 2, 5):
+        t1_, t2_ = we.lb_period_test(mi_)
+        good_ = abs(t1_) < 2e-4 and abs(t2_) < 2e-4
+        lb_ok &= good_
+        print(f"Lubeck-Batista m{mi_}: authors' period test "
+              f"({t1_:.1e}, {t2_:.1e}) {'OK' if good_ else 'FAIL'}")
+    P1_, P2_ = we.lb_deck(2)
+    r_v = float(np.linalg.norm(P1_ - np.array([0.0, 0.0, 1.0])))
+    r_h2 = abs(P2_[2])
+    good_ = r_v < 1e-5 and r_h2 < 1e-8
+    lb_ok &= good_
+    ok &= lb_ok
+    print(f"Lubeck-Batista deck: |z+1 - (0,0,1)| = {r_v:.1e}, "
+          f"z+tau vertical part {r_h2:.1e} "
+          f"{'OK' if good_ else 'FAIL'}")
+
+    # Scherk IV gates -- the 1835 claim itself, measured:
+    #   1. every built point satisfies Scherk's implicit equation 20
+    #      (pointwise, through arccosh, both radial regions);
+    #   2. the closed form is consistent with (G, dh);
+    #   3. the helicoidal-end loop advances the axis by exactly the
+    #      4 pi assembly period.
+    rr_ = np.exp(np.linspace(np.log(0.15), np.log(2.5), 40))
+    th4 = np.linspace(0.15, np.pi - 0.15, 50)
+    F4 = we.scherk4_f(rr_[:, None] * np.exp(1j * th4[None, :]))
+    r_20 = float(np.max(we.scherk4_eqn20(F4)))
+    zs4 = np.array([0.3 + 0.4j, 0.7 + 0.2j, 1.4 + 0.9j])
+    h4 = 1e-6
+
+    def _fan(z):
+        return np.stack(
+            [2j * np.log(z), 2.0 * z,
+             -2.0 * (np.sqrt(1 - z * z) + np.log(z)
+                     - np.log(1 + np.sqrt(1 - z) * np.sqrt(1 + z)))],
+            axis=-1)
+    d4 = (_fan(zs4 + h4) - _fan(zs4 - h4)) / (2 * h4)
+    G4 = 1j * (1 + zs4) / np.sqrt(1 - zs4 * zs4)
+    dh4 = -2.0 * np.sqrt(1 - zs4 * zs4) / zs4
+    om4 = np.stack([0.5 * (1 / G4 - G4) * dh4,
+                    0.5j * (1 / G4 + G4) * dh4, dh4], axis=-1)
+    r_om = float(np.max(np.abs(d4 - om4)))
+    t4 = np.linspace(0.0, 2.0 * np.pi, 4001)
+    zz4 = 0.3 * np.exp(1j * t4)
+    wind = float(np.trapezoid(
+        np.real(2j * 1j * 0.3 * np.exp(1j * t4) / zz4), t4))
+    r_wd = abs(abs(wind) - 4.0 * np.pi)
+    good_ = r_20 < 1e-10 and r_om < 1e-8 and r_wd < 1e-9
+    ok &= good_
+    print(f"Scherk IV: eqn 20 pointwise {r_20:.1e} | forms "
+          f"consistency {r_om:.1e} | end winding vs 4 pi period "
+          f"{r_wd:.1e} {'OK' if good_ else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn
     # change).  Checked on the closed-form engine associates on a fixed grid

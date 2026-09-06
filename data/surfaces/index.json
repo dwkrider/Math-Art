@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 437,
+  "implemented_count": 440,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -5774,15 +5774,15 @@
     },
     {
       "slug": "hackman-surfaces",
-      "name": "Hackman Surface (toroidal 1-noid)",
+      "name": "Hackman Toroidal 1-Noid (t = 0.3333 member)",
       "path": "surfaces/minimal-periodic/hackman-surfaces.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "singly-periodic",
         "tradition-classical"
       ],
@@ -5801,8 +5801,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8183,16 +8185,16 @@
     },
     {
       "slug": "lubeck-batista-surface",
-      "name": "Lubeck-Batista Surface",
+      "name": "Lubeck-Batista Surface (genus 3, tau = i member)",
       "path": "surfaces/minimal-periodic/lubeck-batista-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "doubly-periodic",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -8210,8 +8212,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -10739,19 +10743,19 @@
     },
     {
       "slug": "scherks-fourth-surface",
-      "name": "Scherk's Fourth Surface",
+      "name": "Scherk's Fourth Surface (1835)",
       "path": "surfaces/minimal-periodic/scherks-fourth-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-implicit",
+        "def-weierstrass",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "singly-periodic",
         "singular",
         "tradition-classical"
       ],
-      "definition_mode": "implicit",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
@@ -10766,8 +10770,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
