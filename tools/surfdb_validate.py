@@ -616,6 +616,19 @@ NOT_A_GAP = {
                       "anywhere on disk, so there is still nothing to "
                       "build FROM.  Distinct from Schoen C(H), which "
                       "6.1.5 derives differently and which ships."),
+    # PROVED TO EXIST, BUT NO EXPLICIT EQUATION.  The source is
+    # definitive and says so -- the surface is not missing, its
+    # polynomial is, because the proof never writes one down.
+    "kuehnel-octic-128-nodes":
+        ("no-equation", "Kuehnel's octic is proved to exist as the branch "
+                        "locus of an anticanonical double cover of P(E), "
+                        "with E from the Serre construction on a degree-8 "
+                        "elliptic curve; the key steps are verified in "
+                        "MACAULAY on the abstract ideal and the degree-8 "
+                        "polynomial is never written down.  Nothing to "
+                        "transcribe: the paper settles existence without "
+                        "producing an equation.  Reopen if anyone "
+                        "computes one."),
     # DUPLICATES AND FAMILY RECORDS.
     "weber-tr":
         ("bookkeeping", "The same surface as `weber-trr`, which ships: "
@@ -685,7 +698,7 @@ def coverage(records):
                  ", ".join("%d %s" % (
                      sum(1 for x in excluded if NOT_A_GAP[x][0] == k), k)
                      for k in ("terminal", "bookkeeping",
-                               "contingent", "no-source")
+                               "contingent", "no-source", "no-equation")
                      if any(NOT_A_GAP[x][0] == k for x in excluded))))
     print()
     byfam = {}
