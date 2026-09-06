@@ -2999,6 +2999,232 @@ def genus1helicoid_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 
 
 # ==========================================================================
+# Toroidal Karcher-Scherk towers (genus 1 per period)
+# ==========================================================================
+# Karcher-Scherk saddle towers with a VERTICAL HANDLE: singly periodic,
+# genus 1 in the quotient, first mentioned in Karcher's Tokyo notes and
+# presented on Weber's repository page (mirror ch157) whose notebook
+# `Singly Scherk (g=1).nb` carries the data transcribed here:
+#
+#     on the torus C/<1, i tau1>, with s+- = (1 + tau)/2 +- (k-1)/(2k),
+#     G  = theta11(z - s+) / theta11(z - s-),
+#     dh = theta11(z - s-) theta11(z - s+)
+#          / ( theta11(z - i a1) theta11(z - (1 + tau) + i a1) ),
+#
+# and per k a FindRoot-solved table of (tau1, a1) members killing the
+# horizontal period, Re int_0^1 dh(tau/2 + t) dt = 0.  The tables for
+# k = 3, 4, 5, 7, 8 are in the notebook; one member per k ships below
+# and the record note carries which.
+#
+# What the deck maps do -- MEASURED, not assumed (the self-test keeps
+# measuring them):
+#   * z -> z + 1 closes exactly (translation 0 to quadrature): the
+#     x-cycle is the HANDLE loop;
+#   * z -> z + tau is a pure rotation by -2 pi / k about a vertical
+#     axis (affine fit spread 6e-10), rise ZERO: the tower's k-fold
+#     symmetry;
+#   * the loop AROUND a dh pole (the helicoidal end at z = i a1)
+#     translates by exactly (0, 0, T) with T = 2 pi |res dh| -- THIS is
+#     the tower's vertical period.  For the k = 4, tau1 = 0.4 member
+#     T = 1.077748, matching the independently recorded T_z ~ 1.077
+#     from the earlier constant-extraction pass.  The horizontal
+#     components of that loop vanish (measured < 1e-6 of T), which is
+#     the geometric form of the solved period condition.
+#
+# MESHING.  One torus rectangle (window x in [-1/2, 1/2], y in
+# [0, tau1]) is one WINDING of the tower; the two dh poles sit at
+# (0, a1) and (0, tau1 - a1) inside it and are excised by a mask disk
+# (the wing trim -- the notebook extends into the ends with an
+# incomplete-elliptic-F chart instead; that refinement is future work
+# and is what the `lx` values in the notebook size).  Integration runs
+# down the x = 1/4 column and out along rows, so no path meets a pole.
+# Successive windings are translated copies at (0, 0, s T) and the
+# x = +1/2 edge of winding s IS the x = -1/2 edge of winding s+1 (same
+# y grid, so the seam welds BY INDEX, positions averaged) -- the raw
+# gap is 7e-4 at n = 240, pure quadrature, and averaging closes it.
+#
+# References:
+# - H. Karcher, "Construction of minimal surfaces", Univ. of Tokyo
+#   Surveys in Geometry (1989); Lecture Notes 12, SFB 256 Bonn --
+#   the saddle towers and the Tokyo-notes lineage the page credits.
+# - M. Weber, "Toroidal Karcher-Scherk Surfaces", minimalsurfaces.blog
+#   (mirror ch157; notebook `Singly Scherk (g=1).nb`).
+# - R. Yol, "Symmetrization of Minimal Surfaces in Three Dimensional
+#   Euclidean Space", PhD thesis, Indiana University (2024), section
+#   5.1.4 -- the generalized toroidal Karcher-Scherk family.
+
+# k -> (tau1, a1, lx): one FindRoot-solved member per wing order,
+# straight from the notebook's tables (lx is the notebook's own end
+# extent for that k, recorded for provenance).
+TOROIDAL_KS_MEMBERS = {
+    3: (1.0, 0.38900635790684035, 8),
+    4: (0.4, 0.13619041259273051, 12),
+    5: (0.5, 0.21484200805849266, 16),
+    7: (0.2, 0.12152998199565702, 20),
+    8: (0.15, 0.056545236758766944, 20),
+}
+
+
+def _tks_forms(k, tau1, a1):
+    """(G, dh, W) callables for one member, on the shipped theta."""
+    th = genus1helicoid_theta11
+    tau = 1j * float(tau1)
+    spl = (1.0 + tau) / 2.0 + (k - 1) / (2.0 * k)
+    smi = (1.0 + tau) / 2.0 - (k - 1) / (2.0 * k)
+
+    def G(z):
+        z = np.asarray(z, dtype=complex)
+        return th(z - spl, tau) / th(z - smi, tau)
+
+    def dh(z):
+        z = np.asarray(z, dtype=complex)
+        return (th(z - smi, tau) * th(z - spl, tau)
+                / (th(z - 1j * a1, tau)
+                   * th(z - (1.0 + tau) + 1j * a1, tau)))
+
+    def W(z):
+        g = G(z)
+        d = dh(z)
+        return np.stack([0.5 * (1.0 / g - g) * d,
+                         0.5j * (1.0 / g + g) * d, d], axis=-1)
+    return G, dh, W
+
+
+def _tks_graded(lo, hi, n, specials):
+    """n samples clustered toward each special coordinate (iterated
+    density reweighting, the same scheme _g1h_graded uses)."""
+    t = np.linspace(0.0, 1.0, n)
+    x = lo + (hi - lo) * t
+    spc = np.asarray(specials, dtype=float)
+    for _ in range(4):
+        d = np.min(np.abs(x[:, None] - spc[None, :]), axis=1)
+        wgt = 1.0 / (0.02 + d) ** 1.2
+        cdf = np.concatenate([[0.0],
+                              np.cumsum(0.5 * (wgt[1:] + wgt[:-1])
+                                        * np.diff(x))])
+        cdf /= cdf[-1]
+        x = np.interp(t, cdf, x)
+    return x
+
+
+def _tks_patch(k, tau1, a1, n, r0):
+    """One winding: (xs, ys, X, mask).  Column x = 1/4 integrated in y,
+    rows outward from it; the mask excises the two end disks."""
+    _G, _dh, W = _tks_forms(k, tau1, a1)
+    xs = _tks_graded(-0.5, 0.5, int(n), [0.0])
+    ys = _tks_graded(0.0, float(tau1), max(24, int(n * 0.8)),
+                     [a1, tau1 - a1])
+    Z = xs[:, None] + 1j * ys[None, :]
+    dmin = np.minimum(np.abs(Z - 1j * a1), np.abs(Z - 1j * (tau1 - a1)))
+    mask = dmin > float(r0)
+    i0 = int(np.argmin(np.abs(xs - 0.25)))
+    Wg = W(Z)
+    F = np.zeros(Z.shape + (3,), dtype=complex)
+    dy = np.diff(ys)
+    dx = np.diff(xs)
+    col = Wg[i0]
+    F[i0, 1:] = np.cumsum(0.5 * (col[1:] + col[:-1])
+                          * (1j * dy)[:, None], axis=0)
+    F[i0 + 1:] = F[i0][None] + np.cumsum(
+        0.5 * (Wg[i0 + 1:] + Wg[i0:-1]) * dx[i0:, None, None], axis=0)
+    F[:i0] = (F[i0][None] + np.cumsum(
+        0.5 * (Wg[i0 - 1::-1] + Wg[i0:0:-1])
+        * (-dx[i0 - 1::-1, None, None]), axis=0))[::-1]
+    return xs, ys, np.real(F), mask
+
+
+def tks_vertical_period(k, tau1, a1, r=0.015, n=8001):
+    """The translation of the loop around the z = i a1 end, by direct
+    contour integration of all three forms: (0, 0, T) for a solved
+    member.  The horizontal components vanishing is the geometric form
+    of the period condition, and the self-test measures exactly that."""
+    _G, _dh, W = _tks_forms(k, tau1, a1)
+    t = np.linspace(0.0, 2.0 * np.pi, n)
+    zz = 1j * a1 + r * np.exp(1j * t)
+    dzdt = 1j * r * np.exp(1j * t)
+    loop = np.trapezoid(W(zz) * dzdt[:, None], t, axis=0)
+    return np.real(loop)
+
+
+def tks_period_residual(k, tau1, a1, n=20001):
+    """Re of the horizontal dh period -- the notebook's own Adh
+    condition, zero exactly at the tabulated (tau1, a1) members."""
+    _G, dh, _W = _tks_forms(k, tau1, a1)
+    t = np.linspace(0.0, 1.0, n)
+    v = dh(1j * tau1 / 2.0 + t)
+    return float(np.real(np.trapezoid(v, t)))
+
+
+def toroidal_ks_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                     storeys=1):
+    """MESH_PARAM builder: `storeys` windings of the tower, welded by
+    index along the winding seam.  order picks the wing parameter k
+    (snapped to the notebook's solved tables); radius sets the wing
+    trim (larger radius = smaller mask = longer wings).  theta is
+    unused: no associate family is claimed for the tower."""
+    ks = sorted(TOROIDAL_KS_MEMBERS)
+    k = min(ks, key=lambda kk: abs(kk - int(round(order))))
+    tau1, a1, _lx = TOROIDAL_KS_MEMBERS[k]
+    r0 = 1.2e-3 * (1.2 / float(np.clip(radius, 0.3, 6.0))) ** 2
+    n = int(np.clip(nu * 2.2, 100, 300))
+    xs, ys, X, mask = _tks_patch(k, tau1, a1, n, r0)
+    T = tks_vertical_period(k, tau1, a1)
+    S = max(1, int(storeys))
+    nx, ny = X.shape[0], X.shape[1]
+    NV = nx * ny
+    Vs, Ms = [], []
+    for s_ in range(S):
+        Vs.append((X + s_ * np.array([0.0, 0.0, T[2]])).reshape(-1, 3))
+        Ms.append(mask.reshape(-1))
+    V = np.concatenate(Vs, axis=0)
+    mall = np.concatenate(Ms, axis=0)
+
+    parent = np.arange(S * NV)
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for s_ in range(S - 1):
+        for j in range(ny):
+            a = find(s_ * NV + (nx - 1) * ny + j)
+            b = find((s_ + 1) * NV + j)
+            if a != b:
+                parent[a] = b
+    roots = np.array([find(i) for i in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    sums = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(sums, inv, V)
+    np.add.at(cnt, inv, 1.0)
+    Vm = sums / cnt[:, None]
+    ok_node = np.ones(len(uniq), dtype=bool)
+    np.logical_and.at(ok_node, inv, mall)
+    quads = []
+    for s_ in range(S):
+        for i in range(nx - 1):
+            b0 = s_ * NV + i * ny
+            b1 = s_ * NV + (i + 1) * ny
+            for j in range(ny - 1):
+                f = (inv[b0 + j], inv[b1 + j],
+                     inv[b1 + j + 1], inv[b0 + j + 1])
+                if (ok_node[f[0]] and ok_node[f[1]]
+                        and ok_node[f[2]] and ok_node[f[3]]):
+                    quads.append(f)
+    used = np.zeros(len(Vm), dtype=bool)
+    for f in quads:
+        for a in f:
+            used[a] = True
+    remap = -np.ones(len(Vm), dtype=np.int64)
+    remap[used] = np.arange(int(used.sum()))
+    V = Vm[used]
+    quads = [tuple(int(remap[a]) for a in f) for f in quads]
+    V = _center_fit(V, scale, V)
+    return V, quads, None
+
+
+# ==========================================================================
 # Symmetrized Chen-Gackstatter towers (k-fold symmetry, D_kd assembly)
 # ==========================================================================
 # The k-fold-symmetric continuations of the Chen-Gackstatter surface: for

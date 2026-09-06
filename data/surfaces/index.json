@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 417,
+  "implemented_count": 418,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -14652,15 +14652,15 @@
     },
     {
       "slug": "toroidal-karcher-scherk",
-      "name": "Toroidal Karcher-Scherk Surface",
+      "name": "Toroidal Karcher-Scherk Tower (genus 1)",
       "path": "surfaces/minimal-periodic/toroidal-karcher-scherk.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "singly-periodic",
         "tradition-classical"
       ],
@@ -14679,8 +14679,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

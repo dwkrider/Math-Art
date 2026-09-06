@@ -898,7 +898,18 @@ def _ms_records():
                     "5-ended members with triangular-prism symmetry in a "
                     "1-parameter family of end angles.  Distinct from the "
                     "genus-1 Costa-Scherk tower record, which needs a "
-                    "half-period phase shift."}}),
+                    "half-period phase shift.  THE SHIPPED ROW BUILDS ONE "
+                    "FindRoot-SOLVED (tau1, a1) MEMBER PER WING ORDER k, "
+                    "straight from the notebook's tables: k=3 (1.0, "
+                    "0.38900635790684035), k=4 (0.4, 0.13619041259273051; "
+                    "vertical period T = 1.077748, matching the recorded "
+                    "T_z oracle), k=5 (0.5, 0.21484200805849266), k=7 "
+                    "(0.2, 0.12152998199565702), k=8 (0.15, "
+                    "0.056545236758766944) -- each a member of the "
+                    "1-parameter end-angle family, not a canonical "
+                    "surface; the wing ends are trimmed by a mask disk "
+                    "rather than the notebook's incomplete-elliptic-F "
+                    "chart."}}),
         },
         "plane-with-catenoids": {
             "name": "Plane with Catenoids (doubly periodic)",

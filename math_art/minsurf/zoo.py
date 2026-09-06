@@ -2011,6 +2011,29 @@ SURFACE_FAMILY['CONNOR_DP'] = 'DOUBLY'
 #     Translation-Invariant Torus with 1 Enneper and 3 Annular Ends,
 #     notebook by Ramazan Yol, 2024).
 
+# Toroidal Karcher-Scherk tower: a saddle tower with a VERTICAL HANDLE
+# (genus 1 per period), from the theta data of Weber's `Singly Scherk
+# (g=1).nb` -- see the block above `TOROIDAL_KS_MEMBERS` in
+# weierstrass.py for the data, the measured deck maps, the T_z oracle
+# and the references.  Each wing order k ships ONE FindRoot-solved
+# (tau1, a1) member from the notebook's table (k = 3, 4, 5, 7, 8); the
+# member is named in the description and in the surface record, per
+# the family-member rule the Wei genus-4 row set.
+WE_SURFACES['SP_TOROIDAL_KS'] = {
+    'label': "Toroidal Karcher-Scherk Tower (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.toroidal_ks_mesh,
+    'p_from': lambda order, radius: {
+        'k': min(sorted(we.TOROIDAL_KS_MEMBERS),
+                 key=lambda kk: abs(kk - int(round(order))))},
+    'count': "Wing Order k (3/4/5/7/8)",
+    'storeys_label': "Windings",
+    'test_order': 4,
+}
+# appended after the SURFACE_FAMILY builder loop runs, so the family is
+# declared explicitly -- same as every other appended catalog block
+SURFACE_FAMILY['SP_TOROIDAL_KS'] = 'SINGLY'
+
 WE_SURFACES['SP_SIX_SCHERK'] = {
     'label': "Six-Ended Scherk Tower",
     'family': 'SINGLY',
@@ -3256,6 +3279,68 @@ def _selftest():
     print(f"Breiner-Kleene: frame n.c'={r_dot:.1e} |n|-1={r_len:.1e} | "
           f"homothety spread={r_hom:.1e} centre={r_cen:.1e} | "
           f"|H|e^u {h0:.2e}->{h1:.2e} {'OK' if good else 'FAIL'}")
+
+    # Toroidal Karcher-Scherk gates -- identities stated before the
+    # transcription, measured on every run:
+    #   1. MEMBER: a1 re-solved from the notebook's own period
+    #      condition Re Adh(tau1, .) = 0 by bisection must land on the
+    #      stored table value, for every shipped k;
+    #   2. PERIOD PURITY: the loop around the z = i a1 end must
+    #      translate by (0, 0, T) with the horizontal part < 1e-6 T --
+    #      the geometric form of the period problem being solved; and
+    #      for the k = 4 member T must equal the independently recorded
+    #      oracle 1.077748;
+    #   3. the x-cycle (the handle loop) must close: |f(z+1) - f(z)|
+    #      integrated along a straight probe row < 1e-5.
+    tks_ok = True
+    for kk, (tt1, aa1, _lx) in sorted(we.TOROIDAL_KS_MEMBERS.items()):
+        # the residual has other structure further out (it returns to
+        # positive values on both sides), so the re-solve brackets the
+        # LOCAL crossing: measured, every table member's zero sits
+        # within +-2% of the stored a1 with the residual monotone there
+        lo, hi = 0.98 * aa1, 1.02 * aa1
+        fa = we.tks_period_residual(kk, tt1, lo)
+        fb = we.tks_period_residual(kk, tt1, hi)
+        a_, b_ = lo, hi
+        if fa * fb > 0:
+            tks_ok = False
+            print(f"TKS k={kk}: NO BRACKET for a1 re-solve FAIL")
+            continue
+        for _ in range(60):
+            m_ = 0.5 * (a_ + b_)
+            fm = we.tks_period_residual(kk, tt1, m_, n=8001)
+            if fa * fm <= 0.0:
+                b_ = m_
+            else:
+                a_, fa = m_, fm
+        a_re = 0.5 * (a_ + b_)
+        r_mem = abs(a_re - aa1)
+        loop = we.tks_vertical_period(kk, tt1, aa1)
+        r_horiz = float(np.hypot(loop[0], loop[1]) / abs(loop[2]))
+        good = r_mem < 5e-6 and r_horiz < 1e-6
+        if kk == 4:
+            good &= abs(abs(loop[2]) - 1.077748) < 1e-4
+        tks_ok &= good
+        print(f"TKS k={kk}: a1 re-solve err={r_mem:.1e} "
+              f"loop=(h {r_horiz:.1e}, T {abs(loop[2]):.6f}) "
+              f"{'OK' if good else 'FAIL'}")
+    # handle-loop closure on the k = 4 member.  The homotopy class
+    # matters: only the row BETWEEN the two end punctures is the handle
+    # core (a row below both differs from it by one winding and comes
+    # back translated by (0, 0, T) -- measured, that is exactly how the
+    # windings glue).  The row is held slightly off mid-height because
+    # the G zero/pole pair sits exactly ON y = tau1/2 (regular points
+    # of the integrand, but 0 * inf at an exact grid hit).
+    _G4, _dh4, _W4 = we._tks_forms(4, *we.TOROIDAL_KS_MEMBERS[4][:2])
+    t_ = np.linspace(0.0, 1.0, 20001)
+    zrow = 1j * 0.513 * we.TOROIDAL_KS_MEMBERS[4][0] + t_
+    v_ = _W4(zrow)
+    per1 = np.real(np.trapezoid(v_, t_, axis=0))
+    r_x = float(np.linalg.norm(per1))
+    good = tks_ok and r_x < 1e-5
+    ok &= good
+    print(f"TKS handle loop |f(z+1)-f(z)| = {r_x:.1e} "
+          f"{'OK' if good else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn
     # change).  Checked on the closed-form engine associates on a fixed grid
