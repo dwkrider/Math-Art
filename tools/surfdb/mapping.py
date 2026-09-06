@@ -261,6 +261,9 @@ ALIAS = {
     "minsurf:CHEN_GACK": "chen-gackstatter",
     "minsurf:MEEKS_MOBIUS": "meeks-mobius-strip",
     "minsurf:BJ_CIRCLE": "bjorling-twisted-band",
+    # The Breiner-Kleene bent helicoid, shipped as a Bjorling row from
+    # the notebook's own closed-form seed curve and rotating frame.
+    "minsurf:BJ_BREINER_KLEENE": "breiner-kleene-surface",
     # The half-twisted Scherk shipped in the Weierstrass zoo while the
     # curated record stayed OPEN, because the row minted its own
     # `half-twisted-scherk-surface` twin.  One surface, one record: the
@@ -362,6 +365,8 @@ ALIAS = {
     "tpms_exact:STARFISH_4_1_GENUS_55": "starfish-4-1-genus-55",
     "tpms_exact:STARFISH_4_3_GENUS_87": "starfish-4-3-genus-87",
     "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
+    "tpms_exact:TRIPLY_HORGAN": "triply-periodic-horgan",
+    "tpms_exact:WEI_G4": "wei-triply-periodic-genus-4",
     "tpms_exact:SIMOES_BATISTA": "simoes-batista-surface",
     "tpms_exact:R3_RING": "schoen-riii",
     "tpms_exact:I8_RING": "schoen-i8",

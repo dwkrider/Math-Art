@@ -1024,6 +1024,21 @@ TPMS_EXACT = {
     'RPD': (_we_hex._SPECS['RPD']['label'],
             lambda cells, res, scale, theta:
                 _we_hex.spec_build('RPD', cells, res, scale, theta)),
+    # Weber's triply periodic Horgan surface (ch263): the a = 1/4
+    # member, tau re-derived from the notebook's own period test; ships
+    # a growing fundamental piece (its boundary mirrors classify, the
+    # full cell word does not close yet).
+    'TRIPLY_HORGAN': (_we_hex._SPECS['TRIPLY_HORGAN']['label'],
+                      lambda cells, res, scale, theta:
+                          _we_hex.spec_build('TRIPLY_HORGAN', cells, res,
+                                             scale, theta)),
+    # Wei's genus-4 family, the (a, b) = (0.1, 0.3) member -- the label
+    # says which member because the family is two-parameter and no
+    # canonical member is pinned by the notebook (the F-RD lesson).
+    'WEI_G4': (_we_hex._SPECS['WEI_G4']['label'],
+               lambda cells, res, scale, theta:
+                   _we_hex.spec_build('WEI_G4', cells, res, scale,
+                                      theta)),
     # Schoen H'-T.  Unlike the three rows above it assembles into a full
     # watertight cell rather than shipping the fundamental piece: its
     # boundary curves all classify as mirrors, the reflection group

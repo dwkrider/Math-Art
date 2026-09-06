@@ -996,7 +996,14 @@ def _ms_records():
                     "paper; his doubly periodic genus-2 surfaces (which "
                     "have their own record) arise as limits, as do "
                     "vertical planes over a rhombic tiling desingularized "
-                    "by singly periodic Scherk surfaces."}}),
+                    "by singly periodic Scherk surfaces.  THE SHIPPED ROW "
+                    "IS THE (a, b) = (0.1, 0.3) MEMBER -- the one the "
+                    "notebook renders -- with the modulus re-derived from "
+                    "its period integral (tau = 0.849141499409681i); the "
+                    "notebook pins no canonical member of the family, and "
+                    "the built cell measures 0.771 : 0.815 : 1, so it is "
+                    "NOT the square-based special member the page "
+                    "pictures suggest."}}),
         },
         "stessmann-surface": {
             "name": "Stessmann Surface", "family": "minimal-periodic",

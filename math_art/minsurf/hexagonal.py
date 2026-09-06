@@ -1696,6 +1696,117 @@ _SPECS['SIMOES_BATISTA']['test_res'] = (60, 90)
 
 
 # --------------------------------------------------------------------
+# Triply periodic Horgan surface (Catenoid-Scherk limits), genus 5
+# --------------------------------------------------------------------
+# Weber's ch263: a 1-parameter family with vertical symmetry planes
+# over a square grid and diagonal horizontal lines, limiting in noded
+# planes and in doubly periodic Karcher-Scherk surfaces.  Its neck
+# configuration is exactly that of the FINITE Horgan surface, which is
+# proved NOT to exist -- but this triply periodic relative does, with a
+# 1-dimensional period problem Weber solves by an extremal-length
+# picture proof.  The database keeps `horgan-surface` (non-existent)
+# and `triply-periodic-horgan` (this row) deliberately distinct.
+#
+# Data transcribed from `Triply_Horgan.nb`: eight theta factors at
+# half powers, dh = dz, G normalised to i at cp = 1/4 + tau/4, and the
+# a = 1/4 member with tau solved from the notebook's own test
+#     Re Int_0^a om1 dz = 0
+# re-derived here (bisection over t in (0.2, 1)) to
+#     tau = 0.840021463682679 i.
+#
+# THE IDENTITY THAT VERIFIES THE ROW, measured before it was added and
+# gated in the self-test: the period problem is 2-dimensional on its
+# face (the notebook's first `tst` has two components) and Weber's
+# extremal-length argument says solving the FIRST kills the SECOND.
+# Measured: at tau*, the unimposed second component
+#     Re Int_0^{1/2 + tau/2} om2 dz = 4.0e-14.
+# A wrong exponent, shift or normalisation moves that to O(1e-2).
+#
+# References:
+# - M. Weber, "Catenoid-Scherk Limits -- aka Triply Periodic Horgan
+#   Surface", minimalsurfaces.blog (mirror ch263; notebook
+#   `Triply_Horgan.nb` -- the data and the period test above).
+_TPH_A = 0.25
+_TPH_TAU = 0.840021463682679j
+
+
+def _tph_terms(a, tau):
+    return ((0.0, -0.5), (a, 0.5), (-a, 0.5),
+            (0.5 - a + tau / 2.0, -0.5), (-(0.5 - a + tau / 2.0), -0.5),
+            (0.5, 0.5), (tau / 2.0, -0.5), (0.5 + tau / 2.0, 0.5))
+
+
+def _norm_const(terms, a, tau, z0, base):
+    """log of the constant that normalises exp(sum c log theta) to
+    `base` at z0, on principal branches.  A branch slip against the
+    patch's unwrapped log only rotates the immersion about the vertical
+    axis (G -> e^{i psi} G is an isometry of the piece), so principal
+    branches are enough."""
+    q = np.exp(1j * np.pi * tau)
+    L = complex(np.log(complex(base)))
+    for sh, c in terms(a, tau):
+        L = L - c * np.log(complex(_theta11(np.asarray(z0 - sh), q)))
+    return L
+
+
+_SPECS['TRIPLY_HORGAN'] = _prod_spec(
+    "Triply Periodic Horgan Surface (exact fundamental piece, genus 5)",
+    tau=_TPH_TAU, a=_TPH_A, terms=_tph_terms,
+    const=_norm_const(_tph_terms, _TPH_A, _TPH_TAU,
+                      0.25 + _TPH_TAU / 4.0, 1j),
+    splits=(0.25,),
+    nb="Triply_Horgan.nb")
+_SPECS['TRIPLY_HORGAN']['tsplits'] = (0.25,)
+
+
+# --------------------------------------------------------------------
+# Wei's triply periodic surface of genus 4 -- the (a, b) = (0.1, 0.3)
+# member, and the label says so
+# --------------------------------------------------------------------
+# Wei's 1992 family is TWO-parameter; his doubly periodic genus-2
+# surfaces arise as limits.  `Wei_Genus_4_V1_.nb` does not pin a
+# canonical member: it chooses (a, b) = (0.1, 0.3), derives the third
+# branch value from the Abel relation c = b - a, and solves the ONE
+# remaining period condition
+#     Re Int_a^b om2 dz = 0
+# for the modulus.  Re-derived here (bisection over t in (0.1, 1.5)):
+#     tau = 0.849141499409681 i.
+# This row is THAT member -- the F-RD lesson: a generic member of a
+# family must not ship under the family's bare name, so the label
+# carries (a, b) explicitly and the record's note says the same.
+#
+# The verifying identity, gated in the self-test: the stored tau is
+# re-derived from the notebook's own period integral and must land on
+# the stored value to 1e-9; and the Abel relation c = b - a is what
+# makes the six theta factors a legal Gauss map divisor on the torus
+# (sum of zeros minus poles = 0 mod the lattice), which the re-solve
+# exercises through every factor.
+#
+# References:
+# - F. Wei, "Some existence and uniqueness theorems for doubly periodic
+#   minimal surfaces", Invent. Math. 109 (1992) 113-136.
+# - M. Weber, "Wei's Triply Periodic Surface of Genus 4",
+#   minimalsurfaces.blog (mirror ch335; notebook `Wei_Genus_4_V1_.nb`).
+_WEI4_A, _WEI4_B = 0.1, 0.3
+_WEI4_TAU = 0.849141499409681j
+
+
+def _wei4_terms(a, tau, _b=_WEI4_B):
+    c = _b - a
+    return ((a, 0.5), (_b, -0.5), (c + tau / 2.0, 0.5),
+            (-a, -0.5), (-_b, 0.5), (-c + tau / 2.0, -0.5))
+
+
+_SPECS['WEI_G4'] = _prod_spec(
+    "Wei Triply Periodic Surface (genus 4, a=0.1 b=0.3 member)",
+    tau=_WEI4_TAU, a=_WEI4_A, terms=_wei4_terms,
+    const=_norm_const(_wei4_terms, _WEI4_A, _WEI4_TAU, 0.0, 1.0),
+    splits=(_WEI4_A, _WEI4_B),
+    nb="Wei_Genus_4_V1_.nb")
+_SPECS['WEI_G4']['tsplits'] = (_WEI4_B - _WEI4_A,)
+
+
+# --------------------------------------------------------------------
 # Three more cells by the F-RD recipe: rPD, C(H), Simoes-Batista
 # --------------------------------------------------------------------
 # The closure tell (see the F-RD block) convicted these three of the
@@ -4466,6 +4577,71 @@ def _selftest():
           "z %.1e | seam %.1e T1 %.1e %s"
           % (r_len, r_ang, r_z, r_seam, r_t1, 'OK' if good else 'FAIL'))
 
+    # Horgan / Wei-g4 modulus gates: the stored tau is RE-DERIVED from
+    # each notebook's own period integral, with the notebook's own
+    # normalisation (G(cp) = i for Horgan, G(0) = 1 for Wei), and must
+    # land on the stored member.  For Horgan the period problem looks
+    # 2-dimensional; Weber's extremal-length argument says solving the
+    # first component kills the second, and that UNIMPOSED second
+    # component is measured here -- the row's own analogue of F-RD(r)'s
+    # chamber-square identity.
+    def _nb_period(key, t, z0, z1, om, n_=2500):
+        sp_ = _SPECS[key]
+        a_ = float(sp_['a'])
+        tau_ = 1j * float(t)
+        q_ = np.exp(1j * np.pi * tau_)
+        if key == 'TRIPLY_HORGAN':
+            c0 = _norm_const(sp_['terms'], a_, tau_,
+                             0.25 + tau_ / 4.0, 1j)
+        else:
+            c0 = _norm_const(sp_['terms'], a_, tau_, 0.0, 1.0)
+        z0 = complex(z0(a_, tau_) if callable(z0) else z0)
+        z1 = complex(z1(a_, tau_) if callable(z1) else z1)
+        u_ = (np.arange(n_) + 0.5) / n_
+        s_ = 0.5 * (1.0 - np.cos(np.pi * u_))
+        w_ = 0.5 * np.pi * np.sin(np.pi * u_) / n_ * (z1 - z0)
+        z_ = z0 + (z1 - z0) * s_
+        L_ = np.full(z_.shape, c0, dtype=complex)
+        for sh_, e_ in sp_['terms'](a_, tau_):
+            L_ = L_ + e_ * np.log(_theta11(z_ - sh_, q_))
+        g_ = np.exp(L_)
+        if om == 1:
+            v_ = -0.5 * (g_ - 1.0 / g_)
+        else:
+            v_ = 0.5j * (g_ + 1.0 / g_)
+        return float(np.real(np.sum(v_ * w_)))
+
+    def _rederive(key, z0, z1, om, lo, hi):
+        f_ = lambda t: _nb_period(key, t, z0, z1, om)
+        ts_ = np.linspace(lo, hi, 30)
+        vs_ = [f_(t) for t in ts_]
+        for i_ in range(29):
+            if vs_[i_] * vs_[i_ + 1] < 0.0:
+                aa, bb, fa_ = float(ts_[i_]), float(ts_[i_ + 1]), vs_[i_]
+                for _ in range(60):
+                    mm = 0.5 * (aa + bb)
+                    fm_ = f_(mm)
+                    if fa_ * fm_ <= 0.0:
+                        bb = mm
+                    else:
+                        aa, fa_ = mm, fm_
+                return 0.5 * (aa + bb)
+        return None
+
+    th_t = _rederive('TRIPLY_HORGAN', 0.0, lambda a_, t_: a_, 1, 0.3, 1.0)
+    th_err = abs(th_t - float(np.imag(_SPECS['TRIPLY_HORGAN']['tau'])))
+    th_2nd = abs(_nb_period('TRIPLY_HORGAN',
+                            float(np.imag(_SPECS['TRIPLY_HORGAN']['tau'])),
+                            0.0, lambda a_, t_: 0.5 + t_ / 2.0, 2))
+    w_t = _rederive('WEI_G4', lambda a_, t_: a_,
+                    lambda a_, t_: _WEI4_B, 2, 0.2, 1.4)
+    w_err = abs(w_t - float(np.imag(_SPECS['WEI_G4']['tau'])))
+    good = (th_err < 1e-8 and w_err < 1e-8 and th_2nd < 1e-9)
+    ok &= good
+    print("hexagonal: HORGAN tau re-solve err %.1e, unimposed 2nd period "
+          "%.1e | WEI_G4 tau re-solve err %.1e %s"
+          % (th_err, th_2nd, w_err, 'OK' if good else 'FAIL'))
+
     # The triangle-group series is generated from (r, s, t) rather than
     # typed in, so the first thing to gate is the GENERATOR: every member
     # must reproduce the constants recovered independently from Weber's
@@ -4676,7 +4852,8 @@ def _selftest():
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
                 'FRD_EXACT', 'FRDR',
                 'BOX_1001', 'BOX_1010', 'BOX_1011',
-                'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+                'TRIPLY_COSTA', 'SIMOES_BATISTA',
+                'TRIPLY_HORGAN', 'WEI_G4'):
         rows = []
         # 45/75 suits most rows.  A few need a finer pair -- at 45 the
         # Simoes-Batista patch is still coarse enough that its diameter
@@ -5006,6 +5183,10 @@ def _selftest():
         'SIMOES_BATISTA': 'CLOSED',
         'CLP_HANDLE': 'GROWS', 'I6': 'GROWS', 'STESSMANN': 'GROWS',
         'TRIPLY_COSTA': 'GROWS',
+        # Horgan grows by reflection (aspect 0.60 at depth 3); its full
+        # cell word is future work.  Wei g4 closes: 24 copies, cell
+        # 0.771 : 0.815 : 1.
+        'TRIPLY_HORGAN': 'GROWS', 'WEI_G4': 'CLOSED',
         # closed by rotoreflection + translation, NOT by reflection --
         # see `lidinoid_assembly`; was BARE until that route existed
         'LIDINOID': 'CLOSED',
@@ -5021,16 +5202,26 @@ def _selftest():
           % (len(_EXPECT_STATE), 'OK' if good else 'FAIL ' + ','.join(miss)))
 
     _NRES = 36
+    # Per-row state resolution.  Wei g4's assembly generators are
+    # MEASURED off the patch and its classifier floor sits at n = 48
+    # (1512 faces / piece at 44, 46368 / closed cell at 48); below it
+    # the build takes the honest fundamental-piece fallback.  The
+    # operator's default Resolution/Cell is 50, so CLOSED is the state
+    # the row actually ships at -- the gate simply must not probe it
+    # below the floor.  The durable fix is the walls/word route
+    # (declare its three notebook mirrors exactly); noted in BACKLOG.
+    _NRES_ROW = {'WEI_G4': 50}
     for key in sorted(_EXPECT_STATE):
+        nres = _NRES_ROW.get(key, _NRES)
         if key == 'H':
-            V1, F1 = h_build(1, _NRES, 1.0, 0.0)
-            V3, F3 = h_build(3, _NRES, 1.0, 0.0)
-            pf = (max(24, _NRES) - 1) * (max(48, 2 * _NRES) - 1)
+            V1, F1 = h_build(1, nres, 1.0, 0.0)
+            V3, F3 = h_build(3, nres, 1.0, 0.0)
+            pf = (max(24, nres) - 1) * (max(48, 2 * nres) - 1)
             label = "Schwarz H (exact, hexagonal)"
         else:
-            V1, F1 = spec_build(key, 1, _NRES, 1.0, 0.0)
-            V3, F3 = spec_build(key, 3, _NRES, 1.0, 0.0)
-            pf = (max(24, _NRES) - 1) ** 2
+            V1, F1 = spec_build(key, 1, nres, 1.0, 0.0)
+            V3, F3 = spec_build(key, 3, nres, 1.0, 0.0)
+            pf = (max(24, nres) - 1) ** 2
             label = _SPECS[key]['label']
         V1, V3 = np.asarray(V1, float), np.asarray(V3, float)
         b1 = V1.max(0) - V1.min(0)

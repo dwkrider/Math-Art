@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 414,
+  "implemented_count": 417,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -944,18 +944,18 @@
     },
     {
       "slug": "breiner-kleene-surface",
-      "name": "Breiner-Kleene Surface",
+      "name": "Breiner-Kleene Spiral Helicoid",
       "path": "surfaces/minimal/breiner-kleene-surface.json",
       "primary_family": "minimal",
       "families": [
         "aperiodic",
-        "def-parametric",
+        "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 0,
@@ -970,8 +970,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -15204,15 +15206,15 @@
     },
     {
       "slug": "triply-periodic-horgan",
-      "name": "Triply Periodic Horgan Surface",
+      "name": "TRIPLY_HORGAN (exact)",
       "path": "surfaces/minimal-periodic/triply-periodic-horgan.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
@@ -15231,8 +15233,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -15984,15 +15988,15 @@
     },
     {
       "slug": "wei-triply-periodic-genus-4",
-      "name": "Wei Triply Periodic Surface (genus 4)",
+      "name": "WEI_G4 (exact)",
       "path": "surfaces/minimal-periodic/wei-triply-periodic-genus-4.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
@@ -16011,8 +16015,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

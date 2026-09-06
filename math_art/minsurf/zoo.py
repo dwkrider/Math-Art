@@ -1321,7 +1321,77 @@ def _bj_circle_normal(w, p):
 _BJ_BOOST = (2.0, 1.2)
 
 
+def _bk_normal(w, p):
+    """Breiner-Kleene rotating frame: n = cos(a w) n1 + sin(a w) n2,
+    with n1 the (unit) horizontal normal and n2 the unit binormal-side
+    frame vector of the log-spiral helix, both transcribed VERBATIM
+    from Weber's `Breiner-Kleene.nb`.  n1 and n2 are unit, mutually
+    orthogonal and both orthogonal to c' for every b, d, so any
+    cos/sin combination is a valid Bjorling normal field -- the
+    self-test measures exactly that before trusting the row."""
+    a, b, d = p['a'], p['b'], p['d']
+    r1 = np.sqrt(1.0 + b * b)
+    r2 = np.sqrt((b * b + b ** 4) * (1.0 + b * b + d * d))
+    cb, sb = np.cos(b * w), np.sin(b * w)
+    n1 = (-(b * cb + sb) / r1, (cb - b * sb) / r1, 0.0 * w)
+    n2 = (b * d * (-cb + b * sb) / r2, -b * d * (b * cb + sb) / r2,
+          (b + b ** 3) / r2 + 0.0 * w)
+    ca, sa = np.cos(a * w), np.sin(a * w)
+    return tuple(ca * x + sa * y for x, y in zip(n1, n2))
+
+
 BJORLING = {
+    # Breiner-Kleene bent helicoids: embedded minimal surfaces invariant
+    # under a screw motion COMPOSED WITH A HOMOTHETY, following a
+    # logarithmically spiraling helix c(s) = e^s (cos bs, sin bs, d)
+    # inside an invariant tube.  The seed curve, the two frame fields
+    # and the twist rate are the closed forms of Weber's notebook
+    # (`Breiner-Kleene.nb`, which derives them by applying Schwarz's
+    # Bjorling formula to exactly this data and prints G and dh for the
+    # same member).  The notebook's rendered member is a = 32, b = 8,
+    # d = 2 -- Twist Steps 4 below; the row is the family over the
+    # twist rate, which the paper allows.
+    #
+    # The verifying identity (measured in `_selftest`, stated first):
+    # with a and b both integer, s -> s + T for T = 2 pi / gcd(a, b)
+    # scales the seed and keeps the normal field, so the surface must
+    # satisfy X(z + T) = e^T X(z) + const EXACTLY -- the defining
+    # screw-homothety invariance.  The spread of X(z+T) - e^T X(z)
+    # across the strip measures the whole chain (curve, frame, and the
+    # engine's integral) at once, and it is not a tautology of the
+    # sampling: a wrong n1/n2 coefficient moves it from quadrature
+    # noise to O(1).
+    #
+    # References:
+    # - C. Breiner and S. Kleene, "Logarithmically spiraling helicoids",
+    #   arXiv:1404.6996 (2014).
+    # - M. Weber, "Breiner-Kleene Surface", minimalsurfaces.blog
+    #   repository (local mirror ch005; notebook `Breiner-Kleene.nb`).
+    'BJ_BREINER_KLEENE': {
+        'label': "Breiner-Kleene Spiral Helicoid",
+        'family': 'BJORLING',
+        'curve': lambda w, p: (np.exp(w) * np.cos(p['b'] * w),
+                               np.exp(w) * np.sin(p['b'] * w),
+                               p['d'] * np.exp(w)),
+        'normal': _bk_normal,
+        # ~2.4 turns of the spiral; the full notebook span (-3 pi, 3 pi)
+        # is self-similar over a factor e^{6 pi} ~ 1.5e8, which fits no
+        # display cube -- the outermost windings ARE the surface at any
+        # finite scale, so show those.
+        't_range': (-1.5 * math.pi, 1.5 * math.pi),
+        'v_half': lambda p: p['vh'],
+        # Twist Steps maps to a = 8 * steps; b = 8, d = 2 are the
+        # notebook's member.  steps = 4 (a = 32) is the published
+        # picture; the default 2 reads better at default resolution
+        # (32 normal-turns over the strip want a dense u grid).
+        'p_from': lambda order, radius: {
+            'a': 8 * int(min(max(order, 1), 8)), 'b': 8, 'd': 2,
+            'vh': 0.05 * min(max(radius / 1.2, 0.3), 3.0)},
+        'res_boost': (4.0, 0.8),
+        'count': "Twist Steps",
+        'test_order': 2,
+        'associate': True,
+    },
     'BJ_CYCLOID': {
         # free regression check: the cycloid seed with its principal
         # normal reproduces Catalan's surface exactly
@@ -3117,6 +3187,75 @@ def _selftest():
         good = err < 1e-9
         ok &= good
         print(f"seed {key:15s}: err={err:.2e} {'OK' if good else 'FAIL'}")
+    # Breiner-Kleene gates -- the identities stated before the row was
+    # transcribed, measured on every run:
+    #   1. the frame is VALID Bjorling data: |n| = 1 and n . c' = 0 on
+    #      the seed to machine precision (this is what catches a wrong
+    #      coefficient in n1/n2 -- the equivariance below would not);
+    #   2. the defining screw-homothety invariance: with a = 32, b = 8
+    #      (Twist Steps 4, the notebook member), T = 2 pi / gcd(a, b)
+    #      = pi / 4 must satisfy X(z + T) = e^T X(z) + const, the
+    #      constant measuring the homothety centre (it comes out 0 --
+    #      the origin -- and the spread across the strip is ~1e-11);
+    #   3. minimality, scale-free: the surface is self-similar with
+    #      diameter e^{1.5 pi} ~ 500, so |H| * diam is meaningless;
+    #      |H(u, v)| * e^u is the scale-free curvature residual and
+    #      must FALL with the grid.
+    bspec = BJORLING['BJ_BREINER_KLEENE']
+    bp = bspec['p_from'](4, 1.2)
+    ss = np.linspace(-4.7, 4.7, 3001)
+    nrm = _bk_normal(ss.astype(complex), bp)
+    bb, dd = bp['b'], bp['d']
+    cp1 = (np.exp(ss) * (np.cos(bb * ss) - bb * np.sin(bb * ss)),
+           np.exp(ss) * (np.sin(bb * ss) + bb * np.cos(bb * ss)),
+           dd * np.exp(ss))
+    r_dot = float(np.max(np.abs(
+        sum(np.real(a) * c_ for a, c_ in zip(nrm, cp1)))
+        / (np.exp(ss) * math.sqrt((1.0 + bb * bb) * (1.0 + dd * dd)))))
+    r_len = float(np.max(np.abs(
+        sum(np.real(a) ** 2 for a in nrm) - 1.0)))
+    xb, yb, zb, _, _, _ = we.bjorling_surface(bspec, 481, 7, 4, 1.2)
+    Xb = np.stack([xb, yb, zb], axis=-1)
+    t0b, t1b = bspec['t_range']
+    mT = int(round((math.pi / 4.0) / ((t1b - t0b) / 480.0)))
+    Db = Xb[mT:] - math.exp(math.pi / 4.0) * Xb[:-mT]
+    scb = float(np.max(np.linalg.norm(Xb.reshape(-1, 3), axis=1)))
+    r_hom = float(np.max(np.linalg.norm(
+        Db - Db.mean(axis=(0, 1)), axis=-1))) / scb
+    r_cen = float(np.linalg.norm(Db.mean(axis=(0, 1)))) / scb
+
+    def _bk_hres(nu2, nv2):
+        x2, y2, z2, _, _, _ = we.bjorling_surface(bspec, nu2, nv2, 4, 1.2)
+        P2 = np.stack([x2, y2, z2], axis=-1)
+        us2 = np.linspace(t0b, t1b, nu2)
+        nvv = nv2 if nv2 % 2 else nv2 + 1
+        vs2 = np.linspace(-bp['vh'], bp['vh'], nvv)
+        Pu = np.gradient(P2, us2, axis=0)
+        Pv = np.gradient(P2, vs2, axis=1)
+        nn2 = np.cross(Pu, Pv)
+        nn2 /= np.maximum(np.linalg.norm(nn2, axis=-1, keepdims=True),
+                          1e-300)
+        E2 = (Pu * Pu).sum(-1)
+        F2 = (Pu * Pv).sum(-1)
+        G2 = (Pv * Pv).sum(-1)
+        L2 = (np.gradient(Pu, us2, axis=0) * nn2).sum(-1)
+        M2 = (np.gradient(Pu, vs2, axis=1) * nn2).sum(-1)
+        N2 = (np.gradient(Pv, vs2, axis=1) * nn2).sum(-1)
+        den = 2.0 * (E2 * G2 - F2 * F2)
+        H2 = (E2 * N2 - 2.0 * F2 * M2 + G2 * L2) / np.where(
+            np.abs(den) < 1e-300, 1e-300, den)
+        k2 = max(4, nu2 // 12)
+        kv = max(2, nvv // 6)
+        return float(np.median(np.abs(H2[k2:-k2, kv:-kv])
+                               * np.exp(us2[k2:-k2])[:, None]))
+    h0 = _bk_hres(481, 9)
+    h1 = _bk_hres(961, 17)
+    good = (r_dot < 1e-12 and r_len < 1e-12 and r_hom < 1e-8
+            and r_cen < 1e-8 and h1 < h0 and h1 < 0.05)
+    ok &= good
+    print(f"Breiner-Kleene: frame n.c'={r_dot:.1e} |n|-1={r_len:.1e} | "
+          f"homothety spread={r_hom:.1e} centre={r_cen:.1e} | "
+          f"|H|e^u {h0:.2e}->{h1:.2e} {'OK' if good else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn
     # change).  Checked on the closed-form engine associates on a fixed grid
