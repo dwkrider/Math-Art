@@ -44,7 +44,7 @@
   "construction": [
     {
       "implemented": false,
-      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.  ACQUISITION PASS (batch 7): the equation was never on the page (a Barth private communication), but the 1896 paper itself IS now on disk -- G. Humbert, JMPA (5) 2 (1896) 263-293, acquired via NUMDAM at research/papers/algebraic-surfaces/humbert-1896-surface-sixieme-ordre-fonctions-abeliennes.pdf.  It is an 1896 scan with no text layer, in French, opening with the hyperelliptic theory; extracting the sextic's projective equation needs the hard-PDF page-image conversion pass, queued.",
       "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
     }
   ],

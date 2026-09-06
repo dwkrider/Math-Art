@@ -1540,7 +1540,33 @@ def _f_van_straten_d(x, y, z, mu, vd=7):
             + _vstr_lambda(vd) * _vstr_That(vd, z))
 
 
+def _f_sextic9(x, y, z, mu):
+    # Endrass-Persson-Stevens sextic with NINE ordinary triple points
+    # (arXiv:math/0010163, Prop. 4.12 + the paper's own particular
+    # example): the (c1, c2, c3) = (4, 4, 4) K3 normal form
+    #     q1 q2 q3 + q^3 = 0
+    # with the pinned member a_i = -1, b_i = 0:
+    #     q1 = z^2 - y w,  q2 = x^2 - z w,  q3 = y^2 - x w,
+    #     q  = -w^2 - w (x+y+z) - (xy + yz + zx),
+    # chart w = 1.  Its nine triple points are the three cone vertices
+    # (1:0:0:0), (0:1:0:0), (0:0:1:0) and the six points
+    # (eta^{4i} : eta^{2i} : eta^i : 1), eta a primitive 7th root of
+    # unity -- all off the real affine chart, like most of the Segre
+    # quartic's 64 lines, so the real picture shows the smooth K3 body.
+    # The self-test verifies F, grad F and the full Hessian vanish at
+    # ALL NINE points in complex homogeneous arithmetic, with the
+    # third-order term alive (multiplicity exactly three).
+    q1 = z * z - y
+    q2 = x * x - z
+    q3 = y * y - x
+    q = -1.0 - (x + y + z) - (x * y + y * z + z * x)
+    return q1 * q2 * q3 + q ** 3
+
+
 _MATHWORLD = (
+    ('SEXTIC_9_TRIPLE',
+     "Sextic with 9 Triple Points (EPS (4,4,4) member)", 'BALL', 2.4,
+     _f_sextic9),
     ('SWALLOWTAIL', "Swallowtail (quartic discriminant)", 'BOX', 2.2,
      _f_swallowtail),
     ('CAYLEY_RULED', "Cayley Ruled Cubic", 'BOX', 1.8, _f_cayley_ruled),
@@ -2109,6 +2135,43 @@ def _selftest():
         print("algebraic: van Straten d=%d affine nodes %d (want %d), "
               "worst residual %.1e %s"
               % (d_, nn_, want, worst, 'OK' if okd else 'FAIL'))
+    # EPS sextic: all nine triple points in complex homogeneous
+    # arithmetic -- F, grad F and Hessian vanish, third order alive
+    import cmath as _cm
+
+    def _s9F(p4):
+        x4, y4, z4, w4 = p4
+        return ((z4 * z4 - y4 * w4) * (x4 * x4 - z4 * w4)
+                * (y4 * y4 - x4 * w4)
+                + (-w4 * w4 - w4 * (x4 + y4 + z4)
+                   - (x4 * y4 + y4 * z4 + z4 * x4)) ** 3)
+    _eta = _cm.exp(2j * _cm.pi / 7)
+    _p9 = ([(1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0)]
+           + [(_eta ** (4 * i_), _eta ** (2 * i_), _eta ** i_, 1)
+              for i_ in range(1, 7)])
+    r_s9 = 0.0
+    third9 = True
+    _dird = np.array([0.31, -0.7, 0.52, 0.11], dtype=complex)
+    for p4 in _p9:
+        p4 = np.array(p4, dtype=complex)
+        r_s9 = max(r_s9, abs(_s9F(p4)))
+        h9 = 1e-5
+        for i_ in range(4):
+            e_ = np.zeros(4)
+            e_[i_] = h9
+            r_s9 = max(r_s9, abs((_s9F(p4 + e_) - _s9F(p4 - e_))
+                                 / (2 * h9)))
+            for j_ in range(i_, 4):
+                e2_ = np.zeros(4)
+                e2_[j_] = h9
+                r_s9 = max(r_s9, abs(
+                    (_s9F(p4 + e_ + e2_) - _s9F(p4 + e_ - e2_)
+                     - _s9F(p4 - e_ + e2_) + _s9F(p4 - e_ - e2_))
+                    / (4 * h9 * h9)))
+        third9 &= abs(_s9F(p4 + 1e-2 * _dird)) > 1e-9
+    b6.append(("EPS sextic nine triple points", r_s9, 1e-7))
+    b6.append(("EPS sextic multiplicity exactly 3",
+               0.0 if third9 else 1.0, 0.5))
     bad6 = ['%s:%.1e' % (nm, rv) for (nm, rv, tol) in b6 if rv > tol]
     ok &= not bad6
     print("algebraic: batch-6 polynomial identities (%d) %s"

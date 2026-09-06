@@ -44,7 +44,7 @@
   "construction": [
     {
       "implemented": false,
-      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.  ACQUISITION PASS (batch 7): the equation was never on the page (a Barth private communication).  The 1901 paper is identified precisely -- E. W. Hyde, 'On a Surface of the Sixth Order Which is Touched by the Axes of all Screws Reciprocal to Three Given Screws', Ann. of Math. (2) 2 (1901) 179-188, JSTOR 2007200 -- but every fetchable archive is gated from here (JSTOR login, HathiTrust 403, archive.org blocked), and whether the 1901 paper even prints a usable affine equation is unverified.",
       "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
     }
   ],

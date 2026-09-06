@@ -402,6 +402,7 @@ ALIAS = {
     "algebraic:DESMIC": "desmic-surface",
     "algebraic:BURKHARDT_SECTION": "burkhardt-quartic",
     "algebraic:VAN_STRATEN_D": "van-straten-dihedral-series",
+    "algebraic:SEXTIC_9_TRIPLE": "sextic-with-9-triple-points",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",
     "algebraic:LABS": "labs-septic",

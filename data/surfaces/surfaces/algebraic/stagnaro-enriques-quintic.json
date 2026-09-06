@@ -39,7 +39,7 @@
   "construction": [
     {
       "implemented": false,
-      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.",
+      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.  ACQUISITION PASS (batch 7): the equation was never on the page (a Barth private communication), and Stagnaro's own construction (LNM 997, Ravello 1982) is paywalled.  The open-access completion of his program, Craighero & Gattazzo, Rend. Sem. Mat. Univ. Padova 91 (1994) 185-198, IS on disk (research/papers/algebraic-surfaces/craighero-gattazzo-1994-quintic-surfaces-enriques.pdf) and constructs the 4-Dd-point Enriques quintic explicitly; its OCR is too poor for blind transcription, so the equation extraction needs the page-image conversion pass, queued.",
       "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
     }
   ],
@@ -47,7 +47,8 @@
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
       "O. Labs, 'Advent calendar 2002, No. 16', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch034_no_16.md).",
-      "E. Stagnaro's construction; descriptions and equations communicated to O. Labs by W. Barth, per the page."
+      "E. Stagnaro's construction; descriptions and equations communicated to O. Labs by W. Barth, per the page.",
+      "P. Craighero, R. Gattazzo, 'Quintic surfaces of P3 having a non singular model with q = pg = 0, P2 != 0', Rend. Sem. Mat. Univ. Padova 91 (1994) 185-198 (acquired via NUMDAM, on disk)."
     ]
   },
   "tradition": [
@@ -56,7 +57,7 @@
   "ids": {
     "algsurf": "ch034_no_16"
   },
-  "named_after": "Stagnaro",
+  "named_after": "Quintic, Stagnaro",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

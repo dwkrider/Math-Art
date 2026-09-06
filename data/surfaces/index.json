@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 426,
+  "implemented_count": 427,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -12186,14 +12186,14 @@
     },
     {
       "slug": "sextic-with-9-triple-points",
-      "name": "Sextic with 9 Triple Points",
+      "name": "Sextic with 9 Triple Points (EPS (4,4,4) member)",
       "path": "surfaces/algebraic/sextic-with-9-triple-points.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -12212,8 +12212,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {

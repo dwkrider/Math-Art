@@ -41,7 +41,7 @@
   "construction": [
     {
       "implemented": false,
-      "blocked_by": "Not built. The construction is indirect -- the octic is obtained FROM a Calabi-Yau threefold rather than the other way round -- so there is no equation on the page to transcribe, and none is invented here.",
+      "blocked_by": "Not built. The construction is indirect -- the octic is obtained FROM a Calabi-Yau threefold rather than the other way round -- so there is no equation on the page to transcribe, and none is invented here.  CONFIRMED AT THE SOURCE (batch 7): the paper itself never writes the octic down.  The 128-node example is the branch locus of the anticanonical double cover of P(E) for a rank-2 bundle built by the Serre construction from a degree-8 elliptic curve, with the key steps verified in MACAULAY on the abstract ideal -- an existence proof with no explicit polynomial anywhere in it.  This row cannot be stated explicitly FROM THIS SOURCE; candidate for the documented no-explicit-equation ledger state.",
       "resume": "M. Kuehnel, 'A note on octic hypersurfaces with many nodes', arXiv:math/0210440 (2002, rev. 2003); converted at research/papers/algebraic-surfaces/kuehnel-2002-octic-128-nodes/. The method builds Calabi-Yau threefolds as desingularised double covers of P^3 branched over the octic, using rank-2 bundles over P^3, and reads the node count off the resulting threefold."
     }
   ],
