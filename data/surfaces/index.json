@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 442,
+  "implemented_count": 443,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -7817,8 +7817,8 @@
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -7836,8 +7836,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8187,7 +8189,7 @@
     },
     {
       "slug": "lubeck-batista-surface",
-      "name": "Lubeck-Batista Surface (genus 3, tau = i member)",
+      "name": "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
       "path": "surfaces/minimal-periodic/lubeck-batista-surface.json",
       "primary_family": "minimal-periodic",
       "families": [

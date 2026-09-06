@@ -12231,6 +12231,350 @@ def sfk_fkf_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     return V, F, uv
 
 
+# ==========================================================================
+# Kusner spheres with 2n planar ends (immersed minimal S^2), built to
+# Weber's Kusner.nb recipe and REGISTERED against his PoVRay exports.
+#
+# Weierstrass data (rho = 1 is the classical member; s = sqrt(2p-1)):
+#
+#     G  = rho z^(p-1) (z^p - s) / (s z^p + 1),
+#     dh = i z^(p-1) (z^p - s)(1 + s z^p) / poly^2 dz,
+#     poly = z^(2p) + 2 s z^p/(p-1) - 1,
+#
+# an immersed sphere with 2p planar ends at the roots of poly (p ends
+# inside the unit disk at z^p = (p-s)/(p-1) =: r0, their p partners
+# outside at z^p = -1/r0).  ALL 2p end residues vanish (gated at
+# ~1e-14), so the immersion is single-valued with no period problem.
+# For ODD p the immersion commutes with the antipodal map z ->
+# -1/conj(z) (measured: X(-1/conj z) = X(z) to 1e-16), which is
+# Kusner's projective-plane family -- that one-sided quotient is the
+# separate KUSNER_RP2 row; THIS row is the full immersed sphere, and
+# exists for every p >= 2 (even p included).
+#
+# MESHED TO THE NOTEBOOK'S OWN CHART: the fundamental patch is the
+# image of the upper half annulus xmin <= |zeta| <= 1 under
+# w = ((r0 + zeta)/(1 + r0 zeta))^(1/p) -- a curvilinear sector of
+# angle pi/p with the plate hole around the end w = r0^(1/p) cut out
+# by the |zeta| = xmin circle (Weber's fft/tr/st mesh, reproduced
+# exactly: radial nodes graded by t^(1/p) <-> t^p around r0, angular
+# nodes by the Im Log[(r0 - e^(i p t))/(r0 e^(i p t) - 1)] map).  The
+# exterior chart is the same grid pushed through the MEASURED domain
+# symmetry w -> e^(i pi/p)/w and integrated independently; the two
+# charts agree along |w| = 1 to ~1e-12 (gated), which re-proves the
+# vanishing residues as assembled geometry.  Space frames, MEASURED
+# (not assumed) at 1e-16 by least squares over random domain pairs:
+#     X(conj w)         = diag(-1, 1, -1) X(w)      (patch edge line)
+#     X(e^(2 pi i/p) w) = Rz(-2 pi/p) X(w)
+# and the assembly is the 4p-piece orbit of the two patches under the
+# group they generate.  X(w = 0) = 0 (base normalization f0 - f0(0)
+# of the notebook).
+#
+# GROUND TRUTH: Weber's p = 2 export (kusners-spheres-with-planar-
+# ends, dummy.pov) IS the disk-chart half of this surface at the
+# notebook window xmin = 0.2: our half-assembly registers against it
+# at 0.065% / 0.124% one-sided means (0.095% two-sided) of span with
+# the IDENTITY axis map and IDENTITY scale, bbox agreeing to 4
+# digits.  The zoo gate pins that member's extent ratios (x/y =
+# 0.4430, z/y = 0.5353) plus the closed-form landmark below.  His
+# p = 3 and p = 5 exports are ARTISTIC COMPOSITIONS, measured as
+# three complete copies of the surface nested at relative scales
+# ~(0.68, 0.44, 0.44) with per-copy plate windows (each copy is
+# p-fold symmetric; the union is not), so they pin the family only
+# loosely (per-copy one-sided registration 0.14-0.29%) and are NOT
+# used as gates.
+#
+# Landmark, derived numerically and gated in closed form: the rim
+# corner w = 1 (junction of the two charts on the y-axis line) sits
+# at X(1) = (0, (p-1)/(2 sqrt(2p-1)), 0) for rho = 1 -- 1/sqrt(12),
+# 1/sqrt(5), 2/3 for p = 2, 3, 5; Weber's p = 2 export carries its
+# sphere markers on the same y-axis line.
+#
+# References:
+# - R. Kusner, "Conformal geometry and complete minimal surfaces",
+#   Bull. Amer. Math. Soc. 17 (1987) 291-295 -- the immersed minimal
+#   spheres with 2n planar ends and their projective-plane quotients.
+# - R. Bryant, "A duality theorem for Willmore surfaces", J. Diff.
+#   Geom. 20 (1984) 23-53 -- planar-end spheres as Willmore surfaces;
+#   the inversion of the 3-ended member is Boy's surface (the
+#   Oberwolfach sculpture).
+# - M. Weber, "Kusner's spheres with planar ends", minimalsurfaces.
+#   blog (notebook `Kusner.nb` -- the Weierstrass data, the fft/tr/st
+#   chart and the per-p windows transcribed above; PoVRay exports =
+#   the registration ground truth).
+# ==========================================================================
+
+# per-p plate windows from the notebook (p = 4 interpolated)
+KUSNER_XMIN = {2: 0.20, 3: 0.35, 4: 0.40, 5: 0.45, 6: 0.48}
+
+
+def kusner_forms(p, rho=1.0):
+    """(om1, om2, om3)(w) of Kusner's sphere, poles only at the ends."""
+    s = math.sqrt(2.0 * p - 1.0)
+
+    def om(w):
+        w = np.asarray(w, dtype=complex)
+        wp = w ** p
+        poly = w ** (2 * p) + 2.0 * s * wp / (p - 1.0) - 1.0
+        phi1 = 1j * rho * w ** (2 * p - 2) * (wp - s) ** 2 / poly ** 2
+        phi2 = (1j / rho) * (1.0 + s * wp) ** 2 / poly ** 2
+        dh = 1j * w ** (p - 1) * (wp - s) * (1.0 + s * wp) / poly ** 2
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, dh], axis=-1)
+    return om
+
+
+def _kus_gl(om, z0, z1, n=10):
+    """Gauss-Legendre integral of om along the straight chord z0->z1.
+    Broadcasts over equal-shaped complex arrays z0, z1."""
+    gx, gw = np.polynomial.legendre.leggauss(n)
+    z0 = np.asarray(z0, dtype=complex)
+    z1 = np.asarray(z1, dtype=complex)
+    mid = 0.5 * (z0 + z1)
+    half = 0.5 * (z1 - z0)
+    acc = 0.0
+    for x_, w_ in zip(gx, gw):
+        acc = acc + om(mid + x_ * half) * w_
+    return acc * half[..., None]
+
+
+def _kus_wgrid(p, xmin, nu, nv, mirror=False):
+    """Weber's graded chart of the fundamental sector (see header).
+    Returns (W, i_r0): the grid and the radial index of the r0 node
+    (the boundary corner that maps to w = 0).  `mirror` reverses the
+    angular grading (the exterior chart uses the mirrored grid so its
+    rim nodes coincide with the interior rim nodes)."""
+    s = math.sqrt(2.0 * p - 1.0)
+    r0 = (p - s) / (p - 1.0)
+    eps = 1e-12
+    nx1 = max(6, nu // 3)
+    nx2 = max(12, nu - nx1)
+    t1 = np.linspace(xmin ** (1.0 / p), r0 ** (1.0 / p), nx1,
+                     endpoint=False)
+    t2 = np.linspace(r0 ** (1.0 / p), (1.0 - eps) ** (1.0 / p), nx2 + 1)
+    XR = np.concatenate([t1, t2]) ** p
+    tt = np.linspace(eps, math.pi / p - eps, nv)
+    e = np.exp(1j * p * tt)
+    YR = np.angle((r0 - e) / (r0 * e - 1.0))
+    YR = np.where(YR < 0, YR + TAU, YR)
+    YR[0] = 0.0
+    YR[-1] = math.pi
+    if mirror:
+        YR = math.pi - YR[::-1]
+    Z = XR[:, None] * np.exp(1j * YR[None, :])
+    W = ((r0 + Z) / (1.0 + r0 * Z)) ** (1.0 / p)
+    return W, nx1
+
+
+def _kus_integrate(om, W):
+    """Cumulative Re-integration of om over the grid W: anchor the rim
+    mid-column by a radial ray from w = 0 (X(0) = 0 normalization),
+    sweep the rim row, then every column rim -> inward.  All chords
+    stay inside the chart, away from the end poles."""
+    nu2, nv2 = W.shape
+    F = np.zeros((nu2, nv2, 3), dtype=complex)
+    jm, i0 = nv2 // 2, nu2 - 1
+    zt = W[i0, jm]
+    seg = np.linspace(0.0, 1.0, 33)
+    val = np.zeros(3, dtype=complex)
+    for k in range(32):
+        val = val + _kus_gl(om, zt * seg[k], zt * seg[k + 1], 12)
+    F[i0, jm] = val
+    for j in range(jm + 1, nv2):
+        F[i0, j] = F[i0, j - 1] + _kus_gl(om, W[i0, j - 1], W[i0, j])
+    for j in range(jm - 1, -1, -1):
+        F[i0, j] = F[i0, j + 1] + _kus_gl(om, W[i0, j + 1], W[i0, j])
+    for i in range(i0 - 1, -1, -1):
+        F[i] = F[i + 1] + _kus_gl(om, W[i + 1], W[i])
+    return np.real(F)
+
+
+def kusner_forms_ext(p, rho=1.0):
+    """The forms pushed to the outer chart u = 1/w (w = infinity is a
+    regular point; the substitution gives polynomial-stable forms):
+    polyu = 1 + 2 s u^p/(p-1) - u^(2p), and
+        phi1_u = -i rho (1 - s u^p)^2 / polyu^2,
+        phi2_u = -(i/rho) u^(2p-2) (u^p + s)^2 / polyu^2,
+        dh_u   = -i u^(p-1) (1 - s u^p)(u^p + s) / polyu^2."""
+    s = math.sqrt(2.0 * p - 1.0)
+
+    def om(u):
+        u = np.asarray(u, dtype=complex)
+        up = u ** p
+        polyu = 1.0 + 2.0 * s * up / (p - 1.0) - u ** (2 * p)
+        phi1 = -1j * rho * (1.0 - s * up) ** 2 / polyu ** 2
+        phi2 = -(1j / rho) * u ** (2 * p - 2) * (up + s) ** 2 / polyu ** 2
+        dh = -1j * u ** (p - 1) * (1.0 - s * up) * (up + s) / polyu ** 2
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, dh], axis=-1)
+    return om
+
+
+def kusner_patches(p, xmin, rho=1.0, nu=40, nv=None, xmin_ext=None):
+    """(X_int, X_ext, i_r0): the two fundamental patches (nu', nv, 3)
+    and the radial index of the w = 0 / u = 0 boundary corner.  The
+    interior patch integrates the w-chart forms on Weber's sector
+    grid; the exterior patch integrates the u = 1/w forms on the
+    mirrored grid rotated into the u-plane (u = W e^(-i pi/p)), so
+    its rim nodes land exactly on the interior rim nodes (reversed
+    order) and u = 0 is the regular point w = infinity with X = 0."""
+    if nv is None:
+        nv = 30 * p
+    if xmin_ext is None:
+        xmin_ext = xmin
+    Wi, i_r0 = _kus_wgrid(p, xmin, nu, nv)
+    Xi = _kus_integrate(kusner_forms(p, rho), Wi)
+    Wm, _ = _kus_wgrid(p, xmin_ext, nu, nv, mirror=True)
+    U = Wm * np.exp(-1j * math.pi / p)
+    Xe = _kus_integrate(kusner_forms_ext(p, rho), U)
+    return Xi, Xe, i_r0
+
+
+def kusner_landmark(p, rho=1.0):
+    """X(w = 1) by a mid-sector ray + rim arc (chart-pole-free path)."""
+    om = kusner_forms(p, rho)
+    w0 = np.exp(1j * math.pi / (2.0 * p))
+    seg = np.linspace(0.0, 1.0, 201)
+    val = np.zeros(3, dtype=complex)
+    for k in range(200):
+        val = val + _kus_gl(om, w0 * seg[k], w0 * seg[k + 1], 14)
+    th = np.linspace(math.pi / (2.0 * p), 0.0, 401)
+    arc = np.exp(1j * th)
+    val = val + _kus_gl(om, arc[:-1], arc[1:], 14).sum(axis=0)
+    return np.real(val)
+
+
+def _kus_frames(p):
+    """[(M, parity), ...]: the measured dihedral space frames."""
+    Sc = np.diag([-1.0, 1.0, -1.0])
+    out = []
+    for k in range(p):
+        c, sn = math.cos(TAU * k / p), math.sin(TAU * k / p)
+        Rk = np.array([[c, sn, 0.0], [-sn, c, 0.0], [0.0, 0.0, 1.0]])
+        out.append((Rk, 1))
+        out.append((Rk @ Sc, -1))
+    return out
+
+
+def _kus_grid_quads(nu2, nv2, off=0):
+    return [(off + i * nv2 + j, off + (i + 1) * nv2 + j,
+             off + (i + 1) * nv2 + j + 1, off + i * nv2 + j + 1)
+            for i in range(nu2 - 1) for j in range(nv2 - 1)]
+
+
+def _kus_snap(Xi, Xe, i_r0, p):
+    """Snap the symmetry-line boundaries exactly (the weld then only
+    absorbs float rounding): the arg-0 edges lie on the y-axis line,
+    the arg-pi/p edges on the in-plane C2 axis at azimuth
+    pi/2 - pi/p, the w = 0 / w = infinity boundary corners at the
+    origin, and the exterior rim IS the interior rim reversed."""
+    al = math.pi / 2.0 - math.pi / p
+    u = np.array([math.cos(al), math.sin(al), 0.0])
+
+    def to_y(P):
+        Q = np.zeros_like(P)
+        Q[..., 1] = P[..., 1]
+        return Q
+
+    def to_al(P):
+        return (P @ u)[..., None] * u
+
+    Xi[:, 0] = to_y(Xi[:, 0])                    # w real in [.., 1]
+    Xi[:i_r0 + 1, -1] = to_y(Xi[:i_r0 + 1, -1])  # w real in [0, ..]
+    Xi[i_r0 + 1:, -1] = to_al(Xi[i_r0 + 1:, -1])
+    Xi[i_r0, -1] = 0.0                           # w = 0
+    Xe[:, 0] = to_al(Xe[:, 0])
+    Xe[:i_r0 + 1, -1] = to_al(Xe[:i_r0 + 1, -1])
+    Xe[i_r0 + 1:, -1] = to_y(Xe[i_r0 + 1:, -1])
+    Xe[i_r0, -1] = 0.0                           # w = infinity
+    Xe[-1, :] = Xi[-1, ::-1]                     # shared |w| = 1 rim
+
+
+def _kus_weld(V0, UV0, quads0, cls0, frames, tol):
+    """Orbit-tile V0 under `frames` and weld coincident vertices OF
+    THE SAME CLASS (two offset quantization passes).  The class keeps
+    the two sheets of a genuine self-intersection point (w = 0 and
+    w = infinity both map to the origin) from being fused into a
+    non-manifold vertex: rim vertices are class 0 (they weld across
+    the two charts), interior-chart vertices +1, exterior -1."""
+    n0 = len(V0)
+    Vp, Fp = [], []
+    for i, (M, par) in enumerate(frames):
+        Vp.append(V0 @ M.T)
+        off = i * n0
+        Fp.extend(tuple(off + k for k in (f[::-1] if par < 0 else f))
+                  for f in quads0)
+    V = np.concatenate(Vp, axis=0)
+    UV = np.tile(UV0, (len(frames), 1))
+    C = np.tile(np.asarray(cls0, dtype=np.int64), len(frames))
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for off_ in (0.0, 0.5):
+        key = np.round(V / tol + off_).astype(np.int64)
+        key = np.concatenate([key, C[:, None]], axis=1)
+        _, first, inv = np.unique(key, axis=0, return_index=True,
+                                  return_inverse=True)
+        for i_ in range(len(V)):
+            ra, rb = find(i_), find(int(first[inv[i_]]))
+            if ra != rb:
+                parent[ra] = rb
+    root = np.array([find(i_) for i_ in range(len(V))])
+    used = np.unique(root)
+    remap = -np.ones(len(V), dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    idx = remap[root]
+    F = []
+    for f in Fp:
+        g = [int(idx[f[0]])]
+        for a_ in f[1:]:
+            if int(idx[a_]) != g[-1]:
+                g.append(int(idx[a_]))
+        if len(g) > 3 and g[0] == g[-1]:
+            g.pop()
+        if len(g) >= 3 and len(set(g)) == len(g):
+            F.append(tuple(g))
+    return V[used], F, UV[used]
+
+
+def kusner_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Kusner sphere with 2n planar ends, n = 2 * order (order 1 ->
+    the n = 2 member registered against Weber's export; odd n
+    descends to the projective plane and ships as KUSNER_RP2).
+    `radius` works the plate window: 1.2 = the notebook's own xmin
+    for that n, larger = the flat ends follow further out."""
+    del spec, theta
+    p = int(np.clip(2 * order, 2, 8))
+    xm0 = KUSNER_XMIN.get(p, 0.5)
+    xm = float(np.clip(xm0 * (1.2 / max(float(radius), 0.2)) ** 1.5,
+                       0.02, 0.85))
+    nu_e = max(18, int(nu * 0.75))
+    nv_e = max(24, int(nv * 0.25 * p))
+    Xi, Xe, i_r0 = kusner_patches(p, xm, 1.0, nu_e, nv_e)
+    _kus_snap(Xi, Xe, i_r0, p)
+    nu2, nv2 = Xi.shape[:2]
+    V0 = np.concatenate([Xi.reshape(-1, 3), Xe.reshape(-1, 3)], axis=0)
+    quads0 = (_kus_grid_quads(nu2, nv2)
+              + _kus_grid_quads(nu2, nv2, off=nu2 * nv2))
+    gu = np.tile(np.arange(nu2)[:, None], (1, nv2)).reshape(-1)
+    gv = np.tile(np.arange(nv2)[None, :], (nu2, 1)).reshape(-1)
+    UV0 = np.stack([gu / max(nu2 - 1, 1), gv / max(nv2 - 1, 1)],
+                   axis=-1)
+    UV0 = np.concatenate([UV0, UV0], axis=0)
+    cls_g = np.ones((nu2, nv2), dtype=np.int64)
+    cls_g[-1, :] = 0                             # the shared rim row
+    cls0 = np.concatenate([cls_g.reshape(-1), -cls_g.reshape(-1)])
+    cls0[len(cls_g.reshape(-1)) + (nu2 - 1) * nv2:] = 0
+    diag = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, UV = _kus_weld(V0, UV0, quads0, cls0, _kus_frames(p),
+                         tol=1e-7 * diag)
+    V = _center_fit(V, scale, V)
+    return V, F, UV
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------

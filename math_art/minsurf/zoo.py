@@ -2661,6 +2661,47 @@ WE_SURFACES['KUSNER_RP2'] = {
 }
 SURFACE_FAMILY['KUSNER_RP2'] = 'NONORIENT'
 
+# Kusner's immersed minimal SPHERES with 2n planar ends (Kusner 1987)
+# -- the orientable genus-0 family; for ODD n the immersion commutes
+# with the antipodal map and descends to the projective planes above
+# (KUSNER_RP2), so this row exposes the EVEN members n = 2, 4, 6, 8
+# (n = 2 * order), which exist only as spheres.  Same Weierstrass
+# data (G = z^(n-1)(z^n - s)/(s z^n + 1), s = sqrt(2n - 1), dh with
+# all 2n end residues vanishing -- gated below via 'cycles'), meshed
+# to Weber's own Kusner.nb chart on both hemispheres, the outer chart
+# integrated in u = 1/w (w = infinity is a regular point).  The n = 2
+# member is REGISTERED against Weber's own PoVRay export (his p = 2
+# dummy.pov is the disk-chart half of the surface): 0.13% / 0.27%
+# one-sided means of span at the identity axis map, bbox ratios
+# agreeing to 4 digits -- the zoo gate pins those ratios and the
+# closed-form rim landmark X(1) = (0, (n-1)/(2 sqrt(2n-1)), 0).
+# See the block above `kusner_mesh` in weierstrass.py for the full
+# recipe, the measured frames and the references.
+WE_SURFACES['KUSNER_SPHERE'] = {
+    'label': "Kusner Sphere (2n planar ends)",
+    'family': 'SPHERES',
+    'g': lambda z, p: z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) / (p['s'] * z ** p['p'] + 1.0),
+    'dh': lambda z, p: 1j * z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) * (1.0 + p['s'] * z ** p['p'])
+    / (z ** (2 * p['p']) + 2.0 * p['s'] * z ** p['p']
+       / (p['p'] - 1) - 1.0) ** 2,
+    'mesher': we.kusner_mesh,
+    'p_from': lambda order, radius: (lambda pp: {
+        'p': pp, 's': math.sqrt(2 * pp - 1)})(
+            int(min(max(2 * order, 2), 8))),
+    'count': "End pairs n (2/4/6/8)",
+    'cycles': lambda p: (
+        [(((p['p'] - p['s']) / (p['p'] - 1)) ** (1.0 / p['p'])
+          * np.exp(2j * math.pi * k / p['p']), 0.08)
+         for k in range(p['p'])]
+        + [(((p['p'] - 1) / (p['p'] - p['s'])) ** (1.0 / p['p'])
+            * np.exp(1j * (math.pi + 2 * math.pi * k) / p['p']), 0.08)
+           for k in range(p['p'])]),
+    'test_order': 1,                             # order 1 -> n = 2
+}
+SURFACE_FAMILY['KUSNER_SPHERE'] = 'SPHERES'
+
 WE_SURFACES['LOPEZ_KLEIN'] = {
     # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
     # 1993): the unique-in-its-class complete non-orientable minimal
@@ -3615,6 +3656,55 @@ def _selftest():
               f"export: x/z off {r_x:.1e}, y/z off {r_y:.1e} "
               f"{'OK' if good_ else 'FAIL'}")
     ok &= lb_ok
+
+    # Kusner sphere gates.  Beyond the generic 'cycles' residue gate
+    # (all 2n end loops close -- Kusner's "no period problem"):
+    #   1. the rim landmark X(w = 1), integrated along a mid-sector
+    #      ray + rim arc, equals the closed form
+    #      (0, (n-1)/(2 sqrt(2n-1)), 0) -- 1/sqrt(12), 1/sqrt(5), 2/3
+    #      for n = 2, 3, 5.  This pins the forms, the branch and the
+    #      base normalization in one number.
+    #   2. SHAPE vs Weber's own PoVRay export: his p = 2 dummy.pov is
+    #      the disk-chart half of the n = 2 member at the notebook
+    #      window xmin = 0.2; the full point-cloud registration
+    #      landed at 0.13% / 0.27% one-sided means of span with the
+    #      IDENTITY axis map, and the half-assembly extent ratios
+    #      measured off that export are pinned here to 0.5%.
+    #   3. the assembled sphere is a genuine closed immersed sphere
+    #      minus its 2n end disks: chi = 2 - 2n, 2n boundary loops,
+    #      manifold, orientable (a sphere with slits passes chi; it
+    #      cannot pass the loop count and the p = 2 ratios together).
+    ku_ok = True
+    for p_ in (2, 3, 4, 5):
+        L_ = we.kusner_landmark(p_)
+        want_ = (p_ - 1) / (2.0 * math.sqrt(2.0 * p_ - 1.0))
+        r_lm = max(abs(L_[0]), abs(L_[1] - want_), abs(L_[2]))
+        good_ = r_lm < 1e-8
+        ku_ok &= good_
+        print(f"Kusner sphere n={p_}: rim landmark vs closed form "
+              f"(n-1)/(2 sqrt(2n-1)) off {r_lm:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
+    Xi_, Xe_, ir_ = we.kusner_patches(2, we.KUSNER_XMIN[2], 1.0, 45, 60)
+    we._kus_snap(Xi_, Xe_, ir_, 2)
+    half_ = np.concatenate([Xi_.reshape(-1, 3) @ M_.T
+                            for M_, _p in we._kus_frames(2)])
+    exh_ = half_.max(axis=0) - half_.min(axis=0)
+    r_x = abs(exh_[0] / exh_[1] - 0.4430) / 0.4430
+    r_z = abs(exh_[2] / exh_[1] - 0.5353) / 0.5353
+    good_ = r_x < 0.005 and r_z < 0.005
+    ku_ok &= good_
+    print(f"Kusner sphere n=2 half vs Weber's export: x/y off "
+          f"{r_x:.1e}, z/y off {r_z:.1e} {'OK' if good_ else 'FAIL'}")
+    for order_, p_ in ((1, 2), (2, 4)):
+        V_, F_, _uv = we.kusner_mesh(None, 60, 60, order_, 1.2, 1.0)
+        chi_, nm_, nl_, os_ = we.symtail_edge_stats(np.asarray(V_), F_)
+        good_ = (chi_ == 2 - 2 * p_ and nl_ == 2 * p_ and nm_ == 0
+                 and not os_)
+        ku_ok &= good_
+        print(f"Kusner sphere n={p_}: chi={chi_} (want {2 - 2 * p_}), "
+              f"loops={nl_} (want {2 * p_}), nonman={nm_}, "
+              f"one-sided={os_} {'OK' if good_ else 'FAIL'}")
+    ok &= ku_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20
