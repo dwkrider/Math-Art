@@ -591,6 +591,19 @@ NOT_A_GAP = {
     "dyck-surface":
         ("bookkeeping", "k = 3 of the shipped non-orientable genus-k row."),
     # EXISTENCE UNSETTLED.  Research questions, not implementation work.
+    # NO SOURCE ANYWHERE.  Not "not built yet" -- nothing to build from.
+    "weber-bc2":
+        ("no-source", "A folder name recovered from the Wayback index of "
+                      "Weber's dead archive.  No chapter, no notebook, no "
+                      "paper, no datafile -- the name is all that survives."),
+    # DUPLICATES AND FAMILY RECORDS.
+    "weber-tr":
+        ("bookkeeping", "The same surface as `weber-trr`, which ships: "
+                        "Fujimori-Weber's Table 1 lists only T'-R' genus 6."),
+    "fujimori-weber":
+        ("bookkeeping", "Not a surface -- a family/method whose ten members "
+                        "map onto six that already ship (P, H, S'-S'', "
+                        "H'-T, H''-R, T'-R')."),
     "starfish-4-2-genus-71":
         ("contingent", "Brakke annotates this one 'not quite' -- it fails "
                        "to period-kill.  Whether the surface exists is "
@@ -621,7 +634,8 @@ def coverage(records):
               % (len(excluded),
                  ", ".join("%d %s" % (
                      sum(1 for x in excluded if NOT_A_GAP[x][0] == k), k)
-                     for k in ("terminal", "bookkeeping", "contingent")
+                     for k in ("terminal", "bookkeeping",
+                               "contingent", "no-source")
                      if any(NOT_A_GAP[x][0] == k for x in excluded))))
     print()
     byfam = {}
