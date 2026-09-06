@@ -1394,7 +1394,163 @@ def _f_tooth(x, y, z, mu):
             - (x * x + y * y + z * z))
 
 
+# ----------------------------------------------------------------
+# Batch of named classical/catalogue surfaces added with per-row
+# POLYNOMIAL identities in `_selftest` -- each check tests something
+# the equation claims (exact singular points, exact line containment,
+# discriminant structure, symmetry), not merely that a mesher ran.
+# ----------------------------------------------------------------
+
+def _f_swallowtail(x, y, z, mu):
+    # Discriminant of t^4 + x t^2 + y t + z: the swallowtail of
+    # singularity theory (one of Thom's elementary catastrophes; Labs
+    # Advent calendar No. 9 names it, the discriminant defines it).
+    # Identity: for ANY (t0, x), the quartic with a double root at t0
+    # has y = -4 t0^3 - 2 x t0, z = 3 t0^4 + x t0^2, and this
+    # polynomial vanishes there EXACTLY.
+    return (256.0 * z ** 3 - 128.0 * x * x * z * z
+            + 144.0 * x * y * y * z - 27.0 * y ** 4
+            + 16.0 * x ** 4 * z - 4.0 * x ** 3 * y * y)
+
+
+def _f_cayley_ruled(x, y, z, mu):
+    # Cayley's ruled cubic in its affine normal form z = x y - x^3/3
+    # (MathWorld "Cayley surface"; the homogeneous-space cubic of
+    # Eastwood-Ezhov).  Ruled: every x = c slice is a straight line.
+    # Identity: invariant under the exact 1-parameter affine flow
+    # T_a: (x, y, z) -> (x+a, y + a x + a^2/2, z + a y + a^2 x / 2
+    # + a^3/6), which satisfies f(T_a p) = f(p) identically.
+    return x * y - x ** 3 / 3.0 - z
+
+
+def _f_schur_quartic(x, y, z, mu):
+    # Schur's quartic x^4 - x y^3 = z^4 - z w^3 in the chart w = 1:
+    # the surface attaining B. Segre's bound of 64 lines on a smooth
+    # quartic (Segre 1943; Labs Advent calendar No. 24 shows it).
+    # Identities: the real lines {x = z, y = 1} and {x = -z, y = -1}
+    # lie on it exactly, and the REAL locus is smooth (grad never
+    # vanishes on it) -- the point of the surface is the line count,
+    # not singularities.
+    return x ** 4 - x * y ** 3 - z ** 4 + z
+
+
+def _f_desmic(x, y, z, mu):
+    # A desmic quartic: member a Delta_1 + b Delta_2 with
+    # Delta_1 = (x^2 - w^2)(y^2 - z^2), Delta_2 = (y^2 - w^2)(z^2 - x^2),
+    # Delta_3 = (z^2 - w^2)(x^2 - y^2), which satisfy the desmic
+    # identity Delta_1 + Delta_2 + Delta_3 = 0 (so any two span the
+    # pencil).  THE SHIPPED MEMBER IS (a, b) = (1, 2), chart w = 1 --
+    # a pencil member, not "the" desmic surface, and the record says
+    # so.  Its 12 nodes are EXACT rational points: the 4 coordinate
+    # points and the 8 points (1 : +-1 : +-1 : +-1), i.e. the vertices
+    # of the three desmic tetrahedra; the self-test checks f and grad f
+    # vanish at every one of them (affine ones directly, the rest in a
+    # second chart).
+    w = 1.0
+    d1 = (x * x - w * w) * (y * y - z * z)
+    d2 = (y * y - w * w) * (z * z - x * x)
+    return d1 + 2.0 * d2
+
+
+def _f_burkhardt_section(x, y, z, mu):
+    # The Burkhardt quartic y0^4 - y0 (y1^3+y2^3+y3^3+y4^3)
+    # + 3 y1 y2 y3 y4 = 0 lives in P^4 (45 nodes as a THREEFOLD;
+    # MathWorld / Hunt 1996) -- a 3D picture is necessarily a SECTION,
+    # so the member is pinned and named: the hyperplane
+    # y0 = (y1+y2+y3+y4)/4, which contains ALL SEVEN of the
+    # threefold's real rational nodes (the six (0 : e_i - e_j) points
+    # and (1:1:1:1:1)); a node of the threefold lying in the section
+    # hyperplane is automatically a singular point of the section
+    # (grad F = 0 there).  Chart y4 = 1: four of the seven are affine,
+    # at (1, 1, 1), (-1, 0, 0), (0, -1, 0), (0, 0, -1), and the
+    # self-test checks f = grad f = 0 at each exactly, plus the S3
+    # permutation symmetry of the chart.
+    y4 = 1.0
+    y0 = 0.25 * (x + y + z + y4)
+    return (y0 ** 4 - y0 * (x ** 3 + y ** 3 + z ** 3 + y4 ** 3)
+            + 3.0 * x * y * z * y4)
+
+
+# van Straten's D_d-symmetric nodal series (Labs,
+# algebraicsurface.net/octics/vstrconstr): replace the folding
+# polynomial in Chmutov's construction by the regular d-gon polynomial
+#     R_d(x, y) = prod_j (cos(2 pi j / d) x + sin(2 pi j / d) y - 1),
+# and set  f = R_d + lambda_d * That_d(z),  with That_d the Chebyshev
+# polynomial normalised to critical values {0, 1} and lambda_d MINUS
+# the saddle critical value of R_d.  Then the affine nodes are exactly
+#     (line-line crossings of R_d) x (That = 0 interior critica)
+#   + (the d outer saddles of R_d) x (That = 1 interior critica),
+# which reproduces the page's published counts: d = 7 -> 84, and
+# d = 8 -> 120 affine + 4 at infinity (the even-d parallel edge pairs)
+# = 124.  The self-test counts them numerically for d = 7 and 8 and
+# requires exactly 84 and 120.
+_VSTR_LAMBDA = {}
+
+
+def _vstr_lambda(d):
+    """-1 times the outer-saddle critical value of R_d, solved
+    numerically once per d and cached."""
+    d = int(d)
+    if d in _VSTR_LAMBDA:
+        return _VSTR_LAMBDA[d]
+    # the d outer saddles sit ON the edge-normal rays theta = 2 pi j/d
+    # (measured: d = 7 at r = 1.2361, d = 8 at r = 1.1547), and each
+    # ray is a mirror line of R_d, so the saddle is a 1-D critical
+    # point of R_d(r, 0) beyond the first crossing -- a plain 1-D
+    # Newton in r
+    r = 1.0 / math.cos(math.pi / d) + 0.05
+    for _ in range(200):
+        h = 1e-6
+        g1 = (_vstr_R(d, r + h, 0.0) - _vstr_R(d, r - h, 0.0)) / (2 * h)
+        g2 = (_vstr_R(d, r + h, 0.0) - 2.0 * _vstr_R(d, r, 0.0)
+              + _vstr_R(d, r - h, 0.0)) / (h * h)
+        if abs(g2) < 1e-30:
+            break
+        st = -g1 / g2
+        st = max(-0.2, min(0.2, st))
+        r += st
+        if abs(st) < 1e-13:
+            break
+    _VSTR_LAMBDA[d] = -float(_vstr_R(d, r, 0.0))
+    return _VSTR_LAMBDA[d]
+
+
+def _vstr_R(d, x, y):
+    v = 1.0
+    if isinstance(x, np.ndarray) or isinstance(y, np.ndarray):
+        v = np.ones_like(np.asarray(x, dtype=float)
+                         + np.asarray(y, dtype=float))
+    for j in range(int(d)):
+        a = 2.0 * math.pi * j / d
+        v = v * (math.cos(a) * x + math.sin(a) * y - 1.0)
+    return v
+
+
+def _vstr_That(d, z):
+    """Chebyshev T_d normalised to critical values {0, 1}."""
+    z = np.asarray(z, dtype=float)
+    t0, t1 = np.ones_like(z), z
+    for _ in range(int(d) - 1):
+        t0, t1 = t1, 2.0 * z * t1 - t0
+    return 0.5 * (t1 + 1.0)
+
+
+def _f_van_straten_d(x, y, z, mu, vd=7):
+    return (_vstr_R(vd, x, y)
+            + _vstr_lambda(vd) * _vstr_That(vd, z))
+
+
 _MATHWORLD = (
+    ('SWALLOWTAIL', "Swallowtail (quartic discriminant)", 'BOX', 2.2,
+     _f_swallowtail),
+    ('CAYLEY_RULED', "Cayley Ruled Cubic", 'BOX', 1.8, _f_cayley_ruled),
+    ('SCHUR_QUARTIC', "Schur Quartic (64 lines)", 'BALL', 2.2,
+     _f_schur_quartic),
+    ('DESMIC', "Desmic Quartic (12 nodes, (1,2) member)", 'BALL', 2.6,
+     _f_desmic),
+    ('BURKHARDT_SECTION',
+     "Burkhardt Quartic Section (y0 = sum/4 slice)", 'BALL', 3.0,
+     _f_burkhardt_section),
     ('PEANO', "Peano Surface", 'BOX', 1.3, _f_peano),
     ('CHAIR', "Chair Surface", 'BALL', 8.0, _f_chair),
     ('CROSSED_TROUGH', "Crossed Trough", 'BOX', 1.3, _f_crossed_trough),
@@ -1408,6 +1564,9 @@ _MATHWORLD = (
      _f_nordstrand_weird),
     ('TOOTH', "Tooth Surface", 'BOX', 1.4, _f_tooth),
 )
+
+PRESETS['VAN_STRATEN_D'] = (
+    "Van Straten D_d Nodal Series", _f_van_straten_d, 'BOX', 1.6)
 
 for _key, _label, _shape, _clip, _fn in _MATHWORLD:
     PRESETS[_key] = (_label, _fn, _shape, _clip)
@@ -1537,6 +1696,7 @@ SURFACE_FAMILY.update({k: 'MATHCURVE' for (k, _l, _s, _c, _f)
                        in _MATHCURVE})
 SURFACE_FAMILY.update({k: 'MATHWORLD' for (k, _l, _s, _c, _f)
                        in _MATHWORLD})
+SURFACE_FAMILY['VAN_STRATEN_D'] = 'OCTIC'
 
 GOURSAT_PRESETS.update(_load_goursat())
 
@@ -1556,6 +1716,12 @@ GOURSAT_PRESETS.update(_load_goursat())
 #
 # Row: (attribute, label, kind, default, lo, hi, description)
 PRESET_PARAMS = {
+    'VAN_STRATEN_D': (
+        ('vd', "Degree d", 'INT', 7, 5, 9,
+         "Degree of van Straten's D_d-symmetric nodal surface: the "
+         "regular d-gon polynomial plus a scaled Chebyshev in z.  "
+         "d = 7 has 84 affine nodes, d = 8 has 120 (plus 4 at "
+         "infinity, giving the published 124)"),),
     'KUMMER': (
         ('mu', "Node Sharpness", 'FLOAT', 1.3, 1.05, 2.0,
          "Kummer quartic parameter; it moves the sixteen nodes"),),
@@ -1776,6 +1942,177 @@ def _selftest():
         a, b = np.asarray(a, float), np.asarray(b, float)
         sc = max(float(np.max(np.abs(a))), 1e-30)
         return float(np.max(np.abs(a - b))) / sc
+
+    # ------------------------------------------------------------
+    # Batch-6 rows: per-row POLYNOMIAL identities.  Each tests what
+    # the equation CLAIMS -- exact singular points, exact line
+    # containment, discriminant structure, published node counts --
+    # not that a mesher produced triangles.
+    # ------------------------------------------------------------
+    b6 = []
+    # swallowtail: any quartic with a double root lies on it exactly
+    t0 = rng.uniform(-1.2, 1.2, 200)
+    xx = rng.uniform(-1.5, 1.5, 200)
+    yy = -4.0 * t0 ** 3 - 2.0 * xx * t0
+    zz = 3.0 * t0 ** 4 + xx * t0 ** 2
+    r_sw = float(np.max(np.abs(_f_swallowtail(xx, yy, zz, 1.3)))
+                 / max(1.0, float(np.max(np.abs(zz)) ** 3)))
+    b6.append(("swallowtail double-root locus", r_sw, 1e-9))
+    # Cayley ruled: the exact affine flow preserves f, and the rulings
+    # lie on it identically
+    px, py = rng.uniform(-1.5, 1.5, (2, 100))
+    pz = px * py - px ** 3 / 3.0
+    aa = rng.uniform(-1.0, 1.0, 100)
+    r_cr = float(np.max(np.abs(_f_cayley_ruled(
+        px + aa, py + aa * px + aa * aa / 2.0,
+        pz + aa * py + aa * aa * px / 2.0 + aa ** 3 / 6.0, 1.3))))
+    cc, tt = rng.uniform(-1.5, 1.5, (2, 100))
+    r_cr = max(r_cr, float(np.max(np.abs(_f_cayley_ruled(
+        cc, tt, cc * tt - cc ** 3 / 3.0, 1.3)))))
+    b6.append(("Cayley ruled flow + rulings", r_cr, 1e-10))
+    # Schur quartic: two explicit real lines lie on it exactly, and
+    # the real locus is smooth (the claim IS smooth-with-64-lines)
+    tl = rng.uniform(-2.0, 2.0, 200)
+    r_sq = float(np.max(np.abs(_f_schur_quartic(tl, 1.0 + 0.0 * tl,
+                                                tl, 1.3))))
+    r_sq = max(r_sq, float(np.max(np.abs(_f_schur_quartic(
+        tl, -1.0 + 0.0 * tl, -tl, 1.3)))))
+    b6.append(("Schur quartic real lines", r_sq, 1e-10))
+    gx3, gy3, gz3 = rng.uniform(-2.0, 2.0, (3, 4000))
+    fv = _f_schur_quartic(gx3, gy3, gz3, 1.3)
+    band = np.abs(fv) < 0.05
+    if band.sum() > 50:
+        h_ = 1e-5
+        gxv = (_f_schur_quartic(gx3[band] + h_, gy3[band], gz3[band],
+                                1.3)
+               - _f_schur_quartic(gx3[band] - h_, gy3[band], gz3[band],
+                                  1.3)) / (2 * h_)
+        gyv = (_f_schur_quartic(gx3[band], gy3[band] + h_, gz3[band],
+                                1.3)
+               - _f_schur_quartic(gx3[band], gy3[band] - h_, gz3[band],
+                                  1.3)) / (2 * h_)
+        gzv = (_f_schur_quartic(gx3[band], gy3[band], gz3[band] + h_,
+                                1.3)
+               - _f_schur_quartic(gx3[band], gy3[band], gz3[band] - h_,
+                                  1.3)) / (2 * h_)
+        gm = float(np.min(np.sqrt(gxv ** 2 + gyv ** 2 + gzv ** 2)))
+        b6.append(("Schur quartic real locus smooth (min |grad|)",
+                   0.05 - min(gm, 0.05), 0.049))
+    # desmic member (1, 2): all 12 nodes exact, in homogeneous form
+
+    def _desF(q):
+        xq, yq, zq, wq = q
+        return ((xq * xq - wq * wq) * (yq * yq - zq * zq)
+                + 2.0 * (yq * yq - wq * wq) * (zq * zq - xq * xq))
+
+    def _desG(q):
+        h2 = 1e-6
+        g_ = []
+        for i_ in range(4):
+            q1 = list(q)
+            q2 = list(q)
+            q1[i_] += h2
+            q2[i_] -= h2
+            g_.append((_desF(q1) - _desF(q2)) / (2 * h2))
+        return max(abs(v) for v in g_)
+    import itertools as _it
+    nodes12 = ([tuple(1.0 if j == i_ else 0.0 for j in range(4))
+                for i_ in range(4)]
+               + [(1.0, s1, s2, s3) for s1 in (1.0, -1.0)
+                  for s2 in (1.0, -1.0) for s3 in (1.0, -1.0)])
+    r_dm = max(max(abs(_desF(q)) for q in nodes12),
+               max(_desG(q) for q in nodes12))
+    b6.append(("desmic 12 nodes exact", r_dm, 1e-8))
+    # Burkhardt section: the four affine rational nodes, exact; plus
+    # the chart's S3 symmetry
+
+    def _bsec(q):
+        return float(_f_burkhardt_section(q[0], q[1], q[2], 1.3))
+    r_bk = 0.0
+    for q in ((1.0, 1.0, 1.0), (-1.0, 0.0, 0.0), (0.0, -1.0, 0.0),
+              (0.0, 0.0, -1.0)):
+        r_bk = max(r_bk, abs(_bsec(q)))
+        h2 = 1e-6
+        for i_ in range(3):
+            q1 = list(q)
+            q2 = list(q)
+            q1[i_] += h2
+            q2[i_] -= h2
+            r_bk = max(r_bk, abs((_bsec(q1) - _bsec(q2)) / (2 * h2)))
+    r_bk = max(r_bk, _dev(
+        _f_burkhardt_section(qx, qy, qz, 1.3),
+        _f_burkhardt_section(qy, qz, qx, 1.3)))
+    b6.append(("Burkhardt section nodes + S3", r_bk, 1e-8))
+    # van Straten series: the PUBLISHED affine node counts, each node
+    # verified as a singular point of the actual polynomial
+    for d_, want in ((7, 84), (8, 120)):
+        lam = _vstr_lambda(d_)
+        angs = [2.0 * math.pi * j_ / d_ for j_ in range(d_)]
+        pts2 = []
+        for i_ in range(d_):
+            for j_ in range(i_ + 1, d_):
+                A_ = np.array([[math.cos(angs[i_]), math.sin(angs[i_])],
+                               [math.cos(angs[j_]), math.sin(angs[j_])]])
+                if abs(np.linalg.det(A_)) < 1e-9:
+                    continue
+                pts2.append(tuple(np.linalg.solve(A_, [1.0, 1.0])))
+        sad = []
+        rs = 1.0 / math.cos(math.pi / d_)
+        rsad = None
+        # recover the saddle radius from the cached lambda solve
+        rr = rs + 0.05
+        for _ in range(200):
+            h2 = 1e-6
+            g1 = (_vstr_R(d_, rr + h2, 0.0)
+                  - _vstr_R(d_, rr - h2, 0.0)) / (2 * h2)
+            g2 = (_vstr_R(d_, rr + h2, 0.0) - 2 * _vstr_R(d_, rr, 0.0)
+                  + _vstr_R(d_, rr - h2, 0.0)) / (h2 * h2)
+            st = -g1 / g2
+            st = max(-0.2, min(0.2, st))
+            rr += st
+            if abs(st) < 1e-13:
+                break
+        rsad = rr
+        for j_ in range(d_):
+            sad.append((rsad * math.cos(angs[j_]),
+                        rsad * math.sin(angs[j_])))
+        zc = [math.cos(k_ * math.pi / d_) for k_ in range(1, d_)]
+        z0s = [z_ for z_ in zc
+               if abs(float(_vstr_That(d_, z_))) < 1e-9]
+        z1s = [z_ for z_ in zc
+               if abs(float(_vstr_That(d_, z_)) - 1.0) < 1e-9]
+        cand = ([(px_, py_, z_) for (px_, py_) in pts2 for z_ in z0s]
+                + [(px_, py_, z_) for (px_, py_) in sad for z_ in z1s])
+        nn_ = 0
+        worst = 0.0
+        for (px_, py_, pz_) in cand:
+            fv_ = float(_f_van_straten_d(px_, py_, pz_, 1.3, vd=d_))
+            h2 = 1e-5
+            gv_ = max(
+                abs(float(_f_van_straten_d(px_ + h2, py_, pz_, 1.3,
+                                           vd=d_))
+                    - float(_f_van_straten_d(px_ - h2, py_, pz_, 1.3,
+                                             vd=d_))),
+                abs(float(_f_van_straten_d(px_, py_ + h2, pz_, 1.3,
+                                           vd=d_))
+                    - float(_f_van_straten_d(px_, py_ - h2, pz_, 1.3,
+                                             vd=d_))),
+                abs(float(_f_van_straten_d(px_, py_, pz_ + h2, 1.3,
+                                           vd=d_))
+                    - float(_f_van_straten_d(px_, py_, pz_ - h2, 1.3,
+                                             vd=d_)))) / (2 * h2)
+            worst = max(worst, abs(fv_), gv_ * h2)
+            if abs(fv_) < 1e-7 and gv_ < 1e-4:
+                nn_ += 1
+        okd = (nn_ == want)
+        ok &= okd
+        print("algebraic: van Straten d=%d affine nodes %d (want %d), "
+              "worst residual %.1e %s"
+              % (d_, nn_, want, worst, 'OK' if okd else 'FAIL'))
+    bad6 = ['%s:%.1e' % (nm, rv) for (nm, rv, tol) in b6 if rv > tol]
+    ok &= not bad6
+    print("algebraic: batch-6 polynomial identities (%d) %s"
+          % (len(b6), 'OK' if not bad6 else 'FAIL ' + ','.join(bad6)))
 
     checks = [
         ("Labs septic D7", _dev(_f_labs(qx, qy, qz, 1.3),

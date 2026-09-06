@@ -345,6 +345,12 @@ if _IN_BLENDER:
         e: FloatProperty(name="Coefficient e", default=0.0,
                          min=-8.0, max=8.0, step=10,
                          description="Family coefficient")
+        vd: IntProperty(
+            name="Degree d", default=7, min=5, max=9,
+            description="Degree of van Straten's D_d-symmetric nodal "
+                        "surface (regular d-gon polynomial plus a "
+                        "scaled Chebyshev in z); d = 7 has 84 affine "
+                        "nodes, d = 8 has 120 plus 4 at infinity")
         ratio: FloatProperty(name="Family Ratio", default=2.0,
                              min=1.1, max=6.0,
                              description="Pencil parameter")

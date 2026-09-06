@@ -392,6 +392,16 @@ ALIAS = {
     "tpms:FK_CS": "fischer-koch-cs",
     "tpms:FK_CY": "fischer-koch-cy",
     "algebraic:BARTH": "barth-sextic",
+    # Batch-6 named rows: MathWorld / Labs catalogue entries, each
+    # verified against what its polynomial claims (see the algebraic
+    # self-test).  Burkhardt and the desmic quartic are PINNED members
+    # (a section, a pencil member) and their records say so.
+    "algebraic:SWALLOWTAIL": "swallowtail",
+    "algebraic:CAYLEY_RULED": "cayley-ruled-surface",
+    "algebraic:SCHUR_QUARTIC": "segre-quartic-64-lines",
+    "algebraic:DESMIC": "desmic-surface",
+    "algebraic:BURKHARDT_SECTION": "burkhardt-quartic",
+    "algebraic:VAN_STRATEN_D": "van-straten-dihedral-series",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",
     "algebraic:LABS": "labs-septic",

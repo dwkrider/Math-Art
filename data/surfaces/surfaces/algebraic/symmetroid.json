@@ -15,7 +15,7 @@
     "mode": "implicit",
     "fidelity": "exact",
     "polynomial": null,
-    "note": "The quartic determinant surface of a net of quadrics; ten nodes."
+    "note": "The quartic determinant surface of a net of quadrics; ten nodes. STILL OPEN after the batch-6 pass, and deliberately: 'the' symmetroid is a GENERIC construction, not a surface -- shipping one requires choosing an explicit symmetric 4x4 linear matrix and verifying its ten nodes, and no canonical choice is published in the sources on hand.  A future row must pin and name its member, per the Wei-g4 rule."
   },
   "curvature": {
     "condition": "none",

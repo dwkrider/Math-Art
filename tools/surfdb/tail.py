@@ -97,11 +97,29 @@ WEBER_ARCHIVE = [
 # repo does not build.
 ALGEBRAIC = [
     ("burkhardt-quartic", "Burkhardt Quartic",
-     "A quartic with 45 nodes; Heinrich Burkhardt, 1891."),
+     "A quartic with 45 nodes; Heinrich Burkhardt, 1891.  The 45-nodal "
+     "object is a THREEFOLD in P^4 (y0^4 - y0(y1^3+..+y4^3) "
+     "+ 3 y1 y2 y3 y4 = 0), so any 3D picture is a section: THE "
+     "SHIPPED ROW IS THE y0 = (y1+y2+y3+y4)/4 HYPERPLANE SECTION, "
+     "chosen because it contains all seven of the threefold's real "
+     "rational nodes; four are affine in the y4 = 1 chart and are "
+     "verified exactly by the self-test."),
     ("desmic-surface", "Desmic Surface",
-     "Associated with a desmic system of three tetrahedra."),
+     "Associated with a desmic system of three tetrahedra: Delta_1 = "
+     "(x^2-w^2)(y^2-z^2) and its two cyclic mates satisfy Delta_1 + "
+     "Delta_2 + Delta_3 = 0, and the desmic surfaces are the pencil "
+     "a Delta_1 + b Delta_2.  THE SHIPPED ROW IS THE (a, b) = (1, 2) "
+     "MEMBER, chart w = 1; its 12 nodes are exact rational points "
+     "(the vertices of the three tetrahedra: the coordinate points "
+     "and (1:+-1:+-1:+-1)), each verified exactly by the self-test."),
     ("symmetroid", "Symmetroid",
-     "The quartic determinant surface of a net of quadrics; ten nodes."),
+     "The quartic determinant surface of a net of quadrics; ten nodes. "
+     "STILL OPEN after the batch-6 pass, and deliberately: 'the' "
+     "symmetroid is a GENERIC construction, not a surface -- shipping "
+     "one requires choosing an explicit symmetric 4x4 linear matrix "
+     "and verifying its ten nodes, and no canonical choice is published "
+     "in the sources on hand.  A future row must pin and name its "
+     "member, per the Wei-g4 rule."),
     ("menns-surface", "Menn's Surface",
      "A quartic carrying a higher-order cusp; a standard singularity model."),
     ("peano-surface", "Peano Surface",

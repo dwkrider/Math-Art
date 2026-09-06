@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 420,
+  "implemented_count": 426,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -1181,7 +1181,7 @@
     },
     {
       "slug": "burkhardt-quartic",
-      "name": "Burkhardt Quartic",
+      "name": "Burkhardt Quartic Section (y0 = sum/4 slice)",
       "path": "surfaces/algebraic/burkhardt-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -1189,7 +1189,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -1207,8 +1207,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -1971,7 +1973,7 @@
     },
     {
       "slug": "cayley-ruled-surface",
-      "name": "Cayley's Ruled Surface",
+      "name": "Cayley Ruled Cubic",
       "path": "surfaces/algebraic/cayley-ruled-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -1979,7 +1981,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -1997,8 +1999,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -3549,7 +3553,7 @@
     },
     {
       "slug": "desmic-surface",
-      "name": "Desmic Surface",
+      "name": "Desmic Quartic (12 nodes, (1,2) member)",
       "path": "surfaces/algebraic/desmic-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -3557,7 +3561,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -3575,8 +3579,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -12011,7 +12017,7 @@
     },
     {
       "slug": "segre-quartic-64-lines",
-      "name": "Segre Quartic (64 lines)",
+      "name": "Schur Quartic (64 lines)",
       "path": "surfaces/algebraic/segre-quartic-64-lines.json",
       "primary_family": "algebraic",
       "families": [
@@ -12019,7 +12025,7 @@
         "aperiodic",
         "def-implicit",
         "embedded",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -12037,8 +12043,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13909,14 +13917,14 @@
     },
     {
       "slug": "swallowtail",
-      "name": "Swallowtail",
+      "name": "Swallowtail (quartic discriminant)",
       "path": "surfaces/algebraic/swallowtail.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -13935,8 +13943,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -15451,14 +15461,14 @@
     },
     {
       "slug": "van-straten-dihedral-series",
-      "name": "Van Straten Dihedral Series",
+      "name": "Van Straten D_d Nodal Series",
       "path": "surfaces/algebraic/van-straten-dihedral-series.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -15477,8 +15487,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 2
     },
     {
