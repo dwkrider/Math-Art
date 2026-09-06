@@ -154,13 +154,16 @@ Renders of each selectable option:
 
 <table>
 <tr>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_BREINER_KLEENE.png" width="200"><br><sub>Breiner-Kleene Spiral Helicoid</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__BJ_CYCLOID.png" width="200"><br><sub>Bjorling: Cycloid (Catalan)</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__BJ_CIRCLE.png" width="200"><br><sub>Bjorling: Twisted Band (Mobius)</sub></td>
-<td align="center"><img src="../images/variants/parametric_minimal__BJ_HELIX.png" width="200"><br><sub>Bjorling: Helix Ribbon</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_HELIX.png" width="200"><br><sub>Bjorling: Helix Ribbon</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__BJ_TREFOIL.png" width="200"><br><sub>Bjorling: Trefoil Ribbon</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__BJ_ARCH_SPIRAL.png" width="200"><br><sub>Bjorling: Archimedean Spiral</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/parametric_minimal__BJ_LOG_SPIRAL.png" width="200"><br><sub>Bjorling: Logarithmic Spiral</sub></td>
 </tr>
 </table>

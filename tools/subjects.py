@@ -802,7 +802,7 @@ VARIANT_MAX = {
     # for one page, up from 96.  Lower it deliberately if that is too
     # many -- the renderer prints what it dropped -- but do not leave it
     # at a number that silently deletes families.
-    "mesh.algebraic_surface_add": 132,
+    "mesh.algebraic_surface_add": 160,
 }
 
 # Galleries whose entries are combinations of properties rather than

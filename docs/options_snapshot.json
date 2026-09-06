@@ -462,6 +462,7 @@
    "Coefficient c",
    "Coefficient d",
    "Coefficient e",
+   "Degree d",
    "Family Ratio",
    "Middle Semi-axis",
    "Long Semi-axis",
@@ -613,6 +614,27 @@
    "Boundary Link",
    "Thickness",
    "Scale"
+  ]
+ },
+ "mesh.canal_surface_add": {
+  "label": "Canal Surface",
+  "options": [
+   "Spine",
+   "Radius Law",
+   "Radius",
+   "End Radius",
+   "Wave Count",
+   "Wave Depth",
+   "Slope",
+   "Ellipse Aspect",
+   "Turns",
+   "Pitch",
+   "Knot P",
+   "Knot Q",
+   "Spine Samples",
+   "Sides",
+   "Cap Ends",
+   "Size"
   ]
  },
  "mesh.canonical_polyhedron_add": {
@@ -792,6 +814,7 @@
    "Tube Radius",
    "Beads",
    "Bead Aspect",
+   "Curvature Ratio",
    "Profile Reach",
    "Scale a",
    "Base Radius",
@@ -882,6 +905,23 @@
    "Sharp Seam",
    "Seam Curvature Attribute",
    "Shade Smooth"
+  ]
+ },
+ "mesh.focal_surface_add": {
+  "label": "Focal Surface",
+  "options": [
+   "Source",
+   "Sheets",
+   "Clip Distance",
+   "Semi-axis a",
+   "Semi-axis b",
+   "Semi-axis c",
+   "Ring Radius",
+   "Tube Radius",
+   "Segments U",
+   "Segments V",
+   "Source Surface",
+   "Size"
   ]
  },
  "mesh.fold_import": {
@@ -2838,6 +2878,9 @@
   "options": [
    "Surface",
    "Rendition",
+   "Waist",
+   "Shells",
+   "Shell Ratio",
    "Length",
    "Width",
    "Tube Radius",
