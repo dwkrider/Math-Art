@@ -355,6 +355,16 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
     corners are valid, which is what trims the flares at parabolic
     points instead of meshing to infinity.
 
+    THE CLIP CUTS, IT DOES NOT DROP.  Where a sheet crosses the clip
+    radius -- and a sheet that flares to infinity crosses it
+    diagonally through the grid cells -- each straddling cell is cut
+    along the true crossing: the crossing parameter is found by
+    bisection on the analytic chart, so the inserted rim vertex sits
+    exactly at focal distance = clip, and the partial cell is emitted
+    as the resulting polygon.  Dropping whole cells instead leaves a
+    sawtooth rim of cell-sized teeth, which is how the monkey saddle
+    first shipped.
+
     A DEGENERATE sheet -- one whose image has (near) zero area, like
     BOTH sheets of the torus, which are its centre circle and its axis
     -- is not emitted as its zero-area quad grid: that is invisible in
@@ -364,7 +374,10 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
     operator reports what happened instead of staying silent.
 
     stats: {"cover": {sheet: fraction of the grid within clip},
-            "degenerate": {sheet: "curve" | "point" | "unreduced"}}.
+            "degenerate": {sheet: "curve" | "point" | "unreduced"},
+            "rim": {sheet: (crossing count, worst relative deviation
+                            of a rim vertex's focal distance from
+                            clip)}}.
     """
     u0, u1, v0, v1, wrap_u, wrap_v = _DOMAIN[source]
     NU = nu if wrap_u else nu + 1
@@ -402,6 +415,9 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
     total = NU * NV
     cover = {s: 0.0 for s in sheets}
     degenerate = {}
+    rim = {}
+    duu = (u1 - u0) / nu
+    dvv = (v1 - v0) / nv
     for sheet in sheets:
         pts = F[sheet]
         cover[sheet] = len(pts) / float(total)
@@ -428,7 +444,70 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
             faces.extend(tuple(idx[c] for c in q) for q in quads)
 
         if area > 1e-7 * diag * diag:
-            _emit_grid()                      # a genuine 2-D sheet
+            # A genuine 2-D sheet.  Emit it cell by cell, CUTTING every
+            # cell the clip locus crosses: dropping whole cells would
+            # leave a sawtooth rim of cell-sized teeth.  The crossing
+            # on each straddling grid edge is found by bisection in
+            # PARAMETER space against the analytic chart, so the
+            # inserted rim vertex sits on the clip locus itself.
+            idx = {}
+            for gc, p in pts.items():
+                idx[gc] = len(verts)
+                verts.append(p)
+            cache = {}
+            rim_n, rim_err = 0, 0.0
+
+            def _crossing(ca_raw, cb_raw):
+                """Rim vertex on the grid edge inside->outside."""
+                nonlocal rim_n, rim_err
+                ka = (ca_raw[0] % NU, ca_raw[1] % NV)
+                kb = (cb_raw[0] % NU, cb_raw[1] % NV)
+                ckey = (min(ka, kb), max(ka, kb))
+                if ckey in cache:
+                    return cache[ckey]
+                ua, va = u0 + duu * ca_raw[0], v0 + dvv * ca_raw[1]
+                ub, vb = u0 + duu * cb_raw[0], v0 + dvv * cb_raw[1]
+                ta, tb = 0.0, 1.0
+                for _ in range(40):
+                    tm = 0.5 * (ta + tb)
+                    um, vm = ua + (ub - ua) * tm, va + (vb - va) * tm
+                    _P, _N, k1, k2 = principal(source, um, vm, **kw)
+                    if abs((k1, k2)[sheet]) * clip > 1.0:
+                        ta = tm
+                    else:
+                        tb = tm
+                um, vm = ua + (ub - ua) * ta, va + (vb - va) * ta
+                P, N, k1, k2 = principal(source, um, vm, **kw)
+                d = 1.0 / (k1, k2)[sheet]
+                rim_n += 1
+                rim_err = max(rim_err, abs(abs(d) - clip) / clip)
+                vi = len(verts)
+                verts.append((P[0] + d * N[0], P[1] + d * N[1],
+                              P[2] + d * N[2]))
+                cache[ckey] = vi
+                return vi
+
+            for i in range(NU if wrap_u else NU - 1):
+                for j in range(NV if wrap_v else NV - 1):
+                    raw = [(i, j), (i + 1, j), (i + 1, j + 1),
+                           (i, j + 1)]
+                    keys = [(a % NU, b % NV) for a, b in raw]
+                    ins = [kk in pts for kk in keys]
+                    if not any(ins):
+                        continue
+                    poly = []
+                    for t in range(4):
+                        t2 = (t + 1) % 4
+                        if ins[t]:
+                            poly.append(idx[keys[t]])
+                        if ins[t] != ins[t2]:
+                            poly.append(_crossing(raw[t], raw[t2])
+                                        if ins[t]
+                                        else _crossing(raw[t2], raw[t]))
+                    if len(poly) >= 3:
+                        faces.append(tuple(poly))
+            if rim_n:
+                rim[sheet] = (rim_n, rim_err)
             continue
 
         # the sheet is 1-dimensional (or a point): draw its locus
@@ -460,7 +539,8 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
                 faces.append((base + i * NV + j, base + i2 * NV + j,
                               base + i2 * NV + j2, base + i * NV + j2))
 
-    return verts, faces, {"cover": cover, "degenerate": degenerate}
+    return verts, faces, {"cover": cover, "degenerate": degenerate,
+                          "rim": rim}
 
 
 # ---------------------------------------------------------------------------
@@ -777,6 +857,24 @@ def _selftest():
     print("focal: the monkey saddle's planar umbilic is clipped, "
           "finite mesh (%d%% of sheet 1 within clip) %s"
           % (round(100 * stats["cover"][0]), "OK" if good else "FAIL"))
+
+    # 6b. clipped rims are CUT along the clip locus, not
+    # stair-stepped.  Dropping whole cells at the clip left a sawtooth
+    # rim of cell-sized teeth (observed on the monkey saddle and the
+    # elliptic paraboloid), with long spikes wherever the sheet
+    # crossed the clip radius at a shallow angle.  Every source whose
+    # sheets run to infinity must now insert rim vertices, and every
+    # inserted rim vertex must sit AT focal distance = clip.
+    for src in ('MONKEY_SADDLE', 'PARABOLOID', 'SADDLE', 'CATENOID'):
+        _v, _f, stats = build_focal(src, 48, 48, clip=2.5)
+        rims = stats["rim"]
+        n = sum(cnt for cnt, _e in rims.values())
+        worst = max((e for _c, e in rims.values()), default=1.0)
+        good = bool(rims) and n > 20 and worst < 1e-3
+        ok &= good
+        print("focal: %-14s rim is cut on the clip locus "
+              "(%d rim verts, worst |d - clip|/clip = %.1e) %s"
+              % (src, n, worst, "OK" if good else "FAIL"))
 
     # 7. EVERY source in the enum yields a non-empty mesh with real
     # area through the builder.  The torus taught this lesson: a gate
