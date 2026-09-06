@@ -544,7 +544,20 @@ SUSPECTED_SAME = [
 # Weber's own PoVRay exports -- so the table is empty, but it stays:
 # the next row that ships-before-it-is-shown-to-be-the-surface goes
 # here, not into the implemented count.)
-UNVERIFIED = {}
+UNVERIFIED = {
+    "minsurf:SPH_4NOID_SYM2":
+        "Ships for inspection only.  The Weierstrass data is verified "
+        "(four end periods vanish to 4e-13 across four members) and "
+        "the assembly now passes a topology gate -- one component, "
+        "chi = -2, four boundary loops -- but the SHAPE is still "
+        "wrong.  Weber's own render of the same member "
+        "(_external/4-noids-...-unpacked/'lambda=1.2, mu=1.2'/"
+        "mathematica.png) is two wide, nearly flat plates joined by a "
+        "neck with two funnels; ours is a ball of roughly equal "
+        "extent in all three axes.  chi = -2 with four loops is "
+        "necessary and not sufficient: a sphere with four slits has "
+        "it too.  See BACKLOG.md.",
+}
 
 
 def disposition(source, key):

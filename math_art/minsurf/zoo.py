@@ -2107,7 +2107,7 @@ SURFACE_FAMILY['SP_SCHERK4'] = 'SINGLY'
 # reflect-in-x-then-y assembly applied -- see four_noid_sym2_patch
 # and four_noid_sym2_mesh for the full story.
 WE_SURFACES['SPH_4NOID_SYM2'] = {
-    'label': "4-Noid, Two Symmetry Planes",
+    'label': "4-Noid, Two Symmetry Planes (shape unverified)",
     'family': 'SPHERES',
     'mesher': we.four_noid_sym2_mesh,
     'p_from': lambda order, radius: {},
