@@ -207,6 +207,16 @@ def genus_of(W, faces, period=None, tol=1e-3):
 OVERRIDE = {
     # Lidinoid is rhombohedral -- an rPD-family surface, not a cubic one.
     'LIDINOID': 'RHOMBOHEDRAL',
+    # Triply periodic Horgan: vertical symmetry planes over a SQUARE
+    # grid (Weber ch263) -- tetragonal; the row ships a growing
+    # fundamental piece, whose own proportions say nothing.
+    'TRIPLY_HORGAN': 'TETRAGONAL',
+    # Wei genus-4, (a, b) = (0.1, 0.3) member: the assembled cell
+    # MEASURES 0.771 : 0.815 : 1 -- not a square base for this generic
+    # member (the page's square-base picture is not a constraint the
+    # two-parameter family obeys everywhere), so it is filed NONCUBIC
+    # on the measurement rather than TETRAGONAL on the prose.
+    'WEI_G4': 'NONCUBIC',
     # P, the gyroid and D are all cubic; this row is their Bonnet
     # associate family and the piece it builds is not cube-shaped.
     'PGD': 'CUBIC',

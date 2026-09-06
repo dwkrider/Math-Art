@@ -293,8 +293,14 @@ ADJOINT = {
     'octoadj.fe': ('octo-surface', "Schoen O,C-TO", None),
     'pbatadj.fe': ('brakke-pseudo-batwing', "Brakke Pseudo-Batwing", None),
     'pssadj.fe': ('schoen-hybrid-ss-p', "Schoen P | S'-S''", None),
-    's12adj.fe': (None, "Schoen p.12 Surface", 'SCHOEN12'),
-    's14adj.fe': (None, "Schoen p.14 Surface", 'SCHOEN14'),
+    # Brakke's page names these outright -- "Schoen's F-RD(r)
+    # Surface (formerly unnamed Surface 12)" and "Schoen's
+    # I-WP(r) Surface (formerly unnamed Surface 14)" -- and the
+    # database already carried curated records for both, sitting
+    # beside the minted `schoen1x-exact` twins.  The slug pins
+    # the record; the row key stays SCHOEN12/SCHOEN14.
+    's12adj.fe': ('schoen-frd-r', "Schoen p.12 Surface", 'SCHOEN12'),
+    's14adj.fe': ('schoen-iwp-r', "Schoen p.14 Surface", 'SCHOEN14'),
     'triplane0adj.fe': (None, "Triplane 0", 'TRIPLANE0'),
     'triplane1adj.fe': (None, "Triplane 1", 'TRIPLANE1'),
     'triplane2adj.fe': (None, "Triplane 2", 'TRIPLANE2'),
@@ -594,7 +600,7 @@ def harvest_adjoint(m=96, rings=16, iters=400):
         # is the database record it belongs to, which for a surface the
         # database already knows is that record, and for a new one is
         # whatever `surfdb_build` will derive from the row.
-        key = slug or row_key
+        key = row_key or slug
         record = slug or ('%s-exact' % row_key.lower().replace('_', '-'))
         out[key] = {
             'source': fn,

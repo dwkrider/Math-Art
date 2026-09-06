@@ -531,13 +531,21 @@ def _apply(M, V):
 #       chambers wide: one extra torus period, times one internal
 #       mirror.  On the quarter domain the walls are declared and the
 #       word closes 12 copies.
-#   Lidinoid  its edge residuals PLATEAU at 2.4e-2 and do not fall with
-#       the grid at all, which says this is not quadrature error.  It is
-#       the same situation as the gyroid: at a generic associate angle
-#       (here 64.2098 degrees) a straight line becomes neither a
-#       straight line nor a planar geodesic, so there is no reflection
-#       generator to find and `_assemble` is right to decline.  The
-#       fundamental piece is the honest object and is what ships.
+#   Lidinoid  NOW ASSEMBLES its translational cell -- but NOT by
+#       reflection, and the old diagnosis stands as far as it went: its
+#       edge residuals plateau at 2.4e-2 because at its associate angle
+#       (64.2098 degrees) no boundary curve is a straight line or a
+#       planar geodesic, so there is no reflection generator to find
+#       and `_assemble` is right to decline.  That is the gyroid
+#       situation, and the VMM Lidinoid page states it outright: these
+#       two are the only known embedded TPMS not cut by lines or planar
+#       symmetry curves into simple pieces.  What the Lidinoid HAS is
+#       what Weber's own notebook uses: an order-6 rotoreflection S6
+#       about the vertical axis through the image of z = 1/2, and a
+#       rank-3 period lattice, both measured off deck transformations
+#       of the theta-quotient torus rather than off boundary curves.
+#       `lidinoid_assembly` follows that chain -- see its docstring for
+#       the identities that verify it.
 
 def _log_theta(D, q):
     """log theta11 over a grid, unwrapped to a continuous branch."""
@@ -602,7 +610,7 @@ _SPECS = {
         theta=-math.pi / 2.0,
         nb="Triply_SchwarzCLP.nb"),
     'LIDINOID': dict(
-        label="Lidinoid (exact fundamental piece)",
+        label="Lidinoid (exact)",
         tau=1j * math.tan(math.radians(90.0 - 64.2098)),
         a=0.25,
         terms=lambda a, tau: ((0.0, 2.0 / 3.0), (0.5, -2.0 / 3.0)),
@@ -611,6 +619,12 @@ _SPECS = {
         const=(2.0 / 3.0) * (1j * math.pi / 2.0),
         xlim=(0.0, 1.0), ylim=lambda t: (0.0, np.imag(t)),
         theta=math.radians(64.2098),
+        # The graded rows hug the S6 seam curves at ~1e-6 of the span,
+        # so the shared 1e-4 weld ladder would stitch a copy to its
+        # neighbour one row in from the seam -- the same measurement
+        # that gave rPD its 1e-7.  The true seams are index-merged in
+        # `lidinoid_assembly`, so they close at any tolerance at all.
+        weld=1e-7,
         nb="Triply_Lidinoid.nb"),
     # Genus 4: CLP with a handle added.  Six theta factors at half
     # powers instead of CLP's four, and a genuine period problem -- but
@@ -1679,6 +1693,117 @@ _SPECS['SIMOES_BATISTA'] = _prod_spec(
     const=0.25j * math.pi,
     nb="Sim-es-Batista-g-7.nb")
 _SPECS['SIMOES_BATISTA']['test_res'] = (60, 90)
+
+
+# --------------------------------------------------------------------
+# Triply periodic Horgan surface (Catenoid-Scherk limits), genus 5
+# --------------------------------------------------------------------
+# Weber's ch263: a 1-parameter family with vertical symmetry planes
+# over a square grid and diagonal horizontal lines, limiting in noded
+# planes and in doubly periodic Karcher-Scherk surfaces.  Its neck
+# configuration is exactly that of the FINITE Horgan surface, which is
+# proved NOT to exist -- but this triply periodic relative does, with a
+# 1-dimensional period problem Weber solves by an extremal-length
+# picture proof.  The database keeps `horgan-surface` (non-existent)
+# and `triply-periodic-horgan` (this row) deliberately distinct.
+#
+# Data transcribed from `Triply_Horgan.nb`: eight theta factors at
+# half powers, dh = dz, G normalised to i at cp = 1/4 + tau/4, and the
+# a = 1/4 member with tau solved from the notebook's own test
+#     Re Int_0^a om1 dz = 0
+# re-derived here (bisection over t in (0.2, 1)) to
+#     tau = 0.840021463682679 i.
+#
+# THE IDENTITY THAT VERIFIES THE ROW, measured before it was added and
+# gated in the self-test: the period problem is 2-dimensional on its
+# face (the notebook's first `tst` has two components) and Weber's
+# extremal-length argument says solving the FIRST kills the SECOND.
+# Measured: at tau*, the unimposed second component
+#     Re Int_0^{1/2 + tau/2} om2 dz = 4.0e-14.
+# A wrong exponent, shift or normalisation moves that to O(1e-2).
+#
+# References:
+# - M. Weber, "Catenoid-Scherk Limits -- aka Triply Periodic Horgan
+#   Surface", minimalsurfaces.blog (mirror ch263; notebook
+#   `Triply_Horgan.nb` -- the data and the period test above).
+_TPH_A = 0.25
+_TPH_TAU = 0.840021463682679j
+
+
+def _tph_terms(a, tau):
+    return ((0.0, -0.5), (a, 0.5), (-a, 0.5),
+            (0.5 - a + tau / 2.0, -0.5), (-(0.5 - a + tau / 2.0), -0.5),
+            (0.5, 0.5), (tau / 2.0, -0.5), (0.5 + tau / 2.0, 0.5))
+
+
+def _norm_const(terms, a, tau, z0, base):
+    """log of the constant that normalises exp(sum c log theta) to
+    `base` at z0, on principal branches.  A branch slip against the
+    patch's unwrapped log only rotates the immersion about the vertical
+    axis (G -> e^{i psi} G is an isometry of the piece), so principal
+    branches are enough."""
+    q = np.exp(1j * np.pi * tau)
+    L = complex(np.log(complex(base)))
+    for sh, c in terms(a, tau):
+        L = L - c * np.log(complex(_theta11(np.asarray(z0 - sh), q)))
+    return L
+
+
+_SPECS['TRIPLY_HORGAN'] = _prod_spec(
+    "Triply Periodic Horgan Surface (exact fundamental piece, genus 5)",
+    tau=_TPH_TAU, a=_TPH_A, terms=_tph_terms,
+    const=_norm_const(_tph_terms, _TPH_A, _TPH_TAU,
+                      0.25 + _TPH_TAU / 4.0, 1j),
+    splits=(0.25,),
+    nb="Triply_Horgan.nb")
+_SPECS['TRIPLY_HORGAN']['tsplits'] = (0.25,)
+
+
+# --------------------------------------------------------------------
+# Wei's triply periodic surface of genus 4 -- the (a, b) = (0.1, 0.3)
+# member, and the label says so
+# --------------------------------------------------------------------
+# Wei's 1992 family is TWO-parameter; his doubly periodic genus-2
+# surfaces arise as limits.  `Wei_Genus_4_V1_.nb` does not pin a
+# canonical member: it chooses (a, b) = (0.1, 0.3), derives the third
+# branch value from the Abel relation c = b - a, and solves the ONE
+# remaining period condition
+#     Re Int_a^b om2 dz = 0
+# for the modulus.  Re-derived here (bisection over t in (0.1, 1.5)):
+#     tau = 0.849141499409681 i.
+# This row is THAT member -- the F-RD lesson: a generic member of a
+# family must not ship under the family's bare name, so the label
+# carries (a, b) explicitly and the record's note says the same.
+#
+# The verifying identity, gated in the self-test: the stored tau is
+# re-derived from the notebook's own period integral and must land on
+# the stored value to 1e-9; and the Abel relation c = b - a is what
+# makes the six theta factors a legal Gauss map divisor on the torus
+# (sum of zeros minus poles = 0 mod the lattice), which the re-solve
+# exercises through every factor.
+#
+# References:
+# - F. Wei, "Some existence and uniqueness theorems for doubly periodic
+#   minimal surfaces", Invent. Math. 109 (1992) 113-136.
+# - M. Weber, "Wei's Triply Periodic Surface of Genus 4",
+#   minimalsurfaces.blog (mirror ch335; notebook `Wei_Genus_4_V1_.nb`).
+_WEI4_A, _WEI4_B = 0.1, 0.3
+_WEI4_TAU = 0.849141499409681j
+
+
+def _wei4_terms(a, tau, _b=_WEI4_B):
+    c = _b - a
+    return ((a, 0.5), (_b, -0.5), (c + tau / 2.0, 0.5),
+            (-a, -0.5), (-_b, 0.5), (-c + tau / 2.0, -0.5))
+
+
+_SPECS['WEI_G4'] = _prod_spec(
+    "Wei Triply Periodic Surface (genus 4, a=0.1 b=0.3 member)",
+    tau=_WEI4_TAU, a=_WEI4_A, terms=_wei4_terms,
+    const=_norm_const(_wei4_terms, _WEI4_A, _WEI4_TAU, 0.0, 1.0),
+    splits=(_WEI4_A, _WEI4_B),
+    nb="Wei_Genus_4_V1_.nb")
+_SPECS['WEI_G4']['tsplits'] = (_WEI4_B - _WEI4_A,)
 
 
 # --------------------------------------------------------------------
@@ -2912,6 +3037,227 @@ CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'CONJ_PATCH', 'CONJUGATE',
                     'CONJUGATE_BLOCK')
 
 
+# --------------------------------------------------------------------
+# The Lidinoid cell -- closed by rotoreflection and translation,
+# because reflection cannot reach it
+# --------------------------------------------------------------------
+# At the Lidinoid's associate angle no boundary curve of the patch is a
+# straight line or a planar geodesic (the VMM page: the gyroid and the
+# Lidinoid are the only known embedded TPMS not cut by symmetry lines
+# or planar curves into simple pieces), so the reflection machinery of
+# `_assemble` and the wall/word route both have nothing to work with.
+# Weber's `Lidinoid.nb` closes the cell anyway, from the symmetries the
+# theta-quotient structure forces regardless of the angle:
+#
+#   * z -> z + 1 acts on the immersion as a PURE TRANSLATION T1
+#     (the theta ratio is invariant), verified here as
+#     f(1 + iy) - f(iy) - T1 ~ 7e-9 across the patch height;
+#   * z -> z + tau acts as a 120-degree screw rotation (the 2/3 power
+#     of the theta ratio picks up a cube root of unity), verified by
+#     an affine fit with spread 7e-10 -- its cube is the pure vertical
+#     translation (0, 0, c);
+#   * the notebook's assembly element is the order-6 ROTOREFLECTION
+#     S6 = RotZ(60 deg) o MirrorZ about the vertical axis through
+#     p = f(1/2): S6 . f(u) = f(1 - u) on the bottom edge, verified
+#     to 9e-9.  Its powers give the 3-fold axis (S6^2) and the point
+#     inversion (S6^3), which is why the Lidinoid, unlike the gyroid,
+#     is not chiral.
+#
+# Six copies of the full-torus patch under the S6 powers close Weber's
+# fr3 unit, whose seams are the two halves of the bottom edge: copy
+# k+1's node at parameter u pairs with copy k's node at 1 - u, an EXACT
+# index correspondence because the graded x axis is symmetric under
+# x -> 1 - x.  The seams are therefore merged BY INDEX, not by distance
+# -- both rows sit ~eps^(1/3) off the true seam curve on opposite
+# sides, so no honest weld tolerance can stitch them (and a dishonest
+# one collapses the graded rows first; see the spec's weld note).
+#
+# The unit repeats on Weber's own three vectors v1 = f(1 + tau),
+# v2 = (2 p_x, 0, 0), v3 = (p_x, p_y, 4 p_z).  The PRIMITIVE lattice is
+# finer: T1 itself is a period the 6-copy unit does not contain, and
+# reducing <T1, S6 T1 S6^-1, S6^2 T1 S6^-2> gives an R-centred
+# hexagonal lattice with a = 1.71005, c = 1.30523 (c/a = 0.76327,
+# rhombohedral angle 104.84 degrees); the 6-copy unit is exactly TWO
+# primitive cells (det [v1 v2 v3] = 2 x the primitive volume), and the
+# primitive cell carries 3 torus patches: chi = 3*0 - 2*(3-1) = -4 by
+# Riemann-Hurwitz across the branched 2/3-power cover, genus 3.
+#
+# The closure identity that pins the family member: |f(1+tau)| must
+# equal |2 f(1/2)_x| with a 60-degree angle between them and no
+# vertical component.  Measured at Weyhaupt's angle 64.2098 deg the
+# residual is 9.6e-7 (relative), and it grows LINEARLY away from it --
+# 5e-3 at +-0.2 deg -- so the identity is the period condition itself,
+# sharp in the angle, not a family-wide tautology (the S6 seam identity
+# IS family-wide, 8e-9 at every angle tried, so it verifies the
+# construction rather than the member).
+#
+# Independent external check, measured once (2026-09): against the
+# shipped NODAL Lidinoid level set (tpms._f_lidinoid, the Fisher et al.
+# catalogue form), the exact cell agrees in shape to a median 2.4% of
+# the nodal cubic cell after the lattice-matching affine -- but the
+# lattices genuinely differ: the nodal ansatz forces the BCC metric
+# (rhombohedral angle 109.47 deg, hex c/a = 0.6124), a 20% uniaxial
+# strain away from the exact surface's measured 104.84 deg / 0.76327.
+# The exact row is the trustworthy metric; the nodal row is a cubic-box
+# approximation with a distorted cell, which is worth knowing before
+# using it for anything where the lattice matters.
+#
+# References:
+# - S. Lidin, S. Larsson, "Bonnet transformation of infinite periodic
+#   minimal surfaces with hexagonal symmetry", J. Chem. Soc. Faraday
+#   Trans. 86 (1990) 769-775 -- the L surface.
+# - A. G. Weyhaupt, "Deformations of the gyroid and Lidinoid minimal
+#   surfaces", Pacific J. Math. 235 (2008) 137-171 -- the associate
+#   angle 64.2098 degrees and the rH family.
+# - M. Weber, "Lidinoid", minimalsurfaces.blog repository (mirror
+#   ch274), and `Lidinoid.nb` -- the assembly chain followed here.
+
+def _lid_W(z, sp, q):
+    """The Weierstrass integrand row (om1, om2, om3) at the spec's own
+    associate angle, on a continuous log branch along the given
+    points (callers keep paths short and singularity-free except at
+    declared endpoints)."""
+    z = np.asarray(z, dtype=complex)
+    L = np.full(z.shape, sp['const'], dtype=complex)
+    for shift, c in sp['terms'](sp['a'], sp['tau']):
+        L = L + c * np.log(_theta11(z - shift, q))
+    g = np.exp(L)
+    inv = 1.0 / g
+    return np.stack([0.5 * (inv - g), 0.5j * (inv + g),
+                     np.ones_like(g)], axis=-1) * np.exp(1j * sp['theta'])
+
+
+def _lid_seg(sp, q, z0, z1, sing_end=None, n=4000, m=3):
+    """Integral of the Weierstrass forms along the straight segment
+    z0 -> z1.  `sing_end` names which end (if either) is a lattice zero
+    of a theta factor; the t = u^m substitution there makes the
+    s^(-2/3) integrand regular in u, so the endpoint is reached exactly
+    rather than clipped -- this is what lets the anchors below be
+    measured to ~1e-8 where the eps-clipped patch grid stops at
+    O(eps^(1/3))."""
+    if sing_end is None:
+        t = (np.arange(n) + 0.5) / n
+        zz = z0 + (z1 - z0) * t
+        w = np.full(n, 1.0 / n)
+    else:
+        u = (np.arange(n) + 0.5) / n
+        s = u ** m
+        w = m * u ** (m - 1) / n
+        if sing_end == 'z0':
+            zz = z0 + (z1 - z0) * s
+        else:
+            zz = z1 + (z0 - z1) * s[::-1]
+            w = w[::-1]
+    return np.sum(_lid_W(zz, sp, q) * (w[:, None] * (z1 - z0)), axis=0)
+
+
+_LID_FRAME = {}
+
+
+def lidinoid_frame():
+    """The measured anchors of the Lidinoid assembly, in the frame
+    f(0) = 0: (p, v1, T1, delta) with p = f(1/2), v1 = f(1 + tau),
+    T1 = f(1), and delta = f(i * 1e-7) -- the position of the eps-
+    clipped patch's own origin, so patch coordinates + delta are frame
+    coordinates.  All four are 1D path integrals routed through the
+    domain interior at half height, graded into their singular
+    endpoints."""
+    key = _spec_state('LIDINOID')
+    if key in _LID_FRAME:
+        return _LID_FRAME[key]
+    sp = _SPECS['LIDINOID']
+    tau = sp['tau']
+    ty = float(np.imag(tau))
+    q = np.exp(1j * np.pi * tau)
+    ym = 0.5 * ty
+    i0 = _lid_seg(sp, q, 0.0, 1j * ym, 'z0')
+    ih = _lid_seg(sp, q, 1j * ym, 0.5 + 1j * ym)
+    i05 = _lid_seg(sp, q, 0.5 + 1j * ym, 0.5, 'z1')
+    ir = _lid_seg(sp, q, 0.5 + 1j * ym, 1.0 + 1j * ym)
+    i1 = _lid_seg(sp, q, 1.0 + 1j * ym, 1.0, 'z1')
+    i1t = _lid_seg(sp, q, 1.0 + 1j * ym, 1.0 + 1j * ty, 'z1')
+    p = np.real(i0 + ih + i05)
+    v1 = np.real(i0 + ih + ir + i1t)
+    v1[2] = 0.0                     # measured ~7e-9; exact by symmetry
+    T1 = np.real(i0 + ih + ir + i1)
+    delta = np.real(_lid_seg(sp, q, 0.0, 1j * 1e-7, 'z0'))
+    out = (p, v1, T1, delta)
+    _LID_FRAME[key] = out
+    return out
+
+
+def lidinoid_assembly(P):
+    """Weber's fr3 unit for the Lidinoid: the six S6-power copies of the
+    full-torus patch, their bottom-edge seams merged BY INDEX (copy k+1
+    node u <-> copy k node 1-u; the graded x grid is symmetric under
+    x -> 1-x, so the correspondence is exact), welded at the spec's own
+    1e-7 tolerance.  Returns (V, quads, B) with B = [v1, v2, v3],
+    Weber's own translation vectors for the unit -- note the unit is
+    TWO primitive cells; see the block comment above.  Returns None if
+    the x grid is not the symmetric one the pairing requires."""
+    nx, ny = P.shape[0], P.shape[1]
+    xs, _wx = _spec_nodes('LIDINOID', nx)
+    if len(xs) != nx or np.max(np.abs(xs[::-1] - (1.0 - xs))) > 1e-9:
+        return None
+    p, v1, _T1, delta = lidinoid_frame()
+    v2 = np.array([2.0 * p[0], 0.0, 0.0])
+    v3 = np.array([p[0], p[1], 4.0 * p[2]])
+    B = np.array([v1, v2, v3])
+
+    c60, s60 = 0.5, 0.5 * SQRT3
+    R60 = np.array([[c60, -s60, 0.0], [s60, c60, 0.0], [0.0, 0.0, 1.0]])
+    M = R60 @ np.diag([1.0, 1.0, -1.0])        # S6 linear part
+    S6 = np.eye(4)
+    S6[:3, :3] = M
+    S6[:3, 3] = p - M @ p
+    ops = [np.eye(4)]
+    for _k in range(5):
+        ops.append(S6 @ ops[-1])
+
+    V0 = P.reshape(-1, 3) + delta
+    Q0 = _patch_quads(nx, ny)
+    Vs, Qs = [], []
+    for m, H in enumerate(ops):
+        Vs.append(V0 @ H[:3, :3].T + H[:3, 3])
+        qq = Q0 + m * len(V0)
+        if np.linalg.det(H[:3, :3]) < 0.0:
+            qq = qq[:, ::-1]
+        Qs.append(qq)
+    V = np.concatenate(Vs, axis=0)
+    Q = np.concatenate(Qs, axis=0)
+
+    # the seams, by index: union-find, merged position = average
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    NV = len(V0)
+    for m in range(6):
+        mm = (m + 1) % 6
+        for i in range(nx):
+            if xs[i] >= 0.5 - 1e-13:
+                a = find(mm * NV + i * ny)
+                b = find(m * NV + (nx - 1 - i) * ny)
+                if a != b:
+                    parent[a] = b
+    roots = np.array([find(i) for i in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    sums = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(sums, inv, V)
+    np.add.at(cnt, inv, 1.0)
+    V = sums / cnt[:, None]
+    Q = inv[Q]
+    span = float(np.max(np.linalg.norm(B, axis=1)))
+    V, Q = _weld(V, Q, _weld_tol('LIDINOID') * span)
+    Q = _drop_degenerate(V, np.asarray(Q))
+    return V, Q, B
+
+
 def _clp_far_point(nu, nv, x_at, y_to, theta=0.0):
     """Evaluate the Weierstrass integral at a point ABOVE the patch.
 
@@ -3665,6 +4011,16 @@ def spec_build(key, cells, res_per_cell, scale, theta,
             Qs.append(q)
             base += len(V0)
         built = (np.concatenate(Vs, 0), np.concatenate(Qs, 0), B)
+    elif named and key == 'LIDINOID':
+        # No boundary curve is a symmetry element at the Lidinoid's
+        # associate angle, so the reflection routes cannot reach it;
+        # Weber's rotoreflection + translation chain can -- see
+        # `lidinoid_assembly`.  Already welded and seam-merged there,
+        # so it is validated here and NOT re-welded below (the shared
+        # tail weld runs at the spec's own 1e-7, a no-op on it).
+        la = lidinoid_assembly(P)
+        if la is not None and _assembly_ok(la[0], np.asarray(la[1])):
+            built = la
     elif named:
         built = _assemble(P, gens=spec_generators(key, P)[0])
         if built is not None:
@@ -4141,8 +4497,10 @@ def _selftest():
               "|E-G|/(E+G) %.2e -> %.2e %s"
               % (key, d0, d1, h0, h1, c0, c1, 'OK' if good else 'FAIL'))
 
-    # Every one of the three ships the fundamental PIECE, and the gate
-    # is that they ship a clean one.  CLP with a handle briefly shipped
+    # Whatever each of the three ships -- CLP with a handle its
+    # fundamental piece, rPD its word-closed cell, the Lidinoid its
+    # rotoreflection-closed cell -- the gate is that it ships CLEAN at
+    # every resolution.  CLP with a handle briefly shipped
     # an assembled cell instead: it passed a connectedness count (one
     # piece, half a million vertices) while being a stack of duplicated
     # copies, and rendered as leopard spots.  `_assembly_ok` now rejects
@@ -4167,6 +4525,122 @@ def _selftest():
         ok &= not bad
         print("hexagonal: %s builds clean at res 50/100/160 %s"
               % (key, 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # The Lidinoid closure identities, measured rather than assumed.
+    # Two kinds, and the difference matters (see the assembly block):
+    # the S6 seam identity and the purity of the z -> z+1 translation
+    # hold along the whole tau <-> angle family (they verify the
+    # CONSTRUCTION), while the hexagonal-lattice identity
+    # |f(1+tau)| = |2 f(1/2)_x| at 60 degrees is the PERIOD CONDITION
+    # -- it is 1e-6 at 64.2098 degrees and grows linearly away from it
+    # (5e-3 at +-0.2 deg), so it pins the member, and a wrong tau or a
+    # broken transcription fails here first.
+    sp_l = _SPECS['LIDINOID']
+    tau_l = sp_l['tau']
+    ty_l = float(np.imag(tau_l))
+    q_l = np.exp(1j * np.pi * tau_l)
+    ym_l = 0.5 * ty_l
+    p_l, v1_l, T1_l, _dl = lidinoid_frame()
+    i0 = _lid_seg(sp_l, q_l, 0.0, 1j * ym_l, 'z0')
+    ih = _lid_seg(sp_l, q_l, 1j * ym_l, 0.5 + 1j * ym_l)
+    ir = _lid_seg(sp_l, q_l, 0.5 + 1j * ym_l, 1.0 + 1j * ym_l)
+    i1t = _lid_seg(sp_l, q_l, 1.0 + 1j * ym_l, 1.0 + 1j * ty_l, 'z1')
+    v1_raw = np.real(i0 + ih + ir + i1t)
+    a2 = 2.0 * abs(p_l[0])
+    r_len = abs(np.linalg.norm(v1_raw[:2]) - a2) / a2
+    cosang = abs(v1_raw[0]) * 1.0 / np.linalg.norm(v1_raw[:2])
+    r_ang = abs(math.degrees(math.acos(min(1.0, cosang))) - 60.0)
+    r_z = abs(v1_raw[2])
+    # seam identity S6 f(u) = f(1 - u) at an interior probe
+    u_pr = 0.73
+    fu = np.real(i0 + ih + _lid_seg(sp_l, q_l, 0.5 + 1j * ym_l,
+                                    u_pr + 1j * ym_l)
+                 + _lid_seg(sp_l, q_l, u_pr + 1j * ym_l, u_pr))
+    fmu = np.real(i0 + _lid_seg(sp_l, q_l, 1j * ym_l,
+                                (1.0 - u_pr) + 1j * ym_l)
+                  + _lid_seg(sp_l, q_l, (1.0 - u_pr) + 1j * ym_l,
+                             1.0 - u_pr))
+    c60_, s60_ = 0.5, 0.5 * SQRT3
+    M_l = (np.array([[c60_, -s60_, 0.0], [s60_, c60_, 0.0],
+                     [0.0, 0.0, 1.0]]) @ np.diag([1.0, 1.0, -1.0]))
+    r_seam = float(np.linalg.norm(M_l @ fu + (p_l - M_l @ p_l) - fmu))
+    # z -> z + 1 must act as the pure translation T1
+    y_pr = 0.31 * ty_l
+    fl = np.real(_lid_seg(sp_l, q_l, 0.0, 1j * y_pr, 'z0'))
+    fr_ = np.real(i0 + ih + ir
+                  + _lid_seg(sp_l, q_l, 1.0 + 1j * ym_l, 1.0 + 1j * y_pr))
+    r_t1 = float(np.linalg.norm(fr_ - fl - T1_l))
+    good = (r_len < 1e-5 and r_ang < 1e-3 and r_z < 1e-6
+            and r_seam < 1e-6 and r_t1 < 1e-6)
+    ok &= good
+    print("hexagonal: LIDINOID closure  hex-lattice len %.1e ang %.1e deg "
+          "z %.1e | seam %.1e T1 %.1e %s"
+          % (r_len, r_ang, r_z, r_seam, r_t1, 'OK' if good else 'FAIL'))
+
+    # Horgan / Wei-g4 modulus gates: the stored tau is RE-DERIVED from
+    # each notebook's own period integral, with the notebook's own
+    # normalisation (G(cp) = i for Horgan, G(0) = 1 for Wei), and must
+    # land on the stored member.  For Horgan the period problem looks
+    # 2-dimensional; Weber's extremal-length argument says solving the
+    # first component kills the second, and that UNIMPOSED second
+    # component is measured here -- the row's own analogue of F-RD(r)'s
+    # chamber-square identity.
+    def _nb_period(key, t, z0, z1, om, n_=2500):
+        sp_ = _SPECS[key]
+        a_ = float(sp_['a'])
+        tau_ = 1j * float(t)
+        q_ = np.exp(1j * np.pi * tau_)
+        if key == 'TRIPLY_HORGAN':
+            c0 = _norm_const(sp_['terms'], a_, tau_,
+                             0.25 + tau_ / 4.0, 1j)
+        else:
+            c0 = _norm_const(sp_['terms'], a_, tau_, 0.0, 1.0)
+        z0 = complex(z0(a_, tau_) if callable(z0) else z0)
+        z1 = complex(z1(a_, tau_) if callable(z1) else z1)
+        u_ = (np.arange(n_) + 0.5) / n_
+        s_ = 0.5 * (1.0 - np.cos(np.pi * u_))
+        w_ = 0.5 * np.pi * np.sin(np.pi * u_) / n_ * (z1 - z0)
+        z_ = z0 + (z1 - z0) * s_
+        L_ = np.full(z_.shape, c0, dtype=complex)
+        for sh_, e_ in sp_['terms'](a_, tau_):
+            L_ = L_ + e_ * np.log(_theta11(z_ - sh_, q_))
+        g_ = np.exp(L_)
+        if om == 1:
+            v_ = -0.5 * (g_ - 1.0 / g_)
+        else:
+            v_ = 0.5j * (g_ + 1.0 / g_)
+        return float(np.real(np.sum(v_ * w_)))
+
+    def _rederive(key, z0, z1, om, lo, hi):
+        f_ = lambda t: _nb_period(key, t, z0, z1, om)
+        ts_ = np.linspace(lo, hi, 30)
+        vs_ = [f_(t) for t in ts_]
+        for i_ in range(29):
+            if vs_[i_] * vs_[i_ + 1] < 0.0:
+                aa, bb, fa_ = float(ts_[i_]), float(ts_[i_ + 1]), vs_[i_]
+                for _ in range(60):
+                    mm = 0.5 * (aa + bb)
+                    fm_ = f_(mm)
+                    if fa_ * fm_ <= 0.0:
+                        bb = mm
+                    else:
+                        aa, fa_ = mm, fm_
+                return 0.5 * (aa + bb)
+        return None
+
+    th_t = _rederive('TRIPLY_HORGAN', 0.0, lambda a_, t_: a_, 1, 0.3, 1.0)
+    th_err = abs(th_t - float(np.imag(_SPECS['TRIPLY_HORGAN']['tau'])))
+    th_2nd = abs(_nb_period('TRIPLY_HORGAN',
+                            float(np.imag(_SPECS['TRIPLY_HORGAN']['tau'])),
+                            0.0, lambda a_, t_: 0.5 + t_ / 2.0, 2))
+    w_t = _rederive('WEI_G4', lambda a_, t_: a_,
+                    lambda a_, t_: _WEI4_B, 2, 0.2, 1.4)
+    w_err = abs(w_t - float(np.imag(_SPECS['WEI_G4']['tau'])))
+    good = (th_err < 1e-8 and w_err < 1e-8 and th_2nd < 1e-9)
+    ok &= good
+    print("hexagonal: HORGAN tau re-solve err %.1e, unimposed 2nd period "
+          "%.1e | WEI_G4 tau re-solve err %.1e %s"
+          % (th_err, th_2nd, w_err, 'OK' if good else 'FAIL'))
 
     # The triangle-group series is generated from (r, s, t) rather than
     # typed in, so the first thing to gate is the GENERATOR: every member
@@ -4378,7 +4852,8 @@ def _selftest():
     for key in ('SS', 'H2R', 'TR', 'STESSMANN', 'RII', 'CH', 'I6',
                 'FRD_EXACT', 'FRDR',
                 'BOX_1001', 'BOX_1010', 'BOX_1011',
-                'TRIPLY_COSTA', 'SIMOES_BATISTA'):
+                'TRIPLY_COSTA', 'SIMOES_BATISTA',
+                'TRIPLY_HORGAN', 'WEI_G4'):
         rows = []
         # 45/75 suits most rows.  A few need a finer pair -- at 45 the
         # Simoes-Batista patch is still coarse enough that its diameter
@@ -4660,6 +5135,258 @@ def _selftest():
     print("hexagonal: H'-T period (%.6f, %.6f, %.6f) vs cell height "
           "%.6f (diff %.1e) %s"
           % (p1[0], p1[1], p1[2], hz, err, 'OK' if good else 'FAIL'))
+
+    # ==================================================================
+    # The registry gate: EVERY row, the same tells, no hand-picked list.
+    #
+    # Eight of the twenty-one exact-Weierstrass rows shipped wrong at
+    # some point, and every automated check passed them the whole time
+    # -- each was caught by a person opening the row in Blender.  The
+    # tells that eventually convicted them (the closure tell, the
+    # wall-residual probes, the cell-vs-label measurement) were then
+    # applied only to the rows being fixed.  This gate runs them over
+    # every row in `_SPECS` plus Schwarz H, so a row nobody has looked
+    # at gets the same scrutiny as the ones somebody has.
+    #
+    # Four checks, each applied where the row's kind admits it:
+    #
+    #   1. CLOSURE.  `spec_build` at Reflections depth 1 and 3.  Three
+    #      states, and they are different facts: CLOSED (face count
+    #      depth-inert ABOVE the bare patch -- a cell), BARE (depth-
+    #      inert AT the patch count -- no generators at all, which is
+    #      Lidinoid, not closure), GROWS (a verified partial reflection
+    #      orbit -- the fundamental-piece rows).  A column shows as
+    #      growth with min(bbox)/max(bbox) collapsing; `_fit` normalises
+    #      the LONGEST axis, so a column reads as the other axes
+    #      shrinking, never as one growing.
+    #   2. LATTICE vs LABEL.  A row `surface_class` calls CUBIC must
+    #      measure a cube; one it calls anything else must not.  F-RD
+    #      is the cautionary case: it shipped for months labelled cubic
+    #      while its cell measured 1.074 : 1.074 : 1.
+    #   3. WALLS.  Every row that declares `exact_planes` gets its
+    #      probe residuals gated -- not just the rows that were fixed.
+    #   4. LABEL HONESTY.  A row that does not close must say
+    #      "fundamental piece" in its label, and a row that closes must
+    #      not -- so a regression cannot quietly ship a column under a
+    #      cell's name, and a fix cannot quietly ship under a
+    #      fundamental-piece disclaimer (the H'-T precedent: when the
+    #      cell-word route reached it, the old assertion surfaced the
+    #      fix instead of letting it slip by).
+    #
+    # The expected-state table is asserted EQUAL to the spec list, so a
+    # future row cannot be added without declaring its state here.
+    _EXPECT_STATE = {
+        'H': 'CLOSED', 'CLP': 'CLOSED', 'HT': 'CLOSED', 'SS': 'CLOSED',
+        'H2R': 'CLOSED', 'TR': 'CLOSED', 'RII': 'CLOSED', 'CH': 'CLOSED',
+        'RPD': 'CLOSED', 'FRD_EXACT': 'CLOSED', 'FRDR': 'CLOSED',
+        'BOX_1001': 'CLOSED', 'BOX_1010': 'CLOSED', 'BOX_1011': 'CLOSED',
+        'SIMOES_BATISTA': 'CLOSED',
+        'CLP_HANDLE': 'GROWS', 'I6': 'GROWS', 'STESSMANN': 'GROWS',
+        'TRIPLY_COSTA': 'GROWS',
+        # Horgan grows by reflection (aspect 0.60 at depth 3); its full
+        # cell word is future work.  Wei g4 closes: 24 copies, cell
+        # 0.771 : 0.815 : 1.
+        'TRIPLY_HORGAN': 'GROWS', 'WEI_G4': 'CLOSED',
+        # closed by rotoreflection + translation, NOT by reflection --
+        # see `lidinoid_assembly`; was BARE until that route existed
+        'LIDINOID': 'CLOSED',
+    }
+    try:
+        from .surface_class import SURFACE_CLASS as _SC
+    except ImportError:
+        from surface_class import SURFACE_CLASS as _SC
+    miss = sorted((set(_SPECS) | {'H'}) ^ set(_EXPECT_STATE))
+    good = not miss
+    ok &= good
+    print("hexagonal: registry gate covers every spec row (%d) %s"
+          % (len(_EXPECT_STATE), 'OK' if good else 'FAIL ' + ','.join(miss)))
+
+    _NRES = 36
+    # Per-row state resolution.  Wei g4's assembly generators are
+    # MEASURED off the patch and its classifier floor sits at n = 48
+    # (1512 faces / piece at 44, 46368 / closed cell at 48); below it
+    # the build takes the honest fundamental-piece fallback.  The
+    # operator's default Resolution/Cell is 50, so CLOSED is the state
+    # the row actually ships at -- the gate simply must not probe it
+    # below the floor.  The durable fix is the walls/word route
+    # (declare its three notebook mirrors exactly); noted in BACKLOG.
+    _NRES_ROW = {'WEI_G4': 50}
+    for key in sorted(_EXPECT_STATE):
+        nres = _NRES_ROW.get(key, _NRES)
+        if key == 'H':
+            V1, F1 = h_build(1, nres, 1.0, 0.0)
+            V3, F3 = h_build(3, nres, 1.0, 0.0)
+            pf = (max(24, nres) - 1) * (max(48, 2 * nres) - 1)
+            label = "Schwarz H (exact, hexagonal)"
+        else:
+            V1, F1 = spec_build(key, 1, nres, 1.0, 0.0)
+            V3, F3 = spec_build(key, 3, nres, 1.0, 0.0)
+            pf = (max(24, nres) - 1) ** 2
+            label = _SPECS[key]['label']
+        V1, V3 = np.asarray(V1, float), np.asarray(V3, float)
+        b1 = V1.max(0) - V1.min(0)
+        b3 = V3.max(0) - V3.min(0)
+        a1 = float(min(b1) / max(b1)) if max(b1) > 0 else 0.0
+        a3 = float(min(b3) / max(b3)) if max(b3) > 0 else 0.0
+        f1, f3 = len(F1), len(F3)
+        if f3 == f1 and f1 > pf:
+            state = 'CLOSED'
+        elif f3 <= pf:
+            state = 'BARE'
+        elif f3 > f1:
+            state = 'GROWS'
+        else:
+            state = 'SHRANK'                     # always wrong
+        fp = 'fundamental piece' in label
+        good = state == _EXPECT_STATE[key]
+        # 4. the label must state what the build does
+        good &= fp == (state != 'CLOSED')
+        # a GROWS row must grow a SURFACE: the orbit stays verified by
+        # `spec_reflect_tile`, and the aspect must not collapse toward a
+        # column (the honest worst today is Triply Periodic Costa's
+        # 0.35, a stack of storeys, and it says fundamental piece).
+        if state == 'GROWS':
+            good &= a3 > 0.2
+        # 2. the assembled cell against the classification.  Only a
+        # CLOSED row has a cell to measure; the fundamental-piece rows
+        # have nothing to check the label against, which is a fact
+        # about them worth keeping true (their genus is None in
+        # surface_class for the same reason).
+        cls = _SC.get(key, (None,))[0]
+        good &= cls is not None
+        cube = ''
+        if state == 'CLOSED' and cls is not None:
+            r = np.sort(b1)
+            dev = 1.0 - float(r[0] / r[2])
+            if cls == 'CUBIC':
+                good &= dev < 5e-3               # F-RD's bug was 0.074
+            else:
+                good &= dev > 5e-2               # ...and must not BE a cube
+            if cls == 'TETRAGONAL':              # two equal in-plane axes
+                rr = np.sort(b1)[::-1]
+                good &= abs(float(rr[0] / rr[1]) - 1.0) < 2e-3
+            cube = ' cell %.4f:%.4f:%.4f %s' % (
+                b1[0] / max(b1), b1[1] / max(b1), b1[2] / max(b1), cls)
+        ok &= good
+        print("hexagonal: gate %-14s %-6s faces %5d->%5d (patch %4d) "
+              "asp %.3f->%.3f%s %s"
+              % (key, state, f1, f3, pf, a1, a3, cube,
+                 'OK' if good else 'FAIL'))
+
+    # 3a. Wall residuals for every row that declares planes AND solved
+    # offsets: one probe per arc, gated at 1e-6 (all measure under
+    # 2e-9 today), with arcs sharing one solved wall agreeing to 1e-8
+    # -- the redundant-arc closure that convicted the wrong Box branch
+    # point.
+    for key in sorted(k for k in _SPECS
+                      if _SPECS[k].get('exact_planes')
+                      and _SPECS[k].get('exact_offsets')):
+        sp = _SPECS[key]
+        probes = spec_wall_probes(key)
+        worst, spread = 0.0, 0.0
+        walls = {}
+        for nm, p in probes.items():
+            dnm = nm if nm in sp['exact_planes'] else nm.split('#')[0]
+            if dnm not in sp['exact_planes'] or dnm not in sp['exact_offsets']:
+                continue
+            v = np.asarray(sp['exact_planes'][dnm], dtype=float)
+            v = v / np.linalg.norm(v)
+            d = float(np.dot(v, np.asarray(p[:3], dtype=float)))
+            worst = max(worst, abs(d - float(sp['exact_offsets'][dnm])))
+            walls.setdefault((tuple(np.round(v, 9)),
+                              round(float(sp['exact_offsets'][dnm]), 9)),
+                             []).append(d)
+        for ds in walls.values():
+            if len(ds) > 1:
+                spread = max(spread, max(ds) - min(ds))
+        good = worst < 1e-6 and spread < 1e-8
+        ok &= good
+        print("hexagonal: gate %-14s walls  worst %.1e, redundant-arc "
+              "spread %.1e %s" % (key, worst, spread,
+                                  'OK' if good else 'FAIL'))
+
+    # 3b. Rows with declared planes but MEASURED offsets (the trigroup
+    # rows and R-II) have no solved constant to probe against, so the
+    # check is the two quadratures against each other: the 1D path
+    # integral must land where the 2D patch's own boundary curve sits,
+    # in the declared normal direction, and the gap must FALL with the
+    # patch grid -- quadrature drift, not structure.  This is the check
+    # that convicts a wrong plane: the Box rows' rotated walls measured
+    # 0.1-0.2 here, two orders above the gate.
+    #
+    # Two limits of this gate, recorded so nobody mistakes it for more:
+    # the trigroup LID planes (normal (0,0,1)) are tautological -- on
+    # these rows the height coordinate IS Re(z), so the lids sit at 0
+    # and 1/2 by construction and no probe can find them wrong; and a
+    # single arc on a free plane has nothing independent against it, so
+    # only the NORMAL direction is verified here, never the placement.
+    for key in sorted(k for k in _SPECS
+                      if _SPECS[k].get('exact_planes')
+                      and not _SPECS[k].get('exact_offsets')):
+        sp = _SPECS[key]
+        probes = spec_wall_probes(key)
+        worsts = []
+        for n in (61, 91):
+            P = _spec_patch(key, n, n)
+            curves = dict(spec_curves(key, P))
+            w = 0.0
+            for nm, p in probes.items():
+                dnm = nm if nm in sp['exact_planes'] else nm.split('#')[0]
+                if dnm not in sp['exact_planes']:
+                    continue
+                cnm = nm if nm in curves else dnm
+                if cnm not in curves:
+                    continue
+                v = np.asarray(sp['exact_planes'][dnm], dtype=float)
+                v = v / np.linalg.norm(v)
+                C = np.asarray(curves[cnm], dtype=float)
+                m = len(C)
+                t_ = max(2, m // 5)
+                med = float(np.median(C[t_:m - t_] @ v))
+                w = max(w, abs(med - float(np.dot(
+                    v, np.asarray(p[:3], dtype=float)))))
+            worsts.append(w)
+        good = worsts[1] < 2e-2 and worsts[1] < worsts[0] * 1.05
+        ok &= good
+        print("hexagonal: gate %-14s walls  probe-vs-patch %.1e -> %.1e "
+              "(falling) %s" % (key, worsts[0], worsts[1],
+                                'OK' if good else 'FAIL'))
+
+    # ...and R-II's two horizontal arcs are declared to be the SAME
+    # mirror x = 0 -- two independent path integrals onto one plane, the
+    # only redundant pair among the measured-offset rows.
+    pr = spec_wall_probes('RII')
+    d0 = float(pr['y=0#0'][0])
+    d1 = float(pr['y=1#0'][0])
+    good = abs(d0 - d1) < 1e-8
+    ok &= good
+    print("hexagonal: gate RII same-mirror arcs agree %.6f vs %.6f "
+          "(diff %.1e) %s" % (d0, d1, abs(d0 - d1),
+                              'OK' if good else 'FAIL'))
+
+    # The TPMS_EXACT registry itself.  Every row must be classified in
+    # `surface_class`, and every row must have a verification home: the
+    # spec rows and Schwarz H are gated above, PGD in `weierstrass`, the
+    # Evolver-cell rows and the relaxation/conjugate-Plateau rows in
+    # `plateau`.  An unknown key fails, so a future row cannot ship
+    # without declaring where it is verified.
+    try:
+        from .tpms import TPMS_EXACT as _TE
+        from .fecells import FE_CELLS as _FE
+    except ImportError:
+        from tpms import TPMS_EXACT as _TE
+        from fecells import FE_CELLS as _FE
+    _PLATEAU_GATED = {'R3_RING', 'I8_RING', 'I9_RING', 'GW_CONJ',
+                      'HT_HR_CONJ', 'TR_HT_CONJ', 'HR_TR_CONJ'}
+    unclass = sorted(set(_TE) - set(_SC))
+    orphan = sorted(set(_TE) - set(_SPECS) - set(_FE) - {'H', 'PGD'}
+                    - _PLATEAU_GATED)
+    good = not unclass and not orphan
+    ok &= good
+    print("hexagonal: TPMS_EXACT registry %d rows, all classified and "
+          "all with a verification home %s"
+          % (len(_TE), 'OK' if good else
+             'FAIL unclassified=%s orphan=%s' % (unclass, orphan)))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

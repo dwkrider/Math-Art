@@ -8,14 +8,14 @@
     "def-derived",
     "derived",
     "immersed",
-    "not-implemented",
+    "implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "derived",
     "fidelity": "exact",
-    "polynomial": null,
-    "operation": "focal"
+    "operation": "focal",
+    "note": "The surface of centres: both sheets x + N / kappa_i of principal curvature centres, evaluated ANALYTICALLY from exact source charts (never estimated from a mesh; discrete principal curvatures are noise precisely where the caustic is interesting). Singular at umbilics, where the sheets meet, and flaring to infinity at parabolic points, where the operator clips."
   },
   "curvature": {
     "condition": "none",
@@ -31,15 +31,100 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.",
-      "resume": "The locus of the principal centres of curvature. Flagged in research/missing-surfaces-catalog.md B4 as the highest-value member of the derived family, because it produces something visually unlike anything shipped, and it is a natural companion to math_art/curvature_color.py."
+      "generator": "math_art.focal_surface_generator",
+      "operator_id": "mesh.focal_surface_add",
+      "key": "ELLIPSOID",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "ELLIPSOID"
+    },
+    {
+      "generator": "math_art.focal_surface_generator",
+      "operator_id": "mesh.focal_surface_add",
+      "key": "TORUS",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TORUS"
+    },
+    {
+      "generator": "math_art.focal_surface_generator",
+      "operator_id": "mesh.focal_surface_add",
+      "key": "SPHERE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "SPHERE"
+    },
+    {
+      "generator": "math_art.focal_surface_generator",
+      "operator_id": "mesh.focal_surface_add",
+      "key": "PARABOLOID",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "PARABOLOID"
+    },
+    {
+      "generator": "math_art.focal_surface_generator",
+      "operator_id": "mesh.focal_surface_add",
+      "key": "SADDLE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "SADDLE"
+    },
+    {
+      "generator": "math_art.focal_surface_generator",
+      "operator_id": "mesh.focal_surface_add",
+      "key": "CATENOID",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CATENOID"
+    },
+    {
+      "generator": "math_art.focal_surface_generator",
+      "operator_id": "mesh.focal_surface_add",
+      "key": "MONKEY_SADDLE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "MONKEY_SADDLE"
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "G. Monge, \"Application de l'analyse a la geometrie\" (1807) -- lines of curvature and the centres of curvature of a surface.",
+      "A. Cayley, \"On the centro-surface of an ellipsoid\", Trans. Cambridge Phil. Soc. 12 (1873) -- the focal surface of the ellipsoid.",
+      "L. P. Eisenhart, \"A Treatise on the Differential Geometry of Curves and Surfaces\" (1909), ch. on the surface of centres -- the classical treatment of the two sheets and their tangency to the normals.",
+      "D. Hilbert and S. Cohn-Vossen, \"Anschauliche Geometrie\" (1932) -- centres of curvature and umbilics, read geometrically.",
+      "I. R. Porteous, \"Geometric Differentiation\" (1994) -- the modern singularity-theory reading of focal sets, umbilics and ridges.",
+      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), \"Surface focale (developpee d'une surface)\".",
       "mathcurve, 'surface focale'."
+    ]
+  },
+  "specimens": [
+    {
+      "label": "of the ellipsoid (Cayley's centro-surface)"
+    },
+    {
+      "label": "of the torus (degenerates to the centre circle and the axis)"
+    },
+    {
+      "label": "of the sphere (degenerates to the centre point)"
+    },
+    {
+      "label": "of the elliptic paraboloid"
+    },
+    {
+      "label": "of the hyperbolic paraboloid"
+    },
+    {
+      "label": "of the catenoid"
+    },
+    {
+      "label": "of the monkey saddle (clipped at its planar umbilic)"
+    }
+  ],
+  "notes": {
+    "caveats": [
+      "The degenerate cases carry the classical content: the sphere's sheets collapse to a point, the torus's to its centre circle and axis. A surface with ONE focal sheet degenerated to a curve is a canal surface; with BOTH, a Dupin cyclide."
     ]
   },
   "tradition": [

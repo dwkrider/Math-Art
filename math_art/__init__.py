@@ -54,6 +54,8 @@ _MODULE_NAMES = [
     'apollonian_generator',
     'hyperbolic_surface_generator',
     'quadric_generator',
+    'canal_surface_generator',
+    'focal_surface_generator',
     'spherical_surface_generator',
     'delaunay_generator',
     'bryant_generator',

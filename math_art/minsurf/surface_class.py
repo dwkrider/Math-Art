@@ -106,5 +106,7 @@ SURFACE_CLASS = {
     'TRIPLANE4': ('CUBIC', None),
     'TRIPLANE5': ('CUBIC', None),
     'TRIPLY_COSTA': ('NONCUBIC', None),
+    'TRIPLY_HORGAN': ('TETRAGONAL', None),
     'TR_HT_CONJ': ('NONCUBIC', None),
+    'WEI_G4': ('NONCUBIC', None),
 }

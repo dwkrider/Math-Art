@@ -167,7 +167,7 @@ FE_CELLS = {
     },
     'SCHOEN12': {
         'title': 'Schoen p.12 Surface',
-        'slug': 'schoen12-exact',
+        'slug': 'schoen-frd-r',
         'source': 's12adj.fe',
         'word': 'fca',
         'copies': 8,
@@ -188,7 +188,7 @@ FE_CELLS = {
     },
     'SCHOEN14': {
         'title': 'Schoen p.14 Surface',
-        'slug': 'schoen14-exact',
+        'slug': 'schoen-iwp-r',
         'source': 's14adj.fe',
         'word': 'aceae',
         'copies': 16,

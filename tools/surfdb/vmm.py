@@ -468,7 +468,19 @@ def _vmm_minimal_records():
                     "a closely related doubly periodic catenoid "
                     "arrangement; whether it is the same family has NOT "
                     "been established here, so that page is deliberately "
-                    "not cross-referenced."}}),
+                    "not cross-referenced.  THE SHIPPED ROW IS THE tau = i "
+                    "(square-torus) MEMBER with growth factor bb as the "
+                    "knob; J_F is realised as the balanced theta-11 "
+                    "quotient with zeros {0, 1/2} and poles {tau/2, "
+                    "1/2 - tau/2}, normalised per member by the "
+                    "unit-circle branch-value symmetry (|b1 b2| = 1).  "
+                    "Measured, and gated in the zoo self-test: the loop "
+                    "around each half-catenoid puncture translates by "
+                    "(0, 0, 0) -- the record's 'no period problem' made "
+                    "quantitative -- and both deck translations are "
+                    "purely horizontal ((-0.4926, 0, 0) and "
+                    "(0, -0.6642, 0)), so the field lies between two "
+                    "parallel planes."}}),
         },
         "kusner-sphere-2n-planar-ends": {
             "name": "Kusner Sphere (2n planar ends)", "family": "minimal",
@@ -652,7 +664,7 @@ def _vmm_other_records():
                     "surface."}},
         },
         "norm-one-family": {
-            "name": "Norm One Family", "family": "misc",
+            "name": "Norm One Family", "family": "algebraic",
             "mode": "implicit",
             "blocked_by":
                 "Not built: the supershape record covers the Gielis "
@@ -674,7 +686,11 @@ def _vmm_other_records():
                         "equal-exponent Lame / superellipsoid family): "
                         "|x|^p + |y|^p + |z|^p = 1, octahedron at p = 1, "
                         "sphere at p = 2, cube as p -> infinity, convex "
-                        "for p >= 1.",
+                        "for p >= 1.  SHIPPED with p as a live knob "
+                        "(default 4); gated on two exact identities -- "
+                        "the p = 2 member IS the unit sphere (|F| = 0 on "
+                        "it) and every member is invariant under the full "
+                        "order-48 octahedral group.",
                     "parameters": [
                         {"name": "p", "domain": "(0, inf)", "default": 4,
                          "note": "norm exponent"}]}},
@@ -705,7 +721,10 @@ def _vmm_other_records():
                     "four circles through the vertex triples of a regular "
                     "tetrahedron's faces -- the tetrahedral sibling of "
                     "the shipped Deco-Cube (distance from the cube's six "
-                    "face-inscribed circles)."}},
+                    "face-inscribed circles).  SHIPPED beside DECO_CUBE; "
+                    "gated on the order-12 tetrahedral rotation group "
+                    "acting on the produced mesh (invariance ~2e-13, "
+                    "which a wrong circle centre or normal destroys)."}},
         },
     }
 
@@ -821,7 +840,19 @@ def _ms_records():
                     "forbids 1-noids in R3 proper).  Hackman proved one "
                     "exists on every conformal type of torus; the "
                     "alternating fence of half-catenoids is the simplest "
-                    "member of the wider picture."}}),
+                    "member of the wider picture.  THE SHIPPED ROW is the "
+                    "k = 1/3 member on tau = t + 2i with t = "
+                    "0.333316172865672, re-solved from the notebook's own "
+                    "period condition WITH its verbatim closed-form "
+                    "Bonnet phase (sigma/zeta/theta with Conjugate[]s on "
+                    "the sheared torus).  The batch-5 hypothesis phi = "
+                    "-arg(sigma(-k/2) sigma(k/2)) was tested against that "
+                    "closed form FIRST and is WRONG -- off by pi (a "
+                    "silent dh sign flip that would render perfectly) "
+                    "plus a t-dependent 6e-6 drift.  Gated: period "
+                    "re-solve, pure phase, end loop (0,0,0), deck z+1 "
+                    "purely vertical h = 1.095693, screw rise exactly "
+                    "k h with base-point-independent offset."}}),
         },
         "lopez-martin-slab-surface": {
             "name": "Lopez-Martin Slab Surface", "family": "minimal-periodic",
@@ -865,7 +896,15 @@ def _ms_records():
                     "meets the straight line shared by the helicoidal "
                     "ends.  Weber recovers its Enneper-Weierstrass "
                     "representation via the Schwarz-Bjorling formula on "
-                    "the x = pi level symmetry curve."}}),
+                    "the x = pi level symmetry curve.  THE SHIPPED ROW is "
+                    "that recovery in fully closed form (G = i(1+z)/"
+                    "sqrt(1-z^2), dh = -2 sqrt(1-z^2)/z, explicit f -- no "
+                    "integration), and the gate is Scherk's own equation "
+                    "20: every built point satisfies it POINTWISE to "
+                    "~1e-15 (through arccosh, both radial regions), plus "
+                    "the closed form's consistency with (G, dh) and the "
+                    "helicoidal-end winding advancing the axis by exactly "
+                    "the 4 pi assembly period."}}),
         },
         "half-twisted-scherk": {
             "name": "Half-Twisted Scherk Surface",
@@ -898,7 +937,18 @@ def _ms_records():
                     "5-ended members with triangular-prism symmetry in a "
                     "1-parameter family of end angles.  Distinct from the "
                     "genus-1 Costa-Scherk tower record, which needs a "
-                    "half-period phase shift."}}),
+                    "half-period phase shift.  THE SHIPPED ROW BUILDS ONE "
+                    "FindRoot-SOLVED (tau1, a1) MEMBER PER WING ORDER k, "
+                    "straight from the notebook's tables: k=3 (1.0, "
+                    "0.38900635790684035), k=4 (0.4, 0.13619041259273051; "
+                    "vertical period T = 1.077748, matching the recorded "
+                    "T_z oracle), k=5 (0.5, 0.21484200805849266), k=7 "
+                    "(0.2, 0.12152998199565702), k=8 (0.15, "
+                    "0.056545236758766944) -- each a member of the "
+                    "1-parameter end-angle family, not a canonical "
+                    "surface; the wing ends are trimmed by a mask disk "
+                    "rather than the notebook's incomplete-elliptic-F "
+                    "chart."}}),
         },
         "plane-with-catenoids": {
             "name": "Plane with Catenoids (doubly periodic)",
@@ -917,7 +967,17 @@ def _ms_records():
                     "problem to solve.  The repository's singly periodic "
                     "'translation invariant plane with catenoidal ends' "
                     "(mirror ch172) is the 1-periodic sibling, also "
-                    "unrecorded."}}),
+                    "unrecorded.  THE SHIPPED ROW: g = rho/sqrt(z), "
+                    "dh = dz/(sqrt(z-1) sqrt(z+1)) on the upper half "
+                    "plane; rho = 2^(k-1) is the growth knob (the "
+                    "page's own family parameter, so no single member "
+                    "is pinned).  The square-cell identity -- dis = "
+                    "f(1)_y = -f(-1)_x with f((1,inf)) in the mirror "
+                    "y = +dis, f((-inf,-1)) in x = -dis, and f((0,1)), "
+                    "f((-1,0)) the straight half-turn axes -- is "
+                    "measured at rho = 1 AND 2 (worst residual ~1e-6), "
+                    "so the page's no-period-problem claim is checked "
+                    "across the family rather than at one point."}}),
         },
         "lubeck-batista-surface": {
             "name": "Lubeck-Batista Surface", "family": "minimal-periodic",
@@ -936,7 +996,20 @@ def _ms_records():
                     "3 and four annular ends in the quotient: layers "
                     "joined by Costa saddles keeping the Costa surface's "
                     "straight lines, limiting in the Callahan-Hoffman-"
-                    "Meeks surface -- a doubly periodic version of it."}}),
+                    "Meeks surface -- a doubly periodic version of it.  "
+                    "THE SHIPPED ROW carries the notebook's seven solved "
+                    "(tau, a, b) members (tau = 0.935i .. 2.5i; default "
+                    "tau = i, (a, b) = (-0.16537041, 0.44637591)).  The "
+                    "gate re-derives THE AUTHORS' OWN period conditions "
+                    "(paper Section 6, condition (9)) along the "
+                    "notebook's waypoint paths -- branch-tracked theta "
+                    "logs with a u^2 substitution at the (z - ib)^{-1/2} "
+                    "endpoint, where uniform quadrature leaves a ~3e-2 "
+                    "phantom residual that looks exactly like a wrong "
+                    "member -- and they vanish at every stored member "
+                    "(7e-6..3e-5).  Deck structure gated: z -> z+1 = "
+                    "(0,0,1) EXACTLY, z -> z+tau purely horizontal; the "
+                    "seam branch is the measured reciprocal."}}),
         },
         "simoes-batista-surface": {
             "name": "Simoes-Batista Surface", "family": "minimal-periodic",
@@ -996,7 +1069,14 @@ def _ms_records():
                     "paper; his doubly periodic genus-2 surfaces (which "
                     "have their own record) arise as limits, as do "
                     "vertical planes over a rhombic tiling desingularized "
-                    "by singly periodic Scherk surfaces."}}),
+                    "by singly periodic Scherk surfaces.  THE SHIPPED ROW "
+                    "IS THE (a, b) = (0.1, 0.3) MEMBER -- the one the "
+                    "notebook renders -- with the modulus re-derived from "
+                    "its period integral (tau = 0.849141499409681i); the "
+                    "notebook pins no canonical member of the family, and "
+                    "the built cell measures 0.771 : 0.815 : 1, so it is "
+                    "NOT the square-based special member the page "
+                    "pictures suggest."}}),
         },
         "stessmann-surface": {
             "name": "Stessmann Surface", "family": "minimal-periodic",

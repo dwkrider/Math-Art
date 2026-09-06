@@ -559,13 +559,147 @@ def check_index(records, rep):
                           % (idx.get("implemented_count"), impl))
 
 
+# Records that are NOT open work, and must not be counted as gaps.
+#
+# "Not implemented" ran together three different things: a surface we
+# have not built yet, a surface that CANNOT be built because it does not
+# exist, and a record that is bookkeeping rather than a surface.  Counted
+# together they overstate the backlog and, worse, they put proofs of
+# non-existence on a to-do list -- `horgan-surface` is not waiting for
+# an implementation, it is waiting for nobody.
+#
+# Each entry says which kind it is and why, so the ledger states the
+# mathematics instead of hiding it behind a percentage.
+NOT_A_GAP = {
+    # PROVED OR BELIEVED NOT TO EXIST.  The record is the finding.
+    "horgan-surface":
+        ("terminal", "Horgan's surface does not exist -- the numerical "
+                     "example fails to close; no such minimal surface."),
+    "catenoid-with-handle":
+        ("terminal", "Proved not to exist: R. Schoen (1983) -- the "
+                     "catenoid is the only complete embedded minimal "
+                     "annulus of finite total curvature."),
+    "dihedralized-wohlgemuth-with-handle":
+        ("terminal", "Believed not to exist; no construction published."),
+    "sarti-dodecic":
+        ("terminal", "Terminal AS STATED, not as a surface: the pencil's "
+                     "singular members are fixed by an invariant-theoretic "
+                     "condition that is not reconstructible from the "
+                     "shipped symmetrization, so there is no member to "
+                     "mesh.  Reopen if the literature ever supplies the "
+                     "condition."),
+    "labs-sextic-35-cusps":
+        ("terminal", "Its coefficients are non-real, so the real locus is "
+                     "not a surface -- there is nothing to mesh."),
+    # BOOKKEEPING.  Real records, but their surfaces ship elsewhere.
+    "delaunay-surface":
+        ("bookkeeping", "Family record; its MEMBERS ship via "
+                        "mesh.delaunay_surface_add."),
+    "dyck-surface":
+        ("bookkeeping", "k = 3 of the shipped non-orientable genus-k row."),
+    # EXISTENCE UNSETTLED.  Research questions, not implementation work.
+    # NO SOURCE ANYWHERE.  Not "not built yet" -- nothing to build from.
+    "weber-bc2":
+        ("no-source", "A folder name recovered from the Wayback index of "
+                      "Weber's dead archive.  No chapter, no notebook, no "
+                      "paper, no datafile -- the name is all that survives."),
+    "neovius-sym3":
+        ("no-source", "A folder name recovered from the Wayback index of "
+                      "Weber's dead archive; no chapter, notebook, paper "
+                      "or datafile carries it.  The literature pass DID "
+                      "identify what the name most plausibly denotes: "
+                      "Karcher 1989 section 6.1.3 describes Neovius "
+                      "analogs with handles to the horizontal edges of "
+                      "the three orthogonal prismas, and the triangular "
+                      "prism member has exactly 3-fold symmetry -- but "
+                      "that is a described construction with no numbers "
+                      "anywhere on disk, so there is still nothing to "
+                      "build FROM.  Distinct from Schoen C(H), which "
+                      "6.1.5 derives differently and which ships."),
+    # PROVED TO EXIST, BUT NO EXPLICIT EQUATION.  The source is
+    # definitive and says so -- the surface is not missing, its
+    # polynomial is, because the proof never writes one down.
+    "kuehnel-octic-128-nodes":
+        ("no-equation", "Kuehnel's octic is proved to exist as the branch "
+                        "locus of an anticanonical double cover of P(E), "
+                        "with E from the Serre construction on a degree-8 "
+                        "elliptic curve; the key steps are verified in "
+                        "MACAULAY on the abstract ideal and the degree-8 "
+                        "polynomial is never written down.  Nothing to "
+                        "transcribe: the paper settles existence without "
+                        "producing an equation.  Reopen if anyone "
+                        "computes one."),
+    # DUPLICATES AND FAMILY RECORDS.
+    "weber-tr":
+        ("bookkeeping", "The same surface as `weber-trr`, which ships: "
+                        "Fujimori-Weber's Table 1 lists only T'-R' genus 6."),
+    "fujimori-weber":
+        ("bookkeeping", "Not a surface -- a family/method whose ten members "
+                        "map onto six that already ship (P, H, S'-S'', "
+                        "H'-T, H''-R, T'-R')."),
+    # NO DATAFILE EVER EXISTED.  Brakke's starfish page names these
+    # members; the recovered tarball carries only the eight that shipped
+    # plus the three he annotates as failing.  Nothing was ever published
+    # to build them from -- distinct from the `contingent` three, whose
+    # mathematics is unsettled rather than whose source is missing.
+    "starfish-2-4-genus-79":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-3-4-genus-91":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-4-4-genus-103":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-5-1-genus-67":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-5-4-genus-115":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-4-2-genus-71":
+        ("contingent", "Brakke annotates this one 'not quite' -- it fails "
+                       "to period-kill.  Whether the surface exists is "
+                       "open, so it is not a target."),
+    "starfish-5-2-genus-83":
+        ("contingent", "Brakke annotates this one as failing to "
+                       "period-kill; existence unsettled."),
+    "starfish-5-3-genus-99":
+        ("contingent", "Brakke annotates this one as failing to "
+                       "period-kill; existence unsettled."),
+}
+
+
 def coverage(records):
     total = len(records)
     impl = [s for s, (r, _) in records.items()
             if any(c.get("implemented") for c in r["construction"])]
-    missing = sorted(set(records) - set(impl))
-    print("COVERAGE  %d records, %d implemented, %d not (%.0f%%)"
-          % (total, len(impl), len(missing), 100.0 * len(impl) / max(total, 1)))
+    closed = sorted(set(records) - set(impl))
+    excluded = [s for s in closed if s in NOT_A_GAP]
+    missing = [s for s in closed if s not in NOT_A_GAP]
+    countable = total - len(excluded)
+    print("COVERAGE  %d records, %d implemented, %d open (%.0f%% of %d "
+          "buildable)"
+          % (total, len(impl), len(missing),
+             100.0 * len(impl) / max(countable, 1), countable))
+    if excluded:
+        print("          %d excluded from the denominator: %s"
+              % (len(excluded),
+                 ", ".join("%d %s" % (
+                     sum(1 for x in excluded if NOT_A_GAP[x][0] == k), k)
+                     for k in ("terminal", "bookkeeping",
+                               "contingent", "no-source", "no-equation")
+                     if any(NOT_A_GAP[x][0] == k for x in excluded))))
     print()
     byfam = {}
     for slug, (rec, _) in records.items():
@@ -579,7 +713,13 @@ def coverage(records):
         t, i = byfam[fam]
         print("%-22s %6d %6d%s" % (fam, t, i, "" if t == i else "   <-- gap"))
     print()
-    print("NOT IMPLEMENTED (%d):" % len(missing))
+    if excluded:
+        print("NOT A GAP (%d) -- excluded from the count above:" % len(excluded))
+        for slug in sorted(excluded):
+            kind, why = NOT_A_GAP[slug]
+            print("  %-34s [%s] %s" % (slug, kind, why.split(". ")[0][:74]))
+        print()
+    print("OPEN (%d):" % len(missing))
     for slug in missing:
         rec = records[slug][0]
         why = None

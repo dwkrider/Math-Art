@@ -1,21 +1,27 @@
 {
   "schema_version": "0.1.0",
   "slug": "symmetroid",
-  "name": "Symmetroid",
+  "name": "Quartic Symmetroid (pinned integer web)",
   "primary_family": "algebraic",
   "families": [
     "algebraic",
     "aperiodic",
     "def-implicit",
     "immersed",
-    "not-implemented",
+    "implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "implicit",
     "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 3.5
+    },
     "polynomial": null,
-    "note": "The quartic determinant surface of a net of quadrics; ten nodes."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nThe quartic determinant surface of a net of quadrics; ten nodes. 'The' symmetroid is a GENERIC construction, not a surface, so THE SHIPPED ROW PINS A MEMBER: det(x M0 + y M1 + z M2 + w M3) for four explicit integer symmetric matrices chosen by search for a node-rich real picture (printed in the module).  Of the generic ten nodes this member shows SIX real ones, each verified by the self-test as det = grad det = 0 with the matrix rank EXACTLY 2 there; the other four are complex."
   },
   "curvature": {
     "condition": "none",
@@ -31,16 +37,25 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built. The equation is deliberately NOT transcribed here: an unverified coefficient does not error, it silently defines a different surface, and the numerical oracle that guards the shipped algebraic block cannot guard a surface with no implementation to check against.",
-      "resume": "Transcribe from a primary source into math_art/surfaces/algebraic.py; the build's oracle check then confirms it against that implementation."
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "MATHWORLD",
+      "key": "SYMMETROID",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "E. W. Weisstein, \"Peano Surface\", \"Chair\", \"Crossed Trough\", \"Handkerchief Surface\", \"Hunt's Surface\", \"Kiss Surface\", \"Menn's Surface\", \"Miter Surface\", \"Nordstrand's Weird Surface\", \"Tooth Surface\", MathWorld -- A Wolfram Web Resource, mathworld.wolfram.com.",
+      "T. Nordstrand, \"Weird Cube\" and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).",
+      "G. Peano's 1899 counterexample; cf. the MathWorld page's history of the criterion it defeated.",
       "E. W. Weisstein, MathWorld, topic 'Algebraic Surfaces' -- the enumeration this absence was measured against."
     ]
+  },
+  "metrics": {
+    "normalization": "published"
   },
   "tradition": [
     "classical"

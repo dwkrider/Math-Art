@@ -102,6 +102,12 @@ SURFACES = Menu(
         # them also ship as ruled surfaces; being reachable two
         # ways is a fact about the surface, not a duplication.
         _e("mesh.quadric_add", 'MESH_UVSPHERE'),
+        # Two derived-surface transforms, as self-contained operators:
+        # the envelope of a sphere family along a spine (with a
+        # selected-curve spine mode), and the surface of centres of an
+        # exactly-known chart.
+        _e("mesh.canal_surface_add", 'MESH_CAPSULE'),
+        _e("mesh.focal_surface_add", 'SURFACE_NSURFACE'),
         # One constant-mean-curvature generator: Delaunay surfaces and
         # their roulettes, bubbletons grafted onto them, Wente's closed
         # torus, and the elastic tori of the spherical space form.

@@ -86,6 +86,15 @@ FLAT_SOURCES = [
      "cmc", "mesh.delaunay_surface_add", "cmc"),
     ("steinmetz", "steinmetz_generator", (), True,
      "derived", "mesh.steinmetz_add", "derived"),
+    # The two derived-surface transforms.  Their preset tables are read
+    # by name (SPINES / FOCAL_SOURCES) rather than by inline scan, so
+    # the radius-law and sheet-selector enums never masquerade as
+    # surfaces; the CURVE spine row is defined inline in the operator
+    # and therefore not read at all -- it is a UI mode.
+    ("canal", "canal_surface_generator", ("SPINES",), False,
+     "derived", "mesh.canal_surface_add", "derived"),
+    ("focal", "focal_surface_generator", ("FOCAL_SOURCES",), False,
+     "derived", "mesh.focal_surface_add", "derived"),
     ("constwidth", "constant_width_generator", (), True,
      "misc", "mesh.constant_width_add", "misc"),
 ]
@@ -104,6 +113,8 @@ FAMILY_OVERRIDE = {
     "curiosity:PENDANT_DROP": "revolution",
     "curiosity:TORUS": "revolution",
     "curiosity:ALYSSEID": "revolution",
+    "curiosity:ATTRACTION": "revolution",
+    "curiosity:PROP_CURV": "revolution",
     "curiosity:SINUSOID_REV": "revolution",
     "curiosity:TRACTROID2": "revolution",
     "curiosity:SCHWARZ_LANTERN": "discrete",
@@ -1827,6 +1838,12 @@ MISSING = {
                   "topology": {"complete": True, "compact": False},
                   "tradition": ["crystallographic"]},
     },
+    # canal-surface and focal-surface: these two claims are STALE BY
+    # DESIGN.  mesh.canal_surface_add and mesh.focal_surface_add now
+    # build them (the "canal" / "focal" FLAT_SOURCES rows), so
+    # stage_missing's supersede path drops the blocked_by and keeps the
+    # curated facts below.  The entries stay so a partial build without
+    # the derived stage still emits honest records.
     "canal-surface": {
         "name": "Canal Surface", "family": "derived", "mode": "derived",
         "blocked_by": "Not built as a general transform. The constant-radius "
@@ -1838,7 +1855,25 @@ MISSING = {
                   "the derived-surface transforms as one design pass rather "
                   "than seven entries.",
         "sources": ["G. Monge; see R. Ferreol, mathcurve, 'surface canal'."],
-        "extra": {"definition": {"operation": "canal"},
+        "extra": {"definition": {
+                      "mode": "derived", "operation": "canal",
+                      "note": "The envelope of the one-parameter family of "
+                              "spheres of radius r(s) centred on the spine "
+                              "c(s): each sphere touches the envelope along "
+                              "a characteristic circle of radius "
+                              "r sqrt(1 - r'^2), centred at c - r r' T and "
+                              "tilted asin(r') out of the normal plane. The "
+                              "operator's spine presets are specimens; a "
+                              "selected curve object can also serve as the "
+                              "spine."},
+                  "relations": {"generalizes": ["dupin-cyclide", "torus"]},
+                  "notes": {"caveats": [
+                      "A circular spine at constant radius is exactly the "
+                      "torus, and an ellipse spine with the linear-in-x "
+                      "radius law is exactly the Dupin cyclide; the "
+                      "generator's self-test verifies both against their "
+                      "implicit quartics, tying this operator to the "
+                      "records it generalizes."]},
                   "tradition": ["classical"]},
     },
     "focal-surface": {
@@ -1850,7 +1885,23 @@ MISSING = {
                   "produces something visually unlike anything shipped, and it "
                   "is a natural companion to math_art/curvature_color.py.",
         "sources": ["mathcurve, 'surface focale'."],
-        "extra": {"definition": {"operation": "focal"},
+        "extra": {"definition": {
+                      "mode": "derived", "operation": "focal",
+                      "note": "The surface of centres: both sheets "
+                              "x + N / kappa_i of principal curvature "
+                              "centres, evaluated ANALYTICALLY from exact "
+                              "source charts (never estimated from a mesh; "
+                              "discrete principal curvatures are noise "
+                              "precisely where the caustic is interesting). "
+                              "Singular at umbilics, where the sheets meet, "
+                              "and flaring to infinity at parabolic points, "
+                              "where the operator clips."},
+                  "notes": {"caveats": [
+                      "The degenerate cases carry the classical content: "
+                      "the sphere's sheets collapse to a point, the "
+                      "torus's to its centre circle and axis. A surface "
+                      "with ONE focal sheet degenerated to a curve is a "
+                      "canal surface; with BOTH, a Dupin cyclide."]},
                   "tradition": ["classical"]},
     },
     "dyck-surface": {

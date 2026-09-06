@@ -505,9 +505,27 @@ def _adcal_records():
                 "degree; the series it belongs to lived at "
                 "oliverlabs.net/series, which the capture did not "
                 "preserve."),
-            "resume": ALGSURF_RESUME,
+            "resume": (
+                "SOURCE ACQUIRED (batch 7): O. Labs, 'Dessins d'Enfants "
+                "and Hypersurfaces with Many A_j-Singularities', "
+                "arXiv:math/0505022, converted at research/papers/"
+                "algebraic-surfaces/labs-2005-dessins-denfants-"
+                "hypersurfaces-many-aj-singularities/.  It identifies "
+                "the surface as the DEGREE-12, j = 5 member of "
+                "construction (4): F^A2_12(x,y) + (T^5_12(z)+1)/2 = 0, "
+                "count 132 = 12*11 in its Table 1 -- but the "
+                "coefficients of the 5-Belyi tree polynomial T^5_12 are "
+                "algebraic numbers the paper does not print.  Building "
+                "the row = solving the 5-Belyi plane-tree conditions "
+                "for degree 12 (a bounded polynomial-system solve; the "
+                "paper's Example 3 shows the method), then gating on "
+                "the 132 predicted A5 points."),
             "sources": [
                 _src("ch019_no_01", "Advent calendar 2002, No. 1"),
+                "O. Labs, 'Dessins d'Enfants and Hypersurfaces with "
+                "Many A_j-Singularities', J. London Math. Soc. 74 "
+                "(2006) 607-622; arXiv:math/0505022 (converted, "
+                "research/papers/algebraic-surfaces).",
                 "Cover image of the SuSE Linux 8.1 distribution, per the "
                 "page (Labs made the SuSE cover surfaces from version "
                 "7.1 on)."],
@@ -611,11 +629,27 @@ def _adcal_records():
         "stagnaro-enriques-quintic": {
             "name": "Stagnaro Enriques Quintic (4 tacnodes)",
             "family": "algebraic", "mode": "implicit",
-            "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
+            "blocked_by": ALGSURF_BLOCKED + (
+                "  ACQUISITION PASS (batch 7): the equation was never on "
+                "the page (a Barth private communication), and "
+                "Stagnaro's own construction (LNM 997, Ravello 1982) is "
+                "paywalled.  The open-access completion of his program, "
+                "Craighero & Gattazzo, Rend. Sem. Mat. Univ. Padova 91 "
+                "(1994) 185-198, IS on disk (research/papers/"
+                "algebraic-surfaces/craighero-gattazzo-1994-quintic-"
+                "surfaces-enriques.pdf) and constructs the 4-Dd-point "
+                "Enriques quintic explicitly; its OCR is too poor for "
+                "blind transcription, so the equation extraction needs "
+                "the page-image conversion pass, queued."),
+            "resume": ALGSURF_RESUME,
             "sources": [
                 _src("ch034_no_16", "Advent calendar 2002, No. 16"),
                 "E. Stagnaro's construction; descriptions and equations "
-                "communicated to O. Labs by W. Barth, per the page."],
+                "communicated to O. Labs by W. Barth, per the page.",
+                "P. Craighero, R. Gattazzo, 'Quintic surfaces of P3 "
+                "having a non singular model with q = pg = 0, P2 != 0', "
+                "Rend. Sem. Mat. Univ. Padova 91 (1994) 185-198 "
+                "(acquired via NUMDAM, on disk)."],
             "extra": _deep(_ALG, {
                 "ids": {"algsurf": "ch034_no_16"},
                 "embedding": {
@@ -628,12 +662,34 @@ def _adcal_records():
                 "definition": {"note":
                     "One of Stagnaro's Enriques quintics: a degree-5 "
                     "surface with 4 tacnodes, in a family whose "
-                    "parameters set the tacnode type (0, 1 or 2)."}}),
+                    "parameters set the tacnode type (0, 1 or 2).  THE "
+                    "SHIPPED ROW IS THE CRAIGHERO-GATTAZZO SECTION-3 "
+                    "PENCIL MEMBER (lambda : mu) = (1 : 1) -- the "
+                    "open-access completion of Stagnaro's program, same "
+                    "singular configuration, irreducible bicanonical "
+                    "adjoint -- NOT Stagnaro's own [St.1] surface, whose "
+                    "equation remains unpublished outside LNM 997.  One "
+                    "typo in the source found by testing its claims: the "
+                    "text's fourth Dd-point P(1,0,0,1) must read "
+                    "(0,0,1,1); with that the four Dd-points, the cone "
+                    "tangencies and the rank-1 tacnodal Hessians all "
+                    "verify at machine precision (gated)."}}),
         },
         "hyde-sextic": {
             "name": "Hyde Sextic", "family": "algebraic",
             "mode": "implicit",
-            "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
+            "blocked_by": ALGSURF_BLOCKED + (
+                "  ACQUISITION PASS (batch 7): the equation was never on "
+                "the page (a Barth private communication).  The 1901 "
+                "paper is identified precisely -- E. W. Hyde, 'On a "
+                "Surface of the Sixth Order Which is Touched by the "
+                "Axes of all Screws Reciprocal to Three Given Screws', "
+                "Ann. of Math. (2) 2 (1901) 179-188, JSTOR 2007200 -- "
+                "but every fetchable archive is gated from here (JSTOR "
+                "login, HathiTrust 403, archive.org blocked), and "
+                "whether the 1901 paper even prints a usable affine "
+                "equation is unverified."),
+            "resume": ALGSURF_RESUME,
             "sources": [
                 _src("ch035_no_17", "Advent calendar 2002, No. 17"),
                 "Hyde, Ann. of Math., 2nd series, vol. 2 (1901), and "
@@ -660,7 +716,17 @@ def _adcal_records():
         "humbert-sextic": {
             "name": "Humbert Sextic", "family": "algebraic",
             "mode": "implicit",
-            "blocked_by": ALGSURF_BLOCKED, "resume": ALGSURF_RESUME,
+            "blocked_by": ALGSURF_BLOCKED + (
+                "  ACQUISITION PASS (batch 7): the equation was never on "
+                "the page (a Barth private communication), but the 1896 "
+                "paper itself IS now on disk -- G. Humbert, JMPA (5) 2 "
+                "(1896) 263-293, acquired via NUMDAM at research/papers/"
+                "algebraic-surfaces/humbert-1896-surface-sixieme-ordre-"
+                "fonctions-abeliennes.pdf.  It is an 1896 scan with no "
+                "text layer, in French, opening with the hyperelliptic "
+                "theory; extracting the sextic's projective equation "
+                "needs the hard-PDF page-image conversion pass, queued."),
+            "resume": ALGSURF_RESUME,
             "sources": [
                 _src("ch036_no_18", "Advent calendar 2002, No. 18"),
                 "G. Humbert, 'Sur une surface du sixieme ordre liee aux "

@@ -1464,6 +1464,67 @@ for name, op in OPS:
     if not ok:
         fails.append(name)
 
+# --------------------------------------------------------------------
+# Derived-surface transforms: every enum row must yield a NON-EMPTY
+# mesh with REAL AREA through the OPERATOR path, not just through the
+# builder.  The torus focal surface shipped looking empty once: both
+# its sheets are 1-dimensional and the operator emitted their
+# zero-area quad grid, so a gate that only counted vertices -- or only
+# checked the points were in the right place -- passed while the user
+# saw nothing.  Degenerate sheets are now drawn as thin tubes/markers;
+# this is what keeps any source, present or future, from shipping
+# invisible.
+# --------------------------------------------------------------------
+from math_art import canal_surface_generator as _canal_mod
+from math_art import focal_surface_generator as _focal_mod
+
+def _mesh_area(obj):
+    return sum(p.area for p in obj.data.polygons)
+
+for _key, _lab, _desc in _focal_mod.FOCAL_SOURCES:
+    name = f"focal operator non-empty: {_key}"
+    for o in list(bpy.data.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
+    try:
+        res = bpy.ops.mesh.focal_surface_add(
+            source=_key, segments_u=64, segments_v=48)
+        obj = bpy.context.object
+        area = _mesh_area(obj)
+        ok = (res == {'FINISHED'} and len(obj.data.vertices) > 0
+              and len(obj.data.polygons) > 0 and area > 1e-8)
+        if not ok:
+            print("    verts=%d polys=%d area=%.2e"
+                  % (len(obj.data.vertices), len(obj.data.polygons),
+                     area))
+    except Exception as e:
+        print("   ", e)
+        ok = False
+    print(f"[{name}] {'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(name)
+
+for _key, _lab, _desc in _canal_mod.SPINES:
+    name = f"canal operator non-empty: {_key}"
+    for o in list(bpy.data.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
+    try:
+        res = bpy.ops.mesh.canal_surface_add(
+            spine=_key, spine_samples=96, sides=16)
+        obj = bpy.context.object
+        area = _mesh_area(obj)
+        ok = (res == {'FINISHED'} and len(obj.data.vertices) > 0
+              and len(obj.data.polygons) > 0 and area > 1e-8)
+        if not ok:
+            print("    verts=%d polys=%d area=%.2e"
+                  % (len(obj.data.vertices), len(obj.data.polygons),
+                     area))
+    except Exception as e:
+        print("   ", e)
+        ok = False
+    print(f"[{name}] {'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(name)
+
 # seifert relax exercises the cross-module relative import
 math_art.unregister()
 print("[unregister] OK")

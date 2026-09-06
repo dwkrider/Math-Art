@@ -805,6 +805,19 @@ CHARTS = {
                    "make": lambda m: m._revolve(
                        m.alysseid_profile(1.0, 1.6, 96), 96)[:2]},
     },
+    "solid-of-maximal-attraction": {
+        "x": "sqrt(cos(u))*sin(u)*cos(v)",
+        "y": "sqrt(cos(u))*sin(u)*sin(v)",
+        "z": "cos(u)**(3/2)",
+        "u_range": ("0", "pi/2"), "v_range": ("0", "2*pi"),
+        "periodic_v": True,
+        "note": "r(theta) = a sqrt(cos theta) about the attracted "
+                "boundary point at the origin, a = 1 fixed to the "
+                "operator default; u is the colatitude theta",
+        "oracle": {"module": "curiosity_surface_generator",
+                   "make": lambda m: m._revolve(
+                       m.attraction_profile(1.0, 96), 96)[:2]},
+    },
     "revolution-of-the-sinusoid": {
         "x": "cos(u)*cos(v)",
         "y": "cos(u)*sin(v)",
@@ -1046,12 +1059,20 @@ _NO_BUILDER = ("the record has no implemented construction -- there is "
 # conoids and the three revolution surfaces graduated out of this list
 # when their builders shipped; each now carries a verified chart above.)
 for _slug in ("boys-planet", "dyck-surface",
-              "etruscan-venus-surface", "ida-surface",
-              "nested-klein-bottles",
-              "rotation-surface-with-proportional-curvatures",
-              "solid-of-maximal-attraction"):
+              "etruscan-venus-surface", "ida-surface"):
     REASONS[_slug] = _NO_BUILDER
 del _slug
+REASONS["nested-klein-bottles"] = (
+    "a composition of Franzoni dumbbell tubes (shells of decreasing "
+    "radius about one directrix); the directrix tube has no single "
+    "elementary chart -- the shipped Klein bottle row carries the "
+    "same reason -- and the module self-test gates closure, "
+    "one-sidedness and true enclosure of every shell")
+REASONS["rotation-surface-with-proportional-curvatures"] = (
+    "the meridian height z(t) = (a/k) * integral of sin(u)^(1/k) is "
+    "an incomplete-beta quadrature, non-elementary for general k; the "
+    "builder integrates it by fine trapezoid and the module self-test "
+    "measures the defining curvature ratio on the result")
 
 
 def chart_for(slug):

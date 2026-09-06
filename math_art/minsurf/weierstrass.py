@@ -2999,6 +2999,1294 @@ def genus1helicoid_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 
 
 # ==========================================================================
+# Toroidal Karcher-Scherk towers (genus 1 per period)
+# ==========================================================================
+# Karcher-Scherk saddle towers with a VERTICAL HANDLE: singly periodic,
+# genus 1 in the quotient, first mentioned in Karcher's Tokyo notes and
+# presented on Weber's repository page (mirror ch157) whose notebook
+# `Singly Scherk (g=1).nb` carries the data transcribed here:
+#
+#     on the torus C/<1, i tau1>, with s+- = (1 + tau)/2 +- (k-1)/(2k),
+#     G  = theta11(z - s+) / theta11(z - s-),
+#     dh = theta11(z - s-) theta11(z - s+)
+#          / ( theta11(z - i a1) theta11(z - (1 + tau) + i a1) ),
+#
+# and per k a FindRoot-solved table of (tau1, a1) members killing the
+# horizontal period, Re int_0^1 dh(tau/2 + t) dt = 0.  The tables for
+# k = 3, 4, 5, 7, 8 are in the notebook; one member per k ships below
+# and the record note carries which.
+#
+# What the deck maps do -- MEASURED, not assumed (the self-test keeps
+# measuring them):
+#   * z -> z + 1 closes exactly (translation 0 to quadrature): the
+#     x-cycle is the HANDLE loop;
+#   * z -> z + tau is a pure rotation by -2 pi / k about a vertical
+#     axis (affine fit spread 6e-10), rise ZERO: the tower's k-fold
+#     symmetry;
+#   * the loop AROUND a dh pole (the helicoidal end at z = i a1)
+#     translates by exactly (0, 0, T) with T = 2 pi |res dh| -- THIS is
+#     the tower's vertical period.  For the k = 4, tau1 = 0.4 member
+#     T = 1.077748, matching the independently recorded T_z ~ 1.077
+#     from the earlier constant-extraction pass.  The horizontal
+#     components of that loop vanish (measured < 1e-6 of T), which is
+#     the geometric form of the solved period condition.
+#
+# MESHING.  One torus rectangle (window x in [-1/2, 1/2], y in
+# [0, tau1]) is one WINDING of the tower; the two dh poles sit at
+# (0, a1) and (0, tau1 - a1) inside it and are excised by a mask disk
+# (the wing trim -- the notebook extends into the ends with an
+# incomplete-elliptic-F chart instead; that refinement is future work
+# and is what the `lx` values in the notebook size).  Integration runs
+# down the x = 1/4 column and out along rows, so no path meets a pole.
+# Successive windings are translated copies at (0, 0, s T) and the
+# x = +1/2 edge of winding s IS the x = -1/2 edge of winding s+1 (same
+# y grid, so the seam welds BY INDEX, positions averaged) -- the raw
+# gap is 7e-4 at n = 240, pure quadrature, and averaging closes it.
+#
+# References:
+# - H. Karcher, "Construction of minimal surfaces", Univ. of Tokyo
+#   Surveys in Geometry (1989); Lecture Notes 12, SFB 256 Bonn --
+#   the saddle towers and the Tokyo-notes lineage the page credits.
+# - M. Weber, "Toroidal Karcher-Scherk Surfaces", minimalsurfaces.blog
+#   (mirror ch157; notebook `Singly Scherk (g=1).nb`).
+# - R. Yol, "Symmetrization of Minimal Surfaces in Three Dimensional
+#   Euclidean Space", PhD thesis, Indiana University (2024), section
+#   5.1.4 -- the generalized toroidal Karcher-Scherk family.
+
+# --------------------------------------------------------------------------
+# The ENDS BACKEND: torus / rectangle domains with punctures
+# --------------------------------------------------------------------------
+# Shared machinery for every row whose Weierstrass forms have POLES in
+# the integration window -- ends of the surface.  Grew out of the
+# toroidal Karcher-Scherk mesher (which now runs on it) and exists so
+# that Hackman, the catenoid field, Lubeck-Batista and Scherk's fourth
+# do not each reimplement the same four decisions slightly differently:
+#
+#   1. GRIDS cluster toward every puncture coordinate (`we_ends_grid`);
+#   2. INTEGRATION runs on a spanning tree that no puncture touches:
+#      one HIGHWAY row at the y farthest from every puncture, one BASE
+#      COLUMN per x-strip between puncture columns, rows outward from
+#      their strip's column (`we_ends_integrate`).  A path through a
+#      pole is the failure mode that produced a 3.2e10-span "patch" in
+#      the first Hackman attempt; the tree makes it impossible by
+#      construction.
+#   3. MASKS excise a disk of radius r0 around each puncture (the end
+#      trim), and quad emission drops both masked cells and CUT
+#      CURTAINS -- quads whose 3-D edge jump exceeds a caller-declared
+#      threshold.  The curtains are not cosmetic: around an end with
+#      nonzero vertical flux the immersion is multivalued, two adjacent
+#      rows on opposite sides of the cut sit one winding apart, and a
+#      quad bridging them renders as a vertical wall that the true
+#      surface does not contain (the shipped toroidal-KS mesh carried
+#      536 such edges before this backend existed).
+#   4. `we_ends_loop` integrates all three forms around a puncture:
+#      the end's translation vector.  For a solved singly periodic row
+#      it is (0, 0, T) -- the toroidal-KS k=4 member reproduces its
+#      independently recorded T = 1.077748 through exactly this call,
+#      which is the backend's own self-test oracle -- and for a row
+#      that claims "no period problem" it must vanish outright.
+
+def we_ends_grid(window, punctures, n, ny=None, specials_x=(),
+                 specials_y=()):
+    """Graded (xs, ys) on window = (x0, x1, y0, y1), clustered toward
+    every puncture coordinate and any extra specials."""
+    x0, x1, y0, y1 = (float(v) for v in window)
+    px = sorted({float(np.real(p)) for p in punctures} | set(specials_x))
+    py = sorted({float(np.imag(p)) for p in punctures} | set(specials_y))
+    xs = _tks_graded(x0, x1, int(n), px or [0.5 * (x0 + x1)])
+    ys = _tks_graded(y0, y1, int(ny or max(24, int(n * 0.8))),
+                     py or [0.5 * (y0 + y1)])
+    return xs, ys
+
+
+def we_ends_integrate(Wfn, xs, ys, punctures):
+    """Cumulative integral of the three forms over the grid, on a
+    spanning tree that avoids every puncture: highway row -> base
+    column per strip -> rows outward within the strip.  Returns X
+    (nx, ny, 3) real."""
+    xs = np.asarray(xs, dtype=float)
+    ys = np.asarray(ys, dtype=float)
+    Z = xs[:, None] + 1j * ys[None, :]
+    Wg = Wfn(Z)
+    nx, ny = len(xs), len(ys)
+    px = sorted({float(np.real(p)) for p in punctures})
+    py = [float(np.imag(p)) for p in punctures]
+    # highway: the grid row farthest from every puncture y
+    dy = np.min(np.abs(ys[:, None]
+                       - np.asarray(py or [np.inf])[None, :]), axis=1)
+    jh = int(np.argmax(dy))
+    # strips between puncture x-columns; one base column per strip,
+    # at the grid x farthest from the strip's walls
+    walls = [xs[0] - 1.0] + px + [xs[-1] + 1.0]
+    F = np.zeros(Z.shape + (3,), dtype=complex)
+    dxs = np.diff(xs)
+    dys = np.diff(ys)
+    done_cols = []
+    for w0, w1 in zip(walls[:-1], walls[1:]):
+        sel = np.where((xs > w0 + 1e-12) & (xs < w1 - 1e-12))[0]
+        if not len(sel):
+            continue
+        # distance measured against the CLAMPED walls, so a boundary
+        # strip puts its base mid-strip instead of on the window edge
+        # (an edge base column makes one of the two row sweeps empty)
+        w0c, w1c = max(w0, xs[0]), min(w1, xs[-1])
+        dwall = np.minimum(xs[sel] - w0c, w1c - xs[sel])
+        ib = int(sel[int(np.argmax(dwall))])
+        done_cols.append((ib, sel))
+    # 1. the highway row, integrated once left-to-right from the first
+    # base column (regular everywhere: jh is far from every puncture y)
+    ib0 = done_cols[0][0]
+    row = Wg[:, jh, :]
+    Fh = np.zeros((nx, 3), dtype=complex)
+    if ib0 < nx - 1:
+        Fh[ib0 + 1:] = np.cumsum(0.5 * (row[ib0 + 1:] + row[ib0:-1])
+                                 * dxs[ib0:, None], axis=0)
+    if ib0 > 0:
+        Fh[:ib0] = np.cumsum(0.5 * (row[ib0 - 1::-1] + row[ib0:0:-1])
+                             * (-dxs[ib0 - 1::-1, None]),
+                             axis=0)[::-1]
+    # 2. per strip: base column vertically from the highway, then rows
+    # outward from the base column -- never crossing a strip wall
+    for ib, sel in done_cols:
+        col = Wg[ib]
+        Fc = np.zeros((ny, 3), dtype=complex)
+        if jh < ny - 1:
+            Fc[jh + 1:] = np.cumsum(0.5 * (col[jh + 1:] + col[jh:-1])
+                                    * (1j * dys[jh:])[:, None], axis=0)
+        if jh > 0:
+            Fc[:jh] = np.cumsum(0.5 * (col[jh - 1::-1] + col[jh:0:-1])
+                                * (-1j * dys[jh - 1::-1])[:, None],
+                                axis=0)[::-1]
+        Fc = Fc + Fh[ib][None, :]
+        lo, hi = int(sel[0]), int(sel[-1])
+        F[ib] = Fc
+        if hi > ib:
+            F[ib + 1:hi + 1] = Fc[None] + np.cumsum(
+                0.5 * (Wg[ib + 1:hi + 1] + Wg[ib:hi])
+                * dxs[ib:hi, None, None], axis=0)
+        if lo < ib:
+            F[lo:ib] = (Fc[None] + np.cumsum(
+                0.5 * (Wg[ib - 1:lo - 1 if lo else None:-1]
+                       + Wg[ib:lo:-1])
+                * (-dxs[ib - 1:lo - 1 if lo else None:-1, None, None]),
+                axis=0))[::-1]
+    return np.real(F)
+
+
+def we_ends_mask(xs, ys, punctures, r0):
+    Z = np.asarray(xs)[:, None] + 1j * np.asarray(ys)[None, :]
+    m = np.ones(Z.shape, dtype=bool)
+    for p_ in punctures:
+        m &= np.abs(Z - complex(p_)) > float(r0)
+    return m
+
+
+def we_ends_quads(X, mask, jump=None):
+    """Quad list over the grid: masked cells dropped, and -- when
+    `jump` is given -- any quad with a 3-D edge longer than it (the
+    cut curtains; see the backend header)."""
+    nx, ny = X.shape[0], X.shape[1]
+    quads = []
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            if not (mask[i, j] and mask[i + 1, j]
+                    and mask[i + 1, j + 1] and mask[i, j + 1]):
+                continue
+            if jump is not None:
+                c = (X[i, j], X[i + 1, j], X[i + 1, j + 1], X[i, j + 1])
+                if max(float(np.linalg.norm(c[t] - c[(t + 1) % 4]))
+                       for t in range(4)) > jump:
+                    continue
+            quads.append((i * ny + j, (i + 1) * ny + j,
+                          (i + 1) * ny + j + 1, i * ny + j + 1))
+    return quads
+
+
+def we_ends_loop(Wfn, p, r=0.015, n=8001):
+    """Translation of the loop around puncture p: the end's period
+    vector (real part of the contour integral of all three forms)."""
+    t = np.linspace(0.0, 2.0 * np.pi, n)
+    zz = complex(p) + r * np.exp(1j * t)
+    dzdt = 1j * r * np.exp(1j * t)
+    return np.real(np.trapezoid(Wfn(zz) * dzdt[:, None], t, axis=0))
+
+
+# k -> (tau1, a1, lx): one FindRoot-solved member per wing order,
+# straight from the notebook's tables (lx is the notebook's own end
+# extent for that k, recorded for provenance).
+TOROIDAL_KS_MEMBERS = {
+    3: (1.0, 0.38900635790684035, 8),
+    4: (0.4, 0.13619041259273051, 12),
+    5: (0.5, 0.21484200805849266, 16),
+    7: (0.2, 0.12152998199565702, 20),
+    8: (0.15, 0.056545236758766944, 20),
+}
+
+
+def _tks_forms(k, tau1, a1):
+    """(G, dh, W) callables for one member, on the shipped theta."""
+    th = genus1helicoid_theta11
+    tau = 1j * float(tau1)
+    spl = (1.0 + tau) / 2.0 + (k - 1) / (2.0 * k)
+    smi = (1.0 + tau) / 2.0 - (k - 1) / (2.0 * k)
+
+    def G(z):
+        z = np.asarray(z, dtype=complex)
+        return th(z - spl, tau) / th(z - smi, tau)
+
+    def dh(z):
+        z = np.asarray(z, dtype=complex)
+        return (th(z - smi, tau) * th(z - spl, tau)
+                / (th(z - 1j * a1, tau)
+                   * th(z - (1.0 + tau) + 1j * a1, tau)))
+
+    def W(z):
+        g = G(z)
+        d = dh(z)
+        return np.stack([0.5 * (1.0 / g - g) * d,
+                         0.5j * (1.0 / g + g) * d, d], axis=-1)
+    return G, dh, W
+
+
+def _tks_graded(lo, hi, n, specials):
+    """n samples clustered toward each special coordinate (iterated
+    density reweighting, the same scheme _g1h_graded uses)."""
+    t = np.linspace(0.0, 1.0, n)
+    x = lo + (hi - lo) * t
+    spc = np.asarray(specials, dtype=float)
+    for _ in range(4):
+        d = np.min(np.abs(x[:, None] - spc[None, :]), axis=1)
+        wgt = 1.0 / (0.02 + d) ** 1.2
+        cdf = np.concatenate([[0.0],
+                              np.cumsum(0.5 * (wgt[1:] + wgt[:-1])
+                                        * np.diff(x))])
+        cdf /= cdf[-1]
+        x = np.interp(t, cdf, x)
+    return x
+
+
+def _tks_patch(k, tau1, a1, n, r0):
+    """One winding: (xs, ys, X, mask), through the ends backend.  The
+    punctures sit on the x = 0 line, so the tree has two strips with
+    base columns near +-1/4 -- the same integration the first version
+    hand-rolled, now shared."""
+    _G, _dh, W = _tks_forms(k, tau1, a1)
+    punct = (1j * a1, 1j * (tau1 - a1))
+    xs, ys = we_ends_grid((-0.5, 0.5, 0.0, float(tau1)), punct, int(n))
+    X = we_ends_integrate(W, xs, ys, punct)
+    mask = we_ends_mask(xs, ys, punct, r0)
+    return xs, ys, X, mask
+
+
+def tks_vertical_period(k, tau1, a1, r=0.015, n=8001):
+    """The translation of the loop around the z = i a1 end, by direct
+    contour integration of all three forms: (0, 0, T) for a solved
+    member.  The horizontal components vanishing is the geometric form
+    of the period condition, and the self-test measures exactly that."""
+    _G, _dh, W = _tks_forms(k, tau1, a1)
+    t = np.linspace(0.0, 2.0 * np.pi, n)
+    zz = 1j * a1 + r * np.exp(1j * t)
+    dzdt = 1j * r * np.exp(1j * t)
+    loop = np.trapezoid(W(zz) * dzdt[:, None], t, axis=0)
+    return np.real(loop)
+
+
+def tks_period_residual(k, tau1, a1, n=20001):
+    """Re of the horizontal dh period -- the notebook's own Adh
+    condition, zero exactly at the tabulated (tau1, a1) members."""
+    _G, dh, _W = _tks_forms(k, tau1, a1)
+    t = np.linspace(0.0, 1.0, n)
+    v = dh(1j * tau1 / 2.0 + t)
+    return float(np.real(np.trapezoid(v, t)))
+
+
+def toroidal_ks_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                     storeys=1):
+    """MESH_PARAM builder: `storeys` windings of the tower, welded by
+    index along the winding seam.  order picks the wing parameter k
+    (snapped to the notebook's solved tables); radius sets the wing
+    trim (larger radius = smaller mask = longer wings).  theta is
+    unused: no associate family is claimed for the tower."""
+    ks = sorted(TOROIDAL_KS_MEMBERS)
+    k = min(ks, key=lambda kk: abs(kk - int(round(order))))
+    tau1, a1, _lx = TOROIDAL_KS_MEMBERS[k]
+    r0 = 1.2e-3 * (1.2 / float(np.clip(radius, 0.3, 6.0))) ** 2
+    n = int(np.clip(nu * 2.2, 100, 300))
+    xs, ys, X, mask = _tks_patch(k, tau1, a1, n, r0)
+    T = tks_vertical_period(k, tau1, a1)
+    S = max(1, int(storeys))
+    nx, ny = X.shape[0], X.shape[1]
+    NV = nx * ny
+    Vs, Ms = [], []
+    for s_ in range(S):
+        Vs.append((X + s_ * np.array([0.0, 0.0, T[2]])).reshape(-1, 3))
+        Ms.append(mask.reshape(-1))
+    V = np.concatenate(Vs, axis=0)
+    mall = np.concatenate(Ms, axis=0)
+
+    parent = np.arange(S * NV)
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for s_ in range(S - 1):
+        for j in range(ny):
+            a = find(s_ * NV + (nx - 1) * ny + j)
+            b = find((s_ + 1) * NV + j)
+            if a != b:
+                parent[a] = b
+    roots = np.array([find(i) for i in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    sums = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(sums, inv, V)
+    np.add.at(cnt, inv, 1.0)
+    Vm = sums / cnt[:, None]
+    ok_node = np.ones(len(uniq), dtype=bool)
+    np.logical_and.at(ok_node, inv, mall)
+    # cut curtains: around each helicoidal end the immersion is
+    # multivalued (the loop translates by (0, 0, T)), so rows on
+    # opposite sides of the cut line sit one winding apart and a quad
+    # bridging them is a vertical wall the surface does not contain.
+    # The 3-D jump filter drops them; the gap they leave IS the end
+    # trim, which the incomplete-elliptic-F chart refinement would
+    # fill properly (BACKLOG).
+    jump = 0.55 * abs(T[2])
+    quads = []
+    for s_ in range(S):
+        for i in range(nx - 1):
+            b0 = s_ * NV + i * ny
+            b1 = s_ * NV + (i + 1) * ny
+            for j in range(ny - 1):
+                f = (inv[b0 + j], inv[b1 + j],
+                     inv[b1 + j + 1], inv[b0 + j + 1])
+                if not (ok_node[f[0]] and ok_node[f[1]]
+                        and ok_node[f[2]] and ok_node[f[3]]):
+                    continue
+                c = Vm[list(f)]
+                if max(float(np.linalg.norm(c[t] - c[(t + 1) % 4]))
+                       for t in range(4)) > jump:
+                    continue
+                quads.append(f)
+    used = np.zeros(len(Vm), dtype=bool)
+    for f in quads:
+        for a in f:
+            used[a] = True
+    remap = -np.ones(len(Vm), dtype=np.int64)
+    remap[used] = np.arange(int(used.sum()))
+    V = Vm[used]
+    quads = [tuple(int(remap[a]) for a in f) for f in quads]
+    V = _center_fit(V, scale, V)
+    return V, quads, None
+
+
+# --------------------------------------------------------------------------
+# Plane with catenoids (doubly periodic, square lattice)
+# --------------------------------------------------------------------------
+# The simplest doubly periodic minimal surface with only catenoidal
+# ends in the quotient: a plane with catenoid necks planted on a square
+# lattice, the ends' limiting normals perpendicular to the periodicity
+# plane, growth rate tuned by the Lopez-Ros factor rho -- and, the
+# page states outright, NO period problem to solve.  Data printed on
+# Weber's page (mirror ch039) and in `Doubly_Catenoid.nb`:
+#
+#     g = rho / sqrt(z),   dh = dz / (sqrt(z-1) sqrt(z+1))
+#
+# on the upper half plane, principal branches (all three square roots
+# are analytic there, so no branch tracking).  The catenoidal ends are
+# z = 0 and z = infinity; +-1 are integrable branch points.
+#
+# THE IDENTITY, chosen before the mesher was written and measured
+# before it was trusted (now gated in the zoo self-test): the four
+# real-axis segments must land on the four symmetry elements of the
+# square cell, tied together by ONE number --
+#
+#     f((0,1))      the straight 2-fold axis along y,
+#     f((-1,0))     the straight 2-fold axis along x,
+#     f((1,inf))    planar, in the mirror  y = +dis,
+#     f((-inf,-1))  planar, in the mirror  x = -dis,
+#     dis = f(1)_y = -f(-1)_x            (the SQUARE lattice),
+#
+# all measured by independent 1-D integrals; at rho = 1 they agree to
+# quadrature (~1e-7), and the lattice period is 4 dis.  Weber's own
+# assembly chain (fr2..fr6) is followed literally: two mirrors, two
+# half-turns (16 copies), then translations by (4 dis, 0, 0) and
+# (0, 4 dis, 0).
+#
+# References:
+# - M. Weber, "Plane with Catenoids", minimalsurfaces.blog (mirror
+#   ch039; notebook `Doubly_Catenoid.nb` -- the data and the assembly).
+# - H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#   examples", Manuscripta Math. 62 (1988) -- the Lopez-Ros/growth
+#   mechanism for catenoidal necks in periodic surfaces.
+
+def plane_catenoids_W(rho=1.0):
+    def W(z):
+        z = np.asarray(z, dtype=complex)
+        s0 = np.sqrt(z)
+        s1 = np.sqrt(z - 1.0)
+        s2 = np.sqrt(z + 1.0)
+        ph1 = rho / (s1 * s0 * s2)
+        ph2 = (1.0 / rho) * s0 / (s1 * s2)
+        dh = 1.0 / (s1 * s2)
+        return np.stack([0.5 * (ph2 - ph1), 0.5j * (ph1 + ph2), dh],
+                        axis=-1)
+    return W
+
+
+def _pwc_seg(Wf, z0, z1, se=None, m=2, n=20000):
+    if se is None:
+        t = (np.arange(n) + 0.5) / n
+        zz = z0 + (z1 - z0) * t
+        w = np.full(n, 1.0 / n)
+    else:
+        u = (np.arange(n) + 0.5) / n
+        sv = u ** m
+        w = m * u ** (m - 1) / n
+        if se == 'z0':
+            zz = z0 + (z1 - z0) * sv
+        else:
+            zz = z1 + (z0 - z1) * sv[::-1]
+            w = w[::-1]
+    return np.sum(Wf(zz) * (w[:, None] * (z1 - z0)), axis=0)
+
+
+def plane_catenoids_frame(rho=1.0):
+    """(dis, f1, fm1) for the member: the mirror offset and the two
+    axis endpoints, by graded 1-D integrals from the true z = 0 (the
+    m = 2 substitution regularises every sqrt endpoint)."""
+    Wf = plane_catenoids_W(rho)
+    up = _pwc_seg(Wf, 0.0, 0.5j, 'z0')
+    f1 = np.real(up + _pwc_seg(Wf, 0.5j, 1.0 + 0.5j)
+                 + _pwc_seg(Wf, 1.0 + 0.5j, 1.0, 'z1'))
+    fm1 = np.real(up + _pwc_seg(Wf, 0.5j, -1.0 + 0.5j)
+                  + _pwc_seg(Wf, -1.0 + 0.5j, -1.0, 'z1'))
+    return float(f1[1]), f1, fm1
+
+
+def _pwc_weld(V, Q, tol):
+    """Plain coordinate weld (round-to-lattice buckets)."""
+    key = np.round(V / max(tol, 1e-300)).astype(np.int64)
+    _, first, inv = np.unique(key, axis=0, return_index=True,
+                              return_inverse=True)
+    return V[first], inv[np.asarray(Q)]
+
+
+def plane_catenoids_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                         cells=(1, 1)):
+    """cells2d builder: Weber's 16-copy unit (two mirrors, two
+    half-turns) tiled cu x cv on the measured square lattice.  order
+    drives the Lopez-Ros growth factor rho = 2^(order-1); radius sets
+    the domain reach (how far the catenoid necks flare)."""
+    if isinstance(cells, (int, float)):
+        cells = (int(cells), 1)
+    cu = int(np.clip(cells[0], 1, 6))
+    cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 6))
+    rho = float(2.0 ** (int(np.clip(order, 1, 5)) - 1))
+    Wf = plane_catenoids_W(rho)
+    reach = 1.0 + 3.0 * float(np.clip(radius, 0.3, 6.0)) / 1.2
+    punct = (0.0 + 0j, 1.0 + 0j, -1.0 + 0j)
+    n = int(np.clip(nu * 1.8, 80, 240))
+    eps = 1e-6
+    xs, ys = we_ends_grid((-reach, reach, eps, reach), punct, n,
+                          ny=max(24, int(n * 0.7)))
+    X = we_ends_integrate(Wf, xs, ys, punct)
+    # frame: patch coords are f - f(i eps); shift into the f(0) = 0
+    # frame the identities are stated in
+    delta = np.real(_pwc_seg(Wf, 0.0, 1j * eps, 'z0'))
+    X = X + delta[None, None, :]
+    dis, _f1, _fm1 = plane_catenoids_frame(rho)
+    # snap the real-axis boundary onto its measured symmetry elements
+    # (the reflected/rotated copies then share those vertices exactly
+    # -- the same projection step the conjugate-Plateau route uses)
+    for i, x in enumerate(xs):
+        vx = X[i, 0]
+        if 0.0 < x < 1.0:
+            X[i, 0] = np.array([0.0, vx[1], 0.0])        # y axis
+        elif -1.0 < x < 0.0:
+            X[i, 0] = np.array([vx[0], 0.0, 0.0])        # x axis
+        elif x >= 1.0:
+            X[i, 0] = np.array([vx[0], dis, vx[2]])      # y = +dis
+        else:
+            X[i, 0] = np.array([-dis, vx[1], vx[2]])     # x = -dis
+    mask = np.ones(X.shape[:2], dtype=bool)
+    quads0 = np.asarray(we_ends_quads(X, mask))
+    V0 = X.reshape(-1, 3)
+
+    def refl(nrm, off):
+        nrm = np.asarray(nrm, dtype=float)
+        H = np.eye(4)
+        H[:3, :3] = np.eye(3) - 2.0 * np.outer(nrm, nrm)
+        H[:3, 3] = 2.0 * off * nrm
+        return H
+
+    def halfturn(axis):
+        d = np.asarray(axis, dtype=float)
+        d = d / np.linalg.norm(d)
+        H = np.eye(4)
+        H[:3, :3] = 2.0 * np.outer(d, d) - np.eye(3)
+        return H
+    M1 = refl((1.0, 0.0, 0.0), -dis)
+    M2 = refl((0.0, 1.0, 0.0), dis)
+    R1 = halfturn((0.0, 1.0, 0.0))
+    R2 = halfturn((1.0, 0.0, 0.0))
+    ops = [np.eye(4)]
+    for H in (M1, M2, R1, R2):                # Weber's fr2..fr5 chain
+        ops = ops + [H @ g_ for g_ in ops]
+    a1 = np.array([4.0 * dis, 0.0, 0.0])
+    a2 = np.array([0.0, 4.0 * dis, 0.0])
+    Vs, Qs, base = [], [], 0
+    for iu in range(cu):
+        for iv in range(cv):
+            off = ((iu - 0.5 * (cu - 1)) * a1
+                   + (iv - 0.5 * (cv - 1)) * a2)
+            for H in ops:
+                Vh = V0 @ H[:3, :3].T + H[:3, 3] + off
+                Vs.append(Vh)
+                q = quads0 + base
+                if np.linalg.det(H[:3, :3]) < 0.0:
+                    q = q[:, ::-1]
+                Qs.append(q)
+                base += len(V0)
+    V = np.concatenate(Vs, axis=0)
+    Q = np.concatenate(Qs, axis=0)
+    span = 4.0 * dis * max(cu, cv)
+    V, Q = _pwc_weld(V, Q, 1e-6 * span)
+    V = _center_fit(V, scale, V)
+    return V, [tuple(int(i) for i in q) for q in Q], None
+
+
+# --------------------------------------------------------------------------
+# The catenoid field (doubly periodic half-catenoids)
+# --------------------------------------------------------------------------
+# A doubly periodic field of half-catenoids growing alternately up and
+# down between two parallel planes: 3DXM's "Catenoid Field" exhibit,
+# with the data the VMM/harvest state as g = bb * J_F(z),
+# dh = dz / J_F(z) on a twice-punctured rectangular torus.  J_F is the
+# degree-2 elliptic function with simple zeros at 0, 1/2 and simple
+# poles at tau/2, 1/2 - tau/2 (BALANCED divisor: sum of zeros = sum of
+# poles = 1/2; with the pole pair written as {tau/2, 1/2 + tau/2} the
+# quotient gains an e^{2 pi i z} factor and is not elliptic at all --
+# measured before this row was trusted: the raw quotient's phase walks
+# along the real axis at exactly that rate).  VMM's conformal page
+# ch187 documents J_F as the real rescaling of Jacobi sn whose branch
+# values sit SYMMETRIC to the unit circle; the constant here is fixed
+# numerically per member by |b1 * b2| = 1 over the two real branch
+# values, which is that symmetry.
+#
+# The punctures are the dh poles at the J_F zeros: half-catenoid ends.
+# THE ROW'S CLAIM, measured by the self-test rather than assumed: there
+# is NO period problem -- the loop around each puncture translates by
+# (0, 0, 0) to quadrature (the order-2 poles of om1, om2 have even
+# principal parts, so no residue survives), and both deck translations
+# are purely HORIZONTAL (the field is bounded between two planes).
+# Measured at the tau = i member: loops (0, 0, 0); z -> z + 1 gives
+# (-0.4926, 0, 0) and z -> z + tau gives (0, -0.6642, 0).
+#
+# References:
+# - The 3DXM Consortium, "Catenoid Field", Virtual Math Museum
+#   (mirror vmm/book/surface; J_F on conformal page ch187).
+# - H. Karcher, "Construction of minimal surfaces", Univ. of Tokyo
+#   Surveys in Geometry (1989) -- the chain/field-of-half-catenoids
+#   construction the VMM notes credit.
+# - M. Weber, minimalsurfaces.blog, "translation invariant plane with
+#   catenoidal ends" pages -- the singly periodic siblings.
+
+# --------------------------------------------------------------------------
+# Hackman's toroidal 1-noid (singly periodic, one catenoid end per storey)
+# --------------------------------------------------------------------------
+# M. Hackman's thesis surfaces: toroidal 1-noids on every conformal
+# type of torus, reported (with the notebook this transcribes) at
+# M. Weber, minimalsurfaces.blog, "Hackman surfaces"
+# (`Hackman-Surfaces.nb`, mirrored in research/msblog_harvest/).  Data,
+# on the torus with half-periods {1/2, tau/2}, tau = t + 2i:
+#
+#     k  = 1/3,
+#     G  = theta11(z + k/2) / theta11(z - k/2),
+#     dh = e^{i phi(tau)} sigma(z - k/2) sigma(z + k/2) / sigma(z)^2,
+#
+# with t solved from the notebook's own period condition
+#     period(k, tau) = Re I[1/2 -> 1/2+tau/2] - k Re I[tau/2 -> 1/2+tau/2] = 0.
+#
+# THE BONNET PHASE, RESOLVED BY MEASUREMENT (the batch-5 stop).  The
+# notebook phases dh BEFORE the period condition, so the t-solve
+# depends on phi; phi(tau) is a closed-form sigma/zeta/theta expression
+# containing Conjugate[] (line ~19 of the extract), which this module
+# implements VERBATIM in `hackman_phi` -- the Conjugate[]s matter
+# because tau = t + 2i is a sheared torus and every factor is complex.
+# The batch-5 hypothesis phi = -arg(sigma(-k/2) sigma(k/2)) was tested
+# against that closed form BEFORE anything was built, and it is WRONG:
+# off by exactly pi (a sign flip of e^{i phi} dh -- a silently wrong
+# member that would render perfectly) plus a real t-dependent drift of
+# ~6e-6.  The closed form is what ships.  On the solved member the
+# phase is tiny but nonzero (phi = -5.4570e-6 at the root).
+#
+# Solved member (re-derived here, gated by re-solve in the zoo
+# self-test): t = 0.333316172865672, tau = t + 2i.  The notebook's
+# FindRoot seed window [0.15, 0.25] contains NO root -- the residual
+# is -0.100..-0.046 across it -- and FindRoot walks out to this root;
+# measured before it was trusted.
+#
+# MEASURED STRUCTURE at the member (all gated):
+#   - the end loop around the lattice puncture translates by (0,0,0)
+#     to 1e-15: the catenoid end has no period;
+#   - deck z -> z+1 is a PURE VERTICAL translation (0, 0, h) with
+#     h = 1.095693 (G has period 1, so no rotation);
+#   - deck z -> z+tau is the SCREW: rise exactly h/3 = k h and normal
+#     rotation e^{-2 pi i k} = -120 degrees, so the deck group in
+#     SE(3) is the single screw generator (B^3 = A) -- the surface is
+#     singly periodic with one catenoid end per storey, three storeys
+#     per full turn.
+#
+# References:
+# - M. Hackman, thesis (toroidal 1-noids on every conformal torus);
+#   reported at M. Weber, "Hackman surfaces", minimalsurfaces.blog.
+# - H. Karcher, "Construction of minimal surfaces" (1989) -- the
+#   theta/sigma Weierstrass toolkit on tori this data lives in.
+
+HACKMAN_K = 1.0 / 3.0
+HACKMAN_T = 0.333316172865672
+
+
+def _hk_th1(x, tau, d=0):
+    """theta1(x | tau) and x-derivatives by q-series, COMPLEX nome
+    (the sheared torus needs it); |q| = e^{-2 pi} so 8 terms are
+    far beyond machine precision."""
+    q = np.exp(1j * np.pi * tau)
+    x = np.asarray(x, dtype=complex)
+    out = np.zeros_like(x)
+    for n_ in range(8):
+        c = 2.0 * (-1.0) ** n_ * q ** ((n_ + 0.5) ** 2)
+        m_ = 2 * n_ + 1
+        if d == 0:
+            out = out + c * np.sin(m_ * x)
+        elif d == 1:
+            out = out + c * m_ * np.cos(m_ * x)
+        elif d == 3:
+            out = out - c * m_ ** 3 * np.cos(m_ * x)
+    return out
+
+
+def _hk_eta1(tau):
+    # zeta(1/2) for half-periods {1/2, tau/2}
+    return -(np.pi ** 2 / 6.0) * _hk_th1(0.0, tau, 3)         / _hk_th1(0.0, tau, 1)
+
+
+def _hk_sigma(z, tau):
+    # normalized so sigma(z)/z -> 1 (checked: 5e-25 against mpmath)
+    z = np.asarray(z, dtype=complex)
+    return (np.exp(_hk_eta1(tau) * z * z) * _hk_th1(np.pi * z, tau)
+            / (np.pi * _hk_th1(0.0, tau, 1)))
+
+
+def _hk_zeta(z, tau):
+    z = np.asarray(z, dtype=complex)
+    return 2.0 * _hk_eta1(tau) * z + np.pi * _hk_th1(np.pi * z, tau, 1)         / _hk_th1(np.pi * z, tau)
+
+
+def hackman_phi(tau):
+    """The notebook's closed-form Bonnet phase, VERBATIM -- including
+    every Conjugate[].  Returns the real phase; the zoo gate checks
+    the imaginary part of the log is ~0 (pure phase)."""
+    k = HACKMAN_K
+    kp = k * np.pi / 2.0
+    T1p_, T1m_ = _hk_th1(kp, tau), _hk_th1(-kp, tau)
+    T1pp, T1pm = _hk_th1(kp, tau, 1), _hk_th1(-kp, tau, 1)
+    sm, sp = _hk_sigma(-k / 2, tau), _hk_sigma(k / 2, tau)
+    zm, zp = _hk_zeta(-k / 2, tau), _hk_zeta(k / 2, tau)
+    A = -np.pi * T1p_ * T1pm + T1m_ * (np.pi * T1pp
+                                       + T1p_ * (zm + zp))
+    B = (np.pi * T1p_ * T1pm - np.pi * T1m_ * T1pp
+         + T1m_ * T1p_ * zm + T1m_ * T1p_ * zp)
+    num = 1j * np.sqrt(np.conj(sm * sp * A)) * T1p_
+    den = np.conj(T1m_) * np.sqrt(sm) * np.sqrt(sp) * np.sqrt(B)
+    val = -1j * np.log(-(num / den))
+    return complex(val)
+
+
+def hackman_W(t=HACKMAN_T):
+    """(Wfn, tau, phi) for the member at tau = t + 2i."""
+    k = HACKMAN_K
+    tau = complex(float(t), 2.0)
+    ph = float(np.real(hackman_phi(tau)))
+
+    def W(z):
+        z = np.asarray(z, dtype=complex)
+        dh = (np.exp(1j * ph) * _hk_sigma(z - k / 2, tau)
+              * _hk_sigma(z + k / 2, tau) / _hk_sigma(z, tau) ** 2)
+        g = _hk_th1(np.pi * (z + k / 2), tau)             / _hk_th1(np.pi * (z - k / 2), tau)
+        return np.stack([0.5 * (1.0 / g - g) * dh,
+                         0.5j * (1.0 / g + g) * dh, dh], axis=-1)
+    return W, tau, ph
+
+
+def hackman_period_residual(t, n=4001):
+    """The notebook's period(k, tau) at tau = t + 2i (with the phase
+    evaluated AT that tau, as the notebook does)."""
+    k = HACKMAN_K
+    tau = complex(float(t), 2.0)
+    ph = float(np.real(hackman_phi(tau)))
+
+    def dh(z):
+        return (np.exp(1j * ph) * _hk_sigma(z - k / 2, tau)
+                * _hk_sigma(z + k / 2, tau) / _hk_sigma(z, tau) ** 2)
+    tt = np.linspace(0.0, 1.0, int(n))
+
+    def seg(a, b):
+        z = a + (b - a) * tt
+        return np.trapezoid(dh(z) * (b - a), tt)
+    I1 = seg(0.5 + 0j, 0.5 + tau / 2.0)
+    I2 = seg(tau / 2.0, 0.5 + tau / 2.0)
+    return float(np.real(I1) - k * np.real(I2))
+
+
+def hackman_deck(t=HACKMAN_T, n=20001):
+    """Measured deck translations: (vA, riseB, vB_at_two_bases).
+    vA is the z -> z+1 translation (pure vertical when the row is
+    right); riseB the z -> z+tau vertical rise (= k * vA_z); the two
+    vB screw offsets test the -2 pi k rotation (they agree only if
+    the rotation used is the surface's actual one)."""
+    W, tau, _ph = hackman_W(t)
+    tt = np.linspace(0.0, 1.0, int(n))
+
+    def seg(a, b):
+        z = a + (b - a) * tt
+        return np.real(np.trapezoid(W(z) * (b - a), tt, axis=0))
+    zA = 0.31 + 0.83j
+    vA = seg(zA, zA + 1.0)
+    k = HACKMAN_K
+    c, s_ = np.cos(2.0 * np.pi * k), np.sin(2.0 * np.pi * k)
+    R = np.array([[c, s_, 0.0], [-s_, 0.0 * c + c, 0.0],
+                  [0.0, 0.0, 1.0]])
+    R[1, 1] = c
+    vBs = []
+    for z0 in (0.62 + 0.55j, 0.24 + 1.31j):
+        # f in the universal-cover frame anchored at zA: integrate
+        # from the common base to z0 and to z0 + tau
+        f0 = seg(zA, z0)
+        f1 = f0 + seg(z0, z0 + tau)
+        vBs.append(f1 - R @ f0)
+    return vA, float(vBs[0][2]), vBs[0], vBs[1], R
+
+
+def hackman_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                 storeys=1):
+    """Hackman toroidal 1-noid: the fundamental torus meshed on the
+    ends backend (rectangle [0,1] x [0,2] IS a fundamental domain of
+    {1, tau} -- same covolume, top edge glued with shear), storeys
+    stacked by the MEASURED screw.  order = storeys; radius sets how
+    far into the catenoid end the mesh reaches."""
+    storeys = int(np.clip(max(int(storeys), int(order)), 1, 9))
+    W, tau, _ph = hackman_W()
+    punct = [0.0 + 0j, 1.0 + 0j, tau]
+    r0 = float(np.clip(0.055 * (1.2 / max(float(radius), 0.3)), 0.02,
+                       0.14))
+    n = int(np.clip(nu * 1.6, 72, 200))
+    # window inset by eps: the integrator's strips EXCLUDE columns at
+    # exact wall x (the puncture columns), which would otherwise stay
+    # uninitialized -- measured as a 211-unit bbox of zero-vertices
+    # before this inset
+    eps = 1e-4
+    xs, ys = we_ends_grid((eps, 1.0 - eps, eps, 2.0 - eps), punct, n,
+                          ny=max(60, int(n * 1.2)),
+                          specials_x=(float(np.real(tau)),))
+    X = we_ends_integrate(W, xs, ys, punct)
+    mask = we_ends_mask(xs, ys, punct, r0)
+    quads0 = we_ends_quads(X, mask)
+    V0 = X.reshape(-1, 3)
+    # prune to used vertices: masked grid points keep huge f-values
+    # and would dominate the bounding box (and the centering)
+    used = np.zeros(len(V0), dtype=bool)
+    for q in quads0:
+        for a_ in q:
+            used[a_] = True
+    remap = -np.ones(len(V0), dtype=np.int64)
+    remap[used] = np.arange(int(used.sum()))
+    V0 = V0[used]
+    quads0 = [tuple(int(remap[a_]) for a_ in q) for q in quads0]
+    # the measured screw: rise + rotation about the vertical axis
+    # through the point solving (I - R) a = vB_horizontal
+    vA, riseB, vB, _vB2, R = hackman_deck()
+    a_h = np.linalg.solve(np.eye(2) - R[:2, :2], vB[:2])
+    axis = np.array([a_h[0], a_h[1], 0.0])
+    Vs, Fs = [], []
+    NV = len(V0)
+    for m_ in range(storeys):
+        Vm = V0.copy()
+        for _ in range(m_):
+            Vm = (Vm - axis) @ R.T + axis
+            Vm[:, 2] += riseB
+        Vs.append(Vm)
+        Fs.extend(tuple(int(i) + m_ * NV for i in q) for q in quads0)
+    V = np.concatenate(Vs, axis=0)
+    V = _center_fit(V, scale, V)
+    return V, Fs, None
+
+
+# --------------------------------------------------------------------------
+# The Lubeck-Batista surface (doubly periodic, genus 3)
+# --------------------------------------------------------------------------
+# F. Lubeck and V. Batista's doubly periodic genus-3 minimal surface:
+# the authors' own paper is arXiv:0806.4313 (converted at
+# research/papers/minimal-surfaces/0806.4313v1/), and the data here is
+# Weber's notebook `L_beck-Batista.nb` (mirror extract in
+# research/msblog_harvest/), transcribed verbatim:
+#
+#     dh = dz  (so X3 = Re z: the height is the torus coordinate),
+#     G  = sqrt(th(z - ia) / th(z - (ia - 1/2)))
+#          * th(z) / th(z - 1/2)
+#          * sqrt(th(z - (ib - 1/2)) / th(z - ib)),      th = theta11,
+#
+# on the rectangular torus tau in i R, with (a, b) the notebook's 2-D
+# FindRoot solutions of the AUTHORS' PERIOD CONDITIONS
+#
+#     test(a, b) = Re{ I_w1[ib -> 1/4 -> -tau/2] + I_w1[ib -> tau/2],
+#                      I_w2[ib -> 1/8 -> -tau/2] }  = (0, 0).
+#
+# Those conditions are re-derived numerically by the zoo gate (branch-
+# tracked theta logs along the notebook's own waypoint paths, with a
+# u^2 endpoint substitution at the (z - ib)^{-1/2} branch point --
+# uniform quadrature there leaves a ~3e-2 phantom residual that looks
+# exactly like a wrong member) and they VANISH at every stored member
+# (7e-6..3e-5, quadrature-limited, all seven rows of the table).
+#
+# The four G branch points ia, ia - 1/2, ib - 1/2, ib pair into cuts
+# along the torus edges x = 0 and x = 1/2, so the two half-windows
+# (0, 1/2) and (1/2, 1) are cut-free and carry continuous branches
+# (grid-unwrapped theta logs).  MEASURED: crossing the seam the naive
+# right-half branch lands on the RECIPROCAL 1/G (w2 increments match,
+# w1 flips), so the right half ships as 1/G; the deck translations are
+# z -> z+1 = (0, 0, 1) EXACTLY (vertical period) and z -> z+tau purely
+# horizontal -- the doubly periodic structure, both gated.
+#
+# References:
+# - K. Lubeck and V. Ramos Batista, "The doubly periodic Scherk-Costa
+#   surfaces", arXiv:0806.4313; J. Math. Research 6 (2014) 77-90
+#   (converted at research/papers/minimal-surfaces/0806.4313v1/) --
+#   the authors' construction; their Section 6 reduces the period
+#   problems to the two-real-component condition (9),
+#   Re int_(1) (phi1, phi2) = 0, which is what the notebook's test
+#   function implements and this module's gate re-derives.
+# - M. Weber, "Lubeck-Batista surfaces", minimalsurfaces.blog
+#   (notebook `L_beck-Batista.nb` -- the theta data and the solved
+#   member table transcribed above).
+
+# tau (imag part) -> (a, b), the notebook's solved members
+LB_MEMBERS = (
+    (0.935, -0.022620778269738837, 0.4599636671778001),
+    (0.94, -0.05009519222020475, 0.4533441965300885),
+    (1.0, -0.1653704140092093, 0.44637591301353885),
+    (1.2, -0.3486894358553919, 0.49670000329301656),
+    (1.5, -0.5434796870761005, 0.6111785456438003),
+    (2.0, -0.8189334369185804, 0.8375822891619098),
+    (2.5, -1.0758721591205636, 1.0807522771543987),
+)
+
+
+def _lb_G_path(zp, a, b, tau):
+    """G along a 1-D path, every theta factor's log unwrapped."""
+    th = genus1helicoid_theta11
+    zp = np.asarray(zp, dtype=complex)
+
+    def L(shift, half):
+        v = th(zp - shift, tau)
+        lg = np.log(np.abs(v)) + 1j * np.unwrap(np.angle(v))
+        return (0.5 if half else 1.0) * lg
+    tot = (L(1j * a, True) - L(1j * a - 0.5, True)
+           + L(0.0, False) - L(0.5, False)
+           + L(1j * b - 0.5, True) - L(1j * b, True))
+    return np.exp(tot)
+
+
+def _lb_G_grid(Z, a, b, tau):
+    """continuous branch on a cut-free rectangle grid: phases
+    unwrapped along the first column, then along every row."""
+    th = genus1helicoid_theta11
+
+    def L(shift, half):
+        v = th(Z - shift, tau)
+        ph = np.angle(v)
+        ph0 = np.unwrap(ph[:, 0])
+        ph = np.unwrap(ph, axis=1)
+        ph = ph + (ph0 - ph[:, 0])[:, None]
+        return (0.5 if half else 1.0) * (np.log(np.abs(v)) + 1j * ph)
+    tot = (L(1j * a, True) - L(1j * a - 0.5, True)
+           + L(0.0, False) - L(0.5, False)
+           + L(1j * b - 0.5, True) - L(1j * b, True))
+    return np.exp(tot)
+
+
+def _lb_W_from_G(G):
+    return np.stack([-(G - 1.0 / G) / 2.0,
+                     1j * (G + 1.0 / G) / 2.0,
+                     np.ones_like(G)], axis=-1)
+
+
+def lb_period_test(mi=2, n=8001):
+    """The authors' period conditions at member mi, re-derived: the
+    two real components that the notebook's FindRoot drives to zero,
+    with the u^2 substitution at the singular ib endpoint."""
+    tt, a, b = LB_MEMBERS[int(mi)]
+    tau = 1j * tt
+
+    def seg(z0, z1, sing0=False):
+        u = np.linspace(0.0, 1.0, n)
+        t = u * u if sing0 else u
+        zp = z0 + (z1 - z0) * t
+        if sing0:
+            zp[0] = z0 + (z1 - z0) * 1e-14
+        G = _lb_G_path(zp, a, b, tau)
+        W = _lb_W_from_G(G)
+        jac = ((2.0 * u if sing0 else np.ones_like(u))
+               * (z1 - z0))[:, None]
+        return np.trapezoid(W * jac, u, axis=0)
+    p1a = seg(1j * b, 0.25, sing0=True)
+    p1b = seg(0.25, -tau / 2.0)
+    p2 = seg(1j * b, tau / 2.0, sing0=True)
+    q1 = seg(1j * b, 0.125, sing0=True)
+    q2 = seg(0.125, -tau / 2.0)
+    return (float(np.real(p1a[0] + p1b[0] + p2[0])),
+            float(np.real(q1[1] + q2[1])))
+
+
+def lb_deck(mi=2, n=30001):
+    """(P1, P2): measured deck translations z -> z+1 and z -> z+tau
+    along cut-free probes."""
+    tt, a, b = LB_MEMBERS[int(mi)]
+    tau = 1j * tt
+    t = np.linspace(0.0, 1.0, n)
+
+    def seg(z0, z1):
+        zp = z0 + (z1 - z0) * t
+        W = _lb_W_from_G(_lb_G_path(zp, a, b, tau))
+        return np.real(np.trapezoid(W * (z1 - z0), t, axis=0))
+    P1 = seg(0.21j * tt, 1.0 + 0.21j * tt)
+    P2 = seg(0.25 + 0j, 0.25 + tau)
+    return P1, P2
+
+
+def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+            cells=(1, 1)):
+    """Lubeck-Batista mesh: the two cut-free half-windows integrated
+    on the ends backend, the right half on the measured reciprocal
+    branch, seam-joined below the cuts, tiled by the measured deck
+    translations.  order picks the member from the notebook's table;
+    radius sets how far the corner wings are followed."""
+    if isinstance(cells, (int, float)):
+        cells = (int(cells), 1)
+    cu = int(np.clip(cells[0], 1, 4))
+    cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 4))
+    mi = int(np.clip(order - 1, 0, len(LB_MEMBERS) - 1))
+    tt, a, b = LB_MEMBERS[mi]
+    tau = 1j * tt
+    r0 = float(np.clip(0.075 * (1.2 / max(float(radius), 0.3)), 0.02,
+                       0.2))
+    n = int(np.clip(nu * 1.2, 56, 150))
+    eps = 2e-3
+    ymod = tt
+    ysp = tuple(v % ymod for v in (a, b) if 0.02 < v % ymod
+                < ymod - 0.02)
+    halves = []
+    for x0, x1, recip in ((eps, 0.5 - eps, False),
+                          (0.5 + eps, 1.0 - eps, True)):
+        punct = [complex(round(x0)), complex(round(x1)),
+                 complex(round(x0), ymod), complex(round(x1), ymod)]
+        xs, ys = we_ends_grid((x0, x1, eps, ymod - eps), punct, n,
+                              ny=int(n * 1.3), specials_y=ysp)
+        Z = xs[:, None] + 1j * ys[None, :]
+        G = _lb_G_grid(Z, a, b, tau)
+        if recip:
+            G = 1.0 / G
+        W = _lb_W_from_G(G)
+        X = we_ends_integrate(lambda zz: W, xs, ys, punct)
+        mask = we_ends_mask(xs, ys, punct, r0)
+        halves.append((xs, ys, X, mask))
+    # join: match values at the seam below the cuts (y = 0.2 * ymod)
+    xsL, ysL, XL, mL = halves[0]
+    xsR, ysR, XR, mR = halves[1]
+    jyL = int(np.argmin(np.abs(ysL - 0.2 * ymod)))
+    jyR = int(np.argmin(np.abs(ysR - ysL[jyL])))
+    XR = XR + (XL[-1, jyL] - XR[0, jyR])[None, None, :]
+    V0, F0 = [], []
+    for xs, ys, X, mask in ((xsL, ysL, XL, mL), (xsR, ysR, XR, mR)):
+        off = sum(len(v) for v in V0)
+        q = we_ends_quads(X, mask)
+        F0.extend(tuple(int(i) + off for i in qq) for qq in q)
+        V0.append(X.reshape(-1, 3))
+    V0 = np.concatenate(V0, axis=0)
+    used = np.zeros(len(V0), dtype=bool)
+    for q in F0:
+        for a_ in q:
+            used[a_] = True
+    remap = -np.ones(len(V0), dtype=np.int64)
+    remap[used] = np.arange(int(used.sum()))
+    V0 = V0[used]
+    F0 = [tuple(int(remap[a_]) for a_ in q) for q in F0]
+    P1, P2 = lb_deck(mi, n=8001)
+    Vs, Fs = [], []
+    NV = len(V0)
+    ci = 0
+    for iu in range(cu):
+        for iv in range(cv):
+            Vs.append(V0 + iu * P1[None, :] + iv * P2[None, :])
+            Fs.extend(tuple(int(i) + ci * NV for i in q) for q in F0)
+            ci += 1
+    V = np.concatenate(Vs, axis=0)
+    V = _center_fit(V, scale, V)
+    return V, Fs, None
+
+
+# --------------------------------------------------------------------------
+# Scherk's fourth surface (1835, equation 20)
+# --------------------------------------------------------------------------
+# The least-cited of Scherk's five 1835 surfaces: singly periodic with
+# two annular and two helicoidal ends, singular at the two points where
+# the horizontal symmetry curve meets the straight line the helicoidal
+# ends share.  Weber's `Scherk_Surface_4.nb` (mirror ch341) recovers
+# the Enneper-Weierstrass data by the Schwarz-Bjorling formula on the
+# x = pi level curve of Scherk's implicit equation 20, ending in a
+# fully CLOSED-FORM immersion (no integration at all):
+#
+#     G(z)  = i (1 + z) / sqrt(1 - z^2),
+#     dh(z) = -2 sqrt(1 - z^2) / z,
+#     f(z)  = Re{ 2 i Log z,
+#                 2 z,
+#                 -2 (sqrt(1-z^2) + Log z - Log(1 + sqrt(1-z) sqrt(1+z))) }
+#
+# on the upper half plane in polar coordinates.  The seed curve's
+# ArcCosh(-1 + 8/y^2) is EXACTLY the closed form's -2(log r -
+# log(1 + sqrt(1-r^2))) (verified algebraically and numerically), so
+# the frame relation to Scherk's own (x, y, z) is x = X1 + pi,
+# y = X2, z = X3.
+#
+# GATES (zoo self-test), the row's own claims measured:
+#   1. SCHERK'S OWN EQUATION 20 -- cosh(z + sqrt(t+rho) csc(x/2) /
+#      sqrt 2) = (4 sin^2(x/2) + rho)/y^2 with rho = sqrt(t^2 + y^4
+#      sin^2 x), t = 4 sin^2(x/2) + y^2 cos x -- holds POINTWISE on the
+#      built patch to machine precision (~1e-15, inner AND outer
+#      regions; evaluated through arccosh in z-units, |x| for the odd
+#      csc branch, min over the +- component);
+#   2. the closed form is consistent with (G, dh): d/dz of the
+#      analytic immersion equals (om1, om2, om3) to 1e-9;
+#   3. the helicoidal-end winding: the loop around z = 0 advances the
+#      screw axis coordinate X1 by exactly -4 pi = the assembly's
+#      translation period.
+#
+# References:
+# - H. F. Scherk, "Bemerkungen ueber die kleinste Flaeche innerhalb
+#   gegebener Grenzen", J. Reine Angew. Math. 13 (1835) 185-208
+#   (equation 20).
+# - M. Weber, "Scherk's Fourth Surface", minimalsurfaces.blog (mirror
+#   ch341; notebook `Scherk_Surface_4.nb` -- the Bjorling recovery and
+#   the closed form transcribed above).
+
+def scherk4_f(z):
+    """The closed-form immersion (X1, X2, X3) at z (upper half
+    plane; principal branches are correct there)."""
+    z = np.asarray(z, dtype=complex)
+    return np.stack(
+        [np.real(2j * np.log(z)), np.real(2.0 * z),
+         np.real(-2.0 * (np.sqrt(1.0 - z * z) + np.log(z)
+                         - np.log(1.0 + np.sqrt(1.0 - z)
+                                  * np.sqrt(1.0 + z))))], axis=-1)
+
+
+def scherk4_eqn20(F):
+    """Pointwise residual of Scherk's equation 20 at built points F
+    (in z-units through arccosh; |x| handles the odd csc branch, and
+    the minimum over the two cosh components picks the sheet)."""
+    xs = np.abs(F[..., 0] + np.pi)
+    ys = np.abs(F[..., 1])
+    zs = F[..., 2]
+    t = 4.0 * np.sin(xs / 2) ** 2 + ys ** 2 * np.cos(xs)
+    rho = np.sqrt(t * t + ys ** 4 * np.sin(xs) ** 2)
+    rhs = (4.0 * np.sin(xs / 2) ** 2 + rho)         / np.maximum(ys ** 2, 1e-12)
+    core = (np.sqrt(np.maximum(t + rho, 0.0))
+            / np.maximum(np.sin(xs / 2), 1e-12) / np.sqrt(2.0))
+    ac = np.arccosh(np.maximum(rhs, 1.0))
+    return np.minimum(np.abs(zs + core - ac), np.abs(zs + core + ac))
+
+
+def scherk4_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                 storeys=1):
+    """Scherk's fourth surface: closed-form patch on a polar domain,
+    assembled by the notebook's own chain -- reflect in the plane
+    x = 0, half-turn about the y-axis, translate by the 4 pi period.
+    order = periods; radius sets how far the four ends are followed."""
+    periods = int(np.clip(max(int(storeys), int(order)), 1, 5))
+    reach = float(np.clip(radius, 0.3, 6.0)) / 1.2
+    rmin = float(np.clip(0.10 / reach, 0.008, 0.3))
+    # balance the annular reach against the helicoidal depth (the
+    # notebook solves the same balance with FindRoot): X3 at the
+    # helicoidal trim is ~ -2 log rmin, X2 at the annular trim 2 rmax
+    rmax = max(2.0, abs(np.log(rmin)))
+    n = int(np.clip(nu, 40, 140))
+    eps = 0.02
+    rr = np.exp(np.linspace(np.log(rmin), np.log(rmax), 2 * n))
+    th_ = np.linspace(eps, np.pi - eps, n)
+    Z = rr[:, None] * np.exp(1j * th_[None, :])
+    X = scherk4_f(Z)
+    nx, ny = X.shape[0], X.shape[1]
+    quads0 = [(i * ny + j, (i + 1) * ny + j,
+               (i + 1) * ny + j + 1, i * ny + j + 1)
+              for i in range(nx - 1) for j in range(ny - 1)]
+    V0 = X.reshape(-1, 3)
+    # assembly: fr2 = reflect in plane x = 0; fr3 = half-turn about
+    # the y-axis; fr4 = +- period translations
+    npatch = len(V0)
+    fpatch = [tuple(q) for q in quads0]
+    # fr2: reflect in the plane x = 0
+    blk = np.concatenate([V0, V0 * np.array([-1.0, 1.0, 1.0])], axis=0)
+    fblk = fpatch + [tuple(a_ + npatch for a_ in q) for q in fpatch]
+    # fr3: half-turn about the y-axis
+    nblk = len(blk)
+    cell = np.concatenate([blk, blk * np.array([-1.0, 1.0, -1.0])],
+                          axis=0)
+    fcell = fblk + [tuple(a_ + nblk for a_ in q) for q in fblk]
+    # fr4: the 4 pi translations
+    ncell = len(cell)
+    per = np.array([4.0 * np.pi, 0.0, 0.0])
+    Vs, Fs = [], []
+    for m_ in range(periods):
+        Vs.append(cell + (m_ - (periods - 1) / 2.0) * per[None, :])
+        Fs.extend(tuple(a_ + m_ * ncell for a_ in q) for q in fcell)
+    V = np.concatenate(Vs, axis=0)
+    V = _center_fit(V, scale, V)
+    return V, Fs, None
+
+
+def _cf_member(t=1.0):
+    """(JF, W(bb)) callables for the tau = i t member, with the
+    normalising constant solved per member: constant phase on the real
+    axis folded out, real scale fixed by |b1 b2| = 1 over the two real
+    branch values (J_F's unit-circle symmetry)."""
+    th = genus1helicoid_theta11
+    tau = 1j * float(t)
+
+    def J0(z):
+        z = np.asarray(z, dtype=complex)
+        return (th(z, tau) * th(z - 0.5, tau)
+                / (th(z - tau / 2.0, tau)
+                   * th(z - 0.5 + tau / 2.0, tau)))
+    ph = float(np.angle(complex(J0(np.array(0.13)))))
+    xs = np.linspace(0.01, 0.49, 2001)
+    b1 = float(np.max(np.abs(np.real(J0(xs) * np.exp(-1j * ph)))))
+    xs2 = np.linspace(-0.49, -0.01, 2001)
+    b2 = float(np.max(np.abs(np.real(J0(xs2) * np.exp(-1j * ph)))))
+    C = np.exp(-1j * ph) / math.sqrt(b1 * b2)
+
+    def JF(z):
+        return C * J0(z)
+    return JF
+
+
+def catenoid_field_W(bb=1.0, t=1.0):
+    JF = _cf_member(t)
+
+    def W(z):
+        j = JF(np.asarray(z, dtype=complex))
+        g = bb * j
+        dh = 1.0 / j
+        return np.stack([0.5 * (1.0 / g - g) * dh,
+                         0.5j * (1.0 / g + g) * dh, dh], axis=-1)
+    return W
+
+
+def catenoid_field_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                        cells=(1, 1)):
+    """cells2d builder: cu x cv lattice cells of the field, seams
+    index-welded (the deck maps are exact horizontal translations, so
+    opposite window edges carry identical grids one lattice vector
+    apart).  order drives the growth factor bb; radius the end trim
+    (bigger radius = wider flare)."""
+    if isinstance(cells, (int, float)):
+        cells = (int(cells), 1)
+    cu = int(np.clip(cells[0], 1, 8))
+    cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 8))
+    t = 1.0
+    bb = 0.6 + 0.4 * float(np.clip(order, 1, 6))
+    W = catenoid_field_W(bb, t)
+    punct = (0.0 + 0.0j, 0.5 + 0.0j)
+    r0 = 2.0e-3 * (1.2 / float(np.clip(radius, 0.3, 6.0))) ** 2
+    n = int(np.clip(nu * 2.0, 90, 260))
+    xs, ys = we_ends_grid((-0.25, 0.75, -0.5 * t, 0.5 * t), punct, n)
+    X = we_ends_integrate(W, xs, ys, punct)
+    mask = we_ends_mask(xs, ys, punct, r0)
+    # lattice vectors, measured off the immersion the way the deck
+    # identities are gated: straight probes away from the punctures
+    tt = np.linspace(0.0, 1.0, 8001)
+    z1 = (-0.2 + 0.25j * t) + tt * 1.0
+    P1 = np.real(np.trapezoid(W(z1), tt, axis=0))
+    z2 = (0.25 - 0.5j * t) + tt * (1j * t)
+    P2 = np.real(np.trapezoid(W(z2) * (1j * t), tt, axis=0))
+    nx, ny = X.shape[0], X.shape[1]
+    NV = nx * ny
+    Vs, Ms = [], []
+    for iu in range(cu):
+        for iv in range(cv):
+            Vs.append((X + iu * P1 + iv * P2).reshape(-1, 3))
+            Ms.append(mask.reshape(-1))
+    V = np.concatenate(Vs, axis=0)
+    mall = np.concatenate(Ms, axis=0)
+    parent = np.arange(cu * cv * NV)
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def cell(iu, iv):
+        return (iu * cv + iv) * NV
+    for iu in range(cu):
+        for iv in range(cv):
+            if iu + 1 < cu:      # right edge == next cell's left edge
+                for j in range(ny):
+                    a = find(cell(iu, iv) + (nx - 1) * ny + j)
+                    b = find(cell(iu + 1, iv) + j)
+                    if a != b:
+                        parent[a] = b
+            if iv + 1 < cv:      # top edge == next cell's bottom edge
+                for i in range(nx):
+                    a = find(cell(iu, iv) + i * ny + (ny - 1))
+                    b = find(cell(iu, iv + 1) + i * ny)
+                    if a != b:
+                        parent[a] = b
+    roots = np.array([find(i) for i in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    sums = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(sums, inv, V)
+    np.add.at(cnt, inv, 1.0)
+    Vm = sums / cnt[:, None]
+    ok_node = np.ones(len(uniq), dtype=bool)
+    np.logical_and.at(ok_node, inv, mall)
+    quads = []
+    for c0 in range(cu * cv):
+        for i in range(nx - 1):
+            b0 = c0 * NV + i * ny
+            b1 = c0 * NV + (i + 1) * ny
+            for j in range(ny - 1):
+                f = (inv[b0 + j], inv[b1 + j],
+                     inv[b1 + j + 1], inv[b0 + j + 1])
+                if (ok_node[f[0]] and ok_node[f[1]]
+                        and ok_node[f[2]] and ok_node[f[3]]):
+                    quads.append(f)
+    used = np.zeros(len(Vm), dtype=bool)
+    for f in quads:
+        for a in f:
+            used[a] = True
+    remap = -np.ones(len(Vm), dtype=np.int64)
+    remap[used] = np.arange(int(used.sum()))
+    V = Vm[used]
+    quads = [tuple(int(remap[a]) for a in f) for f in quads]
+    V = _center_fit(V, scale, V)
+    return V, quads, None
+
+
+# ==========================================================================
 # Symmetrized Chen-Gackstatter towers (k-fold symmetry, D_kd assembly)
 # ==========================================================================
 # The k-fold-symmetric continuations of the Chen-Gackstatter surface: for

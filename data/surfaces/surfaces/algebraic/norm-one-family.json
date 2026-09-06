@@ -1,11 +1,13 @@
 {
   "schema_version": "0.1.0",
-  "slug": "cayley-ruled-surface",
-  "name": "Cayley Ruled Cubic",
+  "slug": "norm-one-family",
+  "name": "p-Norm Unit Sphere (superellipsoid, p knob)",
   "primary_family": "algebraic",
   "families": [
     "algebraic",
     "aperiodic",
+    "closed",
+    "closed-orientable",
     "def-implicit",
     "immersed",
     "implemented",
@@ -18,16 +20,28 @@
     "scale": "published",
     "clip": {
       "shape": "BOX",
-      "radius": 1.8
+      "radius": 1.3
     },
     "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nCayley's cubic RULED surface -- distinct from the four-nodal Cayley cubic this repo already ships, which is a different object with the same name attached."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nThe unit spheres of the p-norms on R3 (the equal-exponent Lame / superellipsoid family): |x|^p + |y|^p + |z|^p = 1, octahedron at p = 1, sphere at p = 2, cube as p -> infinity, convex for p >= 1.  SHIPPED with p as a live knob (default 4); gated on two exact identities -- the p = 2 member IS the unit sphere (|F| = 0 on it) and every member is invariant under the full order-48 octahedral group.",
+    "parameters": [
+      {
+        "name": "p",
+        "domain": "(0, inf)",
+        "default": 4,
+        "note": "norm exponent"
+      }
+    ]
   },
   "curvature": {
     "condition": "none",
     "also_satisfies": []
   },
-  "topology": {},
+  "topology": {
+    "compact": true,
+    "orientable": true,
+    "class": "closed-orientable"
+  },
   "symmetry": {
     "kind": "none",
     "periodicity_rank": 0
@@ -40,7 +54,7 @@
       "generator": "math_art.surfaces.algebraic",
       "operator_id": "mesh.algebraic_surface_add",
       "family": "MATHWORLD",
-      "key": "CAYLEY_RULED",
+      "key": "NORM_ONE",
       "definition_index": 0,
       "implemented": true
     }
@@ -51,7 +65,7 @@
       "E. W. Weisstein, \"Peano Surface\", \"Chair\", \"Crossed Trough\", \"Handkerchief Surface\", \"Hunt's Surface\", \"Kiss Surface\", \"Menn's Surface\", \"Miter Surface\", \"Nordstrand's Weird Surface\", \"Tooth Surface\", MathWorld -- A Wolfram Web Resource, mathworld.wolfram.com.",
       "T. Nordstrand, \"Weird Cube\" and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).",
       "G. Peano's 1899 counterexample; cf. the MathWorld page's history of the criterion it defeated.",
-      "E. W. Weisstein, MathWorld, topic 'Algebraic Surfaces' -- the enumeration this absence was measured against."
+      "The 3DXM Consortium, 'Norm One Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch080_norm_one_family.md)."
     ]
   },
   "metrics": {
@@ -60,10 +74,14 @@
   "tradition": [
     "classical"
   ],
+  "ids": {
+    "vmm": "ch080_norm_one_family"
+  },
+  "named_after": "Norm",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
     "requires_thickening": false,
-    "sliceable": false
+    "sliceable": true
   }
 }

@@ -1321,7 +1321,77 @@ def _bj_circle_normal(w, p):
 _BJ_BOOST = (2.0, 1.2)
 
 
+def _bk_normal(w, p):
+    """Breiner-Kleene rotating frame: n = cos(a w) n1 + sin(a w) n2,
+    with n1 the (unit) horizontal normal and n2 the unit binormal-side
+    frame vector of the log-spiral helix, both transcribed VERBATIM
+    from Weber's `Breiner-Kleene.nb`.  n1 and n2 are unit, mutually
+    orthogonal and both orthogonal to c' for every b, d, so any
+    cos/sin combination is a valid Bjorling normal field -- the
+    self-test measures exactly that before trusting the row."""
+    a, b, d = p['a'], p['b'], p['d']
+    r1 = np.sqrt(1.0 + b * b)
+    r2 = np.sqrt((b * b + b ** 4) * (1.0 + b * b + d * d))
+    cb, sb = np.cos(b * w), np.sin(b * w)
+    n1 = (-(b * cb + sb) / r1, (cb - b * sb) / r1, 0.0 * w)
+    n2 = (b * d * (-cb + b * sb) / r2, -b * d * (b * cb + sb) / r2,
+          (b + b ** 3) / r2 + 0.0 * w)
+    ca, sa = np.cos(a * w), np.sin(a * w)
+    return tuple(ca * x + sa * y for x, y in zip(n1, n2))
+
+
 BJORLING = {
+    # Breiner-Kleene bent helicoids: embedded minimal surfaces invariant
+    # under a screw motion COMPOSED WITH A HOMOTHETY, following a
+    # logarithmically spiraling helix c(s) = e^s (cos bs, sin bs, d)
+    # inside an invariant tube.  The seed curve, the two frame fields
+    # and the twist rate are the closed forms of Weber's notebook
+    # (`Breiner-Kleene.nb`, which derives them by applying Schwarz's
+    # Bjorling formula to exactly this data and prints G and dh for the
+    # same member).  The notebook's rendered member is a = 32, b = 8,
+    # d = 2 -- Twist Steps 4 below; the row is the family over the
+    # twist rate, which the paper allows.
+    #
+    # The verifying identity (measured in `_selftest`, stated first):
+    # with a and b both integer, s -> s + T for T = 2 pi / gcd(a, b)
+    # scales the seed and keeps the normal field, so the surface must
+    # satisfy X(z + T) = e^T X(z) + const EXACTLY -- the defining
+    # screw-homothety invariance.  The spread of X(z+T) - e^T X(z)
+    # across the strip measures the whole chain (curve, frame, and the
+    # engine's integral) at once, and it is not a tautology of the
+    # sampling: a wrong n1/n2 coefficient moves it from quadrature
+    # noise to O(1).
+    #
+    # References:
+    # - C. Breiner and S. Kleene, "Logarithmically spiraling helicoids",
+    #   arXiv:1404.6996 (2014).
+    # - M. Weber, "Breiner-Kleene Surface", minimalsurfaces.blog
+    #   repository (local mirror ch005; notebook `Breiner-Kleene.nb`).
+    'BJ_BREINER_KLEENE': {
+        'label': "Breiner-Kleene Spiral Helicoid",
+        'family': 'BJORLING',
+        'curve': lambda w, p: (np.exp(w) * np.cos(p['b'] * w),
+                               np.exp(w) * np.sin(p['b'] * w),
+                               p['d'] * np.exp(w)),
+        'normal': _bk_normal,
+        # ~2.4 turns of the spiral; the full notebook span (-3 pi, 3 pi)
+        # is self-similar over a factor e^{6 pi} ~ 1.5e8, which fits no
+        # display cube -- the outermost windings ARE the surface at any
+        # finite scale, so show those.
+        't_range': (-1.5 * math.pi, 1.5 * math.pi),
+        'v_half': lambda p: p['vh'],
+        # Twist Steps maps to a = 8 * steps; b = 8, d = 2 are the
+        # notebook's member.  steps = 4 (a = 32) is the published
+        # picture; the default 2 reads better at default resolution
+        # (32 normal-turns over the strip want a dense u grid).
+        'p_from': lambda order, radius: {
+            'a': 8 * int(min(max(order, 1), 8)), 'b': 8, 'd': 2,
+            'vh': 0.05 * min(max(radius / 1.2, 0.3), 3.0)},
+        'res_boost': (4.0, 0.8),
+        'count': "Twist Steps",
+        'test_order': 2,
+        'associate': True,
+    },
     'BJ_CYCLOID': {
         # free regression check: the cycloid seed with its principal
         # normal reproduces Catalan's surface exactly
@@ -1940,6 +2010,120 @@ SURFACE_FAMILY['CONNOR_DP'] = 'DOUBLY'
 #     Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk;
 #     Translation-Invariant Torus with 1 Enneper and 3 Annular Ends,
 #     notebook by Ramazan Yol, 2024).
+
+# Toroidal Karcher-Scherk tower: a saddle tower with a VERTICAL HANDLE
+# (genus 1 per period), from the theta data of Weber's `Singly Scherk
+# (g=1).nb` -- see the block above `TOROIDAL_KS_MEMBERS` in
+# weierstrass.py for the data, the measured deck maps, the T_z oracle
+# and the references.  Each wing order k ships ONE FindRoot-solved
+# (tau1, a1) member from the notebook's table (k = 3, 4, 5, 7, 8); the
+# member is named in the description and in the surface record, per
+# the family-member rule the Wei genus-4 row set.
+WE_SURFACES['SP_TOROIDAL_KS'] = {
+    'label': "Toroidal Karcher-Scherk Tower (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.toroidal_ks_mesh,
+    'p_from': lambda order, radius: {
+        'k': min(sorted(we.TOROIDAL_KS_MEMBERS),
+                 key=lambda kk: abs(kk - int(round(order))))},
+    'count': "Wing Order k (3/4/5/7/8)",
+    'storeys_label': "Windings",
+    'test_order': 4,
+}
+# appended after the SURFACE_FAMILY builder loop runs, so the family is
+# declared explicitly -- same as every other appended catalog block
+SURFACE_FAMILY['SP_TOROIDAL_KS'] = 'SINGLY'
+
+
+# The catenoid field: 3DXM's doubly periodic field of half-catenoids,
+# g = bb * J_F, dh = dz / J_F on the twice-punctured rectangular torus
+# -- see the block above `catenoid_field_W` in weierstrass.py for the
+# data, the balanced-divisor lesson, the measured no-period identities
+# and the references.  Ships the tau = i (square-torus) member; bb is
+# the growth knob the VMM exhibit exposes.
+# Hackman's toroidal 1-noid: one FindRoot-solved member on the sheared
+# torus tau = t + 2i, t re-derived from the notebook's own period
+# condition WITH the verbatim closed-form Bonnet phase -- see the block
+# above `hackman_W` in weierstrass.py for the data, the refuted phase
+# hypothesis (off by pi + 6e-6: the silent dh sign flip), the measured
+# deck screw (rise k h, rotation -2 pi k) and the references.
+WE_SURFACES['SP_HACKMAN'] = {
+    'label': "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+    'family': 'SINGLY',
+    'mesher': we.hackman_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Storeys",
+    'storeys_label': "Storeys",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_HACKMAN'] = 'SINGLY'
+
+
+# Lubeck-Batista doubly periodic genus 3: theta Gauss map with four
+# square-root branch points, dh = dz, members from the notebook's
+# solved (tau, a, b) table -- see the block above `lb_mesh` in
+# weierstrass.py for the data, the cut pairing, the measured
+# reciprocal-branch seam and the references.  The gate re-derives the
+# AUTHORS' period conditions (arXiv:0806.4313) at three members.
+WE_SURFACES['DP_LUBECK_BATISTA'] = {
+    'label': "Lubeck-Batista Surface (genus 3, tau = i member)",
+    'family': 'DOUBLY',
+    'mesher': we.lb_mesh,
+    'cells2d_mesher': we.lb_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (0.935i .. 2.5i)",
+    'test_order': 3,
+}
+SURFACE_FAMILY['DP_LUBECK_BATISTA'] = 'DOUBLY'
+
+
+# Scherk's fourth surface (1835, eq. 20): closed-form immersion from
+# Weber's Bjorling recovery -- see the block above `scherk4_mesh` in
+# weierstrass.py for the data, the frame relation to Scherk's own
+# coordinates and the references.  Gated on Scherk's own implicit
+# equation, satisfied pointwise to machine precision.
+WE_SURFACES['SP_SCHERK4'] = {
+    'label': "Scherk's Fourth Surface (1835)",
+    'family': 'SINGLY',
+    'mesher': we.scherk4_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Periods",
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_SCHERK4'] = 'SINGLY'
+
+
+WE_SURFACES['DP_CATENOID_FIELD'] = {
+    'label': "Catenoid Field (square-torus member)",
+    'family': 'DOUBLY',
+    'mesher': we.catenoid_field_mesh,
+    'cells2d_mesher': we.catenoid_field_mesh,
+    'p_from': lambda order, radius: {'bb': 0.6 + 0.4 * min(order, 6)},
+    'count': "Growth",
+    'test_order': 1,
+}
+SURFACE_FAMILY['DP_CATENOID_FIELD'] = 'DOUBLY'
+
+
+# Plane with catenoids: catenoid necks on a SQUARE lattice planted in
+# a plane, Weber's ch039 -- see the block above `plane_catenoids_W` in
+# weierstrass.py for the data, the four-element square-cell identity
+# and the references.  The Lopez-Ros factor rho = 2^(order-1) is the
+# growth knob (the page's own family parameter); the square-lattice
+# identity is gated at rho = 1 AND rho = 2, so the family claim is
+# measured, not assumed.
+WE_SURFACES['DP_PLANE_CATENOIDS'] = {
+    'label': "Plane with Catenoids (square lattice)",
+    'family': 'DOUBLY',
+    'mesher': we.plane_catenoids_mesh,
+    'cells2d_mesher': we.plane_catenoids_mesh,
+    'p_from': lambda order, radius: {
+        'rho': 2.0 ** (min(max(order, 1), 5) - 1)},
+    'count': "Growth (rho = 2^k)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['DP_PLANE_CATENOIDS'] = 'DOUBLY'
 
 WE_SURFACES['SP_SIX_SCHERK'] = {
     'label': "Six-Ended Scherk Tower",
@@ -3117,6 +3301,302 @@ def _selftest():
         good = err < 1e-9
         ok &= good
         print(f"seed {key:15s}: err={err:.2e} {'OK' if good else 'FAIL'}")
+    # Breiner-Kleene gates -- the identities stated before the row was
+    # transcribed, measured on every run:
+    #   1. the frame is VALID Bjorling data: |n| = 1 and n . c' = 0 on
+    #      the seed to machine precision (this is what catches a wrong
+    #      coefficient in n1/n2 -- the equivariance below would not);
+    #   2. the defining screw-homothety invariance: with a = 32, b = 8
+    #      (Twist Steps 4, the notebook member), T = 2 pi / gcd(a, b)
+    #      = pi / 4 must satisfy X(z + T) = e^T X(z) + const, the
+    #      constant measuring the homothety centre (it comes out 0 --
+    #      the origin -- and the spread across the strip is ~1e-11);
+    #   3. minimality, scale-free: the surface is self-similar with
+    #      diameter e^{1.5 pi} ~ 500, so |H| * diam is meaningless;
+    #      |H(u, v)| * e^u is the scale-free curvature residual and
+    #      must FALL with the grid.
+    bspec = BJORLING['BJ_BREINER_KLEENE']
+    bp = bspec['p_from'](4, 1.2)
+    ss = np.linspace(-4.7, 4.7, 3001)
+    nrm = _bk_normal(ss.astype(complex), bp)
+    bb, dd = bp['b'], bp['d']
+    cp1 = (np.exp(ss) * (np.cos(bb * ss) - bb * np.sin(bb * ss)),
+           np.exp(ss) * (np.sin(bb * ss) + bb * np.cos(bb * ss)),
+           dd * np.exp(ss))
+    r_dot = float(np.max(np.abs(
+        sum(np.real(a) * c_ for a, c_ in zip(nrm, cp1)))
+        / (np.exp(ss) * math.sqrt((1.0 + bb * bb) * (1.0 + dd * dd)))))
+    r_len = float(np.max(np.abs(
+        sum(np.real(a) ** 2 for a in nrm) - 1.0)))
+    xb, yb, zb, _, _, _ = we.bjorling_surface(bspec, 481, 7, 4, 1.2)
+    Xb = np.stack([xb, yb, zb], axis=-1)
+    t0b, t1b = bspec['t_range']
+    mT = int(round((math.pi / 4.0) / ((t1b - t0b) / 480.0)))
+    Db = Xb[mT:] - math.exp(math.pi / 4.0) * Xb[:-mT]
+    scb = float(np.max(np.linalg.norm(Xb.reshape(-1, 3), axis=1)))
+    r_hom = float(np.max(np.linalg.norm(
+        Db - Db.mean(axis=(0, 1)), axis=-1))) / scb
+    r_cen = float(np.linalg.norm(Db.mean(axis=(0, 1)))) / scb
+
+    def _bk_hres(nu2, nv2):
+        x2, y2, z2, _, _, _ = we.bjorling_surface(bspec, nu2, nv2, 4, 1.2)
+        P2 = np.stack([x2, y2, z2], axis=-1)
+        us2 = np.linspace(t0b, t1b, nu2)
+        nvv = nv2 if nv2 % 2 else nv2 + 1
+        vs2 = np.linspace(-bp['vh'], bp['vh'], nvv)
+        Pu = np.gradient(P2, us2, axis=0)
+        Pv = np.gradient(P2, vs2, axis=1)
+        nn2 = np.cross(Pu, Pv)
+        nn2 /= np.maximum(np.linalg.norm(nn2, axis=-1, keepdims=True),
+                          1e-300)
+        E2 = (Pu * Pu).sum(-1)
+        F2 = (Pu * Pv).sum(-1)
+        G2 = (Pv * Pv).sum(-1)
+        L2 = (np.gradient(Pu, us2, axis=0) * nn2).sum(-1)
+        M2 = (np.gradient(Pu, vs2, axis=1) * nn2).sum(-1)
+        N2 = (np.gradient(Pv, vs2, axis=1) * nn2).sum(-1)
+        den = 2.0 * (E2 * G2 - F2 * F2)
+        H2 = (E2 * N2 - 2.0 * F2 * M2 + G2 * L2) / np.where(
+            np.abs(den) < 1e-300, 1e-300, den)
+        k2 = max(4, nu2 // 12)
+        kv = max(2, nvv // 6)
+        return float(np.median(np.abs(H2[k2:-k2, kv:-kv])
+                               * np.exp(us2[k2:-k2])[:, None]))
+    h0 = _bk_hres(481, 9)
+    h1 = _bk_hres(961, 17)
+    good = (r_dot < 1e-12 and r_len < 1e-12 and r_hom < 1e-8
+            and r_cen < 1e-8 and h1 < h0 and h1 < 0.05)
+    ok &= good
+    print(f"Breiner-Kleene: frame n.c'={r_dot:.1e} |n|-1={r_len:.1e} | "
+          f"homothety spread={r_hom:.1e} centre={r_cen:.1e} | "
+          f"|H|e^u {h0:.2e}->{h1:.2e} {'OK' if good else 'FAIL'}")
+
+    # Toroidal Karcher-Scherk gates -- identities stated before the
+    # transcription, measured on every run:
+    #   1. MEMBER: a1 re-solved from the notebook's own period
+    #      condition Re Adh(tau1, .) = 0 by bisection must land on the
+    #      stored table value, for every shipped k;
+    #   2. PERIOD PURITY: the loop around the z = i a1 end must
+    #      translate by (0, 0, T) with the horizontal part < 1e-6 T --
+    #      the geometric form of the period problem being solved; and
+    #      for the k = 4 member T must equal the independently recorded
+    #      oracle 1.077748;
+    #   3. the x-cycle (the handle loop) must close: |f(z+1) - f(z)|
+    #      integrated along a straight probe row < 1e-5.
+    tks_ok = True
+    for kk, (tt1, aa1, _lx) in sorted(we.TOROIDAL_KS_MEMBERS.items()):
+        # the residual has other structure further out (it returns to
+        # positive values on both sides), so the re-solve brackets the
+        # LOCAL crossing: measured, every table member's zero sits
+        # within +-2% of the stored a1 with the residual monotone there
+        lo, hi = 0.98 * aa1, 1.02 * aa1
+        fa = we.tks_period_residual(kk, tt1, lo)
+        fb = we.tks_period_residual(kk, tt1, hi)
+        a_, b_ = lo, hi
+        if fa * fb > 0:
+            tks_ok = False
+            print(f"TKS k={kk}: NO BRACKET for a1 re-solve FAIL")
+            continue
+        for _ in range(60):
+            m_ = 0.5 * (a_ + b_)
+            fm = we.tks_period_residual(kk, tt1, m_, n=8001)
+            if fa * fm <= 0.0:
+                b_ = m_
+            else:
+                a_, fa = m_, fm
+        a_re = 0.5 * (a_ + b_)
+        r_mem = abs(a_re - aa1)
+        loop = we.tks_vertical_period(kk, tt1, aa1)
+        r_horiz = float(np.hypot(loop[0], loop[1]) / abs(loop[2]))
+        good = r_mem < 5e-6 and r_horiz < 1e-6
+        if kk == 4:
+            good &= abs(abs(loop[2]) - 1.077748) < 1e-4
+        tks_ok &= good
+        print(f"TKS k={kk}: a1 re-solve err={r_mem:.1e} "
+              f"loop=(h {r_horiz:.1e}, T {abs(loop[2]):.6f}) "
+              f"{'OK' if good else 'FAIL'}")
+    # handle-loop closure on the k = 4 member.  The homotopy class
+    # matters: only the row BETWEEN the two end punctures is the handle
+    # core (a row below both differs from it by one winding and comes
+    # back translated by (0, 0, T) -- measured, that is exactly how the
+    # windings glue).  The row is held slightly off mid-height because
+    # the G zero/pole pair sits exactly ON y = tau1/2 (regular points
+    # of the integrand, but 0 * inf at an exact grid hit).
+    _G4, _dh4, _W4 = we._tks_forms(4, *we.TOROIDAL_KS_MEMBERS[4][:2])
+    t_ = np.linspace(0.0, 1.0, 20001)
+    zrow = 1j * 0.513 * we.TOROIDAL_KS_MEMBERS[4][0] + t_
+    v_ = _W4(zrow)
+    per1 = np.real(np.trapezoid(v_, t_, axis=0))
+    r_x = float(np.linalg.norm(per1))
+    good = tks_ok and r_x < 1e-5
+    ok &= good
+    print(f"TKS handle loop |f(z+1)-f(z)| = {r_x:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Catenoid-field gates -- the row's own claims, measured:
+    #   1. NO PERIOD PROBLEM: the loop around each half-catenoid
+    #      puncture translates by (0, 0, 0);
+    #   2. the field lies between two parallel planes: both deck
+    #      translations are purely horizontal;
+    #   3. J_F really is elliptic: the balanced-divisor quotient has
+    #      constant phase along the real axis (the unbalanced form
+    #      walks at e^{2 pi i z} -- the trap this row hit first).
+    Wcf = we.catenoid_field_W(1.0, 1.0)
+    r_lp = max(float(np.linalg.norm(we.we_ends_loop(Wcf, p_, r=0.02)))
+               for p_ in (0.0, 0.5))
+    t_ = np.linspace(0.0, 1.0, 20001)
+    d1 = np.real(np.trapezoid(Wcf((-0.2 + 0.25j) + t_), t_, axis=0))
+    d2 = np.real(np.trapezoid(Wcf((0.25 - 0.5j) + t_ * 1j) * 1j,
+                              t_, axis=0))
+    r_h = max(abs(float(d1[2])), abs(float(d2[2])))
+    JFf = we._cf_member(1.0)
+    xs_ = np.array([0.11, 0.23, 0.37, 0.44])
+    jv = JFf(xs_)
+    r_ph = float(np.max(np.abs(np.imag(jv))) / np.max(np.abs(jv)))
+    good = r_lp < 1e-6 and r_h < 1e-5 and r_ph < 1e-9
+    ok &= good
+    print(f"Catenoid field: end loops {r_lp:.1e} | deck vertical part "
+          f"{r_h:.1e} | J_F real-axis phase {r_ph:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Plane-with-catenoids gates -- the square-cell identity, stated
+    # before the mesher existed and measured on every run at TWO
+    # members (rho = 1 and 2), so the no-period-problem claim is
+    # checked across the family rather than at one point:
+    #   dis = f(1)_y = -f(-1)_x;  f((1,inf)) lies in y = +dis;
+    #   f((-inf,-1)) lies in x = -dis;  f((0,1)) and f((-1,0)) are the
+    #   straight half-turn axes (x = z = 0 resp. y = z = 0).
+    r_sq = 0.0
+    for rho_ in (1.0, 2.0):
+        dis_, f1_, fm1_ = we.plane_catenoids_frame(rho_)
+        Wp = we.plane_catenoids_W(rho_)
+        up_ = we._pwc_seg(Wp, 0.0, 0.5j, 'z0')
+
+        def _fx(x_):
+            return np.real(up_ + we._pwc_seg(Wp, 0.5j, x_ + 0.5j)
+                           + we._pwc_seg(Wp, x_ + 0.5j, x_))
+        r_sq = max(r_sq, abs(dis_ + fm1_[0]) / dis_)
+        for x_ in (2.5, 6.0):
+            r_sq = max(r_sq, abs(_fx(x_)[1] - dis_) / dis_)
+            r_sq = max(r_sq, abs(_fx(-x_)[0] + dis_) / dis_)
+        ax = _fx(0.45)
+        r_sq = max(r_sq, (abs(ax[0]) + abs(ax[2])) / dis_)
+        ax = _fx(-0.45)
+        r_sq = max(r_sq, (abs(ax[1]) + abs(ax[2])) / dis_)
+    good = r_sq < 1e-5
+    ok &= good
+    print(f"Plane-with-catenoids: square-cell identity (rho = 1, 2) "
+          f"worst {r_sq:.1e} {'OK' if good else 'FAIL'}")
+
+    # Hackman gates -- the member and its structure, re-measured:
+    #   1. the period root re-solves to the stored t (bracket +-2%);
+    #   2. the verbatim phase is a PURE phase (imag part of the log
+    #      ~ 0) -- and the refuted hypothesis really is off by pi
+    #      (recorded, so the trap stays documented);
+    #   3. the end loop translates by (0, 0, 0): the catenoid end of
+    #      the 1-noid has no period;
+    #   4. deck z -> z+1 is pure vertical (0, 0, h); the screw rise is
+    #      exactly k h; and the screw offset is base-point-independent
+    #      under the -2 pi k rotation (the rotation is REAL, not
+    #      assumed: with a wrong angle the two bases disagree).
+    lo, hi = 0.98 * we.HACKMAN_T, 1.02 * we.HACKMAN_T
+    fa_, fb_ = (we.hackman_period_residual(lo),
+                we.hackman_period_residual(hi))
+    hk_ok = fa_ * fb_ < 0
+    if hk_ok:
+        a_, b_ = lo, hi
+        for _ in range(50):
+            m_ = 0.5 * (a_ + b_)
+            fm_ = we.hackman_period_residual(m_)
+            if fa_ * fm_ <= 0.0:
+                b_ = m_
+            else:
+                a_, fa_ = m_, fm_
+        t_re = 0.5 * (a_ + b_)
+        r_t = abs(t_re - we.HACKMAN_T)
+        hk_ok &= r_t < 5e-6
+    else:
+        r_t = float('nan')
+    tau_ = complex(we.HACKMAN_T, 2.0)
+    phv = we.hackman_phi(tau_)
+    r_ph = abs(np.imag(phv))
+    sm_ = we._hk_sigma(-we.HACKMAN_K / 2, tau_)
+    sp_ = we._hk_sigma(we.HACKMAN_K / 2, tau_)
+    hyp = -np.angle(sm_ * sp_)
+    d_pi = abs(abs(float(np.real(phv)) - float(hyp)) - np.pi)
+    hk_ok &= r_ph < 1e-10 and d_pi < 1e-4
+    Whk, _tau, _p = we.hackman_W()
+    r_lp = float(np.linalg.norm(we.we_ends_loop(Whk, 0.0, r=0.05)))
+    hk_ok &= r_lp < 1e-8
+    vA, riseB, vB1, vB2, _R = we.hackman_deck(n=8001)
+    r_A = float(np.hypot(vA[0], vA[1]) / abs(vA[2]))
+    r_k = abs(riseB - we.HACKMAN_K * vA[2]) / abs(vA[2])
+    r_scr = float(np.linalg.norm(vB1 - vB2) / abs(vA[2]))
+    hk_ok &= r_A < 1e-8 and r_k < 1e-8 and r_scr < 1e-5
+    ok &= hk_ok
+    print(f"Hackman: t re-solve {r_t:.1e} | phase pure {r_ph:.1e}, "
+          f"hyp off by pi {d_pi:.1e} | end loop {r_lp:.1e} | deck A "
+          f"horiz {r_A:.1e}, rise ratio {r_k:.1e}, screw agree "
+          f"{r_scr:.1e} {'OK' if hk_ok else 'FAIL'}")
+
+    # Lubeck-Batista gates -- the authors' own period conditions
+    # (arXiv:0806.4313), re-derived along the notebook's waypoint
+    # paths with the u^2 endpoint substitution, must vanish at the
+    # stored members; and the deck structure must be the doubly
+    # periodic one: z -> z+1 EXACTLY (0, 0, 1), z -> z+tau purely
+    # horizontal.
+    lb_ok = True
+    for mi_ in (1, 2, 5):
+        t1_, t2_ = we.lb_period_test(mi_)
+        good_ = abs(t1_) < 2e-4 and abs(t2_) < 2e-4
+        lb_ok &= good_
+        print(f"Lubeck-Batista m{mi_}: authors' period test "
+              f"({t1_:.1e}, {t2_:.1e}) {'OK' if good_ else 'FAIL'}")
+    P1_, P2_ = we.lb_deck(2)
+    r_v = float(np.linalg.norm(P1_ - np.array([0.0, 0.0, 1.0])))
+    r_h2 = abs(P2_[2])
+    good_ = r_v < 1e-5 and r_h2 < 1e-8
+    lb_ok &= good_
+    ok &= lb_ok
+    print(f"Lubeck-Batista deck: |z+1 - (0,0,1)| = {r_v:.1e}, "
+          f"z+tau vertical part {r_h2:.1e} "
+          f"{'OK' if good_ else 'FAIL'}")
+
+    # Scherk IV gates -- the 1835 claim itself, measured:
+    #   1. every built point satisfies Scherk's implicit equation 20
+    #      (pointwise, through arccosh, both radial regions);
+    #   2. the closed form is consistent with (G, dh);
+    #   3. the helicoidal-end loop advances the axis by exactly the
+    #      4 pi assembly period.
+    rr_ = np.exp(np.linspace(np.log(0.15), np.log(2.5), 40))
+    th4 = np.linspace(0.15, np.pi - 0.15, 50)
+    F4 = we.scherk4_f(rr_[:, None] * np.exp(1j * th4[None, :]))
+    r_20 = float(np.max(we.scherk4_eqn20(F4)))
+    zs4 = np.array([0.3 + 0.4j, 0.7 + 0.2j, 1.4 + 0.9j])
+    h4 = 1e-6
+
+    def _fan(z):
+        return np.stack(
+            [2j * np.log(z), 2.0 * z,
+             -2.0 * (np.sqrt(1 - z * z) + np.log(z)
+                     - np.log(1 + np.sqrt(1 - z) * np.sqrt(1 + z)))],
+            axis=-1)
+    d4 = (_fan(zs4 + h4) - _fan(zs4 - h4)) / (2 * h4)
+    G4 = 1j * (1 + zs4) / np.sqrt(1 - zs4 * zs4)
+    dh4 = -2.0 * np.sqrt(1 - zs4 * zs4) / zs4
+    om4 = np.stack([0.5 * (1 / G4 - G4) * dh4,
+                    0.5j * (1 / G4 + G4) * dh4, dh4], axis=-1)
+    r_om = float(np.max(np.abs(d4 - om4)))
+    t4 = np.linspace(0.0, 2.0 * np.pi, 4001)
+    zz4 = 0.3 * np.exp(1j * t4)
+    wind = float(np.trapezoid(
+        np.real(2j * 1j * 0.3 * np.exp(1j * t4) / zz4), t4))
+    r_wd = abs(abs(wind) - 4.0 * np.pi)
+    good_ = r_20 < 1e-10 and r_om < 1e-8 and r_wd < 1e-9
+    ok &= good_
+    print(f"Scherk IV: eqn 20 pointwise {r_20:.1e} | forms "
+          f"consistency {r_om:.1e} | end winding vs 4 pi period "
+          f"{r_wd:.1e} {'OK' if good_ else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn
     # change).  Checked on the closed-form engine associates on a fixed grid

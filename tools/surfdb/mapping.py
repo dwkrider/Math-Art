@@ -58,6 +58,11 @@ MERGE = {
     # already had one.
     "tpms_exact:SCHOEN_I8": "schoen-i8",
     "tpms_exact:SCHOEN_I9": "schoen-i9",
+    # Brakke's "formerly unnamed" Surface 12 is Schoen's F-RD(r), named
+    # on his own page; the exact-Weierstrass FRDR row already emits
+    # `schoen-frd-r`, so the Evolver cell merges in as its second
+    # construction, the same shape as I-8 / I-9 above.
+    "tpms_exact:SCHOEN12": "schoen-frd-r",
     # The box-symmetry series is ONE template selected by a sign vector,
     # so its three shipped members are three constructions of the same
     # catalogued family rather than three surfaces.  MERGE, not ALIAS:
@@ -139,6 +144,31 @@ SPECIMEN = {
 
     "hyperbolic:MINDING_BULGE":   ("minding-surface", "bulge"),
     "hyperbolic:MINDING_SPINDLE": ("minding-surface", "spindle"),
+
+    # The canal generator's spine presets are regimes of ONE
+    # construction (the envelope of a sphere family), not surfaces in
+    # their own right: the circle-spine constant-radius case IS the
+    # torus and the ellipse-spine cyclide-law case IS the Dupin
+    # cyclide, both of which have records already -- the overlap is
+    # recorded on canal-surface's relations rather than by double
+    # emission.
+    "canal:LINE":       ("canal-surface", "straight spine (cylinder, or a cone of spheres under taper)"),
+    "canal:CIRCLE":     ("canal-surface", "circular spine (the torus, at constant radius)"),
+    "canal:ELLIPSE":    ("canal-surface", "ellipse spine (the Dupin cyclide, under the cyclide radius law)"),
+    "canal:HELIX":      ("canal-surface", "helical spine"),
+    "canal:TORUS_KNOT": ("canal-surface", "torus-knot spine"),
+
+    # Likewise the focal generator's sources: one operation, seven
+    # source charts.  The sphere and torus rows degenerate to a point
+    # and to a curve pair -- kept as specimens because the degeneracies
+    # ARE the classical content (they bound Dupin's characterisation).
+    "focal:ELLIPSOID":     ("focal-surface", "of the ellipsoid (Cayley's centro-surface)"),
+    "focal:TORUS":         ("focal-surface", "of the torus (degenerates to the centre circle and the axis)"),
+    "focal:SPHERE":        ("focal-surface", "of the sphere (degenerates to the centre point)"),
+    "focal:PARABOLOID":    ("focal-surface", "of the elliptic paraboloid"),
+    "focal:SADDLE":        ("focal-surface", "of the hyperbolic paraboloid"),
+    "focal:CATENOID":      ("focal-surface", "of the catenoid"),
+    "focal:MONKEY_SADDLE": ("focal-surface", "of the monkey saddle (clipped at its planar umbilic)"),
 
     "spherical:SPHERE":   ("k-positive-revolution", "sphere"),
     "spherical:SPINDLE":  ("k-positive-revolution", "spindle"),
@@ -231,6 +261,24 @@ ALIAS = {
     "minsurf:CHEN_GACK": "chen-gackstatter",
     "minsurf:MEEKS_MOBIUS": "meeks-mobius-strip",
     "minsurf:BJ_CIRCLE": "bjorling-twisted-band",
+    # The Breiner-Kleene bent helicoid, shipped as a Bjorling row from
+    # the notebook's own closed-form seed curve and rotating frame.
+    "minsurf:BJ_BREINER_KLEENE": "breiner-kleene-surface",
+    # The toroidal Karcher-Scherk tower, one solved (tau1, a1) member
+    # per wing order from the notebook's tables.
+    "minsurf:SP_TOROIDAL_KS": "toroidal-karcher-scherk",
+    "minsurf:SP_HACKMAN": "hackman-surfaces",
+    "minsurf:DP_LUBECK_BATISTA": "lubeck-batista-surface",
+    "minsurf:SP_SCHERK4": "scherks-fourth-surface",
+    # The catenoid field, from the ends backend + J_F theta quotient.
+    "minsurf:DP_CATENOID_FIELD": "catenoid-field",
+    "minsurf:DP_PLANE_CATENOIDS": "plane-with-catenoids",
+    # The half-twisted Scherk shipped in the Weierstrass zoo while the
+    # curated record stayed OPEN, because the row minted its own
+    # `half-twisted-scherk-surface` twin.  One surface, one record: the
+    # zoo row's data (G = z, dh = z/(z^2-1) dz) is exactly what the
+    # record's minsurf page (ch152) prints.
+    "minsurf:SP_HALF_TWISTED_SCHERK": "half-twisted-scherk",
     "tpms_exact:PGD": "pgd-associate-family",
     # The exact-Weierstrass rows added on the minimal-periodic branch.
     # These MUST live here rather than being hand-edited into the record
@@ -241,7 +289,27 @@ ALIAS = {
     "tpms_exact:CLP": "clp-exact",
     "tpms_exact:CLP_HANDLE": "clp-handle-exact",
     "tpms_exact:LIDINOID": "lidinoid-exact",
-    "tpms_exact:RPD": "rpd-exact",
+    # These three shipped as TWO records each: a curated one holding the
+    # Evolver cell but reading `implemented: False`, and a row record
+    # under `<slug>-exact` reading implemented but carrying none of the
+    # curation.  That split is what made the ledger report eleven
+    # shipping surfaces as gaps.  Aliased onto the curated record so
+    # each surface is ONE record that is both curated and implemented.
+    # (LIDINOID above keeps its own `-exact` record deliberately: the
+    # unsuffixed `lidinoid` is the NODAL route, a different construction
+    # of the same surface rather than the same row twice.)
+    "tpms_exact:LORD_MACKAY_P3A": "lord-mackay-p3a",
+    "tpms_exact:SCHOEN_BATWING": "schoen-batwing",
+    "tpms_exact:SCHOEN_HYBRID_1": "schoen-hybrid-1",
+    # rPD: aliased onto the curated `weber-rpd` record (the Wayback
+    # archive row), which sat OPEN for months while `rpd-exact` shipped
+    # beside it -- the empty-twin problem again, in the other direction.
+    # They are one surface: the record's own note ("quotient by the
+    # order-3 rotation is a rectangular torus, and the divisor is that
+    # of G^3(z), which is essentially the Weierstrass p-function") is
+    # exactly `_SPECS['RPD']`'s theta divisor (exponents -2/3, 1/3,
+    # 1/3), and both cite mirror ch279_rpd_deformation.
+    "tpms_exact:RPD": "weber-rpd",
     "tpms_exact:HT": "schoen-h-t",
     "tpms_exact:SS": "schoen-s-s",
     "tpms_exact:H2R": "weber-h2r",
@@ -287,6 +355,16 @@ ALIAS = {
     # above exist to prevent.  Pointing them at the existing
     # unsuffixed records also clears eight of the sixteen starfish
     # orphans `surfdb_validate.py` reports.
+    # Brakke's "formerly unnamed" Surface 14 is Schoen's I-WP(r), named
+    # on his own page ("chamber in a box with tubes running to the
+    # centers of eight edges ... 16-fold symmetry" -- the record's own
+    # description, verbatim).  Its minted `schoen14-exact` twin is gone;
+    # the bake table in tools/bake_fe_cells.py pins the same slug, so
+    # bake and mapping still agree by construction.  Surface 12
+    # (F-RD(r)) is a MERGE, not an alias: `schoen-frd-r` is already
+    # emitted by tpms_exact:FRDR, and two rows aliased to one slug is
+    # exactly the collision the build refuses.
+    "tpms_exact:SCHOEN14": "schoen-iwp-r",
     "tpms_exact:STARFISH_2_1_GENUS_31": "starfish-2-1-genus-31",
     "tpms_exact:STARFISH_2_2_GENUS_47": "starfish-2-2-genus-47",
     "tpms_exact:STARFISH_2_3_GENUS_63": "starfish-2-3-genus-63",
@@ -296,6 +374,8 @@ ALIAS = {
     "tpms_exact:STARFISH_4_1_GENUS_55": "starfish-4-1-genus-55",
     "tpms_exact:STARFISH_4_3_GENUS_87": "starfish-4-3-genus-87",
     "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
+    "tpms_exact:TRIPLY_HORGAN": "triply-periodic-horgan",
+    "tpms_exact:WEI_G4": "wei-triply-periodic-genus-4",
     "tpms_exact:SIMOES_BATISTA": "simoes-batista-surface",
     "tpms_exact:R3_RING": "schoen-riii",
     "tpms_exact:I8_RING": "schoen-i8",
@@ -315,6 +395,22 @@ ALIAS = {
     "tpms:FK_CS": "fischer-koch-cs",
     "tpms:FK_CY": "fischer-koch-cy",
     "algebraic:BARTH": "barth-sextic",
+    # Batch-6 named rows: MathWorld / Labs catalogue entries, each
+    # verified against what its polynomial claims (see the algebraic
+    # self-test).  Burkhardt and the desmic quartic are PINNED members
+    # (a section, a pencil member) and their records say so.
+    "algebraic:SWALLOWTAIL": "swallowtail",
+    "algebraic:CAYLEY_RULED": "cayley-ruled-surface",
+    "algebraic:SCHUR_QUARTIC": "segre-quartic-64-lines",
+    "algebraic:DESMIC": "desmic-surface",
+    "algebraic:BURKHARDT_SECTION": "burkhardt-quartic",
+    "algebraic:VAN_STRATEN_D": "van-straten-dihedral-series",
+    "algebraic:SEXTIC_9_TRIPLE": "sextic-with-9-triple-points",
+    "algebraic:HUMBERT": "humbert-sextic",
+    "algebraic:CG_QUINTIC": "stagnaro-enriques-quintic",
+    "algebraic:SYMMETROID": "symmetroid",
+    "algebraic:DECO_TETRAHEDRON": "deco-tetrahedron",
+    "algebraic:NORM_ONE": "norm-one-family",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",
     "algebraic:LABS": "labs-septic",
@@ -328,10 +424,16 @@ ALIAS = {
     "algebraic:TANGLE": "tangle-cube",
     "algebraic:DINGDONG": "ding-dong-surface",
     "curiosity:ZOLL": "zoll-surface",
+    "curiosity:ATTRACTION": "solid-of-maximal-attraction",
+    "curiosity:PROP_CURV":
+        "rotation-surface-with-proportional-curvatures",
     "curiosity:SCHWARZ_LANTERN": "schwarz-lantern",
     "curiosity:GABRIEL": "gabriels-horn",
     "topological:KLEIN": "klein-bottle",
     "topological:KLEIN8": "klein-bottle-figure-eight",
+    "topological:KLEIN_NESTED": "nested-klein-bottles",
+    "topological:ETRUSCAN_VENUS": "etruscan-venus-surface",
+    "topological:IDA": "ida-surface",
     "topological:BOY": "boys-surface",
     "topological:MORIN": "morin-surface",
     "topological:ROMAN": "roman-surface",
