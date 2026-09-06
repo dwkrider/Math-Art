@@ -581,6 +581,13 @@ NOT_A_GAP = {
                      "annulus of finite total curvature."),
     "dihedralized-wohlgemuth-with-handle":
         ("terminal", "Believed not to exist; no construction published."),
+    "sarti-dodecic":
+        ("terminal", "Terminal AS STATED, not as a surface: the pencil's "
+                     "singular members are fixed by an invariant-theoretic "
+                     "condition that is not reconstructible from the "
+                     "shipped symmetrization, so there is no member to "
+                     "mesh.  Reopen if the literature ever supplies the "
+                     "condition."),
     "labs-sextic-35-cusps":
         ("terminal", "Its coefficients are non-real, so the real locus is "
                      "not a surface -- there is nothing to mesh."),
@@ -617,6 +624,36 @@ NOT_A_GAP = {
         ("bookkeeping", "Not a surface -- a family/method whose ten members "
                         "map onto six that already ship (P, H, S'-S'', "
                         "H'-T, H''-R, T'-R')."),
+    # NO DATAFILE EVER EXISTED.  Brakke's starfish page names these
+    # members; the recovered tarball carries only the eight that shipped
+    # plus the three he annotates as failing.  Nothing was ever published
+    # to build them from -- distinct from the `contingent` three, whose
+    # mathematics is unsettled rather than whose source is missing.
+    "starfish-2-4-genus-79":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-3-4-genus-91":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-4-4-genus-103":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-5-1-genus-67":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
+    "starfish-5-4-genus-115":
+        ("no-source", "Named on Brakke's starfish page; the "
+                      "recovered tarball contains no datafile "
+                      "for this member and none was ever "
+                      "published -- nothing to build from."),
     "starfish-4-2-genus-71":
         ("contingent", "Brakke annotates this one 'not quite' -- it fails "
                        "to period-kill.  Whether the surface exists is "
