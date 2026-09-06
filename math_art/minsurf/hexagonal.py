@@ -4661,6 +4661,242 @@ def _selftest():
           "%.6f (diff %.1e) %s"
           % (p1[0], p1[1], p1[2], hz, err, 'OK' if good else 'FAIL'))
 
+    # ==================================================================
+    # The registry gate: EVERY row, the same tells, no hand-picked list.
+    #
+    # Eight of the twenty-one exact-Weierstrass rows shipped wrong at
+    # some point, and every automated check passed them the whole time
+    # -- each was caught by a person opening the row in Blender.  The
+    # tells that eventually convicted them (the closure tell, the
+    # wall-residual probes, the cell-vs-label measurement) were then
+    # applied only to the rows being fixed.  This gate runs them over
+    # every row in `_SPECS` plus Schwarz H, so a row nobody has looked
+    # at gets the same scrutiny as the ones somebody has.
+    #
+    # Four checks, each applied where the row's kind admits it:
+    #
+    #   1. CLOSURE.  `spec_build` at Reflections depth 1 and 3.  Three
+    #      states, and they are different facts: CLOSED (face count
+    #      depth-inert ABOVE the bare patch -- a cell), BARE (depth-
+    #      inert AT the patch count -- no generators at all, which is
+    #      Lidinoid, not closure), GROWS (a verified partial reflection
+    #      orbit -- the fundamental-piece rows).  A column shows as
+    #      growth with min(bbox)/max(bbox) collapsing; `_fit` normalises
+    #      the LONGEST axis, so a column reads as the other axes
+    #      shrinking, never as one growing.
+    #   2. LATTICE vs LABEL.  A row `surface_class` calls CUBIC must
+    #      measure a cube; one it calls anything else must not.  F-RD
+    #      is the cautionary case: it shipped for months labelled cubic
+    #      while its cell measured 1.074 : 1.074 : 1.
+    #   3. WALLS.  Every row that declares `exact_planes` gets its
+    #      probe residuals gated -- not just the rows that were fixed.
+    #   4. LABEL HONESTY.  A row that does not close must say
+    #      "fundamental piece" in its label, and a row that closes must
+    #      not -- so a regression cannot quietly ship a column under a
+    #      cell's name, and a fix cannot quietly ship under a
+    #      fundamental-piece disclaimer (the H'-T precedent: when the
+    #      cell-word route reached it, the old assertion surfaced the
+    #      fix instead of letting it slip by).
+    #
+    # The expected-state table is asserted EQUAL to the spec list, so a
+    # future row cannot be added without declaring its state here.
+    _EXPECT_STATE = {
+        'H': 'CLOSED', 'CLP': 'CLOSED', 'HT': 'CLOSED', 'SS': 'CLOSED',
+        'H2R': 'CLOSED', 'TR': 'CLOSED', 'RII': 'CLOSED', 'CH': 'CLOSED',
+        'RPD': 'CLOSED', 'FRD_EXACT': 'CLOSED', 'FRDR': 'CLOSED',
+        'BOX_1001': 'CLOSED', 'BOX_1010': 'CLOSED', 'BOX_1011': 'CLOSED',
+        'SIMOES_BATISTA': 'CLOSED',
+        'CLP_HANDLE': 'GROWS', 'I6': 'GROWS', 'STESSMANN': 'GROWS',
+        'TRIPLY_COSTA': 'GROWS',
+        'LIDINOID': 'BARE',
+    }
+    try:
+        from .surface_class import SURFACE_CLASS as _SC
+    except ImportError:
+        from surface_class import SURFACE_CLASS as _SC
+    miss = sorted((set(_SPECS) | {'H'}) ^ set(_EXPECT_STATE))
+    good = not miss
+    ok &= good
+    print("hexagonal: registry gate covers every spec row (%d) %s"
+          % (len(_EXPECT_STATE), 'OK' if good else 'FAIL ' + ','.join(miss)))
+
+    _NRES = 36
+    for key in sorted(_EXPECT_STATE):
+        if key == 'H':
+            V1, F1 = h_build(1, _NRES, 1.0, 0.0)
+            V3, F3 = h_build(3, _NRES, 1.0, 0.0)
+            pf = (max(24, _NRES) - 1) * (max(48, 2 * _NRES) - 1)
+            label = "Schwarz H (exact, hexagonal)"
+        else:
+            V1, F1 = spec_build(key, 1, _NRES, 1.0, 0.0)
+            V3, F3 = spec_build(key, 3, _NRES, 1.0, 0.0)
+            pf = (max(24, _NRES) - 1) ** 2
+            label = _SPECS[key]['label']
+        V1, V3 = np.asarray(V1, float), np.asarray(V3, float)
+        b1 = V1.max(0) - V1.min(0)
+        b3 = V3.max(0) - V3.min(0)
+        a1 = float(min(b1) / max(b1)) if max(b1) > 0 else 0.0
+        a3 = float(min(b3) / max(b3)) if max(b3) > 0 else 0.0
+        f1, f3 = len(F1), len(F3)
+        if f3 == f1 and f1 > pf:
+            state = 'CLOSED'
+        elif f3 <= pf:
+            state = 'BARE'
+        elif f3 > f1:
+            state = 'GROWS'
+        else:
+            state = 'SHRANK'                     # always wrong
+        fp = 'fundamental piece' in label
+        good = state == _EXPECT_STATE[key]
+        # 4. the label must state what the build does
+        good &= fp == (state != 'CLOSED')
+        # a GROWS row must grow a SURFACE: the orbit stays verified by
+        # `spec_reflect_tile`, and the aspect must not collapse toward a
+        # column (the honest worst today is Triply Periodic Costa's
+        # 0.35, a stack of storeys, and it says fundamental piece).
+        if state == 'GROWS':
+            good &= a3 > 0.2
+        # 2. the assembled cell against the classification.  Only a
+        # CLOSED row has a cell to measure; the fundamental-piece rows
+        # have nothing to check the label against, which is a fact
+        # about them worth keeping true (their genus is None in
+        # surface_class for the same reason).
+        cls = _SC.get(key, (None,))[0]
+        good &= cls is not None
+        cube = ''
+        if state == 'CLOSED' and cls is not None:
+            r = np.sort(b1)
+            dev = 1.0 - float(r[0] / r[2])
+            if cls == 'CUBIC':
+                good &= dev < 5e-3               # F-RD's bug was 0.074
+            else:
+                good &= dev > 5e-2               # ...and must not BE a cube
+            if cls == 'TETRAGONAL':              # two equal in-plane axes
+                rr = np.sort(b1)[::-1]
+                good &= abs(float(rr[0] / rr[1]) - 1.0) < 2e-3
+            cube = ' cell %.4f:%.4f:%.4f %s' % (
+                b1[0] / max(b1), b1[1] / max(b1), b1[2] / max(b1), cls)
+        ok &= good
+        print("hexagonal: gate %-14s %-6s faces %5d->%5d (patch %4d) "
+              "asp %.3f->%.3f%s %s"
+              % (key, state, f1, f3, pf, a1, a3, cube,
+                 'OK' if good else 'FAIL'))
+
+    # 3a. Wall residuals for every row that declares planes AND solved
+    # offsets: one probe per arc, gated at 1e-6 (all measure under
+    # 2e-9 today), with arcs sharing one solved wall agreeing to 1e-8
+    # -- the redundant-arc closure that convicted the wrong Box branch
+    # point.
+    for key in sorted(k for k in _SPECS
+                      if _SPECS[k].get('exact_planes')
+                      and _SPECS[k].get('exact_offsets')):
+        sp = _SPECS[key]
+        probes = spec_wall_probes(key)
+        worst, spread = 0.0, 0.0
+        walls = {}
+        for nm, p in probes.items():
+            dnm = nm if nm in sp['exact_planes'] else nm.split('#')[0]
+            if dnm not in sp['exact_planes'] or dnm not in sp['exact_offsets']:
+                continue
+            v = np.asarray(sp['exact_planes'][dnm], dtype=float)
+            v = v / np.linalg.norm(v)
+            d = float(np.dot(v, np.asarray(p[:3], dtype=float)))
+            worst = max(worst, abs(d - float(sp['exact_offsets'][dnm])))
+            walls.setdefault((tuple(np.round(v, 9)),
+                              round(float(sp['exact_offsets'][dnm]), 9)),
+                             []).append(d)
+        for ds in walls.values():
+            if len(ds) > 1:
+                spread = max(spread, max(ds) - min(ds))
+        good = worst < 1e-6 and spread < 1e-8
+        ok &= good
+        print("hexagonal: gate %-14s walls  worst %.1e, redundant-arc "
+              "spread %.1e %s" % (key, worst, spread,
+                                  'OK' if good else 'FAIL'))
+
+    # 3b. Rows with declared planes but MEASURED offsets (the trigroup
+    # rows and R-II) have no solved constant to probe against, so the
+    # check is the two quadratures against each other: the 1D path
+    # integral must land where the 2D patch's own boundary curve sits,
+    # in the declared normal direction, and the gap must FALL with the
+    # patch grid -- quadrature drift, not structure.  This is the check
+    # that convicts a wrong plane: the Box rows' rotated walls measured
+    # 0.1-0.2 here, two orders above the gate.
+    #
+    # Two limits of this gate, recorded so nobody mistakes it for more:
+    # the trigroup LID planes (normal (0,0,1)) are tautological -- on
+    # these rows the height coordinate IS Re(z), so the lids sit at 0
+    # and 1/2 by construction and no probe can find them wrong; and a
+    # single arc on a free plane has nothing independent against it, so
+    # only the NORMAL direction is verified here, never the placement.
+    for key in sorted(k for k in _SPECS
+                      if _SPECS[k].get('exact_planes')
+                      and not _SPECS[k].get('exact_offsets')):
+        sp = _SPECS[key]
+        probes = spec_wall_probes(key)
+        worsts = []
+        for n in (61, 91):
+            P = _spec_patch(key, n, n)
+            curves = dict(spec_curves(key, P))
+            w = 0.0
+            for nm, p in probes.items():
+                dnm = nm if nm in sp['exact_planes'] else nm.split('#')[0]
+                if dnm not in sp['exact_planes']:
+                    continue
+                cnm = nm if nm in curves else dnm
+                if cnm not in curves:
+                    continue
+                v = np.asarray(sp['exact_planes'][dnm], dtype=float)
+                v = v / np.linalg.norm(v)
+                C = np.asarray(curves[cnm], dtype=float)
+                m = len(C)
+                t_ = max(2, m // 5)
+                med = float(np.median(C[t_:m - t_] @ v))
+                w = max(w, abs(med - float(np.dot(
+                    v, np.asarray(p[:3], dtype=float)))))
+            worsts.append(w)
+        good = worsts[1] < 2e-2 and worsts[1] < worsts[0] * 1.05
+        ok &= good
+        print("hexagonal: gate %-14s walls  probe-vs-patch %.1e -> %.1e "
+              "(falling) %s" % (key, worsts[0], worsts[1],
+                                'OK' if good else 'FAIL'))
+
+    # ...and R-II's two horizontal arcs are declared to be the SAME
+    # mirror x = 0 -- two independent path integrals onto one plane, the
+    # only redundant pair among the measured-offset rows.
+    pr = spec_wall_probes('RII')
+    d0 = float(pr['y=0#0'][0])
+    d1 = float(pr['y=1#0'][0])
+    good = abs(d0 - d1) < 1e-8
+    ok &= good
+    print("hexagonal: gate RII same-mirror arcs agree %.6f vs %.6f "
+          "(diff %.1e) %s" % (d0, d1, abs(d0 - d1),
+                              'OK' if good else 'FAIL'))
+
+    # The TPMS_EXACT registry itself.  Every row must be classified in
+    # `surface_class`, and every row must have a verification home: the
+    # spec rows and Schwarz H are gated above, PGD in `weierstrass`, the
+    # Evolver-cell rows and the relaxation/conjugate-Plateau rows in
+    # `plateau`.  An unknown key fails, so a future row cannot ship
+    # without declaring where it is verified.
+    try:
+        from .tpms import TPMS_EXACT as _TE
+        from .fecells import FE_CELLS as _FE
+    except ImportError:
+        from tpms import TPMS_EXACT as _TE
+        from fecells import FE_CELLS as _FE
+    _PLATEAU_GATED = {'R3_RING', 'I8_RING', 'I9_RING', 'GW_CONJ',
+                      'HT_HR_CONJ', 'TR_HT_CONJ', 'HR_TR_CONJ'}
+    unclass = sorted(set(_TE) - set(_SC))
+    orphan = sorted(set(_TE) - set(_SPECS) - set(_FE) - {'H', 'PGD'}
+                    - _PLATEAU_GATED)
+    good = not unclass and not orphan
+    ok &= good
+    print("hexagonal: TPMS_EXACT registry %d rows, all classified and "
+          "all with a verification home %s"
+          % (len(_TE), 'OK' if good else
+             'FAIL unclassified=%s orphan=%s' % (unclass, orphan)))
+
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
         raise AssertionError("hexagonal self-test failed")
