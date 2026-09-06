@@ -520,6 +520,7 @@ class Builder:
             label = spec[0] if isinstance(spec, tuple) else str(key)
             fam_key = minsurf.SURFACE_FAMILY.get(key, "CLASSICAL")
             family = fam_family.get(fam_key, "minimal")
+            unver = mapping.UNVERIFIED.get("minsurf:%s" % key)
             slug = self.place(
                 "minsurf", key, label, family,
                 {"generator": "math_art.minsurf.parametric",
@@ -536,7 +537,11 @@ class Builder:
                                  if fam_key in ("SINGLY", "DOUBLY")
                                  else "mesh.parametric_minimal_add"),
                  "family": fam_key, "key": key,
-                 "definition_index": 0, "implemented": True})
+                 "definition_index": 0,
+                 # parked in UNVERIFIED: ships in the menu, does not
+                 # count as built
+                 "implemented": not unver,
+                 **({"blocked_by": unver} if unver else {})})
             rec = self.records[slug]
             if key in zoo_lines:
                 self.cite(rec, "minsurf.zoo", zoo_lines[key], label)

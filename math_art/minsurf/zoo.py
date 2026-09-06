@@ -2094,6 +2094,28 @@ WE_SURFACES['SP_SCHERK4'] = {
 SURFACE_FAMILY['SP_SCHERK4'] = 'SINGLY'
 
 
+# Karcher's 2-parameter family of 4-noids with two orthogonal
+# symmetry planes (Tokyo notes pp. 30ff; Weber's 4-Noid_sym_2.nb).
+# SHIPS FOR INSPECTION ONLY -- parked in mapping.UNVERIFIED, so it is
+# in the menu but does not count as built.  The Weierstrass data and
+# tau(lambda), rho(lambda) are verified (four end periods vanish to
+# 4e-13 across four members) and the patch is a conformal minimal
+# immersion; the ASSEMBLY is wrong -- reflecting in x = 0 and y = 0
+# yields chi = -1 with three boundary loops where a truncated 4-noid
+# needs chi = -2 and four.  See BACKLOG.md before trusting a picture
+# of this.
+WE_SURFACES['SPH_4NOID_SYM2'] = {
+    'label': "4-Noid, Two Symmetry Planes (assembly unsolved)",
+    'family': 'SPHERES',
+    'mesher': we.four_noid_sym2_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "End Position (lambda)",
+    'storeys_label': "End Reach",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SPH_4NOID_SYM2'] = 'SPHERES'
+
+
 WE_SURFACES['DP_CATENOID_FIELD'] = {
     'label': "Catenoid Field (square-torus member)",
     'family': 'DOUBLY',

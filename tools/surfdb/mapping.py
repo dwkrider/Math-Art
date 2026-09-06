@@ -414,6 +414,7 @@ ALIAS = {
     # The preset label carries its node count ("Sarti Dodecic (600
     # nodes)"), which would slugify to a second record beside the
     # curated `sarti-dodecic` -- the twin-record trap again.
+    "minsurf:SPH_4NOID_SYM2": "four-noid-two-symmetry-planes",
     "algebraic:SARTI_DODECIC": "sarti-dodecic",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",
@@ -528,6 +529,28 @@ SUSPECTED_SAME = [
                   "Band (Mobius)' and 'Meeks Mobius Strip'.",
     },
 ]
+
+
+# UNVERIFIED -- "<source>:<key>" -> why.  A registry row that SHIPS in
+# the Add menu, so it can be looked at, but whose surface has not been
+# shown to BE the surface it is named after.  The ledger then records
+# it as not implemented, because "there is a row you can click" and
+# "the mathematics is right" are different claims, and `implemented`
+# means the second.
+#
+# This exists because the 4-noid shipped, was visibly wrong in Blender,
+# and had passed every gate written for it.  Removing this table moves
+# the row straight back into the implemented count -- which is how it
+# was confirmed to do something rather than nothing.
+UNVERIFIED = {
+    "minsurf:SPH_4NOID_SYM2":
+        "Ships for inspection only.  tau(lambda) and rho(lambda) are "
+        "verified -- the four end periods vanish to 4e-13 across four "
+        "members -- and the patch is a conformal minimal immersion, "
+        "but the assembly is wrong: reflecting in x = 0 and y = 0 "
+        "gives chi = -1 with three boundary loops where a truncated "
+        "4-noid needs chi = -2 and four.  See BACKLOG.md.",
+}
 
 
 def disposition(source, key):
