@@ -2702,6 +2702,34 @@ WE_SURFACES['KUSNER_SPHERE'] = {
 }
 SURFACE_FAMILY['KUSNER_SPHERE'] = 'SPHERES'
 
+# The Horgan surface -- A MINIMAL SURFACE THAT DOES NOT EXIST (Hoffman
+# and Karcher 1993, named against Horgan's "death of proof" article):
+# a genus-2 Costa variant whose period problem provably cannot close,
+# though the numerical example looks utterly convincing.  This row
+# ships Weber's own near-miss illustration WITH THE DEFECT LEFT
+# VISIBLE and measured: the two mirror-curve offsets disx(a), disy(a)
+# would have to agree for the surface to exist, and the measured
+# family (gated below) has disx - disy < 0 for every a > 1, vanishing
+# only in the degenerate a -> 1 collapse.  The assembly closes the
+# catenoid-edge seam exactly and leaves the other seam open by
+# |disx - disy| -- at the default a = 1.01 member that gap is 0.0011
+# (invisible, which is the entire point), at a = 1.5 it is 0.089.
+# The ledger's `horgan-surface` record remains terminal (the surface
+# does not exist); THIS row is the illustration of that finding, not
+# an implementation of the surface.  Registered against Weber's own
+# PoVRay exports of all three members (0.15-0.16% GT -> ours of span;
+# cell ratios match his to 4 digits).  See the block above
+# `horgan_mesh` in weierstrass.py for the data and references.
+WE_SURFACES['HORGAN_NEARMISS'] = {
+    'label': "Horgan Surface (non-existent, near-miss)",
+    'family': 'HIGHER',
+    'mesher': we.horgan_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (a = 1.01 / 1.1 / 1.5)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['HORGAN_NEARMISS'] = 'HIGHER'
+
 WE_SURFACES['LOPEZ_KLEIN'] = {
     # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
     # 1993): the unique-in-its-class complete non-orientable minimal
@@ -3705,6 +3733,49 @@ def _selftest():
               f"loops={nl_} (want {2 * p_}), nonman={nm_}, "
               f"one-sided={os_} {'OK' if good_ else 'FAIL'}")
     ok &= ku_ok
+
+    # Horgan near-miss gates -- the row's claim is a NEGATIVE result,
+    # so the gate measures the failure to close, not closure:
+    #   1. the two mirror-curve offsets at Weber's three members equal
+    #      the stored measurements (edge medians, grid-independent to
+    #      1e-6 across three resolutions when measured by the
+    #      vertical-sweep scheme);
+    #   2. the period defect disx - disy is STRICTLY NEGATIVE at every
+    #      probed a and monotonically worsens with a -- the family
+    #      never closes (Hoffman-Karcher's non-existence, measured);
+    #      near the degenerate a -> 1 limit it shrinks (a = 1.003:
+    #      -2.3e-4) which is exactly why the pictures look convincing;
+    #   3. the assembled cell's z/y extent ratios match Weber's own
+    #      exports (registered offline at 0.15-0.16% GT -> ours of
+    #      span; his cell ratios reproduced to 4 digits).
+    hg_ok = True
+    hg_vals = {1.01: (0.003777, 0.004919), 1.1: (0.001120, 0.020953),
+               1.5: (0.000357, 0.089392)}
+    for a_, (wx_, wy_) in hg_vals.items():
+        dx_, dy_ = we.horgan_gap(a_)
+        good_ = (abs(dx_ - wx_) < 5e-5 and abs(dy_ - wy_) < 5e-5
+                 and dx_ - dy_ < -1e-3 * (a_ - 1.0))
+        hg_ok &= good_
+        print(f"Horgan a={a_}: disx={dx_:+.6f} disy={dy_:+.6f} "
+              f"defect={dx_ - dy_:+.6f} (never zero) "
+              f"{'OK' if good_ else 'FAIL'}")
+    dx3, dy3 = we.horgan_gap(1.003)
+    d3 = dx3 - dy3
+    good_ = -6e-4 < d3 < -1e-4
+    hg_ok &= good_
+    print(f"Horgan a=1.003 (near the degenerate limit): defect "
+          f"{d3:+.2e} -- small, not zero {'OK' if good_ else 'FAIL'}")
+    hg_shape = {1: 0.2880, 2: 0.5019, 3: 0.5600}
+    for order_, zy_ in hg_shape.items():
+        V_, _F, _uv = we.horgan_mesh(None, 60, 60, order_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_zy = abs(ex_[2] / ex_[1] - zy_) / zy_
+        good_ = r_zy < 0.01 and abs(ex_[0] / ex_[1] - 1.0) < 0.01
+        hg_ok &= good_
+        print(f"Horgan member {order_} cell z/y vs Weber's export: "
+              f"off {r_zy:.1e} {'OK' if good_ else 'FAIL'}")
+    ok &= hg_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20

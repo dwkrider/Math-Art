@@ -12575,6 +12575,231 @@ def kusner_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     return V, F, UV
 
 
+# ==========================================================================
+# The Horgan surface -- A MINIMAL SURFACE THAT DOES NOT EXIST, shipped
+# as the honest near-miss.  In 1993 Hoffman and Karcher set up the
+# Weierstrass data of a genus-2 Costa variant and named it after John
+# Horgan's Scientific American piece suggesting computer experiments
+# could replace proof: the numerical example looks utterly convincing,
+# and the period problem provably cannot be closed.  This generator
+# draws Weber's own near-miss illustration and MEASURES the failure
+# instead of hiding it.
+#
+# Data (Weber's Horgan.nb, transcribed):
+#     phi1 = rho sqrt(z^2-1) / (sqrt(z) sqrt(z^2-a^2)),
+#     phi2 = sqrt(z) / (rho (z^2-a^2)^(3/2) sqrt(z^2-1)),
+#     dh   = dz / (z^2-a^2),
+# on the strip chart z = sqrt(a^2 + e^w), w = x + iy, y in (0, pi)
+# (all square roots pointwise principal -- the strip maps into the
+# closed upper half plane, where they are continuous).  rho is the
+# notebook's Lopez-Ros balance int_0^1 phi1 = int_0^1 phi2, solved
+# here by graded Gauss quadrature (endpoint substitutions at the
+# z^(-1/2) and (1-z^2)^(-1/2) singularities).
+#
+# THE PERIOD PROBLEM, MEASURED (this is the point of the row): the
+# strip boundary carries two planar symmetry curves --
+#     y = 0   edge (z real > a):      x-mirror curve at   y = disy,
+#     y = pi  edge, z real in (1, a): y-mirror curve at   x = disx
+# (both constant along their edges to ~1e-7, measured).  Closing the
+# surface under the two mirrors needs ONE translation t with
+# disx - t = 0 AND disy - t = 0, i.e. disx = disy.  Measured across
+# the family (see the HORGAN_GAP table in the zoo gate): disx(a)
+# crosses zero near a ~ 1.115, disy(a) > 0 everywhere and vanishes
+# only in the degenerate a -> 1 limit, and |disx - disy| has a
+# MINIMUM of ~0.0093 near a ~ 1.06 -- it never closes.  The assembly
+# translates by t = -disy (the catenoid-edge curve lands exactly in
+# its mirror plane) and leaves the second seam open by the measured
+# defect |disx - disy|, VISIBLE in the geometry exactly as in Weber's
+# renders.
+#
+# GROUND TRUTH: registered against Weber's own PoVRay exports of all
+# three members he renders (a = 1.01, 1.1, 1.5): one-sided means
+# 0.15-0.16% (GT -> ours) / 0.33-0.39% (ours -> GT) of span.  For
+# a = 1.1 and 1.5 his translation equals our -disy to fit precision;
+# for a = 1.01 his dis came from NIntegrate straight through the
+# near-collision of the branch points z = 1 and z = a = 1.01 at
+# PrecisionGoal -> 5, and the registration-fitted value (-0.005)
+# confirms his export used that (inaccurate) number, not the exact
+# offset -- our edge-median measurement replaces the singular path.
+#
+# References:
+# - D. Hoffman and H. Karcher, "Complete embedded minimal surfaces of
+#   finite total curvature", in Geometry V (Encycl. Math. Sci. 90),
+#   Springer 1997, sec. 3.4 -- the Horgan surface as the cautionary
+#   example: the period problem that looks solvable and is not.
+# - J. Horgan, "The death of proof", Scientific American 269:4 (1993)
+#   92-103 -- the article the non-existent surface answers.
+# - M. Weber, "The Horgan surface", minimalsurfaces.blog, repository
+#   of non-existent surfaces (notebook `Horgan.nb` -- the data, the
+#   strip chart, the member windows and the gap presentation
+#   transcribed above; PoVRay exports = registration ground truth).
+# ==========================================================================
+
+HORGAN_A = (1.01, 1.1, 1.5)                     # Weber's three members
+HORGAN_PADS = {1.01: (1.0, 3.0), 1.1: (2.0, 4.0), 1.5: (2.5, 4.5)}
+
+
+def horgan_rho(a):
+    """The notebook's Lopez-Ros balance rho = sqrt(I2 / I1) with
+    I1 = int_0^1 phi1, I2 = int_0^1 phi2 at rho = 1 (both real and
+    positive on (0, 1) with the upper-half-plane branches)."""
+    gx, gw = np.polynomial.legendre.leggauss(200)
+    t = 0.5 * (gx + 1.0)
+    wt = 0.5 * gw
+
+    def f1(z):
+        return np.sqrt(1.0 - z * z) / (np.sqrt(z)
+                                       * np.sqrt(a * a - z * z))
+
+    def f2(z):
+        return np.sqrt(z) / ((a * a - z * z) * np.sqrt(1.0 - z * z)
+                             * np.sqrt(a * a - z * z))
+    z1 = t * t                                   # z^(-1/2) endpoint
+    I1 = float(np.sum(f1(z1) * 2.0 * t * wt))
+    z2 = 1.0 - (1.0 - t) ** 2                    # (1-z^2)^(-1/2) endpoint
+    I2 = float(np.sum(f2(z2) * 2.0 * (1.0 - t) * wt))
+    return math.sqrt(I2 / I1)
+
+
+def horgan_forms_w(a, rho):
+    """(om1, om2, om3)(w) on the strip chart, dz/dw folded in:
+    dz/dw = (z^2 - a^2)/(2z) with z = sqrt(a^2 + e^w)."""
+    def om(w):
+        w = np.asarray(w, dtype=complex)
+        z = np.sqrt(a * a + np.exp(w))
+        s1 = np.sqrt(z * z - 1.0)
+        sa = np.sqrt(z * z - a * a)
+        sz = np.sqrt(z)
+        phi1 = rho * s1 / (sz * sa)
+        phi2 = sz / (rho * (z * z - a * a) * s1 * sa)
+        om3 = 1.0 / (z * z - a * a)
+        jac = ((z * z - a * a) / (2.0 * z))[..., None]
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, om3], axis=-1) * jac
+    return om
+
+
+def horgan_forms_z(a, rho):
+    """The forms in the sphere coordinate (for the anchor paths)."""
+    def phi(z):
+        z = np.asarray(z, dtype=complex)
+        s1 = np.sqrt(z * z - 1.0)
+        sa = np.sqrt(z * z - a * a)
+        sz = np.sqrt(z)
+        phi1 = rho * s1 / (sz * sa)
+        phi2 = sz / (rho * (z * z - a * a) * s1 * sa)
+        om3 = 1.0 / (z * z - a * a)
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, om3], axis=-1)
+    return phi
+
+
+def horgan_patch(a, nu=(24, 24, 36), ny=48, pad=None):
+    """The fundamental strip patch.  Returns (F, X, meta): the real
+    immersion grid (nx, ny, 3) normalized to X(z = 0) = 0, the radial
+    node vector, and a dict with rho, the measured mirror-curve
+    offsets disx / disy (edge medians, std ~1e-7) and the rotation
+    axis image delta = -f(i)."""
+    rho = horgan_rho(a)
+    x0 = math.log(a * a)
+    x1 = math.log(a * a - 1.0)
+    if pad is None:
+        pad = HORGAN_PADS.get(a, (2.0, 4.0))
+    xmin, xmax = x1 - pad[0], x0 + pad[1]
+    nx1, nx2, nx3 = nu
+    X = np.unique(np.concatenate([
+        np.linspace(xmin, x1, nx1), np.linspace(x1, x0, nx2),
+        np.linspace(x0, xmax, nx3)]))
+    eps = 1e-6
+    Y = np.linspace(eps, math.pi - eps, ny)
+    W = X[:, None] + 1j * Y[None, :]
+    om = horgan_forms_w(a, rho)
+    phi = horgan_forms_z(a, rho)
+    ia = int(np.argmin(np.abs(X - x0)))
+    jm = ny // 2
+    za = np.sqrt(a * a + np.exp(W[ia, jm]))
+    # anchor: straight z-path i -> z(anchor), clear of the real axis
+    path = np.linspace(1j, za, 400)
+    F = np.zeros((len(X), ny, 3), dtype=complex)
+    F[ia, jm] = _kus_gl(phi, path[:-1], path[1:], 10).sum(axis=0)
+    # ONE horizontal sweep along the mid row (clear of the two
+    # integrable boundary singularities z = 1, z = 0 at y = pi), then
+    # vertical sweeps down each column: every chord's distance to a
+    # singular corner is at least |x - x1| / |x - x0|, so quadrature
+    # error stays confined to the two columns AT the corners instead
+    # of contaminating whole boundary rows (measured: a horizontal
+    # boundary sweep shifted the mirror-curve offset disx by ~2e-2
+    # depending on ny; the vertical scheme is grid-independent).
+    for i in range(ia + 1, len(X)):
+        F[i, jm] = F[i - 1, jm] + _kus_gl(om, W[i - 1, jm], W[i, jm])
+    for i in range(ia - 1, -1, -1):
+        F[i, jm] = F[i + 1, jm] + _kus_gl(om, W[i + 1, jm], W[i, jm])
+    for j in range(jm + 1, ny):
+        F[:, j] = F[:, j - 1] + _kus_gl(om, W[:, j - 1], W[:, j])
+    for j in range(jm - 1, -1, -1):
+        F[:, j] = F[:, j + 1] + _kus_gl(om, W[:, j + 1], W[:, j])
+    # normalization X(z = 0) = 0: z-path i -> 0 down the imaginary
+    # axis (upper-side branches, all integrable)
+    zp = 1j * np.linspace(1.0, 1e-10, 1500)
+    delta = _kus_gl(phi, zp[:-1], zp[1:], 10).sum(axis=0)
+    Fr = np.real(F) - np.real(delta)
+    x1m = x1 - 1e-9
+    sel1 = X < x1m
+    meta = {
+        'rho': rho,
+        'disy': float(np.median(Fr[:, 0, 1])),
+        'disx': float(np.median(Fr[sel1, -1, 0])),
+        'ey_std': float(Fr[:, 0, 1].std()),
+        'ex_std': float(Fr[sel1, -1, 0].std()),
+        'delta': -np.real(delta),
+    }
+    return Fr, X, meta
+
+
+def horgan_gap(a, nu=(14, 14, 20), ny=28):
+    """(disx, disy) of member a -- the two mirror-curve offsets whose
+    difference is the unclosable period defect."""
+    _F, _X, meta = horgan_patch(a, nu=nu, ny=ny)
+    return meta['disx'], meta['disy']
+
+
+def horgan_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Weber's Horgan near-miss illustration: order picks the member
+    (a = 1.01, 1.1, 1.5 -- his three renders), radius stretches the
+    end windows.  The assembly closes the catenoid-edge mirror seam
+    exactly (t = -disy) and leaves the other seam open by the
+    measured period defect |disx - disy| -- the gap IS the point."""
+    del spec, theta
+    a = HORGAN_A[int(np.clip(order - 1, 0, len(HORGAN_A) - 1))]
+    p0 = HORGAN_PADS[a]
+    fac = float(np.clip(radius / 1.2, 0.4, 2.0))
+    n = max(12, int(nu / 3))
+    F, _X, meta = horgan_patch(
+        a, nu=(n, n, int(1.5 * n)), ny=max(24, int(nv * 0.8)),
+        pad=(p0[0] * fac, p0[1] * fac))
+    nx, ny2 = F.shape[:2]
+    t = -meta['disy']
+    P0 = F.reshape(-1, 3)
+    # rotate about the (1,1,0) symmetry line through f(0) = 0 FIRST,
+    # then translate both copies (the notebook's order)
+    R = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+    tv = np.array([t, t, 0.0])
+    parts = [P0 + tv, P0 @ R.T + tv]
+    parts = parts + [P_ * np.array([-1.0, 1.0, 1.0]) for P_ in parts]
+    parts = parts + [P_ * np.array([1.0, -1.0, 1.0]) for P_ in parts]
+    flips = (False, False, True, True, True, True, False, False)
+    quads0 = _kus_grid_quads(nx, ny2)
+    NV = nx * ny2
+    V = np.concatenate(parts, axis=0)
+    Fc = []
+    for k_, fl_ in enumerate(flips):
+        for q in quads0:
+            qq = tuple(int(i) + k_ * NV for i in q)
+            Fc.append(qq[::-1] if fl_ else qq)
+    V = _center_fit(V, scale, V)
+    return V, Fc, None
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------

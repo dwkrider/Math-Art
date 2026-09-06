@@ -80,8 +80,8 @@
     "swept",
     "topological"
   ],
-  "count": 475,
-  "implemented_count": 443,
+  "count": 476,
+  "implemented_count": 444,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -6564,6 +6564,40 @@
       },
       "implemented": false,
       "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "horgan-surface-non-existent-near-miss",
+      "name": "Horgan Surface (non-existent, near-miss)",
+      "path": "surfaces/minimal/horgan-surface-non-existent-near-miss.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
