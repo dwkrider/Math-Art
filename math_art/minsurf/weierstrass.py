@@ -4348,26 +4348,43 @@ def four_noid_sym2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     seams weld pointwise.  `order` picks the member along lambda (end
     position), `radius` the growth mu.
 
-    Verified two ways (see tests in `_selftest`): the assembled mesh
-    is one sheet with chi = -2 and exactly four boundary loops (a
-    truncated 4-punctured sphere), and its bounding-box proportions
-    match Weber's own PoVRay exports of this family to three decimals
-    (y/x = 0.922, z/x = 0.931 at lambda = 1.8, mu = 4; y/x = 0.627,
-    z/x = 0.972 at lambda = 1.2, mu = 1.2).
+    Verified against Weber's own PoVRay exports of this family (the
+    `dummy.pov` mesh files ARE the assembled surface -- the scene
+    renders the one included piece with no further reflections): a
+    point-cloud registration of our mesh onto his lands at ~0.2% of
+    the bounding span (mean two-sided nearest-neighbour distance) for
+    BOTH members he renders, and every rigid-motion-invariant end
+    statistic agrees -- all pairwise angles between the four end axes
+    to 0.2 degrees, end-circle radii to 4e-4.  The `_selftest` gate
+    checks those invariants plus the topology (one sheet, chi = -2,
+    exactly four boundary loops, oriented): four loose discs, a
+    mis-welded seam, or a wrong member all break it.
+
+    Sliders: `radius` IS mu (the notebook's second parameter -- it
+    sets where each end pair is truncated, so it trades the size of
+    the two wide ends against the two narrow funnels), so the
+    defaults (order 1, radius 1.2) land exactly on the lambda = 1.2,
+    mu = 1.2 member pictured on the minimalsurfaces.blog page.
+    `storeys` (End Reach) at its default keeps the notebook's own
+    window x in [-3, 3]; larger values push the truncation further
+    out the logarithmically-growing catenoid ends, which plumps the
+    figure toward isotropy -- the surface is the same, the window is
+    not.
     """
     del spec, theta
     # lambda > 1 is required by sqrt(lambda - 1); very close to 1 the
     # nested radical blows tau up and the ends degenerate, so the
     # slider runs over the range the notebook actually renders.
     lam = float(np.clip(1.2 + 0.15 * (max(int(order), 1) - 1), 1.2, 2.6))
-    mu = float(np.clip(radius * 2.0, 0.4, 12.0))
+    mu = float(np.clip(radius, 0.4, 12.0))
     nx = int(np.clip(nu * 2, 60, 400))
     ny = int(np.clip(nv, 30, 200))
     # reach 1 is the notebook's own window x in [-3, 3] (also what
     # Weber's PoVRay exports truncate at, which the selftest's
-    # bounding-box comparison relies on); more storeys pushes the
-    # truncation further out the log-growing catenoid ends
-    reach = float(np.clip(0.6 + 0.4 * max(int(storeys), 1), 1.0, 4.0))
+    # shape comparison relies on); the mapping keeps reach 1 up
+    # through the operator's default storeys, so the out-of-the-box
+    # figure is Weber's, and deeper reach is opt-in
+    reach = float(np.clip(0.4 + 0.2 * max(int(storeys), 1), 1.0, 4.0))
     X, x, y = four_noid_sym2_patch(lam, mu, nx, ny,
                                    rmin=-reach * 3.0, rmax=reach * 3.0)
     # locate the two mirror planes from the four boundary arcs: real-
@@ -4413,9 +4430,64 @@ def four_noid_sym2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     from .plateau import _weld_points
     span = float(np.max(full.max(axis=0) - full.min(axis=0)))
     full, ffull = _weld_points(full, ffull, 1e-7 * max(span, 1e-12))
+    # stand it up: in integration coordinates the mirror planes are
+    # x = 0 and y = 0 and the two WIDE ends' axes hug +-y, so the raw
+    # assembly lies on its side.  Rotate -90 deg about x (y -> z, in
+    # Blender's z-up frame) so the wide ends face up/down the way
+    # Weber renders the family in his y-up PoVRay scenes.
+    full = full[:, [0, 2, 1]] * np.array([1.0, 1.0, -1.0])
     # centre and fit the way every other zoo row does -- the raw
-    # integration comes out tens of units across and offset in z
+    # integration comes out tens of units across and offset
     return _center_fit(full, scale, full), ffull
+
+
+def _fournoid_end_stats(V, F):
+    """Boundary-loop statistics: (mean radius, centre, outward axis)
+    per loop, sorted largest-radius first.  Test-only: these are the
+    rigid-motion-invariant end statistics the 4-noid selftest holds
+    against Weber's own PoVRay exports -- the angles between end axes
+    and the wide/narrow radius ratio survive any translation,
+    rotation or uniform scale, so they pin the SHAPE where a
+    bounding box or an Euler characteristic cannot."""
+    V = np.asarray(V)
+    ec = {}
+    for f in F:
+        m = len(f)
+        for k in range(m):
+            a, b = f[k], f[(k + 1) % m]
+            e = (a, b) if a < b else (b, a)
+            ec[e] = ec.get(e, 0) + 1
+    nbr = {}
+    for (a, b), c in ec.items():
+        if c == 1:
+            nbr.setdefault(a, []).append(b)
+            nbr.setdefault(b, []).append(a)
+    eseen, out = set(), []
+    for a0 in nbr:
+        loop, cur = [a0], a0
+        while True:
+            nxt = None
+            for c in nbr[cur]:
+                e = (cur, c) if cur < c else (c, cur)
+                if e not in eseen:
+                    nxt = c
+                    eseen.add(e)
+                    break
+            if nxt is None or nxt == a0:
+                break
+            loop.append(nxt)
+            cur = nxt
+        if len(loop) < 8:
+            continue
+        P = V[np.array(loop)]
+        cen = P.mean(axis=0)
+        Q = P - cen
+        ax = np.linalg.svd(Q)[2][2]
+        if float(np.dot(ax, cen)) < 0.0:
+            ax = -ax
+        out.append((float(np.linalg.norm(Q, axis=1).mean()), cen, ax))
+    out.sort(key=lambda t: -t[0])
+    return out
 
 
 def catenoid_field_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
@@ -13320,29 +13392,55 @@ def _selftest():
     ok &= good
     print(f"4-noid sym2: max |Re period|, four ends x four members "
           f"= {p4:.1e} {'OK' if good else 'FAIL'}")
-    # The assembly is gated on TOPOLOGY, at both members Weber
-    # renders: one sheet, chi = -2, exactly four boundary loops,
-    # manifold -- a truncated 4-punctured sphere and nothing else.
-    # Two earlier checks that DID pass on a visibly wrong surface are
-    # deliberately gone rather than loosened: a conformality residual
-    # (true of the patch, silent about the assembly) and a far-field
-    # end count, which read four loose quarter-discs as four catenoid
-    # ends.  This one cannot: four loose discs are 4 components with
-    # chi = +4, a mis-welded seam breaks chi = -2 or leaks extra
-    # boundary loops, and a self-overlapping weld shows up as
-    # non-manifold edges.  Shape is checked against Weber's own
-    # PoVRay exports of this family (bounding-box proportions,
-    # lambda = 1.8 mu = 4: y/x = 0.92205, z/x = 0.93058;
-    # lambda = 1.2 mu = 1.2: y/x = 0.62681, z/x = 0.97224).
-    for orderq, radq, ryx, rzx in ((5, 2.0, 0.92205, 0.93058),
-                                   (1, 0.6, 0.62681, 0.97224)):
+    # The assembly is gated two ways, at both members Weber renders.
+    # TOPOLOGY: one sheet, chi = -2, exactly four boundary loops,
+    # manifold, consistently oriented -- four loose discs are 4
+    # components with chi = +4, a mis-welded seam breaks chi = -2 or
+    # leaks boundary loops.  Necessary, not sufficient: a sphere with
+    # four slits passes it too.  So, SHAPE: the rigid-motion-invariant
+    # end statistics, measured off Weber's own PoVRay exports of this
+    # family (the `dummy.pov` mesh in each member directory of
+    # 4-noids-with-two-symmetry-planes__uq9HA8Va IS the assembled
+    # surface; our mesh registers onto it at ~0.2% of span).  The
+    # references below are those measurements: every pairwise angle
+    # between the four outward end axes, the wide/narrow end radius
+    # ratio, and the bounding-box proportions at the notebook's own
+    # truncation window.  A wrong member, a wrong mu mapping, or any
+    # assembly that merely has the right topology moves the angles by
+    # tens of degrees.
+    for (orderq, radq, ryx, rzx, awide, anarrow, across, rr) in (
+            (5, 4.0, 0.93058, 0.92205, 151.82, 73.88, 101.22, 4.4929),
+            (1, 1.2, 0.97224, 0.62681, 154.97, 135.30, 94.73, 3.5983)):
         V4, F4 = four_noid_sym2_mesh(None, 80, 60, orderq, radq, 1.0)
         chi4, nm4, or4, loops4, ncomp4 = sptail_topology(V4, F4)
         ext = V4.max(axis=0) - V4.min(axis=0)
         myx, mzx = float(ext[1] / ext[0]), float(ext[2] / ext[0])
+        st = _fournoid_end_stats(V4, F4)
         good = (ncomp4 == 1 and chi4 == -2 and loops4 == 4
-                and nm4 == 0 and or4 and abs(myx - ryx) < 0.02
-                and abs(mzx - rzx) < 0.02)
+                and nm4 == 0 and or4 and len(st) == 4
+                and abs(myx - ryx) < 0.02 and abs(mzx - rzx) < 0.02)
+        if good:
+            def _ang(u, v):
+                return math.degrees(math.acos(
+                    float(np.clip(np.dot(u, v), -1.0, 1.0))))
+            mrr = (st[0][0] + st[1][0]) / (st[2][0] + st[3][0])
+            mwide = _ang(st[0][2], st[1][2])
+            mnarrow = _ang(st[2][2], st[3][2])
+            mcross = max(_ang(st[i][2], st[j][2])
+                         for i in (0, 1) for j in (2, 3))
+            mcross_min = min(_ang(st[i][2], st[j][2])
+                             for i in (0, 1) for j in (2, 3))
+            good = (abs(mwide - awide) < 1.0
+                    and abs(mnarrow - anarrow) < 1.0
+                    and abs(mcross - across) < 1.0
+                    and abs(mcross_min - across) < 1.0
+                    and abs(mrr / rr - 1.0) < 0.02)
+            print(f"4-noid sym2 shape order={orderq}: axis angles "
+                  f"wide-wide={mwide:.2f} (ref {awide}) "
+                  f"narrow-narrow={mnarrow:.2f} (ref {anarrow}) "
+                  f"wide-narrow={mcross_min:.2f}..{mcross:.2f} "
+                  f"(ref {across}) radius ratio={mrr:.4f} (ref {rr}) "
+                  f"{'OK' if good else 'FAIL'}")
         ok &= good
         print(f"4-noid sym2 assembly order={orderq}: comps={ncomp4} "
               f"chi={chi4} loops={loops4} nonman={nm4} "

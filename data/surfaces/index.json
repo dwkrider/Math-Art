@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 441,
+  "implemented_count": 442,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -5255,15 +5255,15 @@
     },
     {
       "slug": "four-noid-two-symmetry-planes",
-      "name": "4-Noid with Two Symmetry Planes",
+      "name": "4-Noid, Two Symmetry Planes",
       "path": "surfaces/minimal/four-noid-two-symmetry-planes.json",
       "primary_family": "minimal",
       "families": [
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -5281,8 +5281,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

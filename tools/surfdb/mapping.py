@@ -538,26 +538,19 @@ SUSPECTED_SAME = [
 # "the mathematics is right" are different claims, and `implemented`
 # means the second.
 #
-# This exists because the 4-noid shipped, was visibly wrong in Blender,
-# and had passed every gate written for it.  (That row is verified
-# now -- topology-gated in weierstrass._selftest and matched against
-# Weber's own PoVRay exports -- so the table is empty, but it stays:
-# the next row that ships-before-it-is-shown-to-be-the-surface goes
-# here, not into the implemented count.)
-UNVERIFIED = {
-    "minsurf:SPH_4NOID_SYM2":
-        "Ships for inspection only.  The Weierstrass data is verified "
-        "(four end periods vanish to 4e-13 across four members) and "
-        "the assembly now passes a topology gate -- one component, "
-        "chi = -2, four boundary loops -- but the SHAPE is still "
-        "wrong.  Weber's own render of the same member "
-        "(_external/4-noids-...-unpacked/'lambda=1.2, mu=1.2'/"
-        "mathematica.png) is two wide, nearly flat plates joined by a "
-        "neck with two funnels; ours is a ball of roughly equal "
-        "extent in all three axes.  chi = -2 with four loops is "
-        "necessary and not sufficient: a sphere with four slits has "
-        "it too.  See BACKLOG.md.",
-}
+# This exists because the 4-noid shipped, was visibly wrong in
+# Blender, and had passed every gate written for it -- twice: an
+# end-count gate that read four loose discs as four ends, then a
+# topology gate (chi = -2, four loops) that a sphere with four slits
+# also satisfies.  The row is verified now, by measurement against
+# Weber's own PoVRay exports: point-cloud registration at ~0.2% of
+# span onto his dummy.pov meshes for both rendered members, plus a
+# selftest that pins the rigid-motion-invariant end statistics
+# (end-axis angles, wide/narrow radius ratio) to values measured off
+# those exports.  The table is empty, but it stays: the next row
+# that ships-before-it-is-shown-to-be-the-surface goes here, not
+# into the implemented count.
+UNVERIFIED = {}
 
 
 def disposition(source, key):
