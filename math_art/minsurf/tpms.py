@@ -978,7 +978,19 @@ TPMS_EXACT_ARRANGEMENTS = {'CLP': _we_hex.CLP_ARRANGEMENTS}
 # half-fixed here.
 TPMS_EXACT_CELL_ROWS = frozenset({
     'H', 'FRD_EXACT', 'FRDR',
-    'BOX_1001', 'BOX_1010', 'BOX_1011', 'SIMOES_BATISTA'})
+    'BOX_1001', 'BOX_1010', 'BOX_1011', 'SIMOES_BATISTA',
+    # The Lidinoid closes its cell (rotoreflection + translation) and
+    # `spec_build` arrays it on Weber's own [v1, v2, v3] -- an hR
+    # lattice whose in-plane vectors meet at 60 degrees, so the
+    # operator's bbox tiling (`tile_periodic`) could never lay it out;
+    # without this entry the Cells X/Y/Z counts were silently inert on
+    # exactly the row that finally had a cell to array.  Neighbouring
+    # units abut along their boundary curves but are not vertex-welded
+    # across cells (the seam rows sit ~eps^(1/3) off the shared curve on
+    # opposite sides; see `lidinoid_assembly` on why only an index merge
+    # can close such a seam, which across cells would need the S6-power
+    # bookkeeping extended to the neighbour's copies).
+    'LIDINOID'})
 
 TPMS_EXACT = {
     'PGD': ("Schwarz P-Gyroid-D (exact, Bonnet angle)", _we_pgd.pgd_build),
@@ -996,9 +1008,11 @@ TPMS_EXACT = {
                                    arrangement)),
     # The three rows that the generalised quadrature grading unblocked.
     # See the note above `_SPECS` in hexagonal.py for what each can do:
-    # CLP with a handle assembles a connected cell, the other two ship
-    # the exact fundamental piece for reasons that are properties of the
-    # surfaces rather than of the code.
+    # CLP with a handle ships its exact fundamental piece, rPD closes
+    # its hexagonal-prism cell by reflection words, and the Lidinoid
+    # closes its cell by rotoreflection + translation (`lidinoid_assembly`
+    # in hexagonal.py) -- reflection cannot reach it, because at its
+    # associate angle no boundary curve is a symmetry element.
     'CLP_HANDLE': (_we_hex._SPECS['CLP_HANDLE']['label'],
                    lambda cells, res, scale, theta:
                        _we_hex.spec_build('CLP_HANDLE', cells, res,

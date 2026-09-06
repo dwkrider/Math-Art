@@ -80,8 +80,8 @@
     "swept",
     "topological"
   ],
-  "count": 477,
-  "implemented_count": 415,
+  "count": 475,
+  "implemented_count": 414,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -11480,15 +11480,15 @@
     },
     {
       "slug": "schoen-iwp-r",
-      "name": "Schoen I-WP(r) Surface",
+      "name": "SCHOEN14 (exact)",
       "path": "surfaces/minimal-periodic/schoen-iwp-r.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
@@ -11507,8 +11507,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -11752,76 +11754,6 @@
       },
       "implemented": false,
       "operator_ids": [],
-      "specimen_count": 0
-    },
-    {
-      "slug": "schoen12-exact",
-      "name": "SCHOEN12 (exact)",
-      "path": "surfaces/minimal-periodic/schoen12-exact.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "implemented",
-        "minimal",
-        "minimal-periodic",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
-      ],
-      "specimen_count": 0
-    },
-    {
-      "slug": "schoen14-exact",
-      "name": "SCHOEN14 (exact)",
-      "path": "surfaces/minimal-periodic/schoen14-exact.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "implemented",
-        "minimal",
-        "minimal-periodic",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
-      ],
       "specimen_count": 0
     },
     {

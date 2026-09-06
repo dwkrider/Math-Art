@@ -1159,8 +1159,16 @@ if _IN_BLENDER:
         assoc_angle: FloatProperty(
             name="Associate Angle", default=0.0,
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
-            description="Bonnet associate family angle; for the Karcher "
-                        "saddle tower it is the wing-clustering angle alpha")
+            description="Bonnet associate family angle.  0 means the "
+                        "surface's own canonical angle, which for an "
+                        "associate-family member is not the parent: the "
+                        "Lidinoid at 0 builds the Lidinoid (64.21 deg in "
+                        "the H family), with its closed cell.  Any other "
+                        "value sweeps the raw Bonnet morph at that angle "
+                        "and shows the honest fundamental piece, since a "
+                        "generic associate is not periodic.  For the "
+                        "Karcher saddle tower it is the wing-clustering "
+                        "angle alpha")
         # -- exact P/Gyroid/D preset: named shortcuts to the three iconic
         # Bonnet angles, leaving the raw angle slider independently settable.
         pgd_preset: EnumProperty(

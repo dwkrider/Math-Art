@@ -58,6 +58,11 @@ MERGE = {
     # already had one.
     "tpms_exact:SCHOEN_I8": "schoen-i8",
     "tpms_exact:SCHOEN_I9": "schoen-i9",
+    # Brakke's "formerly unnamed" Surface 12 is Schoen's F-RD(r), named
+    # on his own page; the exact-Weierstrass FRDR row already emits
+    # `schoen-frd-r`, so the Evolver cell merges in as its second
+    # construction, the same shape as I-8 / I-9 above.
+    "tpms_exact:SCHOEN12": "schoen-frd-r",
     # The box-symmetry series is ONE template selected by a sign vector,
     # so its three shipped members are three constructions of the same
     # catalogued family rather than three surfaces.  MERGE, not ALIAS:
@@ -338,6 +343,16 @@ ALIAS = {
     # above exist to prevent.  Pointing them at the existing
     # unsuffixed records also clears eight of the sixteen starfish
     # orphans `surfdb_validate.py` reports.
+    # Brakke's "formerly unnamed" Surface 14 is Schoen's I-WP(r), named
+    # on his own page ("chamber in a box with tubes running to the
+    # centers of eight edges ... 16-fold symmetry" -- the record's own
+    # description, verbatim).  Its minted `schoen14-exact` twin is gone;
+    # the bake table in tools/bake_fe_cells.py pins the same slug, so
+    # bake and mapping still agree by construction.  Surface 12
+    # (F-RD(r)) is a MERGE, not an alias: `schoen-frd-r` is already
+    # emitted by tpms_exact:FRDR, and two rows aliased to one slug is
+    # exactly the collision the build refuses.
+    "tpms_exact:SCHOEN14": "schoen-iwp-r",
     "tpms_exact:STARFISH_2_1_GENUS_31": "starfish-2-1-genus-31",
     "tpms_exact:STARFISH_2_2_GENUS_47": "starfish-2-2-genus-47",
     "tpms_exact:STARFISH_2_3_GENUS_63": "starfish-2-3-genus-63",
