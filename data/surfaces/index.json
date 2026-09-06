@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 432,
+  "implemented_count": 437,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -4729,7 +4729,7 @@
     },
     {
       "slug": "etruscan-venus-surface",
-      "name": "Etruscan Venus Surface",
+      "name": "Etruscan Venus",
       "path": "surfaces/topological/etruscan-venus-surface.json",
       "primary_family": "topological",
       "families": [
@@ -4737,7 +4737,7 @@
         "closed",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "topological",
         "tradition-sculptural"
       ],
@@ -4756,8 +4756,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.topological_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -6949,7 +6951,7 @@
         "closed",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "topological",
         "tradition-sculptural"
       ],
@@ -6968,8 +6970,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.topological_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8945,7 +8949,7 @@
         "closed",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "topological",
         "tradition-sculptural"
       ],
@@ -8964,8 +8968,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.topological_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -10323,14 +10329,14 @@
     },
     {
       "slug": "rotation-surface-with-proportional-curvatures",
-      "name": "Rotation Surface with Proportional Curvatures",
+      "name": "Proportional-Curvature Surface",
       "path": "surfaces/revolution/rotation-surface-with-proportional-curvatures.json",
       "primary_family": "revolution",
       "families": [
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "revolution",
         "tradition-classical",
         "weingarten"
@@ -10350,8 +10356,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.curiosity_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -12577,7 +12585,7 @@
         "aperiodic",
         "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "revolution",
         "tradition-classical",
         "tradition-physical"
@@ -12597,8 +12605,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.curiosity_surface_add"
+      ],
       "specimen_count": 0
     },
     {

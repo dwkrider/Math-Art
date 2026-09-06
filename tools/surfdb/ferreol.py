@@ -353,8 +353,6 @@ def records():
     out["solid-of-maximal-attraction"] = {
         "name": "Solid of Maximal Attraction",
         "family": "revolution", "mode": "parametric",
-        "blocked_by": "Not built.",
-        "resume": _RESUME_REVOLUTION,
         "sources": [
             _mc("Solid of maximal attraction", "ch1205_attraction_2"),
             "The chapter credits the Marquis de Saint-Jacques (1750) "
@@ -368,7 +366,12 @@ def records():
                 "The shape of the homogeneous solid that maximises "
                 "gravitational attraction at a boundary point: a "
                 "surface of revolution with spherical equation "
-                "r = a sqrt(sin(latitude))."},
+                "r = a sqrt(sin(latitude)).  SHIPPED with the claim "
+                "itself measured: the self-test integrates the "
+                "attraction from the mesh by per-triangle solid "
+                "angles, matches the closed form 4 pi a / 5 to 1 "
+                "percent, and checks it strictly beats every "
+                "equal-volume competitor r = c cos^p."},
         },
     }
 
@@ -435,8 +438,6 @@ def records():
     out["rotation-surface-with-proportional-curvatures"] = {
         "name": "Rotation Surface with Proportional Curvatures",
         "family": "revolution", "mode": "parametric",
-        "blocked_by": "Not built.",
-        "resume": _RESUME_REVOLUTION,
         "sources": [
             _mc("Rotation surface with proportional curvatures",
                 "ch1365_revolpropor_2"),
@@ -455,7 +456,14 @@ def records():
                 "are in a constant ratio k: meridian rho = a cos^k(t). "
                 "k = 1 gives the sphere, k = -1 a minimal surface "
                 "(catenoid); the four sign/size regimes of k give "
-                "spindles, domes, trumpets and annular waists."},
+                "spindles, domes, trumpets and annular waists.  "
+                "SHIPPED with k a live knob and the defining relation "
+                "itself measured: the self-test computes the discrete "
+                "meridian/parallel curvature ratio on the produced "
+                "meridian and checks it equals k, converging under "
+                "refinement, for k in {1, 2, -1, 0.5}; the k = 1 "
+                "member is verified to be the round sphere and k = -1 "
+                "exactly the catenoid rho = a cosh(z/a)."},
         },
     }
 

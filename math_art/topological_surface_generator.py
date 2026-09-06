@@ -102,6 +102,7 @@ import numpy as np
 # this module is the Blender layer over it.
 try:
     from .minsurf.topology import (build_boy, build_crosscap, build_morin,
+                                   build_ovalesque, ovalesque_point,
                                    build_steiner,
                                    build_genus, build_klein_bottle,
                                    build_klein_franzoni,
@@ -113,6 +114,7 @@ try:
                                    winding_conflict_edges)
 except ImportError:  # flat import outside the package
     from minsurf.topology import (build_boy, build_crosscap, build_morin,
+                                  build_ovalesque, ovalesque_point,
                                   build_steiner,
                                   build_genus, build_klein_bottle,
                                   build_klein_franzoni,
@@ -236,6 +238,21 @@ PRESET_ITEMS = [
      "renditions"),
     ('KLEIN8', "Klein Bottle (Figure-8)",
      "Figure-8 / twisted-torus Klein bottle immersion"),
+    ('ETRUSCAN_VENUS', "Etruscan Venus",
+     "Cox, Francis and Idaszak's Etruscan Venus (1989): the Roman "
+     "surface's curve family uncurled to the unit circle -- a singular "
+     "Klein bottle, the connected sum of two Roman surfaces, with 12 "
+     "pinch points.  Francis's ovalesque sweep F(1, 0)"),
+    ('IDA', "Ida Surface",
+     "The immersed Klein bottle at the far corner F(1, 1) of "
+     "Francis's ovalesque family: the Venus with its 12 pinch points "
+     "cancelled by the Romboy homotopy parameter -- a smooth "
+     "immersion, named for its programmer Ray Idaszak"),
+    ('KLEIN_NESTED', "Nested Klein Bottles",
+     "Klein bottles nested one inside another, in the manner of Alan "
+     "Bennett's glass series and Jos Leys's renders: tubes of "
+     "decreasing radius around the shared dumbbell directrix, so each "
+     "shell genuinely encloses the next"),
     ('MOBIUS', "Moebius Strip",
      "The canonical one-sided band (Moebius and Listing, 1858): a "
      "strip closed up after a half twist, as the standard ruled "
@@ -324,6 +341,20 @@ if _IN_BLENDER:
                     "The older closed-form polynomial immersion; "
                     "squatter than the classical shape, seam left "
                     "split as before")])
+        venus_waist: FloatProperty(
+            name="Waist", default=1.0, min=0.3, max=2.0,
+            description="Waist radius r1 of the ovalesque sweep; the "
+                        "height stays 2, so the classic figure has "
+                        "waist-to-height ratio near one half")
+        nest_shells: IntProperty(
+            name="Shells", default=3, min=2, max=5,
+            description="How many bottles to nest (Nested Klein "
+                        "Bottles preset only)")
+        nest_ratio: FloatProperty(
+            name="Shell Ratio", default=0.62, min=0.3, max=0.85,
+            description="Tube-radius ratio between one shell and the "
+                        "next: each inner bottle's tube radius is "
+                        "this fraction of the previous one's")
         klein_length: FloatProperty(
             name="Length", default=20.0, min=4.0, max=60.0,
             description="Length of the directrix the tube is swept "
@@ -438,6 +469,24 @@ if _IN_BLENDER:
             elif p == 'KLEIN8':
                 V, F = build_klein_figure8(self.res_u, self.res_v)
                 name = "Klein Bottle 8"
+            elif p == 'ETRUSCAN_VENUS':
+                V, F = build_ovalesque(self.res_u, self.res_v, 1.0,
+                                       0.0, self.venus_waist, 2.0)
+                seam_sharp = True
+                name = "Etruscan Venus"
+            elif p == 'IDA':
+                V, F = build_ovalesque(self.res_u, self.res_v, 1.0,
+                                       1.0, self.venus_waist, 2.0)
+                seam_sharp = True
+                name = "Ida Surface"
+            elif p == 'KLEIN_NESTED':
+                V, F = build_nested_klein(
+                    self.res_u, self.res_v, self.nest_shells,
+                    self.nest_ratio, self.klein_length,
+                    self.klein_width, self.klein_radius,
+                    self.klein_taper)
+                seam_sharp = True
+                name = "Nested Klein Bottles"
             elif p == 'SUDANESE':
                 V, F = build_sudanese_mobius(self.res_u, self.res_v)
                 name = "Sudanese Mobius Band"
@@ -525,6 +574,13 @@ if _IN_BLENDER:
                 lay.prop(self, 'strip_thickness')
                 lay.prop(self, 'ridge')
             else:
+                if p in ('ETRUSCAN_VENUS', 'IDA'):
+                    lay.prop(self, 'venus_waist')
+                if p == 'KLEIN_NESTED':
+                    for k in ('nest_shells', 'nest_ratio',
+                              'klein_length', 'klein_width',
+                              'klein_radius', 'klein_taper'):
+                        lay.prop(self, k)
                 if p == 'KLEIN':
                     lay.prop(self, 'klein_form')
                     if self.klein_form != 'POLYNOMIAL':
@@ -573,6 +629,32 @@ if _IN_BLENDER:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         for c in reversed(_classes):
             bpy.utils.unregister_class(c)
+
+
+def build_nested_klein(nu, nv, shells=3, ratio=0.62, a=20.0,
+                       b=8.0, c=5.5, d=0.4):
+    """(verts, faces) of SHELLS Franzoni dumbbell Klein bottles nested
+    one inside another -- Alan Bennett's glass series (Science Museum,
+    1995) and Jos Leys's renders, built as a composition of the
+    shipped bottle: every shell is the SAME closed dumbbell tube, with
+    the tube radius scaled by `ratio` from shell to shell around the
+    shared directrix.  Tubes of strictly decreasing radius around one
+    directrix are strictly nested, and the self-test measures exactly
+    that: every vertex of shell i+1 has |generalized winding number|
+    >= 1/2 with respect to shell i's closed mesh -- genuinely
+    enclosed, not merely concentric -- while each shell individually
+    stays closed, chi = 0 and one-sided."""
+    shells = max(2, int(shells))
+    ratio = min(0.9, max(0.1, float(ratio)))
+    verts, faces = [], []
+    for i in range(shells):
+        Vi, Fi = build_klein_franzoni(nu, nv, a, b,
+                                      c * ratio ** i,
+                                      d * ratio ** i)
+        off = len(verts)
+        verts.extend(tuple(v) for v in Vi)
+        faces.extend(tuple(off + k for k in f) for f in Fi)
+    return verts, faces
 
 
 def _selftest():
@@ -630,4 +712,193 @@ def _selftest():
         ok = all(c == 2 for c in cnt.values())
         print(f"twist n={n}: {len(V)} verts, watertight = {ok}")
         assert ok
+    # ---- nested Klein bottles ------------------------------------
+    # (1) each shell individually: closed, chi = 0, and ONE-SIDED --
+    #     orienting the faces by spanning-tree propagation must hit
+    #     conflicts (the Klein identification's winding flip), which a
+    #     torus (also chi = 0) would not; (2) the nesting is real, not
+    #     just concentric: every sampled vertex of shell i+1 has
+    #     |generalized winding number| >= 1/2 with respect to shell
+    #     i's closed mesh, measured by per-triangle solid angles.
+    import math as _m
+    shells = []
+    for i in range(3):
+        Vi, Fi = build_klein_franzoni(48, 24, 20.0, 8.0,
+                                      5.5 * 0.62 ** i, 0.4 * 0.62 ** i)
+        shells.append((Vi, Fi))
+        cnt = edge_face_counts(Fi)
+        chi = len(Vi) - len(cnt) + len(Fi)
+        nb = sum(1 for c in cnt.values() if c == 1)
+        assert chi == 0 and nb == 0, (i, chi, nb)
+        # orientation propagation: build face adjacency with the
+        # relative sense (same directed edge = same winding sense =
+        # conflict when both are to be consistently oriented)
+        owner = {}
+        adj = {}
+        for fi, f in enumerate(Fi):
+            for k in range(len(f)):
+                e = (f[k], f[(k + 1) % len(f)])
+                key = frozenset(e)
+                if key in owner:
+                    fj, ej = owner[key]
+                    same = (e == ej)   # traversed in the SAME direction
+                    adj.setdefault(fi, []).append((fj, same))
+                    adj.setdefault(fj, []).append((fi, same))
+                else:
+                    owner[key] = (fi, e)
+        orient = [0] * len(Fi)
+        orient[0] = 1
+        stack = [0]
+        conflicts = 0
+        while stack:
+            f1 = stack.pop()
+            for f2, same in adj.get(f1, []):
+                want = -orient[f1] if same else orient[f1]
+                if orient[f2] == 0:
+                    orient[f2] = want
+                    stack.append(f2)
+                elif orient[f2] != want:
+                    conflicts += 1
+        assert conflicts > 0, "shell %d oriented consistently: it "             "would be a torus, not a Klein bottle" % i
+    print("nested klein: each of 3 shells closed, chi = 0, one-sided "
+          "(orientation propagation conflicts > 0)")
+
+    def _wind(V, F, P):
+        tot = 0.0
+        for f in F:
+            for i in range(1, len(f) - 1):
+                ax, ay, az = (V[f[0]][0] - P[0], V[f[0]][1] - P[1],
+                              V[f[0]][2] - P[2])
+                bx, by, bz = (V[f[i]][0] - P[0], V[f[i]][1] - P[1],
+                              V[f[i]][2] - P[2])
+                cx, cy, cz = (V[f[i + 1]][0] - P[0],
+                              V[f[i + 1]][1] - P[1],
+                              V[f[i + 1]][2] - P[2])
+                la = _m.sqrt(ax * ax + ay * ay + az * az)
+                lb = _m.sqrt(bx * bx + by * by + bz * bz)
+                lc = _m.sqrt(cx * cx + cy * cy + cz * cz)
+                num = (ax * (by * cz - bz * cy)
+                       - ay * (bx * cz - bz * cx)
+                       + az * (bx * cy - by * cx))
+                den = (la * lb * lc
+                       + (ax * bx + ay * by + az * bz) * lc
+                       + (ax * cx + ay * cy + az * cz) * lb
+                       + (bx * cx + by * cy + bz * cz) * la)
+                tot += 2.0 * _m.atan2(num, den)
+        return tot / (4.0 * _m.pi)
+    for k in range(2):
+        Vout, Fout = shells[k]
+        Vin, _Fin = shells[k + 1]
+        step = max(1, len(Vin) // 25)
+        wmin = 1e9
+        for idx in range(0, len(Vin), step):
+            P = (Vin[idx][0] + 1e-7, Vin[idx][1] - 1e-7,
+                 Vin[idx][2] + 1e-7)
+            wmin = min(wmin, abs(_wind(Vout, Fout, P)))
+        assert wmin >= 0.5, (k, wmin)
+        print("nested klein: shell %d encloses shell %d -- min "
+              "|winding| %.3f over sampled vertices" % (k, k + 1, wmin))
+
+    # the assembled composition builds and keeps the shells' counts
+    V, F = build_nested_klein(32, 16, 3, 0.62)
+    cnt = edge_face_counts(F)
+    assert sum(1 for c in cnt.values() if c == 1) == 0
+    assert len(V) - len(cnt) + len(F) == 0   # 3 x chi(Klein) = 0
+    print("nested klein: assembled 3-shell mesh closed, chi = 0")
+
+    # ---- the ovalesque family (Etruscan Venus / Ida) --------------
+    # gates on what the source (Francis, Picturebook pp. 96/178-179)
+    # claims: (1) the closure identity P(theta+pi, -tau) = P(theta,
+    # tau) that glues the mesh; (2) the corner F(0,1) IS Apery's
+    # published Boy immersion, reproduced to 1e-12 with r1 = 1/sqrt 2,
+    # r2 = 3/2; (3) the l = 0 members double-cover (P(theta, tau+pi) =
+    # P(theta, tau)) -- projective planes -- while l = 1 members do
+    # not; (4) Venus and Ida mesh closed, chi = 0 and ONE-SIDED; (5)
+    # the Venus is SINGULAR (12 pinch points: the normal collapses,
+    # min |N| small) while Ida is a genuine immersion (min |N| bounded
+    # away) -- measured on the same grid.
+    import math as _m
+    rng = np.random.default_rng(7)
+    thr = rng.uniform(0.0, _m.pi, 40)
+    tar = rng.uniform(0.0, 2.0 * _m.pi, 40)
+    for lv, bv in ((0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)):
+        err = float(np.max(np.abs(
+            ovalesque_point(thr + _m.pi, -tar, lv, bv)
+            - ovalesque_point(thr, tar, lv, bv))))
+        assert err < 1e-12, (lv, bv, err)
+    s2 = _m.sqrt(2.0)
+    D = 2.0 - s2 * np.sin(3.0 * thr) * np.sin(2.0 * tar)
+    boy = np.stack([
+        (s2 * np.cos(2 * thr) * np.cos(tar) ** 2
+         + np.cos(thr) * np.sin(2 * tar)) / D,
+        (s2 * np.sin(2 * thr) * np.cos(tar) ** 2
+         - np.sin(thr) * np.sin(2 * tar)) / D,
+        3.0 * np.cos(tar) ** 2 / D], axis=-1)
+    err = float(np.max(np.abs(
+        ovalesque_point(thr, tar, 0.0, 1.0, 1.0 / s2, 1.5) - boy)))
+    assert err < 1e-12, err
+    err0 = float(np.max(np.abs(
+        ovalesque_point(thr, tar + _m.pi, 0.0, 0.7)
+        - ovalesque_point(thr, tar, 0.0, 0.7))))
+    err1 = float(np.min(np.abs(
+        ovalesque_point(thr, tar + _m.pi, 1.0, 0.7)
+        - ovalesque_point(thr, tar, 1.0, 0.7))))
+    assert err0 < 1e-12 and err1 > 1e-3, (err0, err1)
+    print("ovalesque: closure identity to 1e-12 at all four corners; "
+          "F(0,1) reproduces Apery's Boy immersion to 1e-12; l = 0 "
+          "double-covers (RP2), l = 1 does not (Klein)")
+
+    for nick, bv in (("venus", 0.0), ("ida", 1.0)):
+        V, F = build_ovalesque(48, 96, 1.0, bv)
+        cnt = edge_face_counts(F)
+        chi = len(V) - len(cnt) + len(F)
+        nb = sum(1 for c in cnt.values() if c == 1)
+        assert chi == 0 and nb == 0, (nick, chi, nb)
+        owner, adj = {}, {}
+        for fi, f in enumerate(F):
+            for k in range(len(f)):
+                e = (f[k], f[(k + 1) % len(f)])
+                key = frozenset(e)
+                if key in owner:
+                    fj, ej = owner[key]
+                    adj.setdefault(fi, []).append((fj, e == ej))
+                    adj.setdefault(fj, []).append((fi, e == ej))
+                else:
+                    owner[key] = (fi, e)
+        orient = [0] * len(F)
+        orient[0] = 1
+        stack = [0]
+        conflicts = 0
+        while stack:
+            f1 = stack.pop()
+            for f2, same in adj.get(f1, []):
+                want = -orient[f1] if same else orient[f1]
+                if orient[f2] == 0:
+                    orient[f2] = want
+                    stack.append(f2)
+                elif orient[f2] != want:
+                    conflicts += 1
+        assert conflicts > 0, nick
+        print(f"{nick:10s}: closed, chi = 0, one-sided "
+              f"(orientation conflicts)")
+
+    def _minN(bv):
+        h = 1e-5
+        best = 1e9
+        for thv in np.linspace(0.001, _m.pi - 0.001, 60):
+            tav = np.linspace(0.0, 2.0 * _m.pi, 120, endpoint=False)
+            dth = (ovalesque_point(thv + h, tav, 1.0, bv)
+                   - ovalesque_point(thv - h, tav, 1.0, bv)) / (2 * h)
+            dta = (ovalesque_point(thv, tav + h, 1.0, bv)
+                   - ovalesque_point(thv, tav - h, 1.0, bv)) / (2 * h)
+            nn = np.linalg.norm(np.cross(dth, dta), axis=-1)
+            best = min(best, float(nn.min()))
+        return best
+    mn_v = _minN(0.0)
+    mn_i = _minN(1.0)
+    assert mn_v < 0.08 and mn_i > 0.5, (mn_v, mn_i)
+    print("ovalesque: Venus is singular as the source says (normal "
+          "collapses at pinch points, min |N| %.3f) while Ida is a "
+          "genuine immersion (min |N| %.3f)" % (mn_v, mn_i))
+
     print("standalone tests passed")

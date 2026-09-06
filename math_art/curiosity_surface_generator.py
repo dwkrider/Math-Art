@@ -535,6 +535,71 @@ def _thin(profile, keep):
     return out
 
 
+def attraction_profile(a=1.0, steps=96):
+    """[(rho, z)] of the SOLID OF MAXIMAL ATTRACTION: the homogeneous
+    solid maximising the gravitational pull at a boundary point (the
+    origin here), credited to the Marquis de Saint-Jacques (1750) and
+    Gauss (1830).  A point P is worth including iff its pull along the
+    axis, cos(theta)/|P|^2, exceeds a fixed threshold 1/a^2, so the
+    boundary is r(theta) = a sqrt(cos theta) -- the polar form of the
+    record (sqrt(sin latitude)).  Closed: the profile runs from the
+    apex (0, a) on the axis down to the attracted point at the origin,
+    and both ends weld to the axis under _revolve."""
+    n = max(8, int(steps))
+    pts = []
+    for i in range(n + 1):
+        th = 0.5 * math.pi * (n - i) / n
+        c = math.cos(th)
+        if c < 1e-15:          # th = pi/2 in floats: weld to the axis
+            c = 0.0
+        r = a * math.sqrt(c)
+        pts.append((r * math.sin(th), r * math.cos(th)))
+    return pts
+
+
+def prop_curv_profile(a=1.0, k=2.0, steps=96, reach=2.5):
+    """[(rho, z)] of the ROTATION SURFACE WITH PROPORTIONAL
+    CURVATURES: meridian curvature = k times parallel curvature
+    everywhere (a Weingarten relation; Kuhnel, Differential Geometry,
+    p. 95).  Integrating kappa_m = k kappa_p for a profile whose
+    outward normal makes angle t with the axis gives
+    sin t = (rho/a)^k, i.e. rho(t) = a sin(t)^(1/k) and
+    dz = tan(t) drho, so z(t) = (a/k) integral of sin(u)^(1/k) --
+    non-elementary for general k, integrated here by fine trapezoid.
+    k = 1 is the round sphere of radius a; k = -1 is EXACTLY the
+    catenoid rho = a cosh(z/a); k > 0 closes on the axis at both
+    poles, k < 0 flares to rho = reach * a.  Both facts and the
+    curvature ratio itself are measured in the self-test."""
+    n = max(16, int(steps))
+    if abs(k) < 1e-3:
+        # kappa_m = 0: the straight-meridian limit, a cylinder
+        return [(a, a * (2.0 * i / n - 1.0)) for i in range(n + 1)]
+    if k > 0.0:
+        t0, t1 = 0.0, math.pi
+    else:
+        # clamp where rho reaches reach * a: sin t0 = reach^k (< 1)
+        t0 = math.asin(min(1.0, max(1e-9, reach ** k)))
+        t1 = math.pi - t0
+    # z by cumulative trapezoid on a x8 subgrid, centred at t = pi/2
+    sub = 8 * n
+    dt = (t1 - t0) / sub
+    ts = [t0 + dt * j for j in range(sub + 1)]
+
+    def integ(t):
+        return math.sin(min(max(t, 1e-12), math.pi - 1e-12))             ** (1.0 / k)
+    zs = [0.0]
+    for j in range(sub):
+        zs.append(zs[-1] + 0.5 * dt * (integ(ts[j]) + integ(ts[j + 1])))
+    mid = zs[sub // 2]
+    pts = []
+    for i in range(n + 1):
+        j = (sub * i) // n
+        t = ts[j]
+        rho = a * (math.sin(t) ** (1.0 / k)) if 0.0 < t < math.pi             else 0.0
+        pts.append((rho, (a / k) * (zs[j] - mid)))
+    return pts
+
+
 def _revolve(profile, segments=96, caps=False):
     """Revolve a (rho, z) profile about Oz.
 
@@ -993,6 +1058,18 @@ if _IN_BLENDER:
                     "PERPENDICULAR to its asymptote; the pseudosphere "
                     "revolves it about the asymptote itself.  Unlike "
                     "the pseudosphere it is not of constant curvature"),
+                   ('ATTRACTION', "Solid of Maximal Attraction",
+                    "The homogeneous solid that pulls hardest on a "
+                    "point of its boundary (Saint-Jacques 1750, Gauss "
+                    "1830): r = a sqrt(cos theta) about the attracted "
+                    "point, beating the equal-volume sphere by about "
+                    "2.6 percent"),
+                   ('PROP_CURV', "Proportional-Curvature Surface",
+                    "The surface of revolution whose meridian "
+                    "curvature is k times its parallel curvature "
+                    "everywhere: k = 1 the sphere, k = -1 the "
+                    "catenoid, other k spindles, domes, trumpets and "
+                    "waists"),
                    ('CYCLIDE_RING', "Dupin Cyclide (ring)",
                     "Inversion of a ring torus (R > r); every "
                     "line of curvature is a circle"),
@@ -1078,6 +1155,12 @@ if _IN_BLENDER:
             description="Amplitude-to-period ratio a/b of the meridian "
                         "x = a cos(z/b): larger is fatter beads "
                         "(revolution of the sinusoid only)")
+        curv_ratio: FloatProperty(
+            name="Curvature Ratio", default=2.0, min=-3.0, max=3.0,
+            description="Ratio k of meridian to parallel curvature: "
+                        "1 the sphere, -1 the catenoid, 0 the "
+                        "cylinder; k > 0 closed spindles and domes, "
+                        "k < 0 open trumpets and waists")
         tract_reach: FloatProperty(
             name="Profile Reach", default=3.0, min=0.5, max=8.0,
             description="How far along the tractrix the meridian runs "
@@ -1229,6 +1312,16 @@ if _IN_BLENDER:
                     tractroid2_profile(self.dome_a, self.tract_reach,
                                        2 * res), 2 * res)
                 name = "Second Tractroid"
+            elif self.surface == 'ATTRACTION':
+                verts, faces, rims = _revolve(
+                    attraction_profile(self.dome_a, 2 * res), 2 * res)
+                name = "Solid of Maximal Attraction"
+            elif self.surface == 'PROP_CURV':
+                verts, faces, rims = _revolve(
+                    prop_curv_profile(self.dome_a, self.curv_ratio,
+                                      2 * res, self.tract_reach),
+                    2 * res)
+                name = "Proportional-Curvature Surface"
             elif self.surface == 'BOUGUER':
                 verts, faces, rims = _revolve(
                     _thin(bouguer_profile(self.dome_a, self.dome_extent,
@@ -1374,6 +1467,11 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             elif self.surface == 'TRACTROID2':
                 for k in ('dome_a', 'tract_reach'):
+                    lay.prop(self, k)
+            elif self.surface == 'ATTRACTION':
+                lay.prop(self, 'dome_a')
+            elif self.surface == 'PROP_CURV':
+                for k in ('dome_a', 'curv_ratio', 'tract_reach'):
                     lay.prop(self, k)
             elif self.surface == 'BOUGUER':
                 for k in ('dome_a', 'dome_extent'):
@@ -1802,5 +1900,117 @@ def _selftest():
     assert _finite(V)
     print("tropical calabi-yau: 130 two-cells, one per edge of the "
           "triangulation it is dual to")
+
+    # ---- solid of maximal attraction ---------------------------
+    # (1) every vertex obeys the polar equation r^2 = a^2 cos(theta);
+    # (2) the solid is watertight with the closed-form volume
+    #     4 pi a^3 / 15; (3) THE claim the shape exists for, measured:
+    #     the attraction at the origin, integrated from the mesh by
+    #     per-triangle solid angles (A = sum of Omega * mean(z) since
+    #     cos(theta) * r = z), equals the closed form 4 pi a / 5 and
+    #     STRICTLY BEATS every equal-volume competitor r = c cos^p
+    #     (closed forms: A(p) = 2 pi c / (2 + p),
+    #     c = a (2 (3p + 1) / 5)^(1/3)).
+    verts, faces, _rims = _revolve(attraction_profile(1.0, 128), 128)
+    assert _finite(verts) and _valid(verts, faces)
+    assert _watertight(faces)
+    worst = 0.0
+    for (x, y, z) in verts:
+        r = math.sqrt(x * x + y * y + z * z)
+        if r < 1e-9:
+            continue
+        worst = max(worst, abs(r * r - z / r))
+    assert worst < 1e-9, worst
+    vol = _volume(verts, faces)
+    assert abs(vol - 4.0 * math.pi / 15.0) < 0.01 * vol, vol
+
+    def _soang(a3, b3, c3):
+        la = math.sqrt(sum(t * t for t in a3))
+        lb = math.sqrt(sum(t * t for t in b3))
+        lc = math.sqrt(sum(t * t for t in c3))
+        num = (a3[0] * (b3[1] * c3[2] - b3[2] * c3[1])
+               - a3[1] * (b3[0] * c3[2] - b3[2] * c3[0])
+               + a3[2] * (b3[0] * c3[1] - b3[1] * c3[0]))
+        den = (la * lb * lc
+               + sum(a3[i] * b3[i] for i in range(3)) * lc
+               + sum(a3[i] * c3[i] for i in range(3)) * lb
+               + sum(b3[i] * c3[i] for i in range(3)) * la)
+        return 2.0 * math.atan2(num, den)
+    att = 0.0
+    for f in faces:
+        for i in range(1, len(f) - 1):
+            a3, b3, c3 = verts[f[0]], verts[f[i]], verts[f[i + 1]]
+            if min(math.sqrt(sum(t * t for t in v3))
+                   for v3 in (a3, b3, c3)) < 1e-9:
+                continue
+            w = (a3[2] + b3[2] + c3[2]) / 3.0
+            att += abs(_soang(a3, b3, c3)) * w
+    want = 4.0 * math.pi / 5.0
+    assert abs(att - want) < 0.01 * want, att
+
+    def _att_p(pp):
+        cc = (2.0 * (3.0 * pp + 1.0) / 5.0) ** (1.0 / 3.0)
+        return 2.0 * math.pi * cc / (2.0 + pp)
+    for pp in (0.3, 0.42, 0.6, 0.8):
+        assert _att_p(0.5) > _att_p(pp) + 1e-4, pp
+    print("solid of maximal attraction: r^2 = cos(theta) at every "
+          "vertex to 1e-9; watertight, volume 4 pi/15 to 1 percent; "
+          "attraction from mesh solid angles = 4 pi/5 to 1 percent "
+          "and strictly beats every equal-volume cos^p competitor")
+
+    # ---- proportional-curvature rotation surface ----------------
+    # the defining Weingarten relation MEASURED on the meridian the
+    # mesh is built from: discrete meridian curvature (turning angle
+    # over arclength) divided by parallel curvature (normal's radial
+    # component over rho) equals k, converging under refinement --
+    # plus the two exact members: k = 1 IS the unit sphere and
+    # k = -1 IS the catenoid rho = cosh z.
+    def _ratio(kk, steps):
+        prof = prop_curv_profile(1.0, kk, steps, 2.5)
+        seg = []
+        for (r0, z0), (r1, z1) in zip(prof, prof[1:]):
+            seg.append((r1 - r0, z1 - z0))
+        rats = []
+        for i in range(1, len(prof) - 1):
+            d0, d1 = seg[i - 1], seg[i]
+            l0 = math.hypot(*d0)
+            l1 = math.hypot(*d1)
+            if min(l0, l1) < 1e-12:
+                continue
+            dphi = math.atan2(d1[1], d1[0]) - math.atan2(d0[1], d0[0])
+            while dphi > math.pi:
+                dphi -= 2.0 * math.pi
+            while dphi < -math.pi:
+                dphi += 2.0 * math.pi
+            km = dphi / (0.5 * (l0 + l1))
+            tz = 0.5 * (d0[1] / l0 + d1[1] / l1)
+            rho = prof[i][0]
+            if rho < 1e-6 or abs(tz) < 1e-9:
+                continue
+            kp = tz / rho
+            rats.append(km / kp)
+        rats.sort()
+        return rats[len(rats) // 2]
+    for kk in (1.0, 2.0, -1.0, 0.5):
+        e48 = abs(_ratio(kk, 48) - kk)
+        e96 = abs(_ratio(kk, 96) - kk)
+        assert e96 < 2e-3, (kk, e96)
+        assert e96 < e48, (kk, e48, e96)
+    prof = prop_curv_profile(1.0, 1.0, 96, 2.5)
+    zc = sum(z for _r, z in prof) / len(prof)
+    worst = max(abs(math.hypot(r, z - zc) - 1.0) for r, z in prof)
+    assert worst < 1e-4, worst
+    prof = prop_curv_profile(1.0, -1.0, 96, 2.5)
+    worst = max(abs(r - math.cosh(z)) for r, z in prof)
+    assert worst < 1e-4, worst
+    verts, faces, _rims = _revolve(prop_curv_profile(1.0, 2.0, 64,
+                                                     2.5), 64)
+    assert _finite(verts) and _valid(verts, faces)
+    assert _watertight(faces)
+    print("proportional curvatures: measured meridian/parallel "
+          "curvature ratio = k for k in {1, 2, -1, 0.5}, converging "
+          "under refinement; k = 1 is the unit sphere and k = -1 the "
+          "catenoid rho = cosh z, both to 1e-4; k = 2 spindle "
+          "watertight")
 
     print("miscellaneous surfaces standalone tests passed")

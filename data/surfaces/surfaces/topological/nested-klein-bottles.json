@@ -8,15 +8,14 @@
     "closed",
     "def-parametric",
     "immersed",
-    "not-implemented",
+    "implemented",
     "topological",
     "tradition-sculptural"
   ],
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "A composition of the shipped Klein bottle rather than new mathematics; named by Jos Leys."
+    "note": "A composition of the shipped Klein bottle rather than new mathematics; Alan Bennett's glass series and Jos Leys's renders.  SHIPPED as tubes of decreasing radius around the shared dumbbell directrix; the self-test verifies each shell is closed, chi = 0 and ONE-SIDED (orientation propagation must conflict -- a torus would not), and that the nesting is real: every sampled vertex of each inner shell has |generalized winding number| >= 1/2 with respect to the shell outside it, not merely a concentric look."
   },
   "curvature": {
     "condition": "none",
@@ -34,14 +33,22 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.",
-      "resume": "The Geometry Center's Topological Zoo and C. Sequin's sculptural pages are the sources; see research/surface-gallery-gap-review.md Part 3."
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "KLEIN_NESTED",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "Klein bottle: F. Klein (1882).  The default classical bottle shape is built by the tube scheme of G. Franzoni, \"The Klein bottle in its classical shape: a further step towards a good parametrization\", arXiv:0909.5354 (2009): a tube of varying radius swept along a plane directrix, with the dumbbell-curve directrix of the paper's section 4 (which closes) as the default and its section-3 piriform directrix and the older polynomial immersion as alternatives.  A converted copy is in research/papers/ surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.",
+      "Mobius band (the plain ruled one-sided strip): A. F. Mobius (1858) and J. B. Listing (1858), as the standard half-twist ruled parametrization.",
+      "Boy's surface: W. Boy, Math. Ann. 57 (1903), here via the R. Bryant - R. Kusner parametrization.",
+      "Cross-cap and Roman surface: two immersions of RP^2 due to J. Steiner (Rome, 1844).",
+      "Veronese surface: G. Veronese (1854-1917); see M. Berger, \"Geometry Revealed\", Springer 2010, p. 47.  The two named projections used as the endpoints of the Steiner family here are from R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com, chapter \"surface de Veronese\"; a converted copy is in research/books/ mathcurve_encyclopedie_formes_mathematiques/. Mobius band: A. F. Mobius (1858).",
+      "Sudanese Mobius band: H. B. Lawson, \"Complete Minimal Surfaces in S^3\", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman and Daniel Asimov (cf. G. Francis, \"A Topological Picturebook\", Springer 1987).",
       "C. H. Sequin, topological sculpture pages, University of California, Berkeley.",
       "The Geometry Center Topological Zoo, University of Minnesota."
     ]

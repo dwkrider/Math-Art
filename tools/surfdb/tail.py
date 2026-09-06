@@ -143,15 +143,36 @@ ALGEBRAIC = [
 
 TOPOLOGICAL = [
     ("etruscan-venus-surface", "Etruscan Venus Surface",
-     "An immersed non-orientable surface; a staple of the Geometry Center "
-     "exhibits and of Sequin's sculptural work."),
+     "Cox, Francis and Idaszak's Etruscan Venus (1989): F(1, 0) of "
+     "Francis's ovalesque family (A Topological Picturebook, pp. "
+     "178-179) -- the Roman surface's curve family uncurled to the "
+     "unit circle, a SINGULAR Klein bottle (connected sum of two "
+     "Roman surfaces) with 12 pinch points.  SHIPPED from the "
+     "ovalesque sweep, whose self-test reproduces Apery's published "
+     "Boy immersion exactly at the F(0, 1) corner, verifies the "
+     "closure identity, chi = 0 and one-sidedness, and measures the "
+     "singularity the source specifies: the surface normal collapses "
+     "at the pinch points, where Ida's stays bounded away."),
     ("ida-surface", "Ida Surface",
-     "A companion to the Etruscan Venus in the same family."),
+     "F(1, 1) of Francis's ovalesque family: the Venus with its 12 "
+     "pinch points cancelled by the Romboy parameter -- a SMOOTH "
+     "immersed Klein bottle, named for programmer Ray Idaszak.  "
+     "SHIPPED from the same gated ovalesque sweep as the Venus; the "
+     "self-test verifies chi = 0, one-sidedness, and that the normal "
+     "stays bounded away from zero (a genuine immersion, unlike the "
+     "Venus on the same grid)."),
     ("boys-planet", "Boy's Planet",
      "A variant of Boy's surface described by Carlo Sequin."),
     ("nested-klein-bottles", "Nested Klein Bottles",
      "A composition of the shipped Klein bottle rather than new "
-     "mathematics; named by Jos Leys."),
+     "mathematics; Alan Bennett's glass series and Jos Leys's "
+     "renders.  SHIPPED as tubes of decreasing radius around the "
+     "shared dumbbell directrix; the self-test verifies each shell "
+     "is closed, chi = 0 and ONE-SIDED (orientation propagation must "
+     "conflict -- a torus would not), and that the nesting is real: "
+     "every sampled vertex of each inner shell has |generalized "
+     "winding number| >= 1/2 with respect to the shell outside it, "
+     "not merely a concentric look."),
 ]
 
 

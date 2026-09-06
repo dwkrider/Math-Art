@@ -113,6 +113,8 @@ FAMILY_OVERRIDE = {
     "curiosity:PENDANT_DROP": "revolution",
     "curiosity:TORUS": "revolution",
     "curiosity:ALYSSEID": "revolution",
+    "curiosity:ATTRACTION": "revolution",
+    "curiosity:PROP_CURV": "revolution",
     "curiosity:SINUSOID_REV": "revolution",
     "curiosity:TRACTROID2": "revolution",
     "curiosity:SCHWARZ_LANTERN": "discrete",

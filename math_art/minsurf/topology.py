@@ -351,6 +351,66 @@ def build_crosscap(nu, nv):
     return _rp2_quotient(nu, nv, _crosscap_pt, 0.5)
 
 
+def ovalesque_point(th, ta, l, b, r1=1.0, r2=2.0):
+    """Francis's ovalesque sweep F(l, b) (A Topological Picturebook,
+    pp. 96, 178-179): the plane quartic
+
+        rho(tau) = ((1 - l) cos tau + l)
+                   / (1 - (b/sqrt 2) sin(3 theta) sin(2 tau))
+
+    carried into space by the affine maps L(theta) = <J, K> with
+    J = (r1 cos 2 theta, r1 sin 2 theta, r2) (altitudinal axis) and
+    K = (cos theta, -sin theta, 0) (basal axis):
+
+        P = rho cos(tau) J(theta) + rho sin(tau) K(theta).
+
+    Corners of the family: F(0,0) is Apery's cylindrical Roman
+    surface, F(0,1) IS Apery's published Boy immersion (exactly, with
+    r1 = 1/sqrt 2, r2 = 3/2 -- the self-test checks this to 1e-12),
+    F(1,0) the ETRUSCAN VENUS (a singular Klein bottle: the connected
+    sum of two Roman surfaces, with 12 pinch points), F(1,1) IDA (a
+    smooth immersed Klein bottle).  The closure identity
+    P(theta + pi, -tau) = P(theta, tau) glues the mesh; for l = 0 the
+    additional symmetry P(theta, tau + pi) = P(theta, tau) makes the
+    image a double-covered projective plane instead."""
+    den = 1.0 - (b / math.sqrt(2.0)) * np.sin(3.0 * th)         * np.sin(2.0 * ta)
+    rho = ((1.0 - l) * np.cos(ta) + l) / den
+    A = rho * np.cos(ta)
+    B = rho * np.sin(ta)
+    return np.stack([A * r1 * np.cos(2.0 * th) + B * np.cos(th),
+                     A * r1 * np.sin(2.0 * th) - B * np.sin(th),
+                     A * r2], axis=-1)
+
+
+def build_ovalesque(nu, nv, l, b, r1=1.0, r2=2.0):
+    """Mesh F(l, b) on the closed (Klein) domain: theta runs over
+    [0, pi) and tau over [0, 2 pi), and the theta = pi row is glued to
+    theta = 0 under tau -> -tau (the closure identity above), so the
+    mesh is CLOSED with chi = 0.  For l = 1 (Venus, Ida) it is
+    one-sided -- a Klein bottle; the self-test measures that, and the
+    pinch-point distinction between the singular Venus and the
+    immersed Ida.  Returns (verts, faces)."""
+    nu = max(8, int(nu))
+    nv = max(8, int(nv))
+    th = math.pi * np.arange(nu)[:, None] / nu
+    ta = TAU * np.arange(nv)[None, :] / nv
+    V = ovalesque_point(th, ta, float(l), float(b), r1, r2)
+    verts = [tuple(v) for v in V.reshape(-1, 3)]
+
+    def vid(i, j):
+        if i < nu:
+            return i * nv + j % nv
+        return (nv - j) % nv          # theta = pi ~ theta = 0, tau -> -tau
+    faces = []
+    for i in range(nu):
+        for j in range(nv):
+            q = (vid(i, j), vid(i, j + 1),
+                 vid(i + 1, j + 1), vid(i + 1, j))
+            if len(set(q)) == 4:
+                faces.append(q)
+    return verts, faces
+
+
 def build_roman(nu, nv):
     nu += (-nu) % 4            # quarter-offset grid: need 4 | nu
     return _rp2_quotient(nu, nv, _roman_pt, 0.25)

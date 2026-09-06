@@ -7,7 +7,7 @@
     "aperiodic",
     "def-parametric",
     "immersed",
-    "not-implemented",
+    "implemented",
     "revolution",
     "tradition-classical",
     "tradition-physical"
@@ -15,8 +15,20 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "The shape of the homogeneous solid that maximises gravitational attraction at a boundary point: a surface of revolution with spherical equation r = a sqrt(sin(latitude))."
+    "note": "r(theta) = a sqrt(cos theta) about the attracted boundary point at the origin, a = 1 fixed to the operator default; u is the colatitude theta",
+    "x": "sqrt(cos(u))*sin(u)*cos(v)",
+    "y": "sqrt(cos(u))*sin(u)*sin(v)",
+    "z": "cos(u)**(3/2)",
+    "u_range": [
+      "0",
+      "pi/2"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_v": true,
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -32,14 +44,22 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.",
-      "resume": "A meridian-profile surface-of-revolution row; the radial builders in math_art/curiosity_surface_generator.py (build_radial, build_fresnel) are the pattern to follow, and the parametrization is in the cited mirror chapter."
+      "generator": "math_art.curiosity_surface_generator",
+      "operator_id": "mesh.curiosity_surface_add",
+      "key": "ATTRACTION",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.28 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.01561).",
     "sources": [
+      "D. von Seggern, \"CRC Standard Curves and Surfaces\" (1993), p. 304 -- Fresnel's elasticity surface.",
+      "A. Robin (2004), plotted after M. Trott, \"The Mathematica GuideBook for Graphics\" (2004), p. 103 -- the paper bag surface.",
+      "O. Knill (2017); M. A. Villarino and J. C. Varilly (2024) -- the trihyperboloid and its volume ln 256.",
+      "C. Dupin, \"Applications de Geometrie et de Mechanique\", Paris 1822;",
+      "B. Odehnal, \"Ortho-Circles of Dupin Cyclides\", J. Geometry Graphics 10 (2006) 1-21 -- the inversion construction and the ring / horn / spindle classification.",
+      "J. Tannery, Bulletin des sciences mathematiques, 2e serie, 16 (1892) 190; O. Zoll, \"Ueber Flaechen mit Scharen geschlossener geodaetischer Linien\", Math. Ann. 57 (1903) 108-133; A. L. Besse, \"Manifolds all of whose Geodesics are Closed\", Springer 1978.",
       "R. Ferreol, \"Solid of maximal attraction\", Encyclopedie des formes mathematiques remarquables, mathcurve.com; local mirror chapter ch1205_attraction_2 (S:/data/math_art/references/websites/mathcurve/book/surfaces/ch1205_attraction_2.md).",
       "The chapter credits the Marquis de Saint-Jacques (1750) and C. F. Gauss (1830)."
     ]
