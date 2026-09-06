@@ -414,6 +414,10 @@ ALIAS = {
     # The preset label carries its node count ("Sarti Dodecic (600
     # nodes)"), which would slugify to a second record beside the
     # curated `sarti-dodecic` -- the twin-record trap again.
+    # The zoo label names the family ("... (Karcher family)"), which
+    # would slugify to a second record beside the curated
+    # `four-noid-two-symmetry-planes`.
+    "minsurf:SPH_4NOID_SYM2": "four-noid-two-symmetry-planes",
     "algebraic:SARTI_DODECIC": "sarti-dodecic",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",

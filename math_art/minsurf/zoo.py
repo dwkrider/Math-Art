@@ -2094,6 +2094,25 @@ WE_SURFACES['SP_SCHERK4'] = {
 SURFACE_FAMILY['SP_SCHERK4'] = 'SINGLY'
 
 
+# Karcher's 2-parameter family of 4-noids with two orthogonal
+# symmetry planes (Tokyo notes pp. 30ff; Weber's 4-Noid_sym_2.nb).
+# The Jorge-Meeks 4-noid and the tetrahedroid both live in it.  The
+# blog page carries no formulas at all -- the Weierstrass data,
+# tau(lambda) and rho(lambda) are in the notebook it links, all in
+# closed form, and there is no FindRoot in it anywhere because
+# Karcher solves the period problem symbolically.
+WE_SURFACES['SPH_4NOID_SYM2'] = {
+    'label': "4-Noid with Two Symmetry Planes (Karcher family)",
+    'family': 'SPHERES',
+    'mesher': we.four_noid_sym2_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "End Position (lambda)",
+    'storeys_label': "End Reach",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SPH_4NOID_SYM2'] = 'SPHERES'
+
+
 WE_SURFACES['DP_CATENOID_FIELD'] = {
     'label': "Catenoid Field (square-torus member)",
     'family': 'DOUBLY',

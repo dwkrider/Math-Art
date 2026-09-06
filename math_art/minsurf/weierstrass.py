@@ -4194,6 +4194,145 @@ def catenoid_field_W(bb=1.0, t=1.0):
     return W
 
 
+def four_noid_sym2_params(lam):
+    """Karcher's tau and rho for the 4-noid, in closed form.
+
+    Both are printed outright in Weber's `4-Noid_sym_2.nb`; the
+    notebook has no FindRoot anywhere, because this family's period
+    problem is solved in closed form rather than numerically.  The
+    nested radical needs lambda > 1 -- sqrt(lambda - 1) is a factor
+    of the denominator -- which is the family's real parameter range,
+    not a numerical guard.
+    """
+    L = float(lam)
+    big = (1.0 + 2.0 * L ** 4 - 30.0 * L ** 8 + 2.0 * L ** 12 + L ** 16
+           + (1.0 + L ** 4) * math.sqrt(
+               4.0 + 45.0 * L ** 4 + 96.0 * L ** 8 - 146.0 * L ** 12
+               + 96.0 * L ** 16 + 45.0 * L ** 20 + 4.0 * L ** 24))
+    tau = math.sqrt(big) / (math.sqrt(L - 1.0) * L * math.sqrt(1.0 + L)
+                            * math.sqrt(1.0 + L * L)
+                            * math.sqrt(3.0 + 22.0 * L ** 4 + 3.0 * L ** 8))
+    rho = math.sqrt(1.0 + 5.0 * L ** 4) / (
+        L * math.sqrt(L ** 8 - 6.0 * L ** 2 * tau ** 2
+                      + 2.0 * L ** 6 * tau ** 2 + tau ** 4
+                      + L ** 4 * (5.0 - 3.0 * tau ** 4)))
+    return tau, rho
+
+
+def four_noid_sym2_patch(lam, mu, nx, ny, rmin=-3.0, rmax=3.0, eps=1e-7):
+    """One quarter of the 4-noid, integrated from its Weierstrass data.
+
+    G(z) = rho z (z - tau)(z + tau),
+    dh   = z (z - tau)(z + tau) / (z^2 - lam^2)^2 / (z^2 + 1/lam^2)^2,
+
+    on the notebook's strip: u = x + iy with y in (0, pi), and
+    z = sqrt((e^u + lam^2 mu) / (mu - e^u lam^2)).  The notebook also
+    prints a closed-form immersion; this integrates the data instead,
+    which is the same surface and lets the end periods be MEASURED
+    rather than trusted.
+
+    The chart has a pole of its own where mu - e^u lam^2 vanishes --
+    at y = 0, x = log(mu/lam^2).  There z runs to infinity while the
+    metric runs to zero, so the surface is perfectly regular there and
+    only the coordinate blows up; it is why the notebook splits its
+    x-range at log(mu/lam^2) and log(lam^2 mu) and samples each piece
+    separately, and why the conformality residual is large in a thin
+    strip around it while converging O(h^2) everywhere else.
+    """
+    tau, rho = four_noid_sym2_params(lam)
+    t0 = math.log(mu / (lam * lam))
+    t1 = math.log(lam * lam * mu)
+    # the notebook's three-piece x-range, so grid lines land ON the
+    # two special columns instead of straddling them
+    n1 = max(4, int(nx * 0.25))
+    n2 = max(6, int(nx * 0.45))
+    n3 = max(4, nx - n1 - n2)
+    x = np.concatenate([np.linspace(rmin, t0, n1, endpoint=False),
+                        np.linspace(t0, t1, n2, endpoint=False),
+                        np.linspace(t1, rmax, n3)])
+    y = np.linspace(eps, math.pi - eps, ny)
+    U = x[:, None] + 1j * y[None, :]
+    E = np.exp(U)
+    D = mu - E * lam * lam
+    Z = np.sqrt((E + lam * lam * mu) / D)
+    # dz/du in closed form: differentiating z^2 = N/D gives
+    # d(z^2)/du = e^u mu (1 + lam^4) / D^2, since N'D - N D' collapses
+    # to e^u mu (1 + lam^4).  Doing this numerically instead leaves a
+    # residual that does NOT converge under refinement.
+    dZ = E * mu * (1.0 + lam ** 4) / (2.0 * Z * D * D)
+    g = rho * Z * (Z - tau) * (Z + tau)
+    dh = (Z * (Z - tau) * (Z + tau)
+          / ((Z ** 2 - lam ** 2) ** 2 * (Z ** 2 + 1.0 / lam ** 2) ** 2))
+    W = np.stack([0.5 * (1.0 / g - g) * dh,
+                  0.5j * (1.0 / g + g) * dh,
+                  dh], axis=-1) * dZ[..., None]
+    acc = np.zeros(W.shape, dtype=complex)
+    acc[1:] = np.cumsum(0.5 * (W[1:] + W[:-1])
+                        * np.diff(x)[:, None, None], axis=0)
+    col = W[0] * 1j                      # du = i dy along the y edge
+    off = np.zeros(col.shape, dtype=complex)
+    off[1:] = np.cumsum(0.5 * (col[1:] + col[:-1])
+                        * np.diff(y)[:, None], axis=0)
+    return np.real(acc + off[None, :, :]), x, y
+
+
+def four_noid_sym2_end_periods(lam, r=1e-3, n=4000):
+    """Re(period) around each of the four ends z = +-lam, +-i/lam.
+
+    The claim that makes this family exist -- Karcher solves its
+    period problem in closed form -- reduced to four numbers.
+    """
+    tau, rho = four_noid_sym2_params(lam)
+    th = np.linspace(0.0, 2.0 * np.pi, n, endpoint=False)
+    out = []
+    for pole in (lam + 0j, -lam + 0j, 1j / lam, -1j / lam):
+        z = pole + r * np.exp(1j * th)
+        dz = 1j * r * np.exp(1j * th) * (2.0 * np.pi / n)
+        g = rho * z * (z - tau) * (z + tau)
+        dh = (z * (z - tau) * (z + tau)
+              / ((z ** 2 - lam ** 2) ** 2 * (z ** 2 + 1.0 / lam ** 2) ** 2))
+        P = np.stack([0.5 * (1.0 / g - g) * dh,
+                      0.5j * (1.0 / g + g) * dh, dh], axis=-1)
+        out.append(np.real((P * dz[:, None]).sum(axis=0)))
+    return np.array(out)
+
+
+def four_noid_sym2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                        storeys=1):
+    """Karcher's 4-noid with two orthogonal symmetry planes.
+
+    A quarter patch, then the notebook's own assembly: reflect in the
+    plane x = 0, then in the plane y = 0.  Those two reflections ARE
+    the two symmetry planes the surface is named for.  `order` picks
+    the member along lambda (end position), `radius` the growth mu.
+    """
+    del spec, theta
+    # lambda > 1 is required by sqrt(lambda - 1); very close to 1 the
+    # nested radical blows tau up and the ends degenerate, so the
+    # slider runs over the range the notebook actually renders.
+    lam = float(np.clip(1.2 + 0.15 * (max(int(order), 1) - 1), 1.2, 2.6))
+    mu = float(np.clip(radius * 2.0, 0.4, 12.0))
+    nx = int(np.clip(nu * 2, 60, 400))
+    ny = int(np.clip(nv, 30, 200))
+    reach = float(np.clip(1.0 + 0.4 * max(int(storeys), 1), 1.0, 4.0))
+    X, x, y = four_noid_sym2_patch(lam, mu, nx, ny,
+                                   rmin=-reach * 3.0, rmax=reach * 3.0)
+    nxp, nyp = X.shape[0], X.shape[1]
+    quads = [(i * nyp + j, (i + 1) * nyp + j,
+              (i + 1) * nyp + j + 1, i * nyp + j + 1)
+             for i in range(nxp - 1) for j in range(nyp - 1)]
+    V0 = X.reshape(-1, 3)
+    n0 = len(V0)
+    blk = np.concatenate([V0, V0 * np.array([-1.0, 1.0, 1.0])], axis=0)
+    fblk = quads + [tuple(a + n0 for a in q) for q in quads]
+    n1 = len(blk)
+    full = np.concatenate([blk, blk * np.array([1.0, -1.0, 1.0])], axis=0)
+    ffull = fblk + [tuple(a + n1 for a in q) for q in fblk]
+    # centre and fit the way every other zoo row does -- the raw
+    # integration comes out tens of units across and offset in z
+    return _center_fit(full, scale, full), ffull
+
+
 def catenoid_field_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
                         cells=(1, 1)):
     """cells2d builder: cu x cv lattice cells of the field, seams
@@ -13082,6 +13221,51 @@ def _selftest():
               f"{'OK' if good else 'FAIL'}")
     print("sfk deferred (see BACKLOG.md): hackman_surfaces, even-k "
           "Fischer-Koch/Freese (self-intersecting), Freese k=4 branch")
+
+    # ---- Karcher's 4-noid with two symmetry planes ------------------
+    # Its whole claim is that the period problem is solved in closed
+    # form -- no FindRoot anywhere in the source notebook -- so the
+    # gate is the four end periods, measured across the family rather
+    # than at the rendered member.  A wrong digit in tau(lambda) or
+    # rho(lambda) breaks these while still meshing something.
+    p4 = 0.0
+    for lamq in (1.2, 1.5, 1.8, 2.4):
+        p4 = max(p4, float(np.abs(four_noid_sym2_end_periods(lamq)).max()))
+    good = p4 < 1e-9
+    ok &= good
+    print(f"4-noid sym2: max |Re period|, four ends x four members "
+          f"= {p4:.1e} {'OK' if good else 'FAIL'}")
+    # conformal parametrisation <=> minimal immersion.  Measured at two
+    # resolutions because what matters is that it CONVERGES: the chart
+    # has a pole of its own at y = 0, x = log(mu/lam^2) where z runs to
+    # infinity, and a single-resolution threshold either hides that or
+    # trips over it.
+    resq = []
+    for nq in (120, 240):
+        Xq, xq, yq = four_noid_sym2_patch(1.8, 4.0, nq, nq // 2)
+        d1q = np.gradient(Xq, xq, axis=0)
+        d2q = np.gradient(Xq, yq, axis=1)
+        Eq = (d1q * d1q).sum(-1)
+        Gq = (d2q * d2q).sum(-1)
+        mq = slice(3, -3)
+        resq.append(float(np.percentile(
+            np.abs(Eq - Gq)[mq, mq] / (Eq + Gq)[mq, mq], 95)))
+    good = resq[1] < 0.4 * resq[0] and resq[1] < 3e-3
+    ok &= good
+    print(f"4-noid sym2: conformality p95 {resq[0]:.2e} -> {resq[1]:.2e} "
+          f"under refinement {'OK' if good else 'FAIL'}")
+    # four ends, placed by the two symmetry planes
+    Vq, Fq = four_noid_sym2_mesh(None, 70, 46, 4, 2.0, 1.0, 0.0, 1)
+    Vq = np.asarray(Vq)
+    rq = np.linalg.norm(Vq[:, :2], axis=1)
+    keep = rq > 0.75 * rq.max()
+    angq = np.arctan2(Vq[keep, 1], Vq[keep, 0])
+    occ = np.histogram(angq, bins=72, range=(-np.pi, np.pi))[0] > 0
+    runs = sum(1 for iq in range(72) if occ[iq] and not occ[iq - 1])
+    good = runs == 4
+    ok &= good
+    print(f"4-noid sym2: far-field angular clusters = {runs} (want 4) "
+          f"{'OK' if good else 'FAIL'}")
 
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in weierstrass")
     assert ok
