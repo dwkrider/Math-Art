@@ -531,13 +531,21 @@ def _apply(M, V):
 #       chambers wide: one extra torus period, times one internal
 #       mirror.  On the quarter domain the walls are declared and the
 #       word closes 12 copies.
-#   Lidinoid  its edge residuals PLATEAU at 2.4e-2 and do not fall with
-#       the grid at all, which says this is not quadrature error.  It is
-#       the same situation as the gyroid: at a generic associate angle
-#       (here 64.2098 degrees) a straight line becomes neither a
-#       straight line nor a planar geodesic, so there is no reflection
-#       generator to find and `_assemble` is right to decline.  The
-#       fundamental piece is the honest object and is what ships.
+#   Lidinoid  NOW ASSEMBLES its translational cell -- but NOT by
+#       reflection, and the old diagnosis stands as far as it went: its
+#       edge residuals plateau at 2.4e-2 because at its associate angle
+#       (64.2098 degrees) no boundary curve is a straight line or a
+#       planar geodesic, so there is no reflection generator to find
+#       and `_assemble` is right to decline.  That is the gyroid
+#       situation, and the VMM Lidinoid page states it outright: these
+#       two are the only known embedded TPMS not cut by lines or planar
+#       symmetry curves into simple pieces.  What the Lidinoid HAS is
+#       what Weber's own notebook uses: an order-6 rotoreflection S6
+#       about the vertical axis through the image of z = 1/2, and a
+#       rank-3 period lattice, both measured off deck transformations
+#       of the theta-quotient torus rather than off boundary curves.
+#       `lidinoid_assembly` follows that chain -- see its docstring for
+#       the identities that verify it.
 
 def _log_theta(D, q):
     """log theta11 over a grid, unwrapped to a continuous branch."""
@@ -602,7 +610,7 @@ _SPECS = {
         theta=-math.pi / 2.0,
         nb="Triply_SchwarzCLP.nb"),
     'LIDINOID': dict(
-        label="Lidinoid (exact fundamental piece)",
+        label="Lidinoid (exact)",
         tau=1j * math.tan(math.radians(90.0 - 64.2098)),
         a=0.25,
         terms=lambda a, tau: ((0.0, 2.0 / 3.0), (0.5, -2.0 / 3.0)),
@@ -611,6 +619,12 @@ _SPECS = {
         const=(2.0 / 3.0) * (1j * math.pi / 2.0),
         xlim=(0.0, 1.0), ylim=lambda t: (0.0, np.imag(t)),
         theta=math.radians(64.2098),
+        # The graded rows hug the S6 seam curves at ~1e-6 of the span,
+        # so the shared 1e-4 weld ladder would stitch a copy to its
+        # neighbour one row in from the seam -- the same measurement
+        # that gave rPD its 1e-7.  The true seams are index-merged in
+        # `lidinoid_assembly`, so they close at any tolerance at all.
+        weld=1e-7,
         nb="Triply_Lidinoid.nb"),
     # Genus 4: CLP with a handle added.  Six theta factors at half
     # powers instead of CLP's four, and a genuine period problem -- but
@@ -2912,6 +2926,227 @@ CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'CONJ_PATCH', 'CONJUGATE',
                     'CONJUGATE_BLOCK')
 
 
+# --------------------------------------------------------------------
+# The Lidinoid cell -- closed by rotoreflection and translation,
+# because reflection cannot reach it
+# --------------------------------------------------------------------
+# At the Lidinoid's associate angle no boundary curve of the patch is a
+# straight line or a planar geodesic (the VMM page: the gyroid and the
+# Lidinoid are the only known embedded TPMS not cut by symmetry lines
+# or planar curves into simple pieces), so the reflection machinery of
+# `_assemble` and the wall/word route both have nothing to work with.
+# Weber's `Lidinoid.nb` closes the cell anyway, from the symmetries the
+# theta-quotient structure forces regardless of the angle:
+#
+#   * z -> z + 1 acts on the immersion as a PURE TRANSLATION T1
+#     (the theta ratio is invariant), verified here as
+#     f(1 + iy) - f(iy) - T1 ~ 7e-9 across the patch height;
+#   * z -> z + tau acts as a 120-degree screw rotation (the 2/3 power
+#     of the theta ratio picks up a cube root of unity), verified by
+#     an affine fit with spread 7e-10 -- its cube is the pure vertical
+#     translation (0, 0, c);
+#   * the notebook's assembly element is the order-6 ROTOREFLECTION
+#     S6 = RotZ(60 deg) o MirrorZ about the vertical axis through
+#     p = f(1/2): S6 . f(u) = f(1 - u) on the bottom edge, verified
+#     to 9e-9.  Its powers give the 3-fold axis (S6^2) and the point
+#     inversion (S6^3), which is why the Lidinoid, unlike the gyroid,
+#     is not chiral.
+#
+# Six copies of the full-torus patch under the S6 powers close Weber's
+# fr3 unit, whose seams are the two halves of the bottom edge: copy
+# k+1's node at parameter u pairs with copy k's node at 1 - u, an EXACT
+# index correspondence because the graded x axis is symmetric under
+# x -> 1 - x.  The seams are therefore merged BY INDEX, not by distance
+# -- both rows sit ~eps^(1/3) off the true seam curve on opposite
+# sides, so no honest weld tolerance can stitch them (and a dishonest
+# one collapses the graded rows first; see the spec's weld note).
+#
+# The unit repeats on Weber's own three vectors v1 = f(1 + tau),
+# v2 = (2 p_x, 0, 0), v3 = (p_x, p_y, 4 p_z).  The PRIMITIVE lattice is
+# finer: T1 itself is a period the 6-copy unit does not contain, and
+# reducing <T1, S6 T1 S6^-1, S6^2 T1 S6^-2> gives an R-centred
+# hexagonal lattice with a = 1.71005, c = 1.30523 (c/a = 0.76327,
+# rhombohedral angle 104.84 degrees); the 6-copy unit is exactly TWO
+# primitive cells (det [v1 v2 v3] = 2 x the primitive volume), and the
+# primitive cell carries 3 torus patches: chi = 3*0 - 2*(3-1) = -4 by
+# Riemann-Hurwitz across the branched 2/3-power cover, genus 3.
+#
+# The closure identity that pins the family member: |f(1+tau)| must
+# equal |2 f(1/2)_x| with a 60-degree angle between them and no
+# vertical component.  Measured at Weyhaupt's angle 64.2098 deg the
+# residual is 9.6e-7 (relative), and it grows LINEARLY away from it --
+# 5e-3 at +-0.2 deg -- so the identity is the period condition itself,
+# sharp in the angle, not a family-wide tautology (the S6 seam identity
+# IS family-wide, 8e-9 at every angle tried, so it verifies the
+# construction rather than the member).
+#
+# Independent external check, measured once (2026-09): against the
+# shipped NODAL Lidinoid level set (tpms._f_lidinoid, the Fisher et al.
+# catalogue form), the exact cell agrees in shape to a median 2.4% of
+# the nodal cubic cell after the lattice-matching affine -- but the
+# lattices genuinely differ: the nodal ansatz forces the BCC metric
+# (rhombohedral angle 109.47 deg, hex c/a = 0.6124), a 20% uniaxial
+# strain away from the exact surface's measured 104.84 deg / 0.76327.
+# The exact row is the trustworthy metric; the nodal row is a cubic-box
+# approximation with a distorted cell, which is worth knowing before
+# using it for anything where the lattice matters.
+#
+# References:
+# - S. Lidin, S. Larsson, "Bonnet transformation of infinite periodic
+#   minimal surfaces with hexagonal symmetry", J. Chem. Soc. Faraday
+#   Trans. 86 (1990) 769-775 -- the L surface.
+# - A. G. Weyhaupt, "Deformations of the gyroid and Lidinoid minimal
+#   surfaces", Pacific J. Math. 235 (2008) 137-171 -- the associate
+#   angle 64.2098 degrees and the rH family.
+# - M. Weber, "Lidinoid", minimalsurfaces.blog repository (mirror
+#   ch274), and `Lidinoid.nb` -- the assembly chain followed here.
+
+def _lid_W(z, sp, q):
+    """The Weierstrass integrand row (om1, om2, om3) at the spec's own
+    associate angle, on a continuous log branch along the given
+    points (callers keep paths short and singularity-free except at
+    declared endpoints)."""
+    z = np.asarray(z, dtype=complex)
+    L = np.full(z.shape, sp['const'], dtype=complex)
+    for shift, c in sp['terms'](sp['a'], sp['tau']):
+        L = L + c * np.log(_theta11(z - shift, q))
+    g = np.exp(L)
+    inv = 1.0 / g
+    return np.stack([0.5 * (inv - g), 0.5j * (inv + g),
+                     np.ones_like(g)], axis=-1) * np.exp(1j * sp['theta'])
+
+
+def _lid_seg(sp, q, z0, z1, sing_end=None, n=4000, m=3):
+    """Integral of the Weierstrass forms along the straight segment
+    z0 -> z1.  `sing_end` names which end (if either) is a lattice zero
+    of a theta factor; the t = u^m substitution there makes the
+    s^(-2/3) integrand regular in u, so the endpoint is reached exactly
+    rather than clipped -- this is what lets the anchors below be
+    measured to ~1e-8 where the eps-clipped patch grid stops at
+    O(eps^(1/3))."""
+    if sing_end is None:
+        t = (np.arange(n) + 0.5) / n
+        zz = z0 + (z1 - z0) * t
+        w = np.full(n, 1.0 / n)
+    else:
+        u = (np.arange(n) + 0.5) / n
+        s = u ** m
+        w = m * u ** (m - 1) / n
+        if sing_end == 'z0':
+            zz = z0 + (z1 - z0) * s
+        else:
+            zz = z1 + (z0 - z1) * s[::-1]
+            w = w[::-1]
+    return np.sum(_lid_W(zz, sp, q) * (w[:, None] * (z1 - z0)), axis=0)
+
+
+_LID_FRAME = {}
+
+
+def lidinoid_frame():
+    """The measured anchors of the Lidinoid assembly, in the frame
+    f(0) = 0: (p, v1, T1, delta) with p = f(1/2), v1 = f(1 + tau),
+    T1 = f(1), and delta = f(i * 1e-7) -- the position of the eps-
+    clipped patch's own origin, so patch coordinates + delta are frame
+    coordinates.  All four are 1D path integrals routed through the
+    domain interior at half height, graded into their singular
+    endpoints."""
+    key = _spec_state('LIDINOID')
+    if key in _LID_FRAME:
+        return _LID_FRAME[key]
+    sp = _SPECS['LIDINOID']
+    tau = sp['tau']
+    ty = float(np.imag(tau))
+    q = np.exp(1j * np.pi * tau)
+    ym = 0.5 * ty
+    i0 = _lid_seg(sp, q, 0.0, 1j * ym, 'z0')
+    ih = _lid_seg(sp, q, 1j * ym, 0.5 + 1j * ym)
+    i05 = _lid_seg(sp, q, 0.5 + 1j * ym, 0.5, 'z1')
+    ir = _lid_seg(sp, q, 0.5 + 1j * ym, 1.0 + 1j * ym)
+    i1 = _lid_seg(sp, q, 1.0 + 1j * ym, 1.0, 'z1')
+    i1t = _lid_seg(sp, q, 1.0 + 1j * ym, 1.0 + 1j * ty, 'z1')
+    p = np.real(i0 + ih + i05)
+    v1 = np.real(i0 + ih + ir + i1t)
+    v1[2] = 0.0                     # measured ~7e-9; exact by symmetry
+    T1 = np.real(i0 + ih + ir + i1)
+    delta = np.real(_lid_seg(sp, q, 0.0, 1j * 1e-7, 'z0'))
+    out = (p, v1, T1, delta)
+    _LID_FRAME[key] = out
+    return out
+
+
+def lidinoid_assembly(P):
+    """Weber's fr3 unit for the Lidinoid: the six S6-power copies of the
+    full-torus patch, their bottom-edge seams merged BY INDEX (copy k+1
+    node u <-> copy k node 1-u; the graded x grid is symmetric under
+    x -> 1-x, so the correspondence is exact), welded at the spec's own
+    1e-7 tolerance.  Returns (V, quads, B) with B = [v1, v2, v3],
+    Weber's own translation vectors for the unit -- note the unit is
+    TWO primitive cells; see the block comment above.  Returns None if
+    the x grid is not the symmetric one the pairing requires."""
+    nx, ny = P.shape[0], P.shape[1]
+    xs, _wx = _spec_nodes('LIDINOID', nx)
+    if len(xs) != nx or np.max(np.abs(xs[::-1] - (1.0 - xs))) > 1e-9:
+        return None
+    p, v1, _T1, delta = lidinoid_frame()
+    v2 = np.array([2.0 * p[0], 0.0, 0.0])
+    v3 = np.array([p[0], p[1], 4.0 * p[2]])
+    B = np.array([v1, v2, v3])
+
+    c60, s60 = 0.5, 0.5 * SQRT3
+    R60 = np.array([[c60, -s60, 0.0], [s60, c60, 0.0], [0.0, 0.0, 1.0]])
+    M = R60 @ np.diag([1.0, 1.0, -1.0])        # S6 linear part
+    S6 = np.eye(4)
+    S6[:3, :3] = M
+    S6[:3, 3] = p - M @ p
+    ops = [np.eye(4)]
+    for _k in range(5):
+        ops.append(S6 @ ops[-1])
+
+    V0 = P.reshape(-1, 3) + delta
+    Q0 = _patch_quads(nx, ny)
+    Vs, Qs = [], []
+    for m, H in enumerate(ops):
+        Vs.append(V0 @ H[:3, :3].T + H[:3, 3])
+        qq = Q0 + m * len(V0)
+        if np.linalg.det(H[:3, :3]) < 0.0:
+            qq = qq[:, ::-1]
+        Qs.append(qq)
+    V = np.concatenate(Vs, axis=0)
+    Q = np.concatenate(Qs, axis=0)
+
+    # the seams, by index: union-find, merged position = average
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    NV = len(V0)
+    for m in range(6):
+        mm = (m + 1) % 6
+        for i in range(nx):
+            if xs[i] >= 0.5 - 1e-13:
+                a = find(mm * NV + i * ny)
+                b = find(m * NV + (nx - 1 - i) * ny)
+                if a != b:
+                    parent[a] = b
+    roots = np.array([find(i) for i in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    sums = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(sums, inv, V)
+    np.add.at(cnt, inv, 1.0)
+    V = sums / cnt[:, None]
+    Q = inv[Q]
+    span = float(np.max(np.linalg.norm(B, axis=1)))
+    V, Q = _weld(V, Q, _weld_tol('LIDINOID') * span)
+    Q = _drop_degenerate(V, np.asarray(Q))
+    return V, Q, B
+
+
 def _clp_far_point(nu, nv, x_at, y_to, theta=0.0):
     """Evaluate the Weierstrass integral at a point ABOVE the patch.
 
@@ -3665,6 +3900,16 @@ def spec_build(key, cells, res_per_cell, scale, theta,
             Qs.append(q)
             base += len(V0)
         built = (np.concatenate(Vs, 0), np.concatenate(Qs, 0), B)
+    elif named and key == 'LIDINOID':
+        # No boundary curve is a symmetry element at the Lidinoid's
+        # associate angle, so the reflection routes cannot reach it;
+        # Weber's rotoreflection + translation chain can -- see
+        # `lidinoid_assembly`.  Already welded and seam-merged there,
+        # so it is validated here and NOT re-welded below (the shared
+        # tail weld runs at the spec's own 1e-7, a no-op on it).
+        la = lidinoid_assembly(P)
+        if la is not None and _assembly_ok(la[0], np.asarray(la[1])):
+            built = la
     elif named:
         built = _assemble(P, gens=spec_generators(key, P)[0])
         if built is not None:
@@ -4141,8 +4386,10 @@ def _selftest():
               "|E-G|/(E+G) %.2e -> %.2e %s"
               % (key, d0, d1, h0, h1, c0, c1, 'OK' if good else 'FAIL'))
 
-    # Every one of the three ships the fundamental PIECE, and the gate
-    # is that they ship a clean one.  CLP with a handle briefly shipped
+    # Whatever each of the three ships -- CLP with a handle its
+    # fundamental piece, rPD its word-closed cell, the Lidinoid its
+    # rotoreflection-closed cell -- the gate is that it ships CLEAN at
+    # every resolution.  CLP with a handle briefly shipped
     # an assembled cell instead: it passed a connectedness count (one
     # piece, half a million vertices) while being a stack of duplicated
     # copies, and rendered as leopard spots.  `_assembly_ok` now rejects
@@ -4167,6 +4414,57 @@ def _selftest():
         ok &= not bad
         print("hexagonal: %s builds clean at res 50/100/160 %s"
               % (key, 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # The Lidinoid closure identities, measured rather than assumed.
+    # Two kinds, and the difference matters (see the assembly block):
+    # the S6 seam identity and the purity of the z -> z+1 translation
+    # hold along the whole tau <-> angle family (they verify the
+    # CONSTRUCTION), while the hexagonal-lattice identity
+    # |f(1+tau)| = |2 f(1/2)_x| at 60 degrees is the PERIOD CONDITION
+    # -- it is 1e-6 at 64.2098 degrees and grows linearly away from it
+    # (5e-3 at +-0.2 deg), so it pins the member, and a wrong tau or a
+    # broken transcription fails here first.
+    sp_l = _SPECS['LIDINOID']
+    tau_l = sp_l['tau']
+    ty_l = float(np.imag(tau_l))
+    q_l = np.exp(1j * np.pi * tau_l)
+    ym_l = 0.5 * ty_l
+    p_l, v1_l, T1_l, _dl = lidinoid_frame()
+    i0 = _lid_seg(sp_l, q_l, 0.0, 1j * ym_l, 'z0')
+    ih = _lid_seg(sp_l, q_l, 1j * ym_l, 0.5 + 1j * ym_l)
+    ir = _lid_seg(sp_l, q_l, 0.5 + 1j * ym_l, 1.0 + 1j * ym_l)
+    i1t = _lid_seg(sp_l, q_l, 1.0 + 1j * ym_l, 1.0 + 1j * ty_l, 'z1')
+    v1_raw = np.real(i0 + ih + ir + i1t)
+    a2 = 2.0 * abs(p_l[0])
+    r_len = abs(np.linalg.norm(v1_raw[:2]) - a2) / a2
+    cosang = abs(v1_raw[0]) * 1.0 / np.linalg.norm(v1_raw[:2])
+    r_ang = abs(math.degrees(math.acos(min(1.0, cosang))) - 60.0)
+    r_z = abs(v1_raw[2])
+    # seam identity S6 f(u) = f(1 - u) at an interior probe
+    u_pr = 0.73
+    fu = np.real(i0 + ih + _lid_seg(sp_l, q_l, 0.5 + 1j * ym_l,
+                                    u_pr + 1j * ym_l)
+                 + _lid_seg(sp_l, q_l, u_pr + 1j * ym_l, u_pr))
+    fmu = np.real(i0 + _lid_seg(sp_l, q_l, 1j * ym_l,
+                                (1.0 - u_pr) + 1j * ym_l)
+                  + _lid_seg(sp_l, q_l, (1.0 - u_pr) + 1j * ym_l,
+                             1.0 - u_pr))
+    c60_, s60_ = 0.5, 0.5 * SQRT3
+    M_l = (np.array([[c60_, -s60_, 0.0], [s60_, c60_, 0.0],
+                     [0.0, 0.0, 1.0]]) @ np.diag([1.0, 1.0, -1.0]))
+    r_seam = float(np.linalg.norm(M_l @ fu + (p_l - M_l @ p_l) - fmu))
+    # z -> z + 1 must act as the pure translation T1
+    y_pr = 0.31 * ty_l
+    fl = np.real(_lid_seg(sp_l, q_l, 0.0, 1j * y_pr, 'z0'))
+    fr_ = np.real(i0 + ih + ir
+                  + _lid_seg(sp_l, q_l, 1.0 + 1j * ym_l, 1.0 + 1j * y_pr))
+    r_t1 = float(np.linalg.norm(fr_ - fl - T1_l))
+    good = (r_len < 1e-5 and r_ang < 1e-3 and r_z < 1e-6
+            and r_seam < 1e-6 and r_t1 < 1e-6)
+    ok &= good
+    print("hexagonal: LIDINOID closure  hex-lattice len %.1e ang %.1e deg "
+          "z %.1e | seam %.1e T1 %.1e %s"
+          % (r_len, r_ang, r_z, r_seam, r_t1, 'OK' if good else 'FAIL'))
 
     # The triangle-group series is generated from (r, s, t) rather than
     # typed in, so the first thing to gate is the GENERATOR: every member
@@ -4708,7 +5006,9 @@ def _selftest():
         'SIMOES_BATISTA': 'CLOSED',
         'CLP_HANDLE': 'GROWS', 'I6': 'GROWS', 'STESSMANN': 'GROWS',
         'TRIPLY_COSTA': 'GROWS',
-        'LIDINOID': 'BARE',
+        # closed by rotoreflection + translation, NOT by reflection --
+        # see `lidinoid_assembly`; was BARE until that route existed
+        'LIDINOID': 'CLOSED',
     }
     try:
         from .surface_class import SURFACE_CLASS as _SC

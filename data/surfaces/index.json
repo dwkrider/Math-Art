@@ -80,7 +80,7 @@
     "swept",
     "topological"
   ],
-  "count": 479,
+  "count": 477,
   "implemented_count": 415,
   "entries": [
     {
@@ -5799,39 +5799,6 @@
       "families": [
         "def-weierstrass",
         "immersed",
-        "minimal",
-        "minimal-periodic",
-        "not-implemented",
-        "singly-periodic",
-        "tradition-classical"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 1,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "rod",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
-    },
-    {
-      "slug": "half-twisted-scherk-surface",
-      "name": "Half-Twisted Scherk Surface",
-      "path": "surfaces/minimal-periodic/half-twisted-scherk-surface.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
         "implemented",
         "minimal",
         "minimal-periodic",
@@ -10468,41 +10435,6 @@
       "implemented": true,
       "operator_ids": [
         "mesh.algebraic_surface_add"
-      ],
-      "specimen_count": 0
-    },
-    {
-      "slug": "rpd-exact",
-      "name": "RPD (exact)",
-      "path": "surfaces/minimal-periodic/rpd-exact.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "implemented",
-        "minimal",
-        "minimal-periodic",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
       ],
       "specimen_count": 0
     },
@@ -15881,15 +15813,15 @@
     },
     {
       "slug": "weber-rpd",
-      "name": "Weber rPD Surface",
+      "name": "RPD (exact)",
       "path": "surfaces/minimal-periodic/weber-rpd.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
@@ -15908,8 +15840,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

@@ -256,6 +256,12 @@ ALIAS = {
     "minsurf:CHEN_GACK": "chen-gackstatter",
     "minsurf:MEEKS_MOBIUS": "meeks-mobius-strip",
     "minsurf:BJ_CIRCLE": "bjorling-twisted-band",
+    # The half-twisted Scherk shipped in the Weierstrass zoo while the
+    # curated record stayed OPEN, because the row minted its own
+    # `half-twisted-scherk-surface` twin.  One surface, one record: the
+    # zoo row's data (G = z, dh = z/(z^2-1) dz) is exactly what the
+    # record's minsurf page (ch152) prints.
+    "minsurf:SP_HALF_TWISTED_SCHERK": "half-twisted-scherk",
     "tpms_exact:PGD": "pgd-associate-family",
     # The exact-Weierstrass rows added on the minimal-periodic branch.
     # These MUST live here rather than being hand-edited into the record
@@ -278,7 +284,15 @@ ALIAS = {
     "tpms_exact:LORD_MACKAY_P3A": "lord-mackay-p3a",
     "tpms_exact:SCHOEN_BATWING": "schoen-batwing",
     "tpms_exact:SCHOEN_HYBRID_1": "schoen-hybrid-1",
-    "tpms_exact:RPD": "rpd-exact",
+    # rPD: aliased onto the curated `weber-rpd` record (the Wayback
+    # archive row), which sat OPEN for months while `rpd-exact` shipped
+    # beside it -- the empty-twin problem again, in the other direction.
+    # They are one surface: the record's own note ("quotient by the
+    # order-3 rotation is a rectangular torus, and the divisor is that
+    # of G^3(z), which is essentially the Weierstrass p-function") is
+    # exactly `_SPECS['RPD']`'s theta divisor (exponents -2/3, 1/3,
+    # 1/3), and both cite mirror ch279_rpd_deformation.
+    "tpms_exact:RPD": "weber-rpd",
     "tpms_exact:HT": "schoen-h-t",
     "tpms_exact:SS": "schoen-s-s",
     "tpms_exact:H2R": "weber-h2r",
