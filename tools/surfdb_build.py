@@ -259,8 +259,15 @@ class Builder:
 
     # -- dispositions ----------------------------------------------------
 
-    def place(self, source, key, label, family, construction):
-        """Route one registry row through the mapping table."""
+    def place(self, source, key, label, family, construction,
+              slug_from=None):
+        """Route one registry row through the mapping table.
+
+        `slug_from` decouples the slug from the display name.  A slug
+        is IDENTITY here -- record filename, curated-facts key,
+        NOT_A_GAP key, cross-reference target -- so improving a name
+        must not move it.  Pass the string the slug was historically
+        derived from and only `name` changes."""
         kind, payload = mapping.disposition(source, key)
         ref = "%s:%s" % (source, key)
         fam = FAMILY_OVERRIDE.get(ref, family)
@@ -287,7 +294,7 @@ class Builder:
             self.report.append((source, key, "promote", slug))
             return slug
 
-        slug = payload or slugify(label)
+        slug = payload or slugify(slug_from or label)
 
         # SLUG COLLISION. Two different rows must never land on one slug.
         # This is not hypothetical: the Goursat dodecahedral row
@@ -624,18 +631,23 @@ class Builder:
 
     def stage_tpms(self):
         import minsurf
+        from minsurf import labels
         tpms_lines = registry.dict_key_lines(
             open(os.path.join(ROOT, "math_art", "minsurf", "tpms.py"),
                  encoding="utf-8").read(), r"^\s*'([A-Z0-9_]+)':")
         level_fns = nodal.extract(minsurf.TPMS)
         for key in sorted(minsurf.TPMS):
-            label = "%s surface" % key.replace("_", " ").title()
+            # The registry already carries the name a person reads --
+            # use it rather than title-casing the dict key, which turned
+            # CD into "Cd surface" and CI2Y into "Ci2Y surface".
+            label = labels.clean_label(minsurf.TPMS[key][0])
             slug = self.place(
                 "tpms", key, label, "minimal-periodic",
                 {"generator": "math_art.minsurf.tpms",
                  "operator_id": "mesh.periodic_minimal_add",
                  "family": "TPMS", "key": key,
-                 "definition_index": None, "implemented": True})
+                 "definition_index": None, "implemented": True},
+                slug_from="%s surface" % key.replace("_", " ").title())
             rec = self.records[slug]
             self.cite(rec, "minsurf.tpms", tpms_lines.get(key), label)
             rec["curvature"]["condition"] = "minimal"
@@ -651,13 +663,18 @@ class Builder:
                 key, level_fns, minsurf.TPMS[key][1]))
 
         for key in sorted(minsurf.TPMS_EXACT):
-            label = "%s (exact)" % key
+            # Same here, and this is where it hurt most: forty-six
+            # records carried the raw key ("DISPHENOID_FAMILY_A_GENUS_31
+            # (exact)") while the menu had been showing "Disphenoid 31"
+            # from the label sitting in TPMS_EXACT[key][0] all along.
+            label = labels.clean_label(minsurf.TPMS_EXACT[key][0])
             slug = self.place(
                 "tpms_exact", key, label, "minimal-periodic",
                 {"generator": "math_art.minsurf.tpms",
                  "operator_id": "mesh.periodic_minimal_add",
                  "family": "TPMS_EXACT", "key": key,
-                 "definition_index": 0, "implemented": True})
+                 "definition_index": 0, "implemented": True},
+                slug_from="%s (exact)" % key)
             rec = self.records[slug]
             self.cite(rec, "minsurf.tpms", tpms_lines.get(key), label)
             rec["curvature"]["condition"] = "minimal"
@@ -1342,7 +1359,43 @@ class Builder:
                     + ", which is authoritative; an unverified transcription "
                     "would silently define a different surface.")
 
+    def disambiguate_names(self):
+        """Re-qualify names that two records would otherwise share.
+
+        Provenance is stripped from a name because the record already
+        stores it structurally -- but when the SAME surface is
+        catalogued twice, once from its nodal approximation and once
+        from its exact Weierstrass data, that provenance is the only
+        thing telling the two apart.  (They stay two records rather
+        than merging because each carries its own curated facts; a
+        merge would strand them.)  So the qualifier comes back, for
+        exactly the records that need it and no others.
+        """
+        by_name = {}
+        for slug, rec in self.records.items():
+            by_name.setdefault((rec.get("name") or "").strip().lower(),
+                               []).append(slug)
+        fixed = []
+        for _name, slugs in sorted(by_name.items()):
+            if len(slugs) < 2:
+                continue
+            for slug in sorted(slugs):
+                rec = self.records[slug]
+                d = rec.get("definition") or {}
+                if d.get("fidelity") == "exact":
+                    q = "exact"
+                elif d.get("mode") == "nodal":
+                    q = "nodal approximation"
+                else:
+                    continue
+                rec["name"] = "%s (%s)" % (rec["name"], q)
+                fixed.append((slug, rec["name"]))
+        for slug, name in fixed:
+            self.report.append(("names", slug, "disambiguated", name))
+        return fixed
+
     def write(self):
+        self.disambiguate_names()
         written = 0
         for slug, rec in sorted(self.records.items()):
             folder = os.path.join(OUT, "surfaces", rec["primary_family"])

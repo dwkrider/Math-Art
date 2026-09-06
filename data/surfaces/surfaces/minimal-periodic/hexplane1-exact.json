@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "hexplane1-exact",
-  "name": "HEXPLANE1 (exact)",
+  "name": "Hexplane 1",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",

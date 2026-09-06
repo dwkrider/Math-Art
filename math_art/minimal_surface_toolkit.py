@@ -83,6 +83,7 @@ except ImportError:  # flat import outside the package
 
 from .minsurf.domain import _center_fit
 from .minsurf.elliptic import _SQUARE
+from .minsurf import labels as _labels
 from .minsurf.parametric import (ANGLE_PARAM, COUNT_PARAM, FAMILIES,
                                  MESH_PARAM, ORDERLESS, ORDER_RANGE,
                                  PARAMETRIC, PERIODIC_NO_ARRAY,
@@ -376,29 +377,11 @@ if _IN_BLENDER:
     # the lattice words go too because the family heading now carries
     # that.  Anything that names the surface -- a genus, a ring form, a
     # Bonnet angle, a named variant -- is kept.
-    _PROVENANCE = ('evolver cell', 'nodal approximation', 'nodal',
-                   'relaxed', 'exact', 'cubic', 'hexagonal', 'tetragonal',
-                   'trigonal', 'rhombohedral', 'orthorhombic')
-
-    def _clean_label(label):
-        """Drop provenance and lattice words from a menu label."""
-        import re as _re
-
-        def _fix(m):
-            lead, inner = m.group(1), m.group(2)
-            keep = [p.strip() for p in inner.split(',')
-                    if p.strip()
-                    and p.strip().lower() not in _PROVENANCE]
-            if not keep:
-                return ''
-            # Put back the spacing the name had.  Without this every
-            # parenthesis gains a space in front of it and names that
-            # OWN their brackets come apart: Fischer-Koch C(S) turns
-            # into "Fischer-Koch C (S)", and C(I2-Y**) into "C (I2-Y**)".
-            return '%s(%s)' % (lead, ', '.join(keep))
-
-        out = _re.sub(r'(\s*)\(([^()]*)\)', _fix, label)
-        return _re.sub(r'\s{2,}', ' ', out).strip()
+    # The menu name and the database `name` are the same string, so the
+    # rule lives in one bpy-free module both can import (minsurf.labels)
+    # rather than in a copy here that the builder cannot reach.
+    _PROVENANCE = _labels.PROVENANCE
+    _clean_label = _labels.clean_label
 
     def _lattice_of(key):
         """CUBIC / NONCUBIC / ... for a surface row, or None."""

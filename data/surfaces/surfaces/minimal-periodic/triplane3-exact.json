@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "triplane3-exact",
-  "name": "TRIPLANE3 (exact)",
+  "name": "Triplane 3",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
