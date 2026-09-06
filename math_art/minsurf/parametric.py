@@ -950,6 +950,33 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
     return out_pl
 
 
+def _fallback_uv(V, quads):
+    """Best-effort per-face-corner UV for a finished mesh whose own
+    mesher carries no conformal chart (the stacked towers and the 2-D
+    lattice meshers return geometry only).  The vertices' two dominant
+    principal axes, normalised to [0, 1], give a finite, in-range,
+    non-degenerate chart -- not conformal, but a usable texture map
+    where the alternative is none.  Returns per-corner UV in the same
+    (sum of face lengths, 2) layout as the conformal path, or None when
+    there is nothing to chart.
+    """
+    V = np.asarray(V, dtype=np.float64)
+    if len(V) == 0 or not quads:
+        return None
+    c = V - V.mean(0)
+    try:
+        _, _, Vt = np.linalg.svd(c, full_matrices=False)
+        uv = c @ Vt[:2].T
+    except np.linalg.LinAlgError:
+        uv = c[:, :2]
+    lo = uv.min(0)
+    span = np.ptp(uv, axis=0)
+    span[span < 1e-9] = 1.0
+    uv = (uv - lo) / span
+    idx = np.fromiter((i for f in quads for i in f), dtype=np.int64)
+    return uv[idx].astype(np.float32)
+
+
 def _build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
                       with_uv=False, cells=(1, 1), equal_areas=False):
     """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
@@ -1010,7 +1037,7 @@ def _build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
             return V, quads
         uvv = out[2] if len(out) > 2 else None
         if uvv is None or not quads:
-            return V, quads, None
+            return V, quads, _fallback_uv(V, quads)
         idx = np.fromiter((i for f in quads for i in f), dtype=np.int64)
         return V, quads, np.asarray(uvv)[idx]
     if kind in MESH_PARAM:
@@ -1022,7 +1049,7 @@ def _build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
             return V, quads
         uvv = out[2] if len(out) > 2 else None
         if uvv is None or not quads:
-            return V, quads, None
+            return V, quads, _fallback_uv(V, quads)
         idx = np.fromiter((i for f in quads for i in f), dtype=np.int64)
         return V, quads, np.asarray(uvv)[idx]
     # per-surface mesh-density boost: some conformal domains (strongly
