@@ -12800,6 +12800,271 @@ def horgan_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     return V, Fc, None
 
 
+# ==========================================================================
+# Lopez-Martin slab surface -- the b = 1/2 member of the genus-one
+# helicoid family, where the unsolved vertical period closes up again
+# one full translation late.
+#
+# Lopez and Martin ("Minimal surfaces in a wedge of a slab") construct
+# a translation-invariant minimal surface with planar ends that is
+# NEITHER EMBEDDED NOR ORIENTABLE: its only self-intersection is along
+# the z-axis, and it solves a Plateau problem in a wedge of a slab.
+# Per Martin's observation on Weber's page, it belongs to the
+# translation-invariant helicoid-with-handle family with the vertical
+# period condition left unsolved: the same rhombic-torus theta data
+# (G, dh as in the genus1helicoid block above) at tau = e^(i alpha0)
+# but with the end parameter b FREE.  The period structure, measured
+# here (and re-derived by the zoo gate at the notebook's own member):
+#
+#   * horizontal closure of BOTH lattice cycles holds for EVERY
+#     (tau, b) once arg(dhper) = arg(A B)/2 and |rho1|^2 = |B|/|A|
+#     (A = oint G~ dh~, B = oint dh~/G~ over the z -> z+1 cycle);
+#     |dhper| then normalizes the z -> z+tau deck to (0, 0, -2);
+#   * the z -> z+1 cycle translates by (0, 0, s(b)) -- the SLIDE the
+#     blog animates.  b0 = 0.6290650983... is the root s = 0 (the
+#     helicoid with handle; our solver reproduces the notebook's
+#     rho_abs to 13 digits and dhper to 7);
+#   * at b = 1/2 the slide is EXACTLY 2 = one full period, so the
+#     torus quotient closes again, shifted one translation -- and the
+#     data degenerates beautifully: theta factors pair up, dh becomes
+#     CONSTANT (dh = dz/dhper, CHM-style) and G a perfect square with
+#     double zero/pole, so both ends turn PLANAR.  That member is the
+#     Lopez-Martin slab: flat plates at consecutive integer heights
+#     joined by necks, self-intersecting along the vertical axis
+#     (measured: far plate points cluster at z = 0, +-1; the axis
+#     line lies in two sheets of the surface).
+#
+# GROUND TRUTH: the slab itself has no PoVRay export (the page's
+# resource links are dead text), so the family CODE is registered at
+# the helicoid member instead, against Weber's export of the
+# translation-invariant helicoid with handle: built through THIS
+# solver/sheet path, it registers at 0.245% (GT -> ours of span,
+# export scale exactly 3.0 = his three periods normalized to height
+# 2; the residual outlier fraction is his decorative low-resolution
+# line sub-meshes, nt = 2).  The slab member is then the same
+# verified code at the measured b = 1/2 constants, gated on its own
+# structure (slide exactly 2, dh constant, planar-end flatness).
+#
+# References:
+# - F. J. Lopez and F. Martin, "Minimal surfaces in a wedge of a
+#   slab", Comm. Anal. Geom. 9 (2001) 683-723 -- the construction the
+#   page presents.
+# - D. Hoffman, H. Karcher, F. Wei, "The singly periodic genus-one
+#   helicoid", Comment. Math. Helv. 74 (1999) 248-279 -- the family
+#   whose vertical period condition is left unsolved here.
+# - M. Weber, "Lopez-Martin slab surface" and "The translation
+#   invariant helicoid with handle", minimalsurfaces.blog (notebook
+#   `Translation-Helicoid-g-1.nb`: the theta data, the solved member
+#   constants and the strip chart; his helicoid export = the
+#   registration ground truth).
+# ==========================================================================
+
+_LMS_CACHE = {}
+
+
+def lm_slab_member(alpha_deg=_G1H_ALPHA0, b=0.5, n=20001):
+    """Solve the constants chain of the (tau = e^(i alpha), b) member:
+    returns dict(tau, c, b, rho_abs, psi, dhper, slide, r0, a0,
+    XA..XD, sym).  See the block header for the conditions."""
+    key = (round(alpha_deg, 10), round(b, 12))
+    if key in _LMS_CACHE:
+        return _LMS_CACHE[key]
+    tau = complex(np.exp(1j * np.pi * alpha_deg / 180.0))
+    c = 0.5 * (1.0 + tau)
+    th = genus1helicoid_theta11
+
+    def om_raw(z):
+        t1 = th(z + (b - 2.0) * c, tau)
+        t2 = th(z - (1.0 + b) * c, tau)
+        t3 = th(z + (b - 1.0) * c, tau)
+        t4 = th(z - b * c, tau)
+        e = np.exp(1j * np.pi * (b - 2.0 * z + 2.0 * tau + b * tau))
+        return e * t1 * t2 / (t3 * t4), (t1 * t4) / (t3 * t2)
+
+    z0 = 0.13 + 0.27j * tau.imag
+    t = np.linspace(0.0, 1.0, n)
+
+    def cyc(dz):
+        z = z0 + dz * t
+        Gt, dh = om_raw(z)
+        dzs = np.diff(z)
+        A = np.sum(0.5 * ((Gt * dh)[1:] + (Gt * dh)[:-1]) * dzs)
+        B = np.sum(0.5 * ((dh / Gt)[1:] + (dh / Gt)[:-1]) * dzs)
+        P3 = np.sum(0.5 * (dh[1:] + dh[:-1]) * dzs)
+        return A, B, P3
+    A1, B1, P31 = cyc(1.0)
+    _At, _Bt, P3t = cyc(tau)
+    psi = 0.5 * float(np.angle(A1 * B1))
+    rho_abs = float(np.sqrt(np.abs(B1) / np.abs(A1)))
+    r_abs = float(np.real(P3t * np.exp(-1j * psi))) / (-2.0)
+    dhper = r_abs * np.exp(1j * psi)
+    slide = float(np.real(P31 / dhper))
+
+    # domain chart constants: r0 from the notebook's rectangle-shape
+    # condition, a0 from tst(a0) = 1 - b
+    def tst(z, r0_):
+        m_ = 1.0 / (r0_ * r0_)
+        z = np.asarray(z, dtype=complex)
+        K2 = 2.0 * float(np.real(
+            _g1h_ellf(np.array(1.0 - 1e-15 + 0j), m_)))
+        return (z * _g1h_rf(1.0 - z * z + 0j, 1.0 - m_ * z * z + 0j,
+                            np.ones_like(z)) / K2 + 0.5)
+
+    def h(r_):
+        return float(np.imag((1.0 + tau) / 2.0
+                             * (1.0 + complex(tst(-r_ + 1e-14j, r_)))
+                             - tau))
+    lo, hi = 1.05, 8.0
+    flo = h(lo)
+    for _ in range(90):
+        mid = 0.5 * (lo + hi)
+        fm = h(mid)
+        if flo * fm <= 0:
+            hi = mid
+        else:
+            lo, flo = mid, fm
+    r0 = 0.5 * (lo + hi)
+
+    def g(a_):
+        return float(np.real(complex(tst(a_ + 0j, r0)))) - (1.0 - b)
+    lo2, hi2 = -0.999, 0.999
+    flo2 = g(lo2)
+    for _ in range(80):
+        mid = 0.5 * (lo2 + hi2)
+        fm = g(mid)
+        if flo2 * fm <= 0:
+            hi2 = mid
+        else:
+            lo2, flo2 = mid, fm
+    a0 = 0.5 * (lo2 + hi2)
+
+    def corner(tg):
+        s_ = (tg - a0) / (r0 + tg * a0)
+        return math.log(abs(s_))
+    XA, XB = corner(1.0), corner(r0)
+    XC, XD = corner(-1.0), corner(-r0)
+    mem = dict(tau=tau, c=c, b=b, rho_abs=rho_abs, psi=psi,
+               dhper=complex(dhper), slide=slide, r0=r0, a0=a0,
+               m=1.0 / (r0 * r0), XA=XA, XB=XB, XC=XC, XD=XD,
+               sym=XA + XD)
+    _LMS_CACHE[key] = mem
+    return mem
+
+
+def _lms_omega(z, mem, rho1):
+    tau, b, c = mem['tau'], mem['b'], mem['c']
+    th = genus1helicoid_theta11
+    t1 = th(z + (b - 2.0) * c, tau)
+    t2 = th(z - (1.0 + b) * c, tau)
+    t3 = th(z + (b - 1.0) * c, tau)
+    t4 = th(z - b * c, tau)
+    e = np.exp(1j * np.pi * (b - 2.0 * z + 2.0 * tau + b * tau))
+    G = rho1 * e * t1 * t2 / (t3 * t4)
+    o3 = (t1 * t4) / (t3 * t2) / mem['dhper']
+    return 0.5 * (1.0 / G - G) * o3, 0.5j * (1.0 / G + G) * o3, o3
+
+
+def _lms_zmap(w, mem):
+    ew = np.exp(np.asarray(w, dtype=complex))
+    s = (-mem['a0'] - mem['r0'] * ew) / (-1.0 + mem['a0'] * ew)
+    z = np.asarray(s, dtype=complex)
+    K2 = 2.0 * float(np.real(_g1h_ellf(np.array(1.0 - 1e-15 + 0j),
+                                       mem['m'])))
+    return (z * _g1h_rf(1.0 - z * z + 0j, 1.0 - mem['m'] * z * z + 0j,
+                        np.ones_like(z)) / K2 + 0.5) * mem['c']
+
+
+def lm_slab_sheet(mem, rho1, r1=-2.5, nu=101, nv=41, K=8, eps=1e-7):
+    """Fundamental sheet of the (tau, b) member over the half strip
+    [r1, sym - r1] x (0, pi) -- the generalized genus1helicoid sheet
+    (same chart, member constants instead of the harvested ones)."""
+    x_hi = mem['sym'] - r1
+    corners = (mem['XA'], mem['XB'], mem['XC'], mem['XD'])
+    spec = sorted(set(list(corners)
+                      + [mem['sym'] - c_ for c_ in corners]))
+    xs = _g1h_graded(r1, x_hi, nu, spec)
+    xs = np.unique(np.round(np.concatenate(
+        [xs, mem['sym'] - xs, spec,
+         [mem['sym'] - s_ for s_ in spec]]), 12))
+    t = np.linspace(0.0, 1.0, nv)
+    ys = eps + (np.pi - 2 * eps) * (0.5 - 0.5 * np.cos(np.pi * t))
+    nu2 = len(xs)
+    j0 = nv // 2
+    i0 = int(np.argmin(np.abs(xs - mem['sym'] / 2.0)))
+
+    def seg(wa, wb):
+        tt = np.linspace(0.0, 1.0, K + 1)
+        W = wa[:, None] + (wb - wa)[:, None] * tt[None, :]
+        Z = _lms_zmap(W, mem)
+        o = np.stack(_lms_omega(Z, mem, rho1), axis=-1)
+        dZ = np.diff(Z, axis=1)
+        return np.sum(0.5 * (o[:, 1:] + o[:, :-1]) * dZ[..., None],
+                      axis=1)
+
+    F = np.zeros((nu2, nv, 3), complex)
+    row = np.concatenate([np.zeros((1, 3), complex),
+                          np.cumsum(seg(xs[:-1] + 1j * ys[j0],
+                                        xs[1:] + 1j * ys[j0]), axis=0)])
+    F[:, j0] = row - row[i0]
+    for j in range(j0 + 1, nv):
+        F[:, j] = F[:, j - 1] + seg(xs + 1j * ys[j - 1],
+                                    xs + 1j * ys[j])
+    for j in range(j0 - 1, -1, -1):
+        F[:, j] = F[:, j + 1] - seg(xs + 1j * ys[j],
+                                    xs + 1j * ys[j + 1])
+
+    def pint(za, zb, n=20001):
+        tt = np.linspace(0.0, 1.0, n)
+        p = za + (zb - za) * tt
+        o = np.stack(_lms_omega(p, mem, rho1), axis=-1)
+        dz = np.diff(p)
+        return np.sum(0.5 * (o[1:] + o[:-1]) * dz[:, None], axis=0)
+    C = pint(1.0 + 0j, mem['tau'] / 2.0) \
+        + pint(mem['tau'] / 2.0,
+               complex(_lms_zmap(xs[i0] + 1j * ys[j0], mem)))
+    return xs, ys, np.real(F + C[None, None, :])
+
+
+def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Lopez-Martin slab: order = stacked periods, radius sets how far
+    the flat plates follow their planar ends.  Immersed and one-sided
+    as a complete surface -- the mesh keeps the two sheets through the
+    z-axis as separate walls (a genuine self-intersection, exactly as
+    in Weber's and the authors' pictures)."""
+    del spec, theta
+    storeys = int(np.clip(order, 1, 6))
+    mem = lm_slab_member(_G1H_ALPHA0, 0.5)
+    rho1 = mem['rho_abs'] * np.exp(1j * math.atan2(
+        -62.8417365006266681, 108.369522264594063))
+    r1 = -(1.7 + 0.8 * float(np.clip(radius / 1.2, 0.5, 2.5)))
+    pnu = int(np.clip(nu * 1.4, 70, 200))
+    pnv = int(np.clip(nv * 0.7, 30, 80))
+    xs, ys, X = lm_slab_sheet(mem, rho1, r1, pnu, pnv)
+    nu2, nv2 = X.shape[:2]
+    # center the cell at z = 0 (the sheet lands on [-2 - s, -s])
+    zc = 0.5 * (X[..., 2].max() + X[..., 2].min())
+    X = X - np.array([0.0, 0.0, zc])
+    P0 = X.reshape(-1, 3)
+    quads0 = _kus_grid_quads(nu2, nv2)
+    parts, flips = [], []
+    zoff = -(storeys - 1)
+    for s_ in range(storeys):
+        off = np.array([0.0, 0.0, 2.0 * s_ + zoff])
+        parts.append(P0 + off)
+        flips.append(False)
+        parts.append(P0 * np.array([-1.0, -1.0, 1.0]) + off)
+        flips.append(True)
+    V = np.concatenate(parts, axis=0)
+    NV = nu2 * nv2
+    F = []
+    for k_, fl_ in enumerate(flips):
+        for q in quads0:
+            qq = tuple(int(i) + k_ * NV for i in q)
+            F.append(qq[::-1] if fl_ else qq)
+    V = _center_fit(V, scale, V)
+    return V, F, None
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------

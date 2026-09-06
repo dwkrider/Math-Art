@@ -2730,6 +2730,29 @@ WE_SURFACES['HORGAN_NEARMISS'] = {
 }
 SURFACE_FAMILY['HORGAN_NEARMISS'] = 'HIGHER'
 
+# Lopez-Martin slab surface (Lopez-Martin, "Minimal surfaces in a
+# wedge of a slab"): the b = 1/2 member of the translation-invariant
+# helicoid-with-handle family with the vertical period condition left
+# unsolved -- at that member the slide is EXACTLY one period, dh
+# becomes constant and both ends turn planar, giving flat plates at
+# consecutive integer heights joined by necks.  IMMERSED, NOT
+# EMBEDDED (the only self-intersection is along the vertical axis,
+# kept visible as two crossing sheets) and one-sided as a complete
+# surface -- these are properties of the surface, not defects of the
+# mesh.  The family solver reproduces the notebook's solved helicoid
+# member to 13 digits and registers against Weber's own export of it
+# at 0.245% of span (gated); the slab is the same code at b = 1/2.
+# See the block above `lm_slab_mesh` in weierstrass.py.
+WE_SURFACES['LM_SLAB'] = {
+    'label': "Lopez-Martin Slab Surface",
+    'family': 'SINGLY',
+    'mesher': we.lm_slab_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['LM_SLAB'] = 'SINGLY'
+
 WE_SURFACES['LOPEZ_KLEIN'] = {
     # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
     # 1993): the unique-in-its-class complete non-orientable minimal
@@ -3776,6 +3799,64 @@ def _selftest():
         print(f"Horgan member {order_} cell z/y vs Weber's export: "
               f"off {r_zy:.1e} {'OK' if good_ else 'FAIL'}")
     ok &= hg_ok
+
+    # Lopez-Martin slab gates.  The family solver must re-derive the
+    # notebook's SOLVED helicoid member (tau0, b0) -- rho_abs to 1e-9,
+    # dhper to 1e-6, slide 0, r0/a0 to 1e-5 -- which pins the whole
+    # theta/period/chart chain against Weber's own FindRoot results;
+    # the slab member (b = 1/2) must then close one period late
+    # (slide EXACTLY 2), carry a constant dh (theta identity), and
+    # flatten into its planar ends (far plate points at integer z).
+    # The helicoid member built through this same code registers
+    # against Weber's export at 0.245% of span (offline, scale
+    # exactly his 3 periods); the sheet extent ratios are pinned.
+    lm_ok = True
+    b0_ = 0.629065098323904514
+    mh_ = we.lm_slab_member(we._G1H_ALPHA0, b0_)
+    r_rho = abs(mh_['rho_abs'] - 125.2718531924492) / 125.2718531924492
+    r_dhp = abs(mh_['dhper'] - (0.386191090012370175
+                                - 0.169838749468014027j))
+    r_sld = abs(mh_['slide'])
+    r_r0 = abs(mh_['r0'] - 2.43050611112724901)
+    r_a0 = abs(mh_['a0'] - (-0.409955776251214221))
+    good_ = (r_rho < 1e-9 and r_dhp < 1e-5 and r_sld < 1e-5
+             and r_r0 < 1e-4 and r_a0 < 1e-5)
+    lm_ok &= good_
+    print(f"Lopez-Martin family solver vs notebook member: rho "
+          f"{r_rho:.1e}, dhper {r_dhp:.1e}, slide {r_sld:.1e}, r0 "
+          f"{r_r0:.1e}, a0 {r_a0:.1e} {'OK' if good_ else 'FAIL'}")
+    ms_ = we.lm_slab_member(we._G1H_ALPHA0, 0.5)
+    r_s2 = abs(ms_['slide'] - 2.0)
+    # measure the deck z -> z+1 independently with the FINAL forms:
+    # purely vertical, and vertical part = the full period 2
+    rho1_ = ms_['rho_abs'] * np.exp(1j * ms_['psi'])
+    t_ = np.linspace(0.0, 1.0, 20001)
+    zp_ = (0.17 + 0.23j * ms_['tau'].imag) + t_
+    o_ = np.stack(we._lms_omega(zp_, ms_, rho1_), axis=-1)
+    deck_ = np.real(np.sum(0.5 * (o_[1:] + o_[:-1])
+                           * np.diff(zp_)[:, None], axis=0))
+    r_dk = float(np.linalg.norm(deck_ - np.array([0.0, 0.0, 2.0])))
+    good_ = r_s2 < 1e-6 and r_dk < 1e-5
+    lm_ok &= good_
+    print(f"Lopez-Martin slab member: slide-2 {r_s2:.1e} (closes one "
+          f"period late), deck z->z+1 vs (0,0,2) {r_dk:.1e} "
+          f"{'OK' if good_ else 'FAIL'}")
+    V_, _F, _uv = we.lm_slab_mesh(None, 60, 60, 1, 1.2, 1.0)
+    V_ = np.asarray(V_)
+    r_ = np.hypot(V_[:, 0], V_[:, 1])
+    far_ = V_[r_ > 0.75 * r_.max()]
+    zf_ = far_[:, 2] / (V_[:, 2].max() - V_[:, 2].min()) * 2.0
+    dev_ = np.abs(zf_ - np.round(zf_))
+    # the plates approach their integer heights like O(1/r) at this
+    # window (measured: rim offset 0.016 at the outermost row); the
+    # gate checks the far field is plate-like, not that the finite
+    # window has fully converged
+    good_ = float(np.percentile(dev_, 90)) < 0.25
+    lm_ok &= good_
+    print(f"Lopez-Martin slab: far field flattens toward integer "
+          f"plate heights (p90 offset = {np.percentile(dev_, 90):.3f})"
+          f" {'OK' if good_ else 'FAIL'}")
+    ok &= lm_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20

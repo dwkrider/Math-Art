@@ -6,21 +6,26 @@
   "families": [
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
     "non-orientable",
-    "not-implemented",
     "singly-periodic",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
+    "exactness": "numerical-integral",
     "note": "Translation invariant minimal surface with planar ends, neither embedded (self-intersection along the z-axis only) nor orientable; solves a Plateau problem in a wedge of a slab, and arises from the translation invariant helicoid-with-handle family when its vertical period condition is left unsolved."
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -39,24 +44,31 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
-      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "SINGLY",
+      "key": "LM_SLAB",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block.",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
       "M. Weber, 'Lopez-Martin Slab Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch399_lopez_martin_slab_surface.md).",
       "F. J. Lopez and F. Martin, 'Minimal surfaces in a wedge of a slab' (the paper the mirrored page presents)."
     ]
   },
-  "metrics": {
-    "normalization": "unit_cell"
-  },
   "tradition": [
     "classical"
   ],
+  "metrics": {
+    "normalization": "unit_cell"
+  },
   "ids": {
     "msblog": "ch399_lopez_martin_slab_surface"
   },
