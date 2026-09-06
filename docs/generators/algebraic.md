@@ -221,6 +221,7 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/algebraic__VAN_STRATEN_124.png" width="200"><br><sub>Van Straten Octic (124 nodes)</sub></td>
 <td align="center"><img src="../images/variants/algebraic__MOD_CHMUTOV.png" width="200"><br><sub>Modified Chmutov Octic (144 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VAN_STRATEN_D.png" width="200"><br><sub>Van Straten D_d Nodal Series</sub></td>
 </tr>
 </table>
 
@@ -238,6 +239,7 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/algebraic__VMM_DECOCUBE.png" width="200"><br><sub>Deco-Cube</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/algebraic__DECO_TETRAHEDRON.png" width="200"><br><sub>Deco-Tetrahedron</sub></td>
 <td align="center"><img src="../images/variants/algebraic__VMM_JOIN2TORI.png" width="200"><br><sub>Join of Two Tori</sub></td>
 </tr>
 </table>
@@ -270,21 +272,37 @@ Renders of each selectable option:
 
 <table>
 <tr>
+<td align="center"><img src="../images/variants/algebraic__NORM_ONE.png" width="200"><br><sub>p-Norm Unit Sphere (superellipsoid, p knob)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SEXTIC_9_TRIPLE.png" width="200"><br><sub>Sextic with 9 Triple Points (EPS (4,4,4) member)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HUMBERT.png" width="200"><br><sub>Humbert Sextic (O = (1:1:1:1) member)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CG_QUINTIC.png" width="200"><br><sub>Enriques Quintic, 4 Tacnodes (Craighero-Gattazzo (1:1) member)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SYMMETROID.png" width="200"><br><sub>Quartic Symmetroid (pinned integer web)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SWALLOWTAIL.png" width="200"><br><sub>Swallowtail (quartic discriminant)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CAYLEY_RULED.png" width="200"><br><sub>Cayley Ruled Cubic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SCHUR_QUARTIC.png" width="200"><br><sub>Schur Quartic (64 lines)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DESMIC.png" width="200"><br><sub>Desmic Quartic (12 nodes, (1,2) member)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__BURKHARDT_SECTION.png" width="200"><br><sub>Burkhardt Quartic Section (y0 = sum/4 slice)</sub></td>
 <td align="center"><img src="../images/variants/algebraic__PEANO.png" width="200"><br><sub>Peano Surface</sub></td>
 <td align="center"><img src="../images/variants/algebraic__CHAIR.png" width="200"><br><sub>Chair Surface</sub></td>
-<td align="center"><img src="../images/variants/algebraic__CROSSED_TROUGH.png" width="200"><br><sub>Crossed Trough</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/algebraic__CROSSED_TROUGH.png" width="200"><br><sub>Crossed Trough</sub></td>
 <td align="center"><img src="../images/variants/algebraic__HANDKERCHIEF.png" width="200"><br><sub>Handkerchief Surface</sub></td>
 <td align="center"><img src="../images/variants/algebraic__HUNT.png" width="200"><br><sub>Hunt's Surface</sub></td>
-<td align="center"><img src="../images/variants/algebraic__KISS.png" width="200"><br><sub>Kiss Surface</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/algebraic__KISS.png" width="200"><br><sub>Kiss Surface</sub></td>
 <td align="center"><img src="../images/variants/algebraic__MENN.png" width="200"><br><sub>Menn's Surface</sub></td>
 <td align="center"><img src="../images/variants/algebraic__MITER.png" width="200"><br><sub>Miter Surface</sub></td>
-<td align="center"><img src="../images/variants/algebraic__NORDSTRAND_WEIRD.png" width="200"><br><sub>Nordstrand's Weird Surface</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/algebraic__NORDSTRAND_WEIRD.png" width="200"><br><sub>Nordstrand's Weird Surface</sub></td>
 <td align="center"><img src="../images/variants/algebraic__TOOTH.png" width="200"><br><sub>Tooth Surface</sub></td>
 </tr>
 </table>
