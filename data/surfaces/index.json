@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 419,
+  "implemented_count": 420,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -9689,16 +9689,16 @@
     },
     {
       "slug": "plane-with-catenoids",
-      "name": "Plane with Catenoids (doubly periodic)",
+      "name": "Plane with Catenoids (square lattice)",
       "path": "surfaces/minimal-periodic/plane-with-catenoids.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "doubly-periodic",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -9716,8 +9716,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

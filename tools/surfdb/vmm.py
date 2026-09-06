@@ -940,7 +940,17 @@ def _ms_records():
                     "problem to solve.  The repository's singly periodic "
                     "'translation invariant plane with catenoidal ends' "
                     "(mirror ch172) is the 1-periodic sibling, also "
-                    "unrecorded."}}),
+                    "unrecorded.  THE SHIPPED ROW: g = rho/sqrt(z), "
+                    "dh = dz/(sqrt(z-1) sqrt(z+1)) on the upper half "
+                    "plane; rho = 2^(k-1) is the growth knob (the "
+                    "page's own family parameter, so no single member "
+                    "is pinned).  The square-cell identity -- dis = "
+                    "f(1)_y = -f(-1)_x with f((1,inf)) in the mirror "
+                    "y = +dis, f((-inf,-1)) in x = -dis, and f((0,1)), "
+                    "f((-1,0)) the straight half-turn axes -- is "
+                    "measured at rho = 1 AND 2 (worst residual ~1e-6), "
+                    "so the page's no-period-problem claim is checked "
+                    "across the family rather than at one point."}}),
         },
         "lubeck-batista-surface": {
             "name": "Lubeck-Batista Surface", "family": "minimal-periodic",

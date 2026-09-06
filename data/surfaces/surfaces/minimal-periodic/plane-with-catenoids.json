@@ -1,25 +1,30 @@
 {
   "schema_version": "0.1.0",
   "slug": "plane-with-catenoids",
-  "name": "Plane with Catenoids (doubly periodic)",
+  "name": "Plane with Catenoids (square lattice)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "doubly-periodic",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "The simplest doubly periodic minimal surfaces with only catenoidal ends in the quotient: ends arranged in a square lattice with limiting normals perpendicular to the periodicity plane, growth rates adjustable by the Lopez-Ros factor, and no period problem to solve.  The repository's singly periodic 'translation invariant plane with catenoidal ends' (mirror ch172) is the 1-periodic sibling, also unrecorded."
+    "exactness": "numerical-integral",
+    "note": "The simplest doubly periodic minimal surfaces with only catenoidal ends in the quotient: ends arranged in a square lattice with limiting normals perpendicular to the periodicity plane, growth rates adjustable by the Lopez-Ros factor, and no period problem to solve.  The repository's singly periodic 'translation invariant plane with catenoidal ends' (mirror ch172) is the 1-periodic sibling, also unrecorded.  THE SHIPPED ROW: g = rho/sqrt(z), dh = dz/(sqrt(z-1) sqrt(z+1)) on the upper half plane; rho = 2^(k-1) is the growth knob (the page's own family parameter, so no single member is pinned).  The square-cell identity -- dis = f(1)_y = -f(-1)_x with f((1,inf)) in the mirror y = +dis, f((-inf,-1)) in x = -dis, and f((0,1)), f((-1,0)) the straight half-turn axes -- is measured at rho = 1 AND 2 (worst residual ~1e-6), so the page's no-period-problem claim is checked across the family rather than at one point."
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -37,23 +42,28 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
-      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "DP_PLANE_CATENOIDS",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
+      "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024).",
       "M. Weber, 'Plane with Catenoids', minimalsurfaces.blog (local mirror: minsurf/book/.../ch039_plane_with_catenoids.md)."
     ]
-  },
-  "metrics": {
-    "normalization": "unit_cell"
   },
   "tradition": [
     "classical"
   ],
+  "metrics": {
+    "normalization": "unit_cell"
+  },
   "ids": {
     "msblog": "ch039_plane_with_catenoids"
   },

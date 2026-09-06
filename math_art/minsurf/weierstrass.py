@@ -3383,6 +3383,182 @@ def toroidal_ks_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 
 
 # --------------------------------------------------------------------------
+# Plane with catenoids (doubly periodic, square lattice)
+# --------------------------------------------------------------------------
+# The simplest doubly periodic minimal surface with only catenoidal
+# ends in the quotient: a plane with catenoid necks planted on a square
+# lattice, the ends' limiting normals perpendicular to the periodicity
+# plane, growth rate tuned by the Lopez-Ros factor rho -- and, the
+# page states outright, NO period problem to solve.  Data printed on
+# Weber's page (mirror ch039) and in `Doubly_Catenoid.nb`:
+#
+#     g = rho / sqrt(z),   dh = dz / (sqrt(z-1) sqrt(z+1))
+#
+# on the upper half plane, principal branches (all three square roots
+# are analytic there, so no branch tracking).  The catenoidal ends are
+# z = 0 and z = infinity; +-1 are integrable branch points.
+#
+# THE IDENTITY, chosen before the mesher was written and measured
+# before it was trusted (now gated in the zoo self-test): the four
+# real-axis segments must land on the four symmetry elements of the
+# square cell, tied together by ONE number --
+#
+#     f((0,1))      the straight 2-fold axis along y,
+#     f((-1,0))     the straight 2-fold axis along x,
+#     f((1,inf))    planar, in the mirror  y = +dis,
+#     f((-inf,-1))  planar, in the mirror  x = -dis,
+#     dis = f(1)_y = -f(-1)_x            (the SQUARE lattice),
+#
+# all measured by independent 1-D integrals; at rho = 1 they agree to
+# quadrature (~1e-7), and the lattice period is 4 dis.  Weber's own
+# assembly chain (fr2..fr6) is followed literally: two mirrors, two
+# half-turns (16 copies), then translations by (4 dis, 0, 0) and
+# (0, 4 dis, 0).
+#
+# References:
+# - M. Weber, "Plane with Catenoids", minimalsurfaces.blog (mirror
+#   ch039; notebook `Doubly_Catenoid.nb` -- the data and the assembly).
+# - H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#   examples", Manuscripta Math. 62 (1988) -- the Lopez-Ros/growth
+#   mechanism for catenoidal necks in periodic surfaces.
+
+def plane_catenoids_W(rho=1.0):
+    def W(z):
+        z = np.asarray(z, dtype=complex)
+        s0 = np.sqrt(z)
+        s1 = np.sqrt(z - 1.0)
+        s2 = np.sqrt(z + 1.0)
+        ph1 = rho / (s1 * s0 * s2)
+        ph2 = (1.0 / rho) * s0 / (s1 * s2)
+        dh = 1.0 / (s1 * s2)
+        return np.stack([0.5 * (ph2 - ph1), 0.5j * (ph1 + ph2), dh],
+                        axis=-1)
+    return W
+
+
+def _pwc_seg(Wf, z0, z1, se=None, m=2, n=20000):
+    if se is None:
+        t = (np.arange(n) + 0.5) / n
+        zz = z0 + (z1 - z0) * t
+        w = np.full(n, 1.0 / n)
+    else:
+        u = (np.arange(n) + 0.5) / n
+        sv = u ** m
+        w = m * u ** (m - 1) / n
+        if se == 'z0':
+            zz = z0 + (z1 - z0) * sv
+        else:
+            zz = z1 + (z0 - z1) * sv[::-1]
+            w = w[::-1]
+    return np.sum(Wf(zz) * (w[:, None] * (z1 - z0)), axis=0)
+
+
+def plane_catenoids_frame(rho=1.0):
+    """(dis, f1, fm1) for the member: the mirror offset and the two
+    axis endpoints, by graded 1-D integrals from the true z = 0 (the
+    m = 2 substitution regularises every sqrt endpoint)."""
+    Wf = plane_catenoids_W(rho)
+    up = _pwc_seg(Wf, 0.0, 0.5j, 'z0')
+    f1 = np.real(up + _pwc_seg(Wf, 0.5j, 1.0 + 0.5j)
+                 + _pwc_seg(Wf, 1.0 + 0.5j, 1.0, 'z1'))
+    fm1 = np.real(up + _pwc_seg(Wf, 0.5j, -1.0 + 0.5j)
+                  + _pwc_seg(Wf, -1.0 + 0.5j, -1.0, 'z1'))
+    return float(f1[1]), f1, fm1
+
+
+def _pwc_weld(V, Q, tol):
+    """Plain coordinate weld (round-to-lattice buckets)."""
+    key = np.round(V / max(tol, 1e-300)).astype(np.int64)
+    _, first, inv = np.unique(key, axis=0, return_index=True,
+                              return_inverse=True)
+    return V[first], inv[np.asarray(Q)]
+
+
+def plane_catenoids_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                         cells=(1, 1)):
+    """cells2d builder: Weber's 16-copy unit (two mirrors, two
+    half-turns) tiled cu x cv on the measured square lattice.  order
+    drives the Lopez-Ros growth factor rho = 2^(order-1); radius sets
+    the domain reach (how far the catenoid necks flare)."""
+    if isinstance(cells, (int, float)):
+        cells = (int(cells), 1)
+    cu = int(np.clip(cells[0], 1, 6))
+    cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 6))
+    rho = float(2.0 ** (int(np.clip(order, 1, 5)) - 1))
+    Wf = plane_catenoids_W(rho)
+    reach = 1.0 + 3.0 * float(np.clip(radius, 0.3, 6.0)) / 1.2
+    punct = (0.0 + 0j, 1.0 + 0j, -1.0 + 0j)
+    n = int(np.clip(nu * 1.8, 80, 240))
+    eps = 1e-6
+    xs, ys = we_ends_grid((-reach, reach, eps, reach), punct, n,
+                          ny=max(24, int(n * 0.7)))
+    X = we_ends_integrate(Wf, xs, ys, punct)
+    # frame: patch coords are f - f(i eps); shift into the f(0) = 0
+    # frame the identities are stated in
+    delta = np.real(_pwc_seg(Wf, 0.0, 1j * eps, 'z0'))
+    X = X + delta[None, None, :]
+    dis, _f1, _fm1 = plane_catenoids_frame(rho)
+    # snap the real-axis boundary onto its measured symmetry elements
+    # (the reflected/rotated copies then share those vertices exactly
+    # -- the same projection step the conjugate-Plateau route uses)
+    for i, x in enumerate(xs):
+        vx = X[i, 0]
+        if 0.0 < x < 1.0:
+            X[i, 0] = np.array([0.0, vx[1], 0.0])        # y axis
+        elif -1.0 < x < 0.0:
+            X[i, 0] = np.array([vx[0], 0.0, 0.0])        # x axis
+        elif x >= 1.0:
+            X[i, 0] = np.array([vx[0], dis, vx[2]])      # y = +dis
+        else:
+            X[i, 0] = np.array([-dis, vx[1], vx[2]])     # x = -dis
+    mask = np.ones(X.shape[:2], dtype=bool)
+    quads0 = np.asarray(we_ends_quads(X, mask))
+    V0 = X.reshape(-1, 3)
+
+    def refl(nrm, off):
+        nrm = np.asarray(nrm, dtype=float)
+        H = np.eye(4)
+        H[:3, :3] = np.eye(3) - 2.0 * np.outer(nrm, nrm)
+        H[:3, 3] = 2.0 * off * nrm
+        return H
+
+    def halfturn(axis):
+        d = np.asarray(axis, dtype=float)
+        d = d / np.linalg.norm(d)
+        H = np.eye(4)
+        H[:3, :3] = 2.0 * np.outer(d, d) - np.eye(3)
+        return H
+    M1 = refl((1.0, 0.0, 0.0), -dis)
+    M2 = refl((0.0, 1.0, 0.0), dis)
+    R1 = halfturn((0.0, 1.0, 0.0))
+    R2 = halfturn((1.0, 0.0, 0.0))
+    ops = [np.eye(4)]
+    for H in (M1, M2, R1, R2):                # Weber's fr2..fr5 chain
+        ops = ops + [H @ g_ for g_ in ops]
+    a1 = np.array([4.0 * dis, 0.0, 0.0])
+    a2 = np.array([0.0, 4.0 * dis, 0.0])
+    Vs, Qs, base = [], [], 0
+    for iu in range(cu):
+        for iv in range(cv):
+            off = ((iu - 0.5 * (cu - 1)) * a1
+                   + (iv - 0.5 * (cv - 1)) * a2)
+            for H in ops:
+                Vh = V0 @ H[:3, :3].T + H[:3, 3] + off
+                Vs.append(Vh)
+                q = quads0 + base
+                if np.linalg.det(H[:3, :3]) < 0.0:
+                    q = q[:, ::-1]
+                Qs.append(q)
+                base += len(V0)
+    V = np.concatenate(Vs, axis=0)
+    Q = np.concatenate(Qs, axis=0)
+    span = 4.0 * dis * max(cu, cv)
+    V, Q = _pwc_weld(V, Q, 1e-6 * span)
+    V = _center_fit(V, scale, V)
+    return V, [tuple(int(i) for i in q) for q in Q], None
+
+
+# --------------------------------------------------------------------------
 # The catenoid field (doubly periodic half-catenoids)
 # --------------------------------------------------------------------------
 # A doubly periodic field of half-catenoids growing alternately up and

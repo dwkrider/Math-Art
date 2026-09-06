@@ -269,6 +269,7 @@ ALIAS = {
     "minsurf:SP_TOROIDAL_KS": "toroidal-karcher-scherk",
     # The catenoid field, from the ends backend + J_F theta quotient.
     "minsurf:DP_CATENOID_FIELD": "catenoid-field",
+    "minsurf:DP_PLANE_CATENOIDS": "plane-with-catenoids",
     # The half-twisted Scherk shipped in the Weierstrass zoo while the
     # curated record stayed OPEN, because the row minted its own
     # `half-twisted-scherk-surface` twin.  One surface, one record: the

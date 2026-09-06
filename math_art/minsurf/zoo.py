@@ -2052,6 +2052,26 @@ WE_SURFACES['DP_CATENOID_FIELD'] = {
 }
 SURFACE_FAMILY['DP_CATENOID_FIELD'] = 'DOUBLY'
 
+
+# Plane with catenoids: catenoid necks on a SQUARE lattice planted in
+# a plane, Weber's ch039 -- see the block above `plane_catenoids_W` in
+# weierstrass.py for the data, the four-element square-cell identity
+# and the references.  The Lopez-Ros factor rho = 2^(order-1) is the
+# growth knob (the page's own family parameter); the square-lattice
+# identity is gated at rho = 1 AND rho = 2, so the family claim is
+# measured, not assumed.
+WE_SURFACES['DP_PLANE_CATENOIDS'] = {
+    'label': "Plane with Catenoids (square lattice)",
+    'family': 'DOUBLY',
+    'mesher': we.plane_catenoids_mesh,
+    'cells2d_mesher': we.plane_catenoids_mesh,
+    'p_from': lambda order, radius: {
+        'rho': 2.0 ** (min(max(order, 1), 5) - 1)},
+    'count': "Growth (rho = 2^k)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['DP_PLANE_CATENOIDS'] = 'DOUBLY'
+
 WE_SURFACES['SP_SIX_SCHERK'] = {
     'label': "Six-Ended Scherk Tower",
     'family': 'SINGLY',
@@ -3385,6 +3405,35 @@ def _selftest():
     print(f"Catenoid field: end loops {r_lp:.1e} | deck vertical part "
           f"{r_h:.1e} | J_F real-axis phase {r_ph:.1e} "
           f"{'OK' if good else 'FAIL'}")
+
+    # Plane-with-catenoids gates -- the square-cell identity, stated
+    # before the mesher existed and measured on every run at TWO
+    # members (rho = 1 and 2), so the no-period-problem claim is
+    # checked across the family rather than at one point:
+    #   dis = f(1)_y = -f(-1)_x;  f((1,inf)) lies in y = +dis;
+    #   f((-inf,-1)) lies in x = -dis;  f((0,1)) and f((-1,0)) are the
+    #   straight half-turn axes (x = z = 0 resp. y = z = 0).
+    r_sq = 0.0
+    for rho_ in (1.0, 2.0):
+        dis_, f1_, fm1_ = we.plane_catenoids_frame(rho_)
+        Wp = we.plane_catenoids_W(rho_)
+        up_ = we._pwc_seg(Wp, 0.0, 0.5j, 'z0')
+
+        def _fx(x_):
+            return np.real(up_ + we._pwc_seg(Wp, 0.5j, x_ + 0.5j)
+                           + we._pwc_seg(Wp, x_ + 0.5j, x_))
+        r_sq = max(r_sq, abs(dis_ + fm1_[0]) / dis_)
+        for x_ in (2.5, 6.0):
+            r_sq = max(r_sq, abs(_fx(x_)[1] - dis_) / dis_)
+            r_sq = max(r_sq, abs(_fx(-x_)[0] + dis_) / dis_)
+        ax = _fx(0.45)
+        r_sq = max(r_sq, (abs(ax[0]) + abs(ax[2])) / dis_)
+        ax = _fx(-0.45)
+        r_sq = max(r_sq, (abs(ax[1]) + abs(ax[2])) / dis_)
+    good = r_sq < 1e-5
+    ok &= good
+    print(f"Plane-with-catenoids: square-cell identity (rho = 1, 2) "
+          f"worst {r_sq:.1e} {'OK' if good else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn
     # change).  Checked on the closed-form engine associates on a fixed grid
