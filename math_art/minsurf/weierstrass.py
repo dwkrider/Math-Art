@@ -4328,6 +4328,14 @@ def four_noid_sym2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     n1 = len(blk)
     full = np.concatenate([blk, blk * np.array([1.0, -1.0, 1.0])], axis=0)
     ffull = fblk + [tuple(a + n1 for a in q) for q in fblk]
+    # WELD the two mirror seams.  Concatenating the reflected copies
+    # leaves four loose quarter-patches that sit in the right places
+    # and look, from far enough away, like a 4-noid with four ends --
+    # they even pass an end-counting test.  They are four discs.
+    # The surface is one sheet: weld, then check chi.
+    from .plateau import _weld_points
+    span = float(np.max(full.max(axis=0) - full.min(axis=0)))
+    full, ffull = _weld_points(full, ffull, 1e-7 * max(span, 1e-12))
     # centre and fit the way every other zoo row does -- the raw
     # integration comes out tens of units across and offset in z
     return _center_fit(full, scale, full), ffull
@@ -13235,37 +13243,12 @@ def _selftest():
     ok &= good
     print(f"4-noid sym2: max |Re period|, four ends x four members "
           f"= {p4:.1e} {'OK' if good else 'FAIL'}")
-    # conformal parametrisation <=> minimal immersion.  Measured at two
-    # resolutions because what matters is that it CONVERGES: the chart
-    # has a pole of its own at y = 0, x = log(mu/lam^2) where z runs to
-    # infinity, and a single-resolution threshold either hides that or
-    # trips over it.
-    resq = []
-    for nq in (120, 240):
-        Xq, xq, yq = four_noid_sym2_patch(1.8, 4.0, nq, nq // 2)
-        d1q = np.gradient(Xq, xq, axis=0)
-        d2q = np.gradient(Xq, yq, axis=1)
-        Eq = (d1q * d1q).sum(-1)
-        Gq = (d2q * d2q).sum(-1)
-        mq = slice(3, -3)
-        resq.append(float(np.percentile(
-            np.abs(Eq - Gq)[mq, mq] / (Eq + Gq)[mq, mq], 95)))
-    good = resq[1] < 0.4 * resq[0] and resq[1] < 3e-3
-    ok &= good
-    print(f"4-noid sym2: conformality p95 {resq[0]:.2e} -> {resq[1]:.2e} "
-          f"under refinement {'OK' if good else 'FAIL'}")
-    # four ends, placed by the two symmetry planes
-    Vq, Fq = four_noid_sym2_mesh(None, 70, 46, 4, 2.0, 1.0, 0.0, 1)
-    Vq = np.asarray(Vq)
-    rq = np.linalg.norm(Vq[:, :2], axis=1)
-    keep = rq > 0.75 * rq.max()
-    angq = np.arctan2(Vq[keep, 1], Vq[keep, 0])
-    occ = np.histogram(angq, bins=72, range=(-np.pi, np.pi))[0] > 0
-    runs = sum(1 for iq in range(72) if occ[iq] and not occ[iq - 1])
-    good = runs == 4
-    ok &= good
-    print(f"4-noid sym2: far-field angular clusters = {runs} (want 4) "
-          f"{'OK' if good else 'FAIL'}")
+    # The patch and its assembly are NOT gated here, and the row does
+    # not ship, because the assembly is unsolved -- see BACKLOG.  Two
+    # checks that DID pass on a visibly wrong surface are deliberately
+    # gone rather than loosened: a conformality residual (true of the
+    # patch, silent about the assembly) and a far-field end count,
+    # which read four loose quarter-discs as four catenoid ends.
 
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in weierstrass")
     assert ok
