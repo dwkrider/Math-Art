@@ -926,12 +926,17 @@
   ],
   [
    "CLP_HANDLE",
-   "CLP with Handle (genus 4)",
+   "CLP with Handle (exact fundamental piece, genus 4)",
    "TPMS Non-Cubic"
   ],
   [
    "LIDINOID",
    "Lidinoid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "LIDINOID_1",
+   "Lidinoid (exact fundamental piece)",
    "TPMS Non-Cubic"
   ],
   [
@@ -981,7 +986,7 @@
   ],
   [
    "I6",
-   "Schoen I-6 (genus 5)",
+   "Schoen I-6 (exact fundamental piece, genus 5)",
    "TPMS Non-Cubic"
   ],
   [
@@ -1056,12 +1061,12 @@
   ],
   [
    "STESSMANN",
-   "Stessmann's Surface (conjugate to I-WP)",
+   "Stessmann's Surface (exact fundamental piece, conjugate to I-WP)",
    "TPMS Non-Cubic"
   ],
   [
    "TRIPLY_COSTA",
-   "Triply Periodic Costa (Batista, genus 5)",
+   "Triply Periodic Costa (Batista, exact fundamental piece, genus 5)",
    "TPMS Non-Cubic"
   ]
  ],
@@ -8651,6 +8656,48 @@
   [
    "PKD",
    "Pentakis Dodecahedron"
+  ]
+ ],
+ "soft_cells": [
+  [
+   "SADDLE",
+   "Saddle Prism Cell"
+  ],
+  [
+   "TRIPRISM",
+   "Soft Triangular Prism"
+  ],
+  [
+   "HEXPRISM",
+   "Soft Hexagonal Prism"
+  ],
+  [
+   "E2",
+   "Truncated Octahedron"
+  ],
+  [
+   "F2",
+   "Soft Cell (f2)"
+  ],
+  [
+   "G2",
+   "Schwarz P Cell (g2)"
+  ],
+  [
+   "H2",
+   "Soft Cell (h2)"
+  ],
+  [
+   "I2",
+   "Schwarz D Cell (i2)"
+  ],
+  [
+   "KELVIN",
+   "Kelvin Cell"
+  ],
+  [
+   "PD",
+   "PD Cell"
   ]
  ]
 }

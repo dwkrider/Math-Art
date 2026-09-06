@@ -508,7 +508,15 @@
    "Phase",
    "Asymmetry",
    "Kite Semi-Angle",
-   "Curved Edges"
+   "Curved Edges",
+   "Layout",
+   "Domains Around",
+   "Domains Through",
+   "Major Radius",
+   "Minor Radius",
+   "Sphere Radius",
+   "Spread",
+   "Allow Seam"
   ]
  },
  "mesh.apollonian_add": {
@@ -585,6 +593,25 @@
    "Color Bubbles",
    "Intersection Polyhedra",
    "Smooth Shading",
+   "Scale"
+  ]
+ },
+ "mesh.calabi_yau_add": {
+  "label": "Calabi-Yau Cross-Section",
+  "options": [
+   "Family",
+   "Degree",
+   "First Power",
+   "Second Power",
+   "Projection Angle",
+   "Phase",
+   "Extent",
+   "Patch Segments",
+   "Patch Rings",
+   "Color",
+   "Weld Patches",
+   "Boundary Link",
+   "Thickness",
    "Scale"
   ]
  },
@@ -779,6 +806,9 @@
    "Tube Radius",
    "Inversion Centre",
    "Inversion Radius",
+   "Reach",
+   "Deformation",
+   "Clip Radius",
    "Resolution",
    "Smooth Shading",
    "Thickness",
@@ -995,6 +1025,8 @@
    "Border",
    "Strut Radius",
    "Node Radius",
+   "Face Colors",
+   "Strut Colors",
    "Panel Gap"
   ]
  },
@@ -1282,6 +1314,11 @@
    "Relief Height",
    "Backing Slab",
    "Base Thickness",
+   "Surface",
+   "Frequency",
+   "Base Solid",
+   "Sphere Radius",
+   "Spread",
    "Separate Motifs"
   ]
  },
@@ -1296,7 +1333,12 @@
    "Margin",
    "Relief Height",
    "Trim Boundary",
-   "Separate Tiles"
+   "Separate Tiles",
+   "Surface",
+   "Major Radius",
+   "Minor Radius",
+   "Sphere Radius",
+   "Spread"
   ]
  },
  "mesh.knot_carpet_add": {
@@ -1383,7 +1425,12 @@
    "Margin",
    "Relief Height",
    "Trim Boundary",
-   "Separate Tiles"
+   "Separate Tiles",
+   "Surface",
+   "Major Radius",
+   "Minor Radius",
+   "Sphere Radius",
+   "Spread"
   ]
  },
  "mesh.layer_add": {
@@ -1727,7 +1774,7 @@
    "Rim Profile",
    "Rim Twist",
    "Reeds",
-   "Periodicity",
+   "Family",
    "Surface",
    "Arrangement",
    "Modulus",
@@ -1741,6 +1788,9 @@
    "Cells",
    "Cells V",
    "Cells W",
+   "Reflections",
+   "Prism Height",
+   "Cell Proportion",
    "Cells",
    "Domain Radius",
    "Associate Angle",
@@ -2416,6 +2466,30 @@
    "Smooth Shading"
   ]
  },
+ "mesh.soft_cell_add": {
+  "label": "Soft Cells",
+  "options": [
+   "Cell",
+   "Wall Scheme",
+   "Colatitude",
+   "Azimuth",
+   "Symmetry",
+   "Cells X",
+   "Cells Y",
+   "Cells Z",
+   "Gap Factor",
+   "Scale",
+   "Edge Samples",
+   "Face Rings",
+   "Face Style",
+   "Relax Iterations",
+   "Two Materials",
+   "Separate Objects",
+   "Smooth Shading",
+   "Crease Angle",
+   "Resolution"
+  ]
+ },
  "mesh.spacefill_add": {
   "label": "Space-Filling Solids",
   "options": [
@@ -2751,7 +2825,12 @@
    "Margin",
    "Relief Height",
    "Trim Boundary",
-   "Separate Tiles"
+   "Separate Tiles",
+   "Surface",
+   "Major Radius",
+   "Minor Radius",
+   "Sphere Radius",
+   "Spread"
   ]
  },
  "mesh.topological_surface_add": {
@@ -2926,6 +3005,11 @@
    "Color By",
    "Margin",
    "Relief Height",
+   "Surface",
+   "Major Radius",
+   "Minor Radius",
+   "Sphere Radius",
+   "Spread",
    "Separate Cells"
   ]
  },
