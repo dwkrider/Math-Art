@@ -10,7 +10,7 @@ Two modules are live:
 
 * **Polyhedra** — all 471 solids in [`data/polyhedra/`](../data/polyhedra/),
   drawn live in the browser from each record's own vertices and faces.
-* **Surfaces** — all 462 records in [`data/surfaces/`](../data/surfaces/),
+* **Surfaces** — all 475 records in [`data/surfaces/`](../data/surfaces/),
   drawn from meshes baked out of the extension's own generators.
 
 The difference between those two sentences is the main thing to
@@ -116,7 +116,7 @@ argues, rightly, that a mesh is a rendering at a chosen resolution and
 not part of a surface's identity. But the site has to draw something, and
 for much of that database the record is not sufficient to draw from:
 parametric and implicit/nodal records do carry evaluable formulas, but
-the 163 Weierstrass records mostly store no (g, dh) pair at all — their
+the 166 Weierstrass records mostly store no (g, dh) pair at all — their
 own notes say the shipped mesher is authoritative and that an unverified
 transcription "would silently define a different surface".
 
@@ -141,7 +141,7 @@ included, so the studio is built afterwards and each thumbnail is
 rendered **from the exported mesh**. A tile is therefore a picture of the
 exact file the viewer loads.
 
-61 records are implemented by no generator. Those get no mesh and no
+35 records are implemented by no generator. Those get no mesh and no
 tile, the module says so, and the gate does not ask for them.
 
 ## Thumbnails

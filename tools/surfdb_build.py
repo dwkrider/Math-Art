@@ -516,16 +516,7 @@ class Builder:
             slug = self.place(
                 "minsurf", key, label, family,
                 {"generator": "math_art.minsurf.parametric",
-                 # SCHERKT is the exception: minimal_surface_toolkit drops
-                 # it from mesh.periodic_minimal_add's list on purpose (it
-                 # is singly periodic and rode in the TPMS dict
-                 # historically), and its own comment says it stays
-                 # "reachable via mesh.tpms_add" -- which is where it is,
-                 # and where it builds. Pointing the record at the operator
-                 # that omits it made the drive stage conclude no operator
-                 # offered it at all.
-                 "operator_id": ("mesh.tpms_add" if key == "SCHERKT" else
-                                 "mesh.periodic_minimal_add"
+                 "operator_id": ("mesh.periodic_minimal_add"
                                  if fam_key in ("SINGLY", "DOUBLY")
                                  else "mesh.parametric_minimal_add"),
                  "family": fam_key, "key": key,
@@ -633,7 +624,17 @@ class Builder:
             slug = self.place(
                 "tpms", key, label, "minimal-periodic",
                 {"generator": "math_art.minsurf.tpms",
-                 "operator_id": "mesh.periodic_minimal_add",
+                 # SCHERKT is the exception. minimal_surface_toolkit drops
+                 # it from mesh.periodic_minimal_add's surface enum on
+                 # purpose -- it is singly periodic and merely rode in the
+                 # TPMS field dict historically -- and its comment says the
+                 # surface stays "reachable via mesh.tpms_add", which is
+                 # where it is and where it builds. Naming the operator
+                 # that omits it makes the drive stage conclude that NO
+                 # operator offers it, because the drive stage only ever
+                 # tries the operator a record names.
+                 "operator_id": ("mesh.tpms_add" if key == "SCHERKT"
+                                 else "mesh.periodic_minimal_add"),
                  "family": "TPMS", "key": key,
                  "definition_index": None, "implemented": True})
             rec = self.records[slug]

@@ -13,7 +13,7 @@
 //     is independent of how it is evaluated. The gyroid's nodal formula
 //     is not the gyroid: measured, its mean curvature reaches 0.032
 //     where a minimal surface has 0. The record says so; so does this.
-//   * IMPLEMENTED. 61 records describe surfaces no generator builds.
+//   * IMPLEMENTED. 35 records describe surfaces no generator builds.
 //     Those have no mesh and the viewer stays empty, which needs saying
 //     rather than looking like a failure to load.
 
