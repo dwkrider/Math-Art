@@ -3852,14 +3852,44 @@ def hackman_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 # exactly like a wrong member) and they VANISH at every stored member
 # (7e-6..3e-5, quadrature-limited, all seven rows of the table).
 #
-# The four G branch points ia, ia - 1/2, ib - 1/2, ib pair into cuts
-# along the torus edges x = 0 and x = 1/2, so the two half-windows
-# (0, 1/2) and (1/2, 1) are cut-free and carry continuous branches
-# (grid-unwrapped theta logs).  MEASURED: crossing the seam the naive
-# right-half branch lands on the RECIPROCAL 1/G (w2 increments match,
-# w1 flips), so the right half ships as 1/G; the deck translations are
-# z -> z+1 = (0, 0, 1) EXACTLY (vertical period) and z -> z+tau purely
-# horizontal -- the doubly periodic structure, both gated.
+# MESHED TO THE NOTEBOOK'S OWN RECIPE (the earlier two-half-window
+# tiling of the full torus rectangle produced a genuinely different
+# figure -- the exported ground truth is two parallel sheets joined
+# by a four-lobed neck cluster, not a winged strip).  Weber meshes
+# ONE QUARTER of the torus, the rectangle [0, 1/4] x [-Im tau/2,
+# Im tau/2]: his EllipticF/ArcSin chart of the upper half disk is
+# exactly a graded parametrization of that rectangle (verified
+# numerically against the chart; its rmin = 0.01 truncation circle
+# maps to |z| = (2 y0 / S) rmin with S = 2 K(m)/a0, which is what
+# `_lb_map_consts` reproduces without Mathematica).  On that quarter
+# the POINTWISE PRINCIPAL BRANCH of the sqrt product is continuous
+# (measured: neighbour steps stay O(grid) away from the three
+# boundary singularities at all seven members), which is precisely
+# what the notebook's NIntegrate evaluates -- so no branch tracking
+# is needed for the patch, only for the 1-D period paths.
+#
+# The patch is bounded by symmetry lines and a mirror curve, all
+# MEASURED off the computed boundary arcs rather than trusted:
+#   - x = 0, y in (0, b): a straight line (fit residual ~2e-5 of
+#     length) through f(ib) -- Weber's first rotation axis;
+#   - x = 0, y in (b, y0) and (-y0, a): ONE common straight line
+#     through f(ia) -- his second axis (the y in (a, 0) piece lands
+#     on a PARALLEL line, offset by the horizontal period: rotating
+#     about it instead builds an overlapping ghost);
+#   - x = 1/4: a planar curve at constant height X3 (std ~1e-17).
+# Assembly = rotate the patch 180 deg about line 1, the pair about
+# line 2, the four about the mirror plane; the two straight-line
+# rotations preserve the mesh winding, the mirror flips it.  The
+# deck translations are z -> z+1 = (0, 0, 1) EXACTLY (X3 = Re z)
+# and z -> z+tau purely horizontal -- both gated.
+#
+# GROUND TRUTH: registered against Weber's own PoVRay exports of the
+# three members he renders (tau = 0.94i, 1.2i, 2.5i; the dummy.pov
+# meshes ARE the assembled cell, tiled in his scene by 2*MESHxsize /
+# 2*MESHzsize).  Two-sided mean point-to-surface distance lands at
+# 0.07-0.08% of span for ALL THREE with the IDENTITY axis map, and
+# the cell extent ratios match his declared MESHxsize : MESHysize :
+# MESHzsize to ~0.2% -- those ratios are what the zoo gate pins.
 #
 # References:
 # - K. Lubeck and V. Ramos Batista, "The doubly periodic Scherk-Costa
@@ -3900,22 +3930,47 @@ def _lb_G_path(zp, a, b, tau):
     return np.exp(tot)
 
 
-def _lb_G_grid(Z, a, b, tau):
-    """continuous branch on a cut-free rectangle grid: phases
-    unwrapped along the first column, then along every row."""
+def _lb_G_pv(Z, a, b, tau):
+    """The notebook's G as the pointwise principal-branch product --
+    what Mathematica's NIntegrate evaluates.  Continuous on the
+    meshed quarter [0, 1/4] x [-Im tau/2, Im tau/2] (measured at all
+    seven members; the sqrt cuts stay outside it)."""
     th = genus1helicoid_theta11
+    return (np.sqrt(th(Z - 1j * a, tau) / th(Z - (1j * a - 0.5), tau))
+            * th(Z, tau) / th(Z - 0.5, tau)
+            * np.sqrt(th(Z - (1j * b - 0.5), tau) / th(Z - 1j * b, tau)))
 
-    def L(shift, half):
-        v = th(Z - shift, tau)
-        ph = np.angle(v)
-        ph0 = np.unwrap(ph[:, 0])
-        ph = np.unwrap(ph, axis=1)
-        ph = ph + (ph0 - ph[:, 0])[:, None]
-        return (0.5 if half else 1.0) * (np.log(np.abs(v)) + 1j * ph)
-    tot = (L(1j * a, True) - L(1j * a - 0.5, True)
-           + L(0.0, False) - L(0.5, False)
-           + L(1j * b - 0.5, True) - L(1j * b, True))
-    return np.exp(tot)
+
+def _lb_map_consts(y0):
+    """(a0, S) of Weber's half-disk chart, Mathematica-free.
+
+    a0 = modul(i / (4 y0)) with modul(t) = ModularLambda(2t)^(-1/4),
+    so the chart modulus m = 1/a0^4 IS lambda(i / (2 y0)) =
+    (theta2/theta3)^4 at the real nome q = exp(-pi / (2 y0)); S =
+    2 K(m) / a0 with K from the AGM.  Only the product 2 y0 / S is
+    consumed (the image of the chart's rmin truncation circle)."""
+    q = math.exp(-math.pi / (2.0 * y0))
+    t2 = 0.0
+    t3 = 1.0
+    for n_ in range(24):
+        t2 += 2.0 * q ** ((n_ + 0.5) ** 2)
+        t3 += 2.0 * q ** ((n_ + 1.0) ** 2)
+    m = (t2 / t3) ** 4
+    a0 = m ** -0.25
+    x_, y_ = 1.0, math.sqrt(1.0 - m)
+    for _ in range(40):
+        x_, y_ = 0.5 * (x_ + y_), math.sqrt(x_ * y_)
+        if abs(x_ - y_) < 1e-16:
+            break
+    K = math.pi / (2.0 * x_)
+    return a0, 2.0 * K / a0
+
+
+def _lb_fit_line(P):
+    """(point, unit direction, relative residual) of the best line."""
+    c = P.mean(axis=0)
+    _, s, Vt = np.linalg.svd(P - c)
+    return c, Vt[0], float(s[1] / (s[0] + 1e-30))
 
 
 def _lb_W_from_G(G):
@@ -3969,11 +4024,16 @@ def lb_deck(mi=2, n=30001):
 
 def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
             cells=(1, 1)):
-    """Lubeck-Batista mesh: the two cut-free half-windows integrated
-    on the ends backend, the right half on the measured reciprocal
-    branch, seam-joined below the cuts, tiled by the measured deck
-    translations.  order picks the member from the notebook's table;
-    radius sets how far the corner wings are followed."""
+    """Lubeck-Batista / doubly periodic Scherk-Costa mesh, built to
+    Weber's own notebook recipe (see the block header above): the
+    quarter-torus patch [0, 1/4] x [-y0, y0] on the pointwise
+    principal branch, assembled by the two measured 180-degree
+    symmetry-line rotations and the horizontal mirror, tiled by the
+    measured deck translations.  `order` picks the member from the
+    notebook's solved table; `radius` sets how far the flat sheets
+    are followed toward the ends (1.2 = the notebook's own rmin =
+    0.01 truncation, which is what Weber's exports use)."""
+    del spec, theta
     if isinstance(cells, (int, float)):
         cells = (int(cells), 1)
     cu = int(np.clip(cells[0], 1, 4))
@@ -3981,57 +4041,90 @@ def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     mi = int(np.clip(order - 1, 0, len(LB_MEMBERS) - 1))
     tt, a, b = LB_MEMBERS[mi]
     tau = 1j * tt
-    r0 = float(np.clip(0.075 * (1.2 / max(float(radius), 0.3)), 0.02,
-                       0.2))
-    n = int(np.clip(nu * 1.2, 56, 150))
-    eps = 2e-3
-    ymod = tt
-    ysp = tuple(v % ymod for v in (a, b) if 0.02 < v % ymod
-                < ymod - 0.02)
-    halves = []
-    for x0, x1, recip in ((eps, 0.5 - eps, False),
-                          (0.5 + eps, 1.0 - eps, True)):
-        punct = [complex(round(x0)), complex(round(x1)),
-                 complex(round(x0), ymod), complex(round(x1), ymod)]
-        xs, ys = we_ends_grid((x0, x1, eps, ymod - eps), punct, n,
-                              ny=int(n * 1.3), specials_y=ysp)
-        Z = xs[:, None] + 1j * ys[None, :]
-        G = _lb_G_grid(Z, a, b, tau)
-        if recip:
-            G = 1.0 / G
-        W = _lb_W_from_G(G)
-        X = we_ends_integrate(lambda zz: W, xs, ys, punct)
-        mask = we_ends_mask(xs, ys, punct, r0)
-        halves.append((xs, ys, X, mask))
-    # join: match values at the seam below the cuts (y = 0.2 * ymod)
-    xsL, ysL, XL, mL = halves[0]
-    xsR, ysR, XR, mR = halves[1]
-    jyL = int(np.argmin(np.abs(ysL - 0.2 * ymod)))
-    jyR = int(np.argmin(np.abs(ysR - ysL[jyL])))
-    XR = XR + (XL[-1, jyL] - XR[0, jyR])[None, None, :]
-    V0, F0 = [], []
-    for xs, ys, X, mask in ((xsL, ysL, XL, mL), (xsR, ysR, XR, mR)):
-        off = sum(len(v) for v in V0)
-        q = we_ends_quads(X, mask)
-        F0.extend(tuple(int(i) + off for i in qq) for qq in q)
-        V0.append(X.reshape(-1, 3))
-    V0 = np.concatenate(V0, axis=0)
+    y0 = tt / 2.0
+    # end truncation: Weber's rmin = 0.01 at the default radius; the
+    # sheets grow logarithmically, so radius works the exponent
+    rmin = float(np.clip(0.01 * (1.2 / max(float(radius), 0.2)) ** 2,
+                         1e-4, 0.15))
+    _a0, S_ = _lb_map_consts(y0)
+    r0 = 2.0 * y0 / S_ * rmin
+    n = int(np.clip(nu * 1.5, 60, 300))
+    eps = 1e-9
+    punct = [0j]
+    xs, ys = we_ends_grid((0.0, 0.25, -y0 + eps, y0 - eps), punct, n,
+                          ny=int(n * 2.2), specials_y=(a, b))
+    # keep nodes off the two boundary branch points (integrable 1/sqrt
+    # singularities: a node exactly on one evaluates to inf)
+    for v_ in (a, b):
+        jj = int(np.argmin(np.abs(ys - v_)))
+        if abs(ys[jj] - v_) < 1e-9:
+            ys[jj] += 3e-7
+
+    def Wfn(Z):
+        G = _lb_G_pv(Z, a, b, tau)
+        return _lb_W_from_G(G)
+
+    # the end puncture sits ON the window edge x = 0; nudge its wall
+    # just outside so the boundary column is swept too
+    X = we_ends_integrate(Wfn, xs, ys, [complex(-1e-9, 0.0)])
+    mask = we_ends_mask(xs, ys, punct, r0)
+    quads0 = we_ends_quads(X, mask)
+    # the two symmetry lines, measured off the x = 0 boundary arcs
+    wid = b - a
+    selA = (ys > 0.03 * wid) & (ys < b - 0.003) & mask[0]
+    selB = ((ys > b + 0.003) | (ys < a - 0.003)) & mask[0]
+    selL = (ys > a + 0.003) & (ys < -0.03 * wid) & mask[0]
+    cA, uA, rA = _lb_fit_line(X[0][selA])
+    cB, uB, rB = _lb_fit_line(X[0][selB])
+    cL, uL, _rL = _lb_fit_line(X[0][selL])
+    # snap every boundary arc exactly onto its measured line, and the
+    # mirror curve onto its plane, so the assembled seams weld
+    for sel_, c_, u_ in ((selA, cA, uA), (selB, cB, uB), (selL, cL, uL)):
+        P_ = X[0][sel_]
+        X[0][sel_] = c_ + ((P_ - c_) @ u_)[:, None] * u_[None, :]
+    h = float(np.median(X[-1, :, 2]))
+    X[-1, :, 2] = h
+    # prune to used vertices (masked nodes keep huge near-end values)
+    V0 = X.reshape(-1, 3)
     used = np.zeros(len(V0), dtype=bool)
-    for q in F0:
+    for q in quads0:
         for a_ in q:
             used[a_] = True
     remap = -np.ones(len(V0), dtype=np.int64)
     remap[used] = np.arange(int(used.sum()))
     V0 = V0[used]
-    F0 = [tuple(int(remap[a_]) for a_ in q) for q in F0]
-    P1, P2 = lb_deck(mi, n=8001)
-    Vs, Fs = [], []
+    F0 = [tuple(int(remap[a_]) for a_ in q) for q in quads0]
+
+    def rot180(c_, u_):
+        R_ = 2.0 * np.outer(u_, u_) - np.eye(3)
+        return lambda P_: (P_ - c_) @ R_.T + c_
+
+    r1 = rot180(cA, uA)
+    r2 = rot180(cB, uB)
+    parts = [V0, r1(V0)]
+    parts = parts + [r2(P_) for P_ in parts]
+    parts = parts + [P_ * np.array([1.0, 1.0, -1.0])
+                     + np.array([0.0, 0.0, 2.0 * h]) for P_ in parts]
+    # the line rotations are proper (winding kept); the mirror flips
+    flips = (False, False, False, False, True, True, True, True)
     NV = len(V0)
+    Vcell = np.concatenate(parts, axis=0)
+    Fcell = []
+    for k_, fl_ in enumerate(flips):
+        for q in F0:
+            qq = tuple(int(i) + k_ * NV for i in q)
+            Fcell.append(qq[::-1] if fl_ else qq)
+    # deck translations: z -> z+1 is (0, 0, 1) exactly (X3 = Re z);
+    # z -> z+tau is the horizontal one, measured off the grid seam
+    P2 = np.median(X[:, -1, :] - X[:, 0, :], axis=0)
+    P1 = np.array([0.0, 0.0, 1.0])
+    Vs, Fs = [], []
+    NC = len(Vcell)
     ci = 0
     for iu in range(cu):
         for iv in range(cv):
-            Vs.append(V0 + iu * P1[None, :] + iv * P2[None, :])
-            Fs.extend(tuple(int(i) + ci * NV for i in q) for q in F0)
+            Vs.append(Vcell + iu * P1[None, :] + iv * P2[None, :])
+            Fs.extend(tuple(int(i) + ci * NC for i in q) for q in Fcell)
             ci += 1
     V = np.concatenate(Vs, axis=0)
     V = _center_fit(V, scale, V)

@@ -2059,14 +2059,18 @@ WE_SURFACES['SP_HACKMAN'] = {
 SURFACE_FAMILY['SP_HACKMAN'] = 'SINGLY'
 
 
-# Lubeck-Batista doubly periodic genus 3: theta Gauss map with four
-# square-root branch points, dh = dz, members from the notebook's
-# solved (tau, a, b) table -- see the block above `lb_mesh` in
-# weierstrass.py for the data, the cut pairing, the measured
-# reciprocal-branch seam and the references.  The gate re-derives the
-# AUTHORS' period conditions (arXiv:0806.4313) at three members.
+# Lubeck-Batista doubly periodic Scherk-Costa surfaces (genus 3):
+# theta Gauss map with four square-root branch points, dh = dz,
+# members from the notebook's solved (tau, a, b) table, meshed to
+# Weber's own quarter-patch recipe and REGISTERED against his PoVRay
+# exports at 0.07-0.08% of span for all three rendered members --
+# see the block above `lb_mesh` in weierstrass.py for the recipe,
+# the measured symmetry lines and the references.  The gate
+# re-derives the AUTHORS' period conditions (arXiv:0806.4313) at
+# three members AND pins the assembled cell's extent ratios to the
+# MESHxsize : MESHysize : MESHzsize Weber's exports declare.
 WE_SURFACES['DP_LUBECK_BATISTA'] = {
-    'label': "Lubeck-Batista Surface (genus 3, tau = i member)",
+    'label': "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
     'family': 'DOUBLY',
     'mesher': we.lb_mesh,
     'cells2d_mesher': we.lb_mesh,
@@ -3585,10 +3589,32 @@ def _selftest():
     r_h2 = abs(P2_[2])
     good_ = r_v < 1e-5 and r_h2 < 1e-8
     lb_ok &= good_
-    ok &= lb_ok
     print(f"Lubeck-Batista deck: |z+1 - (0,0,1)| = {r_v:.1e}, "
           f"z+tau vertical part {r_h2:.1e} "
           f"{'OK' if good_ else 'FAIL'}")
+    # SHAPE gate: the assembled cell's extent ratios, pinned to the
+    # MESHxsize : MESHysize : MESHzsize declared inside Weber's own
+    # PoVRay exports of the three members he renders (his exports
+    # normalise the y half-extent to 1, so x/z and y/z are the two
+    # rigid-motion-and-scale invariants; the full point-to-surface
+    # registration against those exports landed at 0.07-0.08% of
+    # span with the identity axis map).  A wrong member, a wrong
+    # rotation axis or an overlapping ghost assembly all move these
+    # by far more than the 1.5% gate.
+    lb_shape = {2: (2.3164, 3.0699), 4: (1.0650, 2.1687),
+                7: (1.0000, 3.3672)}
+    for order_, (exz_, eyz_) in lb_shape.items():
+        V_, _F, _uv = we.lb_mesh(None, 110, 60, order_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_x = abs(ex_[0] / ex_[2] - exz_) / exz_
+        r_y = abs(ex_[1] / ex_[2] - eyz_) / eyz_
+        good_ = r_x < 0.015 and r_y < 0.015
+        lb_ok &= good_
+        print(f"Lubeck-Batista m{order_ - 1} cell shape vs Weber's "
+              f"export: x/z off {r_x:.1e}, y/z off {r_y:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
+    ok &= lb_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20
