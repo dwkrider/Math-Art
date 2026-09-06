@@ -7,18 +7,23 @@
     "aperiodic",
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
+    "exactness": "numerical-integral",
     "note": "Weber and Wolf's surface with two catenoidal and three planar ends realizing the borderline case g = 3 of the Hoffman-Meeks conjecture (at most g + 2 ends for an embedded finite-total-curvature surface of genus g); the planar levels connect through Costa saddles.  The page states similar surfaces exist for all odd genera; a companion page shows a genus-4 version."
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -36,14 +41,21 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
-      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "HIGHER",
+      "key": "WEBER_WOLF",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block.",
       "M. Weber, 'Weber-Wolf Surface of genus 3 with 5 ends', minimalsurfaces.blog (local mirror: minsurf/book/.../ch415_weber_wolf_surface_of_genus_3_with_5_ends.md).",
       "M. Weber, 'Weber-Wolf Surface of Genus 4 with 5 Ends', minimalsurfaces.blog (local mirror: minsurf/book/.../ch416_weber_wolf_surface_of_genus_4_with_5_ends.md)."
     ]

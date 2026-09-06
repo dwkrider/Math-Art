@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 476,
-  "implemented_count": 445,
+  "implemented_count": 446,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -15947,8 +15947,8 @@
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -15966,8 +15966,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

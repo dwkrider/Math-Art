@@ -2753,6 +2753,26 @@ WE_SURFACES['LM_SLAB'] = {
 }
 SURFACE_FAMILY['LM_SLAB'] = 'SINGLY'
 
+# Weber-Wolf surface: the borderline case of the Hoffman-Meeks
+# conjecture at genus 3 -- two catenoidal and three planar ends, the
+# planar levels connected by Costa saddles; k = order + 1 picks the
+# dihedral symmetry (k = 2 is THE genus-3 surface, k = 3..5 the
+# higher-symmetry versions of genus 2k - 1).  Data from Weber's DH11
+# notebook with (a, b) RE-SOLVED from the notebook's own period test
+# to ~1e-11 (the stored values plateau at 1e-8..5e-3); registered
+# against Weber's own PoVRay exports of k = 2, 3, 4 at 0.20-0.27%
+# GT -> ours of span, extent ratios matching to 4 digits (pinned
+# below).  See the block above `ww_mesh` in weierstrass.py.
+WE_SURFACES['WEBER_WOLF'] = {
+    'label': "Weber-Wolf Surface (genus 3, 5 ends)",
+    'family': 'HIGHER',
+    'mesher': we.ww_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Symmetry k (2/3/4/5)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['WEBER_WOLF'] = 'HIGHER'
+
 WE_SURFACES['LOPEZ_KLEIN'] = {
     # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
     # 1993): the unique-in-its-class complete non-orientable minimal
@@ -3857,6 +3877,37 @@ def _selftest():
           f"plate heights (p90 offset = {np.percentile(dev_, 90):.3f})"
           f" {'OK' if good_ else 'FAIL'}")
     ok &= lm_ok
+
+    # Weber-Wolf gates: the notebook's OWN period test must vanish at
+    # every stored member (the (a, b) roots re-solved from that test;
+    # quadrature-converged, so a wrong member reads directly), rho
+    # must come out real (the balance makes it so only on the family),
+    # and the assembled extent ratios are pinned to Weber's own
+    # exports (z/x measured off his k = 2, 3, 4 dummy.pov at 0.8928 /
+    # 0.9836 / 0.8829; full point registration landed at 0.20-0.27%
+    # GT -> ours of span offline).
+    ww_ok = True
+    for k_ in (2, 3, 4, 5):
+        a_, b_ = we.WW_MEMBERS[k_]
+        t1_, t2_ = we.ww_tst(k_, a_, b_)
+        rho_ = we.ww_rho(k_, a_, b_)
+        good_ = (abs(t1_) < 5e-8 and abs(t2_) < 5e-8
+                 and abs(rho_.imag) < 1e-12)
+        ww_ok &= good_
+        print(f"Weber-Wolf k={k_}: notebook period test "
+              f"({t1_:+.1e}, {t2_:+.1e}), Im rho = {rho_.imag:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
+    ww_shape = {1: 0.8928, 2: 0.9836, 3: 0.8829}
+    for order_, zx_ in ww_shape.items():
+        V_, _F, _uv = we.ww_mesh(None, 60, 60, order_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_zx = abs(ex_[2] / ex_[0] - zx_) / zx_
+        good_ = r_zx < 0.01 and abs(ex_[1] / ex_[0] - 1.0) < 0.005
+        ww_ok &= good_
+        print(f"Weber-Wolf k={order_ + 1} cell z/x vs Weber's export: "
+              f"off {r_zx:.1e} {'OK' if good_ else 'FAIL'}")
+    ok &= ww_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20

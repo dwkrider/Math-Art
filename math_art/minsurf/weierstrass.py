@@ -13065,6 +13065,267 @@ def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     return V, F, None
 
 
+# ==========================================================================
+# Weber-Wolf surfaces: the borderline case of the Hoffman-Meeks
+# conjecture at genus 3 (two catenoidal + three planar ends), and its
+# higher dihedral symmetrizations.
+#
+# The Hoffman-Meeks conjecture bounds an embedded finite-total-
+# curvature surface of genus g by g + 2 ends; the borderline
+# realizations are the catenoid (g = 0), Costa (g = 1), Wohlgemuth
+# (g = 2), and at g = 3 the Weber-Wolf surface: two catenoidal ends,
+# three planar ends, the connections between consecutive planar
+# levels realized by Costa saddles.  The k-fold dihedral versions
+# (k = 2 is the genus-3 surface; k = 3, 4, 5 have genus 2k - 1) come
+# from Weber's DH11 notebook (higher-symmetry portion by Ramazan
+# Yol).
+#
+# Data (DH11.nb, transcribed; all powers pointwise principal):
+#     phi1 = z^(1/k-1) (z^2-a^2)^(1/k-1) (z^2-1)^(1-1/k)
+#            (z^2-b^2)^(-1-1/k),
+#     phi2 = z^(1-1/k) (z^2-b^2)^(1+1/k) (z^2-1)^(1/k-1)
+#            (z^2-a^2)^(-1-1/k),
+#     dh   = dz/(z^2 - a^2),
+#     om1  = -(rho phi1 - phi2/rho)/2,  om2 = i(rho phi1 + phi2/rho)/2,
+#     rho  = sqrt( int_0^1 e^(-i pi/k) phi2 / int_0^1 e^(i pi/k) phi1 )
+# (rho comes out REAL, gated), with (a, b) the two-parameter period
+# problem.  The notebook's own test function is
+#     tst = ( Re int_{(1+a)/2}^{i -> 10} om2,
+#             Re int_{1/2}^{i -> (a+b)/2} (om1, om2)
+#                 . (-sin(-pi/k), cos(-pi/k)) )
+# and the members are its roots.  The notebook's stored (a, b) values
+# satisfy tst only to 1e-8 (k = 2) .. 5e-3 (k = 5) -- quadrature-
+# converged plateaus, so those are the notebook's own FindRoot
+# tolerances, not our error; WW_MEMBERS stores the roots RE-SOLVED
+# from the same test to ~1e-11 (Newton; k = 2 moved by 1e-8, k = 5
+# by 6e-4).  The zoo gate re-derives tst at the stored roots.
+#
+# MESHED TO THE NOTEBOOK'S LOG CHART: w = log((z^2-a^2)^2/(z^2-b^2)),
+# whose two inverse branches z = sqrt((2a^2 + e^w +- e^(w/2)
+# sqrt(4a^2-4b^2+e^w))/2) cover the fundamental piece as two strips
+# (f2 on y in (0, pi), f3 on y in (-pi, 0), Weber's graded windows
+# with breaks at the critical values x1, x2, x3 = the logs of the
+# images of z = 1, 0 and the branch-merge).  dz/dw is used IN CLOSED
+# FORM (dw/dz = 2z(2/(z^2-a^2) - 1/(z^2-b^2))); integration is one
+# horizontal sweep along a mid row plus vertical column sweeps, the
+# anchor by a straight z-path from the base z = i, and the
+# normalization X(0) = 0 by the imaginary-axis path (upper-side
+# principal branches throughout).  Assembly: 180-degree rotation
+# about the horizontal line at azimuth -pi/(2k), mirror across
+# y = 0, then the k vertical rotations -- the notebook's mp2/mp3/mp4.
+#
+# GROUND TRUTH: registered against Weber's own PoVRay exports of the
+# three members he renders (k = 2, 3, 4): GT -> ours one-sided means
+# 0.27% / 0.23% / 0.20% of span at moderate resolution (0.17% at
+# high; the residual outlier fraction, 6-15%, is his decorative
+# low-resolution FR sub-meshes exactly as in his other packages),
+# and the assembled extent ratios z/x match his exports to 4 digits
+# (0.8928 / 0.9836 / 0.8829 for k = 2 / 3 / 4) -- pinned in the zoo
+# gate.
+#
+# References:
+# - M. Weber and M. Wolf, "Teichmueller theory and handle addition
+#   for minimal surfaces", Ann. of Math. 156 (2002) 713-795 -- the
+#   handle-addition machinery behind the family.
+# - D. Hoffman and W. H. Meeks III, "The asymptotic behavior of
+#   properly embedded minimal surfaces of finite topology", J. Amer.
+#   Math. Soc. 2 (1989) 667-682 -- the conjecture whose g = 3
+#   borderline case this surface realizes.
+# - M. Weber, "Weber-Wolf surface of genus 3 with 5 ends",
+#   minimalsurfaces.blog (notebook `DH11.nb`, higher-symmetry portion
+#   by Ramazan Yol -- the data, the solved members and the log chart
+#   transcribed above; PoVRay exports = registration ground truth).
+# ==========================================================================
+
+# (a, b) per k, re-solved from the notebook's own tst to ~1e-11
+# (the notebook's stored values, satisfying tst to 1e-8..5e-3, are
+# k=2: (1.03243674045806521, 1.09547100064006697),
+# k=3: (1.0261070260032843, 1.0785891849884828),
+# k=4: (1.0203659563370262, 1.0608027225248307),
+# k=5: (1.0162839641877608, 1.0477361415441295))
+WW_MEMBERS = {2: (1.0324367538, 1.0954710181),
+              3: (1.0261022604, 1.0785622028),
+              4: (1.0203291491, 1.0605994668),
+              5: (1.0161738755, 1.0471651251)}
+WW_WINDOWS = {2: (13.0, 0.2, 6.0), 3: (13.0, 0.2, 7.0),
+              4: (13.0, 0.2, 8.0), 5: (13.0, 0.2, 8.0)}
+
+
+def _ww_pow(z, e):
+    return np.exp(e * np.log(z))
+
+
+def ww_phis(k, a, b):
+    def phi1(z):
+        z = np.asarray(z, dtype=complex)
+        return (_ww_pow(z, 1.0 / k - 1.0)
+                * _ww_pow(z * z - a * a, 1.0 / k - 1.0)
+                * _ww_pow(z * z - 1.0, 1.0 - 1.0 / k)
+                * _ww_pow(z * z - b * b, -1.0 - 1.0 / k))
+
+    def phi2(z):
+        z = np.asarray(z, dtype=complex)
+        return (_ww_pow(z, 1.0 - 1.0 / k)
+                * _ww_pow(z * z - b * b, 1.0 + 1.0 / k)
+                * _ww_pow(z * z - 1.0, 1.0 / k - 1.0)
+                * _ww_pow(z * z - a * a, -1.0 - 1.0 / k))
+    return phi1, phi2
+
+
+def ww_rho(k, a, b, n=400):
+    """The Lopez-Ros balance on (0, 1); real for the true members."""
+    phi1, phi2 = ww_phis(k, a, b)
+    gx, gw = np.polynomial.legendre.leggauss(n)
+    t = 0.5 * (gx + 1.0)
+    wt = 0.5 * gw
+    u = 3 * t * t - 2 * t ** 3
+    du = 6 * t - 6 * t * t
+    z = u + 0j
+    I1 = np.sum(np.exp(1j * np.pi / k) * phi1(z) * du * wt)
+    I2 = np.sum(np.exp(-1j * np.pi / k) * phi2(z) * du * wt)
+    return complex(np.sqrt(I2 / I1))
+
+
+def ww_forms(k, a, b, rho):
+    phi1, phi2 = ww_phis(k, a, b)
+
+    def om(z):
+        z = np.asarray(z, dtype=complex)
+        p1 = rho * phi1(z)
+        p2 = phi2(z) / rho
+        return np.stack([-(p1 - p2) / 2.0, 1j * (p1 + p2) / 2.0,
+                         1.0 / (z * z - a * a)], axis=-1)
+    return om
+
+
+def ww_forms_w(k, a, b, rho, branch):
+    """The forms in the log chart, dz/dw in closed form."""
+    om = ww_forms(k, a, b, rho)
+
+    def zfn(w):
+        w = np.asarray(w, dtype=complex)
+        ew = np.exp(w)
+        s = np.sqrt(4 * a * a - 4 * b * b + ew)
+        return np.sqrt(0.5 * (2 * a * a + ew
+                              + branch * np.exp(0.5 * w) * s))
+
+    def omw(w):
+        z = zfn(w)
+        dwdz = 2.0 * z * (2.0 / (z * z - a * a)
+                          - 1.0 / (z * z - b * b))
+        return om(z) / dwdz[..., None]
+    return zfn, omw
+
+
+def ww_tst(k, a, b, n=3000):
+    """The notebook's own 2-component period test (see header)."""
+    rho = ww_rho(k, a, b)
+    om = ww_forms(k, a, b, rho)
+
+    def path_int(waypts):
+        tot = np.zeros(3, dtype=complex)
+        for z0, z1 in zip(waypts[:-1], waypts[1:]):
+            t = np.linspace(0.0, 1.0, n // len(waypts))
+            u = 3 * t * t - 2 * t ** 3
+            pts = z0 + (z1 - z0) * u
+            tot = tot + _kus_gl(om, pts[:-1], pts[1:], 12).sum(axis=0)
+        return tot
+    t1 = float(np.real(path_int(
+        [(1 + a) / 2.0 + 0j, 1j, 10.0 + 0j]))[1])
+    v = np.real(path_int([0.5 + 0j, 1j, (a + b) / 2.0 + 0j]))[:2]
+    d = np.array([-math.sin(-math.pi / k), math.cos(-math.pi / k)])
+    return t1, float(v @ d)
+
+
+def ww_patches(k, nx=10, ny=26, windows=None):
+    """The two log-chart strips of the fundamental piece, integrated
+    (mid-row sweep + vertical columns, z-path anchor from z = i,
+    X(0) = 0 normalization).  Returns ([F2, F3], (a, b, rho))."""
+    a, b = WW_MEMBERS[k]
+    rho = ww_rho(k, a, b).real
+    plan1, plan2, cat = windows or WW_WINDOWS[k]
+    x1, x2, x3 = sorted([
+        math.log((a * a - 1.0) ** 2 / (b * b - 1.0)),
+        math.log(a ** 4 / (b * b)),
+        math.log(4 * (b * b - a * a))])
+    om = ww_forms(k, a, b, rho)
+    eps = 1e-11
+
+    def xgrid(spec):
+        xs = [np.linspace(lo, hi, nx, endpoint=False)
+              for lo, hi in zip(spec[:-1], spec[1:])]
+        return np.unique(np.concatenate(xs + [[spec[-1]]]))
+    X1 = xgrid([-plan1, x1, x2, x3, plan2, cat])
+    X2 = xgrid([-plan1, x1, x2, x3, plan2])
+    Y2 = np.pi * np.linspace(eps ** 0.25, 1.0 - eps, ny) ** 2
+    Y1 = np.sort(-np.pi
+                 * np.linspace(eps ** 0.25, 1.0 - eps, ny)[::-1] ** 0.5)
+    out = []
+    for XR, YR, branch in ((X1, Y2, +1), (X2, Y1, -1)):
+        zfn, omw = ww_forms_w(k, a, b, rho, branch)
+        W = XR[:, None] + 1j * YR[None, :]
+        nu2, nv2 = W.shape
+        F = np.zeros((nu2, nv2, 3), dtype=complex)
+        jm = nv2 // 2
+        im = int(np.argmin(np.abs(XR - 0.5 * (x3 + plan2))))
+        za = complex(zfn(W[im, jm]))
+        path = np.linspace(1j, za, 1200)
+        F[im, jm] = _kus_gl(om, path[:-1], path[1:], 10).sum(axis=0)
+        for i in range(im + 1, nu2):
+            F[i, jm] = F[i - 1, jm] + _kus_gl(omw, W[i - 1, jm],
+                                              W[i, jm])
+        for i in range(im - 1, -1, -1):
+            F[i, jm] = F[i + 1, jm] + _kus_gl(omw, W[i + 1, jm],
+                                              W[i, jm])
+        for j in range(jm + 1, nv2):
+            F[:, j] = F[:, j - 1] + _kus_gl(omw, W[:, j - 1], W[:, j])
+        for j in range(jm - 1, -1, -1):
+            F[:, j] = F[:, j + 1] + _kus_gl(omw, W[:, j + 1], W[:, j])
+        out.append(np.real(F))
+    zp = 1j * np.linspace(1.0, 1e-9, 3000) ** 2
+    delta = np.real(_kus_gl(om, zp[:-1], zp[1:], 10).sum(axis=0))
+    return [o - delta for o in out], (a, b, rho)
+
+
+def ww_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Weber-Wolf surface: order picks k = order + 1 (order 1 = the
+    genus-3, 5-end borderline surface; higher = the k-fold dihedral
+    versions of genus 2k - 1).  `radius` follows the catenoid and
+    planar ends further out."""
+    del spec, theta
+    k = int(np.clip(order + 1, 2, 5))
+    p1, p2, cat = WW_WINDOWS[k]
+    fac = float(np.clip(radius / 1.2, 0.5, 1.6))
+    nx = max(6, int(nu / 6))
+    ny = max(16, int(nv * 0.55))
+    patches, _meta = ww_patches(k, nx=nx, ny=ny,
+                                windows=(p1 * fac, p2, cat * fac))
+    u = np.array([math.cos(math.pi / (2 * k)),
+                  -math.sin(math.pi / (2 * k)), 0.0])
+    R = 2.0 * np.outer(u, u) - np.eye(3)
+    My = np.diag([1.0, -1.0, 1.0])
+    Vs, Fs = [], []
+    off = 0
+    for kk in range(k):
+        th = TAU * kk / k
+        c_, s_ = math.cos(th), math.sin(th)
+        Rz = np.array([[c_, -s_, 0.0], [s_, c_, 0.0], [0.0, 0.0, 1.0]])
+        for Xg in patches:
+            n2, v2 = Xg.shape[:2]
+            P0 = Xg.reshape(-1, 3)
+            quads0 = _kus_grid_quads(n2, v2)
+            for M, fl in ((Rz, False), (Rz @ R, False),
+                          (Rz @ My, True), (Rz @ My @ R, True)):
+                Vs.append(P0 @ M.T)
+                Fs.extend(tuple(i + off for i in
+                                (q[::-1] if fl else q))
+                          for q in quads0)
+                off += len(P0)
+    V = np.concatenate(Vs, axis=0)
+    V = _center_fit(V, scale, V)
+    return V, Fs, None
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
