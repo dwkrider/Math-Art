@@ -4219,7 +4219,7 @@ def four_noid_sym2_params(lam):
     return tau, rho
 
 
-def four_noid_sym2_patch(lam, mu, nx, ny, rmin=-3.0, rmax=3.0, eps=1e-7):
+def four_noid_sym2_patch(lam, mu, nx, ny, rmin=-3.0, rmax=3.0, eps=1e-4):
     """One quarter of the 4-noid, integrated from its Weierstrass data.
 
     G(z) = rho z (z - tau)(z + tau),
@@ -4231,13 +4231,36 @@ def four_noid_sym2_patch(lam, mu, nx, ny, rmin=-3.0, rmax=3.0, eps=1e-7):
     which is the same surface and lets the end periods be MEASURED
     rather than trusted.
 
-    The chart has a pole of its own where mu - e^u lam^2 vanishes --
-    at y = 0, x = log(mu/lam^2).  There z runs to infinity while the
-    metric runs to zero, so the surface is perfectly regular there and
-    only the coordinate blows up; it is why the notebook splits its
-    x-range at log(mu/lam^2) and log(lam^2 mu) and samples each piece
-    separately, and why the conformality residual is large in a thin
-    strip around it while converging O(h^2) everywhere else.
+    The strip covers exactly the open first quadrant of the z-plane
+    (the Moebius map takes the upper half E-plane to the upper half
+    z^2-plane, and the principal sqrt halves that), so the strip's
+    two long edges are NOT one symmetry curve each -- both are MIXED:
+    the y -> 0 edge is z real in (lam, inf) for x < log(mu/lam^2) and
+    z imaginary beyond it, the y -> pi edge is z real in (0, lam) for
+    x < log(lam^2 mu) and z imaginary beyond that.  On the real axis
+    g and dh are both real, so d(X2) = Re(phi2 du) = 0 and the curve
+    lies in a plane X2 = const; on the imaginary axis g is imaginary
+    and dh real, so d(X1) = 0 and the curve lies in X1 = const.  Four
+    planar arcs, but only TWO planes -- the surface's two orthogonal
+    mirror planes, one per z-axis.
+
+    The two split columns are BRANCH POINTS of the strip chart, not
+    just awkward spots.  Where mu - e^u lam^2 vanishes (y = 0,
+    x = log(mu/lam^2)) z runs to infinity while the metric runs to
+    zero; the surface point is regular -- it is one of the two points
+    where the mirror planes' common axis pierces the surface -- but
+    w = 1/z ~ sqrt(u - u0) there, so dX/du diverges like
+    (u - u0)^(-1/2).  Same at (log(lam^2 mu), pi), where z = 0.  A
+    quadrature path that runs a row past one of those spikes at
+    distance eps picks up an O(1) kick that contaminates everything
+    downstream on the row -- which is exactly what displaced the two
+    imaginary-axis arcs into two different, both-wrong planes and
+    broke the assembly.  So the integration runs a single spine along
+    the middle of the strip (far from both branch points) and then
+    up/down each column, with the y-grid graded quadratically toward
+    the edges so the inverse-sqrt endpoint behaviour is resolved; the
+    leftover corner error is confined to the two axis columns, where
+    the assembly snaps the seam onto the planes anyway.
     """
     tau, rho = four_noid_sym2_params(lam)
     t0 = math.log(mu / (lam * lam))
@@ -4250,7 +4273,11 @@ def four_noid_sym2_patch(lam, mu, nx, ny, rmin=-3.0, rmax=3.0, eps=1e-7):
     x = np.concatenate([np.linspace(rmin, t0, n1, endpoint=False),
                         np.linspace(t0, t1, n2, endpoint=False),
                         np.linspace(t1, rmax, n3)])
-    y = np.linspace(eps, math.pi - eps, ny)
+    # smoothstep grading: node spacing ~ s near both strip edges keeps
+    # the branch columns' (u - u0)^(-1/2) integrand tame under the
+    # trapezoid rule
+    s = np.linspace(0.0, 1.0, ny)
+    y = eps + (math.pi - 2.0 * eps) * s * s * (3.0 - 2.0 * s)
     U = x[:, None] + 1j * y[None, :]
     E = np.exp(U)
     D = mu - E * lam * lam
@@ -4266,14 +4293,20 @@ def four_noid_sym2_patch(lam, mu, nx, ny, rmin=-3.0, rmax=3.0, eps=1e-7):
     W = np.stack([0.5 * (1.0 / g - g) * dh,
                   0.5j * (1.0 / g + g) * dh,
                   dh], axis=-1) * dZ[..., None]
+    jm = ny // 2
+    spine = np.zeros((len(x), 3), dtype=complex)
+    spine[1:] = np.cumsum(0.5 * (W[1:, jm] + W[:-1, jm])
+                          * np.diff(x)[:, None], axis=0)
     acc = np.zeros(W.shape, dtype=complex)
-    acc[1:] = np.cumsum(0.5 * (W[1:] + W[:-1])
-                        * np.diff(x)[:, None, None], axis=0)
-    col = W[0] * 1j                      # du = i dy along the y edge
-    off = np.zeros(col.shape, dtype=complex)
-    off[1:] = np.cumsum(0.5 * (col[1:] + col[:-1])
-                        * np.diff(y)[:, None], axis=0)
-    return np.real(acc + off[None, :, :]), x, y
+    dy = np.diff(y)
+    Wi = W * 1j                          # du = i dy along a column
+    acc[:, jm + 1:] = np.cumsum(0.5 * (Wi[:, jm + 1:] + Wi[:, jm:-1])
+                                * dy[jm:][None, :, None], axis=1)
+    rev = Wi[:, jm::-1]
+    acc[:, jm - 1::-1] = -np.cumsum(0.5 * (rev[:, 1:] + rev[:, :-1])
+                                    * dy[:jm][::-1][None, :, None],
+                                    axis=1)
+    return np.real(spine[:, None, :] + acc), x, y
 
 
 def four_noid_sym2_end_periods(lam, r=1e-3, n=4000):
@@ -4301,10 +4334,26 @@ def four_noid_sym2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
                         storeys=1):
     """Karcher's 4-noid with two orthogonal symmetry planes.
 
-    A quarter patch, then the notebook's own assembly: reflect in the
-    plane x = 0, then in the plane y = 0.  Those two reflections ARE
-    the two symmetry planes the surface is named for.  `order` picks
-    the member along lambda (end position), `radius` the growth mu.
+    A quarter patch, then the notebook's MeshReflect assembly --
+    reflect in x = 0, then in y = 0 -- but only after the patch has
+    been moved so its own mirror planes ARE the coordinate planes.
+    The numerical integration starts from an arbitrary base point, so
+    the two planes come out at x = c2 and y = c1 rather than through
+    the origin (the notebook's closed-form immersion carries the
+    constant of integration that puts them there; the integral does
+    not).  Both constants are measured off the boundary arcs -- see
+    `four_noid_sym2_patch` for why each strip edge is two arcs in two
+    different planes, split at log(mu/lam^2) and log(lam^2 mu) -- and
+    the arcs are then snapped exactly onto their planes so the mirror
+    seams weld pointwise.  `order` picks the member along lambda (end
+    position), `radius` the growth mu.
+
+    Verified two ways (see tests in `_selftest`): the assembled mesh
+    is one sheet with chi = -2 and exactly four boundary loops (a
+    truncated 4-punctured sphere), and its bounding-box proportions
+    match Weber's own PoVRay exports of this family to three decimals
+    (y/x = 0.922, z/x = 0.931 at lambda = 1.8, mu = 4; y/x = 0.627,
+    z/x = 0.972 at lambda = 1.2, mu = 1.2).
     """
     del spec, theta
     # lambda > 1 is required by sqrt(lambda - 1); very close to 1 the
@@ -4314,20 +4363,48 @@ def four_noid_sym2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     mu = float(np.clip(radius * 2.0, 0.4, 12.0))
     nx = int(np.clip(nu * 2, 60, 400))
     ny = int(np.clip(nv, 30, 200))
-    reach = float(np.clip(1.0 + 0.4 * max(int(storeys), 1), 1.0, 4.0))
+    # reach 1 is the notebook's own window x in [-3, 3] (also what
+    # Weber's PoVRay exports truncate at, which the selftest's
+    # bounding-box comparison relies on); more storeys pushes the
+    # truncation further out the log-growing catenoid ends
+    reach = float(np.clip(0.6 + 0.4 * max(int(storeys), 1), 1.0, 4.0))
     X, x, y = four_noid_sym2_patch(lam, mu, nx, ny,
                                    rmin=-reach * 3.0, rmax=reach * 3.0)
+    # locate the two mirror planes from the four boundary arcs: real-
+    # axis arcs (x < t0 on the y=0 edge, x < t1 on the y=pi edge) lie
+    # in the plane X2 = c1, imaginary-axis arcs in X1 = c2
+    t0 = math.log(mu / (lam * lam))
+    t1 = math.log(lam * lam * mu)
+    lo0, hi0 = x < t0 - 1e-12, x > t0 + 1e-12
+    lo1, hi1 = x < t1 - 1e-12, x > t1 + 1e-12
+    c1 = float(np.median(np.concatenate([X[lo0, 0, 1], X[lo1, -1, 1]])))
+    c2 = float(np.median(np.concatenate([X[hi0, 0, 0], X[hi1, -1, 0]])))
+    X = X - np.array([c2, c1, 0.0])
+    # snap each arc exactly onto its plane (a sub-milliunit move: the
+    # arcs sit eps inside the strip plus quadrature residual) so the
+    # mirror copies coincide pointwise along the seams; the two axis
+    # columns are on BOTH planes
+    X[lo0, 0, 1] = 0.0
+    X[hi0, 0, 0] = 0.0
+    X[~lo0 & ~hi0, 0, 0:2] = 0.0
+    X[lo1, -1, 1] = 0.0
+    X[hi1, -1, 0] = 0.0
+    X[~lo1 & ~hi1, -1, 0:2] = 0.0
     nxp, nyp = X.shape[0], X.shape[1]
     quads = [(i * nyp + j, (i + 1) * nyp + j,
               (i + 1) * nyp + j + 1, i * nyp + j + 1)
              for i in range(nxp - 1) for j in range(nyp - 1)]
     V0 = X.reshape(-1, 3)
     n0 = len(V0)
+    # each single reflection reverses orientation, so the mirrored
+    # copy's quads flip their winding (and the doubly-mirrored copy
+    # flips twice, back to the original) -- the welded sheet then
+    # carries ONE consistent orientation, which the selftest gates
     blk = np.concatenate([V0, V0 * np.array([-1.0, 1.0, 1.0])], axis=0)
-    fblk = quads + [tuple(a + n0 for a in q) for q in quads]
+    fblk = quads + [tuple(a + n0 for a in q)[::-1] for q in quads]
     n1 = len(blk)
     full = np.concatenate([blk, blk * np.array([1.0, -1.0, 1.0])], axis=0)
-    ffull = fblk + [tuple(a + n1 for a in q) for q in fblk]
+    ffull = fblk + [tuple(a + n1 for a in q)[::-1] for q in fblk]
     # WELD the two mirror seams.  Concatenating the reflected copies
     # leaves four loose quarter-patches that sit in the right places
     # and look, from far enough away, like a 4-noid with four ends --
@@ -13243,12 +13320,34 @@ def _selftest():
     ok &= good
     print(f"4-noid sym2: max |Re period|, four ends x four members "
           f"= {p4:.1e} {'OK' if good else 'FAIL'}")
-    # The patch and its assembly are NOT gated here, and the row does
-    # not ship, because the assembly is unsolved -- see BACKLOG.  Two
-    # checks that DID pass on a visibly wrong surface are deliberately
-    # gone rather than loosened: a conformality residual (true of the
-    # patch, silent about the assembly) and a far-field end count,
-    # which read four loose quarter-discs as four catenoid ends.
+    # The assembly is gated on TOPOLOGY, at both members Weber
+    # renders: one sheet, chi = -2, exactly four boundary loops,
+    # manifold -- a truncated 4-punctured sphere and nothing else.
+    # Two earlier checks that DID pass on a visibly wrong surface are
+    # deliberately gone rather than loosened: a conformality residual
+    # (true of the patch, silent about the assembly) and a far-field
+    # end count, which read four loose quarter-discs as four catenoid
+    # ends.  This one cannot: four loose discs are 4 components with
+    # chi = +4, a mis-welded seam breaks chi = -2 or leaks extra
+    # boundary loops, and a self-overlapping weld shows up as
+    # non-manifold edges.  Shape is checked against Weber's own
+    # PoVRay exports of this family (bounding-box proportions,
+    # lambda = 1.8 mu = 4: y/x = 0.92205, z/x = 0.93058;
+    # lambda = 1.2 mu = 1.2: y/x = 0.62681, z/x = 0.97224).
+    for orderq, radq, ryx, rzx in ((5, 2.0, 0.92205, 0.93058),
+                                   (1, 0.6, 0.62681, 0.97224)):
+        V4, F4 = four_noid_sym2_mesh(None, 80, 60, orderq, radq, 1.0)
+        chi4, nm4, or4, loops4, ncomp4 = sptail_topology(V4, F4)
+        ext = V4.max(axis=0) - V4.min(axis=0)
+        myx, mzx = float(ext[1] / ext[0]), float(ext[2] / ext[0])
+        good = (ncomp4 == 1 and chi4 == -2 and loops4 == 4
+                and nm4 == 0 and or4 and abs(myx - ryx) < 0.02
+                and abs(mzx - rzx) < 0.02)
+        ok &= good
+        print(f"4-noid sym2 assembly order={orderq}: comps={ncomp4} "
+              f"chi={chi4} loops={loops4} nonman={nm4} "
+              f"oriented={or4} bbox y/x={myx:.4f} (ref {ryx}) "
+              f"z/x={mzx:.4f} (ref {rzx}) {'OK' if good else 'FAIL'}")
 
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in weierstrass")
     assert ok

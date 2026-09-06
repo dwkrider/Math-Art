@@ -2096,16 +2096,18 @@ SURFACE_FAMILY['SP_SCHERK4'] = 'SINGLY'
 
 # Karcher's 2-parameter family of 4-noids with two orthogonal
 # symmetry planes (Tokyo notes pp. 30ff; Weber's 4-Noid_sym_2.nb).
-# SHIPS FOR INSPECTION ONLY -- parked in mapping.UNVERIFIED, so it is
-# in the menu but does not count as built.  The Weierstrass data and
-# tau(lambda), rho(lambda) are verified (four end periods vanish to
-# 4e-13 across four members) and the patch is a conformal minimal
-# immersion; the ASSEMBLY is wrong -- reflecting in x = 0 and y = 0
-# yields chi = -1 with three boundary loops where a truncated 4-noid
-# needs chi = -2 and four.  See BACKLOG.md before trusting a picture
-# of this.
+# The Weierstrass data and tau(lambda), rho(lambda) are verified --
+# the four end periods vanish to 4e-13 across four members -- and the
+# assembly is gated on topology in weierstrass._selftest: one sheet,
+# chi = -2, four boundary loops, consistently oriented, with
+# bounding-box proportions matching Weber's own PoVRay exports of the
+# two members he renders.  The strip's edges are each TWO symmetry
+# arcs (split at the chart's branch columns), the patch's mirror
+# planes are located from those arcs, and only then is the notebook's
+# reflect-in-x-then-y assembly applied -- see four_noid_sym2_patch
+# and four_noid_sym2_mesh for the full story.
 WE_SURFACES['SPH_4NOID_SYM2'] = {
-    'label': "4-Noid, Two Symmetry Planes (assembly unsolved)",
+    'label': "4-Noid, Two Symmetry Planes",
     'family': 'SPHERES',
     'mesher': we.four_noid_sym2_mesh,
     'p_from': lambda order, radius: {},
