@@ -154,6 +154,11 @@ PARAMS = {
     # the bare default is an ellipsoid, which reads as a squashed
     # sphere; the one-sheeted hyperboloid says "quadric" at a glance
     "mesh.quadric_add": dict(kind='HYPERBOLOID_ONE'),
+    # A constant-radius helix canal is just a coiled tube -- any bevel
+    # can do that. The Waves law strings pearls along the helix, which
+    # is what "envelope of a family of spheres" looks like.
+    "mesh.canal_surface_add": dict(radius_law='WAVES', wave_count=8,
+                                   wave_depth=0.45),
     "mesh.waterman_add": dict(root=20),
     "mesh.spiked_polyhedron_add": dict(preset='MODERN'),
     "mesh.woven_polyhedron_add": dict(solid='ICOSA'),

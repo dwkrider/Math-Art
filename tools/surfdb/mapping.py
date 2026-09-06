@@ -140,6 +140,31 @@ SPECIMEN = {
     "hyperbolic:MINDING_BULGE":   ("minding-surface", "bulge"),
     "hyperbolic:MINDING_SPINDLE": ("minding-surface", "spindle"),
 
+    # The canal generator's spine presets are regimes of ONE
+    # construction (the envelope of a sphere family), not surfaces in
+    # their own right: the circle-spine constant-radius case IS the
+    # torus and the ellipse-spine cyclide-law case IS the Dupin
+    # cyclide, both of which have records already -- the overlap is
+    # recorded on canal-surface's relations rather than by double
+    # emission.
+    "canal:LINE":       ("canal-surface", "straight spine (cylinder, or a cone of spheres under taper)"),
+    "canal:CIRCLE":     ("canal-surface", "circular spine (the torus, at constant radius)"),
+    "canal:ELLIPSE":    ("canal-surface", "ellipse spine (the Dupin cyclide, under the cyclide radius law)"),
+    "canal:HELIX":      ("canal-surface", "helical spine"),
+    "canal:TORUS_KNOT": ("canal-surface", "torus-knot spine"),
+
+    # Likewise the focal generator's sources: one operation, seven
+    # source charts.  The sphere and torus rows degenerate to a point
+    # and to a curve pair -- kept as specimens because the degeneracies
+    # ARE the classical content (they bound Dupin's characterisation).
+    "focal:ELLIPSOID":     ("focal-surface", "of the ellipsoid (Cayley's centro-surface)"),
+    "focal:TORUS":         ("focal-surface", "of the torus (degenerates to the centre circle and the axis)"),
+    "focal:SPHERE":        ("focal-surface", "of the sphere (degenerates to the centre point)"),
+    "focal:PARABOLOID":    ("focal-surface", "of the elliptic paraboloid"),
+    "focal:SADDLE":        ("focal-surface", "of the hyperbolic paraboloid"),
+    "focal:CATENOID":      ("focal-surface", "of the catenoid"),
+    "focal:MONKEY_SADDLE": ("focal-surface", "of the monkey saddle (clipped at its planar umbilic)"),
+
     "spherical:SPHERE":   ("k-positive-revolution", "sphere"),
     "spherical:SPINDLE":  ("k-positive-revolution", "spindle"),
     "spherical:BULGE":    ("k-positive-revolution", "bulge"),

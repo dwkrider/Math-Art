@@ -8,14 +8,14 @@
     "def-derived",
     "derived",
     "immersed",
-    "not-implemented",
+    "implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "derived",
     "fidelity": "exact",
-    "polynomial": null,
-    "operation": "canal"
+    "operation": "canal",
+    "note": "The envelope of the one-parameter family of spheres of radius r(s) centred on the spine c(s): each sphere touches the envelope along a characteristic circle of radius r sqrt(1 - r'^2), centred at c - r r' T and tilted asin(r') out of the normal plane. The operator's spine presets are specimens; a selected curve object can also serve as the spine."
   },
   "curvature": {
     "condition": "none",
@@ -31,15 +31,82 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built as a general transform. The constant-radius case (a pipe surface) already exists implicitly wherever the repo tubes a curve (math_art/knots/tube.py), so the new capability is the VARYING-radius envelope.",
-      "resume": "R. Ferreol, mathcurve, 'surface canal'. Part B4 of research/missing-surfaces-catalog.md recommends treating the derived-surface transforms as one design pass rather than seven entries."
+      "generator": "math_art.canal_surface_generator",
+      "operator_id": "mesh.canal_surface_add",
+      "key": "LINE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "LINE"
+    },
+    {
+      "generator": "math_art.canal_surface_generator",
+      "operator_id": "mesh.canal_surface_add",
+      "key": "CIRCLE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "CIRCLE"
+    },
+    {
+      "generator": "math_art.canal_surface_generator",
+      "operator_id": "mesh.canal_surface_add",
+      "key": "ELLIPSE",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "ELLIPSE"
+    },
+    {
+      "generator": "math_art.canal_surface_generator",
+      "operator_id": "mesh.canal_surface_add",
+      "key": "HELIX",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "HELIX"
+    },
+    {
+      "generator": "math_art.canal_surface_generator",
+      "operator_id": "mesh.canal_surface_add",
+      "key": "TORUS_KNOT",
+      "definition_index": 0,
+      "implemented": true,
+      "preset": "TORUS_KNOT"
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "G. Monge, \"Application de l'analyse a la geometrie\" (1807) -- canal surfaces as envelopes of one-parameter families of spheres, with the characteristic-circle analysis.",
+      "C. Dupin, \"Applications de geometrie et de mechanique\" (1822) -- the cyclides as the surfaces that are canal surfaces in two ways.",
+      "V. Chandru, D. Dutta and C. M. Hoffmann, \"On the geometry of Dupin cyclides\", The Visual Computer 5 (1989), 277-290 -- the sphere-family construction and the (a, b, d) quartic normal form used by the self-test.",
+      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), \"Surface tubulaire / surface canal\".",
       "G. Monge; see R. Ferreol, mathcurve, 'surface canal'."
+    ]
+  },
+  "specimens": [
+    {
+      "label": "straight spine (cylinder, or a cone of spheres under taper)"
+    },
+    {
+      "label": "circular spine (the torus, at constant radius)"
+    },
+    {
+      "label": "ellipse spine (the Dupin cyclide, under the cyclide radius law)"
+    },
+    {
+      "label": "helical spine"
+    },
+    {
+      "label": "torus-knot spine"
+    }
+  ],
+  "relations": {
+    "generalizes": [
+      "dupin-cyclide",
+      "torus"
+    ]
+  },
+  "notes": {
+    "caveats": [
+      "A circular spine at constant radius is exactly the torus, and an ellipse spine with the linear-in-x radius law is exactly the Dupin cyclide; the generator's self-test verifies both against their implicit quartics, tying this operator to the records it generalizes."
     ]
   },
   "tradition": [

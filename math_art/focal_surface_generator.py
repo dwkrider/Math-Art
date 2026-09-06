@@ -1,0 +1,544 @@
+# Focal surfaces: the surface of centres (the caustic by reflection of
+# the normals).
+#
+# At every point of a surface, each principal curvature kappa_i defines a
+# centre of curvature x + N / kappa_i along the normal.  The locus of
+# those centres -- one sheet per principal curvature --
+#
+#     f_i(u, v) = x(u, v) + N(u, v) / kappa_i(u, v)
+#
+# is the FOCAL SURFACE, classically the "surface of centres"
+# (centro-surface).  It is where the normal lines of the source surface
+# focus, so it is the caustic of the surface's normal congruence, and it
+# is singular exactly where the source is interesting: a sheet runs to
+# infinity where kappa_i -> 0 (parabolic points), and the two sheets
+# MEET at umbilics, where the principal curvatures coincide.  Those
+# cuspidal edges and swallowtails are the point of drawing it.
+#
+# SOURCES ARE EXACT CHARTS ONLY, by design.  Principal curvatures are
+# second derivatives; estimating them from a triangle mesh amplifies
+# noise twice over, and the caustic is worst exactly where the estimate
+# is worst (kappa near 0, and near umbilics).  A focal surface of a
+# coarse mesh is noise wearing the shape of mathematics, so this
+# generator evaluates the shape operator analytically from charts whose
+# first and second fundamental forms are written out exactly -- the same
+# reasoning by which mesh.quadric_add builds from charts rather than by
+# contouring.
+#
+# Degeneracies worth knowing, each asserted by the self-test rather than
+# hoped for:
+#   - the SPHERE's sheets both collapse to its centre (every point is an
+#     umbilic);
+#   - the TORUS's sheets collapse to its centre circle and its axis --
+#     the classical example of both sheets degenerating to curves, which
+#     is Dupin's characterisation territory: a surface with ONE sheet a
+#     curve is a canal surface (mesh.canal_surface_add), and one with
+#     BOTH degenerate is a Dupin cyclide;
+#   - the ELLIPSOID's sheets meet at its four umbilics: Cayley's
+#     centro-surface, the classical showpiece;
+#   - a minimal surface (the CATENOID here) has kappa_2 = -kappa_1, so
+#     the source lies exactly midway between its two focal sheets.
+#
+# References:
+# - G. Monge, "Application de l'analyse a la geometrie" (1807) -- lines
+#   of curvature and the centres of curvature of a surface.
+# - A. Cayley, "On the centro-surface of an ellipsoid", Trans. Cambridge
+#   Phil. Soc. 12 (1873) -- the focal surface of the ellipsoid.
+# - L. P. Eisenhart, "A Treatise on the Differential Geometry of Curves
+#   and Surfaces" (1909), ch. on the surface of centres -- the classical
+#   treatment of the two sheets and their tangency to the normals.
+# - D. Hilbert and S. Cohn-Vossen, "Anschauliche Geometrie" (1932) --
+#   centres of curvature and umbilics, read geometrically.
+# - I. R. Porteous, "Geometric Differentiation" (1994) -- the modern
+#   singularity-theory reading of focal sets, umbilics and ridges.
+# - R. Ferreol, "Encyclopedie des formes mathematiques remarquables"
+#   (mathcurve.com), "Surface focale (developpee d'une surface)".
+
+bl_info = {
+    "name": "Focal Surface",
+    "author": "Math Art project",
+    "version": (1, 0, 0),
+    "blender": (4, 2, 0),
+    "location": "View3D > Add > Mesh > Math Art > Surfaces",
+    "description": "The surface of centres: both sheets of principal "
+                   "curvature centres of an exactly-known source "
+                   "surface, singular at umbilics and parabolic points",
+    "category": "Add Mesh",
+}
+
+import math
+
+try:
+    from .quadric_generator import fit
+except ImportError:
+    from quadric_generator import fit
+
+TAU = 2.0 * math.pi
+
+#: key -> (label, description); read by tools/surfdb (as source, via ast)
+FOCAL_SOURCES = (
+    ('ELLIPSOID', "Ellipsoid",
+     "Cayley's centro-surface: the two sheets of the ellipsoid's "
+     "centres of curvature, meeting at its four umbilics"),
+    ('TORUS', "Torus",
+     "Both sheets degenerate: the tube curvature focuses onto the "
+     "centre circle and the ring curvature onto the axis -- the "
+     "boundary case Dupin's cyclides generalise"),
+    ('SPHERE', "Sphere",
+     "Every point is an umbilic, so both sheets collapse to the "
+     "centre point: the degenerate control case"),
+    ('PARABOLOID', "Elliptic Paraboloid",
+     "The mirror-dish caustic: two sheets with cuspidal edges over "
+     "the dish's two principal directions"),
+    ('SADDLE', "Hyperbolic Paraboloid",
+     "Opposite-sign curvatures put one focal sheet on each side of "
+     "the saddle"),
+    ('CATENOID', "Catenoid",
+     "A minimal surface: the principal curvatures are opposite, so "
+     "the source sits exactly midway between its two focal sheets"),
+    ('MONKEY_SADDLE', "Monkey Saddle",
+     "A planar umbilic (both curvatures vanish at the origin) sends "
+     "both sheets to infinity there; the clip distance cuts the "
+     "resulting flare"),
+)
+
+
+# ---------------------------------------------------------------------------
+# charts, with exact first and second derivatives
+
+
+def _chart(source, u, v, a=1.0, b=0.85, c=0.7, ring=1.0, tube=0.35):
+    """(P, Pu, Pv, Puu, Puv, Pvv) for one source chart, all exact."""
+    cu, su = math.cos(u), math.sin(u)
+    if source == 'TORUS':
+        cv, sv = math.cos(v), math.sin(v)
+        w = ring + tube * cv
+        return ((w * cu, w * su, tube * sv),
+                (-w * su, w * cu, 0.0),
+                (-tube * sv * cu, -tube * sv * su, tube * cv),
+                (-w * cu, -w * su, 0.0),
+                (tube * sv * su, -tube * sv * cu, 0.0),
+                (-tube * cv * cu, -tube * cv * su, -tube * sv))
+    if source in ('SPHERE', 'ELLIPSOID'):
+        if source == 'SPHERE':
+            A = B = C = 1.0
+        else:
+            A, B, C = a, b, c
+        cv, sv = math.cos(v), math.sin(v)
+        return ((A * sv * cu, B * sv * su, C * cv),
+                (-A * sv * su, B * sv * cu, 0.0),
+                (A * cv * cu, B * cv * su, -C * sv),
+                (-A * sv * cu, -B * sv * su, 0.0),
+                (-A * cv * su, B * cv * cu, 0.0),
+                (-A * sv * cu, -B * sv * su, -C * cv))
+    if source == 'CATENOID':
+        ch, sh = math.cosh(v), math.sinh(v)
+        return ((ch * cu, ch * su, v),
+                (-ch * su, ch * cu, 0.0),
+                (sh * cu, sh * su, 1.0),
+                (-ch * cu, -ch * su, 0.0),
+                (-sh * su, sh * cu, 0.0),
+                (ch * cu, ch * su, 0.0))
+    # the graph charts z = f(u, v)
+    if source == 'PARABOLOID':
+        f = 0.5 * u * u / a + 0.5 * v * v / b
+        fu, fv = u / a, v / b
+        fuu, fuv, fvv = 1.0 / a, 0.0, 1.0 / b
+    elif source == 'SADDLE':
+        f = 0.5 * u * u / a - 0.5 * v * v / b
+        fu, fv = u / a, -v / b
+        fuu, fuv, fvv = 1.0 / a, 0.0, -1.0 / b
+    elif source == 'MONKEY_SADDLE':
+        k = 0.6
+        f = k * (u ** 3 - 3.0 * u * v * v)
+        fu, fv = 3.0 * k * (u * u - v * v), -6.0 * k * u * v
+        fuu, fuv, fvv = 6.0 * k * u, -6.0 * k * v, -6.0 * k * u
+    else:
+        raise ValueError("unknown source %r" % source)
+    return ((u, v, f), (1.0, 0.0, fu), (0.0, 1.0, fv),
+            (0.0, 0.0, fuu), (0.0, 0.0, fuv), (0.0, 0.0, fvv))
+
+
+#: (u0, u1, v0, v1, wrap_u, wrap_v) per source
+_DOMAIN = {
+    'TORUS':         (0.0, TAU, 0.0, TAU, True, True),
+    'SPHERE':        (0.0, TAU, 0.12 * math.pi, 0.88 * math.pi,
+                      True, False),
+    'ELLIPSOID':     (0.0, TAU, 0.10 * math.pi, 0.90 * math.pi,
+                      True, False),
+    'PARABOLOID':    (-1.6, 1.6, -1.6, 1.6, False, False),
+    'SADDLE':        (-1.2, 1.2, -1.2, 1.2, False, False),
+    'CATENOID':      (0.0, TAU, -1.25, 1.25, True, False),
+    'MONKEY_SADDLE': (-1.0, 1.0, -1.0, 1.0, False, False),
+}
+
+
+def _sub(p, q):
+    return (p[0] - q[0], p[1] - q[1], p[2] - q[2])
+
+
+def _dot(p, q):
+    return p[0] * q[0] + p[1] * q[1] + p[2] * q[2]
+
+
+def _cross(p, q):
+    return (p[1] * q[2] - p[2] * q[1],
+            p[2] * q[0] - p[0] * q[2],
+            p[0] * q[1] - p[1] * q[0])
+
+
+def principal(source, u, v, **kw):
+    """(P, N, kappa1, kappa2) at one parameter point, all analytic.
+
+    kappa1 >= kappa2 with respect to the chart normal N; the shape
+    operator is diagonalised through the fundamental forms, so no mesh
+    estimate enters anywhere.
+    """
+    P, Pu, Pv, Puu, Puv, Pvv = _chart(source, u, v, **kw)
+    E, F, G = _dot(Pu, Pu), _dot(Pu, Pv), _dot(Pv, Pv)
+    n = _cross(Pu, Pv)
+    m = math.sqrt(_dot(n, n))
+    if m < 1e-15:
+        return P, (0.0, 0.0, 1.0), 0.0, 0.0
+    N = (n[0] / m, n[1] / m, n[2] / m)
+    L, M, Q = _dot(Puu, N), _dot(Puv, N), _dot(Pvv, N)
+    den = E * G - F * F
+    if abs(den) < 1e-18:
+        return P, N, 0.0, 0.0
+    K = (L * Q - M * M) / den
+    H = (E * Q - 2.0 * F * M + G * L) / (2.0 * den)
+    disc = math.sqrt(max(H * H - K, 0.0))
+    return P, N, H + disc, H - disc
+
+
+def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
+                include_source=False, **kw):
+    """(verts, faces, stats) -- focal sheets of one source chart.
+
+    A grid point contributes to sheet i only while its focal distance
+    |1 / kappa_i| stays within `clip`; faces are emitted where all four
+    corners are valid, which is what trims the flares at parabolic
+    points instead of meshing to infinity.
+    """
+    u0, u1, v0, v1, wrap_u, wrap_v = _DOMAIN[source]
+    NU = nu if wrap_u else nu + 1
+    NV = nv if wrap_v else nv + 1
+    us = [u0 + (u1 - u0) * i / nu for i in range(NU)]
+    vs = [v0 + (v1 - v0) * j / nv for j in range(NV)]
+
+    verts, faces = [], []
+    kept = {0: 0, 1: 0}
+    total = NU * NV
+    for sheet in sheets:
+        idx = {}
+        for i, u in enumerate(us):
+            for j, v in enumerate(vs):
+                P, N, k1, k2 = principal(source, u, v, **kw)
+                k = (k1, k2)[sheet]
+                if abs(k) * clip <= 1.0:
+                    continue      # focal point beyond the clip distance
+                d = 1.0 / k
+                idx[(i, j)] = len(verts)
+                verts.append((P[0] + d * N[0], P[1] + d * N[1],
+                              P[2] + d * N[2]))
+                kept[sheet] += 1
+        for i in range(NU if wrap_u else NU - 1):
+            i2 = (i + 1) % NU
+            for j in range(NV if wrap_v else NV - 1):
+                j2 = (j + 1) % NV
+                q = [(i, j), (i2, j), (i2, j2), (i, j2)]
+                if all(c in idx for c in q):
+                    faces.append(tuple(idx[c] for c in q))
+
+    if include_source:
+        base = len(verts)
+        for i, u in enumerate(us):
+            for j, v in enumerate(vs):
+                P, _Pu, _Pv, _a, _b, _c = _chart(source, u, v, **kw)
+                verts.append(P)
+        for i in range(NU if wrap_u else NU - 1):
+            i2 = (i + 1) % NU
+            for j in range(NV if wrap_v else NV - 1):
+                j2 = (j + 1) % NV
+                faces.append((base + i * NV + j, base + i2 * NV + j,
+                              base + i2 * NV + j2, base + i * NV + j2))
+
+    stats = {s: kept[s] / float(total) for s in sheets}
+    return verts, faces, stats
+
+
+# ---------------------------------------------------------------------------
+
+
+try:
+    import bpy
+    from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
+                           IntProperty)
+    _IN_BLENDER = True
+except ImportError:
+    _IN_BLENDER = False
+
+
+if _IN_BLENDER:
+
+    class MESH_OT_focal_surface_add(bpy.types.Operator):
+        """Add a focal surface: the two sheets of centres of principal
+        curvature of an exactly-known source surface -- the caustic of
+        its normals, singular at umbilics and parabolic points"""
+        bl_idname = "mesh.focal_surface_add"
+        bl_label = "Focal Surface"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        source: EnumProperty(
+            name="Source",
+            items=[(k, lab, desc) for k, lab, desc in FOCAL_SOURCES],
+            default='ELLIPSOID',
+            description="The surface whose centres of curvature are "
+                        "traced. Charts are exact, so the curvatures "
+                        "are analytic, never mesh estimates")
+        sheets: EnumProperty(
+            name="Sheets",
+            items=[('BOTH', "Both", "Both sheets of centres"),
+                   ('FIRST', "First",
+                    "Only the sheet of the larger principal curvature"),
+                   ('SECOND', "Second",
+                    "Only the sheet of the smaller principal "
+                    "curvature")],
+            default='BOTH',
+            description="Which sheet of the surface of centres to build")
+        clip: FloatProperty(
+            name="Clip Distance", default=3.0, min=0.2, max=50.0,
+            description="Largest focal distance kept. Near parabolic "
+                        "points 1/curvature runs to infinity; this cuts "
+                        "the flare instead of meshing it")
+        a: FloatProperty(
+            name="Semi-axis a", default=1.0, min=0.1, max=4.0,
+            description="First semi-axis of the ellipsoid, or the "
+                        "first curvature scale of the graph sources")
+        b: FloatProperty(
+            name="Semi-axis b", default=0.85, min=0.1, max=4.0,
+            description="Second semi-axis of the ellipsoid, or the "
+                        "second curvature scale of the graph sources")
+        c: FloatProperty(
+            name="Semi-axis c", default=0.7, min=0.1, max=4.0,
+            description="Polar semi-axis of the ellipsoid. Distinct "
+                        "semi-axes keep the four umbilics visible")
+        ring_radius: FloatProperty(
+            name="Ring Radius", default=1.0, min=0.2, max=4.0,
+            description="Centre-circle radius of the torus source")
+        tube_radius: FloatProperty(
+            name="Tube Radius", default=0.35, min=0.05, max=2.0,
+            description="Tube radius of the torus source")
+        segments_u: IntProperty(
+            name="Segments U", default=128, min=8, max=512)
+        segments_v: IntProperty(
+            name="Segments V", default=96, min=8, max=512)
+        include_source: BoolProperty(
+            name="Source Surface", default=False,
+            description="Also build the source surface in the same "
+                        "mesh, for reading the sheets against it")
+        size: FloatProperty(
+            name="Size", default=1.0, min=0.01, max=100.0,
+            description="Half the largest extent of the finished object")
+
+        def execute(self, context):
+            sheets = {'BOTH': (0, 1), 'FIRST': (0,),
+                      'SECOND': (1,)}[self.sheets]
+            kw = {}
+            if self.source == 'ELLIPSOID':
+                kw = dict(a=self.a, b=self.b, c=self.c)
+            elif self.source in ('PARABOLOID', 'SADDLE'):
+                kw = dict(a=self.a, b=self.b)
+            elif self.source == 'TORUS':
+                kw = dict(ring=self.ring_radius, tube=self.tube_radius)
+            verts, faces, stats = build_focal(
+                self.source, self.segments_u, self.segments_v,
+                sheets=sheets, clip=self.clip,
+                include_source=self.include_source, **kw)
+            if not verts or not faces:
+                self.report({'ERROR'},
+                            "every focal point lies beyond the clip "
+                            "distance; raise Clip Distance")
+                return {'CANCELLED'}
+            verts = fit(verts, self.size)
+
+            me = bpy.data.meshes.new("Focal Surface")
+            me.from_pydata(verts, [], faces)
+            me.validate()
+            me.update()
+            obj = bpy.data.objects.new("Focal Surface", me)
+            context.collection.objects.link(obj)
+            context.view_layer.objects.active = obj
+            obj.select_set(True)
+
+            cover = ", ".join("sheet %d: %d%% within clip"
+                              % (s + 1, round(100 * stats[s]))
+                              for s in sorted(stats))
+            self.report({'INFO'},
+                        "Focal surface of %s: %d verts, %d faces (%s)"
+                        % (dict((k, l) for k, l, _d in
+                                FOCAL_SOURCES)[self.source],
+                           len(verts), len(faces), cover))
+            return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'source')
+            lay.prop(self, 'sheets')
+            lay.prop(self, 'clip')
+            if self.source == 'ELLIPSOID':
+                for k in ('a', 'b', 'c'):
+                    lay.prop(self, k)
+            elif self.source in ('PARABOLOID', 'SADDLE'):
+                lay.prop(self, 'a')
+                lay.prop(self, 'b')
+            elif self.source == 'TORUS':
+                lay.prop(self, 'ring_radius')
+                lay.prop(self, 'tube_radius')
+            for k in ('segments_u', 'segments_v', 'include_source',
+                      'size'):
+                lay.prop(self, k)
+
+    def _menu_func(self, context):
+        self.layout.operator(MESH_OT_focal_surface_add.bl_idname,
+                             text="Focal Surface",
+                             icon='SURFACE_NSURFACE')
+
+    def register():
+        bpy.utils.register_class(MESH_OT_focal_surface_add)
+        if hasattr(bpy.types, "VIEW3D_MT_mesh_add"):
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+
+    def unregister():
+        if hasattr(bpy.types, "VIEW3D_MT_mesh_add"):
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        bpy.utils.unregister_class(MESH_OT_focal_surface_add)
+
+
+# ---------------------------------------------------------------------------
+
+
+def _selftest():
+    """Numeric self-test; raises on failure.
+
+    The gates are the closed forms: the sphere's and torus's degenerate
+    sheets, the ellipsoid's vertex curvatures and umbilics, and the
+    catenoid's minimality -- never a vertex count or a look.
+    """
+    ok = True
+
+    # 1. sphere: both sheets collapse to the centre.  Tolerance 1e-6,
+    # not 1e-12: at an umbilic disc = sqrt(H^2 - K) takes the square
+    # root of pure roundoff, so kappa carries ~1e-8 of noise by
+    # construction -- the price of the closed-form eigenvalues, paid
+    # only where the two sheets coincide anyway.
+    verts, _faces, _st = build_focal('SPHERE', 48, 32, clip=10.0)
+    worst = max(math.sqrt(x * x + y * y + z * z) for x, y, z in verts)
+    good = worst < 1e-6
+    ok &= good
+    print("focal: the sphere's sheets collapse to its centre "
+          "(worst |f| = %.1e) %s" % (worst, "OK" if good else "FAIL"))
+
+    # 2. the CLOSED-FORM surface of revolution: torus R = 1, r = 0.35.
+    # One sheet must be the centre circle (radius R in z = 0), the
+    # other the axis.  Which sheet is which depends on the normal's
+    # sign, so each vertex may match either oracle -- but every vertex
+    # must match one, and BOTH oracles must be hit.
+    verts, _faces, _st = build_focal('TORUS', 64, 48, clip=10.0)
+    hit_circle = hit_axis = 0
+    worst = 0.0
+    for x, y, z in verts:
+        d_circle = abs(math.hypot(x, y) - 1.0) + abs(z)
+        d_axis = math.hypot(x, y)
+        if d_circle < d_axis:
+            hit_circle += 1
+            worst = max(worst, d_circle)
+        else:
+            hit_axis += 1
+            worst = max(worst, d_axis)
+    good = worst < 1e-9 and hit_circle > 0 and hit_axis > 0
+    ok &= good
+    print("focal: the torus's sheets are its centre circle (%d pts) "
+          "and its axis (%d pts), worst deviation %.1e %s"
+          % (hit_circle, hit_axis, worst, "OK" if good else "FAIL"))
+
+    # 3. ellipsoid: at the end of the major axis (u = 0, v = pi/2) the
+    # principal curvatures are a/b^2 and a/c^2 in closed form
+    a, b, c = 1.0, 0.85, 0.7
+    _P, _N, k1, k2 = principal('ELLIPSOID', 0.0, 0.5 * math.pi,
+                               a=a, b=b, c=c)
+    want = sorted((a / (b * b), a / (c * c)))
+    got = sorted((abs(k1), abs(k2)))
+    err = max(abs(g - w) for g, w in zip(got, want))
+    good = err < 1e-12
+    ok &= good
+    print("focal: ellipsoid vertex curvatures match a/b^2, a/c^2 "
+          "(error %.1e) %s" % (err, "OK" if good else "FAIL"))
+
+    # 4. ellipsoid umbilics: the sheets MEET.  min |k1 - k2| over the
+    # grid must approach zero (the umbilics lie in the x-z plane), and
+    # the corresponding focal points must coincide.
+    best, best_gap = None, None
+    u0, u1, v0, v1, _wu, _wv = _DOMAIN['ELLIPSOID']
+    for i in range(160):
+        for j in range(80):
+            u = u0 + (u1 - u0) * i / 160.0
+            v = v0 + (v1 - v0) * j / 80.0
+            P, N, k1, k2 = principal('ELLIPSOID', u, v, a=a, b=b, c=c)
+            if abs(k1) < 1e-9 or abs(k2) < 1e-9:
+                continue
+            spread = abs(k1 - k2)
+            if best is None or spread < best:
+                best = spread
+                f1 = tuple(P[t] + N[t] / k1 for t in range(3))
+                f2 = tuple(P[t] + N[t] / k2 for t in range(3))
+                best_gap = math.dist(f1, f2)
+    good = best is not None and best < 0.02 and best_gap < 0.02
+    ok &= good
+    print("focal: the ellipsoid's sheets meet at an umbilic "
+          "(min |k1-k2| = %.4f, sheet gap %.4f) %s"
+          % (best, best_gap, "OK" if good else "FAIL"))
+
+    # 5. catenoid: H = 0 analytically, so the source lies exactly
+    # midway between its focal sheets
+    worst_h = worst_mid = 0.0
+    for i in range(24):
+        for j in range(16):
+            u = TAU * i / 24.0
+            v = -1.2 + 2.4 * j / 15.0
+            P, N, k1, k2 = principal('CATENOID', u, v)
+            worst_h = max(worst_h, abs(k1 + k2))
+            if abs(k1) > 1e-9 and abs(k2) > 1e-9:
+                mid = tuple(P[t] + 0.5 * (N[t] / k1 + N[t] / k2)
+                            for t in range(3))
+                worst_mid = max(worst_mid, math.dist(mid, P))
+    good = worst_h < 1e-12 and worst_mid < 1e-9
+    ok &= good
+    print("focal: the catenoid is minimal (max |k1+k2| = %.1e) and "
+          "sits midway between its sheets (%.1e) %s"
+          % (worst_h, worst_mid, "OK" if good else "FAIL"))
+
+    # 6. clipping: the monkey saddle's planar umbilic flares to
+    # infinity; with a finite clip every emitted vertex must stay
+    # finite and within clip of its source point by construction
+    verts, faces, stats = build_focal('MONKEY_SADDLE', 48, 48, clip=2.5)
+    good = (all(all(math.isfinite(t) for t in v) for v in verts)
+            and faces and 0.0 < stats[0] < 1.0)
+    ok &= good
+    print("focal: the monkey saddle's planar umbilic is clipped, "
+          "finite mesh (%d%% of sheet 1 within clip) %s"
+          % (round(100 * stats[0]), "OK" if good else "FAIL"))
+
+    # 7. paraboloid apex: kappa = 1/a and 1/b in closed form
+    _P, _N, k1, k2 = principal('PARABOLOID', 0.0, 0.0, a=0.8, b=1.5)
+    err = max(abs(max(abs(k1), abs(k2)) - 1.0 / 0.8),
+              abs(min(abs(k1), abs(k2)) - 1.0 / 1.5))
+    good = err < 1e-12
+    ok &= good
+    print("focal: paraboloid apex curvatures are 1/a and 1/b "
+          "(error %.1e) %s" % (err, "OK" if good else "FAIL"))
+
+    print("RESULT:", "OK" if ok else "FAIL")
+    if not ok:
+        raise AssertionError("focal surface self-test failed")

@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 479,
-  "implemented_count": 413,
+  "implemented_count": 415,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -1428,7 +1428,7 @@
         "def-derived",
         "derived",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "derived",
@@ -1446,9 +1446,11 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
+      "implemented": true,
+      "operator_ids": [
+        "mesh.canal_surface_add"
+      ],
+      "specimen_count": 5
     },
     {
       "slug": "capillary-surface",
@@ -5213,7 +5215,7 @@
         "def-derived",
         "derived",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "derived",
@@ -5231,9 +5233,11 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
+      "implemented": true,
+      "operator_ids": [
+        "mesh.focal_surface_add"
+      ],
+      "specimen_count": 7
     },
     {
       "slug": "four-noid-two-symmetry-planes",
