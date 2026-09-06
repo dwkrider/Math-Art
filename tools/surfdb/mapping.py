@@ -411,6 +411,10 @@ ALIAS = {
     "algebraic:SYMMETROID": "symmetroid",
     "algebraic:DECO_TETRAHEDRON": "deco-tetrahedron",
     "algebraic:NORM_ONE": "norm-one-family",
+    # The preset label carries its node count ("Sarti Dodecic (600
+    # nodes)"), which would slugify to a second record beside the
+    # curated `sarti-dodecic` -- the twin-record trap again.
+    "algebraic:SARTI_DODECIC": "sarti-dodecic",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",
     "algebraic:LABS": "labs-septic",

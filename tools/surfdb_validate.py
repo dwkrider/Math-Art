@@ -581,13 +581,6 @@ NOT_A_GAP = {
                      "annulus of finite total curvature."),
     "dihedralized-wohlgemuth-with-handle":
         ("terminal", "Believed not to exist; no construction published."),
-    "sarti-dodecic":
-        ("terminal", "Terminal AS STATED, not as a surface: the pencil's "
-                     "singular members are fixed by an invariant-theoretic "
-                     "condition that is not reconstructible from the "
-                     "shipped symmetrization, so there is no member to "
-                     "mesh.  Reopen if the literature ever supplies the "
-                     "condition."),
     "labs-sextic-35-cusps":
         ("terminal", "Its coefficients are non-real, so the real locus is "
                      "not a surface -- there is nothing to mesh."),

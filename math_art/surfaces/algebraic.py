@@ -696,46 +696,47 @@ def _f_septic_triple(x, y, z, mu, ratio=2.0):
             + (m + n) * (m - n) ** 3 * s3 * s4)
 
 
-_SARTI_PAIRS = [(i, j) for i in range(4) for j in range(4) if i != j]
-_SARTI_TRIPLES = [(i, j, k) for i in range(4) for j in range(4)
-                  for k in range(4) if len({i, j, k}) == 3]
-_SARTI_QUADS = [(i, j, k, h) for i in range(4) for j in range(4)
-                for k in range(4) for h in range(4)
-                if len({i, j, k, h}) == 4]
-
-
 def _f_sarti(x, y, z, mu):
-    # The lambda = -22/243 member of the degree-12 pencil
-    # S12(x) + lambda Q12(x), in the chart x3 = 1.
-    #
-    # Sarti writes the S_pq... sums "over all the indices i, j, k" with
-    # distinct indices wherever they appear together, i.e. over ordered
-    # tuples -- which is what is done here.
-    ys = (x * x, y * y, z * z, 1.0 + 0.0 * x)
-    P2, T3, Q4 = _SARTI_PAIRS, _SARTI_TRIPLES, _SARTI_QUADS
-    S51 = sum(ys[i] ** 5 * ys[j] for i, j in P2)
-    S42 = sum(ys[i] ** 4 * ys[j] ** 2 for i, j in P2)
-    S33 = sum(ys[i] ** 3 * ys[j] ** 3 for i, j in P2)
-    S411 = sum(ys[i] ** 4 * ys[j] * ys[k] for i, j, k in T3)
-    S321 = sum(ys[i] ** 3 * ys[j] ** 2 * ys[k] for i, j, k in T3)
-    S222 = sum(ys[i] ** 2 * ys[j] ** 2 * ys[k] ** 2 for i, j, k in T3)
-    S3111 = sum(ys[i] ** 3 * ys[j] * ys[k] * ys[h] for i, j, k, h in Q4)
-    S2211 = sum(ys[i] ** 2 * ys[j] ** 2 * ys[h] * ys[k]
-                for i, j, k, h in Q4)
-    fs = (2.0 * S51 - 6.0 * S42 - 12.0 * S411 + 14.0 * S33
-          + 9.0 * S321 + 348.0 * S3111 + 30.0 * S222 - 270.0 * S2211)
-    y0, y1, y2, y3 = ys
-    fa = (y0 ** 3 * (y1 ** 2 * y2 - y1 * y2 ** 2 + y2 ** 2 * y3
-                     - y2 * y3 ** 2 + y3 ** 2 * y1 - y3 * y1 ** 2)
-          - y1 ** 3 * (y2 ** 2 * y3 - y2 * y3 ** 2 + y3 ** 2 * y0
-                       - y3 * y0 ** 2 + y0 ** 2 * y2 - y0 * y2 ** 2)
-          + y2 ** 3 * (y0 ** 2 * y1 - y0 * y1 ** 2 + y1 ** 2 * y3
-                       - y1 * y3 ** 2 + y3 ** 2 * y0 - y3 * y0 ** 2)
-          - y3 ** 3 * (y0 ** 2 * y1 - y0 * y1 ** 2 + y1 ** 2 * y2
-                       - y1 * y2 ** 2 + y2 ** 2 * y0 - y2 * y0 ** 2))
-    S12 = fs + 33.0 * math.sqrt(5.0) * fa
-    Q12 = (ys[0] + ys[1] + ys[2] + ys[3]) ** 6
-    return S12 - (22.0 / 243.0) * Q12
+    """Sarti's degree-12 surface with 600 nodes, chart w = 1.
+
+    X12 = 243 S12 - 22 Q12, in Sarti's five bipolyhedral building
+    blocks.  Transcribed from MathWorld's Sarti Dodecic page, which
+    prints S12 in the l1..l5 basis with every term defined --
+    including the s^+/- pairs that Sarti's own "sums over all the
+    indices" notation leaves to the reader.  An earlier version of
+    this function reconstructed those sums from the paper's notation
+    and got a DIFFERENT polynomial; it never verified, and its
+    failure was recorded here for a long time as the surface being
+    unbuildable.  It was the transcription that was wrong.
+    """
+    del mu                                    # fixed member, no knob
+    w = 1.0
+    l1 = x ** 4 + y ** 4 + z ** 4 + w ** 4
+    l2 = x ** 2 * y ** 2 + z ** 2 * w ** 2
+    l3 = x ** 2 * z ** 2 + y ** 2 * w ** 2
+    l4 = x ** 2 * w ** 2 + y ** 2 * z ** 2
+    l5 = x * y * z * w
+    # s^-_{ij} = li^2 lj - li lj^2 and s^+_{ij} = li^2 lj + li lj^2,
+    # cyclically over (2,3), (3,4), (4,2).  The antisymmetric sum is
+    # the one the sqrt(5) rides on: it is what breaks the surface's
+    # symmetry down from the signed permutations to the bipolyhedral
+    # group, and getting its sign convention wrong loses the 600 nodes
+    # while leaving something that still looks plausible.
+    sm = ((l2 ** 2 * l3 - l2 * l3 ** 2) + (l3 ** 2 * l4 - l3 * l4 ** 2)
+          + (l4 ** 2 * l2 - l4 * l2 ** 2))
+    sp = ((l2 ** 2 * l3 + l2 * l3 ** 2) + (l3 ** 2 * l4 + l3 * l4 ** 2)
+          + (l4 ** 2 * l2 + l4 * l2 ** 2))
+    S12 = (33.0 * math.sqrt(5.0) * sm
+           + 19.0 * sp
+           + 10.0 * (l2 ** 3 + l3 ** 3 + l4 ** 3)
+           - 14.0 * l1 * (l2 * l3 + l2 * l4 + l3 * l4)
+           + 2.0 * l1 ** 2 * (l2 + l3 + l4)
+           - 6.0 * l1 * (l2 ** 2 + l3 ** 2 + l4 ** 2)
+           - 352.0 * l5 ** 2 * (l2 + l3 + l4)
+           + 336.0 * l5 ** 2 * l1
+           + 48.0 * l2 * l3 * l4)
+    Q12 = (x * x + y * y + z * z + w * w) ** 6
+    return 243.0 * S12 - 22.0 * Q12
 
 
 _RECORD = (
@@ -745,19 +746,12 @@ _RECORD = (
      _f_barth_decic),
     ('SEPTIC_TRIPLE', "Septic with 16 Triple Points", 'BALL', 4.0,
      _f_septic_triple),
-    # Sarti's degree-12 surface with 600 nodes is NOT here.  `_f_sarti`
-    # below transcribes her S12 and the lambda = -22/243 pencil member,
-    # and it has the right symmetry -- but it could not be verified, so
-    # shipping it under that name would be a claim we cannot support.
-    # What fails: Sarti fixes the singular members of the pencil by the
-    # orbits they contain, so at an orbit point p the ratio
-    # -S12(p)/Q12(p) must be one of her four values (-3/32, -22/243,
-    # -2/25, 0).  Evaluated at 600-cell vertices it lands on none of
-    # them, under either reading of her "sums over distinct indices"
-    # (ordered or unordered tuples).  Either the summation
-    # multiplicities differ from both readings, or the orbit points need
-    # her frame -- she places the polytopes as in Coxeter p.157 *with x0
-    # and x1 interchanged*, which is not reproduced here.  See BACKLOG.
+    # Sarti's 600-node dodecic.  Its nodes sit at icosahedral
+    # coordinates -- (3-sqrt5)/4, (sqrt5-1)/4, (sqrt5-2)/2 and
+    # (3-sqrt5)/2 -- and the selftest checks four of them in exact
+    # arithmetic, where X12 and all four partials vanish identically.
+    ('SARTI_DODECIC', "Sarti Dodecic (600 nodes)", 'BALL', 2.6,
+     _f_sarti),
 )
 
 for _key, _label, _shape, _clip, _fn in _RECORD:
@@ -2362,6 +2356,47 @@ def _selftest():
     b6.append(("EPS sextic nine triple points", r_s9, 1e-7))
     b6.append(("EPS sextic multiplicity exactly 3",
                0.0 if third9 else 1.0, 0.5))
+    # Sarti dodecic: four of its 600 nodes, at the icosahedral
+    # coordinates the bipolyhedral symmetry forces.  These are not
+    # polished seeds -- X12 and all four partials vanish at them
+    # IDENTICALLY in exact sqrt(5) arithmetic, so the tolerance here
+    # is float64 roundoff and nothing else.  The check is worth its
+    # place because the surface shipped as unbuildable for a long
+    # time on a transcription that got these sums wrong: a wrong
+    # coefficient anywhere in S12 moves every one of these points.
+    _r5 = math.sqrt(5.0)
+    _sa, _sb = (3.0 - _r5) / 4.0, (_r5 - 1.0) / 4.0
+    _sc, _sd = (_r5 - 2.0) / 2.0, (3.0 - _r5) / 2.0
+    _SARTI_NODES = ((-_sa, -_sb, _sc), (_sd, 0.0, 0.0),
+                    (_sb, -_sc, _sa), (-_sc, -_sa, -_sb))
+    r_sar = 0.0
+    hs = 1e-5
+    ordinary = True
+    for _p in _SARTI_NODES:
+        r_sar = max(r_sar, abs(_f_sarti(*_p, 0.0)))
+        H = np.zeros((3, 3))
+        for i_ in range(3):
+            e_ = np.zeros(3)
+            e_[i_] = hs
+            q0 = np.array(_p)
+            r_sar = max(r_sar, abs(
+                (_f_sarti(*(q0 + e_), 0.0) - _f_sarti(*(q0 - e_), 0.0))
+                / (2 * hs)))
+            for j_ in range(3):
+                e2_ = np.zeros(3)
+                e2_[j_] = hs
+                H[i_, j_] = (
+                    _f_sarti(*(q0 + e_ + e2_), 0.0)
+                    - _f_sarti(*(q0 + e_ - e2_), 0.0)
+                    - _f_sarti(*(q0 - e_ + e2_), 0.0)
+                    + _f_sarti(*(q0 - e_ - e2_), 0.0)) / (4 * hs * hs)
+        # an ORDINARY double point: the quadratic term is a genuine
+        # cone, so the Hessian must be nonsingular, not merely nonzero
+        ordinary &= abs(float(np.linalg.det(H))) > 1e-6
+    b6.append(("Sarti dodecic nodes (value and gradient)", r_sar, 2e-7))
+    b6.append(("Sarti dodecic nodes are ordinary",
+               0.0 if ordinary else 1.0, 0.5))
+
     # Humbert sextic: the 16 inherited Kummer nodes (re-polished from
     # stored seeds, mu = 1.3) and the triple point at alpha = (1,1,1)
     _K16 = (
