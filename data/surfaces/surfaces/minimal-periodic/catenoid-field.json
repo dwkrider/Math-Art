@@ -1,25 +1,30 @@
 {
   "schema_version": "0.1.0",
   "slug": "catenoid-field",
-  "name": "Catenoid Field",
+  "name": "Catenoid Field (square-torus member)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "doubly-periodic",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "Doubly periodic field of half-catenoids growing alternately up and down: parametrized by a twice-punctured rectangular torus with Gauss map g(z) = c*Je(z), Je a Jacobi-type elliptic function with two simple poles and zeros.  Weber's repository page 'Doubly Periodic Catenoids' (mirror ch025) describes a closely related doubly periodic catenoid arrangement; whether it is the same family has NOT been established here, so that page is deliberately not cross-referenced."
+    "exactness": "numerical-integral",
+    "note": "Doubly periodic field of half-catenoids growing alternately up and down: parametrized by a twice-punctured rectangular torus with Gauss map g(z) = c*Je(z), Je a Jacobi-type elliptic function with two simple poles and zeros.  Weber's repository page 'Doubly Periodic Catenoids' (mirror ch025) describes a closely related doubly periodic catenoid arrangement; whether it is the same family has NOT been established here, so that page is deliberately not cross-referenced.  THE SHIPPED ROW IS THE tau = i (square-torus) MEMBER with growth factor bb as the knob; J_F is realised as the balanced theta-11 quotient with zeros {0, 1/2} and poles {tau/2, 1/2 - tau/2}, normalised per member by the unit-circle branch-value symmetry (|b1 b2| = 1).  Measured, and gated in the zoo self-test: the loop around each half-catenoid puncture translates by (0, 0, 0) -- the record's 'no period problem' made quantitative -- and both deck translations are purely horizontal ((-0.4926, 0, 0) and (0, -0.6642, 0)), so the field lies between two parallel planes."
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -37,24 +42,29 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
-      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "DP_CATENOID_FIELD",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
+      "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024).",
       "The 3DXM Consortium, 'Catenoid Field', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch025_catenoid_field.md).",
       "H. Karcher, 'Construction of minimal surfaces', Surveys in Geometry, Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256, Bonn (1989) 1-96 (the 'Tokyo notes' the mirrored pages cite for their formulas)."
     ]
   },
-  "metrics": {
-    "normalization": "unit_cell"
-  },
   "tradition": [
     "classical"
   ],
+  "metrics": {
+    "normalization": "unit_cell"
+  },
   "ids": {
     "vmm": "ch025_catenoid_field"
   },

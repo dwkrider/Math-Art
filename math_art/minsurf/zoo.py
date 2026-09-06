@@ -2034,6 +2034,24 @@ WE_SURFACES['SP_TOROIDAL_KS'] = {
 # declared explicitly -- same as every other appended catalog block
 SURFACE_FAMILY['SP_TOROIDAL_KS'] = 'SINGLY'
 
+
+# The catenoid field: 3DXM's doubly periodic field of half-catenoids,
+# g = bb * J_F, dh = dz / J_F on the twice-punctured rectangular torus
+# -- see the block above `catenoid_field_W` in weierstrass.py for the
+# data, the balanced-divisor lesson, the measured no-period identities
+# and the references.  Ships the tau = i (square-torus) member; bb is
+# the growth knob the VMM exhibit exposes.
+WE_SURFACES['DP_CATENOID_FIELD'] = {
+    'label': "Catenoid Field (square-torus member)",
+    'family': 'DOUBLY',
+    'mesher': we.catenoid_field_mesh,
+    'cells2d_mesher': we.catenoid_field_mesh,
+    'p_from': lambda order, radius: {'bb': 0.6 + 0.4 * min(order, 6)},
+    'count': "Growth",
+    'test_order': 1,
+}
+SURFACE_FAMILY['DP_CATENOID_FIELD'] = 'DOUBLY'
+
 WE_SURFACES['SP_SIX_SCHERK'] = {
     'label': "Six-Ended Scherk Tower",
     'family': 'SINGLY',
@@ -3340,6 +3358,32 @@ def _selftest():
     good = tks_ok and r_x < 1e-5
     ok &= good
     print(f"TKS handle loop |f(z+1)-f(z)| = {r_x:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Catenoid-field gates -- the row's own claims, measured:
+    #   1. NO PERIOD PROBLEM: the loop around each half-catenoid
+    #      puncture translates by (0, 0, 0);
+    #   2. the field lies between two parallel planes: both deck
+    #      translations are purely horizontal;
+    #   3. J_F really is elliptic: the balanced-divisor quotient has
+    #      constant phase along the real axis (the unbalanced form
+    #      walks at e^{2 pi i z} -- the trap this row hit first).
+    Wcf = we.catenoid_field_W(1.0, 1.0)
+    r_lp = max(float(np.linalg.norm(we.we_ends_loop(Wcf, p_, r=0.02)))
+               for p_ in (0.0, 0.5))
+    t_ = np.linspace(0.0, 1.0, 20001)
+    d1 = np.real(np.trapezoid(Wcf((-0.2 + 0.25j) + t_), t_, axis=0))
+    d2 = np.real(np.trapezoid(Wcf((0.25 - 0.5j) + t_ * 1j) * 1j,
+                              t_, axis=0))
+    r_h = max(abs(float(d1[2])), abs(float(d2[2])))
+    JFf = we._cf_member(1.0)
+    xs_ = np.array([0.11, 0.23, 0.37, 0.44])
+    jv = JFf(xs_)
+    r_ph = float(np.max(np.abs(np.imag(jv))) / np.max(np.abs(jv)))
+    good = r_lp < 1e-6 and r_h < 1e-5 and r_ph < 1e-9
+    ok &= good
+    print(f"Catenoid field: end loops {r_lp:.1e} | deck vertical part "
+          f"{r_h:.1e} | J_F real-axis phase {r_ph:.1e} "
           f"{'OK' if good else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn

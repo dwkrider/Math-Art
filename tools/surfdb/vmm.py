@@ -468,7 +468,19 @@ def _vmm_minimal_records():
                     "a closely related doubly periodic catenoid "
                     "arrangement; whether it is the same family has NOT "
                     "been established here, so that page is deliberately "
-                    "not cross-referenced."}}),
+                    "not cross-referenced.  THE SHIPPED ROW IS THE tau = i "
+                    "(square-torus) MEMBER with growth factor bb as the "
+                    "knob; J_F is realised as the balanced theta-11 "
+                    "quotient with zeros {0, 1/2} and poles {tau/2, "
+                    "1/2 - tau/2}, normalised per member by the "
+                    "unit-circle branch-value symmetry (|b1 b2| = 1).  "
+                    "Measured, and gated in the zoo self-test: the loop "
+                    "around each half-catenoid puncture translates by "
+                    "(0, 0, 0) -- the record's 'no period problem' made "
+                    "quantitative -- and both deck translations are "
+                    "purely horizontal ((-0.4926, 0, 0) and "
+                    "(0, -0.6642, 0)), so the field lies between two "
+                    "parallel planes."}}),
         },
         "kusner-sphere-2n-planar-ends": {
             "name": "Kusner Sphere (2n planar ends)", "family": "minimal",

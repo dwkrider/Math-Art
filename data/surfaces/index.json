@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 418,
+  "implemented_count": 419,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -1765,16 +1765,16 @@
     },
     {
       "slug": "catenoid-field",
-      "name": "Catenoid Field",
+      "name": "Catenoid Field (square-torus member)",
       "path": "surfaces/minimal-periodic/catenoid-field.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "doubly-periodic",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -1792,8 +1792,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

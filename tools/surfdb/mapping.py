@@ -267,6 +267,8 @@ ALIAS = {
     # The toroidal Karcher-Scherk tower, one solved (tau1, a1) member
     # per wing order from the notebook's tables.
     "minsurf:SP_TOROIDAL_KS": "toroidal-karcher-scherk",
+    # The catenoid field, from the ends backend + J_F theta quotient.
+    "minsurf:DP_CATENOID_FIELD": "catenoid-field",
     # The half-twisted Scherk shipped in the Weierstrass zoo while the
     # curated record stayed OPEN, because the row minted its own
     # `half-twisted-scherk-surface` twin.  One surface, one record: the

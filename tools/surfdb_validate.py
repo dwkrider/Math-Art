@@ -596,6 +596,19 @@ NOT_A_GAP = {
         ("no-source", "A folder name recovered from the Wayback index of "
                       "Weber's dead archive.  No chapter, no notebook, no "
                       "paper, no datafile -- the name is all that survives."),
+    "neovius-sym3":
+        ("no-source", "A folder name recovered from the Wayback index of "
+                      "Weber's dead archive; no chapter, notebook, paper "
+                      "or datafile carries it.  The literature pass DID "
+                      "identify what the name most plausibly denotes: "
+                      "Karcher 1989 section 6.1.3 describes Neovius "
+                      "analogs with handles to the horizontal edges of "
+                      "the three orthogonal prismas, and the triangular "
+                      "prism member has exactly 3-fold symmetry -- but "
+                      "that is a described construction with no numbers "
+                      "anywhere on disk, so there is still nothing to "
+                      "build FROM.  Distinct from Schoen C(H), which "
+                      "6.1.5 derives differently and which ships."),
     # DUPLICATES AND FAMILY RECORDS.
     "weber-tr":
         ("bookkeeping", "The same surface as `weber-trr`, which ships: "
