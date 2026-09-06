@@ -664,7 +664,7 @@ def _vmm_other_records():
                     "surface."}},
         },
         "norm-one-family": {
-            "name": "Norm One Family", "family": "misc",
+            "name": "Norm One Family", "family": "algebraic",
             "mode": "implicit",
             "blocked_by":
                 "Not built: the supershape record covers the Gielis "
@@ -686,7 +686,11 @@ def _vmm_other_records():
                         "equal-exponent Lame / superellipsoid family): "
                         "|x|^p + |y|^p + |z|^p = 1, octahedron at p = 1, "
                         "sphere at p = 2, cube as p -> infinity, convex "
-                        "for p >= 1.",
+                        "for p >= 1.  SHIPPED with p as a live knob "
+                        "(default 4); gated on two exact identities -- "
+                        "the p = 2 member IS the unit sphere (|F| = 0 on "
+                        "it) and every member is invariant under the full "
+                        "order-48 octahedral group.",
                     "parameters": [
                         {"name": "p", "domain": "(0, inf)", "default": 4,
                          "note": "norm exponent"}]}},
@@ -717,7 +721,10 @@ def _vmm_other_records():
                     "four circles through the vertex triples of a regular "
                     "tetrahedron's faces -- the tetrahedral sibling of "
                     "the shipped Deco-Cube (distance from the cube's six "
-                    "face-inscribed circles)."}},
+                    "face-inscribed circles).  SHIPPED beside DECO_CUBE; "
+                    "gated on the order-12 tetrahedral rotation group "
+                    "acting on the produced mesh (invariance ~2e-13, "
+                    "which a wrong circle centre or normal destroys)."}},
         },
     }
 

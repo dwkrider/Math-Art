@@ -662,7 +662,18 @@ def _adcal_records():
                 "definition": {"note":
                     "One of Stagnaro's Enriques quintics: a degree-5 "
                     "surface with 4 tacnodes, in a family whose "
-                    "parameters set the tacnode type (0, 1 or 2)."}}),
+                    "parameters set the tacnode type (0, 1 or 2).  THE "
+                    "SHIPPED ROW IS THE CRAIGHERO-GATTAZZO SECTION-3 "
+                    "PENCIL MEMBER (lambda : mu) = (1 : 1) -- the "
+                    "open-access completion of Stagnaro's program, same "
+                    "singular configuration, irreducible bicanonical "
+                    "adjoint -- NOT Stagnaro's own [St.1] surface, whose "
+                    "equation remains unpublished outside LNM 997.  One "
+                    "typo in the source found by testing its claims: the "
+                    "text's fourth Dd-point P(1,0,0,1) must read "
+                    "(0,0,1,1); with that the four Dd-points, the cone "
+                    "tangencies and the rank-1 tacnodal Hessians all "
+                    "verify at machine precision (gated)."}}),
         },
         "hyde-sextic": {
             "name": "Hyde Sextic", "family": "algebraic",

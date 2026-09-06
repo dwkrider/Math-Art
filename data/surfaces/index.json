@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 475,
-  "implemented_count": 427,
+  "implemented_count": 432,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -3498,7 +3498,7 @@
         "closed",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-gallery"
       ],
       "definition_mode": "implicit",
@@ -3516,8 +3516,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -6595,14 +6597,14 @@
     },
     {
       "slug": "humbert-sextic",
-      "name": "Humbert Sextic",
+      "name": "Humbert Sextic (O = (1:1:1:1) member)",
       "path": "surfaces/algebraic/humbert-sextic.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -6621,8 +6623,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -9071,17 +9075,17 @@
     },
     {
       "slug": "norm-one-family",
-      "name": "Norm One Family",
-      "path": "surfaces/misc/norm-one-family.json",
-      "primary_family": "misc",
+      "name": "p-Norm Unit Sphere (superellipsoid, p knob)",
+      "path": "surfaces/algebraic/norm-one-family.json",
+      "primary_family": "algebraic",
       "families": [
+        "algebraic",
         "aperiodic",
         "closed",
         "closed-orientable",
         "def-implicit",
         "immersed",
-        "misc",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -9099,8 +9103,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13009,14 +13015,14 @@
     },
     {
       "slug": "stagnaro-enriques-quintic",
-      "name": "Stagnaro Enriques Quintic (4 tacnodes)",
+      "name": "Enriques Quintic, 4 Tacnodes (Craighero-Gattazzo (1:1) member)",
       "path": "surfaces/algebraic/stagnaro-enriques-quintic.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -13035,8 +13041,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -14123,7 +14131,7 @@
     },
     {
       "slug": "symmetroid",
-      "name": "Symmetroid",
+      "name": "Quartic Symmetroid (pinned integer web)",
       "path": "surfaces/algebraic/symmetroid.json",
       "primary_family": "algebraic",
       "families": [
@@ -14131,7 +14139,7 @@
         "aperiodic",
         "def-implicit",
         "immersed",
-        "not-implemented",
+        "implemented",
         "tradition-classical"
       ],
       "definition_mode": "implicit",
@@ -14149,8 +14157,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {

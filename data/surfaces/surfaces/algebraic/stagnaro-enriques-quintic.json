@@ -1,21 +1,27 @@
 {
   "schema_version": "0.1.0",
   "slug": "stagnaro-enriques-quintic",
-  "name": "Stagnaro Enriques Quintic (4 tacnodes)",
+  "name": "Enriques Quintic, 4 Tacnodes (Craighero-Gattazzo (1:1) member)",
   "primary_family": "algebraic",
   "families": [
     "algebraic",
     "aperiodic",
     "def-implicit",
-    "not-implemented",
+    "implemented",
     "singular",
     "tradition-classical"
   ],
   "definition": {
     "mode": "implicit",
     "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 3.5
+    },
     "polynomial": null,
-    "note": "One of Stagnaro's Enriques quintics: a degree-5 surface with 4 tacnodes, in a family whose parameters set the tacnode type (0, 1 or 2)."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nOne of Stagnaro's Enriques quintics: a degree-5 surface with 4 tacnodes, in a family whose parameters set the tacnode type (0, 1 or 2).  THE SHIPPED ROW IS THE CRAIGHERO-GATTAZZO SECTION-3 PENCIL MEMBER (lambda : mu) = (1 : 1) -- the open-access completion of Stagnaro's program, same singular configuration, irreducible bicanonical adjoint -- NOT Stagnaro's own [St.1] surface, whose equation remains unpublished outside LNM 997.  One typo in the source found by testing its claims: the text's fourth Dd-point P(1,0,0,1) must read (0,0,1,1); with that the four Dd-points, the cone tangencies and the rank-1 tacnodal Hessians all verify at machine precision (gated)."
   },
   "curvature": {
     "condition": "none",
@@ -38,18 +44,27 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.  ACQUISITION PASS (batch 7): the equation was never on the page (a Barth private communication), and Stagnaro's own construction (LNM 997, Ravello 1982) is paywalled.  The open-access completion of his program, Craighero & Gattazzo, Rend. Sem. Mat. Univ. Padova 91 (1994) 185-198, IS on disk (research/papers/algebraic-surfaces/craighero-gattazzo-1994-quintic-surfaces-enriques.pdf) and constructs the 4-Dd-point Enriques quintic explicitly; its OCR is too poor for blind transcription, so the equation extraction needs the page-image conversion pass, queued.",
-      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "MATHWORLD",
+      "key": "CG_QUINTIC",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "E. W. Weisstein, \"Peano Surface\", \"Chair\", \"Crossed Trough\", \"Handkerchief Surface\", \"Hunt's Surface\", \"Kiss Surface\", \"Menn's Surface\", \"Miter Surface\", \"Nordstrand's Weird Surface\", \"Tooth Surface\", MathWorld -- A Wolfram Web Resource, mathworld.wolfram.com.",
+      "T. Nordstrand, \"Weird Cube\" and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).",
+      "G. Peano's 1899 counterexample; cf. the MathWorld page's history of the criterion it defeated.",
       "O. Labs, 'Advent calendar 2002, No. 16', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch034_no_16.md).",
       "E. Stagnaro's construction; descriptions and equations communicated to O. Labs by W. Barth, per the page.",
       "P. Craighero, R. Gattazzo, 'Quintic surfaces of P3 having a non singular model with q = pg = 0, P2 != 0', Rend. Sem. Mat. Univ. Padova 91 (1994) 185-198 (acquired via NUMDAM, on disk)."
     ]
+  },
+  "metrics": {
+    "normalization": "published"
   },
   "tradition": [
     "classical"
@@ -57,7 +72,7 @@
   "ids": {
     "algsurf": "ch034_no_16"
   },
-  "named_after": "Quintic, Stagnaro",
+  "named_after": "Craighero, Gattazzo, Quintic",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

@@ -9,14 +9,20 @@
     "closed",
     "def-implicit",
     "immersed",
-    "not-implemented",
+    "implemented",
     "tradition-gallery"
   ],
   "definition": {
     "mode": "implicit",
     "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 1.5
+    },
     "polynomial": null,
-    "note": "Level set of the squared-distance function from the four circles through the vertex triples of a regular tetrahedron's faces -- the tetrahedral sibling of the shipped Deco-Cube (distance from the cube's six face-inscribed circles)."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nLevel set of the squared-distance function from the four circles through the vertex triples of a regular tetrahedron's faces -- the tetrahedral sibling of the shipped Deco-Cube (distance from the cube's six face-inscribed circles).  SHIPPED beside DECO_CUBE; gated on the order-12 tetrahedral rotation group acting on the produced mesh (invariance ~2e-13, which a wrong circle centre or normal destroys)."
   },
   "curvature": {
     "condition": "none",
@@ -34,23 +40,32 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.  The level function (squared distance from the four face circumcircles of a regular tetrahedron) is deliberately NOT transcribed: the shipped deco-cube's circle-distance construction is guarded by a numerical oracle, and this variant has no implementation to check a transcription against.",
-      "resume": "Implement beside DECO_CUBE in math_art/surfaces/algebraic.py -- same distance-from-circles machinery with the four tetrahedral face circumcircles -- and let the build's oracle verify any stored form."
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "NAMED",
+      "key": "DECO_TETRAHEDRON",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "3DXM Consortium, \"Functions with compact levels in 3D-XplorMath\", virtualmathmuseum.org/docs/ImplicitCompact.pdf -- the formulas and the default parameters used here.  A converted copy is in research/papers/algebraic-surfaces/vmm-implicit-surfaces-compact/.",
+      "H. Karcher and R. Palais, 3D-XplorMath / Virtual Math Museum surface gallery, virtualmathmuseum.org/Surface/.",
+      "3DXM Virtual Math Museum, implicit-surfaces gallery.",
       "The 3DXM Consortium, 'Deco-Tetahedron', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch091_deco_tetahedron.md)."
     ]
   },
-  "ids": {
-    "vmm": "ch091_deco_tetahedron"
+  "metrics": {
+    "normalization": "published"
   },
   "tradition": [
     "gallery"
   ],
+  "ids": {
+    "vmm": "ch091_deco_tetahedron"
+  },
   "named_after": "Deco",
   "fabrication": {
     "developable": false,

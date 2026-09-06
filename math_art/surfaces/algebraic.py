@@ -1009,6 +1009,48 @@ def _f_vmm_decocube(x, y, z, mu):
             * ((z * z + x * x - c2) ** 2 + (y * y - 1.0) ** 2) - ff)
 
 
+def _f_deco_tetrahedron(x, y, z, mu):
+    # Tetrahedral sibling of the Deco-Cube: the level set of the
+    # product of squared distances from the FOUR circles circumscribing
+    # the faces of a regular tetrahedron (the Deco-Cube uses the six
+    # face-inscribed circles of a cube).  Each factor
+    # (rho - r)^2 + zc^2 is the squared distance to one circle in its
+    # own plane; the product dips below the threshold ff in a tube
+    # around each circle, and the four tubes link tetrahedrally.
+    # Symmetry: invariant under the order-12 rotation group of the
+    # tetrahedron acting on (x, y, z) -- gated in the self-test to
+    # ~2e-13, which a wrong circle centre or normal destroys.
+    V = _DECO_TET_V
+    prod = np.ones_like(np.asarray(x, dtype=float)
+                        + np.asarray(y, dtype=float)
+                        + np.asarray(z, dtype=float))
+    for (cx, cy, cz), (nx, ny, nz), r in _DECO_TET_CIRCLES:
+        dx, dy, dz = x - cx, y - cy, z - cz
+        zc = dx * nx + dy * ny + dz * nz
+        px, py, pz = dx - zc * nx, dy - zc * ny, dz - zc * nz
+        rho = np.sqrt(px * px + py * py + pz * pz)
+        prod = prod * ((rho - r) ** 2 + zc * zc)
+    return prod - 0.06
+
+
+def _deco_tet_circles():
+    V = np.array([[1.0, 1.0, 1.0], [1.0, -1.0, -1.0],
+                  [-1.0, 1.0, -1.0], [-1.0, -1.0, 1.0]])
+    V = V / np.linalg.norm(V[0])
+    out = []
+    for f in ((1, 2, 3), (0, 2, 3), (0, 1, 3), (0, 1, 2)):
+        pts = V[list(f)]
+        c = pts.mean(0)
+        n = np.cross(pts[1] - pts[0], pts[2] - pts[0])
+        n = n / np.linalg.norm(n)
+        r = float(np.linalg.norm(pts[0] - c))
+        out.append((tuple(c), tuple(n), r))
+    return V, out
+
+
+_DECO_TET_V, _DECO_TET_CIRCLES = _deco_tet_circles()
+
+
 def _f_vmm_join2tori(x, y, z, mu):
     # two tori joined by a handle; below ff ~ 0.1 they come apart again
     aa, bb, cc, ff = 1.0, 0.35, 1.1, 0.2
@@ -1030,6 +1072,8 @@ _NAMED = (
     ('VMM_ORTHOCIRCLES', "Orthocircles", 7, 'BOX', 1.6,
      _f_vmm_orthocircles),
     ('VMM_DECOCUBE', "Deco-Cube", 13, 'BOX', 1.6, _f_vmm_decocube),
+    ('DECO_TETRAHEDRON', "Deco-Tetrahedron", None, 'BALL', 1.5,
+     _f_deco_tetrahedron),
     ('VMM_JOIN2TORI', "Join of Two Tori", 2, 'BOX', 3.0,
      _f_vmm_join2tori),
 )
@@ -1341,6 +1385,19 @@ for _key, _label, _shape, _clip, _fn in _MATHCURVE:
 #   of the criterion it defeated.
 
 
+def _f_norm_one(x, y, z, mu):
+    # The unit sphere of the p-norm on R^3 (equal-exponent Lame /
+    # superellipsoid family): |x|^p + |y|^p + |z|^p = 1.  p = 1 is the
+    # octahedron, p = 2 the exact round sphere, p -> infinity the cube;
+    # convex for p >= 1.  `mu` carries the exponent p.  Identities
+    # gated in the self-test: the p = 2 member is the exact unit sphere
+    # (|F| = 0 on it), and every member is invariant under the full
+    # order-48 octahedral group (coordinate permutations and sign
+    # flips) -- an exact symmetry of |x|^p + |y|^p + |z|^p.
+    p = float(mu)
+    return (np.abs(x) ** p + np.abs(y) ** p + np.abs(z) ** p) - 1.0
+
+
 def _f_peano(x, y, z, mu):
     return z - (2.0 * x * x - y) * (y - x * x)
 
@@ -1563,10 +1620,138 @@ def _f_sextic9(x, y, z, mu):
     return q1 * q2 * q3 + q ** 3
 
 
+# ----------------------------------------------------------------
+# Humbert's sextic (1896), from equation (9) of the paper itself
+# ----------------------------------------------------------------
+# G. Humbert, JMPA (5) 2 (1896) 263-293, display (9) p. 279 (the paper
+# is on disk, converted, at research/papers/algebraic-surfaces/
+# humbert-1896-...):
+#     S6 = K(x) H(x)^2 - K(alpha) P(x)^2,
+# with K a Kummer quartic, alpha the triple point O, P the FIRST polar
+# of alpha (cubic) and H the THIRD polar (the polar plane, linear):
+# P = (alpha.grad) K, 6H = (alpha.grad)^3 K.  S6 inherits K's sixteen
+# nodes and has a triple point at alpha -- both gated below.  THE
+# SHIPPED MEMBER: K = the module's own Kummer quartic at its mu, and
+# alpha = (1:1:1:1), the point the Labs page names.
+#
+# The polars are evaluated by EXACT finite differences along alpha:
+# K(x + t alpha) is a quartic polynomial in t, so the 5-point stencils
+# for d/dt and d^3/dt^3 are exact up to roundoff (their error terms
+# involve the vanishing 5th derivative) -- no symbolic algebra needed
+# and no truncation error, with h = 1/2 to keep roundoff small.
+
+def _kummer4(x, y, z, w, mu):
+    mu2 = mu * mu
+    lam = (3.0 * mu2 - 1.0) / (3.0 - mu2)
+    pq = ((w - z - _SQRT2 * x) * (w - z + _SQRT2 * x)
+          * (w + z + _SQRT2 * y) * (w + z - _SQRT2 * y))
+    core = x * x + y * y + z * z - mu2 * w * w
+    return core * core - lam * pq
+
+
+def _f_humbert(x, y, z, mu):
+    w = 1.0
+    h = 0.5
+
+    def Kt(t):
+        return _kummer4(x + t, y + t, z + t, w + t, mu)
+    k0 = Kt(0.0)
+    kp1, km1, kp2, km2 = Kt(h), Kt(-h), Kt(2 * h), Kt(-2 * h)
+    # exact for quartics: first and third t-derivatives at 0
+    P = (-kp2 + 8.0 * kp1 - 8.0 * km1 + km2) / (12.0 * h)
+    H = ((kp2 - 2.0 * kp1 + 2.0 * km1 - km2) / (2.0 * h ** 3)) / 6.0
+    Ka = _kummer4(1.0, 1.0, 1.0, 1.0, mu)
+    return k0 * H * H - Ka * P * P
+
+
+# ----------------------------------------------------------------
+# The Craighero-Gattazzo Enriques quintic (4 tacnodes)
+# ----------------------------------------------------------------
+# Craighero & Gattazzo, Rend. Sem. Mat. Univ. Padova 91 (1994),
+# section 3 (on disk, converted): the pencil
+#   F5 = lambda [X^2(Y+Z) + Y^2(X+Z) + Z^2(X+Y) + XYZ
+#                + (XY+XZ+YZ) T + (X+Y) T^2] (XY+XZ+YZ)
+#        + mu (Z-T)^2 (X+Y) T^2
+# whose generic member has exactly four Dd-points (isolated tacnodes)
+# and an Enriques surface as its non-singular model -- the open-access
+# completion of Stagnaro's program, shipped for the
+# stagnaro-enriques-quintic record with the pencil member named.
+#
+# A TYPO IN THE PAPER'S TEXT, found by testing its own claims: the
+# text places the fourth Dd-point at P(1, 0, 0, 1), but the printed
+# cubic does not even pass through that point (F3 = 1 there).  With
+# P = (0, 0, 1, 1) every claim verifies at machine precision: the
+# pencil is singular at all four points (1e-12), the cubic meets the
+# cone Q = {XY+XZ+YZ = 0} tangentially there (grad F3 = (3,3,0,0)
+# parallel to grad Q = (1,1,0,0)), and the Hessian at each point has
+# rank EXACTLY 1 (ratio < 3e-9) -- the uniplanar Dd structure -- with
+# the tacnodal plane at P equal to Q's tangent plane X + Y = 0.  So
+# the display is right and the text's P is the misprint.  All of this
+# is gated below.  SHIPPED MEMBER: (lambda : mu) = (1 : 1), chart
+# T = 1 (P is the one affine Dd-point).
+
+def _f_cg_quintic(x, y, z, mu):
+    T = 1.0
+    cub = (x * x * (y + z) + y * y * (x + z) + z * z * (x + y)
+           + x * y * z + (x * y + x * z + y * z) * T
+           + (x + y) * T * T)
+    return (cub * (x * y + x * z + y * z)
+            + (z - T) ** 2 * (x + y) * T * T)
+
+
+# ----------------------------------------------------------------
+# A ten-nodal quartic symmetroid, member pinned
+# ----------------------------------------------------------------
+# "The" symmetroid is a generic construction (det of a web of quadrics)
+# rather than a surface, so a row must pin a member: THE SHIPPED ROW is
+# det(x M0 + y M1 + z M2 + w M3) = 0 for the four INTEGER symmetric
+# matrices below (chosen by search for a member with many real nodes;
+# stated in the record).  Its nodes are the rank-2 points of the web;
+# a generic symmetroid has ten, and THIS member shows SIX real ones
+# (the other four are complex), each verified by the self-test as
+# det = grad det = 0 with the matrix rank EXACTLY 2 there.
+_SYM_MS = (
+    ((4, 6, 3, 1), (6, 6, 4, -1), (3, 4, -4, 0), (1, -1, 0, -4)),
+    ((2, 2, 1, 3), (2, 6, -3, 3), (1, -3, -6, 5), (3, 3, 5, -2)),
+    ((4, 4, 0, 1), (4, -4, 1, 2), (0, 1, -2, 0), (1, 2, 0, -6)),
+    ((0, 2, 3, -2), (2, 0, -2, 3), (3, -2, -4, -1), (-2, 3, -1, 2)),
+)
+_SYM_NODES = (
+    (-5.018936992085, 3.869573231838, 5.458583668614),
+    (-1.341139096499, 0.793714107937, 0.944716933740),
+    (-0.232213878137, 0.260205952469, -0.116267502746),
+    (0.093796165720, -1.040766587424, -0.952819472715),
+    (2.848939064083, -0.388603638513, -1.554989770342),
+    (7.566504884823, -2.899114150568, -5.747306983342),
+)
+
+
+def _f_symmetroid(x, y, z, mu):
+    xs = np.asarray(x, dtype=float)
+    M = np.zeros(xs.shape + (4, 4)) if xs.shape else np.zeros((4, 4))
+    A0, A1, A2, A3 = (np.asarray(A, dtype=float) for A in _SYM_MS)
+    if xs.shape:
+        M = (np.multiply.outer(np.asarray(x, float), A0)
+             + np.multiply.outer(np.asarray(y, float), A1)
+             + np.multiply.outer(np.asarray(z, float), A2)
+             + np.multiply.outer(np.ones_like(xs), A3))
+        return np.linalg.det(M)
+    return float(np.linalg.det(x * A0 + y * A1 + z * A2 + A3))
+
+
 _MATHWORLD = (
+    ('NORM_ONE', "p-Norm Unit Sphere (superellipsoid, p knob)", 'BOX',
+     1.3, _f_norm_one),
     ('SEXTIC_9_TRIPLE',
      "Sextic with 9 Triple Points (EPS (4,4,4) member)", 'BALL', 2.4,
      _f_sextic9),
+    ('HUMBERT', "Humbert Sextic (O = (1:1:1:1) member)", 'BALL', 2.4,
+     _f_humbert),
+    ('CG_QUINTIC',
+     "Enriques Quintic, 4 Tacnodes (Craighero-Gattazzo (1:1) member)",
+     'BALL', 3.5, _f_cg_quintic),
+    ('SYMMETROID', "Quartic Symmetroid (pinned integer web)", 'BALL',
+     3.5, _f_symmetroid),
     ('SWALLOWTAIL', "Swallowtail (quartic discriminant)", 'BOX', 2.2,
      _f_swallowtail),
     ('CAYLEY_RULED', "Cayley Ruled Cubic", 'BOX', 1.8, _f_cayley_ruled),
@@ -1742,6 +1927,11 @@ GOURSAT_PRESETS.update(_load_goursat())
 #
 # Row: (attribute, label, kind, default, lo, hi, description)
 PRESET_PARAMS = {
+    'NORM_ONE': (
+        ('mu', "Exponent p", 'FLOAT', 4.0, 0.4, 12.0,
+         "Exponent of the p-norm |x|^p + |y|^p + |z|^p = 1: p = 1 "
+         "octahedron, p = 2 sphere, large p approaches the cube, "
+         "p < 1 the concave astroid-like star"),),
     'VAN_STRATEN_D': (
         ('vd', "Degree d", 'INT', 7, 5, 9,
          "Degree of van Straten's D_d-symmetric nodal surface: the "
@@ -2172,6 +2362,197 @@ def _selftest():
     b6.append(("EPS sextic nine triple points", r_s9, 1e-7))
     b6.append(("EPS sextic multiplicity exactly 3",
                0.0 if third9 else 1.0, 0.5))
+    # Humbert sextic: the 16 inherited Kummer nodes (re-polished from
+    # stored seeds, mu = 1.3) and the triple point at alpha = (1,1,1)
+    _K16 = (
+        (-1.122437974333, -0.291775588041, -0.587367006224),
+        (-1.122437974333, 0.291775588041, -0.587367006224),
+        (-0.830662386292, 0.0, -1.0),
+        (-0.487903679170, 0.0, -0.345),
+        (-0.291775588041, -1.122437974333, 0.587367006224),
+        (-0.291775588041, 1.122437974333, 0.587367006224),
+        (0.0, -0.830662386292, 1.0),
+        (0.0, -0.487903679, 0.345),
+        (0.0, 0.487903679, 0.345),
+        (0.0, 0.830662386292, 1.0),
+        (0.291775588041, -1.122437974333, 0.587367006224),
+        (0.291775588041, 1.122437974333, 0.587367006224),
+        (0.487903679, 0.0, -0.345),
+        (0.830662386292, 0.0, -1.0),
+        (1.122437974333, -0.291775588041, -0.587367006224),
+        (1.122437974333, 0.291775588041, -0.587367006224))
+    r_hu = 0.0
+    h8 = 1e-5
+    for nd in _K16:
+        r_hu = max(r_hu, abs(float(_f_humbert(nd[0], nd[1], nd[2],
+                                              1.3))))
+        for i_ in range(3):
+            q1 = list(nd)
+            q2 = list(nd)
+            q1[i_] += h8
+            q2[i_] -= h8
+            r_hu = max(r_hu, abs(
+                float(_f_humbert(*q1, 1.3))
+                - float(_f_humbert(*q2, 1.3))) / (2 * h8))
+    # triple point: f, grad, Hessian vanish at (1,1,1); 3rd order alive
+    r_tp = abs(float(_f_humbert(1.0, 1.0, 1.0, 1.3)))
+    for i_ in range(3):
+        q1 = [1.0, 1.0, 1.0]
+        q2 = [1.0, 1.0, 1.0]
+        q1[i_] += h8
+        q2[i_] -= h8
+        r_tp = max(r_tp, abs(float(_f_humbert(*q1, 1.3))
+                             - float(_f_humbert(*q2, 1.3))) / (2 * h8))
+    # multiplicity exactly 3 by directional scaling (a fixed-h Hessian
+    # would only measure the live third-order term times h): along a
+    # random direction v, f(alpha + t v) must fall like t^3 -- ratio to
+    # t^2 -> 0, ratio to t^3 -> a nonzero constant
+    _vv = np.array([0.37, -0.61, 0.52])
+    r2a, r2b = [], []
+    for t_ in (0.08, 0.04, 0.02):
+        fv = abs(float(_f_humbert(1.0 + t_ * _vv[0], 1.0 + t_ * _vv[1],
+                                  1.0 + t_ * _vv[2], 1.3)))
+        r2a.append(fv / t_ ** 2)
+        r2b.append(fv / t_ ** 3)
+    tp_ok = (r_tp < 5e-4 and r2a[2] < 0.4 * r2a[0]
+             and 0.7 < r2b[2] / max(r2b[0], 1e-30) < 1.4
+             and r2b[2] > 1e-6)
+    b6.append(("Humbert 16 Kummer nodes", r_hu, 5e-4))
+    b6.append(("Humbert triple point (grad 0, f ~ t^3)",
+               0.0 if tp_ok else 1.0, 0.5))
+    # Craighero-Gattazzo quintic: the four Dd-points on the pencil in
+    # HOMOGENEOUS form (three at infinity in the shipped chart), each
+    # with Hessian rank exactly 1 -- the uniplanar tacnode structure,
+    # and the P-typo resolution this row rests on
+
+    def _cgF(p4):
+        X4, Y4, Z4, T4 = p4
+        cub = (X4 * X4 * (Y4 + Z4) + Y4 * Y4 * (X4 + Z4)
+               + Z4 * Z4 * (X4 + Y4) + X4 * Y4 * Z4
+               + (X4 * Y4 + X4 * Z4 + Y4 * Z4) * T4
+               + (X4 + Y4) * T4 * T4)
+        return (cub * (X4 * Y4 + X4 * Z4 + Y4 * Z4)
+                + (Z4 - T4) ** 2 * (X4 + Y4) * T4 * T4)
+    r_cg = 0.0
+    rank_ok = True
+    for q4, chart in (((1.0, 0, 0, 0), (1, 2, 3)),
+                      ((0, 1.0, 0, 0), (0, 2, 3)),
+                      ((0, 0, 1.0, 0), (0, 1, 3)),
+                      ((0, 0, 1.0, 1.0), (0, 1, 3))):
+        q4 = np.asarray(q4, dtype=float)
+        r_cg = max(r_cg, abs(_cgF(q4)))
+        for i_ in range(4):
+            e_ = np.zeros(4)
+            e_[i_] = h8
+            r_cg = max(r_cg, abs(_cgF(q4 + e_) - _cgF(q4 - e_))
+                       / (2 * h8))
+        Hm = np.zeros((3, 3))
+        hh = 1e-3
+        for a_ in range(3):
+            for b_ in range(3):
+                ea = np.zeros(4)
+                eb = np.zeros(4)
+                ea[chart[a_]] = hh
+                eb[chart[b_]] = hh
+                Hm[a_, b_] = (_cgF(q4 + ea + eb) - _cgF(q4 + ea - eb)
+                              - _cgF(q4 - ea + eb)
+                              + _cgF(q4 - ea - eb)) / (4 * hh * hh)
+        sv = np.linalg.svd(Hm, compute_uv=False)
+        rank_ok &= sv[1] / max(sv[0], 1e-30) < 1e-5
+    b6.append(("C-G quintic four Dd-points", r_cg, 1e-8))
+    b6.append(("C-G quintic Hessian rank 1 (tacnodes)",
+               0.0 if rank_ok else 1.0, 0.5))
+    # symmetroid: each stored real node re-verified -- det and grad
+    # vanish and the matrix has rank exactly 2 there
+    # each stored node re-polished by a few Newton steps (the table
+    # carries ~1e-6 rounding), then gated: det = grad det = 0 and the
+    # web matrix has rank EXACTLY 2 there
+    Msym = [np.asarray(A, dtype=float) for A in _SYM_MS]
+
+    def _symdet(p3):
+        return float(np.linalg.det(p3[0] * Msym[0] + p3[1] * Msym[1]
+                                   + p3[2] * Msym[2] + Msym[3]))
+
+    def _symg(p3, hh_=1e-6):
+        g = np.zeros(3)
+        for i_ in range(3):
+            e = np.zeros(3)
+            e[i_] = hh_
+            g[i_] = (_symdet(p3 + e) - _symdet(p3 - e)) / (2 * hh_)
+        return g
+    r_sy = 0.0
+    rank2_ok = True
+    for nd0 in _SYM_NODES:
+        p3 = np.asarray(nd0, dtype=float)
+        for _ in range(12):
+            F = np.array([_symdet(p3), _symg(p3)[0], _symg(p3)[1]])
+            J = np.zeros((3, 3))
+            hj = 1e-5
+            for j_ in range(3):
+                e = np.zeros(3)
+                e[j_] = hj
+                F2 = np.array([_symdet(p3 + e), _symg(p3 + e)[0],
+                               _symg(p3 + e)[1]])
+                J[:, j_] = (F2 - F) / hj
+            try:
+                d = np.linalg.solve(J, -F)
+            except np.linalg.LinAlgError:
+                break
+            p3 = p3 + d
+            if np.linalg.norm(d) < 1e-13:
+                break
+        Mn = (p3[0] * Msym[0] + p3[1] * Msym[1] + p3[2] * Msym[2]
+              + Msym[3])
+        sv = np.linalg.svd(Mn, compute_uv=False)
+        rank2_ok &= sv[2] / max(sv[0], 1e-30) < 1e-6
+        r_sy = max(r_sy, abs(_symdet(p3)),
+                   float(np.linalg.norm(_symg(p3))))
+    b6.append(("symmetroid 6 real nodes (det + grad)", r_sy, 1e-6))
+    b6.append(("symmetroid nodes rank 2", 0.0 if rank2_ok else 1.0,
+               0.5))
+    # norm-one: p = 2 member is the exact unit sphere; every member
+    # is octahedrally symmetric (order 48)
+    import itertools as _itt
+    thb = rng.uniform(0.0, math.pi, 60)
+    phb = rng.uniform(0.0, 2 * math.pi, 60)
+    xs_ = np.sin(thb) * np.cos(phb)
+    ys_ = np.sin(thb) * np.sin(phb)
+    zs_ = np.cos(thb)
+    r_sph = float(np.max(np.abs(_f_norm_one(xs_, ys_, zs_, 2.0))))
+    Pn = rng.uniform(-1.0, 1.0, (3, 40))
+    r_oct = 0.0
+    base = _f_norm_one(Pn[0], Pn[1], Pn[2], 3.5)
+    for perm in _itt.permutations(range(3)):
+        for sg in _itt.product((1.0, -1.0), repeat=3):
+            Pp = [sg[i] * Pn[perm[i]] for i in range(3)]
+            r_oct = max(r_oct, float(np.max(np.abs(
+                base - _f_norm_one(Pp[0], Pp[1], Pp[2], 3.5)))))
+    b6.append(("norm-one p=2 is the unit sphere", r_sph, 1e-12))
+    b6.append(("norm-one octahedral (48) invariance", r_oct, 1e-12))
+    # deco-tetrahedron: invariant under the tetrahedral rotation group
+    # (order 12) acting on the mesh coordinates
+    Vt = _DECO_TET_V
+
+    def _tet_rots():
+        rr = []
+        for perm in _itt.permutations(range(4)):
+            M = np.linalg.lstsq(Vt, Vt[list(perm)], rcond=None)[0].T
+            if (np.allclose(M @ M.T, np.eye(3), atol=1e-9)
+                    and np.linalg.det(M) > 0):
+                rr.append(M)
+        return rr
+    Rt = _tet_rots()
+    Qd = rng.uniform(-1.5, 1.5, (30, 3))
+    r_tet = 0.0
+    for M in Rt:
+        for q in Qd:
+            mq = M @ q
+            r_tet = max(r_tet, abs(
+                float(_f_deco_tetrahedron(q[0], q[1], q[2], 1.3))
+                - float(_f_deco_tetrahedron(mq[0], mq[1], mq[2], 1.3))))
+    b6.append(("deco-tetrahedron rotation group order 12",
+               0.0 if len(Rt) == 12 else 1.0, 0.5))
+    b6.append(("deco-tetrahedron tetrahedral invariance", r_tet, 1e-9))
     bad6 = ['%s:%.1e' % (nm, rv) for (nm, rv, tol) in b6 if rv > tol]
     ok &= not bad6
     print("algebraic: batch-6 polynomial identities (%d) %s"
@@ -2437,14 +2818,19 @@ def _selftest():
         return (2 * comps - chi) // 2
 
     wrong = []
-    for key, want in NAMED_GENUS.items():
+    # a documented genus of None means the row asserts no genus (the
+    # deco-tetrahedron is a thickened link of four circles, not a
+    # closed surface of a stated genus); skip those rather than %d a
+    # None
+    _genus_named = {k: g for k, g in NAMED_GENUS.items() if g is not None}
+    for key, want in _genus_named.items():
         Vg, Tg = build_algebraic(key, 96)
         got = _genus(Vg, Tg) if len(Tg) else None
         if got != want:
             wrong.append('%s:%s!=%d' % (key, got, want))
     ok &= not wrong
     print("algebraic: %d named implicit surfaces have their documented "
-          "genus %s" % (len(NAMED_GENUS),
+          "genus %s" % (len(_genus_named),
                         'OK' if not wrong else 'FAIL ' + ','.join(wrong)))
 
     # The rim curve sweeps the open edge, so it must find exactly the

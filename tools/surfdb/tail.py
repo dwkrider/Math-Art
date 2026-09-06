@@ -114,12 +114,13 @@ ALGEBRAIC = [
      "and (1:+-1:+-1:+-1)), each verified exactly by the self-test."),
     ("symmetroid", "Symmetroid",
      "The quartic determinant surface of a net of quadrics; ten nodes. "
-     "STILL OPEN after the batch-6 pass, and deliberately: 'the' "
-     "symmetroid is a GENERIC construction, not a surface -- shipping "
-     "one requires choosing an explicit symmetric 4x4 linear matrix "
-     "and verifying its ten nodes, and no canonical choice is published "
-     "in the sources on hand.  A future row must pin and name its "
-     "member, per the Wei-g4 rule."),
+     "'The' symmetroid is a GENERIC construction, not a surface, so "
+     "THE SHIPPED ROW PINS A MEMBER: det(x M0 + y M1 + z M2 + w M3) "
+     "for four explicit integer symmetric matrices chosen by search "
+     "for a node-rich real picture (printed in the module).  Of the "
+     "generic ten nodes this member shows SIX real ones, each verified "
+     "by the self-test as det = grad det = 0 with the matrix rank "
+     "EXACTLY 2 there; the other four are complex."),
     ("menns-surface", "Menn's Surface",
      "A quartic carrying a higher-order cusp; a standard singularity model."),
     ("peano-surface", "Peano Surface",
