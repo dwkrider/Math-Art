@@ -68,9 +68,13 @@ bl_info = {
 
 import math
 
+import numpy as np
+
 try:
+    from .curve_frames.sweep import closed_tube, sweep
     from .quadric_generator import fit
 except ImportError:
+    from curve_frames.sweep import closed_tube, sweep
     from quadric_generator import fit
 
 TAU = 2.0 * math.pi
@@ -211,6 +215,137 @@ def principal(source, u, v, **kw):
     return P, N, H + disc, H - disc
 
 
+def _reduce_locus(pts, NU, NV, wrap_u, wrap_v, tol):
+    """Reduce a DEGENERATE sheet's grid points to their 1-D locus.
+
+    `pts` maps (i, j) -> focal point of a sheet whose image has (near)
+    zero area.  Coincident points are merged (rounding dedupe, then a
+    union-find sweep so a value straddling a rounding boundary cannot
+    split one geometric point into two nodes), grid adjacency collapses
+    to a graph on the merged points, and the graph is walked into
+    ordered chains.
+
+    Returns (chains, isolated, ok): chains is a list of
+    (ordered points, closed), isolated a list of lone points, and ok is
+    False when the graph is not a clean union of paths and cycles -- in
+    which case the caller falls back to emitting the raw grid.
+    """
+    reps, rep_pos = {}, []
+    for p in pts.values():
+        key = tuple(int(round(c / tol)) for c in p)
+        if key not in reps:
+            reps[key] = len(rep_pos)
+            rep_pos.append(p)
+
+    # union-find over the representatives, merging within 2 * tol
+    parent = list(range(len(rep_pos)))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for a in range(len(rep_pos)):
+        for b in range(a + 1, len(rep_pos)):
+            if max(abs(rep_pos[a][t] - rep_pos[b][t])
+                   for t in range(3)) < 2.0 * tol:
+                ra, rb = find(a), find(b)
+                if ra != rb:
+                    parent[rb] = ra
+
+    def node(p):
+        return find(reps[tuple(int(round(c / tol)) for c in p)])
+
+    edges, deg = set(), {}
+    for (i, j) in pts:
+        for (i2, j2) in (((i + 1) % NU, j), (i, (j + 1) % NV)):
+            if i2 == 0 and i + 1 == NU and not wrap_u:
+                continue
+            if j2 == 0 and j + 1 == NV and not wrap_v:
+                continue
+            if (i2, j2) not in pts:
+                continue
+            a, b = node(pts[(i, j)]), node(pts[(i2, j2)])
+            e = (min(a, b), max(a, b))
+            if a != b and e not in edges:
+                edges.add(e)
+                deg[a] = deg.get(a, 0) + 1
+                deg[b] = deg.get(b, 0) + 1
+
+    nodes = sorted({find(t) for t in range(len(rep_pos))})
+    if any(deg.get(n, 0) > 2 for n in nodes):
+        return [], [], False
+
+    adj = {n: [] for n in nodes}
+    for a, b in edges:
+        adj[a].append(b)
+        adj[b].append(a)
+
+    chains, isolated, seen = [], [], set()
+    for start in nodes:
+        if start in seen:
+            continue
+        comp, stack = set(), [start]
+        while stack:
+            n = stack.pop()
+            if n in comp:
+                continue
+            comp.add(n)
+            stack.extend(adj[n])
+        seen |= comp
+        if len(comp) == 1:
+            isolated.append(rep_pos[start])
+            continue
+        ends = [n for n in comp if deg.get(n, 0) == 1]
+        cur = ends[0] if ends else min(comp)
+        chain, prev = [cur], None
+        while True:
+            nxt = [w for w in adj[cur] if w != prev]
+            if not nxt or nxt[0] == chain[0]:
+                break
+            prev, cur = cur, nxt[0]
+            chain.append(cur)
+        chains.append(([rep_pos[n] for n in chain], not ends))
+    return chains, isolated, True
+
+
+def _tube_chain(points, radius, sides=10, closed=False):
+    """(verts, faces) -- a thin round tube along an ordered chain."""
+    P = np.asarray(points, dtype=float)
+    if closed and len(P) >= 3:
+        vs, fs = closed_tube(P, radius, sides)
+        return [tuple(v) for v in vs], [tuple(f) for f in fs]
+    if len(P) < 2:
+        return _marker(tuple(P[0]), radius)
+    prof = [(radius * math.cos(TAU * k / sides),
+             radius * math.sin(TAU * k / sides)) for k in range(sides)]
+    vs, fs = sweep(P, prof)
+    verts = [tuple(v) for v in vs]
+    faces = [tuple(f) for f in fs]
+    # flat disc caps so the rod is watertight
+    for ring, pt, flip in ((0, P[0], True),
+                           ((len(P) - 1) * sides, P[-1], False)):
+        c = len(verts)
+        verts.append(tuple(pt))
+        for k in range(sides):
+            k2 = (k + 1) % sides
+            tri = (c, ring + k, ring + k2)
+            faces.append(tri if flip else (c, ring + k2, ring + k))
+    return verts, faces
+
+
+def _marker(p, radius):
+    """(verts, faces) -- a small octahedron marking a point locus."""
+    r = radius
+    verts = [(p[0] + r, p[1], p[2]), (p[0] - r, p[1], p[2]),
+             (p[0], p[1] + r, p[2]), (p[0], p[1] - r, p[2]),
+             (p[0], p[1], p[2] + r), (p[0], p[1], p[2] - r)]
+    faces = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
+             (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]
+    return verts, faces
+
+
 def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
                 include_source=False, **kw):
     """(verts, faces, stats) -- focal sheets of one source chart.
@@ -219,6 +354,17 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
     |1 / kappa_i| stays within `clip`; faces are emitted where all four
     corners are valid, which is what trims the flares at parabolic
     points instead of meshing to infinity.
+
+    A DEGENERATE sheet -- one whose image has (near) zero area, like
+    BOTH sheets of the torus, which are its centre circle and its axis
+    -- is not emitted as its zero-area quad grid: that is invisible in
+    the viewport, and it shipped that way once.  The sheet is reduced
+    to the curve or point it actually is and drawn as a thin tube or
+    an octahedral marker, and `stats["degenerate"]` records it so the
+    operator reports what happened instead of staying silent.
+
+    stats: {"cover": {sheet: fraction of the grid within clip},
+            "degenerate": {sheet: "curve" | "point" | "unreduced"}}.
     """
     u0, u1, v0, v1, wrap_u, wrap_v = _DOMAIN[source]
     NU = nu if wrap_u else nu + 1
@@ -226,29 +372,80 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
     us = [u0 + (u1 - u0) * i / nu for i in range(NU)]
     vs = [v0 + (v1 - v0) * j / nv for j in range(NV)]
 
+    # evaluate the whole grid once: focal candidates per sheet, plus
+    # the source's own extent, which scales the locus thickness
+    F = {0: {}, 1: {}}
+    lo, hi = [1e30] * 3, [-1e30] * 3
+    for i, u in enumerate(us):
+        for j, v in enumerate(vs):
+            P, N, k1, k2 = principal(source, u, v, **kw)
+            for t in range(3):
+                lo[t] = min(lo[t], P[t])
+                hi[t] = max(hi[t], P[t])
+            for sheet, k in ((0, k1), (1, k2)):
+                if abs(k) * clip > 1.0:
+                    d = 1.0 / k
+                    F[sheet][(i, j)] = (P[0] + d * N[0],
+                                        P[1] + d * N[1],
+                                        P[2] + d * N[2])
+    diag = max(math.sqrt(sum((hi[t] - lo[t]) ** 2 for t in range(3))),
+               1e-9)
+
     verts, faces = [], []
-    kept = {0: 0, 1: 0}
+
+    def _emit(sub):
+        vs2, fs2 = sub
+        base = len(verts)
+        verts.extend(vs2)
+        faces.extend(tuple(base + t for t in f) for f in fs2)
+
     total = NU * NV
+    cover = {s: 0.0 for s in sheets}
+    degenerate = {}
     for sheet in sheets:
-        idx = {}
-        for i, u in enumerate(us):
-            for j, v in enumerate(vs):
-                P, N, k1, k2 = principal(source, u, v, **kw)
-                k = (k1, k2)[sheet]
-                if abs(k) * clip <= 1.0:
-                    continue      # focal point beyond the clip distance
-                d = 1.0 / k
-                idx[(i, j)] = len(verts)
-                verts.append((P[0] + d * N[0], P[1] + d * N[1],
-                              P[2] + d * N[2]))
-                kept[sheet] += 1
+        pts = F[sheet]
+        cover[sheet] = len(pts) / float(total)
+        if not pts:
+            continue
+        quads = []
         for i in range(NU if wrap_u else NU - 1):
             i2 = (i + 1) % NU
             for j in range(NV if wrap_v else NV - 1):
                 j2 = (j + 1) % NV
                 q = [(i, j), (i2, j), (i2, j2), (i, j2)]
-                if all(c in idx for c in q):
-                    faces.append(tuple(idx[c] for c in q))
+                if all(c in pts for c in q):
+                    quads.append(q)
+        area = 0.0
+        for q in quads:
+            a, b, c, d = (np.asarray(pts[t]) for t in q)
+            area += 0.5 * float(np.linalg.norm(np.cross(c - a, d - b)))
+
+        def _emit_grid():
+            idx = {}
+            for gc, p in pts.items():
+                idx[gc] = len(verts)
+                verts.append(p)
+            faces.extend(tuple(idx[c] for c in q) for q in quads)
+
+        if area > 1e-7 * diag * diag:
+            _emit_grid()                      # a genuine 2-D sheet
+            continue
+
+        # the sheet is 1-dimensional (or a point): draw its locus
+        chains, isolated, ok = _reduce_locus(
+            pts, NU, NV, wrap_u, wrap_v, tol=1e-5 * diag)
+        if not ok:
+            _emit_grid()   # better the raw grid than nothing; and say so
+            degenerate[sheet] = "unreduced"
+            continue
+        kind = "point"
+        for chain, closed in chains:
+            if len(chain) >= 2:
+                kind = "curve"
+            _emit(_tube_chain(chain, 0.02 * diag, closed=closed))
+        for p in isolated:
+            _emit(_marker(p, 0.035 * diag))
+        degenerate[sheet] = kind
 
     if include_source:
         base = len(verts)
@@ -263,8 +460,7 @@ def build_focal(source, nu=96, nv=64, sheets=(0, 1), clip=4.0,
                 faces.append((base + i * NV + j, base + i2 * NV + j,
                               base + i2 * NV + j2, base + i * NV + j2))
 
-    stats = {s: kept[s] / float(total) for s in sheets}
-    return verts, faces, stats
+    return verts, faces, {"cover": cover, "degenerate": degenerate}
 
 
 # ---------------------------------------------------------------------------
@@ -372,13 +568,26 @@ if _IN_BLENDER:
             obj.select_set(True)
 
             cover = ", ".join("sheet %d: %d%% within clip"
-                              % (s + 1, round(100 * stats[s]))
-                              for s in sorted(stats))
+                              % (s + 1, round(100 * stats["cover"][s]))
+                              for s in sorted(stats["cover"]))
+            note = ""
+            for s in sorted(stats["degenerate"]):
+                kind = stats["degenerate"][s]
+                if kind == "curve":
+                    note += ("; sheet %d is DEGENERATE -- a curve, not "
+                             "a surface -- drawn as a thin tube" % (s + 1))
+                elif kind == "point":
+                    note += ("; sheet %d is DEGENERATE -- a single "
+                             "point -- drawn as a small marker" % (s + 1))
+                else:
+                    note += ("; sheet %d is degenerate and could not "
+                             "be reduced to a curve; raw (zero-area) "
+                             "grid emitted" % (s + 1))
             self.report({'INFO'},
-                        "Focal surface of %s: %d verts, %d faces (%s)"
+                        "Focal surface of %s: %d verts, %d faces (%s%s)"
                         % (dict((k, l) for k, l, _d in
                                 FOCAL_SOURCES)[self.source],
-                           len(verts), len(faces), cover))
+                           len(verts), len(faces), cover, note))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -428,40 +637,79 @@ def _selftest():
     """
     ok = True
 
-    # 1. sphere: both sheets collapse to the centre.  Tolerance 1e-6,
-    # not 1e-12: at an umbilic disc = sqrt(H^2 - K) takes the square
-    # root of pure roundoff, so kappa carries ~1e-8 of noise by
-    # construction -- the price of the closed-form eigenvalues, paid
-    # only where the two sheets coincide anyway.
-    verts, _faces, _st = build_focal('SPHERE', 48, 32, clip=10.0)
+    # 1. sphere: both sheets collapse to the centre, and the BUILDER
+    # must say so -- emitting small point markers there, not an
+    # invisible zero-area grid.  (At an umbilic disc = sqrt(H^2 - K)
+    # takes the square root of pure roundoff, so kappa carries ~1e-8 of
+    # noise by construction; the marker radius dwarfs that.)
+    verts, faces, st = build_focal('SPHERE', 48, 32, clip=10.0)
     worst = max(math.sqrt(x * x + y * y + z * z) for x, y, z in verts)
-    good = worst < 1e-6
+    good = (verts and faces and worst < 0.15
+            and st["degenerate"] == {0: "point", 1: "point"})
     ok &= good
-    print("focal: the sphere's sheets collapse to its centre "
-          "(worst |f| = %.1e) %s" % (worst, "OK" if good else "FAIL"))
+    print("focal: the sphere's sheets collapse to its centre, drawn "
+          "as point markers (worst |f| = %.3f) %s"
+          % (worst, "OK" if good else "FAIL"))
 
     # 2. the CLOSED-FORM surface of revolution: torus R = 1, r = 0.35.
-    # One sheet must be the centre circle (radius R in z = 0), the
-    # other the axis.  Which sheet is which depends on the normal's
-    # sign, so each vertex may match either oracle -- but every vertex
+    # First the mathematics, at the principal() level: one sheet's
+    # focal points must be the centre circle (radius R in z = 0), the
+    # other's the axis.  Which sheet is which depends on the normal's
+    # sign, so each point may match either oracle -- but every point
     # must match one, and BOTH oracles must be hit.
-    verts, _faces, _st = build_focal('TORUS', 64, 48, clip=10.0)
     hit_circle = hit_axis = 0
     worst = 0.0
-    for x, y, z in verts:
-        d_circle = abs(math.hypot(x, y) - 1.0) + abs(z)
-        d_axis = math.hypot(x, y)
-        if d_circle < d_axis:
-            hit_circle += 1
-            worst = max(worst, d_circle)
-        else:
-            hit_axis += 1
-            worst = max(worst, d_axis)
+    for i in range(64):
+        for j in range(48):
+            u, v = TAU * i / 64.0, TAU * j / 48.0
+            P, N, k1, k2 = principal('TORUS', u, v)
+            for k in (k1, k2):
+                if abs(k) < 0.1:
+                    continue
+                x, y, z = (P[t] + N[t] / k for t in range(3))
+                d_circle = abs(math.hypot(x, y) - 1.0) + abs(z)
+                d_axis = math.hypot(x, y)
+                if d_circle < d_axis:
+                    hit_circle += 1
+                    worst = max(worst, d_circle)
+                else:
+                    hit_axis += 1
+                    worst = max(worst, d_axis)
     good = worst < 1e-9 and hit_circle > 0 and hit_axis > 0
     ok &= good
-    print("focal: the torus's sheets are its centre circle (%d pts) "
-          "and its axis (%d pts), worst deviation %.1e %s"
+    print("focal: the torus's focal points are its centre circle "
+          "(%d pts) and its axis (%d pts), worst deviation %.1e %s"
           % (hit_circle, hit_axis, worst, "OK" if good else "FAIL"))
+
+    # 2b. ...and then the MESH: both sheets are 1-dimensional, so the
+    # builder must flag them degenerate and emit thin tubes AROUND
+    # those loci -- a non-empty, visible mesh.  The torus once shipped
+    # as a soup of zero-area quads that looked like an empty object:
+    # the oracle above passed while the operator produced nothing
+    # visible, so this check holds the MESH to the loci, not just the
+    # mathematics.
+    verts, faces, st = build_focal('TORUS', 64, 48, clip=10.0)
+    tube_r = 0.02 * math.sqrt(2.7 ** 2 + 2.7 ** 2 + 0.7 ** 2)
+    near_circle = near_axis = 0
+    worst = 0.0
+    for x, y, z in verts:
+        d_circle = math.sqrt((math.hypot(x, y) - 1.0) ** 2 + z * z)
+        d_axis = math.hypot(x, y)
+        d = min(d_circle, d_axis)
+        worst = max(worst, d)
+        if d_circle < d_axis:
+            near_circle += 1
+        else:
+            near_axis += 1
+    good = (verts and faces and worst < tube_r + 1e-6
+            and near_circle > 0 and near_axis > 0
+            and st["degenerate"] == {0: "curve", 1: "curve"})
+    ok &= good
+    print("focal: the torus's degenerate sheets are drawn as tubes on "
+          "the circle (%d verts) and the axis (%d verts), worst "
+          "off-locus %.4f <= tube radius %.4f %s"
+          % (near_circle, near_axis, worst, tube_r,
+             "OK" if good else "FAIL"))
 
     # 3. ellipsoid: at the end of the major axis (u = 0, v = pi/2) the
     # principal curvatures are a/b^2 and a/c^2 in closed form
@@ -524,13 +772,35 @@ def _selftest():
     # finite and within clip of its source point by construction
     verts, faces, stats = build_focal('MONKEY_SADDLE', 48, 48, clip=2.5)
     good = (all(all(math.isfinite(t) for t in v) for v in verts)
-            and faces and 0.0 < stats[0] < 1.0)
+            and faces and 0.0 < stats["cover"][0] < 1.0)
     ok &= good
     print("focal: the monkey saddle's planar umbilic is clipped, "
           "finite mesh (%d%% of sheet 1 within clip) %s"
-          % (round(100 * stats[0]), "OK" if good else "FAIL"))
+          % (round(100 * stats["cover"][0]), "OK" if good else "FAIL"))
 
-    # 7. paraboloid apex: kappa = 1/a and 1/b in closed form
+    # 7. EVERY source in the enum yields a non-empty mesh with real
+    # area through the builder.  The torus taught this lesson: a gate
+    # that checks the focal points are in the right PLACE says nothing
+    # about whether the emitted mesh is visible.  Zero-area output must
+    # never ship again for any source, present or future.
+    for key, _lab, _desc in FOCAL_SOURCES:
+        verts, faces, stats = build_focal(key, 48, 40, clip=3.0)
+        area = 0.0
+        V = [np.asarray(v) for v in verts]
+        for f in faces:
+            for t in range(1, len(f) - 1):
+                area += 0.5 * float(np.linalg.norm(
+                    np.cross(V[f[t]] - V[f[0]], V[f[t + 1]] - V[f[0]])))
+        good = bool(verts) and bool(faces) and area > 1e-6
+        ok &= good
+        print("focal: %-14s non-empty mesh with real area "
+              "(%d verts, %d faces, area %.4f%s) %s"
+              % (key, len(verts), len(faces), area,
+                 "".join(", sheet %d %s" % (s + 1, k)
+                         for s, k in sorted(stats["degenerate"].items())),
+                 "OK" if good else "FAIL"))
+
+    # 8. paraboloid apex: kappa = 1/a and 1/b in closed form
     _P, _N, k1, k2 = principal('PARABOLOID', 0.0, 0.0, a=0.8, b=1.5)
     err = max(abs(max(abs(k1), abs(k2)) - 1.0 / 0.8),
               abs(min(abs(k1), abs(k2)) - 1.0 / 1.5))

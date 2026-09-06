@@ -371,12 +371,12 @@ if _IN_BLENDER:
                 ('CURVE', "Selected Curve",
                  "Use the selected curve object as the spine, so any "
                  "knot or curve generator in the add-on feeds this one")],
-            default='HELIX',
+            default='TORUS_KNOT',
             description="The curve the family of spheres travels along")
         radius_law: EnumProperty(
             name="Radius Law",
             items=[(k, lab, desc) for k, lab, desc in LAWS],
-            default='CONSTANT',
+            default='WAVES',
             description="How the sphere radius varies along the spine")
         radius: FloatProperty(
             name="Radius", default=0.25, min=0.005, max=2.0,

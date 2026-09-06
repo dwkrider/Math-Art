@@ -154,11 +154,16 @@ PARAMS = {
     # the bare default is an ellipsoid, which reads as a squashed
     # sphere; the one-sheeted hyperboloid says "quadric" at a glance
     "mesh.quadric_add": dict(kind='HYPERBOLOID_ONE'),
-    # A constant-radius helix canal is just a coiled tube -- any bevel
-    # can do that. The Waves law strings pearls along the helix, which
-    # is what "envelope of a family of spheres" looks like.
-    "mesh.canal_surface_add": dict(radius_law='WAVES', wave_count=8,
-                                   wave_depth=0.45),
+    # A constant-radius canal is just a bevelled tube -- any modifier can
+    # do that. The Waves law strings pearls along the spine, which is
+    # what "envelope of a family of spheres" actually looks like, and the
+    # torus knot puts that on a curve nothing else in the catalogue
+    # produces. Both are PINNED here rather than inherited: this entry
+    # read `radius_law` only and silently changed subject when the
+    # operator's spine default moved off the helix, which is how a figure
+    # stops matching the sentence written about it.
+    "mesh.canal_surface_add": dict(spine='TORUS_KNOT', radius_law='WAVES',
+                                   wave_count=8, wave_depth=0.45),
     "mesh.waterman_add": dict(root=20),
     "mesh.spiked_polyhedron_add": dict(preset='MODERN'),
     "mesh.woven_polyhedron_add": dict(solid='ICOSA'),
