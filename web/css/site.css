@@ -26,6 +26,14 @@
 
 * { box-sizing: border-box; }
 
+/* `hidden` must win.
+ *
+ * The browser's own [hidden] rule is display:none at UA specificity, so
+ * ANY class rule that sets display beats it. `.grid { display: grid }`
+ * did exactly that: switching to the clustered view set grid.hidden and
+ * the grid stayed on screen, 12,000 pixels of it, below the canvas. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
