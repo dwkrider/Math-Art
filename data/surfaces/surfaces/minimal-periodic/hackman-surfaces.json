@@ -1,21 +1,21 @@
 {
   "schema_version": "0.1.0",
   "slug": "hackman-surfaces",
-  "name": "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+  "name": "Hackman Surface (toroidal 1-noid)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "immersed",
-    "implemented",
     "minimal",
     "minimal-periodic",
+    "not-implemented",
     "singly-periodic",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "exactness": "numerical-integral",
+    "polynomial": null,
     "note": "Toroidal 1-noids: quotients of screw-motion invariant singly periodic minimal surfaces with a single catenoidal end in the quotient (the maximum principle forbids 1-noids in R3 proper).  Hackman proved one exists on every conformal type of torus; the alternating fence of half-catenoids is the simplest member of the wider picture.  THE SHIPPED ROW is the k = 1/3 member on tau = t + 2i with t = 0.333316172865672, re-solved from the notebook's own period condition WITH its verbatim closed-form Bonnet phase (sigma/zeta/theta with Conjugate[]s on the sheared torus).  The batch-5 hypothesis phi = -arg(sigma(-k/2) sigma(k/2)) was tested against that closed form FIRST and is WRONG -- off by pi (a silent dh sign flip that would render perfectly) plus a t-dependent 6e-6 drift.  Gated: period re-solve, pure phase, end loop (0,0,0), deck z+1 purely vertical h = 1.095693, screw rise exactly k h with base-point-independent offset."
   },
   "curvature": {
@@ -42,19 +42,14 @@
   },
   "construction": [
     {
-      "generator": "math_art.minsurf.parametric",
-      "operator_id": "mesh.periodic_minimal_add",
-      "family": "SINGLY",
-      "key": "SP_HACKMAN",
-      "definition_index": 0,
-      "implemented": true
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
-      "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024).",
       "M. Weber, 'Hackman Surfaces', minimalsurfaces.blog (local mirror: minsurf/book/.../ch382_hackman_surfaces.md).",
       "M. Hackman, PhD thesis (as credited by the mirrored page for the construction and the classification remarks)."
     ]

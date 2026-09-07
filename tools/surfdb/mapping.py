@@ -575,6 +575,23 @@ UNVERIFIED = {
     # exactly TWO oriented annuli whose only joining seam is the one
     # that provably does not exist (the gap stays open and measured;
     # the `horgan-surface` record itself remains terminal).
+    # (2026-09, later the same day) A sweep of EVERY zoo row -- which
+    # is what the audit above should have been instead of a six-row
+    # spot check -- found two more piles, both shipped in batch 10 and
+    # never re-checked when the four above were caught.
+    "minsurf:SP_HACKMAN":
+        "Assembly is 3 disconnected patches (chi = +3) at storeys=3, "
+        "and the render does not resemble Weber's.  His exports are "
+        "(k, t1) members -- k=3 at t1=0.3/1.0/2.0, k=5 at t1=0.4/1.5 "
+        "-- while this row exposes a single t and no k, so the "
+        "parameterisation is likely wrong as well as the assembly.  "
+        "The exports were on disk throughout and were never used.",
+    "minsurf:SP_SCHERK4":
+        "Assembly is 4 disconnected patches (comps = chi = loops = 4). "
+        "Its mathematics is gated hard -- Scherk's own 1835 equation "
+        "20 holds pointwise at every built vertex to ~1e-14 -- which "
+        "is precisely the trap: a pointwise identity is satisfied by "
+        "the right points in the wrong number of pieces.",
 }
 
 

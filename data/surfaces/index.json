@@ -80,7 +80,7 @@
     "topological"
   ],
   "count": 474,
-  "implemented_count": 448,
+  "implemented_count": 446,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -5777,15 +5777,15 @@
     },
     {
       "slug": "hackman-surfaces",
-      "name": "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+      "name": "Hackman Surface (toroidal 1-noid)",
       "path": "surfaces/minimal-periodic/hackman-surfaces.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
-        "implemented",
         "minimal",
         "minimal-periodic",
+        "not-implemented",
         "singly-periodic",
         "tradition-classical"
       ],
@@ -5804,10 +5804,8 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
-      ],
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -10788,19 +10786,19 @@
     },
     {
       "slug": "scherks-fourth-surface",
-      "name": "Scherk's Fourth Surface (1835)",
+      "name": "Scherk's Fourth Surface",
       "path": "surfaces/minimal-periodic/scherks-fourth-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-weierstrass",
-        "implemented",
+        "def-implicit",
         "minimal",
         "minimal-periodic",
+        "not-implemented",
         "singly-periodic",
         "singular",
         "tradition-classical"
       ],
-      "definition_mode": "weierstrass",
+      "definition_mode": "implicit",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 1,
@@ -10815,10 +10813,8 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
-      ],
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
