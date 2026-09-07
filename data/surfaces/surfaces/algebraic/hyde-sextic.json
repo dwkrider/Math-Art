@@ -7,15 +7,47 @@
     "algebraic",
     "aperiodic",
     "def-implicit",
-    "not-implemented",
+    "implemented",
     "singular",
     "tradition-classical"
   ],
   "definition": {
     "mode": "implicit",
     "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 2.1
+    },
     "polynomial": null,
-    "note": "Hyde's 1901 sextic, touched by the axes of all screws reciprocal to three given screws (classical screw theory); singular along a cuspidal double curve and at 6 points."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nHyde's 1901 sextic, touched by the axes of all screws reciprocal to three given screws (classical screw theory); singular along a cuspidal double curve and at 6 points.",
+    "parameters": [
+      {
+        "name": "a",
+        "symbol": "First Pitch",
+        "domain": "[-4, 4]",
+        "default": -1.0,
+        "integer": false,
+        "note": "Pitch of the first principal screw. The surface is the envelope of the axes of every screw reciprocal to the three principal screws, so the pitches steer the whole shape"
+      },
+      {
+        "name": "b",
+        "symbol": "Middle Pitch",
+        "domain": "[-4, 4]",
+        "default": 0.5,
+        "integer": false,
+        "note": "Pitch of the second principal screw; the two real pinch points sit on the axis of the middle pitch"
+      },
+      {
+        "name": "c",
+        "symbol": "Third Pitch",
+        "domain": "[-4, 4]",
+        "default": 2.0,
+        "integer": false,
+        "note": "Pitch of the third principal screw; spreading the pitches apart spreads the cuspidal edge"
+      }
+    ]
   },
   "curvature": {
     "condition": "none",
@@ -43,17 +75,29 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.  ACQUISITION PASS (batch 7): the equation was never on the page (a Barth private communication).  The 1901 paper is identified precisely -- E. W. Hyde, 'On a Surface of the Sixth Order Which is Touched by the Axes of all Screws Reciprocal to Three Given Screws', Ann. of Math. (2) 2 (1901) 179-188, JSTOR 2007200 -- but every fetchable archive is gated from here (JSTOR login, HathiTrust 403, archive.org blocked), and whether the 1901 paper even prints a usable affine equation is unverified.",
-      "resume": "Transcribe from the mirrored page (and its Singular source where present) into math_art/surfaces/algebraic.py; the build's oracle check then confirms the stored form against that implementation."
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "CLASSICAL",
+      "key": "HYDE",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "O. Labs, \"A Sextic with 35 Cusps\", arXiv:math/0502520 (2005) -- the D5 family (1) and Theorem 3, the real member with 30 cusps and 10 nodes shipped here.",
+      "E. W. Hyde, \"On a Surface of the Sixth Order Which Is Touched by the Axes of All Screws Reciprocal to Three Given Screws\", Ann. of Math. (2) 2 (1901) 179-188 -- the surface the HYDE row rebuilds from its classical definition.",
+      "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, advent calendar 2002 Nos. 1 and 17 -- the descriptions the dodecic and Hyde rows are verified against.  Mirrored locally under references/websites/algsurf/.",
+      "O. Labs, \"Dessins d'Enfants and Hypersurfaces with Many A_j-Singularities\", J. London Math. Soc. (2) 74 (2006) 607-622; arXiv:math/0505022 -- construction (4), the folding-polynomial critical counts, Theorem 7 and the 132 = 12*11 row of Table 1.",
+      "S. V. Chmutov, \"Examples of Projective Surfaces with Many Singularities\", J. Algebraic Geom. 1 (1992) 191-196 -- the nodal construction the A_j series modifies.",
+      "R. S. Ball, \"A Treatise on the Theory of Screws\", Cambridge University Press (1900) -- the pitch quadric and the canonical form of a three-system used in the derivation.",
       "O. Labs, 'Advent calendar 2002, No. 17', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch035_no_17.md).",
       "Hyde, Ann. of Math., 2nd series, vol. 2 (1901), and Ann. of Math. 4 (1888) (the page's references for the screw-theory construction); description and equation communicated to O. Labs by W. Barth."
     ]
+  },
+  "metrics": {
+    "normalization": "published"
   },
   "tradition": [
     "classical"
@@ -61,7 +105,7 @@
   "ids": {
     "algsurf": "ch035_no_17"
   },
-  "named_after": "Hyde",
+  "named_after": "Hyde, Sextic",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

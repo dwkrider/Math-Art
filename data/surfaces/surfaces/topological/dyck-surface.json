@@ -9,8 +9,8 @@
     "closed-nonorientable",
     "def-parametric",
     "immersed",
+    "implemented",
     "non-orientable",
-    "not-implemented",
     "topological",
     "tradition-classical",
     "tradition-physical-model"
@@ -18,7 +18,6 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "polynomial": null,
     "note": "No chart is stored: the record has no implemented construction -- there is no shipped builder to verify a chart against, and this module stores no unverified formulas (the record's own construction block notes what is missing). The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
@@ -42,14 +41,22 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not a separate generator BY DESIGN: it is the k = 3 case of the shipped non-orientable genus-k row, which subsumes it. This record exists so the name resolves.",
-      "resume": "Build it from mesh.topological_surface_add with preset NONORIENT and k = 3."
+      "generator": "math_art.topological_surface_generator",
+      "operator_id": "mesh.topological_surface_add",
+      "key": "DYCK",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "Dyck's surface: W. von Dyck, \"Beitraege zur Analysis situs\", Math. Ann. 32 (1888), 457-512 -- the proof that a sphere with three cross-caps is the same closed surface as a torus with one.",
+      "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\" (mathcurve.com), chapter \"surface de Dyck\" -- both forms of the surface, and Christoph Soland's octagon presentation realized in his wire sculpture \"Janus bifrons\" (Gymnase du Bugnon, Lausanne).",
+      "Klein bottle: F. Klein (1882).  The default classical bottle shape is built by the tube scheme of G. Franzoni, \"The Klein bottle in its classical shape: a further step towards a good parametrization\", arXiv:0909.5354 (2009): a tube of varying radius swept along a plane directrix, with the dumbbell-curve directrix of the paper's section 4 (which closes) as the default and its section-3 piriform directrix and the older polynomial immersion as alternatives.  A converted copy is in research/papers/ surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.",
+      "Mobius band (the plain ruled one-sided strip): A. F. Mobius (1858) and J. B. Listing (1858), as the standard half-twist ruled parametrization.",
+      "Boy's surface: W. Boy, Math. Ann. 57 (1903), here via the R. Bryant - R. Kusner parametrization.",
+      "Cross-cap and Roman surface: two immersions of RP^2 due to J. Steiner (Rome, 1844).",
       "W. von Dyck, 'Beitrage zur Analysis situs', Math. Ann. 32 (1888)."
     ]
   },

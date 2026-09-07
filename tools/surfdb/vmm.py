@@ -153,9 +153,10 @@ def _deep(*layers):
 #     the hyperbolic-type page is attached, the conic-type page ch051 is
 #     the same record's other regime and is noted here rather than
 #     attached (one id slot).
-#   * ch056_two_soliton -> multi-soliton-pseudospherical: the record
-#     covers the 2-, 3- and 4-soliton surfaces (VMM pages ch056, ch058,
-#     ch059) and the breather+soliton page ch057; the first is attached.
+#   * ch056_two_soliton -> two-soliton-surface: the 2-, 3- and
+#     4-soliton surfaces (VMM pages ch056, ch058, ch059) are three rows
+#     now, so the page attaches to the two-soliton row it depicts rather
+#     than to an umbrella; ch057 (breather + soliton) has no row.
 #   * ch065_paraboloid -> elliptic-paraboloid: VMM's rotational
 #     paraboloid is the circular special case of the record.
 #   * ch137 (Scherk's singly periodic) -> scherk-saddle-tower: the
@@ -216,7 +217,7 @@ VMM_IDS = {
     "dini-surface": "ch053_dini",
     "breather-surface": "ch054_breather",
     "kuen-surface": "ch055_kuen",
-    "multi-soliton-pseudospherical": "ch056_two_soliton",
+    "two-soliton-surface": "ch056_two_soliton",
     "k-positive-revolution": "ch060_k1_sor",
     "sieverts-surface": "ch061_sievert_enneper",
     "spherical-helicoid": "ch062_spherical_helicoid",

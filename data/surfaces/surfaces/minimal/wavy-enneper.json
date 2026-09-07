@@ -7,18 +7,24 @@
     "aperiodic",
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "Enneper surface modified so waves develop around its boundary and can travel around it: a finite total curvature minimal immersion of the once-punctured sphere with k-fold symmetry (the exhibit shows the 3-fold case), from Karcher's Tokyo notes."
+    "exactness": "numerical-integral",
+    "note": "Enneper surface modified so waves develop around its boundary and can travel around it: a finite total curvature minimal immersion of the once-punctured sphere with k-fold symmetry (the exhibit shows the 3-fold case), from Karcher's Tokyo notes.",
+    "domain": "disk |z| < 0.9"
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -36,14 +42,23 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
-      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "WAVY_ENNEPER",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "The 3DXM Consortium, \"Wavy Enneper\", \"Karcher JD Saddle Tower\" and \"Karcher JE Saddle Tower\" exhibits, https://virtualmathmuseum.org/",
+      "H. Karcher, \"Construction of minimal surfaces\", in \"Surveys in Geometry\", Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256,",
+      "Bonn, 1989, pp. 1-96 -- the Enneper-end language and the doubly periodic examples (section 3.3).",
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988) 83-114 -- the JD/JE tower families.",
+      "- the exact exhibit data (Gauss map, dh, parameter ranges) followed here.",
+      "A. Enneper (1864) -- the base surface the waves ride on.",
       "The 3DXM Consortium, 'Wavy Enneper Surface', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch010_wavy_enneper.md).",
       "H. Karcher, 'Construction of minimal surfaces', Surveys in Geometry, Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256, Bonn (1989) 1-96 (the 'Tokyo notes' the mirrored pages cite for their formulas)."
     ]

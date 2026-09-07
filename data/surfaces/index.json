@@ -80,8 +80,8 @@
     "swept",
     "topological"
   ],
-  "count": 475,
-  "implemented_count": 440,
+  "count": 477,
+  "implemented_count": 457,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -798,39 +798,6 @@
       "operator_ids": [
         "mesh.parametric_minimal_add"
       ],
-      "specimen_count": 0
-    },
-    {
-      "slug": "boys-planet",
-      "name": "Boy's Planet",
-      "path": "surfaces/topological/boys-planet.json",
-      "primary_family": "topological",
-      "families": [
-        "aperiodic",
-        "closed",
-        "def-parametric",
-        "immersed",
-        "not-implemented",
-        "topological",
-        "tradition-sculptural"
-      ],
-      "definition_mode": "parametric",
-      "has_approximation": false,
-      "curvature_condition": "none",
-      "periodicity_rank": 0,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "none",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -4185,8 +4152,8 @@
         "closed-nonorientable",
         "def-parametric",
         "immersed",
+        "implemented",
         "non-orientable",
-        "not-implemented",
         "topological",
         "tradition-classical",
         "tradition-physical-model"
@@ -4206,8 +4173,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.topological_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -5283,6 +5252,40 @@
       },
       "implemented": false,
       "operator_ids": [],
+      "specimen_count": 0
+    },
+    {
+      "slug": "four-soliton-surface",
+      "name": "Four-Soliton Surface",
+      "path": "surfaces/constant-curvature/four-soliton-surface.json",
+      "primary_family": "constant-curvature",
+      "families": [
+        "aperiodic",
+        "constant-curvature",
+        "def-parametric",
+        "immersed",
+        "implemented",
+        "k-const-negative"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "k-const-negative",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.hyperbolic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -6676,7 +6679,7 @@
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -6695,8 +6698,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7227,9 +7232,9 @@
         "def-weierstrass",
         "doubly-periodic",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -7247,8 +7252,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7260,9 +7267,9 @@
         "def-weierstrass",
         "doubly-periodic",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -7280,8 +7287,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7537,14 +7546,14 @@
         "aperiodic",
         "closed",
         "closed-orientable",
-        "def-implicit",
+        "def-parametric",
         "immersed",
-        "not-implemented",
+        "implemented",
         "topological",
         "tradition-classical",
         "tradition-sculptural"
       ],
-      "definition_mode": "implicit",
+      "definition_mode": "parametric",
       "has_approximation": false,
       "curvature_condition": "none",
       "periodicity_rank": 0,
@@ -7559,8 +7568,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.topological_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7861,6 +7872,40 @@
       "orientable": null,
       "ends": 0,
       "embedding": "singular",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "labs-sextic-30-cusps",
+      "name": "Labs Sextic (30 cusps)",
+      "path": "surfaces/algebraic/labs-sextic-30-cusps.json",
+      "primary_family": "algebraic",
+      "families": [
+        "algebraic",
+        "aperiodic",
+        "def-implicit",
+        "immersed",
+        "implemented",
+        "tradition-classical"
+      ],
+      "definition_mode": "implicit",
+      "has_approximation": false,
+      "curvature_condition": "none",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
       "symmetry": {
         "kind": "none",
         "symbol": null,
@@ -8666,39 +8711,6 @@
       "operator_ids": [
         "mesh.topological_surface_add"
       ],
-      "specimen_count": 0
-    },
-    {
-      "slug": "multi-soliton-pseudospherical",
-      "name": "Multi-Soliton Pseudospherical Surface",
-      "path": "surfaces/constant-curvature/multi-soliton-pseudospherical.json",
-      "primary_family": "constant-curvature",
-      "families": [
-        "aperiodic",
-        "constant-curvature",
-        "def-parametric",
-        "k-const-negative",
-        "not-implemented",
-        "self-intersecting",
-        "tradition-classical"
-      ],
-      "definition_mode": "parametric",
-      "has_approximation": false,
-      "curvature_condition": "k-const-negative",
-      "periodicity_rank": 0,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "self-intersecting",
-      "symmetry": {
-        "kind": "none",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -13174,15 +13186,15 @@
       "path": "surfaces/minimal-periodic/starfish-2-4-genus-79.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-parametric",
+        "def-weierstrass",
         "embedded",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
@@ -13197,8 +13209,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13312,15 +13326,15 @@
       "path": "surfaces/minimal-periodic/starfish-3-4-genus-91.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-parametric",
+        "def-weierstrass",
         "embedded",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
@@ -13335,8 +13349,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13448,15 +13464,15 @@
       "path": "surfaces/minimal-periodic/starfish-4-4-genus-103.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-parametric",
+        "def-weierstrass",
         "embedded",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
@@ -13471,8 +13487,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13481,15 +13499,15 @@
       "path": "surfaces/minimal-periodic/starfish-5-1-genus-67.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-parametric",
+        "def-weierstrass",
         "embedded",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
@@ -13504,8 +13522,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13514,15 +13534,15 @@
       "path": "surfaces/minimal-periodic/starfish-5-2-genus-83.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-parametric",
+        "def-weierstrass",
         "embedded",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
@@ -13537,8 +13557,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13580,15 +13602,15 @@
       "path": "surfaces/minimal-periodic/starfish-5-4-genus-115.json",
       "primary_family": "minimal-periodic",
       "families": [
-        "def-parametric",
+        "def-weierstrass",
         "embedded",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
-      "definition_mode": "parametric",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
@@ -13603,8 +13625,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -13911,14 +13935,14 @@
     },
     {
       "slug": "surface-with-132-a5-singularities",
-      "name": "Surface with 132 A5 Singularities",
+      "name": "Labs Dodecic (132 A5 points)",
       "path": "surfaces/algebraic/surface-with-132-a5-singularities.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "singular",
         "tradition-classical"
       ],
@@ -13937,8 +13961,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -14483,6 +14509,40 @@
       "implemented": true,
       "operator_ids": [
         "mesh.algebraic_surface_add"
+      ],
+      "specimen_count": 0
+    },
+    {
+      "slug": "three-soliton-surface",
+      "name": "Three-Soliton Surface",
+      "path": "surfaces/constant-curvature/three-soliton-surface.json",
+      "primary_family": "constant-curvature",
+      "families": [
+        "aperiodic",
+        "constant-curvature",
+        "def-parametric",
+        "immersed",
+        "implemented",
+        "k-const-negative"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "k-const-negative",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.hyperbolic_surface_add"
       ],
       "specimen_count": 0
     },
@@ -15419,6 +15479,40 @@
       "specimen_count": 0
     },
     {
+      "slug": "two-soliton-surface",
+      "name": "Two-Soliton Surface",
+      "path": "surfaces/constant-curvature/two-soliton-surface.json",
+      "primary_family": "constant-curvature",
+      "families": [
+        "aperiodic",
+        "constant-curvature",
+        "def-parametric",
+        "immersed",
+        "implemented",
+        "k-const-negative"
+      ],
+      "definition_mode": "parametric",
+      "has_approximation": false,
+      "curvature_condition": "k-const-negative",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.hyperbolic_surface_add"
+      ],
+      "specimen_count": 0
+    },
+    {
       "slug": "ufo",
       "name": "Ufo",
       "path": "surfaces/algebraic/ufo.json",
@@ -15632,8 +15726,8 @@
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -15651,8 +15745,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
