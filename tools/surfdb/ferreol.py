@@ -12,7 +12,14 @@ sorted into exactly three piles:
                    checking that the chapter really is that surface (the
                    page BODY, not just the H1 -- two H1s in the mirror
                    are conversion artifacts, see the notes).
-  * `records()` -- 14 chapters name a surface with no record at all.
+  * `records()` -- 14 chapters that named a surface with no record at
+                   all.  Two have since been BUILT (the solid of maximal
+                   attraction and the rotation surface with proportional
+                   curvatures, both presets of mesh.curiosity_surface_add)
+                   and carry `superseded_by` instead of `blocked_by`;
+                   they stay in the table because surfdb_build's supersede
+                   path merges their curated facts onto the built record
+                   and drops only the `implemented: false` claim.
                    Per the house rule these carry NO transcribed
                    equations: an unverified coefficient does not error,
                    it silently defines a different surface, and the
@@ -353,6 +360,11 @@ def records():
     out["solid-of-maximal-attraction"] = {
         "name": "Solid of Maximal Attraction",
         "family": "revolution", "mode": "parametric",
+        # No longer absent: built as the ATTRACTION preset of
+        # mesh.curiosity_surface_add.  The entry stays so surfdb_build's
+        # supersede path can merge its curated facts (year, tradition,
+        # the mathcurve citation) onto the built record.
+        "superseded_by": "mesh.curiosity_surface_add:ATTRACTION",
         "sources": [
             _mc("Solid of maximal attraction", "ch1205_attraction_2"),
             "The chapter credits the Marquis de Saint-Jacques (1750) "
@@ -438,6 +450,9 @@ def records():
     out["rotation-surface-with-proportional-curvatures"] = {
         "name": "Rotation Surface with Proportional Curvatures",
         "family": "revolution", "mode": "parametric",
+        # No longer absent: built as the PROP_CURV preset of
+        # mesh.curiosity_surface_add.
+        "superseded_by": "mesh.curiosity_surface_add:PROP_CURV",
         "sources": [
             _mc("Rotation surface with proportional curvatures",
                 "ch1365_revolpropor_2"),
@@ -744,9 +759,19 @@ def _selftest():
         assert spec.get("name"), slug
         assert spec.get("family") in _FAMILIES, (slug, spec.get("family"))
         assert spec.get("mode") in _MODES, (slug, spec.get("mode"))
-        assert spec.get("blocked_by"), \
-            "%s is absent without a stated reason" % slug
-        assert spec.get("resume"), "%s has no resume pointer" % slug
+        # Either nothing builds this surface (and the entry says why) or
+        # something does (and the entry says what).  A superseded entry
+        # STAYS in the table: surfdb_build merges its curated facts onto
+        # the built record and drops only the `implemented: false` claim.
+        blocked, sup = spec.get("blocked_by"), spec.get("superseded_by")
+        assert blocked or sup, (
+            "%s is absent without a stated reason" % slug)
+        # Never both -- that would let a stale `blocked_by` outlive the
+        # surface being implemented, the exact drift this check catches.
+        assert not (blocked and sup), (
+            "%s claims both blocked_by and superseded_by" % slug)
+        assert sup or spec.get("resume"), (
+            "%s has no resume pointer" % slug)
         assert spec.get("sources"), "%s cites nothing" % slug
         # the mirror chapter must be cited by stem
         assert any(IDS_NEW[slug] in s for s in spec["sources"]), \

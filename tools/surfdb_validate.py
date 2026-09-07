@@ -73,6 +73,7 @@ class Report:
         self.slow_deg = 0
         self.nodes_seen = 0
         self.nodes_proved = 0
+        self.schema_ran = False
 
     def err(self, slug, msg):
         self.errors.append("%s: %s" % (slug, msg))
@@ -525,6 +526,51 @@ def check_symmetry_symbolic(slug, rec, rep):
     return True
 
 
+SCHEMA_PATH = os.path.join(DB, "schema", "surface.schema.json")
+_SCHEMA = None
+_VALIDATOR = None
+
+
+def _schema_validator():
+    """The JSON Schema validator, or None if jsonschema is unavailable.
+
+    WHY THIS EXISTS. The schema declares `additionalProperties: false` on
+    the definition block and a closed enum on `symmetry.kind` -- and for
+    a long time NOTHING ENFORCED EITHER. This file never loaded the
+    schema at all, so records quietly accumulated three keys the schema
+    forbade (`evolver_cell` on 67 records, `weierstrass` on 17,
+    `nodal_polynomial` on 7) and a `symmetry.kind` value outside the enum
+    on 8 more. `evolver_cell` is the single largest defining-datum
+    carrier in the database, so the schema was, in the most literal
+    sense, wrong about the database's most common field.
+
+    A schema nobody runs is documentation that has stopped being true.
+    """
+    global _SCHEMA, _VALIDATOR
+    if _VALIDATOR is not None:
+        return _VALIDATOR
+    try:
+        import jsonschema
+    except ImportError:
+        return None
+    if _SCHEMA is None:
+        with open(SCHEMA_PATH, encoding="utf-8") as fh:
+            _SCHEMA = json.load(fh)
+    _VALIDATOR = jsonschema.Draft202012Validator(_SCHEMA)
+    return _VALIDATOR
+
+
+def check_schema(slug, rec, rep):
+    """Validate one record against the shipped JSON Schema."""
+    v = _schema_validator()
+    if v is None:
+        return False
+    for e in sorted(v.iter_errors(rec), key=lambda x: list(x.path)):
+        where = "/".join(str(x) for x in e.path) or "(root)"
+        rep.err(slug, "schema: %s: %s" % (where, e.message.splitlines()[0][:160]))
+    return True
+
+
 def check_index(records, rep):
     path = os.path.join(DB, "index.json")
     if not os.path.exists(path):
@@ -786,6 +832,7 @@ def main():
     rep = Report()
     for slug, (rec, path) in sorted(records.items()):
         rep.checked += 1
+        rep.schema_ran |= check_schema(slug, rec, rep)
         check_structure(slug, rec, rep)
         check_definitions(slug, rec, rep)
         check_measures(slug, rec, rep)
@@ -845,6 +892,12 @@ def main():
     check_index(records, rep)
 
     print("checked %d records" % rep.checked)
+    if not rep.schema_ran:
+        # Say so loudly. A schema check that quietly does not run is how the
+        # database drifted five fields away from its own schema in the first
+        # place -- silence read as a pass.
+        print("WARNING: jsonschema not installed -- records were NOT validated "
+              "against schema/surface.schema.json")
     if args.slow:
         print("  curvature conditions PROVED numerically: %d" % rep.slow_curv)
         print("  symmetry groups PROVED symbolically:     %d" % rep.slow_sym)
