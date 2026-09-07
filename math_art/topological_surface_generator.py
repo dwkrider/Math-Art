@@ -492,6 +492,9 @@ if _IN_BLENDER:
                 name = "Sudanese Mobius Band"
             elif p == 'CROSSCAP':
                 V, F = build_crosscap(self.res_u, self.res_v)
+                # non-orientable, so it has the winding ring like the
+                # others -- AND a pinch point the ring does not touch
+                seam_sharp = True
                 name = "Cross-Cap"
             elif p == 'ROMAN':
                 V, F = build_roman(self.res_u, self.res_v)
@@ -545,6 +548,14 @@ if _IN_BLENDER:
                 # seam achieved, but on a genuinely closed mesh.  No
                 # crease weight: the surface through the seam is smooth
                 # geometry, not a fold a subdivider should keep.
+                # Two different defects, both fixed by splitting the
+                # normal fan.  The winding ring is where a closed
+                # non-orientable mesh must flip; a fold edge is where
+                # the surface pinches and its two faces point opposite
+                # ways.  The cross-cap has both -- its winding ring is
+                # 48 equator edges and covers NONE of the 193 vertices
+                # whose normals cancel at the pinch, which is why
+                # marking only the ring left the dark line in place.
                 mark_sharp(obj.data, winding_conflict_edges(F),
                            crease=False)
             if p in _IMMERSIONS and self.thickness > 0:
