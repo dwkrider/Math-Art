@@ -214,7 +214,10 @@ if _IN_BLENDER:
             name="Depth", default=2, min=0, max=6,
             description="Subdivision passes; the pentagonal rule multiplies "
                         "the tile count by six each time")
-        layout: EnumProperty(
+        # NOT `layout`: an operator property of that name shadows
+        # self.layout, the UILayout that draw() builds the redo panel on, so
+        # the panel silently renders empty.
+        layout_mode: EnumProperty(
             name="Layout",
             items=[(CONFORMAL, "Conformal",
                     "Laid out by a maximal circle packing of the disc: every "
@@ -256,7 +259,7 @@ if _IN_BLENDER:
         def execute(self, context):
             try:
                 verts, faces, mats, report = build_tiling(
-                    self.rule, self.depth, self.layout, self.output,
+                    self.rule, self.depth, self.layout_mode, self.output,
                     self.inset, self.relief, self.scale, self.color_by,
                     self.ribbon)
             except ValueError as exc:
@@ -279,7 +282,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'rule')
             lay.prop(self, 'depth')
-            lay.prop(self, 'layout')
+            lay.prop(self, 'layout_mode')
             lay.prop(self, 'output')
             if self.output == 'FACES':
                 lay.prop(self, 'inset')

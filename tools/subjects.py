@@ -267,7 +267,7 @@ PARAMS = {
     # enough to see its shape.  The conformal layout is the point --
     # the straight-line one is what the generator exists to avoid.
     "mesh.subdivision_tiling_add": dict(rule='PENTAGONAL', depth=2,
-                                        layout='CONFORMAL',
+                                        layout_mode='CONFORMAL',
                                         inset=0.14),
 
     # The limit-set CURVE is the headline output, but it is an edge mesh

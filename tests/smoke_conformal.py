@@ -67,7 +67,7 @@ def circle_packing_sphere():
 def subdivision_tiling_pentagonal():
     _fresh()
     assert bpy.ops.mesh.subdivision_tiling_add(
-        rule='PENTAGONAL', depth=2, layout='CONFORMAL') == {'FINISHED'}
+        rule='PENTAGONAL', depth=2, layout_mode='CONFORMAL') == {'FINISHED'}
     me = _active_mesh()
     assert len(me.polygons) == 36, len(me.polygons)
     assert all(len(p.vertices) == 5 for p in me.polygons), \
@@ -88,7 +88,7 @@ def subdivision_tiling_other_rules():
                        ('TRIANGLE_QUAD', 12)):
         _fresh()
         assert bpy.ops.mesh.subdivision_tiling_add(
-            rule=rule, depth=2, layout='EUCLIDEAN') == {'FINISHED'}
+            rule=rule, depth=2, layout_mode='EUCLIDEAN') == {'FINISHED'}
         me = _active_mesh()
         assert len(me.polygons) == want, (rule, len(me.polygons), want)
 
@@ -122,9 +122,11 @@ def kleinian_slice():
         "every Maskit cusp must sit above Im(mu) = 1"
 
 
-def menu_entries_present():
-    # Installed as an extension the package is bl_ext.<repo>.math_art, not
-    # math_art; run from a source checkout it is the latter.  Try both.
+def _menu_defs():
+    """Import menu_defs however the add-on happens to be loaded.
+
+    Installed as an extension the package is bl_ext.<repo>.math_art, not
+    math_art; run from a source checkout it is the latter."""
     import importlib
 
     menu_defs = None
@@ -142,14 +144,54 @@ def menu_entries_present():
                 menu_defs = sys.modules[mod]
                 break
     assert menu_defs is not None, "could not import menu_defs"
-    ops = {e.op for m in menu_defs.ALL_MENUS for e in m.entries if e.op}
-    ops |= {e.op for e in menu_defs.ROOT_ENTRIES if e.op}
+    return menu_defs
+
+
+def _math_art_operator_ids():
+    md = _menu_defs()
+    ops = {e.op for m in md.ALL_MENUS for e in m.entries if e.op}
+    ops |= {e.op for e in md.ROOT_ENTRIES if e.op}
+    return ops
+
+
+def menu_entries_present():
+    ops = _math_art_operator_ids()
     for want in ("mesh.circle_packing_add", "mesh.subdivision_tiling_add",
                  "curve.kleinian_add"):
         assert want in ops, "%s is registered but in no menu" % want
 
 
+def no_shadowed_operator_attributes():
+    """No operator property may be named after an attribute Blender itself
+    puts on an Operator.
+
+    `layout` is the one that bites: inside draw(), self.layout is the UILayout
+    the redo panel is built on, so a property of that name shadows it, draw()
+    fails silently and the panel renders EMPTY while the operator still works
+    perfectly when called with keywords.  Nothing else catches this -- the
+    engine tests do not touch draw(), and calling the operator succeeds.
+
+    Checked across every registered Math Art operator, not just the three
+    added here, since the failure is invisible and cheap to test for."""
+    reserved = {'layout', 'report', 'bl_rna', 'poll', 'execute', 'invoke',
+                'draw', 'modal', 'cancel', 'as_keywords', 'id_data'}
+    ours = _math_art_operator_ids()
+    assert ours, "found no Math Art operators to check"
+    bad = []
+    for name in dir(bpy.types):
+        cls = getattr(bpy.types, name, None)
+        idname = getattr(cls, 'bl_idname', None)
+        if not isinstance(idname, str) or idname not in ours:
+            continue
+        annotations = getattr(cls, '__annotations__', {}) or {}
+        for prop in annotations:
+            if prop in reserved:
+                bad.append("%s.%s" % (idname, prop))
+    assert not bad, "operator properties shadowing Blender attributes: %s" % bad
+
+
 CHECKS = [
+    ("no shadowed operator attributes", no_shadowed_operator_attributes),
     ("circle packing default", circle_packing_default),
     ("circle packing maximal", circle_packing_maximal),
     ("circle packing sphere", circle_packing_sphere),
