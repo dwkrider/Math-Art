@@ -12897,11 +12897,31 @@ def horgan_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     p0 = HORGAN_PADS[a]
     fac = float(np.clip(radius / 1.2, 0.4, 2.0))
     n = max(12, int(nu / 3))
-    F, _X, meta = horgan_patch(
+    F, Xg, meta = horgan_patch(
         a, nu=(n, n, int(1.5 * n)), ny=max(24, int(nv * 0.8)),
         pad=(p0[0] * fac, p0[1] * fac))
     nx, ny2 = F.shape[:2]
     t = -meta['disy']
+    x0_ = math.log(a * a)
+    x1_ = math.log(a * a - 1.0)
+    # snap each boundary arc onto its own measured symmetry element
+    # (medians; std ~1e-7), so the two seams that DO close weld
+    # vertex-to-vertex and the two that cannot stay open by exactly
+    # the measured defect:
+    #   y = 0 edge: the catenoid-edge mirror curve, plane y = disy;
+    #   y = pi, x > x0: the (1,1,0) rotation-axis line x = y, z = 0;
+    #   y = pi, x < x1: the gap mirror curve, plane x = disx (OPEN);
+    #   y = pi, x1..x0: its R-image family, plane y = const (OPEN).
+    F[:, 0, 1] = meta['disy']
+    s1 = Xg <= x1_ + 1e-12
+    s2 = (Xg >= x1_ - 1e-12) & (Xg <= x0_ + 1e-12)
+    s3 = Xg >= x0_ - 1e-12
+    F[s1, -1, 0] = meta['disx']
+    F[s2, -1, 1] = float(np.median(F[s2, -1, 1]))
+    ax_ = 0.5 * (F[s3, -1, 0] + F[s3, -1, 1])
+    F[s3, -1, 0] = ax_
+    F[s3, -1, 1] = ax_
+    F[s3, -1, 2] = 0.0
     P0 = F.reshape(-1, 3)
     # rotate about the (1,1,0) symmetry line through f(0) = 0 FIRST,
     # then translate both copies (the notebook's order)
@@ -12910,7 +12930,9 @@ def horgan_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     parts = [P0 + tv, P0 @ R.T + tv]
     parts = parts + [P_ * np.array([-1.0, 1.0, 1.0]) for P_ in parts]
     parts = parts + [P_ * np.array([1.0, -1.0, 1.0]) for P_ in parts]
-    flips = (False, False, True, True, True, True, False, False)
+    # winding parities solved from the two welded seam families (the
+    # in-surface Schwarz elements reverse the attached copy)
+    flips = (False, True, True, False, True, False, False, True)
     quads0 = _kus_grid_quads(nx, ny2)
     NV = nx * ny2
     V = np.concatenate(parts, axis=0)
@@ -12919,6 +12941,26 @@ def horgan_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
         for q in quads0:
             qq = tuple(int(i) + k_ * NV for i in q)
             Fc.append(qq[::-1] if fl_ else qq)
+    # weld the two closable seam families by exact grid-index pairs:
+    #   y = 0 edge (in the y = 0 plane after the translation) glues
+    #   each copy to its y-mirror image; the axis arc glues each copy
+    #   to its 180-degree rotation.  The gap seams are NOT welded --
+    #   the x = +-|disx - disy| and y = +-|disx - disy| arc pairs
+    #   stay open by twice the measured period defect, which is the
+    #   finding this row ships.
+    pairs = []
+
+    def gid(part_, i_, j_):
+        return part_ * NV + i_ * ny2 + j_
+
+    iax = [i_ for i_ in range(nx) if s3[i_]]
+    for pa_, pb_ in ((0, 4), (1, 5), (2, 6), (3, 7)):
+        for i_ in range(nx):
+            pairs.append((gid(pa_, i_, 0), gid(pb_, i_, 0)))
+    for pa_, pb_ in ((0, 1), (2, 3), (4, 5), (6, 7)):
+        for i_ in iax:
+            pairs.append((gid(pa_, i_, ny2 - 1), gid(pb_, i_, ny2 - 1)))
+    V, Fc, _first = _g1h_weld_pairs(V, Fc, pairs)
     V = _center_fit(V, scale, V)
     return V, Fc, None
 
