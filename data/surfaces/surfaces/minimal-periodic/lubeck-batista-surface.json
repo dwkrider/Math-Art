@@ -1,21 +1,21 @@
 {
   "schema_version": "0.1.0",
   "slug": "lubeck-batista-surface",
-  "name": "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
+  "name": "Lubeck-Batista Surface",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "doubly-periodic",
     "immersed",
-    "implemented",
     "minimal",
     "minimal-periodic",
+    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "exactness": "numerical-integral",
+    "polynomial": null,
     "note": "Doubly periodic 1-parameter family (2011) with genus 3 and four annular ends in the quotient: layers joined by Costa saddles keeping the Costa surface's straight lines, limiting in the Callahan-Hoffman-Meeks surface -- a doubly periodic version of it.  THE SHIPPED ROW carries the notebook's seven solved (tau, a, b) members (tau = 0.935i .. 2.5i; default tau = i, (a, b) = (-0.16537041, 0.44637591)).  The gate re-derives THE AUTHORS' OWN period conditions (paper Section 6, condition (9)) along the notebook's waypoint paths -- branch-tracked theta logs with a u^2 substitution at the (z - ib)^{-1/2} endpoint, where uniform quadrature leaves a ~3e-2 phantom residual that looks exactly like a wrong member -- and they vanish at every stored member (7e-6..3e-5).  Deck structure gated: z -> z+1 = (0,0,1) EXACTLY, z -> z+tau purely horizontal; the seam branch is the measured reciprocal."
   },
   "curvature": {
@@ -42,19 +42,14 @@
   },
   "construction": [
     {
-      "generator": "math_art.minsurf.parametric",
-      "operator_id": "mesh.periodic_minimal_add",
-      "family": "DOUBLY",
-      "key": "DP_LUBECK_BATISTA",
-      "definition_index": 0,
-      "implemented": true
+      "implemented": false,
+      "blocked_by": "Documented as a named surface on Matthias Weber's minimal-surface repository (mirrored locally, including its Mathematica notebook and POV-Ray parameter sweeps); no construction has been built in math_art.",
+      "resume": "The local mirror recovered the page's Mathematica notebook (193 notebooks; see the mirror's catalog.md); transcribe its Weierstrass data into math_art/minsurf/ along the zoo route -- research/minimal_surfaces_status.md is the worked path."
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
-      "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024).",
       "M. Weber, 'Lubeck-Batista Surface', minimalsurfaces.blog (local mirror: minsurf/book/.../ch038_lubeck_batista_surface.md).",
       "K. R. M. Lubeck and V. Ramos Batista, 'The doubly periodic Scherk-Costa surfaces', Journal of Mathematics Research 6 (2014) 77-90."
     ]
@@ -68,7 +63,7 @@
   "ids": {
     "msblog": "ch038_lubeck_batista_surface"
   },
-  "named_after": "Batista, Costa, Lubeck, Scherk",
+  "named_after": "Batista, Lubeck",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

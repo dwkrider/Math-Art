@@ -81,7 +81,7 @@
     "topological"
   ],
   "count": 476,
-  "implemented_count": 446,
+  "implemented_count": 442,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -6575,8 +6575,8 @@
         "aperiodic",
         "def-weierstrass",
         "immersed",
-        "implemented",
         "minimal",
+        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -6594,7 +6594,7 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": true,
+      "implemented": false,
       "operator_ids": [
         "mesh.parametric_minimal_add"
       ],
@@ -8091,10 +8091,10 @@
       "families": [
         "def-weierstrass",
         "immersed",
-        "implemented",
         "minimal",
         "minimal-periodic",
         "non-orientable",
+        "not-implemented",
         "singly-periodic",
         "tradition-classical"
       ],
@@ -8113,10 +8113,8 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
-      ],
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -8225,16 +8223,16 @@
     },
     {
       "slug": "lubeck-batista-surface",
-      "name": "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
+      "name": "Lubeck-Batista Surface",
       "path": "surfaces/minimal-periodic/lubeck-batista-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "doubly-periodic",
         "immersed",
-        "implemented",
         "minimal",
         "minimal-periodic",
+        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -8252,10 +8250,8 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.periodic_minimal_add"
-      ],
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
@@ -15947,8 +15943,8 @@
         "aperiodic",
         "def-weierstrass",
         "immersed",
-        "implemented",
         "minimal",
+        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -15966,10 +15962,8 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": true,
-      "operator_ids": [
-        "mesh.parametric_minimal_add"
-      ],
+      "implemented": false,
+      "operator_ids": [],
       "specimen_count": 0
     },
     {
