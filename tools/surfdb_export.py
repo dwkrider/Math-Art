@@ -16,9 +16,9 @@ resolution and not part of a surface's identity, which is right. But the
 site has to draw something, and for a large part of the database the
 record is NOT sufficient to draw from:
 
-  * parametric (120) and implicit/nodal (186) records do carry evaluable
+  * parametric (116) and implicit/nodal (185) records do carry evaluable
     formulas, so those could in principle be evaluated in the browser;
-  * weierstrass (166) mostly does NOT. Those records store no (g, dh)
+  * weierstrass (171) mostly does NOT. Those records store no (g, dh)
     pair -- their own notes say the shipped mesher is authoritative and
     that "an unverified transcription would silently define a different
     surface".
@@ -152,6 +152,29 @@ def mesh_arrays(obj, budget=TRI_BUDGET):
         bm.from_mesh(me3)
         bmesh.ops.triangulate(bm, faces=bm.faces[:])
         bpy.data.objects.remove(tmp, do_unlink=True)
+
+    # SPLIT THE CREASES, so they survive a format that carries only
+    # positions and indices.
+    #
+    # Several generators mark fold lines sharp through
+    # math_art/sharp_creases.py, and those folds ARE the shape -- the
+    # Gaussian curvature is concentrated there and the patches between
+    # them want smooth shading. That attribute cannot travel in this
+    # payload, and inferring it later from dihedral angle does not work:
+    # measured on the shipped meshes, a 30-degree rule misses 720 of the
+    # Schwarz lantern's 852 creases and invents 66 on the Klein quartic,
+    # which has none. The cross-cap is the clearest case -- its winding
+    # seam is marked sharp where the surface through it is smooth
+    # geometry, so no angle threshold can find it.
+    #
+    # Splitting the mesh along those edges puts the information into the
+    # geometry itself. Both consumers then get it for free: the viewer
+    # averages vertex normals and no average crosses a seam, and the
+    # thumbnail renders the same arrays with use_smooth on. Done last, so
+    # the decimator never sees the duplicated vertices.
+    sharp = [e for e in bm.edges if not e.smooth and len(e.link_faces) == 2]
+    if sharp:
+        bmesh.ops.split_edges(bm, edges=sharp)
 
     bm.verts.index_update()
     positions = []

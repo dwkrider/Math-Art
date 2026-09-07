@@ -43,17 +43,21 @@
 const VERT_SRC = `#version 300 es
 precision highp float;
 in vec3 aPos;
+in vec3 aNormal;
 in mat4 aInst;
 in float aFlip;
 uniform mat4 uMVP;
 uniform mat4 uModel;
 uniform int uInstanced;
 out vec3 vWorld;
+out vec3 vNormal;
 flat out float vFlip;
 void main() {
   vec4 p = uInstanced == 1 ? aInst * vec4(aPos, 1.0) : vec4(aPos, 1.0);
   vFlip = uInstanced == 1 ? aFlip : 1.0;
   vWorld = (uModel * p).xyz;
+  vec3 n = uInstanced == 1 ? mat3(aInst) * aNormal : aNormal;
+  vNormal = mat3(uModel) * n;
   gl_Position = uMVP * p;
 }`;
 
@@ -63,14 +67,27 @@ void main() {
 const FRAG_SRC = `#version 300 es
 precision highp float;
 in vec3 vWorld;
+in vec3 vNormal;
 flat in float vFlip;
 uniform vec3 uFront;
 uniform vec3 uBack;
 uniform float uAmbient;
+uniform int uSmooth;
 out vec4 outColor;
 
 void main() {
-  vec3 n = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
+  // SMOOTH where a normal was supplied, FLAT otherwise.
+  //
+  // setMesh averages a per-vertex normal from the triangles meeting at
+  // each vertex. Creases survive that averaging because the exporter
+  // SPLITS the mesh along every edge the generator marked sharp, so the
+  // two sides of a fold are different vertices and nothing averages
+  // across them -- the Schwarz lantern keeps all 852 of its creases and
+  // the Klein quartic gains none. A caller supplying its own geometry
+  // without normals still gets the old derivative-based flat shading.
+  vec3 n = uSmooth == 1
+    ? normalize(vNormal)
+    : normalize(cross(dFdx(vWorld), dFdy(vWorld)));
   bool front = (vFlip < 0.0) ? !gl_FrontFacing : gl_FrontFacing;
   vec3 base = front ? uFront : uBack;
   if (!front) n = -n;
@@ -250,6 +267,45 @@ export function edgeIndices(indices, vertexCount) {
  * indices as uint16 or uint32.  Quantisation is invisible at 16 bits
  * per axis and roughly halves an embedded payload.
  */
+/**
+ * Area-weighted per-vertex normals from positions and indices alone.
+ *
+ * No normals are stored in a mesh payload, and none need to be: the
+ * exporter splits the mesh along every edge a generator marked sharp
+ * (see tools/surfdb_export.py), so a fold's two sides are already
+ * separate vertices and this average cannot cross one. Smooth surfaces
+ * come out smooth, creased ones keep their creases, and neither needs a
+ * dihedral-angle threshold -- which measurement showed cannot work here
+ * in any case.
+ *
+ * The cross product is left unnormalised on purpose, so each face
+ * contributes in proportion to its area; a sliver then pulls the result
+ * about as much as it deserves to.
+ */
+export function computeNormals(positions, indices) {
+  const n = new Float32Array(positions.length);
+  for (let i = 0; i < indices.length; i += 3) {
+    const a = indices[i] * 3, b = indices[i + 1] * 3, c = indices[i + 2] * 3;
+    const ux = positions[b] - positions[a];
+    const uy = positions[b + 1] - positions[a + 1];
+    const uz = positions[b + 2] - positions[a + 2];
+    const vx = positions[c] - positions[a];
+    const vy = positions[c + 1] - positions[a + 1];
+    const vz = positions[c + 2] - positions[a + 2];
+    const nx = uy * vz - uz * vy;
+    const ny = uz * vx - ux * vz;
+    const nz = ux * vy - uy * vx;
+    n[a] += nx; n[a + 1] += ny; n[a + 2] += nz;
+    n[b] += nx; n[b + 1] += ny; n[b + 2] += nz;
+    n[c] += nx; n[c + 1] += ny; n[c + 2] += nz;
+  }
+  for (let i = 0; i < n.length; i += 3) {
+    const L = Math.hypot(n[i], n[i + 1], n[i + 2]);
+    if (L > 1e-20) { n[i] /= L; n[i + 1] /= L; n[i + 2] /= L; }
+  }
+  return n;
+}
+
 export function decodeMesh(packed) {
   const bytes = (b64) => {
     const s = atob(b64);
@@ -567,6 +623,19 @@ export class SurfaceViewer {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.indices, gl.STATIC_DRAW);
 
+    // Normals are derived here, not carried in the payload. On an
+    // instanced patch they are computed on the PATCH, before the
+    // instance transform, which is where they belong -- the vertex
+    // shader rotates each copy's normals by its own instance matrix.
+    const normals = m.indices.length
+      ? computeNormals(positions, m.indices) : null;
+    this.smooth = !!normals;
+    if (normals) {
+      if (!this.nbuf) this.nbuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.nbuf);
+      gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
+    }
+
     if (instances) {
       if (!this.ibuf) this.ibuf = gl.createBuffer();
       if (!this.fbuf) this.fbuf = gl.createBuffer();
@@ -605,6 +674,18 @@ export class SurfaceViewer {
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
     gl.vertexAttribDivisor(aPos, 0);
+
+    const aNormal = gl.getAttribLocation(prog, 'aNormal');
+    if (aNormal >= 0) {
+      if (this.nbuf && this.smooth) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.nbuf);
+        gl.enableVertexAttribArray(aNormal);
+        gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribDivisor(aNormal, 0);
+      } else {
+        gl.disableVertexAttribArray(aNormal);
+      }
+    }
 
     const aInst = gl.getAttribLocation(prog, 'aInst');
     if (aInst >= 0) {
@@ -759,6 +840,8 @@ export class SurfaceViewer {
                   new Float32Array(this.opts.front));
     gl.uniform3fv(gl.getUniformLocation(this.prog, 'uBack'),
                   new Float32Array(this.opts.back));
+    gl.uniform1i(gl.getUniformLocation(this.prog, 'uSmooth'),
+                 this.smooth ? 1 : 0);
     gl.uniform1f(gl.getUniformLocation(this.prog, 'uAmbient'),
                  this.opts.ambient);
     gl.uniform1i(gl.getUniformLocation(this.prog, 'uInstanced'), n ? 1 : 0);
