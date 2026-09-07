@@ -1486,6 +1486,17 @@ BUILD_DATE = "2026-08-28"
 # FLAT_SOURCE.  slug -> (module, operator id, enum key, name)
 IMPLEMENTED_PRESET = {
     # slug -> (module, operator, enum key, name[, primary family])
+    # Delaunay's 1841 CMC surfaces of revolution.  This was carried as a
+    # curated family record marked NOT implemented, on the reasoning that
+    # only its members ship.  That was wrong twice over: the operator's
+    # SURFACE preset builds the family itself, alongside the named
+    # members (Unduloid, Nodoid, Sphere Chain, Cylinder, Catenoid,
+    # Rolling Conic), so the family has a row; and a record that says
+    # "not implemented" for something the add-on builds reads in the
+    # surface browser as a surface with no mesh.
+    "delaunay-surface": (
+        "delaunay_generator", "mesh.delaunay_surface_add",
+        "SURFACE", "Delaunay Surface", "cmc"),
     "bianchi-pinkall-flat-torus": (
         "hopf_fibration_generator", "mesh.hopf_torus_add",
         "BIANCHI_PINKALL", "Bianchi-Pinkall Flat Torus"),
@@ -1724,9 +1735,6 @@ QUADRICS = {
 CURATED_ONLY = {
     # ("torus" lived here until mesh.curiosity_surface_add grew a TORUS
     # row; it now arrives from the curiosity registry like any other.)
-    "delaunay-surface": "The family record. Its MEMBERS ship "
-                        "(mesh.delaunay_surface_add), so the family itself "
-                        "has no row of its own.",
     # Schoen's starfish family: sixteen surfaces on Brakke's page, EIGHT
     # of which he published a datafile for.  Those eight ship and carry
     # their Evolver cell.  The eight below appear on that page as

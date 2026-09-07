@@ -80,7 +80,7 @@
     "topological"
   ],
   "count": 474,
-  "implemented_count": 465,
+  "implemented_count": 466,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -3498,7 +3498,7 @@
       "families": [
         "cmc",
         "def-parametric",
-        "not-implemented",
+        "implemented",
         "singly-periodic",
         "tradition-classical"
       ],
@@ -3517,8 +3517,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.delaunay_surface_add"
+      ],
       "specimen_count": 5
     },
     {
