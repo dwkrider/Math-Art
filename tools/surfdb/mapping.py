@@ -283,6 +283,10 @@ ALIAS = {
     # from the blog pass is keyed without it.
     "minsurf:WEBER_WOLF": "weber-wolf-genus-3-5-ends",
     "minsurf:KAPOULEAS": "kapouleas-surfaces",
+    # The CHKM tori row lands on the curated record from the blog
+    # pass (which sat not-implemented until the notebook data
+    # shipped).
+    "minsurf:CHKM_TORI": "costa-hoffman-karcher-meeks-tori",
     "tpms_exact:PGD": "pgd-associate-family",
     # The exact-Weierstrass rows added on the minimal-periodic branch.
     # These MUST live here rather than being hand-edited into the record

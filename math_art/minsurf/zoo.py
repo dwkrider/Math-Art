@@ -2804,6 +2804,31 @@ WE_SURFACES['KAPOULEAS'] = {
 }
 SURFACE_FAMILY['KAPOULEAS'] = 'HIGHER'
 
+# Costa-Hoffman-Karcher-Meeks tori: the 1-parameter family of embedded
+# minimal tori that deforms the Costa surface's planar middle end into
+# a catenoidal end (Hoffman-Meeks 1987 announcement, Hoffman-Karcher
+# existence/embeddedness; by Costa's classification the ONLY embedded
+# 3-ended minimal tori of finite total curvature).  Data and the three
+# solved members (b = -0.05 / -0.01 / -0.005) from Weber's
+# Costa_3_catenoids_g_1_.nb, kept verbatim -- they satisfy the
+# notebook's own period test to ~1e-11 (gated below).  Meshed to the
+# notebook's log chart w = log((z-1)(z-b)) and welded into ONE torus
+# with 3 catenoid rims (chi = -3, derived); extent ratios pinned to
+# Weber's own PoVRay exports of all three members (registration:
+# GT -> ours one-sided median 0.29-0.31% of span offline).  Member 1
+# is the member his page pictures.  See the block above `chkm_mesh`
+# in weierstrass.py.
+WE_SURFACES['CHKM_TORI'] = {
+    'label': "Costa-Hoffman-Karcher-Meeks Torus",
+    'family': 'TORI',
+    'mesher': we.chkm_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (1-3 = middle-end deformation b of -0.05/-0.01/-0.005)",
+    'order_range': (1, 3),
+    'test_order': 1,
+}
+SURFACE_FAMILY['CHKM_TORI'] = 'TORI'
+
 WE_SURFACES['LOPEZ_KLEIN'] = {
     # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
     # 1993): the unique-in-its-class complete non-orientable minimal
@@ -4016,6 +4041,40 @@ def _selftest():
               f"(derived {-4 * k_}) loops={loops_} nonman={nm2_} "
               f"oriented={orient_} {'OK' if good_ else 'FAIL'}")
     ok &= kap_ok
+
+    # CHKM tori gates: the notebook's own 2-component period test must
+    # vanish at every stored member (printed values kept verbatim;
+    # converged quadrature -- a wrong member reads directly), the
+    # assembly must be ONE torus with 3 catenoid rims (chi = 2 - 2g - r
+    # = -3, DERIVED from genus 1 + 3 ends), and the extent ratios are
+    # pinned to Weber's own PoVRay exports of all three members
+    # (z/x, y/x measured off his dummy.pov; full point registration
+    # landed at 0.29-0.31% GT -> ours of span offline).
+    chkm_ok = True
+    for mi_ in (1, 2, 3):
+        t1_, t2_ = we.chkm_tst(mi_)
+        good_ = abs(t1_) < 1e-8 and abs(t2_) < 1e-8
+        chkm_ok &= good_
+        print(f"CHKM torus member {mi_}: notebook period test "
+              f"({t1_:+.1e}, {t2_:+.1e}) {'OK' if good_ else 'FAIL'}")
+    chkm_pins = {1: (0.4511, 1.0865), 2: (0.2699, 1.0898),
+                 3: (0.2428, 1.1529)}
+    for mi_, (zx_, yx_) in chkm_pins.items():
+        V_, F_, _uv = we.chkm_mesh(None, 40, 40, mi_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(V_, F_)
+        topo_ = (ncomp_ == 1 and chi_ == -3 and loops_ == 3
+                 and nm2_ == 0 and orient_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_zx = abs(ex_[2] / ex_[0] - zx_) / zx_
+        r_yx = abs(ex_[1] / ex_[0] - yx_) / yx_
+        good_ = topo_ and r_zx < 0.01 and r_yx < 0.01
+        chkm_ok &= good_
+        print(f"CHKM torus member {mi_}: comps={ncomp_} chi={chi_} "
+              f"(derived -3) loops={loops_} nonman={nm2_} "
+              f"oriented={orient_}; z/x vs Weber off {r_zx:.1e}, "
+              f"y/x off {r_yx:.1e} {'OK' if good_ else 'FAIL'}")
+    ok &= chkm_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20

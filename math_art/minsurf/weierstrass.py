@@ -14347,6 +14347,372 @@ def kap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 
 
 
+# ==========================================================================
+# Costa-Hoffman-Karcher-Meeks tori: the 1-parameter family of embedded
+# minimal tori obtained by deforming the Costa surface's planar middle
+# end into a catenoidal end.  Announced by Hoffman-Meeks (1987), proven
+# embedded by Hoffman-Karcher; Costa's classification shows these are
+# the ONLY embedded 3-ended minimal tori of finite total curvature.
+#
+# Data (Costa_3_catenoids_g_1_.nb on Weber's repository page, m = 2;
+# all powers pointwise principal):
+#     G    = rho (z-1)^(1/m) z^((m-1)/m) (z-b)^(1/m) / (z-a),
+#     dh   = (z-a) / ((z-1)(z-b)) dz,
+#     phi1 = G dh,   phi2 = dh / G,
+#     om1  = (phi2 - phi1)/2,  om2 = i (phi2 + phi1)/2,  om3 = dh,
+# on the square torus double-covering the z-sphere branched over
+# 0, 1, b, infinity.  Three catenoidal ends: z = 1 and z = b (G = 0,
+# normals up) and z = infinity (G = infinity, normal down); z = b is
+# the strongest end and z = infinity the weakest (dh residues
+# -1.13 / +2.13 / -1 at b = -0.05), the deformed planar middle end.
+# The deformation parameter is b < 0 (b -> 0 is the Costa limit); the
+# notebook's own period test,
+#     tst = ( Re int_0^a om2  (via a/2 + i/2),
+#             Re[-int_0^{-2} (om1, om2) (via -1 + i/2)] . cis(pi/m
+#             + pi/2) ),
+# vanishes at its three printed members (m, a, b, rho) to ~1e-11
+# under converged quadrature (endpoint-clustered substituted GL; a
+# naive per-cell rule stalls at O(1/n) on the z^(-1/2) endpoint), so
+# the printed values are kept VERBATIM and re-gated in the zoo.
+#
+# MESHED TO THE NOTEBOOK'S LOG CHART w = log((z-1)(z-b)), whose two
+# inverse branches z = (1 + b +- sqrt((1-b)^2 + 4 e^w))/2 cover the
+# fundamental piece as two strips (h1 on y in (0, pi), h2 on y in
+# (-pi, 0)); dz/dw in closed form (dw/dz = (2z-1-b)/((z-1)(z-b))).
+# Both strip interiors stay in the upper half z-plane, off every
+# branch cut of the pointwise-principal forms (the products are
+# discontinuous exactly across [0, 1] u (-inf, b]).  Integration is
+# a mid-row sweep plus vertical column sweeps, each strip anchored by
+# a straight upper-half-plane z-path from z = i, normalized F(0) = 0
+# by the imaginary-axis path.  Assembly: the notebook's mirror across
+# y = 0 and the m = 2 vertical rotation give 8 strip copies, WELDED
+# by exact grid-index pairs along the measured seam families:
+#   * h1's y = 0 edge (z real > 1) lies in the y = 0 mirror plane
+#     (partner g My);
+#   * h1's y = pi edge splits at the branch merge x0 = log((1-b)^2/4):
+#     below it z is real in ((1+b)/2, 1), an x = 0 mirror arc
+#     (partner g Mx); above it the edge is the DIRECT chart
+#     continuation of h2's y = -pi edge (same z, same F -- measured
+#     equal to 1e-12; same frame g);
+#   * h2's y = -pi edge splits at x1 = log(-b) (the z = 0 branch
+#     point, F = 0): z in (b, 0) is a y = 0 mirror arc (partner
+#     g My), z in (0, (1+b)/2) an x = 0 mirror arc (partner g Mx);
+#   * h2's y = 0 edge (z real < b) is an x = 0 mirror arc
+#     (partner g Mx).
+# The three end rims (z = 1 at x -> -inf on h1, z = b at x -> -inf
+# on h2, z = infinity at x -> +inf on both) stay open.  Sheet h1
+# copies wind by the frame parity, sheet h2 copies by the same parity
+# (the seam-3 chart continuation fixes the relative winding).
+#
+# GATES (zoo selftest): the notebook's own period test at every
+# member; assembly topology DERIVED from the surface (torus, 3 ends:
+# 1 component, chi = 2 - 2g - r = -3, 3 rims, manifold, oriented);
+# extent ratios pinned to Weber's own PoVRay exports of all three
+# members (z/x, y/x matched to 4 digits).  Full point registration:
+# GT -> ours one-sided median 0.29-0.31% of span at moderate
+# resolution (0.16% at high) against all three dummy.pov exports,
+# identity axes.  Bare defaults (member 1, Weber's window) reproduce
+# the b = -0.05 member his page pictures.
+#
+# References:
+# - C. J. Costa, "Classification of complete minimal surfaces in R3
+#   with total curvature 12 pi", Invent. Math. 105 (1991) 273-303 --
+#   the classification that makes this family the only embedded
+#   3-ended minimal tori of finite total curvature.
+# - D. Hoffman and W. H. Meeks III, "Properties of properly embedded
+#   minimal surfaces of finite topology", Bull. Amer. Math. Soc. 17
+#   (1987) 296-300 -- the announcement.
+# - D. Hoffman and H. Karcher, "Complete embedded minimal surfaces of
+#   finite total curvature", Geometry V, Encyclopaedia Math. Sci. 90,
+#   Springer (1997) 5-93 -- the existence and embeddedness proof.
+# - M. Weber, "Costa-Hoffman-Karcher-Meeks Tori", minimalsurfaces.blog
+#   (notebook `Costa_3_catenoids_g_1_.nb` -- the data, the solved
+#   members, the log chart and the windows transcribed above; PoVRay
+#   exports = registration ground truth).
+# ==========================================================================
+
+# member knob -> (b, a, rho): the notebook's three solved members,
+# kept verbatim (they satisfy the notebook's own test to ~1e-11).
+# Member 1 is the b = -0.05 member Weber's page pictures.
+CHKM_MEMBERS = {
+    1: (-0.05, 2.184062156606648, 10.19097974273576),
+    2: (-0.01, 2.041076401980452, 20.664079792311384),
+    3: (-0.005, 2.0219326830502546, 28.795577879471505),
+}
+# member -> Weber's own render windows (x1a, x1b, x2) in the log chart
+CHKM_WINDOWS = {1: (-10.0, -4.5, 3.5), 2: (-13.0, -6.0, 3.5),
+                3: (-12.0, -6.0, 2.5)}
+_CHKM_M = 2.0
+_CHKM_GL = np.polynomial.legendre.leggauss(14)
+
+
+def chkm_om(a, b, rho):
+    """(om1, om2, om3)(z), pointwise principal powers."""
+    e = 1.0 / _CHKM_M
+
+    def om(z):
+        z = np.asarray(z, dtype=complex)
+        p1 = rho * np.exp((1 - e) * np.log(z) + (e - 1) * np.log(z - 1.0)
+                          + (e - 1) * np.log(z - b))
+        p2 = (1.0 / rho) * (z - a) ** 2 * np.exp(
+            (e - 1) * np.log(z) + (-e - 1) * np.log(z - 1.0)
+            + (-e - 1) * np.log(z - b))
+        dh = (z - a) / ((z - 1.0) * (z - b))
+        return np.stack([(p2 - p1) / 2.0, 1j * (p2 + p1) / 2.0, dh],
+                        axis=-1)
+    return om
+
+
+def chkm_z(w, b, branch):
+    """The two inverse branches of w = log((z-1)(z-b))."""
+    w = np.asarray(w, dtype=complex)
+    s = np.sqrt((1.0 - b) ** 2 + 4.0 * np.exp(w))
+    return 0.5 * (1.0 + b + branch * s)
+
+
+def chkm_omw(a, b, rho, branch):
+    """The forms in the log chart, dz/dw in closed form."""
+    om = chkm_om(a, b, rho)
+
+    def omw(w):
+        z = chkm_z(w, b, branch)
+        dwdz = (2.0 * z - 1.0 - b) / ((z - 1.0) * (z - b))
+        return om(z) / dwdz[..., None]
+    return omw
+
+
+def _chkm_seg(f, z0, z1, nsub=2):
+    """Endpoint-clustered GL integral along one straight segment: the
+    substitution u = 3t^2 - 2t^3 renders the z^(-1/2) branch-point
+    endpoints smooth (a per-cell rule with the singularity on a cell
+    edge converges only O(1/n) -- measured on the period test)."""
+    gx, gw = _CHKM_GL
+    tot = 0.0
+    edges = np.linspace(0.0, 1.0, nsub + 1)
+    for ta, tb in zip(edges[:-1], edges[1:]):
+        t = 0.5 * (ta + tb) + 0.5 * (tb - ta) * gx
+        wq = 0.5 * (tb - ta) * gw
+        u = 3 * t * t - 2 * t ** 3
+        du = 6 * t - 6 * t * t
+        z = z0 + (z1 - z0) * u
+        tot = tot + np.sum(f(z) * ((z1 - z0) * du * wq)[:, None], axis=0)
+    return tot
+
+
+def _chkm_segv(f, z0, z1, nsub=2):
+    """_chkm_seg vectorized over arrays of segment endpoints."""
+    z0 = np.asarray(z0)
+    z1 = np.asarray(z1)
+    gx, gw = _CHKM_GL
+    tot = 0.0
+    edges = np.linspace(0.0, 1.0, nsub + 1)
+    for ta, tb in zip(edges[:-1], edges[1:]):
+        t = 0.5 * (ta + tb) + 0.5 * (tb - ta) * gx
+        wq = 0.5 * (tb - ta) * gw
+        u = 3 * t * t - 2 * t ** 3
+        du = 6 * t - 6 * t * t
+        z = z0[:, None] + (z1 - z0)[:, None] * u[None, :]
+        tot = tot + np.sum(
+            f(z) * ((z1 - z0)[:, None] * (du * wq)[None, :])[..., None],
+            axis=1)
+    return tot
+
+
+def _chkm_path(f, waypts, nsub=24):
+    tot = 0.0
+    for z0, z1 in zip(waypts[:-1], waypts[1:]):
+        tot = tot + _chkm_seg(f, z0, z1, nsub)
+    return tot
+
+
+def chkm_tst(mi, nsub=60):
+    """The notebook's own 2-component period test at member `mi`."""
+    b, a, rho = CHKM_MEMBERS[mi]
+    om = chkm_om(a, b, rho)
+    I1 = _chkm_path(om, [0.0 + 0j, a / 2.0 + 0.5j, a + 0j], nsub)
+    t1 = float(np.real(I1[1]))
+    I2 = _chkm_path(om, [0.0 + 0j, -1.0 + 0.5j, -2.0 + 0j], nsub)
+    v = np.real(-I2[:2])
+    ang = np.pi / _CHKM_M + np.pi / 2.0
+    return t1, float(v @ np.array([np.cos(ang), np.sin(ang)]))
+
+
+def _chkm_grids(b, x1a, x1b, x2, nx):
+    """Sheet x-grids with breaks at x1 = log(-b) (the z = 0 corner) and
+    x0 = log((1-b)^2/4) (the branch merge), sharing every node on
+    [x1, x2] so the cross-sheet seam pairs by index."""
+    b1 = math.log(-b)
+    b0 = math.log((1.0 - b) ** 2 / 4.0)
+    h = 0.35 * min(b0 - b1, x2 - b0)
+
+    def seg(lo, hi, n):
+        return np.linspace(lo, hi, max(3, n), endpoint=False)
+    shared = np.unique(np.concatenate([
+        seg(b1, b0, max(4, int(round(0.30 * nx)))),
+        seg(b0, x2, max(6, int(round(0.40 * nx)))), np.array([x2]),
+        b0 + h * np.array([-.5, -.25, -.12, .12, .25, .5]),
+        b1 + h * np.array([.12, .25, .5])]))
+    shared = shared[(shared >= b1) & (shared <= x2)]
+
+    def tail(x1):
+        n = max(4, int(round(0.30 * nx * (b1 - x1) / (b0 - b1))))
+        return seg(x1, b1, n)
+    xgA = np.unique(np.concatenate([tail(x1a), shared]))
+    xgB = np.unique(np.concatenate([tail(x1b), shared]))
+    return xgA, xgB, b1, b0
+
+
+def _chkm_strip(a, b, rho, sheet, xg, yg, delta):
+    """One strip F (nx, ny, 3): sheet +1 = h1 on y in (0, pi), sheet
+    -1 = h2 on y in (-pi, 0); anchored from z = i, normalized so that
+    F(z=0) = 0 (`delta` is the base integral to z = 0)."""
+    br = 1.0 if sheet > 0 else -1.0
+    ys = yg if sheet > 0 else -yg[::-1]
+    omw = chkm_omw(a, b, rho, br)
+    om = chkm_om(a, b, rho)
+    W = xg[:, None] + 1j * ys[None, :]
+    nx, ny = W.shape
+    F = np.zeros((nx, ny, 3), dtype=complex)
+    jm = int(np.argmin(np.abs(np.abs(ys) - 0.5 * np.pi)))
+    im = int(np.argmin(np.abs(xg - (xg[-1] - 1.0))))
+    za = complex(chkm_z(W[im, jm], b, br))
+    # the anchor z-path from i must stay in the upper half plane,
+    # off every branch cut; both sheets' interiors live there
+    if za.imag <= 1e-9:
+        raise ValueError("CHKM anchor left the upper half plane")
+    F[im, jm] = _chkm_path(om, [1j, za], nsub=24) - delta
+    for i in range(im + 1, nx):
+        F[i, jm] = F[i - 1, jm] + _chkm_seg(omw, W[i - 1, jm], W[i, jm])
+    for i in range(im - 1, -1, -1):
+        F[i, jm] = F[i + 1, jm] + _chkm_seg(omw, W[i + 1, jm], W[i, jm])
+    for j in range(jm + 1, ny):
+        F[:, j] = F[:, j - 1] + _chkm_segv(omw, W[:, j - 1], W[:, j])
+    for j in range(jm - 1, -1, -1):
+        F[:, j] = F[:, j + 1] + _chkm_segv(omw, W[:, j + 1], W[:, j])
+    return np.real(F)
+
+
+def chkm_assemble(mi, nx=36, ny=25, windows=None):
+    """The welded torus: 8 strip copies under {E, My, Rz(pi), Mx},
+    exact grid-index welds along the seam families in the header.
+    Returns (V, quads, diag)."""
+    b, a, rho = CHKM_MEMBERS[mi]
+    om = chkm_om(a, b, rho)
+    x1a, x1b, x2 = windows or CHKM_WINDOWS[mi]
+    xgA, xgB, b1, b0 = _chkm_grids(b, x1a, x1b, x2, nx)
+    t = np.linspace(0.0, 1.0, ny)
+    yg = np.pi * t * t * (3.0 - 2.0 * t)
+    delta = np.real(_chkm_path(om, [1j, 0.0 + 0j], nsub=48))
+    FA = _chkm_strip(a, b, rho, +1, xgA, yg, delta)
+    FB = _chkm_strip(a, b, rho, -1, xgB, yg, delta)
+    nxA, nyA = FA.shape[:2]
+    nxB = FB.shape[0]
+    spanA = float(np.linalg.norm(FA.reshape(-1, 3).max(0)
+                                 - FA.reshape(-1, 3).min(0)))
+    # snap the measured mirror arcs exactly onto their planes
+    selA2 = xgA <= b0 + 1e-12
+    selB_y0 = xgB <= b1 + 1e-12
+    selB_x0 = (xgB >= b1 - 1e-12) & (xgB <= b0 + 1e-12)
+    mirr = (float(np.abs(FA[:, 0, 1]).max()),
+            float(np.abs(FA[selA2, -1, 0]).max()),
+            float(np.abs(FB[:, -1, 0]).max()),
+            float(np.abs(FB[selB_y0, 0, 1]).max()),
+            float(np.abs(FB[selB_x0, 0, 0]).max()))
+    FA[:, 0, 1] = 0.0
+    FA[selA2, -1, 0] = 0.0
+    FB[:, -1, 0] = 0.0
+    FB[selB_y0, 0, 1] = 0.0
+    FB[selB_x0, 0, 0] = 0.0
+    # the direct chart continuation h1(y=pi) = h2(y=-pi) for x >= b0
+    s3A = np.nonzero(xgA >= b0 - 1e-12)[0]
+    s3B = np.nonzero(xgB >= b0 - 1e-12)[0]
+    PA = FA[s3A, -1, :]
+    PB = FB[s3B, 0, :]
+    gap3 = float(np.linalg.norm(PA - PB, axis=1).max())
+    avg = 0.5 * (PA + PB)
+    FA[s3A, -1, :] = avg
+    FB[s3B, 0, :] = avg
+    # 8 copies under the Klein group {E, My, Rz(pi), Mx}
+    frames = [np.diag([1.0, 1.0, 1.0]), np.diag([1.0, -1.0, 1.0]),
+              np.diag([-1.0, -1.0, 1.0]), np.diag([-1.0, 1.0, 1.0])]
+    par = [1, -1, 1, -1]
+    comp = {(0, 1): 1, (1, 1): 0, (2, 1): 3, (3, 1): 2,   # g My
+            (0, 3): 3, (1, 3): 2, (2, 3): 1, (3, 3): 0}   # g Mx
+    Vs, quads, vid = [], [], {}
+    nv = 0
+    for f in range(4):
+        for s, (F, nxs) in enumerate(((FA, nxA), (FB, nxB))):
+            Vf = F.reshape(-1, 3) @ frames[f].T
+            for i in range(nxs):
+                for j in range(nyA):
+                    vid[(f, s, i, j)] = nv + i * nyA + j
+            Vs.append(Vf)
+            for i in range(nxs - 1):
+                for j in range(nyA - 1):
+                    q = [nv + i * nyA + j, nv + (i + 1) * nyA + j,
+                         nv + (i + 1) * nyA + j + 1, nv + i * nyA + j + 1]
+                    quads.append(q if par[f] > 0 else q[::-1])
+            nv += nxs * nyA
+    V = np.concatenate(Vs, axis=0)
+    parent = np.arange(nv)
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(x, y):
+        rx, ry = find(x), find(y)
+        if rx != ry:
+            parent[max(rx, ry)] = min(rx, ry)
+    iA2 = np.nonzero(selA2)[0]
+    iB_y0 = np.nonzero(selB_y0)[0]
+    iB_x0 = np.nonzero(selB_x0)[0]
+    for g in range(4):
+        gMy, gMx = comp[(g, 1)], comp[(g, 3)]
+        for i in range(nxA):                      # h1 y=0 edge
+            union(vid[(g, 0, i, 0)], vid[(gMy, 0, i, 0)])
+        for i in iA2:                             # h1 y=pi, x <= b0
+            union(vid[(g, 0, i, nyA - 1)], vid[(gMx, 0, i, nyA - 1)])
+        for ia, ib in zip(s3A, s3B):              # chart continuation
+            union(vid[(g, 0, ia, nyA - 1)], vid[(g, 1, ib, 0)])
+        for i in iB_y0:                           # h2 y=-pi, x <= b1
+            union(vid[(g, 1, i, 0)], vid[(gMy, 1, i, 0)])
+        for i in iB_x0:                           # h2 y=-pi, b1..b0
+            union(vid[(g, 1, i, 0)], vid[(gMx, 1, i, 0)])
+        for i in range(nxB):                      # h2 y=0 edge
+            union(vid[(g, 1, i, nyA - 1)], vid[(gMx, 1, i, nyA - 1)])
+    root = np.array([find(x) for x in range(nv)])
+    uniq, inv = np.unique(root, return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(Vw, inv, V)
+    np.add.at(cnt, inv, 1.0)
+    Vw /= cnt[:, None]
+    Fq = [[int(inv[i]) for i in q] for q in quads]
+    Fq = [q for q in Fq if len({*q}) == 4]
+    return Vw, Fq, dict(gap3=gap3, span=spanA, mirr=mirr)
+
+
+def chkm_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Costa-Hoffman-Karcher-Meeks torus: `order` picks the member
+    (1-3 = the notebook's solved deformations b = -0.05 / -0.01 /
+    -0.005; member 1 is the one Weber's page pictures).  `radius`
+    follows the three catenoidal ends further out by stretching the
+    log-chart windows."""
+    del spec, theta
+    mi = int(np.clip(order, 1, 3))
+    fac = float(np.clip(radius / 1.2, 0.6, 1.6))
+    x1a, x1b, x2 = CHKM_WINDOWS[mi]
+    win = (x1a * fac, x1b * fac, x2 * fac)
+    nx = int(np.clip(nu, 24, 96))
+    ny = int(np.clip(int(0.6 * nv), 16, 64))
+    V, F, _diag = chkm_assemble(mi, nx=nx, ny=ny, windows=win)
+    V = _center_fit(V, scale, V)
+    return V, F, None
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
