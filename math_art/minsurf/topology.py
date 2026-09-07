@@ -688,58 +688,112 @@ def build_genus(genus, cell=0.125):
 
 def attach_crosscaps(verts, faces, centres, hole, pinch):
     """The cross-cap surgery, on any closed mesh: for each centre, cut
-    away the faces whose centroid lies within `hole` of it and glue the
-    resulting boundary circle to itself ANTIPODALLY, welding vertex i
-    to vertex i + m.  That is the definition of attaching a cross-cap,
-    so each one drops the Euler characteristic by exactly 1 and makes
-    the surface one-sided -- by construction, not by numerical luck.
+    away the faces whose centroid lies within `hole` of it and close
+    the boundary circle with a MOBIUS BAND -- which is what a
+    projective plane minus a disk is, so gluing one into a circle is
+    the definition of attaching a cross-cap.  Each cap therefore drops
+    the Euler characteristic by exactly 1 and makes the surface
+    one-sided, by construction rather than by numerical luck.
 
-    Welding each antipodal pair to their midpoint collapses the cut
-    circle onto one of its diameters; that segment is the double-point
-    line of the classical cross-cap picture, and `pinch` lifts the cap
-    along the centre direction so the two sheets separate visibly.
+    The band is meshed on the classical cross-cap immersion
+    K(x, y, z) = (yz, xy, (x^2 - y^2)/2) of the sphere (the same
+    surface the CROSSCAP preset draws; every coordinate is even, so
+    antipodes coincide and the band's core row welds vertex t to
+    vertex t + m exactly).  The sphere is cut at colatitude pi/4
+    around the smooth point opposite the pinch, and the patch is
+    seated on the rim with the double segment pointing along the
+    centre direction: the visible cap is a dome that rises off the
+    surface and passes through itself along a SEGMENT of double
+    points terminating in two pinch points (Whitney umbrellas) -- the
+    textbook cross-cap picture.  An earlier version instead welded
+    the boundary ring itself to antipodal midpoints; every such
+    midpoint sits at the hole's centre, so the whole cap collapsed
+    onto its lifted spine and rendered as a fan of slivers.  The
+    self-test now gates on the cap's height AND width, which is what
+    would have caught that.
 
-    The cut circle is ordered by angle IN ITS OWN PLANE (normal = the
-    centre direction).  Picking the axes off fixed coordinates instead
-    sorts different holes by different conventions, which pairs the
-    wrong vertices and wrecks the Euler characteristic -- that bug
-    shipped once, and the N_k self-test is what caught it.
+    The boundary ring is walked edge by edge in the direction induced
+    by the kept faces, and each rim vertex keeps the angle it makes IN
+    THE HOLE'S OWN PLANE (normal = the centre direction), which is
+    what seats the band's boundary on the rim.  Measuring angles off
+    fixed coordinate axes instead treats different holes by different
+    conventions and pairs the wrong vertices -- that bug shipped once,
+    and the N_k self-test is what caught it.
 
-    Returns (verts, faces), compacted to the used vertices.  The faces
-    along each double-point segment are shared by four triangles, not
-    two; that is what an immersion looks like as a mesh and is not a
-    defect to weld away.
+    `pinch` scales the cap's height along the centre direction (1 is
+    the immersion's own proportion, 0 flattens the cap).  Returns
+    (verts, faces), compacted to the used vertices.
     """
     V = [list(p) for p in verts]
     faces = [tuple(f) for f in faces]
-    remap = {}
 
-    def resolve(a):
-        while a in remap:
-            a = remap[a]
-        return a
+    def _boundary_loop(kept):
+        """The cut's rim as one vertex cycle, walked in the direction
+        the kept faces traverse it; None if the rim is pinched or not
+        a single loop."""
+        cnt = {}
+        for f in kept:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                e = (a, b) if a < b else (b, a)
+                cnt[e] = cnt.get(e, 0) + 1
+        succ = {}
+        for f in kept:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                e = (a, b) if a < b else (b, a)
+                if cnt[e] == 1:
+                    if a in succ:
+                        return None
+                    succ[a] = b
+        if not succ:
+            return None
+        start = next(iter(succ))
+        loop = [start]
+        x = succ[start]
+        while x != start:
+            loop.append(x)
+            x = succ.get(x)
+            if x is None or len(loop) > len(succ):
+                return None
+        return loop if len(loop) == len(succ) else None
 
     for centre in centres:
         centre = np.asarray(centre, dtype=float)
-        # faces whose centroid falls inside the disk are cut away, and
-        # the vertices left on the cut form the boundary circle
-        inside = []
-        for f in faces:
-            g = np.mean([V[a] for a in f], axis=0)
-            if float(np.linalg.norm(g - centre)) < hole:
-                inside.append(f)
+        # faces whose centroid falls inside the disk are cut away
+        cid = [np.mean([V[a] for a in f], axis=0) for f in faces]
+        inside = {fi for fi, g in enumerate(cid)
+                  if float(np.linalg.norm(g - centre)) < hole}
         if not inside:
             continue
-        cut = set()
-        for f in inside:
-            cut.update(f)
-        # boundary ring: cut vertices that still belong to a kept face
-        kept_now = [f for f in faces if f not in inside]
-        onring = set()
-        for f in kept_now:
-            for a in f:
-                if a in cut:
-                    onring.add(a)
+        # the rim must be one loop of even length (the antipodal weld
+        # needs a partner for every vertex; a contractible cycle in a
+        # quad grid is always even, so growth is a rare fallback):
+        # grow the cut by the nearest touching face until it is
+        ring = None
+        for _ in range(8):
+            kept = [f for fi, f in enumerate(faces)
+                    if fi not in inside]
+            ring = _boundary_loop(kept)
+            if (ring is not None and len(ring) >= 6
+                    and len(ring) % 2 == 0):
+                break
+            cutverts = set()
+            for fi in inside:
+                cutverts.update(faces[fi])
+            grow = [(float(np.linalg.norm(cid[fi] - centre)), fi)
+                    for fi in range(len(faces))
+                    if fi not in inside and cutverts & set(faces[fi])]
+            if not grow:
+                break
+            inside.add(min(grow)[1])
+            ring = None
+        if ring is None or len(ring) < 6 or len(ring) % 2:
+            raise ValueError("cross-cap cut has no clean even rim")
+        faces = kept
+        L = len(ring)
+        m = L // 2
+
         nrm0 = centre / max(float(np.linalg.norm(centre)), 1e-12)
         tmp = np.array([0.0, 0.0, 1.0])
         if abs(float(np.dot(tmp, nrm0))) > 0.9:
@@ -747,29 +801,96 @@ def attach_crosscaps(verts, faces, centres, hole, pinch):
         e1 = np.cross(nrm0, tmp)
         e1 = e1 / max(float(np.linalg.norm(e1)), 1e-12)
         e2 = np.cross(nrm0, e1)
+        pts = np.array([V[a] for a in ring])
+        base = pts.mean(axis=0)
+        d = pts - centre
+        th = np.arctan2(d @ e2, d @ e1)
+        dip = d - np.outer(d @ nrm0, nrm0)
+        rho = float(np.mean(np.linalg.norm(dip, axis=1)))
+        # The immersion's boundary circle is not planar -- its height
+        # varies with the SECOND harmonic of the azimuth -- and
+        # neither is the cut rim on a curved host.  Twist the cap
+        # about its axis so the two wobbles line up in phase (fit the
+        # rim heights' second harmonic); with an arbitrary twist the
+        # residuals alternate around the ring and the blended seam
+        # ripples visibly.
+        hgt = (pts - base) @ nrm0
+        phase = 0.5 * math.atan2(float(np.sum(hgt * np.sin(2 * th))),
+                                 float(np.sum(hgt * np.cos(2 * th))))
+        delta = phase + math.pi / 2.0
+        cd, sd = math.cos(delta), math.sin(delta)
+        alpha = -th - math.pi / 2.0 + delta  # rim angle -> sphere angle
+        # Cut colatitude: how much of the cross-cap blob the cap
+        # keeps.  pi/4 would seat the blob's widest circle on the rim
+        # and bury its lower pinch point inside the host surface;
+        # cutting the much smaller disk keeps nearly the whole blob,
+        # so the cap sits on the hole as a rounded ball -- belly wider
+        # than its neck -- with the double segment and both pinch
+        # points clear of the surface, the way the classical pictures
+        # (e.g. mathcurve's Dyck renderings) draw it.
+        b0 = math.pi / 8.0
+        scale = rho / (math.sin(b0) * math.cos(b0))
+        nrows = max(6, m)
 
-        def ring_angle(a):
-            d = np.array(V[a]) - centre
-            return math.atan2(float(np.dot(d, e2)), float(np.dot(d, e1)))
+        def kpt(al, be):
+            """Cross-cap immersion of the sphere point at colatitude
+            `be` from the cut centre, azimuth `al`."""
+            sb, cb = math.sin(be), math.cos(be)
+            x, y, z = sb * math.cos(al), -cb, sb * math.sin(al)
+            return np.array([y * z, x * y, 0.5 * (x * x - y * y)])
 
-        ring = sorted(onring, key=ring_angle)
-        faces = kept_now
-        if len(ring) < 6:
-            continue
-        half = len(ring) // 2
-        for t in range(half):
-            a, b = resolve(ring[t]), resolve(ring[t + half])
-            if a == b:
-                continue
-            pa, pb = np.array(V[a]), np.array(V[b])
-            mid = 0.5 * (pa + pb)
-            # lift the weld off the surface so the two sheets separate
-            s = math.sin(math.pi * (t + 0.5) / half)
-            mid = mid + pinch * hole * s * nrm0
-            V[a] = list(mid)
-            remap[b] = a
+        rim0 = [kpt(alpha[i], b0) for i in range(L)]
+        z0 = float(np.mean([q[2] for q in rim0]))
 
-    faces = [tuple(resolve(a) for a in f) for f in faces]
+        def world(q):
+            # the twist rotates the in-plane components back so the
+            # boundary still seats on the rim at its own angle
+            qx = q[0] * cd - q[1] * sd
+            qy = q[0] * sd + q[1] * cd
+            return (base + scale * (qx * e1 + qy * e2)
+                    + scale * pinch * (q[2] - z0) * nrm0)
+
+        # rows from the rim (kept verbatim) up to the antipodally
+        # welded core, which lands on the double segment: m vertices
+        # shared by both sheets by INDEX for the weld, while the
+        # sheets crossing there stay separate faces.  The ideal rim's
+        # residual against the true rim is blended away over the first
+        # rows -- but only its SMOOTH part (harmonics 0..2 in the rim
+        # angle: offset, tilt and ellipticity).  The raw residual also
+        # carries the staircase of the cut through the host's quad
+        # grid, and blending that in scallops the whole dome with
+        # grid-frequency wrinkles; fitted, the staircase stays where
+        # it belongs, in the one quad ring at the seam.
+        resid = pts - np.array([world(q) for q in rim0])
+        H = np.stack([np.ones(L), np.cos(th), np.sin(th),
+                      np.cos(2.0 * th), np.sin(2.0 * th)], axis=1)
+        coef, _r, _rk, _sv = np.linalg.lstsq(H, resid, rcond=None)
+        offs = H @ coef
+        rows = [list(ring)]
+        for j in range(1, nrows):
+            be = b0 + (math.pi / 2.0 - b0) * j / nrows
+            w = 0.5 * (1.0 + math.cos(math.pi * j / nrows))
+            row = []
+            for i in range(L):
+                p = world(kpt(alpha[i], be)) + w * offs[i]
+                row.append(len(V))
+                V.append(list(p))
+            rows.append(row)
+        core = []
+        for t in range(m):
+            p = world(kpt(alpha[t], math.pi / 2.0))
+            core.append(len(V))
+            V.append(list(p))
+        rows.append(core)
+        for j in range(nrows):
+            lo, hi = rows[j], rows[j + 1]
+            nh = len(hi)
+            for t in range(L):
+                q = (lo[(t + 1) % L], lo[t],
+                     hi[t % nh], hi[(t + 1) % L % nh])
+                if len(set(q)) == len(q):
+                    faces.append(q)
+
     faces = [f for f in faces if len(set(f)) == len(f)]
     used = sorted({a for f in faces for a in f})
     idx = {a: i for i, a in enumerate(used)}
@@ -778,7 +899,7 @@ def attach_crosscaps(verts, faces, centres, hole, pinch):
 
 
 def build_nonorientable(k=3, segments=64, rings=32, hole=0.0,
-                        pinch=0.55):
+                        pinch=1.0):
     """The closed non-orientable surface N_k of genus k, as an
     immersion: a sphere carrying k cross-caps.
 
@@ -791,18 +912,18 @@ def build_nonorientable(k=3, segments=64, rings=32, hole=0.0,
 
     The construction is surgery rather than a formula, which is what
     makes it exact.  For each cross-cap: cut a disk out of the sphere,
-    leaving a boundary circle of 2m vertices, then glue that circle to
-    itself ANTIPODALLY by welding vertex i to vertex i + m.  That is the
-    definition of attaching a cross-cap, so the topology is right by
-    construction rather than by numerical luck: each one drops the Euler
-    characteristic by exactly 1, giving chi = 2 - k, and makes the
-    surface one-sided.
+    leaving a boundary circle of 2m vertices, then close it with a
+    Mobius band -- a projective plane minus a disk -- whose core row
+    is glued to itself ANTIPODALLY, vertex t welded to vertex t + m.
+    That is the definition of attaching a cross-cap, so the topology
+    is right by construction rather than by numerical luck: each one
+    drops the Euler characteristic by exactly 1, giving chi = 2 - k,
+    and makes the surface one-sided.
 
-    Welding each antipodal pair to their midpoint collapses the cut
-    circle onto one of its diameters, and that segment is precisely the
-    double-point line of the classical cross-cap picture.  `pinch`
-    lifts the cap over that segment so the two sheets are visible
-    rather than coincident.
+    The band is shaped on the classical cross-cap immersion, so each
+    cap is a dome rising off the sphere whose two sheets cross along
+    a segment of double points between two pinch points.  `pinch`
+    scales the dome's height (1 is the immersion's own proportion).
 
     Returns (verts, faces).  The surgery itself lives in
     `attach_crosscaps`, shared with `build_dyck`.
@@ -812,10 +933,13 @@ def build_nonorientable(k=3, segments=64, rings=32, hole=0.0,
     # as a sphere with a dent rather than as the projective plane: with
     # one cross-cap the cap IS the surface's whole character and should
     # dominate, while with six they must stay clear of one another.
-    # Adjacent centres sit 2 sin(pi/k) apart on the equator, so that
-    # sets the ceiling; 0.9 is the free choice when there is only one.
+    # Adjacent centres sit 2 sin(pi/k) apart on the equator, and the
+    # cap's belly bulges well past its cut circle now that the caps
+    # are full cross-cap blobs, so the per-cap budget is tighter than
+    # it was for the old flat welds; 0.75 is the free choice when
+    # there is only one cap.
     if hole <= 0.0:
-        hole = 0.95 if k == 1 else min(0.95, 0.80 * math.sin(math.pi / k))
+        hole = 0.75 if k == 1 else min(0.75, 0.55 * math.sin(math.pi / k))
     nseg, nring = int(segments), int(rings)
 
     # --- the sphere, poles welded -----------------------------------
@@ -849,7 +973,7 @@ def build_nonorientable(k=3, segments=64, rings=32, hole=0.0,
     return attach_crosscaps(verts, faces, centres, hole, pinch)
 
 
-def build_dyck(segments=64, rings=32, hole=0.0, pinch=0.55,
+def build_dyck(segments=64, rings=32, hole=0.0, pinch=1.0,
                major=1.0, minor=0.45):
     """Dyck's surface as a TORUS carrying one cross-cap.
 
@@ -876,7 +1000,10 @@ def build_dyck(segments=64, rings=32, hole=0.0, pinch=0.55,
     nseg, nring = max(16, int(segments)), max(8, int(rings))
     R, r = float(major), float(minor)
     if hole <= 0.0:
-        hole = 1.15 * r
+        # a cut of ~0.6 tube radii grows into a cap whose belly is
+        # about the tube's own girth -- the proportion of the
+        # classical torus-with-cross-cap renderings
+        hole = 0.60 * r
     # the tube angle is sampled at half-steps so no vertex row lands
     # exactly on the outer equator the cap is centred on
     verts = []
@@ -1011,10 +1138,11 @@ def _flag_system(F):
     """The flag system of a closed polygonal mesh: every incident
     (vertex, edge, face) triple, with the three adjacency involutions
     s0 (other vertex of the edge), s1 (other edge of the face at that
-    vertex) and s2 (other face on the edge).  Returns (nflags, s0, s1,
-    s2) as permutation lists.  Combinatorial map automorphisms commute
-    with the involutions, which is what makes the flag system the
-    right instrument for counting them."""
+    vertex) and s2 (other face on the edge).  Returns (flags, s0, s1,
+    s2): the flag list as (vertex, edge, face) triples and the three
+    involutions as permutation lists.  Combinatorial map automorphisms
+    commute with the involutions, which is what makes the flag system
+    the right instrument for counting them."""
     ef = {}
     for fi, f in enumerate(F):
         for i in range(len(f)):
@@ -1044,7 +1172,7 @@ def _flag_system(F):
         s1.append(fid[(v, other[0], fi)])
         fs = ef[e]
         s2.append(fid[(v, e, fs[0] if fs[1] == fi else fs[1])])
-    return len(flags), s0, s1, s2
+    return flags, s0, s1, s2
 
 
 def _map_automorphism_count(F):
@@ -1055,7 +1183,8 @@ def _map_automorphism_count(F):
     without conflict.  A regular map -- one whose symmetry group acts
     transitively on flags -- scores exactly its flag count."""
     from collections import deque
-    n, s0, s1, s2 = _flag_system(F)
+    flags, s0, s1, s2 = _flag_system(F)
+    n = len(flags)
     S = (s0, s1, s2)
     good = 0
     for target in range(n):
@@ -1084,7 +1213,8 @@ def _map_petrie_lengths(F):
     lengths of the composed flag step s2 s1 s0 (one zigzag stride).
     A cube scores {6} -- its Petrie hexagons -- and Klein's map {3,7}_8
     scores {8}, the subscript in its name."""
-    n, s0, s1, s2 = _flag_system(F)
+    flags, s0, s1, s2 = _flag_system(F)
+    n = len(flags)
     lens = set()
     seen = [False] * n
     for t in range(n):
@@ -1100,6 +1230,135 @@ def _map_petrie_lengths(F):
                 break
         lens.add(k)
     return lens
+
+
+def subdivide_flags(V, F):
+    """Barycentric subdivision of a closed polygonal mesh into its
+    FLAGS: each k-gon splits into 2k right-ish triangles (vertex, edge
+    midpoint, face centroid), one per incident (vertex, edge, face)
+    triple.  Klein drew his 1879 figure of the quartic exactly this
+    way -- 24 heptagons each cut into 14 little triangles -- because
+    the 24 x 14 = 336 triangles then stand one-for-one for the map's
+    336 symmetries including reflections: a symmetry is determined by
+    where it sends a single flag.
+
+    Returns (verts, tris, info) with info[i] = (v, e, f, c) for
+    triangle i: the flag's vertex index, its edge as a sorted vertex
+    pair, its face index in F, and its handedness c (0 or 1).  The
+    handedness classes checkerboard the subdivision -- triangles
+    sharing an edge always differ -- and on Klein's map they split
+    336 = 168 + 168: the orientation-preserving and the
+    orientation-reversing halves of the symmetry group, made visible.
+    """
+    V2 = [tuple(float(c) for c in p) for p in V]
+    emid = {}
+    for f in F:
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            e = (a, b) if a < b else (b, a)
+            if e not in emid:
+                emid[e] = len(V2)
+                V2.append(tuple(
+                    0.5 * (np.asarray(V2[a]) + np.asarray(V2[b]))))
+    tris, info = [], []
+    for fi, f in enumerate(F):
+        c = np.mean([V2[a] for a in f], axis=0)
+        ci = len(V2)
+        V2.append(tuple(float(x) for x in c))
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            e = (a, b) if a < b else (b, a)
+            mi = emid[e]
+            tris.append((a, mi, ci))
+            info.append((a, e, fi, 0))
+            tris.append((mi, b, ci))
+            info.append((b, e, fi, 1))
+    return V2, tris, info
+
+
+def klein_quartic_rotations():
+    """The 12 rotations of the Schulte-Wills realization that act as
+    rigid motions of 3-space: the tetrahedral rotation group, as the
+    cyclic coordinate permutations composed with the even sign
+    changes.  Only these 12 of the 336 combinatorial symmetries of
+    Klein's map survive as isometries of the embedding -- the rest
+    act on the mesh but not on the metal, which is exactly why Egan's
+    tetrahedral rendering emphasizes them."""
+    mats = []
+    for cyc in ((0, 1, 2), (1, 2, 0), (2, 0, 1)):
+        P = np.zeros((3, 3))
+        for i, j in enumerate(cyc):
+            P[i, j] = 1.0
+        for signs in ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)):
+            mats.append(np.diag(np.asarray(signs, dtype=float)) @ P)
+    return mats
+
+
+def klein_quartic_tetra_classes():
+    """Per-face class of the 56 triangles of the {3,7} view under the
+    12 rigid rotations: 0 for the 8 CORNER triangles (an inward- and
+    an outward-facing one at each of the lurking tetrahedron's 4
+    corners -- the orbits of size 4, each face pinned by a 3-fold
+    axis) and 1 for the 48 EDGE triangles (8 for each of the 6 edges
+    -- the orbits of size 12).  This is the 56 = 8 + 48 decomposition
+    Baez points out on Egan's tetrahedral picture.  Returns a list of
+    56 zeros and ones; raises if the orbit structure comes out
+    different, rather than colouring a lie."""
+    V, F = build_klein_quartic(dual=False)
+    va = np.asarray(V)
+    vidx = {tuple(np.round(p, 6)): i for i, p in enumerate(va)}
+    fid = {frozenset(f): i for i, f in enumerate(F)}
+    fperms = []
+    for M in klein_quartic_rotations():
+        vperm = [vidx[tuple(np.round(M @ va[i], 6))]
+                 for i in range(len(va))]
+        fperms.append([fid[frozenset(vperm[a] for a in f)] for f in F])
+    label = list(range(len(F)))
+
+    def find(x):
+        while label[x] != x:
+            label[x] = label[label[x]]
+            x = label[x]
+        return x
+
+    for fp in fperms:
+        for i in range(len(F)):
+            a, b = find(i), find(fp[i])
+            if a != b:
+                label[max(a, b)] = min(a, b)
+    orbits = {}
+    for i in range(len(F)):
+        orbits.setdefault(find(i), []).append(i)
+    sizes = sorted(len(o) for o in orbits.values())
+    if sizes != [4, 4, 12, 12, 12, 12]:
+        raise ValueError("tetrahedral orbit sizes %r" % sizes)
+    classes = [1] * len(F)
+    for o in orbits.values():
+        if len(o) == 4:
+            for i in o:
+                classes[i] = 0
+    return classes
+
+
+def petrie_polygon_edges(F, start=0):
+    """One Petrie polygon of the mesh as its cyclic edge list, traced
+    flag by flag: the composed stride s2 s1 s0 is one zigzag step
+    ('cross the edge, then turn'), and collecting each visited flag's
+    edge until the stride returns to the start yields the closed
+    left-right-left-right path.  On Klein's map the loop closes after
+    8 edges -- Baez's devil's driving directions, LRLRLRLR and you
+    are back where you began, and the 8 in the map's name {3,7}_8."""
+    flags, s0, s1, s2 = _flag_system(F)
+    x = start
+    edges = []
+    while True:
+        edges.append(flags[x][1])
+        x = s2[s1[s0[x]]]
+        if x == start:
+            break
+        if len(edges) > 4 * len(flags):
+            raise ValueError("Petrie walk failed to close")
+    return edges
 
 
 def build_twist_strip(half_twists, segments, width=0.6, thick=0.18,
@@ -1458,6 +1717,48 @@ def _selftest():
           "one-sided, chi = -1 at 4 resolutions, not collapsed %s"
           % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
+    # ---- the cap itself is a genuine cross-cap dome -----------------
+    # A collapsed cap passes every combinatorial gate above: the
+    # midpoint-weld version that once shipped had chi = -1, was
+    # one-sided and closed, and rendered as a fan of slivers on a
+    # spike -- every antipodal midpoint sits at the hole's centre, so
+    # the cap had height but no width.  Gate on the geometry the
+    # classical picture requires: the cap rises off the torus (max
+    # radius R + r = 1.45 for the defaults), spreads in BOTH
+    # transverse directions, and no face degenerates to a sliver.
+    bad = []
+    V, F = build_dyck(64, 32)
+    va = np.asarray(V)
+    hole = 0.60 * 0.45              # build_dyck's default cut radius
+    amin = 1e9
+    for f in F:
+        p = va[list(f)]
+        a = 0.0
+        for i in range(1, len(f) - 1):
+            a += 0.5 * float(np.linalg.norm(
+                np.cross(p[i] - p[0], p[i + 1] - p[0])))
+        amin = min(amin, a)
+    capv = va[va[:, 0] > 1.45 + 1e-9]
+    if amin < 1e-6:
+        bad.append('sliver faces: min area %.2e' % amin)
+    if len(capv) == 0:
+        bad.append('no cap above the torus')
+    else:
+        rise = float(capv[:, 0].max()) - 1.45
+        wy = float(np.ptp(capv[:, 1]))
+        wz = float(np.ptp(capv[:, 2]))
+        if rise < 0.25 * hole:
+            bad.append('cap rise %.3f' % rise)
+        if wy < 0.3 * hole or wz < 0.3 * hole:
+            bad.append('cap collapsed: width %.3f x %.3f' % (wy, wz))
+    ok &= not bad
+    print("topology: Dyck cross-cap is a real dome -- min face area "
+          "%.1e, rise %.2f, width %.2f x %.2f over hole %.2f %s"
+          % (amin, float(capv[:, 0].max()) - 1.45 if len(capv) else 0,
+             float(np.ptp(capv[:, 1])) if len(capv) else 0,
+             float(np.ptp(capv[:, 2])) if len(capv) else 0, hole,
+             'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
     # ---- the Klein quartic ------------------------------------------
     # What is claimed is not "a genus-3 mesh" but Klein's map itself,
     # so the gates are the map's own fingerprints: the {3,7} / {7,3}
@@ -1522,6 +1823,63 @@ def _selftest():
           "homothetic truncated tetrahedra, and REGULAR: all 336 map "
           "automorphisms found flag-by-flag, Petrie length 8 (cube "
           "control 48 / 6) %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # ---- flags, tetrahedral orbits, one Petrie polygon --------------
+    # The claims are Baez's, checked as counts on the mesh: 24 x 14 =
+    # 336 flag triangles (one per symmetry, reflections included),
+    # splitting 168 + 168 by handedness in a strict checkerboard; the
+    # 56 triangles fall 8 + 48 under the 12 rigid rotations ("2 for
+    # each of the tetrahedron's 4 corners, and 8 for each of its 6
+    # edges"), with every corner triangle pinned on a 3-fold axis;
+    # and the traced Petrie polygon closes after exactly 8 distinct
+    # chained edges -- the devil's driving directions.
+    bad = []
+    for name, dual in (('{3,7}', False), ('{7,3}', True)):
+        V0, F0 = build_klein_quartic(dual=dual)
+        V2, T2, info = subdivide_flags(V0, F0)
+        if len(T2) != 336:
+            bad.append('%s:flags=%d' % (name, len(T2)))
+        if _chi(V2, T2) != -4:
+            bad.append('%s:flag chi=%d' % (name, _chi(V2, T2)))
+        if any(x != 2 for x in edge_face_counts(T2).values()):
+            bad.append('%s:flag mesh not closed' % name)
+        if len({(v, e, f) for v, e, f, _c in info}) != 336:
+            bad.append('%s:duplicate flags' % name)
+        ch = [c for _v, _e, _f, c in info]
+        if (ch.count(0), ch.count(1)) != (168, 168):
+            bad.append('%s:handedness %d/%d'
+                       % (name, ch.count(0), ch.count(1)))
+        ef2 = {}
+        for ti, t in enumerate(T2):
+            for i in range(3):
+                a, b = t[i], t[(i + 1) % 3]
+                ef2.setdefault((a, b) if a < b else (b, a),
+                               []).append(ti)
+        if any(ch[p[0]] == ch[p[1]] for p in ef2.values()):
+            bad.append('%s:handedness not alternating' % name)
+        pe = petrie_polygon_edges(F0)
+        if len(pe) != 8 or len(set(pe)) != 8:
+            bad.append('%s:petrie %d edges' % (name, len(pe)))
+        elif not all(set(pe[i]) & set(pe[(i + 1) % 8])
+                     for i in range(8)):
+            bad.append('%s:petrie chain broken' % name)
+    cls = klein_quartic_tetra_classes()
+    if (cls.count(0), cls.count(1)) != (8, 48):
+        bad.append('tetra split %d/%d' % (cls.count(0), cls.count(1)))
+    Vp2, Fp2 = build_klein_quartic(dual=False)
+    for fi, c in enumerate(cls):
+        if c == 0:
+            g = np.mean([Vp2[a] for a in Fp2[fi]], axis=0)
+            g = g / np.linalg.norm(g)
+            if float(np.max(np.abs(np.abs(g)
+                                   - 1.0 / math.sqrt(3.0)))) > 1e-9:
+                bad.append('corner face %d off axis' % fi)
+    ok &= not bad
+    print("topology: Klein quartic flags -- 336 per view, chi -4, "
+          "handedness 168 + 168 checkerboarded; tetrahedral orbits "
+          "8 corner + 48 edge triangles, corners on 3-fold axes; "
+          "Petrie polygon = 8 chained edges %s"
           % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     print("RESULT:", "OK" if ok else "FAIL")

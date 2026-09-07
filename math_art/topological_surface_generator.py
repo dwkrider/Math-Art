@@ -50,7 +50,13 @@
 #     168, carried through to the mesh: 56 triangles or the dual 24
 #     heptagons on the Schulte-Wills genus-3 polyhedron.  The self-test
 #     counts all 336 symmetries (with reflections) flag by flag -- see
-#     minsurf/topology.build_klein_quartic.
+#     minsurf/topology.build_klein_quartic.  Options expose the
+#     structure Baez narrates: barycentric subdivision into the 336
+#     flag triangles of Klein's own figure (24 x 14, one per symmetry),
+#     colourings by heptagon (24), by tetrahedral orbit (the 8 corner
+#     + 48 edge triangles of Egan's picture), by handedness (168
+#     mirror-preserving + 168 mirror-reversing flags), and one traced
+#     Petrie polygon (the length-8 LRLR... zigzag that names the map).
 #
 # Non-orientable surfaces cannot embed in 3-space, so KLEIN / KLEIN8 /
 # CROSSCAP / ROMAN / BOY are immersions with self-intersections. The
@@ -152,7 +158,10 @@ try:
                                    build_klein_figure8, build_roman,
                                    build_sudanese_mobius,
                                    build_twist_strip, edge_face_counts,
-                                   winding_conflict_edges)
+                                   winding_conflict_edges,
+                                   subdivide_flags,
+                                   klein_quartic_tetra_classes,
+                                   petrie_polygon_edges)
 except ImportError:  # flat import outside the package
     from minsurf.topology import (build_boy, build_crosscap, build_morin,
                                   build_ovalesque, ovalesque_point,
@@ -165,7 +174,10 @@ except ImportError:  # flat import outside the package
                                   build_klein_figure8, build_roman,
                                   build_sudanese_mobius,
                                   build_twist_strip, edge_face_counts,
-                                  winding_conflict_edges)
+                                  winding_conflict_edges,
+                                  subdivide_flags,
+                                  klein_quartic_tetra_classes,
+                                  petrie_polygon_edges)
 try:
     from .sharp_creases import mark_sharp
 except ImportError:  # flat import outside the package
@@ -367,6 +379,59 @@ if _IN_BLENDER:
         context.view_layer.objects.active = obj
         return obj
 
+    _QUARTIC_ATTR = "tiling"
+    _QUARTIC_MAT = "Klein Quartic Tiling"
+
+    def _quartic_palette(n):
+        """n well-separated colors, deterministically, by stepping the
+        hue around the wheel by the golden ratio."""
+        import colorsys
+        cols = []
+        for i in range(n):
+            h = (0.08 + i * 0.61803398875) % 1.0
+            v = (0.90, 0.60, 0.75)[i % 3]
+            cols.append(colorsys.hsv_to_rgb(h, 0.78, v))
+        return cols
+
+    def _ensure_quartic_material():
+        """A material that shows the tiling color attribute.  Writing
+        a color attribute alone changes nothing on screen: with no
+        material the viewport shades the mesh flat grey in every
+        mode.  Same Attribute -> Base Color wiring as
+        `curvature_color`, in one shared material."""
+        mat = bpy.data.materials.get(_QUARTIC_MAT)
+        if mat is None:
+            mat = bpy.data.materials.new(_QUARTIC_MAT)
+        mat.use_nodes = True
+        nt = mat.node_tree
+        bsdf = attr = out = None
+        for node in nt.nodes:
+            if node.type == 'BSDF_PRINCIPLED' and bsdf is None:
+                bsdf = node
+            elif node.type == 'ATTRIBUTE' and attr is None:
+                attr = node
+            elif node.type == 'OUTPUT_MATERIAL' and out is None:
+                out = node
+        if out is None:
+            out = nt.nodes.new('ShaderNodeOutputMaterial')
+        if bsdf is None:
+            bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
+            bsdf.location = (out.location.x - 280, out.location.y)
+        # == not `is`: bpy hands back a fresh wrapper on every access
+        if not any(lk.to_node == out and lk.from_node == bsdf
+                   for lk in nt.links):
+            nt.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+        if attr is None:
+            attr = nt.nodes.new('ShaderNodeAttribute')
+            attr.location = (bsdf.location.x - 280, bsdf.location.y)
+        attr.attribute_type = 'GEOMETRY'
+        attr.attribute_name = _QUARTIC_ATTR
+        if not any(lk.from_node == attr and lk.to_node == bsdf
+                   for lk in nt.links):
+            nt.links.new(attr.outputs['Color'],
+                         bsdf.inputs['Base Color'])
+        return mat
+
     class MESH_OT_topological_surface_add(bpy.types.Operator):
         """Add a classic topological surface (Klein bottle, projective
         plane immersions, genus-g handlebody, solid twisted strip)"""
@@ -491,6 +556,42 @@ if _IN_BLENDER:
                         "polyhedron toward a smooth form, keeping the "
                         "tiling as the control cage; 0 keeps the flat "
                         "faces")
+        quartic_flags: BoolProperty(
+            name="Flag Triangles", default=False,
+            description="Subdivide every face into its flag "
+                        "triangles, the way Klein drew his own "
+                        "figure: 14 per heptagon, 336 in all, one "
+                        "triangle for every symmetry of the surface "
+                        "including reflections (Klein Quartic preset "
+                        "only)")
+        quartic_color: EnumProperty(
+            name="Coloring", default='NONE',
+            description="Which structure of the tiling to paint into "
+                        "a color attribute (Klein Quartic preset "
+                        "only)",
+            items=[('NONE', "Plain",
+                    "No color attribute"),
+                   ('HEPTAGON', "Heptagons",
+                    "One color per heptagon of the 24, keeping the "
+                    "tiling readable when rounding smooths the faces "
+                    "away; on the triangle tiling each corner takes "
+                    "the color of the heptagon it touches"),
+                   ('TETRA', "Tetrahedral Orbits",
+                    "The 56 triangles split under the 12 rigid "
+                    "rotations into 8 corner triangles -- two per "
+                    "corner of the lurking tetrahedron -- and 48 "
+                    "edge triangles, eight per edge, colored "
+                    "distinctly"),
+                   ('CHIRAL', "Handedness",
+                    "The 336 flag triangles split evenly into the "
+                    "168 mirror-preserving and 168 mirror-reversing "
+                    "symmetries they stand for; needs flag "
+                    "triangles"),
+                   ('PETRIE', "Petrie Polygon",
+                    "Highlight one Petrie polygon: the closed "
+                    "left-right zigzag of 8 edges that names the "
+                    "tiling; needs flag triangles, which give the "
+                    "zigzag a face band thin enough to read")])
         cross_caps: IntProperty(
             name="Cross-Caps k", default=3, min=1, max=8,
             description="Number of cross-caps: N_k has Euler "
@@ -503,10 +604,11 @@ if _IN_BLENDER:
                         "small enough to keep several clear of one "
                         "another")
         cap_pinch: FloatProperty(
-            name="Cross-Cap Pinch", default=0.55, min=0.0, max=1.5,
-            description="How far each cross-cap is lifted over its "
-                        "double-point segment; 0 leaves the two sheets "
-                        "coincident and unreadable")
+            name="Cross-Cap Height", default=1.0, min=0.0, max=1.5,
+            description="How tall each cross-cap dome rises off the "
+                        "surface; 1 keeps the classical proportion, "
+                        "0 flattens the cap and its crossing sheets "
+                        "onto the surface")
         twists: IntProperty(
             name="Half-Twists", default=1, min=0, max=12,
             description="Half-twists per revolution; 1 = Mobius band")
@@ -611,8 +713,12 @@ if _IN_BLENDER:
                         hole=self.cap_size, pinch=self.cap_pinch)
                 name = "Dyck Surface"
             elif p == 'KLEIN_QUARTIC':
-                V, F = build_klein_quartic(
-                    dual=(self.quartic_tiling == 'HEPTAGONS'))
+                quartic_dual = (self.quartic_tiling == 'HEPTAGONS')
+                V, F = build_klein_quartic(dual=quartic_dual)
+                quartic_base = F
+                quartic_info = None
+                if self.quartic_flags:
+                    V, F, quartic_info = subdivide_flags(V, F)
                 name = "Klein Quartic"
             elif p == 'GENUS':
                 cell = 8.0 / max(self.res_u, 16)
@@ -647,6 +753,9 @@ if _IN_BLENDER:
                 # geometry, not a fold a subdivider should keep.
                 mark_sharp(obj.data, winding_conflict_edges(F),
                            crease=False)
+            if p == 'KLEIN_QUARTIC' and self.quartic_color != 'NONE':
+                self._color_quartic(obj, F, quartic_dual,
+                                    quartic_info, quartic_base)
             if p == 'KLEIN_QUARTIC' and self.quartic_rounding > 0:
                 # round the tiled polyhedron toward the smooth genus-3
                 # form; the exact combinatorics stay in the base mesh,
@@ -659,6 +768,79 @@ if _IN_BLENDER:
                 mod.thickness = self.thickness
                 mod.offset = 0.0
             return {'FINISHED'}
+
+        def _color_quartic(self, obj, F, dual, info, base_faces):
+            """Paint the chosen structure of the quartic's tiling into
+            a per-corner color attribute (see the Coloring property).
+
+            Every mode routes through the same two facts: a flag
+            (vertex, edge, face) belongs to exactly one heptagon --
+            its face in the heptagon view, its vertex in the triangle
+            view, where each vertex IS a heptagon of the dual -- and
+            the tetrahedral classes live on the 56 primal triangles,
+            whose ids are exactly the dual view's vertex ids."""
+            me = obj.data
+            mode = self.quartic_color
+            hep = _quartic_palette(24)
+            corner_col = (0.85, 0.25, 0.20)
+            edge_col = (0.55, 0.62, 0.72)
+            plain = (0.75, 0.73, 0.70)
+            hi = (0.95, 0.55, 0.12)
+            cls = (klein_quartic_tetra_classes()
+                   if mode == 'TETRA' else None)
+            loopset = (set(petrie_polygon_edges(base_faces))
+                       if mode == 'PETRIE' else None)
+            if mode in ('CHIRAL', 'PETRIE') and info is None:
+                # without the subdivision, handedness has nothing to
+                # color and the Petrie band swallows whole faces --
+                # a third of the surface -- instead of tracing a path
+                self.report({'WARNING'},
+                            "This coloring reads on the flag "
+                            "triangles; enable Flag Triangles to "
+                            "see it")
+                return
+            buf = []
+            for fi, f in enumerate(F):
+                percorner = None
+                if mode == 'HEPTAGON':
+                    if info is not None:
+                        hid = info[fi][2] if dual else info[fi][0]
+                        col = hep[hid % 24]
+                    elif dual:
+                        col = hep[fi % 24]
+                    else:
+                        percorner = [hep[v % 24] for v in f]
+                elif mode == 'TETRA':
+                    if info is not None:
+                        pid = info[fi][0] if dual else info[fi][2]
+                        col = (corner_col if cls[pid] == 0
+                               else edge_col)
+                    elif dual:
+                        percorner = [corner_col if cls[v] == 0
+                                     else edge_col for v in f]
+                    else:
+                        col = corner_col if cls[fi] == 0 else edge_col
+                elif mode == 'CHIRAL':
+                    col = ((0.92, 0.86, 0.55) if info[fi][3] == 0
+                           else (0.35, 0.42, 0.60))
+                else:  # PETRIE (flags guaranteed by the guard above)
+                    col = hi if info[fi][1] in loopset else plain
+                if percorner is None:
+                    percorner = [col] * len(f)
+                for c in percorner:
+                    buf.extend((c[0], c[1], c[2], 1.0))
+            if len(buf) != 4 * len(me.loops):
+                self.report({'WARNING'},
+                            "color skipped: corner count changed "
+                            "during mesh validation")
+                return
+            att = me.color_attributes.new(name=_QUARTIC_ATTR,
+                                          type='FLOAT_COLOR',
+                                          domain='CORNER')
+            att.data.foreach_set('color', buf)
+            me.color_attributes.active_color = att
+            me.materials.append(_ensure_quartic_material())
+            me.update()
 
         def draw(self, context):
             lay = self.layout
@@ -679,6 +861,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'res_v')
             elif p == 'KLEIN_QUARTIC':
                 lay.prop(self, 'quartic_tiling')
+                lay.prop(self, 'quartic_flags')
+                lay.prop(self, 'quartic_color')
                 lay.prop(self, 'quartic_rounding')
             elif p == 'GENUS':
                 lay.prop(self, 'genus')
@@ -838,6 +1022,19 @@ def _selftest():
     V, F = build_klein_quartic(dual=True)
     stats("klein73", V, F, -4)
     assert len(V) == 56 and len(F) == 24
+    # the flag subdivision carries all 336 flags as faces in either
+    # view, split 168/168 by handedness; the 56 triangles fall 8 + 48
+    # under the rigid rotations; one Petrie polygon has 8 edges
+    for dual in (False, True):
+        Vq, Fq = build_klein_quartic(dual=dual)
+        V2, T2, inf = subdivide_flags(Vq, Fq)
+        stats("kleinflag", V2, T2, -4)
+        assert len(T2) == 336
+        ch = [c for _v, _e, _f, c in inf]
+        assert ch.count(0) == 168 and ch.count(1) == 168
+    cls = klein_quartic_tetra_classes()
+    assert (cls.count(0), cls.count(1)) == (8, 48)
+    assert len(petrie_polygon_edges(build_klein_quartic(dual=False)[1])) == 8
     for n in (0, 1, 2, 3):
         V, F = build_twist_strip(n, 96, ridge=(n == 1))
         cnt = edge_face_counts(F)
