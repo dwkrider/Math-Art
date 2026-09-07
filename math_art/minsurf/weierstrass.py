@@ -13776,18 +13776,27 @@ def ww_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 # ratio of the two catenoidal growth rates (the embeddedness knob).
 #
 # MEASURED assembly topology (kap_mesh): 1 component, chi = -4k with
-# 4 catenoid rims, manifold, oriented -- EXACT for k = 3, 4, 6 (and
-# gated).  OPEN QUESTION at k = 2: the mesh measures chi = -6 (genus
-# 2) against the naive 2-cover target -8; at k = 2 the cover's deck
-# transformation coincides with the dihedral rotation Rz(pi) (the
-# tau-cycle monodromy of G is e^(2 pi i/k) by the b-constraint), so
-# the notebook's own 4k-copy assembly may genuinely realize a
-# quotient with one fewer handle there.  The k = 2 member is the one
-# the page says admits no embedded example; its geometry registers
-# against Weber's export like the rest (all six exports land at
-# 0.2-0.4% median of span with per-export cutoff radii, r0 ~ 1e-2.4
-# .. 1e-1.6, r1 ~ 1e1.6 .. 1e2.4 -- his exports truncate the ends
-# closer in than the notebook's r0 = 0.01, r1 = 1000 cell).
+# 4 catenoid rims, manifold, oriented -- EXACT at EVERY member of
+# every k (2..12), matching the Riemann-Hurwitz derivation above, so
+# the genus is uniformly 2k - 1 (3, 5, 7, 11, ...).  The two k = 4
+# members (and the two k = 6 members) have the SAME topology -- they
+# are the two solutions of the period problem for the same k,
+# differing in geometry only.  A first build measured chi = -6 at
+# k = 2 and the derivation said to doubt the mesh: correctly -- the
+# k = 2 member has c = 0.015, its middle end's chart preimage beta
+# sits at 0.9956, and the notebook's r0 = 0.01 truncation hole
+# around that end SWALLOWS the quarter corner z = 1 (corner radius
+# |invtrf(1)| = 0.0055 < r0), cutting the (1/2, 0) corner out of the
+# complex and shifting chi by +2.  kap_sheet now clamps r0 below
+# 0.45 |invtrf(1)|.  Registration: all six of Weber's exports (k =
+# 2, 3, 4 twice, 6 twice) land at 0.2-0.4% median of span with
+# per-export cutoff radii fitted (r0 ~ 1e-2.4..1e-1.6, r1 ~
+# 1e1.6..1e2.4 -- his exports truncate the ends closer in than the
+# notebook's r0 = 0.01, r1 = 1000 cell).  Orders 1-6 of KAP_MEMBERS
+# are the exported members WITH reference images (k2 a=.22, k3
+# a=.14, k4 a=.07, k4 a=.22, k6 a=.11, k6 a=.27); orders 7-9 (k8
+# a=.1, k10 a=.2, k12 a=.15) have NO exports -- do not register
+# against pictures that do not exist.
 #
 # References:
 # - N. Kapouleas, "Complete embedded minimal surfaces of finite total
@@ -14115,6 +14124,13 @@ def kap_sheet(k, mi, nx=4, ny=18, r0=0.01, r1=1000.0, subdiv=10):
     tau = 1j * t
     rect, trf, invtrf, C = kap_chart(k, a, b, c, d, t)
     lam = C['lam']
+    # the middle-end truncation hole (radius r0 around w = 0, the
+    # end 1/2 - c) must NOT swallow the quarter corner z = 1 at
+    # radius |invtrf(1)| -- at k = 2 (c = 0.015, beta -> 1) the
+    # notebook's r0 = 0.01 exceeds that corner radius, cutting the
+    # (1/2, 0) corner out of the complex and shifting chi by +2
+    corner1 = abs(float(np.real(invtrf(1.0))))
+    r0 = min(r0, 0.45 * corner1)
     br = [float(np.real(invtrf(x)))
           for x in (-lam, -1.0, 1.0, lam, C['dn'], C['eta'], C['xi'])]
     br += [-float(np.real(invtrf(x)))
@@ -14247,6 +14263,21 @@ def kap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     # symmetry elements and must join both seams -- classifying it
     # into one leaves a one-edge slit at every corner of every copy
     selB = (np.imag(Zb) < 1e-4) & (~selT)
+    # force BOTH flags at the four quarter corners analytically (the
+    # break radii |invtrf(-1, 1, lambda, -lambda)| are exact grid
+    # values; chart rounding can push the computed Z a hair past the
+    # 1e-4 window, splitting the corner's 4-copy orbit into 2 + 2 --
+    # at k = 2 that cost exactly the two vertex merges that made the
+    # measured chi -6 instead of the derived -4k)
+    xr_ = np.abs(W[:, 0])
+    C_ = meta['consts']
+    for x_, fa, fb in ((-1.0, 'B', 'L'), (1.0, 'B', 'R'),
+                       (C_['lam'], 'T', 'R'), (-C_['lam'], 'T', 'L')):
+        rc = abs((x_ - C_['beta']) / (x_ - C_['alpha']))
+        ic = int(np.argmin(np.abs(xr_ - rc)))
+        if abs(xr_[ic] - rc) < 1e-9 * max(1.0, rc):
+            for f_ in (fa, fb):
+                {'L': selL, 'R': selR, 'T': selT, 'B': selB}[f_][ic]                     = True
     # snap each arc onto its symmetry element
     F[selL | selR, 0, 2] = 0.0                   # z = 0 plane
     F[selB, 0, 1] = 0.0                          # y = 0 plane

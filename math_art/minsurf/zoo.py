@@ -2785,15 +2785,15 @@ SURFACE_FAMILY['WEBER_WOLF'] = 'HIGHER'
 # existence proof; k = 2 is believed to admit no embedded example
 # (that member is the immersed illustration).  Yol's solved tables
 # pass the notebook's own printed 3-component period test to
-# <= 1.3e-7 (gated below); topology gates: 1 component, chi = -4k
-# with 4 catenoid rims for k >= 3, matching genus 2k - 1 from
-# Riemann-Hurwitz on the k-cover of the 4-ended quotient torus.  The
-# k = 2 assembly measures chi = -6 (genus 2) against the naive
-# 2-cover target -8 -- recorded as an open question in the module
-# header; its geometry registers against Weber's export like the
-# rest (0.2-0.4% median of span across all six exports, cutoff radii
-# fitted per export).  See the block above `kap_mesh` in
-# weierstrass.py for data, tables and references.
+# <= 1.3e-7 (gated below); topology gate DERIVED from the k-cover's
+# Riemann-Hurwitz count: 1 component, chi = -4k, 4 catenoid rims at
+# EVERY member (genus uniformly 2k - 1; the paired members at the
+# same k share their topology and differ in geometry only).  The
+# default member is exported (reference image exists); orders 7-9
+# have no export.  Geometry registers against all six of Weber's
+# exports at 0.2-0.4% median of span (cutoff radii fitted per
+# export).  See the block above `kap_mesh` in weierstrass.py for
+# data, tables, the k = 2 corner-truncation trap and references.
 WE_SURFACES['KAPOULEAS'] = {
     'label': "Kapouleas Surface (desingularized catenoids)",
     'family': 'HIGHER',
@@ -3997,16 +3997,23 @@ def _selftest():
     kap_ok &= gg_ok
     print(f"Kapouleas growth-rate ratios at the six exported members "
           f"{'OK' if gg_ok else 'FAIL'}")
-    for order_, k_, chi_w, loops_w in ((2, 3, -12, 4), (3, 4, -16, 4),
-                                       (1, 2, -6, 4)):
+    # topology target DERIVED, not transcribed: the k-cover of the
+    # 4-ended quotient torus is totally branched over the four ends
+    # (Riemann-Hurwitz: chi_closed = -4(k-1), genus 2k - 1), so the
+    # end-truncated mesh must measure chi = 2 - 2(2k-1) - 4 = -4k
+    # with 4 catenoid rims -- at EVERY member, k = 2 included (a
+    # first build measured -6 there; the derivation flagged the mesh
+    # and the fault was the r0 hole swallowing the z = 1 corner)
+    for order_ in (1, 2, 3, 4):
+        k_ = we.KAP_MEMBERS[order_ - 1][0]
         V_, F_, _uv = we.kap_mesh(None, 48, 48, order_, 1.2, 1.0)
         chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(
             np.asarray(V_), F_)
-        good_ = (ncomp_ == 1 and chi_ == chi_w and loops_ == loops_w
+        good_ = (ncomp_ == 1 and chi_ == -4 * k_ and loops_ == 4
                  and nm2_ == 0 and orient_)
         kap_ok &= good_
         print(f"Kapouleas k={k_} assembly: comps={ncomp_} chi={chi_} "
-              f"(want {chi_w}) loops={loops_} nonman={nm2_} "
+              f"(derived {-4 * k_}) loops={loops_} nonman={nm2_} "
               f"oriented={orient_} {'OK' if good_ else 'FAIL'}")
     ok &= kap_ok
 
