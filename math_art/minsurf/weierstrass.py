@@ -13304,9 +13304,12 @@ def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 # (g = 2), and at g = 3 the Weber-Wolf surface: two catenoidal ends,
 # three planar ends, the connections between consecutive planar
 # levels realized by Costa saddles.  The k-fold dihedral versions
-# (k = 2 is the genus-3 surface; k = 3, 4, 5 have genus 2k - 1) come
-# from Weber's DH11 notebook (higher-symmetry portion by Ramazan
-# Yol).
+# (k = 2 is the genus-3 surface; higher k gives genus 3(k - 1) --
+# the k-cover of the sphere is totally branched over the 8 points
+# 0, +-1, +-a, +-b, infinity, so Riemann-Hurwitz gives
+# 2 - 2g = 2k - 8(k - 1); the meshes measure chi = 3 - 6k with 5 end
+# rims, exactly 2 - 2(3k - 3) - 5) come from Weber's DH11 notebook
+# (higher-symmetry portion by Ramazan Yol).
 #
 # Data (DH11.nb, transcribed; all powers pointwise principal):
 #     phi1 = z^(1/k-1) (z^2-a^2)^(1/k-1) (z^2-1)^(1-1/k)
@@ -13336,11 +13339,15 @@ def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 # images of z = 1, 0 and the branch-merge).  dz/dw is used IN CLOSED
 # FORM (dw/dz = 2z(2/(z^2-a^2) - 1/(z^2-b^2))); integration is one
 # horizontal sweep along a mid row plus vertical column sweeps, the
-# anchor by a straight z-path from the base z = i, and the
-# normalization X(0) = 0 by the imaginary-axis path (upper-side
-# principal branches throughout).  Assembly: 180-degree rotation
-# about the horizontal line at azimuth -pi/(2k), mirror across
-# y = 0, then the k vertical rotations -- the notebook's mp2/mp3/mp4.
+# anchor by a straight z-path from the base z = i for F2, the F3
+# strip CONTINUED from F2 across the y = 0 seam (see ww_patches),
+# and the normalization X(0) = 0 by the imaginary-axis path
+# (upper-side principal branches throughout).  Assembly: 180-degree
+# rotation about the horizontal line at azimuth -pi/(2k), mirror
+# across y = 0, then the k vertical rotations -- the notebook's
+# mp2/mp3/mp4 -- WELDED along the measured seam families into one
+# manifold surface (see ww_mesh; chi = 3 - 6k with 5 end rims and a
+# consistent orientation, measured at every k).
 #
 # GROUND TRUTH: registered against Weber's own PoVRay exports of the
 # three members he renders (k = 2, 3, 4): GT -> ours one-sided means
@@ -13466,9 +13473,20 @@ def ww_tst(k, a, b, n=3000):
 
 
 def ww_patches(k, nx=10, ny=26, windows=None):
-    """The two log-chart strips of the fundamental piece, integrated
-    (mid-row sweep + vertical columns, z-path anchor from z = i,
-    X(0) = 0 normalization).  Returns ([F2, F3], (a, b, rho))."""
+    """The two log-chart strips of the fundamental piece.  F2 is
+    integrated as before (mid-row sweep + vertical columns, z-path
+    anchor from z = i, X(0) = 0 normalization).  F3 is anchored by
+    DIRECT CONTINUATION from F2 across the y = 0 seam: the two
+    inverse branches agree on y = 0 for x below the branch merge
+    log(4(b^2 - a^2)) (measured: the +-delta rows differ by
+    O(delta) there, and by O(1) beyond the merge where the branches
+    are genuinely distinct real-z arcs), so the two strips share one
+    rigid frame instead of each trusting its own z-anchor path.  Its
+    y grid mirrors F2's quadratic grading toward the seam -- the
+    earlier sqrt grading (a mis-transcription of the notebook's
+    NRange[eps^4, .]^(1/2)) truncated the strip 0.042 pi short of
+    y = 0, which is exactly why the F3 pieces could never weld.
+    Returns ([F2, F3], (a, b, rho), (X1, X2, Y2, Y1))."""
     a, b = WW_MEMBERS[k]
     rho = ww_rho(k, a, b).real
     plan1, plan2, cat = windows or WW_WINDOWS[k]
@@ -13486,70 +13504,199 @@ def ww_patches(k, nx=10, ny=26, windows=None):
     X1 = xgrid([-plan1, x1, x2, x3, plan2, cat])
     X2 = xgrid([-plan1, x1, x2, x3, plan2])
     Y2 = np.pi * np.linspace(eps ** 0.25, 1.0 - eps, ny) ** 2
-    Y1 = np.sort(-np.pi
-                 * np.linspace(eps ** 0.25, 1.0 - eps, ny)[::-1] ** 0.5)
-    out = []
-    for XR, YR, branch in ((X1, Y2, +1), (X2, Y1, -1)):
-        zfn, omw = ww_forms_w(k, a, b, rho, branch)
-        W = XR[:, None] + 1j * YR[None, :]
-        nu2, nv2 = W.shape
-        F = np.zeros((nu2, nv2, 3), dtype=complex)
-        jm = nv2 // 2
-        im = int(np.argmin(np.abs(XR - 0.5 * (x3 + plan2))))
-        za = complex(zfn(W[im, jm]))
-        path = np.linspace(1j, za, 1200)
-        F[im, jm] = _kus_gl(om, path[:-1], path[1:], 10).sum(axis=0)
-        for i in range(im + 1, nu2):
-            F[i, jm] = F[i - 1, jm] + _kus_gl(omw, W[i - 1, jm],
-                                              W[i, jm])
-        for i in range(im - 1, -1, -1):
-            F[i, jm] = F[i + 1, jm] + _kus_gl(omw, W[i + 1, jm],
-                                              W[i, jm])
-        for j in range(jm + 1, nv2):
-            F[:, j] = F[:, j - 1] + _kus_gl(omw, W[:, j - 1], W[:, j])
-        for j in range(jm - 1, -1, -1):
-            F[:, j] = F[:, j + 1] + _kus_gl(omw, W[:, j + 1], W[:, j])
-        out.append(np.real(F))
+    Y1 = -Y2[::-1]
+    zfn2, omw2 = ww_forms_w(k, a, b, rho, +1)
+    zfn3, omw3 = ww_forms_w(k, a, b, rho, -1)
+    # ---- F2: anchored from z = i --------------------------------
+    W2 = X1[:, None] + 1j * Y2[None, :]
+    n2x, n2y = W2.shape
+    F2 = np.zeros((n2x, n2y, 3), dtype=complex)
+    jm = n2y // 2
+    im = int(np.argmin(np.abs(X1 - 0.5 * (x3 + plan2))))
+    za = complex(zfn2(W2[im, jm]))
+    path = np.linspace(1j, za, 1200)
+    F2[im, jm] = _kus_gl(om, path[:-1], path[1:], 10).sum(axis=0)
+    for i in range(im + 1, n2x):
+        F2[i, jm] = F2[i - 1, jm] + _kus_gl(omw2, W2[i - 1, jm],
+                                            W2[i, jm])
+    for i in range(im - 1, -1, -1):
+        F2[i, jm] = F2[i + 1, jm] + _kus_gl(omw2, W2[i + 1, jm],
+                                            W2[i, jm])
+    for j in range(jm + 1, n2y):
+        F2[:, j] = F2[:, j - 1] + _kus_gl(omw2, W2[:, j - 1], W2[:, j])
+    for j in range(jm - 1, -1, -1):
+        F2[:, j] = F2[:, j + 1] + _kus_gl(omw2, W2[:, j + 1], W2[:, j])
+    # ---- F3: continued from F2 across the y = 0 seam ------------
+    W3 = X2[:, None] + 1j * Y1[None, :]
+    n3x, n3y = W3.shape
+    F3 = np.zeros((n3x, n3y, 3), dtype=complex)
+    xm = math.log(4.0 * (b * b - a * a))
+    i_s = int(np.argmin(np.abs(X2 - (xm - 1.5))))
+    zs2 = complex(zfn2(W2[i_s, 0]))
+    zs3 = complex(zfn3(W3[i_s, -1]))
+    seg = np.linspace(zs2, zs3, 9)
+    F3[i_s, -1] = F2[i_s, 0] + _kus_gl(om, seg[:-1], seg[1:],
+                                       10).sum(axis=0)
+    jm3 = n3y // 2
+    for j in range(n3y - 2, jm3 - 1, -1):
+        F3[i_s, j] = F3[i_s, j + 1] + _kus_gl(omw3, W3[i_s, j + 1],
+                                              W3[i_s, j])
+    for i in range(i_s + 1, n3x):
+        F3[i, jm3] = F3[i - 1, jm3] + _kus_gl(omw3, W3[i - 1, jm3],
+                                              W3[i, jm3])
+    for i in range(i_s - 1, -1, -1):
+        F3[i, jm3] = F3[i + 1, jm3] + _kus_gl(omw3, W3[i + 1, jm3],
+                                              W3[i, jm3])
+    for j in range(jm3 + 1, n3y):
+        F3[:, j] = F3[:, j - 1] + _kus_gl(omw3, W3[:, j - 1], W3[:, j])
+    for j in range(jm3 - 1, -1, -1):
+        F3[:, j] = F3[:, j + 1] + _kus_gl(omw3, W3[:, j + 1], W3[:, j])
     zp = 1j * np.linspace(1.0, 1e-9, 3000) ** 2
     delta = np.real(_kus_gl(om, zp[:-1], zp[1:], 10).sum(axis=0))
-    return [o - delta for o in out], (a, b, rho)
+    return ([np.real(F2) - delta, np.real(F3) - delta], (a, b, rho),
+            (X1, X2, Y2, Y1))
 
 
 def ww_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     """Weber-Wolf surface: order picks k = order + 1 (order 1 = the
     genus-3, 5-end borderline surface; higher = the k-fold dihedral
-    versions of genus 2k - 1).  `radius` follows the catenoid and
-    planar ends further out."""
+    versions of genus 3(k - 1)).  `radius` follows the catenoid and
+    planar ends
+    further out.  The orbit of the two-strip fundamental piece under
+    the dihedral group is WELDED into one surface by exact grid-index
+    pairs along its measured seam families:
+      * the F2/F3 chart continuation across y = 0, x below the
+        branch merge (same group element, same column);
+      * the y = 0-plane mirror arcs of both strips beyond the merge
+        (partner g My);
+      * F2's y = pi edge, measured as THREE arcs: x < x1 (z real in
+        (1, a)) lies in the y = 0 mirror plane (partner g My);
+        x1 < x < log(a^4/b^2) (z real in (0, 1)) lies in the
+        mirror plane at azimuth -pi/k (partner g Q,
+        Q = Rz(-2 pi/k) My; at k = 2 this is the x = 0 plane);
+        x beyond that (z imaginary) lies ON the in-surface straight
+        line at azimuth -pi/(2 k) (partner g R) -- with the arc
+        junctions at the z-axis (x = x1) and at f(0) = 0;
+      * F3's whole y = -pi edge (z real in (a, b)), in the same
+        azimuth -pi/k mirror plane (partner g Q).
+    The ends (z = a catenoid, z = infinity, z = b planar) stay open
+    rims.  Winding parity of each copy is the parity of its point
+    group element (R and My each reverse)."""
     del spec, theta
     k = int(np.clip(order + 1, 2, 5))
     p1, p2, cat = WW_WINDOWS[k]
     fac = float(np.clip(radius / 1.2, 0.5, 1.6))
     nx = max(6, int(nu / 6))
     ny = max(16, int(nv * 0.55))
-    patches, _meta = ww_patches(k, nx=nx, ny=ny,
-                                windows=(p1 * fac, p2, cat * fac))
+    patches, meta2, grids = ww_patches(k, nx=nx, ny=ny,
+                                       windows=(p1 * fac, p2,
+                                                cat * fac))
+    a, b, _rho = meta2
+    X1, X2, Y2, Y1 = grids
+    F2g, F3g = patches
+    xm = math.log(4.0 * (b * b - a * a))
+    xr = math.log(a ** 4 / (b * b))
     u = np.array([math.cos(math.pi / (2 * k)),
                   -math.sin(math.pi / (2 * k)), 0.0])
     R = 2.0 * np.outer(u, u) - np.eye(3)
     My = np.diag([1.0, -1.0, 1.0])
-    Vs, Fs = [], []
+    cq, sq = math.cos(-TAU / k), math.sin(-TAU / k)
+    Q = np.array([[cq, -sq, 0.0], [sq, cq, 0.0],
+                  [0.0, 0.0, 1.0]]) @ My
+    nq = np.array([math.sin(math.pi / k), math.cos(math.pi / k),
+                   0.0])
+    x1s = math.log((a * a - 1.0) ** 2 / (b * b - 1.0))
+    # snap each boundary arc onto its measured symmetry element
+    s2sel = X1 > xm + 1e-9                       # F2 y=0 mirror arc
+    F2g[s2sel, 0, 1] = 0.0
+    s3sel = X2 > xm + 1e-9                       # F3 y=0 mirror arc
+    F3g[s3sel, -1, 1] = 0.0
+    mysel = X1 < x1s - 1e-9                      # F2 y=pi, x < x1
+    F2g[mysel, -1, 1] = 0.0
+    qsel = (X1 > x1s + 1e-9) & (X1 < xr - 1e-9)  # F2 y=pi Q-plane arc
+    P_ = F2g[qsel, -1]
+    F2g[qsel, -1] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    rsel = X1 > xr + 1e-9                        # F2 y=pi R-line arc
+    P_ = F2g[rsel, -1]
+    F2g[rsel, -1] = (P_ @ u)[:, None] * u[None, :]
+    ic1 = int(np.argmin(np.abs(X1 - x1s)))       # corner on the z axis
+    if abs(X1[ic1] - x1s) < 1e-9:
+        F2g[ic1, -1, 0] = 0.0
+        F2g[ic1, -1, 1] = 0.0
+    icr = int(np.argmin(np.abs(X1 - xr)))        # corner z = 0: f = 0
+    if abs(X1[icr] - xr) < 1e-9:
+        F2g[icr, -1] = 0.0
+    P_ = F3g[:, 0]                               # F3 y=-pi Q-plane arc
+    F3g[:, 0] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    # orbit the two strips; keep each copy's transform for the welds
+    n2x, n2y = F2g.shape[:2]
+    n3x, n3y = F3g.shape[:2]
+    NV2 = n2x * n2y
+    NV3 = n3x * n3y
+    q2 = _kus_grid_quads(n2x, n2y)
+    q3 = _kus_grid_quads(n3x, n3y)
+    Vs, Fs, recs = [], [], []
     off = 0
     for kk in range(k):
         th = TAU * kk / k
         c_, s_ = math.cos(th), math.sin(th)
         Rz = np.array([[c_, -s_, 0.0], [s_, c_, 0.0], [0.0, 0.0, 1.0]])
-        for Xg in patches:
-            n2, v2 = Xg.shape[:2]
-            P0 = Xg.reshape(-1, 3)
-            quads0 = _kus_grid_quads(n2, v2)
-            for M, fl in ((Rz, False), (Rz @ R, False),
-                          (Rz @ My, True), (Rz @ My @ R, True)):
+        for E, par in ((np.eye(3), 0), (R, 1), (My, 1), (My @ R, 0)):
+            M = Rz @ E
+            for si, Xg, qq, nvv in ((0, F2g, q2, NV2),
+                                    (1, F3g, q3, NV3)):
+                P0 = Xg.reshape(-1, 3)
                 Vs.append(P0 @ M.T)
                 Fs.extend(tuple(i + off for i in
-                                (q[::-1] if fl else q))
-                          for q in quads0)
-                off += len(P0)
+                                (q[::-1] if par else q))
+                          for q in qq)
+                recs.append((si, M, off))
+                off += nvv
     V = np.concatenate(Vs, axis=0)
+
+    def findpart(si, M):
+        for sj, Mj, o_ in recs:
+            if sj == si and float(np.abs(Mj - M).max()) < 1e-9:
+                return o_
+        return -1
+
+    pairs = []
+    i_seam = [i_ for i_ in range(n3x) if X2[i_] <= xm + 1e-9]
+    i_s2 = [i_ for i_ in range(n2x) if X1[i_] > xm - 1e-9]
+    i_s3 = [i_ for i_ in range(n3x) if X2[i_] > xm - 1e-9]
+    i_my = [i_ for i_ in range(n2x) if X1[i_] <= x1s + 1e-9]
+    i_q = [i_ for i_ in range(n2x)
+           if x1s - 1e-9 <= X1[i_] <= xr + 1e-9]
+    i_r = [i_ for i_ in range(n2x) if X1[i_] >= xr - 1e-9]
+    for si, M, o_ in recs:
+        if si == 0:
+            o3 = findpart(1, M)                  # chart continuation
+            for i_ in i_seam:
+                pairs.append((o_ + i_ * n2y,
+                              o3 + i_ * n3y + n3y - 1))
+            oMy = findpart(0, M @ My)            # y = 0 mirror
+            for i_ in i_s2:
+                pairs.append((o_ + i_ * n2y, oMy + i_ * n2y))
+            for i_ in i_my:                      # y = pi, x < x1
+                pairs.append((o_ + i_ * n2y + n2y - 1,
+                              oMy + i_ * n2y + n2y - 1))
+            oQ = findpart(0, M @ Q)              # azimuth pi/k mirror
+            for i_ in i_q:
+                pairs.append((o_ + i_ * n2y + n2y - 1,
+                              oQ + i_ * n2y + n2y - 1))
+            oR = findpart(0, M @ R)              # R line
+            for i_ in i_r:
+                pairs.append((o_ + i_ * n2y + n2y - 1,
+                              oR + i_ * n2y + n2y - 1))
+        else:
+            oMy = findpart(1, M @ My)            # y = 0 mirror
+            for i_ in i_s3:
+                pairs.append((o_ + i_ * n3y + n3y - 1,
+                              oMy + i_ * n3y + n3y - 1))
+            oQ = findpart(1, M @ Q)              # azimuth pi/k mirror
+            for i_ in range(n3x):
+                pairs.append((o_ + i_ * n3y, oQ + i_ * n3y))
+    V, Fs, _first = _g1h_weld_pairs(V, Fs, pairs)
     V = _center_fit(V, scale, V)
     return V, Fs, None
 

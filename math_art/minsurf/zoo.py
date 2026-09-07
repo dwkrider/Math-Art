@@ -2757,7 +2757,9 @@ SURFACE_FAMILY['LM_SLAB'] = 'SINGLY'
 # conjecture at genus 3 -- two catenoidal and three planar ends, the
 # planar levels connected by Costa saddles; k = order + 1 picks the
 # dihedral symmetry (k = 2 is THE genus-3 surface, k = 3..5 the
-# higher-symmetry versions of genus 2k - 1).  Data from Weber's DH11
+# higher-symmetry versions of genus 3(k - 1) -- Riemann-Hurwitz over
+# the 8 total branch points; the mesh measures chi = 3 - 6k with 5
+# end rims, which pins it).  Data from Weber's DH11
 # notebook with (a, b) RE-SOLVED from the notebook's own period test
 # to ~1e-11 (the stored values plateau at 1e-8..5e-3); registered
 # against Weber's own PoVRay exports of k = 2, 3, 4 at 0.20-0.27%
