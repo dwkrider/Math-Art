@@ -3870,18 +3870,33 @@ def hackman_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 #
 # The patch is bounded by symmetry lines and a mirror curve, all
 # MEASURED off the computed boundary arcs rather than trusted:
-#   - x = 0, y in (0, b): a straight line (fit residual ~2e-5 of
+#   - x = 0, y in (0, b): a straight line A (fit residual ~2e-5 of
 #     length) through f(ib) -- Weber's first rotation axis;
-#   - x = 0, y in (b, y0) and (-y0, a): ONE common straight line
+#   - x = 0, y in (b, y0) and (-y0, a): ONE common straight line B
 #     through f(ia) -- his second axis (the y in (a, 0) piece lands
-#     on a PARALLEL line, offset by the horizontal period: rotating
-#     about it instead builds an overlapping ghost);
+#     on the ghost line L, PARALLEL to A at half the horizontal
+#     period: rotating about it instead builds an overlapping ghost);
 #   - x = 1/4: a planar curve at constant height X3 (std ~1e-17).
-# Assembly = rotate the patch 180 deg about line 1, the pair about
-# line 2, the four about the mirror plane; the two straight-line
-# rotations preserve the mesh winding, the mirror flips it.  The
-# deck translations are z -> z+1 = (0, 0, 1) EXACTLY (X3 = Re z)
-# and z -> z+tau purely horizontal -- both gated.
+# A and B are horizontal, exactly perpendicular, and INTERSECT at
+# f(ib), so the two Schwarz rotations commute and their product
+# r2 r1 IS the z -> z+tau deck: a 180-degree rotation about the
+# vertical line through the intersection, NOT a translation (which
+# is why tolerance-welding translated copies can never close the
+# tau seams; measured Procrustes fit R = diag(-1,-1,1) to 6e-5 of
+# span).  Assembly = rotate the patch 180 deg about A, the pair
+# about B, the four about the mirror plane, then WELD every seam by
+# exact grid-index pairs: the A/B arcs within the cell, the two
+# y-edges under the tau-deck (X(x, +y0) = r2 r1 X(x, -y0)), the
+# mirror rows in-cell and across the vertical deck z -> z+1 =
+# (0, 0, 1) (exact: X3 = Re z, quarter height exactly 1/4), and the
+# L arcs across the horizontal deck T = twice the A -> L offset.
+# Winding parities are solved from the seam traversals (each
+# in-surface Schwarz rotation reverses the attached copy's mesh
+# winding); the result is one consistently oriented manifold sheet:
+# a single cell measures chi = -8 with 6 boundary loops, and the
+# tiled block fits chi = -12 cu cv + 4 cv -- the bulk -12 per cell
+# being two quotient copies of chi = 2 - 2g - e = -6, i.e. the
+# authors' genus g = 3 quotient with e = 2 ends, MEASURED.
 #
 # GROUND TRUTH: registered against Weber's own PoVRay exports of the
 # three members he renders (tau = 0.94i, 1.2i, 2.5i; the dummy.pov
@@ -3904,6 +3919,9 @@ def hackman_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 #   member table transcribed above).
 
 # tau (imag part) -> (a, b), the notebook's solved members
+# (the operator's member knob walks LB_ORDER below, which puts the
+# three members Weber exports -- 0.94i, 1.2i, 2.5i -- at 1, 2, 3, so
+# the DEFAULT lands on a member with a reference image)
 LB_MEMBERS = (
     (0.935, -0.022620778269738837, 0.4599636671778001),
     (0.94, -0.05009519222020475, 0.4533441965300885),
@@ -3913,6 +3931,10 @@ LB_MEMBERS = (
     (2.0, -0.8189334369185804, 0.8375822891619098),
     (2.5, -1.0758721591205636, 1.0807522771543987),
 )
+
+# member-knob order: Weber's three exported members first (0.94i,
+# 1.2i, 2.5i), then the remaining solved table
+LB_ORDER = (1, 3, 6, 0, 2, 4, 5)
 
 
 def _lb_G_path(zp, a, b, tau):
@@ -4038,7 +4060,7 @@ def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         cells = (int(cells), 1)
     cu = int(np.clip(cells[0], 1, 4))
     cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 4))
-    mi = int(np.clip(order - 1, 0, len(LB_MEMBERS) - 1))
+    mi = LB_ORDER[int(np.clip(order - 1, 0, len(LB_ORDER) - 1))]
     tt, a, b = LB_MEMBERS[mi]
     tau = 1j * tt
     y0 = tt / 2.0
@@ -4069,7 +4091,9 @@ def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     X = we_ends_integrate(Wfn, xs, ys, [complex(-1e-9, 0.0)])
     mask = we_ends_mask(xs, ys, punct, r0)
     quads0 = we_ends_quads(X, mask)
-    # the two symmetry lines, measured off the x = 0 boundary arcs
+    # the two symmetry lines and the ghost line, measured off the
+    # x = 0 boundary arcs (margins keep the fits off the branch-point
+    # corners at y = a, b and the end hole at y = 0)
     wid = b - a
     selA = (ys > 0.03 * wid) & (ys < b - 0.003) & mask[0]
     selB = ((ys > b + 0.003) | (ys < a - 0.003)) & mask[0]
@@ -4077,14 +4101,46 @@ def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     cA, uA, rA = _lb_fit_line(X[0][selA])
     cB, uB, rB = _lb_fit_line(X[0][selB])
     cL, uL, _rL = _lb_fit_line(X[0][selL])
-    # snap every boundary arc exactly onto its measured line, and the
-    # mirror curve onto its plane, so the assembled seams weld
-    for sel_, c_, u_ in ((selA, cA, uA), (selB, cB, uB), (selL, cL, uL)):
+    # idealize the measured elements into the EXACT symmetry
+    # configuration the group structure needs: A and B horizontal,
+    # exactly perpendicular, intersecting at q = f(ib); L exactly
+    # parallel to A at horizontal offset d (the horizontal deck is
+    # T = 2d).  With that, r2 r1 = r1 r2 = the z -> z+tau deck (a
+    # 180-degree rotation about the vertical line through q -- NOT a
+    # translation, which is why tolerance welding of translated
+    # copies could never close these seams), and every seam of the
+    # orbit is an exact index-to-index vertex pair.
+    uA = uA * np.sign(uA[1] if abs(uA[1]) > abs(uA[0]) else uA[0])
+    uA[2] = 0.0
+    uA = uA / np.linalg.norm(uA)
+    uB = uB - (uB @ uA) * uA
+    uB[2] = 0.0
+    uB = uB / np.linalg.norm(uB)
+    h0 = 0.5 * (cA[2] + cB[2])
+    M2 = np.array([[uA[0], -uB[0]], [uA[1], -uB[1]]])
+    ts_ = np.linalg.solve(M2, (cB - cA)[:2])
+    q_ = cA + ts_[0] * uA
+    q_[2] = h0
+    dL = (cL - q_) - ((cL - q_) @ uA) * uA
+    dL[2] = 0.0
+    Tx = 2.0 * dL                                # horizontal deck
+    P1 = np.array([0.0, 0.0, 1.0])               # z -> z+1, exact
+    # snap the WHOLE x = 0 boundary column onto its symmetry element
+    # (full partition at the corner values a, 0, b -- the earlier
+    # margin windows left unsnapped slivers), and the mirror curve
+    # onto its plane, so every assembled seam welds vertex-to-vertex
+    snapA = (ys > 0.0) & (ys < b) & mask[0]
+    snapB = ((ys > b) | (ys < a)) & mask[0]
+    snapL = (ys > a) & (ys < 0.0) & mask[0]
+    for sel_, c0_, u_ in ((snapA, q_, uA), (snapB, q_, uB),
+                          (snapL, q_ + dL, uA)):
         P_ = X[0][sel_]
-        X[0][sel_] = c_ + ((P_ - c_) @ u_)[:, None] * u_[None, :]
+        X[0][sel_] = c0_ + ((P_ - c0_) @ u_)[:, None] * u_[None, :]
     h = float(np.median(X[-1, :, 2]))
     X[-1, :, 2] = h
     # prune to used vertices (masked nodes keep huge near-end values)
+    ny2 = len(ys)
+    nx2 = len(xs)
     V0 = X.reshape(-1, 3)
     used = np.zeros(len(V0), dtype=bool)
     for q in quads0:
@@ -4099,14 +4155,19 @@ def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         R_ = 2.0 * np.outer(u_, u_) - np.eye(3)
         return lambda P_: (P_ - c_) @ R_.T + c_
 
-    r1 = rot180(cA, uA)
-    r2 = rot180(cB, uB)
+    r1 = rot180(q_, uA)
+    r2 = rot180(q_, uB)
     parts = [V0, r1(V0)]
     parts = parts + [r2(P_) for P_ in parts]
     parts = parts + [P_ * np.array([1.0, 1.0, -1.0])
                      + np.array([0.0, 0.0, 2.0 * h]) for P_ in parts]
-    # the line rotations are proper (winding kept); the mirror flips
-    flips = (False, False, False, False, True, True, True, True)
+    # winding parities, SOLVED from the seam traversals (each Schwarz
+    # rotation about an in-surface line reverses the mesh winding of
+    # the copy it attaches, the z-mirror reverses it again, and the
+    # tau-deck g preserves it): the unique consistent assignment --
+    # measured, not assumed -- is e/r2r1/mr1/mr2 kept, the rest
+    # reversed; the welded surface then orients consistently
+    flips = (False, True, True, False, True, False, False, True)
     NV = len(V0)
     Vcell = np.concatenate(parts, axis=0)
     Fcell = []
@@ -4114,19 +4175,81 @@ def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         for q in F0:
             qq = tuple(int(i) + k_ * NV for i in q)
             Fcell.append(qq[::-1] if fl_ else qq)
-    # deck translations: z -> z+1 is (0, 0, 1) exactly (X3 = Re z);
-    # z -> z+tau is the horizontal one, measured off the grid seam
-    P2 = np.median(X[:, -1, :] - X[:, 0, :], axis=0)
-    P1 = np.array([0.0, 0.0, 1.0])
+    # tile: u -> the horizontal deck T, v -> the vertical deck (0,0,1)
     Vs, Fs = [], []
     NC = len(Vcell)
     ci = 0
+    cid = {}
     for iu in range(cu):
         for iv in range(cv):
-            Vs.append(Vcell + iu * P1[None, :] + iv * P2[None, :])
+            cid[(iu, iv)] = ci
+            Vs.append(Vcell + iu * Tx[None, :] + iv * P1[None, :])
             Fs.extend(tuple(int(i) + ci * NC for i in q) for q in Fcell)
             ci += 1
     V = np.concatenate(Vs, axis=0)
+
+    # ---- the weld table: every seam an exact index pair ----------
+    # part order: 0 e, 1 r1, 2 r2, 3 r2r1, 4 m, 5 mr1, 6 mr2, 7 mr2r1
+    def bid(j_):                                 # x = 0 column node
+        return remap[j_]
+
+    def mid_(j_):                                # x = 1/4 mirror row
+        return remap[(nx2 - 1) * ny2 + j_]
+
+    def yid(i_, j_):                             # y-edge node
+        return remap[i_ * ny2 + j_]
+
+    pairs = []
+
+    def pw(cell_a, part_a, va, cell_b, part_b, vb):
+        if va >= 0 and vb >= 0:
+            pairs.append((cell_a * 8 * NV + part_a * NV + int(va),
+                          cell_b * 8 * NV + part_b * NV + int(vb)))
+
+    jsA = [j_ for j_ in range(ny2) if snapA[j_] and used[j_]]
+    jsB = [j_ for j_ in range(ny2) if snapB[j_] and used[j_]]
+    jsL = [j_ for j_ in range(ny2) if snapL[j_] and used[j_]]
+    jsM = [j_ for j_ in range(ny2)
+           if used[(nx2 - 1) * ny2 + j_]]
+    isY = [i_ for i_ in range(nx2)
+           if used[i_ * ny2] and used[i_ * ny2 + ny2 - 1]]
+    for (iu, iv), c_ in cid.items():
+        # in-cell: line A (fixed by r1), line B (fixed by r2)
+        for pa_, pb_ in ((0, 1), (2, 3), (4, 5), (6, 7)):
+            for j_ in jsA:
+                pw(c_, pa_, bid(j_), c_, pb_, bid(j_))
+        for pa_, pb_ in ((0, 2), (1, 3), (4, 6), (5, 7)):
+            for j_ in jsB:
+                pw(c_, pa_, bid(j_), c_, pb_, bid(j_))
+        # in-cell: mirror rows fixed by the z-mirror
+        for pa_, pb_ in ((0, 4), (3, 7)):
+            for j_ in jsM:
+                pw(c_, pa_, mid_(j_), c_, pb_, mid_(j_))
+        # in-cell: the tau-deck g = r2 r1 pairs the two y-edges
+        # (X(x, +y0) = g X(x, -y0)): top edge of h <-> bottom edge
+        # of h*g, same x sample
+        for pa_, pb_ in ((0, 3), (3, 0), (1, 2), (2, 1),
+                         (4, 7), (7, 4), (5, 6), (6, 5)):
+            for i_ in isY:
+                pw(c_, pa_, yid(i_, ny2 - 1), c_, pb_, yid(i_, 0))
+        # cell-to-cell, horizontal deck T (the ghost line L): the
+        # rotation about L is T o r1, so h's L-arc continues into
+        # part h o T o r1 of the +T cell
+        if (iu + 1, iv) in cid:
+            c2_ = cid[(iu + 1, iv)]
+            for pa_, pb_ in ((0, 1), (2, 3), (4, 5), (6, 7)):
+                for j_ in jsL:
+                    pw(c_, pa_, bid(j_), c2_, pb_, bid(j_))
+        # cell-to-cell, vertical deck (0,0,1): the mirror rows of
+        # parts mr1, mr2 continue into parts r1, r2 one period up
+        # (m o r1 = P1 o r1 o m on the mirror plane, since the
+        # quarter's height is exactly 1/4)
+        if (iu, iv + 1) in cid:
+            c2_ = cid[(iu, iv + 1)]
+            for pa_, pb_ in ((5, 1), (6, 2)):
+                for j_ in jsM:
+                    pw(c_, pa_, mid_(j_), c2_, pb_, mid_(j_))
+    V, Fs, _first = _g1h_weld_pairs(V, Fs, pairs)
     V = _center_fit(V, scale, V)
     return V, Fs, None
 

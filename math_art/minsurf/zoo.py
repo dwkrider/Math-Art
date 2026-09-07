@@ -2075,7 +2075,7 @@ WE_SURFACES['DP_LUBECK_BATISTA'] = {
     'mesher': we.lb_mesh,
     'cells2d_mesher': we.lb_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Member (0.935i .. 2.5i)",
+    'count': "Member (1-3 = Weber's 0.94i / 1.2i / 2.5i)",
     'test_order': 3,
 }
 SURFACE_FAMILY['DP_LUBECK_BATISTA'] = 'DOUBLY'
@@ -3713,8 +3713,10 @@ def _selftest():
     # span with the identity axis map).  A wrong member, a wrong
     # rotation axis or an overlapping ghost assembly all move these
     # by far more than the 1.5% gate.
-    lb_shape = {2: (2.3164, 3.0699), 4: (1.0650, 2.1687),
-                7: (1.0000, 3.3672)}
+    # NOTE: the member knob walks we.LB_ORDER (exported members
+    # first), so orders 1, 2, 3 are Weber's 0.94i, 1.2i, 2.5i
+    lb_shape = {1: (2.3164, 3.0699), 2: (1.0650, 2.1687),
+                3: (1.0000, 3.3672)}
     for order_, (exz_, eyz_) in lb_shape.items():
         V_, _F, _uv = we.lb_mesh(None, 110, 60, order_, 1.2, 1.0)
         V_ = np.asarray(V_)
