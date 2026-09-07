@@ -2075,7 +2075,7 @@ WE_SURFACES['DP_LUBECK_BATISTA'] = {
     'mesher': we.lb_mesh,
     'cells2d_mesher': we.lb_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Member (1-3 = Weber's 0.94i / 1.2i / 2.5i)",
+    'count': "Member (1-3 = Weber's 0.94i/1.2i/2.5i, 4-7 = rest)",
     'test_order': 3,
 }
 SURFACE_FAMILY['DP_LUBECK_BATISTA'] = 'DOUBLY'
@@ -2690,7 +2690,7 @@ WE_SURFACES['KUSNER_SPHERE'] = {
     'p_from': lambda order, radius: (lambda pp: {
         'p': pp, 's': math.sqrt(2 * pp - 1)})(
             int(min(max(2 * order, 2), 8))),
-    'count': "End pairs n (2/4/6/8)",
+    'count': "Member (1-4 = n of 2/4/6/8)",
     'cycles': lambda p: (
         [(((p['p'] - p['s']) / (p['p'] - 1)) ** (1.0 / p['p'])
           * np.exp(2j * math.pi * k / p['p']), 0.08)
@@ -2725,7 +2725,7 @@ WE_SURFACES['HORGAN_NEARMISS'] = {
     'family': 'HIGHER',
     'mesher': we.horgan_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Member (a = 1.01 / 1.1 / 1.5)",
+    'count': "Member (1-3 = a of 1.01/1.1/1.5)",
     'test_order': 1,
 }
 SURFACE_FAMILY['HORGAN_NEARMISS'] = 'HIGHER'
@@ -2770,7 +2770,7 @@ WE_SURFACES['WEBER_WOLF'] = {
     'family': 'HIGHER',
     'mesher': we.ww_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Symmetry k (2/3/4/5)",
+    'count': "Member (1-4 = k of 2/3/4/5)",
     'test_order': 1,
 }
 SURFACE_FAMILY['WEBER_WOLF'] = 'HIGHER'

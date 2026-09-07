@@ -12357,6 +12357,13 @@ def sfk_fkf_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 # ==========================================================================
 # Kusner spheres with 2n planar ends (immersed minimal S^2), built to
 # Weber's Kusner.nb recipe and REGISTERED against his PoVRay exports.
+# Weber's own framing (the live page; the mirrored chapter kept only
+# its navigation): "Rob Kusner discovered an interesting class of
+# immersed minimal spheres with an even number 2n of planar ends",
+# and for ODD n the immersion commutes with the antipodal map of S^2,
+# descending to a projective plane with n planar ends -- so the
+# even-n restriction of THIS row is Kusner's mathematics (the odd
+# members ARE the KUSNER_RP2 row), not an arbitrary limit.
 #
 # Weierstrass data (rho = 1 is the classical member; s = sqrt(2p-1)):
 #
@@ -12394,17 +12401,22 @@ def sfk_fkf_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 #
 # GROUND TRUTH: Weber's p = 2 export (kusners-spheres-with-planar-
 # ends, dummy.pov) IS the disk-chart half of this surface at the
-# notebook window xmin = 0.2: our half-assembly registers against it
-# at 0.065% / 0.124% one-sided means (0.095% two-sided) of span with
-# the IDENTITY axis map and IDENTITY scale, bbox agreeing to 4
-# digits.  The zoo gate pins that member's extent ratios (x/y =
-# 0.4430, z/y = 0.5353) plus the closed-form landmark below.  His
-# p = 3 and p = 5 exports are ARTISTIC COMPOSITIONS, measured as
-# three complete copies of the surface nested at relative scales
-# ~(0.68, 0.44, 0.44) with per-copy plate windows (each copy is
-# p-fold symmetric; the union is not), so they pin the family only
-# loosely (per-copy one-sided registration 0.14-0.29%) and are NOT
-# used as gates.
+# notebook window xmin = 0.2 -- his page says so outright ("the
+# cases n=2 (showing one half of the surface)"), so the operator's
+# FULL sphere legitimately shows more lobes than his picture.  Our
+# half-assembly registers against it at 0.11% GT -> ours mean of
+# span (his exports normalise the y half-extent to 1; the axis map
+# is the identity), bbox ratios agreeing to 4 digits.  The zoo gate
+# pins that member's extent ratios (x/y = 0.4430, z/y = 0.5353)
+# plus the closed-form landmark below.  His p = 3 and p = 5 exports
+# are the SAME kind of object, not artistic compositions (an
+# earlier note here claimed 'three nested copies at relative
+# scales', which was measured off his copies.pov SCENE arrangement,
+# not the dummy.pov meshes -- each dummy.pov is ONE connected mesh):
+# the two p = 3 exports are Weber's "two views ... with different
+# cutoffs for the planar ends", and each registers against our
+# half-assembly at its own notebook window (p = 3: 0.088% mean at
+# xmin = 0.35; p = 5: 0.061% at xmin = 0.45).
 #
 # Landmark, derived numerically and gated in closed form: the rim
 # corner w = 1 (junction of the two charts on the y-axis line) sits
