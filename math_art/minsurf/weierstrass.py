@@ -12986,6 +12986,13 @@ def lm_slab_sheet(mem, rho1, r1=-2.5, nu=101, nv=41, K=8, eps=1e-7):
     xs = np.unique(np.round(np.concatenate(
         [xs, mem['sym'] - xs, spec,
          [mem['sym'] - s_ for s_ in spec]]), 12))
+    # enforce EXACT mirror symmetry about SYM/2: the assembly welds by
+    # the index map i <-> n-1-i, and the 1e-12 rounding of the deduped
+    # union can otherwise leave near-twin nodes whose mirrors collapse
+    # (a non-bijective mirror map -> slit seams in the weld)
+    c_half = mem['sym'] / 2.0
+    lo_ = xs[xs < c_half - 1e-9]
+    xs = np.concatenate([lo_, [c_half], (c_half - lo_)[::-1] + c_half])
     t = np.linspace(0.0, 1.0, nv)
     ys = eps + (np.pi - 2 * eps) * (0.5 - 0.5 * np.cos(np.pi * t))
     nu2 = len(xs)
@@ -13025,21 +13032,32 @@ def lm_slab_sheet(mem, rho1, r1=-2.5, nu=101, nv=41, K=8, eps=1e-7):
     return xs, ys, np.real(F + C[None, None, :])
 
 
-def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
-    """Lopez-Martin slab: order = stacked periods, radius sets how far
-    the flat plates follow their planar ends.  Immersed and one-sided
-    as a complete surface -- the mesh keeps the two sheets through the
-    z-axis as separate walls (a genuine self-intersection, exactly as
-    in Weber's and the authors' pictures)."""
-    del spec, theta
-    storeys = int(np.clip(order, 1, 6))
-    mem = lm_slab_member(_G1H_ALPHA0, 0.5)
-    rho1 = mem['rho_abs'] * np.exp(1j * math.atan2(
-        -62.8417365006266681, 108.369522264594063))
-    r1 = -(1.7 + 0.8 * float(np.clip(radius / 1.2, 0.5, 2.5)))
-    pnu = int(np.clip(nu * 1.4, 70, 200))
-    pnv = int(np.clip(nv * 0.7, 30, 80))
-    xs, ys, X = lm_slab_sheet(mem, rho1, r1, pnu, pnv)
+def lm_slab_assemble(mem, rho1, storeys=1, r1=-2.5, nu=101, nv=41):
+    """Finished (V, quads) of `storeys` translational cells of the
+    b = 1/2 member: each cell is the strip sheet plus its 180-degree
+    rotation about the z axis, stacked by (0, 0, 2) and welded by
+    EXACT grid-index pairs, following `genus1helicoid_assemble` (the
+    generic member of the same family) with the b = 1/2 degeneracy
+    folded in.  At b = 1/2 the slide is a FULL period, so (i) the two
+    chart axis segments (E0: x in [XA, XB] of the y = 0 edge, E1:
+    x in [XC, XD] of the y = pi edge) land on the SAME z-axis segment
+    pointwise -- welding each sheet<->rotation pair separately keeps
+    the two sheets through the axis as distinct crossing walls (the
+    surface's genuine self-intersection) -- and (ii) the in-cell
+    ruling of the generic member has migrated onto the cell boundary:
+    the plates carry horizontal straight rays (Schwarz lines in the
+    plate planes), and ALL FOUR ray arcs of a level weld
+    cell-to-cell, none in-cell.  The x-grid is symmetric about SYM/2
+    with the corner values sample-exact, so every partner of sample i
+    is sample nu' - 1 - i and no positional tolerance is involved:
+      * axis welds, cell k: A(i, y=0) <-> B(i, y=0) for i in
+        [iA, iB], and likewise on the y = pi edge;
+      * level welds between cells k, k+1 (the plate line, where the
+        sagging top plate of cell k crosses the bulging bottom plate
+        of cell k+1 transversally -- the smooth Schwarz continuation
+        swaps sheet and side): A_k.E0[x <= XA] <-> B_{k+1}.E1[sym-x]
+        plus the three 180-degree-rotation mates."""
+    xs, ys, X = lm_slab_sheet(mem, rho1, r1, nu, nv)
     nu2, nv2 = X.shape[:2]
     # center the cell at z = 0 (the sheet lands on [-2 - s, -s])
     zc = 0.5 * (X[..., 2].max() + X[..., 2].min())
@@ -13061,6 +13079,51 @@ def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
         for q in quads0:
             qq = tuple(int(i) + k_ * NV for i in q)
             F.append(qq[::-1] if fl_ else qq)
+    # the weld table (all exact index pairs; positions averaged)
+    iA = int(np.argmin(np.abs(xs - min(mem['XA'], mem['XB']))))
+    iB = int(np.argmin(np.abs(xs - max(mem['XA'], mem['XB']))))
+    # mirror partner of sample i (x -> SYM - x); looked up rather than
+    # assumed to be nu' - 1 - i, because the rounding that dedups the
+    # concatenated grid can leave the index symmetry off by one
+    mir = np.argmin(np.abs(xs[None, :]
+                           - (mem['sym'] - xs)[:, None]), axis=1)
+
+    def gid(sheet, i, j):
+        return sheet * NV + i * nv2 + j
+
+    pairs = []
+    for k_ in range(storeys):
+        p, r = 2 * k_, 2 * k_ + 1
+        for i in range(iA, iB + 1):            # the two axis walls
+            pairs.append((gid(p, i, 0), gid(r, i, 0)))
+            pairs.append((gid(p, i, nv2 - 1), gid(r, i, nv2 - 1)))
+        if k_ + 1 < storeys:                   # plate-line welds
+            p2, r2 = 2 * (k_ + 1), 2 * (k_ + 1) + 1
+            for i in range(0, iA + 1):
+                m = int(mir[i])
+                pairs.append((gid(p, i, 0), gid(r2, m, nv2 - 1)))
+                pairs.append((gid(r, i, 0), gid(p2, m, nv2 - 1)))
+                pairs.append((gid(p, i, nv2 - 1), gid(r2, m, 0)))
+                pairs.append((gid(r, i, nv2 - 1), gid(p2, m, 0)))
+    Vw, qw, _first = _g1h_weld_pairs(V, F, pairs)
+    return Vw, qw
+
+
+def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Lopez-Martin slab: order = stacked periods, radius sets how far
+    the flat plates follow their planar ends.  Immersed and one-sided
+    as a complete surface -- the mesh keeps the two sheets through the
+    z-axis as separate walls (a genuine self-intersection, exactly as
+    in Weber's and the authors' pictures)."""
+    del spec, theta
+    storeys = int(np.clip(order, 1, 6))
+    mem = lm_slab_member(_G1H_ALPHA0, 0.5)
+    rho1 = mem['rho_abs'] * np.exp(1j * math.atan2(
+        -62.8417365006266681, 108.369522264594063))
+    r1 = -(1.7 + 0.8 * float(np.clip(radius / 1.2, 0.5, 2.5)))
+    pnu = int(np.clip(nu * 1.4, 70, 200))
+    pnv = int(np.clip(nv * 0.7, 30, 80))
+    V, F = lm_slab_assemble(mem, rho1, storeys, r1, pnu, pnv)
     V = _center_fit(V, scale, V)
     return V, F, None
 
