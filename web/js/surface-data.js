@@ -69,7 +69,7 @@ export async function loadRecord(slug) {
 /**
  * The baked mesh for a surface, or null when there is none.
  *
- * A missing mesh is a normal state, not an error: 61 of the 462 records
+ * A missing mesh is a normal state, not an error: 35 of the 475 records
  * are not implemented by any generator, so no mesh can exist for them.
  * The module shows their mathematics with the viewer left empty.
  */
@@ -164,7 +164,7 @@ export const SORTS = {
   genus: (a, b) =>
     (a.genus ?? 99) - (b.genus ?? 99) || a.name.localeCompare(b.name),
   // Drawable first: a reader browsing for something to look at should not
-  // have to step over the 61 records no generator implements.
+  // have to step over the records no generator implements.
   drawable: (a, b) =>
     (b.implemented ? 1 : 0) - (a.implemented ? 1 : 0) ||
     a.name.localeCompare(b.name),

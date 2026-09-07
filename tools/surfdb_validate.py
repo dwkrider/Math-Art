@@ -628,6 +628,9 @@ NOT_A_GAP = {
         ("bookkeeping", "Not a surface -- a family/method whose ten members "
                         "map onto six that already ship (P, H, S'-S'', "
                         "H'-T, H''-R, T'-R')."),
+    "weber-tr":
+        ("bookkeeping", "The same surface as `weber-trr`, which ships: "
+                        "Fujimori-Weber's Table 1 lists only T'-R' genus 6."),
     # NO DATAFILE EVER EXISTED.  Brakke's starfish page names these
     # members; the recovered tarball carries only the eight that shipped
     # plus the three he annotates as failing.  Nothing was ever published

@@ -1,21 +1,27 @@
 {
   "schema_version": "0.1.0",
   "slug": "surface-with-132-a5-singularities",
-  "name": "Surface with 132 A5 Singularities",
+  "name": "Labs Dodecic (132 A5 points)",
   "primary_family": "algebraic",
   "families": [
     "algebraic",
     "aperiodic",
     "def-implicit",
-    "not-implemented",
+    "implemented",
     "singular",
     "tradition-classical"
   ],
   "definition": {
     "mode": "implicit",
     "fidelity": "exact",
+    "exactness": "elementary",
+    "scale": "published",
+    "clip": {
+      "shape": "BALL",
+      "radius": 3.3
+    },
     "polynomial": null,
-    "note": "Part of a series of surfaces in P^3 with many A_j singularities (the page gives the count 12*11 = 132 for j = 5 but not the degree)."
+    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nPart of a series of surfaces in P^3 with many A_j singularities (the page gives the count 12*11 = 132 for j = 5 but not the degree)."
   },
   "curvature": {
     "condition": "none",
@@ -38,18 +44,30 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Not built.  The equation is deliberately NOT transcribed -- even though the mirrored site publishes its construction (and, for some surfaces, its Singular sources) -- because the numerical oracle that guards the shipped algebraic block can only verify an equation against an implementation, and none exists here; an unverified transcription would silently define a different surface.  The page states the singularity count but not the degree; the series it belongs to lived at oliverlabs.net/series, which the capture did not preserve.",
-      "resume": "SOURCE ACQUIRED (batch 7): O. Labs, 'Dessins d'Enfants and Hypersurfaces with Many A_j-Singularities', arXiv:math/0505022, converted at research/papers/algebraic-surfaces/labs-2005-dessins-denfants-hypersurfaces-many-aj-singularities/.  It identifies the surface as the DEGREE-12, j = 5 member of construction (4): F^A2_12(x,y) + (T^5_12(z)+1)/2 = 0, count 132 = 12*11 in its Table 1 -- but the coefficients of the 5-Belyi tree polynomial T^5_12 are algebraic numbers the paper does not print.  Building the row = solving the 5-Belyi plane-tree conditions for degree 12 (a bounded polynomial-system solve; the paper's Example 3 shows the method), then gating on the 132 predicted A5 points."
+      "generator": "math_art.surfaces.algebraic",
+      "operator_id": "mesh.algebraic_surface_add",
+      "family": "RECORD",
+      "key": "LABS_132_A5",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "O. Labs, \"A Sextic with 35 Cusps\", arXiv:math/0502520 (2005) -- the D5 family (1) and Theorem 3, the real member with 30 cusps and 10 nodes shipped here.",
+      "O. Labs, \"Dessins d'Enfants and Hypersurfaces with Many A_j-Singularities\", J. London Math. Soc. (2) 74 (2006) 607-622; arXiv:math/0505022 -- construction (4), the folding-polynomial critical counts, Theorem 7 and the 132 = 12*11 row of Table 1.",
+      "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, advent calendar 2002 Nos. 1 and 17 -- the descriptions the dodecic and Hyde rows are verified against.  Mirrored locally under references/websites/algsurf/.",
+      "S. V. Chmutov, \"Examples of Projective Surfaces with Many Singularities\", J. Algebraic Geom. 1 (1992) 191-196 -- the nodal construction the A_j series modifies.",
+      "E. W. Hyde, \"On a Surface of the Sixth Order Which Is Touched by the Axes of All Screws Reciprocal to Three Given Screws\", Ann. of Math. (2) 2 (1901) 179-188 -- the surface the HYDE row rebuilds from its classical definition.",
+      "R. S. Ball, \"A Treatise on the Theory of Screws\", Cambridge University Press (1900) -- the pitch quadric and the canonical form of a three-system used in the derivation.",
       "O. Labs, 'Advent calendar 2002, No. 1', The Algebraic Surface Homepage, algebraicsurface.net (Wayback rescue, captures to 2017-10-01; local mirror: algsurf/book/.../ch019_no_01.md).",
       "O. Labs, 'Dessins d'Enfants and Hypersurfaces with Many A_j-Singularities', J. London Math. Soc. 74 (2006) 607-622; arXiv:math/0505022 (converted, research/papers/algebraic-surfaces).",
       "Cover image of the SuSE Linux 8.1 distribution, per the page (Labs made the SuSE cover surfaces from version 7.1 on)."
     ]
+  },
+  "metrics": {
+    "normalization": "published"
   },
   "tradition": [
     "classical"
@@ -57,7 +75,7 @@
   "ids": {
     "algsurf": "ch019_no_01"
   },
-  "named_after": "Singularities",
+  "named_after": "Labs",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

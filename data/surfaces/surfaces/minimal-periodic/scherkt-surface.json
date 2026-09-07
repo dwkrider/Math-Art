@@ -48,7 +48,7 @@
   "construction": [
     {
       "generator": "math_art.minsurf.tpms",
-      "operator_id": "mesh.periodic_minimal_add",
+      "operator_id": "mesh.tpms_add",
       "family": "TPMS",
       "key": "SCHERKT",
       "definition_index": null,

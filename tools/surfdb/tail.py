@@ -167,8 +167,6 @@ TOPOLOGICAL = [
      "self-test verifies chi = 0, one-sidedness, and that the normal "
      "stays bounded away from zero (a genuine immersion, unlike the "
      "Venus on the same grid)."),
-    ("boys-planet", "Boy's Planet",
-     "A variant of Boy's surface described by Carlo Sequin."),
     ("nested-klein-bottles", "Nested Klein Bottles",
      "A composition of the shipped Klein bottle rather than new "
      "mathematics; Alan Bennett's glass series and Jos Leys's "

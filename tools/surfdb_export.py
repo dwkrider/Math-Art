@@ -16,9 +16,9 @@ resolution and not part of a surface's identity, which is right. But the
 site has to draw something, and for a large part of the database the
 record is NOT sufficient to draw from:
 
-  * parametric (109) and implicit/nodal (187) records do carry evaluable
+  * parametric (120) and implicit/nodal (186) records do carry evaluable
     formulas, so those could in principle be evaluated in the browser;
-  * weierstrass (163) mostly does NOT. Those records store no (g, dh)
+  * weierstrass (166) mostly does NOT. Those records store no (g, dh)
     pair -- their own notes say the shipped mesher is authoritative and
     that "an unverified transcription would silently define a different
     surface".
