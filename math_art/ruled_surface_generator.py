@@ -1029,17 +1029,36 @@ def rulings_hypar(a=1.0, b=1.0, c=1.0, extent=1.0, corners=None,
             f1 = (1 - s) * P10 + s * P11
             segs.append((tuple(f0), tuple(f1)))        # s-rulings
         return segs
-    # rulings of z=c((x/a)^2-(y/b)^2) run along x/a +- y/b = const;
-    # sample straight lines of each family
+    # z = c((x/a)^2 - (y/b)^2) factors as c*u*v in the skew coordinates
+    #     u = x/a + y/b,      v = x/a - y/b,
+    # so u = const and v = const are BOTH straight lines lying on it --
+    # that is what "doubly ruled" means here, and neither family runs
+    # along x or y.  On u = k the height is c*k*(2x/a - k), linear in x;
+    # likewise on v = k.  (The earlier code swept y and joined
+    # (-extent, y) to (+extent, y) at a single height: a horizontal
+    # chord that meets the surface only at its two ends, and one whose
+    # family sweeps a parabolic cylinder rather than the saddle.)
+    #
+    # Each line is clipped to the square domain build_hypar meshes, so
+    # the rods and the surface cover the same region.  Lines near the
+    # two extreme k are genuinely short -- a square-domain saddle's
+    # rulings cross it diagonally and taper to nothing at the corners.
+    ka, kb = extent / a, extent / b
+    kmax = ka + kb
     for i in range(n + 1):
-        f = -extent + 2.0 * extent * i / n
-        # family 1: y fixed sweep x  ->  not straight; use diagonal
-        # lines s -> (s, f, ...) are straight only in xy-square edges;
-        # emit the two boundary-anchored straight generators instead
-        segs.append(((-extent, f, c * ((extent / a) ** 2
-                                       - (f / b) ** 2)),
-                     (extent, f, c * ((extent / a) ** 2
-                                      - (f / b) ** 2))))
+        k = -kmax + 2.0 * kmax * i / n
+        # y in [-extent, extent]  <=>  x/a in [k - kb, k + kb]
+        x0 = a * max(k - kb, -ka)
+        x1 = a * min(k + kb, ka)
+        if x1 - x0 <= 1e-12:
+            continue                       # this line misses the square
+        for sign in (1.0, -1.0):           # u = k, then v = k
+            ends = []
+            for xx in (x0, x1):
+                yy = sign * b * (k - xx / a)
+                ends.append((xx, yy,
+                             c * ((xx / a) ** 2 - (yy / b) ** 2)))
+            segs.append((ends[0], ends[1]))
     return segs
 
 
@@ -2016,6 +2035,37 @@ def _selftest():
                'TWIST_STRIP', 'HYPAR'):
         assert md in _RULED
     print(f"curves: {len(segs)} segments -> V={len(ev)} E={len(ee)} OK")
+
+    # ---- the hypar's rulings actually rule it -------------------------
+    # A rod set is only a ruling if the WHOLE rod lies on the surface,
+    # so sample each segment's interior, not just its two ends: the
+    # bug this replaces joined (-e, y) to (+e, y) at one height, which
+    # met the surface exactly at the endpoints and nowhere between.
+    # Being doubly ruled is the other half of the claim -- both
+    # families must be present, and since the saddle is symmetric under
+    # y -> -y they must come out congruent.
+    for _a, _b, _c, _e in ((1.0, 1.0, 1.0, 1.0), (1.4, 0.7, 1.0, 1.0),
+                           (0.6, 1.3, 2.2, 1.2), (1.0, 1.0, -1.0, 1.7)):
+        hsegs = rulings_hypar(_a, _b, _c, _e, None, 24)
+        assert hsegs, (_a, _b, _c, _e)
+        fam = {'u': [], 'v': []}
+        for _p, _q in hsegs:
+            _p, _q = np.asarray(_p), np.asarray(_q)
+            for _t in np.linspace(0.0, 1.0, 11):
+                _x, _y, _z = _p + _t * (_q - _p)
+                assert abs(_z - _c * ((_x / _a) ** 2
+                                      - (_y / _b) ** 2)) < 1e-12,                     ("hypar ruling off the surface", _a, _b, _c, _e, _t)
+                assert abs(_x) <= _e + 1e-9 and abs(_y) <= _e + 1e-9,                     ("hypar ruling outside its domain", _x, _y)
+            _du = abs((_p[0] / _a + _p[1] / _b)
+                      - (_q[0] / _a + _q[1] / _b))
+            fam['u' if _du < 1e-9 else 'v'].append(
+                float(np.linalg.norm(_q - _p)))
+        assert fam['u'] and fam['v'], ("hypar is singly ruled here",
+                                       _a, _b, _c, _e)
+        assert (sorted(round(x, 9) for x in fam['u'])
+                == sorted(round(x, 9) for x in fam['v'])),             ("hypar ruling families differ", _a, _b, _c, _e)
+    print("hypar: both ruling families lie on the surface and are "
+          "congruent OK")
 
     # ---- the five named ruled surfaces --------------------------------
     # Each is checked on the property that DEFINES it, not on its mesh.

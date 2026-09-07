@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "starfish-4-1-genus-55",
-  "name": "STARFISH_4_1_GENUS_55 (exact)",
+  "name": "Starfish 4-1 (genus 55)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",

@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "clp-handle-exact",
-  "name": "CLP_HANDLE (exact)",
+  "name": "CLP with Handle (exact fundamental piece, genus 4)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",

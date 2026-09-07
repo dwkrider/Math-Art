@@ -581,13 +581,6 @@ NOT_A_GAP = {
                      "annulus of finite total curvature."),
     "dihedralized-wohlgemuth-with-handle":
         ("terminal", "Believed not to exist; no construction published."),
-    "sarti-dodecic":
-        ("terminal", "Terminal AS STATED, not as a surface: the pencil's "
-                     "singular members are fixed by an invariant-theoretic "
-                     "condition that is not reconstructible from the "
-                     "shipped symmetrization, so there is no member to "
-                     "mesh.  Reopen if the literature ever supplies the "
-                     "condition."),
     "labs-sextic-35-cusps":
         ("terminal", "Its coefficients are non-real, so the real locus is "
                      "not a surface -- there is nothing to mesh."),
@@ -599,23 +592,24 @@ NOT_A_GAP = {
         ("bookkeeping", "k = 3 of the shipped non-orientable genus-k row."),
     # EXISTENCE UNSETTLED.  Research questions, not implementation work.
     # NO SOURCE ANYWHERE.  Not "not built yet" -- nothing to build from.
-    "weber-bc2":
-        ("no-source", "A folder name recovered from the Wayback index of "
-                      "Weber's dead archive.  No chapter, no notebook, no "
-                      "paper, no datafile -- the name is all that survives."),
     "neovius-sym3":
-        ("no-source", "A folder name recovered from the Wayback index of "
-                      "Weber's dead archive; no chapter, notebook, paper "
-                      "or datafile carries it.  The literature pass DID "
-                      "identify what the name most plausibly denotes: "
-                      "Karcher 1989 section 6.1.3 describes Neovius "
-                      "analogs with handles to the horizontal edges of "
-                      "the three orthogonal prismas, and the triangular "
-                      "prism member has exactly 3-fold symmetry -- but "
-                      "that is a described construction with no numbers "
-                      "anywhere on disk, so there is still nothing to "
-                      "build FROM.  Distinct from Schoen C(H), which "
-                      "6.1.5 derives differently and which ships."),
+        ("no-source", "IDENTIFIED (2026-09) from the Wayback capture of "
+                      "Weber's archive: the folder is "
+                      "Triply/genus13/Neoviussym3 (the Triply/ tree is "
+                      "filed BY GENUS -- genus 13 per cell), and the "
+                      "archived page titles it 'Order 3 Neovius "
+                      "Surface': half the fundamental piece in a "
+                      "triangular prism with Neovius-style handles to "
+                      "all edges of the prism -- Karcher 1989 section "
+                      "6.1.3's triangular-prism Neovius analog, "
+                      "confirmed distinct from every shipped row "
+                      "(Neovius 9, C(H) 7, N14/N26/N38 = 14/26/38).  "
+                      "The page and both renders are preserved in the "
+                      "local mirror under _wayback_archive/; but no "
+                      "notebook or datafile was ever archived, so "
+                      "there is still no Weierstrass data to build "
+                      "FROM -- a construction would be from-scratch "
+                      "conjugate-Plateau work."),
     # PROVED TO EXIST, BUT NO EXPLICIT EQUATION.  The source is
     # definitive and says so -- the surface is not missing, its
     # polynomial is, because the proof never writes one down.
@@ -630,13 +624,13 @@ NOT_A_GAP = {
                         "producing an equation.  Reopen if anyone "
                         "computes one."),
     # DUPLICATES AND FAMILY RECORDS.
-    "weber-tr":
-        ("bookkeeping", "The same surface as `weber-trr`, which ships: "
-                        "Fujimori-Weber's Table 1 lists only T'-R' genus 6."),
     "fujimori-weber":
         ("bookkeeping", "Not a surface -- a family/method whose ten members "
                         "map onto six that already ship (P, H, S'-S'', "
                         "H'-T, H''-R, T'-R')."),
+    "weber-tr":
+        ("bookkeeping", "The same surface as `weber-trr`, which ships: "
+                        "Fujimori-Weber's Table 1 lists only T'-R' genus 6."),
     # NO DATAFILE EVER EXISTED.  Brakke's starfish page names these
     # members; the recovered tarball carries only the eight that shipped
     # plus the three he annotates as failing.  Nothing was ever published

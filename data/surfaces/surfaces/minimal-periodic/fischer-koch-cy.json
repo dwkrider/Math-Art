@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "fischer-koch-cy",
-  "name": "Fk Cy surface",
+  "name": "Fischer-Koch C(Y)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-nodal",
@@ -60,12 +60,12 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "W. Fischer and E. Koch, \"On 3-periodic minimal surfaces\", Z. Kristallogr. 179 (1987) 31-52, and E. Koch, W. Fischer, \"On 3-periodic minimal surfaces with non-cubic symmetry\",",
+      "E. Koch and W. Fischer, \"Triply periodic minimal balance surfaces: a correction\", Acta Crystallogr. A 49 (1993) 209-210. doi:10.1107/S0108767392007591  [C(S) = P and Y = D as minimal surfaces; the nodal geometries remain distinct]",
       "H. G. von Schnering and R. Nesper, \"Nodal surfaces of Fourier series: fundamental invariants of structured matter\",",
       "Z. Phys. B Condensed Matter 83 (1991) 407-412. doi:10.1007/BF01313411  [C(D), C(Y), +-Y, C(+-Y), S nodal forms]",
       "H. G. von Schnering, M. Oehme, G. Rudolf, \"Three-dimensional periodic nodal surfaces which envelope the threefold and fourfold cubic rod packings\", Acta Chem. Scand. 45 (1991) 873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]",
-      "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
-      "D. A. Hoffman, J. T. Hoffman, M. Weber, et al., \"Table of Surfaces\", The Scientific Graphics Project, MSRI (2003). [D' and further G'/OCTO forms]",
-      "J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson, M. A. Yukish, \"Catalog of triply periodic minimal surfaces, equation-based lattice structures, and their homogenized property data\", Data in Brief 49 (2023) 109311. doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*, Triplane/F recommendations]"
+      "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]"
     ]
   },
   "metrics": {
@@ -84,6 +84,7 @@
       }
     ]
   },
+  "named_after": "Fischer, Koch",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

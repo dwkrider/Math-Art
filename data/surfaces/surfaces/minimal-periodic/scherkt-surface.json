@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "scherkt-surface",
-  "name": "Scherkt surface",
+  "name": "Scherk Tower (singly periodic)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-nodal",

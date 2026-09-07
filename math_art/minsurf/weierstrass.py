@@ -3852,14 +3852,59 @@ def hackman_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 # exactly like a wrong member) and they VANISH at every stored member
 # (7e-6..3e-5, quadrature-limited, all seven rows of the table).
 #
-# The four G branch points ia, ia - 1/2, ib - 1/2, ib pair into cuts
-# along the torus edges x = 0 and x = 1/2, so the two half-windows
-# (0, 1/2) and (1/2, 1) are cut-free and carry continuous branches
-# (grid-unwrapped theta logs).  MEASURED: crossing the seam the naive
-# right-half branch lands on the RECIPROCAL 1/G (w2 increments match,
-# w1 flips), so the right half ships as 1/G; the deck translations are
-# z -> z+1 = (0, 0, 1) EXACTLY (vertical period) and z -> z+tau purely
-# horizontal -- the doubly periodic structure, both gated.
+# MESHED TO THE NOTEBOOK'S OWN RECIPE (the earlier two-half-window
+# tiling of the full torus rectangle produced a genuinely different
+# figure -- the exported ground truth is two parallel sheets joined
+# by a four-lobed neck cluster, not a winged strip).  Weber meshes
+# ONE QUARTER of the torus, the rectangle [0, 1/4] x [-Im tau/2,
+# Im tau/2]: his EllipticF/ArcSin chart of the upper half disk is
+# exactly a graded parametrization of that rectangle (verified
+# numerically against the chart; its rmin = 0.01 truncation circle
+# maps to |z| = (2 y0 / S) rmin with S = 2 K(m)/a0, which is what
+# `_lb_map_consts` reproduces without Mathematica).  On that quarter
+# the POINTWISE PRINCIPAL BRANCH of the sqrt product is continuous
+# (measured: neighbour steps stay O(grid) away from the three
+# boundary singularities at all seven members), which is precisely
+# what the notebook's NIntegrate evaluates -- so no branch tracking
+# is needed for the patch, only for the 1-D period paths.
+#
+# The patch is bounded by symmetry lines and a mirror curve, all
+# MEASURED off the computed boundary arcs rather than trusted:
+#   - x = 0, y in (0, b): a straight line A (fit residual ~2e-5 of
+#     length) through f(ib) -- Weber's first rotation axis;
+#   - x = 0, y in (b, y0) and (-y0, a): ONE common straight line B
+#     through f(ia) -- his second axis (the y in (a, 0) piece lands
+#     on the ghost line L, PARALLEL to A at half the horizontal
+#     period: rotating about it instead builds an overlapping ghost);
+#   - x = 1/4: a planar curve at constant height X3 (std ~1e-17).
+# A and B are horizontal, exactly perpendicular, and INTERSECT at
+# f(ib), so the two Schwarz rotations commute and their product
+# r2 r1 IS the z -> z+tau deck: a 180-degree rotation about the
+# vertical line through the intersection, NOT a translation (which
+# is why tolerance-welding translated copies can never close the
+# tau seams; measured Procrustes fit R = diag(-1,-1,1) to 6e-5 of
+# span).  Assembly = rotate the patch 180 deg about A, the pair
+# about B, the four about the mirror plane, then WELD every seam by
+# exact grid-index pairs: the A/B arcs within the cell, the two
+# y-edges under the tau-deck (X(x, +y0) = r2 r1 X(x, -y0)), the
+# mirror rows in-cell and across the vertical deck z -> z+1 =
+# (0, 0, 1) (exact: X3 = Re z, quarter height exactly 1/4), and the
+# L arcs across the horizontal deck T = twice the A -> L offset.
+# Winding parities are solved from the seam traversals (each
+# in-surface Schwarz rotation reverses the attached copy's mesh
+# winding); the result is one consistently oriented manifold sheet:
+# a single cell measures chi = -8 with 6 boundary loops, and the
+# tiled block fits chi = -12 cu cv + 4 cv -- the bulk -12 per cell
+# being two quotient copies of chi = 2 - 2g - e = -6, i.e. the
+# authors' genus g = 3 quotient with e = 2 ends, MEASURED.
+#
+# GROUND TRUTH: registered against Weber's own PoVRay exports of the
+# three members he renders (tau = 0.94i, 1.2i, 2.5i; the dummy.pov
+# meshes ARE the assembled cell, tiled in his scene by 2*MESHxsize /
+# 2*MESHzsize).  Two-sided mean point-to-surface distance lands at
+# 0.07-0.08% of span for ALL THREE with the IDENTITY axis map, and
+# the cell extent ratios match his declared MESHxsize : MESHysize :
+# MESHzsize to ~0.2% -- those ratios are what the zoo gate pins.
 #
 # References:
 # - K. Lubeck and V. Ramos Batista, "The doubly periodic Scherk-Costa
@@ -3874,6 +3919,9 @@ def hackman_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 #   member table transcribed above).
 
 # tau (imag part) -> (a, b), the notebook's solved members
+# (the operator's member knob walks LB_ORDER below, which puts the
+# three members Weber exports -- 0.94i, 1.2i, 2.5i -- at 1, 2, 3, so
+# the DEFAULT lands on a member with a reference image)
 LB_MEMBERS = (
     (0.935, -0.022620778269738837, 0.4599636671778001),
     (0.94, -0.05009519222020475, 0.4533441965300885),
@@ -3883,6 +3931,10 @@ LB_MEMBERS = (
     (2.0, -0.8189334369185804, 0.8375822891619098),
     (2.5, -1.0758721591205636, 1.0807522771543987),
 )
+
+# member-knob order: Weber's three exported members first (0.94i,
+# 1.2i, 2.5i), then the remaining solved table
+LB_ORDER = (1, 3, 6, 0, 2, 4, 5)
 
 
 def _lb_G_path(zp, a, b, tau):
@@ -3900,22 +3952,47 @@ def _lb_G_path(zp, a, b, tau):
     return np.exp(tot)
 
 
-def _lb_G_grid(Z, a, b, tau):
-    """continuous branch on a cut-free rectangle grid: phases
-    unwrapped along the first column, then along every row."""
+def _lb_G_pv(Z, a, b, tau):
+    """The notebook's G as the pointwise principal-branch product --
+    what Mathematica's NIntegrate evaluates.  Continuous on the
+    meshed quarter [0, 1/4] x [-Im tau/2, Im tau/2] (measured at all
+    seven members; the sqrt cuts stay outside it)."""
     th = genus1helicoid_theta11
+    return (np.sqrt(th(Z - 1j * a, tau) / th(Z - (1j * a - 0.5), tau))
+            * th(Z, tau) / th(Z - 0.5, tau)
+            * np.sqrt(th(Z - (1j * b - 0.5), tau) / th(Z - 1j * b, tau)))
 
-    def L(shift, half):
-        v = th(Z - shift, tau)
-        ph = np.angle(v)
-        ph0 = np.unwrap(ph[:, 0])
-        ph = np.unwrap(ph, axis=1)
-        ph = ph + (ph0 - ph[:, 0])[:, None]
-        return (0.5 if half else 1.0) * (np.log(np.abs(v)) + 1j * ph)
-    tot = (L(1j * a, True) - L(1j * a - 0.5, True)
-           + L(0.0, False) - L(0.5, False)
-           + L(1j * b - 0.5, True) - L(1j * b, True))
-    return np.exp(tot)
+
+def _lb_map_consts(y0):
+    """(a0, S) of Weber's half-disk chart, Mathematica-free.
+
+    a0 = modul(i / (4 y0)) with modul(t) = ModularLambda(2t)^(-1/4),
+    so the chart modulus m = 1/a0^4 IS lambda(i / (2 y0)) =
+    (theta2/theta3)^4 at the real nome q = exp(-pi / (2 y0)); S =
+    2 K(m) / a0 with K from the AGM.  Only the product 2 y0 / S is
+    consumed (the image of the chart's rmin truncation circle)."""
+    q = math.exp(-math.pi / (2.0 * y0))
+    t2 = 0.0
+    t3 = 1.0
+    for n_ in range(24):
+        t2 += 2.0 * q ** ((n_ + 0.5) ** 2)
+        t3 += 2.0 * q ** ((n_ + 1.0) ** 2)
+    m = (t2 / t3) ** 4
+    a0 = m ** -0.25
+    x_, y_ = 1.0, math.sqrt(1.0 - m)
+    for _ in range(40):
+        x_, y_ = 0.5 * (x_ + y_), math.sqrt(x_ * y_)
+        if abs(x_ - y_) < 1e-16:
+            break
+    K = math.pi / (2.0 * x_)
+    return a0, 2.0 * K / a0
+
+
+def _lb_fit_line(P):
+    """(point, unit direction, relative residual) of the best line."""
+    c = P.mean(axis=0)
+    _, s, Vt = np.linalg.svd(P - c)
+    return c, Vt[0], float(s[1] / (s[0] + 1e-30))
 
 
 def _lb_W_from_G(G):
@@ -3969,71 +4046,210 @@ def lb_deck(mi=2, n=30001):
 
 def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
             cells=(1, 1)):
-    """Lubeck-Batista mesh: the two cut-free half-windows integrated
-    on the ends backend, the right half on the measured reciprocal
-    branch, seam-joined below the cuts, tiled by the measured deck
-    translations.  order picks the member from the notebook's table;
-    radius sets how far the corner wings are followed."""
+    """Lubeck-Batista / doubly periodic Scherk-Costa mesh, built to
+    Weber's own notebook recipe (see the block header above): the
+    quarter-torus patch [0, 1/4] x [-y0, y0] on the pointwise
+    principal branch, assembled by the two measured 180-degree
+    symmetry-line rotations and the horizontal mirror, tiled by the
+    measured deck translations.  `order` picks the member from the
+    notebook's solved table; `radius` sets how far the flat sheets
+    are followed toward the ends (1.2 = the notebook's own rmin =
+    0.01 truncation, which is what Weber's exports use)."""
+    del spec, theta
     if isinstance(cells, (int, float)):
         cells = (int(cells), 1)
     cu = int(np.clip(cells[0], 1, 4))
     cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 4))
-    mi = int(np.clip(order - 1, 0, len(LB_MEMBERS) - 1))
+    mi = LB_ORDER[int(np.clip(order - 1, 0, len(LB_ORDER) - 1))]
     tt, a, b = LB_MEMBERS[mi]
     tau = 1j * tt
-    r0 = float(np.clip(0.075 * (1.2 / max(float(radius), 0.3)), 0.02,
-                       0.2))
-    n = int(np.clip(nu * 1.2, 56, 150))
-    eps = 2e-3
-    ymod = tt
-    ysp = tuple(v % ymod for v in (a, b) if 0.02 < v % ymod
-                < ymod - 0.02)
-    halves = []
-    for x0, x1, recip in ((eps, 0.5 - eps, False),
-                          (0.5 + eps, 1.0 - eps, True)):
-        punct = [complex(round(x0)), complex(round(x1)),
-                 complex(round(x0), ymod), complex(round(x1), ymod)]
-        xs, ys = we_ends_grid((x0, x1, eps, ymod - eps), punct, n,
-                              ny=int(n * 1.3), specials_y=ysp)
-        Z = xs[:, None] + 1j * ys[None, :]
-        G = _lb_G_grid(Z, a, b, tau)
-        if recip:
-            G = 1.0 / G
-        W = _lb_W_from_G(G)
-        X = we_ends_integrate(lambda zz: W, xs, ys, punct)
-        mask = we_ends_mask(xs, ys, punct, r0)
-        halves.append((xs, ys, X, mask))
-    # join: match values at the seam below the cuts (y = 0.2 * ymod)
-    xsL, ysL, XL, mL = halves[0]
-    xsR, ysR, XR, mR = halves[1]
-    jyL = int(np.argmin(np.abs(ysL - 0.2 * ymod)))
-    jyR = int(np.argmin(np.abs(ysR - ysL[jyL])))
-    XR = XR + (XL[-1, jyL] - XR[0, jyR])[None, None, :]
-    V0, F0 = [], []
-    for xs, ys, X, mask in ((xsL, ysL, XL, mL), (xsR, ysR, XR, mR)):
-        off = sum(len(v) for v in V0)
-        q = we_ends_quads(X, mask)
-        F0.extend(tuple(int(i) + off for i in qq) for qq in q)
-        V0.append(X.reshape(-1, 3))
-    V0 = np.concatenate(V0, axis=0)
+    y0 = tt / 2.0
+    # end truncation: Weber's rmin = 0.01 at the default radius; the
+    # sheets grow logarithmically, so radius works the exponent
+    rmin = float(np.clip(0.01 * (1.2 / max(float(radius), 0.2)) ** 2,
+                         1e-4, 0.15))
+    _a0, S_ = _lb_map_consts(y0)
+    r0 = 2.0 * y0 / S_ * rmin
+    n = int(np.clip(nu * 1.5, 60, 300))
+    eps = 1e-9
+    punct = [0j]
+    xs, ys = we_ends_grid((0.0, 0.25, -y0 + eps, y0 - eps), punct, n,
+                          ny=int(n * 2.2), specials_y=(a, b))
+    # keep nodes off the two boundary branch points (integrable 1/sqrt
+    # singularities: a node exactly on one evaluates to inf)
+    for v_ in (a, b):
+        jj = int(np.argmin(np.abs(ys - v_)))
+        if abs(ys[jj] - v_) < 1e-9:
+            ys[jj] += 3e-7
+
+    def Wfn(Z):
+        G = _lb_G_pv(Z, a, b, tau)
+        return _lb_W_from_G(G)
+
+    # the end puncture sits ON the window edge x = 0; nudge its wall
+    # just outside so the boundary column is swept too
+    X = we_ends_integrate(Wfn, xs, ys, [complex(-1e-9, 0.0)])
+    mask = we_ends_mask(xs, ys, punct, r0)
+    quads0 = we_ends_quads(X, mask)
+    # the two symmetry lines and the ghost line, measured off the
+    # x = 0 boundary arcs (margins keep the fits off the branch-point
+    # corners at y = a, b and the end hole at y = 0)
+    wid = b - a
+    selA = (ys > 0.03 * wid) & (ys < b - 0.003) & mask[0]
+    selB = ((ys > b + 0.003) | (ys < a - 0.003)) & mask[0]
+    selL = (ys > a + 0.003) & (ys < -0.03 * wid) & mask[0]
+    cA, uA, rA = _lb_fit_line(X[0][selA])
+    cB, uB, rB = _lb_fit_line(X[0][selB])
+    cL, uL, _rL = _lb_fit_line(X[0][selL])
+    # idealize the measured elements into the EXACT symmetry
+    # configuration the group structure needs: A and B horizontal,
+    # exactly perpendicular, intersecting at q = f(ib); L exactly
+    # parallel to A at horizontal offset d (the horizontal deck is
+    # T = 2d).  With that, r2 r1 = r1 r2 = the z -> z+tau deck (a
+    # 180-degree rotation about the vertical line through q -- NOT a
+    # translation, which is why tolerance welding of translated
+    # copies could never close these seams), and every seam of the
+    # orbit is an exact index-to-index vertex pair.
+    uA = uA * np.sign(uA[1] if abs(uA[1]) > abs(uA[0]) else uA[0])
+    uA[2] = 0.0
+    uA = uA / np.linalg.norm(uA)
+    uB = uB - (uB @ uA) * uA
+    uB[2] = 0.0
+    uB = uB / np.linalg.norm(uB)
+    h0 = 0.5 * (cA[2] + cB[2])
+    M2 = np.array([[uA[0], -uB[0]], [uA[1], -uB[1]]])
+    ts_ = np.linalg.solve(M2, (cB - cA)[:2])
+    q_ = cA + ts_[0] * uA
+    q_[2] = h0
+    dL = (cL - q_) - ((cL - q_) @ uA) * uA
+    dL[2] = 0.0
+    Tx = 2.0 * dL                                # horizontal deck
+    P1 = np.array([0.0, 0.0, 1.0])               # z -> z+1, exact
+    # snap the WHOLE x = 0 boundary column onto its symmetry element
+    # (full partition at the corner values a, 0, b -- the earlier
+    # margin windows left unsnapped slivers), and the mirror curve
+    # onto its plane, so every assembled seam welds vertex-to-vertex
+    snapA = (ys > 0.0) & (ys < b) & mask[0]
+    snapB = ((ys > b) | (ys < a)) & mask[0]
+    snapL = (ys > a) & (ys < 0.0) & mask[0]
+    for sel_, c0_, u_ in ((snapA, q_, uA), (snapB, q_, uB),
+                          (snapL, q_ + dL, uA)):
+        P_ = X[0][sel_]
+        X[0][sel_] = c0_ + ((P_ - c0_) @ u_)[:, None] * u_[None, :]
+    h = float(np.median(X[-1, :, 2]))
+    X[-1, :, 2] = h
+    # prune to used vertices (masked nodes keep huge near-end values)
+    ny2 = len(ys)
+    nx2 = len(xs)
+    V0 = X.reshape(-1, 3)
     used = np.zeros(len(V0), dtype=bool)
-    for q in F0:
+    for q in quads0:
         for a_ in q:
             used[a_] = True
     remap = -np.ones(len(V0), dtype=np.int64)
     remap[used] = np.arange(int(used.sum()))
     V0 = V0[used]
-    F0 = [tuple(int(remap[a_]) for a_ in q) for q in F0]
-    P1, P2 = lb_deck(mi, n=8001)
-    Vs, Fs = [], []
+    F0 = [tuple(int(remap[a_]) for a_ in q) for q in quads0]
+
+    def rot180(c_, u_):
+        R_ = 2.0 * np.outer(u_, u_) - np.eye(3)
+        return lambda P_: (P_ - c_) @ R_.T + c_
+
+    r1 = rot180(q_, uA)
+    r2 = rot180(q_, uB)
+    parts = [V0, r1(V0)]
+    parts = parts + [r2(P_) for P_ in parts]
+    parts = parts + [P_ * np.array([1.0, 1.0, -1.0])
+                     + np.array([0.0, 0.0, 2.0 * h]) for P_ in parts]
+    # winding parities, SOLVED from the seam traversals (each Schwarz
+    # rotation about an in-surface line reverses the mesh winding of
+    # the copy it attaches, the z-mirror reverses it again, and the
+    # tau-deck g preserves it): the unique consistent assignment --
+    # measured, not assumed -- is e/r2r1/mr1/mr2 kept, the rest
+    # reversed; the welded surface then orients consistently
+    flips = (False, True, True, False, True, False, False, True)
     NV = len(V0)
+    Vcell = np.concatenate(parts, axis=0)
+    Fcell = []
+    for k_, fl_ in enumerate(flips):
+        for q in F0:
+            qq = tuple(int(i) + k_ * NV for i in q)
+            Fcell.append(qq[::-1] if fl_ else qq)
+    # tile: u -> the horizontal deck T, v -> the vertical deck (0,0,1)
+    Vs, Fs = [], []
+    NC = len(Vcell)
     ci = 0
+    cid = {}
     for iu in range(cu):
         for iv in range(cv):
-            Vs.append(V0 + iu * P1[None, :] + iv * P2[None, :])
-            Fs.extend(tuple(int(i) + ci * NV for i in q) for q in F0)
+            cid[(iu, iv)] = ci
+            Vs.append(Vcell + iu * Tx[None, :] + iv * P1[None, :])
+            Fs.extend(tuple(int(i) + ci * NC for i in q) for q in Fcell)
             ci += 1
     V = np.concatenate(Vs, axis=0)
+
+    # ---- the weld table: every seam an exact index pair ----------
+    # part order: 0 e, 1 r1, 2 r2, 3 r2r1, 4 m, 5 mr1, 6 mr2, 7 mr2r1
+    def bid(j_):                                 # x = 0 column node
+        return remap[j_]
+
+    def mid_(j_):                                # x = 1/4 mirror row
+        return remap[(nx2 - 1) * ny2 + j_]
+
+    def yid(i_, j_):                             # y-edge node
+        return remap[i_ * ny2 + j_]
+
+    pairs = []
+
+    def pw(cell_a, part_a, va, cell_b, part_b, vb):
+        if va >= 0 and vb >= 0:
+            pairs.append((cell_a * 8 * NV + part_a * NV + int(va),
+                          cell_b * 8 * NV + part_b * NV + int(vb)))
+
+    jsA = [j_ for j_ in range(ny2) if snapA[j_] and used[j_]]
+    jsB = [j_ for j_ in range(ny2) if snapB[j_] and used[j_]]
+    jsL = [j_ for j_ in range(ny2) if snapL[j_] and used[j_]]
+    jsM = [j_ for j_ in range(ny2)
+           if used[(nx2 - 1) * ny2 + j_]]
+    isY = [i_ for i_ in range(nx2)
+           if used[i_ * ny2] and used[i_ * ny2 + ny2 - 1]]
+    for (iu, iv), c_ in cid.items():
+        # in-cell: line A (fixed by r1), line B (fixed by r2)
+        for pa_, pb_ in ((0, 1), (2, 3), (4, 5), (6, 7)):
+            for j_ in jsA:
+                pw(c_, pa_, bid(j_), c_, pb_, bid(j_))
+        for pa_, pb_ in ((0, 2), (1, 3), (4, 6), (5, 7)):
+            for j_ in jsB:
+                pw(c_, pa_, bid(j_), c_, pb_, bid(j_))
+        # in-cell: mirror rows fixed by the z-mirror
+        for pa_, pb_ in ((0, 4), (3, 7)):
+            for j_ in jsM:
+                pw(c_, pa_, mid_(j_), c_, pb_, mid_(j_))
+        # in-cell: the tau-deck g = r2 r1 pairs the two y-edges
+        # (X(x, +y0) = g X(x, -y0)): top edge of h <-> bottom edge
+        # of h*g, same x sample
+        for pa_, pb_ in ((0, 3), (3, 0), (1, 2), (2, 1),
+                         (4, 7), (7, 4), (5, 6), (6, 5)):
+            for i_ in isY:
+                pw(c_, pa_, yid(i_, ny2 - 1), c_, pb_, yid(i_, 0))
+        # cell-to-cell, horizontal deck T (the ghost line L): the
+        # rotation about L is T o r1, so h's L-arc continues into
+        # part h o T o r1 of the +T cell
+        if (iu + 1, iv) in cid:
+            c2_ = cid[(iu + 1, iv)]
+            for pa_, pb_ in ((0, 1), (2, 3), (4, 5), (6, 7)):
+                for j_ in jsL:
+                    pw(c_, pa_, bid(j_), c2_, pb_, bid(j_))
+        # cell-to-cell, vertical deck (0,0,1): the mirror rows of
+        # parts mr1, mr2 continue into parts r1, r2 one period up
+        # (m o r1 = P1 o r1 o m on the mirror plane, since the
+        # quarter's height is exactly 1/4)
+        if (iu, iv + 1) in cid:
+            c2_ = cid[(iu, iv + 1)]
+            for pa_, pb_ in ((5, 1), (6, 2)):
+                for j_ in jsM:
+                    pw(c_, pa_, mid_(j_), c2_, pb_, mid_(j_))
+    V, Fs, _first = _g1h_weld_pairs(V, Fs, pairs)
     V = _center_fit(V, scale, V)
     return V, Fs, None
 
@@ -4192,6 +4408,302 @@ def catenoid_field_W(bb=1.0, t=1.0):
         return np.stack([0.5 * (1.0 / g - g) * dh,
                          0.5j * (1.0 / g + g) * dh, dh], axis=-1)
     return W
+
+
+def four_noid_sym2_params(lam):
+    """Karcher's tau and rho for the 4-noid, in closed form.
+
+    Both are printed outright in Weber's `4-Noid_sym_2.nb`; the
+    notebook has no FindRoot anywhere, because this family's period
+    problem is solved in closed form rather than numerically.  The
+    nested radical needs lambda > 1 -- sqrt(lambda - 1) is a factor
+    of the denominator -- which is the family's real parameter range,
+    not a numerical guard.
+    """
+    L = float(lam)
+    big = (1.0 + 2.0 * L ** 4 - 30.0 * L ** 8 + 2.0 * L ** 12 + L ** 16
+           + (1.0 + L ** 4) * math.sqrt(
+               4.0 + 45.0 * L ** 4 + 96.0 * L ** 8 - 146.0 * L ** 12
+               + 96.0 * L ** 16 + 45.0 * L ** 20 + 4.0 * L ** 24))
+    tau = math.sqrt(big) / (math.sqrt(L - 1.0) * L * math.sqrt(1.0 + L)
+                            * math.sqrt(1.0 + L * L)
+                            * math.sqrt(3.0 + 22.0 * L ** 4 + 3.0 * L ** 8))
+    rho = math.sqrt(1.0 + 5.0 * L ** 4) / (
+        L * math.sqrt(L ** 8 - 6.0 * L ** 2 * tau ** 2
+                      + 2.0 * L ** 6 * tau ** 2 + tau ** 4
+                      + L ** 4 * (5.0 - 3.0 * tau ** 4)))
+    return tau, rho
+
+
+def four_noid_sym2_patch(lam, mu, nx, ny, rmin=-3.0, rmax=3.0, eps=1e-4):
+    """One quarter of the 4-noid, integrated from its Weierstrass data.
+
+    G(z) = rho z (z - tau)(z + tau),
+    dh   = z (z - tau)(z + tau) / (z^2 - lam^2)^2 / (z^2 + 1/lam^2)^2,
+
+    on the notebook's strip: u = x + iy with y in (0, pi), and
+    z = sqrt((e^u + lam^2 mu) / (mu - e^u lam^2)).  The notebook also
+    prints a closed-form immersion; this integrates the data instead,
+    which is the same surface and lets the end periods be MEASURED
+    rather than trusted.
+
+    The strip covers exactly the open first quadrant of the z-plane
+    (the Moebius map takes the upper half E-plane to the upper half
+    z^2-plane, and the principal sqrt halves that), so the strip's
+    two long edges are NOT one symmetry curve each -- both are MIXED:
+    the y -> 0 edge is z real in (lam, inf) for x < log(mu/lam^2) and
+    z imaginary beyond it, the y -> pi edge is z real in (0, lam) for
+    x < log(lam^2 mu) and z imaginary beyond that.  On the real axis
+    g and dh are both real, so d(X2) = Re(phi2 du) = 0 and the curve
+    lies in a plane X2 = const; on the imaginary axis g is imaginary
+    and dh real, so d(X1) = 0 and the curve lies in X1 = const.  Four
+    planar arcs, but only TWO planes -- the surface's two orthogonal
+    mirror planes, one per z-axis.
+
+    The two split columns are BRANCH POINTS of the strip chart, not
+    just awkward spots.  Where mu - e^u lam^2 vanishes (y = 0,
+    x = log(mu/lam^2)) z runs to infinity while the metric runs to
+    zero; the surface point is regular -- it is one of the two points
+    where the mirror planes' common axis pierces the surface -- but
+    w = 1/z ~ sqrt(u - u0) there, so dX/du diverges like
+    (u - u0)^(-1/2).  Same at (log(lam^2 mu), pi), where z = 0.  A
+    quadrature path that runs a row past one of those spikes at
+    distance eps picks up an O(1) kick that contaminates everything
+    downstream on the row -- which is exactly what displaced the two
+    imaginary-axis arcs into two different, both-wrong planes and
+    broke the assembly.  So the integration runs a single spine along
+    the middle of the strip (far from both branch points) and then
+    up/down each column, with the y-grid graded quadratically toward
+    the edges so the inverse-sqrt endpoint behaviour is resolved; the
+    leftover corner error is confined to the two axis columns, where
+    the assembly snaps the seam onto the planes anyway.
+    """
+    tau, rho = four_noid_sym2_params(lam)
+    t0 = math.log(mu / (lam * lam))
+    t1 = math.log(lam * lam * mu)
+    # the notebook's three-piece x-range, so grid lines land ON the
+    # two special columns instead of straddling them
+    n1 = max(4, int(nx * 0.25))
+    n2 = max(6, int(nx * 0.45))
+    n3 = max(4, nx - n1 - n2)
+    x = np.concatenate([np.linspace(rmin, t0, n1, endpoint=False),
+                        np.linspace(t0, t1, n2, endpoint=False),
+                        np.linspace(t1, rmax, n3)])
+    # smoothstep grading: node spacing ~ s near both strip edges keeps
+    # the branch columns' (u - u0)^(-1/2) integrand tame under the
+    # trapezoid rule
+    s = np.linspace(0.0, 1.0, ny)
+    y = eps + (math.pi - 2.0 * eps) * s * s * (3.0 - 2.0 * s)
+    U = x[:, None] + 1j * y[None, :]
+    E = np.exp(U)
+    D = mu - E * lam * lam
+    Z = np.sqrt((E + lam * lam * mu) / D)
+    # dz/du in closed form: differentiating z^2 = N/D gives
+    # d(z^2)/du = e^u mu (1 + lam^4) / D^2, since N'D - N D' collapses
+    # to e^u mu (1 + lam^4).  Doing this numerically instead leaves a
+    # residual that does NOT converge under refinement.
+    dZ = E * mu * (1.0 + lam ** 4) / (2.0 * Z * D * D)
+    g = rho * Z * (Z - tau) * (Z + tau)
+    dh = (Z * (Z - tau) * (Z + tau)
+          / ((Z ** 2 - lam ** 2) ** 2 * (Z ** 2 + 1.0 / lam ** 2) ** 2))
+    W = np.stack([0.5 * (1.0 / g - g) * dh,
+                  0.5j * (1.0 / g + g) * dh,
+                  dh], axis=-1) * dZ[..., None]
+    jm = ny // 2
+    spine = np.zeros((len(x), 3), dtype=complex)
+    spine[1:] = np.cumsum(0.5 * (W[1:, jm] + W[:-1, jm])
+                          * np.diff(x)[:, None], axis=0)
+    acc = np.zeros(W.shape, dtype=complex)
+    dy = np.diff(y)
+    Wi = W * 1j                          # du = i dy along a column
+    acc[:, jm + 1:] = np.cumsum(0.5 * (Wi[:, jm + 1:] + Wi[:, jm:-1])
+                                * dy[jm:][None, :, None], axis=1)
+    rev = Wi[:, jm::-1]
+    acc[:, jm - 1::-1] = -np.cumsum(0.5 * (rev[:, 1:] + rev[:, :-1])
+                                    * dy[:jm][::-1][None, :, None],
+                                    axis=1)
+    return np.real(spine[:, None, :] + acc), x, y
+
+
+def four_noid_sym2_end_periods(lam, r=1e-3, n=4000):
+    """Re(period) around each of the four ends z = +-lam, +-i/lam.
+
+    The claim that makes this family exist -- Karcher solves its
+    period problem in closed form -- reduced to four numbers.
+    """
+    tau, rho = four_noid_sym2_params(lam)
+    th = np.linspace(0.0, 2.0 * np.pi, n, endpoint=False)
+    out = []
+    for pole in (lam + 0j, -lam + 0j, 1j / lam, -1j / lam):
+        z = pole + r * np.exp(1j * th)
+        dz = 1j * r * np.exp(1j * th) * (2.0 * np.pi / n)
+        g = rho * z * (z - tau) * (z + tau)
+        dh = (z * (z - tau) * (z + tau)
+              / ((z ** 2 - lam ** 2) ** 2 * (z ** 2 + 1.0 / lam ** 2) ** 2))
+        P = np.stack([0.5 * (1.0 / g - g) * dh,
+                      0.5j * (1.0 / g + g) * dh, dh], axis=-1)
+        out.append(np.real((P * dz[:, None]).sum(axis=0)))
+    return np.array(out)
+
+
+def four_noid_sym2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                        storeys=1):
+    """Karcher's 4-noid with two orthogonal symmetry planes.
+
+    A quarter patch, then the notebook's MeshReflect assembly --
+    reflect in x = 0, then in y = 0 -- but only after the patch has
+    been moved so its own mirror planes ARE the coordinate planes.
+    The numerical integration starts from an arbitrary base point, so
+    the two planes come out at x = c2 and y = c1 rather than through
+    the origin (the notebook's closed-form immersion carries the
+    constant of integration that puts them there; the integral does
+    not).  Both constants are measured off the boundary arcs -- see
+    `four_noid_sym2_patch` for why each strip edge is two arcs in two
+    different planes, split at log(mu/lam^2) and log(lam^2 mu) -- and
+    the arcs are then snapped exactly onto their planes so the mirror
+    seams weld pointwise.  `order` picks the member along lambda (end
+    position), `radius` the growth mu.
+
+    Verified against Weber's own PoVRay exports of this family (the
+    `dummy.pov` mesh files ARE the assembled surface -- the scene
+    renders the one included piece with no further reflections): a
+    point-cloud registration of our mesh onto his lands at ~0.2% of
+    the bounding span (mean two-sided nearest-neighbour distance) for
+    BOTH members he renders, and every rigid-motion-invariant end
+    statistic agrees -- all pairwise angles between the four end axes
+    to 0.2 degrees, end-circle radii to 4e-4.  The `_selftest` gate
+    checks those invariants plus the topology (one sheet, chi = -2,
+    exactly four boundary loops, oriented): four loose discs, a
+    mis-welded seam, or a wrong member all break it.
+
+    Sliders: `radius` IS mu (the notebook's second parameter -- it
+    sets where each end pair is truncated, so it trades the size of
+    the two wide ends against the two narrow funnels), so the
+    defaults (order 1, radius 1.2) land exactly on the lambda = 1.2,
+    mu = 1.2 member pictured on the minimalsurfaces.blog page.
+    `storeys` (End Reach) at its default keeps the notebook's own
+    window x in [-3, 3]; larger values push the truncation further
+    out the logarithmically-growing catenoid ends, which plumps the
+    figure toward isotropy -- the surface is the same, the window is
+    not.
+    """
+    del spec, theta
+    # lambda > 1 is required by sqrt(lambda - 1); very close to 1 the
+    # nested radical blows tau up and the ends degenerate, so the
+    # slider runs over the range the notebook actually renders.
+    lam = float(np.clip(1.2 + 0.15 * (max(int(order), 1) - 1), 1.2, 2.6))
+    mu = float(np.clip(radius, 0.4, 12.0))
+    nx = int(np.clip(nu * 2, 60, 400))
+    ny = int(np.clip(nv, 30, 200))
+    # reach 1 is the notebook's own window x in [-3, 3] (also what
+    # Weber's PoVRay exports truncate at, which the selftest's
+    # shape comparison relies on); the mapping keeps reach 1 up
+    # through the operator's default storeys, so the out-of-the-box
+    # figure is Weber's, and deeper reach is opt-in
+    reach = float(np.clip(0.4 + 0.2 * max(int(storeys), 1), 1.0, 4.0))
+    X, x, y = four_noid_sym2_patch(lam, mu, nx, ny,
+                                   rmin=-reach * 3.0, rmax=reach * 3.0)
+    # locate the two mirror planes from the four boundary arcs: real-
+    # axis arcs (x < t0 on the y=0 edge, x < t1 on the y=pi edge) lie
+    # in the plane X2 = c1, imaginary-axis arcs in X1 = c2
+    t0 = math.log(mu / (lam * lam))
+    t1 = math.log(lam * lam * mu)
+    lo0, hi0 = x < t0 - 1e-12, x > t0 + 1e-12
+    lo1, hi1 = x < t1 - 1e-12, x > t1 + 1e-12
+    c1 = float(np.median(np.concatenate([X[lo0, 0, 1], X[lo1, -1, 1]])))
+    c2 = float(np.median(np.concatenate([X[hi0, 0, 0], X[hi1, -1, 0]])))
+    X = X - np.array([c2, c1, 0.0])
+    # snap each arc exactly onto its plane (a sub-milliunit move: the
+    # arcs sit eps inside the strip plus quadrature residual) so the
+    # mirror copies coincide pointwise along the seams; the two axis
+    # columns are on BOTH planes
+    X[lo0, 0, 1] = 0.0
+    X[hi0, 0, 0] = 0.0
+    X[~lo0 & ~hi0, 0, 0:2] = 0.0
+    X[lo1, -1, 1] = 0.0
+    X[hi1, -1, 0] = 0.0
+    X[~lo1 & ~hi1, -1, 0:2] = 0.0
+    nxp, nyp = X.shape[0], X.shape[1]
+    quads = [(i * nyp + j, (i + 1) * nyp + j,
+              (i + 1) * nyp + j + 1, i * nyp + j + 1)
+             for i in range(nxp - 1) for j in range(nyp - 1)]
+    V0 = X.reshape(-1, 3)
+    n0 = len(V0)
+    # each single reflection reverses orientation, so the mirrored
+    # copy's quads flip their winding (and the doubly-mirrored copy
+    # flips twice, back to the original) -- the welded sheet then
+    # carries ONE consistent orientation, which the selftest gates
+    blk = np.concatenate([V0, V0 * np.array([-1.0, 1.0, 1.0])], axis=0)
+    fblk = quads + [tuple(a + n0 for a in q)[::-1] for q in quads]
+    n1 = len(blk)
+    full = np.concatenate([blk, blk * np.array([1.0, -1.0, 1.0])], axis=0)
+    ffull = fblk + [tuple(a + n1 for a in q)[::-1] for q in fblk]
+    # WELD the two mirror seams.  Concatenating the reflected copies
+    # leaves four loose quarter-patches that sit in the right places
+    # and look, from far enough away, like a 4-noid with four ends --
+    # they even pass an end-counting test.  They are four discs.
+    # The surface is one sheet: weld, then check chi.
+    from .plateau import _weld_points
+    span = float(np.max(full.max(axis=0) - full.min(axis=0)))
+    full, ffull = _weld_points(full, ffull, 1e-7 * max(span, 1e-12))
+    # stand it up: in integration coordinates the mirror planes are
+    # x = 0 and y = 0 and the two WIDE ends' axes hug +-y, so the raw
+    # assembly lies on its side.  Rotate -90 deg about x (y -> z, in
+    # Blender's z-up frame) so the wide ends face up/down the way
+    # Weber renders the family in his y-up PoVRay scenes.
+    full = full[:, [0, 2, 1]] * np.array([1.0, 1.0, -1.0])
+    # centre and fit the way every other zoo row does -- the raw
+    # integration comes out tens of units across and offset
+    return _center_fit(full, scale, full), ffull
+
+
+def _fournoid_end_stats(V, F):
+    """Boundary-loop statistics: (mean radius, centre, outward axis)
+    per loop, sorted largest-radius first.  Test-only: these are the
+    rigid-motion-invariant end statistics the 4-noid selftest holds
+    against Weber's own PoVRay exports -- the angles between end axes
+    and the wide/narrow radius ratio survive any translation,
+    rotation or uniform scale, so they pin the SHAPE where a
+    bounding box or an Euler characteristic cannot."""
+    V = np.asarray(V)
+    ec = {}
+    for f in F:
+        m = len(f)
+        for k in range(m):
+            a, b = f[k], f[(k + 1) % m]
+            e = (a, b) if a < b else (b, a)
+            ec[e] = ec.get(e, 0) + 1
+    nbr = {}
+    for (a, b), c in ec.items():
+        if c == 1:
+            nbr.setdefault(a, []).append(b)
+            nbr.setdefault(b, []).append(a)
+    eseen, out = set(), []
+    for a0 in nbr:
+        loop, cur = [a0], a0
+        while True:
+            nxt = None
+            for c in nbr[cur]:
+                e = (cur, c) if cur < c else (c, cur)
+                if e not in eseen:
+                    nxt = c
+                    eseen.add(e)
+                    break
+            if nxt is None or nxt == a0:
+                break
+            loop.append(nxt)
+            cur = nxt
+        if len(loop) < 8:
+            continue
+        P = V[np.array(loop)]
+        cen = P.mean(axis=0)
+        Q = P - cen
+        ax = np.linalg.svd(Q)[2][2]
+        if float(np.dot(ax, cen)) < 0.0:
+            ax = -ax
+        out.append((float(np.linalg.norm(Q, axis=1).mean()), cen, ax))
+    out.sort(key=lambda t: -t[0])
+    return out
 
 
 def catenoid_field_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
@@ -11842,6 +12354,2365 @@ def sfk_fkf_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     return V, F, uv
 
 
+# ==========================================================================
+# Kusner spheres with 2n planar ends (immersed minimal S^2), built to
+# Weber's Kusner.nb recipe and REGISTERED against his PoVRay exports.
+# Weber's own framing (the live page; the mirrored chapter kept only
+# its navigation): "Rob Kusner discovered an interesting class of
+# immersed minimal spheres with an even number 2n of planar ends",
+# and for ODD n the immersion commutes with the antipodal map of S^2,
+# descending to a projective plane with n planar ends -- so the
+# even-n restriction of THIS row is Kusner's mathematics (the odd
+# members ARE the KUSNER_RP2 row), not an arbitrary limit.
+#
+# Weierstrass data (rho = 1 is the classical member; s = sqrt(2p-1)):
+#
+#     G  = rho z^(p-1) (z^p - s) / (s z^p + 1),
+#     dh = i z^(p-1) (z^p - s)(1 + s z^p) / poly^2 dz,
+#     poly = z^(2p) + 2 s z^p/(p-1) - 1,
+#
+# an immersed sphere with 2p planar ends at the roots of poly (p ends
+# inside the unit disk at z^p = (p-s)/(p-1) =: r0, their p partners
+# outside at z^p = -1/r0).  ALL 2p end residues vanish (gated at
+# ~1e-14), so the immersion is single-valued with no period problem.
+# For ODD p the immersion commutes with the antipodal map z ->
+# -1/conj(z) (measured: X(-1/conj z) = X(z) to 1e-16), which is
+# Kusner's projective-plane family -- that one-sided quotient is the
+# separate KUSNER_RP2 row; THIS row is the full immersed sphere, and
+# exists for every p >= 2 (even p included).
+#
+# MESHED TO THE NOTEBOOK'S OWN CHART: the fundamental patch is the
+# image of the upper half annulus xmin <= |zeta| <= 1 under
+# w = ((r0 + zeta)/(1 + r0 zeta))^(1/p) -- a curvilinear sector of
+# angle pi/p with the plate hole around the end w = r0^(1/p) cut out
+# by the |zeta| = xmin circle (Weber's fft/tr/st mesh, reproduced
+# exactly: radial nodes graded by t^(1/p) <-> t^p around r0, angular
+# nodes by the Im Log[(r0 - e^(i p t))/(r0 e^(i p t) - 1)] map).  The
+# exterior chart is the same grid pushed through the MEASURED domain
+# symmetry w -> e^(i pi/p)/w and integrated independently; the two
+# charts agree along |w| = 1 to ~1e-12 (gated), which re-proves the
+# vanishing residues as assembled geometry.  Space frames, MEASURED
+# (not assumed) at 1e-16 by least squares over random domain pairs:
+#     X(conj w)         = diag(-1, 1, -1) X(w)      (patch edge line)
+#     X(e^(2 pi i/p) w) = Rz(-2 pi/p) X(w)
+# and the assembly is the 4p-piece orbit of the two patches under the
+# group they generate.  X(w = 0) = 0 (base normalization f0 - f0(0)
+# of the notebook).
+#
+# GROUND TRUTH: Weber's p = 2 export (kusners-spheres-with-planar-
+# ends, dummy.pov) IS the disk-chart half of this surface at the
+# notebook window xmin = 0.2 -- his page says so outright ("the
+# cases n=2 (showing one half of the surface)"), so the operator's
+# FULL sphere legitimately shows more lobes than his picture.  Our
+# half-assembly registers against it at 0.11% GT -> ours mean of
+# span (his exports normalise the y half-extent to 1; the axis map
+# is the identity), bbox ratios agreeing to 4 digits.  The zoo gate
+# pins that member's extent ratios (x/y = 0.4430, z/y = 0.5353)
+# plus the closed-form landmark below.  His p = 3 and p = 5 exports
+# are the SAME kind of object, not artistic compositions (an
+# earlier note here claimed 'three nested copies at relative
+# scales', which was measured off his copies.pov SCENE arrangement,
+# not the dummy.pov meshes -- each dummy.pov is ONE connected mesh):
+# the two p = 3 exports are Weber's "two views ... with different
+# cutoffs for the planar ends", and each registers against our
+# half-assembly at its own notebook window (p = 3: 0.088% mean at
+# xmin = 0.35; p = 5: 0.061% at xmin = 0.45).
+#
+# Landmark, derived numerically and gated in closed form: the rim
+# corner w = 1 (junction of the two charts on the y-axis line) sits
+# at X(1) = (0, (p-1)/(2 sqrt(2p-1)), 0) for rho = 1 -- 1/sqrt(12),
+# 1/sqrt(5), 2/3 for p = 2, 3, 5; Weber's p = 2 export carries its
+# sphere markers on the same y-axis line.
+#
+# References:
+# - R. Kusner, "Conformal geometry and complete minimal surfaces",
+#   Bull. Amer. Math. Soc. 17 (1987) 291-295 -- the immersed minimal
+#   spheres with 2n planar ends and their projective-plane quotients.
+# - R. Bryant, "A duality theorem for Willmore surfaces", J. Diff.
+#   Geom. 20 (1984) 23-53 -- planar-end spheres as Willmore surfaces;
+#   the inversion of the 3-ended member is Boy's surface (the
+#   Oberwolfach sculpture).
+# - M. Weber, "Kusner's spheres with planar ends", minimalsurfaces.
+#   blog (notebook `Kusner.nb` -- the Weierstrass data, the fft/tr/st
+#   chart and the per-p windows transcribed above; PoVRay exports =
+#   the registration ground truth).
+# ==========================================================================
+
+# per-p plate windows from the notebook (p = 4 interpolated)
+KUSNER_XMIN = {2: 0.20, 3: 0.35, 4: 0.40, 5: 0.45, 6: 0.48}
+
+
+def kusner_forms(p, rho=1.0):
+    """(om1, om2, om3)(w) of Kusner's sphere, poles only at the ends."""
+    s = math.sqrt(2.0 * p - 1.0)
+
+    def om(w):
+        w = np.asarray(w, dtype=complex)
+        wp = w ** p
+        poly = w ** (2 * p) + 2.0 * s * wp / (p - 1.0) - 1.0
+        phi1 = 1j * rho * w ** (2 * p - 2) * (wp - s) ** 2 / poly ** 2
+        phi2 = (1j / rho) * (1.0 + s * wp) ** 2 / poly ** 2
+        dh = 1j * w ** (p - 1) * (wp - s) * (1.0 + s * wp) / poly ** 2
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, dh], axis=-1)
+    return om
+
+
+def _kus_gl(om, z0, z1, n=10):
+    """Gauss-Legendre integral of om along the straight chord z0->z1.
+    Broadcasts over equal-shaped complex arrays z0, z1."""
+    gx, gw = np.polynomial.legendre.leggauss(n)
+    z0 = np.asarray(z0, dtype=complex)
+    z1 = np.asarray(z1, dtype=complex)
+    mid = 0.5 * (z0 + z1)
+    half = 0.5 * (z1 - z0)
+    acc = 0.0
+    for x_, w_ in zip(gx, gw):
+        acc = acc + om(mid + x_ * half) * w_
+    return acc * half[..., None]
+
+
+def _kus_wgrid(p, xmin, nu, nv, mirror=False):
+    """Weber's graded chart of the fundamental sector (see header).
+    Returns (W, i_r0): the grid and the radial index of the r0 node
+    (the boundary corner that maps to w = 0).  `mirror` reverses the
+    angular grading (the exterior chart uses the mirrored grid so its
+    rim nodes coincide with the interior rim nodes)."""
+    s = math.sqrt(2.0 * p - 1.0)
+    r0 = (p - s) / (p - 1.0)
+    eps = 1e-12
+    nx1 = max(6, nu // 3)
+    nx2 = max(12, nu - nx1)
+    t1 = np.linspace(xmin ** (1.0 / p), r0 ** (1.0 / p), nx1,
+                     endpoint=False)
+    t2 = np.linspace(r0 ** (1.0 / p), (1.0 - eps) ** (1.0 / p), nx2 + 1)
+    XR = np.concatenate([t1, t2]) ** p
+    tt = np.linspace(eps, math.pi / p - eps, nv)
+    e = np.exp(1j * p * tt)
+    YR = np.angle((r0 - e) / (r0 * e - 1.0))
+    YR = np.where(YR < 0, YR + TAU, YR)
+    YR[0] = 0.0
+    YR[-1] = math.pi
+    if mirror:
+        YR = math.pi - YR[::-1]
+    Z = XR[:, None] * np.exp(1j * YR[None, :])
+    W = ((r0 + Z) / (1.0 + r0 * Z)) ** (1.0 / p)
+    return W, nx1
+
+
+def _kus_integrate(om, W):
+    """Cumulative Re-integration of om over the grid W: anchor the rim
+    mid-column by a radial ray from w = 0 (X(0) = 0 normalization),
+    sweep the rim row, then every column rim -> inward.  All chords
+    stay inside the chart, away from the end poles."""
+    nu2, nv2 = W.shape
+    F = np.zeros((nu2, nv2, 3), dtype=complex)
+    jm, i0 = nv2 // 2, nu2 - 1
+    zt = W[i0, jm]
+    seg = np.linspace(0.0, 1.0, 33)
+    val = np.zeros(3, dtype=complex)
+    for k in range(32):
+        val = val + _kus_gl(om, zt * seg[k], zt * seg[k + 1], 12)
+    F[i0, jm] = val
+    for j in range(jm + 1, nv2):
+        F[i0, j] = F[i0, j - 1] + _kus_gl(om, W[i0, j - 1], W[i0, j])
+    for j in range(jm - 1, -1, -1):
+        F[i0, j] = F[i0, j + 1] + _kus_gl(om, W[i0, j + 1], W[i0, j])
+    for i in range(i0 - 1, -1, -1):
+        F[i] = F[i + 1] + _kus_gl(om, W[i + 1], W[i])
+    return np.real(F)
+
+
+def kusner_forms_ext(p, rho=1.0):
+    """The forms pushed to the outer chart u = 1/w (w = infinity is a
+    regular point; the substitution gives polynomial-stable forms):
+    polyu = 1 + 2 s u^p/(p-1) - u^(2p), and
+        phi1_u = -i rho (1 - s u^p)^2 / polyu^2,
+        phi2_u = -(i/rho) u^(2p-2) (u^p + s)^2 / polyu^2,
+        dh_u   = -i u^(p-1) (1 - s u^p)(u^p + s) / polyu^2."""
+    s = math.sqrt(2.0 * p - 1.0)
+
+    def om(u):
+        u = np.asarray(u, dtype=complex)
+        up = u ** p
+        polyu = 1.0 + 2.0 * s * up / (p - 1.0) - u ** (2 * p)
+        phi1 = -1j * rho * (1.0 - s * up) ** 2 / polyu ** 2
+        phi2 = -(1j / rho) * u ** (2 * p - 2) * (up + s) ** 2 / polyu ** 2
+        dh = -1j * u ** (p - 1) * (1.0 - s * up) * (up + s) / polyu ** 2
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, dh], axis=-1)
+    return om
+
+
+def kusner_patches(p, xmin, rho=1.0, nu=40, nv=None, xmin_ext=None):
+    """(X_int, X_ext, i_r0): the two fundamental patches (nu', nv, 3)
+    and the radial index of the w = 0 / u = 0 boundary corner.  The
+    interior patch integrates the w-chart forms on Weber's sector
+    grid; the exterior patch integrates the u = 1/w forms on the
+    mirrored grid rotated into the u-plane (u = W e^(-i pi/p)), so
+    its rim nodes land exactly on the interior rim nodes (reversed
+    order) and u = 0 is the regular point w = infinity with X = 0."""
+    if nv is None:
+        nv = 30 * p
+    if xmin_ext is None:
+        xmin_ext = xmin
+    Wi, i_r0 = _kus_wgrid(p, xmin, nu, nv)
+    Xi = _kus_integrate(kusner_forms(p, rho), Wi)
+    Wm, _ = _kus_wgrid(p, xmin_ext, nu, nv, mirror=True)
+    U = Wm * np.exp(-1j * math.pi / p)
+    Xe = _kus_integrate(kusner_forms_ext(p, rho), U)
+    return Xi, Xe, i_r0
+
+
+def kusner_landmark(p, rho=1.0):
+    """X(w = 1) by a mid-sector ray + rim arc (chart-pole-free path)."""
+    om = kusner_forms(p, rho)
+    w0 = np.exp(1j * math.pi / (2.0 * p))
+    seg = np.linspace(0.0, 1.0, 201)
+    val = np.zeros(3, dtype=complex)
+    for k in range(200):
+        val = val + _kus_gl(om, w0 * seg[k], w0 * seg[k + 1], 14)
+    th = np.linspace(math.pi / (2.0 * p), 0.0, 401)
+    arc = np.exp(1j * th)
+    val = val + _kus_gl(om, arc[:-1], arc[1:], 14).sum(axis=0)
+    return np.real(val)
+
+
+def _kus_frames(p):
+    """[(M, parity), ...]: the measured dihedral space frames."""
+    Sc = np.diag([-1.0, 1.0, -1.0])
+    out = []
+    for k in range(p):
+        c, sn = math.cos(TAU * k / p), math.sin(TAU * k / p)
+        Rk = np.array([[c, sn, 0.0], [-sn, c, 0.0], [0.0, 0.0, 1.0]])
+        out.append((Rk, 1))
+        out.append((Rk @ Sc, -1))
+    return out
+
+
+def _kus_grid_quads(nu2, nv2, off=0):
+    return [(off + i * nv2 + j, off + (i + 1) * nv2 + j,
+             off + (i + 1) * nv2 + j + 1, off + i * nv2 + j + 1)
+            for i in range(nu2 - 1) for j in range(nv2 - 1)]
+
+
+def _kus_snap(Xi, Xe, i_r0, p):
+    """Snap the symmetry-line boundaries exactly (the weld then only
+    absorbs float rounding): the arg-0 edges lie on the y-axis line,
+    the arg-pi/p edges on the in-plane C2 axis at azimuth
+    pi/2 - pi/p, the w = 0 / w = infinity boundary corners at the
+    origin, and the exterior rim IS the interior rim reversed."""
+    al = math.pi / 2.0 - math.pi / p
+    u = np.array([math.cos(al), math.sin(al), 0.0])
+
+    def to_y(P):
+        Q = np.zeros_like(P)
+        Q[..., 1] = P[..., 1]
+        return Q
+
+    def to_al(P):
+        return (P @ u)[..., None] * u
+
+    Xi[:, 0] = to_y(Xi[:, 0])                    # w real in [.., 1]
+    Xi[:i_r0 + 1, -1] = to_y(Xi[:i_r0 + 1, -1])  # w real in [0, ..]
+    Xi[i_r0 + 1:, -1] = to_al(Xi[i_r0 + 1:, -1])
+    Xi[i_r0, -1] = 0.0                           # w = 0
+    Xe[:, 0] = to_al(Xe[:, 0])
+    Xe[:i_r0 + 1, -1] = to_al(Xe[:i_r0 + 1, -1])
+    Xe[i_r0 + 1:, -1] = to_y(Xe[i_r0 + 1:, -1])
+    Xe[i_r0, -1] = 0.0                           # w = infinity
+    Xe[-1, :] = Xi[-1, ::-1]                     # shared |w| = 1 rim
+
+
+def _kus_weld(V0, UV0, quads0, cls0, frames, tol):
+    """Orbit-tile V0 under `frames` and weld coincident vertices OF
+    THE SAME CLASS (two offset quantization passes).  The class keeps
+    the two sheets of a genuine self-intersection point (w = 0 and
+    w = infinity both map to the origin) from being fused into a
+    non-manifold vertex: rim vertices are class 0 (they weld across
+    the two charts), interior-chart vertices +1, exterior -1."""
+    n0 = len(V0)
+    Vp, Fp = [], []
+    for i, (M, par) in enumerate(frames):
+        Vp.append(V0 @ M.T)
+        off = i * n0
+        Fp.extend(tuple(off + k for k in (f[::-1] if par < 0 else f))
+                  for f in quads0)
+    V = np.concatenate(Vp, axis=0)
+    UV = np.tile(UV0, (len(frames), 1))
+    C = np.tile(np.asarray(cls0, dtype=np.int64), len(frames))
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for off_ in (0.0, 0.5):
+        key = np.round(V / tol + off_).astype(np.int64)
+        key = np.concatenate([key, C[:, None]], axis=1)
+        _, first, inv = np.unique(key, axis=0, return_index=True,
+                                  return_inverse=True)
+        for i_ in range(len(V)):
+            ra, rb = find(i_), find(int(first[inv[i_]]))
+            if ra != rb:
+                parent[ra] = rb
+    root = np.array([find(i_) for i_ in range(len(V))])
+    used = np.unique(root)
+    remap = -np.ones(len(V), dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    idx = remap[root]
+    F = []
+    for f in Fp:
+        g = [int(idx[f[0]])]
+        for a_ in f[1:]:
+            if int(idx[a_]) != g[-1]:
+                g.append(int(idx[a_]))
+        if len(g) > 3 and g[0] == g[-1]:
+            g.pop()
+        if len(g) >= 3 and len(set(g)) == len(g):
+            F.append(tuple(g))
+    return V[used], F, UV[used]
+
+
+def kusner_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Kusner sphere with 2n planar ends, n = 2 * order (order 1 ->
+    the n = 2 member registered against Weber's export; odd n
+    descends to the projective plane and ships as KUSNER_RP2).
+    `radius` works the plate window: 1.2 = the notebook's own xmin
+    for that n, larger = the flat ends follow further out."""
+    del spec, theta
+    p = int(np.clip(2 * order, 2, 8))
+    xm0 = KUSNER_XMIN.get(p, 0.5)
+    xm = float(np.clip(xm0 * (1.2 / max(float(radius), 0.2)) ** 1.5,
+                       0.02, 0.85))
+    nu_e = max(18, int(nu * 0.75))
+    nv_e = max(24, int(nv * 0.25 * p))
+    Xi, Xe, i_r0 = kusner_patches(p, xm, 1.0, nu_e, nv_e)
+    _kus_snap(Xi, Xe, i_r0, p)
+    nu2, nv2 = Xi.shape[:2]
+    V0 = np.concatenate([Xi.reshape(-1, 3), Xe.reshape(-1, 3)], axis=0)
+    quads0 = (_kus_grid_quads(nu2, nv2)
+              + _kus_grid_quads(nu2, nv2, off=nu2 * nv2))
+    gu = np.tile(np.arange(nu2)[:, None], (1, nv2)).reshape(-1)
+    gv = np.tile(np.arange(nv2)[None, :], (nu2, 1)).reshape(-1)
+    UV0 = np.stack([gu / max(nu2 - 1, 1), gv / max(nv2 - 1, 1)],
+                   axis=-1)
+    UV0 = np.concatenate([UV0, UV0], axis=0)
+    cls_g = np.ones((nu2, nv2), dtype=np.int64)
+    cls_g[-1, :] = 0                             # the shared rim row
+    cls0 = np.concatenate([cls_g.reshape(-1), -cls_g.reshape(-1)])
+    cls0[len(cls_g.reshape(-1)) + (nu2 - 1) * nv2:] = 0
+    diag = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, UV = _kus_weld(V0, UV0, quads0, cls0, _kus_frames(p),
+                         tol=1e-7 * diag)
+    V = _center_fit(V, scale, V)
+    return V, F, UV
+
+
+# ==========================================================================
+# The Horgan surface -- A MINIMAL SURFACE THAT DOES NOT EXIST, shipped
+# as the honest near-miss.  In 1993 Hoffman and Karcher set up the
+# Weierstrass data of a genus-2 Costa variant and named it after John
+# Horgan's Scientific American piece suggesting computer experiments
+# could replace proof: the numerical example looks utterly convincing,
+# and the period problem provably cannot be closed.  This generator
+# draws Weber's own near-miss illustration and MEASURES the failure
+# instead of hiding it.
+#
+# Data (Weber's Horgan.nb, transcribed):
+#     phi1 = rho sqrt(z^2-1) / (sqrt(z) sqrt(z^2-a^2)),
+#     phi2 = sqrt(z) / (rho (z^2-a^2)^(3/2) sqrt(z^2-1)),
+#     dh   = dz / (z^2-a^2),
+# on the strip chart z = sqrt(a^2 + e^w), w = x + iy, y in (0, pi)
+# (all square roots pointwise principal -- the strip maps into the
+# closed upper half plane, where they are continuous).  rho is the
+# notebook's Lopez-Ros balance int_0^1 phi1 = int_0^1 phi2, solved
+# here by graded Gauss quadrature (endpoint substitutions at the
+# z^(-1/2) and (1-z^2)^(-1/2) singularities).
+#
+# THE PERIOD PROBLEM, MEASURED (this is the point of the row): the
+# strip boundary carries two planar symmetry curves --
+#     y = 0   edge (z real > a):      x-mirror curve at   y = disy,
+#     y = pi  edge, z real in (1, a): y-mirror curve at   x = disx
+# (both constant along their edges to ~1e-7, measured).  Closing the
+# surface under the two mirrors needs ONE translation t with
+# disx - t = 0 AND disy - t = 0, i.e. disx = disy.  Measured across
+# the family (see the HORGAN_GAP table in the zoo gate): disx(a)
+# crosses zero near a ~ 1.115, disy(a) > 0 everywhere and vanishes
+# only in the degenerate a -> 1 limit, and |disx - disy| has a
+# MINIMUM of ~0.0093 near a ~ 1.06 -- it never closes.  The assembly
+# translates by t = -disy (the catenoid-edge curve lands exactly in
+# its mirror plane) and leaves the second seam open by the measured
+# defect |disx - disy|, VISIBLE in the geometry exactly as in Weber's
+# renders.
+#
+# GROUND TRUTH: registered against Weber's own PoVRay exports of all
+# three members he renders (a = 1.01, 1.1, 1.5): one-sided means
+# 0.15-0.16% (GT -> ours) / 0.33-0.39% (ours -> GT) of span.  For
+# a = 1.1 and 1.5 his translation equals our -disy to fit precision;
+# for a = 1.01 his dis came from NIntegrate straight through the
+# near-collision of the branch points z = 1 and z = a = 1.01 at
+# PrecisionGoal -> 5, and the registration-fitted value (-0.005)
+# confirms his export used that (inaccurate) number, not the exact
+# offset -- our edge-median measurement replaces the singular path.
+#
+# References:
+# - D. Hoffman and H. Karcher, "Complete embedded minimal surfaces of
+#   finite total curvature", in Geometry V (Encycl. Math. Sci. 90),
+#   Springer 1997, sec. 3.4 -- the Horgan surface as the cautionary
+#   example: the period problem that looks solvable and is not.
+# - J. Horgan, "The death of proof", Scientific American 269:4 (1993)
+#   92-103 -- the article the non-existent surface answers.
+# - M. Weber, "The Horgan surface", minimalsurfaces.blog, repository
+#   of non-existent surfaces (notebook `Horgan.nb` -- the data, the
+#   strip chart, the member windows and the gap presentation
+#   transcribed above; PoVRay exports = registration ground truth).
+# ==========================================================================
+
+HORGAN_A = (1.01, 1.1, 1.5)                     # Weber's three members
+HORGAN_PADS = {1.01: (1.0, 3.0), 1.1: (2.0, 4.0), 1.5: (2.5, 4.5)}
+
+
+def horgan_rho(a):
+    """The notebook's Lopez-Ros balance rho = sqrt(I2 / I1) with
+    I1 = int_0^1 phi1, I2 = int_0^1 phi2 at rho = 1 (both real and
+    positive on (0, 1) with the upper-half-plane branches)."""
+    gx, gw = np.polynomial.legendre.leggauss(200)
+    t = 0.5 * (gx + 1.0)
+    wt = 0.5 * gw
+
+    def f1(z):
+        return np.sqrt(1.0 - z * z) / (np.sqrt(z)
+                                       * np.sqrt(a * a - z * z))
+
+    def f2(z):
+        return np.sqrt(z) / ((a * a - z * z) * np.sqrt(1.0 - z * z)
+                             * np.sqrt(a * a - z * z))
+    z1 = t * t                                   # z^(-1/2) endpoint
+    I1 = float(np.sum(f1(z1) * 2.0 * t * wt))
+    z2 = 1.0 - (1.0 - t) ** 2                    # (1-z^2)^(-1/2) endpoint
+    I2 = float(np.sum(f2(z2) * 2.0 * (1.0 - t) * wt))
+    return math.sqrt(I2 / I1)
+
+
+def horgan_forms_w(a, rho):
+    """(om1, om2, om3)(w) on the strip chart, dz/dw folded in:
+    dz/dw = (z^2 - a^2)/(2z) with z = sqrt(a^2 + e^w)."""
+    def om(w):
+        w = np.asarray(w, dtype=complex)
+        z = np.sqrt(a * a + np.exp(w))
+        s1 = np.sqrt(z * z - 1.0)
+        sa = np.sqrt(z * z - a * a)
+        sz = np.sqrt(z)
+        phi1 = rho * s1 / (sz * sa)
+        phi2 = sz / (rho * (z * z - a * a) * s1 * sa)
+        om3 = 1.0 / (z * z - a * a)
+        jac = ((z * z - a * a) / (2.0 * z))[..., None]
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, om3], axis=-1) * jac
+    return om
+
+
+def horgan_forms_z(a, rho):
+    """The forms in the sphere coordinate (for the anchor paths)."""
+    def phi(z):
+        z = np.asarray(z, dtype=complex)
+        s1 = np.sqrt(z * z - 1.0)
+        sa = np.sqrt(z * z - a * a)
+        sz = np.sqrt(z)
+        phi1 = rho * s1 / (sz * sa)
+        phi2 = sz / (rho * (z * z - a * a) * s1 * sa)
+        om3 = 1.0 / (z * z - a * a)
+        return np.stack([-(phi1 - phi2) / 2.0,
+                         1j * (phi1 + phi2) / 2.0, om3], axis=-1)
+    return phi
+
+
+def horgan_patch(a, nu=(24, 24, 36), ny=48, pad=None):
+    """The fundamental strip patch.  Returns (F, X, meta): the real
+    immersion grid (nx, ny, 3) normalized to X(z = 0) = 0, the radial
+    node vector, and a dict with rho, the measured mirror-curve
+    offsets disx / disy (edge medians, std ~1e-7) and the rotation
+    axis image delta = -f(i)."""
+    rho = horgan_rho(a)
+    x0 = math.log(a * a)
+    x1 = math.log(a * a - 1.0)
+    if pad is None:
+        pad = HORGAN_PADS.get(a, (2.0, 4.0))
+    xmin, xmax = x1 - pad[0], x0 + pad[1]
+    nx1, nx2, nx3 = nu
+    X = np.unique(np.concatenate([
+        np.linspace(xmin, x1, nx1), np.linspace(x1, x0, nx2),
+        np.linspace(x0, xmax, nx3)]))
+    eps = 1e-6
+    Y = np.linspace(eps, math.pi - eps, ny)
+    W = X[:, None] + 1j * Y[None, :]
+    om = horgan_forms_w(a, rho)
+    phi = horgan_forms_z(a, rho)
+    ia = int(np.argmin(np.abs(X - x0)))
+    jm = ny // 2
+    za = np.sqrt(a * a + np.exp(W[ia, jm]))
+    # anchor: straight z-path i -> z(anchor), clear of the real axis
+    path = np.linspace(1j, za, 400)
+    F = np.zeros((len(X), ny, 3), dtype=complex)
+    F[ia, jm] = _kus_gl(phi, path[:-1], path[1:], 10).sum(axis=0)
+    # ONE horizontal sweep along the mid row (clear of the two
+    # integrable boundary singularities z = 1, z = 0 at y = pi), then
+    # vertical sweeps down each column: every chord's distance to a
+    # singular corner is at least |x - x1| / |x - x0|, so quadrature
+    # error stays confined to the two columns AT the corners instead
+    # of contaminating whole boundary rows (measured: a horizontal
+    # boundary sweep shifted the mirror-curve offset disx by ~2e-2
+    # depending on ny; the vertical scheme is grid-independent).
+    for i in range(ia + 1, len(X)):
+        F[i, jm] = F[i - 1, jm] + _kus_gl(om, W[i - 1, jm], W[i, jm])
+    for i in range(ia - 1, -1, -1):
+        F[i, jm] = F[i + 1, jm] + _kus_gl(om, W[i + 1, jm], W[i, jm])
+    for j in range(jm + 1, ny):
+        F[:, j] = F[:, j - 1] + _kus_gl(om, W[:, j - 1], W[:, j])
+    for j in range(jm - 1, -1, -1):
+        F[:, j] = F[:, j + 1] + _kus_gl(om, W[:, j + 1], W[:, j])
+    # normalization X(z = 0) = 0: z-path i -> 0 down the imaginary
+    # axis (upper-side branches, all integrable)
+    zp = 1j * np.linspace(1.0, 1e-10, 1500)
+    delta = _kus_gl(phi, zp[:-1], zp[1:], 10).sum(axis=0)
+    Fr = np.real(F) - np.real(delta)
+    x1m = x1 - 1e-9
+    sel1 = X < x1m
+    meta = {
+        'rho': rho,
+        'disy': float(np.median(Fr[:, 0, 1])),
+        'disx': float(np.median(Fr[sel1, -1, 0])),
+        'ey_std': float(Fr[:, 0, 1].std()),
+        'ex_std': float(Fr[sel1, -1, 0].std()),
+        'delta': -np.real(delta),
+    }
+    return Fr, X, meta
+
+
+def horgan_gap(a, nu=(14, 14, 20), ny=28):
+    """(disx, disy) of member a -- the two mirror-curve offsets whose
+    difference is the unclosable period defect."""
+    _F, _X, meta = horgan_patch(a, nu=nu, ny=ny)
+    return meta['disx'], meta['disy']
+
+
+def horgan_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Weber's Horgan near-miss illustration: order picks the member
+    (a = 1.01, 1.1, 1.5 -- his three renders), radius stretches the
+    end windows.  The assembly closes the catenoid-edge mirror seam
+    exactly (t = -disy) and leaves the other seam open by the
+    measured period defect |disx - disy| -- the gap IS the point."""
+    del spec, theta
+    a = HORGAN_A[int(np.clip(order - 1, 0, len(HORGAN_A) - 1))]
+    p0 = HORGAN_PADS[a]
+    fac = float(np.clip(radius / 1.2, 0.4, 2.0))
+    n = max(12, int(nu / 3))
+    F, Xg, meta = horgan_patch(
+        a, nu=(n, n, int(1.5 * n)), ny=max(24, int(nv * 0.8)),
+        pad=(p0[0] * fac, p0[1] * fac))
+    nx, ny2 = F.shape[:2]
+    t = -meta['disy']
+    x0_ = math.log(a * a)
+    x1_ = math.log(a * a - 1.0)
+    # snap each boundary arc onto its own measured symmetry element
+    # (medians; std ~1e-7), so the two seams that DO close weld
+    # vertex-to-vertex and the two that cannot stay open by exactly
+    # the measured defect:
+    #   y = 0 edge: the catenoid-edge mirror curve, plane y = disy;
+    #   y = pi, x > x0: the (1,1,0) rotation-axis line x = y, z = 0;
+    #   y = pi, x < x1: the gap mirror curve, plane x = disx (OPEN);
+    #   y = pi, x1..x0: its R-image family, plane y = const (OPEN).
+    F[:, 0, 1] = meta['disy']
+    s1 = Xg <= x1_ + 1e-12
+    s2 = (Xg >= x1_ - 1e-12) & (Xg <= x0_ + 1e-12)
+    s3 = Xg >= x0_ - 1e-12
+    F[s1, -1, 0] = meta['disx']
+    F[s2, -1, 1] = float(np.median(F[s2, -1, 1]))
+    ax_ = 0.5 * (F[s3, -1, 0] + F[s3, -1, 1])
+    F[s3, -1, 0] = ax_
+    F[s3, -1, 1] = ax_
+    F[s3, -1, 2] = 0.0
+    P0 = F.reshape(-1, 3)
+    # rotate about the (1,1,0) symmetry line through f(0) = 0 FIRST,
+    # then translate both copies (the notebook's order)
+    R = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+    tv = np.array([t, t, 0.0])
+    parts = [P0 + tv, P0 @ R.T + tv]
+    parts = parts + [P_ * np.array([-1.0, 1.0, 1.0]) for P_ in parts]
+    parts = parts + [P_ * np.array([1.0, -1.0, 1.0]) for P_ in parts]
+    # winding parities solved from the two welded seam families (the
+    # in-surface Schwarz elements reverse the attached copy)
+    flips = (False, True, True, False, True, False, False, True)
+    quads0 = _kus_grid_quads(nx, ny2)
+    NV = nx * ny2
+    V = np.concatenate(parts, axis=0)
+    Fc = []
+    for k_, fl_ in enumerate(flips):
+        for q in quads0:
+            qq = tuple(int(i) + k_ * NV for i in q)
+            Fc.append(qq[::-1] if fl_ else qq)
+    # weld the two closable seam families by exact grid-index pairs:
+    #   y = 0 edge (in the y = 0 plane after the translation) glues
+    #   each copy to its y-mirror image; the axis arc glues each copy
+    #   to its 180-degree rotation.  The gap seams are NOT welded --
+    #   the x = +-|disx - disy| and y = +-|disx - disy| arc pairs
+    #   stay open by twice the measured period defect, which is the
+    #   finding this row ships.
+    pairs = []
+
+    def gid(part_, i_, j_):
+        return part_ * NV + i_ * ny2 + j_
+
+    iax = [i_ for i_ in range(nx) if s3[i_]]
+    for pa_, pb_ in ((0, 4), (1, 5), (2, 6), (3, 7)):
+        for i_ in range(nx):
+            pairs.append((gid(pa_, i_, 0), gid(pb_, i_, 0)))
+    for pa_, pb_ in ((0, 1), (2, 3), (4, 5), (6, 7)):
+        for i_ in iax:
+            pairs.append((gid(pa_, i_, ny2 - 1), gid(pb_, i_, ny2 - 1)))
+    V, Fc, _first = _g1h_weld_pairs(V, Fc, pairs)
+    V = _center_fit(V, scale, V)
+    return V, Fc, None
+
+
+# ==========================================================================
+# Lopez-Martin slab surface -- the b = 1/2 member of the genus-one
+# helicoid family, where the unsolved vertical period closes up again
+# one full translation late.
+#
+# Lopez and Martin ("Minimal surfaces in a wedge of a slab") construct
+# a translation-invariant minimal surface with planar ends that is
+# NEITHER EMBEDDED NOR ORIENTABLE: its only self-intersection is along
+# the z-axis, and it solves a Plateau problem in a wedge of a slab.
+# Per Martin's observation on Weber's page, it belongs to the
+# translation-invariant helicoid-with-handle family with the vertical
+# period condition left unsolved: the same rhombic-torus theta data
+# (G, dh as in the genus1helicoid block above) at tau = e^(i alpha0)
+# but with the end parameter b FREE.  The period structure, measured
+# here (and re-derived by the zoo gate at the notebook's own member):
+#
+#   * horizontal closure of BOTH lattice cycles holds for EVERY
+#     (tau, b) once arg(dhper) = arg(A B)/2 and |rho1|^2 = |B|/|A|
+#     (A = oint G~ dh~, B = oint dh~/G~ over the z -> z+1 cycle);
+#     |dhper| then normalizes the z -> z+tau deck to (0, 0, -2);
+#   * the z -> z+1 cycle translates by (0, 0, s(b)) -- the SLIDE the
+#     blog animates.  b0 = 0.6290650983... is the root s = 0 (the
+#     helicoid with handle; our solver reproduces the notebook's
+#     rho_abs to 13 digits and dhper to 7);
+#   * at b = 1/2 the slide is EXACTLY 2 = one full period, so the
+#     torus quotient closes again, shifted one translation -- and the
+#     data degenerates beautifully: theta factors pair up, dh becomes
+#     CONSTANT (dh = dz/dhper, CHM-style) and G a perfect square with
+#     double zero/pole, so both ends turn PLANAR.  That member is the
+#     Lopez-Martin slab: flat plates at consecutive integer heights
+#     joined by necks, self-intersecting along the vertical axis
+#     (measured: far plate points cluster at z = 0, +-1; the axis
+#     line lies in two sheets of the surface).
+#
+# GROUND TRUTH: the slab itself has no PoVRay export (the page's
+# resource links are dead text), so the family CODE is registered at
+# the helicoid member instead, against Weber's export of the
+# translation-invariant helicoid with handle: built through THIS
+# solver/sheet path, it registers at 0.245% (GT -> ours of span,
+# export scale exactly 3.0 = his three periods normalized to height
+# 2; the residual outlier fraction is his decorative low-resolution
+# line sub-meshes, nt = 2).  The slab member is then the same
+# verified code at the measured b = 1/2 constants, gated on its own
+# structure (slide exactly 2, dh constant, planar-end flatness).
+#
+# References:
+# - F. J. Lopez and F. Martin, "Minimal surfaces in a wedge of a
+#   slab", Comm. Anal. Geom. 9 (2001) 683-723 -- the construction the
+#   page presents.
+# - D. Hoffman, H. Karcher, F. Wei, "The singly periodic genus-one
+#   helicoid", Comment. Math. Helv. 74 (1999) 248-279 -- the family
+#   whose vertical period condition is left unsolved here.
+# - M. Weber, "Lopez-Martin slab surface" and "The translation
+#   invariant helicoid with handle", minimalsurfaces.blog (notebook
+#   `Translation-Helicoid-g-1.nb`: the theta data, the solved member
+#   constants and the strip chart; his helicoid export = the
+#   registration ground truth).
+# ==========================================================================
+
+_LMS_CACHE = {}
+
+
+def lm_slab_member(alpha_deg=_G1H_ALPHA0, b=0.5, n=20001):
+    """Solve the constants chain of the (tau = e^(i alpha), b) member:
+    returns dict(tau, c, b, rho_abs, psi, dhper, slide, r0, a0,
+    XA..XD, sym).  See the block header for the conditions."""
+    key = (round(alpha_deg, 10), round(b, 12))
+    if key in _LMS_CACHE:
+        return _LMS_CACHE[key]
+    tau = complex(np.exp(1j * np.pi * alpha_deg / 180.0))
+    c = 0.5 * (1.0 + tau)
+    th = genus1helicoid_theta11
+
+    def om_raw(z):
+        t1 = th(z + (b - 2.0) * c, tau)
+        t2 = th(z - (1.0 + b) * c, tau)
+        t3 = th(z + (b - 1.0) * c, tau)
+        t4 = th(z - b * c, tau)
+        e = np.exp(1j * np.pi * (b - 2.0 * z + 2.0 * tau + b * tau))
+        return e * t1 * t2 / (t3 * t4), (t1 * t4) / (t3 * t2)
+
+    z0 = 0.13 + 0.27j * tau.imag
+    t = np.linspace(0.0, 1.0, n)
+
+    def cyc(dz):
+        z = z0 + dz * t
+        Gt, dh = om_raw(z)
+        dzs = np.diff(z)
+        A = np.sum(0.5 * ((Gt * dh)[1:] + (Gt * dh)[:-1]) * dzs)
+        B = np.sum(0.5 * ((dh / Gt)[1:] + (dh / Gt)[:-1]) * dzs)
+        P3 = np.sum(0.5 * (dh[1:] + dh[:-1]) * dzs)
+        return A, B, P3
+    A1, B1, P31 = cyc(1.0)
+    _At, _Bt, P3t = cyc(tau)
+    psi = 0.5 * float(np.angle(A1 * B1))
+    rho_abs = float(np.sqrt(np.abs(B1) / np.abs(A1)))
+    r_abs = float(np.real(P3t * np.exp(-1j * psi))) / (-2.0)
+    dhper = r_abs * np.exp(1j * psi)
+    slide = float(np.real(P31 / dhper))
+
+    # domain chart constants: r0 from the notebook's rectangle-shape
+    # condition, a0 from tst(a0) = 1 - b
+    def tst(z, r0_):
+        m_ = 1.0 / (r0_ * r0_)
+        z = np.asarray(z, dtype=complex)
+        K2 = 2.0 * float(np.real(
+            _g1h_ellf(np.array(1.0 - 1e-15 + 0j), m_)))
+        return (z * _g1h_rf(1.0 - z * z + 0j, 1.0 - m_ * z * z + 0j,
+                            np.ones_like(z)) / K2 + 0.5)
+
+    def h(r_):
+        return float(np.imag((1.0 + tau) / 2.0
+                             * (1.0 + complex(tst(-r_ + 1e-14j, r_)))
+                             - tau))
+    lo, hi = 1.05, 8.0
+    flo = h(lo)
+    for _ in range(90):
+        mid = 0.5 * (lo + hi)
+        fm = h(mid)
+        if flo * fm <= 0:
+            hi = mid
+        else:
+            lo, flo = mid, fm
+    r0 = 0.5 * (lo + hi)
+
+    def g(a_):
+        return float(np.real(complex(tst(a_ + 0j, r0)))) - (1.0 - b)
+    lo2, hi2 = -0.999, 0.999
+    flo2 = g(lo2)
+    for _ in range(80):
+        mid = 0.5 * (lo2 + hi2)
+        fm = g(mid)
+        if flo2 * fm <= 0:
+            hi2 = mid
+        else:
+            lo2, flo2 = mid, fm
+    a0 = 0.5 * (lo2 + hi2)
+
+    def corner(tg):
+        s_ = (tg - a0) / (r0 + tg * a0)
+        return math.log(abs(s_))
+    XA, XB = corner(1.0), corner(r0)
+    XC, XD = corner(-1.0), corner(-r0)
+    mem = dict(tau=tau, c=c, b=b, rho_abs=rho_abs, psi=psi,
+               dhper=complex(dhper), slide=slide, r0=r0, a0=a0,
+               m=1.0 / (r0 * r0), XA=XA, XB=XB, XC=XC, XD=XD,
+               sym=XA + XD)
+    _LMS_CACHE[key] = mem
+    return mem
+
+
+def _lms_omega(z, mem, rho1):
+    tau, b, c = mem['tau'], mem['b'], mem['c']
+    th = genus1helicoid_theta11
+    t1 = th(z + (b - 2.0) * c, tau)
+    t2 = th(z - (1.0 + b) * c, tau)
+    t3 = th(z + (b - 1.0) * c, tau)
+    t4 = th(z - b * c, tau)
+    e = np.exp(1j * np.pi * (b - 2.0 * z + 2.0 * tau + b * tau))
+    G = rho1 * e * t1 * t2 / (t3 * t4)
+    o3 = (t1 * t4) / (t3 * t2) / mem['dhper']
+    return 0.5 * (1.0 / G - G) * o3, 0.5j * (1.0 / G + G) * o3, o3
+
+
+def _lms_zmap(w, mem):
+    ew = np.exp(np.asarray(w, dtype=complex))
+    s = (-mem['a0'] - mem['r0'] * ew) / (-1.0 + mem['a0'] * ew)
+    z = np.asarray(s, dtype=complex)
+    K2 = 2.0 * float(np.real(_g1h_ellf(np.array(1.0 - 1e-15 + 0j),
+                                       mem['m'])))
+    return (z * _g1h_rf(1.0 - z * z + 0j, 1.0 - mem['m'] * z * z + 0j,
+                        np.ones_like(z)) / K2 + 0.5) * mem['c']
+
+
+def lm_slab_sheet(mem, rho1, r1=-2.5, nu=101, nv=41, K=8, eps=1e-7):
+    """Fundamental sheet of the (tau, b) member over the half strip
+    [r1, sym - r1] x (0, pi) -- the generalized genus1helicoid sheet
+    (same chart, member constants instead of the harvested ones)."""
+    x_hi = mem['sym'] - r1
+    corners = (mem['XA'], mem['XB'], mem['XC'], mem['XD'])
+    spec = sorted(set(list(corners)
+                      + [mem['sym'] - c_ for c_ in corners]))
+    xs = _g1h_graded(r1, x_hi, nu, spec)
+    xs = np.unique(np.round(np.concatenate(
+        [xs, mem['sym'] - xs, spec,
+         [mem['sym'] - s_ for s_ in spec]]), 12))
+    # enforce EXACT mirror symmetry about SYM/2: the assembly welds by
+    # the index map i <-> n-1-i, and the 1e-12 rounding of the deduped
+    # union can otherwise leave near-twin nodes whose mirrors collapse
+    # (a non-bijective mirror map -> slit seams in the weld)
+    c_half = mem['sym'] / 2.0
+    lo_ = xs[xs < c_half - 1e-9]
+    xs = np.concatenate([lo_, [c_half], (c_half - lo_)[::-1] + c_half])
+    t = np.linspace(0.0, 1.0, nv)
+    ys = eps + (np.pi - 2 * eps) * (0.5 - 0.5 * np.cos(np.pi * t))
+    nu2 = len(xs)
+    j0 = nv // 2
+    i0 = int(np.argmin(np.abs(xs - mem['sym'] / 2.0)))
+
+    def seg(wa, wb):
+        tt = np.linspace(0.0, 1.0, K + 1)
+        W = wa[:, None] + (wb - wa)[:, None] * tt[None, :]
+        Z = _lms_zmap(W, mem)
+        o = np.stack(_lms_omega(Z, mem, rho1), axis=-1)
+        dZ = np.diff(Z, axis=1)
+        return np.sum(0.5 * (o[:, 1:] + o[:, :-1]) * dZ[..., None],
+                      axis=1)
+
+    F = np.zeros((nu2, nv, 3), complex)
+    row = np.concatenate([np.zeros((1, 3), complex),
+                          np.cumsum(seg(xs[:-1] + 1j * ys[j0],
+                                        xs[1:] + 1j * ys[j0]), axis=0)])
+    F[:, j0] = row - row[i0]
+    for j in range(j0 + 1, nv):
+        F[:, j] = F[:, j - 1] + seg(xs + 1j * ys[j - 1],
+                                    xs + 1j * ys[j])
+    for j in range(j0 - 1, -1, -1):
+        F[:, j] = F[:, j + 1] - seg(xs + 1j * ys[j],
+                                    xs + 1j * ys[j + 1])
+
+    def pint(za, zb, n=20001):
+        tt = np.linspace(0.0, 1.0, n)
+        p = za + (zb - za) * tt
+        o = np.stack(_lms_omega(p, mem, rho1), axis=-1)
+        dz = np.diff(p)
+        return np.sum(0.5 * (o[1:] + o[:-1]) * dz[:, None], axis=0)
+    C = pint(1.0 + 0j, mem['tau'] / 2.0) \
+        + pint(mem['tau'] / 2.0,
+               complex(_lms_zmap(xs[i0] + 1j * ys[j0], mem)))
+    return xs, ys, np.real(F + C[None, None, :])
+
+
+def lm_slab_assemble(mem, rho1, storeys=1, r1=-2.5, nu=101, nv=41):
+    """Finished (V, quads) of `storeys` translational cells of the
+    b = 1/2 member: each cell is the strip sheet plus its 180-degree
+    rotation about the z axis, stacked by (0, 0, 2) and welded by
+    EXACT grid-index pairs, following `genus1helicoid_assemble` (the
+    generic member of the same family) with the b = 1/2 degeneracy
+    folded in.  At b = 1/2 the slide is a FULL period, so (i) the two
+    chart axis segments (E0: x in [XA, XB] of the y = 0 edge, E1:
+    x in [XC, XD] of the y = pi edge) land on the SAME z-axis segment
+    pointwise -- welding each sheet<->rotation pair separately keeps
+    the two sheets through the axis as distinct crossing walls (the
+    surface's genuine self-intersection) -- and (ii) the in-cell
+    ruling of the generic member has migrated onto the cell boundary:
+    the plates carry horizontal straight rays (Schwarz lines in the
+    plate planes), and ALL FOUR ray arcs of a level weld
+    cell-to-cell, none in-cell.  The x-grid is symmetric about SYM/2
+    with the corner values sample-exact, so every partner of sample i
+    is sample nu' - 1 - i and no positional tolerance is involved:
+      * axis welds, cell k: A(i, y=0) <-> B(i, y=0) for i in
+        [iA, iB], and likewise on the y = pi edge;
+      * level welds between cells k, k+1 (the plate line, where the
+        sagging top plate of cell k crosses the bulging bottom plate
+        of cell k+1 transversally -- the smooth Schwarz continuation
+        swaps sheet and side): A_k.E0[x <= XA] <-> B_{k+1}.E1[sym-x]
+        plus the three 180-degree-rotation mates."""
+    xs, ys, X = lm_slab_sheet(mem, rho1, r1, nu, nv)
+    nu2, nv2 = X.shape[:2]
+    # center the cell at z = 0 (the sheet lands on [-2 - s, -s])
+    zc = 0.5 * (X[..., 2].max() + X[..., 2].min())
+    X = X - np.array([0.0, 0.0, zc])
+    P0 = X.reshape(-1, 3)
+    quads0 = _kus_grid_quads(nu2, nv2)
+    parts, flips = [], []
+    zoff = -(storeys - 1)
+    for s_ in range(storeys):
+        off = np.array([0.0, 0.0, 2.0 * s_ + zoff])
+        parts.append(P0 + off)
+        flips.append(False)
+        parts.append(P0 * np.array([-1.0, -1.0, 1.0]) + off)
+        flips.append(True)
+    V = np.concatenate(parts, axis=0)
+    NV = nu2 * nv2
+    F = []
+    for k_, fl_ in enumerate(flips):
+        for q in quads0:
+            qq = tuple(int(i) + k_ * NV for i in q)
+            F.append(qq[::-1] if fl_ else qq)
+    # the weld table (all exact index pairs; positions averaged)
+    iA = int(np.argmin(np.abs(xs - min(mem['XA'], mem['XB']))))
+    iB = int(np.argmin(np.abs(xs - max(mem['XA'], mem['XB']))))
+    # mirror partner of sample i (x -> SYM - x); looked up rather than
+    # assumed to be nu' - 1 - i, because the rounding that dedups the
+    # concatenated grid can leave the index symmetry off by one
+    mir = np.argmin(np.abs(xs[None, :]
+                           - (mem['sym'] - xs)[:, None]), axis=1)
+
+    def gid(sheet, i, j):
+        return sheet * NV + i * nv2 + j
+
+    pairs = []
+    for k_ in range(storeys):
+        p, r = 2 * k_, 2 * k_ + 1
+        for i in range(iA, iB + 1):            # the two axis walls
+            pairs.append((gid(p, i, 0), gid(r, i, 0)))
+            pairs.append((gid(p, i, nv2 - 1), gid(r, i, nv2 - 1)))
+        if k_ + 1 < storeys:                   # plate-line welds
+            p2, r2 = 2 * (k_ + 1), 2 * (k_ + 1) + 1
+            for i in range(0, iA + 1):
+                m = int(mir[i])
+                pairs.append((gid(p, i, 0), gid(r2, m, nv2 - 1)))
+                pairs.append((gid(r, i, 0), gid(p2, m, nv2 - 1)))
+                pairs.append((gid(p, i, nv2 - 1), gid(r2, m, 0)))
+                pairs.append((gid(r, i, nv2 - 1), gid(p2, m, 0)))
+    Vw, qw, _first = _g1h_weld_pairs(V, F, pairs)
+    return Vw, qw
+
+
+def lm_slab_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Lopez-Martin slab: order = stacked periods, radius sets how far
+    the flat plates follow their planar ends.  Immersed and one-sided
+    as a complete surface -- the mesh keeps the two sheets through the
+    z-axis as separate walls (a genuine self-intersection, exactly as
+    in Weber's and the authors' pictures)."""
+    del spec, theta
+    storeys = int(np.clip(order, 1, 6))
+    mem = lm_slab_member(_G1H_ALPHA0, 0.5)
+    rho1 = mem['rho_abs'] * np.exp(1j * math.atan2(
+        -62.8417365006266681, 108.369522264594063))
+    r1 = -(1.7 + 0.8 * float(np.clip(radius / 1.2, 0.5, 2.5)))
+    pnu = int(np.clip(nu * 1.4, 70, 200))
+    pnv = int(np.clip(nv * 0.7, 30, 80))
+    V, F = lm_slab_assemble(mem, rho1, storeys, r1, pnu, pnv)
+    V = _center_fit(V, scale, V)
+    return V, F, None
+
+
+# ==========================================================================
+# Weber-Wolf surfaces: the borderline case of the Hoffman-Meeks
+# conjecture at genus 3 (two catenoidal + three planar ends), and its
+# higher dihedral symmetrizations.
+#
+# The Hoffman-Meeks conjecture bounds an embedded finite-total-
+# curvature surface of genus g by g + 2 ends; the borderline
+# realizations are the catenoid (g = 0), Costa (g = 1), Wohlgemuth
+# (g = 2), and at g = 3 the Weber-Wolf surface: two catenoidal ends,
+# three planar ends, the connections between consecutive planar
+# levels realized by Costa saddles.  The k-fold dihedral versions
+# (k = 2 is the genus-3 surface; higher k gives genus 3(k - 1) --
+# the k-cover of the sphere is totally branched over the 8 points
+# 0, +-1, +-a, +-b, infinity, so Riemann-Hurwitz gives
+# 2 - 2g = 2k - 8(k - 1); the meshes measure chi = 3 - 6k with 5 end
+# rims, exactly 2 - 2(3k - 3) - 5) come from Weber's DH11 notebook
+# (higher-symmetry portion by Ramazan Yol).
+#
+# Data (DH11.nb, transcribed; all powers pointwise principal):
+#     phi1 = z^(1/k-1) (z^2-a^2)^(1/k-1) (z^2-1)^(1-1/k)
+#            (z^2-b^2)^(-1-1/k),
+#     phi2 = z^(1-1/k) (z^2-b^2)^(1+1/k) (z^2-1)^(1/k-1)
+#            (z^2-a^2)^(-1-1/k),
+#     dh   = dz/(z^2 - a^2),
+#     om1  = -(rho phi1 - phi2/rho)/2,  om2 = i(rho phi1 + phi2/rho)/2,
+#     rho  = sqrt( int_0^1 e^(-i pi/k) phi2 / int_0^1 e^(i pi/k) phi1 )
+# (rho comes out REAL, gated), with (a, b) the two-parameter period
+# problem.  The notebook's own test function is
+#     tst = ( Re int_{(1+a)/2}^{i -> 10} om2,
+#             Re int_{1/2}^{i -> (a+b)/2} (om1, om2)
+#                 . (-sin(-pi/k), cos(-pi/k)) )
+# and the members are its roots.  The notebook's stored (a, b) values
+# satisfy tst only to 1e-8 (k = 2) .. 5e-3 (k = 5) -- quadrature-
+# converged plateaus, so those are the notebook's own FindRoot
+# tolerances, not our error; WW_MEMBERS stores the roots RE-SOLVED
+# from the same test to ~1e-11 (Newton; k = 2 moved by 1e-8, k = 5
+# by 6e-4).  The zoo gate re-derives tst at the stored roots.
+#
+# MESHED TO THE NOTEBOOK'S LOG CHART: w = log((z^2-a^2)^2/(z^2-b^2)),
+# whose two inverse branches z = sqrt((2a^2 + e^w +- e^(w/2)
+# sqrt(4a^2-4b^2+e^w))/2) cover the fundamental piece as two strips
+# (f2 on y in (0, pi), f3 on y in (-pi, 0), Weber's graded windows
+# with breaks at the critical values x1, x2, x3 = the logs of the
+# images of z = 1, 0 and the branch-merge).  dz/dw is used IN CLOSED
+# FORM (dw/dz = 2z(2/(z^2-a^2) - 1/(z^2-b^2))); integration is one
+# horizontal sweep along a mid row plus vertical column sweeps, the
+# anchor by a straight z-path from the base z = i for F2, the F3
+# strip CONTINUED from F2 across the y = 0 seam (see ww_patches),
+# and the normalization X(0) = 0 by the imaginary-axis path
+# (upper-side principal branches throughout).  Assembly: 180-degree
+# rotation about the horizontal line at azimuth -pi/(2k), mirror
+# across y = 0, then the k vertical rotations -- the notebook's
+# mp2/mp3/mp4 -- WELDED along the measured seam families into one
+# manifold surface (see ww_mesh; chi = 3 - 6k with 5 end rims and a
+# consistent orientation, measured at every k).
+#
+# GROUND TRUTH: registered against Weber's own PoVRay exports of the
+# three members he renders (k = 2, 3, 4): GT -> ours one-sided means
+# 0.27% / 0.23% / 0.20% of span at moderate resolution (0.17% at
+# high; the residual outlier fraction, 6-15%, is his decorative
+# low-resolution FR sub-meshes exactly as in his other packages),
+# and the assembled extent ratios z/x match his exports to 4 digits
+# (0.8928 / 0.9836 / 0.8829 for k = 2 / 3 / 4) -- pinned in the zoo
+# gate.
+#
+# References:
+# - M. Weber and M. Wolf, "Teichmueller theory and handle addition
+#   for minimal surfaces", Ann. of Math. 156 (2002) 713-795 -- the
+#   handle-addition machinery behind the family.
+# - D. Hoffman and W. H. Meeks III, "The asymptotic behavior of
+#   properly embedded minimal surfaces of finite topology", J. Amer.
+#   Math. Soc. 2 (1989) 667-682 -- the conjecture whose g = 3
+#   borderline case this surface realizes.
+# - M. Weber, "Weber-Wolf surface of genus 3 with 5 ends",
+#   minimalsurfaces.blog (notebook `DH11.nb`, higher-symmetry portion
+#   by Ramazan Yol -- the data, the solved members and the log chart
+#   transcribed above; PoVRay exports = registration ground truth).
+# ==========================================================================
+
+# (a, b) per k, re-solved from the notebook's own tst to ~1e-11
+# (the notebook's stored values, satisfying tst to 1e-8..5e-3, are
+# k=2: (1.03243674045806521, 1.09547100064006697),
+# k=3: (1.0261070260032843, 1.0785891849884828),
+# k=4: (1.0203659563370262, 1.0608027225248307),
+# k=5: (1.0162839641877608, 1.0477361415441295))
+WW_MEMBERS = {2: (1.0324367538, 1.0954710181),
+              3: (1.0261022604, 1.0785622028),
+              4: (1.0203291491, 1.0605994668),
+              5: (1.0161738755, 1.0471651251)}
+WW_WINDOWS = {2: (13.0, 0.2, 6.0), 3: (13.0, 0.2, 7.0),
+              4: (13.0, 0.2, 8.0), 5: (13.0, 0.2, 8.0)}
+
+
+def _ww_pow(z, e):
+    return np.exp(e * np.log(z))
+
+
+def ww_phis(k, a, b):
+    def phi1(z):
+        z = np.asarray(z, dtype=complex)
+        return (_ww_pow(z, 1.0 / k - 1.0)
+                * _ww_pow(z * z - a * a, 1.0 / k - 1.0)
+                * _ww_pow(z * z - 1.0, 1.0 - 1.0 / k)
+                * _ww_pow(z * z - b * b, -1.0 - 1.0 / k))
+
+    def phi2(z):
+        z = np.asarray(z, dtype=complex)
+        return (_ww_pow(z, 1.0 - 1.0 / k)
+                * _ww_pow(z * z - b * b, 1.0 + 1.0 / k)
+                * _ww_pow(z * z - 1.0, 1.0 / k - 1.0)
+                * _ww_pow(z * z - a * a, -1.0 - 1.0 / k))
+    return phi1, phi2
+
+
+def ww_rho(k, a, b, n=400):
+    """The Lopez-Ros balance on (0, 1); real for the true members."""
+    phi1, phi2 = ww_phis(k, a, b)
+    gx, gw = np.polynomial.legendre.leggauss(n)
+    t = 0.5 * (gx + 1.0)
+    wt = 0.5 * gw
+    u = 3 * t * t - 2 * t ** 3
+    du = 6 * t - 6 * t * t
+    z = u + 0j
+    I1 = np.sum(np.exp(1j * np.pi / k) * phi1(z) * du * wt)
+    I2 = np.sum(np.exp(-1j * np.pi / k) * phi2(z) * du * wt)
+    return complex(np.sqrt(I2 / I1))
+
+
+def ww_forms(k, a, b, rho):
+    phi1, phi2 = ww_phis(k, a, b)
+
+    def om(z):
+        z = np.asarray(z, dtype=complex)
+        p1 = rho * phi1(z)
+        p2 = phi2(z) / rho
+        return np.stack([-(p1 - p2) / 2.0, 1j * (p1 + p2) / 2.0,
+                         1.0 / (z * z - a * a)], axis=-1)
+    return om
+
+
+def ww_forms_w(k, a, b, rho, branch):
+    """The forms in the log chart, dz/dw in closed form."""
+    om = ww_forms(k, a, b, rho)
+
+    def zfn(w):
+        w = np.asarray(w, dtype=complex)
+        ew = np.exp(w)
+        s = np.sqrt(4 * a * a - 4 * b * b + ew)
+        return np.sqrt(0.5 * (2 * a * a + ew
+                              + branch * np.exp(0.5 * w) * s))
+
+    def omw(w):
+        z = zfn(w)
+        dwdz = 2.0 * z * (2.0 / (z * z - a * a)
+                          - 1.0 / (z * z - b * b))
+        return om(z) / dwdz[..., None]
+    return zfn, omw
+
+
+def ww_tst(k, a, b, n=3000):
+    """The notebook's own 2-component period test (see header)."""
+    rho = ww_rho(k, a, b)
+    om = ww_forms(k, a, b, rho)
+
+    def path_int(waypts):
+        tot = np.zeros(3, dtype=complex)
+        for z0, z1 in zip(waypts[:-1], waypts[1:]):
+            t = np.linspace(0.0, 1.0, n // len(waypts))
+            u = 3 * t * t - 2 * t ** 3
+            pts = z0 + (z1 - z0) * u
+            tot = tot + _kus_gl(om, pts[:-1], pts[1:], 12).sum(axis=0)
+        return tot
+    t1 = float(np.real(path_int(
+        [(1 + a) / 2.0 + 0j, 1j, 10.0 + 0j]))[1])
+    v = np.real(path_int([0.5 + 0j, 1j, (a + b) / 2.0 + 0j]))[:2]
+    d = np.array([-math.sin(-math.pi / k), math.cos(-math.pi / k)])
+    return t1, float(v @ d)
+
+
+def ww_patches(k, nx=10, ny=26, windows=None):
+    """The two log-chart strips of the fundamental piece.  F2 is
+    integrated as before (mid-row sweep + vertical columns, z-path
+    anchor from z = i, X(0) = 0 normalization).  F3 is anchored by
+    DIRECT CONTINUATION from F2 across the y = 0 seam: the two
+    inverse branches agree on y = 0 for x below the branch merge
+    log(4(b^2 - a^2)) (measured: the +-delta rows differ by
+    O(delta) there, and by O(1) beyond the merge where the branches
+    are genuinely distinct real-z arcs), so the two strips share one
+    rigid frame instead of each trusting its own z-anchor path.  Its
+    y grid mirrors F2's quadratic grading toward the seam -- the
+    earlier sqrt grading (a mis-transcription of the notebook's
+    NRange[eps^4, .]^(1/2)) truncated the strip 0.042 pi short of
+    y = 0, which is exactly why the F3 pieces could never weld.
+    Returns ([F2, F3], (a, b, rho), (X1, X2, Y2, Y1))."""
+    a, b = WW_MEMBERS[k]
+    rho = ww_rho(k, a, b).real
+    plan1, plan2, cat = windows or WW_WINDOWS[k]
+    x1, x2, x3 = sorted([
+        math.log((a * a - 1.0) ** 2 / (b * b - 1.0)),
+        math.log(a ** 4 / (b * b)),
+        math.log(4 * (b * b - a * a))])
+    om = ww_forms(k, a, b, rho)
+    eps = 1e-11
+
+    def xgrid(spec):
+        xs = [np.linspace(lo, hi, nx, endpoint=False)
+              for lo, hi in zip(spec[:-1], spec[1:])]
+        return np.unique(np.concatenate(xs + [[spec[-1]]]))
+    X1 = xgrid([-plan1, x1, x2, x3, plan2, cat])
+    X2 = xgrid([-plan1, x1, x2, x3, plan2])
+    Y2 = np.pi * np.linspace(eps ** 0.25, 1.0 - eps, ny) ** 2
+    Y1 = -Y2[::-1]
+    zfn2, omw2 = ww_forms_w(k, a, b, rho, +1)
+    zfn3, omw3 = ww_forms_w(k, a, b, rho, -1)
+    # ---- F2: anchored from z = i --------------------------------
+    W2 = X1[:, None] + 1j * Y2[None, :]
+    n2x, n2y = W2.shape
+    F2 = np.zeros((n2x, n2y, 3), dtype=complex)
+    jm = n2y // 2
+    im = int(np.argmin(np.abs(X1 - 0.5 * (x3 + plan2))))
+    za = complex(zfn2(W2[im, jm]))
+    path = np.linspace(1j, za, 1200)
+    F2[im, jm] = _kus_gl(om, path[:-1], path[1:], 10).sum(axis=0)
+    for i in range(im + 1, n2x):
+        F2[i, jm] = F2[i - 1, jm] + _kus_gl(omw2, W2[i - 1, jm],
+                                            W2[i, jm])
+    for i in range(im - 1, -1, -1):
+        F2[i, jm] = F2[i + 1, jm] + _kus_gl(omw2, W2[i + 1, jm],
+                                            W2[i, jm])
+    for j in range(jm + 1, n2y):
+        F2[:, j] = F2[:, j - 1] + _kus_gl(omw2, W2[:, j - 1], W2[:, j])
+    for j in range(jm - 1, -1, -1):
+        F2[:, j] = F2[:, j + 1] + _kus_gl(omw2, W2[:, j + 1], W2[:, j])
+    # ---- F3: continued from F2 across the y = 0 seam ------------
+    W3 = X2[:, None] + 1j * Y1[None, :]
+    n3x, n3y = W3.shape
+    F3 = np.zeros((n3x, n3y, 3), dtype=complex)
+    xm = math.log(4.0 * (b * b - a * a))
+    i_s = int(np.argmin(np.abs(X2 - (xm - 1.5))))
+    zs2 = complex(zfn2(W2[i_s, 0]))
+    zs3 = complex(zfn3(W3[i_s, -1]))
+    seg = np.linspace(zs2, zs3, 9)
+    F3[i_s, -1] = F2[i_s, 0] + _kus_gl(om, seg[:-1], seg[1:],
+                                       10).sum(axis=0)
+    jm3 = n3y // 2
+    for j in range(n3y - 2, jm3 - 1, -1):
+        F3[i_s, j] = F3[i_s, j + 1] + _kus_gl(omw3, W3[i_s, j + 1],
+                                              W3[i_s, j])
+    for i in range(i_s + 1, n3x):
+        F3[i, jm3] = F3[i - 1, jm3] + _kus_gl(omw3, W3[i - 1, jm3],
+                                              W3[i, jm3])
+    for i in range(i_s - 1, -1, -1):
+        F3[i, jm3] = F3[i + 1, jm3] + _kus_gl(omw3, W3[i + 1, jm3],
+                                              W3[i, jm3])
+    for j in range(jm3 + 1, n3y):
+        F3[:, j] = F3[:, j - 1] + _kus_gl(omw3, W3[:, j - 1], W3[:, j])
+    for j in range(jm3 - 1, -1, -1):
+        F3[:, j] = F3[:, j + 1] + _kus_gl(omw3, W3[:, j + 1], W3[:, j])
+    zp = 1j * np.linspace(1.0, 1e-9, 3000) ** 2
+    delta = np.real(_kus_gl(om, zp[:-1], zp[1:], 10).sum(axis=0))
+    return ([np.real(F2) - delta, np.real(F3) - delta], (a, b, rho),
+            (X1, X2, Y2, Y1))
+
+
+def ww_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Weber-Wolf surface: order picks k = order + 1 (order 1 = the
+    genus-3, 5-end borderline surface; higher = the k-fold dihedral
+    versions of genus 3(k - 1)).  `radius` follows the catenoid and
+    planar ends
+    further out.  The orbit of the two-strip fundamental piece under
+    the dihedral group is WELDED into one surface by exact grid-index
+    pairs along its measured seam families:
+      * the F2/F3 chart continuation across y = 0, x below the
+        branch merge (same group element, same column);
+      * the y = 0-plane mirror arcs of both strips beyond the merge
+        (partner g My);
+      * F2's y = pi edge, measured as THREE arcs: x < x1 (z real in
+        (1, a)) lies in the y = 0 mirror plane (partner g My);
+        x1 < x < log(a^4/b^2) (z real in (0, 1)) lies in the
+        mirror plane at azimuth -pi/k (partner g Q,
+        Q = Rz(-2 pi/k) My; at k = 2 this is the x = 0 plane);
+        x beyond that (z imaginary) lies ON the in-surface straight
+        line at azimuth -pi/(2 k) (partner g R) -- with the arc
+        junctions at the z-axis (x = x1) and at f(0) = 0;
+      * F3's whole y = -pi edge (z real in (a, b)), in the same
+        azimuth -pi/k mirror plane (partner g Q).
+    The ends (z = a catenoid, z = infinity, z = b planar) stay open
+    rims.  Winding parity of each copy is the parity of its point
+    group element (R and My each reverse)."""
+    del spec, theta
+    k = int(np.clip(order + 1, 2, 5))
+    p1, p2, cat = WW_WINDOWS[k]
+    fac = float(np.clip(radius / 1.2, 0.5, 1.6))
+    nx = max(6, int(nu / 6))
+    ny = max(16, int(nv * 0.55))
+    patches, meta2, grids = ww_patches(k, nx=nx, ny=ny,
+                                       windows=(p1 * fac, p2,
+                                                cat * fac))
+    a, b, _rho = meta2
+    X1, X2, Y2, Y1 = grids
+    F2g, F3g = patches
+    xm = math.log(4.0 * (b * b - a * a))
+    xr = math.log(a ** 4 / (b * b))
+    u = np.array([math.cos(math.pi / (2 * k)),
+                  -math.sin(math.pi / (2 * k)), 0.0])
+    R = 2.0 * np.outer(u, u) - np.eye(3)
+    My = np.diag([1.0, -1.0, 1.0])
+    cq, sq = math.cos(-TAU / k), math.sin(-TAU / k)
+    Q = np.array([[cq, -sq, 0.0], [sq, cq, 0.0],
+                  [0.0, 0.0, 1.0]]) @ My
+    nq = np.array([math.sin(math.pi / k), math.cos(math.pi / k),
+                   0.0])
+    x1s = math.log((a * a - 1.0) ** 2 / (b * b - 1.0))
+    # snap each boundary arc onto its measured symmetry element
+    s2sel = X1 > xm + 1e-9                       # F2 y=0 mirror arc
+    F2g[s2sel, 0, 1] = 0.0
+    s3sel = X2 > xm + 1e-9                       # F3 y=0 mirror arc
+    F3g[s3sel, -1, 1] = 0.0
+    mysel = X1 < x1s - 1e-9                      # F2 y=pi, x < x1
+    F2g[mysel, -1, 1] = 0.0
+    qsel = (X1 > x1s + 1e-9) & (X1 < xr - 1e-9)  # F2 y=pi Q-plane arc
+    P_ = F2g[qsel, -1]
+    F2g[qsel, -1] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    rsel = X1 > xr + 1e-9                        # F2 y=pi R-line arc
+    P_ = F2g[rsel, -1]
+    F2g[rsel, -1] = (P_ @ u)[:, None] * u[None, :]
+    ic1 = int(np.argmin(np.abs(X1 - x1s)))       # corner on the z axis
+    if abs(X1[ic1] - x1s) < 1e-9:
+        F2g[ic1, -1, 0] = 0.0
+        F2g[ic1, -1, 1] = 0.0
+    icr = int(np.argmin(np.abs(X1 - xr)))        # corner z = 0: f = 0
+    if abs(X1[icr] - xr) < 1e-9:
+        F2g[icr, -1] = 0.0
+    P_ = F3g[:, 0]                               # F3 y=-pi Q-plane arc
+    F3g[:, 0] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    # orbit the two strips; keep each copy's transform for the welds
+    n2x, n2y = F2g.shape[:2]
+    n3x, n3y = F3g.shape[:2]
+    NV2 = n2x * n2y
+    NV3 = n3x * n3y
+    q2 = _kus_grid_quads(n2x, n2y)
+    q3 = _kus_grid_quads(n3x, n3y)
+    Vs, Fs, recs = [], [], []
+    off = 0
+    for kk in range(k):
+        th = TAU * kk / k
+        c_, s_ = math.cos(th), math.sin(th)
+        Rz = np.array([[c_, -s_, 0.0], [s_, c_, 0.0], [0.0, 0.0, 1.0]])
+        for E, par in ((np.eye(3), 0), (R, 1), (My, 1), (My @ R, 0)):
+            M = Rz @ E
+            for si, Xg, qq, nvv in ((0, F2g, q2, NV2),
+                                    (1, F3g, q3, NV3)):
+                P0 = Xg.reshape(-1, 3)
+                Vs.append(P0 @ M.T)
+                Fs.extend(tuple(i + off for i in
+                                (q[::-1] if par else q))
+                          for q in qq)
+                recs.append((si, M, off))
+                off += nvv
+    V = np.concatenate(Vs, axis=0)
+
+    def findpart(si, M):
+        for sj, Mj, o_ in recs:
+            if sj == si and float(np.abs(Mj - M).max()) < 1e-9:
+                return o_
+        return -1
+
+    pairs = []
+    i_seam = [i_ for i_ in range(n3x) if X2[i_] <= xm + 1e-9]
+    i_s2 = [i_ for i_ in range(n2x) if X1[i_] > xm - 1e-9]
+    i_s3 = [i_ for i_ in range(n3x) if X2[i_] > xm - 1e-9]
+    i_my = [i_ for i_ in range(n2x) if X1[i_] <= x1s + 1e-9]
+    i_q = [i_ for i_ in range(n2x)
+           if x1s - 1e-9 <= X1[i_] <= xr + 1e-9]
+    i_r = [i_ for i_ in range(n2x) if X1[i_] >= xr - 1e-9]
+    for si, M, o_ in recs:
+        if si == 0:
+            o3 = findpart(1, M)                  # chart continuation
+            for i_ in i_seam:
+                pairs.append((o_ + i_ * n2y,
+                              o3 + i_ * n3y + n3y - 1))
+            oMy = findpart(0, M @ My)            # y = 0 mirror
+            for i_ in i_s2:
+                pairs.append((o_ + i_ * n2y, oMy + i_ * n2y))
+            for i_ in i_my:                      # y = pi, x < x1
+                pairs.append((o_ + i_ * n2y + n2y - 1,
+                              oMy + i_ * n2y + n2y - 1))
+            oQ = findpart(0, M @ Q)              # azimuth pi/k mirror
+            for i_ in i_q:
+                pairs.append((o_ + i_ * n2y + n2y - 1,
+                              oQ + i_ * n2y + n2y - 1))
+            oR = findpart(0, M @ R)              # R line
+            for i_ in i_r:
+                pairs.append((o_ + i_ * n2y + n2y - 1,
+                              oR + i_ * n2y + n2y - 1))
+        else:
+            oMy = findpart(1, M @ My)            # y = 0 mirror
+            for i_ in i_s3:
+                pairs.append((o_ + i_ * n3y + n3y - 1,
+                              oMy + i_ * n3y + n3y - 1))
+            oQ = findpart(1, M @ Q)              # azimuth pi/k mirror
+            for i_ in range(n3x):
+                pairs.append((o_ + i_ * n3y, oQ + i_ * n3y))
+    V, Fs, _first = _g1h_weld_pairs(V, Fs, pairs)
+    V = _center_fit(V, scale, V)
+    return V, Fs, None
+
+
+
+# ==========================================================================
+# Kapouleas surfaces -- finite-total-curvature desingularizations of
+# two coaxial catenoids, from Weber's repository page (notebook
+# `Kapouleas.nb` by Ramazan Yol).
+#
+# Kapouleas (1997) constructed embedded finite-total-curvature minimal
+# surfaces with arbitrarily many ends by taking coaxial unions of
+# catenoids and planes and desingularizing the circular intersections
+# with bent singly periodic Scherk surfaces.  This family is the
+# simplest case: TWO coaxial catenoids whose two intersection circles
+# are each replaced by a ring of k Scherk-type handles (k-fold
+# dihedral symmetry).  STATUS, exactly as the page states it: "All
+# period problems here have been solved numerically, so there is no
+# simple existence proof for these surfaces yet."  Also per the page:
+# for 2-fold symmetry no embedded examples are believed to exist (the
+# k = 2 member is an immersed illustration); the first embedded ones
+# appear at 3-fold symmetry; and the 3-dimensional period problem
+# often has two solutions for the same pair of catenoidal growth
+# rates (which is why Weber exports two members for the same k).
+#
+# Data (Yol's notebook, transcribed verbatim; th = theta11 on the
+# rectangular torus tau = i t):
+#     G0 = [th(z-((tau+1)/2+d)) th(z-(1/2-c))^(1/k) th(z-(1/2-b))
+#           th(z-(1/2+a))^(1/k)] /
+#          [th(z-((tau+1)/2-d)) th(z-(1/2+c))^(1/k) th(z-(1/2+b))
+#           th(z-(1/2-a))^(1/k)],
+#     dh0 = [th(z-((tau+1)/2+d)) th(z-((tau+1)/2-d)) th(z-(1/2-b))
+#            th(z-(1/2+b))] /
+#           [th(z-(1/2-c)) th(z-(1/2+c)) th(z-(1/2-a))
+#            th(z-(1/2+a+tau))],
+#     G = G0/G0(0),  dh = dh0/dh0(0),
+# with the linear constraint b = (d + (a-c)/k) - 1/(2k) (satisfied
+# EXACTLY by every stored row) and the free parameters (a, c, d, t)
+# solved by the notebook's FindRoot on its printed 3-component test:
+#     tst1 = Re int_{tau/2}^{tau/2+1/2} dh / c,
+#     tst2 = Re int_0^{1/4+tau/4}^{1/2} om2 / (a-1/2),
+#     tst3 = Re int_{1/2-b}^{(tau+1)/2-d} (om1, om2)
+#            . (-sin pi/k, cos pi/k) / (a-1/2).
+# G carries 1/k-fractional theta powers, so every path evaluation
+# must be branch-tracked CONTINUOUSLY (log-unwrap along the whole
+# polyline, anchored at the normalization point z = 0): the pointwise
+# principal product jumps a k-th-root phase partway along the test
+# paths, and independently-anchored path legs jump sheets as the
+# branch point 1/2 - a crosses the path corner near a = 1/4 -- both
+# produce phantom residuals of order 1e-1 that look exactly like
+# unsolved members.  Tracked correctly, Yol's stored tables satisfy
+# the notebook's own test to 1.3e-7 (worst, k = 2) and typically
+# 1e-8..1e-10 -- far tighter than DH11's tables, so they are kept
+# VERBATIM (nothing re-solved).
+#
+# The quotient of the full surface by its k-fold rotation is the
+# (a,b,c,d,tau) torus with FOUR catenoidal ends (Weber's related
+# page: "Tori with four catenoidal ends"): dh has simple poles at
+# 1/2 +- c (the middle catenoid) and 1/2 - a, 1/2 + a + tau (the
+# outer catenoid), and G has k-th-root branch points at those four
+# points, so the full surface is the k-cover totally branched there:
+# Riemann-Hurwitz gives chi_closed = -4(k-1), genus 2k - 1, with 4
+# catenoidal ends (chi = 2 - 2(2k-1) - 4 = -4k once the end disks
+# are cut).  `kap_growth` is the notebook's closed-form theta-product
+# ratio of the two catenoidal growth rates (the embeddedness knob).
+#
+# MEASURED assembly topology (kap_mesh): 1 component, chi = -4k with
+# 4 catenoid rims, manifold, oriented -- EXACT at EVERY member of
+# every k (2..12), matching the Riemann-Hurwitz derivation above, so
+# the genus is uniformly 2k - 1 (3, 5, 7, 11, ...).  The two k = 4
+# members (and the two k = 6 members) have the SAME topology -- they
+# are the two solutions of the period problem for the same k,
+# differing in geometry only.  A first build measured chi = -6 at
+# k = 2 and the derivation said to doubt the mesh: correctly -- the
+# k = 2 member has c = 0.015, its middle end's chart preimage beta
+# sits at 0.9956, and the notebook's r0 = 0.01 truncation hole
+# around that end SWALLOWS the quarter corner z = 1 (corner radius
+# |invtrf(1)| = 0.0055 < r0), cutting the (1/2, 0) corner out of the
+# complex and shifting chi by +2.  kap_sheet now clamps r0 below
+# 0.45 |invtrf(1)|.  Registration: all six of Weber's exports (k =
+# 2, 3, 4 twice, 6 twice) land at 0.2-0.4% median of span with
+# per-export cutoff radii fitted (r0 ~ 1e-2.4..1e-1.6, r1 ~
+# 1e1.6..1e2.4 -- his exports truncate the ends closer in than the
+# notebook's r0 = 0.01, r1 = 1000 cell).  Orders 1-6 of KAP_MEMBERS
+# are the exported members WITH reference images (k6 a=.11, k6
+# a=.27, k2 a=.22, k3 a=.14, k4 a=.07, k4 a=.22 -- the k = 6 pair
+# leads because the page pictures it, so the DEFAULT has a reference
+# image); orders 7-9 (k8 a=.1, k10 a=.2, k12 a=.15) have NO exports
+# -- do not register against pictures that do not exist.
+#
+# References:
+# - N. Kapouleas, "Complete embedded minimal surfaces of finite total
+#   curvature", J. Diff. Geom. 47 (1997) 95-169 -- the
+#   desingularization construction this family illustrates.
+# - M. Weber, "Kapouleas surfaces", minimalsurfaces.blog (notebook
+#   `Kapouleas.nb` by Ramazan Yol -- the theta data, the solved
+#   member tables and the 3-component period test transcribed above;
+#   PoVRay exports = registration ground truth; the page's
+#   numerical-only status is recorded as stated).
+# ==========================================================================
+
+# solved members, {k: ((a, b, c, d, t), ...)}, tau = i t -- Yol's
+# tables verbatim (every row satisfies b = (d + (a-c)/k) - 1/(2k)
+# exactly and the notebook's own period test to <= 1.3e-7, measured)
+KAP_SOLS = {
+    2: (
+        (0.1755, 0.06698019974822289, 0.010057381750312164, 0.234258890623379, 0.7543457613853664),
+        (0.176, 0.06727996568588351, 0.010120642536458193, 0.2343402869541126, 0.7547849133737129),
+        (0.18, 0.06966403973665058, 0.010623659602824723, 0.23497586953806296, 0.7580549552839374),
+        (0.2, 0.08130442498240442, 0.01306721313256788, 0.23783803154868838, 0.7690179488802832),
+        (0.22, 0.0926593744173635, 0.015407459561082441, 0.24036310419790474, 0.7730964459414758),
+    ),
+    3: (
+        (0.075, 0.03315207605693751, 0.01019564080267277, 0.17821728965782843, 0.41807116769369357),
+        (0.08, 0.03678303000587341, 0.012201223677745657, 0.18085010456512196, 0.4271423133078388),
+        (0.09, 0.043520973027908, 0.016015280624279836, 0.1855260665693346, 0.44239645301951497),
+        (0.1, 0.049880751248852995, 0.01964157681891243, 0.18976127685515712, 0.45543105573571396),
+        (0.11, 0.05602100706268037, 0.02309837104971218, 0.1937204640792511, 0.467035073618209),
+        (0.12, 0.062013249491964184, 0.02638368389120975, 0.19747447745570076, 0.47755683388872017),
+        (0.13, 0.0678955565957585, 0.02949245583819962, 0.20105970854182503, 0.4871796522425911),
+        (0.14, 0.07369024573622202, 0.03242078456956554, 0.2044971739260772, 0.49600976452426043),
+        (0.16, 0.08506771141996647, 0.037731047816367644, 0.210978060692089, 0.5115259277708725),
+        (0.18, 0.09621026945709352, 0.04232314269176511, 0.21698465035434855, 0.524376008919746),
+        (0.2, 0.10715051913771009, 0.04622736859204474, 0.22255964200172498, 0.5346435891702486),
+        (0.22, 0.11790861532077165, 0.049484046045620955, 0.22773663066931196, 0.5423188577334739),
+    ),
+    4: (
+        (0.0497, 0.023167936059970945, 0.010009894307294539, 0.13824540963679458, 0.27276381351319257),
+        (0.0498, 0.023246531765591383, 0.010073907966680826, 0.1383150087572616, 0.27293258937511927),
+        (0.04984079422299173, 0.02327853777835248, 0.0101, 0.13834333922260456, 0.2730012034058101),
+        (0.04999732121030994, 0.023401046673533932, 0.0102, 0.13845171637095643, 0.27326322448816487),
+        (0.05, 0.02340313922230222, 0.010201709829358982, 0.13845356667964195, 0.2732676916410874),
+        (0.06, 0.03063679435349026, 0.016364061393047687, 0.1447278097017522, 0.2873793808672695),
+        (0.07, 0.03734712211647173, 0.022271189612112184, 0.15041491951949978, 0.29879708835732705),
+        (0.08, 0.043873705614721786, 0.027963785309997574, 0.15586465194222118, 0.3088837557049866),
+        (0.09, 0.05031822504189021, 0.03342343241940676, 0.1611740831467419, 0.31812745944669935),
+        (0.1, 0.056716169221540574, 0.03863104939408024, 0.16637393157006064, 0.3267679901942672),
+        (0.12, 0.06940322441399571, 0.048236806295359785, 0.17646242598783565, 0.34272048276533806),
+        (0.14, 0.08192523463103524, 0.05670910270164892, 0.18610251030644745, 0.35728093865363536),
+        (0.16, 0.09423525625436652, 0.06401540290776463, 0.19523910698130767, 0.37062246284001005),
+        (0.18, 0.10628992919323757, 0.07015069815117489, 0.2038276037310313, 0.38275254294082556),
+        (0.2, 0.11805719626772238, 0.07513257193002774, 0.2118403392502293, 0.39358595170004596),
+        (0.22, 0.1295160921992753, 0.0789965853873448, 0.21926523854611146, 0.4029776971248489),
+    ),
+    6: (
+        (0.032, 0.016200786461698563, 0.010289631050414, 0.0959157249701009, 0.15722030652968705),
+        (0.035, 0.018434046777331875, 0.012743194382458503, 0.09805791250774162, 0.1603584159202951),
+        (0.04, 0.022056004395236375, 0.016704055251645703, 0.10150668027051066, 0.16496033658295503),
+        (0.05, 0.029240937339811923, 0.024303961581307085, 0.1082915976033631, 0.1729849754367468),
+        (0.06, 0.03647800143689704, 0.031582192329031235, 0.11507503349173558, 0.18020438103946748),
+        (0.07, 0.04376526226324175, 0.03859540435544804, 0.12186449632248308, 0.18693576118370575),
+        (0.08, 0.051071679823866165, 0.045369661993360226, 0.12863329015609287, 0.19329638261389598),
+        (0.09, 0.05836954526027237, 0.05191596615720512, 0.13535553961980656, 0.1993444574105409),
+        (0.1, 0.06563779615749361, 0.0582365842272164, 0.142010560195363, 0.20511745085237681),
+        (0.11, 0.07286058482594719, 0.06432829429841681, 0.14858196720901665, 0.2106440375142692),
+        (0.12, 0.08002556348410157, 0.07018419339650228, 0.1550562623835186, 0.21594812439323155),
+        (0.13, 0.0871226087555169, 0.07579476953473728, 0.16142173701130644, 0.2210502636791432),
+        (0.14, 0.09414297236711953, 0.08114858251661612, 0.1676677361198889, 0.22596814453122957),
+        (0.15, 0.10107873918593759, 0.08623273543542435, 0.17378419509184165, 0.2307167316573859),
+        (0.16, 0.10792249192816548, 0.0910332372210538, 0.17976136479834112, 0.23530824916418258),
+        (0.17, 0.11466711353295854, 0.09553531298346923, 0.18558966569687008, 0.2397520824133301),
+        (0.18, 0.12130568238739499, 0.09972369376134649, 0.1912596313476194, 0.24405462820266519),
+        (0.19, 0.1278314311496745, 0.10358290130106061, 0.19676191469985127, 0.24821911062874272),
+        (0.2, 0.13423774913670772, 0.10709753215706078, 0.20208733782955118, 0.25224537733859204),
+        (0.21, 0.1405182133558348, 0.11025253669610757, 0.20722696947185273, 0.2561296911795149),
+        (0.22, 0.14666663593386703, 0.11303348179663357, 0.21217221623330595, 0.25986453239272184),
+        (0.23, 0.1526771171247635, 0.11542678124907915, 0.21691491399961005, 0.2634384248492769),
+        (0.24, 0.15854409411464976, 0.11741987545601075, 0.22144740669065152, 0.26683579565860704),
+        (0.25, 0.16426237708431518, 0.1190013424442995, 0.22576260082503175, 0.27003687050085373),
+        (0.26, 0.1698271657664664, 0.12016092547872072, 0.22985398667958648, 0.273017597764656),
+        (0.27, 0.17523404213100718, 0.12088946836344626, 0.23371562019158157, 0.2757495837753267),
+        (0.275, 0.17787697953605952, 0.12108950219461014, 0.23555856323516117, 0.2770122191791659),
+        (0.28, 0.1804789376851667, 0.12117875688337308, 0.2373420638323955, 0.2782000103565516),
+        (0.29, 0.18555807685837872, 0.12102127251470916, 0.24072828894416354, 0.28033149577237854),
+        (0.3, 0.1904679006612544, 0.12040987119226158, 0.24386954585996468, 0.2821018514530964),
+        (0.32, 0.19976590484501155, 0.11779630308492174, 0.24939862202583182, 0.2843637520081887),
+        (0.34, 0.2083453226885899, 0.11327320103607691, 0.2538908561946027, 0.28453072294831167),
+        (0.36, 0.21617639605094147, 0.10675520139463286, 0.25730226295004693, 0.28201569438082746),
+        (0.38, 0.22322595171841264, 0.09812424682337755, 0.2595799928556422, 0.2760319982019401),
+        (0.4, 0.2294593393414061, 0.08722387868447055, 0.2606633191221512, 0.26547497908130346),
+        (0.42, 0.2348500039031039, 0.07387573341816778, 0.2604959594727985, 0.24871710423565305),
+        (0.43, 0.23722952140877002, 0.06624029914267435, 0.25993623793254905, 0.237278567223596),
+        (0.44, 0.23940795611233073, 0.057965941645410676, 0.25906894638656586, 0.22325269255353622),
+        (0.445, 0.2404269415350389, 0.05359935930823804, 0.2585268347530786, 0.21510225308342867),
+        (0.45, 0.24140337996789774, 0.0490908074914815, 0.2579185145498113, 0.20608544713773394),
+    ),
+    8: (
+        (0.07, 0.04859172227753544, 0.0457808575834959, 0.10806432947547243, 0.1366065915306091),
+        (0.1, 0.07206763376832387, 0.06717469199902004, 0.13046447026820138, 0.15045681363976926),
+        (0.12, 0.08745814141616517, 0.08059300756772426, 0.1450322673621307, 0.15841867927959682),
+        (0.15, 0.10999248303015252, 0.09920420397465858, 0.16614300852698485, 0.16901444351789563),
+        (0.2, 0.1455209402791164, 0.1248906788646222, 0.1986322751371942, 0.18431065528004176),
+    ),
+    10: (
+        (0.07, 0.0520380486996463, 0.0499847948043074, 0.10003652818007705, 0.10809701628142294),
+        (0.2, 0.15362209322749176, 0.1368086722665547, 0.19730296045414722, 0.144626758198563),
+    ),
+    12: (
+        (0.07, 0.05454792127545446, 0.05287460747421045, 0.09478747189830533, 0.0895387516392219),
+        (0.1, 0.07978920595331249, 0.0766217658381284, 0.11950768643982318, 0.0984699793700975),
+        (0.12, 0.09638971202770821, 0.09187516107369417, 0.13571264211718273, 0.1034139931820036),
+        (0.15, 0.1208199802678355, 0.11361881339327531, 0.15945488138394176, 0.1098058805781098),
+    ),
+}
+
+
+def kap_shifts(k, a, b, c, d, tau):
+    """(shift, exponent) factor list of G0."""
+    return [((tau + 1.0) / 2.0 + d, 1.0), (0.5 - c, 1.0 / k),
+            (0.5 - b, 1.0), (0.5 + a, 1.0 / k),
+            ((tau + 1.0) / 2.0 - d, -1.0), (0.5 + c, -1.0 / k),
+            (0.5 + b, -1.0), (0.5 - a, -1.0 / k)]
+
+
+def kap_G0_pv(Z, k, a, b, c, d, tau):
+    """G0 as the pointwise principal-branch product (patch use only;
+    NOT continuous along arbitrary paths -- see the block header)."""
+    th = genus1helicoid_theta11
+    out = np.ones_like(np.asarray(Z, dtype=complex))
+    for s, e in kap_shifts(k, a, b, c, d, tau):
+        v = th(Z - s, tau)
+        if e == 1.0:
+            out = out * v
+        elif e == -1.0:
+            out = out / v
+        else:
+            out = out * np.exp(e * np.log(v))
+    return out
+
+
+def kap_G0_path(zp, k, a, b, c, d, tau):
+    """G0 along a 1-D path, every factor's log unwrapped (the branch
+    is anchored at the path's FIRST node)."""
+    th = genus1helicoid_theta11
+    zp = np.asarray(zp, dtype=complex)
+    tot = np.zeros_like(zp)
+    for s, e in kap_shifts(k, a, b, c, d, tau):
+        v = th(zp - s, tau)
+        lg = np.log(np.abs(v)) + 1j * np.unwrap(np.angle(v))
+        tot = tot + e * lg
+    return np.exp(tot)
+
+
+def kap_dh0(Z, a, b, c, d, tau):
+    th = genus1helicoid_theta11
+    Z = np.asarray(Z, dtype=complex)
+
+    def f(s):
+        return th(Z - s, tau)
+    return (f((tau + 1.0) / 2.0 + d) * f((tau + 1.0) / 2.0 - d)
+            * f(0.5 - b) * f(0.5 + b)) / (
+        f(0.5 - c) * f(0.5 + c) * f(0.5 - a) * f(0.5 + a + tau))
+
+
+def kap_tst(k, a, b, c, d, t, n=20001):
+    """The notebook's printed 3-component period test, every G
+    evaluation branch-tracked continuously from z = 0 (independently
+    anchored legs jump sheets for a > ~1/4; see the block header)."""
+    tau = 1j * t
+    g00 = complex(kap_G0_pv(np.array([0j]), k, a, b, c, d, tau)[0])
+    dh00 = complex(kap_dh0(np.array([0j]), a, b, c, d, tau)[0])
+
+    def om_on(zp):
+        G = kap_G0_path(zp, k, a, b, c, d, tau) / g00
+        dh = kap_dh0(zp, a, b, c, d, tau) / dh00
+        return np.stack([(-G * dh + dh / G) / 2.0,
+                         1j * (G * dh + dh / G) / 2.0, dh], axis=-1)
+    u = np.linspace(0.0, 1.0, n)
+    w = u * u * (3.0 - 2.0 * u)
+    # tst1: dh alone (single-valued) along the top mid-line
+    zp = tau / 2.0 + 0.5 * u
+    dh = kap_dh0(zp, a, b, c, d, tau) / dh00
+    t1 = float(np.trapezoid(dh * 0.5, u).real / c)
+    # tst2: ONE continuous branch along the polyline 0 -> 1/4+tau/4
+    # -> 1/2
+    zp = np.concatenate([(0.25 + tau / 4.0) * w,
+                         (0.25 + tau / 4.0)
+                         + (0.25 - tau / 4.0) * w[1:]])
+    om = om_on(zp)
+    t2 = float(np.trapezoid(om[:, 1], zp).real / (a - 0.5))
+    # tst3: branch carried from z = 0 via an interior approach; the
+    # leg endpoints are G zeros/poles (the om limit is finite), nodes
+    # stay 1e-9 inside
+    ws = w * (1.0 - 2e-9) + 1e-9
+    leg0 = 0.5 - b
+    leg1 = (tau + 1.0) / 2.0 - d
+    appr = (0.25 + tau / 4.0) * w
+    appr2 = (0.25 + tau / 4.0) + (
+        (leg0 + 0.02 * (leg1 - leg0)) - (0.25 + tau / 4.0)) * w[1:]
+    leg = leg0 + (leg1 - leg0) * ws
+    zp = np.concatenate([appr, appr2, leg])
+    om = om_on(zp)
+    nl = len(leg)
+    I3 = np.trapezoid(om[-nl:, :2], leg[:, None], axis=0)
+    t3 = float((I3[0].real * (-math.sin(math.pi / k))
+                + I3[1].real * math.cos(math.pi / k)) / (a - 0.5))
+    return t1, t2, t3
+
+
+def kap_growth(k, a, b, c, d, t):
+    """The notebook's closed-form catenoid growth-rate ratio (the
+    embeddedness check of the page)."""
+    th = genus1helicoid_theta11
+    tau = 1j * t
+
+    def f(s):
+        return complex(th(np.array([s], dtype=complex), tau)[0])
+    num = (f(-a - b) * f(-a + b) * f(a - c) * f(-2 * c)
+           * f(0.5 - a - d + 0.5 * (-1 - tau))
+           * f(0.5 - a + d + 0.5 * (-1 - tau)) * f(-a - c - tau))
+    den = (f(-a - c) * f(-b - c) * f(b - c) * f(-a + c)
+           * f(0.5 - c - d + 0.5 * (-1 - tau))
+           * f(0.5 - c + d + 0.5 * (-1 - tau)) * f(-2 * a - tau))
+    return float((num / den).real)
+
+
+
+# member knob order: Weber's six exported members first, LED by the
+# two k = 6 members his page pictures (k=6 a=.11 | k=6 a=.27 |
+# k=2 a=.22 | k=3 a=.14 | k=4 a=.07 | k=4 a=.22), then one
+# representative per remaining k -- so the bare default reproduces
+# the page's own headline picture
+KAP_MEMBERS = ((6, 9), (6, 25), (2, 4), (3, 7), (4, 6), (4, 15),
+               (8, 1), (10, 1), (12, 3))
+
+
+def _kap_ellK(m):
+    return float(np.real(_g1h_rf(np.array([0j]),
+                                 np.array([1.0 - m + 0j]),
+                                 np.array([1.0 + 0j]))[0]))
+
+
+def _kap_ellF(z, m):
+    z = np.asarray(z, dtype=complex)
+    return z * _g1h_rf(1.0 - z * z, 1.0 - m * z * z, np.ones_like(z))
+
+
+def kap_chart(k, a, b, c, d, t):
+    """The notebook's EllipticF rectangle chart: lambda from its
+    aspect condition, rect mapping the upper half plane onto the
+    quarter torus [0, 1/2] x [0, t/2], the Moebius trf placing the
+    polar grid's r -> 0 at the middle end 1/2 - c and r -> infinity
+    at the outer end 1/2 - a, and the special boundary preimages
+    used as mesh grading breaks.  Returns (rect, trf, invtrf,
+    consts)."""
+    y0 = t / 2.0
+
+    def lam_eq(lam):
+        return (lam * _kap_ellK(1.0 - lam * lam) / 2.0
+                / (2.0 * _kap_ellK(1.0 / lam ** 2)) - y0)
+    lo, hi = 1.0 + 1e-9, 50.0
+    flo = lam_eq(lo)
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if flo * lam_eq(mid) <= 0:
+            hi = mid
+        else:
+            lo = mid
+    lam = 0.5 * (lo + hi)
+    m = 1.0 / lam ** 2
+    K = _kap_ellK(m)
+
+    def rect(z):
+        return (_kap_ellF(z, m) + K) / K / 4.0
+
+    def rect_real(x):
+        return rect(np.asarray(x, dtype=complex) + 1e-14j)
+
+    def solve_bottom(target):
+        lo_, hi_ = -1.0 + 1e-15, 1.0 - 1e-15
+        for _ in range(200):
+            mid_ = 0.5 * (lo_ + hi_)
+            if float(np.real(rect_real(mid_))) < target:
+                lo_ = mid_
+            else:
+                hi_ = mid_
+        return 0.5 * (lo_ + hi_)
+
+    def solve_top(target_x):
+        lo_, hi_ = lam * (1.0 + 1e-12), 1e8
+        for _ in range(220):
+            mid_ = math.sqrt(lo_ * hi_)
+            if float(np.real(rect_real(mid_))) > target_x:
+                lo_ = mid_
+            else:
+                hi_ = mid_
+        return math.sqrt(lo_ * hi_)
+    alpha = solve_bottom(0.5 - a)
+    beta = solve_bottom(0.5 - c)
+    consts = dict(lam=lam, m=m, K=K, alpha=alpha, beta=beta,
+                  bn=solve_bottom(0.5 - b), dn=solve_top(0.5 - d),
+                  eta=solve_bottom((1.0 - c) / 2.0),
+                  xi=solve_bottom((0.5 - a) / 2.0))
+
+    def trf(w):
+        w = np.asarray(w, dtype=complex)
+        return (-beta + alpha * w) / (-1.0 + w)
+
+    def invtrf(z):
+        return (z - beta) / (z - alpha)
+    return rect, trf, invtrf, consts
+
+
+def kap_sheet(k, mi, nx=4, ny=18, r0=0.01, r1=1000.0, subdiv=10):
+    """Fundamental patch of Kapouleas member (k, mi) over the
+    notebook's polar grid (upper half w-plane; r0/r1 truncate the
+    middle/outer catenoid ends).  Every omega evaluation is
+    branch-tracked: the anchor node continues G from z = 0 (where
+    G = 1 by normalization) and each grid sweep carries the branch
+    forward node to node, so the whole patch sits on ONE sheet of
+    the k-cover.  Returns (W, Z, F, meta) with F the real immersion
+    (nr, ntheta, 3) after the notebook's two normalizations (f0(0)
+    subtracted via the anchor at z = 0; ff1 sliding the d-line onto
+    the origin)."""
+    a, b, c, d, t = KAP_SOLS[k][mi]
+    tau = 1j * t
+    rect, trf, invtrf, C = kap_chart(k, a, b, c, d, t)
+    lam = C['lam']
+    # the middle-end truncation hole (radius r0 around w = 0, the
+    # end 1/2 - c) must NOT swallow the quarter corner z = 1 at
+    # radius |invtrf(1)| -- at k = 2 (c = 0.015, beta -> 1) the
+    # notebook's r0 = 0.01 exceeds that corner radius, cutting the
+    # (1/2, 0) corner out of the complex and shifting chi by +2
+    corner1 = abs(float(np.real(invtrf(1.0))))
+    r0 = min(r0, 0.45 * corner1)
+    br = [float(np.real(invtrf(x)))
+          for x in (-lam, -1.0, 1.0, lam, C['dn'], C['eta'], C['xi'])]
+    br += [-float(np.real(invtrf(x)))
+           for x in (C['bn'], C['alpha'] + 0.001, C['beta'] - 0.001)]
+    xspec = sorted(set([r0, r1] + [abs(x) for x in br
+                                   if np.isfinite(x)
+                                   and r0 < abs(x) < r1]))
+    xs = [np.exp(np.linspace(math.log(lo), math.log(hi), nx,
+                             endpoint=False))
+          for lo, hi in zip(xspec[:-1], xspec[1:])]
+    xr = np.unique(np.concatenate(xs + [np.array([xspec[-1]])]))
+    eps = 1e-6
+    yr = math.pi * np.linspace(eps, 1.0 - eps, ny) ** 2
+    W = xr[:, None] * np.exp(1j * yr[None, :])
+    Z = rect(trf(W))
+    g00 = complex(kap_G0_pv(np.array([0j]), k, a, b, c, d, tau)[0])
+    dh00 = complex(kap_dh0(np.array([0j]), a, b, c, d, tau)[0])
+    th = genus1helicoid_theta11
+    shifts = kap_shifts(k, a, b, c, d, tau)
+
+    def om_batch(zp, Gstart=None, axis=-1):
+        """omega and G along subdivided paths (last axis = path);
+        per-factor log-unwrap along `axis`, branch corrected to
+        Gstart at the first node when given."""
+        tot = np.zeros_like(zp)
+        for s_, e_ in shifts:
+            v = th(zp - s_, tau)
+            tot = tot + e_ * (np.log(np.abs(v))
+                              + 1j * np.unwrap(np.angle(v),
+                                               axis=axis))
+        G = np.exp(tot) / g00
+        if Gstart is not None:
+            corr = Gstart / np.take(G, 0, axis=axis)
+            G = G * np.expand_dims(corr, axis)
+        dh = kap_dh0(zp, a, b, c, d, tau) / dh00
+        om = np.stack([(-G * dh + dh / G) / 2.0,
+                       1j * (G * dh + dh / G) / 2.0, dh], axis=-1)
+        return om, G
+
+    def seg_int(zp, Gstart=None):
+        """integral over subdivided paths zp (..., K+1) -> (..., 3),
+        plus G at the last node."""
+        om, G = om_batch(zp, Gstart, axis=-1)
+        dz = np.diff(zp, axis=-1)
+        I = np.sum(0.5 * (om[..., 1:, :] + om[..., :-1, :])
+                   * dz[..., None], axis=-2)
+        return I, np.take(G, -1, axis=-1)
+
+    nu2, nv2 = Z.shape
+    F = np.zeros((nu2, nv2, 3), dtype=complex)
+    Gn = np.zeros((nu2, nv2), dtype=complex)
+    jm = nv2 // 2
+    im = int(np.argmin(np.abs(np.log(xr))))
+    uu = np.linspace(0.0, 1.0, subdiv + 1)
+    # anchor: z = 0 (G = 1, f = 0 by the f0(0) normalization) -> mid
+    # node, graded straight path
+    apath = (np.linspace(0.0, 1.0, 400) ** 1.5) * Z[im, jm]
+    I0, G0v = seg_int(apath[None, :], Gstart=np.array([1.0 + 0j]))
+    F[im, jm] = I0[0]
+    Gn[im, jm] = G0v[0]
+    # radial sweep along the mid column (theta = yr[jm])
+    for i in list(range(im + 1, nu2)) + list(range(im - 1, -1, -1)):
+        i0 = i - 1 if i > im else i + 1
+        wseg = W[i0, jm] + (W[i, jm] - W[i0, jm]) * uu
+        zseg = rect(trf(wseg))
+        I_, G_ = seg_int(zseg[None, :], Gstart=Gn[i0, jm][None])
+        F[i, jm] = F[i0, jm] + I_[0]
+        Gn[i, jm] = G_[0]
+    # angular sweeps, batched over all radii
+    for j in list(range(jm + 1, nv2)) + list(range(jm - 1, -1, -1)):
+        j0 = j - 1 if j > jm else j + 1
+        wseg = (W[:, j0])[:, None] + ((W[:, j] - W[:, j0]))[:, None]             * uu[None, :]
+        zseg = rect(trf(wseg))
+        I_, G_ = seg_int(zseg, Gstart=Gn[:, j0])
+        F[:, j] = F[:, j0] + I_
+        Gn[:, j] = G_
+    Fr = np.real(F)
+    # ff1: slide the d-symmetry line (through f((tau+1)/2 - d), at
+    # azimuth pi/k) onto the origin, exactly as the notebook does
+    P = (tau + 1.0) / 2.0 - d
+    u4 = np.linspace(0.0, 1.0, 3001)
+    w4 = u4 * u4 * (3.0 - 2.0 * u4)
+    ws = w4 * (1.0 - 2e-9) + 1e-9
+    mid_ = 0.25 + tau / 4.0
+    zp = np.concatenate([mid_ * w4, mid_ + (P - mid_) * ws[1:]])
+    om, _G = om_batch(zp[None, :], Gstart=np.array([1.0 + 0j]))
+    om = om[0]
+    dz = np.diff(zp)
+    f1P = np.real(np.sum(0.5 * (om[1:] + om[:-1]) * dz[:, None],
+                         axis=0))
+    ff1 = np.array([f1P[0] - f1P[1] / math.tan(math.pi / k),
+                    0.0, 0.0])
+    Fr = Fr - ff1[None, None, :]
+    return W, Z, Fr, dict(a=a, b=b, c=c, d=d, t=t, consts=C,
+                          f1P=f1P, ff1=ff1, y0=t / 2.0)
+
+
+def kap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Kapouleas surface (two coaxial catenoids desingularized by a
+    ring of k Scherk handles at each of the two intersection
+    circles).  `order` walks KAP_MEMBERS (Weber's six exported
+    members first); `radius` follows the catenoid ends further out.
+    The 4k-copy orbit of the fundamental patch (mirror across z = 0,
+    mirror across y = 0, k rotations -- the notebook's mp2/mp3/mp4)
+    is welded by exact grid-index pairs along its measured seam
+    families: the quarter's left and right edges lie in the z = 0
+    plane (partner g Mz), the bottom-edge segments in the y = 0
+    plane (partner g My), and the top edge plus the inter-end
+    segment in the vertical plane at azimuth pi/k (partner g Q,
+    Q = Rz(2 pi/k) My).  The four catenoid end rims (two middle at
+    1/2 +- c, two outer at 1/2 - a and 1/2 + a + tau) stay open."""
+    del spec, theta
+    ki, mi = KAP_MEMBERS[int(np.clip(order - 1, 0,
+                                     len(KAP_MEMBERS) - 1))]
+    fac = float(np.clip(radius / 1.2, 0.4, 2.5))
+    r0 = 0.01 * (1.0 / fac) ** 2
+    r1 = 1000.0 * fac ** 2
+    nx = max(3, int(nu / 12))
+    ny = max(12, int(nv * 0.45))
+    W, Z, F, meta = kap_sheet(ki, mi, nx=nx, ny=ny, r0=r0, r1=r1)
+    y0 = meta['y0']
+    nu2, nv2 = F.shape[:2]
+    # classify the theta = 0 boundary nodes by their chart image
+    Zb = Z[:, 0]
+    selL = np.abs(np.real(Zb)) < 1e-4
+    selR = np.abs(np.real(Zb) - 0.5) < 1e-4
+    selT = np.imag(Zb) > y0 - 1e-4
+    # the flags are INDEPENDENT: a corner node (e.g. the chart origin,
+    # on the bottom edge AND the left edge) belongs to both of its
+    # symmetry elements and must join both seams -- classifying it
+    # into one leaves a one-edge slit at every corner of every copy
+    selB = (np.imag(Zb) < 1e-4) & (~selT)
+    # force BOTH flags at the four quarter corners analytically (the
+    # break radii |invtrf(-1, 1, lambda, -lambda)| are exact grid
+    # values; chart rounding can push the computed Z a hair past the
+    # 1e-4 window, splitting the corner's 4-copy orbit into 2 + 2 --
+    # at k = 2 that cost exactly the two vertex merges that made the
+    # measured chi -6 instead of the derived -4k)
+    xr_ = np.abs(W[:, 0])
+    C_ = meta['consts']
+    for x_, fa, fb in ((-1.0, 'B', 'L'), (1.0, 'B', 'R'),
+                       (C_['lam'], 'T', 'R'), (-C_['lam'], 'T', 'L')):
+        rc = abs((x_ - C_['beta']) / (x_ - C_['alpha']))
+        ic = int(np.argmin(np.abs(xr_ - rc)))
+        if abs(xr_[ic] - rc) < 1e-9 * max(1.0, rc):
+            for f_ in (fa, fb):
+                {'L': selL, 'R': selR, 'T': selT, 'B': selB}[f_][ic]                     = True
+    # snap each arc onto its symmetry element
+    F[selL | selR, 0, 2] = 0.0                   # z = 0 plane
+    F[selB, 0, 1] = 0.0                          # y = 0 plane
+    nq = np.array([-math.sin(math.pi / ki), math.cos(math.pi / ki),
+                   0.0])
+    P_ = F[selT, 0]
+    F[selT, 0] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    P_ = F[:, -1]                                # theta = pi edge
+    F[:, -1] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    # orbit: I, Mz, My, MzMy per rotation (the notebook's order)
+    Mz = np.diag([1.0, 1.0, -1.0])
+    My = np.diag([1.0, -1.0, 1.0])
+    cq, sq = math.cos(TAU / ki), math.sin(TAU / ki)
+    Q = np.array([[cq, -sq, 0.0], [sq, cq, 0.0],
+                  [0.0, 0.0, 1.0]]) @ My
+    NV = nu2 * nv2
+    quads0 = _kus_grid_quads(nu2, nv2)
+    P0 = F.reshape(-1, 3)
+    Vs, Fs, recs = [], [], []
+    off = 0
+    for kk in range(ki):
+        thr = TAU * kk / ki
+        c_, s_ = math.cos(thr), math.sin(thr)
+        Rz = np.array([[c_, -s_, 0.0], [s_, c_, 0.0],
+                       [0.0, 0.0, 1.0]])
+        for E, par in ((np.eye(3), 0), (Mz, 1), (My, 1),
+                       (My @ Mz, 0)):
+            M = Rz @ E
+            Vs.append(P0 @ M.T)
+            Fs.extend(tuple(i_ + off for i_ in
+                            (q[::-1] if par else q))
+                      for q in quads0)
+            recs.append((M, off))
+            off += NV
+    V = np.concatenate(Vs, axis=0)
+
+    def findpart(M):
+        for Mj, o_ in recs:
+            if float(np.abs(Mj - M).max()) < 1e-9:
+                return o_
+        return -1
+
+    iL = np.where(selL)[0]
+    iR = np.where(selR)[0]
+    iB = np.where(selB)[0]
+    iT = np.where(selT)[0]
+    pairs = []
+    for M, o_ in recs:
+        oMz = findpart(M @ Mz)
+        for i_ in np.concatenate([iL, iR]):
+            pairs.append((o_ + i_ * nv2, oMz + i_ * nv2))
+        oMy = findpart(M @ My)
+        for i_ in iB:
+            pairs.append((o_ + i_ * nv2, oMy + i_ * nv2))
+        oQ = findpart(M @ Q)
+        for i_ in iT:
+            pairs.append((o_ + i_ * nv2, oQ + i_ * nv2))
+        for i_ in range(nu2):                    # theta = pi edge
+            pairs.append((o_ + i_ * nv2 + nv2 - 1,
+                          oQ + i_ * nv2 + nv2 - 1))
+    V, Fs, _first = _g1h_weld_pairs(V, Fs, pairs)
+    V = _center_fit(V, scale, V)
+    return V, Fs, None
+
+
+
+# ==========================================================================
+# Costa-Hoffman-Karcher-Meeks tori: the 1-parameter family of embedded
+# minimal tori obtained by deforming the Costa surface's planar middle
+# end into a catenoidal end.  Announced by Hoffman-Meeks (1987), proven
+# embedded by Hoffman-Karcher; Costa's classification shows these are
+# the ONLY embedded 3-ended minimal tori of finite total curvature.
+#
+# Data (Costa_3_catenoids_g_1_.nb on Weber's repository page, m = 2;
+# all powers pointwise principal):
+#     G    = rho (z-1)^(1/m) z^((m-1)/m) (z-b)^(1/m) / (z-a),
+#     dh   = (z-a) / ((z-1)(z-b)) dz,
+#     phi1 = G dh,   phi2 = dh / G,
+#     om1  = (phi2 - phi1)/2,  om2 = i (phi2 + phi1)/2,  om3 = dh,
+# on the square torus double-covering the z-sphere branched over
+# 0, 1, b, infinity.  Three catenoidal ends: z = 1 and z = b (G = 0,
+# normals up) and z = infinity (G = infinity, normal down); z = b is
+# the strongest end and z = infinity the weakest (dh residues
+# -1.13 / +2.13 / -1 at b = -0.05), the deformed planar middle end.
+# The deformation parameter is b < 0 (b -> 0 is the Costa limit); the
+# notebook's own period test,
+#     tst = ( Re int_0^a om2  (via a/2 + i/2),
+#             Re[-int_0^{-2} (om1, om2) (via -1 + i/2)] . cis(pi/m
+#             + pi/2) ),
+# vanishes at its three printed members (m, a, b, rho) to ~1e-11
+# under converged quadrature (endpoint-clustered substituted GL; a
+# naive per-cell rule stalls at O(1/n) on the z^(-1/2) endpoint), so
+# the printed values are kept VERBATIM and re-gated in the zoo.
+#
+# MESHED TO THE NOTEBOOK'S LOG CHART w = log((z-1)(z-b)), whose two
+# inverse branches z = (1 + b +- sqrt((1-b)^2 + 4 e^w))/2 cover the
+# fundamental piece as two strips (h1 on y in (0, pi), h2 on y in
+# (-pi, 0)); dz/dw in closed form (dw/dz = (2z-1-b)/((z-1)(z-b))).
+# Both strip interiors stay in the upper half z-plane, off every
+# branch cut of the pointwise-principal forms (the products are
+# discontinuous exactly across [0, 1] u (-inf, b]).  Integration is
+# a mid-row sweep plus vertical column sweeps, each strip anchored by
+# a straight upper-half-plane z-path from z = i, normalized F(0) = 0
+# by the imaginary-axis path.  Assembly: the notebook's mirror across
+# y = 0 and the m = 2 vertical rotation give 8 strip copies, WELDED
+# by exact grid-index pairs along the measured seam families:
+#   * h1's y = 0 edge (z real > 1) lies in the y = 0 mirror plane
+#     (partner g My);
+#   * h1's y = pi edge splits at the branch merge x0 = log((1-b)^2/4):
+#     below it z is real in ((1+b)/2, 1), an x = 0 mirror arc
+#     (partner g Mx); above it the edge is the DIRECT chart
+#     continuation of h2's y = -pi edge (same z, same F -- measured
+#     equal to 1e-12; same frame g);
+#   * h2's y = -pi edge splits at x1 = log(-b) (the z = 0 branch
+#     point, F = 0): z in (b, 0) is a y = 0 mirror arc (partner
+#     g My), z in (0, (1+b)/2) an x = 0 mirror arc (partner g Mx);
+#   * h2's y = 0 edge (z real < b) is an x = 0 mirror arc
+#     (partner g Mx).
+# The three end rims (z = 1 at x -> -inf on h1, z = b at x -> -inf
+# on h2, z = infinity at x -> +inf on both) stay open.  Sheet h1
+# copies wind by the frame parity, sheet h2 copies by the same parity
+# (the seam-3 chart continuation fixes the relative winding).
+#
+# GATES (zoo selftest): the notebook's own period test at every
+# member; assembly topology DERIVED from the surface (torus, 3 ends:
+# 1 component, chi = 2 - 2g - r = -3, 3 rims, manifold, oriented);
+# extent ratios pinned to Weber's own PoVRay exports of all three
+# members (z/x, y/x matched to 4 digits).  Full point registration:
+# GT -> ours one-sided median 0.29-0.31% of span at moderate
+# resolution (0.16% at high) against all three dummy.pov exports,
+# identity axes.  Bare defaults (member 1, Weber's window) reproduce
+# the b = -0.05 member his page pictures.
+#
+# References:
+# - C. J. Costa, "Classification of complete minimal surfaces in R3
+#   with total curvature 12 pi", Invent. Math. 105 (1991) 273-303 --
+#   the classification that makes this family the only embedded
+#   3-ended minimal tori of finite total curvature.
+# - D. Hoffman and W. H. Meeks III, "Properties of properly embedded
+#   minimal surfaces of finite topology", Bull. Amer. Math. Soc. 17
+#   (1987) 296-300 -- the announcement.
+# - D. Hoffman and H. Karcher, "Complete embedded minimal surfaces of
+#   finite total curvature", Geometry V, Encyclopaedia Math. Sci. 90,
+#   Springer (1997) 5-93 -- the existence and embeddedness proof.
+# - M. Weber, "Costa-Hoffman-Karcher-Meeks Tori", minimalsurfaces.blog
+#   (notebook `Costa_3_catenoids_g_1_.nb` -- the data, the solved
+#   members, the log chart and the windows transcribed above; PoVRay
+#   exports = registration ground truth).
+# ==========================================================================
+
+# member knob -> (b, a, rho): the notebook's three solved members,
+# kept verbatim (they satisfy the notebook's own test to ~1e-11).
+# Member 1 is the b = -0.05 member Weber's page pictures.
+CHKM_MEMBERS = {
+    1: (-0.05, 2.184062156606648, 10.19097974273576),
+    2: (-0.01, 2.041076401980452, 20.664079792311384),
+    3: (-0.005, 2.0219326830502546, 28.795577879471505),
+}
+# member -> Weber's own render windows (x1a, x1b, x2) in the log chart
+CHKM_WINDOWS = {1: (-10.0, -4.5, 3.5), 2: (-13.0, -6.0, 3.5),
+                3: (-12.0, -6.0, 2.5)}
+_CHKM_M = 2.0
+_CHKM_GL = np.polynomial.legendre.leggauss(14)
+
+
+def chkm_om(a, b, rho):
+    """(om1, om2, om3)(z), pointwise principal powers."""
+    e = 1.0 / _CHKM_M
+
+    def om(z):
+        z = np.asarray(z, dtype=complex)
+        p1 = rho * np.exp((1 - e) * np.log(z) + (e - 1) * np.log(z - 1.0)
+                          + (e - 1) * np.log(z - b))
+        p2 = (1.0 / rho) * (z - a) ** 2 * np.exp(
+            (e - 1) * np.log(z) + (-e - 1) * np.log(z - 1.0)
+            + (-e - 1) * np.log(z - b))
+        dh = (z - a) / ((z - 1.0) * (z - b))
+        return np.stack([(p2 - p1) / 2.0, 1j * (p2 + p1) / 2.0, dh],
+                        axis=-1)
+    return om
+
+
+def chkm_z(w, b, branch):
+    """The two inverse branches of w = log((z-1)(z-b))."""
+    w = np.asarray(w, dtype=complex)
+    s = np.sqrt((1.0 - b) ** 2 + 4.0 * np.exp(w))
+    return 0.5 * (1.0 + b + branch * s)
+
+
+def chkm_omw(a, b, rho, branch):
+    """The forms in the log chart, dz/dw in closed form."""
+    om = chkm_om(a, b, rho)
+
+    def omw(w):
+        z = chkm_z(w, b, branch)
+        dwdz = (2.0 * z - 1.0 - b) / ((z - 1.0) * (z - b))
+        return om(z) / dwdz[..., None]
+    return omw
+
+
+def _chkm_seg(f, z0, z1, nsub=2):
+    """Endpoint-clustered GL integral along one straight segment: the
+    substitution u = 3t^2 - 2t^3 renders the z^(-1/2) branch-point
+    endpoints smooth (a per-cell rule with the singularity on a cell
+    edge converges only O(1/n) -- measured on the period test)."""
+    gx, gw = _CHKM_GL
+    tot = 0.0
+    edges = np.linspace(0.0, 1.0, nsub + 1)
+    for ta, tb in zip(edges[:-1], edges[1:]):
+        t = 0.5 * (ta + tb) + 0.5 * (tb - ta) * gx
+        wq = 0.5 * (tb - ta) * gw
+        u = 3 * t * t - 2 * t ** 3
+        du = 6 * t - 6 * t * t
+        z = z0 + (z1 - z0) * u
+        tot = tot + np.sum(f(z) * ((z1 - z0) * du * wq)[:, None], axis=0)
+    return tot
+
+
+def _chkm_segv(f, z0, z1, nsub=2):
+    """_chkm_seg vectorized over arrays of segment endpoints."""
+    z0 = np.asarray(z0)
+    z1 = np.asarray(z1)
+    gx, gw = _CHKM_GL
+    tot = 0.0
+    edges = np.linspace(0.0, 1.0, nsub + 1)
+    for ta, tb in zip(edges[:-1], edges[1:]):
+        t = 0.5 * (ta + tb) + 0.5 * (tb - ta) * gx
+        wq = 0.5 * (tb - ta) * gw
+        u = 3 * t * t - 2 * t ** 3
+        du = 6 * t - 6 * t * t
+        z = z0[:, None] + (z1 - z0)[:, None] * u[None, :]
+        tot = tot + np.sum(
+            f(z) * ((z1 - z0)[:, None] * (du * wq)[None, :])[..., None],
+            axis=1)
+    return tot
+
+
+def _chkm_path(f, waypts, nsub=24):
+    tot = 0.0
+    for z0, z1 in zip(waypts[:-1], waypts[1:]):
+        tot = tot + _chkm_seg(f, z0, z1, nsub)
+    return tot
+
+
+def chkm_tst(mi, nsub=60):
+    """The notebook's own 2-component period test at member `mi`."""
+    b, a, rho = CHKM_MEMBERS[mi]
+    om = chkm_om(a, b, rho)
+    I1 = _chkm_path(om, [0.0 + 0j, a / 2.0 + 0.5j, a + 0j], nsub)
+    t1 = float(np.real(I1[1]))
+    I2 = _chkm_path(om, [0.0 + 0j, -1.0 + 0.5j, -2.0 + 0j], nsub)
+    v = np.real(-I2[:2])
+    ang = np.pi / _CHKM_M + np.pi / 2.0
+    return t1, float(v @ np.array([np.cos(ang), np.sin(ang)]))
+
+
+def _chkm_grids(b, x1a, x1b, x2, nx):
+    """Sheet x-grids with breaks at x1 = log(-b) (the z = 0 corner) and
+    x0 = log((1-b)^2/4) (the branch merge), sharing every node on
+    [x1, x2] so the cross-sheet seam pairs by index."""
+    b1 = math.log(-b)
+    b0 = math.log((1.0 - b) ** 2 / 4.0)
+    h = 0.35 * min(b0 - b1, x2 - b0)
+
+    def seg(lo, hi, n):
+        return np.linspace(lo, hi, max(3, n), endpoint=False)
+    shared = np.unique(np.concatenate([
+        seg(b1, b0, max(4, int(round(0.30 * nx)))),
+        seg(b0, x2, max(6, int(round(0.40 * nx)))), np.array([x2]),
+        b0 + h * np.array([-.5, -.25, -.12, .12, .25, .5]),
+        b1 + h * np.array([.12, .25, .5])]))
+    shared = shared[(shared >= b1) & (shared <= x2)]
+
+    def tail(x1):
+        n = max(4, int(round(0.30 * nx * (b1 - x1) / (b0 - b1))))
+        return seg(x1, b1, n)
+    xgA = np.unique(np.concatenate([tail(x1a), shared]))
+    xgB = np.unique(np.concatenate([tail(x1b), shared]))
+    return xgA, xgB, b1, b0
+
+
+def _chkm_strip(a, b, rho, sheet, xg, yg, delta):
+    """One strip F (nx, ny, 3): sheet +1 = h1 on y in (0, pi), sheet
+    -1 = h2 on y in (-pi, 0); anchored from z = i, normalized so that
+    F(z=0) = 0 (`delta` is the base integral to z = 0)."""
+    br = 1.0 if sheet > 0 else -1.0
+    ys = yg if sheet > 0 else -yg[::-1]
+    omw = chkm_omw(a, b, rho, br)
+    om = chkm_om(a, b, rho)
+    W = xg[:, None] + 1j * ys[None, :]
+    nx, ny = W.shape
+    F = np.zeros((nx, ny, 3), dtype=complex)
+    jm = int(np.argmin(np.abs(np.abs(ys) - 0.5 * np.pi)))
+    im = int(np.argmin(np.abs(xg - (xg[-1] - 1.0))))
+    za = complex(chkm_z(W[im, jm], b, br))
+    # the anchor z-path from i must stay in the upper half plane,
+    # off every branch cut; both sheets' interiors live there
+    if za.imag <= 1e-9:
+        raise ValueError("CHKM anchor left the upper half plane")
+    F[im, jm] = _chkm_path(om, [1j, za], nsub=24) - delta
+    for i in range(im + 1, nx):
+        F[i, jm] = F[i - 1, jm] + _chkm_seg(omw, W[i - 1, jm], W[i, jm])
+    for i in range(im - 1, -1, -1):
+        F[i, jm] = F[i + 1, jm] + _chkm_seg(omw, W[i + 1, jm], W[i, jm])
+    for j in range(jm + 1, ny):
+        F[:, j] = F[:, j - 1] + _chkm_segv(omw, W[:, j - 1], W[:, j])
+    for j in range(jm - 1, -1, -1):
+        F[:, j] = F[:, j + 1] + _chkm_segv(omw, W[:, j + 1], W[:, j])
+    return np.real(F)
+
+
+def chkm_assemble(mi, nx=36, ny=25, windows=None):
+    """The welded torus: 8 strip copies under {E, My, Rz(pi), Mx},
+    exact grid-index welds along the seam families in the header.
+    Returns (V, quads, diag)."""
+    b, a, rho = CHKM_MEMBERS[mi]
+    om = chkm_om(a, b, rho)
+    x1a, x1b, x2 = windows or CHKM_WINDOWS[mi]
+    xgA, xgB, b1, b0 = _chkm_grids(b, x1a, x1b, x2, nx)
+    t = np.linspace(0.0, 1.0, ny)
+    yg = np.pi * t * t * (3.0 - 2.0 * t)
+    delta = np.real(_chkm_path(om, [1j, 0.0 + 0j], nsub=48))
+    FA = _chkm_strip(a, b, rho, +1, xgA, yg, delta)
+    FB = _chkm_strip(a, b, rho, -1, xgB, yg, delta)
+    nxA, nyA = FA.shape[:2]
+    nxB = FB.shape[0]
+    spanA = float(np.linalg.norm(FA.reshape(-1, 3).max(0)
+                                 - FA.reshape(-1, 3).min(0)))
+    # snap the measured mirror arcs exactly onto their planes
+    selA2 = xgA <= b0 + 1e-12
+    selB_y0 = xgB <= b1 + 1e-12
+    selB_x0 = (xgB >= b1 - 1e-12) & (xgB <= b0 + 1e-12)
+    mirr = (float(np.abs(FA[:, 0, 1]).max()),
+            float(np.abs(FA[selA2, -1, 0]).max()),
+            float(np.abs(FB[:, -1, 0]).max()),
+            float(np.abs(FB[selB_y0, 0, 1]).max()),
+            float(np.abs(FB[selB_x0, 0, 0]).max()))
+    FA[:, 0, 1] = 0.0
+    FA[selA2, -1, 0] = 0.0
+    FB[:, -1, 0] = 0.0
+    FB[selB_y0, 0, 1] = 0.0
+    FB[selB_x0, 0, 0] = 0.0
+    # the direct chart continuation h1(y=pi) = h2(y=-pi) for x >= b0
+    s3A = np.nonzero(xgA >= b0 - 1e-12)[0]
+    s3B = np.nonzero(xgB >= b0 - 1e-12)[0]
+    PA = FA[s3A, -1, :]
+    PB = FB[s3B, 0, :]
+    gap3 = float(np.linalg.norm(PA - PB, axis=1).max())
+    avg = 0.5 * (PA + PB)
+    FA[s3A, -1, :] = avg
+    FB[s3B, 0, :] = avg
+    # 8 copies under the Klein group {E, My, Rz(pi), Mx}
+    frames = [np.diag([1.0, 1.0, 1.0]), np.diag([1.0, -1.0, 1.0]),
+              np.diag([-1.0, -1.0, 1.0]), np.diag([-1.0, 1.0, 1.0])]
+    par = [1, -1, 1, -1]
+    comp = {(0, 1): 1, (1, 1): 0, (2, 1): 3, (3, 1): 2,   # g My
+            (0, 3): 3, (1, 3): 2, (2, 3): 1, (3, 3): 0}   # g Mx
+    Vs, quads, vid = [], [], {}
+    nv = 0
+    for f in range(4):
+        for s, (F, nxs) in enumerate(((FA, nxA), (FB, nxB))):
+            Vf = F.reshape(-1, 3) @ frames[f].T
+            for i in range(nxs):
+                for j in range(nyA):
+                    vid[(f, s, i, j)] = nv + i * nyA + j
+            Vs.append(Vf)
+            for i in range(nxs - 1):
+                for j in range(nyA - 1):
+                    q = [nv + i * nyA + j, nv + (i + 1) * nyA + j,
+                         nv + (i + 1) * nyA + j + 1, nv + i * nyA + j + 1]
+                    quads.append(q if par[f] > 0 else q[::-1])
+            nv += nxs * nyA
+    V = np.concatenate(Vs, axis=0)
+    parent = np.arange(nv)
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(x, y):
+        rx, ry = find(x), find(y)
+        if rx != ry:
+            parent[max(rx, ry)] = min(rx, ry)
+    iA2 = np.nonzero(selA2)[0]
+    iB_y0 = np.nonzero(selB_y0)[0]
+    iB_x0 = np.nonzero(selB_x0)[0]
+    for g in range(4):
+        gMy, gMx = comp[(g, 1)], comp[(g, 3)]
+        for i in range(nxA):                      # h1 y=0 edge
+            union(vid[(g, 0, i, 0)], vid[(gMy, 0, i, 0)])
+        for i in iA2:                             # h1 y=pi, x <= b0
+            union(vid[(g, 0, i, nyA - 1)], vid[(gMx, 0, i, nyA - 1)])
+        for ia, ib in zip(s3A, s3B):              # chart continuation
+            union(vid[(g, 0, ia, nyA - 1)], vid[(g, 1, ib, 0)])
+        for i in iB_y0:                           # h2 y=-pi, x <= b1
+            union(vid[(g, 1, i, 0)], vid[(gMy, 1, i, 0)])
+        for i in iB_x0:                           # h2 y=-pi, b1..b0
+            union(vid[(g, 1, i, 0)], vid[(gMx, 1, i, 0)])
+        for i in range(nxB):                      # h2 y=0 edge
+            union(vid[(g, 1, i, nyA - 1)], vid[(gMx, 1, i, nyA - 1)])
+    root = np.array([find(x) for x in range(nv)])
+    uniq, inv = np.unique(root, return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(Vw, inv, V)
+    np.add.at(cnt, inv, 1.0)
+    Vw /= cnt[:, None]
+    Fq = [[int(inv[i]) for i in q] for q in quads]
+    Fq = [q for q in Fq if len({*q}) == 4]
+    return Vw, Fq, dict(gap3=gap3, span=spanA, mirr=mirr)
+
+
+def chkm_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Costa-Hoffman-Karcher-Meeks torus: `order` picks the member
+    (1-3 = the notebook's solved deformations b = -0.05 / -0.01 /
+    -0.005; member 1 is the one Weber's page pictures).  `radius`
+    follows the three catenoidal ends further out by stretching the
+    log-chart windows."""
+    del spec, theta
+    mi = int(np.clip(order, 1, 3))
+    fac = float(np.clip(radius / 1.2, 0.6, 1.6))
+    x1a, x1b, x2 = CHKM_WINDOWS[mi]
+    win = (x1a * fac, x1b * fac, x2 * fac)
+    nx = int(np.clip(nu, 24, 96))
+    ny = int(np.clip(int(0.6 * nv), 16, 64))
+    V, F, _diag = chkm_assemble(mi, nx=nx, ny=ny, windows=win)
+    V = _center_fit(V, scale, V)
+    return V, F, None
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -11855,6 +14726,324 @@ def register():
 
 def unregister():
     pass
+
+
+# ==========================================================================
+# Karcher JD / JE doubly periodic saddle towers (4-punctured rectangular
+# tori)
+# ==========================================================================
+# Two families of embedded doubly periodic minimal surfaces from Karcher's
+# "Embedded minimal surfaces derived from Scherk's examples": fences of
+# Scherk saddle towers, parametrized by 4-punctured RECTANGULAR tori
+# C/<1, i t>.  The Gauss map is a degree-2 elliptic function whose two
+# zeros and two poles sit at the four half-period points 0, w1 = 1/2,
+# w2 = i t/2, w3 = w1 + w2 (the punctures are there), and the height
+# differential is dh = i dz -- constant, because the only vertical
+# normals are at the punctures, so on the torus dh can have neither zeros
+# nor poles (Tokyo notes, 3.3.5).  The two families differ ONLY in how
+# the zeros pair up (the 3DXM exhibits' distinguishing mark):
+#
+#   JD:  zeros {0, w3}, poles {w1, w2} -- the fundamental rectangle's
+#        diagonal joins the TWO ZEROS; neighbouring towers meet along
+#        vertical planar symmetry lines.
+#   JE:  zeros {0, w2}, poles {w1, w3} -- the diagonal joins a ZERO and
+#        a POLE (3D-XplorMath's J_E elliptic function).
+#
+# Both Gauss maps are built directly from the divisor,
+#
+#     g(z) = rho * wp'(z) / ((wp(z) - e_a)(wp(z) - e_b)) ,
+#
+# with e_a, e_b the wp-values at the two POLE half-periods (wp' has
+# simple zeros there, so dividing by both double zeros leaves simple
+# poles) and rho > 0 the scale that normalizes the four branch values of
+# g into the Jacobi-type pattern {B, -B, 1/B, -1/B} of Karcher's
+# "Elliptic Functions of Jacobi Type".  The branch points come from a
+# CLOSED-FORM quadratic: g'/g = 0 forces
+#     x^2 - 2 e_c x - (2 e_c^2 + e_a e_b) = 0,   x = wp(z_branch),
+# (using e_a + e_b = -e_c and wp'' = 6 wp^2 - g2/2), so rho needs no
+# numeric search.  MEASURED and gated in the self-test: JD branch values
+# land on the UNIT CIRCLE (|B| = 1 -- this is exactly Karcher's gamma of
+# the Tokyo notes 3.1, with branch values +-e^{+-i alpha}) and JE branch
+# values land on the IMAGINARY AXIS, with B * B' = 1 in both cases.
+# That is the "most symmetric" normalization, for which the tower wings
+# are orthogonal and the Jenkins-Serrin existence argument of the paper
+# applies.
+#
+# The immersion is CLOSED FORM.  Partial fractions give
+#     Int g dz   = rho/(e_a - e_b) [log(wp - e_a) - log(wp - e_b)] ,
+#     Int 1/g dz = -(1/2 rho) [log sigma(z) - log sigma(z - w_c)] + K z ,
+# where w_c is the non-origin zero of g and K the constant of the exact
+# zeta partial-fraction expansion 1/g = r0 (zeta(z) - zeta(z - w_c)) + K,
+# r0 = -1/(2 rho) (both identities are gated pointwise below -- they are
+# what proves the antiderivatives differentiate back to the 1-forms).
+# The logs are multivalued; on the quarter-rectangle fundamental patch
+# (0, 1/2) x (0, t/2), whose interior contains NO punctures (they sit at
+# its corners), a single-valued branch exists and is realized by
+# unwrapping the phase from the patch centre outward (_jdje_ulog) --
+# principal-branch evaluation would tear the patch wherever wp - e_a
+# crosses the negative real axis, which happens along whole symmetry
+# lines.
+#
+# MESHING.  The quarter patch is bounded by symmetry elements (bottom and
+# top edges: straight horizontal lines; left and right edges: vertical
+# mirror planes -- measured from the built patch, then snapped exactly),
+# so the fence is the orbit of ONE patch under {180-degree rotation about
+# the bottom line} x {mirror in the right plane} x the period lattice,
+# welded seam-exactly with the sptail machinery.  The period lattice is
+# MEASURED by integrating the 1-forms along the torus generators: the
+# t-generator gives the pure vertical translation (0, 0, -t) (exact,
+# since dh = i dz) and the 1-generator a pure horizontal translation;
+# every puncture-loop period lands ON that lattice (gated), which is what
+# lets the trimmed Scherk-type wing ends continue wing-to-wing across
+# copies.  The 3DXM exhibits' morphing modulus bb in (0, 0.5) is the
+# edge-length ratio of the rectangular torus: t = 2 bb; it drives the
+# size of the visible holes.
+#
+# References:
+# - H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#   examples", Manuscripta Math. 62 (1988) 83-114 -- the doubly periodic
+#   tower families and their Jenkins-Serrin construction.
+# - H. Karcher, "Construction of minimal surfaces", in "Surveys in
+#   Geometry", Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256,
+#   Bonn, 1989, pp. 1-96, sections 3.1 and 3.3 -- the elliptic function
+#   gamma with unit-circle branch values, the derivation g = gamma
+#   (resp. its companion) with dh = i dz, and the deformation family.
+# - H. Karcher, "Elliptic Functions of Jacobi Type", 3D-XplorMath
+#   documentation, http://3D-XplorMath.org/ -- the J_D, J_E, J_F triple
+#   on one rectangular torus and the branch-value normalization
+#   {B, -B, 1/B, -1/B} used here.
+# - The 3DXM Consortium, Karcher JD / JE Saddle Tower exhibits,
+#   https://virtualmathmuseum.org/surface/karcher_jd_st/ and
+#   https://virtualmathmuseum.org/surface/karcher_je_st/ -- the
+#   4-punctured-torus presentation and the zero/pole diagonal mark.
+# --------------------------------------------------------------------------
+
+
+def jdje_data(kind, t):
+    """Closed-form Weierstrass data for a JD/JE tower on C/<1, i t>:
+    lattice, pole values (e_a, e_b), the partner zero w_c, the branch
+    normalization rho, and the constants of the 1/g partial fraction."""
+    t = float(t)
+    L = _Lattice(0.5, 1j * t)
+    w1, w2 = 0.5, 0.5j * t
+    w3 = w1 + w2
+    e1 = complex(L.wp(w1))
+    e2 = complex(L.wp(w2))
+    e3 = complex(L.wp(w3))
+    if kind == 'JD':                      # zeros {0, w3}, poles {w1, w2}
+        ea, eb, ec, wc = e1, e2, e3, w3
+    elif kind == 'JE':                    # zeros {0, w2}, poles {w1, w3}
+        ea, eb, ec, wc = e1, e3, e2, w2
+    else:
+        raise ValueError(f"unknown tower kind {kind!r}")
+    # branch points: x = wp(z_b) solves x^2 - 2 e_c x - (2 e_c^2 + e_a e_b)
+    # = 0; equivalently disc = 3 e_c^2 - g2/4 with g2/4 = -(sum e_i e_j)
+    disc = 3.0 * ec * ec + (e1 * e2 + e1 * e3 + e2 * e3)
+    xs = (ec + np.sqrt(complex(disc)), ec - np.sqrt(complex(disc)))
+    # unscaled branch values: wp' = +-2 sqrt(prod(x - e_i)) there, so
+    # u = wp'/((x - e_a)(x - e_b)) = +-2 sqrt((x - e_c)/((x-e_a)(x-e_b)))
+    us = tuple(2.0 * np.sqrt((x - ec) / ((x - ea) * (x - eb)))
+               for x in xs)
+    rho = 1.0 / math.sqrt(abs(us[0] * us[1]))
+    r0 = -0.5 / rho                       # residue of 1/g at z = 0
+    d = dict(kind=kind, t=t, L=L, ea=ea, eb=eb, ec=ec, wc=wc,
+             rho=rho, r0=r0, B=(rho * us[0], rho * us[1]))
+    zt = 0.31 + 0.412j * t                # generic point pinning K
+    d['K'] = complex(1.0 / jdje_g(d, zt)
+                     - r0 * (L.zeta(zt) - L.zeta(zt - wc)))
+    return d
+
+
+def jdje_g(d, z):
+    """The tower Gauss map (degree-2 elliptic, zeros/poles at
+    half-period points)."""
+    L = d['L']
+    wp = L.wp(z)
+    return d['rho'] * L.wp_prime(z) / ((wp - d['ea']) * (wp - d['eb']))
+
+
+def _jdje_ulog(W):
+    """log of a 2-D complex grid with the phase unwrapped from the grid
+    centre outward: a continuous single-valued branch on a simply
+    connected patch whose only zeros sit at (masked) corners.  Principal
+    logs would jump by 2 pi i wherever W crosses the negative real axis,
+    which for the tower data happens along entire symmetry lines."""
+    a = np.angle(W)
+    ic, jc = a.shape[0] // 2, a.shape[1] // 2
+    col = a[:, jc].copy()
+    col[ic:] = np.unwrap(col[ic:])
+    col[:ic + 1] = np.unwrap(col[ic::-1])[::-1]
+    a[:, jc:] = np.unwrap(a[:, jc:], axis=1)
+    a[:, :jc + 1] = np.unwrap(a[:, jc::-1], axis=1)[:, ::-1]
+    a += (col - a[:, jc])[:, None]
+    return np.log(np.abs(W)) + 1j * a
+
+
+def jdje_patch(d, nx, ny, eps):
+    """Closed-form immersion of the quarter-rectangle fundamental patch
+    (0, 1/2) x (0, t/2), corners (= punctures) masked at conformal
+    radius eps.  Grid is cosine-clustered toward all four edges, so the
+    trimmed wing rims around the punctures stay dense.  Every evaluation
+    is nudged toward the patch interior (the boundary carries the log
+    branch cuts).  Returns (X (nx, ny, 3), valid mask, Z grid)."""
+    t = d['t']
+    sx = 0.5 * (1.0 - np.cos(np.pi * np.linspace(0.0, 1.0, nx)))
+    sy = 0.5 * (1.0 - np.cos(np.pi * np.linspace(0.0, 1.0, ny)))
+    U, V = np.meshgrid(0.5 * sx, 0.5 * t * sy, indexing='ij')
+    Z = U + 1j * V
+    nud = 1e-7
+    Zn = (Z + nud * np.where(U > 0.25, -1.0, 1.0)
+          + 1j * (nud * t) * np.where(V > 0.25 * t, -1.0, 1.0))
+    L = d['L']
+    wp = L.wp(Zn)
+    Fg = d['rho'] / (d['ea'] - d['eb']) * (
+        _jdje_ulog(wp - d['ea']) - _jdje_ulog(wp - d['eb']))
+    Fi = d['r0'] * (_jdje_ulog(L.sigma(Zn))
+                    - _jdje_ulog(L.sigma(Zn - d['wc']))) + d['K'] * Zn
+    F1 = 0.5j * (Fi - Fg)                 # dh = i dz folded in
+    F2 = -0.5 * (Fi + Fg)
+    # height is exactly linear (dh = i dz): use the unnudged grid, so
+    # horizontal grid lines are exact level lines
+    X = np.stack([F1.real, F2.real, -np.imag(Z)], axis=-1)
+    valid = np.isfinite(X).all(axis=-1)
+    r = eps * min(1.0, t)
+    for c in (0.0, 0.5, 0.5j * t, 0.5 + 0.5j * t):
+        valid &= np.abs(Z - c) > r
+    return X, valid, Z
+
+
+def jdje_periods(d, n=6001):
+    """(P_1, P_t): real translation periods of the immersion along the
+    torus generators 1 and i t (midline paths, trapezoid)."""
+    z0 = 0.13 + 0.203j * d['t']
+    out = []
+    for dz in (1.0, 1j * d['t']):
+        s = np.linspace(0.0, 1.0, n)
+        z = z0 + s * dz
+        g = jdje_g(d, z)
+        ph = np.stack([0.5j * (1.0 / g - g), -0.5 * (1.0 / g + g),
+                       1j * np.ones_like(g)], axis=-1) * dz
+        out.append(np.real(np.trapezoid(ph, s, axis=0)))
+    return out[0], out[1]
+
+
+def jdje_build(kind='JD', bb=0.35, nx=56, ny=44, towers=2, storeys=2,
+               eps=0.03):
+    """Assembled JD/JE fence: the quarter patch orbited under its
+    measured symmetry elements and period lattice, welded seam-exactly.
+    Returns (V, quads, uv, diag); diag carries the branch values, the
+    edge-snap residuals, the raw periods and the lattice residuals."""
+    t = 2.0 * float(np.clip(bb, 0.06, 0.49))
+    d = jdje_data(kind, t)
+    X, valid, Z = jdje_patch(d, nx, ny, eps)
+    span = float(np.ptp(X.reshape(-1, 3)[valid.reshape(-1)],
+                        axis=0).max())
+    # all four edges lie in elements with X1 = const (bottom/top:
+    # straight lines along X2 at heights 0 and -t/2; left/right:
+    # vertical mirror planes) -- measure, record the residual, snap
+    edges = {'bottom': (slice(None), 0), 'top': (slice(None), ny - 1),
+             'left': (0, slice(None)), 'right': (nx - 1, slice(None))}
+    cs, resid = {}, {}
+    for nm, sl in edges.items():
+        ex = X[sl][valid[sl], 0]
+        c = float(np.median(ex)) if len(ex) else 0.0
+        cs[nm] = c
+        resid[nm] = float(np.max(np.abs(ex - c))) if len(ex) else 0.0
+        X[sl][..., 0] = np.where(valid[sl], c, X[sl][..., 0])
+    # period lattice (snap to its measured exact form)
+    P1r, Ptr = jdje_periods(d)
+    lat_resid = float(max(abs(P1r[1]), abs(P1r[2]),
+                          abs(Ptr[0]), abs(Ptr[1]), abs(Ptr[2] + t)))
+    P1 = np.array([P1r[0], 0.0, 0.0])
+    Pt = np.array([0.0, 0.0, -t])
+    # frames: {E, rotate about bottom line} x {E, mirror in right plane}
+    # x the lattice.  Bottom line: {X1 = c_b, X3 = 0} along X2 ->
+    # diag(-1, 1, -1) + (2 c_b, 0, 0); right plane: {X1 = c_r} ->
+    # diag(-1, 1, 1) + (2 c_r, 0, 0).  Parity = det(M).
+    Mb = np.diag([-1.0, 1.0, -1.0])
+    tb = np.array([2.0 * cs['bottom'], 0.0, 0.0])
+    Mr = np.diag([-1.0, 1.0, 1.0])
+    tr = np.array([2.0 * cs['right'], 0.0, 0.0])
+    frames = []
+    for i in range(max(1, int(towers))):
+        for j in range(max(1, int(storeys))):
+            T = i * P1 + j * Pt
+            for bB in (0, 1):
+                for bR in (0, 1):
+                    M = np.eye(3)
+                    tv = np.zeros(3)
+                    if bR:
+                        M = Mr @ M
+                        tv = Mr @ tv + tr
+                    if bB:
+                        M = Mb @ M
+                        tv = Mb @ tv + tb
+                    frames.append((M, tv + T, -1.0 if bR else 1.0))
+    quads = sptail_grid_quads(nx, ny, valid.reshape(-1))
+    uv0 = _sptail_grid_uv(nx, ny)
+    V, F, uv = sptail_orbit_weld(X.reshape(-1, 3), uv0, quads, frames,
+                                 1e-9 * span)
+    diag = dict(B=d['B'], t=t, edge_resid=resid, span=span,
+                P1=P1r, Pt=Ptr, lat_resid=lat_resid,
+                n_frames=len(frames))
+    return V, F, uv, diag
+
+
+def jdje_mesh(spec, nu, nv, order, radius, scale, theta=0.0, storeys=1):
+    """MESH_PARAM builder for the KARCHER_JD / KARCHER_JE catalog rows."""
+    p = spec['p_from'](order, radius)
+    V, F, uv, _ = jdje_build(
+        kind=p['kind'], bb=p['bb'],
+        nx=int(np.clip(nu, 36, 84)),
+        ny=int(np.clip(int(0.8 * nv), 30, 68)),
+        towers=int(np.clip(p['towers'], 1, 4)),
+        storeys=int(np.clip(storeys, 1, 5)))
+    V = _smooth_boundary(V, F, iters=4)
+    V = _center_fit(V, scale, V)
+    return V, F, uv
+
+
+def discrete_median_H(V, faces):
+    """Median cotangent-Laplacian mean-curvature magnitude |L x|/(4 A)
+    over interior vertices -- the standard "is it actually minimal"
+    probe (a unit sphere at this scale reads H = 1).  Polygons are
+    fan-triangulated; boundary vertices are excluded.  Vectorized, so
+    the self-tests can afford it on full assemblies."""
+    T = []
+    for f in faces:
+        for k in range(1, len(f) - 1):
+            T.append((f[0], f[k], f[k + 1]))
+    T = np.asarray(T, np.int64)
+    if not len(T):
+        return float('nan'), 0
+    n = len(V)
+    E = np.concatenate([T[:, (0, 1)], T[:, (1, 2)], T[:, (2, 0)]])
+    E.sort(axis=1)
+    _, inv, cnt = np.unique(E, axis=0, return_inverse=True,
+                            return_counts=True)
+    bnd = np.unique(E[cnt[inv] == 1])
+    Lx = np.zeros((n, 3))
+    A = np.zeros(n)
+    for i in range(3):
+        j, k = (i + 1) % 3, (i + 2) % 3
+        Pi, Pj, Pk = V[T[:, i]], V[T[:, j]], V[T[:, k]]
+        u, v = Pj - Pi, Pk - Pi
+        cr = np.cross(u, v)
+        crn = np.linalg.norm(cr, axis=1)
+        good = crn > 1e-14
+        cot = np.where(good,
+                       np.einsum('ij,ij->i', u, v) / np.where(good, crn,
+                                                              1.0),
+                       0.0)
+        np.add.at(Lx, T[:, j], cot[:, None] * (Pk - Pj))
+        np.add.at(Lx, T[:, k], cot[:, None] * (Pj - Pk))
+        np.add.at(A, T[:, i], np.where(good, crn / 6.0, 0.0))
+    keep = A > 1e-12
+    keep[bnd] = False
+    if not keep.any():
+        return float('nan'), 0
+    H = np.linalg.norm(Lx[keep], axis=1) / (4.0 * A[keep])
+    return float(np.median(H)), int(keep.sum())
 
 
 def _selftest():
@@ -13082,6 +16271,170 @@ def _selftest():
               f"{'OK' if good else 'FAIL'}")
     print("sfk deferred (see BACKLOG.md): hackman_surfaces, even-k "
           "Fischer-Koch/Freese (self-intersecting), Freese k=4 branch")
+
+    # ---- Karcher JD / JE doubly periodic saddle towers ---------------------
+    # (a) branch-value structure: the four branch values form the
+    #     Jacobi-type quadruple {B, -B, 1/B, -1/B}; JD's lie ON THE UNIT
+    #     CIRCLE (Karcher's gamma), JE's ON THE IMAGINARY AXIS -- and the
+    #     zero/pole pairing across the rectangle diagonal is the
+    #     documented JD/JE distinction (two zeros vs zero + pole).
+    # (b) the closed-form antiderivatives really differentiate to the
+    #     1-forms: the two partial-fraction identities behind them are
+    #     checked pointwise (they are exact algebra, not quadrature).
+    # (c) the period lattice: the t-generator translation is exactly
+    #     vertical (0, 0, -t), the 1-generator exactly horizontal, and
+    #     every puncture-loop period is an INTEGER combination of the
+    #     two -- the doubly periodic closure of the fence.
+    for jkind in ('JD', 'JE'):
+        worst_pair = worst_kind = worst_pf = worst_lat = worst_int = 0.0
+        for jbb in (0.2, 0.3, 0.4):
+            jt = 2.0 * jbb
+            jd = jdje_data(jkind, jt)
+            jB, jB2 = jd['B']
+            worst_pair = max(worst_pair, abs(jB * jB2 - 1.0))
+            worst_kind = max(worst_kind,
+                             abs(abs(jB) - 1.0) if jkind == 'JD'
+                             else abs(jB.real) + abs(jB2.real))
+            # partial-fraction identities (exact calculus of the closed
+            # form): g == rho/(ea-eb) (wp'/(wp-ea) - wp'/(wp-eb)) and
+            # 1/g == r0 (zeta(z) - zeta(z-wc)) + K
+            zz = np.array([0.171 + 0.081j * jt, 0.343 + 0.269j * jt,
+                           0.417 + 0.164j * jt])
+            jL = jd['L']
+            wpz = jL.wp(zz)
+            wpp = jL.wp_prime(zz)
+            lhs = jdje_g(jd, zz)
+            rhs = jd['rho'] / (jd['ea'] - jd['eb']) * (
+                wpp / (wpz - jd['ea']) - wpp / (wpz - jd['eb']))
+            worst_pf = max(worst_pf, float(np.max(np.abs(lhs - rhs))))
+            rhs2 = jd['r0'] * (jL.zeta(zz) - jL.zeta(zz - jd['wc'])) \
+                + jd['K']
+            worst_pf = max(worst_pf,
+                           float(np.max(np.abs(1.0 / lhs - rhs2))))
+            # period lattice purity + puncture loops on the lattice
+            jP1, jPt = jdje_periods(jd)
+            worst_lat = max(worst_lat, abs(jP1[1]), abs(jP1[2]),
+                            abs(jPt[0]), abs(jPt[1]), abs(jPt[2] + jt))
+            for pc in (0.5, 0.5j * jt, 0.5 + 0.5j * jt):
+                rr = 0.09 * min(1.0, jt)
+                pp = np.array([
+                    period_integral(
+                        lambda z, c=c, jd=jd: (
+                            (0.5j * (1.0 / jdje_g(jd, z)
+                                     - jdje_g(jd, z)),
+                             -0.5 * (1.0 / jdje_g(jd, z)
+                                     + jdje_g(jd, z)),
+                             1j * np.ones_like(z))[c]), pc, rr, rr).real
+                    for c in range(3)])
+                m1 = pp[0] / jP1[0]
+                worst_int = max(worst_int, abs(m1 - round(m1)),
+                                abs(pp[1]), abs(pp[2] / jt
+                                                - round(pp[2] / jt)))
+        # diagonal mark: |g| near w3 (JD: second zero -> small; JE:
+        # pole -> large)
+        jd = jdje_data(jkind, 0.7)
+        gd = abs(complex(jdje_g(jd, 0.5 + 0.35j + 0.03 + 0.021j)))
+        diag_ok = gd < 0.5 if jkind == 'JD' else gd > 2.0
+        good = (worst_pair < 1e-10 and worst_kind < 1e-10
+                and worst_pf < 1e-9 and worst_lat < 1e-8
+                and worst_int < 1e-6 and diag_ok)
+        ok &= good
+        print(f"karcher {jkind} data: pair={worst_pair:.1e} "
+              f"kind={worst_kind:.1e} pfrac={worst_pf:.1e} "
+              f"lattice={worst_lat:.1e} puncture={worst_int:.1e} "
+              f"|g(diag)|={gd:.2f} {'OK' if good else 'FAIL'}")
+    # (d) the assembled fences: symmetry edges snap to machine noise,
+    #     the orbit welds into a manifold mesh, and the discrete mean
+    #     curvature says MINIMAL (median cotan |H|; sphere at this
+    #     scale = 1; shipped rows gate at 0.02)
+    for jkind in ('JD', 'JE'):
+        V4, F4, _uv4, dg4 = jdje_build(jkind, bb=0.35, nx=56, ny=44,
+                                       towers=2, storeys=2)
+        er = max(dg4['edge_resid'].values()) / dg4['span']
+        h4, ni4 = discrete_median_H(V4, F4)
+        ec4 = {}
+        for f in F4:
+            m = len(f)
+            for tt in range(m):
+                a, b = f[tt], f[(tt + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ec4[e] = ec4.get(e, 0) + 1
+        nonman = sum(1 for c in ec4.values() if c > 2)
+        welded = 16 * 56 * 44 - len(V4)
+        good = (er < 1e-6 and h4 == h4 and h4 < 0.02 and ni4 > 5000
+                and nonman == 0 and welded > 2000
+                and dg4['lat_resid'] < 1e-8)
+        ok &= good
+        print(f"karcher {jkind} fence: edge_snap={er:.1e} median|H|="
+              f"{h4:.4f}/{ni4} nonman={nonman} welded={welded} "
+              f"lat={dg4['lat_resid']:.1e} {'OK' if good else 'FAIL'}")
+    # ---- Karcher's 4-noid with two symmetry planes ------------------
+    # Its whole claim is that the period problem is solved in closed
+    # form -- no FindRoot anywhere in the source notebook -- so the
+    # gate is the four end periods, measured across the family rather
+    # than at the rendered member.  A wrong digit in tau(lambda) or
+    # rho(lambda) breaks these while still meshing something.
+    p4 = 0.0
+    for lamq in (1.2, 1.5, 1.8, 2.4):
+        p4 = max(p4, float(np.abs(four_noid_sym2_end_periods(lamq)).max()))
+    good = p4 < 1e-9
+    ok &= good
+    print(f"4-noid sym2: max |Re period|, four ends x four members "
+          f"= {p4:.1e} {'OK' if good else 'FAIL'}")
+    # The assembly is gated two ways, at both members Weber renders.
+    # TOPOLOGY: one sheet, chi = -2, exactly four boundary loops,
+    # manifold, consistently oriented -- four loose discs are 4
+    # components with chi = +4, a mis-welded seam breaks chi = -2 or
+    # leaks boundary loops.  Necessary, not sufficient: a sphere with
+    # four slits passes it too.  So, SHAPE: the rigid-motion-invariant
+    # end statistics, measured off Weber's own PoVRay exports of this
+    # family (the `dummy.pov` mesh in each member directory of
+    # 4-noids-with-two-symmetry-planes__uq9HA8Va IS the assembled
+    # surface; our mesh registers onto it at ~0.2% of span).  The
+    # references below are those measurements: every pairwise angle
+    # between the four outward end axes, the wide/narrow end radius
+    # ratio, and the bounding-box proportions at the notebook's own
+    # truncation window.  A wrong member, a wrong mu mapping, or any
+    # assembly that merely has the right topology moves the angles by
+    # tens of degrees.
+    for (orderq, radq, ryx, rzx, awide, anarrow, across, rr) in (
+            (5, 4.0, 0.93058, 0.92205, 151.82, 73.88, 101.22, 4.4929),
+            (1, 1.2, 0.97224, 0.62681, 154.97, 135.30, 94.73, 3.5983)):
+        V4, F4 = four_noid_sym2_mesh(None, 80, 60, orderq, radq, 1.0)
+        chi4, nm4, or4, loops4, ncomp4 = sptail_topology(V4, F4)
+        ext = V4.max(axis=0) - V4.min(axis=0)
+        myx, mzx = float(ext[1] / ext[0]), float(ext[2] / ext[0])
+        st = _fournoid_end_stats(V4, F4)
+        good = (ncomp4 == 1 and chi4 == -2 and loops4 == 4
+                and nm4 == 0 and or4 and len(st) == 4
+                and abs(myx - ryx) < 0.02 and abs(mzx - rzx) < 0.02)
+        if good:
+            def _ang(u, v):
+                return math.degrees(math.acos(
+                    float(np.clip(np.dot(u, v), -1.0, 1.0))))
+            mrr = (st[0][0] + st[1][0]) / (st[2][0] + st[3][0])
+            mwide = _ang(st[0][2], st[1][2])
+            mnarrow = _ang(st[2][2], st[3][2])
+            mcross = max(_ang(st[i][2], st[j][2])
+                         for i in (0, 1) for j in (2, 3))
+            mcross_min = min(_ang(st[i][2], st[j][2])
+                             for i in (0, 1) for j in (2, 3))
+            good = (abs(mwide - awide) < 1.0
+                    and abs(mnarrow - anarrow) < 1.0
+                    and abs(mcross - across) < 1.0
+                    and abs(mcross_min - across) < 1.0
+                    and abs(mrr / rr - 1.0) < 0.02)
+            print(f"4-noid sym2 shape order={orderq}: axis angles "
+                  f"wide-wide={mwide:.2f} (ref {awide}) "
+                  f"narrow-narrow={mnarrow:.2f} (ref {anarrow}) "
+                  f"wide-narrow={mcross_min:.2f}..{mcross:.2f} "
+                  f"(ref {across}) radius ratio={mrr:.4f} (ref {rr}) "
+                  f"{'OK' if good else 'FAIL'}")
+        ok &= good
+        print(f"4-noid sym2 assembly order={orderq}: comps={ncomp4} "
+              f"chi={chi4} loops={loops4} nonman={nm4} "
+              f"oriented={or4} bbox y/x={myx:.4f} (ref {ryx}) "
+              f"z/x={mzx:.4f} (ref {rzx}) {'OK' if good else 'FAIL'}")
 
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in weierstrass")
     assert ok

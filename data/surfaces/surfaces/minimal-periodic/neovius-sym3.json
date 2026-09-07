@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "neovius-sym3",
-  "name": "Neovius-sym3 Surface",
+  "name": "Order 3 Neovius Surface",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
@@ -26,11 +26,13 @@
   },
   "topology": {
     "complete": true,
-    "compact": false
+    "compact": false,
+    "genus_per_cell": 13
   },
   "symmetry": {
     "kind": "space",
-    "periodicity_rank": 3
+    "periodicity_rank": 3,
+    "order": 3
   },
   "embedding": {
     "quality": "immersed"
@@ -38,14 +40,16 @@
   "construction": [
     {
       "implemented": false,
-      "blocked_by": "Recovered from the Wayback index of Weber's dead archive as a named surface folder; no construction has been built here.",
-      "resume": "Recover the notebook from the archived folder and follow the exact-Weierstrass route used for the shipped TPMS_EXACT rows."
+      "blocked_by": "Identified from the Wayback capture of Weber's dead archive (Triply/genus13/Neoviussym3, page captured 2010-07-27): the 'Order 3 Neovius Surface', genus 13 per cell, one half of the fundamental piece in a triangular prism with Neovius-style handles to all edges of the prism -- Karcher 1989 section 6.1.3's triangular-prism Neovius analog, distinct from the shipped Neovius (genus 9), C(H) (genus 7) and N14/N26/N38 (genus 14/26/38) rows.  No notebook or datafile was ever archived (only the page and two renders, preserved in the local mirror under _wayback_archive/), so there is no Weierstrass data to transcribe; a construction would be a from-scratch conjugate-Plateau or handle-insertion build.",
+      "resume": "The recovered page and renders are at the minsurf mirror's _mirror/_wayback_archive/Triply/genus13/Neoviussym3/web/; route: Karcher 1989 6.1.3 (conjugate-Plateau, Neovius-style handles to the triangular prism's edges), gated against the recovered renders and the genus-13 count."
     }
   ],
   "provenance": {
     "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
     "sources": [
-      "M. Weber, https://minimalsurfaces.blog/ and the archive formerly at indiana.edu/~minimal/archive/ (the site is dead; 280 surface folders were recovered from the Wayback CDX index)."
+      "M. Weber, https://minimalsurfaces.blog/ and the archive formerly at indiana.edu/~minimal/archive/ (the site is dead; 280 surface folders were recovered from the Wayback CDX index).",
+      "M. Weber, 'Order 3 Neovius Surface', formerly at indiana.edu/~minimal/archive/Triply/genus13/Neoviussym3/ (Wayback capture 2010-07-27; page and renders preserved in the local mirror).",
+      "H. Karcher, 'The triply periodic minimal surfaces of Alan Schoen and their constant mean curvature companions', Manuscripta Math. 64 (1989) 291-357, section 6.1.3 -- the Neovius analogs with handles to the horizontal edges of the three orthogonal prisms."
     ]
   },
   "metrics": {
@@ -54,6 +58,7 @@
   "tradition": [
     "crystallographic"
   ],
+  "named_after": "Neovius, Order",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "gprime-surface",
-  "name": "Gprime surface",
+  "name": "G' Alternating Gyroid",
   "primary_family": "minimal-periodic",
   "families": [
     "def-nodal",

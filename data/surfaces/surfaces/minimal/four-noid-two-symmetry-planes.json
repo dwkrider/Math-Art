@@ -1,24 +1,29 @@
 {
   "schema_version": "0.1.0",
   "slug": "four-noid-two-symmetry-planes",
-  "name": "4-Noid with Two Symmetry Planes",
+  "name": "4-Noid, Two Symmetry Planes",
   "primary_family": "minimal",
   "families": [
     "aperiodic",
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
+    "exactness": "numerical-integral",
     "note": "Karcher's 2-parameter family of 4-noids (4-punctured spheres, four catenoidal ends) with two orthogonal symmetry planes; the parameters control the position of the ends and their relative growth rates, and the Jorge-Meeks 4-noid is the intersection of the two 1-parameter sections that 3DXM exhibits separately as 'Symmetric 4-noid' (opposite end pairs of different size) and 'Skew 4-noid' (varying angle between end pairs, morphing toward two catenoids joined by a handle -- the family that convinced Hoffman that designed handles were promising)."
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -36,14 +41,19 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
-      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "SPH_4NOID_SYM2",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988);",
+      "H. F. Scherk (1835); A. Enneper (1864); M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0; Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids; Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk; Translation-Invariant Torus with 1 Enneper and 3 Annular Ends, notebook by Ramazan Yol, 2024).",
       "The 3DXM Consortium, 'Symmetric 4-noid', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch013_symmetric_4noid.md).",
       "The 3DXM Consortium, 'Skew 4-noid', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch014_skew_4noid.md).",
       "M. Weber, '4-Noids with Two Symmetry Planes', minimalsurfaces.blog (local mirror: minsurf/book/.../ch173_4_noids_with_two_symmetry_planes.md).",

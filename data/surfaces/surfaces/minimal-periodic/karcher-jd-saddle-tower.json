@@ -7,19 +7,24 @@
     "def-weierstrass",
     "doubly-periodic",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
+    "exactness": "numerical-integral",
     "note": "Doubly periodic embedded conjugate pair of minimal surfaces suggested by the Scherk saddle towers; unlike the JE family the towers are separated by a planar symmetry line, and by a rare coincidence the conjugate family consists of the same surfaces with the parameter running backwards.  Morphing parameter: edge length ratio of the rectangular torus domain."
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -37,24 +42,33 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
-      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "DOUBLY",
+      "key": "KARCHER_JD",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "H. Karcher, \"Construction of minimal surfaces\", in \"Surveys in Geometry\", Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256,",
+      "H. Karcher, \"Embedded minimal surfaces derived from Scherk's examples\", Manuscripta Math. 62 (1988) 83-114 -- the JD/JE tower families.",
+      "The 3DXM Consortium, \"Wavy Enneper\", \"Karcher JD Saddle Tower\" and \"Karcher JE Saddle Tower\" exhibits, https://virtualmathmuseum.org/",
+      "Bonn, 1989, pp. 1-96 -- the Enneper-end language and the doubly periodic examples (section 3.3).",
+      "- the exact exhibit data (Gauss map, dh, parameter ranges) followed here.",
+      "A. Enneper (1864) -- the base surface the waves ride on.",
       "The 3DXM Consortium, 'Karcher JD Saddle tower', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch027_karcher_jd_st.md).",
       "H. Karcher, 'Embedded minimal surfaces derived from Scherk's examples', Manuscripta Math. 62 (1988) 83-114."
     ]
   },
-  "metrics": {
-    "normalization": "unit_cell"
-  },
   "tradition": [
     "classical"
   ],
+  "metrics": {
+    "normalization": "unit_cell"
+  },
   "ids": {
     "vmm": "ch027_karcher_jd_st"
   },

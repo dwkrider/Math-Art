@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "neovius-n26",
-  "name": "NEOVIUS_N26 (exact)",
+  "name": "Neovius N26",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
@@ -946,9 +946,9 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below.",
       "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
       "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
-      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below.",
       "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA Technical Note TN D-5541 (1970), together with his later listings of the second-tier surfaces.",
       "K. Brakke, the Surface Evolver periodic minimal-surface collection (kenbrakke.com/evolver), where several of these are figured."
     ]
@@ -959,6 +959,7 @@
   "tradition": [
     "crystallographic"
   ],
+  "named_after": "Neovius",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

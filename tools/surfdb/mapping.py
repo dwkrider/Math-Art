@@ -119,6 +119,13 @@ MERGE = {
     "algebraic:ENDRASS_160": "endrass-octic-160",
     "algebraic:MOD_CHMUTOV": "modified-chmutov-octic",
     "algebraic:VAN_STRATEN_165": "van-straten-octic",
+    # The degree-12 row is the surface the catalogue already carries as
+    # `surface-with-132-a5-singularities`; without this it would mint a
+    # `labs-dodecic-132-a5-points` twin beside it.  (LABS_30_CUSPS gets
+    # no entry on purpose: the real 30-cusp member of Labs's family is a
+    # DIFFERENT surface from the complex 35-cusp `labs-sextic-35-cusps`,
+    # which has no real points, so it earns its own record.)
+    "algebraic:LABS_132_A5": "surface-with-132-a5-singularities",
     "algebraic:MOBIUS_SURFACE": "mobius-surface",
     "algebraic:NORDSTRAND_WEIRD": "nordstrand-weird-surface",
     # VAN_STRATEN_124 is deliberately NOT here: the curated tables carry
@@ -279,6 +286,14 @@ ALIAS = {
     # zoo row's data (G = z, dh = z/(z^2-1) dz) is exactly what the
     # record's minsurf page (ch152) prints.
     "minsurf:SP_HALF_TWISTED_SCHERK": "half-twisted-scherk",
+    # The Weber-Wolf row's label carries "Surface"; the curated record
+    # from the blog pass is keyed without it.
+    "minsurf:WEBER_WOLF": "weber-wolf-genus-3-5-ends",
+    "minsurf:KAPOULEAS": "kapouleas-surfaces",
+    # The CHKM tori row lands on the curated record from the blog
+    # pass (which sat not-implemented until the notebook data
+    # shipped).
+    "minsurf:CHKM_TORI": "costa-hoffman-karcher-meeks-tori",
     "tpms_exact:PGD": "pgd-associate-family",
     # The exact-Weierstrass rows added on the minimal-periodic branch.
     # These MUST live here rather than being hand-edited into the record
@@ -373,6 +388,18 @@ ALIAS = {
     "tpms_exact:STARFISH_3_3_GENUS_75": "starfish-3-3-genus-75",
     "tpms_exact:STARFISH_4_1_GENUS_55": "starfish-4-1-genus-55",
     "tpms_exact:STARFISH_4_3_GENUS_87": "starfish-4-3-genus-87",
+    # The six members Brakke never published a datafile for, now built
+    # by reconstructing the (m, n) rule from the eight he did publish
+    # (the rule reproduces all eight to 4e-16) and period-killing each
+    # new member against Surface Evolver itself.  4-2 and 5-3 are NOT
+    # here: they stay curated-only, their gap frozen, which is what
+    # Brakke's own "(fake)" and "(not quite)" notes already said.
+    "tpms_exact:STARFISH_2_4_GENUS_79": "starfish-2-4-genus-79",
+    "tpms_exact:STARFISH_3_4_GENUS_91": "starfish-3-4-genus-91",
+    "tpms_exact:STARFISH_4_4_GENUS_103": "starfish-4-4-genus-103",
+    "tpms_exact:STARFISH_5_1_GENUS_67": "starfish-5-1-genus-67",
+    "tpms_exact:STARFISH_5_2_GENUS_83": "starfish-5-2-genus-83",
+    "tpms_exact:STARFISH_5_4_GENUS_115": "starfish-5-4-genus-115",
     "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
     "tpms_exact:TRIPLY_HORGAN": "triply-periodic-horgan",
     "tpms_exact:WEI_G4": "wei-triply-periodic-genus-4",
@@ -411,6 +438,11 @@ ALIAS = {
     "algebraic:SYMMETROID": "symmetroid",
     "algebraic:DECO_TETRAHEDRON": "deco-tetrahedron",
     "algebraic:NORM_ONE": "norm-one-family",
+    # The preset label carries its node count ("Sarti Dodecic (600
+    # nodes)"), which would slugify to a second record beside the
+    # curated `sarti-dodecic` -- the twin-record trap again.
+    "minsurf:SPH_4NOID_SYM2": "four-noid-two-symmetry-planes",
+    "algebraic:SARTI_DODECIC": "sarti-dodecic",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",
     "algebraic:LABS": "labs-septic",
@@ -441,6 +473,9 @@ ALIAS = {
     "topological:SUDANESE": "sudanese-mobius-band",
     "topological:STEINER": "steiner-surface",
     "topological:NONORIENT": "non-orientable-genus-k",
+    # Dyck's surface has a record under `dyck-surface`; the preset
+    # slugifies to `dycks-surface`, which would mint an empty twin.
+    "topological:DYCK": "dyck-surface",
     "topological:GENUS": "genus-g-surface",
     "topological:TWIST_STRIP": "twisted-strip",
     "hyperbolic:PSEUDOSPHERE": "pseudosphere",
@@ -524,6 +559,45 @@ SUSPECTED_SAME = [
                   "Band (Mobius)' and 'Meeks Mobius Strip'.",
     },
 ]
+
+
+# UNVERIFIED -- "<source>:<key>" -> why.  A registry row that SHIPS in
+# the Add menu, so it can be looked at, but whose surface has not been
+# shown to BE the surface it is named after.  The ledger then records
+# it as not implemented, because "there is a row you can click" and
+# "the mathematics is right" are different claims, and `implemented`
+# means the second.
+#
+# This exists because the 4-noid shipped, was visibly wrong in
+# Blender, and had passed every gate written for it -- twice: an
+# end-count gate that read four loose discs as four ends, then a
+# topology gate (chi = -2, four loops) that a sphere with four slits
+# also satisfies.  The row is verified now, by measurement against
+# Weber's own PoVRay exports: point-cloud registration at ~0.2% of
+# span onto his dummy.pov meshes for both rendered members, plus a
+# selftest that pins the rigid-motion-invariant end statistics
+# (end-axis angles, wide/narrow radius ratio) to values measured off
+# those exports.  The table is empty, but it stays: the next row
+# that ships-before-it-is-shown-to-be-the-surface goes here, not
+# into the implemented count.
+UNVERIFIED = {
+    # (2026-09) Four Weber-batch rows sat here as patch piles --
+    # WEBER_WOLF 16 discs, HORGAN_NEARMISS 8, DP_LUBECK_BATISTA 8,
+    # LM_SLAB 2, every one chi = +component-count -- having shipped on
+    # point-cloud registration alone, which compares WHERE POINTS ARE
+    # and is blind to connectivity.  All four assemblies were repaired
+    # (exact grid-index welds along measured seam families; see the
+    # per-row commits) and are now gated on BOTH topology and
+    # registration in the zoo selftest: Weber-Wolf 1 comp chi = 3-6k
+    # with 5 end rims (genus 3(k-1), Riemann-Hurwitz-derived) at
+    # 0.22-0.30% vs Weber's k = 2/3/4 exports; Lubeck-Batista 1 comp
+    # chi = -8/cell (two genus-3 2-end quotient copies per cell) at
+    # 0.08-0.13% vs his three exported members; Lopez-Martin slab
+    # 1 comp chi = 2 - 2s with 2s plate rims; Horgan near-miss
+    # exactly TWO oriented annuli whose only joining seam is the one
+    # that provably does not exist (the gap stays open and measured;
+    # the `horgan-surface` record itself remains terminal).
+}
 
 
 def disposition(source, key):

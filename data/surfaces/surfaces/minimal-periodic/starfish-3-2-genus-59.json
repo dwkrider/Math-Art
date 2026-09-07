@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "starfish-3-2-genus-59",
-  "name": "STARFISH_3_2_GENUS_59 (exact)",
+  "name": "Starfish 3-2 (genus 59)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",

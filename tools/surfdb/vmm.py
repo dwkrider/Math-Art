@@ -153,9 +153,10 @@ def _deep(*layers):
 #     the hyperbolic-type page is attached, the conic-type page ch051 is
 #     the same record's other regime and is noted here rather than
 #     attached (one id slot).
-#   * ch056_two_soliton -> multi-soliton-pseudospherical: the record
-#     covers the 2-, 3- and 4-soliton surfaces (VMM pages ch056, ch058,
-#     ch059) and the breather+soliton page ch057; the first is attached.
+#   * ch056_two_soliton -> two-soliton-surface: the 2-, 3- and
+#     4-soliton surfaces (VMM pages ch056, ch058, ch059) are three rows
+#     now, so the page attaches to the two-soliton row it depicts rather
+#     than to an umbrella; ch057 (breather + soliton) has no row.
 #   * ch065_paraboloid -> elliptic-paraboloid: VMM's rotational
 #     paraboloid is the circular special case of the record.
 #   * ch137 (Scherk's singly periodic) -> scherk-saddle-tower: the
@@ -216,7 +217,7 @@ VMM_IDS = {
     "dini-surface": "ch053_dini",
     "breather-surface": "ch054_breather",
     "kuen-surface": "ch055_kuen",
-    "multi-soliton-pseudospherical": "ch056_two_soliton",
+    "two-soliton-surface": "ch056_two_soliton",
     "k-positive-revolution": "ch060_k1_sor",
     "sieverts-surface": "ch061_sievert_enneper",
     "spherical-helicoid": "ch062_spherical_helicoid",
@@ -503,25 +504,6 @@ def _vmm_minimal_records():
                     "the projective-plane family, which has its own record "
                     "(kusner-projective-plane-p-planar-ends)."}}),
         },
-        "fujimori-weber": {
-            "name": "Fujimori-Weber Surface", "family": "minimal-periodic",
-            "mode": "weierstrass",
-            "blocked_by": VMM_BLOCKED + (
-                "  The exhibit page shows the basic family in images only, "
-                "with no prose; the identification below rests on the "
-                "exhibit's own attribution."),
-            "resume": VMM_RESUME,
-            "sources": [
-                _vmm_src("ch038_fujimori_weber", "Fujimori-Weber"),
-                "S. Fujimori and M. Weber, 'Triply periodic minimal "
-                "surfaces bounded by vertical symmetry planes', "
-                "Manuscripta Math. 129 (2009) 29-53."],
-            "extra": _deep(_SPACE, {"ids": {"vmm": "ch038_fujimori_weber"},
-                "definition": {"note":
-                    "3DXM's exhibit of the triply periodic minimal "
-                    "surfaces constructed by Shoichi Fujimori and Matthias "
-                    "Weber, shown as a morphing basic family."}}),
-        },
     }
 
 
@@ -570,18 +552,47 @@ def _vmm_tpms_records():
             "name": "Schoen TW Family Surface", "family": "minimal-periodic",
             "mode": "weierstrass",
             "blocked_by": VMM_BLOCKED + (
-                "  The exhibit gives images only, and which entry of "
-                "Schoen's NASA catalogue 'TW' denotes has NOT been "
-                "identified here -- resolving that naming is part of the "
-                "remaining work."),
-            "resume": VMM_RESUME,
+                "  NAMING RESOLVED: 'TW' is NOT an entry of the NASA "
+                "catalogue.  3DXM's own companion text "
+                "(FourTriplyPeriod.pdf, mirrored beside the exhibit) "
+                "states the T-W surface 'is not in his list, but made in "
+                "his spirit', living in a hexagonal prism with an order-6 "
+                "quotient group (a 120-degree rotation plus three "
+                "orthogonal 180-degree axes); it is Karcher's T-Wp "
+                "surface (Manuscripta Math. 64 (1989) sections "
+                "5.3.3/5.4.4), the alpha = beta = 60-degree member of "
+                "the two-angle conjugate-contour family whose 45-degree "
+                "diagonal member is I-WP (section 6.2), Gauss map degree "
+                "4 (genus 5 per cell).  Construction attempted "
+                "(2026-09) by the conjugate-Plateau route with the "
+                "45-degree member gated against the shipped Evolver I-WP "
+                "cell: three readings of Karcher's fig. 5.3.3 brick "
+                "contour were eliminated by measurement (one generates a "
+                "provably non-discrete mirror arrangement; two build "
+                "valid TPMS whose mirror placements and cross-sections "
+                "are measurably not I-WP), so the contour transcription, "
+                "not the machinery, is what remains open."),
+            "resume": VMM_RESUME + (
+                "  Resume by extracting the direct fundamental hexagon "
+                "(arc planes AND arc lengths -- conjugation preserves "
+                "boundary lengths) from the shipped I-WP Evolver cell, "
+                "then transposing to the hexagonal prism."),
             "sources": [_vmm_src("ch037_schoen_tw", "A Schoen TW Family"),
-                        SCHOEN_NASA],
+                        SCHOEN_NASA,
+                        "H. Karcher, 'The triply periodic minimal "
+                        "surfaces of Alan Schoen and their constant mean "
+                        "curvature companions', Manuscripta Math. 64 "
+                        "(1989) 291-357, sections 5.3.3/5.4.4 (T-Wp) and "
+                        "6.2 (the two-angle family joining it to I-WP)."],
             "extra": _deep(_SPACE, {"ids": {"vmm": "ch037_schoen_tw"},
                 "definition": {"note":
                     "A hexagonal triply periodic minimal surface family "
-                    "that 3DXM exhibits as 'A Schoen TW Family', "
-                    "attributed by the museum to Alan Schoen."}}),
+                    "that 3DXM exhibits as 'A Schoen TW Family': "
+                    "Karcher's T-Wp ('wrapped package') surface, made in "
+                    "Schoen's spirit but not in the NASA report; the "
+                    "alpha = beta = 60-degree member of the "
+                    "conjugate-contour family whose 45-degree member is "
+                    "I-WP."}}),
         },
         "schoen-c-h": {
             "name": "Schoen C(H) Surface", "family": "minimal-periodic",
@@ -820,7 +831,11 @@ def _ms_records():
                     "surfaces with arbitrarily many ends, built by "
                     "desingularizing the circles of intersection of "
                     "coaxial catenoids and planes with bent singly "
-                    "periodic Scherk surfaces."}}),
+                    "periodic Scherk surfaces.  All period problems "
+                    "are solved numerically only (no simple existence "
+                    "proof), as the source page states; the k = 2 "
+                    "member is believed to admit no embedded "
+                    "example."}}),
         },
         "hackman-surfaces": {
             "name": "Hackman Surface (toroidal 1-noid)", "family":

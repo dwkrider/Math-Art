@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "lubeck-batista-surface",
-  "name": "Lubeck-Batista Surface (genus 3, tau = i member)",
+  "name": "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
@@ -68,7 +68,7 @@
   "ids": {
     "msblog": "ch038_lubeck_batista_surface"
   },
-  "named_after": "Batista, Lubeck",
+  "named_after": "Batista, Costa, Lubeck, Scherk",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

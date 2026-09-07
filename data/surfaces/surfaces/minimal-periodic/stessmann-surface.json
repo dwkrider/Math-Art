@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "stessmann-surface",
-  "name": "STESSMANN (exact)",
+  "name": "Stessmann's Surface (exact fundamental piece, conjugate to I-WP)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
@@ -119,6 +119,7 @@
   "ids": {
     "msblog": "ch330_stesmanns_surface"
   },
+  "named_after": "Stessmann",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

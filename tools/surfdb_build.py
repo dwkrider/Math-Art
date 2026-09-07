@@ -259,8 +259,15 @@ class Builder:
 
     # -- dispositions ----------------------------------------------------
 
-    def place(self, source, key, label, family, construction):
-        """Route one registry row through the mapping table."""
+    def place(self, source, key, label, family, construction,
+              slug_from=None):
+        """Route one registry row through the mapping table.
+
+        `slug_from` decouples the slug from the display name.  A slug
+        is IDENTITY here -- record filename, curated-facts key,
+        NOT_A_GAP key, cross-reference target -- so improving a name
+        must not move it.  Pass the string the slug was historically
+        derived from and only `name` changes."""
         kind, payload = mapping.disposition(source, key)
         ref = "%s:%s" % (source, key)
         fam = FAMILY_OVERRIDE.get(ref, family)
@@ -287,7 +294,7 @@ class Builder:
             self.report.append((source, key, "promote", slug))
             return slug
 
-        slug = payload or slugify(label)
+        slug = payload or slugify(slug_from or label)
 
         # SLUG COLLISION. Two different rows must never land on one slug.
         # This is not hypothetical: the Goursat dodecahedral row
@@ -513,6 +520,7 @@ class Builder:
             label = spec[0] if isinstance(spec, tuple) else str(key)
             fam_key = minsurf.SURFACE_FAMILY.get(key, "CLASSICAL")
             family = fam_family.get(fam_key, "minimal")
+            unver = mapping.UNVERIFIED.get("minsurf:%s" % key)
             slug = self.place(
                 "minsurf", key, label, family,
                 {"generator": "math_art.minsurf.parametric",
@@ -520,7 +528,11 @@ class Builder:
                                  if fam_key in ("SINGLY", "DOUBLY")
                                  else "mesh.parametric_minimal_add"),
                  "family": fam_key, "key": key,
-                 "definition_index": 0, "implemented": True})
+                 "definition_index": 0,
+                 # parked in UNVERIFIED: ships in the menu, does not
+                 # count as built
+                 "implemented": not unver,
+                 **({"blocked_by": unver} if unver else {})})
             rec = self.records[slug]
             if key in zoo_lines:
                 self.cite(rec, "minsurf.zoo", zoo_lines[key], label)
@@ -615,12 +627,16 @@ class Builder:
 
     def stage_tpms(self):
         import minsurf
+        from minsurf import labels
         tpms_lines = registry.dict_key_lines(
             open(os.path.join(ROOT, "math_art", "minsurf", "tpms.py"),
                  encoding="utf-8").read(), r"^\s*'([A-Z0-9_]+)':")
         level_fns = nodal.extract(minsurf.TPMS)
         for key in sorted(minsurf.TPMS):
-            label = "%s surface" % key.replace("_", " ").title()
+            # The registry already carries the name a person reads --
+            # use it rather than title-casing the dict key, which turned
+            # CD into "Cd surface" and CI2Y into "Ci2Y surface".
+            label = labels.clean_label(minsurf.TPMS[key][0])
             slug = self.place(
                 "tpms", key, label, "minimal-periodic",
                 {"generator": "math_art.minsurf.tpms",
@@ -636,7 +652,8 @@ class Builder:
                  "operator_id": ("mesh.tpms_add" if key == "SCHERKT"
                                  else "mesh.periodic_minimal_add"),
                  "family": "TPMS", "key": key,
-                 "definition_index": None, "implemented": True})
+                 "definition_index": None, "implemented": True},
+                slug_from="%s surface" % key.replace("_", " ").title())
             rec = self.records[slug]
             self.cite(rec, "minsurf.tpms", tpms_lines.get(key), label)
             rec["curvature"]["condition"] = "minimal"
@@ -652,13 +669,18 @@ class Builder:
                 key, level_fns, minsurf.TPMS[key][1]))
 
         for key in sorted(minsurf.TPMS_EXACT):
-            label = "%s (exact)" % key
+            # Same here, and this is where it hurt most: forty-six
+            # records carried the raw key ("DISPHENOID_FAMILY_A_GENUS_31
+            # (exact)") while the menu had been showing "Disphenoid 31"
+            # from the label sitting in TPMS_EXACT[key][0] all along.
+            label = labels.clean_label(minsurf.TPMS_EXACT[key][0])
             slug = self.place(
                 "tpms_exact", key, label, "minimal-periodic",
                 {"generator": "math_art.minsurf.tpms",
                  "operator_id": "mesh.periodic_minimal_add",
                  "family": "TPMS_EXACT", "key": key,
-                 "definition_index": 0, "implemented": True})
+                 "definition_index": 0, "implemented": True},
+                slug_from="%s (exact)" % key)
             rec = self.records[slug]
             self.cite(rec, "minsurf.tpms", tpms_lines.get(key), label)
             rec["curvature"]["condition"] = "minimal"
@@ -1343,7 +1365,43 @@ class Builder:
                     + ", which is authoritative; an unverified transcription "
                     "would silently define a different surface.")
 
+    def disambiguate_names(self):
+        """Re-qualify names that two records would otherwise share.
+
+        Provenance is stripped from a name because the record already
+        stores it structurally -- but when the SAME surface is
+        catalogued twice, once from its nodal approximation and once
+        from its exact Weierstrass data, that provenance is the only
+        thing telling the two apart.  (They stay two records rather
+        than merging because each carries its own curated facts; a
+        merge would strand them.)  So the qualifier comes back, for
+        exactly the records that need it and no others.
+        """
+        by_name = {}
+        for slug, rec in self.records.items():
+            by_name.setdefault((rec.get("name") or "").strip().lower(),
+                               []).append(slug)
+        fixed = []
+        for _name, slugs in sorted(by_name.items()):
+            if len(slugs) < 2:
+                continue
+            for slug in sorted(slugs):
+                rec = self.records[slug]
+                d = rec.get("definition") or {}
+                if d.get("fidelity") == "exact":
+                    q = "exact"
+                elif d.get("mode") == "nodal":
+                    q = "nodal approximation"
+                else:
+                    continue
+                rec["name"] = "%s (%s)" % (rec["name"], q)
+                fixed.append((slug, rec["name"]))
+        for slug, name in fixed:
+            self.report.append(("names", slug, "disambiguated", name))
+        return fixed
+
     def write(self):
+        self.disambiguate_names()
         written = 0
         for slug, rec in sorted(self.records.items()):
             folder = os.path.join(OUT, "surfaces", rec["primary_family"])
@@ -1679,14 +1737,21 @@ CURATED_ONLY = {
     # that we do not build them, and why.
 }
 _STARFISH_NO_DATAFILE = (
-    "Schoen starfish surface with no datafile. Brakke's starfish page "
-    "shows it, but publishes datafiles for only eight of the sixteen "
-    "(genus 31, 43, 47, 55, 59, 63, 75, 87) -- those eight ship. There "
-    "is no .fe for this one in the mirror or in starfish.tar, so it "
-    "cannot be built or checked against Evolver."
+    "Schoen starfish surface that does not close up. Brakke publishes "
+    "datafiles for eight of the sixteen (genus 31, 43, 47, 55, 59, 63, "
+    "75, 87); the other eight are pictures only. Six of those eight now "
+    "ship, built by reconstructing the (m, n) rule of the construction "
+    "from the eight published files -- the rule reproduces every vertex "
+    "of all eight to 4e-16 -- and period-killing each new member against "
+    "Surface Evolver itself. THIS one is not among them: its period-"
+    "killing gap freezes under refinement instead of falling, so the "
+    "boundary conditions are not met and there is no surface to ship. "
+    "Brakke's own page says the same of exactly these two, annotating "
+    "4-2 '(fake)' -- 'fails to period kill by only 0.005' -- and 5-3 "
+    "'(not quite)'; the independent agreement is why the other six are "
+    "trusted."
 )
-for _g in ("2-4-genus-79", "3-4-genus-91", "4-2-genus-71", "4-4-genus-103",
-           "5-1-genus-67", "5-2-genus-83", "5-3-genus-99", "5-4-genus-115"):
+for _g in ("4-2-genus-71", "5-3-genus-99"):
     CURATED_ONLY["starfish-" + _g] = _STARFISH_NO_DATAFILE
 del _g
 
@@ -1805,24 +1870,11 @@ MISSING = {
         "sources": ["3DXM Virtual Math Museum, Surfaces gallery."],
         "extra": {"tradition": ["gallery"]},
     },
-    "multi-soliton-pseudospherical": {
-        "name": "Multi-Soliton Pseudospherical Surface",
-        "family": "constant-curvature", "mode": "parametric",
-        "blocked_by": "Only the single BREATHER preset ships. The 2-, 3- and "
-                      "4-soliton surfaces need Sym's formula.",
-        "resume": "A. Bobenko, 'Surfaces in terms of 2 by 2 matrices' (1994) "
-                  "for Sym's formula -- converted in research/papers/. NOTE: "
-                  "Melko-Sterling 1993 does NOT contain a closed-form breather "
-                  "parametrisation despite being cited for one. The Bianchi "
-                  "permutability the bubbleton module already implements is the "
-                  "same machinery.",
-        "sources": ["A. I. Bobenko, in Harmonic Maps and Integrable Systems "
-                    "(1994)."],
-        "extra": {"curvature": {"condition": "k-const-negative",
-                                "gaussian": {"exact": "-1", "value": -1.0}},
-                  "embedding": {"quality": "self-intersecting"},
-                  "tradition": ["classical"]},
-    },
+    # "multi-soliton-pseudospherical" was an umbrella gap record for the
+    # 2-, 3- and 4-soliton surfaces (VMM ch056, ch058, ch059).  All three
+    # now ship as rows of their own, built from the twisted su(2) Lax
+    # pair by iterated Darboux steps and Sym's formula, so the umbrella
+    # is retired rather than left claiming they are missing.
     "schoen-batwing": {
         "name": "Schoen Batwing Surface", "family": "minimal-periodic",
         "mode": "weierstrass",

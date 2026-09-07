@@ -646,6 +646,718 @@ def harvest_adjoint(m=96, rings=16, iters=400):
     return out
 
 
+# ------------------------------------------------- synthesized starfish
+#
+# The eight starfish members Brakke PICTURES but never published a
+# datafile for.  His eight published files (starfish.tar, 2008) turn out
+# to be eight samples of ONE combinatorial construction: the original
+# (pre-adjoint) surface is the Plateau disk on a closed skew polygon of
+# p+q+2 vertices, whose fixed edges form
+#
+#   * a "zigzag" of p segments in the plane y = const, directions
+#     alternating (1,0,1) / (-1,0,1) and ENDING with the unit segment
+#     (-1,0,1)*1; the p-1 free scales, nearest-the-unit first, are the
+#     file's alpha, beta, ... parameters;
+#   * then a "tail" of q segments alternating (0,1,-1), (-1,0,1),
+#     whose q scales are the remaining parameters,
+#
+# with vertex 1 sliding on the line {z = 0, x = y}, edge 1 in the plane
+# z = 0, the closing edge in x = y, and the whole polygon anchored by
+# v2.z = 0 and last-vertex x = y = 0.  Evaluated at Brakke's own
+# parameter values this reproduces every vertex of all eight published
+# files to 4e-16 (starfish31/43/47/55/59/63/75/87adj.fe), so the
+# construction below IS his construction, continued to the (p, q) he
+# left without a file.
+#
+# The p+q-1 scales are not free: the adjoint's boundary arcs must land
+# on THREE planes (all (1,0,1)-edges on x+z=1, all (-1,0,1) on z-x=1,
+# all (0,1,-1) on y-z=1) with conj(edge 1) on the z axis and the
+# closing conjugate on {z=0, x+y=0} -- Brakke's "period killing", a
+# nonlinear system with exactly as many conditions as parameters.  The
+# values below were solved with Surface Evolver 2.70 itself driving
+# each member's own `gg` evolution: evolve the disk, conjugate, read
+# the corner positions, measure the RMS violation of the landing
+# conditions (normalized by the patch scale), and descend in the
+# parameters (Nelder-Mead, then least squares), exactly the search the
+# published files carry in their `search` commands.  At Brakke's own
+# parameters this gap measure reads 0.0004-0.0014 for the eight
+# published members -- pure discretization floor, falling ~4x per
+# refinement -- and that behaviour is the acceptance test: a SOLVED
+# member's gap must keep falling under refinement, while a member that
+# genuinely fails to period-kill flattens at its defect no matter how
+# fine the mesh.
+#
+# Brakke's page flags starfish 4-2 (genus 71) as "(fake)" -- "fails to
+# period kill by only 0.005 (so far)" -- and 5-2 / 5-3 as "(not
+# quite)"; the refinement test below reproduces his verdict for 4-2
+# and 5-3 from scratch (gap frozen at 4.6e-4 / 1.0e-3 across three
+# refinement levels while true members fall to 3e-5), so those ship
+# nothing.  See STARFISH_SYNTH_HELD.
+
+STARFISH_GREEK = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta',
+                  'eta', 'theta']
+
+_SF_UP = (1.0, 0.0, 1.0)       # conjugate arc plane x + z = 1
+_SF_DN = (-1.0, 0.0, 1.0)      # conjugate arc plane z - x = 1
+_SF_TL = (0.0, 1.0, -1.0)      # conjugate arc plane y - z = 1
+_SF_PLANE = {_SF_UP: 'x + z', _SF_DN: 'z - x', _SF_TL: 'y - z'}
+
+# view_transform_generators shared by every member (verbatim from the
+# published files; letters a..g, of which `cube` uses "abdabdf").
+_SF_VIEW = """\
+view_transform_generators 7
+ 1 0 0 0   0 0 1 1   0 1 0 -1    0 0 0 1
+ 1 0 0 0   0 0 -1 -1   0 -1 0 -1    0 0 0 1
+0 0 -1 1   0 1 0 0    -1 0 0 1   0 0 0 1
+0 0 1 -1   0 1 0 0     1 0 0 1   0 0 0 1
+swap_colors -1 0 0 0  0 -1 0 0   0 0 1 0   0 0 0 1
+swap_colors 0 -1 0 0       -1 0 0 0   0 0 -1 0  0 0 0 1
+ 1 0 0 0       0 1 0 0   0 0 -1 0  0 0 0 1
+"""
+
+# the gg evolution script shared by the published files, verbatim
+_SF_GG = """\
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+         u; V; U; g 22; r; g 22; u; V; u; V; u; V;
+         g 66; u; V; u; V; u; V; g 12; hessian;
+         r; g 22; u; V; u; V; hessian; hessian; hessian;
+         r;
+         g 22; u; V; u; V; V; V; hessian; hessian; hessian;
+}
+"""
+
+_SF_TAIL = """\
+// For displaying full cube unit cell
+cube := {
+          transform_expr "abdabdf";
+          show_trans "R"; // center it
+        }
+
+// For displaying partial unit cell
+cubelet := { transform_expr "adadf";
+             show_trans "R"; // center it
+           }
+
+// For displaying rhombic region
+rhomb := {
+          transform_expr "abdabdef";
+          show_trans "R"; // center it
+         }
+"""
+
+
+def starfish_deltas(p, q, params):
+    """The polygon's fixed edges: [(direction, scale, name), ...]."""
+    assert len(params) == p + q - 1
+    s = list(params[:p - 1])
+    t = list(params[p - 1:])
+    zig = [(_SF_DN, 1.0, None)]
+    for j, sc in enumerate(s):
+        zig.append((_SF_UP if j % 2 == 0 else _SF_DN, sc,
+                    STARFISH_GREEK[j]))
+    zig.reverse()
+    out = list(zig)
+    for j, sc in enumerate(t):
+        out.append((_SF_TL if j % 2 == 0 else _SF_DN, sc,
+                    STARFISH_GREEK[p - 1 + j]))
+    return out
+
+
+def starfish_vertices(p, q, params):
+    """Fixed vertices v2..v_{p+q+2} (v1 slides on {z=0, x=y})."""
+    dl = starfish_deltas(p, q, params)
+    tot = np.zeros(3)
+    for d, sc, _n in dl:
+        tot += sc * np.asarray(d)
+    X = np.array([-tot[0], -tot[1], 0.0])
+    out = [X.copy()]
+    for d, sc, _n in dl:
+        X = X + sc * np.asarray(d)
+        out.append(X.copy())
+    return np.asarray(out)
+
+
+def starfish_datafile(p, q, params):
+    """Evolver datafile text for starfish p-q, in the published format.
+
+    Byte-for-byte the shape of Brakke's starfish*adj.fe: same view
+    transforms, same gg, same adj/frame/gogo structure, so both
+    Surface Evolver and `fedata`/`fe_adjoint_patch` run it unchanged.
+    Vertex 1's seed sits at (-1.5, -1.5, 0) as in starfish31adj.fe:
+    with the seed at the origin the fixed-connectivity re-span lands
+    in a wrong basin for some members (0.03 plane residual on 2-1
+    against 0.006 from the published file; the seed is the only
+    difference).
+    """
+    n_fixed = p + q
+    n_vert = p + q + 2
+    dl = starfish_deltas(p, q, params)
+    V = starfish_vertices(p, q, params)
+    g = 12 * p + 16 * q - 9
+    L = []
+    L.append('// starfish%dadj.fe' % g)
+    L.append("// Adjoint of Schoen's starfish %d-%d (genus %d) surface."
+             % (p, q, g))
+    L.append('//')
+    L.append('// Synthesized continuation of the eight datafiles in')
+    L.append("// Brakke's starfish.tar (kenbrakke.com): same fundamental")
+    L.append('// polygon construction, parameters solved for period')
+    L.append('// killing with Surface Evolver 2.70.  Regenerate with')
+    L.append('//     python tools/bake_fe_cells.py --starfish')
+    L.append('')
+    L.append(_SF_VIEW)
+    for i, val in enumerate(params):
+        L.append('parameter %-7s = %.15f' % (STARFISH_GREEK[i], val))
+    L.append('')
+    for k in range(2, n_fixed + 2):
+        L.append('parameter rhs%d = 1;' % k)
+    L.append('')
+    L.append('constraint 21 formula: z = 0')
+    L.append('constraint 22 formula: x = y')
+    L.append('')
+    for k, (d, _sc, _nm) in enumerate(dl, start=2):
+        L.append('constraint %d formula: %s = rhs%d' % (k, _SF_PLANE[d], k))
+    L.append('')
+    L.append('constraint 27 formula: x = 0')
+    L.append('constraint 28 formula: y = 0')
+    L.append('constraint 29 formula: x+y = 0')
+    L.append('')
+    L.append('vertices')
+    L.append('1  -1.5 -1.5 0 constraints 21,22')
+    for i, v in enumerate(V, start=2):
+        L.append('%d  %.15f %.15f %.15f fixed' % (i, v[0], v[1], v[2]))
+    L.append('')
+    L.append('edges')
+    L.append('1  1 2 constraint 21')
+    for k in range(2, n_fixed + 2):
+        L.append('%d  %d %d fixed' % (k, k, k + 1))
+    L.append('%d  %d 1 constraint 22' % (n_fixed + 2, n_vert))
+    L.append('')
+    L.append('faces')
+    L.append('1   ' + ' '.join('-%d' % k for k in range(n_fixed + 2, 0, -1)))
+    L.append('')
+    L.append('read')
+    L.append('hessian_normal')
+    L.append('')
+    L.append(_SF_GG)
+    L.append('read "adjoint.cmd"')
+    L.append('')
+    L.append('adj := {')
+    L.append('         unset vertex constraint 21;')
+    L.append('         unset edge constraint 21;')
+    L.append('         unset vertex constraint 22;')
+    L.append('         unset edge constraint 22;')
+    L.append('         adjoint;')
+    L.append('       }')
+    L.append('')
+    L.append('frame := {')
+    L.append('    unfix vertices; unfix edges;')
+    L.append('')
+    L.append('    minz := vertex[1].z;')
+    L.append('    set vertex z z-minz;')
+    L.append('    miny := vertex[1].y;')
+    L.append('    set vertex y y-miny;')
+    L.append('    minx := vertex[1].x;')
+    L.append('    set vertex x x-minx;')
+    L.append('')
+    L.append('    mag := maximum(max(vertex,z-x),max(vertex,z+x));')
+    L.append('    mag := maximum(mag,max(vertex,y-z));')
+    L.append('    set vertex x x/mag;')
+    L.append('    set vertex y y/mag;')
+    L.append('    set vertex z z/mag;')
+    L.append('')
+    for k, (d, _sc, _nm) in enumerate(dl, start=2):
+        expr = _SF_PLANE[d].replace(' ', '')
+        L.append('    rhs%d := max(edge ee where original==%d,'
+                 'max(ee.vertex,%s));' % (k, k, expr))
+        L.append('    foreach edge ee where original==%d do' % k)
+        L.append('    { set ee.vertex constraint %d; '
+                 'set ee constraint %d; };' % (k, k))
+        L.append('')
+    last = n_fixed + 2
+    L.append('    foreach edge ee where original==%d do' % last)
+    L.append('    { set ee constraint 21; set ee.vertex constraint 21;')
+    L.append('      set ee constraint 29; set ee.vertex constraint 29;')
+    L.append('      unset vertex[1] constraint 29;')
+    L.append('      fix ee; fix ee.vertex;')
+    L.append('    };')
+    L.append('    foreach edge ee where original==1 do')
+    L.append('    { set ee constraint 27; set ee.vertex constraint 27;')
+    L.append('      set ee constraint 28; set ee.vertex constraint 28;')
+    L.append('      fix ee; fix ee.vertex;')
+    L.append('    };')
+    L.append('}')
+    L.append('')
+    L.append('gogo := {gg;    // evolve original surface')
+    L.append('         adj;   // do adjoint transformation')
+    L.append('         frame;  // fit to appropriate constraints')
+    L.append('         show_trans "R"; // center image')
+    for k in range(2, n_fixed + 2):
+        L.append('         rhs%d := 1.0;' % k)
+    for k in range(2, n_fixed + 2, 2):
+        L.append('         refine edge where on_constraint %d;' % k)
+    # The final polish is hessian_seek, NOT plain hessian.  On the
+    # larger members the framed patch is a saddle whose Hessian is not
+    # positive definite (Evolver warns so), and the raw `hessian` step
+    # walks AWAY from the minimum -- on 5-4 two of them inflated the
+    # patch from area 1.822 to 15.5.  `hessian_seek` line-searches the
+    # same direction and only ever descends (measured: 1.822276 ->
+    # 1.822272 on the identical mesh).
+    L.append('         g 20; u; V; u; V; g 20;')
+    L.append('         hessian_seek; hessian_seek;  // final polishing')
+    L.append('  }')
+    L.append('')
+    L.append(_SF_TAIL)
+    return '\n'.join(L) + '\n'
+
+
+# Solved parameters for the six members that period-kill.  `gaps` is
+# (gap at the r1-solved parameters measured on the r2 mesh; after one
+# Gauss-Newton step at r2; at r3 with the stepped parameters) -- a
+# true member falls toward the published members' refinement floor
+# (1-2e-5), which all six do.  `evolver` is what Surface Evolver 2.70
+# reports after the datafile's own `gogo` (framed adjoint fundamental
+# patch): the same area gate the published eight get from
+# EVOLVER_ADJOINT.
+STARFISH_SYNTH = {
+    (2, 4): {
+        'params': [
+            8.790283125478160,
+            3.933219819766423,
+            2.457539064799036,
+            3.498156813264683,
+            2.830730724108730,
+        ],
+        'gaps': (8.25002e-05, 4.35762e-05, 2.08132e-05),
+        'evolver': {'area': 1.772211300, 'facets': 4192},
+    },
+    (3, 4): {
+        'params': [
+            7.431058270764248,
+            1.954904610652685,
+            4.061473205975165,
+            2.387414159384498,
+            3.602765824963857,
+            2.808973131023085,
+        ],
+        'gaps': (5.99772e-05, 2.34816e-05, 1.41338e-05),
+        'evolver': {'area': 1.805694517, 'facets': 4736},
+    },
+    (4, 4): {
+        'params': [
+            6.521719403606066,
+            1.277614805007492,
+            1.985307517986761,
+            4.169358716650494,
+            2.336347221363440,
+            3.662696219663257,
+            2.795850338518620,
+        ],
+        'gaps': (5.03913e-05, 1.73836e-05, 1.19634e-05),
+        'evolver': {'area': 1.810171582, 'facets': 5248},
+    },
+    (5, 1): {
+        'params': [
+            2.380404237760525,
+            1.822416659934089,
+            3.680583216201148,
+            2.044368354971284,
+            8.827077475885721,
+        ],
+        'gaps': (6.07219e-05, 2.26055e-05, 1.20624e-05),
+        'evolver': {'area': 1.675239409, 'facets': 4192},
+    },
+    (5, 2): {
+        'params': [
+            2.473128414087047,
+            1.663822254106106,
+            5.282654527009882,
+            2.203441572852071,
+            7.909712042085338,
+            4.142941204538004,
+        ],
+        'gaps': (5.24618e-05, 2.07278e-05, 1.23288e-05),
+        'evolver': {'area': 1.753028536, 'facets': 4736},
+    },
+    (5, 4): {
+        'params': [
+            5.726865194243731,
+            0.963430378229241,
+            2.079278439254892,
+            1.351529860751444,
+            4.285931992248210,
+            2.290686443063712,
+            3.690521296549047,
+            2.782334943323176,
+        ],
+        'gaps': (5.49601e-05, 1.66832e-05, 1.38172e-05),
+        'evolver': {'area': 1.822274109, 'facets': 5792},
+    },
+}
+
+# Members REFUSED, with the measurement that refused them.
+#
+# The freeze is CORROBORATED BY BRAKKE HIMSELF: his starfish page
+# annotates exactly these members -- 4-2 "(fake)", with "Starfish 4-2
+# fails to period kill by only 0.005 (so far)" in the page text, and
+# 5-3 "(not quite)" -- and publishes datafiles for neither.  This
+# search reproduced his verdict from scratch, knowing only the eight
+# published files: the same two members are the ones whose period gap
+# refuses to fall.  That agreement is also the strongest evidence the
+# SHIPPED six are right -- the reconstruction is faithful enough to
+# rediscover Brakke's own reasons for withholding these two.
+#
+# (5-2 is also marked "(not quite)" on the page, but its gap falls
+# cleanly under refinement here, so it ships on the measurement; the
+# page's parenthetical may reflect an unfinished 2008-era search --
+# "so far" -- rather than a demonstrated obstruction.)
+STARFISH_SYNTH_HELD = {
+    (4, 2): "period gap frozen at 3.5e-4 across refinement levels "
+            "r1-r3, and a Gauss-Newton step at r2 cannot lower it -- "
+            "the residual is orthogonal to all five parameter "
+            "directions (the full step RAISES the gap 24x, half-step "
+            "6x), while every shipping member's identical step cuts "
+            "its gap 2-3x to the published members' floor; matches "
+            "Brakke's own '(fake)' note for 4-2",
+    (5, 3): "period gap frozen at 9.2e-4 across three refinement "
+            "levels (true members fall to 2e-5); matches Brakke's "
+            "own '(not quite)' note for 5-3",
+}
+
+
+def starfish_genus(lets, word, V, m, eps=1e-5):
+    """Genus of the assembled cell's lattice quotient, by group gluing.
+
+    Counted abstractly, not by welding points: the quotient surface is
+    `copies` disk patches glued along rim arcs, every rim vertex lies
+    on one of the framed cell's five symmetry objects -- the mirrors
+    x+z=1 (letter c), z-x=1 (d), y-z=1 (a) or the C2 axes x=y=0 (e)
+    and {z=0, x+y=0} (f) -- and the glue partner of copy M along an
+    arc is M @ G at the SAME rim index, because each glue element
+    fixes its own arc pointwise.  chi then follows from chi(disk) = 1:
+    chi = copies - copies/2 * m + (rim vertex classes).
+    The lattice for "same copy" is the full translation lattice of the
+    letters (`plateau._lattice_basis`).
+
+    CONVENTION: this is the genus of the quotient by the FULL
+    translation lattice.  Brakke's page labels each starfish by the
+    genus of a doubled cell -- every published member measures
+    genus_here = (label + 1) / 2, i.e. label 31/43/47/55/59/63/75/87
+    measures 16/22/24/28/30/32/38/44 here, exactly 6p + 8q - 4.  The
+    gate below therefore demands genus_here == 6p + 8q - 4, which is
+    the label formula 12p + 16q - 9 re-expressed for the primitive
+    quotient.
+    """
+    V = np.asarray(V, dtype=float)
+    rim = V[:m]
+    lets = {k: np.asarray(v, dtype=float) for k, v in lets.items()}
+    mats = [np.asarray(M, dtype=float)
+            for M in pl.eval_transform_expr(lets, word)]
+    ncop = len(mats)
+    B = pl._lattice_basis(lets, tmax=8.0, depth=10)
+    if B is None:
+        return None, 'no lattice basis'
+    Binv = np.linalg.inv(np.asarray(B, dtype=float))
+
+    planes = {'c': (np.array([1.0, 0.0, 1.0]), 1.0),
+              'd': (np.array([-1.0, 0.0, 1.0]), 1.0),
+              'a': (np.array([0.0, 1.0, -1.0]), 1.0)}
+    span = float(np.max(rim.max(0) - rim.min(0)))
+    glue = []
+    for x in rim:
+        els = []
+        for ch, (n, c) in planes.items():
+            if abs(float(x @ n) - c) / np.sqrt(2.0) < eps * span * 10:
+                els.append(ch)
+        if abs(x[0]) < eps * span * 10 and abs(x[1]) < eps * span * 10:
+            els.append('e')
+        if (abs(x[2]) < eps * span * 10
+                and abs(x[0] + x[1]) < eps * span * 10):
+            els.append('f')
+        glue.append(els)
+    untagged = sum(1 for e in glue if not e)
+    if untagged:
+        return None, '%d rim vertices off every symmetry object' % untagged
+
+    def rkey(M):
+        return tuple(np.round(M[:3, :3].ravel(), 6))
+
+    byrot = {}
+    for i, M in enumerate(mats):
+        byrot.setdefault(rkey(M), []).append(i)
+
+    def lookup(M):
+        for j in byrot.get(rkey(M), ()):
+            lam = (M[:3, 3] - mats[j][:3, 3]) @ Binv
+            if np.allclose(lam, np.round(lam), atol=1e-6):
+                return j
+        return None
+
+    parent = list(range(ncop * m))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for i, M in enumerate(mats):
+        for r in range(m):
+            for ch in glue[r]:
+                j = lookup(M @ lets[ch])
+                if j is None:
+                    return None, 'glue partner outside cell'
+                ra, rb = find(i * m + r), find(j * m + r)
+                if ra != rb:
+                    parent[rb] = ra
+    ncl = len({find(i) for i in range(ncop * m)})
+    chi = ncop - (ncop // 2) * m + ncl
+    if chi % 2:
+        return None, 'odd chi %d' % chi
+    return (2 - chi) // 2, {'chi': chi, 'ncl': ncl, 'copies': ncop}
+
+
+def harvest_starfish(m=96, rings=16, iters=400):
+    """Bake the synthesized starfish members, with every gate on.
+
+    Same pipeline and gates as `harvest_adjoint` -- span, conjugate,
+    frame, plane residual, area against Evolver's own gogo, word/weld
+    search, runtime re-span -- plus the genus gate: the assembled
+    cell's quotient genus must equal 6p + 8q - 4 (see starfish_genus)
+    or the member does not ship.
+    """
+    out = {}
+    for (p, q) in sorted(STARFISH_SYNTH):
+        spec = STARFISH_SYNTH[(p, q)]
+        g_label = 12 * p + 16 * q - 9
+        fn = 'starfish%dadj.fe' % g_label
+        slug = 'starfish-%d-%d-genus-%d' % (p, q, g_label)
+        title = 'Starfish %d-%d (genus %d)' % (p, q, g_label)
+        text = starfish_datafile(p, q, spec['params'])
+        path = os.path.join(fedata.MIRROR_DOWNLOADS, fn)
+        try:
+            os.makedirs(fedata.MIRROR_DOWNLOADS, exist_ok=True)
+            with io.open(path, 'w', encoding='utf-8') as fh:
+                fh.write(text)
+        except OSError as e:
+            print("  %-19s cannot write datafile: %s" % (fn, e))
+            continue
+        fe = fedata.read(path)
+        got = pl.fe_adjoint_patch(fe, m=m, rings=rings, iters=iters)
+        if got is None:
+            print("  %-19s HELD: no patch" % fn)
+            continue
+        V, quads, lets, env, loops = got
+        resid = float(env.get('_plane_residual', 1.0))
+        T = np.asarray(pl._quads_to_tris(quads))
+        area = float(pl.mesh_area(np.asarray(V), T))
+        truth = spec.get('evolver')
+        ratio = area / truth['area'] if truth else None
+        ok = resid <= RESID_TOL and (
+            ratio is None or abs(ratio - 1.0) <= AREA_TOL)
+        why = ('area %.3f x Evolver, residual %.1e' % (ratio, resid)
+               if ratio is not None else 'residual %.1e' % resid)
+        if not ok:
+            print("  %-19s HELD: %s" % (fn, why))
+            continue
+        genus, ginfo = starfish_genus(lets, fe.words['cube'], V, m)
+        want = 6 * p + 8 * q - 4
+        if genus != want:
+            print("  %-19s HELD: quotient genus %s != %d (%s)"
+                  % (fn, genus, want, ginfo))
+            continue
+        rt_loops = [[[float(c) for c in pt] for pt in lp] for lp in loops]
+        pick = None
+        for name in pl.fe_word_order(fe.words):
+            word = fe.words[name]
+            if any(ch not in lets for ch in word):
+                continue
+            mats = pl.eval_transform_expr(lets, word)
+            if not (1 < len(mats) <= 256):
+                continue
+            for tol in pl.FE_WELD_LADDER:
+                W, wf = pl.assemble_orbit(V, quads, mats, tol)
+                if not pl.fe_orbit_ok(W, wf):
+                    continue
+                if runtime_ok(rt_loops, lets, word, tol):
+                    pick = (name, word, len(mats), tol)
+                    break
+            if pick:
+                break
+        if pick is None:
+            print("  %-19s HELD: no word assembles from the recorded "
+                  "boundary" % fn)
+            continue
+        name, word, ncopy, tol = pick
+        out[slug] = {
+            'source': fn,
+            'title': title,
+            'record_slug': slug,
+            'route': 'adjoint-synth',
+            'new_row': True,
+            'command': name,
+            'word': word,
+            'copies': ncopy,
+            'weld_tol': tol,
+            'plane_residual': round(resid, 6),
+            'patch_area': round(area, 6),
+            'evolver_area': (round(truth['area'], 6) if truth else None),
+            'quotient_genus': int(genus),
+            'loops': rt_loops,
+            'generators': {c: [float(x) for x in np.ravel(lets[c])]
+                           for c in sorted(lets)},
+        }
+        print("  %-19s -> %-28s %s=%r %3d copies  genus %d(=2*%d-1)  %s"
+              % (fn, slug, name, word, ncopy, g_label, (g_label + 1) // 2,
+                 why))
+    for (p, q), why in sorted(STARFISH_SYNTH_HELD.items()):
+        print("  starfish %d-%d HELD: %s" % (p, q, why))
+    print("  %d synthesized cells" % len(out))
+    return out
+
+
+def update_module_starfish(cells, floors=None):
+    """Merge synthesized starfish cells into the SHIPPED module.
+
+    The regular chain is datafile -> records -> module, but the
+    records belong to the surface database build; this path writes the
+    shipped module directly and leaves the database to its own
+    rebuild.  Existing entries round-trip byte-stable (they were
+    written with the same %.12g format this uses).
+    """
+    sys.path.insert(0, os.path.join(ROOT, 'math_art'))
+    import importlib
+    import minsurf.fecells as _mod
+    importlib.reload(_mod)
+    merged = {}
+    for key, c in _mod.FE_CELLS.items():
+        merged[key] = {
+            'title': c['title'], 'record_slug': c['slug'],
+            'source': c['source'], 'word': c['word'],
+            'copies': c['copies'], 'weld_tol': c['tol'],
+            'new_row': c['new_row'],
+            'res_floor': c.get('res_floor'),
+            'loops': [[[float(x) for x in pt] for pt in lp]
+                      for lp in c['loops']],
+            'generators': {ch: [float(x) for x in np.ravel(M)]
+                           for ch, M in c['letters'].items()},
+        }
+    for slug, c in cells.items():
+        key = slug.upper().replace('-', '_')
+        c = dict(c)
+        if floors and key in floors:
+            c['res_floor'] = int(floors[key])
+        merged[key] = c
+    with io.open(MODULE_OUT, 'w', encoding='utf-8') as fh:
+        fh.write('"""Evolver cells, generated FROM the surface database.\n\n'
+                 'GENERATED by `python tools/bake_fe_cells.py --module` -- do\n'
+                 'not hand-edit.  The defining data lives in the records under\n'
+                 '`data/surfaces`; this module exists only so the shipped\n'
+                 'extension carries the numbers without needing the database\n'
+                 'or the original datafiles.\n\n'
+                 'The synthesized starfish members (route adjoint-synth) come\n'
+                 'from `python tools/bake_fe_cells.py --starfish`, which\n'
+                 'regenerates their datafiles from the solved parameters in\n'
+                 'STARFISH_SYNTH and re-runs every gate.  The starfish family\n'
+                 'is Alan H. Schoen\'s; the construction and the eight\n'
+                 'published datafiles are Kenneth A. Brakke\'s.\n\n'
+                 'References:\n'
+                 '- K. A. Brakke, "The Surface Evolver", Experimental\n'
+                 '  Mathematics 1(2) (1992) 141-165.\n'
+                 '- K. A. Brakke, "Pictoral Table of Starfish Triply Periodic\n'
+                 '  Minimal Surfaces", kenbrakke.com/evolver/examples/\n'
+                 '  periodic/starfish/starfish.html (family due to Alan H.\n'
+                 '  Schoen).\n"""\n\n'
+                 'import numpy as np\n\nFE_CELLS = {\n')
+        # Order as `write_module` does: by record slug where the module
+        # key is just the uppercased slug, by row key otherwise.  Sorting
+        # on the uppercased keys instead reordered the whole table and
+        # buried the six added entries in a 900-line move-diff.
+        def order_key(k):
+            slug = merged[k].get('record_slug', k)
+            if k.upper().replace('-', '_') ==                     slug.upper().replace('-', '_'):
+                return slug
+            return k
+        for key in sorted(merged, key=order_key):
+            c = merged[key]
+            kk = key.upper().replace('-', '_')
+            fh.write("    %r: {\n        'title': %r,\n        'slug': %r,\n"
+                     % (kk, c.get('title') or kk,
+                        c.get('record_slug', key)))
+            fh.write("        'source': %r,\n        'word': %r,\n"
+                     "        'copies': %d,\n        'tol': %g,\n"
+                     "        'new_row': %r,\n"
+                     % (c['source'], c['word'], c['copies'],
+                        c.get('weld_tol', 1e-4), bool(c.get('new_row'))))
+            if c.get('res_floor'):
+                fh.write("        'res_floor': %d,\n" % int(c['res_floor']))
+            fh.write("        'loops': (\n")
+            for lp in c['loops']:
+                flat = [x for pt in lp for x in pt]
+                fh.write("            np.array([%s]).reshape(-1, 3),\n"
+                         % ", ".join("%.12g" % v for v in flat))
+            fh.write("        ),\n        'letters': {\n")
+            for ch in sorted(c['generators']):
+                fh.write("            %r: np.array([%s]).reshape(4, 4),\n"
+                         % (ch, ", ".join("%.12g" % v
+                                          for v in c['generators'][ch])))
+            fh.write("        },\n    },\n")
+        fh.write("}\n")
+        fh.write(_SELFTEST_SRC)
+    print("wrote %s (%d cells, %d synthesized starfish)"
+          % (MODULE_OUT, len(merged), len(cells)))
+
+
+# Appended verbatim to the generated module: a no-Blender numeric check
+# of the starfish entries (the headless runner tests/test_selftests.py
+# discovers and runs it).
+_SELFTEST_SRC = '''
+
+def _selftest():
+    """Structural checks on the baked cells (no Blender, no assembly).
+
+    For every starfish entry: the recorded boundary must actually lie
+    on the five symmetry objects of the framed cell (the three unit
+    mirror planes and the two C2 axes), the letters must be rigid
+    motions, and the cell word must be the family's `abdabdf` at 48
+    copies.  A loop that has drifted off its planes is exactly the
+    defect that opened pinholes at the symmetry axes once, so it is
+    the thing worth re-checking on every import of the shipped table.
+    """
+    ok = True
+    planes = ((np.array([1.0, 0.0, 1.0]), 1.0),
+              (np.array([-1.0, 0.0, 1.0]), 1.0),
+              (np.array([0.0, 1.0, -1.0]), 1.0))
+    for key, c in sorted(FE_CELLS.items()):
+        for ch, M in c['letters'].items():
+            R = np.asarray(M, dtype=float)[:3, :3]
+            if abs(abs(np.linalg.det(R)) - 1.0) > 1e-6:
+                print("fecells: %s letter %r not rigid FAIL" % (key, ch))
+                ok = False
+        if not key.startswith('STARFISH'):
+            continue
+        if c['word'] != 'abdabdf' or c['copies'] != 48:
+            print("fecells: %s word/copies drifted FAIL" % key)
+            ok = False
+        L = np.asarray(c['loops'][0], dtype=float)
+        span = float(np.max(L.max(0) - L.min(0)))
+        worst = 0.0
+        for x in L:
+            d = min(min(abs(float(x @ n) - c0) / np.sqrt(2.0)
+                        for n, c0 in planes),
+                    max(abs(x[0]), abs(x[1])),
+                    max(abs(x[2]), abs(x[0] + x[1])))
+            worst = max(worst, d / span)
+        good = worst < 5e-3
+        ok &= good
+        print("fecells: %-24s boundary-to-symmetry %.2e %s"
+              % (key, worst, "OK" if good else "FAIL"))
+    print("RESULT:", "OK" if ok else "FAIL")
+    if not ok:
+        raise AssertionError("fecells self-test failed")
+'''
+
+
 def write_curation(data, held=None):
     held = sorted(set(HELD_SOURCES if held is None else held))
     with io.open(CURATION_OUT, 'w', encoding='utf-8') as fh:
@@ -981,7 +1693,25 @@ def main():
                          "--module)")
     ap.add_argument('--keys', nargs='*', default=None,
                     help="with --floors: only these FE_CELLS keys")
+    ap.add_argument('--starfish', action='store_true',
+                    help="synthesize the unpublished starfish members "
+                         "from STARFISH_SYNTH, run every gate, and "
+                         "merge the survivors into the shipped module")
     args = ap.parse_args()
+    if args.starfish:
+        cells = harvest_starfish()
+        if cells:
+            update_module_starfish(cells)
+            # the floors probe reads the SHIPPED module -- reload so it
+            # sees the entries the line above just wrote
+            import importlib
+            import minsurf.fecells as _fc
+            importlib.reload(_fc)
+            keys = sorted(s.upper().replace('-', '_') for s in cells)
+            print("measuring resolution floors for the new cells...")
+            floors = measure_floors(keys)
+            update_module_starfish(cells, floors=floors)
+        return
     if args.floors:
         write_floors(measure_floors(args.keys))
         return

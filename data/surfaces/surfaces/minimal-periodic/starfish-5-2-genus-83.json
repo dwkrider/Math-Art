@@ -4,18 +4,20 @@
   "name": "Starfish 5-2 Surface (genus 83)",
   "primary_family": "minimal-periodic",
   "families": [
-    "def-parametric",
+    "def-weierstrass",
     "embedded",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-crystallographic",
     "triply-periodic"
   ],
   "definition": {
-    "mode": "parametric",
+    "mode": "weierstrass",
     "fidelity": "exact",
-    "note": "No closed form is stored: the surface is not implemented in math_art, so there is no shipped code to verify a transcription against, and an unverified formula from the literature would be worse than a null. See construction.blocked_by."
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
+    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.minsurf.tpms, which is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "minimal",
@@ -24,9 +26,9 @@
     ]
   },
   "topology": {
-    "orientable": true,
-    "compact": false,
     "complete": true,
+    "compact": false,
+    "orientable": true,
     "genus": 83
   },
   "symmetry": {
@@ -38,20 +40,29 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Schoen starfish surface with no datafile. Brakke's starfish page shows it, but publishes datafiles for only eight of the sixteen (genus 31, 43, 47, 55, 59, 63, 75, 87) -- those eight ship. There is no .fe for this one in the mirror or in starfish.tar, so it cannot be built or checked against Evolver."
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "STARFISH_5_2_GENUS_83",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "Derived from the Math Art generator registries; no literature citation has been curated for this record yet."
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
     ]
   },
-  "discovered_by": "Alan H. Schoen",
+  "metrics": {
+    "normalization": "unit_cell"
+  },
   "tradition": [
     "crystallographic"
   ],
+  "discovered_by": "Alan H. Schoen",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,
