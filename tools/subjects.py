@@ -782,7 +782,7 @@ VARIANT_MAX = {
     # 132 across Singly (26), Doubly (9), TPMS Cubic (66) and TPMS
     # Non-Cubic (31): the cap must clear the total or it silently drops
     # whole trailing groups -- Non-Cubic went missing at 96.
-    "mesh.periodic_minimal_add": 144,
+    "mesh.periodic_minimal_add": 160,
     "mesh.canonical_polyhedron_add": 96,
     # 132 presets across ten named families: 10 classical, 63 Hauser,
     # 4 record-nodal, 5 many-nodal octics, 7 named implicit, 11
