@@ -586,12 +586,16 @@ UNVERIFIED = {
         "-- while this row exposes a single t and no k, so the "
         "parameterisation is likely wrong as well as the assembly.  "
         "The exports were on disk throughout and were never used.",
-    "minsurf:SP_SCHERK4":
-        "Assembly is 4 disconnected patches (comps = chi = loops = 4). "
-        "Its mathematics is gated hard -- Scherk's own 1835 equation "
-        "20 holds pointwise at every built vertex to ~1e-14 -- which "
-        "is precisely the trap: a pointwise identity is satisfied by "
-        "the right points in the wrong number of pieces.",
+    # (2026-09, repair) SP_SCHERK4 was parked here as 4 disconnected
+    # patches (comps = chi = loops = 4) that passed the pointwise
+    # equation-20 gate -- the trap being that a pointwise identity is
+    # satisfied by the right points in the wrong number of pieces.
+    # Un-parked after the assembly was rebuilt from the closed form's
+    # own continuation structure (Schwarz reflection across the planar
+    # symmetry curve, half-turn across the straight line the surface
+    # contains), index-welded, and gated on the DERIVED topology:
+    # 1 component, chi = 3 - 2 periods, ONE boundary loop, oriented,
+    # with equation 20 now checked on every assembly copy too.
 }
 
 

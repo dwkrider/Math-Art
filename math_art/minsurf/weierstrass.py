@@ -4288,7 +4288,14 @@ def lb_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 #      analytic immersion equals (om1, om2, om3) to 1e-9;
 #   3. the helicoidal-end winding: the loop around z = 0 advances the
 #      screw axis coordinate X1 by exactly -4 pi = the assembly's
-#      translation period.
+#      translation period;
+#   4. TOPOLOGY (added after this row shipped as 4 disconnected
+#      patches that passed gates 1-3 -- a pointwise identity is
+#      satisfied by the right points in the wrong number of pieces):
+#      1 component, chi = 3 - 2 periods, ONE boundary loop,
+#      edge-manifold, oriented, per the continuation-derived weld
+#      table in `scherk4_mesh`; and gate 1 is now also evaluated on
+#      every assembly copy (mirror, half-turn, translates).
 #
 # References:
 # - H. F. Scherk, "Bemerkungen ueber die kleinste Flaeche innerhalb
@@ -4311,9 +4318,14 @@ def scherk4_f(z):
 
 def scherk4_eqn20(F):
     """Pointwise residual of Scherk's equation 20 at built points F
-    (in z-units through arccosh; |x| handles the odd csc branch, and
-    the minimum over the two cosh components picks the sheet)."""
-    xs = np.abs(F[..., 0] + np.pi)
+    (in z-units through arccosh).  Equation 20 is 4-pi periodic in x
+    with csc(x/2) changing sign between its two 2-pi halves; folding
+    x to [0, pi] (as here) loses that sign, so the residual takes the
+    minimum over BOTH signs of the csc core as well as the two cosh
+    branches -- exactly the four z-sheets the 4-pi-periodic implicit
+    surface has over a folded (x, y)."""
+    xs = np.abs(F[..., 0] + np.pi) % (2.0 * np.pi)
+    xs = np.minimum(xs, 2.0 * np.pi - xs)
     ys = np.abs(F[..., 1])
     zs = F[..., 2]
     t = 4.0 * np.sin(xs / 2) ** 2 + ys ** 2 * np.cos(xs)
@@ -4322,14 +4334,36 @@ def scherk4_eqn20(F):
     core = (np.sqrt(np.maximum(t + rho, 0.0))
             / np.maximum(np.sin(xs / 2), 1e-12) / np.sqrt(2.0))
     ac = np.arccosh(np.maximum(rhs, 1.0))
-    return np.minimum(np.abs(zs + core - ac), np.abs(zs + core + ac))
+    return np.minimum(
+        np.minimum(np.abs(zs + core - ac), np.abs(zs + core + ac)),
+        np.minimum(np.abs(zs - core - ac), np.abs(zs - core + ac)))
 
 
 def scherk4_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
                  storeys=1):
     """Scherk's fourth surface: closed-form patch on a polar domain,
-    assembled by the notebook's own chain -- reflect in the plane
-    x = 0, half-turn about the y-axis, translate by the 4 pi period.
+    assembled from the CONTINUATION structure of the closed form (not
+    a pile of copies).  The patch boundary theta = 0 maps to a planar
+    symmetry curve (r < 1, in the plane x = 0) meeting a straight
+    line ON the surface (r > 1, the y-axis: X3 vanishes identically
+    there); theta = pi maps to their translates at x = -2 pi.  Schwarz
+    continuation across a planar geodesic is the MIRROR, across a
+    straight line the HALF-TURN, which fixes every weld:
+
+        cell m = {A, B = M0 A, C = L0 A, D = L0 M0 A}
+        (M0: x -> -x; L0: half-turn about the y-axis)
+        theta=0, r<=1:  A~B,  C~D          (mirror curve, in-cell)
+        theta=0, r>=1:  A~C,  B~D          (straight line, in-cell)
+        theta=pi, r<=1: A_m~B_{m-1}, D_m~C_{m-1}   (cross-cell)
+        theta=pi, r>=1: A_m~C_{m-1}, D_m~B_{m-1}   (cross-cell)
+
+    The two r = 1 seam points are the surface's own singular points
+    (four sheets meet; Weber: "singular at the two points where the
+    horizontal symmetry curve meets the straight line") -- the mesh
+    keeps them as 4-fold vertices, edge-manifold everywhere.  Derived
+    topology, gated in the zoo self-test: 1 component,
+    chi = 3 - 2 * periods, ONE boundary loop (arc-gluing count from
+    the table above; the p=1 sanity case is a disc, chi = 1).
     order = periods; radius sets how far the four ends are followed."""
     periods = int(np.clip(max(int(storeys), int(order)), 1, 5))
     reach = float(np.clip(radius, 0.3, 6.0)) / 1.2
@@ -4339,9 +4373,13 @@ def scherk4_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     # helicoidal trim is ~ -2 log rmin, X2 at the annular trim 2 rmax
     rmax = max(2.0, abs(np.log(rmin)))
     n = int(np.clip(nu, 40, 140))
-    eps = 0.02
-    rr = np.exp(np.linspace(np.log(rmin), np.log(rmax), 2 * n))
-    th_ = np.linspace(eps, np.pi - eps, n)
+    # radial grid hits r = 1 EXACTLY: it is the seam split (curve vs
+    # line continuation) and the singular-point vertex
+    rr = np.concatenate([np.geomspace(rmin, 1.0, n),
+                         np.geomspace(1.0, rmax, n)[1:]])
+    rr[n - 1] = 1.0
+    i1 = n - 1
+    th_ = np.linspace(0.0, np.pi, n)
     Z = rr[:, None] * np.exp(1j * th_[None, :])
     X = scherk4_f(Z)
     nx, ny = X.shape[0], X.shape[1]
@@ -4349,26 +4387,59 @@ def scherk4_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
                (i + 1) * ny + j + 1, i * ny + j + 1)
               for i in range(nx - 1) for j in range(ny - 1)]
     V0 = X.reshape(-1, 3)
-    # assembly: fr2 = reflect in plane x = 0; fr3 = half-turn about
-    # the y-axis; fr4 = +- period translations
-    npatch = len(V0)
-    fpatch = [tuple(q) for q in quads0]
-    # fr2: reflect in the plane x = 0
-    blk = np.concatenate([V0, V0 * np.array([-1.0, 1.0, 1.0])], axis=0)
-    fblk = fpatch + [tuple(a_ + npatch for a_ in q) for q in fpatch]
-    # fr3: half-turn about the y-axis
-    nblk = len(blk)
-    cell = np.concatenate([blk, blk * np.array([-1.0, 1.0, -1.0])],
-                          axis=0)
-    fcell = fblk + [tuple(a_ + nblk for a_ in q) for q in fblk]
-    # fr4: the 4 pi translations
-    ncell = len(cell)
+    NV = len(V0)
+    M0 = np.array([-1.0, 1.0, 1.0])
+    L0 = np.array([-1.0, 1.0, -1.0])
+    patches = [V0, V0 * M0, V0 * L0, V0 * (M0 * L0)]
+    # every gluing in the table joins {A, D} to {B, C} (the graph is
+    # bipartite), so consistent orientation flips exactly one class --
+    # NOT the det<0 copies: the half-turn L0 fixes the shared line
+    # pointwise, so its weld needs a relative flip despite det=+1
+    flip = (False, True, True, False)
     per = np.array([4.0 * np.pi, 0.0, 0.0])
     Vs, Fs = [], []
     for m_ in range(periods):
-        Vs.append(cell + (m_ - (periods - 1) / 2.0) * per[None, :])
-        Fs.extend(tuple(a_ + m_ * ncell for a_ in q) for q in fcell)
+        off = (m_ - (periods - 1) / 2.0) * per
+        for p_ in range(4):
+            Vs.append(patches[p_] + off[None, :])
+            base = (m_ * 4 + p_) * NV
+            if flip[p_]:
+                Fs.extend(tuple(base + a_ for a_ in reversed(q))
+                          for q in quads0)
+            else:
+                Fs.extend(tuple(base + a_ for a_ in q) for q in quads0)
     V = np.concatenate(Vs, axis=0)
+
+    def vid(m_, p_, i_, j_):
+        return (m_ * 4 + p_) * NV + i_ * ny + j_
+    A_, B_, C_, D_ = 0, 1, 2, 3
+    pairs = []
+    for m_ in range(periods):
+        for i_ in range(0, i1 + 1):          # theta=0, r <= 1
+            pairs.append((vid(m_, A_, i_, 0), vid(m_, B_, i_, 0)))
+            pairs.append((vid(m_, C_, i_, 0), vid(m_, D_, i_, 0)))
+        for i_ in range(i1, nx):             # theta=0, r >= 1
+            pairs.append((vid(m_, A_, i_, 0), vid(m_, C_, i_, 0)))
+            pairs.append((vid(m_, B_, i_, 0), vid(m_, D_, i_, 0)))
+        if m_ >= 1:
+            jj = ny - 1
+            for i_ in range(0, i1 + 1):      # theta=pi, r <= 1
+                pairs.append((vid(m_, A_, i_, jj),
+                              vid(m_ - 1, B_, i_, jj)))
+                pairs.append((vid(m_, D_, i_, jj),
+                              vid(m_ - 1, C_, i_, jj)))
+            for i_ in range(i1, nx):         # theta=pi, r >= 1
+                pairs.append((vid(m_, A_, i_, jj),
+                              vid(m_ - 1, C_, i_, jj)))
+                pairs.append((vid(m_, D_, i_, jj),
+                              vid(m_ - 1, B_, i_, jj)))
+    # the welded pairs must already coincide in space (the closed
+    # form's own symmetries put them there); a wrong table would weld
+    # distant points and silently fold the surface
+    dmax = max(float(np.linalg.norm(V[a_] - V[b_])) for a_, b_ in pairs)
+    if dmax > 1e-6 * float(np.max(V.max(axis=0) - V.min(axis=0))):
+        raise ValueError(f"scherk4 weld table mismatch: {dmax:.3e}")
+    V, Fs, _first = _g1h_weld_pairs(V, Fs, pairs)
     V = _center_fit(V, scale, V)
     return V, Fs, None
 

@@ -2084,8 +2084,10 @@ SURFACE_FAMILY['DP_LUBECK_BATISTA'] = 'DOUBLY'
 # Scherk's fourth surface (1835, eq. 20): closed-form immersion from
 # Weber's Bjorling recovery -- see the block above `scherk4_mesh` in
 # weierstrass.py for the data, the frame relation to Scherk's own
-# coordinates and the references.  Gated on Scherk's own implicit
-# equation, satisfied pointwise to machine precision.
+# coordinates, the continuation-derived weld table and the references.
+# Gated on Scherk's own implicit equation (pointwise, machine
+# precision, on every assembly copy) AND on the derived topology
+# (1 component, chi = 3 - 2 periods, one boundary loop).
 WE_SURFACES['SP_SCHERK4'] = {
     'label': "Scherk's Fourth Surface (1835)",
     'family': 'SINGLY',
@@ -4078,14 +4080,43 @@ def _selftest():
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20
-    #      (pointwise, through arccosh, both radial regions);
+    #      (pointwise, through arccosh, both radial regions) -- AND
+    #      every ASSEMBLY copy does too (all four mirror/half-turn
+    #      images and the period translates), because a pointwise
+    #      identity is satisfied by the right points in the wrong
+    #      number of pieces: the old assembly shipped 4 disconnected
+    #      patches that passed this same gate;
     #   2. the closed form is consistent with (G, dh);
     #   3. the helicoidal-end loop advances the axis by exactly the
-    #      4 pi assembly period.
+    #      4 pi assembly period;
+    #   4. TOPOLOGY, against the continuation-derived target (see
+    #      scherk4_mesh): 1 component, chi = 3 - 2p, ONE boundary
+    #      loop, edge-manifold, oriented -- at p = 1 (the disc sanity
+    #      case, chi = +1) and p = 3 (the default).
     rr_ = np.exp(np.linspace(np.log(0.15), np.log(2.5), 40))
     th4 = np.linspace(0.15, np.pi - 0.15, 50)
     F4 = we.scherk4_f(rr_[:, None] * np.exp(1j * th4[None, :]))
     r_20 = float(np.max(we.scherk4_eqn20(F4)))
+    per4 = np.array([4.0 * np.pi, 0.0, 0.0])
+    M0_ = np.array([-1.0, 1.0, 1.0])
+    L0_ = np.array([-1.0, 1.0, -1.0])
+    r_20c = 0.0
+    for T_ in (np.ones(3), M0_, L0_, M0_ * L0_):
+        for m_ in (-1, 0, 1):
+            r_20c = max(r_20c, float(np.max(
+                we.scherk4_eqn20(F4 * T_ + m_ * per4))))
+    s4_topo = True
+    for p4_ in (1, 3):
+        V4, Fq4, _uv4 = we.scherk4_mesh(None, 60, 60, 1, 1.2, 1.0,
+                                        storeys=p4_)
+        chi4, nm4, or4, lp4, nc4 = we.sptail_topology(
+            np.asarray(V4), Fq4)
+        good4 = (nc4 == 1 and chi4 == 3 - 2 * p4_ and lp4 == 1
+                 and nm4 == 0 and or4)
+        s4_topo &= good4
+        print(f"Scherk IV p={p4_}: comps={nc4} chi={chi4} (derived "
+              f"{3 - 2 * p4_}) loops={lp4} nonman={nm4} "
+              f"oriented={or4} {'OK' if good4 else 'FAIL'}")
     zs4 = np.array([0.3 + 0.4j, 0.7 + 0.2j, 1.4 + 0.9j])
     h4 = 1e-6
 
@@ -4106,11 +4137,13 @@ def _selftest():
     wind = float(np.trapezoid(
         np.real(2j * 1j * 0.3 * np.exp(1j * t4) / zz4), t4))
     r_wd = abs(abs(wind) - 4.0 * np.pi)
-    good_ = r_20 < 1e-10 and r_om < 1e-8 and r_wd < 1e-9
+    good_ = (r_20 < 1e-10 and r_20c < 1e-7 and r_om < 1e-8
+             and r_wd < 1e-9 and s4_topo)
     ok &= good_
-    print(f"Scherk IV: eqn 20 pointwise {r_20:.1e} | forms "
-          f"consistency {r_om:.1e} | end winding vs 4 pi period "
-          f"{r_wd:.1e} {'OK' if good_ else 'FAIL'}")
+    print(f"Scherk IV: eqn 20 pointwise {r_20:.1e} (all assembly "
+          f"copies {r_20c:.1e}) | forms consistency {r_om:.1e} | "
+          f"end winding vs 4 pi period {r_wd:.1e} "
+          f"{'OK' if good_ else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn
     # change).  Checked on the closed-form engine associates on a fixed grid
