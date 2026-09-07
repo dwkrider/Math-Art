@@ -1122,6 +1122,14 @@ if _IN_BLENDER:
                         "catenoid necks, large ones give vertical sheets "
                         "with wide cross-tunnels.  0.5 is the member "
                         "Brakke publishes")
+        brick_height: FloatProperty(
+            name="Brick Height", default=1.0, min=0.25, max=2.5,
+            description="Height of the brick the T-Wp conjugate contour "
+                        "sits on, as a fraction of half its long edge.  "
+                        "The TW family deforms with it: small values "
+                        "squash the hexagonal cell, large ones stretch "
+                        "it.  1.0 matches the proportions of the cubic "
+                        "I-WP member the family descends from")
         cell_proportion: FloatProperty(
             name="Cell Proportion", default=0.6, min=0.2, max=1.2,
             description="Which member of the surface's family to build.  "
@@ -1282,6 +1290,10 @@ if _IN_BLENDER:
                     # channel for one.
                     if surf == 'GW_CONJ':
                         _plateau.gw_params(self.prism_height)
+                    # T-Wp is a family too; its brick height reaches the
+                    # builder the same way.
+                    if surf == 'TWP_CONJ':
+                        _plateau.twp_params(height=self.brick_height)
                     # Triangle-group rows are one-parameter families and
                     # the member matters -- see `spec_modulus_range`.
                     if _hex.spec_modulus_range(surf):
@@ -1494,6 +1506,8 @@ if _IN_BLENDER:
                     # Weierstrass data.
                     if self.surface == 'GW_CONJ':
                         lay.prop(self, 'prism_height')
+                    if self.surface == 'TWP_CONJ':
+                        lay.prop(self, 'brick_height')
                     if _hex.spec_modulus_range(self.surface):
                         lay.prop(self, 'cell_proportion')
                     for k in ('resolution', 'cell_size', 'thickness',
