@@ -593,18 +593,23 @@ NOT_A_GAP = {
     # EXISTENCE UNSETTLED.  Research questions, not implementation work.
     # NO SOURCE ANYWHERE.  Not "not built yet" -- nothing to build from.
     "neovius-sym3":
-        ("no-source", "A folder name recovered from the Wayback index of "
-                      "Weber's dead archive; no chapter, notebook, paper "
-                      "or datafile carries it.  The literature pass DID "
-                      "identify what the name most plausibly denotes: "
-                      "Karcher 1989 section 6.1.3 describes Neovius "
-                      "analogs with handles to the horizontal edges of "
-                      "the three orthogonal prismas, and the triangular "
-                      "prism member has exactly 3-fold symmetry -- but "
-                      "that is a described construction with no numbers "
-                      "anywhere on disk, so there is still nothing to "
-                      "build FROM.  Distinct from Schoen C(H), which "
-                      "6.1.5 derives differently and which ships."),
+        ("no-source", "IDENTIFIED (2026-09) from the Wayback capture of "
+                      "Weber's archive: the folder is "
+                      "Triply/genus13/Neoviussym3 (the Triply/ tree is "
+                      "filed BY GENUS -- genus 13 per cell), and the "
+                      "archived page titles it 'Order 3 Neovius "
+                      "Surface': half the fundamental piece in a "
+                      "triangular prism with Neovius-style handles to "
+                      "all edges of the prism -- Karcher 1989 section "
+                      "6.1.3's triangular-prism Neovius analog, "
+                      "confirmed distinct from every shipped row "
+                      "(Neovius 9, C(H) 7, N14/N26/N38 = 14/26/38).  "
+                      "The page and both renders are preserved in the "
+                      "local mirror under _wayback_archive/; but no "
+                      "notebook or datafile was ever archived, so "
+                      "there is still no Weierstrass data to build "
+                      "FROM -- a construction would be from-scratch "
+                      "conjugate-Plateau work."),
     # PROVED TO EXIST, BUT NO EXPLICIT EQUATION.  The source is
     # definitive and says so -- the surface is not missing, its
     # polynomial is, because the proof never writes one down.

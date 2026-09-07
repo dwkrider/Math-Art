@@ -80,7 +80,7 @@
     "topological"
   ],
   "count": 474,
-  "implemented_count": 447,
+  "implemented_count": 448,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -2735,15 +2735,15 @@
     },
     {
       "slug": "costa-hoffman-karcher-meeks-tori",
-      "name": "Costa-Hoffman-Karcher-Meeks Tori",
+      "name": "Costa-Hoffman-Karcher-Meeks Torus",
       "path": "surfaces/minimal/costa-hoffman-karcher-meeks-tori.json",
       "primary_family": "minimal",
       "families": [
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -2761,8 +2761,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8919,7 +8921,7 @@
     },
     {
       "slug": "neovius-sym3",
-      "name": "Neovius-sym3 Surface",
+      "name": "Order 3 Neovius Surface",
       "path": "surfaces/minimal-periodic/neovius-sym3.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8936,7 +8938,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 13,
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
@@ -8944,7 +8946,7 @@
         "kind": "space",
         "symbol": null,
         "ita_number": null,
-        "order": null
+        "order": 3
       },
       "implemented": false,
       "operator_ids": [],
