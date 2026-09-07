@@ -11857,6 +11857,324 @@ def unregister():
     pass
 
 
+# ==========================================================================
+# Karcher JD / JE doubly periodic saddle towers (4-punctured rectangular
+# tori)
+# ==========================================================================
+# Two families of embedded doubly periodic minimal surfaces from Karcher's
+# "Embedded minimal surfaces derived from Scherk's examples": fences of
+# Scherk saddle towers, parametrized by 4-punctured RECTANGULAR tori
+# C/<1, i t>.  The Gauss map is a degree-2 elliptic function whose two
+# zeros and two poles sit at the four half-period points 0, w1 = 1/2,
+# w2 = i t/2, w3 = w1 + w2 (the punctures are there), and the height
+# differential is dh = i dz -- constant, because the only vertical
+# normals are at the punctures, so on the torus dh can have neither zeros
+# nor poles (Tokyo notes, 3.3.5).  The two families differ ONLY in how
+# the zeros pair up (the 3DXM exhibits' distinguishing mark):
+#
+#   JD:  zeros {0, w3}, poles {w1, w2} -- the fundamental rectangle's
+#        diagonal joins the TWO ZEROS; neighbouring towers meet along
+#        vertical planar symmetry lines.
+#   JE:  zeros {0, w2}, poles {w1, w3} -- the diagonal joins a ZERO and
+#        a POLE (3D-XplorMath's J_E elliptic function).
+#
+# Both Gauss maps are built directly from the divisor,
+#
+#     g(z) = rho * wp'(z) / ((wp(z) - e_a)(wp(z) - e_b)) ,
+#
+# with e_a, e_b the wp-values at the two POLE half-periods (wp' has
+# simple zeros there, so dividing by both double zeros leaves simple
+# poles) and rho > 0 the scale that normalizes the four branch values of
+# g into the Jacobi-type pattern {B, -B, 1/B, -1/B} of Karcher's
+# "Elliptic Functions of Jacobi Type".  The branch points come from a
+# CLOSED-FORM quadratic: g'/g = 0 forces
+#     x^2 - 2 e_c x - (2 e_c^2 + e_a e_b) = 0,   x = wp(z_branch),
+# (using e_a + e_b = -e_c and wp'' = 6 wp^2 - g2/2), so rho needs no
+# numeric search.  MEASURED and gated in the self-test: JD branch values
+# land on the UNIT CIRCLE (|B| = 1 -- this is exactly Karcher's gamma of
+# the Tokyo notes 3.1, with branch values +-e^{+-i alpha}) and JE branch
+# values land on the IMAGINARY AXIS, with B * B' = 1 in both cases.
+# That is the "most symmetric" normalization, for which the tower wings
+# are orthogonal and the Jenkins-Serrin existence argument of the paper
+# applies.
+#
+# The immersion is CLOSED FORM.  Partial fractions give
+#     Int g dz   = rho/(e_a - e_b) [log(wp - e_a) - log(wp - e_b)] ,
+#     Int 1/g dz = -(1/2 rho) [log sigma(z) - log sigma(z - w_c)] + K z ,
+# where w_c is the non-origin zero of g and K the constant of the exact
+# zeta partial-fraction expansion 1/g = r0 (zeta(z) - zeta(z - w_c)) + K,
+# r0 = -1/(2 rho) (both identities are gated pointwise below -- they are
+# what proves the antiderivatives differentiate back to the 1-forms).
+# The logs are multivalued; on the quarter-rectangle fundamental patch
+# (0, 1/2) x (0, t/2), whose interior contains NO punctures (they sit at
+# its corners), a single-valued branch exists and is realized by
+# unwrapping the phase from the patch centre outward (_jdje_ulog) --
+# principal-branch evaluation would tear the patch wherever wp - e_a
+# crosses the negative real axis, which happens along whole symmetry
+# lines.
+#
+# MESHING.  The quarter patch is bounded by symmetry elements (bottom and
+# top edges: straight horizontal lines; left and right edges: vertical
+# mirror planes -- measured from the built patch, then snapped exactly),
+# so the fence is the orbit of ONE patch under {180-degree rotation about
+# the bottom line} x {mirror in the right plane} x the period lattice,
+# welded seam-exactly with the sptail machinery.  The period lattice is
+# MEASURED by integrating the 1-forms along the torus generators: the
+# t-generator gives the pure vertical translation (0, 0, -t) (exact,
+# since dh = i dz) and the 1-generator a pure horizontal translation;
+# every puncture-loop period lands ON that lattice (gated), which is what
+# lets the trimmed Scherk-type wing ends continue wing-to-wing across
+# copies.  The 3DXM exhibits' morphing modulus bb in (0, 0.5) is the
+# edge-length ratio of the rectangular torus: t = 2 bb; it drives the
+# size of the visible holes.
+#
+# References:
+# - H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#   examples", Manuscripta Math. 62 (1988) 83-114 -- the doubly periodic
+#   tower families and their Jenkins-Serrin construction.
+# - H. Karcher, "Construction of minimal surfaces", in "Surveys in
+#   Geometry", Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256,
+#   Bonn, 1989, pp. 1-96, sections 3.1 and 3.3 -- the elliptic function
+#   gamma with unit-circle branch values, the derivation g = gamma
+#   (resp. its companion) with dh = i dz, and the deformation family.
+# - H. Karcher, "Elliptic Functions of Jacobi Type", 3D-XplorMath
+#   documentation, http://3D-XplorMath.org/ -- the J_D, J_E, J_F triple
+#   on one rectangular torus and the branch-value normalization
+#   {B, -B, 1/B, -1/B} used here.
+# - The 3DXM Consortium, Karcher JD / JE Saddle Tower exhibits,
+#   https://virtualmathmuseum.org/surface/karcher_jd_st/ and
+#   https://virtualmathmuseum.org/surface/karcher_je_st/ -- the
+#   4-punctured-torus presentation and the zero/pole diagonal mark.
+# --------------------------------------------------------------------------
+
+
+def jdje_data(kind, t):
+    """Closed-form Weierstrass data for a JD/JE tower on C/<1, i t>:
+    lattice, pole values (e_a, e_b), the partner zero w_c, the branch
+    normalization rho, and the constants of the 1/g partial fraction."""
+    t = float(t)
+    L = _Lattice(0.5, 1j * t)
+    w1, w2 = 0.5, 0.5j * t
+    w3 = w1 + w2
+    e1 = complex(L.wp(w1))
+    e2 = complex(L.wp(w2))
+    e3 = complex(L.wp(w3))
+    if kind == 'JD':                      # zeros {0, w3}, poles {w1, w2}
+        ea, eb, ec, wc = e1, e2, e3, w3
+    elif kind == 'JE':                    # zeros {0, w2}, poles {w1, w3}
+        ea, eb, ec, wc = e1, e3, e2, w2
+    else:
+        raise ValueError(f"unknown tower kind {kind!r}")
+    # branch points: x = wp(z_b) solves x^2 - 2 e_c x - (2 e_c^2 + e_a e_b)
+    # = 0; equivalently disc = 3 e_c^2 - g2/4 with g2/4 = -(sum e_i e_j)
+    disc = 3.0 * ec * ec + (e1 * e2 + e1 * e3 + e2 * e3)
+    xs = (ec + np.sqrt(complex(disc)), ec - np.sqrt(complex(disc)))
+    # unscaled branch values: wp' = +-2 sqrt(prod(x - e_i)) there, so
+    # u = wp'/((x - e_a)(x - e_b)) = +-2 sqrt((x - e_c)/((x-e_a)(x-e_b)))
+    us = tuple(2.0 * np.sqrt((x - ec) / ((x - ea) * (x - eb)))
+               for x in xs)
+    rho = 1.0 / math.sqrt(abs(us[0] * us[1]))
+    r0 = -0.5 / rho                       # residue of 1/g at z = 0
+    d = dict(kind=kind, t=t, L=L, ea=ea, eb=eb, ec=ec, wc=wc,
+             rho=rho, r0=r0, B=(rho * us[0], rho * us[1]))
+    zt = 0.31 + 0.412j * t                # generic point pinning K
+    d['K'] = complex(1.0 / jdje_g(d, zt)
+                     - r0 * (L.zeta(zt) - L.zeta(zt - wc)))
+    return d
+
+
+def jdje_g(d, z):
+    """The tower Gauss map (degree-2 elliptic, zeros/poles at
+    half-period points)."""
+    L = d['L']
+    wp = L.wp(z)
+    return d['rho'] * L.wp_prime(z) / ((wp - d['ea']) * (wp - d['eb']))
+
+
+def _jdje_ulog(W):
+    """log of a 2-D complex grid with the phase unwrapped from the grid
+    centre outward: a continuous single-valued branch on a simply
+    connected patch whose only zeros sit at (masked) corners.  Principal
+    logs would jump by 2 pi i wherever W crosses the negative real axis,
+    which for the tower data happens along entire symmetry lines."""
+    a = np.angle(W)
+    ic, jc = a.shape[0] // 2, a.shape[1] // 2
+    col = a[:, jc].copy()
+    col[ic:] = np.unwrap(col[ic:])
+    col[:ic + 1] = np.unwrap(col[ic::-1])[::-1]
+    a[:, jc:] = np.unwrap(a[:, jc:], axis=1)
+    a[:, :jc + 1] = np.unwrap(a[:, jc::-1], axis=1)[:, ::-1]
+    a += (col - a[:, jc])[:, None]
+    return np.log(np.abs(W)) + 1j * a
+
+
+def jdje_patch(d, nx, ny, eps):
+    """Closed-form immersion of the quarter-rectangle fundamental patch
+    (0, 1/2) x (0, t/2), corners (= punctures) masked at conformal
+    radius eps.  Grid is cosine-clustered toward all four edges, so the
+    trimmed wing rims around the punctures stay dense.  Every evaluation
+    is nudged toward the patch interior (the boundary carries the log
+    branch cuts).  Returns (X (nx, ny, 3), valid mask, Z grid)."""
+    t = d['t']
+    sx = 0.5 * (1.0 - np.cos(np.pi * np.linspace(0.0, 1.0, nx)))
+    sy = 0.5 * (1.0 - np.cos(np.pi * np.linspace(0.0, 1.0, ny)))
+    U, V = np.meshgrid(0.5 * sx, 0.5 * t * sy, indexing='ij')
+    Z = U + 1j * V
+    nud = 1e-7
+    Zn = (Z + nud * np.where(U > 0.25, -1.0, 1.0)
+          + 1j * (nud * t) * np.where(V > 0.25 * t, -1.0, 1.0))
+    L = d['L']
+    wp = L.wp(Zn)
+    Fg = d['rho'] / (d['ea'] - d['eb']) * (
+        _jdje_ulog(wp - d['ea']) - _jdje_ulog(wp - d['eb']))
+    Fi = d['r0'] * (_jdje_ulog(L.sigma(Zn))
+                    - _jdje_ulog(L.sigma(Zn - d['wc']))) + d['K'] * Zn
+    F1 = 0.5j * (Fi - Fg)                 # dh = i dz folded in
+    F2 = -0.5 * (Fi + Fg)
+    # height is exactly linear (dh = i dz): use the unnudged grid, so
+    # horizontal grid lines are exact level lines
+    X = np.stack([F1.real, F2.real, -np.imag(Z)], axis=-1)
+    valid = np.isfinite(X).all(axis=-1)
+    r = eps * min(1.0, t)
+    for c in (0.0, 0.5, 0.5j * t, 0.5 + 0.5j * t):
+        valid &= np.abs(Z - c) > r
+    return X, valid, Z
+
+
+def jdje_periods(d, n=6001):
+    """(P_1, P_t): real translation periods of the immersion along the
+    torus generators 1 and i t (midline paths, trapezoid)."""
+    z0 = 0.13 + 0.203j * d['t']
+    out = []
+    for dz in (1.0, 1j * d['t']):
+        s = np.linspace(0.0, 1.0, n)
+        z = z0 + s * dz
+        g = jdje_g(d, z)
+        ph = np.stack([0.5j * (1.0 / g - g), -0.5 * (1.0 / g + g),
+                       1j * np.ones_like(g)], axis=-1) * dz
+        out.append(np.real(np.trapezoid(ph, s, axis=0)))
+    return out[0], out[1]
+
+
+def jdje_build(kind='JD', bb=0.35, nx=56, ny=44, towers=2, storeys=2,
+               eps=0.03):
+    """Assembled JD/JE fence: the quarter patch orbited under its
+    measured symmetry elements and period lattice, welded seam-exactly.
+    Returns (V, quads, uv, diag); diag carries the branch values, the
+    edge-snap residuals, the raw periods and the lattice residuals."""
+    t = 2.0 * float(np.clip(bb, 0.06, 0.49))
+    d = jdje_data(kind, t)
+    X, valid, Z = jdje_patch(d, nx, ny, eps)
+    span = float(np.ptp(X.reshape(-1, 3)[valid.reshape(-1)],
+                        axis=0).max())
+    # all four edges lie in elements with X1 = const (bottom/top:
+    # straight lines along X2 at heights 0 and -t/2; left/right:
+    # vertical mirror planes) -- measure, record the residual, snap
+    edges = {'bottom': (slice(None), 0), 'top': (slice(None), ny - 1),
+             'left': (0, slice(None)), 'right': (nx - 1, slice(None))}
+    cs, resid = {}, {}
+    for nm, sl in edges.items():
+        ex = X[sl][valid[sl], 0]
+        c = float(np.median(ex)) if len(ex) else 0.0
+        cs[nm] = c
+        resid[nm] = float(np.max(np.abs(ex - c))) if len(ex) else 0.0
+        X[sl][..., 0] = np.where(valid[sl], c, X[sl][..., 0])
+    # period lattice (snap to its measured exact form)
+    P1r, Ptr = jdje_periods(d)
+    lat_resid = float(max(abs(P1r[1]), abs(P1r[2]),
+                          abs(Ptr[0]), abs(Ptr[1]), abs(Ptr[2] + t)))
+    P1 = np.array([P1r[0], 0.0, 0.0])
+    Pt = np.array([0.0, 0.0, -t])
+    # frames: {E, rotate about bottom line} x {E, mirror in right plane}
+    # x the lattice.  Bottom line: {X1 = c_b, X3 = 0} along X2 ->
+    # diag(-1, 1, -1) + (2 c_b, 0, 0); right plane: {X1 = c_r} ->
+    # diag(-1, 1, 1) + (2 c_r, 0, 0).  Parity = det(M).
+    Mb = np.diag([-1.0, 1.0, -1.0])
+    tb = np.array([2.0 * cs['bottom'], 0.0, 0.0])
+    Mr = np.diag([-1.0, 1.0, 1.0])
+    tr = np.array([2.0 * cs['right'], 0.0, 0.0])
+    frames = []
+    for i in range(max(1, int(towers))):
+        for j in range(max(1, int(storeys))):
+            T = i * P1 + j * Pt
+            for bB in (0, 1):
+                for bR in (0, 1):
+                    M = np.eye(3)
+                    tv = np.zeros(3)
+                    if bR:
+                        M = Mr @ M
+                        tv = Mr @ tv + tr
+                    if bB:
+                        M = Mb @ M
+                        tv = Mb @ tv + tb
+                    frames.append((M, tv + T, -1.0 if bR else 1.0))
+    quads = sptail_grid_quads(nx, ny, valid.reshape(-1))
+    uv0 = _sptail_grid_uv(nx, ny)
+    V, F, uv = sptail_orbit_weld(X.reshape(-1, 3), uv0, quads, frames,
+                                 1e-9 * span)
+    diag = dict(B=d['B'], t=t, edge_resid=resid, span=span,
+                P1=P1r, Pt=Ptr, lat_resid=lat_resid,
+                n_frames=len(frames))
+    return V, F, uv, diag
+
+
+def jdje_mesh(spec, nu, nv, order, radius, scale, theta=0.0, storeys=1):
+    """MESH_PARAM builder for the KARCHER_JD / KARCHER_JE catalog rows."""
+    p = spec['p_from'](order, radius)
+    V, F, uv, _ = jdje_build(
+        kind=p['kind'], bb=p['bb'],
+        nx=int(np.clip(nu, 36, 84)),
+        ny=int(np.clip(int(0.8 * nv), 30, 68)),
+        towers=int(np.clip(p['towers'], 1, 4)),
+        storeys=int(np.clip(storeys, 1, 5)))
+    V = _smooth_boundary(V, F, iters=4)
+    V = _center_fit(V, scale, V)
+    return V, F, uv
+
+
+def discrete_median_H(V, faces):
+    """Median cotangent-Laplacian mean-curvature magnitude |L x|/(4 A)
+    over interior vertices -- the standard "is it actually minimal"
+    probe (a unit sphere at this scale reads H = 1).  Polygons are
+    fan-triangulated; boundary vertices are excluded.  Vectorized, so
+    the self-tests can afford it on full assemblies."""
+    T = []
+    for f in faces:
+        for k in range(1, len(f) - 1):
+            T.append((f[0], f[k], f[k + 1]))
+    T = np.asarray(T, np.int64)
+    if not len(T):
+        return float('nan'), 0
+    n = len(V)
+    E = np.concatenate([T[:, (0, 1)], T[:, (1, 2)], T[:, (2, 0)]])
+    E.sort(axis=1)
+    _, inv, cnt = np.unique(E, axis=0, return_inverse=True,
+                            return_counts=True)
+    bnd = np.unique(E[cnt[inv] == 1])
+    Lx = np.zeros((n, 3))
+    A = np.zeros(n)
+    for i in range(3):
+        j, k = (i + 1) % 3, (i + 2) % 3
+        Pi, Pj, Pk = V[T[:, i]], V[T[:, j]], V[T[:, k]]
+        u, v = Pj - Pi, Pk - Pi
+        cr = np.cross(u, v)
+        crn = np.linalg.norm(cr, axis=1)
+        good = crn > 1e-14
+        cot = np.where(good,
+                       np.einsum('ij,ij->i', u, v) / np.where(good, crn,
+                                                              1.0),
+                       0.0)
+        np.add.at(Lx, T[:, j], cot[:, None] * (Pk - Pj))
+        np.add.at(Lx, T[:, k], cot[:, None] * (Pj - Pk))
+        np.add.at(A, T[:, i], np.where(good, crn / 6.0, 0.0))
+    keep = A > 1e-12
+    keep[bnd] = False
+    if not keep.any():
+        return float('nan'), 0
+    H = np.linalg.norm(Lx[keep], axis=1) / (4.0 * A[keep])
+    return float(np.median(H)), int(keep.sum())
+
+
 def _selftest():
     # engine self-tests (numpy only)
     ok = True
@@ -13083,5 +13401,101 @@ def _selftest():
     print("sfk deferred (see BACKLOG.md): hackman_surfaces, even-k "
           "Fischer-Koch/Freese (self-intersecting), Freese k=4 branch")
 
+    # ---- Karcher JD / JE doubly periodic saddle towers ---------------------
+    # (a) branch-value structure: the four branch values form the
+    #     Jacobi-type quadruple {B, -B, 1/B, -1/B}; JD's lie ON THE UNIT
+    #     CIRCLE (Karcher's gamma), JE's ON THE IMAGINARY AXIS -- and the
+    #     zero/pole pairing across the rectangle diagonal is the
+    #     documented JD/JE distinction (two zeros vs zero + pole).
+    # (b) the closed-form antiderivatives really differentiate to the
+    #     1-forms: the two partial-fraction identities behind them are
+    #     checked pointwise (they are exact algebra, not quadrature).
+    # (c) the period lattice: the t-generator translation is exactly
+    #     vertical (0, 0, -t), the 1-generator exactly horizontal, and
+    #     every puncture-loop period is an INTEGER combination of the
+    #     two -- the doubly periodic closure of the fence.
+    for jkind in ('JD', 'JE'):
+        worst_pair = worst_kind = worst_pf = worst_lat = worst_int = 0.0
+        for jbb in (0.2, 0.3, 0.4):
+            jt = 2.0 * jbb
+            jd = jdje_data(jkind, jt)
+            jB, jB2 = jd['B']
+            worst_pair = max(worst_pair, abs(jB * jB2 - 1.0))
+            worst_kind = max(worst_kind,
+                             abs(abs(jB) - 1.0) if jkind == 'JD'
+                             else abs(jB.real) + abs(jB2.real))
+            # partial-fraction identities (exact calculus of the closed
+            # form): g == rho/(ea-eb) (wp'/(wp-ea) - wp'/(wp-eb)) and
+            # 1/g == r0 (zeta(z) - zeta(z-wc)) + K
+            zz = np.array([0.171 + 0.081j * jt, 0.343 + 0.269j * jt,
+                           0.417 + 0.164j * jt])
+            jL = jd['L']
+            wpz = jL.wp(zz)
+            wpp = jL.wp_prime(zz)
+            lhs = jdje_g(jd, zz)
+            rhs = jd['rho'] / (jd['ea'] - jd['eb']) * (
+                wpp / (wpz - jd['ea']) - wpp / (wpz - jd['eb']))
+            worst_pf = max(worst_pf, float(np.max(np.abs(lhs - rhs))))
+            rhs2 = jd['r0'] * (jL.zeta(zz) - jL.zeta(zz - jd['wc'])) \
+                + jd['K']
+            worst_pf = max(worst_pf,
+                           float(np.max(np.abs(1.0 / lhs - rhs2))))
+            # period lattice purity + puncture loops on the lattice
+            jP1, jPt = jdje_periods(jd)
+            worst_lat = max(worst_lat, abs(jP1[1]), abs(jP1[2]),
+                            abs(jPt[0]), abs(jPt[1]), abs(jPt[2] + jt))
+            for pc in (0.5, 0.5j * jt, 0.5 + 0.5j * jt):
+                rr = 0.09 * min(1.0, jt)
+                pp = np.array([
+                    period_integral(
+                        lambda z, c=c, jd=jd: (
+                            (0.5j * (1.0 / jdje_g(jd, z)
+                                     - jdje_g(jd, z)),
+                             -0.5 * (1.0 / jdje_g(jd, z)
+                                     + jdje_g(jd, z)),
+                             1j * np.ones_like(z))[c]), pc, rr, rr).real
+                    for c in range(3)])
+                m1 = pp[0] / jP1[0]
+                worst_int = max(worst_int, abs(m1 - round(m1)),
+                                abs(pp[1]), abs(pp[2] / jt
+                                                - round(pp[2] / jt)))
+        # diagonal mark: |g| near w3 (JD: second zero -> small; JE:
+        # pole -> large)
+        jd = jdje_data(jkind, 0.7)
+        gd = abs(complex(jdje_g(jd, 0.5 + 0.35j + 0.03 + 0.021j)))
+        diag_ok = gd < 0.5 if jkind == 'JD' else gd > 2.0
+        good = (worst_pair < 1e-10 and worst_kind < 1e-10
+                and worst_pf < 1e-9 and worst_lat < 1e-8
+                and worst_int < 1e-6 and diag_ok)
+        ok &= good
+        print(f"karcher {jkind} data: pair={worst_pair:.1e} "
+              f"kind={worst_kind:.1e} pfrac={worst_pf:.1e} "
+              f"lattice={worst_lat:.1e} puncture={worst_int:.1e} "
+              f"|g(diag)|={gd:.2f} {'OK' if good else 'FAIL'}")
+    # (d) the assembled fences: symmetry edges snap to machine noise,
+    #     the orbit welds into a manifold mesh, and the discrete mean
+    #     curvature says MINIMAL (median cotan |H|; sphere at this
+    #     scale = 1; shipped rows gate at 0.02)
+    for jkind in ('JD', 'JE'):
+        V4, F4, _uv4, dg4 = jdje_build(jkind, bb=0.35, nx=56, ny=44,
+                                       towers=2, storeys=2)
+        er = max(dg4['edge_resid'].values()) / dg4['span']
+        h4, ni4 = discrete_median_H(V4, F4)
+        ec4 = {}
+        for f in F4:
+            m = len(f)
+            for tt in range(m):
+                a, b = f[tt], f[(tt + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ec4[e] = ec4.get(e, 0) + 1
+        nonman = sum(1 for c in ec4.values() if c > 2)
+        welded = 16 * 56 * 44 - len(V4)
+        good = (er < 1e-6 and h4 == h4 and h4 < 0.02 and ni4 > 5000
+                and nonman == 0 and welded > 2000
+                and dg4['lat_resid'] < 1e-8)
+        ok &= good
+        print(f"karcher {jkind} fence: edge_snap={er:.1e} median|H|="
+              f"{h4:.4f}/{ni4} nonman={nonman} welded={welded} "
+              f"lat={dg4['lat_resid']:.1e} {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in weierstrass")
     assert ok

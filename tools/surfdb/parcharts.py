@@ -1058,8 +1058,7 @@ _NO_BUILDER = ("the record has no implemented construction -- there is "
 # (coil, moebius-strip, clifford-torus, the three Ferreol cones /
 # conoids and the three revolution surfaces graduated out of this list
 # when their builders shipped; each now carries a verified chart above.)
-for _slug in ("boys-planet", "dyck-surface",
-              "etruscan-venus-surface", "ida-surface"):
+for _slug in ("dyck-surface", "etruscan-venus-surface", "ida-surface"):
     REASONS[_slug] = _NO_BUILDER
 del _slug
 REASONS["nested-klein-bottles"] = (

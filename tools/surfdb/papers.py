@@ -23,73 +23,6 @@ propagates.
 """
 
 RECORDS = {
-    "kuehnel-octic-128-nodes": {
-        "name": "Kuehnel Octic (128 nodes)",
-        "family": "algebraic", "mode": "implicit",
-        "blocked_by": "Not built. The construction is indirect -- the octic is "
-                      "obtained FROM a Calabi-Yau threefold rather than the "
-                      "other way round -- so there is no equation on the page "
-                      "to transcribe, and none is invented here.  CONFIRMED "
-                      "AT THE SOURCE (batch 7): the paper itself never "
-                      "writes the octic down.  The 128-node example is the "
-                      "branch locus of the anticanonical double cover of "
-                      "P(E) for a rank-2 bundle built by the Serre "
-                      "construction from a degree-8 elliptic curve, with "
-                      "the key steps verified in MACAULAY on the abstract "
-                      "ideal -- an existence proof with no explicit "
-                      "polynomial anywhere in it.  This row cannot be "
-                      "stated explicitly FROM THIS SOURCE; candidate for "
-                      "the documented no-explicit-equation ledger state.",
-        "resume": "M. Kuehnel, 'A note on octic hypersurfaces with many "
-                  "nodes', arXiv:math/0210440 (2002, rev. 2003); converted at "
-                  "research/papers/algebraic-surfaces/"
-                  "kuehnel-2002-octic-128-nodes/. The method builds "
-                  "Calabi-Yau threefolds as desingularised double covers of "
-                  "P^3 branched over the octic, using rank-2 bundles over P^3, "
-                  "and reads the node count off the resulting threefold.",
-        "sources": [
-            "M. Kuehnel, 'A note on octic hypersurfaces with many nodes', "
-            "arXiv:math/0210440v3 [math.AG] (2002, revised 2003).",
-            "Cited from O. Labs, Algebraic Surface Homepage, octic pages.",
-        ],
-        "extra": {
-            "discovered_by": "Marco Kuehnel", "year": 2002,
-            "curvature": {"condition": "none"},
-            "tradition": ["classical"],
-            "definition": {
-                "degree": 8,
-                "note": "A nodal octic in P^3 with 128 ordinary double "
-                        "points, obtained by REVERSING the usual direction: "
-                        "rather than constructing the octic and deducing a "
-                        "threefold, Calabi-Yau threefolds are built as "
-                        "desingularised double covers of P^3 branched over "
-                        "the surface, and give rise to octics with a "
-                        "determined node count.",
-            },
-            "embedding": {
-                "quality": "singular",
-                "singularities": [{"type": "node (A1)", "count": 128}],
-                "is_record": False,
-                "record_for": None,
-            },
-            "provenance": {
-                "definition": "Not transcribed: the paper's construction is "
-                              "indirect and yields no single displayed "
-                              "equation.",
-            },
-            "notes": {"caveats": [
-                "NOT the same surface as the 128-node member of the Endrass "
-                "octic family, which reaches the same count by a different "
-                "construction. Equal node counts do not make equal surfaces.",
-                "Context from the paper: every node count up to 108 is "
-                "realised by some octic, counts between 108 and 168 only "
-                "partially, and Miyaoka's upper bound for an octic is 174.",
-                "ATTRIBUTION: the citing website gives only the arXiv number, "
-                "and the author is easily misread as Endrass. It is Marco "
-                "Kuehnel.",
-            ]},
-        },
-    },
 
     "sextic-with-9-triple-points": {
         "name": "Sextic with 9 Triple Points",
@@ -212,8 +145,7 @@ def _selftest():
             assert s.get("type") and s.get("count"), slug
 
     # the converted papers this module rests on must actually be present
-    for name in ("endrass-persson-stevens-2000-surfaces-triple-points",
-                 "kuehnel-2002-octic-128-nodes"):
+    for name in ("endrass-persson-stevens-2000-surfaces-triple-points",):
         p = os.path.join(root, "research", "papers", "algebraic-surfaces", name)
         if os.path.isdir(p):
             assert any(f.endswith(".md") for f in os.listdir(p)), \

@@ -119,6 +119,13 @@ MERGE = {
     "algebraic:ENDRASS_160": "endrass-octic-160",
     "algebraic:MOD_CHMUTOV": "modified-chmutov-octic",
     "algebraic:VAN_STRATEN_165": "van-straten-octic",
+    # The degree-12 row is the surface the catalogue already carries as
+    # `surface-with-132-a5-singularities`; without this it would mint a
+    # `labs-dodecic-132-a5-points` twin beside it.  (LABS_30_CUSPS gets
+    # no entry on purpose: the real 30-cusp member of Labs's family is a
+    # DIFFERENT surface from the complex 35-cusp `labs-sextic-35-cusps`,
+    # which has no real points, so it earns its own record.)
+    "algebraic:LABS_132_A5": "surface-with-132-a5-singularities",
     "algebraic:MOBIUS_SURFACE": "mobius-surface",
     "algebraic:NORDSTRAND_WEIRD": "nordstrand-weird-surface",
     # VAN_STRATEN_124 is deliberately NOT here: the curated tables carry
@@ -373,6 +380,18 @@ ALIAS = {
     "tpms_exact:STARFISH_3_3_GENUS_75": "starfish-3-3-genus-75",
     "tpms_exact:STARFISH_4_1_GENUS_55": "starfish-4-1-genus-55",
     "tpms_exact:STARFISH_4_3_GENUS_87": "starfish-4-3-genus-87",
+    # The six members Brakke never published a datafile for, now built
+    # by reconstructing the (m, n) rule from the eight he did publish
+    # (the rule reproduces all eight to 4e-16) and period-killing each
+    # new member against Surface Evolver itself.  4-2 and 5-3 are NOT
+    # here: they stay curated-only, their gap frozen, which is what
+    # Brakke's own "(fake)" and "(not quite)" notes already said.
+    "tpms_exact:STARFISH_2_4_GENUS_79": "starfish-2-4-genus-79",
+    "tpms_exact:STARFISH_3_4_GENUS_91": "starfish-3-4-genus-91",
+    "tpms_exact:STARFISH_4_4_GENUS_103": "starfish-4-4-genus-103",
+    "tpms_exact:STARFISH_5_1_GENUS_67": "starfish-5-1-genus-67",
+    "tpms_exact:STARFISH_5_2_GENUS_83": "starfish-5-2-genus-83",
+    "tpms_exact:STARFISH_5_4_GENUS_115": "starfish-5-4-genus-115",
     "tpms_exact:TRIPLY_COSTA": "triply-periodic-costa",
     "tpms_exact:TRIPLY_HORGAN": "triply-periodic-horgan",
     "tpms_exact:WEI_G4": "wei-triply-periodic-genus-4",
@@ -441,6 +460,9 @@ ALIAS = {
     "topological:SUDANESE": "sudanese-mobius-band",
     "topological:STEINER": "steiner-surface",
     "topological:NONORIENT": "non-orientable-genus-k",
+    # Dyck's surface has a record under `dyck-surface`; the preset
+    # slugifies to `dycks-surface`, which would mint an empty twin.
+    "topological:DYCK": "dyck-surface",
     "topological:GENUS": "genus-g-surface",
     "topological:TWIST_STRIP": "twisted-strip",
     "hyperbolic:PSEUDOSPHERE": "pseudosphere",

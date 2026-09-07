@@ -39,7 +39,7 @@
   "construction": [
     {
       "implemented": false,
-      "blocked_by": "Schoen starfish surface with no datafile. Brakke's starfish page shows it, but publishes datafiles for only eight of the sixteen (genus 31, 43, 47, 55, 59, 63, 75, 87) -- those eight ship. There is no .fe for this one in the mirror or in starfish.tar, so it cannot be built or checked against Evolver."
+      "blocked_by": "Schoen starfish surface that does not close up. Brakke publishes datafiles for eight of the sixteen (genus 31, 43, 47, 55, 59, 63, 75, 87); the other eight are pictures only. Six of those eight now ship, built by reconstructing the (m, n) rule of the construction from the eight published files -- the rule reproduces every vertex of all eight to 4e-16 -- and period-killing each new member against Surface Evolver itself. THIS one is not among them: its period-killing gap freezes under refinement instead of falling, so the boundary conditions are not met and there is no surface to ship. Brakke's own page says the same of exactly these two, annotating 4-2 '(fake)' -- 'fails to period kill by only 0.005' -- and 5-3 '(not quite)'; the independent agreement is why the other six are trusted."
     }
   ],
   "provenance": {

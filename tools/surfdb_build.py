@@ -1678,14 +1678,21 @@ CURATED_ONLY = {
     # that we do not build them, and why.
 }
 _STARFISH_NO_DATAFILE = (
-    "Schoen starfish surface with no datafile. Brakke's starfish page "
-    "shows it, but publishes datafiles for only eight of the sixteen "
-    "(genus 31, 43, 47, 55, 59, 63, 75, 87) -- those eight ship. There "
-    "is no .fe for this one in the mirror or in starfish.tar, so it "
-    "cannot be built or checked against Evolver."
+    "Schoen starfish surface that does not close up. Brakke publishes "
+    "datafiles for eight of the sixteen (genus 31, 43, 47, 55, 59, 63, "
+    "75, 87); the other eight are pictures only. Six of those eight now "
+    "ship, built by reconstructing the (m, n) rule of the construction "
+    "from the eight published files -- the rule reproduces every vertex "
+    "of all eight to 4e-16 -- and period-killing each new member against "
+    "Surface Evolver itself. THIS one is not among them: its period-"
+    "killing gap freezes under refinement instead of falling, so the "
+    "boundary conditions are not met and there is no surface to ship. "
+    "Brakke's own page says the same of exactly these two, annotating "
+    "4-2 '(fake)' -- 'fails to period kill by only 0.005' -- and 5-3 "
+    "'(not quite)'; the independent agreement is why the other six are "
+    "trusted."
 )
-for _g in ("2-4-genus-79", "3-4-genus-91", "4-2-genus-71", "4-4-genus-103",
-           "5-1-genus-67", "5-2-genus-83", "5-3-genus-99", "5-4-genus-115"):
+for _g in ("4-2-genus-71", "5-3-genus-99"):
     CURATED_ONLY["starfish-" + _g] = _STARFISH_NO_DATAFILE
 del _g
 
@@ -1804,24 +1811,11 @@ MISSING = {
         "sources": ["3DXM Virtual Math Museum, Surfaces gallery."],
         "extra": {"tradition": ["gallery"]},
     },
-    "multi-soliton-pseudospherical": {
-        "name": "Multi-Soliton Pseudospherical Surface",
-        "family": "constant-curvature", "mode": "parametric",
-        "blocked_by": "Only the single BREATHER preset ships. The 2-, 3- and "
-                      "4-soliton surfaces need Sym's formula.",
-        "resume": "A. Bobenko, 'Surfaces in terms of 2 by 2 matrices' (1994) "
-                  "for Sym's formula -- converted in research/papers/. NOTE: "
-                  "Melko-Sterling 1993 does NOT contain a closed-form breather "
-                  "parametrisation despite being cited for one. The Bianchi "
-                  "permutability the bubbleton module already implements is the "
-                  "same machinery.",
-        "sources": ["A. I. Bobenko, in Harmonic Maps and Integrable Systems "
-                    "(1994)."],
-        "extra": {"curvature": {"condition": "k-const-negative",
-                                "gaussian": {"exact": "-1", "value": -1.0}},
-                  "embedding": {"quality": "self-intersecting"},
-                  "tradition": ["classical"]},
-    },
+    # "multi-soliton-pseudospherical" was an umbrella gap record for the
+    # 2-, 3- and 4-soliton surfaces (VMM ch056, ch058, ch059).  All three
+    # now ship as rows of their own, built from the twisted su(2) Lax
+    # pair by iterated Darboux steps and Sym's formula, so the umbrella
+    # is retired rather than left claiming they are missing.
     "schoen-batwing": {
         "name": "Schoen Batwing Surface", "family": "minimal-periodic",
         "mode": "weierstrass",

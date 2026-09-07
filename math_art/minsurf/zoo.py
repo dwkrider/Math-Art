@@ -3139,6 +3139,151 @@ _SCHERK_FOURTH_DEFERRED = {
 }
 
 
+# ==========================================================================
+# Wavy Enneper (Karcher) + Karcher JD / JE saddle towers (appended block)
+# ==========================================================================
+# WAVY ENNEPER: finite-total-curvature immersion of the ONCE-PUNCTURED
+# sphere, from Karcher's Tokyo notes via the 3DXM exhibit: the order-
+# (k-1) Enneper surface with a high-order Enneper perturbation riding on
+# its rim, so waves develop around the boundary.  Exact 3DXM data
+# ("About Wavy Enneper", H. Karcher):
+#
+#     Gauss(z) = z^(ee-1) (1 + aa e^{i pi bb} z^ff) / (1 + aa) ,
+#     dh = scaling * Gauss(z) dz ,
+#
+# with ee the tongue count (aa = 0, ee = 2 is the standard Enneper
+# surface; the exhibit shows ee = 3), aa the wave amplitude, ff the wave
+# frequency and bb a phase that walks the waves around the rim.  Here
+# k = ee is the count slider (k-fold rotational symmetry -- exact when
+# ff is a multiple of ee; following the exhibit's pictured member
+# ff = 3 ee), aa = 0.5, bb = 0, and scaling = 2 so aa -> 0 reproduces
+# the toolkit's Enneper row identically.  Both 1-forms are POLYNOMIAL,
+# so every period vanishes identically, the immersion integrates in
+# closed form (_wavyenn_X), and the associate/Bonnet slider is exact and
+# tear-free -- all exactly as for the ENNEPER row above.
+#
+# KARCHER JD / JE SADDLE TOWERS: doubly periodic embedded minimal
+# surfaces on 4-punctured rectangular tori -- fences of Scherk saddle
+# towers, JD's separated by vertical planar symmetry lines and JE's the
+# companion family whose rectangle diagonal joins a zero and a POLE of
+# the degree-2 elliptic Gauss map (JD's joins the two zeros).  The whole
+# engine -- divisor-built Gauss map, closed-form log/sigma
+# antiderivatives, quarter-patch orbit assembly, measured period lattice
+# -- lives in weierstrass.jdje_* (see the block header there for the
+# derivation and gates).  The radius slider morphs the 3DXM modulus
+# bb in (0, 0.5) (edge-length ratio of the rectangular torus = hole
+# size); the count slider sets the number of towers in the fence and the
+# storey slider stacks vertical periods.
+#
+# References:
+# - H. Karcher, "Construction of minimal surfaces", in "Surveys in
+#   Geometry", Univ. of Tokyo, 1989, and Lecture Notes No. 12, SFB 256,
+#   Bonn, 1989, pp. 1-96 -- the Enneper-end language and the doubly
+#   periodic examples (section 3.3).
+# - H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#   examples", Manuscripta Math. 62 (1988) 83-114 -- the JD/JE tower
+#   families.
+# - The 3DXM Consortium, "Wavy Enneper", "Karcher JD Saddle Tower" and
+#   "Karcher JE Saddle Tower" exhibits, https://virtualmathmuseum.org/
+#   -- the exact exhibit data (Gauss map, dh, parameter ranges) followed
+#   here.
+# - A. Enneper (1864) -- the base surface the waves ride on.
+
+
+def _wavyenn_c(p):
+    """(c1, c2): the two monomial weights of the wavy Gauss map."""
+    a, b = p['aa'], p['bb']
+    return (1.0 / (1.0 + a),
+            a * np.exp(1j * math.pi * b) / (1.0 + a))
+
+
+def _wavyenn_g(z, p):
+    c1, c2 = _wavyenn_c(p)
+    return z ** (p['k'] - 1) * (c1 + c2 * z ** p['f'])
+
+
+def _wavyenn_X(z, p, theta=0.0):
+    """Closed-form immersion: with dh = 2 g dz the 1-forms are the
+    polynomials (1 - g^2, i (1 + g^2), 2 g) dz, integrated termwise."""
+    c1, c2 = _wavyenn_c(p)
+    k, f = p['k'], p['f']
+    rot = np.exp(1j * theta)
+    I1 = c1 * z ** k / k + c2 * z ** (k + f) / (k + f)
+    I2 = (c1 * c1 * z ** (2 * k - 1) / (2 * k - 1)
+          + 2.0 * c1 * c2 * z ** (2 * k - 1 + f) / (2 * k - 1 + f)
+          + c2 * c2 * z ** (2 * k - 1 + 2 * f) / (2 * k - 1 + 2 * f))
+    F1 = z - I2
+    F2 = 1j * (z + I2)
+    F3 = 2.0 * I1
+    return (np.real(rot * F1), np.real(rot * F2), np.real(rot * F3))
+
+
+WE_SURFACES['WAVY_ENNEPER'] = {
+    'label': "Wavy Enneper",
+    'family': 'SPHERES',
+    'g': _wavyenn_g,                     # for the period-closure gate
+    'dh': lambda z, p: 2.0 * _wavyenn_g(z, p),
+    'Xexact': _wavyenn_X,
+    'domain': ('disk', 0.0, lambda p: p['reach']),
+    'p_from': lambda order, radius: {
+        'k': int(np.clip(order, 2, 9)),
+        'f': 3 * int(np.clip(order, 2, 9)),
+        'aa': 0.5, 'bb': 0.0,
+        'reach': float(np.clip(1.08 * radius / 1.2, 0.60, 1.30))},
+    'count': "Symmetry order",
+    'order_range': (2, 9),
+    'associate': True,                   # polynomial phi: zero periods
+    'clip': False,
+    # the rim carries ff = 3k wave lobes on top of the Enneper flare:
+    # cluster radially toward the rim and grow the angular sampling
+    # with the wave frequency
+    'radial_grade': 'rim',
+    'res_boost': lambda order: (
+        1.5 * min(1.0 + 0.10 * (min(max(order, 2), 9) - 2), 1.6),
+        1.8 * min(1.0 + 0.30 * (min(max(order, 2), 9) - 2), 2.6)),
+    'cycles': lambda p: [(0.0, 0.5)],
+    'test_order': 3,                     # the exhibit's 3-fold member
+}
+SURFACE_FAMILY['WAVY_ENNEPER'] = 'SPHERES'
+
+
+def _jdje_p(kind):
+    def p_from(order, radius):
+        return {'kind': kind,
+                'towers': int(np.clip(order, 1, 4)),
+                'bb': float(np.clip(0.35 * radius / 1.2, 0.12, 0.48))}
+    return p_from
+
+
+WE_SURFACES['KARCHER_JD'] = {
+    # towers separated by vertical planar symmetry lines; the rectangle
+    # diagonal joins the TWO ZEROS of the Gauss map
+    'label': "Karcher JD Saddle Tower",
+    'family': 'DOUBLY',
+    'mesher': we.jdje_mesh,
+    'p_from': _jdje_p('JD'),
+    'count': "Towers",
+    'order_range': (1, 4),
+    'storeys_label': "Storeys",
+    'test_order': 2,
+}
+SURFACE_FAMILY['KARCHER_JD'] = 'DOUBLY'
+
+WE_SURFACES['KARCHER_JE'] = {
+    # the companion family: the rectangle diagonal joins a zero and a
+    # POLE of the Gauss map
+    'label': "Karcher JE Saddle Tower",
+    'family': 'DOUBLY',
+    'mesher': we.jdje_mesh,
+    'p_from': _jdje_p('JE'),
+    'count': "Towers",
+    'order_range': (1, 4),
+    'storeys_label': "Storeys",
+    'test_order': 2,
+}
+SURFACE_FAMILY['KARCHER_JE'] = 'DOUBLY'
+
+
 def _selftest():
     # standalone catalog tests: build every row through the meshing
     # pipeline, then the engine-level QA gates (period closure,
@@ -4217,5 +4362,60 @@ def _selftest():
     print("symm tail: shipped SYMM_FRIEM SYMM_DBLENN KNOID_ENN_ENDS "
           "ANTIPRISM_KNOID + nonorient HENNEBERG_RP2 KUSNER_RP2 "
           "LOPEZ_KLEIN; 9 index entries skipped as duplicates")
+    # ---- Wavy Enneper gates ------------------------------------------------
+    # (a) the closed-form immersion differentiates back to the 1-forms
+    #     (d/dx X = Re phi, d/dy X = -Im phi, central differences at
+    #     interior points);
+    # (b) aa -> 0 collapses EXACTLY onto the classical Enneper closed
+    #     form (order k-1);
+    # (c) the k-fold symmetry is exact: X(zeta z) = Rz(-2 pi / k) X(z)
+    #     for zeta = e^{2 pi i / k} -- checked at theta = 0 and at an
+    #     associate angle;
+    # (d) the meshed surface is measurably minimal (median cotan |H|).
+    wspec = WE_SURFACES['WAVY_ENNEPER']
+    wp_ = wspec['p_from'](3, 1.2)
+    wz = np.array([0.31 + 0.22j, -0.44 + 0.12j, 0.08 - 0.61j,
+                   0.52 - 0.33j])
+    wh = 1e-6
+    wphi = np.stack([1.0 - _wavyenn_g(wz, wp_) ** 2,
+                     1j * (1.0 + _wavyenn_g(wz, wp_) ** 2),
+                     2.0 * _wavyenn_g(wz, wp_)], axis=-1)
+    dXx = (np.stack(_wavyenn_X(wz + wh, wp_), -1)
+           - np.stack(_wavyenn_X(wz - wh, wp_), -1)) / (2 * wh)
+    dXy = (np.stack(_wavyenn_X(wz + 1j * wh, wp_), -1)
+           - np.stack(_wavyenn_X(wz - 1j * wh, wp_), -1)) / (2 * wh)
+    r_d = max(float(np.max(np.abs(dXx - wphi.real))),
+              float(np.max(np.abs(dXy + wphi.imag))))
+    wp0 = dict(wp_, aa=0.0)
+    r_enn = float(np.max(np.abs(
+        np.stack(_wavyenn_X(wz, wp0), -1)
+        - np.stack(_enneper_X(wz, {'k': wp_['k'] - 1}), -1))))
+    r_sym = 0.0
+    zeta = np.exp(2j * math.pi / wp_['k'])
+    cs_, sn_ = math.cos(TAU / wp_['k']), math.sin(TAU / wp_['k'])
+    Rz = np.array([[cs_, sn_, 0.0], [-sn_, cs_, 0.0], [0.0, 0.0, 1.0]])
+    for th_ in (0.0, 0.37):
+        Aw = np.stack(_wavyenn_X(wz, wp_, th_), -1)
+        Bw = np.stack(_wavyenn_X(zeta * wz, wp_, th_), -1)
+        r_sym = max(r_sym, float(np.max(np.abs(Bw - Aw @ Rz.T))))
+    Vw, Qw = tk.build_parametric('WAVY_ENNEPER', 60, 60, 3, 1.2, 1.0)
+    hw, niw = we.discrete_median_H(Vw, Qw)
+    good = (r_d < 5e-6 and r_enn < 1e-12 and r_sym < 1e-9
+            and hw == hw and hw < 0.02 and niw > 500)
+    ok &= good
+    print(f"wavy enneper: dX-vs-phi={r_d:.1e} enneper-limit={r_enn:.1e} "
+          f"3-fold={r_sym:.1e} median|H|={hw:.4f}/{niw} "
+          f"{'OK' if good else 'FAIL'}")
+    # Karcher JD/JE catalog rows: engine-level gates (branch structure,
+    # partial fractions, period lattice, fence assembly, minimality)
+    # live in weierstrass._selftest; here the rows are additionally
+    # checked through the full toolkit pipeline for measured minimality.
+    for jkey in ('KARCHER_JD', 'KARCHER_JE'):
+        Vj, Qj = tk.build_parametric(jkey, 56, 56, 2, 1.2, 1.0)
+        hj, nij = we.discrete_median_H(Vj, Qj)
+        good = hj == hj and hj < 0.025 and nij > 5000
+        ok &= good
+        print(f"zoo {jkey}: median|H|={hj:.4f} over {nij} interior "
+              f"verts {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
     assert ok

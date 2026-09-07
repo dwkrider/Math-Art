@@ -15,6 +15,11 @@
 #                 of revolution (see below)
 #   BREATHER      the surface of the sine-Gordon BREATHER: a bound
 #                 soliton/antisoliton pair, cusped and many-lobed
+#   TWO_SOLITON, THREE_SOLITON, FOUR_SOLITON -- the surfaces of the
+#                 sine-Gordon multisoliton solutions, built by iterating
+#                 the Backlund transformation algebraically (Bianchi
+#                 permutability) and reading the surface off the frame
+#                 with Sym's formula
 #
 # Pseudospherical surfaces and the sine-Gordon equation are the same
 # subject twice over.  In Chebyshev (asymptotic) coordinates a K = -1
@@ -89,6 +94,21 @@
 #   1994, Sect. 8; and M. Melko and I. Sterling, "Application of soliton
 #   theory to the construction of pseudospherical surfaces in R^3",
 #   Ann. Global Anal. Geom. 11 (1993), 65-107.
+# - Backlund transformation: A. V. Backlund, "Om ytor med konstant
+#   negativ krokning", Lunds Universitets Arsskrift 19 (1883) -- the
+#   line congruence carrying one pseudospherical surface to another,
+#   equivalently the map between solutions of the sine-Gordon equation.
+# - Bianchi permutability: L. Bianchi, "Sulla trasformazione di Backlund
+#   per le superficie pseudosferiche", Rend. Accad. Naz. Lincei (5) 1
+#   (1892), 3-12 -- two Backlund transforms commute, and their common
+#   image is given algebraically; iterating it builds the multisoliton
+#   surfaces without further integration.
+# - Sym's formula: A. Sym, "Soliton surfaces and their application", in:
+#   Soliton geometry from spectral problems, Lecture Notes in Physics
+#   239, Springer, Berlin 1985, 154-231 -- the immersion as the
+#   logarithmic derivative of the frame in the spectral parameter,
+#   F = 2 rho Phi^{-1} dPhi/dt; used here exactly as stated in Bobenko
+#   1994, Theorem 11.
 
 bl_info = {
     "name": "Hyperbolic Surfaces",
@@ -96,8 +116,8 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Hyperbolic Surface",
-    "description": "Pseudosphere, Dini, Kuen, Minding and breather "
-                   "constant-negative-curvature surfaces",
+    "description": "Pseudosphere, Dini, Kuen, Minding, breather and "
+                   "multi-soliton constant-negative-curvature surfaces",
     "category": "Add Mesh",
 }
 
@@ -112,7 +132,8 @@ except ImportError:  # flat import outside the package
 
 
 def _pseudosphere(U, V, twist=0.0, a=0.5, breather_a=0.4,
-                  amsler_angle=90.0):
+                  amsler_angle=90.0, soliton_spread=1.8,
+                  soliton_cross=False):
     x = np.cosh(U) ** -1 * np.cos(V)
     y = np.cosh(U) ** -1 * np.sin(V)
     z = U - np.tanh(U)
@@ -120,7 +141,7 @@ def _pseudosphere(U, V, twist=0.0, a=0.5, breather_a=0.4,
 
 
 def _dini(U, V, twist=0.2, a=0.5, breather_a=0.4,
-          amsler_angle=90.0):
+          amsler_angle=90.0, soliton_spread=1.8, soliton_cross=False):
     x = np.cos(V) * np.sin(U)
     y = np.sin(V) * np.sin(U)
     z = np.cos(U) + np.log(np.tan(U / 2.0)) + twist * V
@@ -228,7 +249,7 @@ def _minding(kind):
     The profile tables are rebuilt per call because they depend on `a`;
     at n = 2001 that is well under a millisecond."""
     def fn(U, V, twist=0.0, a=0.5, breather_a=0.4,
-           amsler_angle=90.0):
+           amsler_angle=90.0, soliton_spread=1.8, soliton_cross=False):
         t, r, z = _minding_profile(kind, a)
         ru = np.interp(U, t, r)
         zu = np.interp(U, t, z)
@@ -237,7 +258,8 @@ def _minding(kind):
 
 
 def _breather(U, V, twist=0.0, a=0.5, breather_a=0.4,
-              amsler_angle=90.0):
+              amsler_angle=90.0, soliton_spread=1.8,
+              soliton_cross=False):
     """The breather surface: the pseudospherical surface built from the
     BREATHER solution of the sine-Gordon equation.
 
@@ -280,6 +302,242 @@ def _breather(U, V, twist=0.0, a=0.5, breather_a=0.4,
     y = 2.0 * w * ca * (w * cw * cv + sw * sv) / D
     z = 2.0 * w * ca * (w * cw * sv - sw * cv) / D
     return x, y, z
+
+
+# --------------------------------------------------------------------------
+# Multisoliton surfaces: iterated Backlund transformation + Sym's formula
+# --------------------------------------------------------------------------
+# The surfaces of the N-soliton solutions of sine-Gordon, built the way
+# Bobenko 1994 (Sect. 8) frames the subject: a K = -1 surface is a
+# solution phi of phi_xy = sin(phi) seen through its SU(2) moving frame
+# Phi(x, y, lambda), and the immersion is Sym's formula
+#
+#     F = 2 rho Phi^{-1} dPhi/dt ,        lambda = e^t ,
+#
+# evaluated at lambda = 1 (Theorem 11 there).  The frame satisfies
+# Phi_x = A Phi, Phi_y = B Phi with, after a lambda-independent diagonal
+# gauge that leaves Sym's formula untouched,
+#
+#     A = (i/2)(phi_x sigma3 - lambda sigma1) ,
+#     B = (i/(2 lambda)) [[0, e^{i phi}], [e^{-i phi}, 0]] ,
+#
+# whose compatibility is exactly phi_xy = sin(phi).  The VACUUM phi = 0
+# has the closed-form frame Phi0 = exp((i/2)(y/lambda - lambda x) sigma1)
+# -- its Sym surface is a straight line, the degenerate K = -1 "surface"
+# every soliton is grafted onto.
+#
+# One Backlund transform with speed beta > 0 is one DARBOUX STEP on the
+# frame: Phi -> D(lambda) Phi with
+#
+#     D(lambda) = lambda I - S ,   S = i beta [[0, sigma], [conj(sigma), 0]] ,
+#
+# where sigma = h1/h2 is the ratio of the components of h = Phi(i beta) h0,
+# a solution of the Lax pair at the imaginary spectral point lambda = i beta.
+# Matching powers of lambda in D_x + D A = A~ D and D_y + D B = B~ D forces
+# e^{i phi~} = sigma^2 e^{-i phi} and, writing sigma = e^{i psi}, reduces
+# every condition to the CLASSICAL Backlund system
+#
+#     ((phi~ + phi)/2)_x = phi_x - beta sin((phi~ + phi)/2) ,
+#     ((phi~ + phi)/2)_y = (1/beta) sin((phi - phi~)/2) ,
+#
+# so the step is Backlund's transformation, done algebraically.  That
+# |sigma| = 1 holds identically -- phi~ stays real -- is the reality
+# theory: at lambda = i beta the antilinear map h -> sigma1 conj(h)
+# preserves solutions, and the initial vector h0 is chosen fixed by it
+# (up to the parity sign the accumulated factors contribute).  The
+# self-test measures | |sigma| - 1 | before normalising, so a broken
+# choice of h0 would be caught rather than silently absorbed.
+#
+# ITERATION IS BIANCHI PERMUTABILITY.  The k-th step needs the previous
+# frame at its own spectral point, Phi_{k-1}(i beta_k) -- a product of
+# the already-known D_j(i beta_k) with the closed-form vacuum -- so N
+# solitons cost N(N+1)/2 matrix products and no integration at all.
+# Two equal speeds make D_j(i beta_k) singular (det = beta_j^2 -
+# beta_k^2): the permutability construction degenerates, which is why
+# the speeds are a strictly increasing ladder and duplicates raise.
+#
+# Sym's formula TELESCOPES over the steps.  dD/dlambda = I, so each step
+# adds one conjugated term to G = Phi^{-1} dPhi/dlambda:
+#
+#     F = 2 G0 + sum_k Phi_{k-1}(1)^{-1} (2/(1 + beta_k^2)) S_k Phi_{k-1}(1)
+#
+# (the identity part of D^{-1} = (I + S)/(1 + beta^2) is pure trace and
+# drops out of the su(2) projection).  The vacuum term 2 G0 =
+# -i (x + y) sigma1 is the bare axis the lobes ride on -- the same
+# linear carrier the breather's -u term is.  Every ingredient is
+# algebraic, so K = -1 holds to machine precision, and the self-test
+# checks the full chain: |sigma| = 1, phi solves sine-Gordon, the first
+# fundamental form is the Chebyshev net dx^2 + 2 cos(phi) dx dy + dy^2,
+# K = -1, and the winding of phi counts exactly N solitons.
+
+
+def _m2(x, d00, d01, d10, d11):
+    """Assemble a (..., 2, 2) complex matrix field from four entries
+    broadcast against the grid `x`."""
+    out = np.zeros(np.shape(x) + (2, 2), dtype=complex)
+    out[..., 0, 0] = d00
+    out[..., 0, 1] = d01
+    out[..., 1, 0] = d10
+    out[..., 1, 1] = d11
+    return out
+
+
+def _m2inv(M):
+    """Inverse of a (..., 2, 2) field, via the adjugate."""
+    det = (M[..., 0, 0] * M[..., 1, 1] - M[..., 0, 1] * M[..., 1, 0])
+    return _m2(M[..., 0, 0], M[..., 1, 1], -M[..., 0, 1],
+               -M[..., 1, 0], M[..., 0, 0]) / det[..., None, None]
+
+
+def _sg_vacuum(x, y, lam):
+    """The vacuum frame Phi0 = exp((i/2)(y/lam - lam x) sigma1) =
+    cos(w) I + i sin(w) sigma1.  For real lam this is in SU(2); at the
+    soliton points lam = i beta the argument w is imaginary and cos/sin
+    become the real cosh/sinh of the soliton phase (beta x + y/beta)/2."""
+    w = 0.5 * (y / lam - lam * x)
+    cw, sw = np.cos(w), np.sin(w)
+    return _m2(w, cw, 1j * sw, 1j * sw, cw)
+
+
+def _sg_dmat(lam, beta, sigma):
+    """The Darboux factor D(lam) = lam I - S with
+    S = i beta [[0, sigma], [conj(sigma), 0]]."""
+    return _m2(sigma, lam, -1j * beta * sigma,
+               -1j * beta * np.conj(sigma), lam)
+
+
+def _sg_sigmas(x, y, betas, charges):
+    """The unimodular Riccati fields sigma_k of the iterated Backlund
+    transformation, one per soliton, plus the worst deviation of |sigma|
+    from 1 (a measurement of the reality theory, not a knob).
+
+    charges[k] = +-1 flips the k-th soliton between kink and antikink by
+    turning the initial vector h0: sigma at the base point is e^{+-i pi/2}.
+    The parity factor eps = (-1)^k compensates the sign the accumulated
+    Darboux factors put in front of the antilinear symmetry
+    h -> sigma1 conj(h), keeping h0 in its fixed set."""
+    for j in range(len(betas)):
+        for k in range(j + 1, len(betas)):
+            if abs(float(betas[j]) - float(betas[k])) < 1e-9:
+                raise ValueError(
+                    f"two solitons share the speed {betas[j]}: the "
+                    f"Darboux factor D(i beta) is singular there and "
+                    f"the permutability construction degenerates.  "
+                    f"Use distinct speeds.")
+    sigs = []
+    dev = 0.0
+    for k, beta in enumerate(betas):
+        lam = 1j * float(beta)
+        M = _sg_vacuum(x, y, lam)
+        for j in range(k):
+            M = _sg_dmat(lam, betas[j], sigs[j]) @ M
+        eps = 1.0 if k % 2 == 0 else -1.0
+        z = np.exp(0.25j * math.pi * charges[k])
+        h1 = M[..., 0, 0] * z + M[..., 0, 1] * (eps * np.conj(z))
+        h2 = M[..., 1, 0] * z + M[..., 1, 1] * (eps * np.conj(z))
+        sig = h1 / h2
+        dev = max(dev, float(np.abs(np.abs(sig) - 1.0).max()))
+        sigs.append(sig / np.abs(sig))
+    return sigs, dev
+
+
+def _sg_eiphi(x, y, betas, charges):
+    """e^{i phi} for the N-soliton angle field, branch-free: each step
+    maps e^{i phi} -> sigma^2 e^{-i phi}.  Used by the window fitter and
+    the self-test (phi itself lives on a 2 pi N winding, so the smooth
+    object is the exponential, not the angle)."""
+    sigs, _ = _sg_sigmas(x, y, betas, charges)
+    c = np.ones(np.shape(x), dtype=complex)
+    for s in sigs:
+        c = s * s * np.conj(c)
+    return c
+
+
+def _multisoliton_xyz(x, y, betas, charges):
+    """Sym's formula for the N-times-transformed frame, telescoped:
+    F = -i(x+y) sigma1 + sum_k Phi_{k-1}(1)^{-1} c_k S_k Phi_{k-1}(1)
+    with c_k = 2/(1 + beta_k^2), projected to R^3 by v_a = Re((i/2)
+    tr(F sigma_a)).  x, y are the ASYMPTOTIC (characteristic)
+    coordinates of the sine-Gordon equation."""
+    sigs, _ = _sg_sigmas(x, y, betas, charges)
+    v1 = np.asarray(x + y, dtype=float).copy()
+    v2 = np.zeros(np.shape(v1))
+    v3 = np.zeros(np.shape(v1))
+    P = _sg_vacuum(x, y, 1.0)
+    for k, beta in enumerate(betas):
+        b = float(beta)
+        S = _m2(sigs[k], 0.0, 1j * b * sigs[k],
+                1j * b * np.conj(sigs[k]), 0.0)
+        R = _m2inv(P) @ S @ P
+        c = 2.0 / (1.0 + b * b)
+        # v_a = Re((i/2) tr(R sigma_a)) per Pauli matrix
+        v1 += c * np.real(0.5j * (R[..., 0, 1] + R[..., 1, 0]))
+        v2 += c * np.real(0.5 * (R[..., 1, 0] - R[..., 0, 1]))
+        v3 += c * np.real(0.5j * (R[..., 0, 0] - R[..., 1, 1]))
+        P = _sg_dmat(1.0, b, sigs[k]) @ P
+    return v1, v2, v3
+
+
+def _soliton_speeds(n, spread):
+    """A geometric ladder of n Backlund speeds centred on 1:
+    beta_k = spread^(k - (n+1)/2).  Any strictly increasing ladder
+    works; the geometric one keeps every consecutive pair at the same
+    ratio, which is the single knob worth exposing."""
+    s = min(max(float(spread), 1.05), 4.0)
+    return [s ** (k - 0.5 * (n - 1)) for k in range(n)]
+
+
+def _soliton_window(betas, charges):
+    """Drawing window in the LAB coordinates xi = x + y, tau = x - y.
+
+    The two directions are bounded by different mathematics, so they
+    are fitted differently:
+
+    tau is the WRAP.  Each kink is a line soliton -- its core extends
+    for ever -- but the vacuum frame Phi0(1) = exp((i/2)(y - x) sigma1)
+    conjugates every soliton's Sym term, rotating it about the axis at
+    exactly unit rate in tau, whatever its speed.  So one full wind of
+    every helical band is one 2 pi span of tau, and a larger window
+    would re-cover the same lobes with overlapping mesh rather than
+    show more surface.  The window takes a whisker more than 2 pi so
+    the bands visibly continue past their seam.
+
+    xi is the EXTENT, and is measured rather than guessed: the density
+    1 - cos(phi) vanishes in the vacuum (phi = 0 mod 2 pi) and reaches
+    2 at a kink core, so its support along the axis is the picture.
+    Fitted because it moves with both the speed ladder and the
+    arrangement -- a fixed window buries a tight ladder in whisker or
+    crops a wide one."""
+    tau = 3.6
+    gx = np.linspace(-16.0, 16.0, 301)
+    gt = np.linspace(-tau, tau, 61)
+    XI, TA = np.meshgrid(gx, gt, indexing='ij')
+    c = _sg_eiphi(0.5 * (XI + TA), 0.5 * (XI - TA), betas, charges)
+    hot = (1.0 - np.real(c)) > 0.4
+    if not hot.any():
+        return -4.0, 4.0, -tau, tau
+    xi = XI[hot]
+    pad = 1.5
+    return (float(xi.min()) - pad, float(xi.max()) + pad, -tau, tau)
+
+
+def _msoliton(count):
+    """Build the preset surface function for the `count`-soliton
+    surface.  U, V arrive NORMALISED to [-1, 1] (like the breather's)
+    and are mapped to the fitted lab-coordinate window, so the mesh axes
+    follow the surface's axis and girth rather than the sine-Gordon
+    characteristics, which run diagonally."""
+    def fn(U, V, twist=0.0, a=0.5, breather_a=0.4, amsler_angle=90.0,
+           soliton_spread=1.8, soliton_cross=False):
+        betas = _soliton_speeds(count, soliton_spread)
+        charges = [(-1.0 if soliton_cross and k % 2 else 1.0)
+                   for k in range(count)]
+        x0, x1, t0, t1 = _soliton_window(betas, charges)
+        xi = 0.5 * (x0 + x1) + 0.5 * (x1 - x0) * U
+        ta = 0.5 * (t0 + t1) + 0.5 * (t1 - t0) * V
+        return _multisoliton_xyz(0.5 * (xi + ta), 0.5 * (xi - ta),
+                                 betas, charges)
+    return fn
 
 
 # --------------------------------------------------------------------------
@@ -363,7 +621,8 @@ def amsler_span(omega0, margin=0.08, r_max=6.0):
     return math.sqrt(max(min(rr, r_max), 1e-6))
 
 
-def _amsler(U, V, twist=0.0, a=0.5, breather_a=0.4, amsler_angle=90.0):
+def _amsler(U, V, twist=0.0, a=0.5, breather_a=0.4, amsler_angle=90.0,
+            soliton_spread=1.8, soliton_cross=False):
     """Amsler's surface on the NORMALISED square U, V in [-1, 1], scaled
     internally to the largest square clear of the cuspidal edges.
 
@@ -429,7 +688,7 @@ def _amsler(U, V, twist=0.0, a=0.5, breather_a=0.4, amsler_angle=90.0):
 
 
 def _kuen(U, V, twist=0.0, a=0.5, breather_a=0.4,
-          amsler_angle=90.0):
+          amsler_angle=90.0, soliton_spread=1.8, soliton_cross=False):
     denom = 1.0 + (U * np.sin(V)) ** 2
     x = 2.0 * (np.cos(U) + U * np.sin(U)) * np.sin(V) / denom
     y = 2.0 * (np.sin(U) - U * np.cos(U)) * np.sin(V) / denom
@@ -460,11 +719,23 @@ PRESETS = {
     # incommensurate frequencies 1 and w = sqrt(1 - b^2).
     'BREATHER': ("Breather Surface", _breather, (-1.0, 1.0),
                  (-1.0, 1.0), False),
+    # normalised squares; _msoliton fits the lab-coordinate window to
+    # the measured support of the solitons (see _soliton_window)
+    'TWO_SOLITON': ("Two-Soliton Surface", _msoliton(2), (-1.0, 1.0),
+                    (-1.0, 1.0), False),
+    'THREE_SOLITON': ("Three-Soliton Surface", _msoliton(3), (-1.0, 1.0),
+                      (-1.0, 1.0), False),
+    'FOUR_SOLITON': ("Four-Soliton Surface", _msoliton(4), (-1.0, 1.0),
+                     (-1.0, 1.0), False),
     # normalised square; _amsler scales it to the largest patch
     # that stays clear of the cuspidal edges for this angle
     'AMSLER': ("Amsler Surface", _amsler, (-1.0, 1.0),
                (-1.0, 1.0), False),
 }
+
+# the presets built from sine-Gordon multisolitons, in one place so the
+# operator's draw() and the self-test agree on which they are
+SOLITON_PRESETS = ('TWO_SOLITON', 'THREE_SOLITON', 'FOUR_SOLITON')
 
 
 def _center(V):
@@ -485,14 +756,15 @@ def _grid_faces(nu, nv, wrap_v):
 
 def build_surface(kind, ures, vres, twist=0.2, scale=1.0,
                   minding_a=0.5, breather_a=0.4,
-                  amsler_angle=90.0):
+                  amsler_angle=90.0, soliton_spread=1.8,
+                  soliton_cross=False):
     label, fn, (u0, u1), (v0, v1), wrap = PRESETS[kind]
     us = np.linspace(u0, u1, ures)
     vs = (np.linspace(v0, v1, vres, endpoint=False) if wrap
           else np.linspace(v0, v1, vres))
     U, Vv = np.meshgrid(us, vs, indexing='ij')
     x, y, z = fn(U, Vv, twist, minding_a, breather_a,
-                 amsler_angle)
+                 amsler_angle, soliton_spread, soliton_cross)
     V = np.stack([x.ravel(), y.ravel(), z.ravel()], axis=-1)
     faces = _grid_faces(ures, vres, wrap)
     return _center(V) * scale, faces
@@ -547,7 +819,7 @@ if _IN_BLENDER:
 
     class MESH_OT_hyperbolic_surface_add(bpy.types.Operator):
         """Add a smooth constant-negative-curvature surface
-        (pseudosphere, Dini or Kuen)"""
+        (pseudosphere, Dini, Kuen, breather or multi-soliton)"""
         bl_idname = "mesh.hyperbolic_surface_add"
         bl_label = "Hyperbolic Surface"
         bl_options = {'REGISTER', 'UNDO'}
@@ -581,6 +853,22 @@ if _IN_BLENDER:
                         "lines cross.  It is the whole parameter: the "
                         "surface is the unique K = -1 surface through "
                         "two lines meeting at this angle")
+        soliton_spread: FloatProperty(
+            name="Speed Ratio", default=1.8, min=1.05, max=3.0,
+            description="Ratio between the speeds of consecutive "
+                        "solitons: values near 1 pack the sheets "
+                        "tightly, larger values pull them apart")
+        soliton_style: EnumProperty(
+            name="Arrangement",
+            description="How the solitons are oriented against each "
+                        "other",
+            items=[('CHAIN', "Chain",
+                    "All solitons oriented alike, strung as a chain of "
+                    "lobes along the axis"),
+                   ('CROSSING', "Crossing",
+                    "Alternating orientations, meeting in a compact "
+                    "crossing at the middle")],
+            default='CHAIN')
         breather_a: FloatProperty(
             name="Breather b", default=0.4, min=0.05, max=0.95,
             description="Breather parameter b in (0, 1): small b gives "
@@ -612,7 +900,9 @@ if _IN_BLENDER:
             verts, faces = build_surface(self.preset, self.ures,
                                          self.vres, self.twist,
                                          self.scale, a, self.breather_a,
-                                         self.amsler_angle)
+                                         self.amsler_angle,
+                                         self.soliton_spread,
+                                         self.soliton_style == 'CROSSING')
             me = bpy.data.meshes.new("HyperbolicSurface")
             me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                            [tuple(int(i) for i in f) for f in faces])
@@ -653,6 +943,9 @@ if _IN_BLENDER:
                 lay.prop(self, 'breather_a')
             if self.preset == 'AMSLER':
                 lay.prop(self, 'amsler_angle')
+            if self.preset in SOLITON_PRESETS:
+                lay.prop(self, 'soliton_spread')
+                lay.prop(self, 'soliton_style')
             if self.preset in ('MINDING_BULGE', 'MINDING_SPINDLE'):
                 lay.prop(self, 'minding_a')
                 if (self.preset == 'MINDING_SPINDLE'
@@ -720,7 +1013,8 @@ def _selftest():
     #    (Dini with twist 0.2 -> -1/(1+0.2^2) = -0.96)
     want = {'PSEUDOSPHERE': -1.0, 'DINI': -1.0 / 1.04, 'KUEN': -1.0,
             'MINDING_BULGE': -1.0, 'MINDING_SPINDLE': -1.0,
-            'BREATHER': -1.0, 'AMSLER': -1.0}
+            'BREATHER': -1.0, 'AMSLER': -1.0, 'TWO_SOLITON': -1.0,
+            'THREE_SOLITON': -1.0, 'FOUR_SOLITON': -1.0}
     for kind in PRESETS:
         fn = PRESETS[kind][1]
         _, _, (u0, u1), (v0, v1), wrap = PRESETS[kind]
@@ -908,6 +1202,116 @@ def _selftest():
         print(f"   straight lines: deviation {su:.1e} / {sv:.1e}, "
               f"crossing angle {got:.4f} deg (want {ang:.1f}) "
               f"{'OK' if ok else 'BAD'}")
+
+    # 5c) MULTISOLITON surfaces (iterated Backlund + Sym).  Five
+    #     instruments, each aimed at a different failure mode:
+    #
+    #     (a) | |sigma| - 1 | BEFORE normalisation.  The reality of the
+    #         Backlund transform is a theorem, not an enforcement: if
+    #         the initial vectors h0 broke the antilinear symmetry the
+    #         Riccati field would leave the unit circle and phi would
+    #         go complex.  Measuring the deviation catches that;
+    #         normalising without measuring would absorb it silently.
+    #     (b) the angle field solves sine-Gordon.  Branch-free, via
+    #         c = e^{i phi}: phi_xy - sin(phi) =
+    #         Im(c_xy/c - c_x c_y/c^2) - Im(c), so the 2 pi N winding
+    #         of phi never touches an arctan.
+    #     (c) the first fundamental form is the Chebyshev net
+    #         E = G = 1, F = cos(phi) -- Theorem 11's (8.16) at
+    #         lambda = 1, and the sharpest full-pipeline check there
+    #         is, since it ties the SURFACE derivatives to the ANGLE
+    #         field point by point.
+    #     (d) K = -1 through the operator-facing preset function,
+    #         window fitting included.
+    #     (e) the winding of phi along a line crossing every soliton,
+    #         and the count of kink cores along it.  An N-soliton that
+    #         silently collapsed to fewer solitons cannot pass either;
+    #         a CROSSING pair is kink + antikink, so its winding is 0
+    #         and the core count still says 2.
+    #
+    #     All derivatives are central differences at random INTERIOR
+    #     points (the endpoint-difference lesson: boundaries report
+    #     their own truncation error, not the surface's).
+    rng2 = np.random.default_rng(20260907)
+    for n, cross in ((2, False), (2, True), (3, False), (4, False)):
+        betas = _soliton_speeds(n, 1.8)
+        charges = [(-1.0 if cross and k % 2 else 1.0) for k in range(n)]
+        tag = f"{n}-soliton {'crossing' if cross else 'chain':8s}"
+
+        gx = np.linspace(-6.0, 6.0, 41)
+        X0, Y0 = np.meshgrid(gx, gx, indexing='ij')
+        _, dev = _sg_sigmas(X0, Y0, betas, charges)
+
+        h = 1e-3
+        xr = rng2.uniform(-2.0, 2.0, 400)
+        yr = rng2.uniform(-2.0, 2.0, 400)
+
+        def C(xx, yy, _b=betas, _c=charges):
+            return _sg_eiphi(xx, yy, _b, _c)
+
+        c0 = C(xr, yr)
+        cx = (C(xr + h, yr) - C(xr - h, yr)) / (2 * h)
+        cy = (C(xr, yr + h) - C(xr, yr - h)) / (2 * h)
+        cxy = (C(xr + h, yr + h) - C(xr + h, yr - h)
+               - C(xr - h, yr + h) + C(xr - h, yr - h)) / (4 * h * h)
+        resid = float(np.abs(np.imag(cxy / c0 - cx * cy / (c0 * c0))
+                             - np.imag(c0)).max())
+
+        def XYZ(xx, yy, _b=betas, _c=charges):
+            return np.stack(_multisoliton_xyz(xx, yy, _b, _c), axis=-1)
+
+        Xu = (XYZ(xr + h, yr) - XYZ(xr - h, yr)) / (2 * h)
+        Xv = (XYZ(xr, yr + h) - XYZ(xr, yr - h)) / (2 * h)
+        E = (Xu * Xu).sum(-1)
+        Fc = (Xu * Xv).sum(-1)
+        G = (Xv * Xv).sum(-1)
+        cheb = max(float(np.abs(E - 1.0).max()),
+                   float(np.abs(G - 1.0).max()),
+                   float(np.abs(Fc - np.real(c0)).max()))
+
+        key = {2: 'TWO_SOLITON', 3: 'THREE_SOLITON',
+               4: 'FOUR_SOLITON'}[n]
+
+        def fnk(uu, vv, tw, aa, ba, _f=PRESETS[key][1], _c=cross):
+            return _f(uu, vv, tw, aa, ba, soliton_cross=_c)
+
+        uu = rng2.uniform(-0.9, 0.9, 400)
+        vv = rng2.uniform(-0.9, 0.9, 400)
+        K = gauss_curvature_param(fnk, uu, vv)
+        K = K[np.isfinite(K)]
+        med = float(np.median(K))
+        q1, q3 = np.percentile(K, [25.0, 75.0])
+
+        t = np.linspace(-60.0, 30.0, 24001)
+        cline = _sg_eiphi(t, 0.6 * t + 12.0, betas, charges)
+        wind = float(np.angle(cline[1:] / cline[:-1]).sum()
+                     / (2.0 * math.pi))
+        w_want = 0.0 if cross and n % 2 == 0 else float(n)
+        hot = (1.0 - np.real(cline)) > 1.5
+        cores = int(np.count_nonzero(hot[1:] & ~hot[:-1])
+                    + (1 if hot[0] else 0))
+
+        ok = (dev < 1e-9 and resid < 1e-4 and cheb < 1e-4
+              and abs(med + 1.0) < 1e-4 and (q3 - q1) < 1e-5
+              and abs(abs(wind) - w_want) < 1e-2 and cores == n)
+        ok_all = ok_all and ok
+        print(f"{tag}: |sigma|-1 {dev:.1e}, sine-Gordon {resid:.1e}, "
+              f"Chebyshev {cheb:.1e} {'OK' if ok else 'BAD'}")
+        print(f"   K median {med:+.7f} IQR {q3 - q1:.1e}, winding "
+              f"{wind:+.3f} (want {w_want:.0f}), cores {cores}/{n} "
+              f"{'OK' if ok else 'BAD'}")
+
+    # equal Backlund speeds make the permutability step singular and
+    # must be refused, not approximated
+    try:
+        _sg_sigmas(np.zeros((2, 2)), np.zeros((2, 2)),
+                   [1.0, 1.0], [1.0, 1.0])
+        guard = False
+    except ValueError:
+        guard = True
+    ok_all = ok_all and guard
+    print(f"soliton guards  : duplicate speed refused "
+          f"{'OK' if guard else 'BAD'}")
 
     # 6) the mesher runs for every preset and produces finite geometry
     for kind in PRESETS:
