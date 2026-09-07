@@ -2799,8 +2799,8 @@ WE_SURFACES['KAPOULEAS'] = {
     'family': 'HIGHER',
     'mesher': we.kap_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Member (1-6 = Weber's k2/k3/k4/k4b/k6/k6b, 7-9 = k8/k10/k12)",
-    'test_order': 2,                             # k = 3, a = 0.14
+    'count': "Member (1-6 = Weber's k6/k6b/k2/k3/k4/k4b, 7-9 = k8/k10/k12)",
+    'test_order': 4,                             # k = 3, a = 0.14
 }
 SURFACE_FAMILY['KAPOULEAS'] = 'HIGHER'
 
@@ -4004,7 +4004,7 @@ def _selftest():
     # with 4 catenoid rims -- at EVERY member, k = 2 included (a
     # first build measured -6 there; the derivation flagged the mesh
     # and the fault was the r0 hole swallowing the z = 1 corner)
-    for order_ in (1, 2, 3, 4):
+    for order_ in (1, 3, 4, 5):
         k_ = we.KAP_MEMBERS[order_ - 1][0]
         V_, F_, _uv = we.kap_mesh(None, 48, 48, order_, 1.2, 1.0)
         chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(

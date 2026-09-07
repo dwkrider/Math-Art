@@ -13793,10 +13793,11 @@ def ww_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 # per-export cutoff radii fitted (r0 ~ 1e-2.4..1e-1.6, r1 ~
 # 1e1.6..1e2.4 -- his exports truncate the ends closer in than the
 # notebook's r0 = 0.01, r1 = 1000 cell).  Orders 1-6 of KAP_MEMBERS
-# are the exported members WITH reference images (k2 a=.22, k3
-# a=.14, k4 a=.07, k4 a=.22, k6 a=.11, k6 a=.27); orders 7-9 (k8
-# a=.1, k10 a=.2, k12 a=.15) have NO exports -- do not register
-# against pictures that do not exist.
+# are the exported members WITH reference images (k6 a=.11, k6
+# a=.27, k2 a=.22, k3 a=.14, k4 a=.07, k4 a=.22 -- the k = 6 pair
+# leads because the page pictures it, so the DEFAULT has a reference
+# image); orders 7-9 (k8 a=.1, k10 a=.2, k12 a=.15) have NO exports
+# -- do not register against pictures that do not exist.
 #
 # References:
 # - N. Kapouleas, "Complete embedded minimal surfaces of finite total
@@ -14025,10 +14026,12 @@ def kap_growth(k, a, b, c, d, t):
 
 
 
-# member knob order: Weber's six exported members first
-# (k=2 a=.22 | k=3 a=.14 | k=4 a=.07 | k=4 a=.22 | k=6 a=.11 |
-#  k=6 a=.27), then one representative per remaining k
-KAP_MEMBERS = ((2, 4), (3, 7), (4, 6), (4, 15), (6, 9), (6, 25),
+# member knob order: Weber's six exported members first, LED by the
+# two k = 6 members his page pictures (k=6 a=.11 | k=6 a=.27 |
+# k=2 a=.22 | k=3 a=.14 | k=4 a=.07 | k=4 a=.22), then one
+# representative per remaining k -- so the bare default reproduces
+# the page's own headline picture
+KAP_MEMBERS = ((6, 9), (6, 25), (2, 4), (3, 7), (4, 6), (4, 15),
                (8, 1), (10, 1), (12, 3))
 
 
