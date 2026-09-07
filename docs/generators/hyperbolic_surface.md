@@ -65,6 +65,11 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/hyperbolic_surface__BREATHER.png" width="200"><br><sub>Breather Surface</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/hyperbolic_surface__TWO_SOLITON.png" width="200"><br><sub>Two-Soliton Surface</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_surface__THREE_SOLITON.png" width="200"><br><sub>Three-Soliton Surface</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_surface__FOUR_SOLITON.png" width="200"><br><sub>Four-Soliton Surface</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/hyperbolic_surface__AMSLER.png" width="200"><br><sub>Amsler Surface</sub></td>
 </tr>
 </table>

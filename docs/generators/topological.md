@@ -74,7 +74,11 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/topological__NONORIENT.png" width="200"><br><sub>Non-Orientable Genus-k</sub></td>
+<td align="center"><img src="../images/variants/topological__DYCK.png" width="200"><br><sub>Dyck's Surface</sub></td>
 <td align="center"><img src="../images/variants/topological__GENUS.png" width="200"><br><sub>Genus-g Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/topological__KLEIN_QUARTIC.png" width="200"><br><sub>Klein Quartic</sub></td>
 <td align="center"><img src="../images/variants/topological__TWIST_STRIP.png" width="200"><br><sub>Twisted Strip (solid)</sub></td>
 </tr>
 </table>

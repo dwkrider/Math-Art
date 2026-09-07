@@ -2041,20 +2041,23 @@ SURFACE_FAMILY['SP_TOROIDAL_KS'] = 'SINGLY'
 # data, the balanced-divisor lesson, the measured no-period identities
 # and the references.  Ships the tau = i (square-torus) member; bb is
 # the growth knob the VMM exhibit exposes.
-# Hackman's toroidal 1-noid: one FindRoot-solved member on the sheared
-# torus tau = t + 2i, t re-derived from the notebook's own period
-# condition WITH the verbatim closed-form Bonnet phase -- see the block
-# above `hackman_W` in weierstrass.py for the data, the refuted phase
-# hypothesis (off by pi + 6e-6: the silent dh sign flip), the measured
-# deck screw (rise k h, rotation -2 pi k) and the references.
+# Hackman screw-motion 1-noids: Michelle Hackman's toroidal 1-noids,
+# the five (k, t1) members Weber's exports picture, each with its
+# period root re-solved from the notebook's own condition WITH the
+# verbatim closed-form Bonnet phase, meshed by the notebook's own
+# elliptic-F domain map and normal-line/screw assembly -- see the
+# block above `hackman_phi` in weierstrass.py for the data, the
+# derived topology (chi = 1 - M, M = k * turns), the registration
+# against Weber's exports (0.22-0.41% RMS, 0.00 deg frame offset)
+# and the references.
 WE_SURFACES['SP_HACKMAN'] = {
-    'label': "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+    'label': "Hackman Screw-Motion 1-Noid",
     'family': 'SINGLY',
     'mesher': we.hackman_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Storeys",
-    'storeys_label': "Storeys",
-    'test_order': 2,
+    'count': "Member (1-2 = k5, t1 1.5/0.4; 3-5 = k3, t1 0.3/1/2)",
+    'storeys_label': "Turns (full screw periods)",
+    'test_order': 1,
 }
 SURFACE_FAMILY['SP_HACKMAN'] = 'SINGLY'
 
@@ -2084,8 +2087,10 @@ SURFACE_FAMILY['DP_LUBECK_BATISTA'] = 'DOUBLY'
 # Scherk's fourth surface (1835, eq. 20): closed-form immersion from
 # Weber's Bjorling recovery -- see the block above `scherk4_mesh` in
 # weierstrass.py for the data, the frame relation to Scherk's own
-# coordinates and the references.  Gated on Scherk's own implicit
-# equation, satisfied pointwise to machine precision.
+# coordinates, the continuation-derived weld table and the references.
+# Gated on Scherk's own implicit equation (pointwise, machine
+# precision, on every assembly copy) AND on the derived topology
+# (1 component, chi = 3 - 2 periods, one boundary loop).
 WE_SURFACES['SP_SCHERK4'] = {
     'label': "Scherk's Fourth Surface (1835)",
     'family': 'SINGLY',
@@ -3833,56 +3838,92 @@ def _selftest():
     print(f"Plane-with-catenoids: square-cell identity (rho = 1, 2) "
           f"worst {r_sq:.1e} {'OK' if good else 'FAIL'}")
 
-    # Hackman gates -- the member and its structure, re-measured:
-    #   1. the period root re-solves to the stored t (bracket +-2%);
+    # Hackman gates -- the family and its structure, re-measured:
+    #   1. every member's period root re-solves to the NOTEBOOK's own
+    #      printed Solutions value (WorkingPrecision -> 6, so 2e-5
+    #      budget for the k=3, t1=2 member, 5e-7 for the rest);
     #   2. the verbatim phase is a PURE phase (imag part of the log
-    #      ~ 0) -- and the refuted hypothesis really is off by pi
-    #      (recorded, so the trap stays documented);
+    #      ~ 0) at every member -- and the refuted batch-5 hypothesis
+    #      really is off by pi (recorded, so the trap stays
+    #      documented);
     #   3. the end loop translates by (0, 0, 0): the catenoid end of
     #      the 1-noid has no period;
     #   4. deck z -> z+1 is pure vertical (0, 0, h); the screw rise is
     #      exactly k h; and the screw offset is base-point-independent
-    #      under the -2 pi k rotation (the rotation is REAL, not
-    #      assumed: with a wrong angle the two bases disagree).
-    lo, hi = 0.98 * we.HACKMAN_T, 1.02 * we.HACKMAN_T
-    fa_, fb_ = (we.hackman_period_residual(lo),
-                we.hackman_period_residual(hi))
-    hk_ok = fa_ * fb_ < 0
-    if hk_ok:
-        a_, b_ = lo, hi
-        for _ in range(50):
-            m_ = 0.5 * (a_ + b_)
-            fm_ = we.hackman_period_residual(m_)
-            if fa_ * fm_ <= 0.0:
-                b_ = m_
-            else:
-                a_, fa_ = m_, fm_
-        t_re = 0.5 * (a_ + b_)
-        r_t = abs(t_re - we.HACKMAN_T)
-        hk_ok &= r_t < 5e-6
-    else:
-        r_t = float('nan')
+    #      under the -2 pi k rotation -- at BOTH a k=5 and a k=3
+    #      member (the rotation is REAL, not assumed);
+    #   5. the conformal chain lands the domain's unit circle on the
+    #      tau/2 midline (mid_err) and the solved member satisfies
+    #      height = k height2 (per_err) -- both ~1e-16;
+    #   6. TOPOLOGY, against the derived target (see hackman_assemble):
+    #      1 component, chi = 1 - M, M + 1 boundary loops for
+    #      M = kpow * turns -- the same numbers Weber's own k=3, t1=1
+    #      export mesh measures (comps=1, chi=-8, loops=10 at M=9);
+    #   7. the assembled extents match Weber's exports (x/z, y/z
+    #      ratios pinned from his dummy.pov meshes, 1% budget);
+    #      registered one-off at 0.22-0.41% RMS of span, 0.00 deg
+    #      frame offset.
+    hk_ok = True
+    r_t = 0.0
+    r_ph = 0.0
+    for kpw_, t1_, _rm, tnb_ in we.HACKMAN_MEMBERS:
+        t_re = we.hackman_solve(kpw_, t1_)
+        dt_ = abs(t_re - tnb_)
+        r_t = max(r_t, dt_)
+        hk_ok &= dt_ < (2e-5 if (kpw_, t1_) == (3, 2.0) else 5e-7)
+        phv_ = we.hackman_phi(complex(t_re, t1_), 1.0 / kpw_)
+        r_ph = max(r_ph, abs(np.imag(phv_)))
+    hk_ok &= r_ph < 1e-10
     tau_ = complex(we.HACKMAN_T, 2.0)
     phv = we.hackman_phi(tau_)
-    r_ph = abs(np.imag(phv))
     sm_ = we._hk_sigma(-we.HACKMAN_K / 2, tau_)
     sp_ = we._hk_sigma(we.HACKMAN_K / 2, tau_)
     hyp = -np.angle(sm_ * sp_)
     d_pi = abs(abs(float(np.real(phv)) - float(hyp)) - np.pi)
-    hk_ok &= r_ph < 1e-10 and d_pi < 1e-4
+    hk_ok &= d_pi < 1e-4
     Whk, _tau, _p = we.hackman_W()
     r_lp = float(np.linalg.norm(we.we_ends_loop(Whk, 0.0, r=0.05)))
     hk_ok &= r_lp < 1e-8
-    vA, riseB, vB1, vB2, _R = we.hackman_deck(n=8001)
-    r_A = float(np.hypot(vA[0], vA[1]) / abs(vA[2]))
-    r_k = abs(riseB - we.HACKMAN_K * vA[2]) / abs(vA[2])
-    r_scr = float(np.linalg.norm(vB1 - vB2) / abs(vA[2]))
-    hk_ok &= r_A < 1e-8 and r_k < 1e-8 and r_scr < 1e-5
+    r_A = r_k = r_scr = 0.0
+    for kpw_, t1_ in ((5, 1.5), (3, 1.0)):
+        k_ = 1.0 / kpw_
+        vA, riseB, vB1, vB2, _R = we.hackman_deck(
+            we.hackman_solve(kpw_, t1_), t1_, k_, n=8001)
+        r_A = max(r_A, float(np.hypot(vA[0], vA[1]) / abs(vA[2])))
+        r_k = max(r_k, abs(riseB - k_ * vA[2]) / abs(vA[2]))
+        r_scr = max(r_scr, float(np.linalg.norm(vB1 - vB2)
+                                 / abs(vA[2])))
+    hk_ok &= r_A < 1e-8 and r_k < 1e-7 and r_scr < 1e-5
+    print(f"Hackman: t re-solve worst {r_t:.1e} (vs notebook "
+          f"Solutions) | phase pure {r_ph:.1e}, hyp off by pi "
+          f"{d_pi:.1e} | end loop {r_lp:.1e} | deck A horiz "
+          f"{r_A:.1e}, rise ratio {r_k:.1e}, screw agree {r_scr:.1e} "
+          f"{'OK' if hk_ok else 'FAIL'}")
+    # ... and the assembly: derived topology + Weber's export extents
+    hk_pins = {(5, 1.5, 0.015): (0.8165, 0.8570),
+               (3, 1.0, 0.1): (0.4105, 0.4703)}
+    for (kpw_, t1_, rm_), (xz_, yz_) in hk_pins.items():
+        Vh, Fh, mm_ = we.hackman_assemble(kpw_, t1_, rm_, turns=3,
+                                          nx1=20, nx2=10, ny=31)
+        M_ = kpw_ * 3
+        chih, nmh, orh, lph, nch = we.sptail_topology(Vh, Fh)
+        topo_ = (nch == 1 and chih == 1 - M_ and lph == M_ + 1
+                 and nmh == 0 and orh)
+        fr_ = we.hackman_frame(kpw_, t1_, rm_, nx1=12, nx2=6, ny=15)
+        exh = Vh.max(axis=0) - Vh.min(axis=0)
+        r_xz = abs(exh[0] / exh[2] - xz_) / xz_
+        r_yz = abs(exh[1] / exh[2] - yz_) / yz_
+        good_ = (topo_ and mm_ < 2e-5 and fr_['mid_err'] < 1e-9
+                 and fr_['per_err'] < 1e-9
+                 and r_xz < 0.01 and r_yz < 0.01)
+        hk_ok &= good_
+        print(f"Hackman k{kpw_} t1={t1_}: comps={nch} chi={chih} "
+              f"(derived {1 - M_}) loops={lph} (derived {M_ + 1}) "
+              f"nonman={nmh} oriented={orh}; welds {mm_:.1e}, "
+              f"mid {fr_['mid_err']:.1e}, period {fr_['per_err']:.1e}"
+              f"; x/z vs export off {r_xz:.1e}, y/z off {r_yz:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
     ok &= hk_ok
-    print(f"Hackman: t re-solve {r_t:.1e} | phase pure {r_ph:.1e}, "
-          f"hyp off by pi {d_pi:.1e} | end loop {r_lp:.1e} | deck A "
-          f"horiz {r_A:.1e}, rise ratio {r_k:.1e}, screw agree "
-          f"{r_scr:.1e} {'OK' if hk_ok else 'FAIL'}")
 
     # Lubeck-Batista gates -- the authors' own period conditions
     # (arXiv:0806.4313), re-derived along the notebook's waypoint
@@ -4223,14 +4264,43 @@ def _selftest():
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20
-    #      (pointwise, through arccosh, both radial regions);
+    #      (pointwise, through arccosh, both radial regions) -- AND
+    #      every ASSEMBLY copy does too (all four mirror/half-turn
+    #      images and the period translates), because a pointwise
+    #      identity is satisfied by the right points in the wrong
+    #      number of pieces: the old assembly shipped 4 disconnected
+    #      patches that passed this same gate;
     #   2. the closed form is consistent with (G, dh);
     #   3. the helicoidal-end loop advances the axis by exactly the
-    #      4 pi assembly period.
+    #      4 pi assembly period;
+    #   4. TOPOLOGY, against the continuation-derived target (see
+    #      scherk4_mesh): 1 component, chi = 3 - 2p, ONE boundary
+    #      loop, edge-manifold, oriented -- at p = 1 (the disc sanity
+    #      case, chi = +1) and p = 3 (the default).
     rr_ = np.exp(np.linspace(np.log(0.15), np.log(2.5), 40))
     th4 = np.linspace(0.15, np.pi - 0.15, 50)
     F4 = we.scherk4_f(rr_[:, None] * np.exp(1j * th4[None, :]))
     r_20 = float(np.max(we.scherk4_eqn20(F4)))
+    per4 = np.array([4.0 * np.pi, 0.0, 0.0])
+    M0_ = np.array([-1.0, 1.0, 1.0])
+    L0_ = np.array([-1.0, 1.0, -1.0])
+    r_20c = 0.0
+    for T_ in (np.ones(3), M0_, L0_, M0_ * L0_):
+        for m_ in (-1, 0, 1):
+            r_20c = max(r_20c, float(np.max(
+                we.scherk4_eqn20(F4 * T_ + m_ * per4))))
+    s4_topo = True
+    for p4_ in (1, 3):
+        V4, Fq4, _uv4 = we.scherk4_mesh(None, 60, 60, 1, 1.2, 1.0,
+                                        storeys=p4_)
+        chi4, nm4, or4, lp4, nc4 = we.sptail_topology(
+            np.asarray(V4), Fq4)
+        good4 = (nc4 == 1 and chi4 == 3 - 2 * p4_ and lp4 == 1
+                 and nm4 == 0 and or4)
+        s4_topo &= good4
+        print(f"Scherk IV p={p4_}: comps={nc4} chi={chi4} (derived "
+              f"{3 - 2 * p4_}) loops={lp4} nonman={nm4} "
+              f"oriented={or4} {'OK' if good4 else 'FAIL'}")
     zs4 = np.array([0.3 + 0.4j, 0.7 + 0.2j, 1.4 + 0.9j])
     h4 = 1e-6
 
@@ -4251,11 +4321,13 @@ def _selftest():
     wind = float(np.trapezoid(
         np.real(2j * 1j * 0.3 * np.exp(1j * t4) / zz4), t4))
     r_wd = abs(abs(wind) - 4.0 * np.pi)
-    good_ = r_20 < 1e-10 and r_om < 1e-8 and r_wd < 1e-9
+    good_ = (r_20 < 1e-10 and r_20c < 1e-7 and r_om < 1e-8
+             and r_wd < 1e-9 and s4_topo)
     ok &= good_
-    print(f"Scherk IV: eqn 20 pointwise {r_20:.1e} | forms "
-          f"consistency {r_om:.1e} | end winding vs 4 pi period "
-          f"{r_wd:.1e} {'OK' if good_ else 'FAIL'}")
+    print(f"Scherk IV: eqn 20 pointwise {r_20:.1e} (all assembly "
+          f"copies {r_20c:.1e}) | forms consistency {r_om:.1e} | "
+          f"end winding vs 4 pi period {r_wd:.1e} "
+          f"{'OK' if good_ else 'FAIL'}")
     # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
     # the deformation is continuous (a small step gives a bounded, non-torn
     # change).  Checked on the closed-form engine associates on a fixed grid

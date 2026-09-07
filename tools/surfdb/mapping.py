@@ -597,6 +597,32 @@ UNVERIFIED = {
     # exactly TWO oriented annuli whose only joining seam is the one
     # that provably does not exist (the gap stays open and measured;
     # the `horgan-surface` record itself remains terminal).
+    # (2026-09, later the same day) A sweep of EVERY zoo row -- which
+    # is what the audit above should have been instead of a six-row
+    # spot check -- found two more piles, both shipped in batch 10 and
+    # never re-checked when the four above were caught.
+    # (2026-09, repair) SP_HACKMAN was parked here as 3 disconnected
+    # patches (chi = +3) whose render did not resemble Weber's, with
+    # a single-t parameterisation where his five exports are (k, t1)
+    # members.  Un-parked after the row was rebuilt from the
+    # notebook: the two parameters are kpow (the screw power -- ends
+    # per turn) and t1 = Im(tau); all five exported members' period
+    # roots re-solve to the notebook's own Solutions cell; the mesh
+    # is the notebook's own elliptic-F domain map + normal-line
+    # half-turn + screw assembly, index-welded; topology matches the
+    # derived chi = 1 - M target AND Weber's own export mesh measures
+    # the same numbers; registration against his exports lands at
+    # 0.22-0.41% RMS of span with zero frame offset.
+    # (2026-09, repair) SP_SCHERK4 was parked here as 4 disconnected
+    # patches (comps = chi = loops = 4) that passed the pointwise
+    # equation-20 gate -- the trap being that a pointwise identity is
+    # satisfied by the right points in the wrong number of pieces.
+    # Un-parked after the assembly was rebuilt from the closed form's
+    # own continuation structure (Schwarz reflection across the planar
+    # symmetry curve, half-turn across the straight line the surface
+    # contains), index-welded, and gated on the DERIVED topology:
+    # 1 component, chi = 3 - 2 periods, ONE boundary loop, oriented,
+    # with equation 20 now checked on every assembly copy too.
 }
 
 
