@@ -820,7 +820,11 @@ def _ms_records():
                     "surfaces with arbitrarily many ends, built by "
                     "desingularizing the circles of intersection of "
                     "coaxial catenoids and planes with bent singly "
-                    "periodic Scherk surfaces."}}),
+                    "periodic Scherk surfaces.  All period problems "
+                    "are solved numerically only (no simple existence "
+                    "proof), as the source page states; the k = 2 "
+                    "member is believed to admit no embedded "
+                    "example."}}),
         },
         "hackman-surfaces": {
             "name": "Hackman Surface (toroidal 1-noid)", "family":

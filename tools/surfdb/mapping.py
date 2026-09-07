@@ -282,6 +282,7 @@ ALIAS = {
     # The Weber-Wolf row's label carries "Surface"; the curated record
     # from the blog pass is keyed without it.
     "minsurf:WEBER_WOLF": "weber-wolf-genus-3-5-ends",
+    "minsurf:KAPOULEAS": "kapouleas-surfaces",
     "tpms_exact:PGD": "pgd-associate-family",
     # The exact-Weierstrass rows added on the minimal-periodic branch.
     # These MUST live here rather than being hand-edited into the record

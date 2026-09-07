@@ -21,7 +21,6 @@
     "def-implicit",
     "def-nodal",
     "def-parametric",
-    "def-variational",
     "def-weierstrass",
     "derived",
     "discrete",
@@ -81,7 +80,7 @@
     "topological"
   ],
   "count": 476,
-  "implemented_count": 446,
+  "implemented_count": 447,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -7224,18 +7223,18 @@
     },
     {
       "slug": "kapouleas-surfaces",
-      "name": "Kapouleas Surface",
+      "name": "Kapouleas Surface (desingularized catenoids)",
       "path": "surfaces/minimal/kapouleas-surfaces.json",
       "primary_family": "minimal",
       "families": [
         "aperiodic",
-        "def-variational",
+        "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
-      "definition_mode": "variational",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 0,
@@ -7250,8 +7249,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {

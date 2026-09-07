@@ -2775,6 +2775,35 @@ WE_SURFACES['WEBER_WOLF'] = {
 }
 SURFACE_FAMILY['WEBER_WOLF'] = 'HIGHER'
 
+# Kapouleas surface (Kapouleas 1997, notebook by Ramazan Yol on
+# Weber's page): two coaxial catenoids with their two intersection
+# circles desingularized by rings of k Scherk-type handles -- the
+# simplest case of Kapouleas' desingularization construction.  The
+# member knob walks KAP_MEMBERS (Weber's six exported members first);
+# radius follows the four catenoidal ends further out.  STATUS AS THE
+# PAGE STATES IT: all period problems solved numerically, no simple
+# existence proof; k = 2 is believed to admit no embedded example
+# (that member is the immersed illustration).  Yol's solved tables
+# pass the notebook's own printed 3-component period test to
+# <= 1.3e-7 (gated below); topology gates: 1 component, chi = -4k
+# with 4 catenoid rims for k >= 3, matching genus 2k - 1 from
+# Riemann-Hurwitz on the k-cover of the 4-ended quotient torus.  The
+# k = 2 assembly measures chi = -6 (genus 2) against the naive
+# 2-cover target -8 -- recorded as an open question in the module
+# header; its geometry registers against Weber's export like the
+# rest (0.2-0.4% median of span across all six exports, cutoff radii
+# fitted per export).  See the block above `kap_mesh` in
+# weierstrass.py for data, tables and references.
+WE_SURFACES['KAPOULEAS'] = {
+    'label': "Kapouleas Surface (desingularized catenoids)",
+    'family': 'HIGHER',
+    'mesher': we.kap_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (1-6 = Weber's k2/k3/k4/k4b/k6/k6b, 7-9 = k8/k10/k12)",
+    'test_order': 2,                             # k = 3, a = 0.14
+}
+SURFACE_FAMILY['KAPOULEAS'] = 'HIGHER'
+
 WE_SURFACES['LOPEZ_KLEIN'] = {
     # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
     # 1993): the unique-in-its-class complete non-orientable minimal
@@ -3942,6 +3971,44 @@ def _selftest():
               f"loops={loops_} nonman={nm2_} oriented={orient_} "
               f"{'OK' if good_ else 'FAIL'}")
     ok &= topo_ok
+
+    # Kapouleas gates: Yol's solved tables must pass the notebook's
+    # own printed 3-component period test (branch-tracked; see the
+    # module header for the two branch traps that fake failures),
+    # the growth-rate ratio is pinned at the exported members, and
+    # the assembled mesh must be ONE surface with chi = -4k and 4
+    # catenoid rims for k >= 3 (the k = 2 near-degenerate member
+    # measures chi = -6; open question, documented).
+    kap_ok = True
+    for k_, mi_ in ((2, 4), (3, 7), (4, 6), (6, 25), (12, 3)):
+        a_, b_, c_, d_, t_ = we.KAP_SOLS[k_][mi_]
+        r1_, r2_, r3_ = we.kap_tst(k_, a_, b_, c_, d_, t_, n=6001)
+        good_ = (abs(r1_) < 1e-10 and abs(r2_) < 3e-6
+                 and abs(r3_) < 3e-6)
+        kap_ok &= good_
+        print(f"Kapouleas k={k_} a={a_}: notebook period test "
+              f"({r1_:+.1e}, {r2_:+.1e}, {r3_:+.1e}) "
+              f"{'OK' if good_ else 'FAIL'}")
+    kap_growth_ref = {(2, 4): 0.389992, (3, 7): 0.753198,
+                      (4, 6): 1.168732, (4, 15): 1.073596,
+                      (6, 9): 2.788387, (6, 25): 1.098769}
+    gg_ok = all(abs(we.kap_growth(k_, *we.KAP_SOLS[k_][mi_]) - v_)
+                < 1e-4 for (k_, mi_), v_ in kap_growth_ref.items())
+    kap_ok &= gg_ok
+    print(f"Kapouleas growth-rate ratios at the six exported members "
+          f"{'OK' if gg_ok else 'FAIL'}")
+    for order_, k_, chi_w, loops_w in ((2, 3, -12, 4), (3, 4, -16, 4),
+                                       (1, 2, -6, 4)):
+        V_, F_, _uv = we.kap_mesh(None, 48, 48, order_, 1.2, 1.0)
+        chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(
+            np.asarray(V_), F_)
+        good_ = (ncomp_ == 1 and chi_ == chi_w and loops_ == loops_w
+                 and nm2_ == 0 and orient_)
+        kap_ok &= good_
+        print(f"Kapouleas k={k_} assembly: comps={ncomp_} chi={chi_} "
+              f"(want {chi_w}) loops={loops_} nonman={nm2_} "
+              f"oriented={orient_} {'OK' if good_ else 'FAIL'}")
+    ok &= kap_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20

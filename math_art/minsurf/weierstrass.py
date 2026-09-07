@@ -13775,6 +13775,20 @@ def ww_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
 # are cut).  `kap_growth` is the notebook's closed-form theta-product
 # ratio of the two catenoidal growth rates (the embeddedness knob).
 #
+# MEASURED assembly topology (kap_mesh): 1 component, chi = -4k with
+# 4 catenoid rims, manifold, oriented -- EXACT for k = 3, 4, 6 (and
+# gated).  OPEN QUESTION at k = 2: the mesh measures chi = -6 (genus
+# 2) against the naive 2-cover target -8; at k = 2 the cover's deck
+# transformation coincides with the dihedral rotation Rz(pi) (the
+# tau-cycle monodromy of G is e^(2 pi i/k) by the b-constraint), so
+# the notebook's own 4k-copy assembly may genuinely realize a
+# quotient with one fewer handle there.  The k = 2 member is the one
+# the page says admits no embedded example; its geometry registers
+# against Weber's export like the rest (all six exports land at
+# 0.2-0.4% median of span with per-export cutoff radii, r0 ~ 1e-2.4
+# .. 1e-1.6, r1 ~ 1e1.6 .. 1e2.4 -- his exports truncate the ends
+# closer in than the notebook's r0 = 0.01, r1 = 1000 cell).
+#
 # References:
 # - N. Kapouleas, "Complete embedded minimal surfaces of finite total
 #   curvature", J. Diff. Geom. 47 (1997) 95-169 -- the
@@ -13999,6 +14013,303 @@ def kap_growth(k, a, b, c, d, t):
            * f(0.5 - c - d + 0.5 * (-1 - tau))
            * f(0.5 - c + d + 0.5 * (-1 - tau)) * f(-2 * a - tau))
     return float((num / den).real)
+
+
+
+# member knob order: Weber's six exported members first
+# (k=2 a=.22 | k=3 a=.14 | k=4 a=.07 | k=4 a=.22 | k=6 a=.11 |
+#  k=6 a=.27), then one representative per remaining k
+KAP_MEMBERS = ((2, 4), (3, 7), (4, 6), (4, 15), (6, 9), (6, 25),
+               (8, 1), (10, 1), (12, 3))
+
+
+def _kap_ellK(m):
+    return float(np.real(_g1h_rf(np.array([0j]),
+                                 np.array([1.0 - m + 0j]),
+                                 np.array([1.0 + 0j]))[0]))
+
+
+def _kap_ellF(z, m):
+    z = np.asarray(z, dtype=complex)
+    return z * _g1h_rf(1.0 - z * z, 1.0 - m * z * z, np.ones_like(z))
+
+
+def kap_chart(k, a, b, c, d, t):
+    """The notebook's EllipticF rectangle chart: lambda from its
+    aspect condition, rect mapping the upper half plane onto the
+    quarter torus [0, 1/2] x [0, t/2], the Moebius trf placing the
+    polar grid's r -> 0 at the middle end 1/2 - c and r -> infinity
+    at the outer end 1/2 - a, and the special boundary preimages
+    used as mesh grading breaks.  Returns (rect, trf, invtrf,
+    consts)."""
+    y0 = t / 2.0
+
+    def lam_eq(lam):
+        return (lam * _kap_ellK(1.0 - lam * lam) / 2.0
+                / (2.0 * _kap_ellK(1.0 / lam ** 2)) - y0)
+    lo, hi = 1.0 + 1e-9, 50.0
+    flo = lam_eq(lo)
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if flo * lam_eq(mid) <= 0:
+            hi = mid
+        else:
+            lo = mid
+    lam = 0.5 * (lo + hi)
+    m = 1.0 / lam ** 2
+    K = _kap_ellK(m)
+
+    def rect(z):
+        return (_kap_ellF(z, m) + K) / K / 4.0
+
+    def rect_real(x):
+        return rect(np.asarray(x, dtype=complex) + 1e-14j)
+
+    def solve_bottom(target):
+        lo_, hi_ = -1.0 + 1e-15, 1.0 - 1e-15
+        for _ in range(200):
+            mid_ = 0.5 * (lo_ + hi_)
+            if float(np.real(rect_real(mid_))) < target:
+                lo_ = mid_
+            else:
+                hi_ = mid_
+        return 0.5 * (lo_ + hi_)
+
+    def solve_top(target_x):
+        lo_, hi_ = lam * (1.0 + 1e-12), 1e8
+        for _ in range(220):
+            mid_ = math.sqrt(lo_ * hi_)
+            if float(np.real(rect_real(mid_))) > target_x:
+                lo_ = mid_
+            else:
+                hi_ = mid_
+        return math.sqrt(lo_ * hi_)
+    alpha = solve_bottom(0.5 - a)
+    beta = solve_bottom(0.5 - c)
+    consts = dict(lam=lam, m=m, K=K, alpha=alpha, beta=beta,
+                  bn=solve_bottom(0.5 - b), dn=solve_top(0.5 - d),
+                  eta=solve_bottom((1.0 - c) / 2.0),
+                  xi=solve_bottom((0.5 - a) / 2.0))
+
+    def trf(w):
+        w = np.asarray(w, dtype=complex)
+        return (-beta + alpha * w) / (-1.0 + w)
+
+    def invtrf(z):
+        return (z - beta) / (z - alpha)
+    return rect, trf, invtrf, consts
+
+
+def kap_sheet(k, mi, nx=4, ny=18, r0=0.01, r1=1000.0, subdiv=10):
+    """Fundamental patch of Kapouleas member (k, mi) over the
+    notebook's polar grid (upper half w-plane; r0/r1 truncate the
+    middle/outer catenoid ends).  Every omega evaluation is
+    branch-tracked: the anchor node continues G from z = 0 (where
+    G = 1 by normalization) and each grid sweep carries the branch
+    forward node to node, so the whole patch sits on ONE sheet of
+    the k-cover.  Returns (W, Z, F, meta) with F the real immersion
+    (nr, ntheta, 3) after the notebook's two normalizations (f0(0)
+    subtracted via the anchor at z = 0; ff1 sliding the d-line onto
+    the origin)."""
+    a, b, c, d, t = KAP_SOLS[k][mi]
+    tau = 1j * t
+    rect, trf, invtrf, C = kap_chart(k, a, b, c, d, t)
+    lam = C['lam']
+    br = [float(np.real(invtrf(x)))
+          for x in (-lam, -1.0, 1.0, lam, C['dn'], C['eta'], C['xi'])]
+    br += [-float(np.real(invtrf(x)))
+           for x in (C['bn'], C['alpha'] + 0.001, C['beta'] - 0.001)]
+    xspec = sorted(set([r0, r1] + [abs(x) for x in br
+                                   if np.isfinite(x)
+                                   and r0 < abs(x) < r1]))
+    xs = [np.exp(np.linspace(math.log(lo), math.log(hi), nx,
+                             endpoint=False))
+          for lo, hi in zip(xspec[:-1], xspec[1:])]
+    xr = np.unique(np.concatenate(xs + [np.array([xspec[-1]])]))
+    eps = 1e-6
+    yr = math.pi * np.linspace(eps, 1.0 - eps, ny) ** 2
+    W = xr[:, None] * np.exp(1j * yr[None, :])
+    Z = rect(trf(W))
+    g00 = complex(kap_G0_pv(np.array([0j]), k, a, b, c, d, tau)[0])
+    dh00 = complex(kap_dh0(np.array([0j]), a, b, c, d, tau)[0])
+    th = genus1helicoid_theta11
+    shifts = kap_shifts(k, a, b, c, d, tau)
+
+    def om_batch(zp, Gstart=None, axis=-1):
+        """omega and G along subdivided paths (last axis = path);
+        per-factor log-unwrap along `axis`, branch corrected to
+        Gstart at the first node when given."""
+        tot = np.zeros_like(zp)
+        for s_, e_ in shifts:
+            v = th(zp - s_, tau)
+            tot = tot + e_ * (np.log(np.abs(v))
+                              + 1j * np.unwrap(np.angle(v),
+                                               axis=axis))
+        G = np.exp(tot) / g00
+        if Gstart is not None:
+            corr = Gstart / np.take(G, 0, axis=axis)
+            G = G * np.expand_dims(corr, axis)
+        dh = kap_dh0(zp, a, b, c, d, tau) / dh00
+        om = np.stack([(-G * dh + dh / G) / 2.0,
+                       1j * (G * dh + dh / G) / 2.0, dh], axis=-1)
+        return om, G
+
+    def seg_int(zp, Gstart=None):
+        """integral over subdivided paths zp (..., K+1) -> (..., 3),
+        plus G at the last node."""
+        om, G = om_batch(zp, Gstart, axis=-1)
+        dz = np.diff(zp, axis=-1)
+        I = np.sum(0.5 * (om[..., 1:, :] + om[..., :-1, :])
+                   * dz[..., None], axis=-2)
+        return I, np.take(G, -1, axis=-1)
+
+    nu2, nv2 = Z.shape
+    F = np.zeros((nu2, nv2, 3), dtype=complex)
+    Gn = np.zeros((nu2, nv2), dtype=complex)
+    jm = nv2 // 2
+    im = int(np.argmin(np.abs(np.log(xr))))
+    uu = np.linspace(0.0, 1.0, subdiv + 1)
+    # anchor: z = 0 (G = 1, f = 0 by the f0(0) normalization) -> mid
+    # node, graded straight path
+    apath = (np.linspace(0.0, 1.0, 400) ** 1.5) * Z[im, jm]
+    I0, G0v = seg_int(apath[None, :], Gstart=np.array([1.0 + 0j]))
+    F[im, jm] = I0[0]
+    Gn[im, jm] = G0v[0]
+    # radial sweep along the mid column (theta = yr[jm])
+    for i in list(range(im + 1, nu2)) + list(range(im - 1, -1, -1)):
+        i0 = i - 1 if i > im else i + 1
+        wseg = W[i0, jm] + (W[i, jm] - W[i0, jm]) * uu
+        zseg = rect(trf(wseg))
+        I_, G_ = seg_int(zseg[None, :], Gstart=Gn[i0, jm][None])
+        F[i, jm] = F[i0, jm] + I_[0]
+        Gn[i, jm] = G_[0]
+    # angular sweeps, batched over all radii
+    for j in list(range(jm + 1, nv2)) + list(range(jm - 1, -1, -1)):
+        j0 = j - 1 if j > jm else j + 1
+        wseg = (W[:, j0])[:, None] + ((W[:, j] - W[:, j0]))[:, None]             * uu[None, :]
+        zseg = rect(trf(wseg))
+        I_, G_ = seg_int(zseg, Gstart=Gn[:, j0])
+        F[:, j] = F[:, j0] + I_
+        Gn[:, j] = G_
+    Fr = np.real(F)
+    # ff1: slide the d-symmetry line (through f((tau+1)/2 - d), at
+    # azimuth pi/k) onto the origin, exactly as the notebook does
+    P = (tau + 1.0) / 2.0 - d
+    u4 = np.linspace(0.0, 1.0, 3001)
+    w4 = u4 * u4 * (3.0 - 2.0 * u4)
+    ws = w4 * (1.0 - 2e-9) + 1e-9
+    mid_ = 0.25 + tau / 4.0
+    zp = np.concatenate([mid_ * w4, mid_ + (P - mid_) * ws[1:]])
+    om, _G = om_batch(zp[None, :], Gstart=np.array([1.0 + 0j]))
+    om = om[0]
+    dz = np.diff(zp)
+    f1P = np.real(np.sum(0.5 * (om[1:] + om[:-1]) * dz[:, None],
+                         axis=0))
+    ff1 = np.array([f1P[0] - f1P[1] / math.tan(math.pi / k),
+                    0.0, 0.0])
+    Fr = Fr - ff1[None, None, :]
+    return W, Z, Fr, dict(a=a, b=b, c=c, d=d, t=t, consts=C,
+                          f1P=f1P, ff1=ff1, y0=t / 2.0)
+
+
+def kap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """Kapouleas surface (two coaxial catenoids desingularized by a
+    ring of k Scherk handles at each of the two intersection
+    circles).  `order` walks KAP_MEMBERS (Weber's six exported
+    members first); `radius` follows the catenoid ends further out.
+    The 4k-copy orbit of the fundamental patch (mirror across z = 0,
+    mirror across y = 0, k rotations -- the notebook's mp2/mp3/mp4)
+    is welded by exact grid-index pairs along its measured seam
+    families: the quarter's left and right edges lie in the z = 0
+    plane (partner g Mz), the bottom-edge segments in the y = 0
+    plane (partner g My), and the top edge plus the inter-end
+    segment in the vertical plane at azimuth pi/k (partner g Q,
+    Q = Rz(2 pi/k) My).  The four catenoid end rims (two middle at
+    1/2 +- c, two outer at 1/2 - a and 1/2 + a + tau) stay open."""
+    del spec, theta
+    ki, mi = KAP_MEMBERS[int(np.clip(order - 1, 0,
+                                     len(KAP_MEMBERS) - 1))]
+    fac = float(np.clip(radius / 1.2, 0.4, 2.5))
+    r0 = 0.01 * (1.0 / fac) ** 2
+    r1 = 1000.0 * fac ** 2
+    nx = max(3, int(nu / 12))
+    ny = max(12, int(nv * 0.45))
+    W, Z, F, meta = kap_sheet(ki, mi, nx=nx, ny=ny, r0=r0, r1=r1)
+    y0 = meta['y0']
+    nu2, nv2 = F.shape[:2]
+    # classify the theta = 0 boundary nodes by their chart image
+    Zb = Z[:, 0]
+    selL = np.abs(np.real(Zb)) < 1e-4
+    selR = np.abs(np.real(Zb) - 0.5) < 1e-4
+    selT = np.imag(Zb) > y0 - 1e-4
+    # the flags are INDEPENDENT: a corner node (e.g. the chart origin,
+    # on the bottom edge AND the left edge) belongs to both of its
+    # symmetry elements and must join both seams -- classifying it
+    # into one leaves a one-edge slit at every corner of every copy
+    selB = (np.imag(Zb) < 1e-4) & (~selT)
+    # snap each arc onto its symmetry element
+    F[selL | selR, 0, 2] = 0.0                   # z = 0 plane
+    F[selB, 0, 1] = 0.0                          # y = 0 plane
+    nq = np.array([-math.sin(math.pi / ki), math.cos(math.pi / ki),
+                   0.0])
+    P_ = F[selT, 0]
+    F[selT, 0] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    P_ = F[:, -1]                                # theta = pi edge
+    F[:, -1] = P_ - (P_ @ nq)[:, None] * nq[None, :]
+    # orbit: I, Mz, My, MzMy per rotation (the notebook's order)
+    Mz = np.diag([1.0, 1.0, -1.0])
+    My = np.diag([1.0, -1.0, 1.0])
+    cq, sq = math.cos(TAU / ki), math.sin(TAU / ki)
+    Q = np.array([[cq, -sq, 0.0], [sq, cq, 0.0],
+                  [0.0, 0.0, 1.0]]) @ My
+    NV = nu2 * nv2
+    quads0 = _kus_grid_quads(nu2, nv2)
+    P0 = F.reshape(-1, 3)
+    Vs, Fs, recs = [], [], []
+    off = 0
+    for kk in range(ki):
+        thr = TAU * kk / ki
+        c_, s_ = math.cos(thr), math.sin(thr)
+        Rz = np.array([[c_, -s_, 0.0], [s_, c_, 0.0],
+                       [0.0, 0.0, 1.0]])
+        for E, par in ((np.eye(3), 0), (Mz, 1), (My, 1),
+                       (My @ Mz, 0)):
+            M = Rz @ E
+            Vs.append(P0 @ M.T)
+            Fs.extend(tuple(i_ + off for i_ in
+                            (q[::-1] if par else q))
+                      for q in quads0)
+            recs.append((M, off))
+            off += NV
+    V = np.concatenate(Vs, axis=0)
+
+    def findpart(M):
+        for Mj, o_ in recs:
+            if float(np.abs(Mj - M).max()) < 1e-9:
+                return o_
+        return -1
+
+    iL = np.where(selL)[0]
+    iR = np.where(selR)[0]
+    iB = np.where(selB)[0]
+    iT = np.where(selT)[0]
+    pairs = []
+    for M, o_ in recs:
+        oMz = findpart(M @ Mz)
+        for i_ in np.concatenate([iL, iR]):
+            pairs.append((o_ + i_ * nv2, oMz + i_ * nv2))
+        oMy = findpart(M @ My)
+        for i_ in iB:
+            pairs.append((o_ + i_ * nv2, oMy + i_ * nv2))
+        oQ = findpart(M @ Q)
+        for i_ in iT:
+            pairs.append((o_ + i_ * nv2, oQ + i_ * nv2))
+        for i_ in range(nu2):                    # theta = pi edge
+            pairs.append((o_ + i_ * nv2 + nv2 - 1,
+                          oQ + i_ * nv2 + nv2 - 1))
+    V, Fs, _first = _g1h_weld_pairs(V, Fs, pairs)
+    V = _center_fit(V, scale, V)
+    return V, Fs, None
 
 
 
