@@ -82,12 +82,18 @@ TPMS = [
      "Disphenoid surface with equal-length C2 axes."),
 ]
 
+# Two names that were in the Wayback index of Weber's dead archive have
+# been REMOVED rather than carried as records:
+#   weber-bc2 -- a folder name and nothing else.  No chapter, notebook,
+#     paper or datafile ever surfaced; there was nothing to build from
+#     and nothing to say about it beyond its own absence.
+#   weber-tr  -- the same surface as `weber-trr`, which ships.
+#     Fujimori-Weber's Table 1 lists only T'-R' genus 6, so the index
+#     name was a second label for a row already present.
 WEBER_ARCHIVE = [
     ("weber-rpd", "Weber rPD Surface"),
-    ("weber-bc2", "Weber BC2 Surface"),
     ("weber-fr-d", "Weber FR-D Surface"),
     ("weber-h2r", "Weber H-double-prime-R Surface"),
-    ("weber-tr", "Weber T-prime-R Surface"),
     ("weber-trr", "Weber T-prime-R-prime Surface"),
     ("triply-periodic-costa", "Triply Periodic Costa Surface"),
     ("neovius-sym3", "Neovius-sym3 Surface"),

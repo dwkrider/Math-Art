@@ -592,10 +592,6 @@ NOT_A_GAP = {
         ("bookkeeping", "k = 3 of the shipped non-orientable genus-k row."),
     # EXISTENCE UNSETTLED.  Research questions, not implementation work.
     # NO SOURCE ANYWHERE.  Not "not built yet" -- nothing to build from.
-    "weber-bc2":
-        ("no-source", "A folder name recovered from the Wayback index of "
-                      "Weber's dead archive.  No chapter, no notebook, no "
-                      "paper, no datafile -- the name is all that survives."),
     "neovius-sym3":
         ("no-source", "A folder name recovered from the Wayback index of "
                       "Weber's dead archive; no chapter, notebook, paper "
@@ -623,9 +619,6 @@ NOT_A_GAP = {
                         "producing an equation.  Reopen if anyone "
                         "computes one."),
     # DUPLICATES AND FAMILY RECORDS.
-    "weber-tr":
-        ("bookkeeping", "The same surface as `weber-trr`, which ships: "
-                        "Fujimori-Weber's Table 1 lists only T'-R' genus 6."),
     "fujimori-weber":
         ("bookkeeping", "Not a surface -- a family/method whose ten members "
                         "map onto six that already ship (P, H, S'-S'', "
