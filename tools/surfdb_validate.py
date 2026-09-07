@@ -616,27 +616,10 @@ NOT_A_GAP = {
                       "anywhere on disk, so there is still nothing to "
                       "build FROM.  Distinct from Schoen C(H), which "
                       "6.1.5 derives differently and which ships."),
-    # PROVED TO EXIST, BUT NO EXPLICIT EQUATION.  The source is
-    # definitive and says so -- the surface is not missing, its
-    # polynomial is, because the proof never writes one down.
-    "kuehnel-octic-128-nodes":
-        ("no-equation", "Kuehnel's octic is proved to exist as the branch "
-                        "locus of an anticanonical double cover of P(E), "
-                        "with E from the Serre construction on a degree-8 "
-                        "elliptic curve; the key steps are verified in "
-                        "MACAULAY on the abstract ideal and the degree-8 "
-                        "polynomial is never written down.  Nothing to "
-                        "transcribe: the paper settles existence without "
-                        "producing an equation.  Reopen if anyone "
-                        "computes one."),
     # DUPLICATES AND FAMILY RECORDS.
     "weber-tr":
         ("bookkeeping", "The same surface as `weber-trr`, which ships: "
                         "Fujimori-Weber's Table 1 lists only T'-R' genus 6."),
-    "fujimori-weber":
-        ("bookkeeping", "Not a surface -- a family/method whose ten members "
-                        "map onto six that already ship (P, H, S'-S'', "
-                        "H'-T, H''-R, T'-R')."),
     # NO DATAFILE EVER EXISTED.  Brakke's starfish page names these
     # members; the recovered tarball carries only the eight that shipped
     # plus the three he annotates as failing.  Nothing was ever published

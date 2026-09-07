@@ -504,25 +504,6 @@ def _vmm_minimal_records():
                     "the projective-plane family, which has its own record "
                     "(kusner-projective-plane-p-planar-ends)."}}),
         },
-        "fujimori-weber": {
-            "name": "Fujimori-Weber Surface", "family": "minimal-periodic",
-            "mode": "weierstrass",
-            "blocked_by": VMM_BLOCKED + (
-                "  The exhibit page shows the basic family in images only, "
-                "with no prose; the identification below rests on the "
-                "exhibit's own attribution."),
-            "resume": VMM_RESUME,
-            "sources": [
-                _vmm_src("ch038_fujimori_weber", "Fujimori-Weber"),
-                "S. Fujimori and M. Weber, 'Triply periodic minimal "
-                "surfaces bounded by vertical symmetry planes', "
-                "Manuscripta Math. 129 (2009) 29-53."],
-            "extra": _deep(_SPACE, {"ids": {"vmm": "ch038_fujimori_weber"},
-                "definition": {"note":
-                    "3DXM's exhibit of the triply periodic minimal "
-                    "surfaces constructed by Shoichi Fujimori and Matthias "
-                    "Weber, shown as a morphing basic family."}}),
-        },
     }
 
 

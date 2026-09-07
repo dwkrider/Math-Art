@@ -80,7 +80,7 @@
     "swept",
     "topological"
   ],
-  "count": 477,
+  "count": 475,
   "implemented_count": 457,
   "entries": [
     {
@@ -5429,39 +5429,6 @@
       "specimen_count": 0
     },
     {
-      "slug": "fujimori-weber",
-      "name": "Fujimori-Weber Surface",
-      "path": "surfaces/minimal-periodic/fujimori-weber.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "minimal",
-        "minimal-periodic",
-        "not-implemented",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
-    },
-    {
       "slug": "gabriels-horn",
       "name": "Gabriel's Horn",
       "path": "surfaces/revolution/gabriels-horn.json",
@@ -7676,38 +7643,6 @@
       "operator_ids": [
         "mesh.periodic_minimal_add"
       ],
-      "specimen_count": 0
-    },
-    {
-      "slug": "kuehnel-octic-128-nodes",
-      "name": "Kuehnel Octic (128 nodes)",
-      "path": "surfaces/algebraic/kuehnel-octic-128-nodes.json",
-      "primary_family": "algebraic",
-      "families": [
-        "algebraic",
-        "aperiodic",
-        "def-implicit",
-        "not-implemented",
-        "singular",
-        "tradition-classical"
-      ],
-      "definition_mode": "implicit",
-      "has_approximation": false,
-      "curvature_condition": "none",
-      "periodicity_rank": 0,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "singular",
-      "symmetry": {
-        "kind": "none",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
       "specimen_count": 0
     },
     {
