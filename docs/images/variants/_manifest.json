@@ -466,7 +466,7 @@
   ],
   [
    "SP_HACKMAN",
-   "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+   "Hackman Screw-Motion 1-Noid",
    "Singly Periodic"
   ],
   [
@@ -507,6 +507,11 @@
   [
    "SP_SCHERK_ENNEPER",
    "Scherk-Enneper",
+   "Singly Periodic"
+  ],
+  [
+   "LM_SLAB",
+   "Lopez-Martin Slab Surface",
    "Singly Periodic"
   ],
   [
@@ -626,7 +631,7 @@
   ],
   [
    "DP_LUBECK_BATISTA",
-   "Lubeck-Batista Surface (genus 3, tau = i member)",
+   "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
    "Doubly Periodic"
   ],
   [
@@ -637,6 +642,16 @@
   [
    "DP_PLANE_CATENOIDS",
    "Plane with Catenoids (square lattice)",
+   "Doubly Periodic"
+  ],
+  [
+   "KARCHER_JD",
+   "Karcher JD Saddle Tower",
+   "Doubly Periodic"
+  ],
+  [
+   "KARCHER_JE",
+   "Karcher JE Saddle Tower",
    "Doubly Periodic"
   ],
   [
@@ -910,6 +925,11 @@
    "TPMS Cubic"
   ],
   [
+   "STARFISH_2_4_GENUS_79",
+   "Starfish 2-4 (genus 79)",
+   "TPMS Cubic"
+  ],
+  [
    "STARFISH_3_1_GENUS_43",
    "Starfish 3-1 (genus 43)",
    "TPMS Cubic"
@@ -925,6 +945,11 @@
    "TPMS Cubic"
   ],
   [
+   "STARFISH_3_4_GENUS_91",
+   "Starfish 3-4 (genus 91)",
+   "TPMS Cubic"
+  ],
+  [
    "STARFISH_4_1_GENUS_55",
    "Starfish 4-1 (genus 55)",
    "TPMS Cubic"
@@ -932,6 +957,26 @@
   [
    "STARFISH_4_3_GENUS_87",
    "Starfish 4-3 (genus 87)",
+   "TPMS Cubic"
+  ],
+  [
+   "STARFISH_4_4_GENUS_103",
+   "Starfish 4-4 (genus 103)",
+   "TPMS Cubic"
+  ],
+  [
+   "STARFISH_5_1_GENUS_67",
+   "Starfish 5-1 (genus 67)",
+   "TPMS Cubic"
+  ],
+  [
+   "STARFISH_5_2_GENUS_83",
+   "Starfish 5-2 (genus 83)",
+   "TPMS Cubic"
+  ],
+  [
+   "STARFISH_5_4_GENUS_115",
+   "Starfish 5-4 (genus 115)",
    "TPMS Cubic"
   ],
   [

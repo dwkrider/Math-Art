@@ -1,21 +1,22 @@
 {
   "schema_version": "0.1.0",
   "slug": "schoen-tw",
-  "name": "Schoen TW Family Surface",
+  "name": "Schoen-Karcher T-Wp (hexagonal wrapped package)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
     "minimal-periodic",
-    "not-implemented",
     "tradition-crystallographic",
     "triply-periodic"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
+    "exactness": "numerical-integral",
+    "scale": "unit_cell",
     "note": "A hexagonal triply periodic minimal surface family that 3DXM exhibits as 'A Schoen TW Family': Karcher's T-Wp ('wrapped package') surface, made in Schoen's spirit but not in the NASA report; the alpha = beta = 60-degree member of the conjugate-contour family whose 45-degree member is I-WP."
   },
   "curvature": {
@@ -37,14 +38,23 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.  NAMING RESOLVED: 'TW' is NOT an entry of the NASA catalogue.  3DXM's own companion text (FourTriplyPeriod.pdf, mirrored beside the exhibit) states the T-W surface 'is not in his list, but made in his spirit', living in a hexagonal prism with an order-6 quotient group (a 120-degree rotation plus three orthogonal 180-degree axes); it is Karcher's T-Wp surface (Manuscripta Math. 64 (1989) sections 5.3.3/5.4.4), the alpha = beta = 60-degree member of the two-angle conjugate-contour family whose 45-degree diagonal member is I-WP (section 6.2), Gauss map degree 4 (genus 5 per cell).  Construction attempted (2026-09) by the conjugate-Plateau route with the 45-degree member gated against the shipped Evolver I-WP cell: three readings of Karcher's fig. 5.3.3 brick contour were eliminated by measurement (one generates a provably non-discrete mirror arrangement; two build valid TPMS whose mirror placements and cross-sections are measurably not I-WP), so the contour transcription, not the machinery, is what remains open.",
-      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md.  Resume by extracting the direct fundamental hexagon (arc planes AND arc lengths -- conjugation preserves boundary lengths) from the shipped I-WP Evolver cell, then transposing to the hexagonal prism."
+      "generator": "math_art.minsurf.tpms",
+      "operator_id": "mesh.periodic_minimal_add",
+      "family": "TPMS_EXACT",
+      "key": "TWP_CONJ",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
+      "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970).  [O,C-TO]",
+      "H. Karcher, \"The triply periodic minimal surfaces of Alan Schoen and their constant mean curvature companions\", Manuscripta Math. 64 (1989) 291-357.  doi:10.1007/BF01165824  [K surface]",
+      "H. G. von Schnering and R. Nesper, \"Nodal surfaces of Fourier series: fundamental invariants of structured matter\",",
+      "Z. Phys. B Condensed Matter 83 (1991) 407-412. doi:10.1007/BF01313411  [C(D), C(Y), +-Y, C(+-Y), S nodal forms]",
+      "H. G. von Schnering, M. Oehme, G. Rudolf, \"Three-dimensional periodic nodal surfaces which envelope the threefold and fourfold cubic rod packings\", Acta Chem. Scand. 45 (1991) 873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]",
+      "M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, \"Triply periodic bicontinuous cubic microdomain morphologies by symmetries\", Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499 [O,C-TO (OCTO), G', F-RD variant]",
       "The 3DXM Consortium, 'A Schoen TW Family', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch037_schoen_tw.md).",
       "A. H. Schoen, 'Infinite periodic minimal surfaces without self-intersections', NASA Technical Note TN D-5541 (1970).",
       "H. Karcher, 'The triply periodic minimal surfaces of Alan Schoen and their constant mean curvature companions', Manuscripta Math. 64 (1989) 291-357, sections 5.3.3/5.4.4 (T-Wp) and 6.2 (the two-angle family joining it to I-WP)."
@@ -59,7 +69,7 @@
   "ids": {
     "vmm": "ch037_schoen_tw"
   },
-  "named_after": "Schoen",
+  "named_after": "Karcher, Schoen",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

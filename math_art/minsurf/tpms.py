@@ -1158,6 +1158,17 @@ TPMS_EXACT = {
     'HR_TR_CONJ': (_pl.CONJUGATE_SURFACES['HR_TR']['name'] + " (relaxed)",
                    lambda cells, res, scale, theta:
                        _pl.conjugate_build('HR_TR', cells, res, scale, theta)),
+    # Karcher's T-Wp, the hexagonal-cell analog of I-WP (3DXM's "A
+    # Schoen TW Family") -- the alpha = beta = 60-degree member of the
+    # two-angle conjugate-contour family whose 45-degree member is
+    # I-WP.  Not in the NASA catalogue ("made in his spirit"); the
+    # contour was measured off an Evolver run of Brakke's IWP.fe and
+    # transposed, and both members are gated on folded Euler
+    # characteristic (-8 at 60, genus 5; -12 at 45).  See the block
+    # above `twp_poly` in plateau.
+    'TWP_CONJ': (_pl.CONJUGATE_SURFACES['TWP']['name'] + " (relaxed)",
+                 lambda cells, res, scale, theta:
+                     _pl.conjugate_build('TWP', cells, res, scale, theta)),
 }
 
 # Rows read straight out of Ken Brakke's Evolver datafiles.  The contour,

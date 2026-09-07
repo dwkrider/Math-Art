@@ -563,20 +563,23 @@ def _vmm_tpms_records():
                 "5.3.3/5.4.4), the alpha = beta = 60-degree member of "
                 "the two-angle conjugate-contour family whose 45-degree "
                 "diagonal member is I-WP (section 6.2), Gauss map degree "
-                "4 (genus 5 per cell).  Construction attempted "
-                "(2026-09) by the conjugate-Plateau route with the "
-                "45-degree member gated against the shipped Evolver I-WP "
-                "cell: three readings of Karcher's fig. 5.3.3 brick "
-                "contour were eliminated by measurement (one generates a "
-                "provably non-discrete mirror arrangement; two build "
-                "valid TPMS whose mirror placements and cross-sections "
-                "are measurably not I-WP), so the contour transcription, "
-                "not the machinery, is what remains open."),
+                "4 (genus 5 per cell).  RESOLVED (2026-09): the "
+                "tpms_exact:TWP_CONJ row now builds it by the "
+                "conjugate-Plateau route.  The contour was MEASURED, not "
+                "transcribed -- the (45,90,90,45,90,90) fundamental "
+                "hexagon was cut out of a converged Surface Evolver run "
+                "of Brakke's IWP.fe, and conjugation's boundary-length "
+                "preservation forced the closed brick hexagon of "
+                "Karcher's fig. 5.3.3 exactly; transposing the two "
+                "alpha-corners to 60 degrees gives T-Wp.  (Three earlier "
+                "readings of the printed figure were eliminated by "
+                "measurement first; the sketch was the wrong source, the "
+                "surface itself the right one.)  This claim is "
+                "superseded once the row emits."),
             "resume": VMM_RESUME + (
-                "  Resume by extracting the direct fundamental hexagon "
-                "(arc planes AND arc lengths -- conjugation preserves "
-                "boundary lengths) from the shipped I-WP Evolver cell, "
-                "then transposing to the hexagonal prism."),
+                "  The row ships; see the block above `twp_poly` in "
+                "math_art/minsurf/plateau.py for the construction and "
+                "its gates."),
             "sources": [_vmm_src("ch037_schoen_tw", "A Schoen TW Family"),
                         SCHOEN_NASA,
                         "H. Karcher, 'The triply periodic minimal "
