@@ -579,13 +579,18 @@ UNVERIFIED = {
     # is what the audit above should have been instead of a six-row
     # spot check -- found two more piles, both shipped in batch 10 and
     # never re-checked when the four above were caught.
-    "minsurf:SP_HACKMAN":
-        "Assembly is 3 disconnected patches (chi = +3) at storeys=3, "
-        "and the render does not resemble Weber's.  His exports are "
-        "(k, t1) members -- k=3 at t1=0.3/1.0/2.0, k=5 at t1=0.4/1.5 "
-        "-- while this row exposes a single t and no k, so the "
-        "parameterisation is likely wrong as well as the assembly.  "
-        "The exports were on disk throughout and were never used.",
+    # (2026-09, repair) SP_HACKMAN was parked here as 3 disconnected
+    # patches (chi = +3) whose render did not resemble Weber's, with
+    # a single-t parameterisation where his five exports are (k, t1)
+    # members.  Un-parked after the row was rebuilt from the
+    # notebook: the two parameters are kpow (the screw power -- ends
+    # per turn) and t1 = Im(tau); all five exported members' period
+    # roots re-solve to the notebook's own Solutions cell; the mesh
+    # is the notebook's own elliptic-F domain map + normal-line
+    # half-turn + screw assembly, index-welded; topology matches the
+    # derived chi = 1 - M target AND Weber's own export mesh measures
+    # the same numbers; registration against his exports lands at
+    # 0.22-0.41% RMS of span with zero frame offset.
     # (2026-09, repair) SP_SCHERK4 was parked here as 4 disconnected
     # patches (comps = chi = loops = 4) that passed the pointwise
     # equation-20 gate -- the trap being that a pointwise identity is

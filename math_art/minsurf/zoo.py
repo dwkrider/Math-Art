@@ -2041,20 +2041,23 @@ SURFACE_FAMILY['SP_TOROIDAL_KS'] = 'SINGLY'
 # data, the balanced-divisor lesson, the measured no-period identities
 # and the references.  Ships the tau = i (square-torus) member; bb is
 # the growth knob the VMM exhibit exposes.
-# Hackman's toroidal 1-noid: one FindRoot-solved member on the sheared
-# torus tau = t + 2i, t re-derived from the notebook's own period
-# condition WITH the verbatim closed-form Bonnet phase -- see the block
-# above `hackman_W` in weierstrass.py for the data, the refuted phase
-# hypothesis (off by pi + 6e-6: the silent dh sign flip), the measured
-# deck screw (rise k h, rotation -2 pi k) and the references.
+# Hackman screw-motion 1-noids: Michelle Hackman's toroidal 1-noids,
+# the five (k, t1) members Weber's exports picture, each with its
+# period root re-solved from the notebook's own condition WITH the
+# verbatim closed-form Bonnet phase, meshed by the notebook's own
+# elliptic-F domain map and normal-line/screw assembly -- see the
+# block above `hackman_phi` in weierstrass.py for the data, the
+# derived topology (chi = 1 - M, M = k * turns), the registration
+# against Weber's exports (0.22-0.41% RMS, 0.00 deg frame offset)
+# and the references.
 WE_SURFACES['SP_HACKMAN'] = {
-    'label': "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+    'label': "Hackman Screw-Motion 1-Noid",
     'family': 'SINGLY',
     'mesher': we.hackman_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Storeys",
-    'storeys_label': "Storeys",
-    'test_order': 2,
+    'count': "Member (1-2 = k5, t1 1.5/0.4; 3-5 = k3, t1 0.3/1/2)",
+    'storeys_label': "Turns (full screw periods)",
+    'test_order': 1,
 }
 SURFACE_FAMILY['SP_HACKMAN'] = 'SINGLY'
 
@@ -3690,56 +3693,92 @@ def _selftest():
     print(f"Plane-with-catenoids: square-cell identity (rho = 1, 2) "
           f"worst {r_sq:.1e} {'OK' if good else 'FAIL'}")
 
-    # Hackman gates -- the member and its structure, re-measured:
-    #   1. the period root re-solves to the stored t (bracket +-2%);
+    # Hackman gates -- the family and its structure, re-measured:
+    #   1. every member's period root re-solves to the NOTEBOOK's own
+    #      printed Solutions value (WorkingPrecision -> 6, so 2e-5
+    #      budget for the k=3, t1=2 member, 5e-7 for the rest);
     #   2. the verbatim phase is a PURE phase (imag part of the log
-    #      ~ 0) -- and the refuted hypothesis really is off by pi
-    #      (recorded, so the trap stays documented);
+    #      ~ 0) at every member -- and the refuted batch-5 hypothesis
+    #      really is off by pi (recorded, so the trap stays
+    #      documented);
     #   3. the end loop translates by (0, 0, 0): the catenoid end of
     #      the 1-noid has no period;
     #   4. deck z -> z+1 is pure vertical (0, 0, h); the screw rise is
     #      exactly k h; and the screw offset is base-point-independent
-    #      under the -2 pi k rotation (the rotation is REAL, not
-    #      assumed: with a wrong angle the two bases disagree).
-    lo, hi = 0.98 * we.HACKMAN_T, 1.02 * we.HACKMAN_T
-    fa_, fb_ = (we.hackman_period_residual(lo),
-                we.hackman_period_residual(hi))
-    hk_ok = fa_ * fb_ < 0
-    if hk_ok:
-        a_, b_ = lo, hi
-        for _ in range(50):
-            m_ = 0.5 * (a_ + b_)
-            fm_ = we.hackman_period_residual(m_)
-            if fa_ * fm_ <= 0.0:
-                b_ = m_
-            else:
-                a_, fa_ = m_, fm_
-        t_re = 0.5 * (a_ + b_)
-        r_t = abs(t_re - we.HACKMAN_T)
-        hk_ok &= r_t < 5e-6
-    else:
-        r_t = float('nan')
+    #      under the -2 pi k rotation -- at BOTH a k=5 and a k=3
+    #      member (the rotation is REAL, not assumed);
+    #   5. the conformal chain lands the domain's unit circle on the
+    #      tau/2 midline (mid_err) and the solved member satisfies
+    #      height = k height2 (per_err) -- both ~1e-16;
+    #   6. TOPOLOGY, against the derived target (see hackman_assemble):
+    #      1 component, chi = 1 - M, M + 1 boundary loops for
+    #      M = kpow * turns -- the same numbers Weber's own k=3, t1=1
+    #      export mesh measures (comps=1, chi=-8, loops=10 at M=9);
+    #   7. the assembled extents match Weber's exports (x/z, y/z
+    #      ratios pinned from his dummy.pov meshes, 1% budget);
+    #      registered one-off at 0.22-0.41% RMS of span, 0.00 deg
+    #      frame offset.
+    hk_ok = True
+    r_t = 0.0
+    r_ph = 0.0
+    for kpw_, t1_, _rm, tnb_ in we.HACKMAN_MEMBERS:
+        t_re = we.hackman_solve(kpw_, t1_)
+        dt_ = abs(t_re - tnb_)
+        r_t = max(r_t, dt_)
+        hk_ok &= dt_ < (2e-5 if (kpw_, t1_) == (3, 2.0) else 5e-7)
+        phv_ = we.hackman_phi(complex(t_re, t1_), 1.0 / kpw_)
+        r_ph = max(r_ph, abs(np.imag(phv_)))
+    hk_ok &= r_ph < 1e-10
     tau_ = complex(we.HACKMAN_T, 2.0)
     phv = we.hackman_phi(tau_)
-    r_ph = abs(np.imag(phv))
     sm_ = we._hk_sigma(-we.HACKMAN_K / 2, tau_)
     sp_ = we._hk_sigma(we.HACKMAN_K / 2, tau_)
     hyp = -np.angle(sm_ * sp_)
     d_pi = abs(abs(float(np.real(phv)) - float(hyp)) - np.pi)
-    hk_ok &= r_ph < 1e-10 and d_pi < 1e-4
+    hk_ok &= d_pi < 1e-4
     Whk, _tau, _p = we.hackman_W()
     r_lp = float(np.linalg.norm(we.we_ends_loop(Whk, 0.0, r=0.05)))
     hk_ok &= r_lp < 1e-8
-    vA, riseB, vB1, vB2, _R = we.hackman_deck(n=8001)
-    r_A = float(np.hypot(vA[0], vA[1]) / abs(vA[2]))
-    r_k = abs(riseB - we.HACKMAN_K * vA[2]) / abs(vA[2])
-    r_scr = float(np.linalg.norm(vB1 - vB2) / abs(vA[2]))
-    hk_ok &= r_A < 1e-8 and r_k < 1e-8 and r_scr < 1e-5
+    r_A = r_k = r_scr = 0.0
+    for kpw_, t1_ in ((5, 1.5), (3, 1.0)):
+        k_ = 1.0 / kpw_
+        vA, riseB, vB1, vB2, _R = we.hackman_deck(
+            we.hackman_solve(kpw_, t1_), t1_, k_, n=8001)
+        r_A = max(r_A, float(np.hypot(vA[0], vA[1]) / abs(vA[2])))
+        r_k = max(r_k, abs(riseB - k_ * vA[2]) / abs(vA[2]))
+        r_scr = max(r_scr, float(np.linalg.norm(vB1 - vB2)
+                                 / abs(vA[2])))
+    hk_ok &= r_A < 1e-8 and r_k < 1e-7 and r_scr < 1e-5
+    print(f"Hackman: t re-solve worst {r_t:.1e} (vs notebook "
+          f"Solutions) | phase pure {r_ph:.1e}, hyp off by pi "
+          f"{d_pi:.1e} | end loop {r_lp:.1e} | deck A horiz "
+          f"{r_A:.1e}, rise ratio {r_k:.1e}, screw agree {r_scr:.1e} "
+          f"{'OK' if hk_ok else 'FAIL'}")
+    # ... and the assembly: derived topology + Weber's export extents
+    hk_pins = {(5, 1.5, 0.015): (0.8165, 0.8570),
+               (3, 1.0, 0.1): (0.4105, 0.4703)}
+    for (kpw_, t1_, rm_), (xz_, yz_) in hk_pins.items():
+        Vh, Fh, mm_ = we.hackman_assemble(kpw_, t1_, rm_, turns=3,
+                                          nx1=20, nx2=10, ny=31)
+        M_ = kpw_ * 3
+        chih, nmh, orh, lph, nch = we.sptail_topology(Vh, Fh)
+        topo_ = (nch == 1 and chih == 1 - M_ and lph == M_ + 1
+                 and nmh == 0 and orh)
+        fr_ = we.hackman_frame(kpw_, t1_, rm_, nx1=12, nx2=6, ny=15)
+        exh = Vh.max(axis=0) - Vh.min(axis=0)
+        r_xz = abs(exh[0] / exh[2] - xz_) / xz_
+        r_yz = abs(exh[1] / exh[2] - yz_) / yz_
+        good_ = (topo_ and mm_ < 2e-5 and fr_['mid_err'] < 1e-9
+                 and fr_['per_err'] < 1e-9
+                 and r_xz < 0.01 and r_yz < 0.01)
+        hk_ok &= good_
+        print(f"Hackman k{kpw_} t1={t1_}: comps={nch} chi={chih} "
+              f"(derived {1 - M_}) loops={lph} (derived {M_ + 1}) "
+              f"nonman={nmh} oriented={orh}; welds {mm_:.1e}, "
+              f"mid {fr_['mid_err']:.1e}, period {fr_['per_err']:.1e}"
+              f"; x/z vs export off {r_xz:.1e}, y/z off {r_yz:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
     ok &= hk_ok
-    print(f"Hackman: t re-solve {r_t:.1e} | phase pure {r_ph:.1e}, "
-          f"hyp off by pi {d_pi:.1e} | end loop {r_lp:.1e} | deck A "
-          f"horiz {r_A:.1e}, rise ratio {r_k:.1e}, screw agree "
-          f"{r_scr:.1e} {'OK' if hk_ok else 'FAIL'}")
 
     # Lubeck-Batista gates -- the authors' own period conditions
     # (arXiv:0806.4313), re-derived along the notebook's waypoint
