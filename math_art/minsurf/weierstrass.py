@@ -13713,6 +13713,295 @@ def ww_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     return V, Fs, None
 
 
+
+# ==========================================================================
+# Kapouleas surfaces -- finite-total-curvature desingularizations of
+# two coaxial catenoids, from Weber's repository page (notebook
+# `Kapouleas.nb` by Ramazan Yol).
+#
+# Kapouleas (1997) constructed embedded finite-total-curvature minimal
+# surfaces with arbitrarily many ends by taking coaxial unions of
+# catenoids and planes and desingularizing the circular intersections
+# with bent singly periodic Scherk surfaces.  This family is the
+# simplest case: TWO coaxial catenoids whose two intersection circles
+# are each replaced by a ring of k Scherk-type handles (k-fold
+# dihedral symmetry).  STATUS, exactly as the page states it: "All
+# period problems here have been solved numerically, so there is no
+# simple existence proof for these surfaces yet."  Also per the page:
+# for 2-fold symmetry no embedded examples are believed to exist (the
+# k = 2 member is an immersed illustration); the first embedded ones
+# appear at 3-fold symmetry; and the 3-dimensional period problem
+# often has two solutions for the same pair of catenoidal growth
+# rates (which is why Weber exports two members for the same k).
+#
+# Data (Yol's notebook, transcribed verbatim; th = theta11 on the
+# rectangular torus tau = i t):
+#     G0 = [th(z-((tau+1)/2+d)) th(z-(1/2-c))^(1/k) th(z-(1/2-b))
+#           th(z-(1/2+a))^(1/k)] /
+#          [th(z-((tau+1)/2-d)) th(z-(1/2+c))^(1/k) th(z-(1/2+b))
+#           th(z-(1/2-a))^(1/k)],
+#     dh0 = [th(z-((tau+1)/2+d)) th(z-((tau+1)/2-d)) th(z-(1/2-b))
+#            th(z-(1/2+b))] /
+#           [th(z-(1/2-c)) th(z-(1/2+c)) th(z-(1/2-a))
+#            th(z-(1/2+a+tau))],
+#     G = G0/G0(0),  dh = dh0/dh0(0),
+# with the linear constraint b = (d + (a-c)/k) - 1/(2k) (satisfied
+# EXACTLY by every stored row) and the free parameters (a, c, d, t)
+# solved by the notebook's FindRoot on its printed 3-component test:
+#     tst1 = Re int_{tau/2}^{tau/2+1/2} dh / c,
+#     tst2 = Re int_0^{1/4+tau/4}^{1/2} om2 / (a-1/2),
+#     tst3 = Re int_{1/2-b}^{(tau+1)/2-d} (om1, om2)
+#            . (-sin pi/k, cos pi/k) / (a-1/2).
+# G carries 1/k-fractional theta powers, so every path evaluation
+# must be branch-tracked CONTINUOUSLY (log-unwrap along the whole
+# polyline, anchored at the normalization point z = 0): the pointwise
+# principal product jumps a k-th-root phase partway along the test
+# paths, and independently-anchored path legs jump sheets as the
+# branch point 1/2 - a crosses the path corner near a = 1/4 -- both
+# produce phantom residuals of order 1e-1 that look exactly like
+# unsolved members.  Tracked correctly, Yol's stored tables satisfy
+# the notebook's own test to 1.3e-7 (worst, k = 2) and typically
+# 1e-8..1e-10 -- far tighter than DH11's tables, so they are kept
+# VERBATIM (nothing re-solved).
+#
+# The quotient of the full surface by its k-fold rotation is the
+# (a,b,c,d,tau) torus with FOUR catenoidal ends (Weber's related
+# page: "Tori with four catenoidal ends"): dh has simple poles at
+# 1/2 +- c (the middle catenoid) and 1/2 - a, 1/2 + a + tau (the
+# outer catenoid), and G has k-th-root branch points at those four
+# points, so the full surface is the k-cover totally branched there:
+# Riemann-Hurwitz gives chi_closed = -4(k-1), genus 2k - 1, with 4
+# catenoidal ends (chi = 2 - 2(2k-1) - 4 = -4k once the end disks
+# are cut).  `kap_growth` is the notebook's closed-form theta-product
+# ratio of the two catenoidal growth rates (the embeddedness knob).
+#
+# References:
+# - N. Kapouleas, "Complete embedded minimal surfaces of finite total
+#   curvature", J. Diff. Geom. 47 (1997) 95-169 -- the
+#   desingularization construction this family illustrates.
+# - M. Weber, "Kapouleas surfaces", minimalsurfaces.blog (notebook
+#   `Kapouleas.nb` by Ramazan Yol -- the theta data, the solved
+#   member tables and the 3-component period test transcribed above;
+#   PoVRay exports = registration ground truth; the page's
+#   numerical-only status is recorded as stated).
+# ==========================================================================
+
+# solved members, {k: ((a, b, c, d, t), ...)}, tau = i t -- Yol's
+# tables verbatim (every row satisfies b = (d + (a-c)/k) - 1/(2k)
+# exactly and the notebook's own period test to <= 1.3e-7, measured)
+KAP_SOLS = {
+    2: (
+        (0.1755, 0.06698019974822289, 0.010057381750312164, 0.234258890623379, 0.7543457613853664),
+        (0.176, 0.06727996568588351, 0.010120642536458193, 0.2343402869541126, 0.7547849133737129),
+        (0.18, 0.06966403973665058, 0.010623659602824723, 0.23497586953806296, 0.7580549552839374),
+        (0.2, 0.08130442498240442, 0.01306721313256788, 0.23783803154868838, 0.7690179488802832),
+        (0.22, 0.0926593744173635, 0.015407459561082441, 0.24036310419790474, 0.7730964459414758),
+    ),
+    3: (
+        (0.075, 0.03315207605693751, 0.01019564080267277, 0.17821728965782843, 0.41807116769369357),
+        (0.08, 0.03678303000587341, 0.012201223677745657, 0.18085010456512196, 0.4271423133078388),
+        (0.09, 0.043520973027908, 0.016015280624279836, 0.1855260665693346, 0.44239645301951497),
+        (0.1, 0.049880751248852995, 0.01964157681891243, 0.18976127685515712, 0.45543105573571396),
+        (0.11, 0.05602100706268037, 0.02309837104971218, 0.1937204640792511, 0.467035073618209),
+        (0.12, 0.062013249491964184, 0.02638368389120975, 0.19747447745570076, 0.47755683388872017),
+        (0.13, 0.0678955565957585, 0.02949245583819962, 0.20105970854182503, 0.4871796522425911),
+        (0.14, 0.07369024573622202, 0.03242078456956554, 0.2044971739260772, 0.49600976452426043),
+        (0.16, 0.08506771141996647, 0.037731047816367644, 0.210978060692089, 0.5115259277708725),
+        (0.18, 0.09621026945709352, 0.04232314269176511, 0.21698465035434855, 0.524376008919746),
+        (0.2, 0.10715051913771009, 0.04622736859204474, 0.22255964200172498, 0.5346435891702486),
+        (0.22, 0.11790861532077165, 0.049484046045620955, 0.22773663066931196, 0.5423188577334739),
+    ),
+    4: (
+        (0.0497, 0.023167936059970945, 0.010009894307294539, 0.13824540963679458, 0.27276381351319257),
+        (0.0498, 0.023246531765591383, 0.010073907966680826, 0.1383150087572616, 0.27293258937511927),
+        (0.04984079422299173, 0.02327853777835248, 0.0101, 0.13834333922260456, 0.2730012034058101),
+        (0.04999732121030994, 0.023401046673533932, 0.0102, 0.13845171637095643, 0.27326322448816487),
+        (0.05, 0.02340313922230222, 0.010201709829358982, 0.13845356667964195, 0.2732676916410874),
+        (0.06, 0.03063679435349026, 0.016364061393047687, 0.1447278097017522, 0.2873793808672695),
+        (0.07, 0.03734712211647173, 0.022271189612112184, 0.15041491951949978, 0.29879708835732705),
+        (0.08, 0.043873705614721786, 0.027963785309997574, 0.15586465194222118, 0.3088837557049866),
+        (0.09, 0.05031822504189021, 0.03342343241940676, 0.1611740831467419, 0.31812745944669935),
+        (0.1, 0.056716169221540574, 0.03863104939408024, 0.16637393157006064, 0.3267679901942672),
+        (0.12, 0.06940322441399571, 0.048236806295359785, 0.17646242598783565, 0.34272048276533806),
+        (0.14, 0.08192523463103524, 0.05670910270164892, 0.18610251030644745, 0.35728093865363536),
+        (0.16, 0.09423525625436652, 0.06401540290776463, 0.19523910698130767, 0.37062246284001005),
+        (0.18, 0.10628992919323757, 0.07015069815117489, 0.2038276037310313, 0.38275254294082556),
+        (0.2, 0.11805719626772238, 0.07513257193002774, 0.2118403392502293, 0.39358595170004596),
+        (0.22, 0.1295160921992753, 0.0789965853873448, 0.21926523854611146, 0.4029776971248489),
+    ),
+    6: (
+        (0.032, 0.016200786461698563, 0.010289631050414, 0.0959157249701009, 0.15722030652968705),
+        (0.035, 0.018434046777331875, 0.012743194382458503, 0.09805791250774162, 0.1603584159202951),
+        (0.04, 0.022056004395236375, 0.016704055251645703, 0.10150668027051066, 0.16496033658295503),
+        (0.05, 0.029240937339811923, 0.024303961581307085, 0.1082915976033631, 0.1729849754367468),
+        (0.06, 0.03647800143689704, 0.031582192329031235, 0.11507503349173558, 0.18020438103946748),
+        (0.07, 0.04376526226324175, 0.03859540435544804, 0.12186449632248308, 0.18693576118370575),
+        (0.08, 0.051071679823866165, 0.045369661993360226, 0.12863329015609287, 0.19329638261389598),
+        (0.09, 0.05836954526027237, 0.05191596615720512, 0.13535553961980656, 0.1993444574105409),
+        (0.1, 0.06563779615749361, 0.0582365842272164, 0.142010560195363, 0.20511745085237681),
+        (0.11, 0.07286058482594719, 0.06432829429841681, 0.14858196720901665, 0.2106440375142692),
+        (0.12, 0.08002556348410157, 0.07018419339650228, 0.1550562623835186, 0.21594812439323155),
+        (0.13, 0.0871226087555169, 0.07579476953473728, 0.16142173701130644, 0.2210502636791432),
+        (0.14, 0.09414297236711953, 0.08114858251661612, 0.1676677361198889, 0.22596814453122957),
+        (0.15, 0.10107873918593759, 0.08623273543542435, 0.17378419509184165, 0.2307167316573859),
+        (0.16, 0.10792249192816548, 0.0910332372210538, 0.17976136479834112, 0.23530824916418258),
+        (0.17, 0.11466711353295854, 0.09553531298346923, 0.18558966569687008, 0.2397520824133301),
+        (0.18, 0.12130568238739499, 0.09972369376134649, 0.1912596313476194, 0.24405462820266519),
+        (0.19, 0.1278314311496745, 0.10358290130106061, 0.19676191469985127, 0.24821911062874272),
+        (0.2, 0.13423774913670772, 0.10709753215706078, 0.20208733782955118, 0.25224537733859204),
+        (0.21, 0.1405182133558348, 0.11025253669610757, 0.20722696947185273, 0.2561296911795149),
+        (0.22, 0.14666663593386703, 0.11303348179663357, 0.21217221623330595, 0.25986453239272184),
+        (0.23, 0.1526771171247635, 0.11542678124907915, 0.21691491399961005, 0.2634384248492769),
+        (0.24, 0.15854409411464976, 0.11741987545601075, 0.22144740669065152, 0.26683579565860704),
+        (0.25, 0.16426237708431518, 0.1190013424442995, 0.22576260082503175, 0.27003687050085373),
+        (0.26, 0.1698271657664664, 0.12016092547872072, 0.22985398667958648, 0.273017597764656),
+        (0.27, 0.17523404213100718, 0.12088946836344626, 0.23371562019158157, 0.2757495837753267),
+        (0.275, 0.17787697953605952, 0.12108950219461014, 0.23555856323516117, 0.2770122191791659),
+        (0.28, 0.1804789376851667, 0.12117875688337308, 0.2373420638323955, 0.2782000103565516),
+        (0.29, 0.18555807685837872, 0.12102127251470916, 0.24072828894416354, 0.28033149577237854),
+        (0.3, 0.1904679006612544, 0.12040987119226158, 0.24386954585996468, 0.2821018514530964),
+        (0.32, 0.19976590484501155, 0.11779630308492174, 0.24939862202583182, 0.2843637520081887),
+        (0.34, 0.2083453226885899, 0.11327320103607691, 0.2538908561946027, 0.28453072294831167),
+        (0.36, 0.21617639605094147, 0.10675520139463286, 0.25730226295004693, 0.28201569438082746),
+        (0.38, 0.22322595171841264, 0.09812424682337755, 0.2595799928556422, 0.2760319982019401),
+        (0.4, 0.2294593393414061, 0.08722387868447055, 0.2606633191221512, 0.26547497908130346),
+        (0.42, 0.2348500039031039, 0.07387573341816778, 0.2604959594727985, 0.24871710423565305),
+        (0.43, 0.23722952140877002, 0.06624029914267435, 0.25993623793254905, 0.237278567223596),
+        (0.44, 0.23940795611233073, 0.057965941645410676, 0.25906894638656586, 0.22325269255353622),
+        (0.445, 0.2404269415350389, 0.05359935930823804, 0.2585268347530786, 0.21510225308342867),
+        (0.45, 0.24140337996789774, 0.0490908074914815, 0.2579185145498113, 0.20608544713773394),
+    ),
+    8: (
+        (0.07, 0.04859172227753544, 0.0457808575834959, 0.10806432947547243, 0.1366065915306091),
+        (0.1, 0.07206763376832387, 0.06717469199902004, 0.13046447026820138, 0.15045681363976926),
+        (0.12, 0.08745814141616517, 0.08059300756772426, 0.1450322673621307, 0.15841867927959682),
+        (0.15, 0.10999248303015252, 0.09920420397465858, 0.16614300852698485, 0.16901444351789563),
+        (0.2, 0.1455209402791164, 0.1248906788646222, 0.1986322751371942, 0.18431065528004176),
+    ),
+    10: (
+        (0.07, 0.0520380486996463, 0.0499847948043074, 0.10003652818007705, 0.10809701628142294),
+        (0.2, 0.15362209322749176, 0.1368086722665547, 0.19730296045414722, 0.144626758198563),
+    ),
+    12: (
+        (0.07, 0.05454792127545446, 0.05287460747421045, 0.09478747189830533, 0.0895387516392219),
+        (0.1, 0.07978920595331249, 0.0766217658381284, 0.11950768643982318, 0.0984699793700975),
+        (0.12, 0.09638971202770821, 0.09187516107369417, 0.13571264211718273, 0.1034139931820036),
+        (0.15, 0.1208199802678355, 0.11361881339327531, 0.15945488138394176, 0.1098058805781098),
+    ),
+}
+
+
+def kap_shifts(k, a, b, c, d, tau):
+    """(shift, exponent) factor list of G0."""
+    return [((tau + 1.0) / 2.0 + d, 1.0), (0.5 - c, 1.0 / k),
+            (0.5 - b, 1.0), (0.5 + a, 1.0 / k),
+            ((tau + 1.0) / 2.0 - d, -1.0), (0.5 + c, -1.0 / k),
+            (0.5 + b, -1.0), (0.5 - a, -1.0 / k)]
+
+
+def kap_G0_pv(Z, k, a, b, c, d, tau):
+    """G0 as the pointwise principal-branch product (patch use only;
+    NOT continuous along arbitrary paths -- see the block header)."""
+    th = genus1helicoid_theta11
+    out = np.ones_like(np.asarray(Z, dtype=complex))
+    for s, e in kap_shifts(k, a, b, c, d, tau):
+        v = th(Z - s, tau)
+        if e == 1.0:
+            out = out * v
+        elif e == -1.0:
+            out = out / v
+        else:
+            out = out * np.exp(e * np.log(v))
+    return out
+
+
+def kap_G0_path(zp, k, a, b, c, d, tau):
+    """G0 along a 1-D path, every factor's log unwrapped (the branch
+    is anchored at the path's FIRST node)."""
+    th = genus1helicoid_theta11
+    zp = np.asarray(zp, dtype=complex)
+    tot = np.zeros_like(zp)
+    for s, e in kap_shifts(k, a, b, c, d, tau):
+        v = th(zp - s, tau)
+        lg = np.log(np.abs(v)) + 1j * np.unwrap(np.angle(v))
+        tot = tot + e * lg
+    return np.exp(tot)
+
+
+def kap_dh0(Z, a, b, c, d, tau):
+    th = genus1helicoid_theta11
+    Z = np.asarray(Z, dtype=complex)
+
+    def f(s):
+        return th(Z - s, tau)
+    return (f((tau + 1.0) / 2.0 + d) * f((tau + 1.0) / 2.0 - d)
+            * f(0.5 - b) * f(0.5 + b)) / (
+        f(0.5 - c) * f(0.5 + c) * f(0.5 - a) * f(0.5 + a + tau))
+
+
+def kap_tst(k, a, b, c, d, t, n=20001):
+    """The notebook's printed 3-component period test, every G
+    evaluation branch-tracked continuously from z = 0 (independently
+    anchored legs jump sheets for a > ~1/4; see the block header)."""
+    tau = 1j * t
+    g00 = complex(kap_G0_pv(np.array([0j]), k, a, b, c, d, tau)[0])
+    dh00 = complex(kap_dh0(np.array([0j]), a, b, c, d, tau)[0])
+
+    def om_on(zp):
+        G = kap_G0_path(zp, k, a, b, c, d, tau) / g00
+        dh = kap_dh0(zp, a, b, c, d, tau) / dh00
+        return np.stack([(-G * dh + dh / G) / 2.0,
+                         1j * (G * dh + dh / G) / 2.0, dh], axis=-1)
+    u = np.linspace(0.0, 1.0, n)
+    w = u * u * (3.0 - 2.0 * u)
+    # tst1: dh alone (single-valued) along the top mid-line
+    zp = tau / 2.0 + 0.5 * u
+    dh = kap_dh0(zp, a, b, c, d, tau) / dh00
+    t1 = float(np.trapezoid(dh * 0.5, u).real / c)
+    # tst2: ONE continuous branch along the polyline 0 -> 1/4+tau/4
+    # -> 1/2
+    zp = np.concatenate([(0.25 + tau / 4.0) * w,
+                         (0.25 + tau / 4.0)
+                         + (0.25 - tau / 4.0) * w[1:]])
+    om = om_on(zp)
+    t2 = float(np.trapezoid(om[:, 1], zp).real / (a - 0.5))
+    # tst3: branch carried from z = 0 via an interior approach; the
+    # leg endpoints are G zeros/poles (the om limit is finite), nodes
+    # stay 1e-9 inside
+    ws = w * (1.0 - 2e-9) + 1e-9
+    leg0 = 0.5 - b
+    leg1 = (tau + 1.0) / 2.0 - d
+    appr = (0.25 + tau / 4.0) * w
+    appr2 = (0.25 + tau / 4.0) + (
+        (leg0 + 0.02 * (leg1 - leg0)) - (0.25 + tau / 4.0)) * w[1:]
+    leg = leg0 + (leg1 - leg0) * ws
+    zp = np.concatenate([appr, appr2, leg])
+    om = om_on(zp)
+    nl = len(leg)
+    I3 = np.trapezoid(om[-nl:, :2], leg[:, None], axis=0)
+    t3 = float((I3[0].real * (-math.sin(math.pi / k))
+                + I3[1].real * math.cos(math.pi / k)) / (a - 0.5))
+    return t1, t2, t3
+
+
+def kap_growth(k, a, b, c, d, t):
+    """The notebook's closed-form catenoid growth-rate ratio (the
+    embeddedness check of the page)."""
+    th = genus1helicoid_theta11
+    tau = 1j * t
+
+    def f(s):
+        return complex(th(np.array([s], dtype=complex), tau)[0])
+    num = (f(-a - b) * f(-a + b) * f(a - c) * f(-2 * c)
+           * f(0.5 - a - d + 0.5 * (-1 - tau))
+           * f(0.5 - a + d + 0.5 * (-1 - tau)) * f(-a - c - tau))
+    den = (f(-a - c) * f(-b - c) * f(b - c) * f(-a + c)
+           * f(0.5 - c - d + 0.5 * (-1 - tau))
+           * f(0.5 - c + d + 0.5 * (-1 - tau)) * f(-2 * a - tau))
+    return float((num / den).real)
+
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
