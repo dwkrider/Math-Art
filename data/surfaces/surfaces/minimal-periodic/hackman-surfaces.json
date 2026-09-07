@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "hackman-surfaces",
-  "name": "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+  "name": "Hackman Screw-Motion 1-Noid",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
