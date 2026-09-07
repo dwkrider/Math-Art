@@ -1404,6 +1404,23 @@ def build_twist_strip(half_twists, segments, width=0.6, thick=0.18,
 
 def _selftest():
     """The module had no self-test; this adds one for the surface the
+    # The cross-cap's dark seam.  It is non-orientable, so a closed
+    # mesh of it MUST carry a ring of winding conflicts -- edges both
+    # of whose faces traverse them the same way -- and averaging
+    # normals across that ring renders it black.  The generator marks
+    # the ring sharp; this pins the ring itself, since a change to the
+    # RP^2 quotient that silently stopped identifying the equator
+    # would remove the conflicts and the seam would come back with
+    # nothing to mark.
+    for nu_, nv_ in ((96, 48), (48, 24)):
+        Vc, Fc = build_crosscap(nu_, nv_)
+        ring = winding_conflict_edges(Fc)
+        eq0_ = 1 + (nv_ - 2) * nu_
+        assert len(ring) == nu_ // 2, (nu_, nv_, len(ring))
+        assert all(a >= eq0_ and b >= eq0_ for a, b in ring), "ring off the equator"
+    print("crosscap: winding-conflict ring is the identified equator, "
+          "nu/2 edges OK")
+
     whole point of which is its topology."""
     from collections import defaultdict, deque
     ok = True

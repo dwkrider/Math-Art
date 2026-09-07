@@ -552,18 +552,47 @@ def _vmm_tpms_records():
             "name": "Schoen TW Family Surface", "family": "minimal-periodic",
             "mode": "weierstrass",
             "blocked_by": VMM_BLOCKED + (
-                "  The exhibit gives images only, and which entry of "
-                "Schoen's NASA catalogue 'TW' denotes has NOT been "
-                "identified here -- resolving that naming is part of the "
-                "remaining work."),
-            "resume": VMM_RESUME,
+                "  NAMING RESOLVED: 'TW' is NOT an entry of the NASA "
+                "catalogue.  3DXM's own companion text "
+                "(FourTriplyPeriod.pdf, mirrored beside the exhibit) "
+                "states the T-W surface 'is not in his list, but made in "
+                "his spirit', living in a hexagonal prism with an order-6 "
+                "quotient group (a 120-degree rotation plus three "
+                "orthogonal 180-degree axes); it is Karcher's T-Wp "
+                "surface (Manuscripta Math. 64 (1989) sections "
+                "5.3.3/5.4.4), the alpha = beta = 60-degree member of "
+                "the two-angle conjugate-contour family whose 45-degree "
+                "diagonal member is I-WP (section 6.2), Gauss map degree "
+                "4 (genus 5 per cell).  Construction attempted "
+                "(2026-09) by the conjugate-Plateau route with the "
+                "45-degree member gated against the shipped Evolver I-WP "
+                "cell: three readings of Karcher's fig. 5.3.3 brick "
+                "contour were eliminated by measurement (one generates a "
+                "provably non-discrete mirror arrangement; two build "
+                "valid TPMS whose mirror placements and cross-sections "
+                "are measurably not I-WP), so the contour transcription, "
+                "not the machinery, is what remains open."),
+            "resume": VMM_RESUME + (
+                "  Resume by extracting the direct fundamental hexagon "
+                "(arc planes AND arc lengths -- conjugation preserves "
+                "boundary lengths) from the shipped I-WP Evolver cell, "
+                "then transposing to the hexagonal prism."),
             "sources": [_vmm_src("ch037_schoen_tw", "A Schoen TW Family"),
-                        SCHOEN_NASA],
+                        SCHOEN_NASA,
+                        "H. Karcher, 'The triply periodic minimal "
+                        "surfaces of Alan Schoen and their constant mean "
+                        "curvature companions', Manuscripta Math. 64 "
+                        "(1989) 291-357, sections 5.3.3/5.4.4 (T-Wp) and "
+                        "6.2 (the two-angle family joining it to I-WP)."],
             "extra": _deep(_SPACE, {"ids": {"vmm": "ch037_schoen_tw"},
                 "definition": {"note":
                     "A hexagonal triply periodic minimal surface family "
-                    "that 3DXM exhibits as 'A Schoen TW Family', "
-                    "attributed by the museum to Alan Schoen."}}),
+                    "that 3DXM exhibits as 'A Schoen TW Family': "
+                    "Karcher's T-Wp ('wrapped package') surface, made in "
+                    "Schoen's spirit but not in the NASA report; the "
+                    "alpha = beta = 60-degree member of the "
+                    "conjugate-contour family whose 45-degree member is "
+                    "I-WP."}}),
         },
         "schoen-c-h": {
             "name": "Schoen C(H) Surface", "family": "minimal-periodic",
@@ -802,7 +831,11 @@ def _ms_records():
                     "surfaces with arbitrarily many ends, built by "
                     "desingularizing the circles of intersection of "
                     "coaxial catenoids and planes with bent singly "
-                    "periodic Scherk surfaces."}}),
+                    "periodic Scherk surfaces.  All period problems "
+                    "are solved numerically only (no simple existence "
+                    "proof), as the source page states; the k = 2 "
+                    "member is believed to admit no embedded "
+                    "example."}}),
         },
         "hackman-surfaces": {
             "name": "Hackman Surface (toroidal 1-noid)", "family":

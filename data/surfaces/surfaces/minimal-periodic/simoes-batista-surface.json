@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "simoes-batista-surface",
-  "name": "SIMOES_BATISTA (exact)",
+  "name": "Simoes-Batista Surface (genus 7)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
@@ -175,6 +175,7 @@
   "ids": {
     "msblog": "ch408_the_simoes_batista_surface"
   },
+  "named_after": "Batista, Simoes",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

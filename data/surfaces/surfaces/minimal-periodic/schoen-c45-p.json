@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "schoen-c45-p",
-  "name": "SCHOEN_C45_P (exact)",
+  "name": "Schoen C45(P)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",
@@ -639,8 +639,8 @@
   "provenance": {
     "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
     "sources": [
-      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
       "A. H. Schoen, \"Infinite periodic minimal surfaces without self-intersections\", NASA TN D-5541 (1970) -- gyroid, I-WP, F-RD.",
+      "H. A. Schwarz (P, D; Gesammelte Mathematische Abhandlungen, 1890).",
       "E. R. Neovius (1883).  Inventory and nodal equations after Ken Brakke's periodic-surface pages (kenbrakke.com/evolver); the tier-2 sources are documented at the expansion block below."
     ]
   },
@@ -650,6 +650,7 @@
   "tradition": [
     "crystallographic"
   ],
+  "named_after": "Schoen",
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

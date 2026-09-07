@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "neovius-surface",
-  "name": "Neovius surface",
+  "name": "Neovius",
   "primary_family": "minimal-periodic",
   "families": [
     "def-nodal",
@@ -653,6 +653,9 @@
     "vmm": "ch034_neovius",
     "msblog": "ch275_neovius_surface"
   },
+  "alternate_names": [
+    "Neovius surface"
+  ],
   "fabrication": {
     "developable": false,
     "printable_watertight": false,

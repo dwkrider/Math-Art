@@ -286,6 +286,14 @@ ALIAS = {
     # zoo row's data (G = z, dh = z/(z^2-1) dz) is exactly what the
     # record's minsurf page (ch152) prints.
     "minsurf:SP_HALF_TWISTED_SCHERK": "half-twisted-scherk",
+    # The Weber-Wolf row's label carries "Surface"; the curated record
+    # from the blog pass is keyed without it.
+    "minsurf:WEBER_WOLF": "weber-wolf-genus-3-5-ends",
+    "minsurf:KAPOULEAS": "kapouleas-surfaces",
+    # The CHKM tori row lands on the curated record from the blog
+    # pass (which sat not-implemented until the notebook data
+    # shipped).
+    "minsurf:CHKM_TORI": "costa-hoffman-karcher-meeks-tori",
     "tpms_exact:PGD": "pgd-associate-family",
     # The exact-Weierstrass rows added on the minimal-periodic branch.
     # These MUST live here rather than being hand-edited into the record
@@ -430,6 +438,11 @@ ALIAS = {
     "algebraic:SYMMETROID": "symmetroid",
     "algebraic:DECO_TETRAHEDRON": "deco-tetrahedron",
     "algebraic:NORM_ONE": "norm-one-family",
+    # The preset label carries its node count ("Sarti Dodecic (600
+    # nodes)"), which would slugify to a second record beside the
+    # curated `sarti-dodecic` -- the twin-record trap again.
+    "minsurf:SPH_4NOID_SYM2": "four-noid-two-symmetry-planes",
+    "algebraic:SARTI_DODECIC": "sarti-dodecic",
     "algebraic:BARTH_DECIC": "barth-decic",
     "algebraic:ENDRASS": "endrass-octic",
     "algebraic:LABS": "labs-septic",
@@ -546,6 +559,45 @@ SUSPECTED_SAME = [
                   "Band (Mobius)' and 'Meeks Mobius Strip'.",
     },
 ]
+
+
+# UNVERIFIED -- "<source>:<key>" -> why.  A registry row that SHIPS in
+# the Add menu, so it can be looked at, but whose surface has not been
+# shown to BE the surface it is named after.  The ledger then records
+# it as not implemented, because "there is a row you can click" and
+# "the mathematics is right" are different claims, and `implemented`
+# means the second.
+#
+# This exists because the 4-noid shipped, was visibly wrong in
+# Blender, and had passed every gate written for it -- twice: an
+# end-count gate that read four loose discs as four ends, then a
+# topology gate (chi = -2, four loops) that a sphere with four slits
+# also satisfies.  The row is verified now, by measurement against
+# Weber's own PoVRay exports: point-cloud registration at ~0.2% of
+# span onto his dummy.pov meshes for both rendered members, plus a
+# selftest that pins the rigid-motion-invariant end statistics
+# (end-axis angles, wide/narrow radius ratio) to values measured off
+# those exports.  The table is empty, but it stays: the next row
+# that ships-before-it-is-shown-to-be-the-surface goes here, not
+# into the implemented count.
+UNVERIFIED = {
+    # (2026-09) Four Weber-batch rows sat here as patch piles --
+    # WEBER_WOLF 16 discs, HORGAN_NEARMISS 8, DP_LUBECK_BATISTA 8,
+    # LM_SLAB 2, every one chi = +component-count -- having shipped on
+    # point-cloud registration alone, which compares WHERE POINTS ARE
+    # and is blind to connectivity.  All four assemblies were repaired
+    # (exact grid-index welds along measured seam families; see the
+    # per-row commits) and are now gated on BOTH topology and
+    # registration in the zoo selftest: Weber-Wolf 1 comp chi = 3-6k
+    # with 5 end rims (genus 3(k-1), Riemann-Hurwitz-derived) at
+    # 0.22-0.30% vs Weber's k = 2/3/4 exports; Lubeck-Batista 1 comp
+    # chi = -8/cell (two genus-3 2-end quotient copies per cell) at
+    # 0.08-0.13% vs his three exported members; Lopez-Martin slab
+    # 1 comp chi = 2 - 2s with 2s plate rims; Horgan near-miss
+    # exactly TWO oriented annuli whose only joining seam is the one
+    # that provably does not exist (the gap stays open and measured;
+    # the `horgan-surface` record itself remains terminal).
+}
 
 
 def disposition(source, key):

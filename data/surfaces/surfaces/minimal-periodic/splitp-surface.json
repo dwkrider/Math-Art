@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "splitp-surface",
-  "name": "Splitp surface",
+  "name": "Split P",
   "primary_family": "minimal-periodic",
   "families": [
     "def-nodal",

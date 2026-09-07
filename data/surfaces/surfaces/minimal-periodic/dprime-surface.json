@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "dprime-surface",
-  "name": "Dprime surface",
+  "name": "D'",
   "primary_family": "minimal-periodic",
   "families": [
     "def-nodal",

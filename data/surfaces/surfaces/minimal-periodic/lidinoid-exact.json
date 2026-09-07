@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
   "slug": "lidinoid-exact",
-  "name": "LIDINOID (exact)",
+  "name": "Lidinoid (exact)",
   "primary_family": "minimal-periodic",
   "families": [
     "def-weierstrass",

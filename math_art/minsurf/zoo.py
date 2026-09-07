@@ -2059,19 +2059,23 @@ WE_SURFACES['SP_HACKMAN'] = {
 SURFACE_FAMILY['SP_HACKMAN'] = 'SINGLY'
 
 
-# Lubeck-Batista doubly periodic genus 3: theta Gauss map with four
-# square-root branch points, dh = dz, members from the notebook's
-# solved (tau, a, b) table -- see the block above `lb_mesh` in
-# weierstrass.py for the data, the cut pairing, the measured
-# reciprocal-branch seam and the references.  The gate re-derives the
-# AUTHORS' period conditions (arXiv:0806.4313) at three members.
+# Lubeck-Batista doubly periodic Scherk-Costa surfaces (genus 3):
+# theta Gauss map with four square-root branch points, dh = dz,
+# members from the notebook's solved (tau, a, b) table, meshed to
+# Weber's own quarter-patch recipe and REGISTERED against his PoVRay
+# exports at 0.07-0.08% of span for all three rendered members --
+# see the block above `lb_mesh` in weierstrass.py for the recipe,
+# the measured symmetry lines and the references.  The gate
+# re-derives the AUTHORS' period conditions (arXiv:0806.4313) at
+# three members AND pins the assembled cell's extent ratios to the
+# MESHxsize : MESHysize : MESHzsize Weber's exports declare.
 WE_SURFACES['DP_LUBECK_BATISTA'] = {
-    'label': "Lubeck-Batista Surface (genus 3, tau = i member)",
+    'label': "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
     'family': 'DOUBLY',
     'mesher': we.lb_mesh,
     'cells2d_mesher': we.lb_mesh,
     'p_from': lambda order, radius: {},
-    'count': "Member (0.935i .. 2.5i)",
+    'count': "Member (1-3 = Weber's 0.94i/1.2i/2.5i, 4-7 = rest)",
     'test_order': 3,
 }
 SURFACE_FAMILY['DP_LUBECK_BATISTA'] = 'DOUBLY'
@@ -2092,6 +2096,34 @@ WE_SURFACES['SP_SCHERK4'] = {
     'test_order': 1,
 }
 SURFACE_FAMILY['SP_SCHERK4'] = 'SINGLY'
+
+
+# Karcher's 2-parameter family of 4-noids with two orthogonal
+# symmetry planes (Tokyo notes pp. 30ff; Weber's 4-Noid_sym_2.nb).
+# The Weierstrass data and tau(lambda), rho(lambda) are verified (the
+# four end periods vanish to 4e-13 across four members), and the
+# assembled mesh is verified against Weber's own PoVRay exports of
+# the two members he renders: point-cloud registration onto his
+# `dummy.pov` meshes lands at ~0.2% of span, and the selftest gates
+# both the topology (one sheet, chi = -2, four boundary loops,
+# oriented) and the rigid-motion-invariant end statistics (all
+# pairwise end-axis angles to 1 degree, wide/narrow radius ratio to
+# 2%) against values measured off those exports.  The defaults land
+# on the lambda = 1.2, mu = 1.2 member pictured on the blog page.
+# The strip's edges are each TWO symmetry arcs (split at the chart's
+# branch columns), the patch's mirror planes are located from those
+# arcs, and only then is the notebook's reflect-in-x-then-y assembly
+# applied -- see four_noid_sym2_patch and four_noid_sym2_mesh.
+WE_SURFACES['SPH_4NOID_SYM2'] = {
+    'label': "4-Noid, Two Symmetry Planes",
+    'family': 'SPHERES',
+    'mesher': we.four_noid_sym2_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "End Position (lambda)",
+    'storeys_label': "End Reach",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SPH_4NOID_SYM2'] = 'SPHERES'
 
 
 WE_SURFACES['DP_CATENOID_FIELD'] = {
@@ -2628,6 +2660,174 @@ WE_SURFACES['KUSNER_RP2'] = {
     'test_order': 1,                             # order 1 -> p = 3
 }
 SURFACE_FAMILY['KUSNER_RP2'] = 'NONORIENT'
+
+# Kusner's immersed minimal SPHERES with 2n planar ends (Kusner 1987)
+# -- the orientable genus-0 family; for ODD n the immersion commutes
+# with the antipodal map and descends to the projective planes above
+# (KUSNER_RP2), so this row exposes the EVEN members n = 2, 4, 6, 8
+# (n = 2 * order), which exist only as spheres.  Same Weierstrass
+# data (G = z^(n-1)(z^n - s)/(s z^n + 1), s = sqrt(2n - 1), dh with
+# all 2n end residues vanishing -- gated below via 'cycles'), meshed
+# to Weber's own Kusner.nb chart on both hemispheres, the outer chart
+# integrated in u = 1/w (w = infinity is a regular point).  The n = 2
+# member is REGISTERED against Weber's own PoVRay export (his p = 2
+# dummy.pov is the disk-chart half of the surface): 0.13% / 0.27%
+# one-sided means of span at the identity axis map, bbox ratios
+# agreeing to 4 digits -- the zoo gate pins those ratios and the
+# closed-form rim landmark X(1) = (0, (n-1)/(2 sqrt(2n-1)), 0).
+# See the block above `kusner_mesh` in weierstrass.py for the full
+# recipe, the measured frames and the references.
+WE_SURFACES['KUSNER_SPHERE'] = {
+    'label': "Kusner Sphere (2n planar ends)",
+    'family': 'SPHERES',
+    'g': lambda z, p: z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) / (p['s'] * z ** p['p'] + 1.0),
+    'dh': lambda z, p: 1j * z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) * (1.0 + p['s'] * z ** p['p'])
+    / (z ** (2 * p['p']) + 2.0 * p['s'] * z ** p['p']
+       / (p['p'] - 1) - 1.0) ** 2,
+    'mesher': we.kusner_mesh,
+    'p_from': lambda order, radius: (lambda pp: {
+        'p': pp, 's': math.sqrt(2 * pp - 1)})(
+            int(min(max(2 * order, 2), 8))),
+    'count': "Member (1-4 = n of 2/4/6/8)",
+    'cycles': lambda p: (
+        [(((p['p'] - p['s']) / (p['p'] - 1)) ** (1.0 / p['p'])
+          * np.exp(2j * math.pi * k / p['p']), 0.08)
+         for k in range(p['p'])]
+        + [(((p['p'] - 1) / (p['p'] - p['s'])) ** (1.0 / p['p'])
+            * np.exp(1j * (math.pi + 2 * math.pi * k) / p['p']), 0.08)
+           for k in range(p['p'])]),
+    'test_order': 1,                             # order 1 -> n = 2
+}
+SURFACE_FAMILY['KUSNER_SPHERE'] = 'SPHERES'
+
+# The Horgan surface -- A MINIMAL SURFACE THAT DOES NOT EXIST (Hoffman
+# and Karcher 1993, named against Horgan's "death of proof" article):
+# a genus-2 Costa variant whose period problem provably cannot close,
+# though the numerical example looks utterly convincing.  This row
+# ships Weber's own near-miss illustration WITH THE DEFECT LEFT
+# VISIBLE and measured: the two mirror-curve offsets disx(a), disy(a)
+# would have to agree for the surface to exist, and the measured
+# family (gated below) has disx - disy < 0 for every a > 1, vanishing
+# only in the degenerate a -> 1 collapse.  The assembly closes the
+# catenoid-edge seam exactly and leaves the other seam open by
+# |disx - disy| -- at the default a = 1.01 member that gap is 0.0011
+# (invisible, which is the entire point), at a = 1.5 it is 0.089.
+# The ledger's `horgan-surface` record remains terminal (the surface
+# does not exist); THIS row is the illustration of that finding, not
+# an implementation of the surface.  Registered against Weber's own
+# PoVRay exports of all three members (0.15-0.16% GT -> ours of span;
+# cell ratios match his to 4 digits).  See the block above
+# `horgan_mesh` in weierstrass.py for the data and references.
+WE_SURFACES['HORGAN_NEARMISS'] = {
+    'label': "Horgan Surface (non-existent, near-miss)",
+    'family': 'HIGHER',
+    'mesher': we.horgan_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (1-3 = a of 1.01/1.1/1.5)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['HORGAN_NEARMISS'] = 'HIGHER'
+
+# Lopez-Martin slab surface (Lopez-Martin, "Minimal surfaces in a
+# wedge of a slab"): the b = 1/2 member of the translation-invariant
+# helicoid-with-handle family with the vertical period condition left
+# unsolved -- at that member the slide is EXACTLY one period, dh
+# becomes constant and both ends turn planar, giving flat plates at
+# consecutive integer heights joined by necks.  IMMERSED, NOT
+# EMBEDDED (the only self-intersection is along the vertical axis,
+# kept visible as two crossing sheets) and one-sided as a complete
+# surface -- these are properties of the surface, not defects of the
+# mesh.  The family solver reproduces the notebook's solved helicoid
+# member to 13 digits and registers against Weber's own export of it
+# at 0.245% of span (gated); the slab is the same code at b = 1/2.
+# See the block above `lm_slab_mesh` in weierstrass.py.
+WE_SURFACES['LM_SLAB'] = {
+    'label': "Lopez-Martin Slab Surface",
+    'family': 'SINGLY',
+    'mesher': we.lm_slab_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['LM_SLAB'] = 'SINGLY'
+
+# Weber-Wolf surface: the borderline case of the Hoffman-Meeks
+# conjecture at genus 3 -- two catenoidal and three planar ends, the
+# planar levels connected by Costa saddles; k = order + 1 picks the
+# dihedral symmetry (k = 2 is THE genus-3 surface, k = 3..5 the
+# higher-symmetry versions of genus 3(k - 1) -- Riemann-Hurwitz over
+# the 8 total branch points; the mesh measures chi = 3 - 6k with 5
+# end rims, which pins it).  Data from Weber's DH11
+# notebook with (a, b) RE-SOLVED from the notebook's own period test
+# to ~1e-11 (the stored values plateau at 1e-8..5e-3); registered
+# against Weber's own PoVRay exports of k = 2, 3, 4 at 0.20-0.27%
+# GT -> ours of span, extent ratios matching to 4 digits (pinned
+# below).  See the block above `ww_mesh` in weierstrass.py.
+WE_SURFACES['WEBER_WOLF'] = {
+    'label': "Weber-Wolf Surface (genus 3, 5 ends)",
+    'family': 'HIGHER',
+    'mesher': we.ww_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (1-4 = k of 2/3/4/5)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['WEBER_WOLF'] = 'HIGHER'
+
+# Kapouleas surface (Kapouleas 1997, notebook by Ramazan Yol on
+# Weber's page): two coaxial catenoids with their two intersection
+# circles desingularized by rings of k Scherk-type handles -- the
+# simplest case of Kapouleas' desingularization construction.  The
+# member knob walks KAP_MEMBERS (Weber's six exported members first);
+# radius follows the four catenoidal ends further out.  STATUS AS THE
+# PAGE STATES IT: all period problems solved numerically, no simple
+# existence proof; k = 2 is believed to admit no embedded example
+# (that member is the immersed illustration).  Yol's solved tables
+# pass the notebook's own printed 3-component period test to
+# <= 1.3e-7 (gated below); topology gate DERIVED from the k-cover's
+# Riemann-Hurwitz count: 1 component, chi = -4k, 4 catenoid rims at
+# EVERY member (genus uniformly 2k - 1; the paired members at the
+# same k share their topology and differ in geometry only).  The
+# default member is exported (reference image exists); orders 7-9
+# have no export.  Geometry registers against all six of Weber's
+# exports at 0.2-0.4% median of span (cutoff radii fitted per
+# export).  See the block above `kap_mesh` in weierstrass.py for
+# data, tables, the k = 2 corner-truncation trap and references.
+WE_SURFACES['KAPOULEAS'] = {
+    'label': "Kapouleas Surface (desingularized catenoids)",
+    'family': 'HIGHER',
+    'mesher': we.kap_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (1-6 = Weber's k6/k6b/k2/k3/k4/k4b, 7-9 = k8/k10/k12)",
+    'test_order': 4,                             # k = 3, a = 0.14
+}
+SURFACE_FAMILY['KAPOULEAS'] = 'HIGHER'
+
+# Costa-Hoffman-Karcher-Meeks tori: the 1-parameter family of embedded
+# minimal tori that deforms the Costa surface's planar middle end into
+# a catenoidal end (Hoffman-Meeks 1987 announcement, Hoffman-Karcher
+# existence/embeddedness; by Costa's classification the ONLY embedded
+# 3-ended minimal tori of finite total curvature).  Data and the three
+# solved members (b = -0.05 / -0.01 / -0.005) from Weber's
+# Costa_3_catenoids_g_1_.nb, kept verbatim -- they satisfy the
+# notebook's own period test to ~1e-11 (gated below).  Meshed to the
+# notebook's log chart w = log((z-1)(z-b)) and welded into ONE torus
+# with 3 catenoid rims (chi = -3, derived); extent ratios pinned to
+# Weber's own PoVRay exports of all three members (registration:
+# GT -> ours one-sided median 0.29-0.31% of span offline).  Member 1
+# is the member his page pictures.  See the block above `chkm_mesh`
+# in weierstrass.py.
+WE_SURFACES['CHKM_TORI'] = {
+    'label': "Costa-Hoffman-Karcher-Meeks Torus",
+    'family': 'TORI',
+    'mesher': we.chkm_mesh,
+    'p_from': lambda order, radius: {},
+    'count': "Member (1-3 = middle-end deformation b of -0.05/-0.01/-0.005)",
+    'order_range': (1, 3),
+    'test_order': 1,
+}
+SURFACE_FAMILY['CHKM_TORI'] = 'TORI'
 
 WE_SURFACES['LOPEZ_KLEIN'] = {
     # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
@@ -3702,10 +3902,324 @@ def _selftest():
     r_h2 = abs(P2_[2])
     good_ = r_v < 1e-5 and r_h2 < 1e-8
     lb_ok &= good_
-    ok &= lb_ok
     print(f"Lubeck-Batista deck: |z+1 - (0,0,1)| = {r_v:.1e}, "
           f"z+tau vertical part {r_h2:.1e} "
           f"{'OK' if good_ else 'FAIL'}")
+    # SHAPE gate: the assembled cell's extent ratios, pinned to the
+    # MESHxsize : MESHysize : MESHzsize declared inside Weber's own
+    # PoVRay exports of the three members he renders (his exports
+    # normalise the y half-extent to 1, so x/z and y/z are the two
+    # rigid-motion-and-scale invariants; the full point-to-surface
+    # registration against those exports landed at 0.07-0.08% of
+    # span with the identity axis map).  A wrong member, a wrong
+    # rotation axis or an overlapping ghost assembly all move these
+    # by far more than the 1.5% gate.
+    # NOTE: the member knob walks we.LB_ORDER (exported members
+    # first), so orders 1, 2, 3 are Weber's 0.94i, 1.2i, 2.5i
+    lb_shape = {1: (2.3164, 3.0699), 2: (1.0650, 2.1687),
+                3: (1.0000, 3.3672)}
+    for order_, (exz_, eyz_) in lb_shape.items():
+        V_, _F, _uv = we.lb_mesh(None, 110, 60, order_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_x = abs(ex_[0] / ex_[2] - exz_) / exz_
+        r_y = abs(ex_[1] / ex_[2] - eyz_) / eyz_
+        good_ = r_x < 0.015 and r_y < 0.015
+        lb_ok &= good_
+        print(f"Lubeck-Batista m{order_ - 1} cell shape vs Weber's "
+              f"export: x/z off {r_x:.1e}, y/z off {r_y:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
+    ok &= lb_ok
+
+    # Kusner sphere gates.  Beyond the generic 'cycles' residue gate
+    # (all 2n end loops close -- Kusner's "no period problem"):
+    #   1. the rim landmark X(w = 1), integrated along a mid-sector
+    #      ray + rim arc, equals the closed form
+    #      (0, (n-1)/(2 sqrt(2n-1)), 0) -- 1/sqrt(12), 1/sqrt(5), 2/3
+    #      for n = 2, 3, 5.  This pins the forms, the branch and the
+    #      base normalization in one number.
+    #   2. SHAPE vs Weber's own PoVRay export: his p = 2 dummy.pov is
+    #      the disk-chart half of the n = 2 member at the notebook
+    #      window xmin = 0.2; the full point-cloud registration
+    #      landed at 0.13% / 0.27% one-sided means of span with the
+    #      IDENTITY axis map, and the half-assembly extent ratios
+    #      measured off that export are pinned here to 0.5%.
+    #   3. the assembled sphere is a genuine closed immersed sphere
+    #      minus its 2n end disks: chi = 2 - 2n, 2n boundary loops,
+    #      manifold, orientable (a sphere with slits passes chi; it
+    #      cannot pass the loop count and the p = 2 ratios together).
+    ku_ok = True
+    for p_ in (2, 3, 4, 5):
+        L_ = we.kusner_landmark(p_)
+        want_ = (p_ - 1) / (2.0 * math.sqrt(2.0 * p_ - 1.0))
+        r_lm = max(abs(L_[0]), abs(L_[1] - want_), abs(L_[2]))
+        good_ = r_lm < 1e-8
+        ku_ok &= good_
+        print(f"Kusner sphere n={p_}: rim landmark vs closed form "
+              f"(n-1)/(2 sqrt(2n-1)) off {r_lm:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
+    Xi_, Xe_, ir_ = we.kusner_patches(2, we.KUSNER_XMIN[2], 1.0, 45, 60)
+    we._kus_snap(Xi_, Xe_, ir_, 2)
+    half_ = np.concatenate([Xi_.reshape(-1, 3) @ M_.T
+                            for M_, _p in we._kus_frames(2)])
+    exh_ = half_.max(axis=0) - half_.min(axis=0)
+    r_x = abs(exh_[0] / exh_[1] - 0.4430) / 0.4430
+    r_z = abs(exh_[2] / exh_[1] - 0.5353) / 0.5353
+    good_ = r_x < 0.005 and r_z < 0.005
+    ku_ok &= good_
+    print(f"Kusner sphere n=2 half vs Weber's export: x/y off "
+          f"{r_x:.1e}, z/y off {r_z:.1e} {'OK' if good_ else 'FAIL'}")
+    for order_, p_ in ((1, 2), (2, 4)):
+        V_, F_, _uv = we.kusner_mesh(None, 60, 60, order_, 1.2, 1.0)
+        chi_, nm_, nl_, os_ = we.symtail_edge_stats(np.asarray(V_), F_)
+        good_ = (chi_ == 2 - 2 * p_ and nl_ == 2 * p_ and nm_ == 0
+                 and not os_)
+        ku_ok &= good_
+        print(f"Kusner sphere n={p_}: chi={chi_} (want {2 - 2 * p_}), "
+              f"loops={nl_} (want {2 * p_}), nonman={nm_}, "
+              f"one-sided={os_} {'OK' if good_ else 'FAIL'}")
+    ok &= ku_ok
+
+    # Horgan near-miss gates -- the row's claim is a NEGATIVE result,
+    # so the gate measures the failure to close, not closure:
+    #   1. the two mirror-curve offsets at Weber's three members equal
+    #      the stored measurements (edge medians, grid-independent to
+    #      1e-6 across three resolutions when measured by the
+    #      vertical-sweep scheme);
+    #   2. the period defect disx - disy is STRICTLY NEGATIVE at every
+    #      probed a and monotonically worsens with a -- the family
+    #      never closes (Hoffman-Karcher's non-existence, measured);
+    #      near the degenerate a -> 1 limit it shrinks (a = 1.003:
+    #      -2.3e-4) which is exactly why the pictures look convincing;
+    #   3. the assembled cell's z/y extent ratios match Weber's own
+    #      exports (registered offline at 0.15-0.16% GT -> ours of
+    #      span; his cell ratios reproduced to 4 digits).
+    hg_ok = True
+    hg_vals = {1.01: (0.003777, 0.004919), 1.1: (0.001120, 0.020953),
+               1.5: (0.000357, 0.089392)}
+    for a_, (wx_, wy_) in hg_vals.items():
+        dx_, dy_ = we.horgan_gap(a_)
+        good_ = (abs(dx_ - wx_) < 5e-5 and abs(dy_ - wy_) < 5e-5
+                 and dx_ - dy_ < -1e-3 * (a_ - 1.0))
+        hg_ok &= good_
+        print(f"Horgan a={a_}: disx={dx_:+.6f} disy={dy_:+.6f} "
+              f"defect={dx_ - dy_:+.6f} (never zero) "
+              f"{'OK' if good_ else 'FAIL'}")
+    dx3, dy3 = we.horgan_gap(1.003)
+    d3 = dx3 - dy3
+    good_ = -6e-4 < d3 < -1e-4
+    hg_ok &= good_
+    print(f"Horgan a=1.003 (near the degenerate limit): defect "
+          f"{d3:+.2e} -- small, not zero {'OK' if good_ else 'FAIL'}")
+    hg_shape = {1: 0.2880, 2: 0.5019, 3: 0.5600}
+    for order_, zy_ in hg_shape.items():
+        V_, _F, _uv = we.horgan_mesh(None, 60, 60, order_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_zy = abs(ex_[2] / ex_[1] - zy_) / zy_
+        good_ = r_zy < 0.01 and abs(ex_[0] / ex_[1] - 1.0) < 0.01
+        hg_ok &= good_
+        print(f"Horgan member {order_} cell z/y vs Weber's export: "
+              f"off {r_zy:.1e} {'OK' if good_ else 'FAIL'}")
+    ok &= hg_ok
+
+    # Lopez-Martin slab gates.  The family solver must re-derive the
+    # notebook's SOLVED helicoid member (tau0, b0) -- rho_abs to 1e-9,
+    # dhper to 1e-6, slide 0, r0/a0 to 1e-5 -- which pins the whole
+    # theta/period/chart chain against Weber's own FindRoot results;
+    # the slab member (b = 1/2) must then close one period late
+    # (slide EXACTLY 2), carry a constant dh (theta identity), and
+    # flatten into its planar ends (far plate points at integer z).
+    # The helicoid member built through this same code registers
+    # against Weber's export at 0.245% of span (offline, scale
+    # exactly his 3 periods); the sheet extent ratios are pinned.
+    lm_ok = True
+    b0_ = 0.629065098323904514
+    mh_ = we.lm_slab_member(we._G1H_ALPHA0, b0_)
+    r_rho = abs(mh_['rho_abs'] - 125.2718531924492) / 125.2718531924492
+    r_dhp = abs(mh_['dhper'] - (0.386191090012370175
+                                - 0.169838749468014027j))
+    r_sld = abs(mh_['slide'])
+    r_r0 = abs(mh_['r0'] - 2.43050611112724901)
+    r_a0 = abs(mh_['a0'] - (-0.409955776251214221))
+    good_ = (r_rho < 1e-9 and r_dhp < 1e-5 and r_sld < 1e-5
+             and r_r0 < 1e-4 and r_a0 < 1e-5)
+    lm_ok &= good_
+    print(f"Lopez-Martin family solver vs notebook member: rho "
+          f"{r_rho:.1e}, dhper {r_dhp:.1e}, slide {r_sld:.1e}, r0 "
+          f"{r_r0:.1e}, a0 {r_a0:.1e} {'OK' if good_ else 'FAIL'}")
+    ms_ = we.lm_slab_member(we._G1H_ALPHA0, 0.5)
+    r_s2 = abs(ms_['slide'] - 2.0)
+    # measure the deck z -> z+1 independently with the FINAL forms:
+    # purely vertical, and vertical part = the full period 2
+    rho1_ = ms_['rho_abs'] * np.exp(1j * ms_['psi'])
+    t_ = np.linspace(0.0, 1.0, 20001)
+    zp_ = (0.17 + 0.23j * ms_['tau'].imag) + t_
+    o_ = np.stack(we._lms_omega(zp_, ms_, rho1_), axis=-1)
+    deck_ = np.real(np.sum(0.5 * (o_[1:] + o_[:-1])
+                           * np.diff(zp_)[:, None], axis=0))
+    r_dk = float(np.linalg.norm(deck_ - np.array([0.0, 0.0, 2.0])))
+    good_ = r_s2 < 1e-6 and r_dk < 1e-5
+    lm_ok &= good_
+    print(f"Lopez-Martin slab member: slide-2 {r_s2:.1e} (closes one "
+          f"period late), deck z->z+1 vs (0,0,2) {r_dk:.1e} "
+          f"{'OK' if good_ else 'FAIL'}")
+    V_, _F, _uv = we.lm_slab_mesh(None, 60, 60, 1, 1.2, 1.0)
+    V_ = np.asarray(V_)
+    r_ = np.hypot(V_[:, 0], V_[:, 1])
+    far_ = V_[r_ > 0.75 * r_.max()]
+    zf_ = far_[:, 2] / (V_[:, 2].max() - V_[:, 2].min()) * 2.0
+    dev_ = np.abs(zf_ - np.round(zf_))
+    # the plates approach their integer heights like O(1/r) at this
+    # window (measured: rim offset 0.016 at the outermost row); the
+    # gate checks the far field is plate-like, not that the finite
+    # window has fully converged
+    good_ = float(np.percentile(dev_, 90)) < 0.25
+    lm_ok &= good_
+    print(f"Lopez-Martin slab: far field flattens toward integer "
+          f"plate heights (p90 offset = {np.percentile(dev_, 90):.3f})"
+          f" {'OK' if good_ else 'FAIL'}")
+    ok &= lm_ok
+
+    # Weber-Wolf gates: the notebook's OWN period test must vanish at
+    # every stored member (the (a, b) roots re-solved from that test;
+    # quadrature-converged, so a wrong member reads directly), rho
+    # must come out real (the balance makes it so only on the family),
+    # and the assembled extent ratios are pinned to Weber's own
+    # exports (z/x measured off his k = 2, 3, 4 dummy.pov at 0.8928 /
+    # 0.9836 / 0.8829; full point registration landed at 0.20-0.27%
+    # GT -> ours of span offline).
+    ww_ok = True
+    for k_ in (2, 3, 4, 5):
+        a_, b_ = we.WW_MEMBERS[k_]
+        t1_, t2_ = we.ww_tst(k_, a_, b_)
+        rho_ = we.ww_rho(k_, a_, b_)
+        good_ = (abs(t1_) < 5e-8 and abs(t2_) < 5e-8
+                 and abs(rho_.imag) < 1e-12)
+        ww_ok &= good_
+        print(f"Weber-Wolf k={k_}: notebook period test "
+              f"({t1_:+.1e}, {t2_:+.1e}), Im rho = {rho_.imag:.1e} "
+              f"{'OK' if good_ else 'FAIL'}")
+    ww_shape = {1: 0.8928, 2: 0.9836, 3: 0.8829}
+    for order_, zx_ in ww_shape.items():
+        V_, _F, _uv = we.ww_mesh(None, 60, 60, order_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_zx = abs(ex_[2] / ex_[0] - zx_) / zx_
+        good_ = r_zx < 0.01 and abs(ex_[1] / ex_[0] - 1.0) < 0.005
+        ww_ok &= good_
+        print(f"Weber-Wolf k={order_ + 1} cell z/x vs Weber's export: "
+              f"off {r_zx:.1e} {'OK' if good_ else 'FAIL'}")
+    ok &= ww_ok
+
+    # Assembly topology gates for the repaired Weber-batch rows: the
+    # meshes must be SURFACES, not patch piles -- registration alone
+    # cannot tell those apart (sixteen loose patches in the right
+    # places register exactly like a welded surface), so every row is
+    # gated on BOTH.  Targets derived per row (chi = 2 - 2g - b):
+    #   Weber-Wolf: 1 comp, chi = 3 - 6k (genus 3(k-1), 5 end rims);
+    #   Lubeck-Batista cell: 1 comp, chi = -8, 6 loops (bulk tiling
+    #     -12/cell = two quotient copies of the genus-3 2-end chi=-6);
+    #   Lopez-Martin slab: 1 comp, chi = 2 - 2s, 2s plate rims;
+    #   Horgan near-miss: exactly TWO mirror halves (the only seam
+    #     that could join them is the one that does not exist), each
+    #     an oriented manifold annulus.
+    topo_ok = True
+    for nm_, fn_, ord_, want_ in (
+            ("Weber-Wolf k=2", we.ww_mesh, 1, (1, -9, 5, True)),
+            ("Weber-Wolf k=3", we.ww_mesh, 2, (1, -15, 5, True)),
+            ("Lubeck-Batista cell", we.lb_mesh, 1, (1, -8, 6, True)),
+            ("Lopez-Martin s=2", we.lm_slab_mesh, 2, (1, -2, 4, True)),
+            ("Horgan a=1.1", we.horgan_mesh, 2, (2, 0, 4, True))):
+        V_, F_, _uv = fn_(None, 48, 48, ord_, 1.2, 1.0)
+        chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(
+            np.asarray(V_), F_)
+        good_ = ((ncomp_, chi_, loops_, orient_) == want_
+                 and nm2_ == 0)
+        topo_ok &= good_
+        print(f"assembly topology {nm_}: comps={ncomp_} chi={chi_} "
+              f"loops={loops_} nonman={nm2_} oriented={orient_} "
+              f"{'OK' if good_ else 'FAIL'}")
+    ok &= topo_ok
+
+    # Kapouleas gates: Yol's solved tables must pass the notebook's
+    # own printed 3-component period test (branch-tracked; see the
+    # module header for the two branch traps that fake failures),
+    # the growth-rate ratio is pinned at the exported members, and
+    # the assembled mesh must be ONE surface with chi = -4k and 4
+    # catenoid rims for k >= 3 (the k = 2 near-degenerate member
+    # measures chi = -6; open question, documented).
+    kap_ok = True
+    for k_, mi_ in ((2, 4), (3, 7), (4, 6), (6, 25), (12, 3)):
+        a_, b_, c_, d_, t_ = we.KAP_SOLS[k_][mi_]
+        r1_, r2_, r3_ = we.kap_tst(k_, a_, b_, c_, d_, t_, n=6001)
+        good_ = (abs(r1_) < 1e-10 and abs(r2_) < 3e-6
+                 and abs(r3_) < 3e-6)
+        kap_ok &= good_
+        print(f"Kapouleas k={k_} a={a_}: notebook period test "
+              f"({r1_:+.1e}, {r2_:+.1e}, {r3_:+.1e}) "
+              f"{'OK' if good_ else 'FAIL'}")
+    kap_growth_ref = {(2, 4): 0.389992, (3, 7): 0.753198,
+                      (4, 6): 1.168732, (4, 15): 1.073596,
+                      (6, 9): 2.788387, (6, 25): 1.098769}
+    gg_ok = all(abs(we.kap_growth(k_, *we.KAP_SOLS[k_][mi_]) - v_)
+                < 1e-4 for (k_, mi_), v_ in kap_growth_ref.items())
+    kap_ok &= gg_ok
+    print(f"Kapouleas growth-rate ratios at the six exported members "
+          f"{'OK' if gg_ok else 'FAIL'}")
+    # topology target DERIVED, not transcribed: the k-cover of the
+    # 4-ended quotient torus is totally branched over the four ends
+    # (Riemann-Hurwitz: chi_closed = -4(k-1), genus 2k - 1), so the
+    # end-truncated mesh must measure chi = 2 - 2(2k-1) - 4 = -4k
+    # with 4 catenoid rims -- at EVERY member, k = 2 included (a
+    # first build measured -6 there; the derivation flagged the mesh
+    # and the fault was the r0 hole swallowing the z = 1 corner)
+    for order_ in (1, 3, 4, 5):
+        k_ = we.KAP_MEMBERS[order_ - 1][0]
+        V_, F_, _uv = we.kap_mesh(None, 48, 48, order_, 1.2, 1.0)
+        chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(
+            np.asarray(V_), F_)
+        good_ = (ncomp_ == 1 and chi_ == -4 * k_ and loops_ == 4
+                 and nm2_ == 0 and orient_)
+        kap_ok &= good_
+        print(f"Kapouleas k={k_} assembly: comps={ncomp_} chi={chi_} "
+              f"(derived {-4 * k_}) loops={loops_} nonman={nm2_} "
+              f"oriented={orient_} {'OK' if good_ else 'FAIL'}")
+    ok &= kap_ok
+
+    # CHKM tori gates: the notebook's own 2-component period test must
+    # vanish at every stored member (printed values kept verbatim;
+    # converged quadrature -- a wrong member reads directly), the
+    # assembly must be ONE torus with 3 catenoid rims (chi = 2 - 2g - r
+    # = -3, DERIVED from genus 1 + 3 ends), and the extent ratios are
+    # pinned to Weber's own PoVRay exports of all three members
+    # (z/x, y/x measured off his dummy.pov; full point registration
+    # landed at 0.29-0.31% GT -> ours of span offline).
+    chkm_ok = True
+    for mi_ in (1, 2, 3):
+        t1_, t2_ = we.chkm_tst(mi_)
+        good_ = abs(t1_) < 1e-8 and abs(t2_) < 1e-8
+        chkm_ok &= good_
+        print(f"CHKM torus member {mi_}: notebook period test "
+              f"({t1_:+.1e}, {t2_:+.1e}) {'OK' if good_ else 'FAIL'}")
+    chkm_pins = {1: (0.4511, 1.0865), 2: (0.2699, 1.0898),
+                 3: (0.2428, 1.1529)}
+    for mi_, (zx_, yx_) in chkm_pins.items():
+        V_, F_, _uv = we.chkm_mesh(None, 40, 40, mi_, 1.2, 1.0)
+        V_ = np.asarray(V_)
+        chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(V_, F_)
+        topo_ = (ncomp_ == 1 and chi_ == -3 and loops_ == 3
+                 and nm2_ == 0 and orient_)
+        ex_ = V_.max(axis=0) - V_.min(axis=0)
+        r_zx = abs(ex_[2] / ex_[0] - zx_) / zx_
+        r_yx = abs(ex_[1] / ex_[0] - yx_) / yx_
+        good_ = topo_ and r_zx < 0.01 and r_yx < 0.01
+        chkm_ok &= good_
+        print(f"CHKM torus member {mi_}: comps={ncomp_} chi={chi_} "
+              f"(derived -3) loops={loops_} nonman={nm2_} "
+              f"oriented={orient_}; z/x vs Weber off {r_zx:.1e}, "
+              f"y/x off {r_yx:.1e} {'OK' if good_ else 'FAIL'}")
+    ok &= chkm_ok
 
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20

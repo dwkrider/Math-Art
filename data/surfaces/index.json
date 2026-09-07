@@ -21,7 +21,6 @@
     "def-implicit",
     "def-nodal",
     "def-parametric",
-    "def-variational",
     "def-weierstrass",
     "derived",
     "discrete",
@@ -80,8 +79,8 @@
     "swept",
     "topological"
   ],
-  "count": 475,
-  "implemented_count": 457,
+  "count": 474,
+  "implemented_count": 465,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -841,7 +840,7 @@
     },
     {
       "slug": "brakke-pseudo-batwing",
-      "name": "BRAKKE_PSEUDO_BATWING (exact)",
+      "name": "Brakke Pseudo-Batwing",
       "path": "surfaces/minimal-periodic/brakke-pseudo-batwing.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -1182,7 +1181,7 @@
     },
     {
       "slug": "c21p-exact",
-      "name": "C21P (exact)",
+      "name": "Schoen C21(P)",
       "path": "surfaces/minimal-periodic/c21p-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2008,7 +2007,7 @@
     },
     {
       "slug": "cd-surface",
-      "name": "Cd surface",
+      "name": "Complementary D",
       "path": "surfaces/minimal-periodic/cd-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2044,7 +2043,7 @@
     },
     {
       "slug": "cg-surface",
-      "name": "Cg surface",
+      "name": "Complementary Gyroid",
       "path": "surfaces/minimal-periodic/cg-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2217,7 +2216,7 @@
     },
     {
       "slug": "ci2y-surface",
-      "name": "Ci2Y surface",
+      "name": "C(I2-Y**) Rod Packing",
       "path": "surfaces/minimal-periodic/ci2y-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2363,7 +2362,7 @@
     },
     {
       "slug": "clp-exact",
-      "name": "CLP (exact)",
+      "name": "Schwarz CLP",
       "path": "surfaces/minimal-periodic/clp-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2398,7 +2397,7 @@
     },
     {
       "slug": "clp-handle-exact",
-      "name": "CLP_HANDLE (exact)",
+      "name": "CLP with Handle (exact fundamental piece, genus 4)",
       "path": "surfaces/minimal-periodic/clp-handle-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2703,15 +2702,15 @@
     },
     {
       "slug": "costa-hoffman-karcher-meeks-tori",
-      "name": "Costa-Hoffman-Karcher-Meeks Tori",
+      "name": "Costa-Hoffman-Karcher-Meeks Torus",
       "path": "surfaces/minimal/costa-hoffman-karcher-meeks-tori.json",
       "primary_family": "minimal",
       "families": [
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -2729,8 +2728,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -3691,7 +3692,7 @@
     },
     {
       "slug": "disphenoid-family-a-genus-31",
-      "name": "DISPHENOID_FAMILY_A_GENUS_31 (exact)",
+      "name": "Disphenoid 31",
       "path": "surfaces/minimal-periodic/disphenoid-family-a-genus-31.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3726,7 +3727,7 @@
     },
     {
       "slug": "disphenoid-family-a-genus-43",
-      "name": "DISPHENOID_FAMILY_A_GENUS_43 (exact)",
+      "name": "Disphenoid 43",
       "path": "surfaces/minimal-periodic/disphenoid-family-a-genus-43.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3761,7 +3762,7 @@
     },
     {
       "slug": "disphenoid-family-a-genus-55",
-      "name": "DISPHENOID_FAMILY_A_GENUS_55 (exact)",
+      "name": "Disphenoid 55",
       "path": "surfaces/minimal-periodic/disphenoid-family-a-genus-55.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3796,7 +3797,7 @@
     },
     {
       "slug": "disphenoid-family-b-genus-35",
-      "name": "DISPHENOID_FAMILY_B_GENUS_35 (exact)",
+      "name": "Disphenoid 35",
       "path": "surfaces/minimal-periodic/disphenoid-family-b-genus-35.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3831,7 +3832,7 @@
     },
     {
       "slug": "disphenoid-family-b-genus-51",
-      "name": "DISPHENOID_FAMILY_B_GENUS_51 (exact)",
+      "name": "Disphenoid 51",
       "path": "surfaces/minimal-periodic/disphenoid-family-b-genus-51.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3866,7 +3867,7 @@
     },
     {
       "slug": "disphenoid-family-b-genus-67",
-      "name": "DISPHENOID_FAMILY_B_GENUS_67 (exact)",
+      "name": "Disphenoid 67",
       "path": "surfaces/minimal-periodic/disphenoid-family-b-genus-67.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3969,7 +3970,7 @@
     },
     {
       "slug": "dprime-surface",
-      "name": "Dprime surface",
+      "name": "D'",
       "path": "surfaces/minimal-periodic/dprime-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4870,7 +4871,7 @@
     },
     {
       "slug": "fischer-koch-cs",
-      "name": "Fk Cs surface",
+      "name": "Fischer-Koch C(S)",
       "path": "surfaces/minimal-periodic/fischer-koch-cs.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4906,7 +4907,7 @@
     },
     {
       "slug": "fischer-koch-cy",
-      "name": "Fk Cy surface",
+      "name": "Fischer-Koch C(Y)",
       "path": "surfaces/minimal-periodic/fischer-koch-cy.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5012,7 +5013,7 @@
     },
     {
       "slug": "fk-cpmy-surface",
-      "name": "Fk Cpmy surface",
+      "name": "Fischer-Koch C(+-Y)",
       "path": "surfaces/minimal-periodic/fk-cpmy-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5048,7 +5049,7 @@
     },
     {
       "slug": "fk-pmy-surface",
-      "name": "Fk Pmy surface",
+      "name": "Fischer-Koch +-Y",
       "path": "surfaces/minimal-periodic/fk-pmy-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5084,7 +5085,7 @@
     },
     {
       "slug": "fk-s-surface",
-      "name": "Fk S surface",
+      "name": "Fischer-Koch S",
       "path": "surfaces/minimal-periodic/fk-s-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5120,7 +5121,7 @@
     },
     {
       "slug": "fk-y-surface",
-      "name": "Fk Y surface",
+      "name": "Fischer-Koch Y",
       "path": "surfaces/minimal-periodic/fk-y-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5224,15 +5225,15 @@
     },
     {
       "slug": "four-noid-two-symmetry-planes",
-      "name": "4-Noid with Two Symmetry Planes",
+      "name": "4-Noid, Two Symmetry Planes",
       "path": "surfaces/minimal/four-noid-two-symmetry-planes.json",
       "primary_family": "minimal",
       "families": [
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -5250,8 +5251,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -5290,7 +5293,7 @@
     },
     {
       "slug": "frd-surface",
-      "name": "Frd surface",
+      "name": "Schoen F-RD",
       "path": "surfaces/minimal-periodic/frd-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5326,7 +5329,7 @@
     },
     {
       "slug": "frd2-surface",
-      "name": "Frd2 surface",
+      "name": "Schoen F-RD (Wohlgemuth variant)",
       "path": "surfaces/minimal-periodic/frd2-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5568,7 +5571,7 @@
     },
     {
       "slug": "gprime-surface",
-      "name": "Gprime surface",
+      "name": "G' Alternating Gyroid",
       "path": "surfaces/minimal-periodic/gprime-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5709,7 +5712,7 @@
     },
     {
       "slug": "h-exact",
-      "name": "H (exact)",
+      "name": "Schwarz H",
       "path": "surfaces/minimal-periodic/h-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6262,7 +6265,7 @@
     },
     {
       "slug": "hexplane1-exact",
-      "name": "HEXPLANE1 (exact)",
+      "name": "Hexplane 1",
       "path": "surfaces/minimal-periodic/hexplane1-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6297,7 +6300,7 @@
     },
     {
       "slug": "hexplane2-exact",
-      "name": "HEXPLANE2 (exact)",
+      "name": "Hexplane 2",
       "path": "surfaces/minimal-periodic/hexplane2-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6332,7 +6335,7 @@
     },
     {
       "slug": "hexplane3-exact",
-      "name": "HEXPLANE3 (exact)",
+      "name": "Hexplane 3",
       "path": "surfaces/minimal-periodic/hexplane3-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6367,7 +6370,7 @@
     },
     {
       "slug": "hexplane4-exact",
-      "name": "HEXPLANE4 (exact)",
+      "name": "Hexplane 4",
       "path": "surfaces/minimal-periodic/hexplane4-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6402,7 +6405,7 @@
     },
     {
       "slug": "hexplane5-exact",
-      "name": "HEXPLANE5 (exact)",
+      "name": "Hexplane 5",
       "path": "surfaces/minimal-periodic/hexplane5-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6535,8 +6538,42 @@
       "specimen_count": 0
     },
     {
+      "slug": "horgan-surface-non-existent-near-miss",
+      "name": "Horgan Surface (non-existent, near-miss)",
+      "path": "surfaces/minimal/horgan-surface-non-existent-near-miss.json",
+      "primary_family": "minimal",
+      "families": [
+        "aperiodic",
+        "def-weierstrass",
+        "immersed",
+        "implemented",
+        "minimal",
+        "tradition-classical"
+      ],
+      "definition_mode": "weierstrass",
+      "has_approximation": false,
+      "curvature_condition": "minimal",
+      "periodicity_rank": 0,
+      "genus": null,
+      "genus_per_cell": null,
+      "orientable": null,
+      "ends": 0,
+      "embedding": "immersed",
+      "symmetry": {
+        "kind": "none",
+        "symbol": null,
+        "ita_number": null,
+        "order": null
+      },
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
+      "specimen_count": 0
+    },
+    {
       "slug": "ht-tr-exact",
-      "name": "HT_TR (exact)",
+      "name": "Schoen H'-T | T'-R'",
       "path": "surfaces/minimal-periodic/ht-tr-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6952,7 +6989,7 @@
     },
     {
       "slug": "iwp-surface",
-      "name": "Iwp surface",
+      "name": "Schoen I-WP",
       "path": "surfaces/minimal-periodic/iwp-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7160,18 +7197,18 @@
     },
     {
       "slug": "kapouleas-surfaces",
-      "name": "Kapouleas Surface",
+      "name": "Kapouleas Surface (desingularized catenoids)",
       "path": "surfaces/minimal/kapouleas-surfaces.json",
       "primary_family": "minimal",
       "families": [
         "aperiodic",
-        "def-variational",
+        "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
-      "definition_mode": "variational",
+      "definition_mode": "weierstrass",
       "has_approximation": false,
       "curvature_condition": "minimal",
       "periodicity_rank": 0,
@@ -7186,8 +7223,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7611,7 +7650,7 @@
     },
     {
       "slug": "ksurf-surface",
-      "name": "Ksurf surface",
+      "name": "Karcher K",
       "path": "surfaces/minimal-periodic/ksurf-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7761,8 +7800,8 @@
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -7780,8 +7819,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -7921,7 +7962,7 @@
     },
     {
       "slug": "lidinoid",
-      "name": "Lidinoid surface",
+      "name": "Lidinoid (nodal approximation)",
       "path": "surfaces/minimal-periodic/lidinoid.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7958,7 +7999,7 @@
     },
     {
       "slug": "lidinoid-exact",
-      "name": "LIDINOID (exact)",
+      "name": "Lidinoid (exact)",
       "path": "surfaces/minimal-periodic/lidinoid-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8033,10 +8074,10 @@
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
         "non-orientable",
-        "not-implemented",
         "singly-periodic",
         "tradition-classical"
       ],
@@ -8055,8 +8096,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -8130,7 +8173,7 @@
     },
     {
       "slug": "lord-mackay-p3a",
-      "name": "LORD_MACKAY_P3A (exact)",
+      "name": "Lord-Mackay P3a",
       "path": "surfaces/minimal-periodic/lord-mackay-p3a.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8165,7 +8208,7 @@
     },
     {
       "slug": "lubeck-batista-surface",
-      "name": "Lubeck-Batista Surface (genus 3, tau = i member)",
+      "name": "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
       "path": "surfaces/minimal-periodic/lubeck-batista-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8683,7 +8726,7 @@
     },
     {
       "slug": "neovius-n14",
-      "name": "NEOVIUS_N14 (exact)",
+      "name": "Neovius N14",
       "path": "surfaces/minimal-periodic/neovius-n14.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8718,7 +8761,7 @@
     },
     {
       "slug": "neovius-n26",
-      "name": "NEOVIUS_N26 (exact)",
+      "name": "Neovius N26",
       "path": "surfaces/minimal-periodic/neovius-n26.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8753,7 +8796,7 @@
     },
     {
       "slug": "neovius-n38",
-      "name": "NEOVIUS_N38 (exact)",
+      "name": "Neovius N38",
       "path": "surfaces/minimal-periodic/neovius-n38.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8788,7 +8831,7 @@
     },
     {
       "slug": "neovius-surface",
-      "name": "Neovius surface",
+      "name": "Neovius",
       "path": "surfaces/minimal-periodic/neovius-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8825,7 +8868,7 @@
     },
     {
       "slug": "neovius-sym3",
-      "name": "Neovius-sym3 Surface",
+      "name": "Order 3 Neovius Surface",
       "path": "surfaces/minimal-periodic/neovius-sym3.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8842,7 +8885,7 @@
       "curvature_condition": "minimal",
       "periodicity_rank": 3,
       "genus": null,
-      "genus_per_cell": null,
+      "genus_per_cell": 13,
       "orientable": null,
       "ends": 0,
       "embedding": "immersed",
@@ -8850,7 +8893,7 @@
         "kind": "space",
         "symbol": null,
         "ita_number": null,
-        "order": null
+        "order": 3
       },
       "implemented": false,
       "operator_ids": [],
@@ -9136,7 +9179,7 @@
     },
     {
       "slug": "octo-surface",
-      "name": "Octo surface",
+      "name": "Schoen O,C-TO",
       "path": "surfaces/minimal-periodic/octo-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10485,14 +10528,14 @@
     },
     {
       "slug": "sarti-dodecic",
-      "name": "Sarti Dodecic",
+      "name": "Sarti Dodecic (600 nodes)",
       "path": "surfaces/algebraic/sarti-dodecic.json",
       "primary_family": "algebraic",
       "families": [
         "algebraic",
         "aperiodic",
         "def-implicit",
-        "not-implemented",
+        "implemented",
         "record-holder",
         "singular",
         "tradition-classical"
@@ -10512,8 +10555,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.algebraic_surface_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -10725,7 +10770,7 @@
     },
     {
       "slug": "scherkt-surface",
-      "name": "Scherkt surface",
+      "name": "Scherk Tower (singly periodic)",
       "path": "surfaces/minimal-periodic/scherkt-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10794,7 +10839,7 @@
     },
     {
       "slug": "schoen-batwing",
-      "name": "SCHOEN_BATWING (exact)",
+      "name": "Schoen Batwing",
       "path": "surfaces/minimal-periodic/schoen-batwing.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10829,7 +10874,7 @@
     },
     {
       "slug": "schoen-batwing-41",
-      "name": "SCHOEN_BATWING_41 (exact)",
+      "name": "Schoen C41-4(P)",
       "path": "surfaces/minimal-periodic/schoen-batwing-41.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10864,7 +10909,7 @@
     },
     {
       "slug": "schoen-batwing-57",
-      "name": "SCHOEN_BATWING_57 (exact)",
+      "name": "Schoen C57-4(P)",
       "path": "surfaces/minimal-periodic/schoen-batwing-57.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10899,7 +10944,7 @@
     },
     {
       "slug": "schoen-c-h",
-      "name": "CH (exact)",
+      "name": "Schoen C(H) (genus 7)",
       "path": "surfaces/minimal-periodic/schoen-c-h.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10934,7 +10979,7 @@
     },
     {
       "slug": "schoen-c27-p",
-      "name": "SCHOEN_C27_P (exact)",
+      "name": "Schoen C27(P)",
       "path": "surfaces/minimal-periodic/schoen-c27-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10969,7 +11014,7 @@
     },
     {
       "slug": "schoen-c33-p",
-      "name": "SCHOEN_C33_P (exact)",
+      "name": "Schoen C33(P)",
       "path": "surfaces/minimal-periodic/schoen-c33-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11004,7 +11049,7 @@
     },
     {
       "slug": "schoen-c39-p",
-      "name": "SCHOEN_C39_P (exact)",
+      "name": "Schoen C39(P)",
       "path": "surfaces/minimal-periodic/schoen-c39-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11039,7 +11084,7 @@
     },
     {
       "slug": "schoen-c45-p",
-      "name": "SCHOEN_C45_P (exact)",
+      "name": "Schoen C45(P)",
       "path": "surfaces/minimal-periodic/schoen-c45-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11074,7 +11119,7 @@
     },
     {
       "slug": "schoen-frd-r",
-      "name": "FRDR (exact)",
+      "name": "Schoen F-RD(r) (quarter-twisted, genus 5)",
       "path": "surfaces/minimal-periodic/schoen-frd-r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11109,7 +11154,7 @@
     },
     {
       "slug": "schoen-gw",
-      "name": "GW_CONJ (exact)",
+      "name": "Schoen GW (graphite-wurtzite)",
       "path": "surfaces/minimal-periodic/schoen-gw.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11144,7 +11189,7 @@
     },
     {
       "slug": "schoen-h-t",
-      "name": "HT (exact)",
+      "name": "Schoen H'-T (genus 4)",
       "path": "surfaces/minimal-periodic/schoen-h-t.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11179,7 +11224,7 @@
     },
     {
       "slug": "schoen-hybrid-1",
-      "name": "SCHOEN_HYBRID_1 (exact)",
+      "name": "Schoen Hybrid P | F-RD",
       "path": "surfaces/minimal-periodic/schoen-hybrid-1.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11214,7 +11259,7 @@
     },
     {
       "slug": "schoen-hybrid-h2r-tr",
-      "name": "HR_TR_CONJ (exact)",
+      "name": "Schoen H\"-R | T'-R' hybrid",
       "path": "surfaces/minimal-periodic/schoen-hybrid-h2r-tr.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11249,7 +11294,7 @@
     },
     {
       "slug": "schoen-hybrid-ht-h2r",
-      "name": "HT_HR_CONJ (exact)",
+      "name": "Schoen H'-T | H\"-R hybrid",
       "path": "surfaces/minimal-periodic/schoen-hybrid-ht-h2r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11284,7 +11329,7 @@
     },
     {
       "slug": "schoen-hybrid-ss-p",
-      "name": "SCHOEN_HYBRID_SS_P (exact)",
+      "name": "Schoen P | S'-S''",
       "path": "surfaces/minimal-periodic/schoen-hybrid-ss-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11319,7 +11364,7 @@
     },
     {
       "slug": "schoen-hybrid-tr-ht",
-      "name": "TR_HT_CONJ (exact)",
+      "name": "Schoen T'-R' | H'-T hybrid",
       "path": "surfaces/minimal-periodic/schoen-hybrid-tr-ht.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11354,7 +11399,7 @@
     },
     {
       "slug": "schoen-i6",
-      "name": "I6 (exact)",
+      "name": "Schoen I-6 (exact fundamental piece, genus 5)",
       "path": "surfaces/minimal-periodic/schoen-i6.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11389,7 +11434,7 @@
     },
     {
       "slug": "schoen-i8",
-      "name": "I8_RING (exact)",
+      "name": "Schoen I-8 (ring form)",
       "path": "surfaces/minimal-periodic/schoen-i8.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11424,7 +11469,7 @@
     },
     {
       "slug": "schoen-i9",
-      "name": "I9_RING (exact)",
+      "name": "Schoen I-9 (ring form)",
       "path": "surfaces/minimal-periodic/schoen-i9.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11459,7 +11504,7 @@
     },
     {
       "slug": "schoen-iwp-r",
-      "name": "SCHOEN14 (exact)",
+      "name": "Schoen p.14 Surface",
       "path": "surfaces/minimal-periodic/schoen-iwp-r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11494,7 +11539,7 @@
     },
     {
       "slug": "schoen-manta-genus-19",
-      "name": "SCHOEN_MANTA_GENUS_19 (exact)",
+      "name": "Schoen Manta",
       "path": "surfaces/minimal-periodic/schoen-manta-genus-19.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11529,7 +11574,7 @@
     },
     {
       "slug": "schoen-manta-genus-35",
-      "name": "SCHOEN_MANTA_GENUS_35 (exact)",
+      "name": "Schoen Manta (genus 35)",
       "path": "surfaces/minimal-periodic/schoen-manta-genus-35.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11564,7 +11609,7 @@
     },
     {
       "slug": "schoen-manta-genus-51",
-      "name": "SCHOEN_MANTA_GENUS_51 (exact)",
+      "name": "Schoen Manta (genus 57)",
       "path": "surfaces/minimal-periodic/schoen-manta-genus-51.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11599,7 +11644,7 @@
     },
     {
       "slug": "schoen-rii",
-      "name": "RII (exact)",
+      "name": "Schoen R-II (genus 9)",
       "path": "surfaces/minimal-periodic/schoen-rii.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11634,7 +11679,7 @@
     },
     {
       "slug": "schoen-riii",
-      "name": "R3_RING (exact)",
+      "name": "Schoen R-III (ring form, genus 13)",
       "path": "surfaces/minimal-periodic/schoen-riii.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11669,7 +11714,7 @@
     },
     {
       "slug": "schoen-s-s",
-      "name": "SS (exact)",
+      "name": "Schoen S'-S'' (genus 4)",
       "path": "surfaces/minimal-periodic/schoen-s-s.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -12223,7 +12268,7 @@
     },
     {
       "slug": "simoes-batista-surface",
-      "name": "SIMOES_BATISTA (exact)",
+      "name": "Simoes-Batista Surface (genus 7)",
       "path": "surfaces/minimal-periodic/simoes-batista-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -12942,7 +12987,7 @@
     },
     {
       "slug": "splitp-surface",
-      "name": "Splitp surface",
+      "name": "Split P",
       "path": "surfaces/minimal-periodic/splitp-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13012,7 +13057,7 @@
     },
     {
       "slug": "starfish-2-1-genus-31",
-      "name": "STARFISH_2_1_GENUS_31 (exact)",
+      "name": "Starfish 2-1 (genus 31)",
       "path": "surfaces/minimal-periodic/starfish-2-1-genus-31.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13047,7 +13092,7 @@
     },
     {
       "slug": "starfish-2-2-genus-47",
-      "name": "STARFISH_2_2_GENUS_47 (exact)",
+      "name": "Starfish 2-2 (genus 47)",
       "path": "surfaces/minimal-periodic/starfish-2-2-genus-47.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13082,7 +13127,7 @@
     },
     {
       "slug": "starfish-2-3-genus-63",
-      "name": "STARFISH_2_3_GENUS_63 (exact)",
+      "name": "Starfish 2-3 (genus 63)",
       "path": "surfaces/minimal-periodic/starfish-2-3-genus-63.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13152,7 +13197,7 @@
     },
     {
       "slug": "starfish-3-1-genus-43",
-      "name": "STARFISH_3_1_GENUS_43 (exact)",
+      "name": "Starfish 3-1 (genus 43)",
       "path": "surfaces/minimal-periodic/starfish-3-1-genus-43.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13187,7 +13232,7 @@
     },
     {
       "slug": "starfish-3-2-genus-59",
-      "name": "STARFISH_3_2_GENUS_59 (exact)",
+      "name": "Starfish 3-2 (genus 59)",
       "path": "surfaces/minimal-periodic/starfish-3-2-genus-59.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13222,7 +13267,7 @@
     },
     {
       "slug": "starfish-3-3-genus-75",
-      "name": "STARFISH_3_3_GENUS_75 (exact)",
+      "name": "Starfish 3-3 (genus 75)",
       "path": "surfaces/minimal-periodic/starfish-3-3-genus-75.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13292,7 +13337,7 @@
     },
     {
       "slug": "starfish-4-1-genus-55",
-      "name": "STARFISH_4_1_GENUS_55 (exact)",
+      "name": "Starfish 4-1 (genus 55)",
       "path": "surfaces/minimal-periodic/starfish-4-1-genus-55.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13360,7 +13405,7 @@
     },
     {
       "slug": "starfish-4-3-genus-87",
-      "name": "STARFISH_4_3_GENUS_87 (exact)",
+      "name": "Starfish 4-3 (genus 87)",
       "path": "surfaces/minimal-periodic/starfish-4-3-genus-87.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13668,7 +13713,7 @@
     },
     {
       "slug": "stessmann-surface",
-      "name": "STESSMANN (exact)",
+      "name": "Stessmann's Surface (exact fundamental piece, conjugate to I-WP)",
       "path": "surfaces/minimal-periodic/stessmann-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15000,7 +15045,7 @@
     },
     {
       "slug": "triplane0-exact",
-      "name": "TRIPLANE0 (exact)",
+      "name": "Triplane 0",
       "path": "surfaces/minimal-periodic/triplane0-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15035,7 +15080,7 @@
     },
     {
       "slug": "triplane1-exact",
-      "name": "TRIPLANE1 (exact)",
+      "name": "Triplane 1",
       "path": "surfaces/minimal-periodic/triplane1-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15070,7 +15115,7 @@
     },
     {
       "slug": "triplane2-exact",
-      "name": "TRIPLANE2 (exact)",
+      "name": "Triplane 2",
       "path": "surfaces/minimal-periodic/triplane2-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15105,7 +15150,7 @@
     },
     {
       "slug": "triplane3-exact",
-      "name": "TRIPLANE3 (exact)",
+      "name": "Triplane 3",
       "path": "surfaces/minimal-periodic/triplane3-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15140,7 +15185,7 @@
     },
     {
       "slug": "triplane4-exact",
-      "name": "TRIPLANE4 (exact)",
+      "name": "Triplane 4",
       "path": "surfaces/minimal-periodic/triplane4-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15175,7 +15220,7 @@
     },
     {
       "slug": "triplane5-exact",
-      "name": "TRIPLANE5 (exact)",
+      "name": "Triplane 5",
       "path": "surfaces/minimal-periodic/triplane5-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15210,7 +15255,7 @@
     },
     {
       "slug": "triply-periodic-costa",
-      "name": "TRIPLY_COSTA (exact)",
+      "name": "Triply Periodic Costa (Batista, exact fundamental piece, genus 5)",
       "path": "surfaces/minimal-periodic/triply-periodic-costa.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15245,7 +15290,7 @@
     },
     {
       "slug": "triply-periodic-horgan",
-      "name": "TRIPLY_HORGAN (exact)",
+      "name": "Triply Periodic Horgan Surface (exact fundamental piece, genus 5)",
       "path": "surfaces/minimal-periodic/triply-periodic-horgan.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15687,41 +15732,8 @@
       "specimen_count": 0
     },
     {
-      "slug": "weber-bc2",
-      "name": "Weber BC2 Surface",
-      "path": "surfaces/minimal-periodic/weber-bc2.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "minimal",
-        "minimal-periodic",
-        "not-implemented",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
-    },
-    {
       "slug": "weber-fr-d",
-      "name": "FRD_EXACT (exact)",
+      "name": "Schoen F-RD (genus 6)",
       "path": "surfaces/minimal-periodic/weber-fr-d.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15756,7 +15768,7 @@
     },
     {
       "slug": "weber-h2r",
-      "name": "H2R (exact)",
+      "name": "Schoen H''-R (genus 5)",
       "path": "surfaces/minimal-periodic/weber-h2r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15791,7 +15803,7 @@
     },
     {
       "slug": "weber-pqr-series",
-      "name": "BOX_1001 (exact)",
+      "name": "Box Type (+-|+) (genus 5)",
       "path": "surfaces/minimal-periodic/weber-pqr-series.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15826,7 +15838,7 @@
     },
     {
       "slug": "weber-rpd",
-      "name": "RPD (exact)",
+      "name": "rPD deformation",
       "path": "surfaces/minimal-periodic/weber-rpd.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15860,41 +15872,8 @@
       "specimen_count": 0
     },
     {
-      "slug": "weber-tr",
-      "name": "Weber T-prime-R Surface",
-      "path": "surfaces/minimal-periodic/weber-tr.json",
-      "primary_family": "minimal-periodic",
-      "families": [
-        "def-weierstrass",
-        "immersed",
-        "minimal",
-        "minimal-periodic",
-        "not-implemented",
-        "tradition-crystallographic",
-        "triply-periodic"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 3,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "space",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
-      "specimen_count": 0
-    },
-    {
       "slug": "weber-trr",
-      "name": "TR (exact)",
+      "name": "Schoen T'-R' (genus 6)",
       "path": "surfaces/minimal-periodic/weber-trr.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15936,8 +15915,8 @@
         "aperiodic",
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
-        "not-implemented",
         "tradition-classical"
       ],
       "definition_mode": "weierstrass",
@@ -15955,8 +15934,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.parametric_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
@@ -16065,7 +16046,7 @@
     },
     {
       "slug": "wei-triply-periodic-genus-4",
-      "name": "WEI_G4 (exact)",
+      "name": "Wei Triply Periodic Surface (genus 4, a=0.1 b=0.3 member)",
       "path": "surfaces/minimal-periodic/wei-triply-periodic-genus-4.json",
       "primary_family": "minimal-periodic",
       "families": [

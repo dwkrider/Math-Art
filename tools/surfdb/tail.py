@@ -82,12 +82,18 @@ TPMS = [
      "Disphenoid surface with equal-length C2 axes."),
 ]
 
+# Two names that were in the Wayback index of Weber's dead archive have
+# been REMOVED rather than carried as records:
+#   weber-bc2 -- a folder name and nothing else.  No chapter, notebook,
+#     paper or datafile ever surfaced; there was nothing to build from
+#     and nothing to say about it beyond its own absence.
+#   weber-tr  -- the same surface as `weber-trr`, which ships.
+#     Fujimori-Weber's Table 1 lists only T'-R' genus 6, so the index
+#     name was a second label for a row already present.
 WEBER_ARCHIVE = [
     ("weber-rpd", "Weber rPD Surface"),
-    ("weber-bc2", "Weber BC2 Surface"),
     ("weber-fr-d", "Weber FR-D Surface"),
     ("weber-h2r", "Weber H-double-prime-R Surface"),
-    ("weber-tr", "Weber T-prime-R Surface"),
     ("weber-trr", "Weber T-prime-R-prime Surface"),
     ("triply-periodic-costa", "Triply Periodic Costa Surface"),
     ("neovius-sym3", "Neovius-sym3 Surface"),
@@ -212,6 +218,63 @@ def records():
                 "tradition": ["crystallographic"],
             },
         }
+
+    # neovius-sym3: IDENTIFIED (2026-09).  The Wayback CDX places the
+    # folder at archive/Triply/genus13/Neoviussym3/ -- Weber filed his
+    # Triply/ tree BY GENUS, so the filing itself records genus 13 per
+    # cell -- and the archived page (index.html, captured 2010-07-27,
+    # re-fetched with both 600 px renders and preserved in the local
+    # mirror under _wayback_archive/) titles it "Order 3 Neovius
+    # Surface" and states: "One half of the fundamental piece of this
+    # surface sits inside a triangular prism, with Neovius-style
+    # handles extending to all edges of the prism", linking the plain
+    # genus-9 Neovius as a relative.  That is exactly Karcher (1989)
+    # section 6.1.3's Neovius analog for the triangular prism, and it
+    # is DISTINCT from every shipped Neovius/C(H) row: Neovius C(P)
+    # genus 9, Schoen C(H) genus 7 (hexagonal, derived differently in
+    # Karcher 6.1.5), Brakke N14/N26/N38 genus 14/26/38 (cubic).  No
+    # notebook or datafile was ever archived (mma.nb probes 404; the
+    # folder holds only the two renders and the page), so the record
+    # stays unbuilt -- but it is a real, identified surface, not a
+    # bare folder name.
+    out["neovius-sym3"].update({
+        "name": "Order 3 Neovius Surface",
+        "blocked_by":
+            "Identified from the Wayback capture of Weber's dead "
+            "archive (Triply/genus13/Neoviussym3, page captured "
+            "2010-07-27): the 'Order 3 Neovius Surface', genus 13 per "
+            "cell, one half of the fundamental piece in a triangular "
+            "prism with Neovius-style handles to all edges of the "
+            "prism -- Karcher 1989 section 6.1.3's triangular-prism "
+            "Neovius analog, distinct from the shipped Neovius "
+            "(genus 9), C(H) (genus 7) and N14/N26/N38 (genus "
+            "14/26/38) rows.  No notebook or datafile was ever "
+            "archived (only the page and two renders, preserved in "
+            "the local mirror under _wayback_archive/), so there is "
+            "no Weierstrass data to transcribe; a construction would "
+            "be a from-scratch conjugate-Plateau or handle-insertion "
+            "build.",
+        "resume":
+            "The recovered page and renders are at the minsurf "
+            "mirror's _mirror/_wayback_archive/Triply/genus13/"
+            "Neoviussym3/web/; route: Karcher 1989 6.1.3 "
+            "(conjugate-Plateau, Neovius-style handles to the "
+            "triangular prism's edges), gated against the recovered "
+            "renders and the genus-13 count.",
+    })
+    out["neovius-sym3"]["sources"] = list(WEBER_SOURCES) + [
+        "M. Weber, 'Order 3 Neovius Surface', formerly at "
+        "indiana.edu/~minimal/archive/Triply/genus13/Neoviussym3/ "
+        "(Wayback capture 2010-07-27; page and renders preserved in "
+        "the local mirror).",
+        "H. Karcher, 'The triply periodic minimal surfaces of Alan "
+        "Schoen and their constant mean curvature companions', "
+        "Manuscripta Math. 64 (1989) 291-357, section 6.1.3 -- the "
+        "Neovius analogs with handles to the horizontal edges of the "
+        "three orthogonal prisms.",
+    ]
+    out["neovius-sym3"]["extra"]["topology"]["genus_per_cell"] = 13
+    out["neovius-sym3"]["extra"]["symmetry"]["order"] = 3
 
     for slug, name, note in ALGEBRAIC:
         out[slug] = {

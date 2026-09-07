@@ -7,18 +7,39 @@
     "aperiodic",
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
     "mode": "weierstrass",
     "fidelity": "exact",
-    "polynomial": null,
-    "note": "Kusner's immersed minimal spheres with an even number 2n of planar ends (the VMM exhibit shows n = 4: a sphere with 8 punctures, 4 per hemisphere, and 4 straight lines on the surface).  For n odd the immersion factors through the antipodal map and gives the projective-plane family, which has its own record (kusner-projective-plane-p-planar-ends)."
+    "exactness": "numerical-integral",
+    "gauss_map": "z**(-1 + p)*(z**p - s)/(1.0 + s*z**p)",
+    "height_differential": "1.0*i*z**(-1 + p)*(1.0 + s*z**p)*(z**p - s)/(-1.0 + z**(2*p) + 2.0*s*z**p/(-1 + p))**2",
+    "parameters": [
+      {
+        "name": "p",
+        "domain": "see the generator's p_from",
+        "default": 6,
+        "integer": true
+      },
+      {
+        "name": "s",
+        "domain": "see the generator's p_from",
+        "default": 3.3166247903554,
+        "integer": false
+      }
+    ],
+    "note": "Extracted from the shipped row's source by AST (complete multi-line lambdas, g/dh lambdas) and reproduced numerically against the shipped callables over the complex plane, exactly -- no scalar slack."
   },
   "curvature": {
     "condition": "minimal",
+    "mean": {
+      "exact": "0",
+      "value": 0.0,
+      "source": "classical"
+    },
     "also_satisfies": [
       "weingarten"
     ]
@@ -36,14 +57,21 @@
   },
   "construction": [
     {
-      "implemented": false,
-      "blocked_by": "Named exhibit in the 3DXM Virtual Math Museum (mirrored locally); no construction has been built in math_art.",
-      "resume": "The mirrored VMM page links the exhibit's 3D-XplorMath documentation PDF; reconstruct the Weierstrass data from it (or from Karcher's cited Tokyo notes) and follow the zoo route in math_art/minsurf/; see research/minimal_surfaces_status.md."
+      "generator": "math_art.minsurf.parametric",
+      "operator_id": "mesh.parametric_minimal_add",
+      "family": "SPHERES",
+      "key": "KUSNER_SPHERE",
+      "definition_index": 0,
+      "implemented": true
     }
   ],
   "provenance": {
-    "definition": "Not transcribed. The record exists to state that the surface is absent and why; a fabricated equation would be worse than a null.",
+    "definition": "Weierstrass data reproduced numerically against the shipped implementation (math_art/minsurf/zoo.py, row KUSNER_SPHERE) by sampling g and dh over rings in the complex plane at the row's default parameters: g: matches over 144 complex samples (worst 0); dh: matches over 144 complex samples (worst 1.43e-14).",
     "sources": [
+      "L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987) 291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full citations in the weierstrass symtail engine block.",
+      "B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33 (1991) for the (never embedded) finite Riemann family; the symmetrized member follows M. Weber, minimalsurfaces.blog, \"Symmetrized Finite Riemann\".",
+      "H. Karcher, \"Construction of minimal surfaces\" (1989) for the symmetrization method (double Enneper, k-noid families);",
+      "L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids; data after M. Weber, minimalsurfaces.blog (\"Symmetrized Double Enneper\", \"k-Noids with Enneper Ends\", \"Antiprismatic k-Noids\").",
       "The 3DXM Consortium, 'Kusner Surface', Virtual Math Museum, virtualmathmuseum.org (local mirror: vmm/book/surface/ch020_kusner_ds.md).",
       "M. Weber, 'Kusner's Spheres with Planar Ends', minimalsurfaces.blog (local mirror: minsurf/book/.../ch065_kusners_spheres_with_planar_ends.md).",
       "R. Kusner, 'Conformal geometry and complete minimal surfaces', Bull. Amer. Math. Soc. 17 (1987) 291-295."
