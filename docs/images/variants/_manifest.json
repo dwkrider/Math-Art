@@ -1952,8 +1952,16 @@
    "Non-Orientable Genus-k"
   ],
   [
+   "DYCK",
+   "Dyck's Surface"
+  ],
+  [
    "GENUS",
    "Genus-g Surface"
+  ],
+  [
+   "KLEIN_QUARTIC",
+   "Klein Quartic"
   ],
   [
    "TWIST_STRIP",
@@ -5670,6 +5678,18 @@
   [
    "BREATHER",
    "Breather Surface"
+  ],
+  [
+   "TWO_SOLITON",
+   "Two-Soliton Surface"
+  ],
+  [
+   "THREE_SOLITON",
+   "Three-Soliton Surface"
+  ],
+  [
+   "FOUR_SOLITON",
+   "Four-Soliton Surface"
   ],
   [
    "AMSLER",
