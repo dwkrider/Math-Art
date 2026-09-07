@@ -76,7 +76,7 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/tpms__SP_TOROIDAL_KS.png" width="200"><br><sub>Toroidal Karcher-Scherk Tower (genus 1)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/tpms__SP_HACKMAN.png" width="200"><br><sub>Hackman Toroidal 1-Noid (t = 0.3333 member)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_HACKMAN.png" width="200"><br><sub>Hackman Screw-Motion 1-Noid</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_SCHERK4.png" width="200"><br><sub>Scherk's Fourth Surface (1835)</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_SIX_SCHERK.png" width="200"><br><sub>Six-Ended Scherk Tower</sub></td>
 </tr>
@@ -91,26 +91,27 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/tpms__SP_SCHERK_ENNEPER.png" width="200"><br><sub>Scherk-Enneper</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__LM_SLAB.png" width="200"><br><sub>Lopez-Martin Slab Surface</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_SIX_SCHERK_G1.png" width="200"><br><sub>Six-Ended Scherk Tower (genus 1)</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_COSTA_SCHERK_G1.png" width="200"><br><sub>Costa-Scherk Tower (genus 1)</sub></td>
-<td align="center"><img src="../images/variants/tpms__SP_EIGHT_SCHERK_G2.png" width="200"><br><sub>Eight-Ended Scherk Tower (genus 2)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__SP_EIGHT_SCHERK_G2.png" width="200"><br><sub>Eight-Ended Scherk Tower (genus 2)</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_DASILVA_BATISTA.png" width="200"><br><sub>daSilva-Batista Surface (genus 2)</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_CAT_HANDLE_G1.png" width="200"><br><sub>Catenoid Tower with Handle (genus 2)</sub></td>
-<td align="center"><img src="../images/variants/tpms__SP_CAT_HANDLES_G3.png" width="200"><br><sub>Catenoid Tower with 2 Handles (genus 3)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__SP_CAT_HANDLES_G3.png" width="200"><br><sub>Catenoid Tower with 2 Handles (genus 3)</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_COSTA_TRANSINV.png" width="200"><br><sub>Translation-Invariant Costa</sub></td>
 <td align="center"><img src="../images/variants/tpms__CHM12_PERIODIC.png" width="200"><br><sub>Callahan-Hoffman-Meeks CHM-(1,2) (genus 4)</sub></td>
-<td align="center"><img src="../images/variants/tpms__SP_SCREW_CHM.png" width="200"><br><sub>Screw-Motion CHM Tower</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__SP_SCREW_CHM.png" width="200"><br><sub>Screw-Motion CHM Tower</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_FISCHER_KOCH.png" width="200"><br><sub>Fischer-Koch Tower (translation-invariant)</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_FK_FREESE.png" width="200"><br><sub>Fischer-Koch-Freese (twisted)</sub></td>
-<td align="center"><img src="../images/variants/tpms__SP_1CAT_2ANN.png" width="200"><br><sub>Torus with Catenoid + 2 Annular Ends</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__SP_1CAT_2ANN.png" width="200"><br><sub>Torus with Catenoid + 2 Annular Ends</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_2ENN_2ANN.png" width="200"><br><sub>Torus with 2 Enneper + 2 Annular Ends</sub></td>
 <td align="center"><img src="../images/variants/tpms__SP_HALF_TWISTED_SCHERK.png" width="200"><br><sub>Half-Twisted Scherk Surface</sub></td>
 </tr>
@@ -135,9 +136,13 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/tpms__CONNOR_DP.png" width="200"><br><sub>Connor Experimental (doubly periodic)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/tpms__DP_LUBECK_BATISTA.png" width="200"><br><sub>Lubeck-Batista Surface (genus 3, tau = i member)</sub></td>
+<td align="center"><img src="../images/variants/tpms__DP_LUBECK_BATISTA.png" width="200"><br><sub>Lubeck-Batista Surface (doubly periodic Scherk-Costa)</sub></td>
 <td align="center"><img src="../images/variants/tpms__DP_CATENOID_FIELD.png" width="200"><br><sub>Catenoid Field (square-torus member)</sub></td>
 <td align="center"><img src="../images/variants/tpms__DP_PLANE_CATENOIDS.png" width="200"><br><sub>Plane with Catenoids (square lattice)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__KARCHER_JD.png" width="200"><br><sub>Karcher JD Saddle Tower</sub></td>
+<td align="center"><img src="../images/variants/tpms__KARCHER_JE.png" width="200"><br><sub>Karcher JE Saddle Tower</sub></td>
 </tr>
 </table>
 
@@ -235,13 +240,23 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/tpms__STARFISH_2_3_GENUS_63.png" width="200"><br><sub>Starfish 2-3 (genus 63)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__STARFISH_2_4_GENUS_79.png" width="200"><br><sub>Starfish 2-4 (genus 79)</sub></td>
 <td align="center"><img src="../images/variants/tpms__STARFISH_3_1_GENUS_43.png" width="200"><br><sub>Starfish 3-1 (genus 43)</sub></td>
 <td align="center"><img src="../images/variants/tpms__STARFISH_3_2_GENUS_59.png" width="200"><br><sub>Starfish 3-2 (genus 59)</sub></td>
-<td align="center"><img src="../images/variants/tpms__STARFISH_3_3_GENUS_75.png" width="200"><br><sub>Starfish 3-3 (genus 75)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__STARFISH_3_3_GENUS_75.png" width="200"><br><sub>Starfish 3-3 (genus 75)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_3_4_GENUS_91.png" width="200"><br><sub>Starfish 3-4 (genus 91)</sub></td>
 <td align="center"><img src="../images/variants/tpms__STARFISH_4_1_GENUS_55.png" width="200"><br><sub>Starfish 4-1 (genus 55)</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/tpms__STARFISH_4_3_GENUS_87.png" width="200"><br><sub>Starfish 4-3 (genus 87)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_4_4_GENUS_103.png" width="200"><br><sub>Starfish 4-4 (genus 103)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_5_1_GENUS_67.png" width="200"><br><sub>Starfish 5-1 (genus 67)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__STARFISH_5_2_GENUS_83.png" width="200"><br><sub>Starfish 5-2 (genus 83)</sub></td>
+<td align="center"><img src="../images/variants/tpms__STARFISH_5_4_GENUS_115.png" width="200"><br><sub>Starfish 5-4 (genus 115)</sub></td>
 <td align="center"><img src="../images/variants/tpms__TRIPLANE0.png" width="200"><br><sub>Triplane 0</sub></td>
 </tr>
 <tr>
