@@ -36,6 +36,22 @@
 #     projective plane (n = 3 is Boy's).  Both are exact identities in
 #     the formula -- see minsurf/topology.build_morin.
 #
+#   * Dyck's surface -- the closed one-sided surface of non-orientable
+#     genus 3, in BOTH of the forms von Dyck proved equal in 1888: a
+#     torus carrying one cross-cap (the default, and the form that
+#     makes the theorem a picture) and a sphere carrying three.  The
+#     cross-caps are attached by exact surgery, so chi = -1 by
+#     construction -- see minsurf/topology.build_dyck.
+#
+#   * The Klein quartic -- the most symmetric genus-3 surface there is,
+#     defined by x^3 y + y^3 z + z^3 x = 0 in the complex projective
+#     plane and so not directly meshable; what is built is its regular
+#     tiling, the map {3,7}_8 with automorphism group PSL(2,7) of order
+#     168, carried through to the mesh: 56 triangles or the dual 24
+#     heptagons on the Schulte-Wills genus-3 polyhedron.  The self-test
+#     counts all 336 symmetries (with reflections) flag by flag -- see
+#     minsurf/topology.build_klein_quartic.
+#
 # Non-orientable surfaces cannot embed in 3-space, so KLEIN / KLEIN8 /
 # CROSSCAP / ROMAN / BOY are immersions with self-intersections. The
 # parametric grids are closed combinatorially -- boundary
@@ -81,6 +97,30 @@
 # - Sphere eversion exists at all: Stephen Smale, "A classification of
 #   immersions of the two-sphere", Trans. AMS 90 (1959), 281-290 -- a
 #   proof that gave no picture, which is what Morin's model supplies.
+# - Dyck's surface: W. von Dyck, "Beitraege zur Analysis situs",
+#   Math. Ann. 32 (1888), 457-512 -- the proof that a sphere with
+#   three cross-caps is the same closed surface as a torus with one.
+# - R. Ferreol, "Encyclopedie des formes mathematiques remarquables"
+#   (mathcurve.com), chapter "surface de Dyck" -- both forms of the
+#   surface, and Christoph Soland's octagon presentation realized in
+#   his wire sculpture "Janus bifrons" (Gymnase du Bugnon, Lausanne).
+# - Klein quartic: F. Klein, "Ueber die Transformation siebenter
+#   Ordnung der elliptischen Functionen", Math. Ann. 14 (1878) -- the
+#   quartic curve and its regular map {3,7}_8 of genus 3 with 168
+#   orientation-preserving symmetries.
+# - E. Schulte and J. M. Wills, "A polyhedral realization of Felix
+#   Klein's map {3,7}_8 on a Riemann surface of genus 3", J. London
+#   Math. Soc. (2) 32 (1985), 539-547 -- the embedded 56-triangle
+#   genus-3 polyhedron on two homothetic truncated tetrahedra that
+#   carries the tiling here.
+# - S. Levy (ed.), "The Eightfold Way: The Beauty of Klein's Quartic
+#   Curve", MSRI Publications 35, Cambridge University Press (1999) --
+#   the volume around Helaman Ferguson's sculpture of the 24-heptagon
+#   tiling, which the dual view shows.
+# - J. C. Baez, "Klein's Quartic Curve",
+#   math.ucr.edu/home/baez/klein.html, and G. Egan, "Klein's Quartic
+#   Curve", gregegan.net/SCIENCE/KleinQuartic/KleinQuartic.html --
+#   the symmetry story and tetrahedral realizations of the tilings.
 # - Menagerie after ch. 6 of H. Segerman, "Visualizing Mathematics
 #   with 3D Printing" (2016).
 
@@ -104,6 +144,7 @@ try:
     from .minsurf.topology import (build_boy, build_crosscap, build_morin,
                                    build_ovalesque, ovalesque_point,
                                    build_steiner,
+                                   build_dyck, build_klein_quartic,
                                    build_genus, build_klein_bottle,
                                    build_klein_franzoni,
                                    build_mobius_band,
@@ -116,6 +157,7 @@ except ImportError:  # flat import outside the package
     from minsurf.topology import (build_boy, build_crosscap, build_morin,
                                   build_ovalesque, ovalesque_point,
                                   build_steiner,
+                                  build_dyck, build_klein_quartic,
                                   build_genus, build_klein_bottle,
                                   build_klein_franzoni,
                                   build_mobius_band,
@@ -282,8 +324,20 @@ PRESET_ITEMS = [
      "cross-caps. k = 1 is the projective plane, k = 2 the Klein "
      "bottle, k = 3 Dyck's surface. Immersed, with a segment of "
      "double points per cross-cap -- none of them embeds in 3-space"),
+    ('DYCK', "Dyck's Surface",
+     "The closed one-sided surface of non-orientable genus 3, in "
+     "either of the two forms von Dyck proved equal in 1888: a torus "
+     "carrying one cross-cap, or a sphere carrying three.  The torus "
+     "form is the default -- a handle and a cross-cap on one surface "
+     "is the theorem made visible"),
     ('GENUS', "Genus-g Surface",
      "Orientable genus-g handlebody surface (implicit)"),
+    ('KLEIN_QUARTIC', "Klein Quartic",
+     "The most symmetric surface of genus 3, carrying its regular "
+     "tiling through to the mesh: 24 heptagons (the Eightfold Way "
+     "view) or the dual 56 triangles, on the Schulte-Wills genus-3 "
+     "polyhedron.  Its symmetry group has order 168 -- the largest "
+     "any genus-3 surface allows"),
     ('TWIST_STRIP', "Twisted Strip (solid)",
      "Solid closed strip with n half-twists; n = 1 is a Mobius band"),
 ]
@@ -406,6 +460,37 @@ if _IN_BLENDER:
         genus: IntProperty(
             name="Genus", default=2, min=1, max=5,
             description="Number of handles (verified for 1-5)")
+        dyck_form: EnumProperty(
+            name="Form", default='TORUS',
+            description="Which of the two equal forms of the surface "
+                        "to build (Dyck's Surface preset only)",
+            items=[('TORUS', "Torus With Cross-Cap",
+                    "A torus with one disk cut away and the rim of "
+                    "the hole glued to itself antipodally: the "
+                    "connected sum of a torus and a projective plane"),
+                   ('SPHERE', "Sphere With Three Cross-Caps",
+                    "A sphere carrying three cross-caps: the "
+                    "connected sum of three projective planes -- the "
+                    "same surface, by von Dyck's theorem")])
+        quartic_tiling: EnumProperty(
+            name="Tiling", default='HEPTAGONS',
+            description="Which of the two dual regular tilings of the "
+                        "quartic to carry as the mesh faces (Klein "
+                        "Quartic preset only)",
+            items=[('HEPTAGONS', "Heptagons",
+                    "The tiling by 24 heptagons, three around every "
+                    "corner -- the view realized in Helaman "
+                    "Ferguson's sculpture The Eightfold Way"),
+                   ('TRIANGLES', "Triangles",
+                    "The dual tiling by 56 triangles, seven around "
+                    "every corner -- the Schulte-Wills polyhedron "
+                    "with flat faces")])
+        quartic_rounding: IntProperty(
+            name="Rounding", default=2, min=0, max=4,
+            description="Subdivision levels that round the tiled "
+                        "polyhedron toward a smooth form, keeping the "
+                        "tiling as the control cage; 0 keeps the flat "
+                        "faces")
         cross_caps: IntProperty(
             name="Cross-Caps k", default=3, min=1, max=8,
             description="Number of cross-caps: N_k has Euler "
@@ -514,6 +599,21 @@ if _IN_BLENDER:
                     max(8, self.res_v // 2), hole=self.cap_size,
                     pinch=self.cap_pinch)
                 name = f"Non-Orientable N{self.cross_caps}"
+            elif p == 'DYCK':
+                if self.dyck_form == 'SPHERE':
+                    V, F = build_nonorientable(
+                        3, max(16, self.res_u),
+                        max(8, self.res_v // 2), hole=self.cap_size,
+                        pinch=self.cap_pinch)
+                else:
+                    V, F = build_dyck(
+                        max(16, self.res_u), max(8, self.res_v),
+                        hole=self.cap_size, pinch=self.cap_pinch)
+                name = "Dyck Surface"
+            elif p == 'KLEIN_QUARTIC':
+                V, F = build_klein_quartic(
+                    dual=(self.quartic_tiling == 'HEPTAGONS'))
+                name = "Klein Quartic"
             elif p == 'GENUS':
                 cell = 8.0 / max(self.res_u, 16)
                 V, F = build_genus(self.genus, cell)
@@ -547,6 +647,13 @@ if _IN_BLENDER:
                 # geometry, not a fold a subdivider should keep.
                 mark_sharp(obj.data, winding_conflict_edges(F),
                            crease=False)
+            if p == 'KLEIN_QUARTIC' and self.quartic_rounding > 0:
+                # round the tiled polyhedron toward the smooth genus-3
+                # form; the exact combinatorics stay in the base mesh,
+                # which remains the modifier's control cage
+                mod = obj.modifiers.new("Rounding", 'SUBSURF')
+                mod.levels = self.quartic_rounding
+                mod.render_levels = self.quartic_rounding
             if p in _IMMERSIONS and self.thickness > 0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
@@ -564,6 +671,15 @@ if _IN_BLENDER:
                 lay.prop(self, 'cap_pinch')
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')
+            elif p == 'DYCK':
+                lay.prop(self, 'dyck_form')
+                lay.prop(self, 'cap_size')
+                lay.prop(self, 'cap_pinch')
+                lay.prop(self, 'res_u')
+                lay.prop(self, 'res_v')
+            elif p == 'KLEIN_QUARTIC':
+                lay.prop(self, 'quartic_tiling')
+                lay.prop(self, 'quartic_rounding')
             elif p == 'GENUS':
                 lay.prop(self, 'genus')
                 lay.prop(self, 'res_u')
@@ -706,6 +822,22 @@ def _selftest():
     for g in (1, 2, 3):
         V, F = build_genus(g, cell=0.125)
         stats(f"genus-{g}", V, [tuple(t) for t in F], 2 - 2 * g)
+    # Dyck's surface: both of von Dyck's forms are the same closed
+    # one-sided surface with chi = -1 (deep gates -- one-sidedness,
+    # regularity of the Klein map -- live in minsurf.topology's own
+    # self-test; these are the operator-facing counts)
+    V, F = build_dyck(64, 32)
+    stats("dyck-torus", V, F, -1)
+    V, F = build_nonorientable(3, 64, 16)
+    stats("dyck-sphere", V, F, -1)
+    # the Klein quartic in both tilings: 24/84/56 one way, 56/84/24
+    # the other, chi = -4 either way
+    V, F = build_klein_quartic(dual=False)
+    stats("klein37", V, F, -4)
+    assert len(V) == 24 and len(F) == 56
+    V, F = build_klein_quartic(dual=True)
+    stats("klein73", V, F, -4)
+    assert len(V) == 56 and len(F) == 24
     for n in (0, 1, 2, 3):
         V, F = build_twist_strip(n, 96, ridge=(n == 1))
         cnt = edge_face_counts(F)

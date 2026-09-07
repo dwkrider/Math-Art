@@ -562,9 +562,9 @@ def _printed_expr(eq):
 # 884736 s^6 - 8640 s^3 + 25 (eq. (3) of the paper), which has NO real
 # roots -- the paper itself notes "the coefficients of the surface
 # S_35 are not real".  A complex surface has no real zero set to mesh,
-# so it cannot ship in a real gallery; the real member of that family
-# with 30 real cusps and 10 real nodes (the paper's theorem 3) would
-# need its own transcription pass.
+# so it cannot ship in a real gallery.  The real member of that family
+# with 30 real cusps and 10 real nodes (the paper's Theorem 3) IS
+# shipped, as LABS_30_CUSPS in the cuspidal-record block below.
 #
 # A wrong coefficient in any of these does NOT raise -- it produces a
 # surface that renders perfectly well and simply has the wrong number of
@@ -804,6 +804,21 @@ for _key, _label, _shape, _clip, _fn in _RECORD:
 #       at roots of T4 is singular, and 3 * 3 * 4 * 4 = 144.  The
 #       self-test constructs all 144 and checks each one.
 #
+# One 128-nodal octic deliberately NOT here: M. Kuehnel's
+# (arXiv:math/0210440, 2002).  It is a genuinely DIFFERENT construction
+# from the family's generic-b 128-node member above -- his octic is the
+# discriminant of a quadratic form on a non-split rank-2 bundle over
+# P^3 built by the Serre construction from a degree-8 elliptic curve,
+# with no dihedral symmetry imposed and node counts forced to
+# multiples of 4 (his own remark notes only 124 and 156 would be NEW
+# counts; 128 was already realised by this family) -- but the paper is
+# an existence proof: no polynomial is printed, and the MACAULAY runs
+# it cites operate on the abstract ideal, never producing an equation.
+# Reconstructing one would mean redoing the unpublished Serre-extension
+# computation and choosing a generic section, whose nodes carry no
+# reality guarantee -- a surface the author never wrote down cannot be
+# transcribed, only invented, so it stays out.
+#
 # References:
 # - St. Endrass, "A Projective Surface of Degree Eight with 168
 #   Nodes", J. Algebraic Geom. 6 (1997) 325-334 -- the family and the
@@ -820,6 +835,9 @@ for _key, _label, _shape, _clip, _fn in _RECORD:
 # - V. I. Arnold, S. M. Gusein-Zade and A. N. Varchenko, Singularities
 #   of Differentiable Maps II, Birkhaeuser (1988), p. 419 -- Chmutov's
 #   original series.
+# - M. Kuehnel, "A note on octic hypersurfaces with many nodes",
+#   arXiv:math/0210440 (2002) -- the bundle-theoretic 128-nodal
+#   existence result discussed (and not transcribed) above.
 
 
 #: Endrass's Step 3 values (the 168-node record), and his closed-form
@@ -925,6 +943,205 @@ _OCTIC = (
 )
 
 for _key, _label, _shape, _clip, _fn in _OCTIC:
+    PRESETS[_key] = (_label, _fn, _shape, _clip)
+
+
+# ======================================================================
+# Cusps and higher A_j: the cuspidal record surfaces
+# ======================================================================
+# Three surfaces whose defining property sits one step (or four) up the
+# A_k hierarchy from the node: A2 cusps on a sextic, A5 points on a
+# dodecic, and a classical envelope singular along a cuspidal CURVE.
+#
+#   LABS_30_CUSPS   O. Labs's sextic with 30 real cusps and 10 real
+#       nodes (Theorem 3 of the 35-cusp paper): the D5-symmetric family
+#       f = p - q^3 -- p the product of z and the five planes of a
+#       regular pentagon through the axis, q a D5-invariant quadric --
+#       at the parameters s0 = 5^(1/3)/12, t0 = 4 s0, u = 0 picked out
+#       by the prime component sl_{f,1} of the family's discriminant.
+#       ONE REAL-FORM CHOICE: the paper normalises v := 1 via w ->
+#       lambda w, valid over C for ANY lambda != 0 (its eq. (2)); with
+#       v = +1 the quadric s0(x^2+y^2) + t0 z^2 + w^2 is positive
+#       definite and every cusp has complex coordinates.  Undoing that
+#       with lambda = i gives the real form v = -1 -- the SAME surface
+#       over C -- whose quadric cuts the chart w = 1 in an ellipsoid,
+#       and the 15 pairwise intersection lines of the six planes pierce
+#       it in exactly 2 * 15 = 30 REAL points: the cusps, at closed
+#       form.  The 10 nodes lie in the plane at infinity, at the D5
+#       orbit of the directions (1 : 0 : (3 +- sqrt5)/8 : 0).  All
+#       forty singularities are checked one by one in `_selftest`,
+#       cusps as F = grad F = 0 with Hessian rank EXACTLY 2 and the
+#       cubic term alive (the A2 signature), nodes at rank 3.
+#
+#   LABS_132_A5   the degree-12, j = 5 member of O. Labs's dessins
+#       d'enfants series, construction (4) of the paper:
+#       F^{A2}_d(x, y) + (T(z) + 1)/2 = 0 with F^{A2}_d Chmutov's real
+#       folding polynomial of the root lattice A2 and T a j-Belyi
+#       polynomial.  The paper proves the T exist via their plane trees
+#       but prints no coefficients (they are in general genuinely
+#       algebraic numbers -- its Example 3).  The member behind the
+#       132 = 12 * 11 count of its Table 1 is Theorem 7's maximising
+#       polynomial: floor(12/6) = 2 critical points of multiplicity 5
+#       sharing the SAME critical value -1.  That plane tree is the
+#       mirror-symmetric chain of two 6-edge bouquets, and for it the
+#       Belyi conditions degenerate to closed form:
+#       MT^5_12(z) = 2 (z^2 - 1)^6 - 1, so the surface is simply
+#
+#           F^{A2}_12(x, y) + (z^2 - 1)^6  =  0
+#
+#       with integer coefficients once expanded.  Every critical point
+#       of F^{A2}_12 is real and Morse: 66 = C(12,2) with value 0,
+#       36 = 12*9/3 with value -1, 19 with value 8 -- 121 = 11^2 in
+#       all, the counts the paper states.  Each value-0 critical point
+#       meets the two multiplicity-5 critical points z = +-1 in an A5
+#       point (locally x^2 + y^2 + z^6), giving 132 = 66 * 2 REAL
+#       A5-singularities -- the Table 1 record row, rendered as advent
+#       calendar No. 1 -- plus 36 real A1 nodes in the plane z = 0
+#       where the value -1 critical points meet the simple critical
+#       point of MT at value +1.  `_selftest` recounts the 121 critical
+#       points from scratch and verifies all 132 + 36 singular points.
+#
+#   HYDE   E. W. Hyde's sextic of 1901: the surface touched by the
+#       axes of all screws reciprocal to three given screws.  Hyde's
+#       paper is print-gated and the equation shown on O. Labs's page
+#       was W. Barth's private communication, so the equation here is
+#       DERIVED from the classical definition and gated on every
+#       property the page states.  The screws reciprocal to three
+#       principal screws of pitches (a, b, c) on the coordinate axes
+#       (R. S. Ball's canonical form of a three-system) are
+#       (omega ; -(a wx, b wy, c wz)); eliminating omega from the
+#       three linear axis conditions -- the determinant of
+#       [[h+a, -z, y], [z, h+b, -x], [-y, x, h+c]] -- shows the axes
+#       of the pitch-h members sweep Ball's pitch quadric
+#
+#           (h+a)(h+b)(h+c) + (h+a)x^2 + (h+b)y^2 + (h+c)z^2 = 0,
+#
+#       and the surface touched by ALL the axes is the envelope of the
+#       pitch quadrics over h: the DISCRIMINANT of that monic cubic in
+#       h, whose coefficients are quadrics in (x, y, z).  It is a
+#       sextic with leading form -4 (x^2+y^2+z^2)^3, hence compact and
+#       nonsingular at infinity.  Its singular locus is exactly what
+#       the source describes: a cuspidal double curve where the cubic
+#       acquires a TRIPLE root (the sphere rho^2 = p^2/3 - q(0) cut by
+#       a quadric), and the 6 points where that sphere and quadric are
+#       tangent -- on axis i at coordinate^2 = -(p_i - p_j)(p_i - p_k),
+#       real exactly on the middle-pitch axis: 2 real of 6, matching
+#       the page's "only 2 can be seen in the real image".
+#       CROSS-CHECK: at pitches (-3, -1, 4) the discriminant is
+#       exactly MINUS MathWorld's Hunt sextic, so the shipped HUNT row
+#       is a member of this screw family -- two independent
+#       transcriptions meeting, which `_selftest` verifies, along with
+#       the tangency of the axes themselves.
+#
+# References:
+# - O. Labs, "A Sextic with 35 Cusps", arXiv:math/0502520 (2005) --
+#   the D5 family (1) and Theorem 3, the real member with 30 cusps
+#   and 10 nodes shipped here.
+# - O. Labs, "Dessins d'Enfants and Hypersurfaces with Many
+#   A_j-Singularities", J. London Math. Soc. (2) 74 (2006) 607-622;
+#   arXiv:math/0505022 -- construction (4), the folding-polynomial
+#   critical counts, Theorem 7 and the 132 = 12*11 row of Table 1.
+# - S. V. Chmutov, "Examples of Projective Surfaces with Many
+#   Singularities", J. Algebraic Geom. 1 (1992) 191-196 -- the nodal
+#   construction the A_j series modifies.
+# - E. W. Hyde, "On a Surface of the Sixth Order Which Is Touched by
+#   the Axes of All Screws Reciprocal to Three Given Screws", Ann. of
+#   Math. (2) 2 (1901) 179-188 -- the surface the HYDE row rebuilds
+#   from its classical definition.
+# - R. S. Ball, "A Treatise on the Theory of Screws", Cambridge
+#   University Press (1900) -- the pitch quadric and the canonical
+#   form of a three-system used in the derivation.
+# - O. Labs, Algebraic Surface Homepage, algebraicsurface.net, advent
+#   calendar 2002 Nos. 1 and 17 -- the descriptions the dodecic and
+#   Hyde rows are verified against.  Mirrored locally under
+#   references/websites/algsurf/.
+
+
+_LABS35_S0 = 5.0 ** (1.0 / 3.0) / 12.0
+_LABS35_T0 = 4.0 * _LABS35_S0
+
+
+def _f_labs_cusps(x, y, z, mu):
+    # f = p - q^3 in the chart w = 1 of the real form v = -1 (see the
+    # section comment): p is z times the five pentagon planes, q the
+    # D5-invariant quadric at Theorem 3's parameters.
+    prod = 1.0
+    for j in range(5):
+        a = 2.0 * math.pi * j / 5.0
+        prod = prod * (math.cos(a) * x + math.sin(a) * y - z)
+    q = _LABS35_S0 * (x * x + y * y) + _LABS35_T0 * z * z - 1.0
+    return z * prod - q ** 3
+
+
+def _a2_powsum(d, s1, s2):
+    """Power sum q_d of three numbers with elementary symmetric
+    functions (s1, s2, 1), and its partials in s1 and s2, via Newton's
+    recursion q_k = s1 q_{k-1} - s2 q_{k-2} + q_{k-3}."""
+    q0, q1, q2 = 3.0 + 0.0 * s1, s1, s1 * s1 - 2.0 * s2
+    a0, a1, a2 = 0.0 * s1, 1.0 + 0.0 * s1, 2.0 * s1
+    b0, b1, b2 = 0.0 * s1, 0.0 * s1, -2.0 + 0.0 * s1
+    for _ in range(int(d) - 2):
+        qn = s1 * q2 - s2 * q1 + q0
+        an = q2 + s1 * a2 - s2 * a1 + a0
+        bn = s1 * b2 - q1 - s2 * b1 + b0
+        q0, q1, q2 = q1, q2, qn
+        a0, a1, a2 = a1, a2, an
+        b0, b1, b2 = b1, b2, bn
+    return q2, a2, b2
+
+
+def _a2_fold(d, x, y):
+    """Chmutov's real folding polynomial F^{A2}_d of the root lattice
+    A2, normalised to critical values {0, -1, 8}.
+
+    With s1 = x + iy the elementary symmetric functions of
+    (e^{iu}, e^{iv}, e^{-i(u+v)}) are (s1, conj s1, 1), so the power
+    sum q_d is a polynomial in (s1, conj s1) by Newton's identity and
+    F(x, y) := 2 + q_d + conj q_d satisfies, on the image of
+    phi(u, v) = (cos u + cos v + cos(u+v), sin u + sin v - sin(u+v)),
+    the folding identity F(phi(u, v)) = 2 + 2 (cos du + cos dv
+    + cos d(u+v)) -- which pins its critical values to 8 and to the
+    Chmutov pair {0, -1}.  The identity and the critical counts are
+    gated in `_selftest`."""
+    s1 = x + 1j * y
+    q, _da, _db = _a2_powsum(d, s1, x - 1j * y)
+    return 2.0 + 2.0 * np.real(q)
+
+
+def _a2_fold_grad(d, x, y):
+    """Exact gradient of `_a2_fold` (the conjugate-pair sum defeats
+    complex-step differentiation, so the recursion carries partials)."""
+    _q, da, db = _a2_powsum(d, x + 1j * y, x - 1j * y)
+    return (2.0 * np.real(da + db), 2.0 * np.imag(db - da))
+
+
+def _f_labs_dodecic(x, y, z, mu):
+    # F^{A2}_12(x, y) + (z^2 - 1)^6 = 0: construction (4) at j = 5,
+    # d = 12 with Theorem 7's MT^5_12(z) = 2(z^2-1)^6 - 1, i.e.
+    # (MT + 1)/2 = (z^2 - 1)^6.  132 real A5 points and 36 real nodes.
+    return _a2_fold(12, x, y) + (z * z - 1.0) ** 6
+
+
+def _f_hyde(x, y, z, mu, a=-1.0, b=0.5, c=2.0):
+    # The discriminant in h of the pitch-quadric cubic
+    # (h+a)(h+b)(h+c) + (h+a)x^2 + (h+b)y^2 + (h+c)z^2, written as
+    # h^3 + p h^2 + q h + r with p constant and q, r quadrics.
+    p = a + b + c
+    q = a * b + b * c + c * a + x * x + y * y + z * z
+    r = a * b * c + a * x * x + b * y * y + c * z * z
+    return (18.0 * p * q * r - 4.0 * p ** 3 * r + p * p * q * q
+            - 4.0 * q ** 3 - 27.0 * r * r)
+
+
+_CUSPIDAL = (
+    ('LABS_30_CUSPS', "Labs Sextic (30 cusps)", 'BALL', 3.4,
+     _f_labs_cusps),
+    ('LABS_132_A5', "Labs Dodecic (132 A5 points)", 'BALL', 3.3,
+     _f_labs_dodecic),
+    ('HYDE', "Hyde Sextic", 'BALL', 2.1, _f_hyde),
+)
+
+for _key, _label, _shape, _clip, _fn in _CUSPIDAL:
     PRESETS[_key] = (_label, _fn, _shape, _clip)
 
 
@@ -1908,6 +2125,11 @@ SURFACE_FAMILY.update({k: 'MATHCURVE' for (k, _l, _s, _c, _f)
 SURFACE_FAMILY.update({k: 'MATHWORLD' for (k, _l, _s, _c, _f)
                        in _MATHWORLD})
 SURFACE_FAMILY['VAN_STRATEN_D'] = 'OCTIC'
+# the cuspidal records sit with the nodal ones; Hyde's classical
+# screw envelope sits with the other 19th/early-20th-century surfaces
+SURFACE_FAMILY.update({'LABS_30_CUSPS': 'RECORD',
+                       'LABS_132_A5': 'RECORD',
+                       'HYDE': 'CLASSICAL'})
 
 GOURSAT_PRESETS.update(_load_goursat())
 
@@ -1990,6 +2212,17 @@ PRESET_PARAMS = {
         ('tube', "Tube Radius", 'FLOAT', 0.45, 0.05, 0.7,
          "Radius of the tube. Above the ring radius the hole closes "
          "and the ring cyclide becomes a spindle"),),
+    'HYDE': (
+        ('a', "First Pitch", 'FLOAT', -1.0, -4.0, 4.0,
+         "Pitch of the first principal screw. The surface is the "
+         "envelope of the axes of every screw reciprocal to the three "
+         "principal screws, so the pitches steer the whole shape"),
+        ('b', "Middle Pitch", 'FLOAT', 0.5, -4.0, 4.0,
+         "Pitch of the second principal screw; the two real pinch "
+         "points sit on the axis of the middle pitch"),
+        ('c', "Third Pitch", 'FLOAT', 2.0, -4.0, 4.0,
+         "Pitch of the third principal screw; spreading the pitches "
+         "apart spreads the cuspidal edge"),),
     'FRESNEL': (
         ('axis_b', "Middle Semi-axis", 'FLOAT', 1.2, 1.02, 1.48,
          "Middle semi-axis b of the generating ellipsoid (a = 1 is "
@@ -2789,6 +3022,344 @@ def _selftest():
     ok &= good
     print("algebraic: Labs alpha = %.10f vs published -0.14010685 %s"
           % (_LABS_ALPHA, 'OK' if good else 'FAIL'))
+
+    # ------------------------------------------------------------------
+    # The cuspidal record surfaces: singular sets counted and TYPED.
+    # An A2 cusp and a node render almost identically at mesh
+    # resolution, so each singular point is classified by its Hessian
+    # rank and surviving low-order term, not merely located.
+    # ------------------------------------------------------------------
+    b7 = []
+
+    def _hess33(fn, P3, d=1e-5):
+        H = np.zeros((3, 3))
+        for i in range(3):
+            Pp = np.array(P3, float).reshape(3, 1)
+            Pm = Pp.copy()
+            Pp[i, 0] += d
+            Pm[i, 0] -= d
+            H[:, i] = (_grad_cs(fn, Pp) - _grad_cs(fn, Pm))[:, 0] / (2 * d)
+        return 0.5 * (H + H.T)
+
+    # Labs 30-cusp sextic.  The fifteen pairwise intersection lines of
+    # the six planes pierce the ellipsoid q = 0 in exactly 30 real
+    # points, all in closed form; each must be an A2 cusp: F and grad F
+    # zero, Hessian rank EXACTLY 2, cubic term alive along the null
+    # direction.
+    from itertools import combinations as _combs
+    _pentn = [np.array([math.cos(2.0 * math.pi * j / 5.0),
+                        math.sin(2.0 * math.pi * j / 5.0), -1.0])
+              for j in range(5)]
+    _lines = [np.array([-n[1], n[0], 0.0]) for n in _pentn]
+    _lines += [np.cross(n1, n2) for n1, n2 in _combs(_pentn, 2)]
+    cusps = []
+    for dvec in _lines:
+        t_ = 1.0 / math.sqrt(_LABS35_S0 * (dvec[0] ** 2 + dvec[1] ** 2)
+                             + _LABS35_T0 * dvec[2] ** 2)
+        cusps += [t_ * dvec, -t_ * dvec]
+    P30 = np.array(cusps).T
+    r_lc = max(float(np.max(np.abs(
+        _f_labs_cusps(P30[0], P30[1], P30[2], 1.3)))),
+        float(np.max(np.abs(_grad_cs(_f_labs_cusps, P30)))))
+    n_a2 = 0
+    for P3 in cusps:
+        H = _hess33(_f_labs_cusps, P3)
+        ev, Vv = np.linalg.eigh(H)
+        evs = np.sort(np.abs(ev))[::-1]
+        rank = int(np.sum(np.abs(ev) > 1e-5 * evs[0]))
+        null = Vv[:, int(np.argmin(np.abs(ev)))]
+        tt = 1e-2
+        vals = [float(_f_labs_cusps(*(np.array(P3) + s_ * tt * null),
+                                    1.3)) for s_ in (-2, -1, 1, 2)]
+        d3 = (vals[3] - 2.0 * vals[2] + 2.0 * vals[1] - vals[0]) \
+            / (2.0 * tt ** 3)
+        if rank == 2 and abs(d3) > 1e-3:
+            n_a2 += 1
+    b7.append(("Labs sextic: 30 closed-form cusps on it, singular",
+               r_lc, 1e-9))
+    b7.append(("Labs sextic: all 30 are A2 (rank 2, cubic alive)",
+               0.0 if n_a2 == 30 else 1.0, 0.5))
+
+    # ... and its 10 nodes in the plane at infinity, at the D5 orbit
+    # of (1 : 0 : (3 +- sqrt5)/8 : 0), each with homogeneous Hessian
+    # rank 3 (the fourth null direction is Euler's).
+    def _labsF4(x4, y4, z4, w4):
+        prod = 1.0
+        for j in range(5):
+            aj = 2.0 * math.pi * j / 5.0
+            prod = prod * (math.cos(aj) * x4 + math.sin(aj) * y4 - z4)
+        return (z4 * prod - (_LABS35_S0 * (x4 * x4 + y4 * y4)
+                             + _LABS35_T0 * z4 * z4 - w4 * w4) ** 3)
+
+    def _labsG4(Q):
+        g4 = np.zeros(4)
+        for i in range(4):
+            Qc = np.array(Q, complex)
+            Qc[i] += 1j * 1e-20
+            g4[i] = np.imag(_labsF4(*Qc)) / 1e-20
+        return g4
+
+    r_inf = 0.0
+    n_rank3 = 0
+    _SQ5 = math.sqrt(5.0)
+    for zdir in ((3.0 + _SQ5) / 8.0, (3.0 - _SQ5) / 8.0):
+        for k in range(5):
+            aj = 2.0 * math.pi * k / 5.0
+            Q = np.array([math.cos(aj), math.sin(aj), zdir, 0.0])
+            r_inf = max(r_inf, abs(_labsF4(*Q)),
+                        float(np.max(np.abs(_labsG4(Q)))))
+            H4 = np.zeros((4, 4))
+            for i in range(4):
+                Qp = Q.copy()
+                Qm = Q.copy()
+                Qp[i] += 1e-5
+                Qm[i] -= 1e-5
+                H4[:, i] = (_labsG4(Qp) - _labsG4(Qm)) / 2e-5
+            ev4 = np.sort(np.abs(np.linalg.eigvalsh(
+                0.5 * (H4 + H4.T))))[::-1]
+            if int(np.sum(ev4 > 1e-5 * ev4[0])) == 3:
+                n_rank3 += 1
+    b7.append(("Labs sextic: 10 nodes at infinity, singular", r_inf,
+               1e-9))
+    b7.append(("Labs sextic: infinity nodes have rank 3 (A1)",
+               0.0 if n_rank3 == 10 else 1.0, 0.5))
+
+    # Labs dodecic.  First the folding identity that pins F^{A2}_12 --
+    # a wrong recursion coefficient shifts the critical values and
+    # silently changes every count downstream.
+    uu = rng.uniform(0.0, 2.0 * math.pi, 120)
+    vv = rng.uniform(0.0, 2.0 * math.pi, 120)
+    fx = np.cos(uu) + np.cos(vv) + np.cos(uu + vv)
+    fy = np.sin(uu) + np.sin(vv) - np.sin(uu + vv)
+    r_id = float(np.max(np.abs(
+        _a2_fold(12, fx, fy)
+        - (2.0 + 2.0 * (np.cos(12.0 * uu) + np.cos(12.0 * vv)
+                        + np.cos(12.0 * (uu + vv)))))))
+    b7.append(("dodecic: folding identity F(phi) = 2 + 2 tau_12",
+               r_id, 1e-8))
+    gxa, gya = _a2_fold_grad(12, fx[:20], fy[:20])
+    hfd = 1e-6
+    r_gr = max(
+        float(np.max(np.abs(gxa - (_a2_fold(12, fx[:20] + hfd, fy[:20])
+                                   - _a2_fold(12, fx[:20] - hfd,
+                                              fy[:20])) / (2 * hfd)))),
+        float(np.max(np.abs(gya - (_a2_fold(12, fx[:20], fy[:20] + hfd)
+                                   - _a2_fold(12, fx[:20],
+                                              fy[:20] - hfd))
+                            / (2 * hfd)))))
+    b7.append(("dodecic: analytic fold gradient matches differences",
+               r_gr, 1e-4))
+
+    # The critical point census, re-derived from scratch: the images of
+    # the torus lattice points carry all of them (121 = 11^2, all
+    # real), but the images landing ON the fold lines are not critical
+    # points of F itself, so the exact gradient filters them.
+    def _fold_newton(px_, py_):
+        for _ in range(4):
+            gx_, gy_ = _a2_fold_grad(12, px_, py_)
+            dd = 1e-6
+            g1 = _a2_fold_grad(12, px_ + dd, py_)
+            g2 = _a2_fold_grad(12, px_ - dd, py_)
+            g3 = _a2_fold_grad(12, px_, py_ + dd)
+            g4 = _a2_fold_grad(12, px_, py_ - dd)
+            H = np.array([[(g1[0] - g2[0]), (g3[0] - g4[0])],
+                          [(g1[1] - g2[1]), (g3[1] - g4[1])]]) / (2 * dd)
+            try:
+                st = np.linalg.solve(0.5 * (H + H.T), [-gx_, -gy_])
+            except np.linalg.LinAlgError:
+                break
+            px_, py_ = px_ + st[0], py_ + st[1]
+            if st[0] ** 2 + st[1] ** 2 < 1e-26:
+                break
+        return px_, py_
+
+    def _true_crit(cands):
+        out = []
+        for (px_, py_) in cands:
+            gx_, gy_ = _a2_fold_grad(12, px_, py_)
+            if math.hypot(gx_, gy_) > 1e-6:
+                continue                     # fold-line image
+            px_, py_ = _fold_newton(px_, py_)
+            if any((px_ - q0_) ** 2 + (py_ - q1_) ** 2 < 1e-8
+                   for q0_, q1_ in out):
+                continue
+            out.append((px_, py_))
+        return out
+
+    cand0, cand1 = [], []
+    for a_ in range(24):
+        for b_ in range(24):
+            if a_ % 2 == 0 and b_ % 2 == 0:
+                continue                     # tau = 3 -> value 8
+            u_ = math.pi * a_ / 12.0
+            v_ = math.pi * b_ / 12.0
+            cand0.append((math.cos(u_) + math.cos(v_) + math.cos(u_ + v_),
+                          math.sin(u_) + math.sin(v_) - math.sin(u_ + v_)))
+    for a_ in range(36):
+        for b_ in range(36):
+            u_ = math.pi * a_ / 18.0
+            v_ = math.pi * b_ / 18.0
+            if (abs(math.sin(12 * u_) + math.sin(12 * (u_ + v_))) > 1e-9
+                    or abs(math.sin(12 * v_)
+                           + math.sin(12 * (u_ + v_))) > 1e-9):
+                continue
+            if abs(math.cos(12 * u_) + math.cos(12 * v_)
+                   + math.cos(12 * (u_ + v_)) + 1.5) > 1e-9:
+                continue                     # want tau = -3/2 -> value -1
+            cand1.append((math.cos(u_) + math.cos(v_) + math.cos(u_ + v_),
+                          math.sin(u_) + math.sin(v_) - math.sin(u_ + v_)))
+    c0 = _true_crit(cand0)
+    c1 = _true_crit(cand1)
+    r_v0 = max([abs(_a2_fold(12, px_, py_)) for px_, py_ in c0] + [0.0])
+    r_v1 = max([abs(_a2_fold(12, px_, py_) + 1.0)
+                for px_, py_ in c1] + [0.0])
+    b7.append(("dodecic: 66 critical points with value 0",
+               0.0 if len(c0) == 66 else 1.0, 0.5))
+    b7.append(("dodecic: 36 critical points with value -1",
+               0.0 if len(c1) == 36 else 1.0, 0.5))
+    b7.append(("dodecic: critical values exact", max(r_v0, r_v1), 1e-9))
+
+    # The surface separates variables, so its Hessian is the fold's
+    # 2 x 2 block plus g''(z) with g = (z^2-1)^6, and g'' vanishes
+    # EXACTLY at z = +-1: an A5 point is a Morse fold point at value 0
+    # against the sixth-order well, a node a Morse point at value -1
+    # against g(0) = 1 with g''(0) = -12.
+    def _fold_hess(px_, py_, dd=1e-6):
+        g1 = _a2_fold_grad(12, px_ + dd, py_)
+        g2 = _a2_fold_grad(12, px_ - dd, py_)
+        g3 = _a2_fold_grad(12, px_, py_ + dd)
+        g4 = _a2_fold_grad(12, px_, py_ - dd)
+        H = np.array([[(g1[0] - g2[0]), (g3[0] - g4[0])],
+                      [(g1[1] - g2[1]), (g3[1] - g4[1])]]) / (2 * dd)
+        return 0.5 * (H + H.T)
+
+    n_a5 = 0
+    r_a5 = 0.0
+    for (px_, py_) in c0:
+        gx_, gy_ = _a2_fold_grad(12, px_, py_)
+        ev2 = np.abs(np.linalg.eigvalsh(_fold_hess(px_, py_)))
+        morse = float(ev2.min()) > 1e-4 * float(ev2.max())
+        for zc in (1.0, -1.0):
+            r_a5 = max(r_a5, abs(float(_f_labs_dodecic(px_, py_, zc,
+                                                       1.3))),
+                       abs(gx_), abs(gy_),
+                       abs(12.0 * zc * (zc * zc - 1.0) ** 5))
+            sixth = float(_f_labs_dodecic(px_, py_, zc * 1.05,
+                                          1.3)) / 0.05 ** 6
+            if morse and sixth > 1.0:
+                n_a5 += 1
+    n_a1 = 0
+    for (px_, py_) in c1:
+        gx_, gy_ = _a2_fold_grad(12, px_, py_)
+        ev2 = np.abs(np.linalg.eigvalsh(_fold_hess(px_, py_)))
+        r_a5 = max(r_a5, abs(float(_f_labs_dodecic(px_, py_, 0.0, 1.3))),
+                   abs(gx_), abs(gy_))
+        if float(ev2.min()) > 1e-4 * float(ev2.max()):
+            n_a1 += 1                        # + g''(0) = -12 -> rank 3
+    b7.append(("dodecic: 132 real A5 points verified",
+               0.0 if n_a5 == 132 else 1.0, 0.5))
+    b7.append(("dodecic: 36 real nodes in z = 0 verified",
+               0.0 if n_a1 == 36 else 1.0, 0.5))
+    b7.append(("dodecic: singular points on the surface, grad 0",
+               r_a5, 1e-7))
+
+    # Hyde sextic: the defining property IS the gate.  Random screws
+    # of the reciprocal three-system: each axis must lie on its pitch
+    # quadric, and its two envelope points must lie ON the sextic with
+    # the axis direction tangent to it.
+    aH, bH, cH = -1.0, 0.5, 2.0
+    r_pq = r_tan = 0.0
+    n_touch = 0
+    for _ in range(40):
+        w3 = rng.normal(size=3)
+        v3 = -np.array([aH * w3[0], bH * w3[1], cH * w3[2]])
+        hp = float(w3 @ v3 / (w3 @ w3))
+        cax = np.cross(w3, v3) / (w3 @ w3)
+        u3 = w3 / np.linalg.norm(w3)
+        for t_ in (-1.7, 0.3, 2.2):
+            xq, yq, zq = cax + t_ * u3
+            r_pq = max(r_pq, abs(
+                (hp + aH) * (hp + bH) * (hp + cH) + (hp + aH) * xq * xq
+                + (hp + bH) * yq * yq + (hp + cH) * zq * zq))
+        dabc = ((hp + bH) * (hp + cH) + (hp + aH) * (hp + cH)
+                + (hp + aH) * (hp + bH))
+        bq = 2.0 * float(cax @ u3)
+        cq = float(cax @ cax) + dabc
+        disc_ = bq * bq - 4.0 * cq
+        if disc_ < 0.0:
+            continue
+        for sgn in (1.0, -1.0):
+            Pt = cax + 0.5 * (-bq + sgn * math.sqrt(disc_)) * u3
+            sc = max(1.0, abs(_f_hyde(Pt[0] + 0.5, Pt[1] - 0.3,
+                                      Pt[2] + 0.4, 1.3)))
+            r_pq = max(r_pq, abs(_f_hyde(Pt[0], Pt[1], Pt[2], 1.3)) / sc)
+            g3_ = _grad_cs(_f_hyde, Pt.reshape(3, 1))[:, 0]
+            gn = float(np.linalg.norm(g3_))
+            if gn > 1e-6:
+                r_tan = max(r_tan, abs(float(u3 @ g3_)) / gn)
+                n_touch += 1
+    b7.append(("Hyde: axes on their pitch quadrics, touch points on "
+               "the sextic", r_pq, 1e-8))
+    b7.append(("Hyde: the axes are TANGENT there", r_tan, 1e-7))
+    b7.append(("Hyde: tangency actually sampled",
+               0.0 if n_touch >= 30 else 1.0, 0.5))
+
+    # ... its two real pinch points, in closed form on the middle-pitch
+    # axis (the other four of the six are complex, matching the
+    # source's 'only 2 can be seen in the real image') ...
+    yp = math.sqrt((bH - aH) * (cH - bH))
+    r_pp = 0.0
+    for sy in (1.0, -1.0):
+        r_pp = max(r_pp, abs(_f_hyde(0.0, sy * yp, 0.0, 1.3)),
+                   float(np.max(np.abs(_grad_cs(
+                       _f_hyde, np.array([[0.0], [sy * yp], [0.0]]))))))
+    b7.append(("Hyde: 2 real pinch points singular", r_pp, 1e-8))
+
+    # ... its cuspidal double curve (triple root of the pitch cubic:
+    # the sphere rho^2 = p^2/3 - q0 cut by the quadric r-condition),
+    # sampled and confirmed singular ...
+    s1H = aH + bH + cH
+    s2H = aH * bH + bH * cH + cH * aH
+    s3H = aH * bH * cH
+    R2H = s1H * s1H / 3.0 - s2H
+    r_cc = 0.0
+    n_cc = 0
+    for _ in range(8):
+        Pc = rng.normal(size=3)
+        Pc *= math.sqrt(R2H) / np.linalg.norm(Pc)
+        for _ in range(60):
+            f1 = float(Pc @ Pc) - R2H
+            f2 = (s3H + aH * Pc[0] ** 2 + bH * Pc[1] ** 2
+                  + cH * Pc[2] ** 2 - s1H ** 3 / 27.0)
+            J2 = np.array([2.0 * Pc, [2.0 * aH * Pc[0], 2.0 * bH * Pc[1],
+                                      2.0 * cH * Pc[2]]])
+            st, *_ = np.linalg.lstsq(J2, [-f1, -f2], rcond=None)
+            Pc = Pc + st
+            if float(st @ st) < 1e-26:
+                break
+        if abs(float(Pc @ Pc) - R2H) > 1e-9:
+            continue
+        n_cc += 1
+        r_cc = max(r_cc, abs(_f_hyde(Pc[0], Pc[1], Pc[2], 1.3)),
+                   float(np.max(np.abs(_grad_cs(_f_hyde,
+                                                Pc.reshape(3, 1))))))
+    b7.append(("Hyde: cuspidal curve sampled and singular", r_cc, 1e-7))
+    b7.append(("Hyde: cuspidal curve samples found",
+               0.0 if n_cc >= 5 else 1.0, 0.5))
+
+    # ... and the family cross-check: at pitches (-3, -1, 4) the
+    # discriminant is exactly MINUS the shipped Hunt sextic -- this
+    # module's own MathWorld row -- two transcriptions meeting.
+    b7.append(("Hyde at (-3,-1,4) is minus the Hunt sextic",
+               _dev(_f_hyde(qx, qy, qz, 1.3, a=-3.0, b=-1.0, c=4.0),
+                    -_f_hunt(qx, qy, qz, 1.3)), 1e-12))
+
+    bad7 = ['%s:%.1e' % (nm, rv) for (nm, rv, tol) in b7 if rv > tol]
+    ok &= not bad7
+    print("algebraic: cuspidal-record singular sets (%d checks: "
+          "30 A2 + 10 A1 on the sextic, 132 A5 + 36 A1 on the "
+          "dodecic, Hyde's envelope) %s"
+          % (len(b7), 'OK' if not bad7 else 'FAIL ' + ','.join(bad7)))
 
     # These are tubes around curves, so the genus IS the surface.  Check
     # it from the meshed Euler characteristic rather than trusting the
