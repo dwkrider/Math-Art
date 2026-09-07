@@ -123,7 +123,25 @@ def kleinian_slice():
 
 
 def menu_entries_present():
-    from math_art import menu_defs
+    # Installed as an extension the package is bl_ext.<repo>.math_art, not
+    # math_art; run from a source checkout it is the latter.  Try both.
+    import importlib
+
+    menu_defs = None
+    for name in ("bl_ext.user_default.math_art.menu_defs",
+                 "bl_ext.vscode_development.math_art.menu_defs",
+                 "math_art.menu_defs"):
+        try:
+            menu_defs = importlib.import_module(name)
+            break
+        except ImportError:
+            continue
+    if menu_defs is None:                       # find it wherever it landed
+        for mod in list(sys.modules):
+            if mod.endswith("math_art.menu_defs"):
+                menu_defs = sys.modules[mod]
+                break
+    assert menu_defs is not None, "could not import menu_defs"
     ops = {e.op for m in menu_defs.ALL_MENUS for e in m.entries if e.op}
     ops |= {e.op for e in menu_defs.ROOT_ENTRIES if e.op}
     for want in ("mesh.circle_packing_add", "mesh.subdivision_tiling_add",
