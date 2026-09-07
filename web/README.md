@@ -201,6 +201,22 @@ a separate thing from `viewer.js` next door:
   median silhouette agreement of 0.86 against the thumbnails; matching
   the lens as well gives 0.98, with nothing below 0.93. `home` follows
   whatever orientation the page opened at.
+- **Creases, without carrying them.** Several generators mark fold lines
+  sharp through `math_art/sharp_creases.py`, and those folds *are* the
+  shape — the curvature is concentrated there and the patches between
+  them want smooth shading. That attribute cannot travel in a payload of
+  positions and indices, so `tools/surfdb_export.py` **splits the mesh
+  along every sharp edge** instead. The fold's two sides become separate
+  vertices, and the viewer's per-vertex normal average then cannot cross
+  it. Both the tile and the model get the crease for free, from the same
+  arrays.
+
+  Inferring creases from dihedral angle was measured and rejected: a
+  30° rule misses 720 of the Schwarz lantern's 852 creases and invents
+  66 on the Klein quartic, which has none. The cross-cap settles it —
+  its winding seam is marked sharp where the surface through it is
+  smooth geometry, so no threshold can find it.
+
 - **One material, both sides.** An open sheet has no inside to cull to,
   so both faces are drawn in the studio's White Plastic and the normal is
   simply flipped on a back face — which is exactly what Cycles does when
