@@ -68,15 +68,25 @@ def euler_characteristic(nverts, faces):
 
 
 def build_klein_bottle(nu, nv):
-    """The iconic bottle-shaped Klein immersion (the standard smooth
-    closed-form parametrization, u in [0, pi], v in [0, 2pi]). The
-    u = pi rim coincides with the u = 0 rim under v -> pi - v.  The
-    seam is left SPLIT (coincident duplicate vertices, no index
-    gluing): welding it makes the winding flip there, and averaged
-    smooth normals then degenerate into a dark shading crease.  Split,
-    each side shades smoothly and the renderer's double-sided normal
-    flip hides the join.  Cut along that rim the surface is an
-    orientable cylinder, so chi is still 0."""
+    """The polynomial bottle-shaped Klein immersion (u in [0, pi],
+    v in [0, 2pi]).  The u = pi rim coincides with the u = 0 rim under
+    v -> pi - v, i.e. column j of the last row is column nv/2 - j of the
+    first (verified to 5e-16), and that identification is APPLIED here:
+    the last row is not emitted at all, its face corners referring back
+    into row 0.  So the mesh is genuinely closed -- chi = 0 with no
+    boundary.
+
+    This used to leave the seam SPLIT, as coincident duplicate vertices
+    with no index gluing, because welding makes the winding flip there
+    and averaged smooth normals degenerate into a dark crease.  That
+    bought smooth shading at the price of a "closed" surface with 96
+    boundary edges, which is not closed.  The honest fix is the one the
+    Franzoni rendition uses: close the mesh and mark the one
+    unavoidable winding-conflict ring SHARP, which splits normals at
+    exactly that ring (see `winding_conflict_edges` and the operator's
+    seam handling).  Every closed non-orientable mesh has such a ring;
+    it is a fact about non-orientability, not a defect to hide by
+    leaving a hole."""
     nv += nv % 2
     u = math.pi * np.arange(nu + 1)[:, None] / nu
     v = TAU * np.arange(nv)[None, :] / nv
@@ -92,22 +102,41 @@ def build_klein_bottle(nu, nv):
                               + 80 * cu ** 7 * cv * su)
     z = (2.0 / 15.0) * sv * (3 + 5 * cu * su)
     V = np.stack(np.broadcast_arrays(x, y, z), axis=-1).reshape(-1, 3)
+    V = V[:nu * nv]                      # drop the duplicate u = pi row
+
+    def idx(i, j):
+        """Grid index, folding the last row onto the first.
+
+        The seam identification is v -> pi - v, which on the sample grid
+        v_j = 2 pi j / nv is j -> nv/2 - j.  nv is forced even above so
+        that lands on a sample.
+        """
+        if i == nu:
+            return ((nv // 2 - j) % nv)
+        return i * nv + (j % nv)
+
     faces = []
     for i in range(nu):
         for j in range(nv):
-            j2 = (j + 1) % nv
-            faces.append((i * nv + j, i * nv + j2,
-                          (i + 1) * nv + j2, (i + 1) * nv + j))
+            j2 = j + 1
+            faces.append((idx(i, j), idx(i, j2),
+                          idx(i + 1, j2), idx(i + 1, j)))
     return V, faces
 
 
 def build_klein_figure8(nu, nv, radius=2.0):
     """Figure-8 (twisted-torus) Klein immersion: the cross-section is a
-    figure-8 that makes a half-turn per revolution. The u = 2pi seam
-    coincides with u = 0 under v -> -v but is left SPLIT (coincident
-    duplicate vertices) -- see build_klein_bottle for why.  v samples
-    sit at half-steps so no column lands on the figure-8 crossing
-    point."""
+    figure-8 that makes a half-turn per revolution.  v samples sit at
+    half-steps so no column lands on the figure-8 crossing point.
+
+    The u = 2pi seam coincides with u = 0 under v -> -v, and because of
+    those half-steps that is j -> nv - 1 - j on the sample grid, NOT the
+    j -> -j the continuous map suggests (verified to 2e-15; the naive
+    map is wrong by 0.29).  The identification is applied, so the mesh
+    is closed: chi = 0 with no boundary.  It used to be left split, and
+    the one unavoidable winding-conflict ring of a closed non-orientable
+    mesh is marked sharp by the operator instead -- see
+    build_klein_bottle."""
     u = TAU * np.arange(nu + 1)[:, None] / nu
     v = TAU * (np.arange(nv)[None, :] + 0.5) / nv
     c2, s2 = np.cos(u / 2), np.sin(u / 2)
@@ -117,12 +146,17 @@ def build_klein_figure8(nu, nv, radius=2.0):
     y = r * np.sin(u)
     z = s2 * sv + c2 * s2v
     V = np.stack(np.broadcast_arrays(x, y, z), axis=-1).reshape(-1, 3)
+    V = V[:nu * nv]                      # drop the duplicate u = 2pi row
+
+    def idx(i, j):
+        j %= nv
+        return (nv - 1 - j) if i == nu else i * nv + j
+
     faces = []
     for i in range(nu):
         for j in range(nv):
-            j2 = (j + 1) % nv
-            faces.append((i * nv + j, i * nv + j2,
-                          (i + 1) * nv + j2, (i + 1) * nv + j))
+            faces.append((idx(i, j), idx(i, j + 1),
+                          idx(i + 1, j + 1), idx(i + 1, j)))
     return V, faces
 
 
