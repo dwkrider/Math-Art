@@ -5377,7 +5377,8 @@ def _selftest():
         from tpms import TPMS_EXACT as _TE
         from fecells import FE_CELLS as _FE
     _PLATEAU_GATED = {'R3_RING', 'I8_RING', 'I9_RING', 'GW_CONJ',
-                      'HT_HR_CONJ', 'TR_HT_CONJ', 'HR_TR_CONJ'}
+                      'HT_HR_CONJ', 'TR_HT_CONJ', 'HR_TR_CONJ',
+                      'TWP_CONJ'}
     unclass = sorted(set(_TE) - set(_SC))
     orphan = sorted(set(_TE) - set(_SPECS) - set(_FE) - {'H', 'PGD'}
                     - _PLATEAU_GATED)

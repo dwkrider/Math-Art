@@ -3641,6 +3641,143 @@ CONJUGATE_SURFACES['HR_TR'] = {
 }
 
 
+# Karcher's T-Wp ("wrapped package"), the hexagonal-cell analog of
+# Schoen's I-WP -- the surface 3D-XplorMath exhibits as "A Schoen TW
+# Family".  It is NOT an entry of Schoen's NASA catalogue: 3DXM's own
+# companion text says it "is not in his list, but made in his spirit",
+# and the construction is Karcher's, Manuscripta Math. 64 (1989)
+# section 5.3.3.
+#
+# The prism's faces and symmetry planes cut I-WP (resp. T-Wp) into 16
+# (resp. 12) hexagons with vertex angles (alpha, 90, 90, alpha, 90, 90)
+# and normal rotations (-90, alpha, 90, -90, alpha, 90), alpha = 45 deg
+# for I-WP and 60 deg for T-Wp.  The conjugate contour is a hexagon on
+# a brick: two vertical edges (the horizontal-lid arcs of the direct
+# piece) and four horizontal edges (its vertical-mirror arcs), with one
+# 180-degree rotational symmetry about a horizontal axis parallel to
+# the two middle edges.  That symmetry is what makes the two same-plane
+# arcs of the direct piece land in the SAME plane (Karcher 4.2's
+# parallel-plane period problem): a 180-degree rotation about an axis
+# parallel to a plane's normal maps every plane with that normal to
+# itself, so the period is killed for EVERY brick height -- which is
+# why this is a family and the height is a free knob.
+#
+# The contour was not transcribed from Karcher's sketch.  It was
+# MEASURED off Schoen's I-WP itself: Brakke's IWP.fe was run to
+# convergence in Surface Evolver 2.70, the (alpha,90,90,alpha,90,90)
+# fundamental hexagon was cut out of the assembled surface (arcs on
+# x=1 / x=y / z=0 / y=0 / x=y / z=1, lengths (2l, sqrt2 l, l, 2l,
+# sqrt2 l, l) with l = 0.5770486), and conjugation preserves boundary
+# lengths, so those arc lengths ARE the polygon's edge lengths.  The
+# closed polygon they force is Karcher's brick hexagon exactly --
+# vertices (0,0,0) (2,0,0) (1,1,0) (1,1,1) (1,-1,1) (0,0,1) on his
+# 2x2x1 brick at alpha = 45 -- and transposing the two alpha-corners
+# to 60 degrees gives T-Wp.  Only alpha in {45, 60} closes: the three
+# vertical mirror planes of the direct piece meet pairwise at
+# (alpha, alpha, 180 - 2*alpha), a Euclidean kaleidoscope triangle
+# only for (45,45,90) and (60,60,60).
+#
+# Gates (both members): the reflection word yields 16 / 12 copies which
+# weld into one clean sheet, and folding the block by its own measured
+# lattice (pure translations recovered from the reflection group) gives
+# Euler characteristic -12 at 45 (Schoen I-WP, genus 4 per primitive
+# bcc cell, doubled in the 2x2x2 conventional cell) and -8 at 60 --
+# genus 5 per hexagonal cell, matching the degree-4 Gauss map Karcher
+# derives for T-Wp.  At 45 the rebuilt cell registers against the
+# Evolver-converged I-WP hexagon at 1.1% median / 1.6% max of the
+# lattice constant, and the cubic cell aspect is reproduced to 2%.
+#
+# References:
+# - H. Karcher, "The triply periodic minimal surfaces of Alan Schoen
+#   and their constant mean curvature companions", Manuscripta
+#   Mathematica 64 (1989) 291-357, section 5.3.3 -- the two-angle
+#   family, its brick contour, and the name T-Wp ("Wp for wrapped
+#   package").
+# - H. Karcher, "Construction of minimal surfaces", University of Tokyo
+#   lecture notes / SFB 256 Bonn report 12 (1989), plate 68.d --
+#   "A. Schoen's I-Wp surface (alpha = 45) and analogous one in
+#   hexagonal cell (alpha = 60)".
+# - A. H. Schoen, "Infinite periodic minimal surfaces without
+#   self-intersections", NASA TN D-5541 (1970) -- I-WP, the alpha = 45
+#   member.
+# - The 3DXM Consortium, "A Schoen TW Family", Virtual Math Museum,
+#   virtualmathmuseum.org/surface/schoen_tw/schoen_tw.html -- the
+#   exhibit this row implements.
+# - K. A. Brakke, "Triply periodic minimal surfaces" datafile IWP.fe,
+#   kenbrakke.com/evolver/ -- the free-boundary statement of I-WP the
+#   contour was measured from.
+
+def twp_poly(alpha_deg=60.0, height=1.0):
+    """Karcher's brick-hexagon conjugate contour for the I-WP / T-Wp
+    two-angle family, in units of half the long horizontal edge.
+
+    Vertex angles are (alpha, 90, 90, alpha, 90, 90); the two vertical
+    edges have length `height` (1.0 reproduces the proportions of the
+    cubic I-WP member at alpha = 45).  Returns (poly, edge_vectors);
+    the edge vectors double as the direct piece's mirror normals.
+    """
+    al = math.radians(float(alpha_deg))
+    e1 = np.array([1.0, 0.0, 0.0])
+    e4 = np.array([math.cos(2 * al), -math.sin(2 * al), 0.0])
+    e2 = np.array([-math.cos(al), math.sin(al), 0.0])
+    b = 2.0 * math.cos(al)
+    h = float(height)
+    P0 = np.zeros(3)
+    P1 = P0 + 2.0 * e1
+    P2 = P1 + b * e2
+    P3 = P2 + np.array([0.0, 0.0, h])
+    P4 = P3 + 2.0 * e4
+    P5 = P4 + b * e2
+    poly = [P0, P1, P2, P3, P4, P5]
+    edges = [P1 - P0, P2 - P1, P3 - P2, P4 - P3, P5 - P4, P0 - P5]
+    return ([tuple(p) for p in poly], [tuple(e) for e in edges])
+
+
+# Reflection words per member: 'cbdbdb' is {I, c} x D3 -- the six
+# in-plane triangles of the hexagonal cell times the two lid layers, 12
+# copies; at 45 the in-plane group is D4 and the cell takes 16.  The
+# second word adds the bottom-lid reflection for a second vertical
+# period (24 / 32 copies).
+_TWP_WORDS = {60.0: ('cbdbdb', 'fcbdbdb'),
+              45.0: ('cbdbdbdb', 'fcbdbdbdb')}
+
+
+def twp_params(alpha_deg=60.0, height=1.0):
+    """Set the T-Wp family member, the way `gw_params` sets GW's.
+
+    `alpha_deg` picks the crystallographic member (60 = T-Wp, 45 =
+    I-WP); `height` is the brick height of the conjugate contour, the
+    family's free deformation parameter.
+    """
+    a = 45.0 if abs(float(alpha_deg) - 45.0) < 7.5 else 60.0
+    spec = CONJUGATE_SURFACES['TWP']
+    poly, edges = twp_poly(a, height)
+    spec['poly'] = poly
+    spec['normals'] = edges
+    spec['words'] = _TWP_WORDS[a]
+    spec['alpha'] = a
+    spec['height'] = float(height)
+    return spec
+
+
+_TWP_POLY0, _TWP_EDGES0 = twp_poly(60.0, 1.0)
+CONJUGATE_SURFACES['TWP'] = {
+    'name': "Schoen-Karcher T-Wp (hexagonal wrapped package)",
+    'alpha': 60.0,
+    'height': 1.0,
+    'poly': _TWP_POLY0,
+    'normals': _TWP_EDGES0,
+    # The two diagonal arcs land in the SAME plane -- forced by the
+    # contour's 180-degree symmetry.  Measured before pinning: their
+    # offsets differ by 8.8e-6 at alpha = 60 and 6.4e-7 at 45, i.e. the
+    # symmetry really does kill the parallel-plane period and the pin
+    # only removes discretization noise.
+    'same': {4: 1},
+    'letters': {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5},
+    'words': _TWP_WORDS[60.0],
+}
+
+
 def _conj_segment_ids(P, poly):
     """Label each point by the contour segment it sits on."""
     poly = np.asarray(poly, dtype=float)
@@ -3668,7 +3805,16 @@ def conjugate_patch(key, m=120, rings=20, iters=400):
     """
     spec = CONJUGATE_SURFACES[key]
     poly = np.asarray(spec['poly'], dtype=float)
-    loop = resample_loop(np.vstack([poly, poly[:1]]), m)
+    # Corner-preserving resample.  A uniform resample misses every
+    # polygon corner by up to half a sample spacing, and the corners are
+    # exactly the points where 2k reflected copies of the conjugate
+    # piece meet -- each missed corner became a small 2k-gon pinhole
+    # around its image in the assembled cell (measured on T-Wp: sixty
+    # open edges after the lattice fold, all clustered on corner-axis
+    # images, and an Euler characteristic of -21 against the derived
+    # -8).  Same disease and same cure as the Evolver cells
+    # (`resample_loop_corners`).
+    loop = resample_loop_corners(np.vstack([poly, poly[:1]]), m)
     V, quads, fixed = build_disk_grid(loop, rings)
     V = np.asarray(V, dtype=float)
     fixed = np.asarray(fixed, dtype=bool)
@@ -3694,6 +3840,24 @@ def conjugate_patch(key, m=120, rings=20, iters=400):
         if not len(idx):
             continue
         W[idx] -= ((W[idx] @ nrm[k]) - off[k])[:, None] * nrm[k]
+    # A corner sample lies on TWO of the mirror planes, and the loop
+    # above lands it on only one of them -- the other still misses by
+    # the raw conjugate's ~1e-2, which no weld tolerance should be
+    # asked to close.  Land each corner on the intersection LINE of its
+    # two planes (least-squares step onto both constraints at once).
+    ncon = len(nrm)
+    for ci in range(len(poly)):
+        d2 = np.linalg.norm(V[bnd] - poly[ci], axis=1)
+        j = int(np.argmin(d2))
+        if d2[j] > 1e-9:        # resample did not keep this corner
+            continue
+        jv = bnd[j]
+        k1, k2 = (ci - 1) % ncon, ci
+        A2 = np.array([nrm[k1], nrm[k2]])
+        r2 = np.array([off[k1] - W[jv] @ nrm[k1],
+                       off[k2] - W[jv] @ nrm[k2]])
+        dw, *_ = np.linalg.lstsq(A2, r2, rcond=None)
+        W[jv] = W[jv] + dw
     W = np.asarray(minimize_area(W.copy(), T, fixed,
                                  outer_iters=max(1, iters // 2)),
                    dtype=float)
@@ -3715,7 +3879,8 @@ def _reflection(n, c):
 # measured by running Brakke's datafiles in Evolver 2.70.  Gated as an
 # equality in `_selftest`, because a change here means the letter-to-arc
 # mapping is wrong, not that the mesh got slightly worse.
-_CONJ_CELL_COPIES = {'GW': 12, 'HT_HR': 24, 'TR_HT': 24, 'HR_TR': 24}
+_CONJ_CELL_COPIES = {'GW': 12, 'HT_HR': 24, 'TR_HT': 24, 'HR_TR': 24,
+                     'TWP': 12}
 
 
 def _matkey(M):
@@ -3861,6 +4026,73 @@ def conjugate_tile_checked(V, quads, arc_planes, spec, depth=2):
         if dup == 0 and over == 0 and comps == 1:
             return W, wf, n
     return np.asarray(V, dtype=float), list(quads), 1
+
+
+def conjugate_lattice_fold(W, wf, arc_planes, quant=1e-4):
+    """Fold an assembled conjugate cell onto its own translation lattice
+    and measure the closed surface's Euler characteristic.
+
+    The lattice is not assumed: pure translations are recovered from
+    the group the arc-plane reflections generate (products of parallel
+    mirrors), the three shortest independent ones form the basis, and
+    every vertex is reduced modulo it.  What comes back --
+    `(chi, open_edges, over_edges, basis_lengths)` -- is the strongest
+    topology gate this route has: a genus-g TPMS cell must fold to
+    chi = 2 - 2g with NO open and NO over-shared edges, and a pile of
+    coincident sheets, a pinholed assembly or a wrong subgroup all fail
+    it while still rendering plausibly.
+    """
+    W = np.asarray(W, dtype=float)
+    refl = [_reflection(*p) for p in arc_planes]
+    seen = {_matkey(np.eye(4)): np.eye(4)}
+    frontier = [np.eye(4)]
+    for _ in range(6):
+        newf = []
+        for M in frontier:
+            for R in refl:
+                N = M @ R
+                k = _matkey(N)
+                if k in seen or np.abs(N[:3, 3]).max() > 12.0:
+                    continue
+                seen[k] = N
+                newf.append(N)
+        frontier = newf
+    trans = sorted((M[:3, 3] for M in seen.values()
+                    if np.allclose(M[:3, :3], np.eye(3), atol=1e-12)
+                    and np.linalg.norm(M[:3, 3]) > 1e-6),
+                   key=np.linalg.norm)
+    basis = []
+    for t in trans:
+        cand = basis + [t]
+        if np.linalg.matrix_rank(np.array(cand), tol=1e-6) == len(cand):
+            basis = cand
+        if len(basis) == 3:
+            break
+    if len(basis) < 3:
+        return None, None, None, None
+    B = np.array(basis)
+    C = (np.linalg.inv(B.T) @ W.T).T
+    Cf = C - np.floor(C + quant / 2.0)
+    key = np.round(Cf / quant).astype(np.int64)
+    key[key >= int(round(1.0 / quant))] = 0
+    _uniq, inv = np.unique(key, axis=0, return_inverse=True)
+    faces = []
+    for f in wf:
+        g = tuple(dict.fromkeys(int(inv[i]) for i in f))
+        if len(g) >= 3:
+            faces.append(g)
+    cnt = {}
+    for f in faces:
+        mm = len(f)
+        for i in range(mm):
+            x, y = f[i], f[(i + 1) % mm]
+            e = (x, y) if x < y else (y, x)
+            cnt[e] = cnt.get(e, 0) + 1
+    nv = len({x for f in faces for x in f})
+    chi = nv - len(cnt) + len(faces)
+    op = sum(1 for c in cnt.values() if c == 1)
+    ov = sum(1 for c in cnt.values() if c > 2)
+    return chi, op, ov, np.linalg.norm(B, axis=1)
 
 
 def conjugate_surface(key, m=120, rings=20, iters=400, depth=2):
@@ -4166,15 +4398,56 @@ def _selftest():
         # constraint normals were transcribed correctly.  This is the
         # check that would have caught building all three hybrids from
         # one contour (0.9338 and 1.4064 against 0.6623 and 0.5893).
-        ev = CONJUGATE_SURFACES[key]['evolver_area']
-        aerr = abs(areas[1] - ev) / ev
+        # T-Wp has no Brakke datafile, so no Evolver patch area to pin
+        # against here; its own gate below pins the alpha = 45 member
+        # against an Evolver run of IWP.fe instead.
+        ev = CONJUGATE_SURFACES[key].get('evolver_area')
+        aerr = 0.0 if ev is None else abs(areas[1] - ev) / ev
         good = (drift < 0.01 and offp < 1e-9 and ncopy == want
                 and aerr < 0.01 and areas[1] > 1e-6)
         ok &= good
-        print("plateau: conjugate %-6s area %.6f (Evolver %.6f, %.2f%%), "
+        print("plateau: conjugate %-6s area %.6f (Evolver %s, %.2f%%), "
               "drift %.3f%%, on-plane %.0e, %d copies (Evolver %d) %s"
-              % (key, areas[1], ev, 100.0 * aerr, 100.0 * drift, offp,
+              % (key, areas[1],
+                 '--' if ev is None else '%.6f' % ev,
+                 100.0 * aerr, 100.0 * drift, offp,
                  ncopy, want, 'OK' if good else 'FAIL'))
+
+    # The T-Wp family, both crystallographic members -- the lesson from
+    # Weber-Wolf is that one member agreeing proves little.  Targets are
+    # DERIVED, not recorded from the mesh: a cell of N hexagonal pieces
+    # with corner order k folds to chi = (N/k + N) - 3N + N, so 16
+    # pieces at k = 4 give -12 (I-WP, genus 4 per primitive bcc cell,
+    # doubled in the conventional cell) and 12 pieces at k = 3 give -8
+    # (T-Wp, genus 5, matching Karcher's degree-4 Gauss map).  The
+    # alpha = 45 member is additionally pinned against Surface Evolver
+    # 2.70 running Brakke's IWP.fe: the fundamental hexagon's area is
+    # sqrt(3)/2 in cell units with l = 0.5770486 the measured lid-arc
+    # length, i.e. 2.6006 in contour units; and the folded lattice must
+    # be CUBIC, |a| = |c| = 2/l = 3.4661.
+    for _alpha, _chi_want, _ncopy in ((60.0, -8, 12), (45.0, -12, 16)):
+        twp_params(_alpha, 1.0)
+        Vt, qt, pt = conjugate_patch('TWP', m=96, rings=16, iters=250)
+        Wt, wt, nt = conjugate_tile(Vt, qt, pt, CONJUGATE_SURFACES['TWP'],
+                                    depth=2, tol=1e-5)
+        dup, over, comps = _orbit_defects(Wt, wt)
+        chi, opn, ovr, lat = conjugate_lattice_fold(Wt, wt, pt)
+        good = (nt == _ncopy and dup == 0 and over == 0 and comps == 1
+                and chi == _chi_want and opn == 0 and ovr == 0)
+        if _alpha == 45.0:
+            at = mesh_area(Vt, np.asarray(_quads_to_tris(qt)))
+            aerr = abs(at - 2.6006) / 2.6006
+            cub = abs(float(lat[2]) / float(lat[0]) - 1.0)
+            good = good and aerr < 0.01 and cub < 0.05
+            print("plateau: TWP alpha=45 area %.4f (IWP.fe 2.6006, "
+                  "%.2f%%), cell aspect off cubic %.2f%%"
+                  % (at, 100.0 * aerr, 100.0 * cub))
+        ok &= good
+        print("plateau: TWP alpha=%2.0f %d copies, dup %d over %d "
+              "comps %d, folded chi %s (target %d, open %s over %s) %s"
+              % (_alpha, nt, dup, over, comps, chi, _chi_want, opn, ovr,
+                 'OK' if good else 'FAIL'))
+    twp_params(60.0, 1.0)      # restore the shipped default member
 
     # The ring rows assembled by Brakke's own generator matrices and
     # words.  The copy counts are HIS -- 8 for I-8's `bac`, 8 for I-9's
