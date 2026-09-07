@@ -69,7 +69,7 @@ export async function loadRecord(slug) {
 /**
  * The baked mesh for a surface, or null when there is none.
  *
- * A missing mesh is a normal state, not an error: 35 of the 475 records
+ * A missing mesh is a normal state, not an error: 9 of the 474 records
  * are not implemented by any generator, so no mesh can exist for them.
  * The module shows their mathematics with the viewer left empty.
  */
