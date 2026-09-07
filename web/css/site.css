@@ -648,3 +648,51 @@ figcaption {
   background:
     repeating-linear-gradient(45deg, #0d1013 0 6px, #101419 6px 12px);
 }
+
+/* ------------------------------------------------ clustered view */
+
+.view-modes { margin-bottom: 0.7rem; }
+
+.cluster-wrap {
+  position: relative;
+  width: 100%;
+  height: min(76vh, 46rem);
+  background:
+    radial-gradient(ellipse at 50% 45%, #12161b 0%, #0a0c0f 78%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cluster-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.cluster-canvas:active { cursor: grabbing; }
+
+/* Definition notes run to a hundred words; the two-column panel grid
+ * would set them three or four words to a line. They sit below it, at
+ * the panel's full width, with a measure that stays readable. */
+.detail-notes { max-width: 46rem; }
+
+.detail-notes .provenance {
+  font-size: 0.88rem;
+  line-height: 1.62;
+  color: var(--ink-dim);
+}
+
+/* Inline maths inside prose: ASCII expressions read better set apart
+ * from the surrounding sentence. */
+.detail-notes code,
+.provenance code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--ink);
+  background: var(--bg-sunken);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}

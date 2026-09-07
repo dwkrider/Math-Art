@@ -147,16 +147,29 @@ export function renderSurfaceDetail(rec, entry, host) {
   if (d.v_range) {
     sec.append(formulaRow('v', `${d.v_range[0]} … ${d.v_range[1]}`));
   }
+  panels.append(sec);
+
+  // Prose goes BELOW the two-column grid, at full width.
+  //
+  // The panel grid is right for label/value pairs and wrong for a
+  // paragraph: a 13rem column turns a definition note into a ribbon of
+  // three or four words a line. These notes run to a hundred words, so
+  // they get the panel's whole width.
+  const prose = [];
   if (d.fidelity === 'approximation' && d.residual) {
     const r = d.residual;
-    sec.append($('p', 'provenance',
-      `This is an approximation, and the database measures how far: mean `
-      + `curvature reaches ${r.max_abs_mean_curvature} on the level set `
-      + `(sampled at resolution ${r.measured_at_resolution}), where a `
-      + `minimal surface has 0.`));
+    prose.push(`This is an approximation, and the database measures how `
+      + `far: mean curvature reaches ${r.max_abs_mean_curvature} on the `
+      + `level set (sampled at resolution ${r.measured_at_resolution}), `
+      + `where a minimal surface has 0.`);
   }
-  if (d.note) sec.append($('p', 'provenance', d.note));
-  panels.append(sec);
+  if (d.note) prose.push(d.note);
+  if (prose.length) {
+    const notes = $('section', 'panel-section detail-notes');
+    notes.append($('h3', null, 'Notes on the definition'));
+    for (const t of prose) notes.append($('p', 'provenance', t));
+    host.append(notes);
+  }
 
   // -- curvature
   const c = rec.curvature || {};
