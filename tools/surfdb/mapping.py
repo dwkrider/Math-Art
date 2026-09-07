@@ -554,35 +554,22 @@ SUSPECTED_SAME = [
 # that ships-before-it-is-shown-to-be-the-surface goes here, not
 # into the implemented count.
 UNVERIFIED = {
-    # Four rows from the Weber batch are not single surfaces: the
-    # assembled mesh is a pile of disconnected patches.  Measured
-    # component / Euler / boundary-loop counts, at k or n = default:
-    #   WEBER_WOLF        16 components, chi = +16, 16 loops
-    #   HORGAN_NEARMISS    8 components, chi =  +8,  8 loops
-    #   DP_LUBECK_BATISTA  8 components, chi =  +8,  8 loops
-    #   LM_SLAB            2 components, chi =  +2,  2 loops
-    # A closed piece of any of these should have NEGATIVE Euler
-    # characteristic; a positive one equal to the component count means
-    # every piece is a disc.  Welding does not repair Weber-Wolf -- it
-    # plateaus at 5 components, chi = -4 -- so the patches do not share
-    # boundaries and the assembly is structurally wrong, not merely
-    # unglued.
-    #
-    # These shipped because the batch was gated on point-cloud
-    # registration, which compares WHERE POINTS ARE and is blind to
-    # connectivity: sixteen loose patches lying in the right places
-    # register at 0.2% just as a welded surface does.
-    "minsurf:WEBER_WOLF":
-        "Assembly is 16 disconnected patches (chi = +16).  Registration "
-        "0.20-0.27% is real but says nothing about connectivity.",
-    "minsurf:HORGAN_NEARMISS":
-        "Assembly is 8 disconnected patches (chi = +8).  The measured "
-        "period gap is unaffected and stands.",
-    "minsurf:DP_LUBECK_BATISTA":
-        "Assembly is 8 disconnected patches (chi = +8) despite "
-        "registering at 0.08%.",
-    "minsurf:LM_SLAB":
-        "Assembly is 2 disconnected patches (chi = +2).",
+    # (2026-09) Four Weber-batch rows sat here as patch piles --
+    # WEBER_WOLF 16 discs, HORGAN_NEARMISS 8, DP_LUBECK_BATISTA 8,
+    # LM_SLAB 2, every one chi = +component-count -- having shipped on
+    # point-cloud registration alone, which compares WHERE POINTS ARE
+    # and is blind to connectivity.  All four assemblies were repaired
+    # (exact grid-index welds along measured seam families; see the
+    # per-row commits) and are now gated on BOTH topology and
+    # registration in the zoo selftest: Weber-Wolf 1 comp chi = 3-6k
+    # with 5 end rims (genus 3(k-1), Riemann-Hurwitz-derived) at
+    # 0.22-0.30% vs Weber's k = 2/3/4 exports; Lubeck-Batista 1 comp
+    # chi = -8/cell (two genus-3 2-end quotient copies per cell) at
+    # 0.08-0.13% vs his three exported members; Lopez-Martin slab
+    # 1 comp chi = 2 - 2s with 2s plate rims; Horgan near-miss
+    # exactly TWO oriented annuli whose only joining seam is the one
+    # that provably does not exist (the gap stays open and measured;
+    # the `horgan-surface` record itself remains terminal).
 }
 
 

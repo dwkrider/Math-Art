@@ -7,8 +7,8 @@
     "aperiodic",
     "def-weierstrass",
     "immersed",
+    "implemented",
     "minimal",
-    "not-implemented",
     "tradition-classical"
   ],
   "definition": {
@@ -46,8 +46,7 @@
       "family": "HIGHER",
       "key": "HORGAN_NEARMISS",
       "definition_index": 0,
-      "implemented": false,
-      "blocked_by": "Assembly is 8 disconnected patches (chi = +8).  The measured period gap is unaffected and stands."
+      "implemented": true
     }
   ],
   "provenance": {

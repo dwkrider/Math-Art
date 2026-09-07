@@ -3913,6 +3913,36 @@ def _selftest():
               f"off {r_zx:.1e} {'OK' if good_ else 'FAIL'}")
     ok &= ww_ok
 
+    # Assembly topology gates for the repaired Weber-batch rows: the
+    # meshes must be SURFACES, not patch piles -- registration alone
+    # cannot tell those apart (sixteen loose patches in the right
+    # places register exactly like a welded surface), so every row is
+    # gated on BOTH.  Targets derived per row (chi = 2 - 2g - b):
+    #   Weber-Wolf: 1 comp, chi = 3 - 6k (genus 3(k-1), 5 end rims);
+    #   Lubeck-Batista cell: 1 comp, chi = -8, 6 loops (bulk tiling
+    #     -12/cell = two quotient copies of the genus-3 2-end chi=-6);
+    #   Lopez-Martin slab: 1 comp, chi = 2 - 2s, 2s plate rims;
+    #   Horgan near-miss: exactly TWO mirror halves (the only seam
+    #     that could join them is the one that does not exist), each
+    #     an oriented manifold annulus.
+    topo_ok = True
+    for nm_, fn_, ord_, want_ in (
+            ("Weber-Wolf k=2", we.ww_mesh, 1, (1, -9, 5, True)),
+            ("Weber-Wolf k=3", we.ww_mesh, 2, (1, -15, 5, True)),
+            ("Lubeck-Batista cell", we.lb_mesh, 1, (1, -8, 6, True)),
+            ("Lopez-Martin s=2", we.lm_slab_mesh, 2, (1, -2, 4, True)),
+            ("Horgan a=1.1", we.horgan_mesh, 2, (2, 0, 4, True))):
+        V_, F_, _uv = fn_(None, 48, 48, ord_, 1.2, 1.0)
+        chi_, nm2_, orient_, loops_, ncomp_ = we.sptail_topology(
+            np.asarray(V_), F_)
+        good_ = ((ncomp_, chi_, loops_, orient_) == want_
+                 and nm2_ == 0)
+        topo_ok &= good_
+        print(f"assembly topology {nm_}: comps={ncomp_} chi={chi_} "
+              f"loops={loops_} nonman={nm2_} oriented={orient_} "
+              f"{'OK' if good_ else 'FAIL'}")
+    ok &= topo_ok
+
     # Scherk IV gates -- the 1835 claim itself, measured:
     #   1. every built point satisfies Scherk's implicit equation 20
     #      (pointwise, through arccosh, both radial regions);
