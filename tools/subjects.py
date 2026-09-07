@@ -270,12 +270,15 @@ PARAMS = {
                                         layout='CONFORMAL',
                                         inset=0.14),
 
-    # The gasket case is the one that looks like the Apollonian gasket
-    # we already ship, so the quasifuchsian curve is the better
-    # advertisement: a wild fractal Jordan curve nothing else here
-    # produces.
-    "curve.kleinian_add": dict(mode='CURVE', preset='QUASIFUCHSIAN',
-                               epsilon=0.002, max_depth=24),
+    # The limit-set CURVE is the headline output, but it is an edge mesh
+    # with no faces, so the icon baker has nothing to render.  The
+    # circle orbit is the same group seen through its action on a seed
+    # circle -- renderable, and it reads as "nested rings" at icon size
+    # where a hairline fractal curve would not.  The doc figure should
+    # still show the quasifuchsian curve.
+    "curve.kleinian_add": dict(mode='ORBIT', preset='GASKET',
+                               orbit_depth=4, seed_radius=0.3,
+                               tube_ratio=0.08),
 
     # -- patterns -------------------------------------------------
     # The bare default is a plain relief; a reaction-diffusion field
