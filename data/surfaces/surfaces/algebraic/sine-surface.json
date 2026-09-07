@@ -21,8 +21,8 @@
       "shape": "BOX",
       "radius": 1.1
     },
-    "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nThe surface (sin u, sin v, sin(u+v)): a sextic that is a union of ellipses in three ways, with pinch points where the sheets meet.  NOT the surface Ferreol's lantern-hunting almost mislabeled: the note in sources.py records that this chapter is not Schwarz's lantern."
+    "polynomial": "1 * (x * x + y * y - z * z) * (x * x + y * y - z * z) - 4 * x * x * y * y * (1 - z * z)",
+    "note": "The surface (sin u, sin v, sin(u+v)): a sextic that is a union of ellipses in three ways, with pinch points where the sheets meet.  NOT the surface Ferreol's lantern-hunting almost mislabeled: the note in sources.py records that this chapter is not Schwarz's lantern."
   },
   "curvature": {
     "condition": "none",
@@ -47,7 +47,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
     "sources": [
       "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com -- the chapters \"parapluie de Cartan\", \"surface de Cassini\", \"surface de Titeica\".  A converted copy of the whole encyclopedia is in research/books/ mathcurve_encyclopedie_formes_mathematiques/.",
       "H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own umbrella x^2 = y^2 z, already in the Hauser block above.",

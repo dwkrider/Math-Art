@@ -20,8 +20,7 @@
       "shape": "BOX",
       "radius": 2.0
     },
-    "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface."
+    "polynomial": "1 * ((x - 1) ** 2 + (y - 0) ** 2 + z * z) * ((x - (-0.4999999999999998)) ** 2 + (y - 0.8660254037844387) ** 2 + z * z) * ((x - (-0.5000000000000004)) ** 2 + (y - (-0.8660254037844385)) ** 2 + z * z) - 2.313060765624999"
   },
   "curvature": {
     "condition": "none",
@@ -46,7 +45,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
     "sources": [
       "R. Ferreol, \"Encyclopedie des formes mathematiques remarquables\", mathcurve.com -- the chapters \"parapluie de Cartan\", \"surface de Cassini\", \"surface de Titeica\".  A converted copy of the whole encyclopedia is in research/books/ mathcurve_encyclopedie_formes_mathematiques/.",
       "H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own umbrella x^2 = y^2 z, already in the Hauser block above.",

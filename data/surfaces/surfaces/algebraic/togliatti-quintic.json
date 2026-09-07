@@ -21,8 +21,7 @@
       "shape": "BALL",
       "radius": 5.0
     },
-    "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface."
+    "polynomial": "64 * (x - 1) * (x * x * x * x - 4 * x * x * x - 10 * x * x * y * y - 4 * x * x + 16 * x - 20 * x * y * y + 5 * y * y * y * y + 16 - 20 * y * y) - 8.312538755549069 * (2 * z - 1.6625077511098136) * (4 * (x * x + y * y - z * z) + 7.708203932499369) * (4 * (x * x + y * y - z * z) + 7.708203932499369)"
   },
   "curvature": {
     "condition": "none",
@@ -56,7 +55,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 2.73e-12).",
     "sources": [
       "A. Cayley, \"A Memoir on Cubic Surfaces\", Phil. Trans. 159, 1869.",
       "A. Clebsch, \"Ueber die Flachen vierter Ordnung...\", Journal fur die reine und angewandte Mathematik 69, 1868 -- the diagonal surface.",

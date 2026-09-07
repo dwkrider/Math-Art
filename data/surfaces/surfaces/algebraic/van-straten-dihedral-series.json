@@ -21,7 +21,7 @@
       "radius": 1.6
     },
     "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nVan Straten's modification of Chmutov's nodal series: replace the folding polynomial by the regular d-gon polynomial R_d(x,y), giving the D_d-symmetric surface R_d(x,y) + lambda*(T_d(z)+1) = 0 with lambda the critical value of R_d and T_d the Chebyshev polynomial with critical values 0 and 1.  Trades some of Chmutov's (partly complex) nodes for fewer, ALL REAL ones.",
+    "note": "Polynomial not stored: no closed form is stored for this surface, and its implementation could not be read back as one expression (call to isinstance()). The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nVan Straten's modification of Chmutov's nodal series: replace the folding polynomial by the regular d-gon polynomial R_d(x,y), giving the D_d-symmetric surface R_d(x,y) + lambda*(T_d(z)+1) = 0 with lambda the critical value of R_d and T_d the Chebyshev polynomial with critical values 0 and 1.  Trades some of Chmutov's (partly complex) nodes for fewer, ALL REAL ones.",
     "parameters": [
       {
         "name": "d",

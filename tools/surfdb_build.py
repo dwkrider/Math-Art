@@ -42,7 +42,8 @@ sys.path.insert(0, HERE)
 # outside Blender.
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
-from surfdb import (algsurf, charts, curation, ferreol,  # noqa: E402
+from surfdb import (algextract, algsurf, charts, curation,  # noqa: E402
+                    ferreol,
                     invariants, mapping, nodal, papers, polynomial,
                     published, references, registry, sources, tail,
                     views, vmm, wedata, weextract)
@@ -465,6 +466,24 @@ class Builder:
                     % (base, num(k), r2, num(k1), r2, num(k2), r2, num(k3)))
         return None
 
+    @staticmethod
+    def _preset_extra(key, fn, A):
+        """The arguments after (x, y, z), at the operator's own defaults.
+
+        `mu` and `fold` are shared OPERATOR properties with no Python
+        default, so reading `signature().default` yields
+        `inspect._empty` for them -- fine for the many presets that
+        ignore mu, and silently fatal for the ones that use it, whose
+        oracle then raised and whose polynomial was recorded as absent.
+        `algextract.preset_defaults` reads the real values.
+        """
+        try:
+            return algextract.preset_defaults(A, key, fn)
+        except Exception:                                # noqa: BLE001
+            sig = inspect.signature(fn)
+            return {p: sig.parameters[p].default
+                    for p in list(sig.parameters)[3:]}
+
     def _polynomial_for(self, key, slug, fn, clip_radius, A):
         cand = curation.polynomial_for(slug)
         if cand is None:
@@ -475,12 +494,10 @@ class Builder:
                     cand = self._goursat_polynomial(fam, co)
             except Exception:                            # noqa: BLE001
                 cand = None
+        extra = self._preset_extra(key, fn, A)
         if cand is None and key in A.HAUSER_EQUATION:
             cand = None  # converted below from gallery notation
             raw = A.HAUSER_EQUATION[key]
-            sig = inspect.signature(fn)
-            extra = {p: sig.parameters[p].default
-                     for p in list(sig.parameters)[3:]}
             try:
                 oracle = (lambda x, y, z, _f=fn, _e=extra: _f(x, y, z, **_e))
                 poly, detail = polynomial.convert_verified(
@@ -489,10 +506,23 @@ class Builder:
             except Exception as exc:                    # noqa: BLE001
                 return None, "conversion raised: %s" % exc
         if cand is None:
+            # FOURTH ROUTE: no stored equation anywhere, but the shipped
+            # function's own body is the definition -- straight-line
+            # arithmetic on x, y, z.  Inline it back into an expression.
+            # This is not trusted on its own: it goes through the same
+            # oracle as every other route, and a refusal is recorded
+            # with its reason rather than left as a bare null.
+            try:
+                cand = algextract.extract(fn, A, params=extra)
+            except algextract.Unextractable as exc:
+                return None, ("no closed form is stored for this surface, "
+                              "and its implementation could not be read "
+                              "back as one expression (%s)" % exc)
+            except Exception as exc:                    # noqa: BLE001
+                return None, "extraction raised: %s" % exc
+        if cand is None:
             return None, ("no closed form is stored for this surface; it is "
                           "defined by its shipped implementation")
-        sig = inspect.signature(fn)
-        extra = {p: sig.parameters[p].default for p in list(sig.parameters)[3:]}
         try:
             oracle = (lambda x, y, z, _f=fn, _e=extra: _f(x, y, z, **_e))
             ok, detail = polynomial.verify_against(

@@ -20,8 +20,7 @@
       "shape": "BALL",
       "radius": 2.6
     },
-    "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nEndrass's 5-parameter family of octics with D8 x Z2 symmetry, combining two constructions of B. Segre: a product of eight planes (four symmetric plane-pair factors) minus the square of a degree-4 form in x^2+y^2, z and w, with complex parameters a, b, c, d, e.  The named members are promoted to their own records (see specimens).",
+    "polynomial": "0.25 * (x * x - 1) * (y * y - 1) * ((x + y) ** 2 - 2) * ((x - y) ** 2 - 2) - ((-0.6035533905932737) * (x * x + y * y) * (x * x + y * y) + (1.7071067811865475 * z * z + 1.4874368670764582) * (x * x + y * y) - z ** 4 + (-0.9142135623730951) * z * z + -1.1231601717798214) ** 2",
     "parameters": [
       {
         "name": "a",
@@ -43,7 +42,8 @@
         "name": "e",
         "domain": "complex"
       }
-    ]
+    ],
+    "note": "Endrass's 5-parameter family of octics with D8 x Z2 symmetry, combining two constructions of B. Segre: a product of eight planes (four symmetric plane-pair factors) minus the square of a degree-4 form in x^2+y^2, z and w, with complex parameters a, b, c, d, e.  The named members are promoted to their own records (see specimens)."
   },
   "curvature": {
     "condition": "none",
@@ -75,7 +75,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 4.44e-16).",
     "sources": [
       "St. Endrass, \"A Projective Surface of Degree Eight with 168 Nodes\", J. Algebraic Geom. 6 (1997) 325-334 -- the family and the 112-node count of its generic member.",
       "O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.",

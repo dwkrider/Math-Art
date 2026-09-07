@@ -22,8 +22,7 @@
       "shape": "BALL",
       "radius": 2.2
     },
-    "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.",
+    "polynomial": "(x * x + y * y + z * z - 1.6900000000000002) * (x * x + y * y + z * z - 1.6900000000000002) - 3.106870229007634 * (1 - z - 1.4142135623730951 * x) * (1 - z + 1.4142135623730951 * x) * (1 + z + 1.4142135623730951 * y) * (1 + z - 1.4142135623730951 * y)",
     "parameters": [
       {
         "name": "mu",
@@ -70,7 +69,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).",
     "sources": [
       "E. E. Kummer, 'Uber die Flachen vierten Grades mit sechzehn singularen Punkten', Monatsber. Akad. Wiss. Berlin (1864).",
       "mathcurve.com, Kummer surface (mirror ch1294): 16 ordinary singular points at the tetrahedral vertices; Breske-Labs-van Straten (2005) mu(4) = 16 (exact) -- independent node-count oracle."

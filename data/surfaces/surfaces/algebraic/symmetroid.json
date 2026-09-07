@@ -21,7 +21,7 @@
       "radius": 3.5
     },
     "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nThe quartic determinant surface of a net of quadrics; ten nodes. 'The' symmetroid is a GENERIC construction, not a surface, so THE SHIPPED ROW PINS A MEMBER: det(x M0 + y M1 + z M2 + w M3) for four explicit integer symmetric matrices chosen by search for a node-rich real picture (printed in the module).  Of the generic ten nodes this member shows SIX real ones, each verified by the self-test as det = grad det = 0 with the matrix rank EXACTLY 2 there; the other four are complex."
+    "note": "Polynomial not stored: no closed form is stored for this surface, and its implementation could not be read back as one expression (attribute shape). The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nThe quartic determinant surface of a net of quadrics; ten nodes. 'The' symmetroid is a GENERIC construction, not a surface, so THE SHIPPED ROW PINS A MEMBER: det(x M0 + y M1 + z M2 + w M3) for four explicit integer symmetric matrices chosen by search for a node-rich real picture (printed in the module).  Of the generic ten nodes this member shows SIX real ones, each verified by the self-test as det = grad det = 0 with the matrix rank EXACTLY 2 there; the other four are complex."
   },
   "curvature": {
     "condition": "none",
