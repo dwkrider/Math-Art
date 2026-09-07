@@ -268,6 +268,11 @@
    "Tori (genus 1)"
   ],
   [
+   "CHKM_TORI",
+   "Costa-Hoffman-Karcher-Meeks Torus",
+   "Tori (genus 1)"
+  ],
+  [
    "KNOID",
    "Jorge-Meeks k-noid",
    "Spheres (genus 0)"
@@ -323,6 +328,11 @@
    "Spheres (genus 0)"
   ],
   [
+   "SPH_4NOID_SYM2",
+   "4-Noid, Two Symmetry Planes",
+   "Spheres (genus 0)"
+  ],
+  [
    "SYMM_FRIEM",
    "Symmetrized Finite Riemann (2m catenoids)",
    "Spheres (genus 0)"
@@ -340,6 +350,16 @@
   [
    "ANTIPRISM_KNOID",
    "Antiprismatic k-noid (full family)",
+   "Spheres (genus 0)"
+  ],
+  [
+   "KUSNER_SPHERE",
+   "Kusner Sphere (2n planar ends)",
+   "Spheres (genus 0)"
+  ],
+  [
+   "WAVY_ENNEPER",
+   "Wavy Enneper",
    "Spheres (genus 0)"
   ],
   [
@@ -395,6 +415,21 @@
   [
    "WOHLGEMUTH_G3",
    "Wohlgemuth Second Surface (genus 3)",
+   "Higher Genus"
+  ],
+  [
+   "HORGAN_NEARMISS",
+   "Horgan Surface (non-existent, near-miss)",
+   "Higher Genus"
+  ],
+  [
+   "WEBER_WOLF",
+   "Weber-Wolf Surface (genus 3, 5 ends)",
+   "Higher Genus"
+  ],
+  [
+   "KAPOULEAS",
+   "Kapouleas Surface (desingularized catenoids)",
    "Higher Genus"
   ],
   [
@@ -1137,6 +1172,11 @@
   [
    "TR_HT_CONJ",
    "Schoen T'-R' | H'-T hybrid",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TWP_CONJ",
+   "Schoen-Karcher T-Wp (hexagonal wrapped package)",
    "TPMS Non-Cubic"
   ],
   [
