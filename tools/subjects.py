@@ -254,6 +254,29 @@ PARAMS = {
     # is invisible; coloring by radius separates the generations.
     "mesh.apollonian_add": dict(color_by='SIZE'),
 
+    # A packing at its bare defaults is a plain hexagonal disc, which
+    # says "circles" but not "conformal map".  Prescribing a lobed
+    # boundary makes the interior visibly warp to meet it -- the
+    # rigidity that is the whole point of the subject.
+    "mesh.circle_packing_add": dict(rings=6, boundary='PRESCRIBED',
+                                    lobes=3, amplitude=0.75,
+                                    output='RINGS', color_by='RADIUS'),
+
+    # Depth 2 is 36 pentagons: enough that the subdivision reads as a
+    # rule rather than a one-off, while each tile is still large
+    # enough to see its shape.  The conformal layout is the point --
+    # the straight-line one is what the generator exists to avoid.
+    "mesh.subdivision_tiling_add": dict(rule='PENTAGONAL', depth=2,
+                                        layout='CONFORMAL',
+                                        inset=0.14),
+
+    # The gasket case is the one that looks like the Apollonian gasket
+    # we already ship, so the quasifuchsian curve is the better
+    # advertisement: a wild fractal Jordan curve nothing else here
+    # produces.
+    "curve.kleinian_add": dict(mode='CURVE', preset='QUASIFUCHSIAN',
+                               epsilon=0.002, max_depth=24),
+
     # -- patterns -------------------------------------------------
     # The bare default is a plain relief; a reaction-diffusion field
     # wrapped on a torus shows what the generator is actually for --
@@ -383,6 +406,10 @@ PLAN_VIEW = {
     "mesh.fractal_reptile_add", "mesh.islamic_pattern_add",
     "mesh.celtic_knot_2d_add",
     "mesh.knot_carpet_add", "mesh.hyperbolic_tiling_add",
+    # circle packings, conformal tilings and limit sets are all drawn
+    # in the plane; at three-quarters they foreshorten into ellipses
+    "mesh.circle_packing_add", "mesh.subdivision_tiling_add",
+    "curve.kleinian_add",
     "mesh.map_lsystem_add",
     # curve-based fractals that are drawn in the plane
     "curve.lsystem_add", "curve.turtle_curve_add",
