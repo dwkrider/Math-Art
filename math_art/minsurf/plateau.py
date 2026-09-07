@@ -3767,9 +3767,11 @@ CONJUGATE_SURFACES['TWP'] = {
     'height': 1.0,
     'poly': _TWP_POLY0,
     'normals': _TWP_EDGES0,
-    # The two diagonal arcs land in the SAME plane -- forced exactly by
-    # the contour's 180-degree symmetry, measured here as a difference
-    # of 3e-4 before being pinned.
+    # The two diagonal arcs land in the SAME plane -- forced by the
+    # contour's 180-degree symmetry.  Measured before pinning: their
+    # offsets differ by 8.8e-6 at alpha = 60 and 6.4e-7 at 45, i.e. the
+    # symmetry really does kill the parallel-plane period and the pin
+    # only removes discretization noise.
     'same': {4: 1},
     'letters': {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5},
     'words': _TWP_WORDS[60.0],

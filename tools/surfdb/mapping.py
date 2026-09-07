@@ -417,6 +417,16 @@ ALIAS = {
     "tpms_exact:HT_HR_CONJ": "schoen-hybrid-ht-h2r",
     "tpms_exact:TR_HT_CONJ": "schoen-hybrid-tr-ht",
     "tpms_exact:HR_TR_CONJ": "schoen-hybrid-h2r-tr",
+    # Karcher's T-Wp, 3DXM's "A Schoen TW Family" -- the curated record
+    # predates the row, so the row lands on it rather than opening a
+    # twin.  The contour was measured off an Evolver run of Brakke's
+    # IWP.fe (conjugation preserves boundary lengths) and transposed to
+    # the hexagonal prism; gated on folded Euler characteristic (-8,
+    # genus 5 per cell, matching the record's degree-4 Gauss map) with
+    # the 45-degree member reproducing I-WP (chi -12, cell cubic to 2%,
+    # patch area pinned to the Evolver run).  See the block above
+    # `twp_poly` in math_art/minsurf/plateau.py.
+    "tpms_exact:TWP_CONJ": "schoen-tw",
     "tpms:LIDINOID": "lidinoid",
     "tpms:NEOVIUS": "neovius-surface",
     "tpms:FK_CS": "fischer-koch-cs",

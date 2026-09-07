@@ -80,7 +80,7 @@
     "topological"
   ],
   "count": 474,
-  "implemented_count": 466,
+  "implemented_count": 467,
   "entries": [
     {
       "slug": "alternating-fence-of-half-catenoids",
@@ -11751,15 +11751,15 @@
     },
     {
       "slug": "schoen-tw",
-      "name": "Schoen TW Family Surface",
+      "name": "Schoen-Karcher T-Wp (hexagonal wrapped package)",
       "path": "surfaces/minimal-periodic/schoen-tw.json",
       "primary_family": "minimal-periodic",
       "families": [
         "def-weierstrass",
         "immersed",
+        "implemented",
         "minimal",
         "minimal-periodic",
-        "not-implemented",
         "tradition-crystallographic",
         "triply-periodic"
       ],
@@ -11778,8 +11778,10 @@
         "ita_number": null,
         "order": null
       },
-      "implemented": false,
-      "operator_ids": [],
+      "implemented": true,
+      "operator_ids": [
+        "mesh.periodic_minimal_add"
+      ],
       "specimen_count": 0
     },
     {
