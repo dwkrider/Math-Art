@@ -13,7 +13,7 @@
 //     is independent of how it is evaluated. The gyroid's nodal formula
 //     is not the gyroid: measured, its mean curvature reaches 0.032
 //     where a minimal surface has 0. The record says so; so does this.
-//   * IMPLEMENTED. 9 records describe surfaces no generator builds.
+//   * IMPLEMENTED. 7 records have no mesh, each for a stated reason.
 //     Those have no mesh and the viewer stays empty, which needs saying
 //     rather than looking like a failure to load.
 
@@ -85,17 +85,39 @@ export function renderSurfaceDetail(rec, entry, host) {
   host.append(head);
 
   if (entry && entry.hasMesh === false) {
-    // Say it plainly rather than leaving an empty stage looking broken.
-    // Two different reasons land here: no generator builds the surface at
-    // all, or one does but it cannot be driven headlessly (an operator
-    // that spans a selection has no canonical shape to bake).
-    host.append($('p', 'notice',
-      entry.implemented
-        ? 'This surface is built by an operator that works on geometry you '
-          + 'select, so it has no single shape to show here. Everything '
-          + 'below is what the database records about it.'
-        : 'No generator builds this surface yet, so there is no mesh to '
-          + 'show. Everything below is what the database records about it.'));
+    // Say WHY, in the database's own words where it has them.
+    //
+    // The records that cannot be drawn are not one kind of thing. Some
+    // describe surfaces proved not to exist -- the finding IS the record
+    // -- and some are merely unbuilt and may become buildable. Reporting
+    // both as "no generator builds this yet" states the second correctly
+    // and the first not at all.
+    const blocked = (rec.construction || [])
+      .map((c) => c.blocked_by).filter(Boolean)[0];
+    const resume = (rec.construction || [])
+      .map((c) => c.resume).filter(Boolean)[0];
+    const note = $('p', 'notice');
+    if (blocked) {
+      // Only the non-existence case gets a lead-in. The others already
+      // begin by saying they are not built, and a prefix produced
+      // "Not built yet. Not built, and not buildable by this add-on".
+      if (/NOT TO EXIST/.test(blocked)) {
+        note.append($('strong', null, 'There is nothing to draw. '));
+      }
+      note.append(document.createTextNode(blocked));
+      if (resume) {
+        note.append(document.createElement('br'));
+        note.append(document.createTextNode(resume));
+      }
+    } else if (entry.implemented) {
+      note.textContent =
+        'This surface is built by an operator that works on geometry you '
+        + 'select, so it has no single shape to show here.';
+    } else {
+      note.textContent =
+        'No generator builds this surface yet, so there is no mesh to show.';
+    }
+    host.append(note);
   }
 
   const panels = $('div', 'panel-grid');

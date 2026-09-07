@@ -174,7 +174,20 @@ async function main() {
   // -- stage ----------------------------------------------------------
   async function show(slug) {
     const entry = byslug.get(slug);
-    if (!entry) return;
+    if (!entry) {
+      // Say so, rather than leaving the previous surface up as though it
+      // were the one asked for. Records do get removed -- horgan-surface
+      // was, being a proved non-existence -- so a stale link is a real
+      // way to arrive here.
+      detail.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'notice';
+      p.textContent = `No surface in the database has the name "${slug}".`;
+      detail.append(p);
+      $('#stage-caption').textContent = '';
+      $('#stage').classList.add('empty');
+      return;
+    }
     selected = slug;
     for (const t of grid.querySelectorAll('.tile')) {
       t.classList.toggle('on', t.dataset.slug === slug);

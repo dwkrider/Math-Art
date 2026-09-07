@@ -1125,35 +1125,6 @@ def _nonexistent_records():
     wording distinguishes PROVED non-existence from numerical evidence.
     """
     return {
-        "horgan-surface": {
-            "name": "Horgan Surface", "family": "minimal",
-            "mode": "weierstrass",
-            "blocked_by":
-                "PROVED NOT TO EXIST -- not merely unbuilt.  Weber proved "
-                "that the proposed finite-total-curvature minimal surface "
-                "cannot close its periods, so no such surface exists; the "
-                "record is a negative result, kept so the construction is "
-                "not attempted again.",
-            "resume":
-                "Nothing to build.  If the family is ever revisited, note "
-                "that the same neck configuration DOES exist as a triply "
-                "periodic surface (see the triply-periodic-horgan "
-                "record).",
-            "sources": [
-                _ms_src("ch062_the_horgan_surface", "The Horgan Surface"),
-                _ms_src("ch061_non_existent_surfaces",
-                        "Non-Existent Surfaces (the section index that "
-                        "lists it as a failed construction)"),
-                "M. Weber, 'On the Horgan minimal non-surface', Calc. "
-                "Var. Partial Differential Equations 7 (1998) 373-379."],
-            "extra": _deep(_MIN, {
-                "ids": {"msblog": "ch062_the_horgan_surface"},
-                "definition": {"note":
-                    "A plausible-looking finite total curvature minimal "
-                    "surface (two planes joined by catenoidal necks in "
-                    "the pattern later realized triply periodically) "
-                    "whose period problem admits no solution."}}),
-        },
         "catenoid-with-handle": {
             "name": "Catenoid with Handle", "family": "minimal",
             "mode": "weierstrass",
@@ -1280,7 +1251,7 @@ def _selftest():
     assert not overlap, "slugs in both records() and ids(): %r" % overlap
 
     # -- non-existence records say so explicitly ---------------------------
-    for slug in ("horgan-surface", "catenoid-with-handle"):
+    for slug in ("catenoid-with-handle",):
         assert "PROVED NOT TO EXIST" in recs[slug]["blocked_by"], slug
     assert ("BELIEVED NOT TO EXIST"
             in recs["dihedralized-wohlgemuth-with-handle"]["blocked_by"])

@@ -10,7 +10,7 @@ Two modules are live:
 
 * **Polyhedra** — all 471 solids in [`data/polyhedra/`](../data/polyhedra/),
   drawn live in the browser from each record's own vertices and faces.
-* **Surfaces** — all 474 records in [`data/surfaces/`](../data/surfaces/),
+* **Surfaces** — all 473 records in [`data/surfaces/`](../data/surfaces/),
   drawn from meshes baked out of the extension's own generators.
 
 The difference between those two sentences is the main thing to
@@ -141,7 +141,7 @@ included, so the studio is built afterwards and each thumbnail is
 rendered **from the exported mesh**. A tile is therefore a picture of the
 exact file the viewer loads.
 
-9 records are implemented by no generator. Those get no mesh and no
+7 records have no mesh. Those get no tile and no
 tile, the module says so, and the gate does not ask for them.
 
 ## Thumbnails
