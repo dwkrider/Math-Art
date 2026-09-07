@@ -3,6 +3,10 @@ __pycache__/
 *.blend
 *.blend1
 *.stl
+# Local Python virtual environment, never tracked.
+.venv/
+venv/
+
 # Local extension builds. Distribution is via GitHub Releases, not the repo.
 dev/
 dist/
