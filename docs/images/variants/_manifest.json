@@ -57,6 +57,14 @@
    "Second Tractroid"
   ],
   [
+   "ATTRACTION",
+   "Solid of Maximal Attraction"
+  ],
+  [
+   "PROP_CURV",
+   "Proportional-Curvature Surface"
+  ],
+  [
    "CYCLIDE_RING",
    "Dupin Cyclide (ring)"
   ],
@@ -79,6 +87,18 @@
   [
    "ZOLL",
    "Zoll's Surface"
+  ],
+  [
+   "EGUCHI_HANSON",
+   "Eguchi-Hanson Space"
+  ],
+  [
+   "TROPICAL_CY",
+   "Tropical Calabi-Yau Surface"
+  ],
+  [
+   "CONIFOLD",
+   "Conifold Transition"
   ]
  ],
  "geodesic": [
@@ -378,6 +398,11 @@
    "Higher Genus"
   ],
   [
+   "BJ_BREINER_KLEENE",
+   "Breiner-Kleene Spiral Helicoid",
+   "Bjorling (curve-seeded)"
+  ],
+  [
    "BJ_CYCLOID",
    "Bjorling: Cycloid (Catalan)",
    "Bjorling (curve-seeded)"
@@ -432,6 +457,21 @@
   [
    "GENUS1_HELICOID",
    "Helicoid with Handle (genus 1)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_TOROIDAL_KS",
+   "Toroidal Karcher-Scherk Tower (genus 1)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_HACKMAN",
+   "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_SCHERK4",
+   "Scherk's Fourth Surface (1835)",
    "Singly Periodic"
   ],
   [
@@ -582,6 +622,21 @@
   [
    "CONNOR_DP",
    "Connor Experimental (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
+   "DP_LUBECK_BATISTA",
+   "Lubeck-Batista Surface (genus 3, tau = i member)",
+   "Doubly Periodic"
+  ],
+  [
+   "DP_CATENOID_FIELD",
+   "Catenoid Field (square-torus member)",
+   "Doubly Periodic"
+  ],
+  [
+   "DP_PLANE_CATENOIDS",
+   "Plane with Catenoids (square lattice)",
    "Doubly Periodic"
   ],
   [
@@ -935,11 +990,6 @@
    "TPMS Non-Cubic"
   ],
   [
-   "LIDINOID_1",
-   "Lidinoid (exact fundamental piece)",
-   "TPMS Non-Cubic"
-  ],
-  [
    "RPD",
    "rPD deformation",
    "TPMS Non-Cubic"
@@ -1067,6 +1117,16 @@
   [
    "TRIPLY_COSTA",
    "Triply Periodic Costa (Batista, exact fundamental piece, genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "TRIPLY_HORGAN",
+   "Triply Periodic Horgan Surface (exact fundamental piece, genus 5)",
+   "TPMS Non-Cubic"
+  ],
+  [
+   "WEI_G4",
+   "Wei Triply Periodic Surface (genus 4, a=0.1 b=0.3 member)",
    "TPMS Non-Cubic"
   ]
  ],
@@ -1528,6 +1588,11 @@
    "Many-Nodal Octics"
   ],
   [
+   "VAN_STRATEN_D",
+   "Van Straten D_d Nodal Series",
+   "Many-Nodal Octics"
+  ],
+  [
    "VMM_PRETZEL",
    "Pretzel",
    "Named Implicit Surfaces"
@@ -1555,6 +1620,11 @@
   [
    "VMM_DECOCUBE",
    "Deco-Cube",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "DECO_TETRAHEDRON",
+   "Deco-Tetrahedron",
    "Named Implicit Surfaces"
   ],
   [
@@ -1616,6 +1686,56 @@
    "DARBOUX_CYCLIDE",
    "Darboux Cyclide",
    "Encyclopedia Surfaces"
+  ],
+  [
+   "NORM_ONE",
+   "p-Norm Unit Sphere (superellipsoid, p knob)",
+   "MathWorld Gallery"
+  ],
+  [
+   "SEXTIC_9_TRIPLE",
+   "Sextic with 9 Triple Points (EPS (4,4,4) member)",
+   "MathWorld Gallery"
+  ],
+  [
+   "HUMBERT",
+   "Humbert Sextic (O = (1:1:1:1) member)",
+   "MathWorld Gallery"
+  ],
+  [
+   "CG_QUINTIC",
+   "Enriques Quintic, 4 Tacnodes (Craighero-Gattazzo (1:1) member)",
+   "MathWorld Gallery"
+  ],
+  [
+   "SYMMETROID",
+   "Quartic Symmetroid (pinned integer web)",
+   "MathWorld Gallery"
+  ],
+  [
+   "SWALLOWTAIL",
+   "Swallowtail (quartic discriminant)",
+   "MathWorld Gallery"
+  ],
+  [
+   "CAYLEY_RULED",
+   "Cayley Ruled Cubic",
+   "MathWorld Gallery"
+  ],
+  [
+   "SCHUR_QUARTIC",
+   "Schur Quartic (64 lines)",
+   "MathWorld Gallery"
+  ],
+  [
+   "DESMIC",
+   "Desmic Quartic (12 nodes, (1,2) member)",
+   "MathWorld Gallery"
+  ],
+  [
+   "BURKHARDT_SECTION",
+   "Burkhardt Quartic Section (y0 = sum/4 slice)",
+   "MathWorld Gallery"
   ],
   [
    "PEANO",
@@ -1786,6 +1906,18 @@
   [
    "KLEIN8",
    "Klein Bottle (Figure-8)"
+  ],
+  [
+   "ETRUSCAN_VENUS",
+   "Etruscan Venus"
+  ],
+  [
+   "IDA",
+   "Ida Surface"
+  ],
+  [
+   "KLEIN_NESTED",
+   "Nested Klein Bottles"
   ],
   [
    "MOBIUS",

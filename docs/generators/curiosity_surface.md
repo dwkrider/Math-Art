@@ -81,16 +81,25 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/curiosity_surface__SINUSOID_REV.png" width="200"><br><sub>Revolution of the Sinusoid</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__TRACTROID2.png" width="200"><br><sub>Second Tractroid</sub></td>
-<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_RING.png" width="200"><br><sub>Dupin Cyclide (ring)</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__ATTRACTION.png" width="200"><br><sub>Solid of Maximal Attraction</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/curiosity_surface__PROP_CURV.png" width="200"><br><sub>Proportional-Curvature Surface</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_RING.png" width="200"><br><sub>Dupin Cyclide (ring)</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_HORN.png" width="200"><br><sub>Dupin Cyclide (horn)</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_SPINDLE.png" width="200"><br><sub>Dupin Cyclide (spindle)</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__TANNERY_PEAR.png" width="200"><br><sub>Tannery's Pear</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__TANNERY_HOURGLASS.png" width="200"><br><sub>Tannery's Hourglass</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/curiosity_surface__TANNERY_HOURGLASS.png" width="200"><br><sub>Tannery's Hourglass</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__ZOLL.png" width="200"><br><sub>Zoll's Surface</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__EGUCHI_HANSON.png" width="200"><br><sub>Eguchi-Hanson Space</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__TROPICAL_CY.png" width="200"><br><sub>Tropical Calabi-Yau Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/curiosity_surface__CONIFOLD.png" width="200"><br><sub>Conifold Transition</sub></td>
 </tr>
 </table>
 

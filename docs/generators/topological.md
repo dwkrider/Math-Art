@@ -55,6 +55,11 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/topological__KLEIN.png" width="200"><br><sub>Klein Bottle</sub></td>
 <td align="center"><img src="../images/variants/topological__KLEIN8.png" width="200"><br><sub>Klein Bottle (Figure-8)</sub></td>
+<td align="center"><img src="../images/variants/topological__ETRUSCAN_VENUS.png" width="200"><br><sub>Etruscan Venus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/topological__IDA.png" width="200"><br><sub>Ida Surface</sub></td>
+<td align="center"><img src="../images/variants/topological__KLEIN_NESTED.png" width="200"><br><sub>Nested Klein Bottles</sub></td>
 <td align="center"><img src="../images/variants/topological__MOBIUS.png" width="200"><br><sub>Moebius Strip</sub></td>
 </tr>
 <tr>
