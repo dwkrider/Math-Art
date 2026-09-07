@@ -5747,7 +5747,7 @@
     },
     {
       "slug": "hackman-surfaces",
-      "name": "Hackman Toroidal 1-Noid (t = 0.3333 member)",
+      "name": "Hackman Screw-Motion 1-Noid",
       "path": "surfaces/minimal-periodic/hackman-surfaces.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10799,7 +10799,7 @@
       },
       "implemented": true,
       "operator_ids": [
-        "mesh.periodic_minimal_add"
+        "mesh.tpms_add"
       ],
       "specimen_count": 0
     },
