@@ -1,0 +1,2608 @@
+{
+ "generated_from": "data/polyhedra",
+ "families": [
+  "platonic",
+  "archimedean",
+  "catalan",
+  "johnson",
+  "kepler-poinsot"
+ ],
+ "columns": [
+  {
+   "key": "8",
+   "label": "8+ face types",
+   "note": "The least regular solids in the table, gathered so the table does not trail off into columns of one.",
+   "count": 19
+  },
+  {
+   "key": "7",
+   "label": "7 face types",
+   "note": "Solids whose faces fall into 7 symmetry classes.",
+   "count": 11
+  },
+  {
+   "key": "6",
+   "label": "6 face types",
+   "note": "Solids whose faces fall into 6 symmetry classes.",
+   "count": 11
+  },
+  {
+   "key": "5",
+   "label": "5 face types",
+   "note": "Solids whose faces fall into 5 symmetry classes.",
+   "count": 13
+  },
+  {
+   "key": "4",
+   "label": "4 face types",
+   "note": "Solids whose faces fall into 4 symmetry classes.",
+   "count": 17
+  },
+  {
+   "key": "3",
+   "label": "3 face types",
+   "note": "Solids whose faces fall into 3 symmetry classes.",
+   "count": 16
+  },
+  {
+   "key": "2",
+   "label": "2 face types",
+   "note": "Solids whose faces fall into 2 symmetry classes.",
+   "count": 16
+  },
+  {
+   "key": "1",
+   "label": "1 face type",
+   "note": "Every face equivalent to every other: the isohedral solids, which is what the Catalans are.",
+   "count": 15
+  },
+  {
+   "key": "regular",
+   "label": "Regular",
+   "note": "Transitive on vertices, edges and faces at once -- nothing about them can be made more uniform. The five Platonic solids and the four Kepler-Poinsot stars.",
+   "count": 9
+  }
+ ],
+ "solids": [
+  {
+   "slug": "square-pyramid",
+   "name": "Square Pyramid",
+   "kind": "Johnson",
+   "faces": 5,
+   "vertices": 5,
+   "edges": 8,
+   "schoenflies": "C4v",
+   "order": 8,
+   "period": "Cyclic",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "pentagonal-pyramid",
+   "name": "Pentagonal Pyramid",
+   "kind": "Johnson",
+   "faces": 6,
+   "vertices": 6,
+   "edges": 10,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "elongated-triangular-pyramid",
+   "name": "Elongated Triangular Pyramid",
+   "kind": "Johnson",
+   "faces": 7,
+   "vertices": 7,
+   "edges": 12,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "augmented-triangular-prism",
+   "name": "Augmented Triangular Prism",
+   "kind": "Johnson",
+   "faces": 8,
+   "vertices": 7,
+   "edges": 13,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "triangular-cupola",
+   "name": "Triangular Cupola",
+   "kind": "Johnson",
+   "faces": 8,
+   "vertices": 9,
+   "edges": 15,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "tridiminished-icosahedron",
+   "name": "Tridiminished Icosahedron",
+   "kind": "Johnson",
+   "faces": 8,
+   "vertices": 9,
+   "edges": 15,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "elongated-square-pyramid",
+   "name": "Elongated Square Pyramid",
+   "kind": "Johnson",
+   "faces": 9,
+   "vertices": 9,
+   "edges": 16,
+   "schoenflies": "C4v",
+   "order": 8,
+   "period": "Cyclic",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "augmented-pentagonal-prism",
+   "name": "Augmented Pentagonal Prism",
+   "kind": "Johnson",
+   "faces": 10,
+   "vertices": 11,
+   "edges": 19,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "augmented-tridiminished-icosahedron",
+   "name": "Augmented Tridiminished Icosahedron",
+   "kind": "Johnson",
+   "faces": 10,
+   "vertices": 10,
+   "edges": 18,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "square-cupola",
+   "name": "Square Cupola",
+   "kind": "Johnson",
+   "faces": 10,
+   "vertices": 12,
+   "edges": 20,
+   "schoenflies": "C4v",
+   "order": 8,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "augmented-hexagonal-prism",
+   "name": "Augmented Hexagonal Prism",
+   "kind": "Johnson",
+   "faces": 11,
+   "vertices": 13,
+   "edges": 22,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "biaugmented-triangular-prism",
+   "name": "Biaugmented Triangular Prism",
+   "kind": "Johnson",
+   "faces": 11,
+   "vertices": 8,
+   "edges": 17,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "elongated-pentagonal-pyramid",
+   "name": "Elongated Pentagonal Pyramid",
+   "kind": "Johnson",
+   "faces": 11,
+   "vertices": 11,
+   "edges": 20,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "metabidiminished-icosahedron",
+   "name": "Metabidiminished Icosahedron",
+   "kind": "Johnson",
+   "faces": 12,
+   "vertices": 10,
+   "edges": 20,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "pentagonal-cupola",
+   "name": "Pentagonal Cupola",
+   "kind": "Johnson",
+   "faces": 12,
+   "vertices": 15,
+   "edges": 25,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "biaugmented-pentagonal-prism",
+   "name": "Biaugmented Pentagonal Prism",
+   "kind": "Johnson",
+   "faces": 13,
+   "vertices": 12,
+   "edges": 23,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "gyroelongated-square-pyramid",
+   "name": "Gyroelongated Square Pyramid",
+   "kind": "Johnson",
+   "faces": 13,
+   "vertices": 9,
+   "edges": 20,
+   "schoenflies": "C4v",
+   "order": 8,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "augmented-truncated-tetrahedron",
+   "name": "Augmented Truncated Tetrahedron",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 15,
+   "edges": 27,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "elongated-triangular-cupola",
+   "name": "Elongated Triangular Cupola",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 15,
+   "edges": 27,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "metabiaugmented-hexagonal-prism",
+   "name": "Metabiaugmented Hexagonal Prism",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 14,
+   "edges": 26,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "sphenocorona",
+   "name": "Sphenocorona",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 10,
+   "edges": 22,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "augmented-dodecahedron",
+   "name": "Augmented Dodecahedron",
+   "kind": "Johnson",
+   "faces": 16,
+   "vertices": 21,
+   "edges": 35,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "gyroelongated-pentagonal-pyramid",
+   "name": "Gyroelongated Pentagonal Pyramid",
+   "kind": "Johnson",
+   "faces": 16,
+   "vertices": 11,
+   "edges": 25,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "augmented-sphenocorona",
+   "name": "Augmented Sphenocorona",
+   "kind": "Johnson",
+   "faces": 17,
+   "vertices": 11,
+   "edges": 26,
+   "schoenflies": "Cs",
+   "order": 2,
+   "period": "Cyclic",
+   "orbits": 11,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "pentagonal-rotunda",
+   "name": "Pentagonal Rotunda",
+   "kind": "Johnson",
+   "faces": 17,
+   "vertices": 20,
+   "edges": 35,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "elongated-square-cupola",
+   "name": "Elongated Square Cupola",
+   "kind": "Johnson",
+   "faces": 18,
+   "vertices": 20,
+   "edges": 36,
+   "schoenflies": "C4v",
+   "order": 8,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "sphenomegacorona",
+   "name": "Sphenomegacorona",
+   "kind": "Johnson",
+   "faces": 18,
+   "vertices": 12,
+   "edges": 28,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "gyroelongated-triangular-cupola",
+   "name": "Gyroelongated Triangular Cupola",
+   "kind": "Johnson",
+   "faces": 20,
+   "vertices": 15,
+   "edges": 33,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "metabiaugmented-dodecahedron",
+   "name": "Metabiaugmented Dodecahedron",
+   "kind": "Johnson",
+   "faces": 20,
+   "vertices": 22,
+   "edges": 40,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "triangular-hebesphenorotunda",
+   "name": "Triangular Hebesphenorotunda",
+   "kind": "Johnson",
+   "faces": 20,
+   "vertices": 18,
+   "edges": 36,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "hebesphenomegacorona",
+   "name": "Hebesphenomegacorona",
+   "kind": "Johnson",
+   "faces": 21,
+   "vertices": 14,
+   "edges": 33,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 8,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "augmented-truncated-cube",
+   "name": "Augmented Truncated Cube",
+   "kind": "Johnson",
+   "faces": 22,
+   "vertices": 28,
+   "edges": 48,
+   "schoenflies": "C4v",
+   "order": 8,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "elongated-pentagonal-cupola",
+   "name": "Elongated Pentagonal Cupola",
+   "kind": "Johnson",
+   "faces": 22,
+   "vertices": 25,
+   "edges": 45,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "triaugmented-dodecahedron",
+   "name": "Triaugmented Dodecahedron",
+   "kind": "Johnson",
+   "faces": 24,
+   "vertices": 23,
+   "edges": 45,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "gyroelongated-square-cupola",
+   "name": "Gyroelongated Square Cupola",
+   "kind": "Johnson",
+   "faces": 26,
+   "vertices": 20,
+   "edges": 44,
+   "schoenflies": "C4v",
+   "order": 8,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "elongated-pentagonal-rotunda",
+   "name": "Elongated Pentagonal Rotunda",
+   "kind": "Johnson",
+   "faces": 27,
+   "vertices": 30,
+   "edges": 55,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "pentagonal-gyrocupolarotunda",
+   "name": "Pentagonal Gyrocupolarotunda",
+   "kind": "Johnson",
+   "faces": 27,
+   "vertices": 25,
+   "edges": 50,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "pentagonal-orthocupolarotunda",
+   "name": "Pentagonal Orthocupolarotunda",
+   "kind": "Johnson",
+   "faces": 27,
+   "vertices": 25,
+   "edges": 50,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "gyroelongated-pentagonal-cupola",
+   "name": "Gyroelongated Pentagonal Cupola",
+   "kind": "Johnson",
+   "faces": 32,
+   "vertices": 25,
+   "edges": 55,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "tridiminished-rhombicosidodecahedron",
+   "name": "Tridiminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 32,
+   "vertices": 45,
+   "edges": 75,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 11,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "elongated-pentagonal-gyrocupolarotunda",
+   "name": "Elongated Pentagonal Gyrocupolarotunda",
+   "kind": "Johnson",
+   "faces": 37,
+   "vertices": 35,
+   "edges": 70,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 9,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "elongated-pentagonal-orthocupolarotunda",
+   "name": "Elongated Pentagonal Orthocupolarotunda",
+   "kind": "Johnson",
+   "faces": 37,
+   "vertices": 35,
+   "edges": 70,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 9,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "gyroelongated-pentagonal-rotunda",
+   "name": "Gyroelongated Pentagonal Rotunda",
+   "kind": "Johnson",
+   "faces": 37,
+   "vertices": 30,
+   "edges": 65,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 8,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "augmented-truncated-dodecahedron",
+   "name": "Augmented Truncated Dodecahedron",
+   "kind": "Johnson",
+   "faces": 42,
+   "vertices": 65,
+   "edges": 105,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 10,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "gyrate-bidiminished-rhombicosidodecahedron",
+   "name": "Gyrate Bidiminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 42,
+   "vertices": 50,
+   "edges": 90,
+   "schoenflies": "Cs",
+   "order": 2,
+   "period": "Cyclic",
+   "orbits": 27,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "metabidiminished-rhombicosidodecahedron",
+   "name": "Metabidiminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 42,
+   "vertices": 50,
+   "edges": 90,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 16,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "gyroelongated-pentagonal-cupolarotunda",
+   "name": "Gyroelongated Pentagonal Cupolarotunda",
+   "kind": "Johnson",
+   "faces": 47,
+   "vertices": 35,
+   "edges": 80,
+   "schoenflies": "C5",
+   "order": 5,
+   "period": "Cyclic",
+   "orbits": 11,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "bigyrate-diminished-rhombicosidodecahedron",
+   "name": "Bigyrate Diminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 52,
+   "vertices": 55,
+   "edges": 105,
+   "schoenflies": "Cs",
+   "order": 2,
+   "period": "Cyclic",
+   "orbits": 31,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "diminished-rhombicosidodecahedron",
+   "name": "Diminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 52,
+   "vertices": 55,
+   "edges": 105,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 11,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "metabiaugmented-truncated-dodecahedron",
+   "name": "Metabiaugmented Truncated Dodecahedron",
+   "kind": "Johnson",
+   "faces": 52,
+   "vertices": 70,
+   "edges": 120,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 18,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "metagyrate-diminished-rhombicosidodecahedron",
+   "name": "Metagyrate Diminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 52,
+   "vertices": 55,
+   "edges": 105,
+   "schoenflies": "Cs",
+   "order": 2,
+   "period": "Cyclic",
+   "orbits": 31,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "paragyrate-diminished-rhombicosidodecahedron",
+   "name": "Paragyrate Diminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 52,
+   "vertices": 55,
+   "edges": 105,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 11,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "gyrate-rhombicosidodecahedron",
+   "name": "Gyrate Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 62,
+   "vertices": 60,
+   "edges": 120,
+   "schoenflies": "C5v",
+   "order": 10,
+   "period": "Cyclic",
+   "orbits": 13,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "metabigyrate-rhombicosidodecahedron",
+   "name": "Metabigyrate Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 62,
+   "vertices": 60,
+   "edges": 120,
+   "schoenflies": "C2v",
+   "order": 4,
+   "period": "Cyclic",
+   "orbits": 22,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "triaugmented-truncated-dodecahedron",
+   "name": "Triaugmented Truncated Dodecahedron",
+   "kind": "Johnson",
+   "faces": 62,
+   "vertices": 75,
+   "edges": 135,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 16,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "trigyrate-rhombicosidodecahedron",
+   "name": "Trigyrate Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 62,
+   "vertices": 60,
+   "edges": 120,
+   "schoenflies": "C3v",
+   "order": 6,
+   "period": "Cyclic",
+   "orbits": 17,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "8"
+  },
+  {
+   "slug": "triangular-bipyramid",
+   "name": "Triangular Bipyramid",
+   "kind": "Johnson",
+   "faces": 6,
+   "vertices": 5,
+   "edges": 9,
+   "schoenflies": "D3h",
+   "order": 12,
+   "period": "Dihedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "gyrobifastigium",
+   "name": "Gyrobifastigium",
+   "kind": "Johnson",
+   "faces": 8,
+   "vertices": 8,
+   "edges": 14,
+   "schoenflies": "D2d",
+   "order": 8,
+   "period": "Dihedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "elongated-triangular-bipyramid",
+   "name": "Elongated Triangular Bipyramid",
+   "kind": "Johnson",
+   "faces": 9,
+   "vertices": 8,
+   "edges": 15,
+   "schoenflies": "D3h",
+   "order": 12,
+   "period": "Dihedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "pentagonal-bipyramid",
+   "name": "Pentagonal Bipyramid",
+   "kind": "Johnson",
+   "faces": 10,
+   "vertices": 7,
+   "edges": 15,
+   "schoenflies": "D5h",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "elongated-square-bipyramid",
+   "name": "Elongated Square Bipyramid",
+   "kind": "Johnson",
+   "faces": 12,
+   "vertices": 10,
+   "edges": 20,
+   "schoenflies": "D4h",
+   "order": 16,
+   "period": "Dihedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "snub-disphenoid",
+   "name": "Snub Disphenoid",
+   "kind": "Johnson",
+   "faces": 12,
+   "vertices": 8,
+   "edges": 18,
+   "schoenflies": "D2d",
+   "order": 8,
+   "period": "Dihedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "bilunabirotunda",
+   "name": "Bilunabirotunda",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 14,
+   "edges": 26,
+   "schoenflies": "D2h",
+   "order": 8,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "parabiaugmented-hexagonal-prism",
+   "name": "Parabiaugmented Hexagonal Prism",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 14,
+   "edges": 26,
+   "schoenflies": "D2d",
+   "order": 8,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "triangular-orthobicupola",
+   "name": "Triangular Orthobicupola",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 12,
+   "edges": 24,
+   "schoenflies": "D3h",
+   "order": 12,
+   "period": "Dihedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "triaugmented-triangular-prism",
+   "name": "Triaugmented Triangular Prism",
+   "kind": "Johnson",
+   "faces": 14,
+   "vertices": 9,
+   "edges": 21,
+   "schoenflies": "D3h",
+   "order": 12,
+   "period": "Dihedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "elongated-pentagonal-bipyramid",
+   "name": "Elongated Pentagonal Bipyramid",
+   "kind": "Johnson",
+   "faces": 15,
+   "vertices": 12,
+   "edges": 25,
+   "schoenflies": "D5h",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "gyroelongated-square-bipyramid",
+   "name": "Gyroelongated Square Bipyramid",
+   "kind": "Johnson",
+   "faces": 16,
+   "vertices": 10,
+   "edges": 24,
+   "schoenflies": "D4d",
+   "order": 16,
+   "period": "Dihedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "triaugmented-hexagonal-prism",
+   "name": "Triaugmented Hexagonal Prism",
+   "kind": "Johnson",
+   "faces": 17,
+   "vertices": 15,
+   "edges": 30,
+   "schoenflies": "D3h",
+   "order": 12,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "square-gyrobicupola",
+   "name": "Square Gyrobicupola",
+   "kind": "Johnson",
+   "faces": 18,
+   "vertices": 16,
+   "edges": 32,
+   "schoenflies": "D4d",
+   "order": 16,
+   "period": "Dihedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "square-orthobicupola",
+   "name": "Square Orthobicupola",
+   "kind": "Johnson",
+   "faces": 18,
+   "vertices": 16,
+   "edges": 32,
+   "schoenflies": "D4h",
+   "order": 16,
+   "period": "Dihedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "elongated-triangular-gyrobicupola",
+   "name": "Elongated Triangular Gyrobicupola",
+   "kind": "Johnson",
+   "faces": 20,
+   "vertices": 18,
+   "edges": 36,
+   "schoenflies": "D3d",
+   "order": 12,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "elongated-triangular-orthobicupola",
+   "name": "Elongated Triangular Orthobicupola",
+   "kind": "Johnson",
+   "faces": 20,
+   "vertices": 18,
+   "edges": 36,
+   "schoenflies": "D3h",
+   "order": 12,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "parabiaugmented-dodecahedron",
+   "name": "Parabiaugmented Dodecahedron",
+   "kind": "Johnson",
+   "faces": 20,
+   "vertices": 22,
+   "edges": 40,
+   "schoenflies": "D5d",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "pentagonal-gyrobicupola",
+   "name": "Pentagonal Gyrobicupola",
+   "kind": "Johnson",
+   "faces": 22,
+   "vertices": 20,
+   "edges": 40,
+   "schoenflies": "D5d",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "pentagonal-orthobicupola",
+   "name": "Pentagonal Orthobicupola",
+   "kind": "Johnson",
+   "faces": 22,
+   "vertices": 20,
+   "edges": 40,
+   "schoenflies": "D5h",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "disphenocingulum",
+   "name": "Disphenocingulum",
+   "kind": "Johnson",
+   "faces": 24,
+   "vertices": 16,
+   "edges": 38,
+   "schoenflies": "D2d",
+   "order": 8,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "elongated-square-gyrobicupola",
+   "name": "Elongated Square Gyrobicupola",
+   "kind": "Johnson",
+   "faces": 26,
+   "vertices": 24,
+   "edges": 48,
+   "schoenflies": "D4d",
+   "order": 16,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "gyroelongated-triangular-bicupola",
+   "name": "Gyroelongated Triangular Bicupola",
+   "kind": "Johnson",
+   "faces": 26,
+   "vertices": 18,
+   "edges": 42,
+   "schoenflies": "D3",
+   "order": 6,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "snub-square-antiprism",
+   "name": "Snub Square Antiprism",
+   "kind": "Johnson",
+   "faces": 26,
+   "vertices": 16,
+   "edges": 40,
+   "schoenflies": "D4d",
+   "order": 16,
+   "period": "Dihedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "biaugmented-truncated-cube",
+   "name": "Biaugmented Truncated Cube",
+   "kind": "Johnson",
+   "faces": 30,
+   "vertices": 32,
+   "edges": 60,
+   "schoenflies": "D4h",
+   "order": 16,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "elongated-pentagonal-gyrobicupola",
+   "name": "Elongated Pentagonal Gyrobicupola",
+   "kind": "Johnson",
+   "faces": 32,
+   "vertices": 30,
+   "edges": 60,
+   "schoenflies": "D5d",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "elongated-pentagonal-orthobicupola",
+   "name": "Elongated Pentagonal Orthobicupola",
+   "kind": "Johnson",
+   "faces": 32,
+   "vertices": 30,
+   "edges": 60,
+   "schoenflies": "D5h",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "pentagonal-orthobirotunda",
+   "name": "Pentagonal Orthobirotunda",
+   "kind": "Johnson",
+   "faces": 32,
+   "vertices": 30,
+   "edges": 60,
+   "schoenflies": "D5h",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 4,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "4"
+  },
+  {
+   "slug": "gyroelongated-square-bicupola",
+   "name": "Gyroelongated Square Bicupola",
+   "kind": "Johnson",
+   "faces": 34,
+   "vertices": 24,
+   "edges": 56,
+   "schoenflies": "D4",
+   "order": 8,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "elongated-pentagonal-gyrobirotunda",
+   "name": "Elongated Pentagonal Gyrobirotunda",
+   "kind": "Johnson",
+   "faces": 42,
+   "vertices": 40,
+   "edges": 80,
+   "schoenflies": "D5d",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "elongated-pentagonal-orthobirotunda",
+   "name": "Elongated Pentagonal Orthobirotunda",
+   "kind": "Johnson",
+   "faces": 42,
+   "vertices": 40,
+   "edges": 80,
+   "schoenflies": "D5h",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "gyroelongated-pentagonal-bicupola",
+   "name": "Gyroelongated Pentagonal Bicupola",
+   "kind": "Johnson",
+   "faces": 42,
+   "vertices": 30,
+   "edges": 70,
+   "schoenflies": "D5",
+   "order": 10,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "parabidiminished-rhombicosidodecahedron",
+   "name": "Parabidiminished Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 42,
+   "vertices": 50,
+   "edges": 90,
+   "schoenflies": "D5d",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 5,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "5"
+  },
+  {
+   "slug": "gyroelongated-pentagonal-birotunda",
+   "name": "Gyroelongated Pentagonal Birotunda",
+   "kind": "Johnson",
+   "faces": 52,
+   "vertices": 40,
+   "edges": 90,
+   "schoenflies": "D5",
+   "order": 10,
+   "period": "Dihedral",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "parabiaugmented-truncated-dodecahedron",
+   "name": "Parabiaugmented Truncated Dodecahedron",
+   "kind": "Johnson",
+   "faces": 52,
+   "vertices": 70,
+   "edges": 120,
+   "schoenflies": "D5d",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 6,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "6"
+  },
+  {
+   "slug": "parabigyrate-rhombicosidodecahedron",
+   "name": "Parabigyrate Rhombicosidodecahedron",
+   "kind": "Johnson",
+   "faces": 62,
+   "vertices": 60,
+   "edges": 120,
+   "schoenflies": "D5d",
+   "order": 20,
+   "period": "Dihedral",
+   "orbits": 7,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    false
+   ],
+   "column": "7"
+  },
+  {
+   "slug": "tetrahedron",
+   "name": "Tetrahedron",
+   "kind": "Platonic",
+   "faces": 4,
+   "vertices": 4,
+   "edges": 6,
+   "schoenflies": "Td",
+   "order": 24,
+   "period": "Tetrahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": true,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "truncated-tetrahedron",
+   "name": "Truncated Tetrahedron",
+   "kind": "Archimedean",
+   "faces": 8,
+   "vertices": 12,
+   "edges": 18,
+   "schoenflies": "Td",
+   "order": 24,
+   "period": "Tetrahedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "triakistetrahedron",
+   "name": "Triakistetrahedron",
+   "kind": "Catalan",
+   "faces": 12,
+   "vertices": 8,
+   "edges": 18,
+   "schoenflies": "Td",
+   "order": 24,
+   "period": "Tetrahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "cube",
+   "name": "Cube",
+   "kind": "Platonic",
+   "faces": 6,
+   "vertices": 8,
+   "edges": 12,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": true,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "octahedron",
+   "name": "Octahedron",
+   "kind": "Platonic",
+   "faces": 8,
+   "vertices": 6,
+   "edges": 12,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": true,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "rhombic-dodecahedron",
+   "name": "Rhombic dodecahedron",
+   "kind": "Catalan",
+   "faces": 12,
+   "vertices": 14,
+   "edges": 24,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    true,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "cuboctahedron",
+   "name": "Cuboctahedron",
+   "kind": "Archimedean",
+   "faces": 14,
+   "vertices": 12,
+   "edges": 24,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    true,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "truncated-cube",
+   "name": "Truncated Cube",
+   "kind": "Archimedean",
+   "faces": 14,
+   "vertices": 24,
+   "edges": 36,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "truncated-octahedron",
+   "name": "Truncated Octahedron",
+   "kind": "Archimedean",
+   "faces": 14,
+   "vertices": 24,
+   "edges": 36,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "deltoidal-icositetrahedron",
+   "name": "Deltoidal icositetrahedron",
+   "kind": "Catalan",
+   "faces": 24,
+   "vertices": 26,
+   "edges": 48,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "pentagonal-icositetrahedron",
+   "name": "Pentagonal icositetrahedron",
+   "kind": "Catalan",
+   "faces": 24,
+   "vertices": 38,
+   "edges": 60,
+   "schoenflies": "O",
+   "order": 24,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "tetrakishexahedron",
+   "name": "Tetrakishexahedron",
+   "kind": "Catalan",
+   "faces": 24,
+   "vertices": 14,
+   "edges": 36,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "triakisoctahedron",
+   "name": "Triakisoctahedron",
+   "kind": "Catalan",
+   "faces": 24,
+   "vertices": 14,
+   "edges": 36,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "rhombicuboctahedron",
+   "name": "Rhombicuboctahedron",
+   "kind": "Archimedean",
+   "faces": 26,
+   "vertices": 24,
+   "edges": 48,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "truncated-cuboctahedron",
+   "name": "Truncated Cuboctahedron",
+   "kind": "Archimedean",
+   "faces": 26,
+   "vertices": 48,
+   "edges": 72,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "snub-cube",
+   "name": "Snub Cube",
+   "kind": "Archimedean",
+   "faces": 38,
+   "vertices": 24,
+   "edges": 60,
+   "schoenflies": "O",
+   "order": 24,
+   "period": "Octahedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "disdyakisdodecahedron",
+   "name": "Disdyakisdodecahedron",
+   "kind": "Catalan",
+   "faces": 48,
+   "vertices": 26,
+   "edges": 72,
+   "schoenflies": "Oh",
+   "order": 48,
+   "period": "Octahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "dodecahedron",
+   "name": "Dodecahedron",
+   "kind": "Platonic",
+   "faces": 12,
+   "vertices": 20,
+   "edges": 30,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": true,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "great-dodecahedron",
+   "name": "Great Dodecahedron",
+   "kind": "Kepler-Poinsot",
+   "faces": 12,
+   "vertices": 12,
+   "edges": 30,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": false,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "great-stellated-dodecahedron",
+   "name": "Great Stellated Dodecahedron",
+   "kind": "Kepler-Poinsot",
+   "faces": 12,
+   "vertices": 20,
+   "edges": 30,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": false,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "small-stellated-dodecahedron",
+   "name": "Small Stellated Dodecahedron",
+   "kind": "Kepler-Poinsot",
+   "faces": 12,
+   "vertices": 12,
+   "edges": 30,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": false,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "great-icosahedron",
+   "name": "Great Icosahedron",
+   "kind": "Kepler-Poinsot",
+   "faces": 20,
+   "vertices": 12,
+   "edges": 30,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": false,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "icosahedron",
+   "name": "Icosahedron",
+   "kind": "Platonic",
+   "faces": 20,
+   "vertices": 12,
+   "edges": 30,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": true,
+   "convex": true,
+   "transitivity": [
+    true,
+    true,
+    true
+   ],
+   "column": "regular"
+  },
+  {
+   "slug": "rhombic-triacontahedron",
+   "name": "Rhombic triacontahedron",
+   "kind": "Catalan",
+   "faces": 30,
+   "vertices": 32,
+   "edges": 60,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    true,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "icosidodecahedron",
+   "name": "Icosidodecahedron",
+   "kind": "Archimedean",
+   "faces": 32,
+   "vertices": 30,
+   "edges": 60,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    true,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "truncated-dodecahedron",
+   "name": "Truncated Dodecahedron",
+   "kind": "Archimedean",
+   "faces": 32,
+   "vertices": 60,
+   "edges": 90,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "truncated-icosahedron",
+   "name": "Truncated Icosahedron",
+   "kind": "Archimedean",
+   "faces": 32,
+   "vertices": 60,
+   "edges": 90,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 2,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "2"
+  },
+  {
+   "slug": "deltoidal-hexecontahedron",
+   "name": "Deltoidal hexecontahedron",
+   "kind": "Catalan",
+   "faces": 60,
+   "vertices": 62,
+   "edges": 120,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "pentagonal-hexecontahedron",
+   "name": "Pentagonal hexecontahedron",
+   "kind": "Catalan",
+   "faces": 60,
+   "vertices": 92,
+   "edges": 150,
+   "schoenflies": "I",
+   "order": 60,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "pentakisdodecahedron",
+   "name": "Pentakisdodecahedron",
+   "kind": "Catalan",
+   "faces": 60,
+   "vertices": 32,
+   "edges": 90,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "triakisicosahedron",
+   "name": "Triakisicosahedron",
+   "kind": "Catalan",
+   "faces": 60,
+   "vertices": 32,
+   "edges": 90,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  },
+  {
+   "slug": "rhombicosidodecahedron",
+   "name": "Rhombicosidodecahedron",
+   "kind": "Archimedean",
+   "faces": 62,
+   "vertices": 60,
+   "edges": 120,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "truncated-icosidodecahedron",
+   "name": "Truncated Icosidodecahedron",
+   "kind": "Archimedean",
+   "faces": 62,
+   "vertices": 120,
+   "edges": 180,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "snub-dodecahedron",
+   "name": "Snub Dodecahedron",
+   "kind": "Archimedean",
+   "faces": 92,
+   "vertices": 60,
+   "edges": 150,
+   "schoenflies": "I",
+   "order": 60,
+   "period": "Icosahedral",
+   "orbits": 3,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    true,
+    false,
+    false
+   ],
+   "column": "3"
+  },
+  {
+   "slug": "disdyakistriacontahedron",
+   "name": "Disdyakistriacontahedron",
+   "kind": "Catalan",
+   "faces": 120,
+   "vertices": 62,
+   "edges": 180,
+   "schoenflies": "Ih",
+   "order": 120,
+   "period": "Icosahedral",
+   "orbits": 1,
+   "regular": false,
+   "convex": true,
+   "transitivity": [
+    false,
+    false,
+    true
+   ],
+   "column": "1"
+  }
+ ]
+}
