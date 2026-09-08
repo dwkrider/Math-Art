@@ -51,61 +51,39 @@ export class Catalog {
     });
     controls.append(search);
 
-    const sortSel = $('select', 'sort');
-    sortSel.setAttribute('aria-label', 'Sort order');
-    for (const [k, label] of [['name', 'Name'], ['faces', 'Face count'],
-                              ['vertices', 'Vertex count'],
-                              ['symmetry', 'Symmetry order']]) {
-      const o = $('option', null, label);
-      o.value = k;
-      sortSel.append(o);
-    }
-    sortSel.addEventListener('change', () => {
-      this.sort = sortSel.value;
-      this.refresh();
-    });
-    controls.append(sortSel);
-
-    const convexSel = $('select', 'convex');
-    convexSel.setAttribute('aria-label', 'Convexity');
-    for (const [k, label] of [['any', 'Convex or not'], ['convex', 'Convex only'],
-                              ['nonconvex', 'Non-convex only']]) {
-      const o = $('option', null, label);
-      o.value = k;
-      convexSel.append(o);
-    }
-    convexSel.addEventListener('change', () => {
-      this.query.convex = convexSel.value;
-      this.refresh();
-    });
-    controls.append(convexSel);
-
-    head.append(controls);
-
-    // -- family facet, in the generators' own vocabulary. Because it is a
-    // partition, these counts sum to the whole database.
+    // ONE FAMILY SELECT, not a bank of chips.
+    //
+    // This was a sort menu, a convexity menu and thirty-odd family
+    // chips. Together they ran deeper than the first row of the grid
+    // they were filtering, and in the clustered view they pushed the
+    // canvas most of the way off the screen. The surfaces module made
+    // the same trade earlier and reads better for it.
+    //
+    // Nothing is lost that the catalogue cannot express another way:
+    // filterEntries resolves each solid to ONE primary family, so a
+    // select says exactly what the chips did, and convexity is a family
+    // in all but name -- the star and compound families are where the
+    // non-convex solids live.
+    const famSel = $('select', 'sort');
+    famSel.setAttribute('aria-label', 'Family');
     const famCounts = familyCounts(this.entries);
-    const fams = $('div', 'facet');
-    fams.append($('h3', null, 'Family'));
-    const famList = $('div', 'chips');
+    const anyOpt = $('option', null, `All families (${this.entries.length})`);
+    anyOpt.value = '';
+    famSel.append(anyOpt);
     for (const f of FAMILY_ORDER) {
       const n = famCounts.get(f);
       if (!n) continue;
-      const chip = $('button', 'chip');
-      chip.type = 'button';
-      chip.append($('span', null, f));
-      chip.append($('span', 'chip-count', String(n)));
-      chip.addEventListener('click', () => {
-        const i = this.query.families.indexOf(f);
-        if (i >= 0) this.query.families.splice(i, 1);
-        else this.query.families.push(f);
-        chip.classList.toggle('on');
-        this.refresh();
-      });
-      famList.append(chip);
+      const o = $('option', null, `${f} (${n})`);
+      o.value = f;
+      famSel.append(o);
     }
-    fams.append(famList);
-    head.append(fams);
+    famSel.addEventListener('change', () => {
+      this.query.families = famSel.value ? [famSel.value] : [];
+      this.refresh();
+    });
+    controls.append(famSel);
+
+    head.append(controls);
 
     // GRID is the default. The clustered view answers a different
     // question -- what is near what -- and is worth opting into rather
