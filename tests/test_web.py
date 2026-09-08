@@ -282,6 +282,39 @@ def check_js_syntax(fail, quiet):
     return n
 
 
+def check_layout_tracks(fail):
+    """The viewer's column may not be sized by what is inside it.
+
+    A bare `1fr` is `minmax(auto, 1fr)`, and that auto minimum lets a
+    wide child stretch the track. It happened: a long implicit equation
+    in the detail panel widened the workspace column, the stage stretched
+    to match, and the surface -- drawn centred in the canvas -- ended up
+    off the right-hand edge and out of view.
+
+    Only the containers on that path are checked. Elsewhere a bare 1fr is
+    ordinary and correct.
+    """
+    css = os.path.join(WEB, "css", "site.css")
+    if not os.path.exists(css):
+        return 0
+    with open(css, encoding="utf-8") as fh:
+        text = fh.read()
+    checked = 0
+    for sel in (".module-layout", ".workspace"):
+        for m in re.finditer(re.escape(sel) + r"[^{]*\{([^}]*)\}", text):
+            body = m.group(1)
+            gtc = re.search(r"grid-template-columns:([^;]*);", body)
+            if not gtc:
+                continue
+            checked += 1
+            tracks = gtc.group(1)
+            if "1fr" in tracks and "minmax(0" not in tracks:
+                fail("%s uses a bare 1fr (%s) -- it must be minmax(0, 1fr), "
+                     "or a wide equation stretches the viewer"
+                     % (sel, tracks.strip()))
+    return checked
+
+
 def check_lfs_deploy(fail):
     """The deploy pulls every LFS path the site serves.
 
@@ -452,7 +485,7 @@ def check_seo(fail):
 
 
 def check_cluster_cache(fail, quiet):
-    """Run the clustered view's own headless checks, if node is here.
+    """Run the browser modules' own headless checks, if node is here.
 
     The layout cache and the tile gate are behaviours no other check in
     this file can see: a broken cache still draws the right picture, just
@@ -460,23 +493,29 @@ def check_cluster_cache(fail, quiet):
     stopwatch and a stubbed DOM, which is what tests/web/ provides.
     """
     node = shutil.which("node")
-    test = os.path.join(PROJ, "tests", "web", "test_cluster_cache.mjs")
-    if not os.path.exists(test):
-        fail("tests/web/test_cluster_cache.mjs is missing")
-        return False
+    tests = [os.path.join(PROJ, "tests", "web", n) for n in
+             ("test_cluster_cache.mjs", "test_stl_export.mjs")]
+    for t in tests:
+        if not os.path.exists(t):
+            fail("%s is missing" % os.path.relpath(t, PROJ))
+            return False
+    test = tests[0]
     if not node:
         if not quiet:
             print("cluster    : skipped (node not on PATH)")
         return True
-    r = subprocess.run([node, test], capture_output=True, text=True)
-    if r.returncode != 0:
-        for line in (r.stdout + r.stderr).splitlines():
-            if "FAIL" in line or "Error" in line:
-                fail("cluster cache: " + line.strip())
-        if r.returncode and "FAIL" not in r.stdout:
-            fail("cluster cache checks exited %d" % r.returncode)
-        return False
-    return True
+    good = True
+    for t in tests:
+        r = subprocess.run([node, t], capture_output=True, text=True)
+        if r.returncode != 0:
+            good = False
+            name = os.path.basename(t)
+            for line in (r.stdout + r.stderr).splitlines():
+                if "FAIL" in line or "Error" in line:
+                    fail("%s: %s" % (name, line.strip()))
+            if "FAIL" not in r.stdout:
+                fail("%s exited %d" % (name, r.returncode))
+    return good
 
 
 def main(argv):
@@ -500,6 +539,7 @@ def main(argv):
     n_pages, n_urls, n_math = check_seo(fail)
     cache_ok = check_cluster_cache(fail, quiet)
     n_lfs = check_lfs_deploy(fail)
+    n_tracks = check_layout_tracks(fail)
 
     if not quiet:
         print("thumbnails : %d of %d solids (%d missing)"
@@ -515,8 +555,9 @@ def main(argv):
         print("formulae   : %d MathML blocks, all well-formed" % n_math)
         print("lfs deploy : %d tracked path(s), all pulled by the workflow"
               % n_lfs)
+        print("layout     : %d viewer track(s) bounded" % n_tracks)
         if cache_ok:
-            print("cluster    : layout cache + tile gate OK")
+            print("browser js : cluster cache, tile gate and STL export OK")
 
     if failures:
         print("\n%d FAILURE(S):" % len(failures))

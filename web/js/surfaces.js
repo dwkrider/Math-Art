@@ -15,6 +15,20 @@ import { SurfaceViewer, freshCanvas, STUDIO_VIEW, STUDIO_FOV,
          STUDIO_DISTANCE } from './surface-viewer.js';
 import { renderSurfaceDetail } from './surface-detail.js';
 import { ClusterView, preloadAtlas } from './cluster-view.js';
+import { buildBinarySTL, downloadSTL } from './stl.js';
+
+// Longest side of the exported STL, in millimetres. STL carries no
+// units and slicers read it as mm, so this is the cube the model fits
+// in. 100 mm sits inside every common build plate, prints in a
+// reasonable time, and is easy to scale up in a slicer for anyone who
+// wants the object bigger -- scaling down a 200 mm model is the more
+// annoying direction, because the wall goes with it.
+const EXPORT_MM = 100;
+
+// Wall thickness given to open surfaces, in millimetres. 2 mm is a few
+// perimeters at a normal nozzle width -- thin enough not to swamp the
+// form, thick enough to print.
+const EXPORT_WALL_MM = 2;
 
 const VIEWS = 1;
 
@@ -53,6 +67,9 @@ async function main() {
   const query = { text: '', families: [] };
   const sort = 'name';        // no selector any more; alphabetical
   let selected = null;
+  // The packed mesh currently on the stage, so the STL button exports
+  // what is being looked at rather than fetching it again.
+  let current = null;
 
   const head = el('div', 'catalog-head');
 
@@ -212,6 +229,8 @@ async function main() {
     }
     if (cluster) cluster.select(slug);
     const [rec, mesh] = await Promise.all([loadRecord(slug), loadMesh(slug)]);
+    current = mesh ? { slug, rec, mesh } : null;
+    setUpExport();
     renderSurfaceDetail(rec, { ...entry, hasMesh: baked.has(slug) }, detail);
     document.title = `${rec.name} — Math Art`;
     $('#stage-caption').textContent = rec.name;
@@ -229,6 +248,85 @@ async function main() {
                        indices: new Uint16Array(0) });
     }
   }
+
+  // ---- STL export ------------------------------------------------
+  //
+  // The file is built from the packed mesh the viewer was handed, so it
+  // is the surface on screen and not a re-derivation of it.
+  const exportBtn = $('#export-stl');
+  const exportNote = $('#export-note');
+
+  /**
+   * Whether this surface is a closed solid, from what the record says.
+   *
+   * It matters because most of these are surfaces in the strict sense --
+   * a sheet of no thickness -- and a slicer can do nothing with one. The
+   * record knows: a compact surface with no boundary bounds a region,
+   * anything else has to be thickened first. Saying so on the button is
+   * kinder than letting someone find out in their slicer.
+   */
+  function printability(rec) {
+    const t = rec.topology || {};
+    const e = rec.embedding || {};
+    if (t.compact && (t.boundary_components === 0) && t.orientable
+        && !e.self_intersecting) {
+      return null;
+    }
+    const why = [];
+    if (t.boundary_components) why.push('it has a boundary');
+    if (t.compact === false) why.push('it is not compact');
+    if (t.orientable === false) why.push('it is non-orientable');
+    if (e.self_intersecting) why.push('it passes through itself');
+    return why.length ? why.join(', ') : 'it is not a closed solid';
+  }
+
+  function setUpExport() {
+    exportBtn.disabled = !current;
+    exportNote.hidden = true;
+    exportNote.textContent = '';
+  }
+
+  exportBtn.addEventListener('click', () => {
+    if (!current) return;
+    let built;
+    try {
+      built = buildBinarySTL(current.mesh, {
+        name: current.rec.name, sizeMM: EXPORT_MM,
+        thicknessMM: EXPORT_WALL_MM,
+      });
+    } catch (err) {
+      exportNote.hidden = false;
+      exportNote.textContent = `Could not build an STL: ${err.message}`;
+      return;
+    }
+    if (!built) {
+      exportNote.hidden = false;
+      exportNote.textContent = 'This surface has no triangles to export.';
+      return;
+    }
+    downloadSTL(built, current.slug);
+    const dims = built.mm.map((v) => v.toFixed(0)).join(' × ');
+    const a = built.audit;
+    const bits = [`${built.triangles.toLocaleString()} triangles, ${dims} mm`];
+    bits.push(built.thickened
+      ? `thickened to a ${EXPORT_WALL_MM} mm wall`
+      : 'already a closed solid, exported as it is');
+    // Say what a slicer will find, measured from the file just written
+    // rather than guessed from the record.
+    if (a.watertight) {
+      bits.push('watertight');
+    } else {
+      const why = [];
+      if (a.holes) why.push(`${a.holes} open edge${a.holes === 1 ? '' : 's'}`);
+      if (a.nonManifold) why.push(`${a.nonManifold} edge(s) shared by more than two faces`);
+      if (a.flipped) why.push(`${a.flipped} inconsistently wound edge(s)`);
+      bits.push(`not watertight (${why.join(', ')}) — this surface `
+                + 'passes through itself or has no consistent side, so a '
+                + 'slicer may need to repair it');
+    }
+    exportNote.hidden = false;
+    exportNote.textContent = bits.join('; ') + '.';
+  });
 
   for (const [id, opt] of [['opt-wireframe', 'wireframe'],
                            ['opt-rotate', 'autoRotate']]) {

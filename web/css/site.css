@@ -213,7 +213,10 @@ a { color: var(--accent); }
 }
 
 @media (max-width: 62rem) {
-  .module-layout { grid-template-columns: 1fr; }
+  /* minmax(0, …), not 1fr: a bare 1fr is minmax(AUTO, 1fr), and that
+   * auto minimum lets a wide equation stretch the single column on a
+   * narrow window -- the same failure the two-column layout had. */
+  .module-layout { grid-template-columns: minmax(0, 1fr); }
   .workspace-sticky {
     position: static;
     max-height: none;
@@ -370,7 +373,25 @@ a { color: var(--accent); }
 
 /* ---------------------------------------------------------- stage */
 
-.workspace { display: grid; gap: 1.5rem; min-width: 0; }
+/* THE COLUMN MUST NOT BE SIZED BY ITS CONTENTS.
+ *
+ * This is a grid, and a grid's implicit column is `auto` -- it sizes to
+ * the widest thing in it. The detail panel is in it, and a long implicit
+ * equation is very wide, so the column grew, the stage stretched to
+ * match, and the canvas became wider than the panel it sits in. The
+ * surface is drawn centred in the canvas, so it sailed off to the right
+ * and out of view.
+ *
+ * minmax(0, 1fr) says the track may never exceed the space available,
+ * whatever is inside it. The equation then scrolls inside its own box,
+ * which is what .eqn-math's overflow-x is for, instead of pushing the
+ * viewer around. */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  min-width: 0;
+}
 
 .stage-wrap {
   margin: 0;
@@ -454,6 +475,9 @@ figcaption {
 /* --------------------------------------------------------- detail */
 
 .detail {
+  /* Also a grid item, and also not allowed to size its own track: see
+   * the note on .workspace. */
+  min-width: 0;
   background: var(--bg-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -546,7 +570,7 @@ figcaption {
  * values off the end of a 13rem column. */
 .deflist {
   display: grid;
-  grid-template-columns: minmax(5.5rem, auto) 1fr;
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
   gap: 0.2rem 0.8rem;
   margin: 0;
   font-size: 0.86rem;
@@ -560,7 +584,7 @@ figcaption {
  * right edge at a width set by whatever the longest label happens to be. */
 .metric {
   display: grid;
-  grid-template-columns: minmax(5.5rem, auto) 1fr;
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
   gap: 0.2rem 0.8rem;
   align-items: baseline;
   padding: 0.24rem 0;
@@ -860,6 +884,8 @@ figcaption {
 }
 
 .eqn {
+  min-width: 0;
+  max-width: 100%;
   margin: 0 0 1.1rem;
   padding: 0.75rem 0.9rem;
   background: var(--bg-sunken);
@@ -879,6 +905,9 @@ figcaption {
 /* The equation, and the one rule that matters: it may scroll, the page
  * may not. */
 .eqn-math {
+  /* The equation scrolls; the page and the viewer do not move. */
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 0.2rem;
@@ -913,4 +942,34 @@ figcaption {
   color: var(--ink-dim);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* The stage bar's action button (STL export), and the line it writes
+ * after a download. The bar already holds the viewpoint segments and the
+ * two switches, so this sits at the end of it rather than starting a
+ * row of its own. */
+.stage-action {
+  margin-left: auto;
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.stage-action:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.stage-action:disabled { opacity: 0.4; cursor: default; }
+
+.stage-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  max-width: 42rem;
 }
