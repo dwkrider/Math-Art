@@ -95,8 +95,8 @@
       {
         "field": "polynomial",
         "label": "Implicit equation",
-        "latex": "z",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>z</mi></mrow><annotation encoding=\"application/x-tex\">z</annotation></semantics></math>",
+        "latex": "z = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>z</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">z = 0</annotation></semantics></math>",
         "relation": "= 0"
       }
     ]

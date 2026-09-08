@@ -391,6 +391,21 @@ PAGE = """<!doctype html>
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {{
+  b.hidden = false;
+  b.addEventListener('click', () => {{
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => {{ b.textContent = 'copied';
+              setTimeout(() => {{ b.textContent = 'copy LaTeX'; }}, 1200); }},
+      () => {{ b.textContent = 'copy failed'; }});
+  }});
+}}
+</script>
 </body>
 </html>
 """
@@ -415,13 +430,20 @@ def formulas_html(items):
     which is where a copy-paste-aware reader finds it.
     """
     out = []
+    many = len(items) > 1
     for f in items:
-        out.append('    <figure class="formula">')
-        out.append("      <figcaption>%s</figcaption>" % esc(f["label"]))
-        out.append('      <div class="formula-math">%s%s</div>'
-                   % (f["mathml"],
-                      ('<span class="formula-relation">%s</span>'
-                       % esc(f["relation"])) if f.get("relation") else ""))
+        out.append('    <figure class="eqn">')
+        if many:
+            out.append('      <figcaption class="eqn-label">%s</figcaption>'
+                       % esc(f["label"]))
+        # The relation is typeset inside the MathML, so there is nothing
+        # to place beside it here.
+        out.append('      <div class="eqn-math">%s</div>' % f["mathml"])
+        # The LaTeX is already in the page, inside the MathML annotation;
+        # this only lifts it to the clipboard. Hidden without scripting,
+        # since a button that cannot do anything is worse than no button.
+        out.append('      <button type="button" class="eqn-copy" hidden '
+                   'data-latex="%s">copy LaTeX</button>' % esc(f["latex"]))
         out.append("    </figure>")
     return chr(10).join(out)
 

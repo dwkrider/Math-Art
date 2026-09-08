@@ -74,8 +74,8 @@
       {
         "field": "polynomial",
         "label": "Implicit equation",
-        "latex": "x^{2} + y^{2} z + z^{3}",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mrow><msup><mi>y</mi><mn>2</mn></msup><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><mo>+</mo><msup><mi>z</mi><mn>3</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">x^{2} + y^{2} z + z^{3}</annotation></semantics></math>",
+        "latex": "x^{2} + y^{2} z + z^{3} = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mrow><msup><mi>y</mi><mn>2</mn></msup><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><mo>+</mo><msup><mi>z</mi><mn>3</mn></msup></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x^{2} + y^{2} z + z^{3} = 0</annotation></semantics></math>",
         "relation": "= 0"
       }
     ]

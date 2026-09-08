@@ -74,13 +74,15 @@
 
   <section class="panel-section">
     <h2>Formula</h2>
-    <figure class="formula">
-      <figcaption>Gauss map g</figcaption>
-      <div class="formula-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mi>ρ</mi><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mi>z</mi><mo>&#x2212;</mo><mfrac><mn>1</mn><mi>z</mi></mfrac></mrow><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\rho \left(z - \frac{1}{z}\right)</annotation></semantics></math></div>
+    <figure class="eqn">
+      <figcaption class="eqn-label">Gauss map g</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mi>ρ</mi><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mi>z</mi><mo>&#x2212;</mo><mfrac><mn>1</mn><mi>z</mi></mfrac></mrow><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\rho \left(z - \frac{1}{z}\right)</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\rho \left(z - \frac{1}{z}\right)">copy LaTeX</button>
     </figure>
-    <figure class="formula">
-      <figcaption>Height differential dh</figcaption>
-      <div class="formula-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mi>z</mi><mo>&#x2212;</mo><mfrac><mn>1</mn><mi>z</mi></mfrac></mrow></mrow><annotation encoding="application/x-tex">z - \frac{1}{z}</annotation></semantics></math></div>
+    <figure class="eqn">
+      <figcaption class="eqn-label">Height differential dh</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mi>z</mi><mo>&#x2212;</mo><mfrac><mn>1</mn><mi>z</mi></mfrac></mrow></mrow><annotation encoding="application/x-tex">z - \frac{1}{z}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="z - \frac{1}{z}">copy LaTeX</button>
     </figure>
   </section>
   <section class="panel-section">
@@ -118,5 +120,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

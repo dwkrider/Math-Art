@@ -286,8 +286,16 @@ _GREEK_CHAR = {
 }
 
 
-def typeset(text):
+def typeset(text, relation=None):
     """One expression -> {'latex', 'mathml'}, or None if it is not typesettable.
+
+    `relation` closes the statement, e.g. "= 0". It is typeset INSIDE the
+    formula rather than left for the page to add afterwards, for two
+    reasons. A polynomial on its own is an expression, not an equation --
+    the implicit surface is the zero set, and the "= 0" is part of what
+    is being said. And a sibling element beside display MathML has to be
+    positioned against a box whose size the browser decides, which is how
+    the relation ended up overlapping its own label.
 
     Returns None rather than raising: a record carrying an expression this
     cannot read should show no formula, never a wrong one.
@@ -303,6 +311,12 @@ def typeset(text):
         body = _MathML().go(tree)
     except (expr.ExprError, RecursionError):
         return None
+    if relation:
+        rel = relation.strip()
+        latex = "%s %s" % (latex, rel)
+        op, _, rhs = rel.partition(" ")
+        body = ("%s<mo>%s</mo>%s"
+                % (body, _esc(op), "<mn>%s</mn>" % _esc(rhs) if rhs else ""))
     mathml = ('<math xmlns="http://www.w3.org/1998/Math/MathML" '
               'display="block"><semantics><mrow>%s</mrow>'
               '<annotation encoding="application/x-tex">%s</annotation>'
@@ -466,7 +480,7 @@ def formulas(rec):
     dfn = rec.get("definition") or {}
     out = []
     for key, label, tail in FORMULA_FIELDS:
-        got = typeset(dfn.get(key))
+        got = typeset(dfn.get(key), tail)
         if got:
             out.append({"field": key, "label": label,
                         "latex": got["latex"], "mathml": got["mathml"],

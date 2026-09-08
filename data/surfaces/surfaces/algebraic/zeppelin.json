@@ -74,8 +74,8 @@
       {
         "field": "polynomial",
         "label": "Implicit equation",
-        "latex": "x y z + y z + 2 z^{5}",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>+</mo><mrow><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><mo>+</mo><mrow><mn>2</mn><mo>&#x2062;</mo><msup><mi>z</mi><mn>5</mn></msup></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">x y z + y z + 2 z^{5}</annotation></semantics></math>",
+        "latex": "x y z + y z + 2 z^{5} = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>+</mo><mrow><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><mo>+</mo><mrow><mn>2</mn><mo>&#x2062;</mo><msup><mi>z</mi><mn>5</mn></msup></mrow></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x y z + y z + 2 z^{5} = 0</annotation></semantics></math>",
         "relation": "= 0"
       }
     ]

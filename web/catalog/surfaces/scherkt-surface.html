@@ -76,9 +76,9 @@
 
   <section class="panel-section">
     <h2>Formula</h2>
-    <figure class="formula">
-      <figcaption>Level function</figcaption>
-      <div class="formula-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>z</mi><mo stretchy="false">)</mo></mrow><mo>&#x2212;</mo><mrow><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo></mrow></mrow></mrow></mrow><annotation encoding="application/x-tex">\sin\left(z\right) - \sinh\left(x\right) \sinh\left(y\right)</annotation></semantics></math><span class="formula-relation">= 0</span></div>
+    <figure class="eqn">
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>z</mi><mo stretchy="false">)</mo></mrow><mo>&#x2212;</mo><mrow><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\sin\left(z\right) - \sinh\left(x\right) \sinh\left(y\right) = 0</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\sin\left(z\right) - \sinh\left(x\right) \sinh\left(y\right) = 0">copy LaTeX</button>
     </figure>
   </section>
   <section class="panel-section">
@@ -120,5 +120,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

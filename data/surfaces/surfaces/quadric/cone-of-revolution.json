@@ -89,8 +89,8 @@
       {
         "field": "polynomial",
         "label": "Implicit equation",
-        "latex": "x^{2} + y^{2} - z^{2}",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">x^{2} + y^{2} - z^{2}</annotation></semantics></math>",
+        "latex": "x^{2} + y^{2} - z^{2} = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x^{2} + y^{2} - z^{2} = 0</annotation></semantics></math>",
         "relation": "= 0"
       }
     ]

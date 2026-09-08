@@ -99,10 +99,16 @@ function renderDescription(rec, host) {
     sec.append($('p', 'description-prose', d.summary));
   }
 
+  // The caption is dropped when there is only one formula: the section
+  // it sits in already says "Formula", so "IMPLICIT EQUATION" underneath
+  // it is the same word twice. Where a record carries several -- a Gauss
+  // map and a height differential, or x, y and z -- the label is the
+  // only thing telling them apart, so it stays.
+  const many = (d.formulas || []).length > 1;
   for (const f of d.formulas || []) {
-    const fig = $('figure', 'formula');
-    fig.append($('figcaption', 'formula-label', f.label));
-    const box = $('div', 'formula-math');
+    const fig = $('figure', 'eqn');
+    if (many) fig.append($('figcaption', 'eqn-label', f.label));
+    const box = $('div', 'eqn-math');
     // The MathML is generated, not user content, and is inserted as
     // markup because that is what it is. It has to be parsed in the
     // MathML namespace or the browser builds unknown HTML elements that
@@ -113,7 +119,6 @@ function renderDescription(rec, host) {
     const node = doc.documentElement;
     if (node && node.localName === 'math') {
       box.append(document.importNode(node, true));
-      if (f.relation) box.append($('span', 'formula-relation', ' ' + f.relation));
     } else {
       // Unparseable: show the LaTeX rather than nothing, and never
       // innerHTML something that did not parse as MathML.
@@ -121,7 +126,7 @@ function renderDescription(rec, host) {
     }
     fig.append(box);
 
-    const copy = $('button', 'formula-copy', 'copy LaTeX');
+    const copy = $('button', 'eqn-copy', 'copy LaTeX');
     copy.type = 'button';
     copy.addEventListener('click', () => {
       navigator.clipboard?.writeText(f.latex).then(

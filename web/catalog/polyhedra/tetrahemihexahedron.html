@@ -95,5 +95,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

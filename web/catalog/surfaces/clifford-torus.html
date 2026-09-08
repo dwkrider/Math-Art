@@ -74,17 +74,20 @@
 
   <section class="panel-section">
     <h2>Formula</h2>
-    <figure class="formula">
-      <figcaption>x(u, v)</figcaption>
-      <div class="formula-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mrow><mi>u</mi><mo>+</mo><mi>v</mi></mrow><mo stretchy="false">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\cos\left(u + v\right)}{\sqrt{2} - \sin\left(v\right)}</annotation></semantics></math></div>
+    <figure class="eqn">
+      <figcaption class="eqn-label">x(u, v)</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mrow><mi>u</mi><mo>+</mo><mi>v</mi></mrow><mo stretchy="false">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\cos\left(u + v\right)}{\sqrt{2} - \sin\left(v\right)}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\frac{\cos\left(u + v\right)}{\sqrt{2} - \sin\left(v\right)}">copy LaTeX</button>
     </figure>
-    <figure class="formula">
-      <figcaption>y(u, v)</figcaption>
-      <div class="formula-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mrow><mi>u</mi><mo>+</mo><mi>v</mi></mrow><mo stretchy="false">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\sin\left(u + v\right)}{\sqrt{2} - \sin\left(v\right)}</annotation></semantics></math></div>
+    <figure class="eqn">
+      <figcaption class="eqn-label">y(u, v)</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mrow><mi>u</mi><mo>+</mo><mi>v</mi></mrow><mo stretchy="false">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\sin\left(u + v\right)}{\sqrt{2} - \sin\left(v\right)}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\frac{\sin\left(u + v\right)}{\sqrt{2} - \sin\left(v\right)}">copy LaTeX</button>
     </figure>
-    <figure class="formula">
-      <figcaption>z(u, v)</figcaption>
-      <div class="formula-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\cos\left(v\right)}{\sqrt{2} - \sin\left(v\right)}</annotation></semantics></math></div>
+    <figure class="eqn">
+      <figcaption class="eqn-label">z(u, v)</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\cos\left(v\right)}{\sqrt{2} - \sin\left(v\right)}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\frac{\cos\left(v\right)}{\sqrt{2} - \sin\left(v\right)}">copy LaTeX</button>
     </figure>
   </section>
   <section class="panel-section">
@@ -123,5 +126,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

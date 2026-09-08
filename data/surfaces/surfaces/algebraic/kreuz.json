@@ -74,8 +74,8 @@
       {
         "field": "polynomial",
         "label": "Implicit equation",
-        "latex": "x y z",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><annotation encoding=\"application/x-tex\">x y z</annotation></semantics></math>",
+        "latex": "x y z = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x y z = 0</annotation></semantics></math>",
         "relation": "= 0"
       }
     ]

@@ -80,9 +80,9 @@
 
   <section class="panel-section">
     <h2>Formula</h2>
-    <figure class="formula">
-      <figcaption>Implicit equation</figcaption>
-      <div class="formula-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>&#x2212;</mo><mrow><mn>0.1</mn><mo>&#x2062;</mo><msup><mrow><mo stretchy="false">(</mo><mrow><mrow><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><mo>+</mo><mi>z</mi></mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow><mn>3</mn></msup></mrow></mrow></mrow><annotation encoding="application/x-tex">x y z - 0.1 \left(x + y + z - 1\right)^{3}</annotation></semantics></math><span class="formula-relation">= 0</span></div>
+    <figure class="eqn">
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>&#x2212;</mo><mrow><mn>0.1</mn><mo>&#x2062;</mo><msup><mrow><mo stretchy="false">(</mo><mrow><mrow><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><mo>+</mo><mi>z</mi></mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow><mn>3</mn></msup></mrow></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">x y z - 0.1 \left(x + y + z - 1\right)^{3} = 0</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="x y z - 0.1 \left(x + y + z - 1\right)^{3} = 0">copy LaTeX</button>
     </figure>
   </section>
   <section class="panel-section">
@@ -121,5 +121,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

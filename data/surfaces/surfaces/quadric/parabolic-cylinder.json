@@ -77,8 +77,8 @@
       {
         "field": "polynomial",
         "label": "Implicit equation",
-        "latex": "x^{2} - z",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2212;</mo><mi>z</mi></mrow></mrow><annotation encoding=\"application/x-tex\">x^{2} - z</annotation></semantics></math>",
+        "latex": "x^{2} - z = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2212;</mo><mi>z</mi></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x^{2} - z = 0</annotation></semantics></math>",
         "relation": "= 0"
       }
     ]
