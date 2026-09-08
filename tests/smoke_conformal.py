@@ -28,6 +28,26 @@ def _fresh():
     bpy.ops.object.delete()
 
 
+def _extent(me):
+    xs = [v.co for v in me.vertices]
+    return tuple(max(c[i] for c in xs) - min(c[i] for c in xs)
+                 for i in range(3))
+
+
+def _assert_in_cube(me, what):
+    """Every generator centres on its bounding box and fits the largest extent
+    to a 2 m cube, the project-wide convention."""
+    ext = _extent(me)
+    assert max(ext) <= 2.0 + 1e-4, "%s overflows the 2 m cube: %r" % (what, ext)
+    assert abs(max(ext) - 2.0) < 1e-4, (
+        "%s should FILL the cube in its largest extent, got %.4f"
+        % (what, max(ext)))
+    for v in me.vertices:
+        assert (abs(v.co.x) <= 1.0 + 1e-4 and abs(v.co.y) <= 1.0 + 1e-4
+                and abs(v.co.z) <= 1.0 + 1e-4), \
+            "%s: vertex outside the cube" % what
+
+
 def _active_mesh():
     ob = bpy.context.view_layer.objects.active
     assert ob is not None, "no active object"
@@ -49,9 +69,7 @@ def circle_packing_maximal():
         rings=3, geometry='HYPERBOLIC', boundary='MAXIMAL') == {'FINISHED'}
     me = _active_mesh()
     assert len(me.vertices) > 50
-    # a maximal packing lives in the unit disc
-    far = max(max(abs(v.co.x), abs(v.co.y)) for v in me.vertices)
-    assert far < 1.6, "maximal packing spilled well outside the disc: %.3f" % far
+    _assert_in_cube(me, "maximal packing")
 
 
 def circle_packing_sphere():
@@ -60,8 +78,10 @@ def circle_packing_sphere():
         combinatorics='SPHERE', rings=2, sphere_res=1) == {'FINISHED'}
     me = _active_mesh()
     assert len(me.vertices) > 20
-    far = max(v.co.length for v in me.vertices)
-    assert far < 1.4, "spherical caps should sit on the unit sphere: %.3f" % far
+    _assert_in_cube(me, "sphere packing")
+    # the caps are a sphere, so all three extents should fill the cube
+    ext = _extent(me)
+    assert min(ext) > 1.9, "a packed sphere should be round: %r" % (ext,)
 
 
 def subdivision_tiling_pentagonal():
@@ -101,8 +121,7 @@ def kleinian_limit_set():
     me = _active_mesh()
     assert len(me.vertices) > 500, len(me.vertices)
     assert len(me.edges) > 400, len(me.edges)
-    far = max(max(abs(v.co.x), abs(v.co.y)) for v in me.vertices)
-    assert far < 1.01, "gasket limit set escaped the unit disc: %.4f" % far
+    _assert_in_cube(me, "gasket limit set")
 
 
 def kleinian_orbit():
@@ -111,6 +130,7 @@ def kleinian_orbit():
         mode='ORBIT', preset='GASKET', orbit_depth=3) == {'FINISHED'}
     me = _active_mesh()
     assert len(me.polygons) > 100, len(me.polygons)
+    _assert_in_cube(me, "circle orbit")
 
 
 def kleinian_slice():
@@ -118,8 +138,13 @@ def kleinian_slice():
     assert bpy.ops.curve.kleinian_add(mode='SLICE', denom=16) == {'FINISHED'}
     me = _active_mesh()
     assert len(me.vertices) > 8, len(me.vertices)
-    assert all(v.co.y > 1.0 - 1e-6 for v in me.vertices), \
-        "every Maskit cusp must sit above Im(mu) = 1"
+    _assert_in_cube(me, "Maskit slice")
+    # Im(mu) > 1 is a statement about the PARAMETER, and the mesh is fitted to
+    # the 2 m cube like every other generator, so the invariant is checked on
+    # the cusps themselves rather than on their rescaled coordinates.  The
+    # engine self-test in kleinian/slice.py asserts it at source.
+    ys = [v.co.y for v in me.vertices]
+    assert max(ys) - min(ys) > 0.0, "the slice boundary collapsed"
 
 
 def _menu_defs():

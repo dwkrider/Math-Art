@@ -65,6 +65,23 @@ _PALETTE = [
 _NPAL = len(_PALETTE)
 
 
+def _center_fit(verts, scale=1.0):
+    """Centre on the bounding box and fit the largest extent to a 2 m cube --
+    the project-wide convention -- then apply `scale`.
+
+    A limit set happens to land inside the unit disc for many parameter
+    choices, so the CURVE mode looks fitted whether or not anything fits it;
+    the circle orbit does not, and ran to twice the cube before this."""
+    if not verts:
+        return verts
+    lo = [min(v[i] for v in verts) for i in range(3)]
+    hi = [max(v[i] for v in verts) for i in range(3)]
+    ext = max(hi[i] - lo[i] for i in range(3))
+    k = (2.0 / ext if ext > 1e-9 else 1.0) * scale
+    mid = [0.5 * (lo[i] + hi[i]) for i in range(3)]
+    return [tuple((v[i] - mid[i]) * k for i in range(3)) for v in verts]
+
+
 def _ring(cx, cy, r, tube, seg, tseg):
     verts, faces = [], []
     for i in range(seg):
@@ -102,11 +119,11 @@ def build_kleinian(mode='CURVE', family=GRANDMA, preset='QUASIFUCHSIAN',
 
     if mode == 'SLICE':
         cusps = boundary(denom=max(2, denom))
-        verts = [(m.real * scale, m.imag * scale, 0.0) for (_, _, m) in cusps]
+        verts = [(m.real, m.imag, 0.0) for (_, _, m) in cusps]
         edges = [(i, i + 1) for i in range(len(verts) - 1)]
         report = "Maskit slice: %d cusps to denominator %d" % (len(cusps),
                                                                denom)
-        return verts, edges, [], [], report
+        return _center_fit(verts, scale), edges, [], [], report
 
     gens = generators(family, ta, tb, mu)
 
@@ -125,16 +142,15 @@ def build_kleinian(mode='CURVE', family=GRANDMA, preset='QUASIFUCHSIAN',
             else:
                 t = 0.0 if hi <= lo else (math.log(r) - lo) / (hi - lo)
                 mi = 1 + int(min(0.999, max(0.0, t)) * (_NPAL - 1))
-            rv, rf = _ring(c.real * scale, c.imag * scale, r * scale,
-                           max(1e-5, r * tube_ratio * scale), ring_seg,
-                           tube_seg)
+            rv, rf = _ring(c.real, c.imag, r,
+                           max(1e-5, r * tube_ratio), ring_seg, tube_seg)
             base = len(verts)
             verts.extend(rv)
             for f in rf:
                 faces.append(tuple(base + i for i in f))
                 mats.append(mi)
-        return verts, [], faces, mats, ("orbit: %d circles to depth %d"
-                                        % (len(circles), orbit_depth))
+        return (_center_fit(verts, scale), [], faces, mats,
+                "orbit: %d circles to depth %d" % (len(circles), orbit_depth))
 
     pts = limit_set(gens, epsilon=epsilon, max_depth=max_depth,
                     max_points=max_points)
@@ -145,14 +161,14 @@ def build_kleinian(mode='CURVE', family=GRANDMA, preset='QUASIFUCHSIAN',
         if not (abs(z.real) < 1e6 and abs(z.imag) < 1e6):
             prev = None
             continue
-        verts.append((z.real * scale, z.imag * scale, 0.0))
+        verts.append((z.real, z.imag, 0.0))
         i = len(verts) - 1
         if prev is not None and abs(z - prev) < 0.25:
             edges.append((i - 1, i))
         prev = z
     report = ("limit set: %d points, %d segments, epsilon %.4g"
               % (len(verts), len(edges), epsilon))
-    return verts, edges, [], [], report
+    return _center_fit(verts, scale), edges, [], [], report
 
 
 # ==========================================================================
@@ -359,8 +375,22 @@ def _selftest():
 
     v4, e4, f4, m4, rep4 = build_kleinian('SLICE', denom=12)
     assert len(v4) > 5 and len(e4) == len(v4) - 1, rep4
-    assert all(p[1] > 1.0 - 1e-9 for p in v4), \
+    # Im(mu) > 1 is a statement about the PARAMETER; the mesh is fitted to the
+    # 2 m cube, so assert it where it still means something -- on the cusps
+    # themselves, not on their rescaled coordinates.
+    assert all(m.imag > 1.0 for (_, _, m) in kleinian.boundary(denom=12)), \
         "every Maskit cusp must have Im(mu) > 1"
+
+    # every mode must sit inside the 2 m cube
+    for kw in (dict(mode='CURVE', preset='GASKET', epsilon=0.02, max_depth=18),
+               dict(mode='ORBIT', preset='GASKET', orbit_depth=3),
+               dict(mode='SLICE', denom=12)):
+        vv = build_kleinian(**kw)[0]
+        ext = [max(p[i] for p in vv) - min(p[i] for p in vv) for i in range(3)]
+        assert max(ext) <= 2.0 + 1e-9, (kw['mode'], ext)
+        assert abs(max(ext) - 2.0) < 1e-9, \
+            "%s should FILL the cube in its largest extent, got %.4f" \
+            % (kw['mode'], max(ext))
 
     v5, e5, f5, m5, _ = build_kleinian('CURVE', preset='CUSTOM',
                                        ta_re=1.87, ta_im=0.1,
