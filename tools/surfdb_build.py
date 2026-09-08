@@ -1281,6 +1281,18 @@ class Builder:
             # which is what actually specifies the surface.
             bj = got["bj"]
             if d.get("mode") == "weierstrass" and not d.get("gauss_map"):
+                # The seed as DATA, not only as prose. It was extracted
+                # and verified component-by-component against the shipped
+                # callable; describing it in a sentence and discarding
+                # the structure left the one datum that specifies the
+                # surface unreadable by anything but a human.
+                d["bjorling_seed"] = {
+                    "curve": list(bj["curve"]),
+                    "normal": (bj["normal"] if bj["normal"] == "frenet"
+                               else list(bj["normal"])),
+                    "t_range": list(bj["t_range"]),
+                    "params": dict(bj.get("params") or {}),
+                }
                 nrm = ("the Frenet principal normal of the curve"
                        if bj["normal"] == "frenet"
                        else "n(t) = (%s)" % ", ".join(bj["normal"]))

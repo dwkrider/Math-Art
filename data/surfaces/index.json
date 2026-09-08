@@ -5355,7 +5355,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Fm-3m",
         "ita_number": null,
         "order": null
       },
@@ -7676,7 +7676,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Pm-3m",
         "ita_number": null,
         "order": null
       },
@@ -9205,7 +9205,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Pm-3m",
         "ita_number": null,
         "order": null
       },

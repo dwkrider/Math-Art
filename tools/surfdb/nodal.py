@@ -28,6 +28,8 @@ these surfaces are NOT minimal, and the residual says by how much.
 
 import re
 
+from . import algextract
+
 _STRIP = re.compile(r"\bnp\.")
 _DEF = re.compile(r"^\s*def\s+\w+\([^)]*\)\s*:\s*$")
 
@@ -84,9 +86,28 @@ def extract(tpms_table, keys=None):
         except (OSError, TypeError):
             continue
         got = convert(src)
+        if not got:
+            # The three rows `convert()` declines all have the same
+            # shape: local aliases (`cx = np.cos(x)`, `c2y = ...`) used
+            # to keep a long product readable. That is straight-line
+            # arithmetic, which `algextract` inlines -- the same inliner
+            # that read the algebraic presets back into their equations.
+            # It is not a licence to guess: each result still goes
+            # through `verify()` against the shipped callable, and all
+            # three reproduce it at residual 0.
+            try:
+                got = algextract.extract(fn, tpms_module_of(fn))
+            except Exception:                            # noqa: BLE001
+                got = None
         if got:
             out[key] = got
     return out
+
+
+def tpms_module_of(fn):
+    """The module a TPMS callable lives in, for its global constants."""
+    import sys
+    return sys.modules.get(getattr(fn, "__module__", ""), None)
 
 
 def verify(text, fn, extent=3.2):

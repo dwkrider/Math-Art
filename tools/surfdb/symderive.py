@@ -228,6 +228,15 @@ DERIVED = {
     "fischer-koch-cy": {
         "hermann_mauguin": "I4132", "order": 48,
         "origin_shift": ['0', '0', '0']},
+    "frd2-surface": {
+        "hermann_mauguin": "Fm-3m", "order": 192,
+        "origin_shift": ['0', '0', '0']},
+    "ksurf-surface": {
+        "hermann_mauguin": "Pm-3m", "order": 48,
+        "origin_shift": ['0', '0', '0']},
+    "octo-surface": {
+        "hermann_mauguin": "Pm-3m", "order": 48,
+        "origin_shift": ['0', '0', '0']},
     "fk-cpmy-surface": {
         "hermann_mauguin": "Ia-3", "order": 48,
         "origin_shift": ['0', '0', '0']},

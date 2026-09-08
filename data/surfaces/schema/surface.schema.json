@@ -657,6 +657,65 @@
             "null"
           ],
           "description": "mode=discrete."
+        },
+        "bjorling_seed": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "mode=weierstrass, for rows solving Bjorling's problem. These surfaces have NO (g, dh) pair to store: the surface is the unique minimal extension of a real-analytic strip -- a curve c(t) carrying a unit normal n(t) -- and the engine computes that extension numerically. The seed IS the definition, so it is stored as data rather than described in prose. Every component is reproduced against the shipped callable at 200 sample parameters before it is recorded.",
+          "properties": {
+            "curve": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "string"
+              },
+              "description": "c(t) components in the exact language."
+            },
+            "normal": {
+              "description": "n(t) as three components, or the string 'frenet' when the row names the curve's own Frenet principal normal -- named, never fabricated.",
+              "anyOf": [
+                {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "const": "frenet"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "t_range": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "string"
+              }
+            },
+            "params": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "Values the seed's free names take."
+            }
+          }
         }
       }
     },
