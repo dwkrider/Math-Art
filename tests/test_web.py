@@ -282,6 +282,44 @@ def check_js_syntax(fail, quiet):
     return n
 
 
+def check_lfs_deploy(fail):
+    """The deploy pulls every LFS path the site serves.
+
+    This is the one failure the rest of this file cannot see. Locally
+    every LFS file is smudged, so the meshes and tiles are real and each
+    check here passes; on the deployed site they are 130-byte pointer
+    files unless the workflow asked for them by name. It served 466
+    pointer meshes that way -- the tiles were pulled and looked fine, so
+    the catalogue seemed healthy and only the 3-D view was empty, on a
+    green build.
+
+    So the check is static: whatever .gitattributes marks as LFS under
+    web/ has to appear in the workflow's --include list.
+    """
+    ga = os.path.join(PROJ, ".gitattributes")
+    wf = os.path.join(PROJ, ".github", "workflows", "pages.yml")
+    if not (os.path.exists(ga) and os.path.exists(wf)):
+        return 0
+    with open(ga, encoding="utf-8") as fh:
+        tracked = [ln.split()[0] for ln in fh
+                   if "filter=lfs" in ln and ln.strip()
+                   and ln.split()[0].startswith("web/")]
+    with open(wf, encoding="utf-8") as fh:
+        flow = fh.read()
+    m = re.search(r'lfs pull --include="([^"]+)"', flow)
+    if not m:
+        fail("pages.yml has no `git lfs pull --include=` -- the site would "
+             "deploy every LFS file as a pointer")
+        return 0
+    inc = [x.strip() for x in m.group(1).split(",")]
+    for pat in tracked:
+        top = pat.split("/")[0] + "/" + pat.split("/")[1]      # web/<dir>
+        if not any(i.startswith(top) for i in inc):
+            fail("%s is LFS-tracked but pages.yml does not pull it; it "
+                 "would deploy as pointer files" % pat)
+    return len(tracked)
+
+
 def check_seo(fail):
     """The generated metadata, pages and sitemap are present and agree.
 
@@ -461,6 +499,7 @@ def main(argv):
     n_js = check_js_syntax(fail, quiet)
     n_pages, n_urls, n_math = check_seo(fail)
     cache_ok = check_cluster_cache(fail, quiet)
+    n_lfs = check_lfs_deploy(fail)
 
     if not quiet:
         print("thumbnails : %d of %d solids (%d missing)"
@@ -474,6 +513,8 @@ def main(argv):
         print("seo pages  : %d object pages, %d sitemap URLs"
               % (n_pages, n_urls))
         print("formulae   : %d MathML blocks, all well-formed" % n_math)
+        print("lfs deploy : %d tracked path(s), all pulled by the workflow"
+              % n_lfs)
         if cache_ok:
             print("cluster    : layout cache + tile gate OK")
 
