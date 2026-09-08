@@ -9,11 +9,12 @@
 // it: `VIEWS` below is the single point where that choice lives.
 
 import { loadIndex, loadRecord, loadMesh, loadMeshManifest, filterEntries, SORTS,
-         FAMILY_ORDER, FAMILY_LABELS, MODE_LABELS, countBy, thumbUrl }
+         FAMILY_ORDER, FAMILY_LABELS, countBy, thumbUrl }
   from './surface-data.js';
 import { SurfaceViewer, freshCanvas, STUDIO_VIEW, STUDIO_FOV,
          STUDIO_DISTANCE } from './surface-viewer.js';
 import { renderSurfaceDetail } from './surface-detail.js';
+import { ClusterView, preloadAtlas } from './cluster-view.js';
 
 const VIEWS = 1;
 
@@ -49,12 +50,44 @@ async function main() {
   const detail = $('#detail');
 
   // -- catalogue ------------------------------------------------------
-  const query = { text: '', families: [], modes: [], periodic: 'any',
-                  drawable: 'any' };
-  let sort = 'name';
+  const query = { text: '', families: [] };
+  const sort = 'name';        // no selector any more; alphabetical
   let selected = null;
 
   const head = el('div', 'catalog-head');
+
+  // GRID is the default. The clustered view answers a different question
+  // -- what is near what -- and is worth opting into, not landing in.
+  let mode = 'grid';
+  let cluster = null;
+
+  // Fetch the tile sheet now, not when the reader first opens the
+  // clustered view. The view will not start laying anything out until it
+  // has arrived, so requesting it only on the switch means waiting then;
+  // requesting it here means it is normally already decoded. It is one
+  // image the grid does not use, so it is started after the page has
+  // done its own loading rather than competing with it.
+  if ('requestIdleCallback' in window) requestIdleCallback(() => preloadAtlas());
+  else setTimeout(() => preloadAtlas(), 0);
+  const modeBar = el('div', 'segmented view-modes');
+  modeBar.setAttribute('role', 'group');
+  modeBar.setAttribute('aria-label', 'Catalogue view');
+  for (const [k, label] of [['grid', 'Grid'], ['cluster', 'Clusters']]) {
+    const b = el('button', 'seg' + (k === 'grid' ? ' on' : ''), label);
+    b.type = 'button';
+    b.addEventListener('click', () => {
+      for (const o of modeBar.children) o.classList.remove('on');
+      b.classList.add('on');
+      mode = k;
+      refresh();
+    });
+    modeBar.append(b);
+  }
+  head.append(modeBar);
+
+  // Two controls only: filter by name, pick a family. The chip banks for
+  // family and definition mode ran to twenty-odd buttons and took more
+  // vertical space than the catalogue they were filtering.
   const controls = el('div', 'catalog-controls');
 
   const search = el('input', 'search');
@@ -64,67 +97,36 @@ async function main() {
   search.addEventListener('input', () => { query.text = search.value; refresh(); });
   controls.append(search);
 
-  const sortSel = el('select', 'sort');
-  sortSel.setAttribute('aria-label', 'Sort order');
-  for (const [k, label] of [['name', 'Name'], ['family', 'Family'],
-                            ['genus', 'Genus'], ['drawable', 'Drawable first']]) {
-    const o = el('option', null, label);
-    o.value = k;
-    sortSel.append(o);
+  const famSel = el('select', 'sort');
+  famSel.setAttribute('aria-label', 'Family');
+  const famCounts = countBy(entries, (e) => e.primary_family);
+  const anyOpt = el('option', null, `All families (${entries.length})`);
+  anyOpt.value = '';
+  famSel.append(anyOpt);
+  for (const f of FAMILY_ORDER) {
+    const n = famCounts.get(f);
+    if (!n) continue;
+    const o = el('option', null, `${FAMILY_LABELS[f] || f} (${n})`);
+    o.value = f;
+    famSel.append(o);
   }
-  sortSel.addEventListener('change', () => { sort = sortSel.value; refresh(); });
-  controls.append(sortSel);
-
-  const periodSel = el('select', 'convex');
-  periodSel.setAttribute('aria-label', 'Periodicity');
-  for (const [k, label] of [['any', 'Periodic or not'],
-                            ['periodic', 'Periodic only'],
-                            ['aperiodic', 'Aperiodic only']]) {
-    const o = el('option', null, label);
-    o.value = k;
-    periodSel.append(o);
-  }
-  periodSel.addEventListener('change', () => {
-    query.periodic = periodSel.value;
+  famSel.addEventListener('change', () => {
+    query.families = famSel.value ? [famSel.value] : [];
     refresh();
   });
-  controls.append(periodSel);
+  controls.append(famSel);
   head.append(controls);
-
-  const chipFacet = (title, values, labels, counts, key) => {
-    const facet = el('div', 'facet');
-    facet.append(el('h3', null, title));
-    const chips = el('div', 'chips');
-    for (const v of values) {
-      const n = counts.get(v);
-      if (!n) continue;
-      const chip = el('button', 'chip');
-      chip.type = 'button';
-      chip.append(el('span', null, labels[v] || v));
-      chip.append(el('span', 'chip-count', String(n)));
-      chip.addEventListener('click', () => {
-        const arr = query[key];
-        const i = arr.indexOf(v);
-        if (i >= 0) arr.splice(i, 1); else arr.push(v);
-        chip.classList.toggle('on');
-        refresh();
-      });
-      chips.append(chip);
-    }
-    facet.append(chips);
-    return facet;
-  };
-
-  head.append(chipFacet('Family', FAMILY_ORDER, FAMILY_LABELS,
-                        countBy(entries, (e) => e.primary_family), 'families'));
-  head.append(chipFacet('Defined by', Object.keys(MODE_LABELS), MODE_LABELS,
-                        countBy(entries, (e) => e.definition_mode), 'modes'));
 
   const status = el('p', 'catalog-status');
   head.append(status);
   $('#catalog').append(head);
   const grid = el('div', 'grid');
   $('#catalog').append(grid);
+  const clusterWrap = el('div', 'cluster-wrap');
+  const clusterCanvas = el('canvas', 'cluster-canvas');
+  clusterWrap.append(clusterCanvas);
+  clusterWrap.hidden = true;
+  $('#catalog').append(clusterWrap);
 
   function tile(e) {
     const card = el('button', 'tile');
@@ -164,6 +166,22 @@ async function main() {
   function refresh() {
     const found = filterEntries(entries, query).sort(SORTS[sort]);
     status.textContent = `${found.length} of ${entries.length} surfaces`;
+    const clustered = mode === 'cluster';
+    grid.hidden = clustered;
+    clusterWrap.hidden = !clustered;
+
+    if (clustered) {
+      if (!cluster) {
+        cluster = new ClusterView(clusterCanvas, entries, {
+          thumbUrl,
+          hasMesh: (slug) => baked.has(slug),
+          onSelect: (slug) => { location.hash = slug; },
+        });
+      }
+      cluster.show(found);
+      if (selected) cluster.select(selected);
+      return;
+    }
     grid.textContent = '';
     for (const e of found) grid.append(tile(e));
     if (!found.length) {
@@ -174,11 +192,25 @@ async function main() {
   // -- stage ----------------------------------------------------------
   async function show(slug) {
     const entry = byslug.get(slug);
-    if (!entry) return;
+    if (!entry) {
+      // Say so, rather than leaving the previous surface up as though it
+      // were the one asked for. Records do get removed -- horgan-surface
+      // was, being a proved non-existence -- so a stale link is a real
+      // way to arrive here.
+      detail.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'notice';
+      p.textContent = `No surface in the database has the name "${slug}".`;
+      detail.append(p);
+      $('#stage-caption').textContent = '';
+      $('#stage').classList.add('empty');
+      return;
+    }
     selected = slug;
     for (const t of grid.querySelectorAll('.tile')) {
       t.classList.toggle('on', t.dataset.slug === slug);
     }
+    if (cluster) cluster.select(slug);
     const [rec, mesh] = await Promise.all([loadRecord(slug), loadMesh(slug)]);
     renderSurfaceDetail(rec, { ...entry, hasMesh: baked.has(slug) }, detail);
     document.title = `${rec.name} — Math Art`;

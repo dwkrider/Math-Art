@@ -1,0 +1,26 @@
+# Math Art -- companion site
+#
+# NOTE ON WHERE THIS FILE LIVES.  Crawlers read robots.txt only from the
+# root of a host: https://dwkrider.github.io/robots.txt, which belongs to
+# a different repository. This site is a project site under /Math-Art/,
+# so THIS file is not consulted, and the Sitemap line below will not be
+# discovered from it. Submit the sitemap directly instead (Google Search
+# Console, Bing Webmaster Tools), or copy the Sitemap line into the
+# root site's robots.txt.
+#
+# It is still written, because it costs nothing, documents the intent in
+# one obvious place, and becomes live the moment the site is served from
+# a domain root or a custom domain.
+#
+# Everything here is public and static. The only exclusions are payload
+# directories: mesh JSON, the vendored three.js build and the sprite
+# sheet are fetched by the pages themselves and are not documents a
+# search result should ever land on.
+
+User-agent: *
+Allow: /
+Disallow: /Math-Art/surfaces/
+Disallow: /Math-Art/vendor/
+Disallow: /Math-Art/data/
+
+Sitemap: https://dwkrider.github.io/Math-Art/sitemap.xml

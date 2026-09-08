@@ -301,6 +301,23 @@ def main():
     scene.render.resolution_x = scene.render.resolution_y = RES
     scene.cycles.samples = SAMPLES
 
+    # TRANSPARENT BACKGROUND, unlike the documentation figures.
+    #
+    # The studio shoots against a black velvet dome, which is right for a
+    # figure on a page and wrong for a tile: in the clustered view the
+    # tiles sit centimetres apart and every one is an opaque black square
+    # clipping its neighbours and any highlight drawn behind it.
+    #
+    # The dome is kept -- it is a light source as much as a backdrop, and
+    # removing it would change the shading -- but hidden from camera rays,
+    # so it still bounces light while the film records alpha where nothing
+    # was hit. The lighting is therefore unchanged; only the background
+    # goes away.
+    scene.render.film_transparent = True
+    dome = bpy.data.objects.get("Backdrop Dome")
+    if dome is not None:
+        dome.visible_camera = False
+
     shot = 0
     for slug, tpath in todo:
         try:

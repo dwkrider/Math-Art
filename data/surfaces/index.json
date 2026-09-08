@@ -79,7 +79,7 @@
     "swept",
     "topological"
   ],
-  "count": 474,
+  "count": 473,
   "implemented_count": 467,
   "entries": [
     {
@@ -6505,38 +6505,6 @@
       "operator_ids": [
         "mesh.hopf_torus_add"
       ],
-      "specimen_count": 0
-    },
-    {
-      "slug": "horgan-surface",
-      "name": "Horgan Surface",
-      "path": "surfaces/minimal/horgan-surface.json",
-      "primary_family": "minimal",
-      "families": [
-        "aperiodic",
-        "def-weierstrass",
-        "immersed",
-        "minimal",
-        "not-implemented",
-        "tradition-classical"
-      ],
-      "definition_mode": "weierstrass",
-      "has_approximation": false,
-      "curvature_condition": "minimal",
-      "periodicity_rank": 0,
-      "genus": null,
-      "genus_per_cell": null,
-      "orientable": null,
-      "ends": 0,
-      "embedding": "immersed",
-      "symmetry": {
-        "kind": "none",
-        "symbol": null,
-        "ita_number": null,
-        "order": null
-      },
-      "implemented": false,
-      "operator_ids": [],
       "specimen_count": 0
     },
     {

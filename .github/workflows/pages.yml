@@ -23,6 +23,8 @@ on:
     paths:
       - 'web/**'
       - 'data/polyhedra/**'
+      - 'data/surfaces/**'
+      - 'tools/site_seo.py'
       - 'tests/test_web.py'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -59,6 +61,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      # The catalog pages, sitemap and head metadata are derived from the
+      # two databases. Regenerating before the gate means a database
+      # change that reached master without a re-run still deploys a
+      # correct site, and the gate then checks the result rather than
+      # whatever happened to be committed.
+      - name: Refresh the generated metadata
+        run: python tools/site_seo.py
 
       - name: Gate the site
         run: python tests/test_web.py

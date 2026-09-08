@@ -619,9 +619,6 @@ def check_index(records, rep):
 # mathematics instead of hiding it behind a percentage.
 NOT_A_GAP = {
     # PROVED OR BELIEVED NOT TO EXIST.  The record is the finding.
-    "horgan-surface":
-        ("terminal", "Horgan's surface does not exist -- the numerical "
-                     "example fails to close; no such minimal surface."),
     "catenoid-with-handle":
         ("terminal", "Proved not to exist: R. Schoen (1983) -- the "
                      "catenoid is the only complete embedded minimal "

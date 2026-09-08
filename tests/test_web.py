@@ -19,6 +19,10 @@
 #               every relative import in the JS resolves too
 #   importmap   the bare specifiers the modules import are declared, and
 #               point at files that exist
+#   seo         every database record has a generated catalog page, every
+#               page has a record, the JSON-LD parses, and sitemap.xml
+#               agrees with what is on disk.  This catches the tool not
+#               having been re-run after a database change
 #   offline     nothing fetches from a third-party host at runtime.  The
 #               site is meant to compute everything locally, so a CDN
 #               reference is a correctness bug, not a style choice
@@ -43,7 +47,12 @@ SURF_MESHES = os.path.join(WEB, "surfaces")
 
 # Hosts are never contacted at runtime; the only absolute URLs allowed
 # are ones a reader clicks.
-ALLOWED_LINK_HOSTS = ("github.com", "en.wikipedia.org", "mathworld.wolfram.com")
+# dwkrider.github.io is the site's own origin. It appears in the
+# canonical link and the Open Graph tags, which the specifications
+# require to be absolute; nothing fetches them, so they are not the
+# remote dependency this check is looking for.
+ALLOWED_LINK_HOSTS = ("github.com", "en.wikipedia.org",
+                      "mathworld.wolfram.com", "dwkrider.github.io")
 
 
 def _index():
@@ -122,6 +131,26 @@ def check_surfaces(fail):
     for s in sorted(thumbs - all_slugs):
         fail("orphan thumbnail web/thumbs/surfaces/%s.png names no surface" % s)
 
+    # The clustered view draws from a sprite sheet, so a stale atlas shows
+    # the wrong surface under the right name -- a silent, plausible-looking
+    # error. It must list exactly the tiles on disk.
+    apath = os.path.join(WEB, "thumbs", "surfaces-atlas.json")
+    if not os.path.exists(apath):
+        fail("no web/thumbs/surfaces-atlas.json "
+             "(run tools/build_thumb_atlas.py)")
+    else:
+        with open(apath, encoding="utf-8") as fh:
+            atlas = json.load(fh)
+        listed = set(atlas.get("tiles") or {})
+        if not os.path.exists(os.path.join(WEB, "thumbs",
+                                           "surfaces-atlas.png")):
+            fail("surfaces-atlas.json exists but the .png does not")
+        for s in sorted(listed - thumbs):
+            fail("atlas lists %s, which has no tile" % s)
+        for s in sorted(thumbs - listed):
+            fail("%s has a tile but the atlas omits it "
+                 "(re-run tools/build_thumb_atlas.py)" % s)
+
     # The page reads this manifest instead of guessing from `implemented`,
     # so a stale one would mislabel tiles. It has to agree with the disk.
     mpath = os.path.join(WEB, "surface-meshes.json")
@@ -152,7 +181,13 @@ def check_html_links(fail):
                     fail("%s references third-party host: %s"
                          % (os.path.relpath(path, PROJ), url))
                 continue
-            target = os.path.normpath(os.path.join(base, url.split("?")[0]))
+            # A fragment addresses a place inside the target, not a
+            # different file: catalog pages link to modules/surfaces.html
+            # #gyroid, and the file to test for is the part before the #.
+            rel = url.split("#")[0].split("?")[0]
+            if not rel:
+                continue
+            target = os.path.normpath(os.path.join(base, rel))
             checked += 1
             if not os.path.exists(target):
                 fail("%s -> %s does not exist"
@@ -247,6 +282,130 @@ def check_js_syntax(fail, quiet):
     return n
 
 
+def check_seo(fail):
+    """The generated metadata, pages and sitemap are present and agree.
+
+    tools/site_seo.py derives all of this from the two databases, so the
+    failure this guards against is the tool not having been re-run: a
+    record added upstream then has no page, and sitemap.xml advertises a
+    set of URLs that no longer matches what is on disk. Both are silent
+    -- the site looks fine and the missing object is simply absent from
+    search -- which is exactly the kind of drift a gate is for.
+    """
+    n_pages = 0
+
+    # Every record in each database has a page, and every page has a record.
+    for kind, db, key in (("surfaces", os.path.join(PROJ, "data", "surfaces"),
+                           "surfaces"),
+                          ("polyhedra", DB, "polyhedra")):
+        with open(os.path.join(db, "index.json"), encoding="utf-8") as fh:
+            want = {e["slug"] for e in json.load(fh)["entries"]}
+        d = os.path.join(WEB, "catalog", kind)
+        if not os.path.isdir(d):
+            fail("web/catalog/%s/ is missing -- run tools/site_seo.py" % kind)
+            continue
+        have = {f[:-5] for f in os.listdir(d)
+                if f.endswith(".html") and f != "index.html"}
+        n_pages += len(have)
+        for s in sorted(want - have):
+            fail("%s has no catalog page (run tools/site_seo.py): %s"
+                 % (kind, s))
+        for s in sorted(have - want):
+            fail("%s catalog page has no database record: %s" % (kind, s))
+        if not os.path.exists(os.path.join(d, "index.html")):
+            fail("web/catalog/%s/index.html is missing" % kind)
+
+    # The three hand-written pages carry a generated head block.
+    for rel in ("index.html", "modules/surfaces.html", "modules/polyhedra.html"):
+        p = os.path.join(WEB, *rel.split("/"))
+        with open(p, encoding="utf-8") as fh:
+            src = fh.read()
+        for tag in ('rel="canonical"', 'property="og:title"',
+                    'name="twitter:card"', 'application/ld+json'):
+            if tag not in src:
+                fail("web/%s carries no %s" % (rel, tag))
+
+    # Every JSON-LD block parses. A malformed one is ignored silently by
+    # every consumer, so nothing would ever report it.
+    for path in _web_files(".html"):
+        with open(path, encoding="utf-8") as fh:
+            src = fh.read()
+        for m in re.finditer(r'<script type="application/ld\+json">(.*?)</script>',
+                             src, re.S):
+            try:
+                json.loads(m.group(1))
+            except ValueError as exc:
+                fail("%s has unparseable JSON-LD: %s"
+                     % (os.path.relpath(path, PROJ), exc))
+                break
+
+    # sitemap.xml lists only URLs that exist on disk, and lists them all.
+    sm = os.path.join(WEB, "sitemap.xml")
+    n_urls = 0
+    if not os.path.exists(sm):
+        fail("web/sitemap.xml is missing -- run tools/site_seo.py")
+    else:
+        with open(sm, encoding="utf-8") as fh:
+            body = fh.read()
+        locs = re.findall(r"<loc>([^<]+)</loc>", body)
+        n_urls = len(locs)
+        listed = set()
+        for loc in locs:
+            rel = loc.split("github.io/Math-Art/", 1)[-1] or "index.html"
+            listed.add(rel)
+            p = os.path.join(WEB, *rel.split("/"))
+            if not os.path.exists(p):
+                fail("sitemap.xml lists %s, which is not on disk" % rel)
+        for path in _web_files(".html"):
+            rel = os.path.relpath(path, WEB).replace(os.sep, "/")
+            if rel == "index.html":
+                continue
+            if rel not in listed:
+                fail("%s is not listed in sitemap.xml" % rel)
+
+    # robots.txt has to point at the sitemap, or it is decoration.
+    rb = os.path.join(WEB, "robots.txt")
+    if not os.path.exists(rb):
+        fail("web/robots.txt is missing -- run tools/site_seo.py")
+    else:
+        with open(rb, encoding="utf-8") as fh:
+            body = fh.read()
+        if "Sitemap:" not in body:
+            fail("web/robots.txt names no Sitemap")
+        if "sitemap.xml" not in body:
+            fail("web/robots.txt does not point at sitemap.xml")
+
+    return n_pages, n_urls
+
+
+def check_cluster_cache(fail, quiet):
+    """Run the clustered view's own headless checks, if node is here.
+
+    The layout cache and the tile gate are behaviours no other check in
+    this file can see: a broken cache still draws the right picture, just
+    slowly, and a broken gate draws it in the wrong order. Both need a
+    stopwatch and a stubbed DOM, which is what tests/web/ provides.
+    """
+    node = shutil.which("node")
+    test = os.path.join(PROJ, "tests", "web", "test_cluster_cache.mjs")
+    if not os.path.exists(test):
+        fail("tests/web/test_cluster_cache.mjs is missing")
+        return False
+    if not node:
+        if not quiet:
+            print("cluster    : skipped (node not on PATH)")
+        return True
+    r = subprocess.run([node, test], capture_output=True, text=True)
+    if r.returncode != 0:
+        for line in (r.stdout + r.stderr).splitlines():
+            if "FAIL" in line or "Error" in line:
+                fail("cluster cache: " + line.strip())
+        if r.returncode and "FAIL" not in r.stdout:
+            fail("cluster cache checks exited %d" % r.returncode)
+        return False
+    return True
+
+
 def main(argv):
     quiet = "--quiet" in argv
     failures = []
@@ -265,6 +424,8 @@ def main(argv):
     n_imports = check_js_relative_imports(fail)
     check_no_remote_fetch(fail)
     n_js = check_js_syntax(fail, quiet)
+    n_pages, n_urls = check_seo(fail)
+    cache_ok = check_cluster_cache(fail, quiet)
 
     if not quiet:
         print("thumbnails : %d of %d solids (%d missing)"
@@ -275,6 +436,10 @@ def main(argv):
         print("import map : %d specifier(s)" % n_map)
         print("js imports : %d relative import(s) resolved" % n_imports)
         print("js syntax  : %d module(s) checked" % n_js)
+        print("seo pages  : %d object pages, %d sitemap URLs"
+              % (n_pages, n_urls))
+        if cache_ok:
+            print("cluster    : layout cache + tile gate OK")
 
     if failures:
         print("\n%d FAILURE(S):" % len(failures))
