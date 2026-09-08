@@ -10,7 +10,7 @@ Its striking feature is arithmetic rather than geometric. If the starting curvat
 
 ### Using it
 
-1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Apollonian Gasket*.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Apollonian Gasket*.
 2. **Pick the Mode.** **Sphere Packing (3D)** fills space with mutually tangent Soddy spheres; **Gasket (2D)** draws the classic Apollonian circles in the plane. The mode decides which of the controls below appear.
 3. **Set how deep it fills** with the three knobs that apply to both modes: **Depth** is the number of gap-filling generations; **Min Radius** stops inscribing once new elements fall below it ($0$ takes a per-mode default); and **Max Count** is a hard cap — the packing fills the *largest* gaps first up to this many, since it can never fill space completely.
 4. **Dial the mode-specific controls.** In **Gasket (2D)**, **Circle Style** is **Filled Discs** or **Tube Rings**; choosing Tube Rings reveals **Ring Tube** (tube radius as a fraction of the circle's) and **Tube Segments**, and **Ring Segments** sets each circle's smoothness. In **Sphere Packing (3D)**, **Sphere Resolution** subdivides each icosphere (higher rounds them so tangent spheres actually touch) and **Sphere Inflate** grows spheres slightly to fuse their contacts for printing.
