@@ -282,6 +282,39 @@ def check_js_syntax(fail, quiet):
     return n
 
 
+def check_layout_tracks(fail):
+    """The viewer's column may not be sized by what is inside it.
+
+    A bare `1fr` is `minmax(auto, 1fr)`, and that auto minimum lets a
+    wide child stretch the track. It happened: a long implicit equation
+    in the detail panel widened the workspace column, the stage stretched
+    to match, and the surface -- drawn centred in the canvas -- ended up
+    off the right-hand edge and out of view.
+
+    Only the containers on that path are checked. Elsewhere a bare 1fr is
+    ordinary and correct.
+    """
+    css = os.path.join(WEB, "css", "site.css")
+    if not os.path.exists(css):
+        return 0
+    with open(css, encoding="utf-8") as fh:
+        text = fh.read()
+    checked = 0
+    for sel in (".module-layout", ".workspace"):
+        for m in re.finditer(re.escape(sel) + r"[^{]*\{([^}]*)\}", text):
+            body = m.group(1)
+            gtc = re.search(r"grid-template-columns:([^;]*);", body)
+            if not gtc:
+                continue
+            checked += 1
+            tracks = gtc.group(1)
+            if "1fr" in tracks and "minmax(0" not in tracks:
+                fail("%s uses a bare 1fr (%s) -- it must be minmax(0, 1fr), "
+                     "or a wide equation stretches the viewer"
+                     % (sel, tracks.strip()))
+    return checked
+
+
 def check_lfs_deploy(fail):
     """The deploy pulls every LFS path the site serves.
 
@@ -506,6 +539,7 @@ def main(argv):
     n_pages, n_urls, n_math = check_seo(fail)
     cache_ok = check_cluster_cache(fail, quiet)
     n_lfs = check_lfs_deploy(fail)
+    n_tracks = check_layout_tracks(fail)
 
     if not quiet:
         print("thumbnails : %d of %d solids (%d missing)"
@@ -521,6 +555,7 @@ def main(argv):
         print("formulae   : %d MathML blocks, all well-formed" % n_math)
         print("lfs deploy : %d tracked path(s), all pulled by the workflow"
               % n_lfs)
+        print("layout     : %d viewer track(s) bounded" % n_tracks)
         if cache_ok:
             print("browser js : cluster cache, tile gate and STL export OK")
 
