@@ -85,6 +85,7 @@
     {
       "slug": "alternating-fence-of-half-catenoids",
       "name": "Alternating Fence of Half-Catenoids",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/alternating-fence-of-half-catenoids.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -120,6 +121,7 @@
     {
       "slug": "amsler-surface",
       "name": "Amsler Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/amsler-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -155,6 +157,7 @@
     {
       "slug": "antiprismatic-k-noid-full-family",
       "name": "Antiprismatic k-noid (full family)",
+      "poly_degree": null,
       "path": "surfaces/minimal/antiprismatic-k-noid-full-family.json",
       "primary_family": "minimal",
       "families": [
@@ -189,6 +192,7 @@
     {
       "slug": "antiprismatic-k-noid-nn-eq-5",
       "name": "Antiprismatic k-noid (nn=5)",
+      "poly_degree": null,
       "path": "surfaces/minimal/antiprismatic-k-noid-nn-eq-5.json",
       "primary_family": "minimal",
       "families": [
@@ -223,6 +227,7 @@
     {
       "slug": "astroidal-ellipsoid",
       "name": "Astroidal Ellipsoid",
+      "poly_degree": null,
       "path": "surfaces/misc/astroidal-ellipsoid.json",
       "primary_family": "misc",
       "families": [
@@ -256,6 +261,7 @@
     {
       "slug": "atomic-orbital-surface",
       "name": "Atomic Orbital Surface",
+      "poly_degree": null,
       "path": "surfaces/spectral/atomic-orbital-surface.json",
       "primary_family": "spectral",
       "families": [
@@ -289,6 +295,7 @@
     {
       "slug": "barth-decic",
       "name": "Barth Decic (345 nodes)",
+      "poly_degree": 10,
       "path": "surfaces/algebraic/barth-decic.json",
       "primary_family": "algebraic",
       "families": [
@@ -324,6 +331,7 @@
     {
       "slug": "barth-sextic",
       "name": "Barth Sextic",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/barth-sextic.json",
       "primary_family": "algebraic",
       "families": [
@@ -359,6 +367,7 @@
     {
       "slug": "barth-sextic-icosahedral-frame",
       "name": "Barth Sextic (icosahedral frame)",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/barth-sextic-icosahedral-frame.json",
       "primary_family": "algebraic",
       "families": [
@@ -393,6 +402,7 @@
     {
       "slug": "berg",
       "name": "Berg",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/berg.json",
       "primary_family": "algebraic",
       "families": [
@@ -427,6 +437,7 @@
     {
       "slug": "bianchi-pinkall-flat-torus",
       "name": "Bianchi-Pinkall Flat Torus",
+      "poly_degree": null,
       "path": "surfaces/misc/bianchi-pinkall-flat-torus.json",
       "primary_family": "misc",
       "families": [
@@ -464,6 +475,7 @@
     {
       "slug": "bipyramidal-k-noid",
       "name": "Bipyramidal k-noid",
+      "poly_degree": null,
       "path": "surfaces/minimal/bipyramidal-k-noid.json",
       "primary_family": "minimal",
       "families": [
@@ -498,6 +510,7 @@
     {
       "slug": "bjorling-archimedean-spiral",
       "name": "Bjorling: Archimedean Spiral",
+      "poly_degree": null,
       "path": "surfaces/minimal/bjorling-archimedean-spiral.json",
       "primary_family": "minimal",
       "families": [
@@ -532,6 +545,7 @@
     {
       "slug": "bjorling-helix-ribbon",
       "name": "Bjorling: Helix Ribbon",
+      "poly_degree": null,
       "path": "surfaces/minimal/bjorling-helix-ribbon.json",
       "primary_family": "minimal",
       "families": [
@@ -566,6 +580,7 @@
     {
       "slug": "bjorling-logarithmic-spiral",
       "name": "Bjorling: Logarithmic Spiral",
+      "poly_degree": null,
       "path": "surfaces/minimal/bjorling-logarithmic-spiral.json",
       "primary_family": "minimal",
       "families": [
@@ -600,6 +615,7 @@
     {
       "slug": "bjorling-trefoil-ribbon",
       "name": "Bjorling: Trefoil Ribbon",
+      "poly_degree": null,
       "path": "surfaces/minimal/bjorling-trefoil-ribbon.json",
       "primary_family": "minimal",
       "families": [
@@ -634,6 +650,7 @@
     {
       "slug": "bjorling-twisted-band",
       "name": "Bjorling: Twisted Band (Mobius)",
+      "poly_degree": null,
       "path": "surfaces/minimal/bjorling-twisted-band.json",
       "primary_family": "minimal",
       "families": [
@@ -668,6 +685,7 @@
     {
       "slug": "bohemian-dome",
       "name": "Bohemian Dome",
+      "poly_degree": null,
       "path": "surfaces/misc/bohemian-dome.json",
       "primary_family": "misc",
       "families": [
@@ -701,6 +719,7 @@
     {
       "slug": "bouguer-dome",
       "name": "Bouguer Dome",
+      "poly_degree": null,
       "path": "surfaces/revolution/bouguer-dome.json",
       "primary_family": "revolution",
       "families": [
@@ -734,6 +753,7 @@
     {
       "slug": "bouligands-pillow",
       "name": "Bouligand's Pillow",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/bouligands-pillow.json",
       "primary_family": "algebraic",
       "families": [
@@ -768,6 +788,7 @@
     {
       "slug": "bour-surface",
       "name": "Bour's Minimal Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal/bour-surface.json",
       "primary_family": "minimal",
       "families": [
@@ -802,6 +823,7 @@
     {
       "slug": "boys-surface",
       "name": "Boy's Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/boys-surface.json",
       "primary_family": "topological",
       "families": [
@@ -841,6 +863,7 @@
     {
       "slug": "brakke-pseudo-batwing",
       "name": "Brakke Pseudo-Batwing",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/brakke-pseudo-batwing.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -876,6 +899,7 @@
     {
       "slug": "breather-surface",
       "name": "Breather Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/breather-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -911,6 +935,7 @@
     {
       "slug": "breiner-kleene-surface",
       "name": "Breiner-Kleene Spiral Helicoid",
+      "poly_degree": null,
       "path": "surfaces/minimal/breiner-kleene-surface.json",
       "primary_family": "minimal",
       "families": [
@@ -945,6 +970,7 @@
     {
       "slug": "bretzel2",
       "name": "Bretzel2",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/bretzel2.json",
       "primary_family": "algebraic",
       "families": [
@@ -979,6 +1005,7 @@
     {
       "slug": "bretzel5",
       "name": "Bretzel5",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/bretzel5.json",
       "primary_family": "algebraic",
       "families": [
@@ -1013,6 +1040,7 @@
     {
       "slug": "bryant-surface",
       "name": "Bryant Surface",
+      "poly_degree": null,
       "path": "surfaces/cmc/bryant-surface.json",
       "primary_family": "cmc",
       "families": [
@@ -1047,6 +1075,7 @@
     {
       "slug": "bubble-cluster",
       "name": "Bubble Cluster",
+      "poly_degree": null,
       "path": "surfaces/physical/bubble-cluster.json",
       "primary_family": "physical",
       "families": [
@@ -1081,6 +1110,7 @@
     {
       "slug": "bubbleton",
       "name": "Bubbleton",
+      "poly_degree": null,
       "path": "surfaces/cmc/bubbleton.json",
       "primary_family": "cmc",
       "families": [
@@ -1114,6 +1144,7 @@
     {
       "slug": "buggle",
       "name": "Buggle",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/buggle.json",
       "primary_family": "algebraic",
       "families": [
@@ -1148,6 +1179,7 @@
     {
       "slug": "burkhardt-quartic",
       "name": "Burkhardt Quartic Section (y0 = sum/4 slice)",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/burkhardt-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -1182,6 +1214,7 @@
     {
       "slug": "c21p-exact",
       "name": "Schoen C21(P)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/c21p-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -1217,6 +1250,7 @@
     {
       "slug": "calabi-yau-cross-section",
       "name": "Calabi-Yau Cross-Section",
+      "poly_degree": null,
       "path": "surfaces/topological/calabi-yau-cross-section.json",
       "primary_family": "topological",
       "families": [
@@ -1253,6 +1287,7 @@
     {
       "slug": "callahan-hoffman-meeks-chm-1-2-genus-4",
       "name": "Callahan-Hoffman-Meeks CHM-(1,2) (genus 4)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/callahan-hoffman-meeks-chm-1-2-genus-4.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -1288,6 +1323,7 @@
     {
       "slug": "callahan-hoffman-meeks-singly-periodic",
       "name": "Callahan-Hoffman-Meeks (singly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/callahan-hoffman-meeks-singly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -1323,6 +1359,7 @@
     {
       "slug": "calypso",
       "name": "Calypso",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/calypso.json",
       "primary_family": "algebraic",
       "families": [
@@ -1357,6 +1394,7 @@
     {
       "slug": "calyx",
       "name": "Calyx",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/calyx.json",
       "primary_family": "algebraic",
       "families": [
@@ -1391,6 +1429,7 @@
     {
       "slug": "canal-surface",
       "name": "Canal Surface",
+      "poly_degree": null,
       "path": "surfaces/derived/canal-surface.json",
       "primary_family": "derived",
       "families": [
@@ -1425,6 +1464,7 @@
     {
       "slug": "capillary-surface",
       "name": "Capillary Surface",
+      "poly_degree": null,
       "path": "surfaces/physical/capillary-surface.json",
       "primary_family": "physical",
       "families": [
@@ -1459,6 +1499,7 @@
     {
       "slug": "cartans-umbrella",
       "name": "Cartan's Umbrella",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/cartans-umbrella.json",
       "primary_family": "algebraic",
       "families": [
@@ -1493,6 +1534,7 @@
     {
       "slug": "cassini-surface",
       "name": "Cassini Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/cassini-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -1527,6 +1569,7 @@
     {
       "slug": "cassini-surface-of-revolution",
       "name": "Cassini Surface of Revolution",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/cassini-surface-of-revolution.json",
       "primary_family": "algebraic",
       "families": [
@@ -1561,6 +1604,7 @@
     {
       "slug": "cassinian-surface-3-poles",
       "name": "Cassinian Surface (3 poles)",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/cassinian-surface-3-poles.json",
       "primary_family": "algebraic",
       "families": [
@@ -1595,6 +1639,7 @@
     {
       "slug": "catalan",
       "name": "Catalan",
+      "poly_degree": null,
       "path": "surfaces/minimal/catalan.json",
       "primary_family": "minimal",
       "families": [
@@ -1629,6 +1674,7 @@
     {
       "slug": "catalan-surface",
       "name": "Catalan's Minimal Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal/catalan-surface.json",
       "primary_family": "minimal",
       "families": [
@@ -1663,6 +1709,7 @@
     {
       "slug": "catenoid",
       "name": "Catenoid",
+      "poly_degree": null,
       "path": "surfaces/minimal/catenoid.json",
       "primary_family": "minimal",
       "families": [
@@ -1700,6 +1747,7 @@
     {
       "slug": "catenoid-enneper-higher-genus",
       "name": "Catenoid-Enneper (higher genus)",
+      "poly_degree": null,
       "path": "surfaces/minimal/catenoid-enneper-higher-genus.json",
       "primary_family": "minimal",
       "families": [
@@ -1734,6 +1782,7 @@
     {
       "slug": "catenoid-field",
       "name": "Catenoid Field (square-torus member)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/catenoid-field.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -1769,6 +1818,7 @@
     {
       "slug": "catenoid-helicoid-associate-family",
       "name": "Catenoid-Helicoid Associate Family",
+      "poly_degree": null,
       "path": "surfaces/minimal/catenoid-helicoid-associate-family.json",
       "primary_family": "minimal",
       "families": [
@@ -1802,6 +1852,7 @@
     {
       "slug": "catenoid-tower-with-2-handles-genus-3",
       "name": "Catenoid Tower with 2 Handles (genus 3)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/catenoid-tower-with-2-handles-genus-3.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -1837,6 +1888,7 @@
     {
       "slug": "catenoid-tower-with-handle-genus-2",
       "name": "Catenoid Tower with Handle (genus 2)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/catenoid-tower-with-handle-genus-2.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -1872,6 +1924,7 @@
     {
       "slug": "catenoid-with-handle",
       "name": "Catenoid with Handle",
+      "poly_degree": null,
       "path": "surfaces/minimal/catenoid-with-handle.json",
       "primary_family": "minimal",
       "families": [
@@ -1904,6 +1957,7 @@
     {
       "slug": "cayley-nodal-cubic",
       "name": "Cayley Nodal Cubic",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/cayley-nodal-cubic.json",
       "primary_family": "algebraic",
       "families": [
@@ -1940,6 +1994,7 @@
     {
       "slug": "cayley-ruled-surface",
       "name": "Cayley Ruled Cubic",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/cayley-ruled-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -1974,6 +2029,7 @@
     {
       "slug": "cayleys-cubic-k-eq-4",
       "name": "Cayley's Cubic (k = 4)",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/cayleys-cubic-k-eq-4.json",
       "primary_family": "algebraic",
       "families": [
@@ -2008,6 +2064,7 @@
     {
       "slug": "cd-surface",
       "name": "Complementary D",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/cd-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2044,6 +2101,7 @@
     {
       "slug": "cg-surface",
       "name": "Complementary Gyroid",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/cg-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2080,6 +2138,7 @@
     {
       "slug": "chair-surface",
       "name": "Chair Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/chair-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -2114,6 +2173,7 @@
     {
       "slug": "chen-gackstatter",
       "name": "Chen-Gackstatter Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal/chen-gackstatter.json",
       "primary_family": "minimal",
       "families": [
@@ -2149,6 +2209,7 @@
     {
       "slug": "chen-gackstatter-higher-genus",
       "name": "Chen-Gackstatter (higher genus)",
+      "poly_degree": null,
       "path": "surfaces/minimal/chen-gackstatter-higher-genus.json",
       "primary_family": "minimal",
       "families": [
@@ -2183,6 +2244,7 @@
     {
       "slug": "chmutov-sextic",
       "name": "Chmutov Sextic",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/chmutov-sextic.json",
       "primary_family": "algebraic",
       "families": [
@@ -2217,6 +2279,7 @@
     {
       "slug": "ci2y-surface",
       "name": "C(I2-Y**) Rod Packing",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/ci2y-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2253,6 +2316,7 @@
     {
       "slug": "circular-cylinder",
       "name": "Circular Cylinder",
+      "poly_degree": 2,
       "path": "surfaces/quadric/circular-cylinder.json",
       "primary_family": "quadric",
       "families": [
@@ -2290,6 +2354,7 @@
     {
       "slug": "clebsch-diagonal-cubic",
       "name": "Clebsch Diagonal Cubic",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/clebsch-diagonal-cubic.json",
       "primary_family": "algebraic",
       "families": [
@@ -2327,6 +2392,7 @@
     {
       "slug": "clifford-torus",
       "name": "Clifford Torus",
+      "poly_degree": null,
       "path": "surfaces/topological/clifford-torus.json",
       "primary_family": "topological",
       "families": [
@@ -2363,6 +2429,7 @@
     {
       "slug": "clp-exact",
       "name": "Schwarz CLP",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/clp-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2398,6 +2465,7 @@
     {
       "slug": "clp-handle-exact",
       "name": "CLP with Handle (exact fundamental piece, genus 4)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/clp-handle-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2433,6 +2501,7 @@
     {
       "slug": "coil",
       "name": "Coil",
+      "poly_degree": null,
       "path": "surfaces/swept/coil.json",
       "primary_family": "swept",
       "families": [
@@ -2467,6 +2536,7 @@
     {
       "slug": "columpius",
       "name": "Columpius",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/columpius.json",
       "primary_family": "algebraic",
       "families": [
@@ -2501,6 +2571,7 @@
     {
       "slug": "compound-helical-cone",
       "name": "Compound Helical Cone",
+      "poly_degree": null,
       "path": "surfaces/ruled/compound-helical-cone.json",
       "primary_family": "ruled",
       "families": [
@@ -2534,6 +2605,7 @@
     {
       "slug": "cone-of-revolution",
       "name": "Cone of Revolution",
+      "poly_degree": 2,
       "path": "surfaces/quadric/cone-of-revolution.json",
       "primary_family": "quadric",
       "families": [
@@ -2569,6 +2641,7 @@
     {
       "slug": "conifold-transition",
       "name": "Conifold Transition",
+      "poly_degree": null,
       "path": "surfaces/misc/conifold-transition.json",
       "primary_family": "misc",
       "families": [
@@ -2602,6 +2675,7 @@
     {
       "slug": "connor-experimental-doubly-periodic",
       "name": "Connor Experimental (doubly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/connor-experimental-doubly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2637,6 +2711,7 @@
     {
       "slug": "constant-width-solid",
       "name": "Constant Width Solid",
+      "poly_degree": null,
       "path": "surfaces/misc/constant-width-solid.json",
       "primary_family": "misc",
       "families": [
@@ -2670,6 +2745,7 @@
     {
       "slug": "corkscrew",
       "name": "Corkscrew",
+      "poly_degree": null,
       "path": "surfaces/swept/corkscrew.json",
       "primary_family": "swept",
       "families": [
@@ -2703,6 +2779,7 @@
     {
       "slug": "costa-hoffman-karcher-meeks-tori",
       "name": "Costa-Hoffman-Karcher-Meeks Torus",
+      "poly_degree": null,
       "path": "surfaces/minimal/costa-hoffman-karcher-meeks-tori.json",
       "primary_family": "minimal",
       "families": [
@@ -2737,6 +2814,7 @@
     {
       "slug": "costa-hoffman-meeks",
       "name": "Costa-Hoffman-Meeks Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal/costa-hoffman-meeks.json",
       "primary_family": "minimal",
       "families": [
@@ -2772,6 +2850,7 @@
     {
       "slug": "costa-scherk-tower-genus-1",
       "name": "Costa-Scherk Tower (genus 1)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/costa-scherk-tower-genus-1.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -2807,6 +2886,7 @@
     {
       "slug": "costa-surface",
       "name": "Costa's Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal/costa-surface.json",
       "primary_family": "minimal",
       "families": [
@@ -2842,6 +2922,7 @@
     {
       "slug": "costa-wohlgemuth-4-ends",
       "name": "Costa-Wohlgemuth (4 ends)",
+      "poly_degree": null,
       "path": "surfaces/minimal/costa-wohlgemuth-4-ends.json",
       "primary_family": "minimal",
       "families": [
@@ -2876,6 +2957,7 @@
     {
       "slug": "crixxi",
       "name": "Crixxi",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/crixxi.json",
       "primary_family": "algebraic",
       "families": [
@@ -2910,6 +2992,7 @@
     {
       "slug": "crochet-hyperbolic-surface",
       "name": "Crochet Hyperbolic Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/crochet-hyperbolic-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -2944,6 +3027,7 @@
     {
       "slug": "cross-cap",
       "name": "Cross-Cap",
+      "poly_degree": null,
       "path": "surfaces/topological/cross-cap.json",
       "primary_family": "topological",
       "families": [
@@ -2981,6 +3065,7 @@
     {
       "slug": "crossed-trough",
       "name": "Crossed Trough",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/crossed-trough.json",
       "primary_family": "algebraic",
       "families": [
@@ -3015,6 +3100,7 @@
     {
       "slug": "cube",
       "name": "Cube",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/cube.json",
       "primary_family": "algebraic",
       "families": [
@@ -3049,6 +3135,7 @@
     {
       "slug": "cube-diagonal-quartic",
       "name": "Cube-Diagonal Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/cube-diagonal-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -3083,6 +3170,7 @@
     {
       "slug": "cube-edge-quartic",
       "name": "Cube-Edge Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/cube-edge-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -3117,6 +3205,7 @@
     {
       "slug": "cube-median-quartic",
       "name": "Cube-Median Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/cube-median-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -3151,6 +3240,7 @@
     {
       "slug": "cuboctahedral-quartic",
       "name": "Cuboctahedral Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/cuboctahedral-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -3185,6 +3275,7 @@
     {
       "slug": "cuboctahedral-triangle-quartic",
       "name": "Cuboctahedral Triangle Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/cuboctahedral-triangle-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -3219,6 +3310,7 @@
     {
       "slug": "d-form",
       "name": "D-Form",
+      "poly_degree": null,
       "path": "surfaces/misc/d-form.json",
       "primary_family": "misc",
       "families": [
@@ -3253,6 +3345,7 @@
     {
       "slug": "daisy",
       "name": "Daisy",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/daisy.json",
       "primary_family": "algebraic",
       "families": [
@@ -3287,6 +3380,7 @@
     {
       "slug": "darboux-cyclide",
       "name": "Darboux Cyclide",
+      "poly_degree": 4,
       "path": "surfaces/cyclide/darboux-cyclide.json",
       "primary_family": "cyclide",
       "families": [
@@ -3322,6 +3416,7 @@
     {
       "slug": "darboux-surface",
       "name": "Darboux Surface",
+      "poly_degree": null,
       "path": "surfaces/swept/darboux-surface.json",
       "primary_family": "swept",
       "families": [
@@ -3355,6 +3450,7 @@
     {
       "slug": "dasilva-batista-surface-genus-2",
       "name": "daSilva-Batista Surface (genus 2)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/dasilva-batista-surface-genus-2.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3390,6 +3486,7 @@
     {
       "slug": "dattel",
       "name": "Dattel",
+      "poly_degree": 2,
       "path": "surfaces/algebraic/dattel.json",
       "primary_family": "algebraic",
       "families": [
@@ -3424,6 +3521,7 @@
     {
       "slug": "deco-cube",
       "name": "Deco-Cube",
+      "poly_degree": 12,
       "path": "surfaces/algebraic/deco-cube.json",
       "primary_family": "algebraic",
       "families": [
@@ -3458,6 +3556,7 @@
     {
       "slug": "deco-tetrahedron",
       "name": "Deco-Tetrahedron",
+      "poly_degree": 16,
       "path": "surfaces/algebraic/deco-tetrahedron.json",
       "primary_family": "algebraic",
       "families": [
@@ -3493,6 +3592,7 @@
     {
       "slug": "delaunay-surface",
       "name": "Delaunay Surface",
+      "poly_degree": null,
       "path": "surfaces/cmc/delaunay-surface.json",
       "primary_family": "cmc",
       "families": [
@@ -3526,6 +3626,7 @@
     {
       "slug": "desmic-surface",
       "name": "Desmic Quartic (12 nodes, (1,2) member)",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/desmic-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -3560,6 +3661,7 @@
     {
       "slug": "diabolo",
       "name": "Diabolo",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/diabolo.json",
       "primary_family": "algebraic",
       "families": [
@@ -3594,6 +3696,7 @@
     {
       "slug": "dihedralized-wohlgemuth-with-handle",
       "name": "Dihedralized Wohlgemuth with Handle",
+      "poly_degree": null,
       "path": "surfaces/minimal/dihedralized-wohlgemuth-with-handle.json",
       "primary_family": "minimal",
       "families": [
@@ -3626,6 +3729,7 @@
     {
       "slug": "ding-dong-surface",
       "name": "Ding-dong",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/ding-dong-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -3660,6 +3764,7 @@
     {
       "slug": "dini-surface",
       "name": "Dini Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/dini-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -3695,6 +3800,7 @@
     {
       "slug": "disphenoid-family-a-genus-31",
       "name": "Disphenoid 31",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/disphenoid-family-a-genus-31.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3730,6 +3836,7 @@
     {
       "slug": "disphenoid-family-a-genus-43",
       "name": "Disphenoid 43",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/disphenoid-family-a-genus-43.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3765,6 +3872,7 @@
     {
       "slug": "disphenoid-family-a-genus-55",
       "name": "Disphenoid 55",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/disphenoid-family-a-genus-55.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3800,6 +3908,7 @@
     {
       "slug": "disphenoid-family-b-genus-35",
       "name": "Disphenoid 35",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/disphenoid-family-b-genus-35.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3835,6 +3944,7 @@
     {
       "slug": "disphenoid-family-b-genus-51",
       "name": "Disphenoid 51",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/disphenoid-family-b-genus-51.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3870,6 +3980,7 @@
     {
       "slug": "disphenoid-family-b-genus-67",
       "name": "Disphenoid 67",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/disphenoid-family-b-genus-67.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -3905,6 +4016,7 @@
     {
       "slug": "distel",
       "name": "Distel",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/distel.json",
       "primary_family": "algebraic",
       "families": [
@@ -3939,6 +4051,7 @@
     {
       "slug": "double-enneper",
       "name": "Double Enneper",
+      "poly_degree": null,
       "path": "surfaces/minimal/double-enneper.json",
       "primary_family": "minimal",
       "families": [
@@ -3973,6 +4086,7 @@
     {
       "slug": "dprime-surface",
       "name": "D'",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/dprime-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4009,6 +4123,7 @@
     {
       "slug": "dromedar",
       "name": "Dromedar",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/dromedar.json",
       "primary_family": "algebraic",
       "families": [
@@ -4043,6 +4158,7 @@
     {
       "slug": "dullo",
       "name": "Dullo",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/dullo.json",
       "primary_family": "algebraic",
       "families": [
@@ -4077,6 +4193,7 @@
     {
       "slug": "dupin-cyclide",
       "name": "Dupin Cyclide",
+      "poly_degree": null,
       "path": "surfaces/cyclide/dupin-cyclide.json",
       "primary_family": "cyclide",
       "families": [
@@ -4113,6 +4230,7 @@
     {
       "slug": "durchblick",
       "name": "Durchblick",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/durchblick.json",
       "primary_family": "algebraic",
       "families": [
@@ -4147,6 +4265,7 @@
     {
       "slug": "dyck-surface",
       "name": "Dyck's Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/dyck-surface.json",
       "primary_family": "topological",
       "families": [
@@ -4185,6 +4304,7 @@
     {
       "slug": "egg-box",
       "name": "Egg Box",
+      "poly_degree": null,
       "path": "surfaces/swept/egg-box.json",
       "primary_family": "swept",
       "families": [
@@ -4218,6 +4338,7 @@
     {
       "slug": "eguchi-hanson-space",
       "name": "Eguchi-Hanson Space",
+      "poly_degree": null,
       "path": "surfaces/misc/eguchi-hanson-space.json",
       "primary_family": "misc",
       "families": [
@@ -4251,6 +4372,7 @@
     {
       "slug": "eight-ended-scherk-tower-genus-2",
       "name": "Eight-Ended Scherk Tower (genus 2)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/eight-ended-scherk-tower-genus-2.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4286,6 +4408,7 @@
     {
       "slug": "eistuete",
       "name": "Eistuete",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/eistuete.json",
       "primary_family": "algebraic",
       "families": [
@@ -4320,6 +4443,7 @@
     {
       "slug": "elastic-torus-s3",
       "name": "Elastic Torus (S3)",
+      "poly_degree": null,
       "path": "surfaces/cmc/elastic-torus-s3.json",
       "primary_family": "cmc",
       "families": [
@@ -4353,6 +4477,7 @@
     {
       "slug": "ellipsoid",
       "name": "Ellipsoid",
+      "poly_degree": 2,
       "path": "surfaces/quadric/ellipsoid.json",
       "primary_family": "quadric",
       "families": [
@@ -4389,6 +4514,7 @@
     {
       "slug": "elliptic-cone",
       "name": "Elliptic Cone",
+      "poly_degree": 2,
       "path": "surfaces/quadric/elliptic-cone.json",
       "primary_family": "quadric",
       "families": [
@@ -4425,6 +4551,7 @@
     {
       "slug": "elliptic-cylinder",
       "name": "Elliptic Cylinder",
+      "poly_degree": 2,
       "path": "surfaces/quadric/elliptic-cylinder.json",
       "primary_family": "quadric",
       "families": [
@@ -4461,6 +4588,7 @@
     {
       "slug": "elliptic-paraboloid",
       "name": "Elliptic Paraboloid",
+      "poly_degree": 2,
       "path": "surfaces/quadric/elliptic-paraboloid.json",
       "primary_family": "quadric",
       "families": [
@@ -4496,6 +4624,7 @@
     {
       "slug": "endrass-octic",
       "name": "Endrass Octic",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/endrass-octic.json",
       "primary_family": "algebraic",
       "families": [
@@ -4531,6 +4660,7 @@
     {
       "slug": "endrass-octic-160",
       "name": "Endrass Octic (160 nodes)",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/endrass-octic-160.json",
       "primary_family": "algebraic",
       "families": [
@@ -4565,6 +4695,7 @@
     {
       "slug": "endrass-octic-family",
       "name": "Endrass Octic Family",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/endrass-octic-family.json",
       "primary_family": "algebraic",
       "families": [
@@ -4599,6 +4730,7 @@
     {
       "slug": "enneper-ended-k-noid",
       "name": "Enneper-ended k-noid",
+      "poly_degree": null,
       "path": "surfaces/minimal/enneper-ended-k-noid.json",
       "primary_family": "minimal",
       "families": [
@@ -4633,6 +4765,7 @@
     {
       "slug": "enneper-surface",
       "name": "Enneper",
+      "poly_degree": null,
       "path": "surfaces/minimal/enneper-surface.json",
       "primary_family": "minimal",
       "families": [
@@ -4668,6 +4801,7 @@
     {
       "slug": "enneper-with-n-catenoids",
       "name": "Enneper with n Catenoids",
+      "poly_degree": null,
       "path": "surfaces/minimal/enneper-with-n-catenoids.json",
       "primary_family": "minimal",
       "families": [
@@ -4702,6 +4836,7 @@
     {
       "slug": "etruscan-venus-surface",
       "name": "Etruscan Venus",
+      "poly_degree": null,
       "path": "surfaces/topological/etruscan-venus-surface.json",
       "primary_family": "topological",
       "families": [
@@ -4737,6 +4872,7 @@
     {
       "slug": "eve",
       "name": "Eve",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/eve.json",
       "primary_family": "algebraic",
       "families": [
@@ -4771,6 +4907,7 @@
     {
       "slug": "fanfare",
       "name": "Fanfare",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/fanfare.json",
       "primary_family": "algebraic",
       "families": [
@@ -4805,6 +4942,7 @@
     {
       "slug": "fence-of-catenoids-karcher",
       "name": "Fence of Catenoids (Karcher)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fence-of-catenoids-karcher.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4840,6 +4978,7 @@
     {
       "slug": "finite-riemann-plane-2-catenoids",
       "name": "Finite Riemann (plane + 2 catenoids)",
+      "poly_degree": null,
       "path": "surfaces/minimal/finite-riemann-plane-2-catenoids.json",
       "primary_family": "minimal",
       "families": [
@@ -4874,6 +5013,7 @@
     {
       "slug": "fischer-koch-cs",
       "name": "Fischer-Koch C(S)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fischer-koch-cs.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4910,6 +5050,7 @@
     {
       "slug": "fischer-koch-cy",
       "name": "Fischer-Koch C(Y)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fischer-koch-cy.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4946,6 +5087,7 @@
     {
       "slug": "fischer-koch-freese-twisted",
       "name": "Fischer-Koch-Freese (twisted)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fischer-koch-freese-twisted.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -4981,6 +5123,7 @@
     {
       "slug": "fischer-koch-tower-translation-invariant",
       "name": "Fischer-Koch Tower (translation-invariant)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fischer-koch-tower-translation-invariant.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5016,6 +5159,7 @@
     {
       "slug": "fk-cpmy-surface",
       "name": "Fischer-Koch C(+-Y)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fk-cpmy-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5052,6 +5196,7 @@
     {
       "slug": "fk-pmy-surface",
       "name": "Fischer-Koch +-Y",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fk-pmy-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5088,6 +5233,7 @@
     {
       "slug": "fk-s-surface",
       "name": "Fischer-Koch S",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fk-s-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5124,6 +5270,7 @@
     {
       "slug": "fk-y-surface",
       "name": "Fischer-Koch Y",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/fk-y-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5160,6 +5307,7 @@
     {
       "slug": "flirt",
       "name": "Flirt",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/flirt.json",
       "primary_family": "algebraic",
       "families": [
@@ -5194,6 +5342,7 @@
     {
       "slug": "focal-surface",
       "name": "Focal Surface",
+      "poly_degree": null,
       "path": "surfaces/derived/focal-surface.json",
       "primary_family": "derived",
       "families": [
@@ -5228,6 +5377,7 @@
     {
       "slug": "four-noid-two-symmetry-planes",
       "name": "4-Noid, Two Symmetry Planes",
+      "poly_degree": null,
       "path": "surfaces/minimal/four-noid-two-symmetry-planes.json",
       "primary_family": "minimal",
       "families": [
@@ -5262,6 +5412,7 @@
     {
       "slug": "four-soliton-surface",
       "name": "Four-Soliton Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/four-soliton-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -5296,6 +5447,7 @@
     {
       "slug": "frd-surface",
       "name": "Schoen F-RD",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/frd-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5332,6 +5484,7 @@
     {
       "slug": "frd2-surface",
       "name": "Schoen F-RD (Wohlgemuth variant)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/frd2-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5368,6 +5521,7 @@
     {
       "slug": "fresnel-elasticity-surface",
       "name": "Fresnel Elasticity Surface",
+      "poly_degree": null,
       "path": "surfaces/misc/fresnel-elasticity-surface.json",
       "primary_family": "misc",
       "families": [
@@ -5401,6 +5555,7 @@
     {
       "slug": "fresnel-wave-surface",
       "name": "Fresnel Wave Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/fresnel-wave-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -5436,6 +5591,7 @@
     {
       "slug": "gabriels-horn",
       "name": "Gabriel's Horn",
+      "poly_degree": null,
       "path": "surfaces/revolution/gabriels-horn.json",
       "primary_family": "revolution",
       "families": [
@@ -5471,6 +5627,7 @@
     {
       "slug": "gaudi-surface",
       "name": "Gaudi's Surface",
+      "poly_degree": null,
       "path": "surfaces/ruled/gaudi-surface.json",
       "primary_family": "ruled",
       "families": [
@@ -5504,6 +5661,7 @@
     {
       "slug": "geisha",
       "name": "Geisha",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/geisha.json",
       "primary_family": "algebraic",
       "families": [
@@ -5538,6 +5696,7 @@
     {
       "slug": "genus-g-surface",
       "name": "Genus-g Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/genus-g-surface.json",
       "primary_family": "topological",
       "families": [
@@ -5574,6 +5733,7 @@
     {
       "slug": "gprime-surface",
       "name": "G' Alternating Gyroid",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/gprime-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5610,6 +5770,7 @@
     {
       "slug": "guimard-surface",
       "name": "Guimard's Surface",
+      "poly_degree": null,
       "path": "surfaces/ruled/guimard-surface.json",
       "primary_family": "ruled",
       "families": [
@@ -5643,6 +5804,7 @@
     {
       "slug": "gupf",
       "name": "Gupf",
+      "poly_degree": 2,
       "path": "surfaces/algebraic/gupf.json",
       "primary_family": "algebraic",
       "families": [
@@ -5677,6 +5839,7 @@
     {
       "slug": "gyroid",
       "name": "Gyroid",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/gyroid.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5715,6 +5878,7 @@
     {
       "slug": "h-exact",
       "name": "Schwarz H",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/h-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5750,6 +5914,7 @@
     {
       "slug": "hackman-surfaces",
       "name": "Hackman Screw-Motion 1-Noid",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/hackman-surfaces.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5785,6 +5950,7 @@
     {
       "slug": "half-twisted-scherk",
       "name": "Half-Twisted Scherk Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/half-twisted-scherk.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -5820,6 +5986,7 @@
     {
       "slug": "handkerchief-surface",
       "name": "Handkerchief Surface",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/handkerchief-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -5854,6 +6021,7 @@
     {
       "slug": "hanging-drop-of-water",
       "name": "Hanging Drop of Water",
+      "poly_degree": null,
       "path": "surfaces/revolution/hanging-drop-of-water.json",
       "primary_family": "revolution",
       "families": [
@@ -5887,6 +6055,7 @@
     {
       "slug": "harlekin",
       "name": "Harlekin",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/harlekin.json",
       "primary_family": "algebraic",
       "families": [
@@ -5921,6 +6090,7 @@
     {
       "slug": "helico-conical-surface",
       "name": "Helico-Conical Surface",
+      "poly_degree": null,
       "path": "surfaces/swept/helico-conical-surface.json",
       "primary_family": "swept",
       "families": [
@@ -5954,6 +6124,7 @@
     {
       "slug": "helicoid",
       "name": "Helicoid",
+      "poly_degree": null,
       "path": "surfaces/minimal/helicoid.json",
       "primary_family": "minimal",
       "families": [
@@ -5991,6 +6162,7 @@
     {
       "slug": "helicoid-with-handle-genus-1",
       "name": "Helicoid with Handle (genus 1)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/helicoid-with-handle-genus-1.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6026,6 +6198,7 @@
     {
       "slug": "helicoidal-cone",
       "name": "Helicoidal Cone",
+      "poly_degree": null,
       "path": "surfaces/ruled/helicoidal-cone.json",
       "primary_family": "ruled",
       "families": [
@@ -6060,6 +6233,7 @@
     {
       "slug": "helicoidal-karcher-scherk-twisted-tower",
       "name": "Helicoidal Karcher-Scherk (twisted tower)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/helicoidal-karcher-scherk-twisted-tower.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6095,6 +6269,7 @@
     {
       "slug": "helix",
       "name": "Helix",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/helix.json",
       "primary_family": "algebraic",
       "families": [
@@ -6129,6 +6304,7 @@
     {
       "slug": "henneberg-one-sided",
       "name": "Henneberg (one-sided)",
+      "poly_degree": null,
       "path": "surfaces/minimal/henneberg-one-sided.json",
       "primary_family": "minimal",
       "families": [
@@ -6164,6 +6340,7 @@
     {
       "slug": "henneberg-surface",
       "name": "Henneberg",
+      "poly_degree": null,
       "path": "surfaces/minimal/henneberg-surface.json",
       "primary_family": "minimal",
       "families": [
@@ -6200,6 +6377,7 @@
     {
       "slug": "henrici-cubic",
       "name": "Henrici Cubic",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/henrici-cubic.json",
       "primary_family": "algebraic",
       "families": [
@@ -6234,6 +6412,7 @@
     {
       "slug": "herz",
       "name": "Herz",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/herz.json",
       "primary_family": "algebraic",
       "families": [
@@ -6268,6 +6447,7 @@
     {
       "slug": "hexplane1-exact",
       "name": "Hexplane 1",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/hexplane1-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6303,6 +6483,7 @@
     {
       "slug": "hexplane2-exact",
       "name": "Hexplane 2",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/hexplane2-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6338,6 +6519,7 @@
     {
       "slug": "hexplane3-exact",
       "name": "Hexplane 3",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/hexplane3-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6373,6 +6555,7 @@
     {
       "slug": "hexplane4-exact",
       "name": "Hexplane 4",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/hexplane4-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6408,6 +6591,7 @@
     {
       "slug": "hexplane5-exact",
       "name": "Hexplane 5",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/hexplane5-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6443,6 +6627,7 @@
     {
       "slug": "himmel-und-hoelle",
       "name": "Himmel und Hoelle",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/himmel-und-hoelle.json",
       "primary_family": "algebraic",
       "families": [
@@ -6477,6 +6662,7 @@
     {
       "slug": "hopf-torus",
       "name": "Hopf Torus",
+      "poly_degree": null,
       "path": "surfaces/topological/hopf-torus.json",
       "primary_family": "topological",
       "families": [
@@ -6510,6 +6696,7 @@
     {
       "slug": "horgan-surface-non-existent-near-miss",
       "name": "Horgan Surface (non-existent, near-miss)",
+      "poly_degree": null,
       "path": "surfaces/minimal/horgan-surface-non-existent-near-miss.json",
       "primary_family": "minimal",
       "families": [
@@ -6544,6 +6731,7 @@
     {
       "slug": "ht-tr-exact",
       "name": "Schoen H'-T | T'-R'",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/ht-tr-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6579,6 +6767,7 @@
     {
       "slug": "humbert-sextic",
       "name": "Humbert Sextic (O = (1:1:1:1) member)",
+      "poly_degree": 12,
       "path": "surfaces/algebraic/humbert-sextic.json",
       "primary_family": "algebraic",
       "families": [
@@ -6613,6 +6802,7 @@
     {
       "slug": "hunts-surface",
       "name": "Hunt's Surface",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/hunts-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -6647,6 +6837,7 @@
     {
       "slug": "hyde-sextic",
       "name": "Hyde Sextic",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/hyde-sextic.json",
       "primary_family": "algebraic",
       "families": [
@@ -6681,6 +6872,7 @@
     {
       "slug": "hyperbolic-cylinder",
       "name": "Hyperbolic Cylinder",
+      "poly_degree": 2,
       "path": "surfaces/quadric/hyperbolic-cylinder.json",
       "primary_family": "quadric",
       "families": [
@@ -6717,6 +6909,7 @@
     {
       "slug": "hyperbolic-helicoid",
       "name": "Hyperbolic Helicoid",
+      "poly_degree": null,
       "path": "surfaces/swept/hyperbolic-helicoid.json",
       "primary_family": "swept",
       "families": [
@@ -6750,6 +6943,7 @@
     {
       "slug": "hyperbolic-paraboloid",
       "name": "Hyperbolic Paraboloid",
+      "poly_degree": null,
       "path": "surfaces/quadric/hyperbolic-paraboloid.json",
       "primary_family": "quadric",
       "families": [
@@ -6786,6 +6980,7 @@
     {
       "slug": "hyperboloid-one-sheet",
       "name": "Hyperboloid of One Sheet",
+      "poly_degree": null,
       "path": "surfaces/quadric/hyperboloid-one-sheet.json",
       "primary_family": "quadric",
       "families": [
@@ -6822,6 +7017,7 @@
     {
       "slug": "hyperboloid-two-sheets",
       "name": "Hyperboloid of Two Sheets",
+      "poly_degree": 2,
       "path": "surfaces/quadric/hyperboloid-two-sheets.json",
       "primary_family": "quadric",
       "families": [
@@ -6857,6 +7053,7 @@
     {
       "slug": "icosidodecahedral-pentagon-sextic",
       "name": "Icosidodecahedral Pentagon Sextic",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/icosidodecahedral-pentagon-sextic.json",
       "primary_family": "algebraic",
       "families": [
@@ -6891,6 +7088,7 @@
     {
       "slug": "icosidodecahedral-triangle-sextic",
       "name": "Icosidodecahedral Triangle Sextic",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/icosidodecahedral-triangle-sextic.json",
       "primary_family": "algebraic",
       "families": [
@@ -6925,6 +7123,7 @@
     {
       "slug": "ida-surface",
       "name": "Ida Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/ida-surface.json",
       "primary_family": "topological",
       "families": [
@@ -6960,6 +7159,7 @@
     {
       "slug": "iwp-surface",
       "name": "Schoen I-WP",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/iwp-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -6996,6 +7196,7 @@
     {
       "slug": "jeeners-flower",
       "name": "Jeener's Flower",
+      "poly_degree": null,
       "path": "surfaces/minimal/jeeners-flower.json",
       "primary_family": "minimal",
       "families": [
@@ -7030,6 +7231,7 @@
     {
       "slug": "join-of-two-tori",
       "name": "Join of Two Tori",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/join-of-two-tori.json",
       "primary_family": "algebraic",
       "families": [
@@ -7064,6 +7266,7 @@
     {
       "slug": "jorge-meeks-k-noid",
       "name": "Jorge-Meeks k-noid",
+      "poly_degree": null,
       "path": "surfaces/minimal/jorge-meeks-k-noid.json",
       "primary_family": "minimal",
       "families": [
@@ -7099,6 +7302,7 @@
     {
       "slug": "k-noid-with-enneper-ends",
       "name": "k-Noid with Enneper Ends",
+      "poly_degree": null,
       "path": "surfaces/minimal/k-noid-with-enneper-ends.json",
       "primary_family": "minimal",
       "families": [
@@ -7133,6 +7337,7 @@
     {
       "slug": "k-positive-revolution",
       "name": "Constant Positive Curvature Surface of Revolution",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/k-positive-revolution.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -7168,6 +7373,7 @@
     {
       "slug": "kapouleas-surfaces",
       "name": "Kapouleas Surface (desingularized catenoids)",
+      "poly_degree": null,
       "path": "surfaces/minimal/kapouleas-surfaces.json",
       "primary_family": "minimal",
       "families": [
@@ -7202,6 +7408,7 @@
     {
       "slug": "karcher-jd-saddle-tower",
       "name": "Karcher JD Saddle Tower",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/karcher-jd-saddle-tower.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7237,6 +7444,7 @@
     {
       "slug": "karcher-je-saddle-tower",
       "name": "Karcher JE Saddle Tower",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/karcher-je-saddle-tower.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7272,6 +7480,7 @@
     {
       "slug": "karcher-meeks-rosenberg-doubly-periodic",
       "name": "Karcher-Meeks-Rosenberg (doubly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/karcher-meeks-rosenberg-doubly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7307,6 +7516,7 @@
     {
       "slug": "karcher-meeks-rosenberg-kmr-3-tilted-ends",
       "name": "Karcher-Meeks-Rosenberg (KMR-3, tilted ends)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/karcher-meeks-rosenberg-kmr-3-tilted-ends.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7342,6 +7552,7 @@
     {
       "slug": "karcher-scherk-with-handles-doubly-periodic",
       "name": "Karcher-Scherk with Handles (doubly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/karcher-scherk-with-handles-doubly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7377,6 +7588,7 @@
     {
       "slug": "kegel",
       "name": "Kegel",
+      "poly_degree": 2,
       "path": "surfaces/algebraic/kegel.json",
       "primary_family": "algebraic",
       "families": [
@@ -7411,6 +7623,7 @@
     {
       "slug": "kiss-surface",
       "name": "Kiss Surface",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/kiss-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -7445,6 +7658,7 @@
     {
       "slug": "klein-bottle",
       "name": "Klein Bottle",
+      "poly_degree": null,
       "path": "surfaces/topological/klein-bottle.json",
       "primary_family": "topological",
       "families": [
@@ -7483,6 +7697,7 @@
     {
       "slug": "klein-bottle-figure-eight",
       "name": "Klein Bottle (Figure-8)",
+      "poly_degree": null,
       "path": "surfaces/topological/klein-bottle-figure-eight.json",
       "primary_family": "topological",
       "families": [
@@ -7516,6 +7731,7 @@
     {
       "slug": "klein-quartic",
       "name": "Klein Quartic",
+      "poly_degree": null,
       "path": "surfaces/topological/klein-quartic.json",
       "primary_family": "topological",
       "families": [
@@ -7553,6 +7769,7 @@
     {
       "slug": "kolibri",
       "name": "Kolibri",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/kolibri.json",
       "primary_family": "algebraic",
       "families": [
@@ -7587,6 +7804,7 @@
     {
       "slug": "kreuz",
       "name": "Kreuz",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/kreuz.json",
       "primary_family": "algebraic",
       "families": [
@@ -7621,6 +7839,7 @@
     {
       "slug": "ksurf-surface",
       "name": "Karcher K",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/ksurf-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7657,6 +7876,7 @@
     {
       "slug": "kuen-surface",
       "name": "Kuen Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/kuen-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -7693,6 +7913,7 @@
     {
       "slug": "kummer-quartic",
       "name": "Kummer Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/kummer-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -7729,6 +7950,7 @@
     {
       "slug": "kusner-projective-plane-p-planar-ends",
       "name": "Kusner Projective Plane (p planar ends)",
+      "poly_degree": null,
       "path": "surfaces/minimal/kusner-projective-plane-p-planar-ends.json",
       "primary_family": "minimal",
       "families": [
@@ -7764,6 +7986,7 @@
     {
       "slug": "kusner-sphere-2n-planar-ends",
       "name": "Kusner Sphere (2n planar ends)",
+      "poly_degree": null,
       "path": "surfaces/minimal/kusner-sphere-2n-planar-ends.json",
       "primary_family": "minimal",
       "families": [
@@ -7798,6 +8021,7 @@
     {
       "slug": "labs-septic",
       "name": "Labs Septic (99 nodes)",
+      "poly_degree": 7,
       "path": "surfaces/algebraic/labs-septic.json",
       "primary_family": "algebraic",
       "families": [
@@ -7833,6 +8057,7 @@
     {
       "slug": "labs-sextic-30-cusps",
       "name": "Labs Sextic (30 cusps)",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/labs-sextic-30-cusps.json",
       "primary_family": "algebraic",
       "families": [
@@ -7867,6 +8092,7 @@
     {
       "slug": "labs-sextic-35-cusps",
       "name": "Labs Sextic (35 cusps)",
+      "poly_degree": null,
       "path": "surfaces/algebraic/labs-sextic-35-cusps.json",
       "primary_family": "algebraic",
       "families": [
@@ -7899,6 +8125,7 @@
     {
       "slug": "leopold",
       "name": "Leopold",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/leopold.json",
       "primary_family": "algebraic",
       "families": [
@@ -7933,6 +8160,7 @@
     {
       "slug": "lidinoid",
       "name": "Lidinoid (nodal approximation)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/lidinoid.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -7970,6 +8198,7 @@
     {
       "slug": "lidinoid-exact",
       "name": "Lidinoid (exact)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/lidinoid-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8005,6 +8234,7 @@
     {
       "slug": "limao",
       "name": "Limao",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/limao.json",
       "primary_family": "algebraic",
       "families": [
@@ -8039,6 +8269,7 @@
     {
       "slug": "lopez-martin-slab-surface",
       "name": "Lopez-Martin Slab Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/lopez-martin-slab-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8075,6 +8306,7 @@
     {
       "slug": "lopez-minimal-klein-bottle",
       "name": "Lopez Minimal Klein Bottle",
+      "poly_degree": null,
       "path": "surfaces/minimal/lopez-minimal-klein-bottle.json",
       "primary_family": "minimal",
       "families": [
@@ -8110,6 +8342,7 @@
     {
       "slug": "lopez-sphere-2-ends-of-index-2",
       "name": "Lopez sphere (2 ends of index 2)",
+      "poly_degree": null,
       "path": "surfaces/minimal/lopez-sphere-2-ends-of-index-2.json",
       "primary_family": "minimal",
       "families": [
@@ -8144,6 +8377,7 @@
     {
       "slug": "lord-mackay-p3a",
       "name": "Lord-Mackay P3a",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/lord-mackay-p3a.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8179,6 +8413,7 @@
     {
       "slug": "lubeck-batista-surface",
       "name": "Lubeck-Batista Surface (doubly periodic Scherk-Costa)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/lubeck-batista-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8214,6 +8449,7 @@
     {
       "slug": "meeks-mobius-strip",
       "name": "Meeks Mobius Strip",
+      "poly_degree": null,
       "path": "surfaces/minimal/meeks-mobius-strip.json",
       "primary_family": "minimal",
       "families": [
@@ -8249,6 +8485,7 @@
     {
       "slug": "menns-surface",
       "name": "Menn's Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/menns-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -8283,6 +8520,7 @@
     {
       "slug": "miau",
       "name": "Miau",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/miau.json",
       "primary_family": "algebraic",
       "families": [
@@ -8317,6 +8555,7 @@
     {
       "slug": "michelangelo",
       "name": "Michelangelo",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/michelangelo.json",
       "primary_family": "algebraic",
       "families": [
@@ -8351,6 +8590,7 @@
     {
       "slug": "milk-carton-surface",
       "name": "Milk Carton",
+      "poly_degree": null,
       "path": "surfaces/ruled/milk-carton-surface.json",
       "primary_family": "ruled",
       "families": [
@@ -8384,6 +8624,7 @@
     {
       "slug": "minding-surface",
       "name": "Minding Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/minding-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -8419,6 +8660,7 @@
     {
       "slug": "minimal-polyhedron",
       "name": "Minimal Polyhedron",
+      "poly_degree": null,
       "path": "surfaces/discrete/minimal-polyhedron.json",
       "primary_family": "discrete",
       "families": [
@@ -8453,6 +8695,7 @@
     {
       "slug": "miter-surface",
       "name": "Miter Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/miter-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -8487,6 +8730,7 @@
     {
       "slug": "mobius-surface",
       "name": "Moebius Surface",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/mobius-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -8521,6 +8765,7 @@
     {
       "slug": "modified-chmutov-octic",
       "name": "Modified Chmutov Octic (144 nodes)",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/modified-chmutov-octic.json",
       "primary_family": "algebraic",
       "families": [
@@ -8555,6 +8800,7 @@
     {
       "slug": "moebius-strip",
       "name": "Moebius Strip",
+      "poly_degree": null,
       "path": "surfaces/topological/moebius-strip.json",
       "primary_family": "topological",
       "families": [
@@ -8592,6 +8838,7 @@
     {
       "slug": "monkey-saddle",
       "name": "Monkey Saddle (n-fold)",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/monkey-saddle.json",
       "primary_family": "algebraic",
       "families": [
@@ -8627,6 +8874,7 @@
     {
       "slug": "morin-surface",
       "name": "Morin's Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/morin-surface.json",
       "primary_family": "topological",
       "families": [
@@ -8664,6 +8912,7 @@
     {
       "slug": "neiloid",
       "name": "Neiloid",
+      "poly_degree": null,
       "path": "surfaces/revolution/neiloid.json",
       "primary_family": "revolution",
       "families": [
@@ -8697,6 +8946,7 @@
     {
       "slug": "neovius-n14",
       "name": "Neovius N14",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/neovius-n14.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8732,6 +8982,7 @@
     {
       "slug": "neovius-n26",
       "name": "Neovius N26",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/neovius-n26.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8767,6 +9018,7 @@
     {
       "slug": "neovius-n38",
       "name": "Neovius N38",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/neovius-n38.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8802,6 +9054,7 @@
     {
       "slug": "neovius-surface",
       "name": "Neovius",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/neovius-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8839,6 +9092,7 @@
     {
       "slug": "neovius-sym3",
       "name": "Order 3 Neovius Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/neovius-sym3.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -8872,6 +9126,7 @@
     {
       "slug": "nepali",
       "name": "Nepali",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/nepali.json",
       "primary_family": "algebraic",
       "families": [
@@ -8906,6 +9161,7 @@
     {
       "slug": "nested-klein-bottles",
       "name": "Nested Klein Bottles",
+      "poly_degree": null,
       "path": "surfaces/topological/nested-klein-bottles.json",
       "primary_family": "topological",
       "families": [
@@ -8941,6 +9197,7 @@
     {
       "slug": "nodoid",
       "name": "Nodoid",
+      "poly_degree": null,
       "path": "surfaces/cmc/nodoid.json",
       "primary_family": "cmc",
       "families": [
@@ -8975,6 +9232,7 @@
     {
       "slug": "non-orientable-genus-k",
       "name": "Non-Orientable Genus-k Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/non-orientable-genus-k.json",
       "primary_family": "topological",
       "families": [
@@ -9012,6 +9270,7 @@
     {
       "slug": "nordstrand-weird-surface",
       "name": "Nordstrand's Weird Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/nordstrand-weird-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -9046,6 +9305,7 @@
     {
       "slug": "norm-one-family",
       "name": "p-Norm Unit Sphere (superellipsoid, p knob)",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/norm-one-family.json",
       "primary_family": "algebraic",
       "families": [
@@ -9082,6 +9342,7 @@
     {
       "slug": "octahedron-edge-quartic",
       "name": "Octahedron-Edge Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/octahedron-edge-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -9116,6 +9377,7 @@
     {
       "slug": "octdong",
       "name": "Octdong",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/octdong.json",
       "primary_family": "algebraic",
       "families": [
@@ -9150,6 +9412,7 @@
     {
       "slug": "octo-surface",
       "name": "Schoen O,C-TO",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/octo-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -9186,6 +9449,7 @@
     {
       "slug": "oloid",
       "name": "Oloid",
+      "poly_degree": null,
       "path": "surfaces/ruled/oloid.json",
       "primary_family": "ruled",
       "families": [
@@ -9224,6 +9488,7 @@
     {
       "slug": "orthocircles",
       "name": "Orthocircles",
+      "poly_degree": 12,
       "path": "surfaces/algebraic/orthocircles.json",
       "primary_family": "algebraic",
       "families": [
@@ -9258,6 +9523,7 @@
     {
       "slug": "paper-bag-surface",
       "name": "Paper Bag Surface",
+      "poly_degree": null,
       "path": "surfaces/misc/paper-bag-surface.json",
       "primary_family": "misc",
       "families": [
@@ -9291,6 +9557,7 @@
     {
       "slug": "parabolic-conoid",
       "name": "Parabolic Conoid",
+      "poly_degree": null,
       "path": "surfaces/ruled/parabolic-conoid.json",
       "primary_family": "ruled",
       "families": [
@@ -9326,6 +9593,7 @@
     {
       "slug": "parabolic-cylinder",
       "name": "Parabolic Cylinder",
+      "poly_degree": 2,
       "path": "surfaces/quadric/parabolic-cylinder.json",
       "primary_family": "quadric",
       "families": [
@@ -9362,6 +9630,7 @@
     {
       "slug": "paraboloid-of-revolution",
       "name": "Paraboloid of Revolution",
+      "poly_degree": 2,
       "path": "surfaces/quadric/paraboloid-of-revolution.json",
       "primary_family": "quadric",
       "families": [
@@ -9397,6 +9666,7 @@
     {
       "slug": "peano-surface",
       "name": "Peano Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/peano-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -9431,6 +9701,7 @@
     {
       "slug": "pearce-saddle-surface",
       "name": "Pearce Saddle Surface",
+      "poly_degree": null,
       "path": "surfaces/discrete/pearce-saddle-surface.json",
       "primary_family": "discrete",
       "families": [
@@ -9464,6 +9735,7 @@
     {
       "slug": "periodic-enneper",
       "name": "Periodic Enneper",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/periodic-enneper.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -9499,6 +9771,7 @@
     {
       "slug": "pgd-associate-family",
       "name": "P-Gyroid-D Associate Family",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/pgd-associate-family.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -9534,6 +9807,7 @@
     {
       "slug": "pilz-surface",
       "name": "Pilz Surface",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/pilz-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -9568,6 +9842,7 @@
     {
       "slug": "pilzchen",
       "name": "Pilzchen",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/pilzchen.json",
       "primary_family": "algebraic",
       "families": [
@@ -9602,6 +9877,7 @@
     {
       "slug": "pipe",
       "name": "Pipe",
+      "poly_degree": 2,
       "path": "surfaces/algebraic/pipe.json",
       "primary_family": "algebraic",
       "families": [
@@ -9636,6 +9912,7 @@
     {
       "slug": "plane",
       "name": "Plane",
+      "poly_degree": 1,
       "path": "surfaces/quadric/plane.json",
       "primary_family": "quadric",
       "families": [
@@ -9672,6 +9949,7 @@
     {
       "slug": "plane-with-catenoids",
       "name": "Plane with Catenoids (square lattice)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/plane-with-catenoids.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -9707,6 +9985,7 @@
     {
       "slug": "plateau-span",
       "name": "Plateau Soap-Film Span",
+      "poly_degree": null,
       "path": "surfaces/physical/plateau-span.json",
       "primary_family": "physical",
       "families": [
@@ -9741,6 +10020,7 @@
     {
       "slug": "plop",
       "name": "Plop",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/plop.json",
       "primary_family": "algebraic",
       "families": [
@@ -9775,6 +10055,7 @@
     {
       "slug": "polsterzipf",
       "name": "Polsterzipf",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/polsterzipf.json",
       "primary_family": "algebraic",
       "families": [
@@ -9809,6 +10090,7 @@
     {
       "slug": "pretzel",
       "name": "Pretzel",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/pretzel.json",
       "primary_family": "algebraic",
       "families": [
@@ -9843,6 +10125,7 @@
     {
       "slug": "prismatic-k-noid",
       "name": "Prismatic k-noid",
+      "poly_degree": null,
       "path": "surfaces/minimal/prismatic-k-noid.json",
       "primary_family": "minimal",
       "families": [
@@ -9877,6 +10160,7 @@
     {
       "slug": "pseudosphere",
       "name": "Pseudosphere",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/pseudosphere.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -9914,6 +10198,7 @@
     {
       "slug": "pyramidal-k-noid",
       "name": "Pyramidal k-noid",
+      "poly_degree": null,
       "path": "surfaces/minimal/pyramidal-k-noid.json",
       "primary_family": "minimal",
       "families": [
@@ -9948,6 +10233,7 @@
     {
       "slug": "quartic-with-12-cuboctahedral-nodes",
       "name": "Quartic with 12 Cuboctahedral Nodes",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/quartic-with-12-cuboctahedral-nodes.json",
       "primary_family": "algebraic",
       "families": [
@@ -9982,6 +10268,7 @@
     {
       "slug": "relaxed-bubble",
       "name": "Relaxed Bubble",
+      "poly_degree": null,
       "path": "surfaces/physical/relaxed-bubble.json",
       "primary_family": "physical",
       "families": [
@@ -10016,6 +10303,7 @@
     {
       "slug": "revolution-of-the-catenary",
       "name": "Revolution of the Catenary",
+      "poly_degree": null,
       "path": "surfaces/revolution/revolution-of-the-catenary.json",
       "primary_family": "revolution",
       "families": [
@@ -10050,6 +10338,7 @@
     {
       "slug": "revolution-of-the-sinusoid",
       "name": "Revolution of the Sinusoid",
+      "poly_degree": null,
       "path": "surfaces/revolution/revolution-of-the-sinusoid.json",
       "primary_family": "revolution",
       "families": [
@@ -10084,6 +10373,7 @@
     {
       "slug": "richmond-generalized-g-eq-z-k",
       "name": "Richmond (generalized, g = z^k)",
+      "poly_degree": null,
       "path": "surfaces/minimal/richmond-generalized-g-eq-z-k.json",
       "primary_family": "minimal",
       "families": [
@@ -10118,6 +10408,7 @@
     {
       "slug": "richmond-surface",
       "name": "Richmond",
+      "poly_degree": null,
       "path": "surfaces/minimal/richmond-surface.json",
       "primary_family": "minimal",
       "families": [
@@ -10153,6 +10444,7 @@
     {
       "slug": "riemann-minimal-example",
       "name": "Riemann's Minimal Example",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/riemann-minimal-example.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10188,6 +10480,7 @@
     {
       "slug": "right-conoid",
       "name": "Right Conoid",
+      "poly_degree": null,
       "path": "surfaces/ruled/right-conoid.json",
       "primary_family": "ruled",
       "families": [
@@ -10221,6 +10514,7 @@
     {
       "slug": "roman-surface",
       "name": "Roman Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/roman-surface.json",
       "primary_family": "topological",
       "families": [
@@ -10259,6 +10553,7 @@
     {
       "slug": "rossman-thayer-wohlgemuth-doubly-periodic",
       "name": "Rossman-Thayer-Wohlgemuth (doubly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/rossman-thayer-wohlgemuth-doubly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10294,6 +10589,7 @@
     {
       "slug": "rotation-surface-with-proportional-curvatures",
       "name": "Proportional-Curvature Surface",
+      "poly_degree": null,
       "path": "surfaces/revolution/rotation-surface-with-proportional-curvatures.json",
       "primary_family": "revolution",
       "families": [
@@ -10329,6 +10625,7 @@
     {
       "slug": "rounded-dodecahedron",
       "name": "Rounded Dodecahedron",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/rounded-dodecahedron.json",
       "primary_family": "algebraic",
       "families": [
@@ -10363,6 +10660,7 @@
     {
       "slug": "rounded-icosahedron",
       "name": "Rounded Icosahedron",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/rounded-icosahedron.json",
       "primary_family": "algebraic",
       "families": [
@@ -10397,6 +10695,7 @@
     {
       "slug": "rounded-tetrahedron-0-lt-k-lt-4",
       "name": "Rounded Tetrahedron (0 < k < 4)",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/rounded-tetrahedron-0-lt-k-lt-4.json",
       "primary_family": "algebraic",
       "families": [
@@ -10431,6 +10730,7 @@
     {
       "slug": "saddle-polyhedron",
       "name": "Saddle Polyhedron",
+      "poly_degree": null,
       "path": "surfaces/discrete/saddle-polyhedron.json",
       "primary_family": "discrete",
       "families": [
@@ -10464,6 +10764,7 @@
     {
       "slug": "saddle-tower-karcher-unequal-wings",
       "name": "Saddle Tower (Karcher, unequal wings)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/saddle-tower-karcher-unequal-wings.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10499,6 +10800,7 @@
     {
       "slug": "sarti-dodecic",
       "name": "Sarti Dodecic (600 nodes)",
+      "poly_degree": 12,
       "path": "surfaces/algebraic/sarti-dodecic.json",
       "primary_family": "algebraic",
       "families": [
@@ -10534,6 +10836,7 @@
     {
       "slug": "sattel",
       "name": "Sattel",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/sattel.json",
       "primary_family": "algebraic",
       "families": [
@@ -10568,6 +10871,7 @@
     {
       "slug": "scherk-collins-sculpture",
       "name": "Scherk-Collins Sculpture",
+      "poly_degree": null,
       "path": "surfaces/minimal/scherk-collins-sculpture.json",
       "primary_family": "minimal",
       "families": [
@@ -10601,6 +10905,7 @@
     {
       "slug": "scherk-doubly-periodic",
       "name": "Scherk's Doubly Periodic Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/scherk-doubly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10636,6 +10941,7 @@
     {
       "slug": "scherk-enneper",
       "name": "Scherk-Enneper",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/scherk-enneper.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10671,6 +10977,7 @@
     {
       "slug": "scherk-saddle-tower",
       "name": "Scherk Saddle Tower",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/scherk-saddle-tower.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10706,6 +11013,7 @@
     {
       "slug": "scherks-fourth-surface",
       "name": "Scherk's Fourth Surface (1835)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/scherks-fourth-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10741,6 +11049,7 @@
     {
       "slug": "scherkt-surface",
       "name": "Scherk Tower (singly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/scherkt-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10776,6 +11085,7 @@
     {
       "slug": "schneeflocke",
       "name": "Schneeflocke",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/schneeflocke.json",
       "primary_family": "algebraic",
       "families": [
@@ -10810,6 +11120,7 @@
     {
       "slug": "schoen-batwing",
       "name": "Schoen Batwing",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-batwing.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10845,6 +11156,7 @@
     {
       "slug": "schoen-batwing-41",
       "name": "Schoen C41-4(P)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-batwing-41.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10880,6 +11192,7 @@
     {
       "slug": "schoen-batwing-57",
       "name": "Schoen C57-4(P)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-batwing-57.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10915,6 +11228,7 @@
     {
       "slug": "schoen-c-h",
       "name": "Schoen C(H) (genus 7)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-c-h.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10950,6 +11264,7 @@
     {
       "slug": "schoen-c27-p",
       "name": "Schoen C27(P)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-c27-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -10985,6 +11300,7 @@
     {
       "slug": "schoen-c33-p",
       "name": "Schoen C33(P)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-c33-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11020,6 +11336,7 @@
     {
       "slug": "schoen-c39-p",
       "name": "Schoen C39(P)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-c39-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11055,6 +11372,7 @@
     {
       "slug": "schoen-c45-p",
       "name": "Schoen C45(P)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-c45-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11090,6 +11408,7 @@
     {
       "slug": "schoen-frd-r",
       "name": "Schoen F-RD(r) (quarter-twisted, genus 5)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-frd-r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11125,6 +11444,7 @@
     {
       "slug": "schoen-gw",
       "name": "Schoen GW (graphite-wurtzite)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-gw.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11160,6 +11480,7 @@
     {
       "slug": "schoen-h-t",
       "name": "Schoen H'-T (genus 4)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-h-t.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11195,6 +11516,7 @@
     {
       "slug": "schoen-hybrid-1",
       "name": "Schoen Hybrid P | F-RD",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-hybrid-1.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11230,6 +11552,7 @@
     {
       "slug": "schoen-hybrid-h2r-tr",
       "name": "Schoen H\"-R | T'-R' hybrid",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-hybrid-h2r-tr.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11265,6 +11588,7 @@
     {
       "slug": "schoen-hybrid-ht-h2r",
       "name": "Schoen H'-T | H\"-R hybrid",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-hybrid-ht-h2r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11300,6 +11624,7 @@
     {
       "slug": "schoen-hybrid-ss-p",
       "name": "Schoen P | S'-S''",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-hybrid-ss-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11335,6 +11660,7 @@
     {
       "slug": "schoen-hybrid-tr-ht",
       "name": "Schoen T'-R' | H'-T hybrid",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-hybrid-tr-ht.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11370,6 +11696,7 @@
     {
       "slug": "schoen-i6",
       "name": "Schoen I-6 (exact fundamental piece, genus 5)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-i6.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11405,6 +11732,7 @@
     {
       "slug": "schoen-i8",
       "name": "Schoen I-8 (ring form)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-i8.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11440,6 +11768,7 @@
     {
       "slug": "schoen-i9",
       "name": "Schoen I-9 (ring form)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-i9.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11475,6 +11804,7 @@
     {
       "slug": "schoen-iwp-r",
       "name": "Schoen p.14 Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-iwp-r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11510,6 +11840,7 @@
     {
       "slug": "schoen-manta-genus-19",
       "name": "Schoen Manta",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-manta-genus-19.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11545,6 +11876,7 @@
     {
       "slug": "schoen-manta-genus-35",
       "name": "Schoen Manta (genus 35)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-manta-genus-35.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11580,6 +11912,7 @@
     {
       "slug": "schoen-manta-genus-51",
       "name": "Schoen Manta (genus 57)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-manta-genus-51.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11615,6 +11948,7 @@
     {
       "slug": "schoen-rii",
       "name": "Schoen R-II (genus 9)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-rii.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11650,6 +11984,7 @@
     {
       "slug": "schoen-riii",
       "name": "Schoen R-III (ring form, genus 13)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-riii.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11685,6 +12020,7 @@
     {
       "slug": "schoen-s-s",
       "name": "Schoen S'-S'' (genus 4)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-s-s.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11720,6 +12056,7 @@
     {
       "slug": "schoen-tw",
       "name": "Schoen-Karcher T-Wp (hexagonal wrapped package)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schoen-tw.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11755,6 +12092,7 @@
     {
       "slug": "schwarz-d",
       "name": "Schwarz D Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schwarz-d.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11792,6 +12130,7 @@
     {
       "slug": "schwarz-lantern",
       "name": "Schwarz's Lantern",
+      "poly_degree": null,
       "path": "surfaces/discrete/schwarz-lantern.json",
       "primary_family": "discrete",
       "families": [
@@ -11828,6 +12167,7 @@
     {
       "slug": "schwarz-p",
       "name": "Schwarz P Surface",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/schwarz-p.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11866,6 +12206,7 @@
     {
       "slug": "screw-motion-chm-tower",
       "name": "Screw-Motion CHM Tower",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/screw-motion-chm-tower.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -11901,6 +12242,7 @@
     {
       "slug": "seashell",
       "name": "Seashell",
+      "poly_degree": null,
       "path": "surfaces/swept/seashell.json",
       "primary_family": "swept",
       "families": [
@@ -11934,6 +12276,7 @@
     {
       "slug": "second-tractroid",
       "name": "Second Tractroid",
+      "poly_degree": null,
       "path": "surfaces/revolution/second-tractroid.json",
       "primary_family": "revolution",
       "families": [
@@ -11968,6 +12311,7 @@
     {
       "slug": "seepferdchen",
       "name": "Seepferdchen",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/seepferdchen.json",
       "primary_family": "algebraic",
       "families": [
@@ -12002,6 +12346,7 @@
     {
       "slug": "segre-quartic-64-lines",
       "name": "Schur Quartic (64 lines)",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/segre-quartic-64-lines.json",
       "primary_family": "algebraic",
       "families": [
@@ -12036,6 +12381,7 @@
     {
       "slug": "seifert-surface",
       "name": "Seifert Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/seifert-surface.json",
       "primary_family": "topological",
       "families": [
@@ -12069,6 +12415,7 @@
     {
       "slug": "septic-with-16-triple-points",
       "name": "Septic with 16 Triple Points",
+      "poly_degree": 7,
       "path": "surfaces/algebraic/septic-with-16-triple-points.json",
       "primary_family": "algebraic",
       "families": [
@@ -12103,6 +12450,7 @@
     {
       "slug": "sextic-with-60-lines",
       "name": "Sextic with 60 Lines",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/sextic-with-60-lines.json",
       "primary_family": "algebraic",
       "families": [
@@ -12137,6 +12485,7 @@
     {
       "slug": "sextic-with-60-lines-second-solution",
       "name": "Sextic with 60 Lines (second solution)",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/sextic-with-60-lines-second-solution.json",
       "primary_family": "algebraic",
       "families": [
@@ -12171,6 +12520,7 @@
     {
       "slug": "sextic-with-9-triple-points",
       "name": "Sextic with 9 Triple Points (EPS (4,4,4) member)",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/sextic-with-9-triple-points.json",
       "primary_family": "algebraic",
       "families": [
@@ -12205,6 +12555,7 @@
     {
       "slug": "sieverts-surface",
       "name": "Sievert's Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/sieverts-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -12241,6 +12592,7 @@
     {
       "slug": "simoes-batista-surface",
       "name": "Simoes-Batista Surface (genus 7)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/simoes-batista-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -12276,6 +12628,7 @@
     {
       "slug": "sine-surface",
       "name": "Sine Surface",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/sine-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -12311,6 +12664,7 @@
     {
       "slug": "sine-torus",
       "name": "Sine Torus",
+      "poly_degree": null,
       "path": "surfaces/swept/sine-torus.json",
       "primary_family": "swept",
       "families": [
@@ -12344,6 +12698,7 @@
     {
       "slug": "sinusoidal-cone",
       "name": "Sinusoidal Cone",
+      "poly_degree": null,
       "path": "surfaces/ruled/sinusoidal-cone.json",
       "primary_family": "ruled",
       "families": [
@@ -12378,6 +12733,7 @@
     {
       "slug": "six-ended-scherk-tower",
       "name": "Six-Ended Scherk Tower",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/six-ended-scherk-tower.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -12413,6 +12769,7 @@
     {
       "slug": "six-ended-scherk-tower-genus-1",
       "name": "Six-Ended Scherk Tower (genus 1)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/six-ended-scherk-tower-genus-1.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -12448,6 +12805,7 @@
     {
       "slug": "six-icosidodecahedral-planes",
       "name": "Six Icosidodecahedral Planes",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/six-icosidodecahedral-planes.json",
       "primary_family": "algebraic",
       "families": [
@@ -12482,6 +12840,7 @@
     {
       "slug": "skew-ruled-cubic",
       "name": "Skew Ruled Cubic",
+      "poly_degree": null,
       "path": "surfaces/ruled/skew-ruled-cubic.json",
       "primary_family": "ruled",
       "families": [
@@ -12515,6 +12874,7 @@
     {
       "slug": "sofa",
       "name": "Sofa",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/sofa.json",
       "primary_family": "algebraic",
       "families": [
@@ -12549,6 +12909,7 @@
     {
       "slug": "solid-of-maximal-attraction",
       "name": "Solid of Maximal Attraction",
+      "poly_degree": null,
       "path": "surfaces/revolution/solid-of-maximal-attraction.json",
       "primary_family": "revolution",
       "families": [
@@ -12584,6 +12945,7 @@
     {
       "slug": "solitude",
       "name": "Solitude",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/solitude.json",
       "primary_family": "algebraic",
       "families": [
@@ -12618,6 +12980,7 @@
     {
       "slug": "sphere",
       "name": "Sphere",
+      "poly_degree": 2,
       "path": "surfaces/quadric/sphere.json",
       "primary_family": "quadric",
       "families": [
@@ -12655,6 +13018,7 @@
     {
       "slug": "sphere-catenoid-enneper-end",
       "name": "Sphere: catenoid + Enneper end",
+      "poly_degree": null,
       "path": "surfaces/minimal/sphere-catenoid-enneper-end.json",
       "primary_family": "minimal",
       "families": [
@@ -12689,6 +13053,7 @@
     {
       "slug": "sphere-chain",
       "name": "Sphere Chain",
+      "poly_degree": null,
       "path": "surfaces/cmc/sphere-chain.json",
       "primary_family": "cmc",
       "families": [
@@ -12722,6 +13087,7 @@
     {
       "slug": "spherical-harmonic-surface",
       "name": "Spherical Harmonic Surface",
+      "poly_degree": null,
       "path": "surfaces/spectral/spherical-harmonic-surface.json",
       "primary_family": "spectral",
       "families": [
@@ -12755,6 +13121,7 @@
     {
       "slug": "spherical-helicoid",
       "name": "Spherical Helicoid",
+      "poly_degree": null,
       "path": "surfaces/swept/spherical-helicoid.json",
       "primary_family": "swept",
       "families": [
@@ -12789,6 +13156,7 @@
     {
       "slug": "sphericon",
       "name": "Sphericon",
+      "poly_degree": null,
       "path": "surfaces/ruled/sphericon.json",
       "primary_family": "ruled",
       "families": [
@@ -12823,6 +13191,7 @@
     {
       "slug": "spheroid",
       "name": "Spheroid",
+      "poly_degree": 2,
       "path": "surfaces/quadric/spheroid.json",
       "primary_family": "quadric",
       "families": [
@@ -12859,6 +13228,7 @@
     {
       "slug": "spindel",
       "name": "Spindel",
+      "poly_degree": 2,
       "path": "surfaces/algebraic/spindel.json",
       "primary_family": "algebraic",
       "families": [
@@ -12893,6 +13263,7 @@
     {
       "slug": "spiral-ruled",
       "name": "Spiral Ruled",
+      "poly_degree": null,
       "path": "surfaces/ruled/spiral-ruled.json",
       "primary_family": "ruled",
       "families": [
@@ -12926,6 +13297,7 @@
     {
       "slug": "spitz",
       "name": "Spitz",
+      "poly_degree": 9,
       "path": "surfaces/algebraic/spitz.json",
       "primary_family": "algebraic",
       "families": [
@@ -12960,6 +13332,7 @@
     {
       "slug": "splitp-surface",
       "name": "Split P",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/splitp-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -12996,6 +13369,7 @@
     {
       "slug": "stagnaro-enriques-quintic",
       "name": "Enriques Quintic, 4 Tacnodes (Craighero-Gattazzo (1:1) member)",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/stagnaro-enriques-quintic.json",
       "primary_family": "algebraic",
       "families": [
@@ -13030,6 +13404,7 @@
     {
       "slug": "starfish-2-1-genus-31",
       "name": "Starfish 2-1 (genus 31)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-2-1-genus-31.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13065,6 +13440,7 @@
     {
       "slug": "starfish-2-2-genus-47",
       "name": "Starfish 2-2 (genus 47)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-2-2-genus-47.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13100,6 +13476,7 @@
     {
       "slug": "starfish-2-3-genus-63",
       "name": "Starfish 2-3 (genus 63)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-2-3-genus-63.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13135,6 +13512,7 @@
     {
       "slug": "starfish-2-4-genus-79",
       "name": "Starfish 2-4 Surface (genus 79)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-2-4-genus-79.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13170,6 +13548,7 @@
     {
       "slug": "starfish-3-1-genus-43",
       "name": "Starfish 3-1 (genus 43)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-3-1-genus-43.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13205,6 +13584,7 @@
     {
       "slug": "starfish-3-2-genus-59",
       "name": "Starfish 3-2 (genus 59)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-3-2-genus-59.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13240,6 +13620,7 @@
     {
       "slug": "starfish-3-3-genus-75",
       "name": "Starfish 3-3 (genus 75)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-3-3-genus-75.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13275,6 +13656,7 @@
     {
       "slug": "starfish-3-4-genus-91",
       "name": "Starfish 3-4 Surface (genus 91)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-3-4-genus-91.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13310,6 +13692,7 @@
     {
       "slug": "starfish-4-1-genus-55",
       "name": "Starfish 4-1 (genus 55)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-4-1-genus-55.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13345,6 +13728,7 @@
     {
       "slug": "starfish-4-2-genus-71",
       "name": "Starfish 4-2 Surface (genus 71)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-4-2-genus-71.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13378,6 +13762,7 @@
     {
       "slug": "starfish-4-3-genus-87",
       "name": "Starfish 4-3 (genus 87)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-4-3-genus-87.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13413,6 +13798,7 @@
     {
       "slug": "starfish-4-4-genus-103",
       "name": "Starfish 4-4 Surface (genus 103)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-4-4-genus-103.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13448,6 +13834,7 @@
     {
       "slug": "starfish-5-1-genus-67",
       "name": "Starfish 5-1 Surface (genus 67)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-5-1-genus-67.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13483,6 +13870,7 @@
     {
       "slug": "starfish-5-2-genus-83",
       "name": "Starfish 5-2 Surface (genus 83)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-5-2-genus-83.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13518,6 +13906,7 @@
     {
       "slug": "starfish-5-3-genus-99",
       "name": "Starfish 5-3 Surface (genus 99)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-5-3-genus-99.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13551,6 +13940,7 @@
     {
       "slug": "starfish-5-4-genus-115",
       "name": "Starfish 5-4 Surface (genus 115)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/starfish-5-4-genus-115.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13586,6 +13976,7 @@
     {
       "slug": "steiner-surface",
       "name": "Steiner Surface (Veronese shadow)",
+      "poly_degree": null,
       "path": "surfaces/topological/steiner-surface.json",
       "primary_family": "topological",
       "families": [
@@ -13619,6 +14010,7 @@
     {
       "slug": "steinmetz-solid",
       "name": "Steinmetz Solid",
+      "poly_degree": null,
       "path": "surfaces/derived/steinmetz-solid.json",
       "primary_family": "derived",
       "families": [
@@ -13652,6 +14044,7 @@
     {
       "slug": "stern",
       "name": "Stern",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/stern.json",
       "primary_family": "algebraic",
       "families": [
@@ -13686,6 +14079,7 @@
     {
       "slug": "stessmann-surface",
       "name": "Stessmann's Surface (exact fundamental piece, conjugate to I-WP)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/stessmann-surface.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -13721,6 +14115,7 @@
     {
       "slug": "subway",
       "name": "Subway",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/subway.json",
       "primary_family": "algebraic",
       "families": [
@@ -13755,6 +14150,7 @@
     {
       "slug": "sudanese-mobius-band",
       "name": "Sudanese Mobius Band",
+      "poly_degree": null,
       "path": "surfaces/topological/sudanese-mobius-band.json",
       "primary_family": "topological",
       "families": [
@@ -13788,6 +14184,7 @@
     {
       "slug": "suess",
       "name": "Suess",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/suess.json",
       "primary_family": "algebraic",
       "families": [
@@ -13822,6 +14219,7 @@
     {
       "slug": "supershape",
       "name": "Supershape",
+      "poly_degree": null,
       "path": "surfaces/spectral/supershape.json",
       "primary_family": "spectral",
       "families": [
@@ -13855,6 +14253,7 @@
     {
       "slug": "surface-of-constant-slope",
       "name": "Surface of Constant Slope",
+      "poly_degree": null,
       "path": "surfaces/ruled/surface-of-constant-slope.json",
       "primary_family": "ruled",
       "families": [
@@ -13888,6 +14287,7 @@
     {
       "slug": "surface-with-132-a5-singularities",
       "name": "Labs Dodecic (132 A5 points)",
+      "poly_degree": null,
       "path": "surfaces/algebraic/surface-with-132-a5-singularities.json",
       "primary_family": "algebraic",
       "families": [
@@ -13922,6 +14322,7 @@
     {
       "slug": "swallowtail",
       "name": "Swallowtail (quartic discriminant)",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/swallowtail.json",
       "primary_family": "algebraic",
       "families": [
@@ -13956,6 +14357,7 @@
     {
       "slug": "symmetrized-chen-gackstatter-2-level-genus-2-k-1",
       "name": "Symmetrized Chen-Gackstatter (2-level, genus 2(k-1))",
+      "poly_degree": null,
       "path": "surfaces/minimal/symmetrized-chen-gackstatter-2-level-genus-2-k-1.json",
       "primary_family": "minimal",
       "families": [
@@ -13990,6 +14392,7 @@
     {
       "slug": "symmetrized-chen-gackstatter-3-level-genus-3-k-1",
       "name": "Symmetrized Chen-Gackstatter (3-level, genus 3(k-1))",
+      "poly_degree": null,
       "path": "surfaces/minimal/symmetrized-chen-gackstatter-3-level-genus-3-k-1.json",
       "primary_family": "minimal",
       "families": [
@@ -14024,6 +14427,7 @@
     {
       "slug": "symmetrized-chen-gackstatter-k-fold-genus-k-1",
       "name": "Symmetrized Chen-Gackstatter (k-fold, genus k-1)",
+      "poly_degree": null,
       "path": "surfaces/minimal/symmetrized-chen-gackstatter-k-fold-genus-k-1.json",
       "primary_family": "minimal",
       "families": [
@@ -14058,6 +14462,7 @@
     {
       "slug": "symmetrized-double-enneper",
       "name": "Symmetrized Double Enneper",
+      "poly_degree": null,
       "path": "surfaces/minimal/symmetrized-double-enneper.json",
       "primary_family": "minimal",
       "families": [
@@ -14092,6 +14497,7 @@
     {
       "slug": "symmetrized-finite-riemann-2m-catenoids",
       "name": "Symmetrized Finite Riemann (2m catenoids)",
+      "poly_degree": null,
       "path": "surfaces/minimal/symmetrized-finite-riemann-2m-catenoids.json",
       "primary_family": "minimal",
       "families": [
@@ -14126,6 +14532,7 @@
     {
       "slug": "symmetroid",
       "name": "Quartic Symmetroid (pinned integer web)",
+      "poly_degree": null,
       "path": "surfaces/algebraic/symmetroid.json",
       "primary_family": "algebraic",
       "families": [
@@ -14160,6 +14567,7 @@
     {
       "slug": "tangent-developable",
       "name": "Tangent Developable",
+      "poly_degree": null,
       "path": "surfaces/ruled/tangent-developable.json",
       "primary_family": "ruled",
       "families": [
@@ -14193,6 +14601,7 @@
     {
       "slug": "tangle-cube",
       "name": "Tangle Cube",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/tangle-cube.json",
       "primary_family": "algebraic",
       "families": [
@@ -14227,6 +14636,7 @@
     {
       "slug": "tannery-pear",
       "name": "Tannery's Pear",
+      "poly_degree": null,
       "path": "surfaces/revolution/tannery-pear.json",
       "primary_family": "revolution",
       "families": [
@@ -14263,6 +14673,7 @@
     {
       "slug": "tanz",
       "name": "Tanz",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/tanz.json",
       "primary_family": "algebraic",
       "families": [
@@ -14297,6 +14708,7 @@
     {
       "slug": "taube",
       "name": "Taube",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/taube.json",
       "primary_family": "algebraic",
       "families": [
@@ -14331,6 +14743,7 @@
     {
       "slug": "taubin-heart",
       "name": "Taubin Heart",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/taubin-heart.json",
       "primary_family": "algebraic",
       "families": [
@@ -14365,6 +14778,7 @@
     {
       "slug": "tetrahedral-cubic-k-eq-0",
       "name": "Tetrahedral Cubic (k = 0)",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/tetrahedral-cubic-k-eq-0.json",
       "primary_family": "algebraic",
       "families": [
@@ -14399,6 +14813,7 @@
     {
       "slug": "tetrahedral-cubic-k-gt-4",
       "name": "Tetrahedral Cubic (k > 4)",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/tetrahedral-cubic-k-gt-4.json",
       "primary_family": "algebraic",
       "families": [
@@ -14433,6 +14848,7 @@
     {
       "slug": "tetrahedral-cubic-k-lt-0",
       "name": "Tetrahedral Cubic (k < 0)",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/tetrahedral-cubic-k-lt-0.json",
       "primary_family": "algebraic",
       "families": [
@@ -14467,6 +14883,7 @@
     {
       "slug": "three-soliton-surface",
       "name": "Three-Soliton Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/three-soliton-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -14501,6 +14918,7 @@
     {
       "slug": "tilted-scherk-doubly-periodic",
       "name": "Tilted Scherk (doubly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/tilted-scherk-doubly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -14536,6 +14954,7 @@
     {
       "slug": "titeica-cubic-k-eq-0",
       "name": "Titeica Cubic (k' = 0)",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/titeica-cubic-k-eq-0.json",
       "primary_family": "algebraic",
       "families": [
@@ -14570,6 +14989,7 @@
     {
       "slug": "titeica-surface",
       "name": "Titeica Surface",
+      "poly_degree": 3,
       "path": "surfaces/algebraic/titeica-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -14604,6 +15024,7 @@
     {
       "slug": "tobel",
       "name": "Tobel",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/tobel.json",
       "primary_family": "algebraic",
       "families": [
@@ -14638,6 +15059,7 @@
     {
       "slug": "togliatti-quintic",
       "name": "Togliatti Quintic",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/togliatti-quintic.json",
       "primary_family": "algebraic",
       "families": [
@@ -14673,6 +15095,7 @@
     {
       "slug": "tooth-surface",
       "name": "Tooth Surface",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/tooth-surface.json",
       "primary_family": "algebraic",
       "families": [
@@ -14707,6 +15130,7 @@
     {
       "slug": "toroidal-karcher-scherk",
       "name": "Toroidal Karcher-Scherk Tower (genus 1)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/toroidal-karcher-scherk.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -14742,6 +15166,7 @@
     {
       "slug": "torus",
       "name": "Torus",
+      "poly_degree": null,
       "path": "surfaces/revolution/torus.json",
       "primary_family": "revolution",
       "families": [
@@ -14777,6 +15202,7 @@
     {
       "slug": "torus-with-2-enneper-2-annular-ends",
       "name": "Torus with 2 Enneper + 2 Annular Ends",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/torus-with-2-enneper-2-annular-ends.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -14812,6 +15238,7 @@
     {
       "slug": "torus-with-catenoid-2-annular-ends",
       "name": "Torus with Catenoid + 2 Annular Ends",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/torus-with-catenoid-2-annular-ends.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -14847,6 +15274,7 @@
     {
       "slug": "translation-invariant-costa",
       "name": "Translation-Invariant Costa",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/translation-invariant-costa.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -14882,6 +15310,7 @@
     {
       "slug": "translation-invariant-enneper-3-annular-ends",
       "name": "Translation-Invariant Enneper (3 annular ends)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/translation-invariant-enneper-3-annular-ends.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -14917,6 +15346,7 @@
     {
       "slug": "trichter",
       "name": "Trichter",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/trichter.json",
       "primary_family": "algebraic",
       "families": [
@@ -14951,6 +15381,7 @@
     {
       "slug": "triconic-tetrahedral-quartic",
       "name": "Triconic Tetrahedral Quartic",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/triconic-tetrahedral-quartic.json",
       "primary_family": "algebraic",
       "families": [
@@ -14985,6 +15416,7 @@
     {
       "slug": "trihyperboloid",
       "name": "Trihyperboloid",
+      "poly_degree": null,
       "path": "surfaces/misc/trihyperboloid.json",
       "primary_family": "misc",
       "families": [
@@ -15018,6 +15450,7 @@
     {
       "slug": "triplane0-exact",
       "name": "Triplane 0",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triplane0-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15053,6 +15486,7 @@
     {
       "slug": "triplane1-exact",
       "name": "Triplane 1",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triplane1-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15088,6 +15522,7 @@
     {
       "slug": "triplane2-exact",
       "name": "Triplane 2",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triplane2-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15123,6 +15558,7 @@
     {
       "slug": "triplane3-exact",
       "name": "Triplane 3",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triplane3-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15158,6 +15594,7 @@
     {
       "slug": "triplane4-exact",
       "name": "Triplane 4",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triplane4-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15193,6 +15630,7 @@
     {
       "slug": "triplane5-exact",
       "name": "Triplane 5",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triplane5-exact.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15228,6 +15666,7 @@
     {
       "slug": "triply-periodic-costa",
       "name": "Triply Periodic Costa (Batista, exact fundamental piece, genus 5)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triply-periodic-costa.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15263,6 +15702,7 @@
     {
       "slug": "triply-periodic-horgan",
       "name": "Triply Periodic Horgan Surface (exact fundamental piece, genus 5)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/triply-periodic-horgan.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15298,6 +15738,7 @@
     {
       "slug": "tropical-calabi-yau-surface",
       "name": "Tropical Calabi-Yau Surface",
+      "poly_degree": null,
       "path": "surfaces/misc/tropical-calabi-yau-surface.json",
       "primary_family": "misc",
       "families": [
@@ -15331,6 +15772,7 @@
     {
       "slug": "tuelle",
       "name": "Tuelle",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/tuelle.json",
       "primary_family": "algebraic",
       "families": [
@@ -15365,6 +15807,7 @@
     {
       "slug": "twilight",
       "name": "Twilight",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/twilight.json",
       "primary_family": "algebraic",
       "families": [
@@ -15399,6 +15842,7 @@
     {
       "slug": "twisted-strip",
       "name": "Twisted Strip (solid)",
+      "poly_degree": null,
       "path": "surfaces/topological/twisted-strip.json",
       "primary_family": "topological",
       "families": [
@@ -15433,6 +15877,7 @@
     {
       "slug": "two-soliton-surface",
       "name": "Two-Soliton Surface",
+      "poly_degree": null,
       "path": "surfaces/constant-curvature/two-soliton-surface.json",
       "primary_family": "constant-curvature",
       "families": [
@@ -15467,6 +15912,7 @@
     {
       "slug": "ufo",
       "name": "Ufo",
+      "poly_degree": 2,
       "path": "surfaces/algebraic/ufo.json",
       "primary_family": "algebraic",
       "families": [
@@ -15501,6 +15947,7 @@
     {
       "slug": "unduloid",
       "name": "Unduloid",
+      "poly_degree": null,
       "path": "surfaces/cmc/unduloid.json",
       "primary_family": "cmc",
       "families": [
@@ -15536,6 +15983,7 @@
     {
       "slug": "van-straten-dihedral-series",
       "name": "Van Straten D_d Nodal Series",
+      "poly_degree": null,
       "path": "surfaces/algebraic/van-straten-dihedral-series.json",
       "primary_family": "algebraic",
       "families": [
@@ -15570,6 +16018,7 @@
     {
       "slug": "van-straten-octic",
       "name": "Van Straten Octic (165 nodes)",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/van-straten-octic.json",
       "primary_family": "algebraic",
       "families": [
@@ -15604,6 +16053,7 @@
     {
       "slug": "van-straten-octic-124-nodes",
       "name": "Van Straten Octic (124 nodes)",
+      "poly_degree": 8,
       "path": "surfaces/algebraic/van-straten-octic-124-nodes.json",
       "primary_family": "algebraic",
       "families": [
@@ -15638,6 +16088,7 @@
     {
       "slug": "vis-a-vis",
       "name": "Vis a vis",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/vis-a-vis.json",
       "primary_family": "algebraic",
       "families": [
@@ -15672,6 +16123,7 @@
     {
       "slug": "wavy-enneper",
       "name": "Wavy Enneper",
+      "poly_degree": null,
       "path": "surfaces/minimal/wavy-enneper.json",
       "primary_family": "minimal",
       "families": [
@@ -15706,6 +16158,7 @@
     {
       "slug": "weber-fr-d",
       "name": "Schoen F-RD (genus 6)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/weber-fr-d.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15741,6 +16194,7 @@
     {
       "slug": "weber-h2r",
       "name": "Schoen H''-R (genus 5)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/weber-h2r.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15776,6 +16230,7 @@
     {
       "slug": "weber-pqr-series",
       "name": "Box Type (+-|+) (genus 5)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/weber-pqr-series.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15811,6 +16266,7 @@
     {
       "slug": "weber-rpd",
       "name": "rPD deformation",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/weber-rpd.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15846,6 +16302,7 @@
     {
       "slug": "weber-trr",
       "name": "Schoen T'-R' (genus 6)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/weber-trr.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15881,6 +16338,7 @@
     {
       "slug": "weber-wolf-genus-3-5-ends",
       "name": "Weber-Wolf Surface (genus 3, 5 ends)",
+      "poly_degree": null,
       "path": "surfaces/minimal/weber-wolf-genus-3-5-ends.json",
       "primary_family": "minimal",
       "families": [
@@ -15915,6 +16373,7 @@
     {
       "slug": "wedeln",
       "name": "Wedeln",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/wedeln.json",
       "primary_family": "algebraic",
       "families": [
@@ -15949,6 +16408,7 @@
     {
       "slug": "wei-doubly-periodic-genus-2",
       "name": "Wei Doubly Periodic (genus 2)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/wei-doubly-periodic-genus-2.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -15984,6 +16444,7 @@
     {
       "slug": "wei-higher-genus-tower-doubly-periodic",
       "name": "Wei Higher-Genus Tower (doubly periodic)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/wei-higher-genus-tower-doubly-periodic.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -16019,6 +16480,7 @@
     {
       "slug": "wei-triply-periodic-genus-4",
       "name": "Wei Triply Periodic Surface (genus 4, a=0.1 b=0.3 member)",
+      "poly_degree": null,
       "path": "surfaces/minimal-periodic/wei-triply-periodic-genus-4.json",
       "primary_family": "minimal-periodic",
       "families": [
@@ -16054,6 +16516,7 @@
     {
       "slug": "wente-torus",
       "name": "Wente Torus",
+      "poly_degree": null,
       "path": "surfaces/cmc/wente-torus.json",
       "primary_family": "cmc",
       "families": [
@@ -16090,6 +16553,7 @@
     {
       "slug": "whitney-umbrella",
       "name": "Whitney Umbrella",
+      "poly_degree": 3,
       "path": "surfaces/ruled/whitney-umbrella.json",
       "primary_family": "ruled",
       "families": [
@@ -16125,6 +16589,7 @@
     {
       "slug": "wigwam",
       "name": "Wigwam",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/wigwam.json",
       "primary_family": "algebraic",
       "families": [
@@ -16159,6 +16624,7 @@
     {
       "slug": "willmore-surface",
       "name": "Willmore Surface",
+      "poly_degree": null,
       "path": "surfaces/topological/willmore-surface.json",
       "primary_family": "topological",
       "families": [
@@ -16193,6 +16659,7 @@
     {
       "slug": "windkanal",
       "name": "Windkanal",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/windkanal.json",
       "primary_family": "algebraic",
       "families": [
@@ -16227,6 +16694,7 @@
     {
       "slug": "wohlgemuth-second-surface-genus-3",
       "name": "Wohlgemuth Second Surface (genus 3)",
+      "poly_degree": null,
       "path": "surfaces/minimal/wohlgemuth-second-surface-genus-3.json",
       "primary_family": "minimal",
       "families": [
@@ -16261,6 +16729,7 @@
     {
       "slug": "xano",
       "name": "Xano",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/xano.json",
       "primary_family": "algebraic",
       "families": [
@@ -16295,6 +16764,7 @@
     {
       "slug": "zeck",
       "name": "Zeck",
+      "poly_degree": 4,
       "path": "surfaces/algebraic/zeck.json",
       "primary_family": "algebraic",
       "families": [
@@ -16329,6 +16799,7 @@
     {
       "slug": "zeppelin",
       "name": "Zeppelin",
+      "poly_degree": 5,
       "path": "surfaces/algebraic/zeppelin.json",
       "primary_family": "algebraic",
       "families": [
@@ -16363,6 +16834,7 @@
     {
       "slug": "zitrus",
       "name": "Zitrus",
+      "poly_degree": 6,
       "path": "surfaces/algebraic/zitrus.json",
       "primary_family": "algebraic",
       "families": [
@@ -16397,6 +16869,7 @@
     {
       "slug": "zoll-surface",
       "name": "Zoll's Surface",
+      "poly_degree": null,
       "path": "surfaces/revolution/zoll-surface.json",
       "primary_family": "revolution",
       "families": [
