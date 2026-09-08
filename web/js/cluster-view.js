@@ -74,15 +74,45 @@ export class ClusterView {
     return Math.max(12, Math.min(132, 0.85 * Math.sqrt(area / n)));
   }
 
+  /**
+   * One sprite sheet instead of 466 requests.
+   *
+   * Fetched individually the tiles are 466 requests and ~34 MB, and the
+   * field visibly fills in over several seconds. tools/build_thumb_atlas.py
+   * packs them at the size this view draws them, which is a couple of
+   * megabytes in a single request -- the whole field appears at once.
+   *
+   * If the atlas is missing the view still works: it falls back to the
+   * individual PNGs, so a checkout that has not run the packer yet is
+   * slower rather than broken.
+   */
   _loadTiles() {
+    if (this._atlasTried) { this._loadLoose(); return; }
+    this._atlasTried = true;
+    fetch(new URL('../thumbs/surfaces-atlas.json', import.meta.url))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('no atlas'))))
+      .then((meta) => new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => res({ meta, img });
+        img.onerror = rej;
+        img.src = new URL('../thumbs/surfaces-atlas.png', import.meta.url).href;
+      }))
+      .then(({ meta, img }) => {
+        this.atlas = { img, ...meta };
+        this.dirty = true;
+      })
+      .catch(() => this._loadLoose());
+  }
+
+  /** The old path: one image per tile. Used only without an atlas. */
+  _loadLoose() {
     for (const e of this.entries) {
       if (this.bitmaps.has(e.slug) || this.pending.has(e.slug)) continue;
-      if (!this.hasMesh(e.slug)) continue;      // no tile exists for it
+      if (!this.hasMesh(e.slug)) continue;
       this.pending.add(e.slug);
       const img = new Image();
       img.decoding = 'async';
       img.onload = () => {
-        // Downscale on decode; the 320px original is never kept.
         const done = (bm) => {
           this.bitmaps.set(e.slug, bm);
           this.pending.delete(e.slug);
@@ -224,14 +254,18 @@ export class ClusterView {
     // than the spring iteration happening in the same frame.
     for (let i = 0; i < this.entries.length; i++) {
       const e = this.entries[i];
-      const bm = this.bitmaps.get(e.slug);
       const x = p.x[i] - s / 2, y = p.y[i] - s / 2;
-      if (bm) {
+      const at = this.atlas && this.atlas.tiles[e.slug];
+      const bm = this.bitmaps.get(e.slug);
+      if (at) {
+        c.drawImage(this.atlas.img, at[0], at[1], this.atlas.cell,
+                    this.atlas.cell, x, y, s, s);
+      } else if (bm) {
         c.drawImage(bm, x, y, s, s);
-      } else {
-        c.fillStyle = '#141820';
-        c.fillRect(x, y, s, s);
       }
+      // No placeholder rectangle: the tiles are transparent so that they
+      // do not clip one another, and a filled square would put the very
+      // background back that the alpha channel exists to remove.
       if (e.slug === this.selected || i === this.hover) {
         c.strokeStyle = e.slug === this.selected ? '#6fb3f2' : '#9aa3af';
         c.lineWidth = 2 / v.k;

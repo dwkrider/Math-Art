@@ -122,6 +122,26 @@ def check_surfaces(fail):
     for s in sorted(thumbs - all_slugs):
         fail("orphan thumbnail web/thumbs/surfaces/%s.png names no surface" % s)
 
+    # The clustered view draws from a sprite sheet, so a stale atlas shows
+    # the wrong surface under the right name -- a silent, plausible-looking
+    # error. It must list exactly the tiles on disk.
+    apath = os.path.join(WEB, "thumbs", "surfaces-atlas.json")
+    if not os.path.exists(apath):
+        fail("no web/thumbs/surfaces-atlas.json "
+             "(run tools/build_thumb_atlas.py)")
+    else:
+        with open(apath, encoding="utf-8") as fh:
+            atlas = json.load(fh)
+        listed = set(atlas.get("tiles") or {})
+        if not os.path.exists(os.path.join(WEB, "thumbs",
+                                           "surfaces-atlas.png")):
+            fail("surfaces-atlas.json exists but the .png does not")
+        for s in sorted(listed - thumbs):
+            fail("atlas lists %s, which has no tile" % s)
+        for s in sorted(thumbs - listed):
+            fail("%s has a tile but the atlas omits it "
+                 "(re-run tools/build_thumb_atlas.py)" % s)
+
     # The page reads this manifest instead of guessing from `implemented`,
     # so a stale one would mislabel tiles. It has to agree with the disk.
     mpath = os.path.join(WEB, "surface-meshes.json")
