@@ -60,10 +60,10 @@ Everything lives under **Add ▸ Mesh ▸ Math Art**, organized into families:
 
 Explore the mathematics in your browser at
 **[dwkrider.github.io/Math-Art](https://dwkrider.github.io/Math-Art/)** — an
-interactive companion that computes polyhedra, surfaces, patterns, knots and
-fractals live from exact geometry (nothing pre‑rendered), backed by the project's
-470‑record surface database. You can spin each object, read its defining
-formulae, and export a printable STL straight from the surface viewer.
+interactive companion that computes **polyhedra** and **surfaces** live from
+exact geometry (nothing pre‑rendered), backed by the project's 470‑record surface
+database. You can spin each object, read its defining formulae, and export a
+printable STL straight from the surface viewer. (More families will follow.)
 
 ## Gallery & Documentation
 
