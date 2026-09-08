@@ -209,12 +209,13 @@ export function renderSurfaceDetail(rec, entry, host) {
     ['Level', d.level],
   ]);
   if (meta) sec.append(meta);
-  for (const row of [
-    formulaRow('x', d.x), formulaRow('y', d.y), formulaRow('z', d.z),
-    formulaRow('F', d.polynomial),
-    formulaRow('level', d.level_function),
-    formulaRow('g', d.g), formulaRow('dh', d.dh),
-  ]) if (row) sec.append(row);
+  // The defining expressions are NOT repeated here. They are set
+  // properly at the top of the panel, from the record's own
+  // `description.formulas`, and printing the same polynomial again as a
+  // row of ASCII a few centimetres below is the same thing twice -- the
+  // second time worse. What stays is what the typeset formula does not
+  // carry: the mode and fidelity above, and the parameter ranges below,
+  // which bound the chart rather than define it.
   if (d.u_range) {
     sec.append(formulaRow('u', `${d.u_range[0]} … ${d.u_range[1]}`));
   }

@@ -892,11 +892,6 @@ figcaption {
   text-align: left;
 }
 
-.eqn-relation {
-  color: var(--ink-dim);
-  margin-left: 0.4rem;
-}
-
 .eqn-copy {
   margin-top: 0.5rem;
   padding: 0.25rem 0.6rem;
