@@ -21,7 +21,7 @@
       "radius": 3.3
     },
     "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nPart of a series of surfaces in P^3 with many A_j singularities (the page gives the count 12*11 = 132 for j = 5 but not the degree)."
+    "note": "Polynomial not stored: no closed form is stored for this surface, and its implementation could not be read back as one expression (constant 1j). The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nPart of a series of surfaces in P^3 with many A_j singularities (the page gives the count 12*11 = 132 for j = 5 but not the degree)."
   },
   "curvature": {
     "condition": "none",

@@ -20,8 +20,7 @@
       "shape": "BALL",
       "radius": 4.0
     },
-    "polynomial": null,
-    "note": "A one-parameter family of S_4-symmetric septics; the general element carries sixteen ordinary triple points. Imposing the symmetry is what reduces the problem enough to solve (paper, Theorem 5.1).",
+    "polynomial": "(-2) * ((x + y + z + 1) ** 2 * (x * y + x * z + x * 1 + y * z + y * 1 + z * 1) * (x * y * z + x * y * 1 + x * z * 1 + y * z * 1) - (x + y + z + 1) * (x * y * z + x * y * 1 + x * z * 1 + y * z * 1) ** 2 - (x + y + z + 1) ** 3 * x * y * z * 1) - 24 * (x + y + z + 1) * (x * y + x * z + x * 1 + y * z + y * 1 + z * 1) ** 3 - (-21) * (x * y + x * z + x * 1 + y * z + y * 1 + z * 1) ** 2 * (x * y * z + x * y * 1 + x * z * 1 + y * z * 1) + 15 * (x + y + z + 1) * (x * y + x * z + x * 1 + y * z + y * 1 + z * 1) * x * y * z * 1 + (-3) * (x * y * z + x * y * 1 + x * z * 1 + y * z * 1) * x * y * z * 1",
     "parameters": [
       {
         "name": "ratio",
@@ -32,6 +31,7 @@
         "note": "The pencil parameter nu with mu = 1; the sixteen triple points sit at the vertices of the coordinate tetrahedron and the S4 orbit of (-nu : 1 : nu : nu), so the ratio spreads that orbit"
       }
     ],
+    "note": "A one-parameter family of S_4-symmetric septics; the general element carries sixteen ordinary triple points. Imposing the symmetry is what reduces the problem enough to solve (paper, Theorem 5.1).",
     "degree": 7
   },
   "curvature": {
@@ -66,7 +66,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 1.14e-13).",
     "sources": [
       "S. Endrass, U. Persson and J. Stevens, 'Surfaces with triple points', arXiv:math/0010163v1 [math.AG] (2000), section 5 and Theorem 5.1 -- 'A septic with 16 ordinary triple points'."
     ]

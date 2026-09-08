@@ -15,7 +15,21 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "F(1, 1) of Francis's ovalesque family: the Venus with its 12 pinch points cancelled by the Romboy parameter -- a SMOOTH immersed Klein bottle, named for programmer Ray Idaszak.  SHIPPED from the same gated ovalesque sweep as the Venus; the self-test verifies chi = 0, one-sidedness, and that the normal stays bounded away from zero (a genuine immersion, unlike the Venus on the same grid)."
+    "note": "Francis's ovalesque sweep F(1, 1): the same sweep as the Etruscan Venus with the quartic's denominator switched on, which separates the Venus's pinch points and leaves a smoothly immersed Klein bottle.  Waist r1 = 1 and height r2 = 2 at the operator's defaults",
+    "x": "(cos(v)*cos(2*u) + sin(v)*cos(u))/(1 - (1/sqrt(2))*sin(3*u)*sin(2*v))",
+    "y": "(cos(v)*sin(2*u) - sin(v)*sin(u))/(1 - (1/sqrt(2))*sin(3*u)*sin(2*v))",
+    "z": "2*cos(v)/(1 - (1/sqrt(2))*sin(3*u)*sin(2*v))",
+    "u_range": [
+      "0",
+      "pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -41,7 +55,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.73 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.06468).",
     "sources": [
       "Klein bottle: F. Klein (1882).  The default classical bottle shape is built by the tube scheme of G. Franzoni, \"The Klein bottle in its classical shape: a further step towards a good parametrization\", arXiv:0909.5354 (2009): a tube of varying radius swept along a plane directrix, with the dumbbell-curve directrix of the paper's section 4 (which closes) as the default and its section-3 piriform directrix and the older polynomial immersion as alternatives.  A converted copy is in research/papers/ surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.",
       "Mobius band (the plain ruled one-sided strip): A. F. Mobius (1858) and J. B. Listing (1858), as the standard half-twist ruled parametrization.",

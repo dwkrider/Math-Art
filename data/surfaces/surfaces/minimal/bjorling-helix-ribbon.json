@@ -16,7 +16,24 @@
     "fidelity": "exact",
     "domain": "disk",
     "note": "Bjorling's problem: the unique minimal surface through a given real-analytic strip. The defining seed, reproduced numerically against the shipped row (math_art/minsurf/zoo.py, BJ_HELIX): c(t) = (cos(t), sin(t), 0.4*t), with normal n(t) = (-cos(t), -sin(t), 0), t in [-6.283185307, 6.283185307]. The Weierstrass data is the holomorphic extension of the seed, computed numerically by the engine -- the seed, not a (g, dh) pair, is what specifies this surface.",
-    "exactness": "numerical-integral"
+    "exactness": "numerical-integral",
+    "bjorling_seed": {
+      "curve": [
+        "cos(t)",
+        "sin(t)",
+        "0.4*t"
+      ],
+      "normal": [
+        "-cos(t)",
+        "-sin(t)",
+        "0"
+      ],
+      "t_range": [
+        "-6.283185307",
+        "6.283185307"
+      ],
+      "params": {}
+    }
   },
   "curvature": {
     "condition": "minimal",

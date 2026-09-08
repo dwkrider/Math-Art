@@ -42,10 +42,11 @@ sys.path.insert(0, HERE)
 # outside Blender.
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
-from surfdb import (algsurf, charts, curation, ferreol,  # noqa: E402
+from surfdb import (algextract, algsurf, charts, curation,  # noqa: E402
+                    ferreol,
                     invariants, mapping, nodal, papers, polynomial,
                     published, references, registry, sources, tail,
-                    views, vmm, wedata, weextract)
+                    symderive, views, vmm, wedata, weextract)
 
 try:
     from surfdb import parcharts                          # noqa: E402
@@ -465,6 +466,24 @@ class Builder:
                     % (base, num(k), r2, num(k1), r2, num(k2), r2, num(k3)))
         return None
 
+    @staticmethod
+    def _preset_extra(key, fn, A):
+        """The arguments after (x, y, z), at the operator's own defaults.
+
+        `mu` and `fold` are shared OPERATOR properties with no Python
+        default, so reading `signature().default` yields
+        `inspect._empty` for them -- fine for the many presets that
+        ignore mu, and silently fatal for the ones that use it, whose
+        oracle then raised and whose polynomial was recorded as absent.
+        `algextract.preset_defaults` reads the real values.
+        """
+        try:
+            return algextract.preset_defaults(A, key, fn)
+        except Exception:                                # noqa: BLE001
+            sig = inspect.signature(fn)
+            return {p: sig.parameters[p].default
+                    for p in list(sig.parameters)[3:]}
+
     def _polynomial_for(self, key, slug, fn, clip_radius, A):
         cand = curation.polynomial_for(slug)
         if cand is None:
@@ -475,12 +494,10 @@ class Builder:
                     cand = self._goursat_polynomial(fam, co)
             except Exception:                            # noqa: BLE001
                 cand = None
+        extra = self._preset_extra(key, fn, A)
         if cand is None and key in A.HAUSER_EQUATION:
             cand = None  # converted below from gallery notation
             raw = A.HAUSER_EQUATION[key]
-            sig = inspect.signature(fn)
-            extra = {p: sig.parameters[p].default
-                     for p in list(sig.parameters)[3:]}
             try:
                 oracle = (lambda x, y, z, _f=fn, _e=extra: _f(x, y, z, **_e))
                 poly, detail = polynomial.convert_verified(
@@ -489,10 +506,23 @@ class Builder:
             except Exception as exc:                    # noqa: BLE001
                 return None, "conversion raised: %s" % exc
         if cand is None:
+            # FOURTH ROUTE: no stored equation anywhere, but the shipped
+            # function's own body is the definition -- straight-line
+            # arithmetic on x, y, z.  Inline it back into an expression.
+            # This is not trusted on its own: it goes through the same
+            # oracle as every other route, and a refusal is recorded
+            # with its reason rather than left as a bare null.
+            try:
+                cand = algextract.extract(fn, A, params=extra)
+            except algextract.Unextractable as exc:
+                return None, ("no closed form is stored for this surface, "
+                              "and its implementation could not be read "
+                              "back as one expression (%s)" % exc)
+            except Exception as exc:                    # noqa: BLE001
+                return None, "extraction raised: %s" % exc
+        if cand is None:
             return None, ("no closed form is stored for this surface; it is "
                           "defined by its shipped implementation")
-        sig = inspect.signature(fn)
-        extra = {p: sig.parameters[p].default for p in list(sig.parameters)[3:]}
         try:
             oracle = (lambda x, y, z, _f=fn, _e=extra: _f(x, y, z, **_e))
             ok, detail = polynomial.verify_against(
@@ -880,6 +910,56 @@ class Builder:
                     "SINGLETONS names %s but %s does not exist" % (op, path))
             self.report.append(("singleton", slug, "emit", slug))
 
+    def stage_derived_symmetry(self):
+        """Attach the MEASURED space group to the periodic records.
+
+        The 150 periodic surfaces are the largest family and were the
+        least identified: a record reading "triply periodic, rank 3" and
+        nothing else does not say which TPMS it is.  `symderive` measures
+        the group against the surface's own level function and freezes
+        the result; see that module for why the obvious route -- closing
+        `definition.evolver_cell.generators` -- gives a proper SUBGROUP
+        and would have recorded Schwarz P as Pm-3m rather than Im-3m.
+
+        The derived value is kept in its own field beside the curated
+        `hermann_mauguin`, never written over it.  Where both exist they
+        are compared and the verdict recorded, so an agreement is
+        evidence and a disagreement is a flag rather than a silent
+        overwrite.
+        """
+        n = agree = differ = amb = 0
+        for slug, rec in self.records.items():
+            got = symderive.derived_for(slug)
+            if not got:
+                continue
+            sym = rec.setdefault("symmetry", {})
+            cur = sym.get("hermann_mauguin")
+            hm = got.get("hermann_mauguin")
+            got.setdefault("ambiguous", False)
+            got["agrees_with_curated"] = (None if not (cur and hm)
+                                          else cur == hm)
+            sym["derived_space_group"] = got
+            n += 1
+            if got["ambiguous"]:
+                amb += 1
+            if cur and hm:
+                if cur == hm:
+                    agree += 1
+                else:
+                    differ += 1
+                    self.report.append(("symmetry", slug, "disagreement",
+                                        "curated %s vs derived %s"
+                                        % (cur, hm)))
+            elif hm and not cur:
+                # Nothing curated to contradict, so the measurement is
+                # the record's answer -- promoted, but traceable to the
+                # derivation that produced it.
+                sym["hermann_mauguin"] = hm
+        self.report.append(("symmetry", "-", "derived",
+                            "%d records: %d resolved, %d ambiguous, "
+                            "%d agree with curated, %d disagree"
+                            % (n, n - amb, amb, agree, differ)))
+
     def stage_missing(self):
         """Records for surfaces that are NOT implemented.
 
@@ -1201,6 +1281,18 @@ class Builder:
             # which is what actually specifies the surface.
             bj = got["bj"]
             if d.get("mode") == "weierstrass" and not d.get("gauss_map"):
+                # The seed as DATA, not only as prose. It was extracted
+                # and verified component-by-component against the shipped
+                # callable; describing it in a sentence and discarding
+                # the structure left the one datum that specifies the
+                # surface unreadable by anything but a human.
+                d["bjorling_seed"] = {
+                    "curve": list(bj["curve"]),
+                    "normal": (bj["normal"] if bj["normal"] == "frenet"
+                               else list(bj["normal"])),
+                    "t_range": list(bj["t_range"]),
+                    "params": dict(bj.get("params") or {}),
+                }
                 nrm = ("the Frenet principal normal of the curve"
                        if bj["normal"] == "frenet"
                        else "n(t) = (%s)" % ", ".join(bj["normal"]))
@@ -2062,6 +2154,7 @@ def main():
         b.stage_missing()
 
     b.curate()
+    b.stage_derived_symmetry()
     b.finish()
 
     # Curated facts that never reached a record are a mapping bug: either

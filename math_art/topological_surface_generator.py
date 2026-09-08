@@ -634,7 +634,6 @@ if _IN_BLENDER:
 
         def execute(self, context):
             p = self.preset
-            seam_sharp = False
             if p == 'KLEIN':
                 if self.klein_form == 'POLYNOMIAL':
                     V, F = build_klein_bottle(self.res_u, self.res_v)
@@ -643,15 +642,10 @@ if _IN_BLENDER:
                         self.res_u, self.res_v, self.klein_length,
                         self.klein_width, self.klein_radius,
                         self.klein_taper, self.klein_form)
-                    # the closed dumbbell mesh carries the unavoidable
-                    # winding-flip ring on its seam circle; sharp-split
-                    # the normals there instead of splitting vertices
-                    seam_sharp = self.klein_form == 'DUMBBELL'
                 name = "Klein Bottle"
             elif p == 'MOBIUS':
                 V, F = build_mobius_band(self.res_u, self.res_v,
                                          width=self.strip_width)
-                seam_sharp = True
                 name = "Moebius Strip"
             elif p == 'KLEIN8':
                 V, F = build_klein_figure8(self.res_u, self.res_v)
@@ -659,12 +653,10 @@ if _IN_BLENDER:
             elif p == 'ETRUSCAN_VENUS':
                 V, F = build_ovalesque(self.res_u, self.res_v, 1.0,
                                        0.0, self.venus_waist, 2.0)
-                seam_sharp = True
                 name = "Etruscan Venus"
             elif p == 'IDA':
                 V, F = build_ovalesque(self.res_u, self.res_v, 1.0,
                                        1.0, self.venus_waist, 2.0)
-                seam_sharp = True
                 name = "Ida Surface"
             elif p == 'KLEIN_NESTED':
                 V, F = build_nested_klein(
@@ -672,16 +664,12 @@ if _IN_BLENDER:
                     self.nest_ratio, self.klein_length,
                     self.klein_width, self.klein_radius,
                     self.klein_taper)
-                seam_sharp = True
                 name = "Nested Klein Bottles"
             elif p == 'SUDANESE':
                 V, F = build_sudanese_mobius(self.res_u, self.res_v)
                 name = "Sudanese Mobius Band"
             elif p == 'CROSSCAP':
                 V, F = build_crosscap(self.res_u, self.res_v)
-                # non-orientable, so it has the winding ring like the
-                # others -- AND a pinch point the ring does not touch
-                seam_sharp = True
                 name = "Cross-Cap"
             elif p == 'ROMAN':
                 V, F = build_roman(self.res_u, self.res_v)
@@ -743,7 +731,17 @@ if _IN_BLENDER:
             V = (V - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9 else 1.0)
             obj = _new_object(context, name, V * self.scale, F,
                               smooth=self.smooth)
-            if seam_sharp and mark_sharp is not None:
+            # This used to be a per-preset `seam_sharp` flag set beside
+            # each builder, so it reached only the presets someone
+            # remembered: Cross-Cap and Mobius had it, while Roman, the
+            # figure-8 Klein, Sudanese and Steiner shipped with a dark
+            # shading seam.  Whether a mesh needs it is a property of the
+            # GEOMETRY, not of the preset name, so ask the geometry --
+            # `winding_conflict_edges` returns the ring for a closed
+            # non-orientable mesh and nothing at all otherwise.  No
+            # future preset can be forgotten, because none has to be
+            # remembered.
+            if mark_sharp is not None:
                 # A closed non-orientable mesh cannot wind consistently:
                 # one ring of edges is traversed the same way by both of
                 # its faces, and averaged smooth normals degenerate
@@ -987,13 +985,24 @@ def _selftest():
     # rim circles near the cusp are honest boundary
     V, F = build_klein_franzoni(64, 32, directrix='PIRIFORM')
     stats("kleinpiri", V, F, 0, nbound_want=64)
-    # the legacy polynomial immersion keeps its split seam (2
-    # coincident rims of nv edges each), so cut open it is an
-    # orientable cylinder: chi = 0 with 2*nv boundary edges
+    # the polynomial immersion is CLOSED: its u = pi rim is identified
+    # with the u = 0 rim under v -> pi - v and the identification is
+    # applied, so chi = 0 with NO boundary.  This expectation used to
+    # read nbound_want=64, encoding the old split seam -- i.e. the test
+    # asserted the defect, and would have kept asserting it forever.
     V, F = build_klein_bottle(64, 32)
-    stats("kleinpoly", V, F, 0, nbound_want=64)
+    stats("kleinpoly", V, F, 0, nbound_want=0)
+    # and being closed and non-orientable, it must carry exactly one
+    # winding-conflict ring -- nv edges.  That ring is what the operator
+    # marks sharp; if it ever became empty the mesh would have silently
+    # turned orientable, which for a Klein bottle is impossible.
+    assert len(winding_conflict_edges(F)) == 32, "kleinpoly conflict ring"
     V, F = build_klein_figure8(64, 32)
-    stats("klein8", V, F, 0, nbound_want=64)
+    # closed too, by the same argument: its seam identification is
+    # j -> nv - 1 - j (the half-step v sampling shifts it off the naive
+    # j -> -j), applied rather than left as a duplicate row.
+    stats("klein8", V, F, 0, nbound_want=0)
+    assert len(winding_conflict_edges(F)) == 32, "klein8 conflict ring"
     # the plain Mobius band: chi = 0 and its single boundary edge,
     # 2*nu edges long
     V, F = build_mobius_band(64, 8)

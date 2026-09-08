@@ -20,8 +20,7 @@
       "shape": "BALL",
       "radius": 3.4
     },
-    "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface."
+    "polynomial": "z * 1 * (1 * x + 0 * y - z) * (0.30901699437494745 * x + 0.9510565162951535 * y - z) * ((-0.8090169943749473) * x + 0.5877852522924732 * y - z) * ((-0.8090169943749475) * x + (-0.587785252292473) * y - z) * (0.30901699437494723 * x + (-0.9510565162951536) * y - z) - (0.1424979955563914 * (x * x + y * y) + 0.5699919822255656 * z * z - 1) ** 3"
   },
   "curvature": {
     "condition": "none",
@@ -46,7 +45,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 2.66e-15).",
     "sources": [
       "O. Labs, \"A Sextic with 35 Cusps\", arXiv:math/0502520 (2005) -- the D5 family (1) and Theorem 3, the real member with 30 cusps and 10 nodes shipped here.",
       "O. Labs, \"Dessins d'Enfants and Hypersurfaces with Many A_j-Singularities\", J. London Math. Soc. (2) 74 (2006) 607-622; arXiv:math/0505022 -- construction (4), the folding-polynomial critical counts, Theorem 7 and the 132 = 12*11 row of Table 1.",

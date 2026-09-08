@@ -41,7 +41,19 @@
   },
   "symmetry": {
     "kind": "space",
-    "periodicity_rank": 3
+    "periodicity_rank": 3,
+    "derived_space_group": {
+      "hermann_mauguin": "Ia-3d",
+      "order": 96,
+      "origin_shift": [
+        "0",
+        "0",
+        "0"
+      ],
+      "ambiguous": false,
+      "agrees_with_curated": null
+    },
+    "hermann_mauguin": "Ia-3d"
   },
   "embedding": {
     "quality": "immersed"

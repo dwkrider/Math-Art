@@ -21,9 +21,9 @@
       "shape": "BALL",
       "radius": 2.6
     },
-    "polynomial": null,
-    "note": "Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.\n\nInvariant under the reflection group of the 600-cell.",
-    "degree": 12
+    "polynomial": "243 * (73.79024325749306 * ((x ** 2 * y ** 2 + z ** 2 * 1) ** 2 * (x ** 2 * z ** 2 + y ** 2 * 1) - (x ** 2 * y ** 2 + z ** 2 * 1) * (x ** 2 * z ** 2 + y ** 2 * 1) ** 2 + (x ** 2 * z ** 2 + y ** 2 * 1) ** 2 * (x ** 2 * 1 + y ** 2 * z ** 2) - (x ** 2 * z ** 2 + y ** 2 * 1) * (x ** 2 * 1 + y ** 2 * z ** 2) ** 2 + (x ** 2 * 1 + y ** 2 * z ** 2) ** 2 * (x ** 2 * y ** 2 + z ** 2 * 1) - (x ** 2 * 1 + y ** 2 * z ** 2) * (x ** 2 * y ** 2 + z ** 2 * 1) ** 2) + 19 * ((x ** 2 * y ** 2 + z ** 2 * 1) ** 2 * (x ** 2 * z ** 2 + y ** 2 * 1) + (x ** 2 * y ** 2 + z ** 2 * 1) * (x ** 2 * z ** 2 + y ** 2 * 1) ** 2 + (x ** 2 * z ** 2 + y ** 2 * 1) ** 2 * (x ** 2 * 1 + y ** 2 * z ** 2) + (x ** 2 * z ** 2 + y ** 2 * 1) * (x ** 2 * 1 + y ** 2 * z ** 2) ** 2 + (x ** 2 * 1 + y ** 2 * z ** 2) ** 2 * (x ** 2 * y ** 2 + z ** 2 * 1) + (x ** 2 * 1 + y ** 2 * z ** 2) * (x ** 2 * y ** 2 + z ** 2 * 1) ** 2) + 10 * ((x ** 2 * y ** 2 + z ** 2 * 1) ** 3 + (x ** 2 * z ** 2 + y ** 2 * 1) ** 3 + (x ** 2 * 1 + y ** 2 * z ** 2) ** 3) - 14 * (x ** 4 + y ** 4 + z ** 4 + 1) * ((x ** 2 * y ** 2 + z ** 2 * 1) * (x ** 2 * z ** 2 + y ** 2 * 1) + (x ** 2 * y ** 2 + z ** 2 * 1) * (x ** 2 * 1 + y ** 2 * z ** 2) + (x ** 2 * z ** 2 + y ** 2 * 1) * (x ** 2 * 1 + y ** 2 * z ** 2)) + 2 * (x ** 4 + y ** 4 + z ** 4 + 1) ** 2 * (x ** 2 * y ** 2 + z ** 2 * 1 + x ** 2 * z ** 2 + y ** 2 * 1 + x ** 2 * 1 + y ** 2 * z ** 2) - 6 * (x ** 4 + y ** 4 + z ** 4 + 1) * ((x ** 2 * y ** 2 + z ** 2 * 1) ** 2 + (x ** 2 * z ** 2 + y ** 2 * 1) ** 2 + (x ** 2 * 1 + y ** 2 * z ** 2) ** 2) - 352 * (x * y * z * 1) ** 2 * (x ** 2 * y ** 2 + z ** 2 * 1 + x ** 2 * z ** 2 + y ** 2 * 1 + x ** 2 * 1 + y ** 2 * z ** 2) + 336 * (x * y * z * 1) ** 2 * (x ** 4 + y ** 4 + z ** 4 + 1) + 48 * (x ** 2 * y ** 2 + z ** 2 * 1) * (x ** 2 * z ** 2 + y ** 2 * 1) * (x ** 2 * 1 + y ** 2 * z ** 2)) - 22 * (x * x + y * y + z * z + 1) ** 6",
+    "degree": 12,
+    "note": "Invariant under the reflection group of the 600-cell."
   },
   "curvature": {
     "condition": "none",
@@ -56,7 +56,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 4.66e-10).",
     "sources": [
       "A. Sarti, \"Pencils of symmetric surfaces in P_3\", arXiv:math/0106080; J. Algebra 246 (2001) 429-452 -- the dodecic is the member of the degree-12 pencil at lambda = -22/243.",
       "O. Labs, \"A Septic with 99 real Nodes\", arXiv:math/0409348 (2004); Rend. Sem. Mat. Univ. Padova 116 (2006) 299-313.",

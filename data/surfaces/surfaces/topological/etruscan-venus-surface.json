@@ -15,7 +15,21 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "Cox, Francis and Idaszak's Etruscan Venus (1989): F(1, 0) of Francis's ovalesque family (A Topological Picturebook, pp. 178-179) -- the Roman surface's curve family uncurled to the unit circle, a SINGULAR Klein bottle (connected sum of two Roman surfaces) with 12 pinch points.  SHIPPED from the ovalesque sweep, whose self-test reproduces Apery's published Boy immersion exactly at the F(0, 1) corner, verifies the closure identity, chi = 0 and one-sidedness, and measures the singularity the source specifies: the surface normal collapses at the pinch points, where Ida's stays bounded away."
+    "note": "Francis's ovalesque sweep F(1, 0): rho = 1, so the plane quartic is the unit circle and the surface is the pure sweep of that circle by the altitudinal and basal axes.  Waist r1 = 1 and height r2 = 2 at the operator's defaults",
+    "x": "cos(v)*cos(2*u) + sin(v)*cos(u)",
+    "y": "cos(v)*sin(2*u) - sin(v)*sin(u)",
+    "z": "2*cos(v)",
+    "u_range": [
+      "0",
+      "pi"
+    ],
+    "v_range": [
+      "0",
+      "2*pi"
+    ],
+    "periodic_u": true,
+    "periodic_v": true,
+    "exactness": "elementary"
   },
   "curvature": {
     "condition": "none",
@@ -41,7 +55,7 @@
     }
   ],
   "provenance": {
-    "definition": "Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery's compilation.",
+    "definition": "Chart reproduced numerically against the shipped implementation: fwd max 0.58 of tol, 0.0% of oracle beyond tol (tol floor 2.5 x 0.04338).",
     "sources": [
       "Klein bottle: F. Klein (1882).  The default classical bottle shape is built by the tube scheme of G. Franzoni, \"The Klein bottle in its classical shape: a further step towards a good parametrization\", arXiv:0909.5354 (2009): a tube of varying radius swept along a plane directrix, with the dumbbell-curve directrix of the paper's section 4 (which closes) as the default and its section-3 piriform directrix and the older polynomial immersion as alternatives.  A converted copy is in research/papers/ surfaces-and-immersions/franzoni-2009-klein-bottle-classical-shape/.",
       "Mobius band (the plain ruled one-sided strip): A. F. Mobius (1858) and J. B. Listing (1858), as the standard half-twist ruled parametrization.",

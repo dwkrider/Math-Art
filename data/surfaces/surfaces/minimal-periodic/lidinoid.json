@@ -46,7 +46,19 @@
     "kind": "space",
     "periodicity_rank": 3,
     "chiral": true,
-    "verified_by": "curated"
+    "verified_by": "curated",
+    "derived_space_group": {
+      "hermann_mauguin": "Ia-3d",
+      "order": 96,
+      "origin_shift": [
+        "0",
+        "0",
+        "0"
+      ],
+      "ambiguous": false,
+      "agrees_with_curated": null
+    },
+    "hermann_mauguin": "Ia-3d"
   },
   "embedding": {
     "quality": "embedded"

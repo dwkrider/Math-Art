@@ -40,7 +40,19 @@
   },
   "symmetry": {
     "kind": "space",
-    "periodicity_rank": 3
+    "periodicity_rank": 3,
+    "derived_space_group": {
+      "hermann_mauguin": "P42/mcm",
+      "order": 16,
+      "origin_shift": [
+        "0",
+        "0",
+        "1/4"
+      ],
+      "ambiguous": false,
+      "agrees_with_curated": null
+    },
+    "hermann_mauguin": "P42/mcm"
   },
   "embedding": {
     "quality": "immersed"

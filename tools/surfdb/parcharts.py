@@ -269,6 +269,47 @@ CHARTS = {
         "oracle": {"module": "minsurf.topology",
                    "make": lambda m: m.build_klein_franzoni(96, 64)},
     },
+    # Two corners of Francis's ovalesque family F(l, b) (A Topological
+    # Picturebook, pp. 96, 178-9): both are l = 1, so rho's numerator is
+    # 1 and the sweep closes into a Klein bottle; b selects the singular
+    # Venus (b = 0, twelve pinch points) from the smooth immersed Ida
+    # (b = 1, where the denominator's sin(3u) sin(2v) term pushes the
+    # pinches apart).  u is Francis's theta on [0, pi) and v his tau;
+    # the mesh glues P(u + pi, -v) = P(u, v), which is why u stops at pi
+    # for a closed surface.  r1 = 1 is the operator's Waist default and
+    # r2 = 2 its fixed height.
+    "etruscan-venus-surface": {
+        "x": "cos(v)*cos(2*u) + sin(v)*cos(u)",
+        "y": "cos(v)*sin(2*u) - sin(v)*sin(u)",
+        "z": "2*cos(v)",
+        "u_range": ("0", "pi"), "v_range": ("0", "2*pi"),
+        "periodic_u": True, "periodic_v": True,
+        "note": "Francis's ovalesque sweep F(1, 0): rho = 1, so the "
+                "plane quartic is the unit circle and the surface is "
+                "the pure sweep of that circle by the altitudinal and "
+                "basal axes.  Waist r1 = 1 and height r2 = 2 at the "
+                "operator's defaults",
+        "oracle": {"module": "minsurf.topology",
+                   "make": lambda m: m.build_ovalesque(96, 96, 1.0, 0.0,
+                                                       1.0, 2.0)},
+    },
+    "ida-surface": {
+        "x": "(cos(v)*cos(2*u) + sin(v)*cos(u))"
+             "/(1 - (1/sqrt(2))*sin(3*u)*sin(2*v))",
+        "y": "(cos(v)*sin(2*u) - sin(v)*sin(u))"
+             "/(1 - (1/sqrt(2))*sin(3*u)*sin(2*v))",
+        "z": "2*cos(v)/(1 - (1/sqrt(2))*sin(3*u)*sin(2*v))",
+        "u_range": ("0", "pi"), "v_range": ("0", "2*pi"),
+        "periodic_u": True, "periodic_v": True,
+        "note": "Francis's ovalesque sweep F(1, 1): the same sweep as "
+                "the Etruscan Venus with the quartic's denominator "
+                "switched on, which separates the Venus's pinch points "
+                "and leaves a smoothly immersed Klein bottle.  Waist "
+                "r1 = 1 and height r2 = 2 at the operator's defaults",
+        "oracle": {"module": "minsurf.topology",
+                   "make": lambda m: m.build_ovalesque(96, 96, 1.0, 1.0,
+                                                       1.0, 2.0)},
+    },
     "klein-bottle-figure-eight": {
         "x": "(2 + cos(u/2)*sin(v) - sin(u/2)*sin(2*v))*cos(u)",
         "y": "(2 + cos(u/2)*sin(v) - sin(u/2)*sin(2*v))*sin(u)",
@@ -1057,10 +1098,66 @@ _NO_BUILDER = ("the record has no implemented construction -- there is "
                "construction block notes what is missing)")
 # (coil, moebius-strip, clifford-torus, the three Ferreol cones /
 # conoids and the three revolution surfaces graduated out of this list
-# when their builders shipped; each now carries a verified chart above.)
-for _slug in ("dyck-surface", "etruscan-venus-surface", "ida-surface"):
-    REASONS[_slug] = _NO_BUILDER
+# when their builders shipped; each now carries a verified chart above.
+# So did etruscan-venus-surface and ida-surface, whose charts are two
+# corners of the ovalesque family above -- they sat here claiming "no
+# implemented construction" long after `mesh.topological_surface_add`
+# shipped them, which is the failure mode this ledger exists to
+# prevent: a stale REASON is worse than none, because it reads as a
+# finding.)
+REASONS["dyck-surface"] = (
+    "the operator offers Dyck's surface in two renditions selected by "
+    "`dyck_form` -- a three-cross-cap sphere and a three-handled "
+    "torus -- built by different routines, so the record names a "
+    "surface that no single chart covers; a chart for either rendition "
+    "alone would silently describe half the row")
+# Records the sweep had never visited at all -- which is a worse state
+# than a refusal, because an unvisited row is indistinguishable from an
+# overlooked one.  Each is read and given its disposition here.  None of
+# them is a chart withheld; every one is a construction that genuinely
+# is not a single closed-form map of two parameters.
+REASONS["delaunay-surface"] = (
+    "the meridian of a Delaunay surface is a QUADRATURE -- the "
+    "generator's own header says so, and integrates it in a substituted "
+    "variable to keep the endpoints finite -- so the profile exists "
+    "only as the numerical integral, not as an expression in u")
+REASONS["eguchi-hanson-space"] = (
+    "the bolt slice's height is obtained by integrating z'(r) with the "
+    "trapezium rule over 160 steps (`eguchi_hanson_profile`); rho is "
+    "closed form but z is a quadrature, so the revolved profile has no "
+    "expression in the exact language")
+for _slug in ("two-soliton-surface", "three-soliton-surface",
+              "four-soliton-surface"):
+    REASONS[_slug] = (
+        "the multi-soliton sine-Gordon surface is mapped onto a lab "
+        "window (`_soliton_window`) FITTED numerically from the soliton "
+        "speeds and charges, so even though the multi-soliton formula "
+        "itself is explicit, the domain the operator draws is not a "
+        "stated u/v rectangle and a chart would misreport the framing")
 del _slug
+REASONS["calabi-yau-cross-section"] = (
+    "the surface is the union of p*q phase-related PATCHES of "
+    "z1^p + z2^q = 1 (25 at the defaults), each carrying its own root "
+    "branch exp(2 pi i k / p) * u^(2/p); one chart cannot cover a "
+    "multi-patch cover, and picking a single patch would describe 1/25 "
+    "of the row")
+REASONS["conifold-transition"] = (
+    "the preset draws the conifold TRANSITION -- a family of profiles "
+    "across the node at delta = 0, assembled from several surfaces in "
+    "one mesh -- so the row is a one-parameter family of surfaces "
+    "rather than one surface with a chart")
+REASONS["tropical-calabi-yau-surface"] = (
+    "a tropical hypersurface is PIECEWISE LINEAR: it is the corner "
+    "locus where the maximum of the tropical polynomial's affine "
+    "pieces is attained twice, which is a subdivision of R^3, not the "
+    "image of a smooth map of two parameters")
+REASONS["klein-quartic"] = (
+    "built from the (2, 3, 7) tiling's combinatorics -- 24 heptagons "
+    "or their triangular dual, with flags and rounding as mesh "
+    "options -- so the surface is a polyhedral quotient rather than a "
+    "parametrised one; the genus-3 quartic's smooth model needs the "
+    "hyperbolic structure the operator deliberately does not build")
+
 REASONS["nested-klein-bottles"] = (
     "a composition of Franzoni dumbbell tubes (shells of decreasing "
     "radius about one directrix); the directrix tube has no single "

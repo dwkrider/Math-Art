@@ -5,6 +5,7 @@
 #     python tools/surfdb_validate.py --slow      # + curvature and symmetry
 #     python tools/surfdb_validate.py --nodes     # + count the singular points
 #     python tools/surfdb_validate.py --stale     # records older than their generator
+#     python tools/surfdb_validate.py --reproducible   # can a reader rebuild it?
 #
 # data/polyhedra's validator is what raised it above a dump: it recomputes
 # every claim and it caught three real errors in the first three records.
@@ -73,6 +74,7 @@ class Report:
         self.slow_deg = 0
         self.nodes_seen = 0
         self.nodes_proved = 0
+        self.schema_ran = False
 
     def err(self, slug, msg):
         self.errors.append("%s: %s" % (slug, msg))
@@ -525,6 +527,51 @@ def check_symmetry_symbolic(slug, rec, rep):
     return True
 
 
+SCHEMA_PATH = os.path.join(DB, "schema", "surface.schema.json")
+_SCHEMA = None
+_VALIDATOR = None
+
+
+def _schema_validator():
+    """The JSON Schema validator, or None if jsonschema is unavailable.
+
+    WHY THIS EXISTS. The schema declares `additionalProperties: false` on
+    the definition block and a closed enum on `symmetry.kind` -- and for
+    a long time NOTHING ENFORCED EITHER. This file never loaded the
+    schema at all, so records quietly accumulated three keys the schema
+    forbade (`evolver_cell` on 67 records, `weierstrass` on 17,
+    `nodal_polynomial` on 7) and a `symmetry.kind` value outside the enum
+    on 8 more. `evolver_cell` is the single largest defining-datum
+    carrier in the database, so the schema was, in the most literal
+    sense, wrong about the database's most common field.
+
+    A schema nobody runs is documentation that has stopped being true.
+    """
+    global _SCHEMA, _VALIDATOR
+    if _VALIDATOR is not None:
+        return _VALIDATOR
+    try:
+        import jsonschema
+    except ImportError:
+        return None
+    if _SCHEMA is None:
+        with open(SCHEMA_PATH, encoding="utf-8") as fh:
+            _SCHEMA = json.load(fh)
+    _VALIDATOR = jsonschema.Draft202012Validator(_SCHEMA)
+    return _VALIDATOR
+
+
+def check_schema(slug, rec, rep):
+    """Validate one record against the shipped JSON Schema."""
+    v = _schema_validator()
+    if v is None:
+        return False
+    for e in sorted(v.iter_errors(rec), key=lambda x: list(x.path)):
+        where = "/".join(str(x) for x in e.path) or "(root)"
+        rep.err(slug, "schema: %s: %s" % (where, e.message.splitlines()[0][:160]))
+    return True
+
+
 def check_index(records, rep):
     path = os.path.join(DB, "index.json")
     if not os.path.exists(path):
@@ -723,6 +770,129 @@ def coverage(records):
         print("  %-34s %s" % (slug, first[:96]))
 
 
+# Modes whose defining datum is a different field, so "has a formula"
+# has to be asked mode by mode rather than once.
+_DATUM = {
+    "implicit": ("polynomial",),
+    "nodal": ("nodal_polynomial", "level_function"),
+    "parametric": ("x",),
+    "weierstrass": ("gauss_map", "bjorling_seed", "weierstrass"),
+    "derived": (),
+}
+
+# The BROAD datum: anything machine-readable that determines the
+# surface, including the Evolver cell.  Quoting only this would flatter;
+# quoting only the strict field would understate by the ~60 rows whose
+# definition genuinely IS Brakke's datafile.
+_BROAD_EXTRA = ("evolver_cell", "nodal_polynomial", "level_function",
+                "bjorling_seed", "weierstrass", "polynomial", "x",
+                "gauss_map")
+
+
+# The boilerplate every record carries. It describes where the record
+# came from, not why it has no formula, so it must not be mistaken for
+# a stated reason -- doing so would report a clean ledger over 124 rows
+# that in fact explain nothing.
+_BOILERPLATE = "Derived from the Math Art generator registries"
+
+UNEXPLAINED = "NO REASON RECORDED"
+
+
+def _refusal_reason(slug, rec, d):
+    """Why this record carries no defining datum, from wherever it is said.
+
+    The extractor modules are the authority: `parcharts.REASONS` and the
+    Weierstrass refusals are written by the code that TRIED and declined,
+    so they state the actual obstruction. The record's own note is next
+    best. The generic provenance line is not a reason at all.
+    """
+    try:
+        from surfdb import parcharts
+        why = parcharts.REASONS.get(slug)
+        if why:
+            return why
+    except ImportError:
+        pass
+    for cand in ((d.get("note") or ""),
+                 ((rec.get("provenance") or {}).get("definition") or "")):
+        cand = cand.strip()
+        if cand and not cand.startswith(_BOILERPLATE):
+            return cand
+    return UNEXPLAINED
+
+
+def reproducible(records):
+    """Can a reader with only the records rebuild the surface?
+
+    `coverage()` measures IMPLEMENTATION -- is there a builder.  This
+    measures REPRODUCTION -- does the record say what the surface IS.
+    They are different questions and the database has historically
+    answered only the first, which is how it reached 100% coverage
+    while fewer than half its records carried a defining datum.
+
+    Two numbers, deliberately: STRICT counts the mode's own schema
+    field, BROAD counts any machine-readable datum.  A refusal is
+    reported with its reason, never as a bare absence, because a null
+    with a stated reason is data and a bare null is a bug that looks
+    like data.
+    """
+    byfam, bymode = {}, {}
+    strict = broad = domained = 0
+    refusals = []
+    for slug, (rec, _) in sorted(records.items()):
+        d = rec.get("definition") or {}
+        mode = d.get("mode") or "?"
+        fields = _DATUM.get(mode, ())
+        has_strict = any(d.get(f) for f in fields)
+        has_broad = has_strict or any(d.get(f) for f in _BROAD_EXTRA)
+        # A formula with no domain is not reproducible either: it does
+        # not say WHERE to evaluate it.
+        has_dom = bool(d.get("u_range") or d.get("clip_radius")
+                       or d.get("domain") or d.get("cell")
+                       or d.get("evolver_cell") or d.get("level") is not None
+                       or mode in ("implicit", "nodal"))
+        strict += has_strict
+        broad += has_broad
+        domained += has_strict and has_dom
+        for table, key in ((bymode, mode), (byfam, rec["primary_family"])):
+            row = table.setdefault(key, [0, 0, 0])
+            row[0] += 1
+            row[1] += has_strict
+            row[2] += has_broad
+        if not has_broad:
+            refusals.append((slug, mode, _refusal_reason(slug, rec, d)))
+
+    total = len(records)
+    print("REPRODUCIBLE  %d records" % total)
+    print("  strict (the mode's own field)  %4d  %5.1f%%"
+          % (strict, 100.0 * strict / max(total, 1)))
+    print("  broad  (any machine datum)     %4d  %5.1f%%"
+          % (broad, 100.0 * broad / max(total, 1)))
+    print("  strict AND a stated domain     %4d  %5.1f%%"
+          % (domained, 100.0 * domained / max(total, 1)))
+    print()
+    for title, table in (("MODE", bymode), ("FAMILY", byfam)):
+        print("%-22s %6s %7s %6s" % (title, "TOTAL", "STRICT", "BROAD"))
+        for k in sorted(table):
+            t, s, b = table[k]
+            print("%-22s %6d %7d %6d%s"
+                  % (k, t, s, b, "" if b == t else "   <-- gap"))
+        print()
+
+    print("NO MACHINE-READABLE DATUM (%d):" % len(refusals))
+    silent = 0
+    for slug, mode, why in refusals:
+        if why == UNEXPLAINED:
+            silent += 1
+        print("  %-32s [%-11s] %s" % (slug, mode, why.split(". ")[0][:70]))
+    if silent:
+        # The point of the ledger: a row with neither a datum nor a
+        # reason is the only genuinely bad state, and it is named.
+        print("\n  %d of those record NO REASON -- each is a gap in the "
+              "ledger, not a property of the surface." % silent)
+    return silent
+
+
 def stale(records):
     """Records older than the generator module they describe."""
     def last_commit(path):
@@ -758,6 +928,9 @@ def stale(records):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--coverage", action="store_true")
+    ap.add_argument("--reproducible", action="store_true",
+                    help="can a reader with only the records "
+                         "rebuild each surface?")
     ap.add_argument("--stale", action="store_true")
     ap.add_argument("--slow", action="store_true",
                     help="also measure curvature and prove symmetry")
@@ -780,12 +953,19 @@ def main():
     if args.coverage:
         coverage(records)
         return 0
+    if args.reproducible:
+        # A row with neither a datum nor a reason FAILS. That is the
+        # whole point: coverage() reached 100% while half the records
+        # said nothing about what the surface is, because nothing was
+        # counting. This counts, and refuses to pass on a silent null.
+        return 1 if reproducible(records) else 0
     if args.stale:
         return 1 if stale(records) else 0
 
     rep = Report()
     for slug, (rec, path) in sorted(records.items()):
         rep.checked += 1
+        rep.schema_ran |= check_schema(slug, rec, rep)
         check_structure(slug, rec, rep)
         check_definitions(slug, rec, rep)
         check_measures(slug, rec, rep)
@@ -845,6 +1025,12 @@ def main():
     check_index(records, rep)
 
     print("checked %d records" % rep.checked)
+    if not rep.schema_ran:
+        # Say so loudly. A schema check that quietly does not run is how the
+        # database drifted five fields away from its own schema in the first
+        # place -- silence read as a pass.
+        print("WARNING: jsonschema not installed -- records were NOT validated "
+              "against schema/surface.schema.json")
     if args.slow:
         print("  curvature conditions PROVED numerically: %d" % rep.slow_curv)
         print("  symmetry groups PROVED symbolically:     %d" % rep.slow_sym)

@@ -30,17 +30,15 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 MODULES = ("expr", "views", "mapping", "polynomial", "registry", "curation",
            "invariants", "references", "sources", "tail", "crosscheck",
-           "charts", "weierstrass", "wedata", "weextract",
+           "charts", "weierstrass", "wedata", "weextract", "parcharts",
+           "algextract", "symderive",
            "nodal", "ferreol", "vmm", "published", "algsurf", "papers")
 
-# NOT listed above: `parcharts`, the parametric-chart extractor. The name
-# was added here before the module was written, so the suite failed on a
-# module that has never existed -- a gate that reports a failure nobody
-# can act on trains people to ignore it. `surfdb_build` already imports
-# it defensively (`except ImportError: parcharts = None`) and simply
-# skips chart extraction when it is absent, so its absence is a missing
-# FEATURE, not a broken build. Add it back in the same commit that adds
-# the module, not before.
+# `parcharts` was once listed here BEFORE it was written, so the suite
+# failed on a module that did not exist -- a gate reporting a failure
+# nobody can act on trains people to ignore it. It was removed with a
+# note to re-add it in the same commit that added the module. The module
+# now exists, so it is listed again, alongside `algextract`.
 
 
 def main():
