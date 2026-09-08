@@ -378,6 +378,34 @@ def check_seo(fail):
     return n_pages, n_urls
 
 
+def check_cluster_cache(fail, quiet):
+    """Run the clustered view's own headless checks, if node is here.
+
+    The layout cache and the tile gate are behaviours no other check in
+    this file can see: a broken cache still draws the right picture, just
+    slowly, and a broken gate draws it in the wrong order. Both need a
+    stopwatch and a stubbed DOM, which is what tests/web/ provides.
+    """
+    node = shutil.which("node")
+    test = os.path.join(PROJ, "tests", "web", "test_cluster_cache.mjs")
+    if not os.path.exists(test):
+        fail("tests/web/test_cluster_cache.mjs is missing")
+        return False
+    if not node:
+        if not quiet:
+            print("cluster    : skipped (node not on PATH)")
+        return True
+    r = subprocess.run([node, test], capture_output=True, text=True)
+    if r.returncode != 0:
+        for line in (r.stdout + r.stderr).splitlines():
+            if "FAIL" in line or "Error" in line:
+                fail("cluster cache: " + line.strip())
+        if r.returncode and "FAIL" not in r.stdout:
+            fail("cluster cache checks exited %d" % r.returncode)
+        return False
+    return True
+
+
 def main(argv):
     quiet = "--quiet" in argv
     failures = []
@@ -397,6 +425,7 @@ def main(argv):
     check_no_remote_fetch(fail)
     n_js = check_js_syntax(fail, quiet)
     n_pages, n_urls = check_seo(fail)
+    cache_ok = check_cluster_cache(fail, quiet)
 
     if not quiet:
         print("thumbnails : %d of %d solids (%d missing)"
@@ -409,6 +438,8 @@ def main(argv):
         print("js syntax  : %d module(s) checked" % n_js)
         print("seo pages  : %d object pages, %d sitemap URLs"
               % (n_pages, n_urls))
+        if cache_ok:
+            print("cluster    : layout cache + tile gate OK")
 
     if failures:
         print("\n%d FAILURE(S):" % len(failures))

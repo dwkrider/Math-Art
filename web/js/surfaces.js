@@ -14,7 +14,7 @@ import { loadIndex, loadRecord, loadMesh, loadMeshManifest, filterEntries, SORTS
 import { SurfaceViewer, freshCanvas, STUDIO_VIEW, STUDIO_FOV,
          STUDIO_DISTANCE } from './surface-viewer.js';
 import { renderSurfaceDetail } from './surface-detail.js';
-import { ClusterView } from './cluster-view.js';
+import { ClusterView, preloadAtlas } from './cluster-view.js';
 
 const VIEWS = 1;
 
@@ -60,6 +60,15 @@ async function main() {
   // -- what is near what -- and is worth opting into, not landing in.
   let mode = 'grid';
   let cluster = null;
+
+  // Fetch the tile sheet now, not when the reader first opens the
+  // clustered view. The view will not start laying anything out until it
+  // has arrived, so requesting it only on the switch means waiting then;
+  // requesting it here means it is normally already decoded. It is one
+  // image the grid does not use, so it is started after the page has
+  // done its own loading rather than competing with it.
+  if ('requestIdleCallback' in window) requestIdleCallback(() => preloadAtlas());
+  else setTimeout(() => preloadAtlas(), 0);
   const modeBar = el('div', 'segmented view-modes');
   modeBar.setAttribute('role', 'group');
   modeBar.setAttribute('aria-label', 'Catalogue view');

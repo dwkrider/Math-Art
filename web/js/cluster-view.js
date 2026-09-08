@@ -23,6 +23,38 @@ import { knnGraph, SpringLayout } from './cluster.js';
 const TILE_PX = 64;          // decode size; drawn smaller than this
 const SETTLE_ITERS = 900;    // measured: overlap still resolving until ~900
 
+// The sprite sheet, fetched once for the page rather than once per view.
+// Held at module scope because there is only ever one sheet, and because
+// the fetch has to be startable before any ClusterView exists.
+let atlasPromise = null;
+
+/**
+ * Start loading the tile sheet.
+ *
+ * Call this when the page loads. The clustered view is built lazily, on
+ * the first switch into it, so without this the sheet is not even
+ * requested until the reader asks for the view -- and then the layout
+ * runs against tiles that have not arrived, which is a field of nothing
+ * arranging itself. Starting at page load means the image is normally
+ * there by the time it is wanted.
+ *
+ * Idempotent, and never rejects: a missing sheet resolves to null and
+ * the view falls back to the individual PNGs.
+ */
+export function preloadAtlas() {
+  if (atlasPromise) return atlasPromise;
+  atlasPromise = fetch(new URL('../thumbs/surfaces-atlas.json', import.meta.url))
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error('no atlas'))))
+    .then((meta) => new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res({ img, ...meta });
+      img.onerror = rej;
+      img.src = new URL('../thumbs/surfaces-atlas.png', import.meta.url).href;
+    }))
+    .catch(() => null);
+  return atlasPromise;
+}
+
 export class ClusterView {
   constructor(canvas, entries, opts = {}) {
     this.canvas = canvas;
@@ -37,16 +69,89 @@ export class ClusterView {
     this.hover = -1;
     this.view = { x: 0, y: 0, k: 1 };
     this.entries = entries;
+    // Converged layouts, keyed by the subset they were solved for. See
+    // _cacheKey and show().
+    this.cache = new Map();
     this._bind();
   }
 
-  /** Lay out the given subset (the catalogue's current filter). */
+  /**
+   * What a cached layout is a layout OF.
+   *
+   * The slugs, in order, because that is precisely the input the layout
+   * solves for -- and the canvas size with them, because it is an input
+   * too: it sets the tile size, and through it the collision distance
+   * and the whole length scale. A layout solved for one canvas is not
+   * the layout for another, so a resize has to miss.
+   */
+  _cacheKey(entries, w, h) {
+    return Math.round(w) + 'x' + Math.round(h) + '|' +
+           entries.map((e) => e.slug).join(',');
+  }
+
+  /**
+   * Lay out the given subset (the catalogue's current filter).
+   *
+   * A subset that has been solved before is restored instead of solved
+   * again. Going to another family and back was re-running the whole
+   * thing -- for the full catalogue that is a 19,148-edge nearest
+   * neighbour graph and 900 iterations over 112k pairs, about 1.1s of
+   * work to arrive at the arrangement it had a moment ago. It is also
+   * deterministic (the generator is seeded), so the recomputed layout is
+   * identical to the one thrown away: the wait bought nothing at all.
+   */
   show(entries) {
     this.entries = entries;
     this.selectedIdx = -1;
-    const n = entries.length;
-    this.edges = n > 1 ? knnGraph(entries) : [];
     const r = this.canvas.getBoundingClientRect();
+    this.view = { x: 0, y: 0, k: 1 };
+    this.userMoved = false;
+
+    const key = this._cacheKey(entries, r.width || 900, r.height || 600);
+    this._key = key;
+
+    // NOTHING STARTS UNTIL THE TILES ARE HERE.
+    //
+    // The layout used to begin immediately and the sheet arrived
+    // whenever it arrived, so the reader watched an empty field organise
+    // itself and the thumbnails appeared at the end, already settled --
+    // the one part worth watching, missed. Building the neighbour graph
+    // is deferred with it: it is ~220ms of synchronous work on the full
+    // catalogue, and running it while the image is in flight just takes
+    // the main thread away from decoding.
+    cancelAnimationFrame(this._raf);
+    this._waiting = true;
+    this._draw();
+    this._loadTiles().then(() => {
+      // A later show() may have superseded this one while we waited.
+      if (this._key !== key) return;
+      this._waiting = false;
+      this._begin(entries, key, r);
+    });
+    return this;
+  }
+
+  /** Build or restore the layout, once the tiles are available. */
+  _begin(entries, key, r) {
+    const n = entries.length;
+    const hit = this.cache.get(key);
+    if (hit) {
+      // Re-inserted so the map's insertion order stays least-recent
+      // first, which is what the eviction below relies on.
+      this.cache.delete(key);
+      this.cache.set(key, hit);
+      // Copies: the restored arrays are handed to the view, and a later
+      // run must not be able to write through them into the cache.
+      this.layout = { x: Float64Array.from(hit.x),
+                      y: Float64Array.from(hit.y) };
+      this.edges = null;
+      this.iters = SETTLE_ITERS;          // already settled; do not step
+      this._frame();
+      this._run();
+      return;
+    }
+
+    this.edges = n > 1 ? knnGraph(entries) : [];
     this.layout = new SpringLayout(n, this.edges, {
       width: r.width || 900,
       height: r.height || 600,
@@ -56,13 +161,7 @@ export class ClusterView {
       minDist: this.nodeSize() * 0.95,
     });
     this.iters = 0;
-    this.view = { x: 0, y: 0, k: 1 };
-    // Until the reader pans or zooms, the view follows the field. After
-    // that it is theirs and nothing moves it under them.
-    this.userMoved = false;
-    this._loadTiles();
     this._run();
-    return this;
   }
 
   /**
@@ -98,21 +197,16 @@ export class ClusterView {
    * slower rather than broken.
    */
   _loadTiles() {
-    if (this._atlasTried) { this._loadLoose(); return; }
-    this._atlasTried = true;
-    fetch(new URL('../thumbs/surfaces-atlas.json', import.meta.url))
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('no atlas'))))
-      .then((meta) => new Promise((res, rej) => {
-        const img = new Image();
-        img.onload = () => res({ meta, img });
-        img.onerror = rej;
-        img.src = new URL('../thumbs/surfaces-atlas.png', import.meta.url).href;
-      }))
-      .then(({ meta, img }) => {
-        this.atlas = { img, ...meta };
+    return preloadAtlas().then((atlas) => {
+      if (atlas) {
+        this.atlas = atlas;
         this.dirty = true;
-      })
-      .catch(() => this._loadLoose());
+      } else {
+        // No sheet: the individual PNGs still work, and they arrive
+        // progressively, so this path is not gated on them.
+        this._loadLoose();
+      }
+    });
   }
 
   /** The old path: one image per tile. Used only without an atlas. */
@@ -152,6 +246,7 @@ export class ClusterView {
         // following it keeps the whole arrangement in view throughout
         // instead of letting it expand off the edges.
         this._frame();
+        if (this.iters >= SETTLE_ITERS) this._store();
         this.dirty = true;
       }
       if (this.dirty) this._draw();
@@ -171,6 +266,23 @@ export class ClusterView {
    */
   _positions() {
     return { x: this.layout.x, y: this.layout.y };
+  }
+
+  /**
+   * Keep the converged layout, so returning to this subset is instant.
+   *
+   * Bounded, because a search box can generate a new subset per
+   * keystroke and each one holds two arrays for as long as the page
+   * lives. 32 is comfortably more than the 16 families plus whatever
+   * searches one sitting produces, and the oldest goes first.
+   */
+  _store() {
+    if (!this._key || this.cache.has(this._key)) return;
+    this.cache.set(this._key, { x: Float64Array.from(this.layout.x),
+                                y: Float64Array.from(this.layout.y) });
+    while (this.cache.size > 32) {
+      this.cache.delete(this.cache.keys().next().value);
+    }
   }
 
   /**
@@ -220,7 +332,13 @@ export class ClusterView {
     }
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, r.width, r.height);
-    if (!this.entries.length) return;
+    if (this._waiting) {
+      c.fillStyle = '#6b7480';
+      c.font = '12px system-ui, sans-serif';
+      c.fillText('loading thumbnails…', 12, r.height - 12);
+      return;
+    }
+    if (!this.entries.length || !this.layout) return;
 
     const p = this._positions();
     this.pos = p;
@@ -287,7 +405,7 @@ export class ClusterView {
   }
 
   _at(px, py) {
-    if (!this.pos) return -1;
+    if (!this.pos || this._waiting) return -1;
     const v = this.view;
     const s = this.nodeSize();
     const x = (px - v.x) / v.k, y = (py - v.y) / v.k;
@@ -348,5 +466,6 @@ export class ClusterView {
     cancelAnimationFrame(this._raf);
     for (const bm of this.bitmaps.values()) if (bm.close) bm.close();
     this.bitmaps.clear();
+    this.cache.clear();
   }
 }
