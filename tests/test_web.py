@@ -452,7 +452,7 @@ def check_seo(fail):
 
 
 def check_cluster_cache(fail, quiet):
-    """Run the clustered view's own headless checks, if node is here.
+    """Run the browser modules' own headless checks, if node is here.
 
     The layout cache and the tile gate are behaviours no other check in
     this file can see: a broken cache still draws the right picture, just
@@ -460,23 +460,29 @@ def check_cluster_cache(fail, quiet):
     stopwatch and a stubbed DOM, which is what tests/web/ provides.
     """
     node = shutil.which("node")
-    test = os.path.join(PROJ, "tests", "web", "test_cluster_cache.mjs")
-    if not os.path.exists(test):
-        fail("tests/web/test_cluster_cache.mjs is missing")
-        return False
+    tests = [os.path.join(PROJ, "tests", "web", n) for n in
+             ("test_cluster_cache.mjs", "test_stl_export.mjs")]
+    for t in tests:
+        if not os.path.exists(t):
+            fail("%s is missing" % os.path.relpath(t, PROJ))
+            return False
+    test = tests[0]
     if not node:
         if not quiet:
             print("cluster    : skipped (node not on PATH)")
         return True
-    r = subprocess.run([node, test], capture_output=True, text=True)
-    if r.returncode != 0:
-        for line in (r.stdout + r.stderr).splitlines():
-            if "FAIL" in line or "Error" in line:
-                fail("cluster cache: " + line.strip())
-        if r.returncode and "FAIL" not in r.stdout:
-            fail("cluster cache checks exited %d" % r.returncode)
-        return False
-    return True
+    good = True
+    for t in tests:
+        r = subprocess.run([node, t], capture_output=True, text=True)
+        if r.returncode != 0:
+            good = False
+            name = os.path.basename(t)
+            for line in (r.stdout + r.stderr).splitlines():
+                if "FAIL" in line or "Error" in line:
+                    fail("%s: %s" % (name, line.strip()))
+            if "FAIL" not in r.stdout:
+                fail("%s exited %d" % (name, r.returncode))
+    return good
 
 
 def main(argv):
@@ -516,7 +522,7 @@ def main(argv):
         print("lfs deploy : %d tracked path(s), all pulled by the workflow"
               % n_lfs)
         if cache_ok:
-            print("cluster    : layout cache + tile gate OK")
+            print("browser js : cluster cache, tile gate and STL export OK")
 
     if failures:
         print("\n%d FAILURE(S):" % len(failures))

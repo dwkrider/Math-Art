@@ -914,3 +914,33 @@ figcaption {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* The stage bar's action button (STL export), and the line it writes
+ * after a download. The bar already holds the viewpoint segments and the
+ * two switches, so this sits at the end of it rather than starting a
+ * row of its own. */
+.stage-action {
+  margin-left: auto;
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.stage-action:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.stage-action:disabled { opacity: 0.4; cursor: default; }
+
+.stage-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  max-width: 42rem;
+}
