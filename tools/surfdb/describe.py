@@ -52,6 +52,15 @@ GREEK = {
     "upsilon", "phi", "chi", "psi", "omega",
 }
 
+# The language's named constants (expr.CONSTANTS). These are NOT
+# variables and must not be set as though they were: "pi" typeset as two
+# italic letters reads as p times i, which is a different expression.
+# `e` takes upright roman for the same reason -- an italic e is a
+# variable, an upright one is Euler's number.
+CONST_LATEX = {"pi": "\\pi", "e": "\\mathrm{e}",
+               "phi": "\\varphi", "inf": "\\infty"}
+CONST_MATHML = {"pi": "π", "e": "e", "phi": "φ", "inf": "∞"}
+
 # Functions that get a name in roman type rather than a symbol.
 NAMED = {
     "sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh",
@@ -80,6 +89,8 @@ def _num(v):
 
 
 def _sym(name):
+    if name in CONST_LATEX:
+        return CONST_LATEX[name]
     if name in GREEK:
         return "\\" + name
     if name == "nn":            # the zoo's integer family index
@@ -220,6 +231,8 @@ class _MathML:
         raise expr.ExprError("cannot typeset %s" % type(n).__name__)
 
     def ident(self, name):
+        if name in CONST_MATHML:
+            return CONST_MATHML[name]
         if name in GREEK:
             return _GREEK_CHAR.get(name, name)
         if name == "nn":
@@ -527,6 +540,31 @@ def _selftest():
 
     if "\\left(" in typeset("x*y*z")["latex"]:
         raise AssertionError("spurious parentheses in a plain product")
+
+    # Repeated factors fold to a power. This is notation, not algebra:
+    # the presets write x*x because that is faster to evaluate, and set
+    # literally it reads "x x".
+    for src, want in (("x*x", "x^{2}"), ("x*x*x", "x^{3}"),
+                      ("2*x*x", "2 x^{2}"), ("x*y*x", "x^{2} y")):
+        got = typeset(src)["latex"]
+        if got != want:
+            raise AssertionError("fold %r -> %r, want %r" % (src, got, want))
+    if typeset("x*y*z")["latex"] != "x y z":
+        raise AssertionError("distinct factors were folded together")
+    if "msup" not in typeset("x*x")["mathml"]:
+        raise AssertionError("MathML did not fold the repeated factor")
+
+    # The named constants are constants, not variables: pi set as two
+    # italic letters reads as p times i, a different expression, and an
+    # italic e is a variable where an upright one is Euler's number.
+    for src, want in (("pi", "\\pi"), ("phi", "\\varphi"),
+                      ("e", "\\mathrm{e}"), ("2*pi*x", "2 \\pi x")):
+        got = typeset(src)["latex"]
+        if got != want:
+            raise AssertionError("constant %r -> %r, want %r"
+                                 % (src, got, want))
+    if chr(0x3c0) not in typeset("pi")["mathml"]:
+        raise AssertionError("MathML did not use the pi character")
 
     # Junk must yield nothing rather than something wrong.
     for bad in ("x +", "", None, 42):
