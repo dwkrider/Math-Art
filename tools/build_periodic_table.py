@@ -106,6 +106,151 @@ def kind_of(fams):
             return label
     return "Other"
 
+# --------------------------------------------------------------------
+# THE COLUMN SCHEMES.
+#
+# What forms a column is a question with several defensible answers, so
+# the reader picks. Each scheme below groups all 127 -- none of them is a
+# filter, and none leaves a solid unplaced -- and each is derived from a
+# field the records populate for every one of them.
+#
+# `noble` names the column, if any, that plays the part the noble gases
+# do: the closed case, where nothing about the solid can be made more
+# uniform in the terms the scheme is grouping by. It is a real claim, so
+# it is only set where it is true. Grouping by symmetry ends with the
+# icosahedral solids, which are the most symmetric but are not closed in
+# that sense, and that scheme sets it to None.
+# --------------------------------------------------------------------
+
+TAIL = 8
+
+
+def _capped(n):
+    """Orbit counts run to 31 with a long thin tail. Cap it, or the table
+    ends in a run of columns holding one solid each."""
+    return str(min(n, TAIL)) if n else "?"
+
+
+def _orbit_labels(word):
+    return {
+        "1": ("1 %s type" % word,
+              "Every %s equivalent to every other." % word),
+        str(TAIL): ("%d+ %s types" % (TAIL, word),
+                    "The least regular solids here, gathered so the table "
+                    "does not trail off into columns of one."),
+    }
+
+
+def _band(n):
+    for hi in (6, 12, 20, 32, 60, 92):
+        if n <= hi:
+            return str(hi)
+    return "many"
+
+
+SCHEMES = [
+    {
+        "key": "face-types",
+        "label": "Kinds of face",
+        "note": "How many classes the symmetry group divides the faces "
+                "into. Falls left to right, so the table runs from the "
+                "lopsided to the perfectly uniform.",
+        "column": lambda r: "regular" if r["regular"] else _capped(r["orbits"]),
+        "order": [str(i) for i in range(TAIL, 0, -1)] + ["regular"],
+        "labels": dict(_orbit_labels("face"), **{
+            "regular": ("Regular", "Transitive on vertices, edges and faces "
+                        "at once -- nothing about them can be made more "
+                        "uniform. The five Platonic solids and the four "
+                        "Kepler-Poinsot stars.")}),
+        "noble": "regular",
+    },
+    {
+        "key": "vertex-types",
+        "label": "Kinds of vertex",
+        "note": "The dual reading: how many classes of vertex. The "
+                "Archimedean solids have exactly one, which is what "
+                "'vertex-transitive' means and what defines them.",
+        "column": lambda r: ("regular" if r["regular"]
+                             else _capped(r["vertex_orbits"])),
+        "order": [str(i) for i in range(TAIL, 0, -1)] + ["regular"],
+        "labels": dict(_orbit_labels("vertex"), **{
+            "regular": ("Regular", "Transitive on vertices, edges and faces "
+                        "at once.")}),
+        "noble": "regular",
+    },
+    {
+        "key": "symmetry",
+        "label": "Symmetry group",
+        "note": "The point group, from least to most symmetric. Reading "
+                "across a row compares solids of similar complexity built "
+                "on different symmetries.",
+        "column": lambda r: r["period"],
+        "order": ["Cyclic", "Rotoreflection", "Dihedral", "Tetrahedral",
+                  "Octahedral", "Icosahedral"],
+        "labels": {
+            "Cyclic": ("Cyclic", "A single rotation axis, with or without "
+                       "mirrors."),
+            "Dihedral": ("Dihedral", "A principal axis with two-fold axes "
+                         "across it."),
+            "Tetrahedral": ("Tetrahedral", "The symmetry of the tetrahedron."),
+            "Octahedral": ("Octahedral", "The symmetry of the cube and "
+                           "octahedron."),
+            "Icosahedral": ("Icosahedral", "The symmetry of the dodecahedron "
+                            "and icosahedron -- the largest a polyhedron can "
+                            "have."),
+        },
+        # The icosahedral solids are the most symmetric, but "most" is not
+        # "closed": nothing stops a solid having icosahedral symmetry and
+        # still being irregular in every other way.
+        "noble": None,
+    },
+    {
+        "key": "classification",
+        "label": "Classification",
+        "note": "Which closed set each solid belongs to, ordered so the "
+                "regular ones come last. Compare with the other schemes: "
+                "the Johnson solids spread across every face-type column, "
+                "which is the table earning its keep. No column is "
+                "highlighted here because regularity is split between the "
+                "last two: the Platonic solids and the Kepler-Poinsot "
+                "stars are equally regular, one convex and one not.",
+        "column": lambda r: r["kind"],
+        "order": ["Johnson", "Catalan", "Archimedean", "Kepler-Poinsot",
+                  "Platonic"],
+        "labels": {
+            "Johnson": ("Johnson", "The 92 convex solids with regular faces "
+                        "that are neither Platonic nor Archimedean."),
+            "Catalan": ("Catalan", "The duals of the Archimedean solids: "
+                        "face-transitive, but not vertex-transitive."),
+            "Archimedean": ("Archimedean", "Vertex-transitive, with more "
+                            "than one kind of regular face."),
+            "Kepler-Poinsot": ("Kepler-Poinsot", "The four regular star "
+                               "polyhedra."),
+            "Platonic": ("Platonic", "The five regular convex solids."),
+        },
+        # NOT "Platonic". The four Kepler-Poinsot solids are just as
+        # fully transitive and sit in their own column, so no single
+        # column here is the closed one -- and saying otherwise is a
+        # claim the gate checks and rejects.
+        "noble": None,
+    },
+    {
+        "key": "faces",
+        "label": "Number of faces",
+        "note": "The nearest thing here to an atomic number -- an "
+                "ordering, though not an identifier: many solids share a "
+                "face count, and nothing recurs at intervals of it.",
+        "column": lambda r: _band(r["faces"]),
+        "order": ["6", "12", "20", "32", "60", "92", "many"],
+        "labels": {
+            "6": ("Up to 6", ""), "12": ("7-12", ""), "20": ("13-20", ""),
+            "32": ("21-32", ""), "60": ("33-60", ""), "92": ("61-92", ""),
+            "many": ("More than 92", ""),
+        },
+        "noble": None,
+    },
+]
+
 
 def main():
     with open(os.path.join(DB, "index.json"), encoding="utf-8") as fh:
@@ -119,8 +264,9 @@ def main():
         with open(os.path.join(DB, e["path"]), encoding="utf-8") as fh:
             rec = json.load(fh)
         sym = rec.get("symmetry") or {}
+        comb = rec.get("combinatorics") or {}
         tr = sym.get("transitivity") or {}
-        orb = (sym.get("orbits") or {}).get("faces")
+        orb = sym.get("orbits") or {}
         regular = bool(tr.get("vertex") and tr.get("edge") and tr.get("face"))
         rows.append({
             "slug": e["slug"],
@@ -132,76 +278,72 @@ def main():
             "schoenflies": sym.get("schoenflies"),
             "order": sym.get("order"),
             "period": period_of(sym.get("schoenflies")),
-            "orbits": orb,
+            "orbits": orb.get("faces"),
+            "vertex_orbits": orb.get("vertices"),
+            "edge_orbits": orb.get("edges"),
             "regular": regular,
-            "convex": bool(rec.get("combinatorics", {}).get("convex")),
+            "chiral": bool(sym.get("chiral")),
+            "self_dual": bool(comb.get("self_dual")),
+            "convex": bool(comb.get("convex")),
             "transitivity": [bool(tr.get("vertex")), bool(tr.get("edge")),
                              bool(tr.get("face"))],
         })
 
-    missing = [r["slug"] for r in rows if r["orbits"] is None]
-    if missing:
-        sys.stderr.write("no face-orbit count for: %s\n" % ", ".join(missing))
-        return 1
+    for field in ("orbits", "vertex_orbits", "edge_orbits"):
+        missing = [r["slug"] for r in rows if r[field] is None]
+        if missing:
+            sys.stderr.write("no %s for: %s\n" % (field, ", ".join(missing)))
+            return 1
 
-    # Columns: one per face-orbit count, with the long thin tail gathered
-    # so the table does not end in a run of columns holding one solid
-    # each, and the regular solids lifted into a column of their own.
-    TAIL = 8
-
-    def column_of(r):
-        if r["regular"]:
-            return "regular"
-        return str(min(r["orbits"], TAIL))
-
-    for r in rows:
-        r["column"] = column_of(r)
-
-    order = [str(i) for i in range(TAIL, 0, -1)] + ["regular"]
-    labels = {
-        "regular": ("Regular", "Transitive on vertices, edges and faces at "
-                    "once -- nothing about them can be made more uniform. "
-                    "The five Platonic solids and the four Kepler-Poinsot "
-                    "stars."),
-        "1": ("1 face type", "Every face equivalent to every other: the "
-              "isohedral solids, which is what the Catalans are."),
-        str(TAIL): ("%d+ face types" % TAIL,
-                    "The least regular solids in the table, gathered so the "
-                    "table does not trail off into columns of one."),
-    }
-    columns = []
-    for key in order:
-        members = [r for r in rows if r["column"] == key]
-        if not members:
-            continue
-        label, note = labels.get(
-            key, ("%s face types" % key,
-                  "Solids whose faces fall into %s symmetry classes." % key))
-        columns.append({"key": key, "label": label, "note": note,
-                        "count": len(members)})
-
-    # Within a column: least symmetric first, then smallest first, so a
-    # column reads from lopsided to highly symmetric and the eye can
-    # compare across at a similar height.
+    # Within a column: least symmetric first, then smallest, so a column
+    # reads from lopsided to highly symmetric whichever scheme is showing.
     rows.sort(key=lambda r: (PERIOD_RANK.get(r["period"], 0), r["faces"],
                              r["name"]))
-    for r in rows:
-        r.pop("column", None)
+
+    schemes = []
+    for sc in SCHEMES:
+        for r in rows:
+            r.setdefault("columns", {})[sc["key"]] = sc["column"](r)
+        counts = {}
+        for r in rows:
+            k = r["columns"][sc["key"]]
+            counts[k] = counts.get(k, 0) + 1
+        cols = []
+        for key in sc["order"]:
+            if key not in counts:
+                continue
+            label, note = sc["labels"].get(
+                key, ("%s %s" % (key, sc["label"].lower()), ""))
+            cols.append({"key": key, "label": label, "note": note,
+                         "count": counts[key]})
+        placed = sum(c["count"] for c in cols)
+        if placed != len(rows):
+            sys.stderr.write(
+                "scheme %r places %d of %d solids -- a column key is missing "
+                "from its order\n" % (sc["key"], placed, len(rows)))
+            return 1
+        schemes.append({"key": sc["key"], "label": sc["label"],
+                        "note": sc["note"], "noble": sc["noble"],
+                        "columns": cols})
 
     table = {
         "generated_from": "data/polyhedra",
         "families": list(FAMILIES),
-        "columns": columns,
-        "solids": [dict(r, column=column_of(r)) for r in rows],
+        "default_scheme": SCHEMES[0]["key"],
+        "schemes": schemes,
+        "solids": rows,
     }
     with open(OUT, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(table, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
 
-    print("periodic table: %d solids in %d columns -> %s"
-          % (len(rows), len(columns), os.path.relpath(OUT, PROJ)))
-    for c in columns:
-        print("   %-16s %3d" % (c["label"], c["count"]))
+    print("periodic table: %d solids, %d column schemes -> %s"
+          % (len(rows), len(schemes), os.path.relpath(OUT, PROJ)))
+    for s in schemes:
+        print("   %-18s %s"
+              % (s["label"],
+                 "  ".join("%s:%d" % (c["label"], c["count"])
+                           for c in s["columns"])))
     return 0
 
 

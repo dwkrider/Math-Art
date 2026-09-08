@@ -44,26 +44,46 @@ for (const [kind, n] of [['Platonic', 5], ['Archimedean', 13],
   ok(byKind[kind] === n, `${kind}: ${byKind[kind]} (expected ${n})`);
 }
 
-console.log('3. every solid has a column, and the columns add up');
-ok(table.solids.every((s) => s.column), 'every solid placed in a column');
-const sum = table.columns.reduce((n, c) => n + c.count, 0);
-ok(sum === table.solids.length, `column counts sum to ${sum}`);
-for (const c of table.columns) {
-  const n = table.solids.filter((s) => s.column === c.key).length;
-  if (n !== c.count) { fail++; console.log(`  FAIL ${c.key}: ${n} vs ${c.count}`); }
+console.log('3. EVERY scheme places EVERY solid');
+// A scheme is a rearrangement, never a filter. A column key missing from
+// a scheme's order would drop its solids off the page silently -- the
+// table would simply look shorter.
+ok(table.schemes.length >= 2, `${table.schemes.length} column schemes`);
+for (const sc of table.schemes) {
+  const keys = new Set(sc.columns.map((c) => c.key));
+  const placed = table.solids.filter((s) => keys.has(s.columns[sc.key]));
+  ok(placed.length === table.solids.length,
+     `${sc.label}: places all ${table.solids.length} (${placed.length})`);
+  const sum = sc.columns.reduce((n, c) => n + c.count, 0);
+  ok(sum === table.solids.length, `${sc.label}: counts sum to ${sum}`);
+  for (const c of sc.columns) {
+    const n = table.solids.filter((s) => s.columns[sc.key] === c.key).length;
+    if (n !== c.count) {
+      fail++;
+      console.log(`  FAIL ${sc.label}/${c.key}: ${n} vs stated ${c.count}`);
+    }
+  }
 }
+ok(table.schemes.some((s) => s.key === table.default_scheme),
+   `default scheme ${table.default_scheme} exists`);
 
-console.log('4. the noble gases are the regular solids, and only those');
-const noble = table.solids.filter((s) => s.column === 'regular');
-ok(noble.length === 9, `9 in the regular column (${noble.length})`);
-ok(noble.every((s) => s.transitivity.every(Boolean)),
-   'all transitive on vertices, edges AND faces');
-const regularElsewhere = table.solids.filter(
-  (s) => s.column !== 'regular' && s.transitivity.every(Boolean));
-ok(regularElsewhere.length === 0,
-   `no fully-transitive solid left outside it (${regularElsewhere.length})`);
-ok(new Set(noble.map((s) => s.kind)).size === 2,
-   'they are exactly the Platonic and Kepler-Poinsot solids');
+console.log('4. a noble column, where claimed, really is closed');
+// The claim is that nothing in it can be made more uniform in the terms
+// the scheme groups by. Only checked where a scheme makes it.
+for (const sc of table.schemes.filter((s) => s.noble)) {
+  const noble = table.solids.filter((s) => s.columns[sc.key] === sc.noble);
+  ok(noble.length > 0, `${sc.label}: the noble column is populated`);
+  ok(noble.every((s) => s.transitivity.every(Boolean)),
+     `${sc.label}: all of them transitive on vertices, edges AND faces`);
+  const outside = table.solids.filter(
+    (s) => s.columns[sc.key] !== sc.noble && s.transitivity.every(Boolean));
+  ok(outside.length === 0,
+     `${sc.label}: no fully-transitive solid left outside it (${outside.length})`);
+}
+const reg = table.solids.filter((s) => s.transitivity.every(Boolean));
+ok(reg.length === 9, `9 fully-transitive solids in all (${reg.length})`);
+ok(new Set(reg.map((s) => s.kind)).size === 2,
+   'exactly the Platonic and Kepler-Poinsot solids');
 
 console.log('5. every cell can draw a thumbnail');
 let noThumb = 0;

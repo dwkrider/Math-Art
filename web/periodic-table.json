@@ -7,60 +7,251 @@
   "johnson",
   "kepler-poinsot"
  ],
- "columns": [
+ "default_scheme": "face-types",
+ "schemes": [
   {
-   "key": "8",
-   "label": "8+ face types",
-   "note": "The least regular solids in the table, gathered so the table does not trail off into columns of one.",
-   "count": 19
+   "key": "face-types",
+   "label": "Kinds of face",
+   "note": "How many classes the symmetry group divides the faces into. Falls left to right, so the table runs from the lopsided to the perfectly uniform.",
+   "noble": "regular",
+   "columns": [
+    {
+     "key": "8",
+     "label": "8+ face types",
+     "note": "The least regular solids here, gathered so the table does not trail off into columns of one.",
+     "count": 19
+    },
+    {
+     "key": "7",
+     "label": "7 kinds of face",
+     "note": "",
+     "count": 11
+    },
+    {
+     "key": "6",
+     "label": "6 kinds of face",
+     "note": "",
+     "count": 11
+    },
+    {
+     "key": "5",
+     "label": "5 kinds of face",
+     "note": "",
+     "count": 13
+    },
+    {
+     "key": "4",
+     "label": "4 kinds of face",
+     "note": "",
+     "count": 17
+    },
+    {
+     "key": "3",
+     "label": "3 kinds of face",
+     "note": "",
+     "count": 16
+    },
+    {
+     "key": "2",
+     "label": "2 kinds of face",
+     "note": "",
+     "count": 16
+    },
+    {
+     "key": "1",
+     "label": "1 face type",
+     "note": "Every face equivalent to every other.",
+     "count": 15
+    },
+    {
+     "key": "regular",
+     "label": "Regular",
+     "note": "Transitive on vertices, edges and faces at once -- nothing about them can be made more uniform. The five Platonic solids and the four Kepler-Poinsot stars.",
+     "count": 9
+    }
+   ]
   },
   {
-   "key": "7",
-   "label": "7 face types",
-   "note": "Solids whose faces fall into 7 symmetry classes.",
-   "count": 11
+   "key": "vertex-types",
+   "label": "Kinds of vertex",
+   "note": "The dual reading: how many classes of vertex. The Archimedean solids have exactly one, which is what 'vertex-transitive' means and what defines them.",
+   "noble": "regular",
+   "columns": [
+    {
+     "key": "8",
+     "label": "8+ vertex types",
+     "note": "The least regular solids here, gathered so the table does not trail off into columns of one.",
+     "count": 12
+    },
+    {
+     "key": "7",
+     "label": "7 kinds of vertex",
+     "note": "",
+     "count": 5
+    },
+    {
+     "key": "5",
+     "label": "5 kinds of vertex",
+     "note": "",
+     "count": 8
+    },
+    {
+     "key": "4",
+     "label": "4 kinds of vertex",
+     "note": "",
+     "count": 17
+    },
+    {
+     "key": "3",
+     "label": "3 kinds of vertex",
+     "note": "",
+     "count": 30
+    },
+    {
+     "key": "2",
+     "label": "2 kinds of vertex",
+     "note": "",
+     "count": 33
+    },
+    {
+     "key": "1",
+     "label": "1 vertex type",
+     "note": "Every vertex equivalent to every other.",
+     "count": 13
+    },
+    {
+     "key": "regular",
+     "label": "Regular",
+     "note": "Transitive on vertices, edges and faces at once.",
+     "count": 9
+    }
+   ]
   },
   {
-   "key": "6",
-   "label": "6 face types",
-   "note": "Solids whose faces fall into 6 symmetry classes.",
-   "count": 11
+   "key": "symmetry",
+   "label": "Symmetry group",
+   "note": "The point group, from least to most symmetric. Reading across a row compares solids of similar complexity built on different symmetries.",
+   "noble": null,
+   "columns": [
+    {
+     "key": "Cyclic",
+     "label": "Cyclic",
+     "note": "A single rotation axis, with or without mirrors.",
+     "count": 56
+    },
+    {
+     "key": "Dihedral",
+     "label": "Dihedral",
+     "note": "A principal axis with two-fold axes across it.",
+     "count": 36
+    },
+    {
+     "key": "Tetrahedral",
+     "label": "Tetrahedral",
+     "note": "The symmetry of the tetrahedron.",
+     "count": 3
+    },
+    {
+     "key": "Octahedral",
+     "label": "Octahedral",
+     "note": "The symmetry of the cube and octahedron.",
+     "count": 14
+    },
+    {
+     "key": "Icosahedral",
+     "label": "Icosahedral",
+     "note": "The symmetry of the dodecahedron and icosahedron -- the largest a polyhedron can have.",
+     "count": 18
+    }
+   ]
   },
   {
-   "key": "5",
-   "label": "5 face types",
-   "note": "Solids whose faces fall into 5 symmetry classes.",
-   "count": 13
+   "key": "classification",
+   "label": "Classification",
+   "note": "Which closed set each solid belongs to, ordered so the regular ones come last. Compare with the other schemes: the Johnson solids spread across every face-type column, which is the table earning its keep. No column is highlighted here because regularity is split between the last two: the Platonic solids and the Kepler-Poinsot stars are equally regular, one convex and one not.",
+   "noble": null,
+   "columns": [
+    {
+     "key": "Johnson",
+     "label": "Johnson",
+     "note": "The 92 convex solids with regular faces that are neither Platonic nor Archimedean.",
+     "count": 92
+    },
+    {
+     "key": "Catalan",
+     "label": "Catalan",
+     "note": "The duals of the Archimedean solids: face-transitive, but not vertex-transitive.",
+     "count": 13
+    },
+    {
+     "key": "Archimedean",
+     "label": "Archimedean",
+     "note": "Vertex-transitive, with more than one kind of regular face.",
+     "count": 13
+    },
+    {
+     "key": "Kepler-Poinsot",
+     "label": "Kepler-Poinsot",
+     "note": "The four regular star polyhedra.",
+     "count": 4
+    },
+    {
+     "key": "Platonic",
+     "label": "Platonic",
+     "note": "The five regular convex solids.",
+     "count": 5
+    }
+   ]
   },
   {
-   "key": "4",
-   "label": "4 face types",
-   "note": "Solids whose faces fall into 4 symmetry classes.",
-   "count": 17
-  },
-  {
-   "key": "3",
-   "label": "3 face types",
-   "note": "Solids whose faces fall into 3 symmetry classes.",
-   "count": 16
-  },
-  {
-   "key": "2",
-   "label": "2 face types",
-   "note": "Solids whose faces fall into 2 symmetry classes.",
-   "count": 16
-  },
-  {
-   "key": "1",
-   "label": "1 face type",
-   "note": "Every face equivalent to every other: the isohedral solids, which is what the Catalans are.",
-   "count": 15
-  },
-  {
-   "key": "regular",
-   "label": "Regular",
-   "note": "Transitive on vertices, edges and faces at once -- nothing about them can be made more uniform. The five Platonic solids and the four Kepler-Poinsot stars.",
-   "count": 9
+   "key": "faces",
+   "label": "Number of faces",
+   "note": "The nearest thing here to an atomic number -- an ordering, though not an identifier: many solids share a face count, and nothing recurs at intervals of it.",
+   "noble": null,
+   "columns": [
+    {
+     "key": "6",
+     "label": "Up to 6",
+     "note": "",
+     "count": 5
+    },
+    {
+     "key": "12",
+     "label": "7-12",
+     "note": "",
+     "count": 26
+    },
+    {
+     "key": "20",
+     "label": "13-20",
+     "note": "",
+     "count": 32
+    },
+    {
+     "key": "32",
+     "label": "21-32",
+     "note": "",
+     "count": 30
+    },
+    {
+     "key": "60",
+     "label": "33-60",
+     "note": "",
+     "count": 25
+    },
+    {
+     "key": "92",
+     "label": "61-92",
+     "note": "",
+     "count": 8
+    },
+    {
+     "key": "many",
+     "label": "More than 92",
+     "note": "",
+     "count": 1
+    }
+   ]
   }
  ],
  "solids": [
@@ -75,14 +266,24 @@
    "order": 8,
    "period": "Cyclic",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "6"
+   }
   },
   {
    "slug": "pentagonal-pyramid",
@@ -95,14 +296,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "6"
+   }
   },
   {
    "slug": "elongated-triangular-pyramid",
@@ -115,14 +326,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 3,
+   "vertex_orbits": 3,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "augmented-triangular-prism",
@@ -135,14 +356,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "triangular-cupola",
@@ -155,14 +386,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "2",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "tridiminished-icosahedron",
@@ -175,14 +416,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "elongated-square-pyramid",
@@ -195,14 +446,24 @@
    "order": 8,
    "period": "Cyclic",
    "orbits": 3,
+   "vertex_orbits": 3,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "augmented-pentagonal-prism",
@@ -215,14 +476,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 5,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "augmented-tridiminished-icosahedron",
@@ -235,14 +506,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 4,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "square-cupola",
@@ -255,14 +536,24 @@
    "order": 8,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "2",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "augmented-hexagonal-prism",
@@ -275,14 +566,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 4,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "biaugmented-triangular-prism",
@@ -295,14 +596,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 6,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "elongated-pentagonal-pyramid",
@@ -315,14 +626,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 3,
+   "vertex_orbits": 3,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "metabidiminished-icosahedron",
@@ -335,14 +656,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 5,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "pentagonal-cupola",
@@ -355,14 +686,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "2",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "biaugmented-pentagonal-prism",
@@ -375,14 +716,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 4,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "gyroelongated-square-pyramid",
@@ -395,14 +746,24 @@
    "order": 8,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "augmented-truncated-tetrahedron",
@@ -415,14 +776,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "elongated-triangular-cupola",
@@ -435,14 +806,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 3,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "metabiaugmented-hexagonal-prism",
@@ -455,14 +836,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 9,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "sphenocorona",
@@ -475,14 +866,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 5,
+   "vertex_orbits": 4,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "augmented-dodecahedron",
@@ -495,14 +896,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 5,
+   "edge_orbits": 6,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "5",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "gyroelongated-pentagonal-pyramid",
@@ -515,14 +926,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "augmented-sphenocorona",
@@ -535,14 +956,24 @@
    "order": 2,
    "period": "Cyclic",
    "orbits": 11,
+   "vertex_orbits": 7,
+   "edge_orbits": 15,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "7",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "pentagonal-rotunda",
@@ -555,14 +986,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "elongated-square-cupola",
@@ -575,14 +1016,24 @@
    "order": 8,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 3,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "sphenomegacorona",
@@ -595,14 +1046,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 5,
+   "edge_orbits": 10,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "5",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "gyroelongated-triangular-cupola",
@@ -615,14 +1076,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "metabiaugmented-dodecahedron",
@@ -635,14 +1106,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 8,
+   "edge_orbits": 13,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "triangular-hebesphenorotunda",
@@ -655,14 +1136,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "hebesphenomegacorona",
@@ -675,14 +1166,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 8,
+   "vertex_orbits": 5,
+   "edge_orbits": 11,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "5",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "augmented-truncated-cube",
@@ -695,14 +1196,24 @@
    "order": 8,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 5,
+   "edge_orbits": 9,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "5",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "elongated-pentagonal-cupola",
@@ -715,14 +1226,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 3,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "3",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "triaugmented-dodecahedron",
@@ -735,14 +1256,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 6,
+   "vertex_orbits": 7,
+   "edge_orbits": 10,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "7",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "gyroelongated-square-cupola",
@@ -755,14 +1286,24 @@
    "order": 8,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "elongated-pentagonal-rotunda",
@@ -775,14 +1316,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "pentagonal-gyrocupolarotunda",
@@ -795,14 +1346,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "pentagonal-orthocupolarotunda",
@@ -815,14 +1376,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "gyroelongated-pentagonal-cupola",
@@ -835,14 +1406,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "tridiminished-rhombicosidodecahedron",
@@ -855,14 +1436,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 11,
+   "vertex_orbits": 9,
+   "edge_orbits": 16,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "elongated-pentagonal-gyrocupolarotunda",
@@ -875,14 +1466,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 9,
+   "vertex_orbits": 5,
+   "edge_orbits": 10,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "5",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "elongated-pentagonal-orthocupolarotunda",
@@ -895,14 +1496,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 9,
+   "vertex_orbits": 5,
+   "edge_orbits": 10,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "5",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "gyroelongated-pentagonal-rotunda",
@@ -915,14 +1526,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 8,
+   "vertex_orbits": 5,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "5",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "augmented-truncated-dodecahedron",
@@ -935,14 +1556,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 10,
+   "vertex_orbits": 9,
+   "edge_orbits": 15,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "gyrate-bidiminished-rhombicosidodecahedron",
@@ -955,14 +1586,24 @@
    "order": 2,
    "period": "Cyclic",
    "orbits": 27,
+   "vertex_orbits": 27,
+   "edge_orbits": 49,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "metabidiminished-rhombicosidodecahedron",
@@ -975,14 +1616,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 16,
+   "vertex_orbits": 14,
+   "edge_orbits": 26,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "gyroelongated-pentagonal-cupolarotunda",
@@ -995,14 +1646,24 @@
    "order": 5,
    "period": "Cyclic",
    "orbits": 11,
+   "vertex_orbits": 7,
+   "edge_orbits": 16,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "7",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "bigyrate-diminished-rhombicosidodecahedron",
@@ -1015,14 +1676,24 @@
    "order": 2,
    "period": "Cyclic",
    "orbits": 31,
+   "vertex_orbits": 29,
+   "edge_orbits": 56,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "diminished-rhombicosidodecahedron",
@@ -1035,14 +1706,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 11,
+   "vertex_orbits": 7,
+   "edge_orbits": 14,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "7",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "metabiaugmented-truncated-dodecahedron",
@@ -1055,14 +1736,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 18,
+   "vertex_orbits": 20,
+   "edge_orbits": 35,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "metagyrate-diminished-rhombicosidodecahedron",
@@ -1075,14 +1766,24 @@
    "order": 2,
    "period": "Cyclic",
    "orbits": 31,
+   "vertex_orbits": 29,
+   "edge_orbits": 56,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "paragyrate-diminished-rhombicosidodecahedron",
@@ -1095,14 +1796,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 11,
+   "vertex_orbits": 7,
+   "edge_orbits": 14,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "7",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "gyrate-rhombicosidodecahedron",
@@ -1115,14 +1826,24 @@
    "order": 10,
    "period": "Cyclic",
    "orbits": 13,
+   "vertex_orbits": 8,
+   "edge_orbits": 16,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "92"
+   }
   },
   {
    "slug": "metabigyrate-rhombicosidodecahedron",
@@ -1135,14 +1856,24 @@
    "order": 4,
    "period": "Cyclic",
    "orbits": 22,
+   "vertex_orbits": 17,
+   "edge_orbits": 34,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "92"
+   }
   },
   {
    "slug": "triaugmented-truncated-dodecahedron",
@@ -1155,14 +1886,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 16,
+   "vertex_orbits": 15,
+   "edge_orbits": 27,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "92"
+   }
   },
   {
    "slug": "trigyrate-rhombicosidodecahedron",
@@ -1175,14 +1916,24 @@
    "order": 6,
    "period": "Cyclic",
    "orbits": 17,
+   "vertex_orbits": 12,
+   "edge_orbits": 24,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "8"
+   "columns": {
+    "face-types": "8",
+    "vertex-types": "8",
+    "symmetry": "Cyclic",
+    "classification": "Johnson",
+    "faces": "92"
+   }
   },
   {
    "slug": "triangular-bipyramid",
@@ -1195,14 +1946,24 @@
    "order": 12,
    "period": "Dihedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "6"
+   }
   },
   {
    "slug": "gyrobifastigium",
@@ -1215,14 +1976,24 @@
    "order": 8,
    "period": "Dihedral",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "elongated-triangular-bipyramid",
@@ -1235,14 +2006,24 @@
    "order": 12,
    "period": "Dihedral",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "pentagonal-bipyramid",
@@ -1255,14 +2036,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "elongated-square-bipyramid",
@@ -1275,14 +2066,24 @@
    "order": 16,
    "period": "Dihedral",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "snub-disphenoid",
@@ -1295,14 +2096,24 @@
    "order": 8,
    "period": "Dihedral",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "12"
+   }
   },
   {
    "slug": "bilunabirotunda",
@@ -1315,14 +2126,24 @@
    "order": 8,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "parabiaugmented-hexagonal-prism",
@@ -1335,14 +2156,24 @@
    "order": 8,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "triangular-orthobicupola",
@@ -1355,14 +2186,24 @@
    "order": 12,
    "period": "Dihedral",
    "orbits": 3,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "triaugmented-triangular-prism",
@@ -1375,14 +2216,24 @@
    "order": 12,
    "period": "Dihedral",
    "orbits": 3,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "elongated-pentagonal-bipyramid",
@@ -1395,14 +2246,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "gyroelongated-square-bipyramid",
@@ -1415,14 +2276,24 @@
    "order": 16,
    "period": "Dihedral",
    "orbits": 2,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "triaugmented-hexagonal-prism",
@@ -1435,14 +2306,24 @@
    "order": 12,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "square-gyrobicupola",
@@ -1455,14 +2336,24 @@
    "order": 16,
    "period": "Dihedral",
    "orbits": 3,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "square-orthobicupola",
@@ -1475,14 +2366,24 @@
    "order": 16,
    "period": "Dihedral",
    "orbits": 3,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "elongated-triangular-gyrobicupola",
@@ -1495,14 +2396,24 @@
    "order": 12,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 2,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "elongated-triangular-orthobicupola",
@@ -1515,14 +2426,24 @@
    "order": 12,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 2,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "parabiaugmented-dodecahedron",
@@ -1535,14 +2456,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 2,
+   "vertex_orbits": 3,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "20"
+   }
   },
   {
    "slug": "pentagonal-gyrobicupola",
@@ -1555,14 +2486,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 3,
+   "vertex_orbits": 2,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "pentagonal-orthobicupola",
@@ -1575,14 +2516,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 3,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "disphenocingulum",
@@ -1595,14 +2546,24 @@
    "order": 8,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 7,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "elongated-square-gyrobicupola",
@@ -1615,14 +2576,24 @@
    "order": 16,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 2,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "gyroelongated-triangular-bicupola",
@@ -1635,14 +2606,24 @@
    "order": 6,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "snub-square-antiprism",
@@ -1655,14 +2636,24 @@
    "order": 16,
    "period": "Dihedral",
    "orbits": 3,
+   "vertex_orbits": 2,
+   "edge_orbits": 4,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "biaugmented-truncated-cube",
@@ -1675,14 +2666,24 @@
    "order": 16,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 6,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "elongated-pentagonal-gyrobicupola",
@@ -1695,14 +2696,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 2,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "elongated-pentagonal-orthobicupola",
@@ -1715,14 +2726,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 2,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "2",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "pentagonal-orthobirotunda",
@@ -1735,14 +2756,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 4,
+   "vertex_orbits": 3,
+   "edge_orbits": 5,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "4"
+   "columns": {
+    "face-types": "4",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "32"
+   }
   },
   {
    "slug": "gyroelongated-square-bicupola",
@@ -1755,14 +2786,24 @@
    "order": 8,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "elongated-pentagonal-gyrobirotunda",
@@ -1775,14 +2816,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 6,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "elongated-pentagonal-orthobirotunda",
@@ -1795,14 +2846,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 6,
+   "vertex_orbits": 3,
+   "edge_orbits": 6,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "gyroelongated-pentagonal-bicupola",
@@ -1815,14 +2876,24 @@
    "order": 10,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "parabidiminished-rhombicosidodecahedron",
@@ -1835,14 +2906,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 5,
+   "vertex_orbits": 3,
+   "edge_orbits": 6,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "5"
+   "columns": {
+    "face-types": "5",
+    "vertex-types": "3",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "gyroelongated-pentagonal-birotunda",
@@ -1855,14 +2936,24 @@
    "order": 10,
    "period": "Dihedral",
    "orbits": 6,
+   "vertex_orbits": 4,
+   "edge_orbits": 10,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "4",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "parabiaugmented-truncated-dodecahedron",
@@ -1875,14 +2966,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 6,
+   "vertex_orbits": 5,
+   "edge_orbits": 9,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "6"
+   "columns": {
+    "face-types": "6",
+    "vertex-types": "5",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "60"
+   }
   },
   {
    "slug": "parabigyrate-rhombicosidodecahedron",
@@ -1895,14 +2996,24 @@
    "order": 20,
    "period": "Dihedral",
    "orbits": 7,
+   "vertex_orbits": 4,
+   "edge_orbits": 8,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     false
    ],
-   "column": "7"
+   "columns": {
+    "face-types": "7",
+    "vertex-types": "4",
+    "symmetry": "Dihedral",
+    "classification": "Johnson",
+    "faces": "92"
+   }
   },
   {
    "slug": "tetrahedron",
@@ -1915,14 +3026,24 @@
    "order": 24,
    "period": "Tetrahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": true,
    "convex": true,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Tetrahedral",
+    "classification": "Platonic",
+    "faces": "6"
+   }
   },
   {
    "slug": "truncated-tetrahedron",
@@ -1935,14 +3056,24 @@
    "order": 24,
    "period": "Tetrahedral",
    "orbits": 2,
+   "vertex_orbits": 1,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "1",
+    "symmetry": "Tetrahedral",
+    "classification": "Archimedean",
+    "faces": "12"
+   }
   },
   {
    "slug": "triakistetrahedron",
@@ -1955,14 +3086,24 @@
    "order": 24,
    "period": "Tetrahedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Tetrahedral",
+    "classification": "Catalan",
+    "faces": "12"
+   }
   },
   {
    "slug": "cube",
@@ -1975,14 +3116,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Octahedral",
+    "classification": "Platonic",
+    "faces": "6"
+   }
   },
   {
    "slug": "octahedron",
@@ -1995,14 +3146,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Octahedral",
+    "classification": "Platonic",
+    "faces": "12"
+   }
   },
   {
    "slug": "rhombic-dodecahedron",
@@ -2015,14 +3176,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 1,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     true,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Octahedral",
+    "classification": "Catalan",
+    "faces": "12"
+   }
   },
   {
    "slug": "cuboctahedron",
@@ -2035,14 +3206,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 2,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     true,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "1",
+    "symmetry": "Octahedral",
+    "classification": "Archimedean",
+    "faces": "20"
+   }
   },
   {
    "slug": "truncated-cube",
@@ -2055,14 +3236,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 2,
+   "vertex_orbits": 1,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "1",
+    "symmetry": "Octahedral",
+    "classification": "Archimedean",
+    "faces": "20"
+   }
   },
   {
    "slug": "truncated-octahedron",
@@ -2075,14 +3266,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 2,
+   "vertex_orbits": 1,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "1",
+    "symmetry": "Octahedral",
+    "classification": "Archimedean",
+    "faces": "20"
+   }
   },
   {
    "slug": "deltoidal-icositetrahedron",
@@ -2095,14 +3296,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 3,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "3",
+    "symmetry": "Octahedral",
+    "classification": "Catalan",
+    "faces": "32"
+   }
   },
   {
    "slug": "pentagonal-icositetrahedron",
@@ -2115,14 +3326,24 @@
    "order": 24,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 3,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "3",
+    "symmetry": "Octahedral",
+    "classification": "Catalan",
+    "faces": "32"
+   }
   },
   {
    "slug": "tetrakishexahedron",
@@ -2135,14 +3356,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Octahedral",
+    "classification": "Catalan",
+    "faces": "32"
+   }
   },
   {
    "slug": "triakisoctahedron",
@@ -2155,14 +3386,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Octahedral",
+    "classification": "Catalan",
+    "faces": "32"
+   }
   },
   {
    "slug": "rhombicuboctahedron",
@@ -2175,14 +3416,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 3,
+   "vertex_orbits": 1,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "1",
+    "symmetry": "Octahedral",
+    "classification": "Archimedean",
+    "faces": "32"
+   }
   },
   {
    "slug": "truncated-cuboctahedron",
@@ -2195,14 +3446,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 3,
+   "vertex_orbits": 1,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "1",
+    "symmetry": "Octahedral",
+    "classification": "Archimedean",
+    "faces": "32"
+   }
   },
   {
    "slug": "snub-cube",
@@ -2215,14 +3476,24 @@
    "order": 24,
    "period": "Octahedral",
    "orbits": 3,
+   "vertex_orbits": 1,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "1",
+    "symmetry": "Octahedral",
+    "classification": "Archimedean",
+    "faces": "60"
+   }
   },
   {
    "slug": "disdyakisdodecahedron",
@@ -2235,14 +3506,24 @@
    "order": 48,
    "period": "Octahedral",
    "orbits": 1,
+   "vertex_orbits": 3,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "3",
+    "symmetry": "Octahedral",
+    "classification": "Catalan",
+    "faces": "60"
+   }
   },
   {
    "slug": "dodecahedron",
@@ -2255,14 +3536,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Icosahedral",
+    "classification": "Platonic",
+    "faces": "12"
+   }
   },
   {
    "slug": "great-dodecahedron",
@@ -2275,14 +3566,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": false,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Icosahedral",
+    "classification": "Kepler-Poinsot",
+    "faces": "12"
+   }
   },
   {
    "slug": "great-stellated-dodecahedron",
@@ -2295,14 +3596,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": false,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Icosahedral",
+    "classification": "Kepler-Poinsot",
+    "faces": "12"
+   }
   },
   {
    "slug": "small-stellated-dodecahedron",
@@ -2315,14 +3626,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": false,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Icosahedral",
+    "classification": "Kepler-Poinsot",
+    "faces": "12"
+   }
   },
   {
    "slug": "great-icosahedron",
@@ -2335,14 +3656,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": false,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Icosahedral",
+    "classification": "Kepler-Poinsot",
+    "faces": "20"
+   }
   },
   {
    "slug": "icosahedron",
@@ -2355,14 +3686,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": true,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     true,
     true
    ],
-   "column": "regular"
+   "columns": {
+    "face-types": "regular",
+    "vertex-types": "regular",
+    "symmetry": "Icosahedral",
+    "classification": "Platonic",
+    "faces": "20"
+   }
   },
   {
    "slug": "rhombic-triacontahedron",
@@ -2375,14 +3716,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 1,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     true,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Icosahedral",
+    "classification": "Catalan",
+    "faces": "32"
+   }
   },
   {
    "slug": "icosidodecahedron",
@@ -2395,14 +3746,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 2,
+   "vertex_orbits": 1,
+   "edge_orbits": 1,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     true,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "1",
+    "symmetry": "Icosahedral",
+    "classification": "Archimedean",
+    "faces": "32"
+   }
   },
   {
    "slug": "truncated-dodecahedron",
@@ -2415,14 +3776,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 2,
+   "vertex_orbits": 1,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "1",
+    "symmetry": "Icosahedral",
+    "classification": "Archimedean",
+    "faces": "32"
+   }
   },
   {
    "slug": "truncated-icosahedron",
@@ -2435,14 +3806,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 2,
+   "vertex_orbits": 1,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "2"
+   "columns": {
+    "face-types": "2",
+    "vertex-types": "1",
+    "symmetry": "Icosahedral",
+    "classification": "Archimedean",
+    "faces": "32"
+   }
   },
   {
    "slug": "deltoidal-hexecontahedron",
@@ -2455,14 +3836,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 3,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "3",
+    "symmetry": "Icosahedral",
+    "classification": "Catalan",
+    "faces": "60"
+   }
   },
   {
    "slug": "pentagonal-hexecontahedron",
@@ -2475,14 +3866,24 @@
    "order": 60,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 3,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "3",
+    "symmetry": "Icosahedral",
+    "classification": "Catalan",
+    "faces": "60"
+   }
   },
   {
    "slug": "pentakisdodecahedron",
@@ -2495,14 +3896,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Icosahedral",
+    "classification": "Catalan",
+    "faces": "60"
+   }
   },
   {
    "slug": "triakisicosahedron",
@@ -2515,14 +3926,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 2,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "2",
+    "symmetry": "Icosahedral",
+    "classification": "Catalan",
+    "faces": "60"
+   }
   },
   {
    "slug": "rhombicosidodecahedron",
@@ -2535,14 +3956,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 3,
+   "vertex_orbits": 1,
+   "edge_orbits": 2,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "1",
+    "symmetry": "Icosahedral",
+    "classification": "Archimedean",
+    "faces": "92"
+   }
   },
   {
    "slug": "truncated-icosidodecahedron",
@@ -2555,14 +3986,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 3,
+   "vertex_orbits": 1,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "1",
+    "symmetry": "Icosahedral",
+    "classification": "Archimedean",
+    "faces": "92"
+   }
   },
   {
    "slug": "snub-dodecahedron",
@@ -2575,14 +4016,24 @@
    "order": 60,
    "period": "Icosahedral",
    "orbits": 3,
+   "vertex_orbits": 1,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": true,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     true,
     false,
     false
    ],
-   "column": "3"
+   "columns": {
+    "face-types": "3",
+    "vertex-types": "1",
+    "symmetry": "Icosahedral",
+    "classification": "Archimedean",
+    "faces": "92"
+   }
   },
   {
    "slug": "disdyakistriacontahedron",
@@ -2595,14 +4046,24 @@
    "order": 120,
    "period": "Icosahedral",
    "orbits": 1,
+   "vertex_orbits": 3,
+   "edge_orbits": 3,
    "regular": false,
+   "chiral": false,
+   "self_dual": false,
    "convex": true,
    "transitivity": [
     false,
     false,
     true
    ],
-   "column": "1"
+   "columns": {
+    "face-types": "1",
+    "vertex-types": "3",
+    "symmetry": "Icosahedral",
+    "classification": "Catalan",
+    "faces": "many"
+   }
   }
  ]
 }

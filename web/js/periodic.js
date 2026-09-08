@@ -54,12 +54,37 @@ async function main() {
     return;
   }
 
-  const byColumn = new Map(table.columns.map((c) => [c.key, []]));
-  for (const s of table.solids) {
-    if (byColumn.has(s.column)) byColumn.get(s.column).push(s);
-  }
-
   host.textContent = '';
+
+  // WHAT FORMS A COLUMN IS THE READER'S CHOICE.
+  //
+  // There is no single right answer -- kinds of face, kinds of vertex,
+  // symmetry group, classification and sheer size are all defensible,
+  // and they disagree interestingly. Every scheme places all 127; none
+  // is a filter. tools/build_periodic_table.py works them all out and
+  // ships the assignments, so switching is instant and no scheme can
+  // quietly drop a solid.
+  const schemes = new Map(table.schemes.map((s) => [s.key, s]));
+  let schemeKey = table.default_scheme;
+  let current = null;
+
+  const bar = el('div', 'periodic-controls');
+  const label = el('label', 'periodic-select');
+  label.append(el('span', null, 'Columns:'));
+  const sel = el('select', 'sort');
+  sel.setAttribute('aria-label', 'What forms a column');
+  for (const s of table.schemes) {
+    const o = el('option', null, s.label);
+    o.value = s.key;
+    if (s.key === schemeKey) o.selected = true;
+    sel.append(o);
+  }
+  label.append(sel);
+  bar.append(label);
+  const note = el('p', 'periodic-note');
+  bar.append(note);
+  host.append(bar);
+
   const legend = el('div', 'periodic-legend');
   for (const [kind, cls] of Object.entries(KIND_CLASS)) {
     const n = table.solids.filter((s) => s.kind === kind).length;
@@ -71,27 +96,51 @@ async function main() {
   host.append(legend);
 
   const grid = el('div', 'periodic-grid');
-  for (const col of table.columns) {
-    const column = el('div', 'periodic-column');
-    if (col.key === 'regular') column.classList.add('noble');
-    const head = el('div', 'column-head');
-    head.append(el('span', 'column-label', col.label));
-    head.append(el('span', 'column-count', String(col.count)));
-    head.title = col.note;
-    column.append(head);
-
-    for (const s of byColumn.get(col.key) || []) {
-      column.append(cell(s));
-    }
-    grid.append(column);
-  }
   host.append(grid);
+
+  function draw() {
+    const scheme = schemes.get(schemeKey);
+    note.textContent = scheme.note;
+    grid.textContent = '';
+    const byColumn = new Map(scheme.columns.map((c) => [c.key, []]));
+    for (const s of table.solids) {
+      const k = s.columns[scheme.key];
+      if (byColumn.has(k)) byColumn.get(k).push(s);
+    }
+    for (const col of scheme.columns) {
+      const column = el('div', 'periodic-column');
+      // Only where the claim is true: a "noble" column is one whose
+      // members cannot be made more uniform in the terms being grouped
+      // by. Grouping by symmetry ends with the icosahedral solids, which
+      // are the most symmetric but not closed in that sense, so that
+      // scheme highlights nothing.
+      if (scheme.noble && col.key === scheme.noble) {
+        column.classList.add('noble');
+      }
+      const head = el('div', 'column-head');
+      head.append(el('span', 'column-label', col.label));
+      head.append(el('span', 'column-count', String(col.count)));
+      if (col.note) head.title = col.note;
+      column.append(head);
+      for (const s of byColumn.get(col.key) || []) column.append(cell(s));
+      grid.append(column);
+    }
+    if (current) {
+      for (const c of grid.querySelectorAll('.periodic-cell')) {
+        c.classList.toggle('on', c.dataset.slug === current);
+      }
+    }
+  }
+
+  sel.addEventListener('change', () => {
+    schemeKey = sel.value;
+    draw();
+  });
 
   // -- the detail panel, opened on click ---------------------------
   const panel = $('#panel');
   const viewer = new Viewer($('#stage'));
   const detail = $('#detail');
-  let current = null;
 
   function cell(s) {
     const b = el('button', `periodic-cell ${KIND_CLASS[s.kind] || ''}`);
@@ -146,6 +195,8 @@ async function main() {
     if (location.hash) history.replaceState(null, '', location.pathname);
     document.title = 'Periodic Table of Polyhedra — Math Art';
   }
+  draw();
+
   $('#panel-close').addEventListener('click', close);
   addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 

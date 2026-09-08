@@ -1154,3 +1154,28 @@ figcaption {
 @media (max-width: 62rem) {
   .periodic-panel { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* The column-scheme picker above the table. */
+.periodic-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.8rem;
+}
+.periodic-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+.periodic-select select { min-width: 12rem; }
+.periodic-note {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  max-width: 52rem;
+  flex: 1 1 20rem;
+}
