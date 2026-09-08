@@ -81,6 +81,13 @@
   </div>
 
   <section class="panel-section">
+    <h2>Formula</h2>
+    <figure class="eqn">
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mn>0.25</mn><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><msup><mrow><mo stretchy="false">(</mo><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>&#x2212;</mo><mn>2</mn></mrow><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><msup><mrow><mo stretchy="false">(</mo><mrow><mi>x</mi><mo>&#x2212;</mo><mi>y</mi></mrow><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>&#x2212;</mo><mn>2</mn></mrow><mo stretchy="false">)</mo></mrow></mrow><mo>&#x2212;</mo><msup><mrow><mo stretchy="false">(</mo><mrow><mrow><mrow><mrow><mrow><mrow><mo>&#x2212;</mo><mn>3.875</mn></mrow><mo>&#x2062;</mo><msup><mrow><mo stretchy="false">(</mo><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup></mrow><mo>+</mo><mrow><msup><mi>y</mi><mn>2</mn></msup></mrow></mrow><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow><mo>+</mo><mrow><mrow><mo stretchy="false">(</mo><mrow><mrow><mn>4</mn><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo>+</mo><mn>8.824116139070417</mn></mrow><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup></mrow><mo>+</mo><mrow><msup><mi>y</mi><mn>2</mn></msup></mrow></mrow><mo stretchy="false">)</mo></mrow></mrow></mrow><mo>&#x2212;</mo><msup><mi>z</mi><mn>4</mn></msup></mrow><mo>&#x2212;</mo><mrow><mn>4.058504678941934</mn><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo>&#x2212;</mo><mn>5.032078619621483</mn></mrow><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">0.25 \left(x^{2} - 1\right) \left(y^{2} - 1\right) \left(\left(x + y\right)^{2} - 2\right) \left(\left(x - y\right)^{2} - 2\right) - \left(-3.875 \left(x^{2} + y^{2}\right)^{2} + \left(4 z^{2} + 8.824116139070417\right) \left(x^{2} + y^{2}\right) - z^{4} - 4.058504678941934 z^{2} - 5.032078619621483\right)^{2} = 0</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="0.25 \left(x^{2} - 1\right) \left(y^{2} - 1\right) \left(\left(x + y\right)^{2} - 2\right) \left(\left(x - y\right)^{2} - 2\right) - \left(-3.875 \left(x^{2} + y^{2}\right)^{2} + \left(4 z^{2} + 8.824116139070417\right) \left(x^{2} + y^{2}\right) - z^{4} - 4.058504678941934 z^{2} - 5.032078619621483\right)^{2} = 0">copy LaTeX</button>
+    </figure>
+  </section>
+  <section class="panel-section">
     <h2>Properties</h2>
     <dl class="deflist">
       <dt>Family</dt><dd>algebraic</dd>
@@ -95,13 +102,11 @@
   </section>
   <section class="panel-section">
     <h2>Definition</h2>
-    <p class="detail-notes">Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.
-
-Endrass&#x27;s second D8 x Z2 octic: parameter values in his 5-parameter family (b = 4 and four derived expressions in b and sqrt(2), printed on the mirrored page) giving exactly 160 nodes.  Distinct from, and found alongside, his 168-nodal record surface.</p>
+    <p class="detail-notes">Endrass&#x27;s second D8 x Z2 octic: parameter values in his 5-parameter family (b = 4 and four derived expressions in b and sqrt(2), printed on the mirrored page) giving exactly 160 nodes.  Distinct from, and found alongside, his 168-nodal record surface.</p>
   </section>
   <section class="panel-section">
     <h2>Sources</h2>
-    <p class="provenance">Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery&#x27;s compilation.</p>
+    <p class="provenance">Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 8.88e-16).</p>
     <ul class="sources">
       <li>St. Endrass, &quot;A Projective Surface of Degree Eight with 168 Nodes&quot;, J. Algebraic Geom. 6 (1997) 325-334 -- the family and the 112-node count of its generic member.</li>
       <li>O. Labs, Algebraic Surface Homepage, algebraicsurface.net, octics pages (endroctconstr, stephan160, duco165, stephan120128136, vstrconstr) and advent calendar 2002 No. 6 -- the printed family, the 160-/165-nodal parameter values, the 124-nodal equation and the modified Chmutov octic.  Mirrored locally under references/websites/algsurf/.</li>
@@ -124,5 +129,20 @@ Endrass&#x27;s second D8 x Z2 octic: parameter values in his 5-parameter family 
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

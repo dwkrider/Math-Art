@@ -128,5 +128,33 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Enneper is a minimal surface, given by a parametrisation, genus 0, 1 end, self-intersecting.",
+    "source": "curated",
+    "curated": "One of the simplest minimal surfaces that can be written down in closed form, and a standard first example because its Weierstrass data is as plain as it gets. It has a single end and no boundary, and it passes through itself: minimal does not mean tidy. Grown far enough, the self-intersections dominate the picture.",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "u - \\frac{u^{3}}{3} + u v^{2}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mi>u</mi><mo>&#x2212;</mo><mfrac><msup><mi>u</mi><mn>3</mn></msup><mn>3</mn></mfrac></mrow><mo>+</mo><mrow><mi>u</mi><mo>&#x2062;</mo><msup><mi>v</mi><mn>2</mn></msup></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">u - \\frac{u^{3}}{3} + u v^{2}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "v - \\frac{v^{3}}{3} + v u^{2}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mi>v</mi><mo>&#x2212;</mo><mfrac><msup><mi>v</mi><mn>3</mn></msup><mn>3</mn></mfrac></mrow><mo>+</mo><mrow><mi>v</mi><mo>&#x2062;</mo><msup><mi>u</mi><mn>2</mn></msup></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">v - \\frac{v^{3}}{3} + v u^{2}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "u^{2} - v^{2}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msup><mi>u</mi><mn>2</mn></msup><mo>&#x2212;</mo><msup><mi>v</mi><mn>2</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">u^{2} - v^{2}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

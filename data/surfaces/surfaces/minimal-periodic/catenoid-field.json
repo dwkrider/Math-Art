@@ -74,5 +74,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Catenoid Field (square-torus member) is a doubly periodic minimal surface, given by a Weierstrass representation, immersed, with a layer group.",
+    "source": "templated"
   }
 }

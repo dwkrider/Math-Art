@@ -125,5 +125,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Stessmann's Surface (exact fundamental piece, conjugate to I-WP) is a triply periodic minimal surface, given by a Weierstrass representation, self-intersecting, with a crystallographic space group.",
+    "source": "templated"
   }
 }

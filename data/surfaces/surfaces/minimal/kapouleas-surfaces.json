@@ -72,5 +72,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Kapouleas Surface (desingularized catenoids) is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

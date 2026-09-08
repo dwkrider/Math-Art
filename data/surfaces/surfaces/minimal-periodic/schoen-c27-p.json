@@ -656,5 +656,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schoen C27(P) is a triply periodic minimal surface, given by a Weierstrass representation, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

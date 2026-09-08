@@ -81,5 +81,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Bjorling: Helix Ribbon is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

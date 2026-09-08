@@ -60,5 +60,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Catenoid with Handle is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

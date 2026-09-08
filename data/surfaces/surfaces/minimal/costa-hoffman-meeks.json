@@ -145,5 +145,25 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Costa-Hoffman-Meeks Surface is a minimal surface, given by a Weierstrass representation, genus varies, 3 ends, embedded.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "gauss_map",
+        "label": "Gauss map g",
+        "latex": "c \\exp\\left(\\frac{-\\left(k \\log\\left(z\\right) + \\log\\left(1 + z\\right) + \\log\\left(-1 + z\\right)\\right)}{1 + k}\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>c</mi><mo>&#x2062;</mo><mrow><mi>exp</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mfrac><mrow><mo>&#x2212;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mi>k</mi><mo>&#x2062;</mo><mrow><mi>log</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mi>log</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>1</mn><mo>+</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mi>log</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mrow><mn>1</mn><mo>+</mo><mi>k</mi></mrow></mfrac><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">c \\exp\\left(\\frac{-\\left(k \\log\\left(z\\right) + \\log\\left(1 + z\\right) + \\log\\left(-1 + z\\right)\\right)}{1 + k}\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "height_differential",
+        "label": "Height differential dh",
+        "latex": "\\frac{c}{-1 + z^{2}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mi>c</mi><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{c}{-1 + z^{2}}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

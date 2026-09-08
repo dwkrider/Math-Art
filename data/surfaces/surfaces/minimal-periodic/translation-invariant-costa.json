@@ -88,5 +88,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Translation-Invariant Costa is a singly periodic minimal surface, given by a Weierstrass representation, genus 1, 4 ends, immersed, with a rod group.",
+    "source": "templated"
   }
 }

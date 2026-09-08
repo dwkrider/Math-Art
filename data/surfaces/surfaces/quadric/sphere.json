@@ -143,5 +143,19 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Sphere is a quadric surface, of constant positive Gaussian curvature, defined by an implicit equation, genus 0, embedded, with a continuous symmetry group.",
+    "source": "curated",
+    "curated": "The set of points at a fixed distance from a centre: the surface of constant positive curvature, the shape that encloses the most volume for its area, and the one every other closed surface is measured against.",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "x^{2} + y^{2} + z^{2} - 1 = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x^{2} + y^{2} + z^{2} - 1 = 0</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

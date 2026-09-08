@@ -75,6 +75,13 @@
   </div>
 
   <section class="panel-section">
+    <h2>Formula</h2>
+    <figure class="eqn">
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>+</mo><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo>+</mo><mrow><mn>2</mn><mo>&#x2062;</mo><msup><mi>y</mi><mn>3</mn></msup><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><mo>+</mo><mrow><mn>3</mn><mo>&#x2062;</mo><msup><mi>y</mi><mn>3</mn></msup></mrow></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">x^{2} y z + x^{2} z^{2} + 2 y^{3} z + 3 y^{3} = 0</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="x^{2} y z + x^{2} z^{2} + 2 y^{3} z + 3 y^{3} = 0">copy LaTeX</button>
+    </figure>
+  </section>
+  <section class="panel-section">
     <h2>Properties</h2>
     <dl class="deflist">
       <dt>Family</dt><dd>algebraic</dd>
@@ -106,5 +113,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

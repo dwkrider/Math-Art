@@ -824,3 +824,93 @@ figcaption {
   color: var(--ink-faint);
 }
 .index-link a { color: var(--ink-dim); }
+
+/* ------------------------------------------------------------------
+ * Descriptions and formulae.
+ *
+ * NOTE ON THE CLASS NAME. These are `.eqn`, not `.formula`, because
+ * `.formula` was already taken -- by the definition rows further up,
+ * which are a grid with a 1.6rem label column. Reusing the name put
+ * the caption, the relation and the copy button into that column: the
+ * label wrapped to a stack, and the relation landed on top of it.
+ *
+ * The maths is MathML, rendered by the browser itself -- there is no
+ * library here and no web font. What the stylesheet has to do is give a
+ * long equation somewhere to go: a decic runs to several hundred
+ * characters, and left to itself it would either force the page to
+ * scroll sideways or be clipped. It scrolls inside its own box.
+ * ------------------------------------------------------------------ */
+
+.description-prose,
+.object-prose {
+  color: var(--ink);
+  line-height: 1.65;
+  max-width: 46rem;
+  margin: 0 0 0.9rem;
+}
+
+/* Under curated prose the templated line is supporting detail, so it is
+ * set quieter rather than competing with the paragraph above it. */
+.description-summary {
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 46rem;
+  margin: 0 0 0.9rem;
+}
+
+.eqn {
+  margin: 0 0 1.1rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+
+.eqn figcaption,
+.eqn .eqn-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-faint);
+  margin-bottom: 0.45rem;
+}
+
+/* The equation, and the one rule that matters: it may scroll, the page
+ * may not. */
+.eqn-math {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.2rem;
+  color: var(--ink);
+}
+
+.eqn-math math {
+  font-size: 1.05rem;
+  /* Some engines still centre display maths in the available width,
+   * which puts a long equation's start off-screen to the left. */
+  text-align: left;
+}
+
+.eqn-copy {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.eqn-copy:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+/* A browser with no MathML support drops to the LaTeX, which should at
+ * least look like code rather than like prose. */
+.eqn-math code {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

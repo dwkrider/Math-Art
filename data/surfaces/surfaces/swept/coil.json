@@ -80,5 +80,32 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Coil is a swept surface, given by a parametrisation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "\\cos\\left(v\\right) - 0.45 \\cos\\left(u\\right) \\cos\\left(v\\right) + \\frac{0.18 \\sin\\left(u\\right) \\sin\\left(v\\right)}{\\sqrt{1.16}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2212;</mo><mrow><mn>0.45</mn><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>+</mo><mfrac><mrow><mn>0.18</mn><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow><msqrt><mn>1.16</mn></msqrt></mfrac></mrow></mrow><annotation encoding=\"application/x-tex\">\\cos\\left(v\\right) - 0.45 \\cos\\left(u\\right) \\cos\\left(v\\right) + \\frac{0.18 \\sin\\left(u\\right) \\sin\\left(v\\right)}{\\sqrt{1.16}}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "\\sin\\left(v\\right) - 0.45 \\cos\\left(u\\right) \\sin\\left(v\\right) - \\frac{0.18 \\sin\\left(u\\right) \\cos\\left(v\\right)}{\\sqrt{1.16}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2212;</mo><mrow><mn>0.45</mn><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>&#x2212;</mo><mfrac><mrow><mn>0.18</mn><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow><msqrt><mn>1.16</mn></msqrt></mfrac></mrow></mrow><annotation encoding=\"application/x-tex\">\\sin\\left(v\\right) - 0.45 \\cos\\left(u\\right) \\sin\\left(v\\right) - \\frac{0.18 \\sin\\left(u\\right) \\cos\\left(v\\right)}{\\sqrt{1.16}}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "0.4 v + \\frac{0.45 \\sin\\left(u\\right)}{\\sqrt{1.16}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mn>0.4</mn><mo>&#x2062;</mo><mi>v</mi></mrow><mo>+</mo><mfrac><mrow><mn>0.45</mn><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow></mrow><msqrt><mn>1.16</mn></msqrt></mfrac></mrow></mrow><annotation encoding=\"application/x-tex\">0.4 v + \\frac{0.45 \\sin\\left(u\\right)}{\\sqrt{1.16}}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

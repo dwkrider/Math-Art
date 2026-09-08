@@ -91,7 +91,7 @@
   </section>
   <section class="panel-section">
     <h2>Definition</h2>
-    <p class="detail-notes">No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface.</p>
+    <p class="detail-notes">No chart is stored: the preset draws the conifold TRANSITION -- a family of profiles across the node at delta = 0, assembled from several surfaces in one mesh -- so the row is a one-parameter family of surfaces rather than one surface with a chart. The shipped implementation is authoritative; an unverified transcription would silently define a different surface.</p>
   </section>
   <section class="panel-section">
     <h2>Sources</h2>
@@ -115,5 +115,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

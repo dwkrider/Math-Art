@@ -73,5 +73,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "4-Noid, Two Symmetry Planes is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

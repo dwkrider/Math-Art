@@ -76,6 +76,13 @@
   </div>
 
   <section class="panel-section">
+    <h2>Formula</h2>
+    <figure class="eqn">
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><msup><mrow><mo stretchy="false">(</mo><mrow><mn>0.25</mn><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><mo>+</mo><mi>z</mi></mrow><mo>+</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow></mrow><mo stretchy="false">)</mo></mrow><mn>4</mn></msup><mo>&#x2212;</mo><mrow><mn>0.25</mn><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><mo>+</mo><mi>z</mi></mrow><mo>+</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mrow><msup><mi>x</mi><mn>3</mn></msup><mo>+</mo><msup><mi>y</mi><mn>3</mn></msup></mrow><mo>+</mo><msup><mi>z</mi><mn>3</mn></msup></mrow><mo>+</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow></mrow></mrow><mo>+</mo><mrow><mn>3</mn><mo>&#x2062;</mo><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\left(0.25 \left(x + y + z + 1\right)\right)^{4} - 0.25 \left(x + y + z + 1\right) \left(x^{3} + y^{3} + z^{3} + 1\right) + 3 x y z = 0</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\left(0.25 \left(x + y + z + 1\right)\right)^{4} - 0.25 \left(x + y + z + 1\right) \left(x^{3} + y^{3} + z^{3} + 1\right) + 3 x y z = 0">copy LaTeX</button>
+    </figure>
+  </section>
+  <section class="panel-section">
     <h2>Properties</h2>
     <dl class="deflist">
       <dt>Family</dt><dd>algebraic</dd>
@@ -90,13 +97,11 @@
   </section>
   <section class="panel-section">
     <h2>Definition</h2>
-    <p class="detail-notes">Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.
-
-A quartic with 45 nodes; Heinrich Burkhardt, 1891.  The 45-nodal object is a THREEFOLD in P^4 (y0^4 - y0(y1^3+..+y4^3) + 3 y1 y2 y3 y4 = 0), so any 3D picture is a section: THE SHIPPED ROW IS THE y0 = (y1+y2+y3+y4)/4 HYPERPLANE SECTION, chosen because it contains all seven of the threefold&#x27;s real rational nodes; four are affine in the y4 = 1 chart and are verified exactly by the self-test.</p>
+    <p class="detail-notes">A quartic with 45 nodes; Heinrich Burkhardt, 1891.  The 45-nodal object is a THREEFOLD in P^4 (y0^4 - y0(y1^3+..+y4^3) + 3 y1 y2 y3 y4 = 0), so any 3D picture is a section: THE SHIPPED ROW IS THE y0 = (y1+y2+y3+y4)/4 HYPERPLANE SECTION, chosen because it contains all seven of the threefold&#x27;s real rational nodes; four are affine in the y4 = 1 chart and are verified exactly by the self-test.</p>
   </section>
   <section class="panel-section">
     <h2>Sources</h2>
-    <p class="provenance">Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery&#x27;s compilation.</p>
+    <p class="provenance">Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).</p>
     <ul class="sources">
       <li>E. W. Weisstein, &quot;Peano Surface&quot;, &quot;Chair&quot;, &quot;Crossed Trough&quot;, &quot;Handkerchief Surface&quot;, &quot;Hunt&#x27;s Surface&quot;, &quot;Kiss Surface&quot;, &quot;Menn&#x27;s Surface&quot;, &quot;Miter Surface&quot;, &quot;Nordstrand&#x27;s Weird Surface&quot;, &quot;Tooth Surface&quot;, MathWorld -- A Wolfram Web Resource, mathworld.wolfram.com.</li>
       <li>T. Nordstrand, &quot;Weird Cube&quot; and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).</li>
@@ -114,5 +119,20 @@ A quartic with 45 nodes; Heinrich Burkhardt, 1891.  The 45-nodal object is a THR
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

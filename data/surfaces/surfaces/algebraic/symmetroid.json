@@ -65,5 +65,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Quartic Symmetroid (pinned integer web) is an algebraic surface, defined by an implicit equation, immersed.",
+    "source": "templated"
   }
 }

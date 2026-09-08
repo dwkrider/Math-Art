@@ -85,5 +85,33 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Cross-Cap is a topological surface, given by a parametrisation, immersed with singularities.",
+    "source": "curated",
+    "curated": "The projective plane rendered with a single segment of self-intersection ending in two pinch points. It is the crudest of the three standard pictures -- Boy's surface is smooth and the Roman surface is symmetric -- and the easiest to see through: a disc with its boundary glued to itself the wrong way round.",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "0.5 \\sin\\left(u\\right) \\sin\\left(2 v\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>0.5</mn><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>v</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">0.5 \\sin\\left(u\\right) \\sin\\left(2 v\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "0.5 \\sin\\left(2 u\\right) \\cos\\left(v\\right)^{2}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>0.5</mn><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>u</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">0.5 \\sin\\left(2 u\\right) \\cos\\left(v\\right)^{2}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "0.5 \\cos\\left(2 u\\right) \\cos\\left(v\\right)^{2}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>0.5</mn><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>u</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">0.5 \\cos\\left(2 u\\right) \\cos\\left(v\\right)^{2}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

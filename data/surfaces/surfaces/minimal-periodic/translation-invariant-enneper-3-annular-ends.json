@@ -68,5 +68,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Translation-Invariant Enneper (3 annular ends) is a singly periodic minimal surface, given by a Weierstrass representation, immersed, with a rod group.",
+    "source": "templated"
   }
 }

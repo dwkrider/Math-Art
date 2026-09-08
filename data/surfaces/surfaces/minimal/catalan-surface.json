@@ -114,5 +114,10 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Catalan's Minimal Surface is a minimal surface, given by a Weierstrass representation, self-intersecting.",
+    "source": "curated",
+    "curated": "The minimal surface that contains a cycloid as a geodesic -- the curve traced by a point on a rolling wheel. Catalan found it in 1855 by asking which minimal surface a given curve could sit inside, which is the question Björling's problem answers in general."
   }
 }

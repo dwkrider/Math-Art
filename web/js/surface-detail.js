@@ -69,6 +69,78 @@ const EXTERNAL = {
 
 const YES_NO = (v) => (v === undefined || v === null ? null : (v ? 'yes' : 'no'));
 
+/**
+ * The description block: what the surface is, and its formula.
+ *
+ * Both halves are built by tools/surfdb/describe.py and stored on the
+ * record, so this only places them. In particular the formula is NOT
+ * assembled here: it is compiled from the same expression the mesher
+ * integrates, precisely so that the equation on the page and the surface
+ * in the viewport cannot disagree.
+ *
+ * MATHML, AND NO LIBRARY. The maths is stored as MathML with the LaTeX
+ * carried inside it as an <annotation>. Browsers render MathML Core
+ * natively, so the alternative -- a vendored KaTeX at ~280 KB, on a site
+ * whose whole JS is a fraction of that -- buys nothing except a
+ * dependency. The LaTeX rides along because it is what a reader wants to
+ * copy, and it is offered as a click.
+ */
+function renderDescription(rec, host) {
+  const d = rec.description;
+  if (!d) return;
+  const sec = $('section', 'panel-section description');
+  if (d.curated) {
+    sec.append($('p', 'description-prose', d.curated));
+    // The templated line still earns its place under curated prose: it
+    // states the classification in the catalogue's own vocabulary, which
+    // the prose deliberately does not.
+    sec.append($('p', 'description-summary', d.summary));
+  } else {
+    sec.append($('p', 'description-prose', d.summary));
+  }
+
+  // The caption is dropped when there is only one formula: the section
+  // it sits in already says "Formula", so "IMPLICIT EQUATION" underneath
+  // it is the same word twice. Where a record carries several -- a Gauss
+  // map and a height differential, or x, y and z -- the label is the
+  // only thing telling them apart, so it stays.
+  const many = (d.formulas || []).length > 1;
+  for (const f of d.formulas || []) {
+    const fig = $('figure', 'eqn');
+    if (many) fig.append($('figcaption', 'eqn-label', f.label));
+    const box = $('div', 'eqn-math');
+    // The MathML is generated, not user content, and is inserted as
+    // markup because that is what it is. It has to be parsed in the
+    // MathML namespace or the browser builds unknown HTML elements that
+    // lay out as inline text -- the equation appears as a run of loose
+    // numbers and letters, which is the failure this line avoids.
+    const doc = new DOMParser().parseFromString(
+      f.mathml, 'application/xhtml+xml');
+    const node = doc.documentElement;
+    if (node && node.localName === 'math') {
+      box.append(document.importNode(node, true));
+    } else {
+      // Unparseable: show the LaTeX rather than nothing, and never
+      // innerHTML something that did not parse as MathML.
+      box.append($('code', null, f.latex));
+    }
+    fig.append(box);
+
+    const copy = $('button', 'eqn-copy', 'copy LaTeX');
+    copy.type = 'button';
+    copy.addEventListener('click', () => {
+      navigator.clipboard?.writeText(f.latex).then(
+        () => { copy.textContent = 'copied';
+                setTimeout(() => { copy.textContent = 'copy LaTeX'; }, 1200); },
+        () => { copy.textContent = 'copy failed'; });
+    });
+    fig.append(copy);
+    sec.append(fig);
+  }
+  host.append(sec);
+}
+
+
 export function renderSurfaceDetail(rec, entry, host) {
   host.textContent = '';
 
@@ -83,6 +155,8 @@ export function renderSurfaceDetail(rec, entry, host) {
   for (const f of rec.families || []) tags.append($('span', 'tag', f));
   head.append(tags);
   host.append(head);
+
+  renderDescription(rec, host);
 
   if (entry && entry.hasMesh === false) {
     // Say WHY, in the database's own words where it has them.
@@ -135,12 +209,13 @@ export function renderSurfaceDetail(rec, entry, host) {
     ['Level', d.level],
   ]);
   if (meta) sec.append(meta);
-  for (const row of [
-    formulaRow('x', d.x), formulaRow('y', d.y), formulaRow('z', d.z),
-    formulaRow('F', d.polynomial),
-    formulaRow('level', d.level_function),
-    formulaRow('g', d.g), formulaRow('dh', d.dh),
-  ]) if (row) sec.append(row);
+  // The defining expressions are NOT repeated here. They are set
+  // properly at the top of the panel, from the record's own
+  // `description.formulas`, and printing the same polynomial again as a
+  // row of ASCII a few centimetres below is the same thing twice -- the
+  // second time worse. What stays is what the typeset formula does not
+  // carry: the mode and fidelity above, and the parameter ranges below,
+  // which bound the chart rather than define it.
   if (d.u_range) {
     sec.append(formulaRow('u', `${d.u_range[0]} … ${d.u_range[1]}`));
   }

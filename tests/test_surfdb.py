@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 MODULES = ("expr", "views", "mapping", "polynomial", "registry", "curation",
            "invariants", "references", "sources", "tail", "crosscheck",
            "charts", "weierstrass", "wedata", "weextract", "parcharts",
-           "algextract", "symderive",
+           "algextract", "symderive", "describe",
            "nodal", "ferreol", "vmm", "published", "algsurf", "papers")
 
 # `parcharts` was once listed here BEFORE it was written, so the suite

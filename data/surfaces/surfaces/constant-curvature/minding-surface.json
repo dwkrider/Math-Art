@@ -93,5 +93,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Minding Surface is a surface of constant negative Gaussian curvature, given by a parametrisation, embedded, with a continuous symmetry group.",
+    "source": "templated"
   }
 }

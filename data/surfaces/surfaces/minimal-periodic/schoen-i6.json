@@ -1195,5 +1195,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schoen I-6 (exact fundamental piece, genus 5) is a triply periodic minimal surface, given by a Weierstrass representation, genus 5 per unit cell, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

@@ -71,5 +71,32 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Fresnel Elasticity Surface is a surface, given by a parametrisation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "\\sqrt{\\sin\\left(u\\right)^{2} \\cos\\left(v\\right)^{2} + 2.25 \\sin\\left(u\\right)^{2} \\sin\\left(v\\right)^{2} + 4 \\cos\\left(u\\right)^{2}} \\sin\\left(u\\right) \\cos\\left(v\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msqrt><mrow><mrow><mrow><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow><mo>+</mo><mrow><mn>2.25</mn><mo>&#x2062;</mo><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>&#x2062;</mo><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow><mo>+</mo><mrow><mn>4</mn><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow></msqrt><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sqrt{\\sin\\left(u\\right)^{2} \\cos\\left(v\\right)^{2} + 2.25 \\sin\\left(u\\right)^{2} \\sin\\left(v\\right)^{2} + 4 \\cos\\left(u\\right)^{2}} \\sin\\left(u\\right) \\cos\\left(v\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "\\sqrt{\\sin\\left(u\\right)^{2} \\cos\\left(v\\right)^{2} + 2.25 \\sin\\left(u\\right)^{2} \\sin\\left(v\\right)^{2} + 4 \\cos\\left(u\\right)^{2}} \\sin\\left(u\\right) \\sin\\left(v\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msqrt><mrow><mrow><mrow><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow><mo>+</mo><mrow><mn>2.25</mn><mo>&#x2062;</mo><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>&#x2062;</mo><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow><mo>+</mo><mrow><mn>4</mn><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow></msqrt><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sqrt{\\sin\\left(u\\right)^{2} \\cos\\left(v\\right)^{2} + 2.25 \\sin\\left(u\\right)^{2} \\sin\\left(v\\right)^{2} + 4 \\cos\\left(u\\right)^{2}} \\sin\\left(u\\right) \\sin\\left(v\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "\\sqrt{\\sin\\left(u\\right)^{2} \\cos\\left(v\\right)^{2} + 2.25 \\sin\\left(u\\right)^{2} \\sin\\left(v\\right)^{2} + 4 \\cos\\left(u\\right)^{2}} \\cos\\left(u\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msqrt><mrow><mrow><mrow><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow><mo>+</mo><mrow><mn>2.25</mn><mo>&#x2062;</mo><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>&#x2062;</mo><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow><mo>+</mo><mrow><mn>4</mn><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow></msqrt><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sqrt{\\sin\\left(u\\right)^{2} \\cos\\left(v\\right)^{2} + 2.25 \\sin\\left(u\\right)^{2} \\sin\\left(v\\right)^{2} + 4 \\cos\\left(u\\right)^{2}} \\cos\\left(u\\right)</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

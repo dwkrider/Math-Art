@@ -69,5 +69,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Wente Torus is a constant-mean-curvature surface, given by a parametrisation, genus 1, immersed.",
+    "source": "templated"
   }
 }

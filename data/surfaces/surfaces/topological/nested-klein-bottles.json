@@ -61,5 +61,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Nested Klein Bottles is a topological surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

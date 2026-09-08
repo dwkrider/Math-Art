@@ -73,6 +73,19 @@
   </div>
 
   <section class="panel-section">
+    <h2>Formula</h2>
+    <figure class="eqn">
+      <figcaption class="eqn-label">Gauss map g</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>B</mi><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mn>1</mn><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo>+</mo><mrow><mi>i</mi><mo>&#x2062;</mo><mi>z</mi><mo>&#x2062;</mo><mi>c</mi></mrow></mrow><mo stretchy="false">)</mo></mrow></mrow><mi>z</mi></mfrac></mrow><annotation encoding="application/x-tex">\frac{B \left(1 + z^{2} + i z c\right)}{z}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\frac{B \left(1 + z^{2} + i z c\right)}{z}">copy LaTeX</button>
+    </figure>
+    <figure class="eqn">
+      <figcaption class="eqn-label">Height differential dh</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>B</mi><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mi>i</mi><mo>+</mo><mrow><mi>i</mi><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo>&#x2212;</mo><mrow><mi>z</mi><mo>&#x2062;</mo><mi>c</mi></mrow></mrow><mo stretchy="false">)</mo></mrow></mrow><msup><mi>z</mi><mn>2</mn></msup></mfrac></mrow><annotation encoding="application/x-tex">\frac{B \left(i + i z^{2} - z c\right)}{z^{2}}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\frac{B \left(i + i z^{2} - z c\right)}{z^{2}}">copy LaTeX</button>
+    </figure>
+  </section>
+  <section class="panel-section">
     <h2>Properties</h2>
     <dl class="deflist">
       <dt>Family</dt><dd>minimal</dd>
@@ -106,5 +119,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

@@ -74,5 +74,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Symmetrized Chen-Gackstatter (k-fold, genus k-1) is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

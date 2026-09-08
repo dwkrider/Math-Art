@@ -93,7 +93,7 @@
   </section>
   <section class="panel-section">
     <h2>Definition</h2>
-    <p class="detail-notes">No chart is stored: the record has no implemented construction -- there is no shipped builder to verify a chart against, and this module stores no unverified formulas (the record&#x27;s own construction block notes what is missing). The shipped implementation is authoritative; an unverified transcription would silently define a different surface.</p>
+    <p class="detail-notes">No chart is stored: the operator offers Dyck&#x27;s surface in two renditions selected by `dyck_form` -- a three-cross-cap sphere and a three-handled torus -- built by different routines, so the record names a surface that no single chart covers; a chart for either rendition alone would silently describe half the row. The shipped implementation is authoritative; an unverified transcription would silently define a different surface.</p>
   </section>
   <section class="panel-section">
     <h2>Sources</h2>
@@ -118,5 +118,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

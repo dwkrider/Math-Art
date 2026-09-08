@@ -1115,5 +1115,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schoen I-9 (ring form) is a triply periodic minimal surface, given by a Weierstrass representation, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

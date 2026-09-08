@@ -78,5 +78,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Helicoidal Karcher-Scherk (twisted tower) is a singly periodic minimal surface, given by a Weierstrass representation, genus 0, immersed, with a rod group.",
+    "source": "templated"
   }
 }

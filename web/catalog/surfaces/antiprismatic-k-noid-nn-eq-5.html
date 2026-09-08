@@ -73,6 +73,19 @@
   </div>
 
   <section class="panel-section">
+    <h2>Formula</h2>
+    <figure class="eqn">
+      <figcaption class="eqn-label">Gauss map g</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><mi>ρ</mi><mo>&#x2062;</mo><msup><mi>z</mi><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><mi>n</mi></mrow></msup><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><msup><mi>z</mi><mi>n</mi></msup><mo>+</mo><mfrac><mn>1</mn><msup><mi>a</mi><mi>n</mi></msup></mfrac></mrow><mo stretchy="false">)</mo></mrow></mrow><mrow><msup><mi>z</mi><mi>n</mi></msup><mo>&#x2212;</mo><msup><mi>a</mi><mi>n</mi></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{\rho z^{-1 + n} \left(z^{n} + \frac{1}{a^{n}}\right)}{z^{n} - a^{n}}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\frac{\rho z^{-1 + n} \left(z^{n} + \frac{1}{a^{n}}\right)}{z^{n} - a^{n}}">copy LaTeX</button>
+    </figure>
+    <figure class="eqn">
+      <figcaption class="eqn-label">Height differential dh</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mfrac><mrow><msup><mi>z</mi><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><mi>n</mi></mrow></msup><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><msup><mi>z</mi><mi>n</mi></msup><mo>&#x2212;</mo><msup><mi>a</mi><mi>n</mi></msup></mrow><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><msup><mi>z</mi><mi>n</mi></msup><mo>+</mo><mfrac><mn>1</mn><msup><mi>a</mi><mi>n</mi></msup></mfrac></mrow><mo stretchy="false">)</mo></mrow></mrow><mrow><msup><mrow><mo stretchy="false">(</mo><mrow><msup><mi>z</mi><mi>n</mi></msup><mo>&#x2212;</mo><msup><mi>b</mi><mi>n</mi></msup></mrow><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>&#x2062;</mo><msup><mrow><mo stretchy="false">(</mo><mrow><msup><mi>z</mi><mi>n</mi></msup><mo>+</mo><mfrac><mn>1</mn><msup><mi>b</mi><mi>n</mi></msup></mfrac></mrow><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{z^{-1 + n} \left(z^{n} - a^{n}\right) \left(z^{n} + \frac{1}{a^{n}}\right)}{\left(z^{n} - b^{n}\right)^{2} \left(z^{n} + \frac{1}{b^{n}}\right)^{2}}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\frac{z^{-1 + n} \left(z^{n} - a^{n}\right) \left(z^{n} + \frac{1}{a^{n}}\right)}{\left(z^{n} - b^{n}\right)^{2} \left(z^{n} + \frac{1}{b^{n}}\right)^{2}}">copy LaTeX</button>
+    </figure>
+  </section>
+  <section class="panel-section">
     <h2>Properties</h2>
     <dl class="deflist">
       <dt>Family</dt><dd>minimal</dd>
@@ -106,5 +119,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

@@ -88,5 +88,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Riemann's Minimal Example is a singly periodic minimal surface, given by a Weierstrass representation, genus 0, embedded, with a rod group.",
+    "source": "templated"
   }
 }

@@ -80,5 +80,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Bjorling: Logarithmic Spiral is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

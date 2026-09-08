@@ -38,6 +38,7 @@ const W = {
   genus: 0.5,
   orientable: 0.4,
   tag: 0.45,
+  degree: 2.0,
 };
 
 /** Sparse unit-length feature vector for one index entry. */
@@ -65,6 +66,12 @@ export function featureVector(e) {
     put('or:' + e.orientable, W.orientable);
   }
   for (const t of e.families || []) put('tag:' + t, W.tag);
+
+  // Degree is bucketed at the top: 12 and 16 are two records between
+  // them, and a bucket of one is a cluster of one.
+  if (e.poly_degree != null) {
+    put('deg:' + (e.poly_degree > 8 ? 'high' : e.poly_degree), W.degree);
+  }
 
   // Unit length, so cosine is a plain dot product and a record carrying
   // more tags is not automatically "bigger" than one carrying fewer.

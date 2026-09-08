@@ -68,5 +68,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Starfish 5-2 Surface (genus 83) is a triply periodic minimal surface, given by a Weierstrass representation, genus 83, embedded, with a crystallographic group.",
+    "source": "templated"
   }
 }

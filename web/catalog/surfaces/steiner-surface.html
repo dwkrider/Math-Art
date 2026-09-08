@@ -78,6 +78,28 @@
   </div>
 
   <section class="panel-section">
+    <h2>About</h2>
+    <p class="object-prose">The general name for Steiner&#x27;s quartic images of the projective plane, of which the Roman surface is the symmetric member. All of them are quartics, all self-intersect, and all carry pinch points; they were among the first surfaces studied for their singularities rather than in spite of them.</p>
+  </section>
+  <section class="panel-section">
+    <h2>Formula</h2>
+    <figure class="eqn">
+      <figcaption class="eqn-label">x(u, v)</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\sin\left(u\right) \cos\left(v\right) \sin\left(v\right)</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\sin\left(u\right) \cos\left(v\right) \sin\left(v\right)">copy LaTeX</button>
+    </figure>
+    <figure class="eqn">
+      <figcaption class="eqn-label">y(u, v)</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\cos\left(u\right) \cos\left(v\right) \sin\left(v\right)</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\cos\left(u\right) \cos\left(v\right) \sin\left(v\right)">copy LaTeX</button>
+    </figure>
+    <figure class="eqn">
+      <figcaption class="eqn-label">z(u, v)</figcaption>
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><mo>&#x2062;</mo><msup><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow></mrow><annotation encoding="application/x-tex">\sin\left(u\right) \cos\left(u\right) \cos\left(v\right)^{2}</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="\sin\left(u\right) \cos\left(u\right) \cos\left(v\right)^{2}">copy LaTeX</button>
+    </figure>
+  </section>
+  <section class="panel-section">
     <h2>Properties</h2>
     <dl class="deflist">
       <dt>Family</dt><dd>topological</dd>
@@ -116,5 +138,20 @@
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

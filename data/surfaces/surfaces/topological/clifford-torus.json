@@ -78,5 +78,32 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Clifford Torus is a topological surface, given by a parametrisation, genus 1, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "\\frac{\\cos\\left(u + v\\right)}{\\sqrt{2} - \\sin\\left(v\\right)}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mi>u</mi><mo>+</mo><mi>v</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\cos\\left(u + v\\right)}{\\sqrt{2} - \\sin\\left(v\\right)}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "\\frac{\\sin\\left(u + v\\right)}{\\sqrt{2} - \\sin\\left(v\\right)}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mi>u</mi><mo>+</mo><mi>v</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\sin\\left(u + v\\right)}{\\sqrt{2} - \\sin\\left(v\\right)}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "\\frac{\\cos\\left(v\\right)}{\\sqrt{2} - \\sin\\left(v\\right)}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mrow><msqrt><mn>2</mn></msqrt><mo>&#x2212;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\cos\\left(v\\right)}{\\sqrt{2} - \\sin\\left(v\\right)}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

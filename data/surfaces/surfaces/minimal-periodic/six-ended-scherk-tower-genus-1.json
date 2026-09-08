@@ -83,5 +83,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Six-Ended Scherk Tower (genus 1) is a singly periodic minimal surface, given by a Weierstrass representation, genus 1, 6 ends, immersed, with a rod group.",
+    "source": "templated"
   }
 }

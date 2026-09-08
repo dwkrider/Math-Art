@@ -66,5 +66,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Horgan Surface (non-existent, near-miss) is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

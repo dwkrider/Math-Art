@@ -93,5 +93,25 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Meeks Mobius Strip is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "gauss_map",
+        "label": "Gauss map g",
+        "latex": "\\frac{z^{2} \\left(1 + z\\right)}{-1 + z}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><msup><mi>z</mi><mn>2</mn></msup><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mn>1</mn><mo>+</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><mi>z</mi></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{z^{2} \\left(1 + z\\right)}{-1 + z}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "height_differential",
+        "label": "Height differential dh",
+        "latex": "i - \\frac{i}{z^{2}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mi>i</mi></mrow><mo>&#x2212;</mo><mfrac><mrow><mi>i</mi></mrow><msup><mi>z</mi><mn>2</mn></msup></mfrac></mrow></mrow><annotation encoding=\"application/x-tex\">i - \\frac{i}{z^{2}}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

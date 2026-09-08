@@ -76,6 +76,13 @@
   </div>
 
   <section class="panel-section">
+    <h2>Formula</h2>
+    <figure class="eqn">
+      <div class="eqn-math"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mrow><mrow><mn>4</mn><mo>&#x2062;</mo><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup></mrow><mo>+</mo><mrow><msup><mi>y</mi><mn>2</mn></msup></mrow></mrow><mo>+</mo><mrow><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo stretchy="false">)</mo></mrow></mrow><mo>&#x2212;</mo><mrow><msup><mi>y</mi><mn>2</mn></msup><mo>&#x2062;</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mn>1</mn><mo>&#x2212;</mo><mrow><msup><mi>y</mi><mn>2</mn></msup></mrow></mrow><mo>&#x2212;</mo><mrow><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo stretchy="false">)</mo></mrow></mrow></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">4 x^{2} \left(x^{2} + y^{2} + z^{2}\right) - y^{2} \left(1 - y^{2} - z^{2}\right) = 0</annotation></semantics></math></div>
+      <button type="button" class="eqn-copy" hidden data-latex="4 x^{2} \left(x^{2} + y^{2} + z^{2}\right) - y^{2} \left(1 - y^{2} - z^{2}\right) = 0">copy LaTeX</button>
+    </figure>
+  </section>
+  <section class="panel-section">
     <h2>Properties</h2>
     <dl class="deflist">
       <dt>Family</dt><dd>algebraic</dd>
@@ -90,13 +97,11 @@
   </section>
   <section class="panel-section">
     <h2>Definition</h2>
-    <p class="detail-notes">Polynomial not stored: no closed form is stored for this surface; it is defined by its shipped implementation. The shipped implementation in math_art/surfaces/algebraic.py is authoritative; an unverified transcription would silently define a different surface.
-
-A quartic with two pinch points.</p>
+    <p class="detail-notes">A quartic with two pinch points.</p>
   </section>
   <section class="panel-section">
     <h2>Sources</h2>
-    <p class="provenance">Derived from the Math Art generator registries and cross-referenced to the literature; not transcribed from any gallery&#x27;s compilation.</p>
+    <p class="provenance">Closed form reproduced numerically against the shipped implementation (math_art/surfaces/algebraic.py) over 240 sample points: matches oracle x 1 over 240 points (worst 0).</p>
     <ul class="sources">
       <li>E. W. Weisstein, &quot;Peano Surface&quot;, &quot;Chair&quot;, &quot;Crossed Trough&quot;, &quot;Handkerchief Surface&quot;, &quot;Hunt&#x27;s Surface&quot;, &quot;Kiss Surface&quot;, &quot;Menn&#x27;s Surface&quot;, &quot;Miter Surface&quot;, &quot;Nordstrand&#x27;s Weird Surface&quot;, &quot;Tooth Surface&quot;, MathWorld -- A Wolfram Web Resource, mathworld.wolfram.com.</li>
       <li>T. Nordstrand, &quot;Weird Cube&quot; and the tooth/pillow object, per the MathWorld pages (Nordstrand 1997).</li>
@@ -114,5 +119,20 @@ A quartic with two pinch points.</p>
   </p>
 </footer>
 
+<script>
+// Reveal and wire the copy buttons. They ship hidden so that a reader
+// without scripting sees no control that cannot work; the LaTeX itself
+// is already in the page, inside each formula's MathML <annotation>,
+// so nothing here is the only copy of anything.
+for (const b of document.querySelectorAll('.eqn-copy')) {
+  b.hidden = false;
+  b.addEventListener('click', () => {
+    navigator.clipboard?.writeText(b.dataset.latex).then(
+      () => { b.textContent = 'copied';
+              setTimeout(() => { b.textContent = 'copy LaTeX'; }, 1200); },
+      () => { b.textContent = 'copy failed'; });
+  });
+}
+</script>
 </body>
 </html>

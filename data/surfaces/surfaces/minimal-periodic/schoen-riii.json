@@ -1158,5 +1158,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schoen R-III (ring form, genus 13) is a triply periodic minimal surface, given by a Weierstrass representation, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

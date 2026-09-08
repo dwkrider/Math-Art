@@ -88,5 +88,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Callahan-Hoffman-Meeks (singly periodic) is a singly periodic minimal surface, given by a Weierstrass representation, genus 3, 2 ends, embedded, with a rod group.",
+    "source": "templated"
   }
 }

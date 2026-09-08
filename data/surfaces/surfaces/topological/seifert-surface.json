@@ -55,5 +55,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Seifert Surface is a topological surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

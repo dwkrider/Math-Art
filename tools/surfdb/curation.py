@@ -1718,8 +1718,30 @@ def polynomial_for(slug):
     return POLYNOMIAL.get(slug)
 
 
+def _selftest_descriptions(known=None):
+    """Every curated description is prose, and lands on a real record.
+
+    A description keyed by a slug that does not exist is silently dead
+    text -- it never reaches a page and nothing reports it. That has
+    already happened once in this file with curated facts, which is why
+    the build cross-checks the keys.
+    """
+    for slug, text in DESCRIPTION.items():
+        if not isinstance(text, str) or len(text.strip()) < 40:
+            raise AssertionError("description for %r is not prose" % slug)
+        if "$" in text or "\(" in text or "\[" in text:
+            raise AssertionError(
+                "description for %r contains a formula; formulae are "
+                "compiled from the stored expressions by describe.py, "
+                "never written here" % slug)
+        if known is not None and slug not in known:
+            raise AssertionError(
+                "DESCRIPTION names %r, which is not a record" % slug)
+
+
 def _selftest():
     """Structural checks on the curation table; raises on failure."""
+    _selftest_descriptions()
     from . import views
 
     for slug, rec in FACTS.items():
@@ -1850,3 +1872,217 @@ FACTS["scherkt-surface"] = {
               "names, so pointing the record at the wrong one is "
               "indistinguishable from the surface being unreachable."},
 }
+
+
+# --------------------------------------------------------------------
+# Reader-facing prose.
+#
+# The `summary` every record carries is templated from its own fields by
+# tools/surfdb/describe.py, so all 473 have one and none of them can be
+# wrong about a fact. What a template cannot give is why a surface is
+# worth looking at, and that is what this table is for.
+#
+# SCOPE.  These are deliberately partial. A surface with no entry keeps
+# its templated summary, which is a correct if dry sentence; a surface
+# with one gets a paragraph as well. Adding an entry is always safe and
+# never required.
+#
+# THE RULE.  Say only what the record already supports -- its curated
+# FACTS above, its topology, its provenance. Do not put a formula in
+# here: formulae are compiled from the stored expressions by
+# describe.py, precisely so that no one ever types one twice. A
+# description that states a fact the database does not hold is worse
+# than no description, because it reads as authoritative.
+# --------------------------------------------------------------------
+
+DESCRIPTION = {
+
+    "catenoid": (
+        "Hang a chain between two points and it settles into a catenary. "
+        "Spin that curve about the axis between them and you get the "
+        "catenoid -- the shape a soap film takes when it spans two "
+        "parallel rings. It was the first minimal surface found after the "
+        "plane, and apart from the plane it is the only one that is also "
+        "a surface of revolution. Pull the rings too far apart and the "
+        "film has no stable shape left to take, and it snaps."),
+
+    "helicoid": (
+        "The surface swept by a horizontal line as it rises and rotates "
+        "at a constant rate -- a spiral ramp, continued forever in both "
+        "directions. It is the only ruled minimal surface other than the "
+        "plane, meaning it can be built entirely out of straight lines. "
+        "It is also the catenoid's twin: each can be bent into the other "
+        "without any stretching, through a family of minimal surfaces "
+        "that are all locally the same surface in different poses."),
+
+    "gyroid": (
+        "A single surface that divides space into two interpenetrating "
+        "labyrinths, neither of which ever meets the other, and which "
+        "are mirror images. Alan Schoen found it in 1970 while looking "
+        "for strong, light structures, and it went unproved for nearly "
+        "twenty years. It contains no straight lines and no plane "
+        "mirrors, which is what makes it hard: the usual way of building "
+        "such a surface is to reflect a patch across its own boundary, "
+        "and the gyroid gives you nothing to reflect in. It turns up in "
+        "butterfly wing scales and in block copolymers."),
+
+    "schwarz-p": (
+        "The oldest of the triply periodic minimal surfaces, from "
+        "Schwarz's work in the 1860s. Think of it as a scaffold of tubes "
+        "joining the faces of a cube to its neighbours, repeated forever "
+        "in all three directions; the surface separates space into two "
+        "identical interlocking halves. Schwarz built it by solving for "
+        "a single patch spanning a skew quadrilateral of straight lines "
+        "and then reflecting that patch across its own edges, which is "
+        "the method the whole family is named for."),
+
+    "schwarz-d": (
+        "Schwarz's diamond surface, the P surface's conjugate: the two "
+        "are the same local geometry rotated through a right angle in the "
+        "associate family, so a patch of one bends into a patch of the "
+        "other without stretching. Its two labyrinths follow the bonds of "
+        "the diamond lattice, which is where the name comes from."),
+
+    "enneper-surface": (
+        "One of the simplest minimal surfaces that can be written down "
+        "in closed form, and a standard first example because its "
+        "Weierstrass data is as plain as it gets. It has a single end "
+        "and no boundary, and it passes through itself: minimal does not "
+        "mean tidy. Grown far enough, the self-intersections dominate the "
+        "picture."),
+
+    "costa-surface": (
+        "For over two centuries the only known embedded minimal surfaces "
+        "of finite topology were the plane, the catenoid and the "
+        "helicoid, and it was widely assumed there were no others. "
+        "Costa's surface, found in 1982, was the counterexample: it has "
+        "genus one and three ends, and it does not cross itself. The "
+        "picture came before the proof -- it was Hoffman and Meeks who "
+        "established that it really is embedded, using computer images to "
+        "see what to prove."),
+
+    "boys-surface": (
+        "A way of putting the projective plane into ordinary space "
+        "without any creases or corners -- allowing it to pass through "
+        "itself, which it must. Werner Boy found it in 1901 when his "
+        "supervisor, Hilbert, had asked him to prove no such thing "
+        "existed. It has threefold symmetry and a single triple point "
+        "where three sheets meet."),
+
+    "roman-surface": (
+        "Steiner's Roman surface, another image of the projective plane, "
+        "named for the city he was visiting when he found it in 1844. "
+        "Where Boy's surface is smooth, this one has six pinch points and "
+        "three lines of self-intersection meeting at a triple point, "
+        "which makes it far easier to write down -- a quartic -- and far "
+        "less well behaved."),
+
+    "klein-bottle": (
+        "A bottle whose inside is its outside: a surface with no "
+        "boundary and no two sides at all. It cannot be built in three "
+        "dimensions without passing through itself, and the familiar "
+        "glass models cheat exactly there. In four dimensions the "
+        "self-intersection can be undone."),
+
+    "pseudosphere": (
+        "A surface of constant negative curvature -- the hyperbolic "
+        "counterpart of the sphere, which has constant positive "
+        "curvature. It is the tractrix spun about its asymptote, and it "
+        "was the first concrete model of the hyperbolic geometry that "
+        "Lobachevsky and Bolyai had described only in the abstract. "
+        "Hilbert later proved that no surface in ordinary space can carry "
+        "the whole hyperbolic plane, so this is necessarily a fragment."),
+
+    "dini-surface": (
+        "Take the pseudosphere and drag it along a helix as it turns: the "
+        "result keeps the same constant negative curvature but winds "
+        "around an axis, which is why it is often drawn as a twisted "
+        "horn. Constant curvature survives the twisting because the "
+        "motion is a screw, and a screw is a rigid motion."),
+
+    "monkey-saddle": (
+        "An ordinary saddle rises in two directions and falls in two. "
+        "This one falls in three -- two for the legs and one for the "
+        "tail, which is where the name comes from. It is the standard "
+        "picture of a degenerate critical point: the surface is flat to "
+        "second order at the origin, so the usual test for a maximum or "
+        "minimum tells you nothing there."),
+
+    "whitney-umbrella": (
+        "The model singularity for a surface mapped into space: a "
+        "pinch point where the sheet closes up to a single point, with a "
+        "line of self-intersection running out of it -- the handle of the "
+        "umbrella. Whitney showed that this and ordinary crossings are "
+        "the only singularities a generic map of a surface into "
+        "three-space can have, which is why it turns up so often."),
+
+    "torus": (
+        "The surface of a doughnut, and the simplest closed surface after "
+        "the sphere. It is flat in the sense that matters to a "
+        "geometer -- it can carry a geometry with no curvature at all, "
+        "which is why a video game can wrap its world around one -- even "
+        "though the doughnut sitting in space is visibly curved."),
+
+    "sphere": (
+        "The set of points at a fixed distance from a centre: the surface "
+        "of constant positive curvature, the shape that encloses the most "
+        "volume for its area, and the one every other closed surface is "
+        "measured against."),
+
+    "cross-cap": (
+        "The projective plane rendered with a single segment of "
+        "self-intersection ending in two pinch points. It is the crudest "
+        "of the three standard pictures -- Boy's surface is smooth and "
+        "the Roman surface is symmetric -- and the easiest to see through: "
+        "a disc with its boundary glued to itself the wrong way round."),
+
+    "lidinoid": (
+        "A triply periodic minimal surface of genus three found by Sven "
+        "Lidin, and the gyroid's near relative: both are embedded members "
+        "of associate families, arrived at by rotating a patch rather "
+        "than by reflecting one. It stands in the same relation to the H "
+        "surface as the gyroid does to Schwarz P."),
+
+    "henneberg-surface": (
+        "A minimal surface that is not orientable -- it contains a Möbius "
+        "band -- which for a long time was thought impossible for a "
+        "minimal surface. It is also the only classical example that is "
+        "algebraic, and it contains a pair of straight lines meeting at "
+        "right angles."),
+
+    "richmond-surface": (
+        "A family of minimal surfaces with two ends, one planar and one "
+        "of higher order, obtained by the simplest Weierstrass data after "
+        "Enneper's. Increasing the order winds the higher end round more "
+        "times and the surface acquires more symmetry."),
+
+    "catalan-surface": (
+        "The minimal surface that contains a cycloid as a geodesic -- the "
+        "curve traced by a point on a rolling wheel. Catalan found it in "
+        "1855 by asking which minimal surface a given curve could sit "
+        "inside, which is the question Björling's problem answers in "
+        "general."),
+
+    "bour-surface": (
+        "One of the minimal surfaces that can be bent onto a surface of "
+        "revolution without stretching. Bour classified these in 1862; "
+        "the family is the standard source of examples where an intrinsic "
+        "property -- what the surface measures like from inside -- and an "
+        "extrinsic one -- how it sits in space -- come apart."),
+
+    "steiner-surface": (
+        "The general name for Steiner's quartic images of the projective "
+        "plane, of which the Roman surface is the symmetric member. All "
+        "of them are quartics, all self-intersect, and all carry pinch "
+        "points; they were among the first surfaces studied for their "
+        "singularities rather than in spite of them."),
+}
+
+
+def description_for(slug):
+    """Hand-written prose for `slug`, or None.
+
+    Absence is normal and not an error: describe.py falls back to the
+    templated summary, which every record has.
+    """
+    return DESCRIPTION.get(slug)

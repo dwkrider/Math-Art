@@ -83,5 +83,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Eight-Ended Scherk Tower (genus 2) is a singly periodic minimal surface, given by a Weierstrass representation, genus 2, 8 ends, immersed, with a rod group.",
+    "source": "templated"
   }
 }

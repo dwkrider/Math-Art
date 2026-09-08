@@ -147,5 +147,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Triply Periodic Costa (Batista, exact fundamental piece, genus 5) is a triply periodic minimal surface, given by a Weierstrass representation, genus 4 per unit cell, embedded, with a crystallographic space group.",
+    "source": "templated"
   }
 }

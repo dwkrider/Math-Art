@@ -69,5 +69,9 @@
     "printable_watertight": true,
     "requires_thickening": true,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Schwarz's Lantern is a discrete surface, given by a parametrisation, genus 0, embedded.",
+    "source": "templated"
   }
 }

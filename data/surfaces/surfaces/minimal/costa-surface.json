@@ -109,5 +109,10 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Costa's Surface is a minimal surface, given by a Weierstrass representation, genus 1, 3 ends, embedded.",
+    "source": "curated",
+    "curated": "For over two centuries the only known embedded minimal surfaces of finite topology were the plane, the catenoid and the helicoid, and it was widely assumed there were no others. Costa's surface, found in 1982, was the counterexample: it has genus one and three ends, and it does not cross itself. The picture came before the proof -- it was Hoffman and Meeks who established that it really is embedded, using computer images to see what to prove."
   }
 }

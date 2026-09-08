@@ -73,5 +73,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Unduloid is a singly periodic constant-mean-curvature surface, of constant mean curvature, given by a parametrisation, genus 0, embedded, with a continuous symmetry group.",
+    "source": "templated"
   }
 }

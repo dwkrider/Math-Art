@@ -61,5 +61,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Spherical Helicoid is a swept surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

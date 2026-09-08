@@ -68,5 +68,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Starfish 5-4 Surface (genus 115) is a triply periodic minimal surface, given by a Weierstrass representation, genus 115, embedded, with a crystallographic group.",
+    "source": "templated"
   }
 }

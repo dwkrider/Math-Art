@@ -124,5 +124,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Lidinoid (exact) is a triply periodic minimal surface, given by a Weierstrass representation, genus 3 per unit cell, immersed, with Ia-3d symmetry (a crystallographic space group).",
+    "source": "templated"
   }
 }

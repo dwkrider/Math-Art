@@ -123,5 +123,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Canal Surface is a derived surface, derived from another surface in the catalogue, immersed.",
+    "source": "templated"
   }
 }

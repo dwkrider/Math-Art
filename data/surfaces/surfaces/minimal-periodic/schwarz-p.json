@@ -785,5 +785,19 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schwarz P Surface is a triply periodic minimal surface, defined as a nodal algebraic surface, genus 3 per unit cell, embedded, with Im-3m symmetry (a crystallographic space group).",
+    "source": "curated",
+    "curated": "The oldest of the triply periodic minimal surfaces, from Schwarz's work in the 1860s. Think of it as a scaffold of tubes joining the faces of a cube to its neighbours, repeated forever in all three directions; the surface separates space into two identical interlocking halves. Schwarz built it by solving for a single patch spanning a skew quadrilateral of straight lines and then reflecting that patch across its own edges, which is the method the whole family is named for.",
+    "formulas": [
+      {
+        "field": "level_function",
+        "label": "Level function",
+        "latex": "\\cos\\left(x\\right) + \\cos\\left(y\\right) + \\cos\\left(z\\right) = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>+</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">\\cos\\left(x\\right) + \\cos\\left(y\\right) + \\cos\\left(z\\right) = 0</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }
