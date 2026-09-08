@@ -8414,6 +8414,82 @@ def sptail_grid_quads(nr, nt, valid=None):
     return q
 
 
+def sptail_grid_quads_cut(nr, nt, lev, V0, UV0):
+    """Grid quads trimmed ON the mask boundary instead of beside it.
+
+    `sptail_grid_quads(valid=...)` drops every quad touching a masked
+    vertex, so a mask whose boundary is a circle in the chart comes out
+    as a staircase along the grid.  Given the SIGNED level whose sign
+    that mask was (positive = keep), this interpolates each straddling
+    grid edge to lev = 0 and emits the trimmed polygon, so the cut
+    lands on the mask boundary itself.
+
+    Interpolation runs along the grid edge, between two vertices that
+    straddle the boundary.  It does not extrapolate toward the masked
+    centre: these masks cover branch points, where the immersion is
+    ill-conditioned, and aiming anything at one amplifies the error the
+    trim is meant to remove.
+
+    Returns (quads, V, UV) with the interpolated vertices appended.
+    """
+    lev = np.asarray(lev, float).reshape(-1)
+    V = [np.asarray(V0, float)]
+    UV = [np.asarray(UV0, float)]
+    extraV, extraUV, cut_of = [], [], {}
+    n0 = len(lev)
+
+    def _cut(a, b):
+        key = (a, b) if a < b else (b, a)
+        hit = cut_of.get(key)
+        if hit is not None:
+            return hit
+        la, lb = lev[a], lev[b]
+        t = la / (la - lb) if la != lb else 0.5
+        t = min(max(float(t), 0.0), 1.0)
+        # a cut landing all but on the kept vertex leaves a sliver, and
+        # slivers read as raggedness just as a staircase does
+        if t < 0.06:
+            cut_of[key] = int(a)
+            return int(a)
+        idx = n0 + len(extraV)
+        extraV.append(V0[a] + t * (V0[b] - V0[a]))
+        extraUV.append(UV0[a] + t * (UV0[b] - UV0[a]))
+        cut_of[key] = idx
+        return idx
+
+    keep = lev > 0.0
+    quads = []
+    for i in range(nr - 1):
+        for j in range(nt - 1):
+            f = (i * nt + j, i * nt + j + 1,
+                 (i + 1) * nt + j + 1, (i + 1) * nt + j)
+            live = tuple(bool(keep[k]) for k in f)
+            if not any(live):
+                continue
+            if all(live):
+                quads.append(f)
+                continue
+            poly = []
+            for t_ in range(4):
+                a, b = f[t_], f[(t_ + 1) % 4]
+                if live[t_]:
+                    poly.append(int(a))
+                if live[t_] != live[(t_ + 1) % 4]:
+                    poly.append(_cut(a, b) if live[t_] else _cut(b, a))
+            g = [poly[0]]
+            for q_ in poly[1:]:
+                if q_ != g[-1]:
+                    g.append(q_)
+            if len(g) > 3 and g[0] == g[-1]:
+                g.pop()
+            if len(g) >= 3 and len(set(g)) == len(g):
+                quads.append(tuple(g))
+    if extraV:
+        V.append(np.asarray(extraV, float))
+        UV.append(np.asarray(extraUV, float))
+    return quads, np.concatenate(V, axis=0), np.concatenate(UV, axis=0)
+
+
 def sptail_orbit_weld(V0, UV0, quads0, frames, tol):
     """Tile V0 under `frames` [(M, tvec, parity), ...] and weld
     coincident vertices (two offset quantization passes, so a pair
@@ -10975,8 +11051,10 @@ def stinv_costa_build(a=-10.0, nu=52, nt=44, storeys=1, rmin=0.02,
     t = stinv_tgrid(nt, marks=(theta_b,))
     X = sptail_polar_patch(om, r, t)
     ZG = r[:, None] * np.exp(1j * t[None, :])
-    valid = ((np.abs(ZG - 1.0) > delta) & (np.abs(ZG + 1.0) > delta)
-             ).reshape(-1)
+    # signed distance to the nearer branch-point disk, not just its
+    # sign: the trim below cuts on lev = 0 rather than on grid lines
+    lev_c = np.minimum(np.abs(ZG - 1.0), np.abs(ZG + 1.0)) - delta
+    valid = (lev_c > 0.0).reshape(-1)
     i_a = int(np.searchsorted(r, zeta_a))
     jb = int(np.argmin(np.abs(t - theta_b)))
     vg = valid.reshape(len(r), len(t))
@@ -11008,7 +11086,8 @@ def stinv_costa_build(a=-10.0, nu=52, nt=44, storeys=1, rmin=0.02,
     X[-1, :jb + 1, 1] = np.where(vg[-1, :jb + 1], 0.0,
                                  X[-1, :jb + 1, 1])
     V0 = X.reshape(-1, 3)
-    q0 = sptail_grid_quads(len(r), len(t), valid=valid)
+    q0, V0, UV0 = sptail_grid_quads_cut(
+        len(r), len(t), lev_c, V0, _sptail_grid_uv(len(r), len(t)))
     T = np.array([0.0, 2.0 * yAc, 0.0])
     frames = []
     for bx in (0, 1):
@@ -11028,8 +11107,7 @@ def stinv_costa_build(a=-10.0, nu=52, nt=44, storeys=1, rmin=0.02,
     # every frame is a sign-diagonal matrix plus an exact multiple of T,
     # so seam partners are bitwise equal after snapping -- a near-exact
     # tolerance keeps the branch-point clusters from being fused
-    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
-                                 q0, frames, 1e-12 * span)
+    V, F, uv = sptail_orbit_weld(V0, UV0, q0, frames, 1e-12 * span)
     diag['T'] = T
     diag['span'] = span
     return V, F, uv, diag
@@ -11468,11 +11546,13 @@ def stinv_screw_build(timag=0.8, nu=64, nt=40, storeys=1, delta=0.10):
     # lattice-aware end masks: a disk crossing the x = 0 / x = 1 screw
     # seam must cut BOTH sides identically, or the seam weld leaves
     # unpaired faces
-    valid = np.ones(ZG.shape, dtype=bool)
+    # signed distance to the nearest end disk, so the trim can cut ON
+    # the mask boundary rather than on the grid line beside it
+    lev_s = np.full(ZG.shape, np.inf)
     for ec in (e1, e2):
         for sh in (-1.0, 0.0, 1.0):
-            valid &= np.abs(ZG - (ec + sh)) > delta
-    valid = valid.reshape(-1)
+            lev_s = np.minimum(lev_s, np.abs(ZG - (ec + sh)) - delta)
+    valid = (lev_s > 0.0).reshape(-1)
     vg = valid.reshape(nx, ny)
     i_u = int(np.searchsorted(x, ua))
     i_b1 = int(np.searchsorted(x, zb1))
@@ -11595,7 +11675,8 @@ def stinv_screw_build(timag=0.8, nu=64, nt=40, storeys=1, delta=0.10):
         X[0, sel0, :] @ Msg.T + tsg - X[-1, sel0, :], axis=-1)))
     X[-1, :, :] = X[0, :, :] @ Msg.T + tsg
     V0 = X.reshape(-1, 3)
-    q0 = sptail_grid_quads(nx, ny, valid=valid)
+    q0, V0, UV0 = sptail_grid_quads_cut(
+        nx, ny, lev_s, V0, _sptail_grid_uv(nx, ny))
     # ---- frames: lambda^s A^a sigma^e -------------------------------
     S = storeys
     lab = []                          # frame order: (s, a, e)
@@ -11663,7 +11744,7 @@ def stinv_screw_build(timag=0.8, nu=64, nt=40, storeys=1, delta=0.10):
         else:
             Fp.extend(tuple(off + i for i in f) for f in q0)
     Vall = np.concatenate(Vp, axis=0)
-    UVall = np.tile(_sptail_grid_uv(nx, ny), (len(frames), 1))
+    UVall = np.tile(UV0, (len(frames), 1))
     parent = np.arange(len(Vall))
 
     def _find(a2):
