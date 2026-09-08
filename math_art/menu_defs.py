@@ -165,7 +165,7 @@ FRACTALS = Menu(
         _e("mesh.sponge_add", 'MESH_CUBE'),
         _e("mesh.mandelbulb_add", 'META_BALL'),
         _e("mesh.snowflake_add", 'FREEZE'),
-        _e("mesh.apollonian_add", 'MESH_CIRCLE'),
+        _e("curve.kleinian_add", 'FORCE_TURBULENCE'),
         _e("mesh.fractal_polyhedron_add", 'OUTLINER_OB_POINTCLOUD'),
         _e("curve.space_filling_add", 'CURVE_DATA'),
         _e("curve.lsystem_add", 'GRAPH'),
@@ -244,6 +244,7 @@ PATTERNS = Menu(
         _e("mesh.isohedral_add", 'MOD_UVPROJECT'),
         _e("mesh.aperiodic_add", 'MESH_ICOSPHERE'),
         _e("mesh.reptile_add", 'MESH_GRID'),
+        _e("mesh.subdivision_tiling_add", 'MESH_GRID'),
         _e("mesh.voderberg_add", 'FORCE_VORTEX'),
         _e("mesh.spiral_tiling_add", 'FORCE_VORTEX'),
         _e("mesh.spidron_rosette_add", 'FORCE_VORTEX'),
@@ -252,7 +253,12 @@ PATTERNS = Menu(
         _e("mesh.over_under_screen_add", 'MESH_GRID'),
         _e("mesh.knot_carpet_add", 'MESH_CIRCLE'),
         SEP,
+        # circle-based and conformal: a hyperbolic tiling, the packings
+        # that compute conformal structure, and the gasket that is the
+        # classical special case of one
         _e("mesh.hyperbolic_tiling_add", 'MESH_CIRCLE'),
+        _e("mesh.circle_packing_add", 'MESH_CIRCLE'),
+        _e("mesh.apollonian_add", 'MESH_CIRCLE'),
     ])
 
 # non-spherical shapes that roll ("rolloids"): rollers of constant
