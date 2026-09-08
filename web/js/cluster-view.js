@@ -21,7 +21,7 @@
 import { knnGraph, SpringLayout } from './cluster.js';
 
 const TILE_PX = 64;          // decode size; drawn smaller than this
-const SETTLE_ITERS = 600;    // measured: separation stops improving after
+const SETTLE_ITERS = 900;    // measured: overlap still resolving until ~900
 
 export class ClusterView {
   constructor(canvas, entries, opts = {}) {
@@ -47,10 +47,15 @@ export class ClusterView {
     const n = entries.length;
     this.edges = n > 1 ? knnGraph(entries) : [];
     const r = this.canvas.getBoundingClientRect();
-    this.layout = new SpringLayout(n, this.edges,
-                                   { width: r.width || 900, height: r.height || 600 });
+    this.layout = new SpringLayout(n, this.edges, {
+      width: r.width || 900,
+      height: r.height || 600,
+      // Overlap is part of the energy, so the layout solves for an
+      // arrangement the tiles fit into rather than being shuffled
+      // afterwards to make them fit.
+      minDist: this.nodeSize() * 0.95,
+    });
     this.iters = 0;
-    this.spaced = null;
     this.view = { x: 0, y: 0, k: 1 };
     this._loadTiles();
     this._run();
@@ -68,10 +73,13 @@ export class ClusterView {
     const r = this.canvas.getBoundingClientRect();
     const area = (r.width || 900) * (r.height || 600);
     // sqrt(area / n) is the side of the square each tile would get if the
-    // canvas were divided evenly, which is the largest size that can fit
-    // without guaranteed overlap. 0.85 of it leaves the gaps that make
-    // the clusters legible as clusters.
-    return Math.max(12, Math.min(132, 0.85 * Math.sqrt(area / n)));
+    // canvas were divided evenly -- the largest size that could fit, and
+    // then only in a perfect grid. A clustered field is deliberately
+    // uneven, so it needs slack: at 0.85 the tiles want 72% of the canvas
+    // and no arrangement with visible clusters fits (441 of 473 tiles
+    // overlapped). 0.60 asks for 36% and leaves 2 overlapping, while
+    // keeping tiles big enough to recognise.
+    return Math.max(12, Math.min(132, 0.60 * Math.sqrt(area / n)));
   }
 
   /**
@@ -137,7 +145,6 @@ export class ClusterView {
         // rather than appearing already solved after a second's freeze.
         this.layout.step(12);
         this.iters += 12;
-        if (this.iters >= SETTLE_ITERS) this._space();
         this.dirty = true;
       }
       if (this.dirty) this._draw();
@@ -147,81 +154,16 @@ export class ClusterView {
   }
 
   /**
-   * Ease the densest clumps apart, radially, without rearranging them.
+   * The converged positions, used as they are.
    *
-   * The springs optimise for similarity and know nothing about tile size,
-   * so a tight cluster stacks its members and only the last one drawn is
-   * visible -- 473 tiles showing as about forty. Three repairs were tried
-   * and the first two are recorded so they are not tried again:
-   *
-   *   Axis-aligned pair separation snapped the field onto a lattice. It
-   *   fixed the overlap by discarding the layout, which is the one thing
-   *   the view exists to show.
-   *
-   *   Uniform scaling did nothing at all, and I should have seen why:
-   *   fitted() normalises the bounding box to the canvas, so scaling
-   *   every position by a constant is invariant under it. Worse, it was
-   *   paired with a zoom-to-fit, and that DID have an effect -- tiles
-   *   ended up 6 pixels across instead of the 31 the canvas affords.
-   *
-   * What works is local and radial: overlapping pairs push apart along
-   * the line joining them, a fraction of the overlap per round, for a few
-   * rounds. That redistributes density -- which fitted() does not undo --
-   * while leaving each tile among the same neighbours the springs chose.
+   * The layout already works in canvas coordinates and is bounded to
+   * them, so there is nothing to fit and nothing to rescale. Both of
+   * those were tried: rescaling is invariant under the fit that followed
+   * it, and separating pairs afterwards destroyed the clustering the
+   * whole view is for.
    */
-  _space(rounds = 60) {
-    const r = this.canvas.getBoundingClientRect();
-    const p = this.layout.fitted(r.width, r.height, this.nodeSize() * 0.6 + 12);
-    const n = this.entries.length;
-    const x = Float64Array.from(p.x), y = Float64Array.from(p.y);
-    const want = this.nodeSize() * 0.95;
-    const damp = 0.5;
-    for (let it = 0; it < rounds; it++) {
-      let hits = 0;
-      for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-          let ex = x[j] - x[i], ey = y[j] - y[i];
-          let d = Math.hypot(ex, ey);
-          if (d >= want) continue;
-          if (d < 1e-6) {                 // exactly coincident: nudge
-            ex = (i % 2 ? 1 : -1) * 1e-3;
-            ey = (j % 2 ? 1 : -1) * 1e-3;
-            d = Math.hypot(ex, ey);
-          }
-          const push = ((want - d) / d) * damp * 0.5;
-          const ox = ex * push, oy = ey * push;
-          x[i] -= ox; y[i] -= oy;
-          x[j] += ox; y[j] += oy;
-          hits++;
-        }
-      }
-      if (!hits) break;
-    }
-    // Re-fit: the pushing grew the bounding box past the canvas.
-    let lox = Infinity, loy = Infinity, hix = -Infinity, hiy = -Infinity;
-    for (let i = 0; i < n; i++) {
-      if (x[i] < lox) lox = x[i];
-      if (y[i] < loy) loy = y[i];
-      if (x[i] > hix) hix = x[i];
-      if (y[i] > hiy) hiy = y[i];
-    }
-    const pad = this.nodeSize() * 0.55 + 6;
-    const sc = Math.min((r.width - 2 * pad) / Math.max(1e-6, hix - lox),
-                        (r.height - 2 * pad) / Math.max(1e-6, hiy - loy), 1);
-    const ox = pad + (r.width - 2 * pad - (hix - lox) * sc) / 2;
-    const oy = pad + (r.height - 2 * pad - (hiy - loy) * sc) / 2;
-    for (let i = 0; i < n; i++) {
-      x[i] = ox + (x[i] - lox) * sc;
-      y[i] = oy + (y[i] - loy) * sc;
-    }
-    this.spaced = { x, y };
-    this.view = { x: 0, y: 0, k: 1 };
-  }
-
   _positions() {
-    if (this.spaced) return this.spaced;
-    const r = this.canvas.getBoundingClientRect();
-    return this.layout.fitted(r.width, r.height, this.nodeSize() * 0.6 + 12);
+    return { x: this.layout.x, y: this.layout.y };
   }
 
   _draw() {

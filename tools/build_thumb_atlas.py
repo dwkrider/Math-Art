@@ -16,10 +16,12 @@ and lazy-loads them, so it wants the full-resolution tile and does not
 want to pay for 465 it will never show.
 
 The cell size is the atlas's only real parameter. It has to cover the
-largest a tile is ever drawn in the clustered view -- 0.85*sqrt(area/n),
+largest a tile is ever drawn in the clustered view -- 0.60*sqrt(area/n),
 which for a small filtered set hits the 132 px clamp -- so 128 is the
 honest choice, and a filtered handful is the one case where the view
-falls back to the full-resolution PNGs anyway.
+falls back to the full-resolution PNGs anyway. The clamp, not the
+factor, is what sets this: changing the factor does not change the
+cell, only the point at which the clamp starts binding.
 
 Transparency is preserved: the tiles are rendered against a hidden
 backdrop precisely so they do not clip each other in the layout, and an
