@@ -108,8 +108,8 @@
       {
         "field": "polynomial",
         "label": "Implicit equation",
-        "latex": "x y z + 1 \\left(x^{2} + y^{2} + z^{2}\\right) - 2 = 0",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>+</mo><mrow><mn>1</mn><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>&#x2212;</mo><mn>2</mn></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x y z + 1 \\left(x^{2} + y^{2} + z^{2}\\right) - 2 = 0</annotation></semantics></math>",
+        "latex": "x y z + \\left(x^{2} + y^{2} + z^{2}\\right) - 2 = 0",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mi>x</mi><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>+</mo><mrow><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>&#x2212;</mo><mn>2</mn></mrow><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">x y z + \\left(x^{2} + y^{2} + z^{2}\\right) - 2 = 0</annotation></semantics></math>",
         "relation": "= 0"
       }
     ]

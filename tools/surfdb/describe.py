@@ -132,6 +132,85 @@ def _grouped(n):
     return [(f, e) for f, e in out]
 
 
+def _is_const(n, v):
+    return isinstance(n, ast.Constant) and not isinstance(n.value, bool)         and n.value == v
+
+
+def _significant(n):
+    """Factors of a product, with the ones that say nothing removed.
+
+    A coefficient of 1 is not information -- the presets carry them
+    because they fall out of how the equation was assembled, and
+    "1 - 1(x^2 + y^2 + 2 z^2)" is the same statement as
+    "1 - (x^2 + y^2 + 2 z^2)" with an extra character to trip over. A
+    factor of -1 is a sign, and is better written as one.
+
+    Both are identities, not simplification: nothing here cancels terms,
+    reorders a sum or touches a coefficient that is doing work.
+
+    Returns (negative, [(node, exponent)]).
+    """
+    neg = False
+    kept = []
+    for f, e in _grouped(n):
+        if _is_const(f, 1):
+            continue
+        if isinstance(f, ast.UnaryOp) and isinstance(f.op, ast.USub)                 and _is_const(f.operand, 1):
+            if e % 2:
+                neg = not neg
+            continue
+        kept.append((f, e))
+    return neg, kept
+
+
+def _signed_rhs(is_plus, node):
+    """Peel negations off a sum's right operand, flipping the sign.
+
+    Source expressions carry negative constants as they were computed --
+    `x - -0.49999999999999998`, `a + -b` -- and printed literally that is
+    a double sign the reader has to resolve. Folding it into the operator
+    is an identity: a - (-b) is a + b.
+
+    Peeled in a loop, because a doubly negated term reduces twice.
+    """
+    while True:
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+            node, is_plus = node.operand, not is_plus
+        elif (isinstance(node, ast.Constant)
+              and isinstance(node.value, (int, float))
+              and not isinstance(node.value, bool)
+              and node.value < 0):
+            node, is_plus = ast.Constant(-node.value), not is_plus
+        elif (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mult)
+              and _leading_negative(node)):
+            node, is_plus = _drop_leading_sign(node), not is_plus
+        else:
+            return is_plus, node
+
+
+def _leading_negative(node):
+    """True if this product's first factor carries a minus sign."""
+    f = _factors(node)[0]
+    if isinstance(f, ast.UnaryOp) and isinstance(f.op, ast.USub):
+        return True
+    return (isinstance(f, ast.Constant) and isinstance(f.value, (int, float))
+            and not isinstance(f.value, bool) and f.value < 0)
+
+
+def _drop_leading_sign(node):
+    """The same product with its leading factor made positive."""
+    fs = _factors(node)
+    f = fs[0]
+    if isinstance(f, ast.UnaryOp):
+        fs[0] = f.operand
+    else:
+        fs[0] = ast.Constant(-f.value)
+    out = fs[0]
+    for nxt in fs[1:]:
+        out = ast.BinOp(left=out, op=ast.Mult(), right=nxt)
+    return out
+
+
 class _Latex:
     """AST -> LaTeX. Returns (text, precedence)."""
 
@@ -182,8 +261,11 @@ class _Latex:
             base, _ = self.wrap(n.left, P_ATOM)
             return "%s^{%s}" % (base, self.go(n.right)[0]), P_POW
         if isinstance(op, ast.Mult):
+            neg, factors = _significant(n)
+            if not factors:                      # the product was all 1s
+                return ("-1" if neg else "1"), P_ATOM
             parts = []
-            for f, e in _grouped(n):
+            for f, e in factors:
                 t, _ = self.wrap(f, P_ATOM if e > 1 else P_MUL)
                 parts.append("%s^{%d}" % (t, e) if e > 1 else t)
             out = parts[0]
@@ -193,11 +275,16 @@ class _Latex:
                 # a numeral glued to a numeral.
                 join = " " if (t[:1].isalpha() or t.startswith(chr(92))) else " " + chr(92) + "cdot "
                 out += join + t
-            return out, P_MUL
+            return ("-" + out, P_UNARY) if neg else (out, P_MUL)
         if isinstance(op, (ast.Add, ast.Sub)):
+            plus, rhs = _signed_rhs(isinstance(op, ast.Add), n.right)
             a, _ = self.wrap(n.left, P_ADD)
-            b, _ = self.wrap(n.right, P_ADD)
-            return "%s %s %s" % (a, "+" if isinstance(op, ast.Add) else "-", b), P_ADD
+            # Subtraction does not associate: the right operand of a
+            # MINUS must be bracketed when it is itself a sum, or
+            # "x - (y + z)" prints as "x - y + z", which is a different
+            # expression. Addition is associative and needs no bracket.
+            b, _ = self.wrap(rhs, P_ADD if plus else P_MUL)
+            return "%s %s %s" % (a, "+" if plus else "-", b), P_ADD
         raise expr.ExprError("cannot typeset operator %s" % type(op).__name__)
 
 
@@ -278,15 +365,24 @@ class _MathML:
             return "<msup>%s%s</msup>" % (self.par(n.left, P_ATOM),
                                           self.go(n.right))
         if isinstance(op, ast.Mult):
+            neg, factors = _significant(n)
+            if not factors:
+                return "<mn>%s</mn>" % ("-1" if neg else "1")
             parts = []
-            for f, e in _grouped(n):
+            for f, e in factors:
                 inner = self.par(f, P_ATOM if e > 1 else P_MUL)
                 parts.append("<msup>%s<mn>%d</mn></msup>" % (inner, e)
                              if e > 1 else inner)
-            return "<mrow>%s</mrow>" % "<mo>&#x2062;</mo>".join(parts)
-        sign = "+" if isinstance(op, ast.Add) else "&#x2212;"
+            body = "<mo>&#x2062;</mo>".join(parts)
+            if neg:
+                body = "<mo>&#x2212;</mo>" + body
+            return "<mrow>%s</mrow>" % body
+        plus, rhs = _signed_rhs(isinstance(op, ast.Add), n.right)
+        sign = "+" if plus else "&#x2212;"
+        # See the note in _Latex.binop: a minus does not associate.
         return ("<mrow>%s<mo>%s</mo>%s</mrow>"
-                % (self.par(n.left, P_ADD), sign, self.par(n.right, P_ADD)))
+                % (self.par(n.left, P_ADD), sign,
+                   self.par(rhs, P_ADD if plus else P_MUL)))
 
 
 _GREEK_CHAR = {
@@ -553,6 +649,49 @@ def _selftest():
         raise AssertionError("distinct factors were folded together")
     if "msup" not in typeset("x*x")["mathml"]:
         raise AssertionError("MathML did not fold the repeated factor")
+
+    # A coefficient of 1 is not information, and -1 is a sign. Both are
+    # identities; nothing here cancels a term or touches a coefficient
+    # that is doing work.
+    for src, want in (("1*x", "x"), ("-1*x", "-x"), ("2*1*x", "2 x"),
+                      ("1*x*1*y", "x y"), ("1*1", "1"),
+                      ("x*x + 1 - 1*(y*y + 2*z*z)",
+                       "x^{2} + 1 - \\left(y^{2} + 2 z^{2}\\right)")):
+        got = typeset(src)["latex"]
+        if got != want:
+            raise AssertionError("unit factor %r -> %r, want %r"
+                                 % (src, got, want))
+    # A coefficient that IS doing work must survive untouched.
+    if typeset("2*x")["latex"] != "2 x":
+        raise AssertionError("a real coefficient was dropped")
+
+    # PRECEDENCE, which is where a typesetter silently changes the
+    # meaning rather than looking wrong. Subtraction does not
+    # associate: "x - (y + z)" printed as "x - y + z" is a different
+    # expression, and nothing downstream would ever report it. Each of
+    # these was a real defect at some point in this module.
+    for src, want in (
+        ("x - (y + z)", "x - \\left(y + z\\right)"),
+        ("x - (y - z)", "x - \\left(y - z\\right)"),
+        ("(x - y) - (z - 1)", "x - y - \\left(z - 1\\right)"),
+        ("x + (y + z)", "x + y + z"),          # addition does associate
+        ("x + (y - z)", "x + y - z"),
+        ("x - y*z", "x - y z"),                # product binds tighter
+        ("x - -0.5", "x + 0.5"),               # no double sign
+        ("x + -0.5*(y + z)", "x - 0.5 \\left(y + z\\right)"),
+        ("(x + y)**2", "\\left(x + y\\right)^{2}"),
+        ("x/(y + z)", "\\frac{x}{y + z}"),
+    ):
+        got = typeset(src)["latex"]
+        if got != want:
+            raise AssertionError("precedence %r -> %r, want %r"
+                                 % (src, got, want))
+    # The same rule in the MathML: a bracketed sum must survive there
+    # too, or the two notations disagree about the surface.
+    if typeset("x - (y + z)")["mathml"].count("(") < 1:
+        raise AssertionError("MathML dropped the bracket on a minus")
+    if not typeset("11*x")["latex"].startswith("11"):
+        raise AssertionError("11 was mangled into 1 and 1")
 
     # The named constants are constants, not variables: pi set as two
     # italic letters reads as p times i, a different expression, and an

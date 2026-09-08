@@ -100,8 +100,8 @@
       {
         "field": "gauss_map",
         "label": "Gauss map g",
-        "latex": "1 z \\mathit{Rho}",
-        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>1</mn><mo>&#x2062;</mo><mi>z</mi><mo>&#x2062;</mo><mi>Rho</mi></mrow></mrow><annotation encoding=\"application/x-tex\">1 z \\mathit{Rho}</annotation></semantics></math>",
+        "latex": "z \\mathit{Rho}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>z</mi><mo>&#x2062;</mo><mi>Rho</mi></mrow></mrow><annotation encoding=\"application/x-tex\">z \\mathit{Rho}</annotation></semantics></math>",
         "relation": null
       },
       {
