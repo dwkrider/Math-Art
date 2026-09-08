@@ -65,5 +65,32 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Hyperbolic Helicoid is a swept surface, given by a parametrisation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "\\frac{\\sinh\\left(v\\right) \\cos\\left(2.5 u\\right)}{1 + \\cosh\\left(u\\right) \\cosh\\left(v\\right)}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2.5</mn><mo>&#x2062;</mo><mi>u</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mrow><mn>1</mn><mo>+</mo><mrow><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\sinh\\left(v\\right) \\cos\\left(2.5 u\\right)}{1 + \\cosh\\left(u\\right) \\cosh\\left(v\\right)}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "\\frac{\\sinh\\left(v\\right) \\sin\\left(2.5 u\\right)}{1 + \\cosh\\left(u\\right) \\cosh\\left(v\\right)}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2.5</mn><mo>&#x2062;</mo><mi>u</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mrow><mn>1</mn><mo>+</mo><mrow><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\sinh\\left(v\\right) \\sin\\left(2.5 u\\right)}{1 + \\cosh\\left(u\\right) \\cosh\\left(v\\right)}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "\\frac{\\cosh\\left(v\\right) \\sinh\\left(u\\right)}{1 + \\cosh\\left(u\\right) \\cosh\\left(v\\right)}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mrow><mn>1</mn><mo>+</mo><mrow><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\cosh\\left(v\\right) \\sinh\\left(u\\right)}{1 + \\cosh\\left(u\\right) \\cosh\\left(v\\right)}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

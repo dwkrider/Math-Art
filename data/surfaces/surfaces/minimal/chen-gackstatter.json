@@ -89,5 +89,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Chen-Gackstatter Surface is a minimal surface, given by a Weierstrass representation, genus 1, 1 end, self-intersecting.",
+    "source": "templated"
   }
 }

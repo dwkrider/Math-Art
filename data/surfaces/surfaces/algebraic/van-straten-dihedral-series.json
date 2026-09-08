@@ -106,5 +106,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Van Straten D_d Nodal Series is an algebraic surface, defined by an implicit equation, immersed with singularities.",
+    "source": "templated"
   }
 }

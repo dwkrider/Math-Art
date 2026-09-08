@@ -91,5 +91,25 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "k-Noid with Enneper Ends is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "gauss_map",
+        "label": "Gauss map g",
+        "latex": "\\frac{z^{-1 + k} \\left(R^{k} - z^{k}\\right)}{-1 + z^{k} R^{k}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><msup><mi>z</mi><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><mi>k</mi></mrow></msup><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><msup><mi>R</mi><mi>k</mi></msup><mo>&#x2212;</mo><msup><mi>z</mi><mi>k</mi></msup></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><mrow><msup><mi>z</mi><mi>k</mi></msup><mo>&#x2062;</mo><msup><mi>R</mi><mi>k</mi></msup></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{z^{-1 + k} \\left(R^{k} - z^{k}\\right)}{-1 + z^{k} R^{k}}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "height_differential",
+        "label": "Height differential dh",
+        "latex": "\\frac{1 - \\frac{z^{k} + z^{-k}}{R^{k} + R^{-k}}}{z \\left(-2 + z^{k} + z^{-k}\\right)^{2}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mn>1</mn><mo>&#x2212;</mo><mfrac><mrow><msup><mi>z</mi><mi>k</mi></msup><mo>+</mo><msup><mi>z</mi><mrow><mo>&#x2212;</mo><mi>k</mi></mrow></msup></mrow><mrow><msup><mi>R</mi><mi>k</mi></msup><mo>+</mo><msup><mi>R</mi><mrow><mo>&#x2212;</mo><mi>k</mi></mrow></msup></mrow></mfrac></mrow><mrow><mi>z</mi><mo>&#x2062;</mo><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mo>&#x2212;</mo><mn>2</mn></mrow><mo>+</mo><msup><mi>z</mi><mi>k</mi></msup></mrow><mo>+</mo><msup><mi>z</mi><mrow><mo>&#x2212;</mo><mi>k</mi></mrow></msup></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{1 - \\frac{z^{k} + z^{-k}}{R^{k} + R^{-k}}}{z \\left(-2 + z^{k} + z^{-k}\\right)^{2}}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

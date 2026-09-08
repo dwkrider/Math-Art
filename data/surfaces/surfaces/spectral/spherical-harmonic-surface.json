@@ -51,5 +51,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Spherical Harmonic Surface is a spectral surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

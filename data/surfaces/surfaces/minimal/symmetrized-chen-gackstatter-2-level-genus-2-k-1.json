@@ -67,5 +67,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Symmetrized Chen-Gackstatter (2-level, genus 2(k-1)) is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

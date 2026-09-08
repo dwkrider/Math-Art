@@ -93,5 +93,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Lopez Minimal Klein Bottle is a minimal surface, given by a Weierstrass representation, 1 end, immersed.",
+    "source": "templated"
   }
 }

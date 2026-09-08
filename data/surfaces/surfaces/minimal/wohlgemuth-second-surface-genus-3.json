@@ -86,5 +86,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Wohlgemuth Second Surface (genus 3) is a minimal surface, given by a Weierstrass representation, genus 3, 4 ends, immersed.",
+    "source": "templated"
   }
 }

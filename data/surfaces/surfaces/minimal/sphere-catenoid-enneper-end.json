@@ -102,5 +102,25 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Sphere: catenoid + Enneper end is a minimal surface, given by a Weierstrass representation, genus 0, 2 ends, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "gauss_map",
+        "label": "Gauss map g",
+        "latex": "\\rho \\left(z - \\frac{1}{z}\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>ρ</mi><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mi>z</mi><mo>&#x2212;</mo><mfrac><mn>1</mn><mi>z</mi></mfrac></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\rho \\left(z - \\frac{1}{z}\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "height_differential",
+        "label": "Height differential dh",
+        "latex": "z - \\frac{1}{z}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>z</mi><mo>&#x2212;</mo><mfrac><mn>1</mn><mi>z</mi></mfrac></mrow></mrow><annotation encoding=\"application/x-tex\">z - \\frac{1}{z}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

@@ -66,5 +66,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Proportional-Curvature Surface is a surface of revolution, a Weingarten surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

@@ -88,5 +88,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Torus with Catenoid + 2 Annular Ends is a singly periodic minimal surface, given by a Weierstrass representation, genus 1, 3 ends, immersed, with a rod group.",
+    "source": "templated"
   }
 }

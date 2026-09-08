@@ -84,5 +84,25 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Lopez sphere (2 ends of index 2) is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "gauss_map",
+        "label": "Gauss map g",
+        "latex": "\\frac{B \\left(1 + z^{2} + 1 i z c\\right)}{z}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mi>B</mi><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mn>1</mn><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo>+</mo><mrow><mn>1</mn><mo>&#x2062;</mo><mi>i</mi><mo>&#x2062;</mo><mi>z</mi><mo>&#x2062;</mo><mi>c</mi></mrow></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mi>z</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{B \\left(1 + z^{2} + 1 i z c\\right)}{z}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "height_differential",
+        "label": "Height differential dh",
+        "latex": "\\frac{1 B \\left(i + i z^{2} - z c\\right)}{z^{2}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mn>1</mn><mo>&#x2062;</mo><mi>B</mi><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mi>i</mi><mo>+</mo><mrow><mi>i</mi><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo>&#x2212;</mo><mrow><mi>z</mi><mo>&#x2062;</mo><mi>c</mi></mrow></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><msup><mi>z</mi><mn>2</mn></msup></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{1 B \\left(i + i z^{2} - z c\\right)}{z^{2}}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

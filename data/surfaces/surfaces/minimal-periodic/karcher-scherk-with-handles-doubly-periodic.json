@@ -76,5 +76,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Karcher-Scherk with Handles (doubly periodic) is a doubly periodic minimal surface, given by a Weierstrass representation, immersed, with a layer group.",
+    "source": "templated"
   }
 }

@@ -74,5 +74,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Toroidal Karcher-Scherk Tower (genus 1) is a singly periodic minimal surface, given by a Weierstrass representation, immersed, with a rod group.",
+    "source": "templated"
   }
 }

@@ -339,6 +339,41 @@ def check_seo(fail):
                      % (os.path.relpath(path, PROJ), exc))
                 break
 
+    # Every surface record carries a description, and every formula on a
+    # page is well-formed MathML.
+    #
+    # Malformed MathML is the failure worth guarding: a browser given
+    # broken markup does not report anything, it builds unknown elements
+    # that lay out as inline text, so a wrong equation appears as a run
+    # of loose letters and numbers and looks like a styling problem.
+    from xml.etree import ElementTree as ET
+    sdb = os.path.join(PROJ, "data", "surfaces")
+    with open(os.path.join(sdb, "index.json"), encoding="utf-8") as fh:
+        sidx = json.load(fh)["entries"]
+    missing = 0
+    for e in sidx:
+        with open(os.path.join(sdb, e["path"]), encoding="utf-8") as fh:
+            d = (json.load(fh) or {}).get("description") or {}
+        if not d.get("summary"):
+            missing += 1
+    if missing:
+        fail("%d surface record(s) carry no description -- run "
+             "tools/surfdb_build.py" % missing)
+
+    n_math = bad_math = 0
+    for path in _web_files(".html"):
+        with open(path, encoding="utf-8") as fh:
+            src = fh.read()
+        for m in re.finditer("<math" + chr(92) + "b.*?</math>", src, re.S):
+            n_math += 1
+            try:
+                ET.fromstring(m.group(0))
+            except ET.ParseError as exc:
+                bad_math += 1
+                if bad_math <= 3:
+                    fail("%s has malformed MathML: %s"
+                         % (os.path.relpath(path, PROJ), exc))
+
     # sitemap.xml lists only URLs that exist on disk, and lists them all.
     sm = os.path.join(WEB, "sitemap.xml")
     n_urls = 0
@@ -375,7 +410,7 @@ def check_seo(fail):
         if "sitemap.xml" not in body:
             fail("web/robots.txt does not point at sitemap.xml")
 
-    return n_pages, n_urls
+    return n_pages, n_urls, n_math
 
 
 def check_cluster_cache(fail, quiet):
@@ -424,7 +459,7 @@ def main(argv):
     n_imports = check_js_relative_imports(fail)
     check_no_remote_fetch(fail)
     n_js = check_js_syntax(fail, quiet)
-    n_pages, n_urls = check_seo(fail)
+    n_pages, n_urls, n_math = check_seo(fail)
     cache_ok = check_cluster_cache(fail, quiet)
 
     if not quiet:
@@ -438,6 +473,7 @@ def main(argv):
         print("js syntax  : %d module(s) checked" % n_js)
         print("seo pages  : %d object pages, %d sitemap URLs"
               % (n_pages, n_urls))
+        print("formulae   : %d MathML blocks, all well-formed" % n_math)
         if cache_ok:
             print("cluster    : layout cache + tile gate OK")
 

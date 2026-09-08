@@ -66,5 +66,18 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Geisha is an algebraic surface, defined by an implicit equation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "x^{2} y z + x^{2} z^{2} - y^{3} z + y^{3}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2062;</mo><mi>y</mi><mo>&#x2062;</mo><mi>z</mi></mrow><mo>+</mo><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo>&#x2212;</mo><mrow><mrow><msup><mi>y</mi><mn>3</mn></msup><mo>&#x2062;</mo><mi>z</mi></mrow><mo>+</mo><msup><mi>y</mi><mn>3</mn></msup></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">x^{2} y z + x^{2} z^{2} - y^{3} z + y^{3}</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

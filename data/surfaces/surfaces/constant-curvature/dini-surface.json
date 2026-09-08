@@ -86,5 +86,33 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Dini Surface is a singly periodic surface of constant negative Gaussian curvature, given by a parametrisation, embedded, with a continuous symmetry group.",
+    "source": "curated",
+    "curated": "Take the pseudosphere and drag it along a helix as it turns: the result keeps the same constant negative curvature but winds around an axis, which is why it is often drawn as a twisted horn. Constant curvature survives the twisting because the motion is a screw, and a screw is a rigid motion.",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "\\sqrt{1 - 0.2^{2}} \\cos\\left(u\\right) \\sin\\left(v\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msqrt><mrow><mn>1</mn><mo>&#x2212;</mo><msup><mn>0.2</mn><mn>2</mn></msup></mrow></msqrt><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sqrt{1 - 0.2^{2}} \\cos\\left(u\\right) \\sin\\left(v\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "\\sqrt{1 - 0.2^{2}} \\sin\\left(u\\right) \\sin\\left(v\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msqrt><mrow><mn>1</mn><mo>&#x2212;</mo><msup><mn>0.2</mn><mn>2</mn></msup></mrow></msqrt><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sqrt{1 - 0.2^{2}} \\sin\\left(u\\right) \\sin\\left(v\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "\\sqrt{1 - 0.2^{2}} \\left(\\cos\\left(v\\right) + \\log\\left(\\tan\\left(\\frac{v}{2}\\right)\\right)\\right) + 0.2 u",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><msqrt><mrow><mn>1</mn><mo>&#x2212;</mo><msup><mn>0.2</mn><mn>2</mn></msup></mrow></msqrt><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mo>+</mo><mrow><mi>log</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mi>tan</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mfrac><mi>v</mi><mn>2</mn></mfrac><mo stretchy=\"false\">)</mo></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mn>0.2</mn><mo>&#x2062;</mo><mi>u</mi></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sqrt{1 - 0.2^{2}} \\left(\\cos\\left(v\\right) + \\log\\left(\\tan\\left(\\frac{v}{2}\\right)\\right)\\right) + 0.2 u</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

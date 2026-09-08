@@ -82,5 +82,32 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Gabriel's Horn is a surface of revolution, given by a parametrisation, embedded.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "u",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>u</mi></mrow><annotation encoding=\"application/x-tex\">u</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "\\frac{\\cos\\left(v\\right)}{u}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mi>u</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\cos\\left(v\\right)}{u}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "\\frac{\\sin\\left(v\\right)}{u}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mi>u</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{\\sin\\left(v\\right)}{u}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

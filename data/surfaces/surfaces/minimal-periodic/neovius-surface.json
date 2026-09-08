@@ -672,5 +672,18 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Neovius is a triply periodic minimal surface, defined as a nodal algebraic surface, genus 9 per unit cell, embedded, with Im-3m symmetry (a crystallographic space group).",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "level_function",
+        "label": "Level function",
+        "latex": "3 \\left(\\cos\\left(x\\right) + \\cos\\left(y\\right) + \\cos\\left(z\\right)\\right) + 4 \\cos\\left(x\\right) \\cos\\left(y\\right) \\cos\\left(z\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mn>3</mn><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>+</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mn>4</mn><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">3 \\left(\\cos\\left(x\\right) + \\cos\\left(y\\right) + \\cos\\left(z\\right)\\right) + 4 \\cos\\left(x\\right) \\cos\\left(y\\right) \\cos\\left(z\\right)</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

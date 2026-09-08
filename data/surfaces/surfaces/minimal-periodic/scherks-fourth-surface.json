@@ -74,5 +74,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Scherk's Fourth Surface (1835) is a singly periodic minimal surface, given by a Weierstrass representation, immersed with singularities, with a rod group.",
+    "source": "templated"
   }
 }

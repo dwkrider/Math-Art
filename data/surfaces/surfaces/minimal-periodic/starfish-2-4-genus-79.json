@@ -68,5 +68,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Starfish 2-4 Surface (genus 79) is a triply periodic minimal surface, given by a Weierstrass representation, genus 79, embedded, with a crystallographic group.",
+    "source": "templated"
   }
 }

@@ -68,5 +68,32 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Astroidal Ellipsoid is a surface, given by a parametrisation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "\\left(\\cos\\left(u\\right) \\cos\\left(v\\right)\\right)^{3}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mn>3</mn></msup></mrow><annotation encoding=\"application/x-tex\">\\left(\\cos\\left(u\\right) \\cos\\left(v\\right)\\right)^{3}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "1.5 \\left(\\sin\\left(u\\right) \\cos\\left(v\\right)\\right)^{3}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>1.5</mn><mo>&#x2062;</mo><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mn>3</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">1.5 \\left(\\sin\\left(u\\right) \\cos\\left(v\\right)\\right)^{3}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "2 \\sin\\left(v\\right)^{3}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>2</mn><mo>&#x2062;</mo><msup><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow><mn>3</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">2 \\sin\\left(v\\right)^{3}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

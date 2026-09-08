@@ -110,5 +110,9 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Genus-g Surface is a topological surface, given by a parametrisation, genus varies, embedded.",
+    "source": "templated"
   }
 }

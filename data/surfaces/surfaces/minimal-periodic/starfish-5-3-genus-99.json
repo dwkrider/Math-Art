@@ -57,5 +57,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Starfish 5-3 Surface (genus 99) is a triply periodic minimal surface, given by a parametrisation, genus 99, embedded, with a crystallographic group.",
+    "source": "templated"
   }
 }

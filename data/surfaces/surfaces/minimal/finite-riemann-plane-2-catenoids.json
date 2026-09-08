@@ -92,5 +92,25 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Finite Riemann (plane + 2 catenoids) is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "gauss_map",
+        "label": "Gauss map g",
+        "latex": "\\frac{t \\left(3 + z^{2}\\right)}{-1 + z^{2}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mi>t</mi><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mn>3</mn><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{t \\left(3 + z^{2}\\right)}{-1 + z^{2}}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "height_differential",
+        "label": "Height differential dh",
+        "latex": "\\frac{3 + z^{2}}{-1 + z^{2}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mn>3</mn><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{3 + z^{2}}{-1 + z^{2}}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

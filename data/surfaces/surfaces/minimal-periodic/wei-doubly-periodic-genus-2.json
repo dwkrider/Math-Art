@@ -82,5 +82,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Wei Doubly Periodic (genus 2) is a doubly periodic minimal surface, given by a Weierstrass representation, genus 2, 4 ends, embedded, with a layer group.",
+    "source": "templated"
   }
 }

@@ -131,5 +131,32 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Right Conoid is a ruled surface, given by a parametrisation, embedded or immersed depending on parameters.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "v \\cos\\left(u\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>v</mi><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">v \\cos\\left(u\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "v \\sin\\left(u\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>v</mi><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">v \\sin\\left(u\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "0.5 \\sin\\left(2 u\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>0.5</mn><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>u</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">0.5 \\sin\\left(2 u\\right)</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

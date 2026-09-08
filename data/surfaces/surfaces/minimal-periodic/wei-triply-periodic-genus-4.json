@@ -74,5 +74,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Wei Triply Periodic Surface (genus 4, a=0.1 b=0.3 member) is a triply periodic minimal surface, given by a Weierstrass representation, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

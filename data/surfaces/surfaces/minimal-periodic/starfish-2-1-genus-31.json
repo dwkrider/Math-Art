@@ -692,5 +692,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Starfish 2-1 (genus 31) is a triply periodic minimal surface, given by a Weierstrass representation, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

@@ -58,5 +58,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Bouguer Dome is a surface of revolution, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

@@ -107,5 +107,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Delaunay Surface is a singly periodic constant-mean-curvature surface, of constant mean curvature, given by a parametrisation, embedded or immersed depending on parameters, with a continuous symmetry group.",
+    "source": "templated"
   }
 }

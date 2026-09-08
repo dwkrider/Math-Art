@@ -70,5 +70,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Klein Quartic is a topological surface, given by a parametrisation, genus 3, immersed.",
+    "source": "templated"
   }
 }

@@ -49,5 +49,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Scherk-Collins Sculpture is a minimal surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

@@ -59,5 +59,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Willmore Surface is a topological surface, a critical point of the Willmore energy, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

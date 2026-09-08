@@ -81,5 +81,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Labs Dodecic (132 A5 points) is an algebraic surface, defined by an implicit equation, immersed with singularities.",
+    "source": "templated"
   }
 }

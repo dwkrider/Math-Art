@@ -66,5 +66,18 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Durchblick is an algebraic surface, defined by an implicit equation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "x^{3} y + x z^{3} + y^{3} z + z^{3} + 5 z",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mrow><mrow><msup><mi>x</mi><mn>3</mn></msup><mo>&#x2062;</mo><mi>y</mi></mrow><mo>+</mo><mrow><mi>x</mi><mo>&#x2062;</mo><msup><mi>z</mi><mn>3</mn></msup></mrow></mrow><mo>+</mo><mrow><msup><mi>y</mi><mn>3</mn></msup><mo>&#x2062;</mo><mi>z</mi></mrow></mrow><mo>+</mo><msup><mi>z</mi><mn>3</mn></msup></mrow><mo>+</mo><mrow><mn>5</mn><mo>&#x2062;</mo><mi>z</mi></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">x^{3} y + x z^{3} + y^{3} z + z^{3} + 5 z</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

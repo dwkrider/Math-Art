@@ -79,5 +79,32 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Catalan is a minimal surface, given by a parametrisation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "u - \\sin\\left(u\\right) \\cosh\\left(v\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>u</mi><mo>&#x2212;</mo><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">u - \\sin\\left(u\\right) \\cosh\\left(v\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "1 - \\cos\\left(u\\right) \\cosh\\left(v\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>1</mn><mo>&#x2212;</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cosh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>v</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">1 - \\cos\\left(u\\right) \\cosh\\left(v\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "4 \\sin\\left(\\frac{u}{2}\\right) \\sinh\\left(\\frac{v}{2}\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mn>4</mn><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mfrac><mi>u</mi><mn>2</mn></mfrac><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sinh</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mfrac><mi>v</mi><mn>2</mn></mfrac><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">4 \\sin\\left(\\frac{u}{2}\\right) \\sinh\\left(\\frac{v}{2}\\right)</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

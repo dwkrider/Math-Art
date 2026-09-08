@@ -138,5 +138,25 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "P-Gyroid-D Associate Family is a triply periodic minimal surface, given by a Weierstrass representation, genus 3 per unit cell, embedded or immersed depending on parameters, with varies symmetry (a crystallographic space group).",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "gauss_map",
+        "label": "Gauss map g",
+        "latex": "\\frac{-1 i \\sqrt{3 + z} \\sqrt{-1 + z}}{2 i \\sqrt{z} - 1 \\sqrt{1 + z} \\sqrt{-3 + z}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>&#x2062;</mo><mi>i</mi><mo>&#x2062;</mo><msqrt><mrow><mn>3</mn><mo>+</mo><mi>z</mi></mrow></msqrt><mo>&#x2062;</mo><msqrt><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>+</mo><mi>z</mi></mrow></msqrt></mrow><mrow><mrow><mn>2</mn><mo>&#x2062;</mo><mi>i</mi><mo>&#x2062;</mo><msqrt><mi>z</mi></msqrt></mrow><mo>&#x2212;</mo><mrow><mn>1</mn><mo>&#x2062;</mo><msqrt><mrow><mn>1</mn><mo>+</mo><mi>z</mi></mrow></msqrt><mo>&#x2062;</mo><msqrt><mrow><mrow><mo>&#x2212;</mo><mn>3</mn></mrow><mo>+</mo><mi>z</mi></mrow></msqrt></mrow></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{-1 i \\sqrt{3 + z} \\sqrt{-1 + z}}{2 i \\sqrt{z} - 1 \\sqrt{1 + z} \\sqrt{-3 + z}}</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "height_differential",
+        "label": "Height differential dh",
+        "latex": "\\frac{-1 i}{\\sqrt{z} \\sqrt{1 + z} \\sqrt{-3 + z}}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mrow><mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo>&#x2062;</mo><mi>i</mi></mrow><mrow><msqrt><mi>z</mi></msqrt><mo>&#x2062;</mo><msqrt><mrow><mn>1</mn><mo>+</mo><mi>z</mi></mrow></msqrt><mo>&#x2062;</mo><msqrt><mrow><mrow><mo>&#x2212;</mo><mn>3</mn></mrow><mo>+</mo><mi>z</mi></mrow></msqrt></mrow></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{-1 i}{\\sqrt{z} \\sqrt{1 + z} \\sqrt{-3 + z}}</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

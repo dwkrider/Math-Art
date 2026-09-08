@@ -119,5 +119,19 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Gyroid is a triply periodic minimal surface, defined as a nodal algebraic surface, genus 3 per unit cell, embedded, with Ia-3d symmetry (a crystallographic space group).",
+    "source": "curated",
+    "curated": "A single surface that divides space into two interpenetrating labyrinths, neither of which ever meets the other, and which are mirror images. Alan Schoen found it in 1970 while looking for strong, light structures, and it went unproved for nearly twenty years. It contains no straight lines and no plane mirrors, which is what makes it hard: the usual way of building such a surface is to reflect a patch across its own boundary, and the gyroid gives you nothing to reflect in. It turns up in butterfly wing scales and in block copolymers.",
+    "formulas": [
+      {
+        "field": "level_function",
+        "label": "Level function",
+        "latex": "\\sin\\left(x\\right) \\cos\\left(y\\right) + \\sin\\left(y\\right) \\cos\\left(z\\right) + \\sin\\left(z\\right) \\cos\\left(x\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>+</mo><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sin\\left(x\\right) \\cos\\left(y\\right) + \\sin\\left(y\\right) \\cos\\left(z\\right) + \\sin\\left(z\\right) \\cos\\left(x\\right)</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

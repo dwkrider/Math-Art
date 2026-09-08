@@ -73,5 +73,18 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Cassinian Surface (3 poles) is an algebraic surface, defined by an implicit equation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "1 \\left(\\left(x - 1\\right)^{2} + \\left(y - 0\\right)^{2} + z^{2}\\right) \\left(\\left(x - -0.4999999999999998\\right)^{2} + \\left(y - 0.8660254037844387\\right)^{2} + z^{2}\\right) \\left(\\left(x - -0.5000000000000004\\right)^{2} + \\left(y - -0.8660254037844385\\right)^{2} + z^{2}\\right) - 2.313060765624999",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mn>1</mn><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mi>x</mi><mo>&#x2212;</mo><mn>1</mn></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mi>y</mi><mo>&#x2212;</mo><mn>0</mn></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow><mo>+</mo><mrow><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mi>x</mi><mo>&#x2212;</mo><mrow><mo>&#x2212;</mo><mn>0.4999999999999998</mn></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mi>y</mi><mo>&#x2212;</mo><mn>0.8660254037844387</mn></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow><mo>+</mo><mrow><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mi>x</mi><mo>&#x2212;</mo><mrow><mo>&#x2212;</mo><mn>0.5000000000000004</mn></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mi>y</mi><mo>&#x2212;</mo><mrow><mo>&#x2212;</mo><mn>0.8660254037844385</mn></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow><mo>+</mo><mrow><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>&#x2212;</mo><mn>2.313060765624999</mn></mrow></mrow><annotation encoding=\"application/x-tex\">1 \\left(\\left(x - 1\\right)^{2} + \\left(y - 0\\right)^{2} + z^{2}\\right) \\left(\\left(x - -0.4999999999999998\\right)^{2} + \\left(y - 0.8660254037844387\\right)^{2} + z^{2}\\right) \\left(\\left(x - -0.5000000000000004\\right)^{2} + \\left(y - -0.8660254037844385\\right)^{2} + z^{2}\\right) - 2.313060765624999</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

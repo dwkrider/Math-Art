@@ -113,5 +113,33 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Helicoid is a singly periodic minimal surface, given by a parametrisation, genus 0, 1 end, embedded, with a continuous symmetry group.",
+    "source": "curated",
+    "curated": "The surface swept by a horizontal line as it rises and rotates at a constant rate -- a spiral ramp, continued forever in both directions. It is the only ruled minimal surface other than the plane, meaning it can be built entirely out of straight lines. It is also the catenoid's twin: each can be bent into the other without any stretching, through a family of minimal surfaces that are all locally the same surface in different poses.",
+    "formulas": [
+      {
+        "field": "x",
+        "label": "x(u, v)",
+        "latex": "v \\cos\\left(u\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>v</mi><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">v \\cos\\left(u\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "y",
+        "label": "y(u, v)",
+        "latex": "v \\sin\\left(u\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mi>v</mi><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>u</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">v \\sin\\left(u\\right)</annotation></semantics></math>",
+        "relation": null
+      },
+      {
+        "field": "z",
+        "label": "z(u, v)",
+        "latex": "u",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>u</mi></mrow><annotation encoding=\"application/x-tex\">u</annotation></semantics></math>",
+        "relation": null
+      }
+    ]
   }
 }

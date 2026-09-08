@@ -101,5 +101,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Bjorling: Twisted Band (Mobius) is a minimal surface, given by a Weierstrass representation, immersed.",
+    "source": "templated"
   }
 }

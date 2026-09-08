@@ -762,5 +762,19 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schwarz D Surface is a triply periodic minimal surface, defined as a nodal algebraic surface, genus 3 per unit cell, embedded, with Pn-3m symmetry (a crystallographic space group).",
+    "source": "curated",
+    "curated": "Schwarz's diamond surface, the P surface's conjugate: the two are the same local geometry rotated through a right angle in the associate family, so a patch of one bends into a patch of the other without stretching. Its two labyrinths follow the bonds of the diamond lattice, which is where the name comes from.",
+    "formulas": [
+      {
+        "field": "level_function",
+        "label": "Level function",
+        "latex": "\\sin\\left(x\\right) \\sin\\left(y\\right) \\sin\\left(z\\right) + \\sin\\left(x\\right) \\cos\\left(y\\right) \\cos\\left(z\\right) + \\cos\\left(x\\right) \\sin\\left(y\\right) \\cos\\left(z\\right) + \\cos\\left(x\\right) \\cos\\left(y\\right) \\sin\\left(z\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>+</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>+</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>sin</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">\\sin\\left(x\\right) \\sin\\left(y\\right) \\sin\\left(z\\right) + \\sin\\left(x\\right) \\cos\\left(y\\right) \\cos\\left(z\\right) + \\cos\\left(x\\right) \\sin\\left(y\\right) \\cos\\left(z\\right) + \\cos\\left(x\\right) \\cos\\left(y\\right) \\sin\\left(z\\right)</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

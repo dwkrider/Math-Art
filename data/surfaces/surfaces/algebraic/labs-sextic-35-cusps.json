@@ -62,5 +62,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Labs Sextic (35 cusps) is an algebraic surface, defined by an implicit equation, immersed with singularities.",
+    "source": "templated"
   }
 }

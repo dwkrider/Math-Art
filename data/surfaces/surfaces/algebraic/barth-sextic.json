@@ -87,5 +87,18 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Barth Sextic is an algebraic surface, defined by an implicit equation, immersed with singularities, with Ih symmetry (a point group).",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "4 \\left(\\phi^{2} x^{2} - y^{2}\\right) \\left(\\phi^{2} y^{2} - z^{2}\\right) \\left(\\phi^{2} z^{2} - x^{2}\\right) - \\left(1 + 2 \\phi\\right) \\left(x^{2} + y^{2} + z^{2} - 1\\right)^{2}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mn>4</mn><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mi>φ</mi><mn>2</mn></msup><mo>&#x2062;</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mi>φ</mi><mn>2</mn></msup><mo>&#x2062;</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mi>φ</mi><mn>2</mn></msup><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><msup><mi>x</mi><mn>2</mn></msup></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>&#x2212;</mo><mrow><mrow><mo stretchy=\"false\">(</mo><mrow><mn>1</mn><mo>+</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>φ</mi></mrow></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup></mrow><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup></mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo stretchy=\"false\">)</mo></mrow><mn>2</mn></msup></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">4 \\left(\\phi^{2} x^{2} - y^{2}\\right) \\left(\\phi^{2} y^{2} - z^{2}\\right) \\left(\\phi^{2} z^{2} - x^{2}\\right) - \\left(1 + 2 \\phi\\right) \\left(x^{2} + y^{2} + z^{2} - 1\\right)^{2}</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

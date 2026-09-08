@@ -94,5 +94,19 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Whitney Umbrella is a ruled surface, defined by an implicit equation, immersed with singularities.",
+    "source": "curated",
+    "curated": "The model singularity for a surface mapped into space: a pinch point where the sheet closes up to a single point, with a line of self-intersection running out of it -- the handle of the umbrella. Whitney showed that this and ordinary crossings are the only singularities a generic map of a surface into three-space can have, which is why it turns up so often.",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "x^{2} - y^{2} z",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>&#x2212;</mo><mrow><msup><mi>y</mi><mn>2</mn></msup><mo>&#x2062;</mo><mi>z</mi></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">x^{2} - y^{2} z</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

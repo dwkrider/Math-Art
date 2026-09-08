@@ -86,5 +86,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Costa-Wohlgemuth (4 ends) is a minimal surface, given by a Weierstrass representation, genus 2, 4 ends, immersed.",
+    "source": "templated"
   }
 }

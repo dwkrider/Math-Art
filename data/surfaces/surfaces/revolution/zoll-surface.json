@@ -70,5 +70,9 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Zoll's Surface is a surface of revolution, given by a parametrisation, genus 0, embedded.",
+    "source": "templated"
   }
 }

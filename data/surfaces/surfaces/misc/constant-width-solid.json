@@ -81,5 +81,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Constant Width Solid is a surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

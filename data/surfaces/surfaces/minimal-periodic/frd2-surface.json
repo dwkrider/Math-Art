@@ -91,5 +91,18 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schoen F-RD (Wohlgemuth variant) is a triply periodic minimal surface, defined as a nodal algebraic surface, immersed, with Fm-3m symmetry (a crystallographic space group).",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "level_function",
+        "label": "Level function",
+        "latex": "8 \\cos\\left(x\\right) \\cos\\left(y\\right) \\cos\\left(z\\right) + \\cos\\left(2 x\\right) \\cos\\left(2 y\\right) \\cos\\left(2 z\\right) - \\cos\\left(2 x\\right) \\cos\\left(2 y\\right) + \\cos\\left(2 y\\right) \\cos\\left(2 z\\right) + \\cos\\left(2 z\\right) \\cos\\left(2 x\\right)",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mn>8</mn><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>x</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>y</mi><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mi>z</mi><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>x</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>y</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>&#x2212;</mo><mrow><mrow><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>x</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>y</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>y</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow><mo>+</mo><mrow><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mi>cos</mi><mo>&#x2061;</mo><mo stretchy=\"false\">(</mo><mrow><mn>2</mn><mo>&#x2062;</mo><mi>x</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow></mrow></mrow></mrow><annotation encoding=\"application/x-tex\">8 \\cos\\left(x\\right) \\cos\\left(y\\right) \\cos\\left(z\\right) + \\cos\\left(2 x\\right) \\cos\\left(2 y\\right) \\cos\\left(2 z\\right) - \\cos\\left(2 x\\right) \\cos\\left(2 y\\right) + \\cos\\left(2 y\\right) \\cos\\left(2 z\\right) + \\cos\\left(2 z\\right) \\cos\\left(2 x\\right)</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

@@ -64,5 +64,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Order 3 Neovius Surface is a triply periodic minimal surface, given by a Weierstrass representation, genus 13 per unit cell, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

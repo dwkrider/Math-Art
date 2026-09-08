@@ -68,5 +68,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Starfish 5-1 Surface (genus 67) is a triply periodic minimal surface, given by a Weierstrass representation, genus 67, embedded, with a crystallographic group.",
+    "source": "templated"
   }
 }

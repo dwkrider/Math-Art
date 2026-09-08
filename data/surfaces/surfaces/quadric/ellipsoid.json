@@ -91,5 +91,18 @@
     "printable_watertight": true,
     "requires_thickening": false,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Ellipsoid is a quadric surface, defined by an implicit equation, genus 0, embedded.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "\\frac{x^{2}}{a^{2}} + \\frac{y^{2}}{b^{2}} + \\frac{z^{2}}{c^{2}} - 1",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mrow><mfrac><msup><mi>x</mi><mn>2</mn></msup><msup><mi>a</mi><mn>2</mn></msup></mfrac><mo>+</mo><mfrac><msup><mi>y</mi><mn>2</mn></msup><msup><mi>b</mi><mn>2</mn></msup></mfrac></mrow><mo>+</mo><mfrac><msup><mi>z</mi><mn>2</mn></msup><msup><mi>c</mi><mn>2</mn></msup></mfrac></mrow><mo>&#x2212;</mo><mn>1</mn></mrow></mrow><annotation encoding=\"application/x-tex\">\\frac{x^{2}}{a^{2}} + \\frac{y^{2}}{b^{2}} + \\frac{z^{2}}{c^{2}} - 1</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

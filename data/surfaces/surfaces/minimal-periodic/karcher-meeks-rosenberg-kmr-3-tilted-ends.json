@@ -80,5 +80,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Karcher-Meeks-Rosenberg (KMR-3, tilted ends) is a doubly periodic minimal surface, given by a Weierstrass representation, genus 1, 4 ends, immersed, with a layer group.",
+    "source": "templated"
   }
 }

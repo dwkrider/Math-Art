@@ -136,5 +136,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Calabi-Yau Cross-Section is a topological surface, given by a parametrisation, genus varies, self-intersecting, with a point group.",
+    "source": "templated"
   }
 }

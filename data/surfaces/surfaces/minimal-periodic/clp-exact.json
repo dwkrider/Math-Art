@@ -735,5 +735,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Schwarz CLP is a triply periodic minimal surface, given by a Weierstrass representation, genus 3 per unit cell, immersed, with a crystallographic space group.",
+    "source": "templated"
   }
 }

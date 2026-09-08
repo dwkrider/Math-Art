@@ -100,5 +100,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": true
+  },
+  "description": {
+    "summary": "Non-Orientable Genus-k Surface is a topological surface, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

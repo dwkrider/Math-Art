@@ -59,5 +59,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Two-Soliton Surface is a surface of constant negative Gaussian curvature, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

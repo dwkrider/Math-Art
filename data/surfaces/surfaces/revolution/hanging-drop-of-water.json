@@ -55,5 +55,9 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Hanging Drop of Water is a surface of revolution, given by a parametrisation, immersed.",
+    "source": "templated"
   }
 }

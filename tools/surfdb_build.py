@@ -43,7 +43,7 @@ sys.path.insert(0, HERE)
 # outside Blender.
 sys.path.insert(0, os.path.join(ROOT, "math_art"))
 
-from surfdb import (algextract, algsurf, charts, curation,  # noqa: E402
+from surfdb import (algextract, algsurf, charts, curation, describe,  # noqa: E402
                     ferreol,
                     invariants, mapping, nodal, papers, polynomial,
                     published, references, registry, sources, tail,
@@ -1497,6 +1497,11 @@ class Builder:
         self.disambiguate_names()
         written = 0
         for slug, rec in sorted(self.records.items()):
+            # Last, so it sees the finished record: the summary restates
+            # fields the earlier stages fill in, and the formulae are
+            # compiled from expressions some of those stages derive.
+            rec["description"] = describe.describe(
+                rec, curation.description_for(slug))
             folder = os.path.join(OUT, "surfaces", rec["primary_family"])
             os.makedirs(folder, exist_ok=True)
             with open(os.path.join(folder, slug + ".json"), "w",

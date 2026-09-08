@@ -67,5 +67,18 @@
     "printable_watertight": false,
     "requires_thickening": false,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Labs Sextic (30 cusps) is an algebraic surface, defined by an implicit equation, immersed.",
+    "source": "templated",
+    "formulas": [
+      {
+        "field": "polynomial",
+        "label": "Implicit equation",
+        "latex": "z \\cdot 1 \\left(1 x + 0 y - z\\right) \\left(0.30901699437494745 x + 0.9510565162951535 y - z\\right) \\left(-0.8090169943749473 x + 0.5877852522924732 y - z\\right) \\left(-0.8090169943749475 x + -0.587785252292473 y - z\\right) \\left(0.30901699437494723 x + -0.9510565162951536 y - z\\right) - \\left(0.1424979955563914 \\left(x^{2} + y^{2}\\right) + 0.5699919822255656 z^{2} - 1\\right)^{3}",
+        "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mrow><mrow><mi>z</mi><mo>&#x2062;</mo><mn>1</mn><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mn>1</mn><mo>&#x2062;</mo><mi>x</mi></mrow><mo>+</mo><mrow><mn>0</mn><mo>&#x2062;</mo><mi>y</mi></mrow></mrow><mo>&#x2212;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mn>0.30901699437494745</mn><mo>&#x2062;</mo><mi>x</mi></mrow><mo>+</mo><mrow><mn>0.9510565162951535</mn><mo>&#x2062;</mo><mi>y</mi></mrow></mrow><mo>&#x2212;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mrow><mo>&#x2212;</mo><mn>0.8090169943749473</mn></mrow><mo>&#x2062;</mo><mi>x</mi></mrow><mo>+</mo><mrow><mn>0.5877852522924732</mn><mo>&#x2062;</mo><mi>y</mi></mrow></mrow><mo>&#x2212;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mrow><mo>&#x2212;</mo><mn>0.8090169943749475</mn></mrow><mo>&#x2062;</mo><mi>x</mi></mrow><mo>+</mo><mrow><mrow><mo>&#x2212;</mo><mn>0.587785252292473</mn></mrow><mo>&#x2062;</mo><mi>y</mi></mrow></mrow><mo>&#x2212;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mn>0.30901699437494723</mn><mo>&#x2062;</mo><mi>x</mi></mrow><mo>+</mo><mrow><mrow><mo>&#x2212;</mo><mn>0.9510565162951536</mn></mrow><mo>&#x2062;</mo><mi>y</mi></mrow></mrow><mo>&#x2212;</mo><mi>z</mi></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>&#x2212;</mo><msup><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><mrow><mn>0.1424979955563914</mn><mo>&#x2062;</mo><mrow><mo stretchy=\"false\">(</mo><mrow><mrow><msup><mi>x</mi><mn>2</mn></msup></mrow><mo>+</mo><mrow><msup><mi>y</mi><mn>2</mn></msup></mrow></mrow><mo stretchy=\"false\">)</mo></mrow></mrow><mo>+</mo><mrow><mn>0.5699919822255656</mn><mo>&#x2062;</mo><msup><mi>z</mi><mn>2</mn></msup></mrow></mrow><mo>&#x2212;</mo><mn>1</mn></mrow><mo stretchy=\"false\">)</mo></mrow><mn>3</mn></msup></mrow></mrow><annotation encoding=\"application/x-tex\">z \\cdot 1 \\left(1 x + 0 y - z\\right) \\left(0.30901699437494745 x + 0.9510565162951535 y - z\\right) \\left(-0.8090169943749473 x + 0.5877852522924732 y - z\\right) \\left(-0.8090169943749475 x + -0.587785252292473 y - z\\right) \\left(0.30901699437494723 x + -0.9510565162951536 y - z\\right) - \\left(0.1424979955563914 \\left(x^{2} + y^{2}\\right) + 0.5699919822255656 z^{2} - 1\\right)^{3}</annotation></semantics></math>",
+        "relation": "= 0"
+      }
+    ]
   }
 }

@@ -68,5 +68,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Starfish 3-4 Surface (genus 91) is a triply periodic minimal surface, given by a Weierstrass representation, genus 91, embedded, with a crystallographic group.",
+    "source": "templated"
   }
 }

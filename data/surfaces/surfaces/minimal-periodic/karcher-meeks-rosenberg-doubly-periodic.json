@@ -83,5 +83,9 @@
     "printable_watertight": false,
     "requires_thickening": true,
     "sliceable": false
+  },
+  "description": {
+    "summary": "Karcher-Meeks-Rosenberg (doubly periodic) is a doubly periodic minimal surface, given by a Weierstrass representation, genus 1, 4 ends, embedded, with a layer group.",
+    "source": "templated"
   }
 }
