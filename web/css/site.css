@@ -704,3 +704,123 @@ figcaption {
   padding: 0.05em 0.3em;
   border-radius: 3px;
 }
+
+/* ------------------------------------------------------------------
+ * The generated object and index pages (web/catalog/), written by
+ * tools/site_seo.py.
+ *
+ * These are static documents rather than app views: one object, its
+ * properties and its sources, with a link into the interactive module.
+ * They exist so that each surface and solid has a real URL a search
+ * engine can index, and they are read by people who arrive from one,
+ * so they get a plain centred measure rather than the module layout.
+ * ------------------------------------------------------------------ */
+
+.object-page,
+.object-index {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.object-head {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.object-figure {
+  width: 260px;
+  height: 260px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+
+/* A record with no mesh still gets a figure slot, so the page does not
+ * reflow into a different shape for the sake of a missing tile. */
+.object-figure-blank {
+  display: grid;
+  place-items: center;
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+}
+
+.object-lead { flex: 1 1 22rem; min-width: 0; }
+.object-lead h1 { margin: 0 0 0.5rem; font-size: 1.9rem; }
+
+.object-summary {
+  color: var(--ink-dim);
+  font-size: 1.02rem;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+  max-width: 42rem;
+}
+
+.object-open {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+.object-open:hover { background: var(--accent-dim); color: var(--ink); }
+
+.object-page .panel-section { margin-bottom: 2rem; }
+.object-page .panel-section h2 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+/* Two columns of term/value, which is what the properties actually are;
+ * the module detail panel uses the same shape. */
+.object-page .deflist {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1.25rem;
+  margin: 0;
+  font-size: 0.92rem;
+}
+.object-page .deflist dt { color: var(--ink-faint); }
+.object-page .deflist dd { margin: 0; color: var(--ink); }
+
+/* The A-Z index. Multi-column so 473 names are a page rather than a
+ * scroll, and grouped by initial so the eye can jump. */
+.index-group { margin-bottom: 1.75rem; }
+.index-group h2 {
+  font-size: 1.1rem;
+  color: var(--accent);
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 0.3rem;
+  margin: 0 0 0.75rem;
+}
+.index-list {
+  columns: 4 14rem;
+  column-gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.92rem;
+}
+.index-list li { break-inside: avoid; margin-bottom: 0.3rem; }
+.index-list a { color: var(--ink-dim); text-decoration: none; }
+.index-list a:hover { color: var(--accent); text-decoration: underline; }
+
+/* The link from a module page across to its static index. */
+.index-link {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: var(--ink-faint);
+}
+.index-link a { color: var(--ink-dim); }
