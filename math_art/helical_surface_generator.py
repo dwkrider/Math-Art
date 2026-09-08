@@ -820,6 +820,24 @@ if _IN_BLENDER:
             me.polygons.foreach_set(
                 'use_smooth', [self.smooth] * len(me.polygons))
             me.update()
+            # A closed non-orientable mesh cannot wind consistently:
+            # one ring of edges is traversed the same way by both of
+            # its faces, and averaging smooth normals across it drives
+            # them to zero, which renders as a dark jagged seam.  The
+            # sine torus is a Klein bottle at half-odd-integer k (the
+            # docstring above says so) and reaches that state through
+            # its own seam identification, so the ring is found rather
+            # than assumed -- an orientable member returns none and
+            # nothing is marked.
+            try:
+                from .minsurf.topology import winding_conflict_edges
+                from .sharp_creases import mark_sharp
+            except ImportError:                      # pragma: no cover
+                from minsurf.topology import winding_conflict_edges
+                from sharp_creases import mark_sharp
+            ring = winding_conflict_edges(faces)
+            if ring:
+                mark_sharp(me, ring, crease=False)
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
