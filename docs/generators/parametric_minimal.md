@@ -87,6 +87,9 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/parametric_minimal__CHEN_GACK.png" width="200"><br><sub>Chen-Gackstatter</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__COSTA_HM.png" width="200"><br><sub>Costa-Hoffman-Meeks (genus k)</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__CHKM_TORI.png" width="200"><br><sub>Costa-Hoffman-Karcher-Meeks Torus</sub></td>
+</tr>
 </table>
 
 ### Spheres (genus 0)
@@ -110,12 +113,17 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/parametric_minimal__M3_FRIEM.png" width="200"><br><sub>Finite Riemann (plane + 2 catenoids)</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__ENNEPER_NCAT.png" width="200"><br><sub>Enneper with n Catenoids</sub></td>
-<td align="center"><img src="../images/variants/parametric_minimal__SYMM_FRIEM.png" width="200"><br><sub>Symmetrized Finite Riemann (2m catenoids)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__SPH_4NOID_SYM2.png" width="200"><br><sub>4-Noid, Two Symmetry Planes</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/parametric_minimal__SYMM_FRIEM.png" width="200"><br><sub>Symmetrized Finite Riemann (2m catenoids)</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__SYMM_DBLENN.png" width="200"><br><sub>Symmetrized Double Enneper</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__KNOID_ENN_ENDS.png" width="200"><br><sub>k-Noid with Enneper Ends</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/parametric_minimal__ANTIPRISM_KNOID.png" width="200"><br><sub>Antiprismatic k-noid (full family)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__KUSNER_SPHERE.png" width="200"><br><sub>Kusner Sphere (2n planar ends)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__WAVY_ENNEPER.png" width="200"><br><sub>Wavy Enneper</sub></td>
 </tr>
 </table>
 
@@ -147,6 +155,11 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/parametric_minimal__WOHLGEMUTH_G3.png" width="200"><br><sub>Wohlgemuth Second Surface (genus 3)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__HORGAN_NEARMISS.png" width="200"><br><sub>Horgan Surface (non-existent, near-miss)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__WEBER_WOLF.png" width="200"><br><sub>Weber-Wolf Surface (genus 3, 5 ends)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__KAPOULEAS.png" width="200"><br><sub>Kapouleas Surface (desingularized catenoids)</sub></td>
 </tr>
 </table>
 

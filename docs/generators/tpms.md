@@ -316,16 +316,19 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/tpms__TR.png" width="200"><br><sub>Schoen T'-R' (genus 6)</sub></td>
 <td align="center"><img src="../images/variants/tpms__TR_HT_CONJ.png" width="200"><br><sub>Schoen T'-R' | H'-T hybrid</sub></td>
-<td align="center"><img src="../images/variants/tpms__CLP.png" width="200"><br><sub>Schwarz CLP</sub></td>
+<td align="center"><img src="../images/variants/tpms__TWP_CONJ.png" width="200"><br><sub>Schoen-Karcher T-Wp (hexagonal wrapped package)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__CLP.png" width="200"><br><sub>Schwarz CLP</sub></td>
 <td align="center"><img src="../images/variants/tpms__H.png" width="200"><br><sub>Schwarz H</sub></td>
 <td align="center"><img src="../images/variants/tpms__SIMOES_BATISTA.png" width="200"><br><sub>Simoes-Batista Surface (genus 7)</sub></td>
-<td align="center"><img src="../images/variants/tpms__STESSMANN.png" width="200"><br><sub>Stessmann's Surface (exact fundamental piece, conjugate to I-WP)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/tpms__STESSMANN.png" width="200"><br><sub>Stessmann's Surface (exact fundamental piece, conjugate to I-WP)</sub></td>
 <td align="center"><img src="../images/variants/tpms__TRIPLY_COSTA.png" width="200"><br><sub>Triply Periodic Costa (Batista, exact fundamental piece, genus 5)</sub></td>
 <td align="center"><img src="../images/variants/tpms__TRIPLY_HORGAN.png" width="200"><br><sub>Triply Periodic Horgan Surface (exact fundamental piece, genus 5)</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/tpms__WEI_G4.png" width="200"><br><sub>Wei Triply Periodic Surface (genus 4, a=0.1 b=0.3 member)</sub></td>
 </tr>
 </table>

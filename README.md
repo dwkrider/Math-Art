@@ -31,7 +31,7 @@ Everything lives under **Add ▸ Mesh ▸ Math Art**, organized into families:
 | **Styles** | 5 | Post‑process any mesh — ball‑and‑stick, face coloring, fabrication slicing, relief screens |
 | **Origami** | 2 | Classical crease patterns with a real folding solver, and a crease‑pattern importer |
 
-## Greatest hits
+## Highlights
 
 - **Minimal‑surface toolkit** — 150+ minimal surfaces, from the textbook
   catenoid and Enneper to the full triply‑periodic zoo (gyroid, Schwarz P/D,
@@ -40,9 +40,9 @@ Everything lives under **Add ▸ Mesh ▸ Math Art**, organized into families:
 - **Calabi‑Yau cross‑section** — Hanson's parametrisation of the quintic slice,
   the surface behind nearly every "Calabi‑Yau" picture, with its torus‑knot
   boundary.
-- **Soft cells** — Domokos, Goriely, Horváth & Regős's (2024) corner‑free
-  space‑fillers, including the family that sweeps a Schwarz minimal surface
-  continuously into Kelvin's foam.
+- **Symmetric Sculpture** — a Blender adaptation of George W. Hart's
+  sculpture‑design program (behind pieces like *Frabjous* and *Whimsy*): draw one
+  flat motif and it replicates live into a whole symmetric family of planes.
 - **Origami** — nine classical crease patterns (Miura, waterbomb, Kresling,
   Ron Resch…) folded by a rigid‑panel *or* bending‑paper solver, with the whole
   fold path cached as shape keys so it animates.
@@ -51,8 +51,6 @@ Everything lives under **Add ▸ Mesh ▸ Math Art**, organized into families:
 - **Polyhedra, end to end** — every Platonic, Archimedean and Catalan solid,
   all 92 Johnson solids, the 59 stellations of the icosahedron, and regular
   compounds, on one consistent footing.
-- **Focal & canal surfaces** — the caustic of a surface's normals, and the
-  envelope of a moving sphere (with the exact Dupin cyclide).
 - **Knots & Seifert surfaces** — torus and tight knots with the spanning
   surfaces of their links.
 - **Curved‑surface tilings** — wallpaper, Islamic and isohedral patterns wrapped
