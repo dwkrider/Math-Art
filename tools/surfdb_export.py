@@ -214,13 +214,47 @@ def unpack_mesh(packed):
     return positions, list(indices)
 
 
+# Presentation parameters shared with the documentation.
+#
+# tools/subjects.py PARAMS is what the docs hero and the menu icon are
+# drawn with, so adopting it here would put all three in step -- and for
+# most operators it would be a disaster. For them the entry selects WHICH
+# surface: preset='CLEBSCH' on the algebraic operator, preset='KLEIN' on
+# the topological one. A record's identity travels in `key`/`family`, not
+# in `params`, so it does not override such an entry. Applied across the
+# board, 449 of the 473 records change and all 147 algebraic surfaces
+# bake as the Clebsch cubic.
+#
+# Hence an allowlist, naming only operators whose PARAMS entry is a
+# PRESENTATION choice -- something that changes how the one surface
+# looks, not which surface it is. A record's own params still win.
+SHARE_DOCS_PARAMS = {
+    # Fold with Blender's cloth solver, as the documentation hero does.
+    # The internal packing bakes the same surface far flatter, so the
+    # tile and the hero were visibly different objects.
+    "mesh.crochet_add",
+}
+
+
+def _params_for(con):
+    """The record's parameters, under the docs' where they are shared."""
+    own = dict(con.get("params") or {})
+    if con.get("operator_id") not in SHARE_DOCS_PARAMS:
+        return own
+    import subjects as subject_cfg                            # noqa: E402
+    base = dict(getattr(subject_cfg, "PARAMS", {}).get(
+        con["operator_id"], {}))
+    base.update(own)
+    return base
+
+
 def build(rec):
     """Run the record's operator and hand back the object it made."""
     err = None
     for con in rec.get("construction") or []:
         if not con.get("implemented"):
             continue
-        obj, e = DRIVE.run_op(con["operator_id"], con.get("params") or {},
+        obj, e = DRIVE.run_op(con["operator_id"], _params_for(con),
                               key=con.get("key"), family=con.get("family"))
         if obj is not None:
             return obj, None
