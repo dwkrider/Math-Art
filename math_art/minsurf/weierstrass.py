@@ -2525,8 +2525,17 @@ def cg_higher_assemble(genus, nu, arcn, Rend):
     for idx in b['rim'].values():
         bmask0[idx] = True
     bmask0[list(b['branch'].values())] = True
-    keep = np.linalg.norm(V0 - q, axis=1) <= Rend
-    faces0 = [f for f in faces0 if all(keep[i] for i in f)]
+    # Spherical end trim, cut ON the sphere rather than beside it.
+    # Dropping whole faces outside |V - q| = Rend left the rim
+    # following mesh cells, which reads as a crinkled fringe all round
+    # the ends -- the same defect as the chart-space masks elsewhere in
+    # this module, in object space.  The interpolated rim vertices are
+    # not boundary-snapped points, so they take bmask0 = False.
+    lev_e = Rend - np.linalg.norm(V0 - q, axis=1)
+    faces0, V0, UV0 = trim_faces_to_level(V0, UV0, faces0, lev_e)
+    if len(V0) > len(bmask0):
+        bmask0 = np.concatenate(
+            [bmask0, np.zeros(len(V0) - len(bmask0), dtype=bool)])
     used = sorted(set(i for f in faces0 for i in f))
     rmv = {v: k for k, v in enumerate(used)}
     V0, UV0, bmask0 = V0[used], UV0[used], bmask0[used]
@@ -8412,6 +8421,75 @@ def sptail_grid_quads(nr, nt, valid=None):
                                  and valid[f[2]] and valid[f[3]]):
                 q.append(f)
     return q
+
+
+def trim_faces_to_level(V, UV, faces, lev, snap=0.06):
+    """Trim a polygon soup to lev >= 0, cutting ON the level set.
+
+    The grid version below needs a grid; this one takes any face list,
+    for trims done in OBJECT space -- a spherical end cut, say, where
+    `lev` is |V - centre| - R.  Dropping whole faces there leaves the
+    rim following mesh cells, which reads as a crinkled fringe rather
+    than a clean edge.
+
+    Each edge crossing lev = 0 contributes one interpolated vertex,
+    shared between the two faces that meet on it so the cut rim stays
+    watertight.  A crossing within `snap` of a kept vertex is snapped
+    onto it instead, since a sliver reads as roughness just as a
+    staircase does.  Returns (faces, V, UV).
+    """
+    V = np.asarray(V, float)
+    UV = np.asarray(UV, float)
+    lev = np.asarray(lev, float)
+    keep = lev >= 0.0
+    extraV, extraUV, cut_of = [], [], {}
+    n0 = len(V)
+
+    def _cut(a, b):
+        key = (a, b) if a < b else (b, a)
+        hit = cut_of.get(key)
+        if hit is not None:
+            return hit
+        la, lb = lev[a], lev[b]
+        t = la / (la - lb) if la != lb else 0.5
+        t = min(max(float(t), 0.0), 1.0)
+        if t < snap:
+            cut_of[key] = int(a)
+            return int(a)
+        idx = n0 + len(extraV)
+        extraV.append(V[a] + t * (V[b] - V[a]))
+        extraUV.append(UV[a] + t * (UV[b] - UV[a]))
+        cut_of[key] = idx
+        return idx
+
+    out = []
+    for f in faces:
+        live = [bool(keep[i]) for i in f]
+        if all(live):
+            out.append(tuple(int(i) for i in f))
+            continue
+        if not any(live):
+            continue
+        poly = []
+        k = len(f)
+        for t_ in range(k):
+            a, b = int(f[t_]), int(f[(t_ + 1) % k])
+            if live[t_]:
+                poly.append(a)
+            if live[t_] != live[(t_ + 1) % k]:
+                poly.append(_cut(a, b) if live[t_] else _cut(b, a))
+        g = [poly[0]]
+        for q_ in poly[1:]:
+            if q_ != g[-1]:
+                g.append(q_)
+        if len(g) > 3 and g[0] == g[-1]:
+            g.pop()
+        if len(g) >= 3 and len(set(g)) == len(g):
+            out.append(tuple(g))
+    if extraV:
+        V = np.concatenate([V, np.asarray(extraV, float)], axis=0)
+        UV = np.concatenate([UV, np.asarray(extraUV, float)], axis=0)
+    return out, V, UV
 
 
 def sptail_grid_quads_cut(nr, nt, lev, V0, UV0):

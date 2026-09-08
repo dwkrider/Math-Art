@@ -84,6 +84,7 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/algebraic__MONKEY.png" width="200"><br><sub>Monkey Saddle (n-fold)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HYDE.png" width="200"><br><sub>Hyde Sextic</sub></td>
 </tr>
 </table>
 
@@ -207,6 +208,11 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/algebraic__SEPTIC_TRIPLE.png" width="200"><br><sub>Septic with 16 Triple Points</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SARTI_DODECIC.png" width="200"><br><sub>Sarti Dodecic (600 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__LABS_30_CUSPS.png" width="200"><br><sub>Labs Sextic (30 cusps)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__LABS_132_A5.png" width="200"><br><sub>Labs Dodecic (132 A5 points)</sub></td>
 </tr>
 </table>
 
