@@ -75,11 +75,11 @@ export class ClusterView {
     // sqrt(area / n) is the side of the square each tile would get if the
     // canvas were divided evenly -- the largest size that could fit, and
     // then only in a perfect grid. A clustered field is deliberately
-    // uneven, so it needs slack: at 0.85 the tiles want 72% of the canvas
-    // and no arrangement with visible clusters fits (441 of 473 tiles
-    // overlapped). 0.60 asks for 36% and leaves 2 overlapping, while
-    // keeping tiles big enough to recognise.
-    return Math.max(12, Math.min(132, 0.60 * Math.sqrt(area / n)));
+    // uneven, so it needs slack, and clusters are the dense part: mean
+    // tile coverage over the full set runs 69% at a factor of 0.60 and
+    // 60% at 0.52. Below that the tiles stop being recognisable faster
+    // than the crowding improves.
+    return Math.max(12, Math.min(132, 0.52 * Math.sqrt(area / n)));
   }
 
   /**

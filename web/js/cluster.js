@@ -88,22 +88,37 @@ function cosine(a, b) {
 }
 
 /**
+ * How many neighbours each node keeps. THIS HAS TO SCALE WITH n.
+ *
+ * 40 was measured on the full 473 and is right there: separation -- mean
+ * distance between different-family pairs over same-family pairs -- goes
+ * 1.30x at k=4, 1.63x at k=10, 3.99x at k=28, 9.35x at k=40, then stops
+ * improving. Too sparse a graph pins each node with a handful of edges
+ * and the arrangement stays near its random start.
+ *
+ * But 40 is a proportion, not a count. On the 147 algebraic surfaces it
+ * connects every node to 27% of the set -- a graph so near complete that
+ * everything attracts everything, and the field collapsed into a blob
+ * using 19% of the canvas with tiles 97% covered. n/12 keeps the
+ * connectivity roughly constant instead: 39 for the full set, 12 for a
+ * 150-record family, and the floor of 6 keeps a small filter connected
+ * at all. That one change takes the algebraic field from 19% of the
+ * canvas to 89%.
+ */
+export function neighbourCount(n) {
+  return Math.max(6, Math.min(40, Math.round(n / 12)));
+}
+
+/**
  * A k-nearest-neighbour graph over the entries.
  *
  * Springs on every pair pull the whole set into one blob: 473 nodes is
  * 111k springs, and the many weak similarities swamp the few strong ones.
  * Keeping each node's k best neighbours cuts that back.
- *
- * k = 40 was measured, not guessed, and the result was the opposite of
- * what I expected. Separation -- mean distance between different-family
- * pairs over same-family pairs -- goes 1.30x at k=4, 1.22x at k=6, 1.63x
- * at k=10, 3.99x at k=28, 9.35x at k=40, then stops improving (9.28x at
- * k=60). A very sparse graph gives the layout too little to work with:
- * each node is pinned by a handful of edges and the global arrangement
- * stays near its random start. Enough edges, and the families genuinely
- * pull themselves apart.
  */
-export function knnGraph(entries, k = 40) {
+export function knnGraph(entries, k) {
+  if (k === undefined) k = neighbourCount(entries.length);
+  k = Math.max(1, Math.min(k, entries.length - 1));
   const vecs = entries.map(featureVector);
   const edges = [];
   const seen = new Set();
@@ -164,7 +179,15 @@ export class SpringLayout {
     // repulsion becomes stiff, so the layout settles into an arrangement
     // that has room for the tiles in the first place.
     this.minDist = opts.minDist || 0;
-    this.collide = opts.collide === undefined ? 300 : opts.collide;
+    // Stiffness of the collision term. It has to be this large because of
+    // what it competes with: attraction grows as d^2/k, so each of a
+    // node's edges pulls far harder at contact than plain repulsion
+    // pushes. Measured on the full set, mean tile coverage falls 94% ->
+    // 69% -> 60% as this goes 300 -> 8000 -> 15000. Past about 25000 it
+    // starts beating the edges instead of balancing them and the
+    // clustering goes with it: at 200000 family separation collapses
+    // from 5.5x to 1.05x, which is no clustering at all.
+    this.collide = opts.collide === undefined ? 15000 : opts.collide;
     // Iterations over which the collision term is brought up to strength.
     // Applied from the start it competes with the edges while the clusters
     // are still forming, and the layout settles into a more even, less
@@ -182,12 +205,43 @@ export class SpringLayout {
     for (let i = 0; i < n; i++) {
       // Start on a disc, not a square: a square's corners bias the first
       // iterations outward along the diagonals.
-      const r = Math.sqrt(rand()) * Math.min(width, height) * 0.45;
+      // Start on a disc the size of the field the layout is going to
+      // make, not the size of the canvas: a small filter otherwise has
+      // to contract a long way before it starts arranging anything.
+      const span = this.minDist > 0
+        ? Math.min(Math.min(width, height) * 0.45,
+                   Math.sqrt(n) * this.minDist * 0.60)
+        : Math.min(width, height) * 0.45;
+      const r = Math.sqrt(rand()) * span;
       const t = rand() * Math.PI * 2;
       this.x[i] = width / 2 + r * Math.cos(t);
       this.y[i] = height / 2 + r * Math.sin(t);
     }
-    this.k = Math.sqrt((width * height) / Math.max(1, n));
+    // THE LENGTH SCALE IS THE TILE, NOT THE CANVAS.
+    //
+    // Fruchterman-Reingold's k = sqrt(area/n) is the spacing an even
+    // spread would have, which is the right scale only while the tiles
+    // happen to be that size. They are not: nodeSize() clamps at 132px,
+    // so for a small filter the tiles stop growing while k keeps rising,
+    // and two cyclides ended up 4 tile-widths apart on a canvas that
+    // could have shown them side by side. Tying k to the tile makes the
+    // layout scale-consistent -- every distance is in tile units, and a
+    // 2-record filter and a 473-record one settle at the same density.
+    // Cyclide nearest-neighbour distance: 4.02 tiles before, 2.30 after.
+    this.kRatio = opts.kRatio === undefined ? 2.6 : opts.kRatio;
+    this.k = this.minDist > 0
+      ? this.minDist * this.kRatio
+      : Math.sqrt((width * height) / Math.max(1, n));
+
+    // Cooling. The floor is in tile units, and slower than it looks it
+    // needs to be, for one specific reason: the old schedule (x0.985 to
+    // a floor of 0.35 PIXELS) reached its floor at iteration 354, while
+    // the collision term only reaches full strength at 300. The force
+    // that separates the tiles arrived just as the field froze at a
+    // third of a pixel per step, so it could never act.
+    this.cool = opts.cool === undefined ? 0.996 : opts.cool;
+    this.tempFloor = (opts.tempFloor === undefined ? 0.03 : opts.tempFloor)
+      * (this.minDist || 12);
     this.temp = Math.min(width, height) * 0.10;
     this.iter = 0;
   }
@@ -268,7 +322,7 @@ export class SpringLayout {
       if (y[i] < pad) y[i] = pad; else if (y[i] > my) y[i] = my;
     }
     // Cool slowly; stopping early leaves clusters still overlapping.
-    this.temp = Math.max(temp * 0.985, 0.35);
+    this.temp = Math.max(temp * this.cool, this.tempFloor);
     this.iter++;
   }
 
