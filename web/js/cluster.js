@@ -128,11 +128,18 @@ export function neighbourCount(n) {
  * Springs on every pair pull the whole set into one blob: 473 nodes is
  * 111k springs, and the many weak similarities swamp the few strong ones.
  * Keeping each node's k best neighbours cuts that back.
+ *
+ * `vector` is what makes a record comparable, and it is the only part of
+ * this file that knows what is being laid out. The surfaces pass their
+ * own (the default below); the polyhedra pass cluster-polyhedra.js's.
+ * Everything after this point -- the graph, the springs, the collision
+ * term, the schedule -- is the same machinery for both, and was measured
+ * once.
  */
-export function knnGraph(entries, k) {
+export function knnGraph(entries, k, vector = featureVector) {
   if (k === undefined) k = neighbourCount(entries.length);
   k = Math.max(1, Math.min(k, entries.length - 1));
-  const vecs = entries.map(featureVector);
+  const vecs = entries.map(vector);
   const edges = [];
   const seen = new Set();
   for (let i = 0; i < entries.length; i++) {

@@ -11,6 +11,8 @@
 
 import { familyCounts, filterEntries, SORTS, thumbUrl, FAMILY_ORDER }
   from './data.js';
+import { ClusterView, preloadAtlas } from './cluster-view.js';
+import { polyhedronVector } from './cluster-polyhedra.js';
 
 const $ = (tag, cls, text) => {
   const el = document.createElement(tag);
@@ -105,18 +107,74 @@ export class Catalog {
     fams.append(famList);
     head.append(fams);
 
+    // GRID is the default. The clustered view answers a different
+    // question -- what is near what -- and is worth opting into rather
+    // than landing in. Same arrangement as the surfaces module.
+    this.mode = 'grid';
+    this.cluster = null;
+    const modeBar = $('div', 'segmented view-modes');
+    modeBar.setAttribute('role', 'group');
+    modeBar.setAttribute('aria-label', 'Catalogue view');
+    for (const [k, label] of [['grid', 'Grid'], ['cluster', 'Clusters']]) {
+      const b = $('button', 'seg' + (k === 'grid' ? ' on' : ''), label);
+      b.type = 'button';
+      b.addEventListener('click', () => {
+        for (const o of modeBar.children) o.classList.remove('on');
+        b.classList.add('on');
+        this.mode = k;
+        this.refresh();
+      });
+      modeBar.append(b);
+    }
+    head.append(modeBar);
+
     this.status = $('p', 'catalog-status');
     head.append(this.status);
     this.host.append(head);
 
     this.grid = $('div', 'grid');
     this.host.append(this.grid);
+
+    this.clusterWrap = $('div', 'cluster-wrap');
+    this.clusterCanvas = $('canvas', 'cluster-canvas');
+    this.clusterWrap.append(this.clusterCanvas);
+    this.clusterWrap.hidden = true;
+    this.host.append(this.clusterWrap);
+
+    // Fetch the sprite sheet now rather than on the first switch: the
+    // view will not lay anything out until it arrives, so asking for it
+    // late means waiting then. After the page's own loading, since the
+    // grid does not use it.
+    if ('requestIdleCallback' in window) requestIdleCallback(() => preloadAtlas('polyhedra'));
+    else setTimeout(() => preloadAtlas('polyhedra'), 0);
   }
 
   refresh() {
     const found = filterEntries(this.entries, this.query).sort(SORTS[this.sort]);
     this.status.textContent =
       `${found.length} of ${this.entries.length} solids`;
+
+    const clustered = this.mode === 'cluster';
+    this.grid.hidden = clustered;
+    this.clusterWrap.hidden = !clustered;
+
+    if (clustered) {
+      if (!this.cluster) {
+        this.cluster = new ClusterView(this.clusterCanvas, this.entries, {
+          atlas: 'polyhedra',
+          vector: polyhedronVector,
+          thumbUrl,
+          onSelect: (slug) => {
+            this.select(slug);
+            this.onSelect(slug);
+          },
+        });
+      }
+      this.cluster.show(found);
+      if (this.selected) this.cluster.select(this.selected);
+      return;
+    }
+
     this.grid.textContent = '';
     for (const e of found) this.grid.append(this.tile(e));
     if (!found.length) {
@@ -158,9 +216,13 @@ export class Catalog {
     for (const el of this.grid.querySelectorAll('.tile')) {
       el.classList.toggle('on', el.dataset.slug === slug);
     }
+    if (this.cluster) this.cluster.select(slug);
   }
 
   reveal(slug) {
+    // Only meaningful for the grid: the clustered view has no scroll
+    // position to move, and it frames its whole field by construction.
+    if (this.mode !== 'grid') return;
     const el = this.grid.querySelector(`.tile[data-slug="${CSS.escape(slug)}"]`);
     el?.scrollIntoView({ block: 'nearest' });
   }
