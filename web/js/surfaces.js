@@ -19,8 +19,11 @@ import { buildBinarySTL, downloadSTL } from './stl.js';
 
 // Longest side of the exported STL, in millimetres. STL carries no
 // units and slicers read it as mm, so this is the cube the model fits
-// in -- 200 mm being a common single-plate build volume.
-const EXPORT_MM = 200;
+// in. 100 mm sits inside every common build plate, prints in a
+// reasonable time, and is easy to scale up in a slicer for anyone who
+// wants the object bigger -- scaling down a 200 mm model is the more
+// annoying direction, because the wall goes with it.
+const EXPORT_MM = 100;
 
 // Wall thickness given to open surfaces, in millimetres. 2 mm is a few
 // perimeters at a normal nozzle width -- thin enough not to swamp the
