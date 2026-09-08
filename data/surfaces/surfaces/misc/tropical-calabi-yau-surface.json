@@ -13,7 +13,7 @@
   "definition": {
     "mode": "parametric",
     "fidelity": "exact",
-    "note": "No closed form is stored for this surface. It is defined by its shipped implementation in math_art.curiosity_surface_generator, which is authoritative; an unverified transcription would silently define a different surface."
+    "note": "No chart is stored: a tropical hypersurface is PIECEWISE LINEAR: it is the corner locus where the maximum of the tropical polynomial's affine pieces is attained twice, which is a subdivision of R^3, not the image of a smooth map of two parameters. The shipped implementation is authoritative; an unverified transcription would silently define a different surface."
   },
   "curvature": {
     "condition": "none",
