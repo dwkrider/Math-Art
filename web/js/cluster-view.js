@@ -57,6 +57,9 @@ export class ClusterView {
     });
     this.iters = 0;
     this.view = { x: 0, y: 0, k: 1 };
+    // Until the reader pans or zooms, the view follows the field. After
+    // that it is theirs and nothing moves it under them.
+    this.userMoved = false;
     this._loadTiles();
     this._run();
     return this;
@@ -145,6 +148,10 @@ export class ClusterView {
         // rather than appearing already solved after a second's freeze.
         this.layout.step(12);
         this.iters += 12;
+        // Re-framed every step: the free field grows as it organises, and
+        // following it keeps the whole arrangement in view throughout
+        // instead of letting it expand off the edges.
+        this._frame();
         this.dirty = true;
       }
       if (this.dirty) this._draw();
@@ -154,16 +161,52 @@ export class ClusterView {
   }
 
   /**
-   * The converged positions, used as they are.
+   * The converged positions, used exactly as they are.
    *
-   * The layout already works in canvas coordinates and is bounded to
-   * them, so there is nothing to fit and nothing to rescale. Both of
-   * those were tried: rescaling is invariant under the fit that followed
-   * it, and separating pairs afterwards destroyed the clustering the
-   * whole view is for.
+   * The layout is unbounded (see SpringLayout._one), so these are in its
+   * own space and may lie anywhere. Framing is the view's job and is
+   * done with the view transform in _frame, never by moving a node:
+   * a post-hoc shuffle draws something other than what converged, which
+   * is the thing this view had wrong twice before.
    */
   _positions() {
     return { x: this.layout.x, y: this.layout.y };
+  }
+
+  /**
+   * Point the view at the field: centre it, and scale down if it is
+   * larger than the canvas.
+   *
+   * This is a pure view transform -- translate and uniform scale -- so
+   * it cannot change the arrangement, and because the tiles are drawn
+   * inside the same transform it cannot change how much they overlap
+   * either. Position and tile size scale together, so the picture is
+   * the converged one, just framed.
+   *
+   * It never scales UP. A two-record filter could be magnified to fill
+   * the canvas, but the tile size is already chosen (nodeSize) and
+   * blowing two thumbnails up to 300px to fill space is not an
+   * improvement on two at their proper size with room around them.
+   */
+  _frame() {
+    if (this.userMoved || !this.entries.length) return;
+    const p = this.layout;
+    let lox = Infinity, loy = Infinity, hix = -Infinity, hiy = -Infinity;
+    for (let i = 0; i < this.entries.length; i++) {
+      if (p.x[i] < lox) lox = p.x[i];
+      if (p.x[i] > hix) hix = p.x[i];
+      if (p.y[i] < loy) loy = p.y[i];
+      if (p.y[i] > hiy) hiy = p.y[i];
+    }
+    const r = this.canvas.getBoundingClientRect();
+    const w = r.width || 900, h = r.height || 600;
+    // Half a tile of margin, so an edge tile is framed rather than cut.
+    const m = this.nodeSize() / 2 + 8;
+    const k = Math.min(1, (w - 2 * m) / Math.max(1e-6, hix - lox),
+                          (h - 2 * m) / Math.max(1e-6, hiy - loy));
+    this.view.k = k;
+    this.view.x = w / 2 - ((lox + hix) / 2) * k;
+    this.view.y = h / 2 - ((loy + hiy) / 2) * k;
   }
 
   _draw() {
@@ -270,6 +313,7 @@ export class ClusterView {
         if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
         this.view.x = drag.vx + dx;
         this.view.y = drag.vy + dy;
+        this.userMoved = true;
         this.dirty = true;
         return;
       }
@@ -290,6 +334,7 @@ export class ClusterView {
       this.view.x = ev.offsetX - (ev.offsetX - this.view.x) * (k / this.view.k);
       this.view.y = ev.offsetY - (ev.offsetY - this.view.y) * (k / this.view.k);
       this.view.k = k;
+      this.userMoved = true;
       this.dirty = true;
     }, { passive: false });
   }

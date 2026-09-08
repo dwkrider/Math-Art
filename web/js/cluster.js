@@ -98,15 +98,21 @@ function cosine(a, b) {
  *
  * But 40 is a proportion, not a count. On the 147 algebraic surfaces it
  * connects every node to 27% of the set -- a graph so near complete that
- * everything attracts everything, and the field collapsed into a blob
- * using 19% of the canvas with tiles 97% covered. n/12 keeps the
- * connectivity roughly constant instead: 39 for the full set, 12 for a
- * 150-record family, and the floor of 6 keeps a small filter connected
- * at all. That one change takes the algebraic field from 19% of the
- * canvas to 89%.
+ * everything attracts everything, and the field collapses into a blob
+ * with tiles 97% covered. Connectivity has to stay roughly constant
+ * instead, which is what n/5 does: 60 for the full set, 29 for a
+ * 150-record family, 8 at the floor.
+ *
+ * The divisor is a balance and n/5 is where it sits. Too dense and the
+ * layout collapses, as 40-for-everything did. Too sparse and
+ * Fruchterman-Reingold does what it does with sparse graphs -- it goes
+ * stringy, sprawling into filaments: at n/12 the 56 minimal surfaces
+ * spread over EIGHT canvases, and at n/8 over ten. n/5 keeps every
+ * subset's natural extent close to one canvas, which is what lets the
+ * layout run unbounded.
  */
 export function neighbourCount(n) {
-  return Math.max(6, Math.min(40, Math.round(n / 12)));
+  return Math.max(8, Math.min(60, Math.round(n / 5)));
 }
 
 /**
@@ -195,7 +201,6 @@ export class SpringLayout {
     // no ramp against 6.21x with one, and overlap is worse as well (119
     // overlapping tiles against 2). Cluster first, then make room.
     this.ramp = opts.ramp === undefined ? 300 : opts.ramp;
-    this.pad = (this.minDist / 2) + 6;
     this.x = new Float64Array(n);
     this.y = new Float64Array(n);
     this.dx = new Float64Array(n);
@@ -228,7 +233,29 @@ export class SpringLayout {
     // layout scale-consistent -- every distance is in tile units, and a
     // 2-record filter and a 473-record one settle at the same density.
     // Cyclide nearest-neighbour distance: 4.02 tiles before, 2.30 after.
-    this.kRatio = opts.kRatio === undefined ? 2.6 : opts.kRatio;
+    // 3.2 spreads the field enough to bring mean tile coverage on the
+    // full set to 52% while keeping family separation at 6.21x. Lower
+    // packs it tighter and overlaps more (65% at 2.6); higher separates
+    // better still but sprawls past what a single view can frame.
+    this.kRatio = opts.kRatio === undefined ? 3.2 : opts.kRatio;
+
+    // Gravity: a weak pull toward the field's own centroid.
+    //
+    // Needed because the kNN graph is not always connected. A family
+    // filter is one well-linked lump, but a SEARCH can return a handful
+    // of surfaces from eight different families, and those components
+    // have nothing joining them -- they repel, with no attraction to
+    // answer, and drift apart for as long as the layout runs. Framing
+    // then scales the whole thing down to fit and the tiles vanish:
+    // "torus|catenoid|helicoid" drew at 4px, "schwarz|schoen" at 7px.
+    //
+    // A quadratic pull to the centroid is the standard answer and behaves
+    // like one more edge per node, so it bounds the field without putting
+    // a wall anywhere for tiles to pile against. At 0.25 those two
+    // queries draw at 31px and 29px. It is not free -- separation over
+    // the full set goes 6.21x to 5.46x -- but a layout that is correct
+    // only for connected inputs is not correct.
+    this.gravity = opts.gravity === undefined ? 0.25 : opts.gravity;
     this.k = this.minDist > 0
       ? this.minDist * this.kRatio
       : Math.sqrt((width * height) / Math.max(1, n));
@@ -307,19 +334,44 @@ export class SpringLayout {
       dx[e.b] += ux; dy[e.b] += uy;
     }
 
+    // THE LAYOUT IS UNBOUNDED.
+    //
+    // There was a clamp here holding every node inside the canvas, and
+    // it did visible damage: a node that wanted to be outside was placed
+    // exactly ON the boundary, so the overflow stacked up into a
+    // straight line of tiles along the edge. On a filtered family that
+    // was most of the set -- 61 of 147 algebraic, 81 of 150
+    // minimal-periodic -- piled onto the border.
+    //
+    // It was also making the crowding worse rather than better, by
+    // compressing the field into a box it did not fit: removing it drops
+    // mean tile coverage on the algebraic family from 35% to 26%.
+    //
+    // So the layout now solves in its own space and the VIEW frames the
+    // result (see ClusterView._frame). Nothing is moved to make it fit;
+    // the arrangement that converged is the arrangement that is drawn.
+    const g = this.gravity;
+    if (g > 0 && n > 1) {
+      let cx = 0, cy = 0;
+      for (let i = 0; i < n; i++) { cx += x[i]; cy += y[i]; }
+      cx /= n; cy /= n;
+      for (let i = 0; i < n; i++) {
+        const ex = x[i] - cx, ey = y[i] - cy;
+        const d = Math.hypot(ex, ey) || 1e-3;
+        // Same d^2/k law as an edge, so it is one more spring rather
+        // than a different kind of force competing on its own terms.
+        const f = (d * d) / k * g;
+        dx[i] -= (ex / d) * f;
+        dy[i] -= (ey / d) * f;
+      }
+    }
+
     const temp = this.temp;
-    const pad = this.pad;
-    const mx = this.w - pad, my = this.h - pad;
     for (let i = 0; i < n; i++) {
       const d = Math.hypot(dx[i], dy[i]) || 1e-9;
       const m = Math.min(d, temp);
       x[i] += (dx[i] / d) * m;
       y[i] += (dy[i] / d) * m;
-      // Keep the field on the canvas. Without this the collision term
-      // pushes it outward indefinitely and the caller has to scale it
-      // back, which is the shrinking this was meant to avoid.
-      if (x[i] < pad) x[i] = pad; else if (x[i] > mx) x[i] = mx;
-      if (y[i] < pad) y[i] = pad; else if (y[i] > my) y[i] = my;
     }
     // Cool slowly; stopping early leaves clusters still overlapping.
     this.temp = Math.max(temp * this.cool, this.tempFloor);
