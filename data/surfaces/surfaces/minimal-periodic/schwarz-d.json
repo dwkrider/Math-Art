@@ -690,7 +690,14 @@
     "ita_number": 224,
     "lattice": "diamond",
     "chiral": false,
-    "verified_by": "curated"
+    "verified_by": "curated",
+    "derived_space_group": {
+      "hermann_mauguin": null,
+      "order": 192,
+      "ambiguous": true,
+      "note": "3 groups of order 192 fix this surface (Fd-3c:2, Fd-3m, Fd-3m:2); the group they generate is larger than any entry in the table, so the cell is coarser than the surface's own translational lattice and no single symbol is maximal",
+      "agrees_with_curated": null
+    }
   },
   "embedding": {
     "quality": "embedded"

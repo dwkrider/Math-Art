@@ -46,7 +46,7 @@ from surfdb import (algextract, algsurf, charts, curation,  # noqa: E402
                     ferreol,
                     invariants, mapping, nodal, papers, polynomial,
                     published, references, registry, sources, tail,
-                    views, vmm, wedata, weextract)
+                    symderive, views, vmm, wedata, weextract)
 
 try:
     from surfdb import parcharts                          # noqa: E402
@@ -909,6 +909,56 @@ class Builder:
                 self.problems.append(
                     "SINGLETONS names %s but %s does not exist" % (op, path))
             self.report.append(("singleton", slug, "emit", slug))
+
+    def stage_derived_symmetry(self):
+        """Attach the MEASURED space group to the periodic records.
+
+        The 150 periodic surfaces are the largest family and were the
+        least identified: a record reading "triply periodic, rank 3" and
+        nothing else does not say which TPMS it is.  `symderive` measures
+        the group against the surface's own level function and freezes
+        the result; see that module for why the obvious route -- closing
+        `definition.evolver_cell.generators` -- gives a proper SUBGROUP
+        and would have recorded Schwarz P as Pm-3m rather than Im-3m.
+
+        The derived value is kept in its own field beside the curated
+        `hermann_mauguin`, never written over it.  Where both exist they
+        are compared and the verdict recorded, so an agreement is
+        evidence and a disagreement is a flag rather than a silent
+        overwrite.
+        """
+        n = agree = differ = amb = 0
+        for slug, rec in self.records.items():
+            got = symderive.derived_for(slug)
+            if not got:
+                continue
+            sym = rec.setdefault("symmetry", {})
+            cur = sym.get("hermann_mauguin")
+            hm = got.get("hermann_mauguin")
+            got.setdefault("ambiguous", False)
+            got["agrees_with_curated"] = (None if not (cur and hm)
+                                          else cur == hm)
+            sym["derived_space_group"] = got
+            n += 1
+            if got["ambiguous"]:
+                amb += 1
+            if cur and hm:
+                if cur == hm:
+                    agree += 1
+                else:
+                    differ += 1
+                    self.report.append(("symmetry", slug, "disagreement",
+                                        "curated %s vs derived %s"
+                                        % (cur, hm)))
+            elif hm and not cur:
+                # Nothing curated to contradict, so the measurement is
+                # the record's answer -- promoted, but traceable to the
+                # derivation that produced it.
+                sym["hermann_mauguin"] = hm
+        self.report.append(("symmetry", "-", "derived",
+                            "%d records: %d resolved, %d ambiguous, "
+                            "%d agree with curated, %d disagree"
+                            % (n, n - amb, amb, agree, differ)))
 
     def stage_missing(self):
         """Records for surfaces that are NOT implemented.
@@ -2092,6 +2142,7 @@ def main():
         b.stage_missing()
 
     b.curate()
+    b.stage_derived_symmetry()
     b.finish()
 
     # Curated facts that never reached a record are a mapping bug: either

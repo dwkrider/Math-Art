@@ -1241,6 +1241,60 @@
             "number",
             "null"
           ]
+        },
+        "derived_space_group": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "The space group MEASURED from the surface's own level function, kept separate from the curated `hermann_mauguin` so the two can be compared rather than conflated. Derived by testing every group in the validated Hall table for F(g.x) = +/-F(x); the method reproduces the three published groups it can be checked against. It is deliberately NOT derived from `definition.evolver_cell.generators`, which are patch-tiling generators and yield a proper subgroup -- Pm-3m instead of Im-3m for Schwarz P.",
+          "properties": {
+            "hermann_mauguin": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "order": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Operations per conventional cell."
+            },
+            "origin_shift": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "string"
+              },
+              "description": "Cell fractions, as exact strings."
+            },
+            "ambiguous": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "True when several groups of the same order fix the surface, so no single symbol is maximal. A tie is recorded, never resolved by picking one."
+            },
+            "agrees_with_curated": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
         }
       }
     },

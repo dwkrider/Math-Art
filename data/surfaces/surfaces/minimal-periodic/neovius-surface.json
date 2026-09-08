@@ -617,7 +617,18 @@
     "hermann_mauguin": "Im-3m",
     "ita_number": 229,
     "chiral": false,
-    "verified_by": "curated"
+    "verified_by": "curated",
+    "derived_space_group": {
+      "hermann_mauguin": "Im-3m",
+      "order": 96,
+      "origin_shift": [
+        "0",
+        "0",
+        "0"
+      ],
+      "ambiguous": false,
+      "agrees_with_curated": true
+    }
   },
   "embedding": {
     "quality": "embedded"

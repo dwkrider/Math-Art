@@ -2067,7 +2067,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3d",
         "ita_number": null,
         "order": null
       },
@@ -2240,7 +2240,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3d",
         "ita_number": null,
         "order": null
       },
@@ -4897,7 +4897,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3d",
         "ita_number": null,
         "order": null
       },
@@ -4933,7 +4933,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "I4132",
         "ita_number": null,
         "order": null
       },
@@ -5039,7 +5039,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3",
         "ita_number": null,
         "order": null
       },
@@ -5075,7 +5075,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3",
         "ita_number": null,
         "order": null
       },
@@ -5111,7 +5111,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3d",
         "ita_number": null,
         "order": null
       },
@@ -5147,7 +5147,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "I4132",
         "ita_number": null,
         "order": null
       },
@@ -5319,7 +5319,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Fm-3m",
         "ita_number": null,
         "order": null
       },
@@ -5597,7 +5597,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3d",
         "ita_number": null,
         "order": null
       },
@@ -7015,7 +7015,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Im-3m",
         "ita_number": null,
         "order": null
       },
@@ -7989,7 +7989,7 @@
       "embedding": "embedded",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3d",
         "ita_number": null,
         "order": null
       },
@@ -8024,7 +8024,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3d",
         "ita_number": null,
         "order": null
       },
@@ -10795,7 +10795,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "P42/mcm",
         "ita_number": null,
         "order": null
       },
@@ -13015,7 +13015,7 @@
       "embedding": "immersed",
       "symmetry": {
         "kind": "space",
-        "symbol": null,
+        "symbol": "Ia-3",
         "ita_number": null,
         "order": null
       },
