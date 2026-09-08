@@ -9373,10 +9373,13 @@ def _symtail_disk_grid(spec, p, nu, nv, theta):
         X_out[i] = X_out[i + 1] - inc[i]
     isplit = int(np.searchsorted(u, r_ring))
     X = np.where((np.arange(nu) < isplit)[:, None, None], X_in, X_out)
-    mask = np.ones(z.shape, dtype=bool)
+    # Signed distance to the nearest puncture circle, positive outside.
+    # The mask is only its sign; the caller needs the VALUE, so it can
+    # put the cut on the circle instead of on the nearest grid line.
+    lev = np.full(z.shape, np.inf)
     for zc, rho in punct:
-        mask &= np.abs(z - zc) > rho
-    return X, mask
+        lev = np.minimum(lev, np.abs(z - zc) - rho)
+    return X, lev > 0.0, lev
 
 
 def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
@@ -9400,8 +9403,9 @@ def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
         X = np.stack([x, y, z], axis=-1)
         mask = tail if isinstance(tail, np.ndarray) \
             else np.ones((nu, nv), dtype=bool)
+        lev = None                       # _we_disk already cut its rims
     else:
-        X, mask = _symtail_disk_grid(spec, p, nu, nv, theta)
+        X, mask, lev = _symtail_disk_grid(spec, p, nu, nv, theta)
     nu = X.shape[0]                             # grid may have resized
     irow = 0 if spec.get('crosscap_rim', 'outer') == 'inner' else nu - 1
     h = nv // 2
@@ -9429,12 +9433,73 @@ def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'),
                    axis=-1).reshape(-1, 2)
     vm = mask.reshape(-1)
+    # Marching-squares trim of the puncture rims.  Keeping only quads
+    # whose four corners all survive puts the cut on the nearest GRID
+    # LINE, and the rim comes out a staircase -- measured on the Kusner
+    # projective plane as a zig-zag term LARGER than its step term, with
+    # rim edges varying 145-fold in length.  Interpolating each
+    # straddling grid edge to lev = 0 puts the cut on the circle itself.
+    #
+    # The interpolation runs ALONG the grid edge, between one kept and
+    # one removed vertex that both sit within a cell of the circle.  It
+    # deliberately does not integrate phi toward the circle: these
+    # punctures are planar ends, phi has a double pole at each centre,
+    # and quadrature aimed at one amplifies the very error being
+    # removed (tried, and it made the rim worse: zig-zag 0.034 -> 0.057).
+    Xf = X.reshape(-1, 3)
+    levf = lev.reshape(-1) if lev is not None else None
+    do_cut = levf is not None and bool(spec.get('clip_punctures'))
+    extra_V, extra_UV, cut_of = [], [], {}
+
+    def _cut(a, b):
+        """Vertex id on lev = 0 along the grid edge a (kept) -> b."""
+        key = (a, b) if a < b else (b, a)
+        hit = cut_of.get(key)
+        if hit is not None:
+            return hit
+        la, lb = float(levf[a]), float(levf[b])
+        t = la / (la - lb) if la != lb else 0.5
+        t = min(max(t, 0.0), 1.0)
+        # A cut landing almost on the kept vertex leaves a sliver edge,
+        # and slivers are what the rim-quality measure actually
+        # punishes: at p = 5 they drove the rim edge-length ratio to
+        # 1172 -- worse than the staircase this replaces -- while the
+        # zig-zag term looked fine.  Snap those cuts onto the vertex.
+        if t < 0.06:
+            cut_of[key] = int(a)
+            return int(a)
+        idx = nu * nv + len(extra_V)
+        extra_V.append(Xf[a] + t * (Xf[b] - Xf[a]))
+        extra_UV.append(UVg[a] + t * (UVg[b] - UVg[a]))
+        cut_of[key] = idx
+        return idx
+
     quads = []
     for i in range(nu - 1):
         for j in range(nv):
             j2 = (j + 1) % nv
             f = (vid[i, j], vid[i + 1, j], vid[i + 1, j2], vid[i, j2])
-            if not (vm[f[0]] and vm[f[1]] and vm[f[2]] and vm[f[3]]):
+            live = (vm[f[0]], vm[f[1]], vm[f[2]], vm[f[3]])
+            if not any(live):
+                continue
+            if not all(live):
+                if not do_cut:
+                    continue
+                poly = []
+                for t_ in range(4):
+                    a, b = f[t_], f[(t_ + 1) % 4]
+                    if live[t_]:
+                        poly.append(int(a))
+                    if live[t_] != live[(t_ + 1) % 4]:
+                        poly.append(_cut(a, b) if live[t_] else _cut(b, a))
+                g = [poly[0]]
+                for q_ in poly[1:]:
+                    if q_ != g[-1]:
+                        g.append(q_)
+                if len(g) > 3 and g[0] == g[-1]:
+                    g.pop()
+                if len(g) >= 3 and len(set(g)) == len(g):
+                    quads.append(tuple(g))
                 continue
             g = [int(f[0])]                     # collapse repeats -> tri
             for t in range(1, 4):
@@ -9445,6 +9510,9 @@ def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
             if len(g) >= 3 and g[0] != g[-1] and len(set(g)) == len(g):
                 quads.append(tuple(g))
     V = X.reshape(-1, 3)
+    if extra_V:
+        V = np.concatenate([V, np.asarray(extra_V, float)], axis=0)
+        UVg = np.concatenate([UVg, np.asarray(extra_UV, float)], axis=0)
     used = np.unique(np.fromiter((i for f in quads for i in f),
                                  dtype=np.int64))
     # optional object-space percentile clip (planar-end flares)
@@ -9456,7 +9524,7 @@ def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
         quads = [f for f in quads if all(rad[i] <= thr for i in f)]
         used = np.unique(np.fromiter((i for f in quads for i in f),
                                      dtype=np.int64))
-    remap = np.full(nu * nv, -1, dtype=np.int64)
+    remap = np.full(len(V), -1, dtype=np.int64)
     remap[used] = np.arange(len(used))
     V = V[used]
     UVg = UVg[used]

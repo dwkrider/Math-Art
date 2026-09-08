@@ -2650,6 +2650,7 @@ WE_SURFACES['KUSNER_RP2'] = {
        / (p['p'] - 1) - 1.0) ** 2,
     'mesher': we.symtail_crosscap_mesh,
     'crosscap_rim': 'outer',
+    'clip_punctures': True,   # cut the end rims on the circle, not the grid
     'domain': ('disk', 0.0, 1.0),
     'p_from': lambda order, radius: (lambda pp: {
         'p': pp, 's': math.sqrt(2 * pp - 1)})(_symtail_kusner_p(order)),
@@ -5003,5 +5004,57 @@ def _selftest():
         ok &= good
         print(f"zoo {jkey}: median|H|={hj:.4f} over {nij} interior "
               f"verts {'OK' if good else 'FAIL'}")
+    # ---- Kusner projective plane: the end rims are cut, not stepped --
+    # The planar-end rims are trimmed by interpolating each straddling
+    # grid edge to the puncture circle.  Keeping only whole quads put
+    # the cut on the nearest grid line instead, and the rim came out a
+    # staircase.  The signature of a staircase is that the ZIG-ZAG term
+    # (mean |d2r| along the rim) exceeds the STEP term (mean |dr|); a
+    # cut rim has it the other way round.  Checked at every shipped
+    # member, because the first version of this fix passed at p = 3 and
+    # left p = 5 stepped.
+    from collections import Counter as _Ctr, defaultdict as _dd
+    kr_ok = True
+    _kspec = WE_SURFACES['KUSNER_RP2']
+    for _ord in (1, 2, 3):
+        _V, _F = _kspec['mesher'](_kspec, 64, 64, _ord, 1.2, 1.0)[:2]
+        _V = np.asarray(_V)
+        _ec = _Ctr()
+        for _q in _F:
+            for _k in range(len(_q)):
+                _a, _b = _q[_k], _q[(_k + 1) % len(_q)]
+                _ec[(min(_a, _b), max(_a, _b))] += 1
+        _adj = _dd(list)
+        for _a, _b in [e for e, c in _ec.items() if c == 1]:
+            _adj[_a].append(_b)
+            _adj[_b].append(_a)
+        _seen, _loops = set(), []
+        for _v in list(_adj):
+            if _v in _seen:
+                continue
+            _cyc, _cur, _prev = [_v], _v, None
+            _seen.add(_v)
+            while True:
+                _nx = next((w for w in _adj[_cur]
+                            if w != _prev and w not in _seen), None)
+                if _nx is None:
+                    break
+                _cyc.append(_nx)
+                _seen.add(_nx)
+                _prev, _cur = _cur, _nx
+            _loops.append(_cyc)
+        _zz = _st = 0.0
+        for _L in _loops:
+            _P = _V[_L]
+            _r = np.linalg.norm(_P - _P.mean(0), axis=1)
+            _zz = max(_zz, float(np.abs(np.diff(_r, 2)).mean() / _r.mean()))
+            _st = max(_st, float(np.abs(np.diff(_r)).mean() / _r.mean()))
+        _good = (len(_loops) == 2 * _ord + 1 and _zz < _st)
+        kr_ok &= _good
+        print(f"kusner rp2 p={2 * _ord + 1}: rims={len(_loops)} "
+              f"zigzag={_zz:.4f} step={_st:.4f} "
+              f"{'OK' if _good else 'FAIL (stepped)'}")
+    ok &= kr_ok
+
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
     assert ok
