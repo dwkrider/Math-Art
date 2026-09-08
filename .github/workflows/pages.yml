@@ -46,17 +46,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # LFS is fetched by hand, for ONE path. `lfs: true` on checkout pulls
-      # every object in the repository, and docs/images/ is ~180 MB of
-      # generator figures that this site never serves -- roughly 216 MB per
-      # deploy against a 1 GB/month bandwidth allowance, so five or six
-      # deploys would exhaust it. web/thumbs/ alone is ~36 MB.
+      # LFS is fetched by hand, for the paths this site actually serves.
+      # `lfs: true` on checkout pulls every object in the repository, and
+      # docs/images/ is ~200 MB of generator figures the site never
+      # serves -- against a 1 GB/month bandwidth allowance that is a few
+      # deploys and no more.
       #
-      # Without any pull the catalogue still "works" and every tile is a
-      # 130-byte pointer file, which is why the size check below is not
-      # decoration.
-      - name: Fetch the catalogue thumbnails
-        run: git lfs pull --include="web/thumbs/**"
+      # BOTH paths are needed and only one used to be listed. The meshes
+      # are LFS too (see .gitattributes), so the site deployed 466
+      # 130-byte pointer files where the geometry should be, every
+      # surface failed to parse, and the viewer showed nothing. The
+      # thumbnails were fine, so the catalogue looked healthy and only
+      # the 3-D view was empty -- and the build stayed green, because the
+      # check below counted mesh FILES rather than looking inside them.
+      - name: Fetch the tiles and the meshes
+        run: git lfs pull --include="web/thumbs/**,web/surfaces/**"
 
       - uses: actions/setup-python@v5
         with:
@@ -88,12 +92,19 @@ jobs:
           echo "surfaces:   $(find web/data/surfaces/surfaces -name '*.json' | wc -l)"
           echo "meshes:     $(ls web/surfaces/*.json 2>/dev/null | wc -l)"
           echo "payload:    $(du -sh web | cut -f1)"
-          # An unresolved LFS pointer is ~130 bytes and still deploys
-          # happily, so the failure would be a gallery of broken tiles
-          # rather than a red build. Catch it here instead.
-          small=$(find web/thumbs -name '*.png' -size -1k | wc -l)
-          if [ "$small" -ne 0 ]; then
-            echo "::error::$small thumbnail(s) are unresolved LFS pointers"
+          # An unresolved LFS pointer deploys perfectly happily -- it is
+          # a small text file, and a web server will serve it with a 200.
+          # The failure is therefore silent: broken tiles, or a viewer
+          # with no geometry, on a green build.
+          #
+          # Checked by CONTENT, not by size. The previous version looked
+          # for files under 1 kB, which is a proxy for "pointer" that
+          # misses the question entirely -- and it only looked at the
+          # thumbnails, which is how 466 pointer meshes shipped.
+          ptr=$(grep -rl --include='*.png' --include='*.json'                   '^version https://git-lfs.github.com/spec/v1'                   web/thumbs web/surfaces 2>/dev/null | wc -l)
+          if [ "$ptr" -ne 0 ]; then
+            echo "::error::$ptr file(s) are unresolved LFS pointers"
+            grep -rl --include='*.png' --include='*.json'               '^version https://git-lfs.github.com/spec/v1'               web/thumbs web/surfaces 2>/dev/null | head -5
             exit 1
           fi
 
