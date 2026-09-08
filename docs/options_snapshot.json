@@ -208,6 +208,32 @@
    "Scale"
   ]
  },
+ "curve.kleinian_add": {
+  "label": "Kleinian Limit Set",
+  "options": [
+   "Output",
+   "Family",
+   "Preset",
+   "Trace A (real)",
+   "Trace A (imag)",
+   "Trace B (real)",
+   "Trace B (imag)",
+   "Mu (real)",
+   "Mu (imag)",
+   "Detail",
+   "Word Depth",
+   "Point Budget",
+   "Orbit Depth",
+   "Seed Circle",
+   "Cusp Detail",
+   "Ring Thickness",
+   "Ring Segments",
+   "Tube Segments",
+   "Material By",
+   "Scale",
+   "Shade Smooth"
+  ]
+ },
  "curve.lsystem_add": {
   "label": "L-system",
   "options": [
@@ -697,6 +723,28 @@
    "Separate Cords"
   ]
  },
+ "mesh.circle_packing_add": {
+  "label": "Circle Packing",
+  "options": [
+   "Pattern",
+   "Rings",
+   "Grid Size",
+   "Geometry",
+   "Boundary",
+   "Lobes",
+   "Lobe Depth",
+   "Boundary Size",
+   "Refinement",
+   "Output",
+   "Ring Thickness",
+   "Ring Segments",
+   "Tube Segments",
+   "Cap Resolution",
+   "Material By",
+   "Scale",
+   "Shade Smooth"
+  ]
+ },
  "mesh.cmc_capillary_add": {
   "label": "CMC Capillary Surface",
   "options": [
@@ -1172,6 +1220,8 @@
    "V Resolution",
    "Twist",
    "Crossing Angle",
+   "Speed Ratio",
+   "Arrangement",
    "Breather b",
    "Waist / Girth",
    "Scale",
@@ -1830,6 +1880,7 @@
    "Cells W",
    "Reflections",
    "Prism Height",
+   "Brick Height",
    "Cell Proportion",
    "Cells",
    "Domain Radius",
@@ -2776,6 +2827,21 @@
    "Floor Size"
   ]
  },
+ "mesh.subdivision_tiling_add": {
+  "label": "Subdivision Tiling",
+  "options": [
+   "Rule",
+   "Depth",
+   "Layout",
+   "Output",
+   "Tile Gap",
+   "Ribbon Width",
+   "Relief",
+   "Material By",
+   "Scale",
+   "Shade Smooth"
+  ]
+ },
  "mesh.supershape_add": {
   "label": "Supershape",
   "options": [
@@ -2891,9 +2957,14 @@
    "Pinch",
    "Projection Angle",
    "Genus",
+   "Form",
+   "Tiling",
+   "Rounding",
+   "Flag Triangles",
+   "Coloring",
    "Cross-Caps k",
    "Cross-Cap Size",
-   "Cross-Cap Pinch",
+   "Cross-Cap Height",
    "Half-Twists",
    "Strip Width",
    "Strip Thickness",
