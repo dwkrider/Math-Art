@@ -69,6 +69,23 @@ _PALETTE = [
 _NPAL = len(_PALETTE)
 
 
+def _center_fit(verts, scale=1.0):
+    """Centre on the bounding box and fit the largest extent to a 2 m cube --
+    the project-wide convention -- then apply `scale`.
+
+    Without this the output size is whatever the packing happened to produce,
+    which for a hyperbolic layout is the unit disc and for a euclidean one is
+    arbitrary."""
+    if not verts:
+        return verts
+    lo = [min(v[i] for v in verts) for i in range(3)]
+    hi = [max(v[i] for v in verts) for i in range(3)]
+    ext = max(hi[i] - lo[i] for i in range(3))
+    k = (2.0 / ext if ext > 1e-9 else 1.0) * scale
+    mid = [0.5 * (lo[i] + hi[i]) for i in range(3)]
+    return [tuple((v[i] - mid[i]) * k for i in range(3)) for v in verts]
+
+
 def _centroid(poly):
     n = len(poly)
     return (sum(p[0] for p in poly) / n, sum(p[1] for p in poly) / n)
@@ -125,8 +142,8 @@ def build_tiling(rule=PENTAGONAL, depth=2, layout=CONFORMAL, output='FACES',
             for (px, py) in poly:
                 sx = cx + (px - cx) * (1.0 - ribbon)
                 sy = cy + (py - cy) * (1.0 - ribbon)
-                verts.append((px * scale, py * scale, z * scale))
-                verts.append((sx * scale, sy * scale, z * scale))
+                verts.append((px, py, z))
+                verts.append((sx, sy, z))
             n = len(poly)
             for i in range(n):
                 a0 = base + 2 * i
@@ -141,9 +158,11 @@ def build_tiling(rule=PENTAGONAL, depth=2, layout=CONFORMAL, output='FACES',
                    cy + (py - cy) * (1.0 - inset)) for (px, py) in poly]
         base = len(verts)
         for (px, py) in shrunk:
-            verts.append((px * scale, py * scale, z * scale))
+            verts.append((px, py, z))
         faces.append(tuple(range(base, base + len(shrunk))))
         mats.append(mi)
+
+    verts = _center_fit(verts, scale)
 
     report = ("%s depth %d: %d tiles, %s layout" %
               (rule.lower(), depth, len(polys), info['layout'].lower()))

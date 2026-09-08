@@ -87,7 +87,114 @@ def _cap_from_planar_circle(c, r):
     return (nx, ny, nz), math.acos(d)
 
 
-def pack_sphere(K, face_index=0, tol=1e-10, max_sweeps=4000):
+def ball_isometry(x, a):
+    """Ahlfors' isometry of the unit ball taking `a` to the origin.
+
+    Restricted to the boundary it is a Moebius transformation of the sphere, so
+    it carries circles to circles -- which is what lets a packing be
+    renormalised without ceasing to be a packing."""
+    xa = [x[i] - a[i] for i in range(3)]
+    n2a = sum(c * c for c in a)
+    n2xa = sum(c * c for c in xa)
+    n2x = sum(c * c for c in x)
+    dot = sum(x[i] * a[i] for i in range(3))
+    den = n2x * n2a - 2.0 * dot + 1.0
+    if abs(den) < 1e-14:
+        return tuple(x)
+    return tuple(((1.0 - n2a) * xa[i] - n2xa * a[i]) / den for i in range(3))
+
+
+def _cap_from_sphere_points(pts, inside):
+    """Cap (axis, angular radius) through three boundary points on the sphere.
+
+    `inside` is a point known to lie within the cap, and it is what fixes the
+    orientation.  Choosing the sign by "make d positive" instead -- which works
+    while every cap is small -- is wrong here: a Moebius transformation can
+    carry a cap across the far side, where the correct angular radius exceeds
+    pi/2 and d is negative.  Getting that wrong silently swaps a cap for its
+    complement and destroys tangency."""
+    (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) = pts
+    ux, uy, uz = x2 - x1, y2 - y1, z2 - z1
+    vx, vy, vz = x3 - x1, y3 - y1, z3 - z1
+    nx = uy * vz - uz * vy
+    ny = uz * vx - ux * vz
+    nz = ux * vy - uy * vx
+    ln = math.sqrt(nx * nx + ny * ny + nz * nz)
+    if ln < 1e-14:
+        return (0.0, 0.0, 1.0), 0.0
+    nx, ny, nz = nx / ln, ny / ln, nz / ln
+    d = nx * x1 + ny * y1 + nz * z1
+    if nx * inside[0] + ny * inside[1] + nz * inside[2] < d:
+        nx, ny, nz, d = -nx, -ny, -nz, -d
+    return (nx, ny, nz), math.acos(min(1.0, max(-1.0, d)))
+
+
+def _cap_points(axis, ang, n=3):
+    """`n` points spread around a cap's boundary circle."""
+    up = (0.0, 0.0, 1.0) if abs(axis[2]) < 0.9 else (1.0, 0.0, 0.0)
+    ex = (up[1] * axis[2] - up[2] * axis[1],
+          up[2] * axis[0] - up[0] * axis[2],
+          up[0] * axis[1] - up[1] * axis[0])
+    m = math.sqrt(sum(c * c for c in ex)) or 1.0
+    ex = tuple(c / m for c in ex)
+    ey = (axis[1] * ex[2] - axis[2] * ex[1],
+          axis[2] * ex[0] - axis[0] * ex[2],
+          axis[0] * ex[1] - axis[1] * ex[0])
+    ca, sa = math.cos(ang), math.sin(ang)
+    out = []
+    for k in range(n):
+        t = 2.0 * math.pi * k / n
+        c, s = math.cos(t), math.sin(t)
+        out.append(tuple(ca * axis[i] + sa * (c * ex[i] + s * ey[i])
+                         for i in range(3)))
+    return out
+
+
+def normalise(axes, angs, iters=200, tol=1e-13):
+    """Moebius-normalise a spherical packing so the circles are balanced.
+
+    A packing of the sphere is unique only UP TO MOEBIUS TRANSFORMATIONS, and
+    the one that falls out of the remove-a-face construction is badly skewed:
+    the three vertices of the dropped face become horocycles in the disc, which
+    project to enormous caps -- typically an 8:1 spread on an octahedron, with
+    everything else crowded into the gap.  That is a valid packing, just an
+    unflattering choice of representative.
+
+    Balancing is the conformal-centering iteration: take the centroid of the
+    cap centres, which lies strictly inside the ball unless the packing is
+    already balanced, apply the ball isometry carrying it to the origin, and
+    repeat.  Circles stay circles, so tangency is preserved exactly.
+
+    The centroid must be taken UNWEIGHTED.  Weighting each centre by its cap
+    area is the obvious thing to try and it DIVERGES -- measured on the
+    octahedron, the caps grow past 70 degrees and the centroid wanders instead
+    of settling.  Unweighted converges in about a dozen steps and lands on the
+    exact answer: all six octahedron caps at 45 degrees, which is what tangency
+    forces once the axes are orthogonal."""
+    axes = [None if a is None else tuple(a) for a in axes]
+    angs = list(angs)
+    live = [v for v in range(len(axes)) if axes[v] is not None]
+    if not live:
+        return axes, angs
+    for _ in range(iters):
+        c = [0.0, 0.0, 0.0]
+        for v in live:
+            for i in range(3):
+                c[i] += axes[v][i]
+        c = [t / len(live) for t in c]
+        n = math.sqrt(sum(t * t for t in c))
+        if n < tol:
+            break
+        step = min(n, 0.6)                        # keep the step inside the ball
+        c = [t * (step / n) for t in c]
+        for v in live:
+            pts = [ball_isometry(p, c) for p in _cap_points(axes[v], angs[v])]
+            inside = ball_isometry(axes[v], c)   # the cap centre goes with it
+            axes[v], angs[v] = _cap_from_sphere_points(pts, inside)
+    return axes, angs
+
+
+def pack_sphere(K, face_index=0, tol=1e-10, max_sweeps=4000, balance=True):
     """Maximal packing of a triangulated sphere.
 
     Returns (axes, angular_radii, info) where each circle is the spherical cap
@@ -105,8 +212,12 @@ def pack_sphere(K, face_index=0, tol=1e-10, max_sweeps=4000):
         if cen[v] is None:
             continue
         axes[v], ang[v] = _cap_from_planar_circle(cen[v], rad[v])
+    if balance:
+        axes, ang = normalise(axes, ang)
     info = {'dropped_face': dropped, 'sweeps': res.sweeps,
-            'angle_error': res.max_angle_error, 'converged': res.converged}
+            'angle_error': res.max_angle_error, 'converged': res.converged,
+            'spread': (max(ang) / min(a for a in ang if a > 0)
+                       if any(a > 0 for a in ang) else 1.0)}
     return axes, ang, info
 
 
@@ -164,6 +275,30 @@ def _selftest():
         worst2 = max(worst2, abs(sep - (ang2[v] + ang2[u])))
     assert worst2 < 1e-6, "asymmetric spherical tangency error %.3e" % worst2
 
+    # 6. normalisation preserves tangency exactly and BALANCES the packing.
+    #    Unnormalised, the three vertices of the dropped face are horocycles in
+    #    the disc and project to enormous caps.
+    raw_axes, raw_ang, raw_info = pack_sphere(K, balance=False)
+    bal_axes, bal_ang, bal_info = pack_sphere(K, balance=True)
+    assert raw_info['spread'] > 4.0,         "the unnormalised octahedron packing should be badly skewed, got %.2f"         % raw_info['spread']
+    assert bal_info['spread'] < 1.05,         "the balanced octahedron packing should be near uniform, got %.2f"         % bal_info['spread']
+    worst3 = 0.0
+    for (v, u) in K.edges():
+        dot = sum(a * b for a, b in zip(bal_axes[v], bal_axes[u]))
+        sep = math.acos(min(1.0, max(-1.0, dot)))
+        worst3 = max(worst3, abs(sep - (bal_ang[v] + bal_ang[u])))
+    assert worst3 < 1e-6, "normalisation broke tangency: %.3e" % worst3
+
+    # the ball isometry really is one: it maps the sphere to itself
+    for k in range(20):
+        t = 0.31 * k
+        x = (math.cos(t) * 0.6, math.sin(t) * 0.6,
+             math.sqrt(max(0.0, 1.0 - 0.36)))
+        y = ball_isometry(x, (0.25, -0.1, 0.05))
+        assert abs(math.sqrt(sum(c * c for c in y)) - 1.0) < 1e-9
+
     print("packing.sphere: remove-a-face gives a disc, projection lands on the "
           "unit sphere, symmetric and asymmetric spheres pack with tangency "
-          "error < 1e-6. RESULT: OK")
+          "error < 1e-6; Moebius normalisation cuts the octahedron's cap "
+          "spread %.1f:1 -> %.2f:1 with tangency error %.1e. RESULT: OK"
+          % (raw_info['spread'], bal_info['spread'], worst3))

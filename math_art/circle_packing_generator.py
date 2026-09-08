@@ -71,6 +71,23 @@ _PALETTE = [
 _NPAL = len(_PALETTE)
 
 
+def _center_fit(verts, scale=1.0):
+    """Centre on the bounding box and fit the largest extent to a 2 m cube --
+    the project-wide convention -- then apply `scale`.
+
+    A hyperbolic packing comes out inside the unit disc and a euclidean one at
+    whatever size the radii happened to settle on, so without this the output
+    size is an accident of the solve."""
+    if not verts:
+        return verts
+    lo = [min(v[i] for v in verts) for i in range(3)]
+    hi = [max(v[i] for v in verts) for i in range(3)]
+    ext = max(hi[i] - lo[i] for i in range(3))
+    k = (2.0 / ext if ext > 1e-9 else 1.0) * scale
+    mid = [0.5 * (lo[i] + hi[i]) for i in range(3)]
+    return [tuple((v[i] - mid[i]) * k for i in range(3)) for v in verts]
+
+
 def _ring(cx, cy, r, tube, seg, tseg):
     """A torus of centreline radius r in the z = 0 plane."""
     verts = []
@@ -98,6 +115,46 @@ def _disc(cx, cy, r, seg, z=0.0):
         a = 2.0 * math.pi * i / seg
         verts.append((cx + r * math.cos(a), cy + r * math.sin(a), z))
     faces = [(0, i + 1, (i + 1) % seg + 1) for i in range(seg)]
+    return verts, faces
+
+
+def _spherical_cap(axis, ang, res=2):
+    """A spherical cap as a dome on the unit sphere: the set of points within
+    angular radius `ang` of `axis`.
+
+    Built as concentric rings on the sphere itself.  Squashing a ball into a
+    lens -- the obvious shortcut -- gives ellipsoid blobs that do not lie on the
+    sphere and do not meet their neighbours where the packing says they should."""
+    rings = max(2, 2 + 2 * res)
+    seg = max(8, 8 * (res + 1))
+    up = (0.0, 0.0, 1.0) if abs(axis[2]) < 0.9 else (1.0, 0.0, 0.0)
+    ex = (up[1] * axis[2] - up[2] * axis[1],
+          up[2] * axis[0] - up[0] * axis[2],
+          up[0] * axis[1] - up[1] * axis[0])
+    m = math.sqrt(sum(c * c for c in ex)) or 1.0
+    ex = tuple(c / m for c in ex)
+    ey = (axis[1] * ex[2] - axis[2] * ex[1],
+          axis[2] * ex[0] - axis[0] * ex[2],
+          axis[0] * ex[1] - axis[1] * ex[0])
+
+    verts = [tuple(axis)]                       # the pole
+    for i in range(1, rings + 1):
+        a = ang * i / rings
+        ca, sa = math.cos(a), math.sin(a)
+        for j in range(seg):
+            t = 2.0 * math.pi * j / seg
+            c, sn = math.cos(t), math.sin(t)
+            verts.append(tuple(ca * axis[k] + sa * (c * ex[k] + sn * ey[k])
+                               for k in range(3)))
+    faces = []
+    for j in range(seg):                        # the polar fan
+        faces.append((0, 1 + j, 1 + (j + 1) % seg))
+    for i in range(rings - 1):                  # the quad bands
+        b0 = 1 + i * seg
+        b1 = 1 + (i + 1) * seg
+        for j in range(seg):
+            k = (j + 1) % seg
+            faces.append((b0 + j, b1 + j, b1 + k, b0 + k))
     return verts, faces
 
 
@@ -147,7 +204,7 @@ def _mat_index(color_by, v, K, radii, rmin, rmax):
 
 def build_packing(combinatorics='HEX', rings=5, grid=6, geometry='EUCLIDEAN',
                   boundary='PRESCRIBED', lobes=3, amplitude=0.75,
-                  base_radius=0.35, refine=0, output='RINGS', tube_ratio=0.14,
+                  base_radius=0.35, refine=0, output='DISCS', tube_ratio=0.14,
                   ring_seg=24, tube_seg=8, sphere_res=2, color_by='RADIUS',
                   scale=1.0):
     """Build the packing and return (verts, faces, mats, report)."""
@@ -157,32 +214,18 @@ def build_packing(combinatorics='HEX', rings=5, grid=6, geometry='EUCLIDEAN',
             K, _ = refine_n(K, None, min(refine, 3))
         axes, ang, info = pack_sphere(K)
         verts, faces, mats = [], [], []
-        sv, sf = _icosphere(sphere_res)
         for v in range(K.nv):
-            if axes[v] is None:
+            if axes[v] is None or ang[v] <= 1e-9:
                 continue
-            r = math.sin(ang[v])
-            cz = math.cos(ang[v])
-            ax = axes[v]
-            # frame about the cap axis
-            up = (0.0, 0.0, 1.0) if abs(ax[2]) < 0.9 else (1.0, 0.0, 0.0)
-            ex = (up[1] * ax[2] - up[2] * ax[1], up[2] * ax[0] - up[0] * ax[2],
-                  up[0] * ax[1] - up[1] * ax[0])
-            n = math.sqrt(sum(c * c for c in ex)) or 1.0
-            ex = tuple(c / n for c in ex)
-            ey = (ax[1] * ex[2] - ax[2] * ex[1], ax[2] * ex[0] - ax[0] * ex[2],
-                  ax[0] * ex[1] - ax[1] * ex[0])
+            cv, cf = _spherical_cap(axes[v], ang[v], sphere_res)
             base = len(verts)
-            for (px, py, pz) in sv:
-                verts.append(tuple(
-                    scale * (cz * ax[i] + r * (px * ex[i] + py * ey[i])
-                             + 0.06 * r * pz * ax[i]) for i in range(3)))
-            for f in sf:
+            verts.extend(cv)
+            for f in cf:
                 faces.append(tuple(base + i for i in f))
                 mats.append(1 + (v % (_NPAL - 1)))
         report = ("sphere: %d caps, %d sweeps, angle error %.2e"
                   % (K.nv, info['sweeps'], info['angle_error']))
-        return verts, faces, mats, report
+        return _center_fit(verts, scale), faces, mats, report
 
     if combinatorics == 'GRID':
         K, xy = square_grid(grid, grid)
@@ -227,8 +270,8 @@ def build_packing(combinatorics='HEX', rings=5, grid=6, geometry='EUCLIDEAN',
     for v in range(K.nv):
         if pos[v] is None or rad[v] <= 0.0:
             continue
-        x, y = pos[v][0] * scale, pos[v][1] * scale
-        r = rad[v] * scale
+        x, y = pos[v][0], pos[v][1]
+        r = rad[v]
         mi = _mat_index(color_by, v, K, rad, rmin, rmax)
         if output == 'DISCS':
             dv, df = _disc(x, y, r, ring_seg)
@@ -248,12 +291,13 @@ def build_packing(combinatorics='HEX', rings=5, grid=6, geometry='EUCLIDEAN',
             if pos[v] is None:
                 continue
             idx[v] = len(verts)
-            verts.append((pos[v][0] * scale, pos[v][1] * scale, 0.0))
+            verts.append((pos[v][0], pos[v][1], 0.0))
         for (a, b) in K.edges():
             if a in idx and b in idx:
                 faces.append((idx[a], idx[b], idx[a]))
                 mats.append(1)
 
+    verts = _center_fit(verts, scale)
     circles = sum(1 for v in range(K.nv) if pos[v] is not None)
     report = ("%d circles, %d sweeps, angle error %.2e"
               % (circles, res.sweeps, res.max_angle_error))
@@ -354,11 +398,11 @@ if _IN_BLENDER:
                         "true conformal structure")
         output: EnumProperty(
             name="Output",
-            items=[('RINGS', "Rings", "Each circle as a torus"),
-                   ('DISCS', "Discs", "Each circle as a flat disc"),
+            items=[('DISCS', "Discs", "Each circle as a flat disc"),
+                   ('RINGS', "Rings", "Each circle as a torus"),
                    ('GRAPH', "Tangency Graph",
                     "Edges joining the centres of touching circles")],
-            default='RINGS')
+            default='DISCS')
         tube_ratio: FloatProperty(
             name="Ring Thickness", default=0.14, min=0.01, max=0.5,
             description="Tube radius as a fraction of each circle's radius")

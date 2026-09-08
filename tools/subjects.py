@@ -260,7 +260,7 @@ PARAMS = {
     # rigidity that is the whole point of the subject.
     "mesh.circle_packing_add": dict(rings=6, boundary='PRESCRIBED',
                                     lobes=3, amplitude=0.75,
-                                    output='RINGS', color_by='RADIUS'),
+                                    output='DISCS', color_by='RADIUS'),
 
     # Depth 2 is 36 pentagons: enough that the subdivision reads as a
     # rule rather than a one-off, while each tile is still large
