@@ -1313,6 +1313,11 @@
    "Classical"
   ],
   [
+   "HYDE",
+   "Hyde Sextic",
+   "Classical"
+  ],
+  [
    "CALYX",
    "Calyx",
    "Hauser Gallery"
@@ -1645,6 +1650,21 @@
   [
    "SEPTIC_TRIPLE",
    "Septic with 16 Triple Points",
+   "Record Nodal Surfaces"
+  ],
+  [
+   "SARTI_DODECIC",
+   "Sarti Dodecic (600 nodes)",
+   "Record Nodal Surfaces"
+  ],
+  [
+   "LABS_30_CUSPS",
+   "Labs Sextic (30 cusps)",
+   "Record Nodal Surfaces"
+  ],
+  [
+   "LABS_132_A5",
+   "Labs Dodecic (132 A5 points)",
    "Record Nodal Surfaces"
   ],
   [
