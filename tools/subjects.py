@@ -25,6 +25,13 @@ dicts); the rig helpers at the bottom appear only when bpy is present.
 # should show what you get when you click the entry -- so only the ones
 # whose defaults under-sell them are listed.
 PARAMS = {
+    # The hero is a relief panel (built by SETUP) cut into stacked
+    # contour layers along Z -- the topographic model.  Dowels off so no
+    # holes clutter the layers, assembled (explode 0) so it reads as the
+    # panel, not a scatter of parts.  The flat cut-sheets it also emits
+    # are hidden by HIDE_AFTER, leaving just the sliced part.
+    "object.fabrication_slice": dict(technique='STACKED', axis='Z',
+                                     use_dowels=False, explode=0.0),
     # A bare noble faceting is a self-intersecting wireframe-ish solid
     # and reads as mush when shaded; the great dodecahedron -- faceting
     # 1 of the icosahedral vertex set -- has big obvious pentagons and
@@ -444,6 +451,10 @@ PLAN_VIEW = {
 HIDE_AFTER = {
     "object.symmetric_sculpture_add": ("SymSculpt Motif",
                                        "SymSculpt Guides"),
+    # The slicer emits both an assembled 3-D preview (the "Plates") and
+    # a flat nested cut-sheet layout (the "Sheets"); the hero wants only
+    # the sliced part, so hide the sheet layout and its group empty.
+    "object.fabrication_slice": ("ReliefSlice Sheets", "ReliefSlice sheet"),
 }
 
 
@@ -1386,8 +1397,30 @@ if _IN_BLENDER:
         bpy.context.view_layer.objects.active = made[0]
         return made
 
+    def _setup_fabrication_slice():
+        """A relief panel for the slicer to cut into stacked layers.
+
+        `object.fabrication_slice` slices whatever is active into flat
+        parts; with nothing there it has nothing to show.  A relief
+        panel is the telling subject -- sliced along Z it becomes a
+        stack of contour layers, the classic topographic model, which
+        is exactly what the operator is for.  The panel is renamed to a
+        fixed string so the Sheets layout it also emits can be hidden by
+        name (see HIDE_AFTER); the panel itself is dropped once the
+        operator has consumed it.
+        """
+        bpy.ops.mesh.relief_panel_add(preset='DUNES')
+        panel = bpy.context.active_object
+        panel.name = "ReliefSlice"
+        for ob in bpy.context.selected_objects:
+            ob.select_set(False)
+        panel.select_set(True)
+        bpy.context.view_layer.objects.active = panel
+        return [panel]
+
     SETUP = {
         "object.minimal_span": _setup_minimal_span,
+        "object.fabrication_slice": _setup_fabrication_slice,
     }
 
     # ----------------------------------------------------------------
