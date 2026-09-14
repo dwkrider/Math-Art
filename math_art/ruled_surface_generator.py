@@ -1212,6 +1212,31 @@ def weft_weave(charts, overhang=0.0, sub=6):
     return right, left, crossings, gap
 
 
+def weft_rails(charts, samples=96):
+    """The edges of the woven region of each piece (`_weft_chart`), as
+    (points, closed) polylines: the curves its rulings end on, which bind
+    the ribbon ends as a basket's rim does -- also where Weave Gap stops
+    the ribbons short of the surface's own edge.  A loop has two, closed;
+    a Mobius band one, running twice round; an open piece two, from its
+    first ruling to its last."""
+    rails = []
+    for ch in charts:
+        S, (u0, u1), closure = ch['S'], ch['span'], ch['closure']
+        v0, v1 = ch['v']
+        if closure == 'mobius':
+            u = np.linspace(u0, u0 + 2.0 * (u1 - u0), 2 * samples,
+                            endpoint=False)
+            rails.append((S(u, np.full(len(u), v1)), True))
+            continue
+        if closure == 'loop':
+            u = np.linspace(u0, u1, samples, endpoint=False)
+        else:
+            u = np.linspace(ch['u'][0], ch['u'][-1], samples)
+        for vv in (v0, v1):
+            rails.append((S(u, np.full(len(u), vv)), closure == 'loop'))
+    return rails
+
+
 # --------------------------------------------------------------------
 # 4. conoids  (right conoid S = (v cos u, v sin u, h(u)))
 # --------------------------------------------------------------------
@@ -2305,6 +2330,17 @@ def _weft_charts(op, n=None):
     return [_weft_chart(S, n, loop, 'loop', (0.0, 1.0))]    # CONSTANT_SLOPE
 
 
+def _ribbon_rails(op):
+    """The boundary curves drawn with woven ribbons.  A basket-woven mode
+    draws the edges of its woven region (`weft_rails`), so the rim binds
+    the ribbon ends wherever they stop; the others draw their rails
+    (`_boundary_loops`), which their ribbons already end on."""
+    if op.mode in _WEFT:
+        return [([tuple(p) for p in pts], closed) for pts, closed
+                in weft_rails(_weft_charts(op), max(96, op.res_u))]
+    return _boundary_loops(op)
+
+
 def _hypar_boundary(op, N):
     """The (closed) boundary loop of the hypar: the four corner edges of
     the bilinear patch, or the perimeter of the z=c((x/a)^2-(y/b)^2)
@@ -2921,7 +2957,7 @@ if _IN_BLENDER:
                         "boundary curves.  Negative trims the ribbons "
                         "back from the edge instead")
         weave_gap: FloatProperty(
-            name="Weave Gap", default=0.2, min=0.02, max=0.45,
+            name="Weave Gap", default=0.05, min=0.02, max=0.45,
             description="How far the woven ribbons stop short of where "
                         "the rulings run together -- a cone's apex, a "
                         "conoid's axis, the edge a tangent developable "
@@ -3001,7 +3037,7 @@ if _IN_BLENDER:
                 verts, faces, plan = weave_rulings(
                     fa, fb, self.ribbon_width, self.ribbon_thickness,
                     self.weave_float, **weave_opts)
-                loops = (_boundary_loops(self)
+                loops = (_ribbon_rails(self)
                          if self.show_boundaries else [])
                 tv, tf = _tubes(loops, self.rod_radius, 8)
                 o = len(verts)
@@ -4037,7 +4073,7 @@ def _selftest():
         knot_outer_height=1.0, knot_circle_radius=4.5,
         knot_twist=math.radians(30.0), knot_rods=24, v_extent=1.0,
         n_rods=24, family='BOTH', output='RIBBONS', ribbon_overhang=0.1,
-        weave_gap=0.2, conoid_kind='PLUCKER')
+        weave_gap=0.2, conoid_kind='PLUCKER', res_u=120)
     combos = ([(md, 'PLUCKER') for md, _l, _d in _MODES
                if md in _WOVEN and md != 'CONOID']
               + [('CONOID', k) for k, _l, _d in _CONOID_KINDS])
@@ -4048,6 +4084,16 @@ def _selftest():
         assert len(plan_['crossings']['ia']), (md, kind)
         assert plan_['conflicts'] == 0, (md, kind, plan_['conflicts'])
     assert 'HELICAL_CONE' not in _WOVEN
+    # the rims drawn with the ribbons are the woven region's edges: one
+    # loop round a Mobius band, and on Plucker's conoid an inner rim right
+    # at the gap by the axis and an outer one at the rulings' ends
+    rims = _ribbon_rails(SimpleNamespace(**dict(base, mode='TWIST_STRIP')))
+    assert len(rims) == 1 and rims[0][1], [c for _p, c in rims]
+    rims = _ribbon_rails(SimpleNamespace(**dict(base, mode='CONOID')))
+    assert len(rims) == 2 and all(c for _p, c in rims)
+    for (pts, _c), radius in zip(rims, (0.2, 1.0)):
+        pts = np.asarray(pts)
+        assert np.allclose(np.hypot(pts[:, 0], pts[:, 1]), radius), radius
     print("basket weave: crossings exact on both strands, plain weave "
           "alternating round every closed weaver on a cylinder, Mobius "
           "bands of both parities and a cone; Whitney rods on the "
