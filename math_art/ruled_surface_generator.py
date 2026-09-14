@@ -2771,7 +2771,7 @@ if _IN_BLENDER:
                                  description="Corner point of the "
                                              "bilinear patch (s=1, t=1)")
         # concentric torus-knot span
-        knot_p: IntProperty(name="Inner p", default=2, min=1, max=8,
+        knot_p: IntProperty(name="Inner p", default=1, min=1, max=8,
                             description="Times the knots wind around "
                                         "the main axis")
         knot_q: IntProperty(name="Inner q", default=3, min=0, max=9,
@@ -2807,7 +2807,7 @@ if _IN_BLENDER:
                                   description="p of the outer knot; 0 "
                                               "matches the inner p so "
                                               "the rulings line up")
-        knot_outer_q: IntProperty(name="Outer q", default=5, min=0,
+        knot_outer_q: IntProperty(name="Outer q", default=6, min=0,
                                   max=9,
                                   description="q of the outer knot; 0 "
                                               "degenerates it to a "
