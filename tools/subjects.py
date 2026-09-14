@@ -908,13 +908,17 @@ VARIANT_EXTRA = {
         # output must be named explicitly: PARAMS pins RODS for the
         # hero, and params_for merges it in, so without this the plain
         # hyperboloid rendered identically to the rulings entry below.
-        ("HYPERBOLOID", "Stick Hyperboloid",
+        ("HYPERBOLOID", "Hyperboloid",
          dict(mode='HYPERBOLOID', output='SURFACE')),
-        ("HYPERBOLOID_RODS", "Stick Hyperboloid (Rulings)",
+        ("HYPERBOLOID_RODS", "Hyperboloid (Rulings)",
          dict(mode='HYPERBOLOID', output='RODS', family='BOTH')),
+        ("HYPERBOLOID_RIBBONS", "Hyperboloid (Woven Ribbons)",
+         dict(mode='HYPERBOLOID', output='RIBBONS', n_rods=32)),
         ("HELICAL_CONE", "Compound Helical Cone",
-         dict(mode='HELICAL_CONE')),
+         dict(mode='HELICAL_CONE', output='SURFACE')),
         ("SPIRAL", "Spiral Ruled", dict(mode='SPIRAL')),
+        ("SPIRAL_RIBBONS", "Spiral Ruled (Woven Ribbons)",
+         dict(mode='SPIRAL', output='RIBBONS')),
         ("SPIRAL_ROSETTE", "Spiral Ruled (Rosette)",
          dict(mode='SPIRAL', tightness=0.0, petals=5, petal_amp=0.4)),
         ("PLUCKER", "Plucker Cylindroid",
@@ -934,6 +938,8 @@ VARIANT_EXTRA = {
         ("TWIST_STRIP", "Twisted Strip (Mobius)",
          dict(mode='TWIST_STRIP', half_twists=1)),
         ("HYPAR", "Hyperbolic Paraboloid", dict(mode='HYPAR')),
+        ("HYPAR_RIBBONS", "Hyperbolic Paraboloid (Woven Ribbons)",
+         dict(mode='HYPAR', output='RIBBONS', n_rods=24)),
     ],
     # The atomic half is indexed by the quantum numbers (n, l, m), not
     # by an enum, so there is nothing to introspect; the molecular half
