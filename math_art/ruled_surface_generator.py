@@ -15,12 +15,22 @@
 # sculptures (George Hart's stick hyperboloids, hyperbolic-paraboloid
 # string art).
 #
+# The two doubly-ruled modes, the hyperboloid and the hyperbolic
+# paraboloid, carry a second family of rulings crossing the first, and
+# can also be rendered as WOVEN RIBBONS: every ruling of both families a
+# flat ribbon lying in the surface, passing alternately over and under
+# the ribbons of the other family (a plain weave, or a twill).  The
+# weaving itself knows nothing about the surface and lives in
+# `weaving/rulings.py`; a mode joins it by supplying its two ruling
+# families (see `_ruling_families`).
+#
 # Modes
 #   HYPERBOLOID   -- hyperboloid of one sheet from straight rulings
 #     strung between two coaxial circles, the top circle rotated by a
 #     twist angle.  The waist radius a = R cos(twist/2) is set purely
 #     by the twist: 0 -> cylinder, 180 deg -> double cone.  Doubly
-#     ruled: left- and right-handed families of rulings.
+#     ruled: left- and right-handed families of rulings, drawn singly,
+#     crossing, or woven.
 #   HELICAL_CONE  -- the compound helical cone / Solomonic column: a
 #     cone that is spirally fluted (N flutes winding helically) and
 #     optionally wound a second time along a planetary helix, its
@@ -52,7 +62,8 @@
 #   HYPAR         -- the doubly-ruled hyperbolic paraboloid, either as
 #     z = c((x/a)^2 - (y/b)^2) or as the bilinear patch spanning four
 #     user-set skew corner points (the surface of any four points in
-#     general position).
+#     general position).  Its two ruling families can likewise be drawn
+#     singly, crossing, or woven.
 #   KNOT_SPAN     -- a ruled surface strung between two concentric
 #     (p, q) torus knots: straight rulings interpolate S = inner(u)(1-v)
 #     + outer(u) v between an inner and an outer toroidal knot sampled on
@@ -104,6 +115,12 @@
 #   Book" (1994).  The knot-to-knot span is adapted here as a pure
 #   ruled surface (cf. the soap-film version in the minimal-surface
 #   toolkit).
+# - D. Hilbert and S. Cohn-Vossen, "Anschauliche Geometrie" (1932),
+#   chapter 1 -- the doubly ruled quadrics, whose two rulings through
+#   each point are what the woven-ribbon output interlaces.
+# - B. Grunbaum and G. C. Shephard, "Satins and Twills: An Introduction
+#   to the Geometry of Fabrics," Mathematics Magazine 53 (1980),
+#   139-161 -- plain weave and twills as over/under patterns.
 # - Classical background: M. do Carmo, "Differential Geometry of
 #   Curves and Surfaces" (1976); A. Gray, "Modern Differential
 #   Geometry of Curves and Surfaces" (1997); D. Struik, "Lectures
@@ -115,12 +132,12 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
-    "description": "Stick hyperboloids, compound helical cones, "
+    "description": "Hyperboloids, compound helical cones, "
                    "spiral ruled surfaces, conoids, tangent "
                    "developables, helicoids, twisted strips, "
                    "doubly-ruled hypars and concentric torus-knot "
                    "spans -- straight-line-swept surfaces, optionally "
-                   "rendered as rulings",
+                   "rendered as rulings or woven ribbons",
     "category": "Add Mesh",
 }
 
@@ -135,6 +152,11 @@ try:
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
+
+try:                                  # inside the math_art package
+    from .weaving.rulings import (weave_rulings, crossing_clearance)
+except ImportError:                   # flat import (test runner)
+    from weaving.rulings import (weave_rulings, crossing_clearance)
 
 _TWO_PI = 2.0 * math.pi
 
@@ -1015,19 +1037,27 @@ def build_hypar(a=1.0, b=1.0, c=1.0, extent=1.0, res=48,
 
 
 def rulings_hypar(a=1.0, b=1.0, c=1.0, extent=1.0, corners=None,
-                  n=16):
+                  n=16, family='BOTH'):
+    """Ruling segments of the hypar.  RIGHT keeps one family (the lines
+    x/a + y/b = const, or the patch's constant-s lines), LEFT the other,
+    BOTH interleaves them.  Every segment of a family runs the same way
+    (increasing x, or increasing t / s), which the woven output needs."""
+    right = family in ('RIGHT', 'BOTH')
+    left = family in ('LEFT', 'BOTH')
     segs = []
     if corners is not None:
         P00, P10, P01, P11 = (np.asarray(p, dtype=float)
                               for p in corners)
         for i in range(n + 1):
             s = i / n
-            e0 = (1 - s) * P00 + s * P10
-            e1 = (1 - s) * P01 + s * P11
-            segs.append((tuple(e0), tuple(e1)))        # t-rulings
-            f0 = (1 - s) * P00 + s * P01
-            f1 = (1 - s) * P10 + s * P11
-            segs.append((tuple(f0), tuple(f1)))        # s-rulings
+            if right:
+                e0 = (1 - s) * P00 + s * P10
+                e1 = (1 - s) * P01 + s * P11
+                segs.append((tuple(e0), tuple(e1)))    # t-rulings
+            if left:
+                f0 = (1 - s) * P00 + s * P01
+                f1 = (1 - s) * P10 + s * P11
+                segs.append((tuple(f0), tuple(f1)))    # s-rulings
         return segs
     # z = c((x/a)^2 - (y/b)^2) factors as c*u*v in the skew coordinates
     #     u = x/a + y/b,      v = x/a - y/b,
@@ -1053,6 +1083,8 @@ def rulings_hypar(a=1.0, b=1.0, c=1.0, extent=1.0, corners=None,
         if x1 - x0 <= 1e-12:
             continue                       # this line misses the square
         for sign in (1.0, -1.0):           # u = k, then v = k
+            if not (right if sign > 0 else left):
+                continue
             ends = []
             for xx in (x0, x1):
                 yy = sign * b * (k - xx / a)
@@ -1079,7 +1111,7 @@ def developable_determinant(bx, by, bz, dx, dy, dz, u=None):
 
 
 _MODES = [
-    ('HYPERBOLOID', "Stick Hyperboloid",
+    ('HYPERBOLOID', "Hyperboloid",
      "Hyperboloid of one sheet from straight rulings between two "
      "coaxial circles; twist sets the waist"),
     ('HELICAL_CONE', "Compound Helical Cone",
@@ -1129,6 +1161,11 @@ _MODES = [
 #: and is a deliberate choice rather than the obvious first look.
 _SURFACE_FIRST = {'HELICAL_CONE'}
 
+#: doubly-ruled modes: two crossing ruling families, so a Ruling Family
+#: choice and the woven-ribbon output.  A mode joins by adding a branch
+#: to `_ruling_families`.
+_WOVEN = {'HYPERBOLOID', 'HYPAR'}
+
 
 def effective_output(op):
     """Resolve the AUTO output against the mode.
@@ -1136,8 +1173,11 @@ def effective_output(op):
     Blender gives an enum one default, but the right first look differs
     by surface: a ruled surface is best shown BY its rulings, while the
     helical cone has none and reads as a column only when filled.  AUTO
-    is the sentinel that lets one property mean both.
+    is the sentinel that lets one property mean both.  Woven ribbons
+    need two ruling families, so a singly-ruled mode falls back to rods.
     """
+    if op.output == 'RIBBONS':
+        return 'RIBBONS' if op.mode in _WOVEN else 'RODS'
     if op.output != 'AUTO':
         return op.output
     return 'SURFACE' if op.mode in _SURFACE_FIRST else 'RODS'
@@ -1204,7 +1244,7 @@ def _build_surface(op):
     if m == 'HYPERBOLOID':
         vf = build_hyperboloid(op.radius, op.height, op.twist,
                                op.res_u, op.res_v)
-        return (*vf, "Stick Hyperboloid")
+        return (*vf, "Hyperboloid")
     if m == 'HELICAL_CONE':
         vf = build_helical_cone(op.radius, op.cone_height, op.flutes,
                                 op.flute_depth, op.cone_twist,
@@ -1303,8 +1343,30 @@ def _build_rulings(op, n=None):
         corners = (op.p00, op.p10, op.p01, op.p11) \
             if op.use_corners else None
         return rulings_hypar(op.hy_a, op.hy_b, op.hy_c, op.v_extent,
-                             corners, n)
+                             corners, n, op.family)
     return []
+
+
+def _ruling_families(op, n=None):
+    """The two ruling families of a doubly-ruled mode, as a pair of
+    segment lists, each family oriented consistently; None for a mode
+    with only one family.  This is the whole interface to the woven
+    output: a mode that can answer here can be woven."""
+    if n is None:
+        n = op.n_rods
+    if op.mode == 'HYPERBOLOID':
+        # both families run bottom circle -> top circle
+        return (rulings_hyperboloid(op.radius, op.height, op.twist,
+                                    'RIGHT', n),
+                rulings_hyperboloid(op.radius, op.height, op.twist,
+                                    'LEFT', n))
+    if op.mode == 'HYPAR':
+        corners = (op.p00, op.p10, op.p01, op.p11) \
+            if op.use_corners else None
+        return tuple(rulings_hypar(op.hy_a, op.hy_b, op.hy_c,
+                                   op.v_extent, corners, n, fam)
+                     for fam in ('RIGHT', 'LEFT'))
+    return None
 
 
 def _hypar_boundary(op, N):
@@ -1394,10 +1456,11 @@ def _loop_segments(loops):
 if _IN_BLENDER:
 
     class MESH_OT_ruled_surface_add(bpy.types.Operator):
-        """Add a ruled surface: a stick hyperboloid, compound helical
+        """Add a ruled surface: a hyperboloid, compound helical
         cone, spiral ruled surface, conoid, tangent developable,
         helicoid, twisted strip or doubly-ruled hyperbolic paraboloid.
-        Straight-ruled modes can be rendered as their rulings (rods)"""
+        Straight-ruled modes can be rendered as their rulings (rods),
+        and the doubly-ruled ones as woven ribbons"""
         bl_idname = "mesh.ruled_surface_add"
         bl_label = "Ruled Surface"
         bl_options = {'REGISTER', 'UNDO'}
@@ -1425,14 +1488,20 @@ if _IN_BLENDER:
                              description="Rotation of the top ring "
                                          "in degrees; waist radius "
                                          "= R cos(twist/2)")
-        family: EnumProperty(name="Ruling Family",
-                             items=[('BOTH', "Both", ""),
-                                    ('RIGHT', "Right", ""),
-                                    ('LEFT', "Left", "")],
-                             default='BOTH',
-                             description="Which ruling family to draw "
-                                         "as rods (both = crossing "
-                                         "string sculpture)")
+        family: EnumProperty(
+            name="Ruling Family",
+            items=[('BOTH', "Both",
+                    "Both ruling families, crossing each other"),
+                   ('RIGHT', "Right",
+                    "One family only: the hyperboloid's right-handed "
+                    "rulings, or one of the saddle's two families"),
+                   ('LEFT', "Left",
+                    "The other family only: the hyperboloid's "
+                    "left-handed rulings, or the saddle's other family")],
+            default='BOTH',
+            description="Which ruling family of a doubly-ruled surface "
+                        "to draw as rods or curves (both = the crossing "
+                        "string sculpture)")
         # helical cone
         cone_height: FloatProperty(name="Height", default=2.5,
                                    min=0.1, max=30.0,
@@ -1634,10 +1703,12 @@ if _IN_BLENDER:
                            description="Samples across the rulings")
         output: EnumProperty(
             name="Output",
-            description="Build the filled surface, or its straight "
-                        "rulings as solid rods or bare curves.  The "
-                        "compound helical cone is not straight-ruled, "
-                        "so for that one these draw its arrises -- the "
+            description="Build the filled surface, its straight "
+                        "rulings as solid rods or bare curves, or -- on "
+                        "a doubly-ruled surface -- both ruling families "
+                        "woven together as ribbons.  The compound "
+                        "helical cone is not straight-ruled, so for that "
+                        "one rods and curves draw its arrises -- the "
                         "helical ridges of its flutes",
             items=[('AUTO', "Automatic",
                     "Rulings as rods for the straight-ruled surfaces, "
@@ -1650,12 +1721,35 @@ if _IN_BLENDER:
                     "stick sculpture)"),
                    ('CURVES', "Bare Curves",
                     "The straight rulings as a bare wireframe of "
-                    "edges (no faces)")],
+                    "edges (no faces)"),
+                   ('RIBBONS', "Woven Ribbons",
+                    "Both ruling families as flat ribbons lying in the "
+                    "surface, passing over and under each other where "
+                    "they cross.  Doubly-ruled surfaces only (the "
+                    "hyperboloid and the hyperbolic paraboloid); others "
+                    "fall back to rods")],
             default='AUTO')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
                             max=400,
-                            description="Number of rulings drawn in rods "
-                                        "or bare-curves output")
+                            description="Number of rulings drawn in rods, "
+                                        "bare-curves or woven-ribbons "
+                                        "output (per family)")
+        ribbon_width: FloatProperty(
+            name="Ribbon Width", default=0.7, min=0.05, max=1.0,
+            description="Width of each woven ribbon, as a fraction of "
+                        "the widest that still weaves cleanly: 1 leaves "
+                        "just enough room between crossings for a ribbon "
+                        "to pass from over to under without touching")
+        ribbon_thickness: FloatProperty(
+            name="Ribbon Thickness", default=0.15, min=0.01, max=1.0,
+            description="Thickness of each ribbon as a fraction of its "
+                        "width; where two ribbons cross they also part "
+                        "by this much")
+        weave_float: IntProperty(
+            name="Float Length", default=1, min=1, max=4,
+            description="Crossings a ribbon passes over before it goes "
+                        "under: 1 is a plain weave, 2 a 2/2 twill, 3 a "
+                        "3/3 twill")
         rod_radius: FloatProperty(name="Rod Radius", default=0.02,
                                   min=0.002, max=0.3,
                                   description="Radius of each rod in rods "
@@ -1683,7 +1777,29 @@ if _IN_BLENDER:
             info = ""
             out = effective_output(self)
             want_rulings = out in ('RODS', 'CURVES')
-            if want_rulings and self.mode in _RULED:
+            if self.output == 'RIBBONS' and out != 'RIBBONS':
+                info = " [woven ribbons need two ruling families]"
+            if out == 'RIBBONS':
+                fa, fb = _ruling_families(self)
+                verts, faces, plan = weave_rulings(
+                    fa, fb, self.ribbon_width, self.ribbon_thickness,
+                    self.weave_float)
+                loops = (_boundary_loops(self)
+                         if self.show_boundaries else [])
+                tv, tf = _tubes(loops, self.rod_radius, 8)
+                o = len(verts)
+                verts = list(verts) + tv
+                faces = list(faces) + [[i + o for i in q] for q in tf]
+                name += " (Woven Ribbons)"
+                info += f" crossings={len(plan['crossings']['ia'])}"
+                if plan['conflicts'] or plan['tight']:
+                    self.report(
+                        {'WARNING'},
+                        f"{plan['conflicts']} crossings could not "
+                        f"alternate, {plan['tight']} spans too tight for "
+                        f"the ribbons to part: narrow the ribbons or use "
+                        f"fewer rulings")
+            elif want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
                 loops = (_boundary_loops(self)
                          if self.show_boundaries else [])
@@ -1807,13 +1923,24 @@ if _IN_BLENDER:
             lay.prop(self, 'res_v')
             if m in _RULED:
                 lay.prop(self, 'output')
-                if effective_output(self) in ('RODS', 'CURVES'):
-                    if m == 'HYPERBOLOID':
+                out = effective_output(self)
+                if self.output == 'RIBBONS' and out != 'RIBBONS':
+                    lay.label(text="Woven ribbons need two ruling "
+                                   "families", icon='INFO')
+                if out in ('RODS', 'CURVES'):
+                    if m in _WOVEN:
                         lay.prop(self, 'family')
                     lay.prop(self, 'n_rods')
-                    if effective_output(self) == 'RODS':
+                    if out == 'RODS':
                         lay.prop(self, 'rod_radius')
                     lay.prop(self, 'show_boundaries')
+                elif out == 'RIBBONS':
+                    for k in ('n_rods', 'ribbon_width',
+                              'ribbon_thickness', 'weave_float',
+                              'show_boundaries'):
+                        lay.prop(self, k)
+                    if self.show_boundaries:
+                        lay.prop(self, 'rod_radius')
             for k in ('smooth', 'thickness', 'scale'):
                 lay.prop(self, k)
 
@@ -2136,4 +2263,85 @@ def _selftest():
     assert n3 == 1, ("expected exactly one cubic", n3)
     print("ruled cubic: no quadric fits, and exactly one cubic does "
           "(residual %.1e) OK" % r3)
+
+    # ---- woven ribbons: the hyperboloid ---------------------------------
+    # Right ruling i leaves the bottom circle at angle 2 pi i / n and left
+    # ruling j at 2 pi j / n.  Written in polar form, a ruling of twist d
+    # from angle a sits at angle a + d/2 + atan(s tan(d/2)) at height
+    # z = H s, so the two meet exactly when k = (j - i) mod n satisfies
+    # 2 pi k / n <= 2 twist, and they meet at
+    #     s = tan((2 pi k / n - twist) / 2) / tan(twist / 2).
+    # Gate on that count and those heights -- and on every crossing
+    # lying on the quadric, radius^2 = R^2 (cos^2(tw/2) + s^2 sin^2(tw/2))
+    # -- rather than on "the weave meshed".  Along either strand k rises
+    # by one per crossing, so the level IS k up to a constant and the
+    # plain weave can never conflict.
+    for n_, tw_ in ((48, 120.0), (24, 120.0), (36, 75.0), (30, 150.0)):
+        twr = math.radians(tw_)
+        fa = rulings_hyperboloid(1.0, 1.0, tw_, 'RIGHT', n_)
+        fb = rulings_hyperboloid(1.0, 1.0, tw_, 'LEFT', n_)
+        wv, wf, plan = weave_rulings(fa, fb)
+        X = plan['crossings']
+        per = sum(1 for k in range(n_)
+                  if _TWO_PI * k / n_ <= 2.0 * twr + 1e-9)
+        assert len(X['ia']) == n_ * per, (n_, tw_, len(X['ia']), n_ * per)
+        k_ = (X['ib'] - X['ia']) % n_
+        s_ = np.tan((_TWO_PI * k_ / n_ - twr) / 2.0) / math.tan(twr / 2.0)
+        assert np.max(np.abs(X['point'][:, 2] - s_)) < 1e-9, (n_, tw_)
+        rho2 = X['point'][:, 0] ** 2 + X['point'][:, 1] ** 2
+        want = math.cos(twr / 2.0) ** 2 + (s_ * math.sin(twr / 2.0)) ** 2
+        assert np.max(np.abs(rho2 - want)) < 1e-9, (n_, tw_)
+        assert plan['conflicts'] == 0, (n_, tw_, plan['conflicts'])
+        for st in plan['strands']:
+            assert np.all(st['sign'][1:] != st['sign'][:-1]), (n_, tw_)
+        assert weave_rulings(fa, fb, run=2)[2]['conflicts'] == 0
+        assert np.all(np.isfinite(np.asarray(wv)))
+        assert all(0 <= i < len(wv) for f in wf for i in f)
+        if (n_, tw_) == (48, 120.0):       # the operator's defaults
+            clear = crossing_clearance(plan)
+            assert plan['tight'] == 0 and clear > 0.5, (plan['tight'],
+                                                        clear)
+    print("woven hyperboloid: crossing count, heights and radii match "
+          "the closed form; plain weave and 2/2 twill conflict-free; "
+          "ribbons clear at the defaults (%.2f thickness) OK" % clear)
+
+    # ---- woven ribbons: the hyperbolic paraboloid -----------------------
+    # The Ruling Family split must partition the BOTH rods exactly, the
+    # crossings of the z = c((x/a)^2 - (y/b)^2) saddle must lie on it,
+    # and both saddle forms must weave cleanly at the defaults.
+    corner_pts = ((-1, -1, -1), (1, -1, 1), (-1, 1, 1), (1, 1, -1))
+    for corners_ in (None, corner_pts):
+        both = rulings_hypar(1.0, 1.0, 1.0, 1.0, corners_, 48)
+        fa = rulings_hypar(1.0, 1.0, 1.0, 1.0, corners_, 48, 'RIGHT')
+        fb = rulings_hypar(1.0, 1.0, 1.0, 1.0, corners_, 48, 'LEFT')
+        assert len(fa) + len(fb) == len(both) and fa and fb
+        assert set(fa) | set(fb) == set(both), "families do not partition"
+        _wv, _wf, plan = weave_rulings(fa, fb)
+        X = plan['crossings']
+        if corners_ is None:
+            P = X['point']
+            assert np.max(np.abs(P[:, 2] - (P[:, 0] ** 2 - P[:, 1] ** 2))) \
+                < 1e-9
+        clear = crossing_clearance(plan)
+        assert plan['conflicts'] == 0 and plan['tight'] == 0, \
+            (corners_ is None, plan['conflicts'], plan['tight'])
+        assert clear > 0.5, (corners_ is None, clear)
+        print("woven hypar (%s): %d crossings on the saddle, families "
+              "partition the rods, conflict-free, clearance %.2f OK"
+              % ("equation" if corners_ is None else "corners",
+                 len(X['ia']), clear))
+
+    # the output falls back to rods on a singly-ruled mode, and only the
+    # doubly-ruled modes answer for their two families
+    from types import SimpleNamespace
+    for md in ('HYPERBOLOID', 'HYPAR', 'SPIRAL', 'HELICAL_CONE'):
+        op_ = SimpleNamespace(
+            mode=md, output='RIBBONS', radius=1.0, height=1.0, twist=120.0,
+            n_rods=12, hy_a=1.0, hy_b=1.0, hy_c=1.0, v_extent=1.0,
+            use_corners=False, p00=None, p10=None, p01=None, p11=None)
+        woven = md in _WOVEN
+        assert effective_output(op_) == ('RIBBONS' if woven else 'RODS')
+        assert (_ruling_families(op_) is not None) == woven, md
+    print("woven output: offered on the doubly-ruled modes, rods "
+          "elsewhere OK")
     print("RESULT: OK")
