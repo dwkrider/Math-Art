@@ -69,8 +69,11 @@
 #     singly, crossing, or woven.
 #   KNOT_SPAN     -- a ruled surface strung between two concentric
 #     (p, q) torus knots: straight rulings interpolate S = inner(u)(1-v)
-#     + outer(u) v between an inner and an outer toroidal knot sampled on
-#     a shared parameter.  The outer curve degenerates to a plain circle
+#     + outer(u + twist) v between an inner and an outer toroidal knot
+#     sampled on a shared parameter.  Like the hyperboloid, the rods can
+#     be drawn as a right family (+twist), a left family (-twist) or
+#     both; the two families do not meet, so they form a mesh of string
+#     but are not woven.  The outer curve degenerates to a plain circle
 #     (wound p times) when its q = 0.  A straight-ruled cousin of the
 #     soap-film "knot to knot" span in the minimal-surface toolkit.
 #
@@ -158,10 +161,10 @@ except ImportError:
 
 try:                                  # inside the math_art package
     from .weaving.rulings import (weave_rulings, crossing_clearance,
-                                  extend_families)
+                                  extend_families, segment_crossings)
 except ImportError:                   # flat import (test runner)
     from weaving.rulings import (weave_rulings, crossing_clearance,
-                                 extend_families)
+                                 extend_families, segment_crossings)
 
 _TWO_PI = 2.0 * math.pi
 
@@ -402,14 +405,15 @@ def rulings_hyperboloid(radius=1.0, height=1.0, twist=120.0,
 # 1b. concentric torus-knot span
 # --------------------------------------------------------------------
 
-def _knot_curve(p, q, m, scale=1.0, tube=1.0, major=2.0):
+def _knot_curve(p, q, m, scale=1.0, tube=1.0, major=2.0, phase=0.0):
     """A (p, q) torus knot sampled at m points on t in [0, 2pi):
         r     = tube cos(q t) + major
         (x,y) = r (cos(p t), sin(p t)),   z = -tube sin(q t)
     all times `scale`.  q = 0 degenerates to a circle of radius
     (tube + major) wound p times.  endpoint=False so the loop welds
-    cleanly under wrap_u."""
-    t = np.linspace(0.0, _TWO_PI, m, endpoint=False)
+    cleanly under wrap_u.  `phase` shifts every sample along the knot
+    (t -> t + phase) without changing the curve itself."""
+    t = np.linspace(0.0, _TWO_PI, m, endpoint=False) + phase
     r = np.cos(q * t) * tube + major
     return np.stack([r * np.cos(p * t), r * np.sin(p * t),
                      -np.sin(q * t) * tube], axis=1) * scale
@@ -419,13 +423,16 @@ def _knot_span_boundaries(p=2, q=3, knot_scale=1.0, tube=1.0,
                           inner_height=1.0, inner_lift=0.0,
                           inner_rotation=0.0, outer_p=0, outer_q=5,
                           outer_scale=2.0, outer_tube=1.0,
-                          outer_height=1.0, circle_radius=4.5, m=96):
+                          outer_height=1.0, circle_radius=4.5, m=96,
+                          outer_phase=0.0):
     """Inner and outer boundary loops (each (m, 3)) for the knot span.
     The inner loop is always a (p, q) torus knot, height-scaled, lifted
     and optionally rotated about z.  The outer loop is a second
     (outer_p or p, outer_q) torus knot, or -- when outer_q == 0 -- a
     plain circle of radius `circle_radius` wound p times so the rulings
-    still line up."""
+    still line up.  `outer_phase` slides the outer samples along the
+    outer loop, so sample i of the inner loop faces a point further on
+    (the twist of the rulings); the loops themselves do not move."""
     inner = _knot_curve(p, q, m, scale=knot_scale, tube=tube)
     inner[:, 2] *= inner_height
     inner[:, 2] += inner_lift
@@ -437,10 +444,10 @@ def _knot_span_boundaries(p=2, q=3, knot_scale=1.0, tube=1.0,
     po = outer_p or p
     if outer_q > 0:
         outer = _knot_curve(po, outer_q, m, scale=outer_scale,
-                            tube=outer_tube)
+                            tube=outer_tube, phase=outer_phase)
         outer[:, 2] *= outer_height
     else:
-        t = np.linspace(0.0, _TWO_PI, m, endpoint=False)
+        t = np.linspace(0.0, _TWO_PI, m, endpoint=False) + outer_phase
         outer = np.stack([circle_radius * np.cos(p * t),
                           circle_radius * np.sin(p * t),
                           np.zeros(m)], axis=1)
@@ -451,16 +458,16 @@ def build_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
                     inner_height=1.0, inner_lift=0.0, inner_rotation=0.0,
                     outer_p=0, outer_q=5, outer_scale=2.0,
                     outer_tube=1.0, outer_height=1.0, circle_radius=4.5,
-                    res_u=96, res_v=16):
+                    res_u=96, res_v=16, shift=0.0):
     """Ruled surface between two concentric torus knots:
-        S(u, v) = inner(u) (1 - v) + outer(u) v,   v in [0, 1]
+        S(u, v) = inner(u) (1 - v) + outer(u + shift) v,   v in [0, 1]
     the same straight-ruling interpolation as the stick hyperboloid,
     with the two coaxial circles replaced by an inner and an outer
-    (p, q) torus knot."""
+    (p, q) torus knot.  `shift` is the right-handed family's twist."""
     inner, outer = _knot_span_boundaries(
         p, q, knot_scale, tube, inner_height, inner_lift, inner_rotation,
         outer_p, outer_q, outer_scale, outer_tube, outer_height,
-        circle_radius, res_u)
+        circle_radius, res_u, outer_phase=shift)
     v = np.linspace(0.0, 1.0, res_v + 1)
     P = np.empty((res_u, res_v + 1, 3))
     for j, vv in enumerate(v):
@@ -472,15 +479,29 @@ def rulings_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
                       inner_height=1.0, inner_lift=0.0,
                       inner_rotation=0.0, outer_p=0, outer_q=5,
                       outer_scale=2.0, outer_tube=1.0, outer_height=1.0,
-                      circle_radius=4.5, n=48):
-    """Ruling segments of the knot span: one straight rod per sample,
-    joining inner(u) to outer(u).  A single ruling family (unlike the
-    hyperboloid's crossing left/right pair)."""
-    inner, outer = _knot_span_boundaries(
-        p, q, knot_scale, tube, inner_height, inner_lift, inner_rotation,
-        outer_p, outer_q, outer_scale, outer_tube, outer_height,
-        circle_radius, n)
-    return [(tuple(inner[i]), tuple(outer[i])) for i in range(n)]
+                      circle_radius=4.5, n=48, family='RIGHT',
+                      shift=0.0):
+    """Ruling segments of the knot span: one straight rod per sample.
+
+    RIGHT joins inner(u) to outer(u + shift), LEFT joins inner(u) to
+    outer(u - shift), BOTH draws the two families together -- the stick
+    hyperboloid's construction (bottom point to the top circle turned
+    +twist or -twist) carried over to a pair of knots, with both rails
+    left where they are.  Unlike the hyperboloid's, these two families
+    do not in general meet: a chord between two knots is not a ruling of
+    one doubly-ruled surface, so BOTH reads as a mesh of string rather
+    than as crossings that could be woven."""
+    args = (p, q, knot_scale, tube, inner_height, inner_lift,
+            inner_rotation, outer_p, outer_q, outer_scale, outer_tube,
+            outer_height, circle_radius, n)
+    segs = []
+    for sign, fam in ((1.0, 'RIGHT'), (-1.0, 'LEFT')):
+        if family not in (fam, 'BOTH'):
+            continue
+        inner, outer = _knot_span_boundaries(*args,
+                                             outer_phase=sign * shift)
+        segs.extend((tuple(inner[i]), tuple(outer[i])) for i in range(n))
+    return segs
 
 
 # --------------------------------------------------------------------
@@ -1166,10 +1187,14 @@ _MODES = [
 #: and is a deliberate choice rather than the obvious first look.
 _SURFACE_FIRST = {'HELICAL_CONE'}
 
-#: doubly-ruled modes: two crossing ruling families, so a Ruling Family
-#: choice and the woven-ribbon output.  A mode joins by adding a branch
-#: to `_ruling_families`.
+#: doubly-ruled modes: two crossing ruling families, so the woven-ribbon
+#: output.  A mode joins by adding a branch to `_ruling_families`.
 _WOVEN = {'HYPERBOLOID', 'HYPAR'}
+
+#: modes with a Ruling Family choice.  The knot span's two families
+#: (twisted forward and back along the outer knot) never meet, so it
+#: can draw both as a mesh of rods but has nothing to weave.
+_TWO_FAMILY = _WOVEN | {'KNOT_SPAN'}
 
 
 def effective_output(op):
@@ -1292,7 +1317,7 @@ def _build_surface(op):
                              op.knot_outer_p, op.knot_outer_q,
                              op.knot_outer_scale, op.knot_outer_tube,
                              op.knot_outer_height, op.knot_circle_radius,
-                             op.res_u, op.res_v)
+                             op.res_u, op.res_v, shift=op.knot_twist)
         return (*vf, "Concentric Toroidal Knots")
     # HYPAR
     corners = None
@@ -1307,7 +1332,7 @@ def _build_rulings(op, n=None):
     """Ruling segments for the current mode (rods mode)."""
     m = op.mode
     if n is None:
-        n = op.n_rods
+        n = op.knot_rods if m == 'KNOT_SPAN' else op.n_rods
     if m == 'HYPERBOLOID':
         return rulings_hyperboloid(op.radius, op.height, op.twist,
                                    op.family, n)
@@ -1343,7 +1368,8 @@ def _build_rulings(op, n=None):
                                  op.knot_outer_p, op.knot_outer_q,
                                  op.knot_outer_scale, op.knot_outer_tube,
                                  op.knot_outer_height,
-                                 op.knot_circle_radius, n)
+                                 op.knot_circle_radius, n, op.family,
+                                 op.knot_twist)
     if m == 'HYPAR':
         corners = (op.p00, op.p10, op.p01, op.p11) \
             if op.use_corners else None
@@ -1422,6 +1448,17 @@ def _boundary_loops(op):
         # a single ruling family gives clean bottom/top rails
         segs = rulings_hyperboloid(op.radius, op.height, op.twist,
                                    'RIGHT', N)
+    elif m == 'KNOT_SPAN':
+        # likewise: with BOTH the two families' ends would interleave
+        # and the rail would zigzag between them
+        segs = rulings_knot_span(op.knot_p, op.knot_q, op.knot_scale,
+                                 op.knot_tube, op.knot_inner_height,
+                                 op.knot_inner_lift, op.knot_rotation,
+                                 op.knot_outer_p, op.knot_outer_q,
+                                 op.knot_outer_scale, op.knot_outer_tube,
+                                 op.knot_outer_height,
+                                 op.knot_circle_radius, N, 'RIGHT',
+                                 op.knot_twist)
     else:
         segs = _build_rulings(op, N)
     if not segs:
@@ -1496,17 +1533,17 @@ if _IN_BLENDER:
         family: EnumProperty(
             name="Ruling Family",
             items=[('BOTH', "Both",
-                    "Both ruling families, crossing each other"),
+                    "Both ruling families together, forming a mesh"),
                    ('RIGHT', "Right",
-                    "One family only: the hyperboloid's right-handed "
-                    "rulings, or one of the saddle's two families"),
+                    "One family only: the right-handed rulings (twisted "
+                    "forward), or one of the saddle's two families"),
                    ('LEFT', "Left",
-                    "The other family only: the hyperboloid's "
-                    "left-handed rulings, or the saddle's other family")],
+                    "The other family only: the left-handed rulings "
+                    "(twisted back), or the saddle's other family")],
             default='BOTH',
-            description="Which ruling family of a doubly-ruled surface "
-                        "to draw as rods or curves (both = the crossing "
-                        "string sculpture)")
+            description="Which ruling family to draw as rods or curves "
+                        "(both = the two families together, the mesh of "
+                        "a string sculpture)")
         # helical cone
         cone_height: FloatProperty(name="Height", default=2.5,
                                    min=0.1, max=30.0,
@@ -1693,6 +1730,19 @@ if _IN_BLENDER:
                                           description="Radius of the "
                                                       "outer circle "
                                                       "when Outer q = 0")
+        knot_twist: FloatProperty(
+            name="Twist", default=math.radians(30.0), min=-math.pi,
+            max=math.pi, subtype='ANGLE',
+            description="How far along the outer knot each rod's far end "
+                        "slides, in knot parameter (a full turn would "
+                        "trace the whole knot).  The right family slides "
+                        "forward and the left family back, so with both "
+                        "families the rods cross into a mesh, as on a "
+                        "stick hyperboloid")
+        knot_rods: IntProperty(
+            name="Rod Count", default=128, min=3, max=800,
+            description="Number of rods strung between the two knots in "
+                        "rods or bare-curves output (per family)")
 
         # shared extents / resolution / output
         v_extent: FloatProperty(name="Ruling Extent", default=1.0,
@@ -1791,7 +1841,8 @@ if _IN_BLENDER:
             out = effective_output(self)
             want_rulings = out in ('RODS', 'CURVES')
             if self.output == 'RIBBONS' and out != 'RIBBONS':
-                info = " [woven ribbons need two ruling families]"
+                info = " [woven ribbons need two ruling families " \
+                       "that cross]"
             if out == 'RIBBONS':
                 # a weave is BOTH ruling families crossing into a mesh;
                 # pin the family to match, so the panel says so and
@@ -1932,7 +1983,7 @@ if _IN_BLENDER:
             elif m == 'KNOT_SPAN':
                 keys = ('knot_p', 'knot_q', 'knot_scale', 'knot_tube',
                         'knot_inner_height', 'knot_inner_lift',
-                        'knot_rotation', 'knot_outer_q')
+                        'knot_rotation', 'knot_twist', 'knot_outer_q')
                 if self.knot_outer_q > 0:
                     keys += ('knot_outer_p', 'knot_outer_scale',
                              'knot_outer_tube', 'knot_outer_height')
@@ -1954,11 +2005,12 @@ if _IN_BLENDER:
                 out = effective_output(self)
                 if self.output == 'RIBBONS' and out != 'RIBBONS':
                     lay.label(text="Woven ribbons need two ruling "
-                                   "families", icon='INFO')
+                                   "families that cross", icon='INFO')
                 if out in ('RODS', 'CURVES'):
-                    if m in _WOVEN:
+                    if m in _TWO_FAMILY:
                         lay.prop(self, 'family')
-                    lay.prop(self, 'n_rods')
+                    lay.prop(self, 'knot_rods' if m == 'KNOT_SPAN'
+                             else 'n_rods')
                     if out == 'RODS':
                         lay.prop(self, 'rod_radius')
                     lay.prop(self, 'show_boundaries')
@@ -2173,6 +2225,62 @@ def _selftest():
     inner, oc = _knot_span_boundaries(outer_q=0, m=32)
     assert np.max(np.abs(oc[:, 2])) < 1e-9
     print(f"knot span: {len(kseg)} rulings, circle-outer planar OK")
+
+    # twist: sliding every far end k samples along the outer knot must be
+    # exactly an index shift of the untwisted rods' far ends -- forward
+    # for the right family, back for the left -- with the near ends (and
+    # so both knots) untouched, and zero twist must make the two
+    # families coincide.  Checked on a knot outer and a circle outer.
+    n_, k_ = 24, 3
+    sh_ = _TWO_PI * k_ / n_
+    for oq in (5, 0):
+        base = rulings_knot_span(n=n_, outer_q=oq)
+        rt = rulings_knot_span(n=n_, outer_q=oq, family='RIGHT', shift=sh_)
+        lt = rulings_knot_span(n=n_, outer_q=oq, family='LEFT', shift=sh_)
+        assert rulings_knot_span(n=n_, outer_q=oq, family='BOTH',
+                                 shift=sh_) == rt + lt
+        assert rulings_knot_span(n=n_, outer_q=oq, family='LEFT') == base
+        for i in range(n_):
+            assert np.allclose(rt[i][0], base[i][0])
+            assert np.allclose(lt[i][0], base[i][0])
+            assert np.allclose(rt[i][1], base[(i + k_) % n_][1], atol=1e-9)
+            assert np.allclose(lt[i][1], base[(i - k_) % n_][1], atol=1e-9)
+    # the filled surface is the right family's: its far row is those ends
+    rt = rulings_knot_span(n=n_, family='RIGHT', shift=sh_)
+    kv, _kf = build_knot_span(res_u=n_, res_v=4, shift=sh_)
+    far = np.asarray(kv).reshape(n_, 5, 3)[:, -1]
+    assert np.allclose(far, [s[1] for s in rt], atol=1e-9)
+    # the two families do not weave: at a 30 degree twist every place
+    # they touch is a shared END -- each right rod leaves the inner knot
+    # where its left partner does, and the far ends coincide when twice
+    # the twist is a whole number of samples -- never mid-rod
+    kr = rulings_knot_span(n=48, family='RIGHT', shift=math.radians(30.0))
+    kl = rulings_knot_span(n=48, family='LEFT', shift=math.radians(30.0))
+    KX = segment_crossings(kr, kl)
+    at_end = ((np.minimum(KX['ta'], 1.0 - KX['ta']) < 1e-9)
+              & (np.minimum(KX['tb'], 1.0 - KX['tb']) < 1e-9))
+    assert len(KX['ia']) == 2 * 48 and np.all(at_end), \
+        (len(KX['ia']), int(np.sum(~at_end)))
+    # with both families drawn, the rails still come from ONE family (two
+    # clean loops, not a zigzag between interleaved ends), and the rod
+    # count is per family
+    from types import SimpleNamespace
+    kop = SimpleNamespace(
+        mode='KNOT_SPAN', family='BOTH', res_u=120, knot_p=2, knot_q=3,
+        knot_scale=1.0, knot_tube=1.0, knot_inner_height=1.0,
+        knot_inner_lift=0.0, knot_rotation=0.0, knot_outer_p=0,
+        knot_outer_q=5, knot_outer_scale=2.0, knot_outer_tube=1.0,
+        knot_outer_height=1.0, knot_circle_radius=4.5,
+        knot_twist=math.radians(30.0), knot_rods=40, n_rods=48)
+    rails_ = _boundary_loops(kop)
+    assert [len(p) for p, _c in rails_] == [120, 120]
+    ring = np.asarray(rails_[0][0])
+    step = np.linalg.norm(np.diff(ring, axis=0), axis=1)
+    assert step.max() < 3.0 * np.median(step), "rail zigzags"
+    assert len(_build_rulings(kop)) == 80
+    print("knot span twist: an exact slide along the outer knot, right "
+          "forward and left back; surface matches the right family; the "
+          "families touch only at shared ends; rails stay single OK")
 
     # boundary curves: a closed loop of k points -> k segments, an open
     # one -> k-1; both knots feed through _edges like the rulings do
