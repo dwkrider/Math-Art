@@ -33,6 +33,23 @@
 # clear, keeping every rod end on its rail (`separate_rods`, in the same
 # engine module).
 #
+# Surface output takes a wall thickness one of two ways.  Solidify
+# offsets the surface to both sides along its normals, which stays clean
+# only while half the thickness is under the surface's reach: where the
+# surface bends more tightly than that, pinches to a point, or passes
+# through itself, the offset folds over into fins.  The concentric
+# toroidal knots can do all three -- an inner (1, 3) knot and an outer
+# (1, 6) knot at twice its scale even touch, at the six points where
+# cos 3t = 1/4, and there a twist past about 24 degrees pinches the
+# surface.  Fused Solid instead keeps every point within half the
+# thickness of the surface: Poisson-disk samples of it are splatted into
+# a sparse volume and meshed back, which gives one closed solid whatever
+# the surface does, at the price of rounded rims and a heavier mesh
+# (`fused_solid_params` sizes it).  The default, Automatic, builds the
+# Solidify wall, looks for faces of it passing through one another
+# (`count_crossings`), and falls back to Fused Solid only if it finds
+# any.
+#
 # Modes
 #   HYPERBOLOID   -- hyperboloid of one sheet from straight rulings
 #     strung between two coaxial circles, the top circle rotated by a
@@ -138,6 +155,12 @@
 # - B. Grunbaum and G. C. Shephard, "Satins and Twills: An Introduction
 #   to the Geometry of Fabrics," Mathematics Magazine 53 (1980),
 #   139-161 -- plain weave and twills as over/under patterns.
+# - H. Federer, "Curvature Measures," Transactions of the American
+#   Mathematical Society 93 (1959), 418-491 -- the reach of a set: an
+#   offset thinner than it cannot fold, one thicker can.
+# - K. Museth, "VDB: High-Resolution Sparse Volumes with Dynamic
+#   Topology," ACM Transactions on Graphics 32(3) (2013) -- the sparse
+#   volume the Fused Solid wall is splatted into and meshed from.
 # - Classical background: M. do Carmo, "Differential Geometry of
 #   Curves and Surfaces" (1976); A. Gray, "Modern Differential
 #   Geometry of Curves and Surfaces" (1997); D. Struik, "Lectures
@@ -1771,7 +1794,176 @@ def _loop_segments(loops):
     return segs
 
 
+# --------------------------------------------------------------------
+# Surface thickness: crossing check and Fused Solid sizing
+# --------------------------------------------------------------------
+
+def count_crossings(tris, pairs):
+    """Of the candidate triangle index `pairs` (a BVH overlap test, which
+    may list a pair in either order or both), the number of distinct
+    pairs sharing no corner -- faces really passing through each other,
+    not neighbours meeting along an edge or at a vertex."""
+    P = np.asarray(pairs, dtype=np.int64).reshape(-1, 2)
+    if not len(P):
+        return 0
+    P = np.unique(np.sort(P, axis=1), axis=0)
+    P = P[P[:, 0] != P[:, 1]]
+    T = np.asarray(tris, dtype=np.int64)
+    ta, tb = T[P[:, 0]], T[P[:, 1]]
+    shared = (ta[:, :, None] == tb[:, None, :]).any(axis=(1, 2))
+    return int((~shared).sum())
+
+
+#: voxels across the wall, and surface samples across it
+_FUSED_VOXELS = 8
+_FUSED_SAMPLES = 6
+#: the finest voxel, as a fraction of the object's size, so a very thin
+#: wall on a large surface cannot ask for an unbounded volume
+_FUSED_FINEST = 1.0 / 400.0
+#: a density ball of radius r meshes about 0.6 voxel inside r at the
+#: half-density threshold (measured 0.58-0.62 voxel at 6-10 voxels
+#: across the wall), so the radius is padded by that much
+_FUSED_PAD = 0.6
+#: passes of neighbour averaging that take the voxel grain off
+_FUSED_SMOOTHING = 3
+
+
+def fused_solid_params(thickness, extent):
+    """Voxel size, surface sample spacing and ball radius for a Fused
+    Solid wall of `thickness` on a surface `extent` across.
+
+    The wall is the set of points within thickness / 2 of the surface.
+    It is built by scattering Poisson-disk samples over the surface,
+    giving each a ball of density in a sparse volume and meshing the
+    volume at half density.  Samples a sixth of the thickness apart
+    overlap enough that the union of their balls is smooth to well
+    under a voxel; closer than half a voxel adds nothing."""
+    voxel = max(thickness / _FUSED_VOXELS, extent * _FUSED_FINEST)
+    spacing = max(thickness / _FUSED_SAMPLES, 0.5 * voxel)
+    radius = 0.5 * thickness + _FUSED_PAD * voxel
+    return voxel, spacing, radius
+
+
 if _IN_BLENDER:
+
+    _FUSED_GROUP = "Math Art Fused Solid"
+    _FUSED_VERSION = 1
+
+    def _self_crossings(context, obj):
+        """Pairs of faces of `obj`'s evaluated mesh (its modifiers
+        applied) that pass through each other (`count_crossings`)."""
+        from mathutils.bvhtree import BVHTree
+        dg = context.evaluated_depsgraph_get()
+        ev = obj.evaluated_get(dg)
+        m = ev.to_mesh()
+        try:
+            m.calc_loop_triangles()
+            co = np.empty(len(m.vertices) * 3)
+            m.vertices.foreach_get('co', co)
+            tris = np.empty(len(m.loop_triangles) * 3, dtype=np.int64)
+            m.loop_triangles.foreach_get('vertices', tris)
+        finally:
+            ev.to_mesh_clear()
+        tris = tris.reshape(-1, 3)
+        if not len(tris):
+            return 0
+        bvh = BVHTree.FromPolygons(co.reshape(-1, 3).tolist(),
+                                   tris.tolist(), all_triangles=True)
+        return count_crossings(tris, bvh.overlap(bvh))
+
+    def _set_node_choice(node, prop, prop_value, socket, socket_value):
+        """Set a node option that is a node property in older Blenders
+        and a menu input in newer ones."""
+        if hasattr(node, prop):
+            setattr(node, prop, prop_value)
+        else:
+            node.inputs[socket].default_value = socket_value
+
+    def _fused_solid_group():
+        """The shared Fused Solid node group, made on first use, and its
+        input identifiers by name.  One group serves every object; each
+        modifier carries its own input values."""
+        ng = next((g for g in bpy.data.node_groups
+                   if g.get("math_art_fused_solid") == _FUSED_VERSION),
+                  None)
+        if ng is None:
+            ng = bpy.data.node_groups.new(_FUSED_GROUP, 'GeometryNodeTree')
+            ng["math_art_fused_solid"] = _FUSED_VERSION
+            face = ng.interface
+            face.new_socket("Geometry", in_out='INPUT',
+                            socket_type='NodeSocketGeometry')
+            face.new_socket("Geometry", in_out='OUTPUT',
+                            socket_type='NodeSocketGeometry')
+            for name, kind in (("Point Spacing", 'NodeSocketFloat'),
+                               ("Point Density", 'NodeSocketFloat'),
+                               ("Radius", 'NodeSocketFloat'),
+                               ("Voxel Size", 'NodeSocketFloat'),
+                               ("Smoothing", 'NodeSocketInt'),
+                               ("Smooth Shading", 'NodeSocketBool')):
+                face.new_socket(name, in_out='INPUT', socket_type=kind)
+            N, L = ng.nodes, ng.links
+            gin = N.new('NodeGroupInput')
+            gout = N.new('NodeGroupOutput')
+            scatter = N.new('GeometryNodeDistributePointsOnFaces')
+            _set_node_choice(scatter, 'distribute_method', 'POISSON',
+                             'Distribute Method', 'Poisson Disk')
+            splat = N.new('GeometryNodePointsToVolume')
+            _set_node_choice(splat, 'resolution_mode', 'VOXEL_SIZE',
+                             'Resolution Mode', 'Size')
+            splat.inputs['Density'].default_value = 1.0
+            mesh = N.new('GeometryNodeVolumeToMesh')
+            _set_node_choice(mesh, 'resolution_mode', 'GRID',
+                             'Resolution Mode', 'Grid')
+            mesh.inputs['Threshold'].default_value = 0.5
+            pos = N.new('GeometryNodeInputPosition')
+            blur = N.new('GeometryNodeBlurAttribute')
+            blur.data_type = 'FLOAT_VECTOR'
+            place = N.new('GeometryNodeSetPosition')
+            shade = N.new('GeometryNodeSetShadeSmooth')
+            # link by socket NAME: interface order is not creation order
+            src = {s.name: s for s in gin.outputs}
+            vec_in = next(s for s in blur.inputs
+                          if s.type == 'VECTOR' and s.enabled)
+            vec_out = next(s for s in blur.outputs
+                           if s.type == 'VECTOR' and s.enabled)
+            L.new(src["Geometry"], scatter.inputs['Mesh'])
+            L.new(src["Point Spacing"], scatter.inputs['Distance Min'])
+            L.new(src["Point Density"], scatter.inputs['Density Max'])
+            L.new(scatter.outputs['Points'], splat.inputs['Points'])
+            L.new(src["Radius"], splat.inputs['Radius'])
+            L.new(src["Voxel Size"], splat.inputs['Voxel Size'])
+            L.new(splat.outputs['Volume'], mesh.inputs['Volume'])
+            L.new(mesh.outputs['Mesh'], place.inputs['Geometry'])
+            L.new(pos.outputs['Position'], vec_in)
+            L.new(src["Smoothing"], blur.inputs['Iterations'])
+            L.new(vec_out, place.inputs['Position'])
+            L.new(place.outputs['Geometry'], shade.inputs['Geometry'])
+            L.new(src["Smooth Shading"], shade.inputs['Shade Smooth'])
+            L.new(shade.outputs['Geometry'], gout.inputs[0])
+            for k, node in enumerate((gin, scatter, splat, mesh, place,
+                                      shade, gout)):
+                node.location = (220.0 * k, 0.0)
+            pos.location = (440.0, -260.0)
+            blur.location = (660.0, -260.0)
+        idents = {item.name: item.identifier
+                  for item in ng.interface.items_tree
+                  if getattr(item, 'in_out', None) == 'INPUT'}
+        return ng, idents
+
+    def _add_fused_solid(obj, voxel, spacing, radius, smooth):
+        """Give `obj` a live Fused Solid modifier sized by
+        `fused_solid_params`.  The inputs are set before the stack first
+        evaluates: changing one afterwards needs a depsgraph tag."""
+        ng, ids = _fused_solid_group()
+        mod = obj.modifiers.new("Fused Solid", 'NODES')
+        mod.node_group = ng
+        for name, value in (("Point Spacing", spacing),
+                            ("Point Density", 4.0 / spacing ** 2),
+                            ("Radius", radius), ("Voxel Size", voxel),
+                            ("Smoothing", _FUSED_SMOOTHING),
+                            ("Smooth Shading", bool(smooth))):
+            mod[ids[name]] = value
+        return mod
 
     class MESH_OT_ruled_surface_add(bpy.types.Operator):
         """Add a ruled surface: a hyperboloid, compound helical
@@ -2113,10 +2305,28 @@ if _IN_BLENDER:
                         "bare-curves output")
         smooth: BoolProperty(name="Smooth Shading", default=True,
                              description="Shade the surface smooth")
-        thickness: FloatProperty(name="Thickness", default=0.0,
-                                 min=0.0, max=1.0,
-                                 description="Solidify thickness "
-                                             "(surface modes)")
+        thickness: FloatProperty(
+            name="Thickness", default=0.0, min=0.0, max=1.0,
+            description="Wall thickness given to the surface (Surface "
+                        "output); 0 leaves it a bare surface")
+        thickness_method: EnumProperty(
+            name="Thickness Method",
+            items=(('AUTO', "Automatic",
+                    "Solidify, unless the solidified wall would fold or "
+                    "pass through itself; then Fused Solid"),
+                   ('SOLIDIFY', "Solidify",
+                    "Offset the surface to both sides along its normals. "
+                    "Light and sharp-rimmed, but it folds into fins "
+                    "wherever the surface bends more tightly than half "
+                    "the thickness, pinches, or passes through itself"),
+                   ('FUSED', "Fused Solid",
+                    "Keep everything within half the thickness of the "
+                    "surface, meshed from a volume: always one closed "
+                    "solid, even where the surface pinches or passes "
+                    "through itself, with rounded rims and a much "
+                    "heavier mesh")),
+            default='AUTO',
+            description="How the surface is given its thickness")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0,
                              description="Overall size; 1 fits the "
@@ -2243,9 +2453,25 @@ if _IN_BLENDER:
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             if self.thickness > 0 and out == 'SURFACE':
-                mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
-                mod.thickness = self.thickness
-                mod.offset = 0.0
+                method = self.thickness_method
+                if method != 'FUSED':
+                    mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
+                    mod.thickness = self.thickness
+                    mod.offset = 0.0
+                    if method == 'AUTO':
+                        crossed = _self_crossings(context, obj)
+                        if crossed:
+                            obj.modifiers.remove(mod)
+                            method = 'FUSED'
+                            info += (f" [Solidify would pass through "
+                                     f"itself ({crossed} face pairs): "
+                                     f"Fused Solid used]")
+                if method == 'FUSED':
+                    voxel, spacing, radius = fused_solid_params(
+                        self.thickness, 2.0 * self.scale)
+                    _add_fused_solid(obj, voxel, spacing, radius,
+                                     self.smooth)
+                    info += f" fused solid voxel={voxel:.4f}"
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
@@ -2348,8 +2574,11 @@ if _IN_BLENDER:
                         lay.prop(self, k)
                     if self.show_boundaries:
                         lay.prop(self, 'rod_radius')
-            for k in ('smooth', 'thickness', 'scale'):
-                lay.prop(self, k)
+            lay.prop(self, 'smooth')
+            lay.prop(self, 'thickness')
+            if self.thickness > 0 and effective_output(self) == 'SURFACE':
+                lay.prop(self, 'thickness_method')
+            lay.prop(self, 'scale')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.ruled_surface_add",
@@ -3033,4 +3262,38 @@ def _selftest():
         assert (_ruling_families(op_) is not None) == woven, md
     print("woven output: offered on the doubly-ruled modes, rods "
           "elsewhere OK")
+
+    # the crossing count: pairs sharing a corner are neighbours, not
+    # crossings, and a pair listed both ways counts once
+    ct = np.array([[0, 1, 2], [1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    assert count_crossings(ct, [(0, 1), (1, 0), (0, 2), (2, 0), (3, 3),
+                                (3, 2)]) == 2
+    assert count_crossings(ct, []) == 0
+    # Fused Solid sizing: an eighth of the wall per voxel, floored by the
+    # object's size; samples a sixth apart; the radius padded by the
+    # measured threshold shrink
+    fv, fs, fr = fused_solid_params(0.06, 2.0)
+    assert abs(fv - 0.0075) < 1e-12 and abs(fs - 0.01) < 1e-12, (fv, fs)
+    assert abs(fr - (0.03 + _FUSED_PAD * 0.0075)) < 1e-12, fr
+    fv, fs, fr = fused_solid_params(0.01, 2.0)
+    assert abs(fv - 2.0 * _FUSED_FINEST) < 1e-12, fv
+    assert abs(fs - 0.5 * fv) < 1e-12 and fr > 0.005, (fs, fr)
+    # ... and why Solidify cannot be trusted on the knot span: an inner
+    # (1, 3) knot and an outer (1, 6) knot at twice its scale touch
+    # wherever cos 3t = 1/4 (dr = c(4c - 1), dz = s(1 - 4c)), six times
+    t_touch = math.acos(0.25) / 3.0
+    ts = np.array([sg * t_touch + k * _TWO_PI / 3.0
+                   for sg in (1.0, -1.0) for k in range(3)])
+    kin, kout = _knot_span_at(ts, ts, p=1, q=3, knot_scale=1.0, tube=1.0,
+                              outer_p=0, outer_q=6, outer_scale=2.0,
+                              outer_tube=1.0)
+    touch = float(np.linalg.norm(kin - kout, axis=1).max())
+    assert touch < 1e-12, touch
+    kin2, kout2 = _knot_span_at(ts + 0.1, ts + 0.1, p=1, q=3,
+                                outer_p=0, outer_q=6, outer_scale=2.0)
+    assert np.linalg.norm(kin2 - kout2, axis=1).min() > 1e-3
+    print("surface thickness: crossings count distinct corner-free pairs; "
+          "Fused Solid voxel, spacing and padded radius sized from the "
+          "wall; the (1,3)/(1,6) knot rails touch at six points (within "
+          "%.1e) OK" % touch)
     print("RESULT: OK")
