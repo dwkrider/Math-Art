@@ -316,24 +316,81 @@ _ROD_GAP = 0.25
 _ROD_SPACING = 2.0
 
 
-def _closest_between(Pa, Pb, reach):
-    """Closest approach of two polylines, comparing only the pieces of
-    each that come within `reach` of the other's end-to-end chord.
-    Returns (piece_a, s, piece_b, t, dist, point_a, point_b) or None."""
-    def near(P, Q):
-        _s, _t, dd = _pairwise_closest(P[:-1], np.diff(P, axis=0),
-                                       Q[:1], (Q[-1] - Q[0])[None, :])
-        return np.nonzero(dd[:, 0] < reach)[0]
-    ka, kb = near(Pa, Pb), near(Pb, Pa)
-    if len(ka) == 0 or len(kb) == 0:
+def _polyline_length(P):
+    return float(np.linalg.norm(np.diff(P, axis=0), axis=1).sum())
+
+
+def _resample(P, n):
+    """n + 1 points spaced evenly by arc length along polyline P, keeping
+    both ends."""
+    seg = np.linalg.norm(np.diff(P, axis=0), axis=1)
+    s = np.concatenate(([0.0], np.cumsum(seg)))
+    t = np.linspace(0.0, s[-1], n + 1)
+    return np.stack([np.interp(t, s, P[:, k]) for k in range(3)], axis=1)
+
+
+def _coarse(P, pieces=16):
+    """At most `pieces` pieces through P's own points, and how far P
+    strays from them: a cheap stand-in for the proximity search, whose
+    reach is widened by the stray so nothing near is missed."""
+    if len(P) <= pieces + 1:
+        return P, 0.0
+    idx = np.unique(np.rint(np.linspace(0, len(P) - 1,
+                                        pieces + 1)).astype(int))
+    C = P[idx]
+    stray = 0.0
+    for k in range(len(idx) - 1):
+        pts = P[idx[k]:idx[k + 1] + 1]
+        a, d = C[k], C[k + 1] - C[k]
+        dd = float(d @ d)
+        tt = (np.clip(((pts - a) @ d) / dd, 0.0, 1.0) if dd > 0.0
+              else np.zeros(len(pts)))
+        stray = max(stray, float(np.linalg.norm(
+            pts - (a + tt[:, None] * d), axis=1).max()))
+    return C, stray
+
+
+def _piece_distances(Pa, Pb):
+    """Clamped closest points between every piece of polyline Pa and
+    every piece of Pb: matrices s, t and dist."""
+    return _pairwise_closest(Pa[:-1], np.diff(Pa, axis=0),
+                             Pb[:-1], np.diff(Pb, axis=0))
+
+
+def _joint(Pa, Pb, want):
+    """If two rods share an end (within `want`), the joint point and how
+    far from it they are meant to touch; otherwise None.
+
+    Two rods leaving a joint at angle theta stay within `want` of each
+    other for about want / sin(theta), so that is the stretch excused --
+    not the whole pair: a curved rod that leaves a joint can come back
+    and cross its partner further on, and that crossing still counts.
+    """
+    ends = np.linalg.norm(Pa[[0, -1]][:, None, :] - Pb[[0, -1]][None, :, :],
+                          axis=-1)
+    ia, ib = np.unravel_index(int(np.argmin(ends)), ends.shape)
+    if ends[ia, ib] >= want:
         return None
-    Da = Pa[ka + 1] - Pa[ka]
-    Db = Pb[kb + 1] - Pb[kb]
-    s, t, dist = _pairwise_closest(Pa[ka], Da, Pb[kb], Db)
-    ia, ib = np.unravel_index(int(np.argmin(dist)), dist.shape)
-    return (int(ka[ia]), float(s[ia, ib]), int(kb[ib]), float(t[ia, ib]),
-            float(dist[ia, ib]), Pa[ka[ia]] + s[ia, ib] * Da[ia],
-            Pb[kb[ib]] + t[ia, ib] * Db[ib])
+    ta = Pa[1] - Pa[0] if ia == 0 else Pa[-2] - Pa[-1]
+    tb = Pb[1] - Pb[0] if ib == 0 else Pb[-2] - Pb[-1]
+    cos = abs(float(ta @ tb)) / max(float(np.linalg.norm(ta)
+                                          * np.linalg.norm(tb)), 1e-300)
+    sin = math.sqrt(max(0.0, 1.0 - cos * cos))
+    point = 0.5 * ((Pa[0] if ia == 0 else Pa[-1])
+                   + (Pb[0] if ib == 0 else Pb[-1]))
+    return point, want / max(sin, math.sin(math.radians(3.0))) + want
+
+
+def _outside_joint(s, t, Pa, Pb, joint):
+    """Mask of the piece pairs (of a `_piece_distances` result) that are
+    not both within the joint's excused stretch."""
+    if joint is None:
+        return np.ones(s.shape, dtype=bool)
+    point, reach = joint
+    qa = Pa[:-1][:, None, :] + s[..., None] * np.diff(Pa, axis=0)[:, None, :]
+    qb = Pb[:-1][None, :, :] + t[..., None] * np.diff(Pb, axis=0)[None, :, :]
+    return ~((np.linalg.norm(qa - point, axis=-1) < reach)
+             & (np.linalg.norm(qb - point, axis=-1) < reach))
 
 
 def _segment_pairs_closest(A0, A1, B0, B1):
@@ -360,17 +417,18 @@ def _segment_pairs_closest(A0, A1, B0, B1):
     return s, t, qa, qb, np.linalg.norm(qa - qb, axis=1)
 
 
-def separate_rods(segs, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
+def separate_rods(rods, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
                   iterations=150, settle=40, smoothing=0.5,
                   straighten=0.02, reach=3.0):
-    """Bend straight rods of `radius` aside wherever two would pass
-    through each other, leaving a clear gap of `gap` radii and every rod
-    end where it was.
+    """Bend rods of `radius` aside wherever two would pass through each
+    other, leaving a clear gap of `gap` radii and every rod end where it
+    was.  A rod is a polyline: two points for a straight rod, more for a
+    curved one.
 
     Position-based dynamics (Muller et al. 2007) on the rods that
     matter.  Each rod within `reach` clearances of another becomes a
-    chain of points `spacing` radii apart with its two end points fixed,
-    and every iteration
+    chain of points `spacing` radii apart along it, its two end points
+    fixed, and every iteration
 
       * pushes apart each nearby pair of pieces (one from each rod) that
         sit closer than the clearance, at their closest points and along
@@ -378,10 +436,11 @@ def separate_rods(segs, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
         truly cross -- sharing the correction among the four piece ends
         by where along each piece the closest point falls, so a fixed
         rod end passes all of it to the other rod;
-      * relaxes every chain toward the average of its neighbours, so a
-        push spreads into a smooth bend rather than a kink; and
-      * draws every point a little back toward its straight rod, so no
-        bend is longer or deeper than the pushes require.
+      * smooths each chain's DISPLACEMENT toward the average of its
+        neighbours', so a push spreads into a gentle bend rather than a
+        kink, while a curved rod keeps its own curve; and
+      * draws the displacement a little back toward zero, so no bend is
+        longer or deeper than the pushes require.
 
     A last few passes apply the pushes alone, to settle the gap.
 
@@ -393,75 +452,94 @@ def separate_rods(segs, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
     layers about a clearance deep on its own -- and the crossing lattice
     of a hyperboloid settles into its two families, one over the other.
 
-    Pairs of rods that share an end (within a clearance) meet at a joint
-    on a rail and are meant to touch; they are left out.
+    Rods that share an end (within a clearance) meet at a joint on a
+    rail and are meant to touch next to it; only that stretch is left
+    out (`_joint`).
 
-    Returns (polylines, info).  polylines[i] is an (k, 3) array: the two
-    ends of a rod that did not move, otherwise its bent points with the
-    unmoved straight stretches dropped.  info counts the rod pairs that
-    were closer than (2 + gap/2) radii (`contacts`) and the joints
-    skipped among them, the pairs still closer than a rod diameter
+    Returns (polylines, info).  polylines[i] is the rod as given if it
+    did not move; a moved straight rod keeps just its bent points, a
+    moved curved rod all of its chain.  info counts the rod pairs that
+    were closer than (2 + gap/2) radii (`contacts`) and the pairs that
+    touch at a joint, the pairs still closer than a rod diameter
     afterwards (`remaining`), and gives the largest offset and the
-    smallest gap left between any two rods that are not joined.
+    smallest gap left between two rods away from any joint.
     """
-    S = np.asarray(segs, dtype=float).reshape(-1, 2, 3)
-    m = len(S)
+    src = [np.asarray(r, dtype=float).reshape(-1, 3) for r in rods]
+    m = len(src)
     info = dict(contacts=0, joints=0, remaining=0, max_offset=0.0,
                 min_gap=math.inf)
-    polys = [S[k].copy() for k in range(m)]
+    polys = [P.copy() for P in src]
     if m < 2 or radius <= 0.0:
         return polys, info
-    P0, Dv = S[:, 0], S[:, 1] - S[:, 0]
-    L = np.linalg.norm(Dv, axis=1)
+    L = np.array([_polyline_length(P) for P in src])
     want = (2.0 + gap) * radius
     detect = (2.0 + 0.5 * gap) * radius
-    near = segment_contacts(S, want * reach)
+    far = want * reach
+
+    # candidate rod pairs, searched on coarse copies of the rods
+    pieces, owner, stray = [], [], np.zeros(m)
+    for k, P in enumerate(src):
+        if L[k] < 1e-12:
+            continue
+        C, stray[k] = _coarse(P)
+        pieces.extend(zip(C[:-1], C[1:]))
+        owner.extend([k] * (len(C) - 1))
+    owner = np.asarray(owner, dtype=int)
+    near = segment_contacts(pieces, far + 2.0 * float(stray.max()))
+    cand = set()
+    for i, j, d in zip(near['i'], near['j'], near['dist']):
+        a, b = int(owner[i]), int(owner[j])
+        if a != b and d < far + stray[a] + stray[b]:
+            cand.add((min(a, b), max(a, b)))
+
     pairs = []
-    for a, b, dist in zip(near['i'], near['j'], near['dist']):
-        a, b = int(a), int(b)
-        if L[a] < 1e-12 or L[b] < 1e-12:
+    for a, b in sorted(cand):
+        joint = _joint(src[a], src[b], want)
+        s, t, dist = _piece_distances(src[a], src[b])
+        ok = _outside_joint(s, t, src[a], src[b], joint)
+        if joint is not None and np.any((dist < detect) & ~ok):
+            info['joints'] += 1
+        if not np.any(ok):
             continue
-        ends = np.linalg.norm(S[a][:, None, :] - S[b][None, :, :], axis=-1)
-        if ends.min() < want:
-            info['joints'] += int(dist < detect)
+        dmin = float(dist[ok].min())
+        if dmin >= far:
             continue
-        pairs.append((a, b))
-        info['contacts'] += int(dist < detect)
+        pairs.append((a, b, joint))
+        info['contacts'] += int(dmin < detect)
     if info['contacts'] == 0:
         return polys, info
 
     # every rod near another becomes a chain of points, its ends pinned
-    rods = sorted({k for pair in pairs for k in pair})
+    rods_in = sorted({k for a, b, _j in pairs for k in (a, b)})
     first, count, chains, pinned = {}, {}, [], []
     total = 0
-    for k in rods:
+    for k in rods_in:
         n = max(8, int(math.ceil(L[k] / (spacing * radius))))
         first[k], count[k] = total, n
         total += n + 1
-        chains.append(P0[k] + np.linspace(0.0, 1.0, n + 1)[:, None] * Dv[k])
+        chains.append(_resample(src[k], n))
         pin = np.zeros(n + 1, dtype=bool)
         pin[0] = pin[-1] = True
         pinned.append(pin)
     X = np.concatenate(chains)
     base = X.copy()
     free = (~np.concatenate(pinned)).astype(float)
-    inner = np.concatenate([first[k] + np.arange(1, count[k]) for k in rods])
+    inner = np.concatenate([first[k] + np.arange(1, count[k])
+                            for k in rods_in])
 
-    # the pieces of each pair that can meet, found once on the straight
-    # rods: the bends stay far smaller than the search reach
+    def chain(k, arr):
+        return arr[first[k]:first[k] + count[k] + 1]
+
+    # the pieces of each pair that can meet, found once on the rods as
+    # given: the bends stay far smaller than the search reach
     from_a, from_b = [], []
-    for a, b in pairs:
-        fa, na, fb, nb = first[a], count[a], first[b], count[b]
-        mids = 0.5 * (base[fa:fa + na] + base[fa + 1:fa + na + 1])
-        t = np.clip(((mids - P0[b]) @ Dv[b]) / (L[b] * L[b]), 0.0, 1.0)
-        away = np.linalg.norm(mids - (P0[b] + t[:, None] * Dv[b]), axis=1)
-        sel = np.nonzero(away < want * reach)[0]
-        j = np.clip(np.floor(t[sel] * nb).astype(int), 0, nb - 1)
-        for dj in (-1, 0, 1):
-            jj = j + dj
-            ok = (jj >= 0) & (jj < nb)
-            from_a.append(fa + sel[ok])
-            from_b.append(fb + jj[ok])
+    for a, b, joint in pairs:
+        Ca, Cb = chain(a, base), chain(b, base)
+        s, t, dist = _piece_distances(Ca, Cb)
+        ia, ib = np.nonzero((dist < far) & _outside_joint(s, t, Ca, Cb,
+                                                          joint))
+        from_a.append(first[a] + ia)
+        from_b.append(first[b] + ib)
     SA, SB = np.concatenate(from_a), np.concatenate(from_b)
 
     def push():
@@ -495,33 +573,40 @@ def separate_rods(segs, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
 
     for _ in range(iterations):
         push()
-        X[inner] += smoothing * (0.5 * (X[inner - 1] + X[inner + 1])
-                                 - X[inner])
-        X[inner] += straighten * (base[inner] - X[inner])
+        D = X - base
+        D[inner] += smoothing * (0.5 * (D[inner - 1] + D[inner + 1])
+                                 - D[inner])
+        D[inner] *= 1.0 - straighten
+        X[:] = base + D
     for _ in range(settle):
         if not push():
             break
 
     tol = 0.01 * radius
-    for k in rods:
-        P = X[first[k]:first[k] + count[k] + 1]
-        off = np.linalg.norm(P - base[first[k]:first[k] + count[k] + 1],
-                             axis=1)
+    for k in rods_in:
+        P = chain(k, X)
+        off = np.linalg.norm(P - chain(k, base), axis=1)
         if off.max() <= tol:
             continue
-        moved = off > tol
-        keep = moved.copy()
-        keep[1:] |= moved[:-1]
-        keep[:-1] |= moved[1:]
-        keep[0] = keep[-1] = True
-        polys[k] = P[keep].copy()
+        if len(src[k]) == 2:
+            # a straight rod: its unmoved stretches stay straight chords
+            moved = off > tol
+            keep = moved.copy()
+            keep[1:] |= moved[:-1]
+            keep[:-1] |= moved[1:]
+            keep[0] = keep[-1] = True
+            polys[k] = P[keep].copy()
+        else:
+            polys[k] = P.copy()
         info['max_offset'] = max(info['max_offset'], float(off.max()))
-    for a, b in pairs:
-        hit = _closest_between(polys[a], polys[b], want * reach)
-        if hit is None:
+    for a, b, joint in pairs:
+        s, t, dist = _piece_distances(polys[a], polys[b])
+        ok = _outside_joint(s, t, polys[a], polys[b], joint)
+        if not np.any(ok):
             continue
-        info['min_gap'] = min(info['min_gap'], hit[4])
-        info['remaining'] += int(hit[4] < 2.0 * radius)
+        dmin = float(dist[ok].min())
+        info['min_gap'] = min(info['min_gap'], dmin)
+        info['remaining'] += int(dmin < 2.0 * radius)
     return polys, info
 
 
@@ -1018,4 +1103,32 @@ def _selftest():
     assert inf['contacts'] == 0 and all(len(P) == 2 for P in polys)
     print("rulings: skew, T and a four-rod star separate with every end "
           "fixed; a V joint and distant rods stay straight OK")
+
+    # curved rods are polylines.  An arc crossing a straight bar twice:
+    # both crossings clear, the ends stay put, and away from the
+    # crossings the arc is still the arc
+    th_ = np.linspace(0.0, math.pi, 65)
+    arc = np.stack([np.cos(th_), np.sin(th_), np.zeros_like(th_)], axis=1)
+    bar = np.array([(-1.0, 0.8, 0.0), (1.0, 0.8, 0.0)])
+    polys, inf = separate_rods([arc, bar], r_)
+    assert inf['contacts'] == 1 and inf['remaining'] == 0, inf
+    assert np.allclose(polys[0][0], arc[0]) and np.allclose(polys[0][-1], arc[-1])
+    assert worst_gap(polys, [(arc[0], arc[-1]), tuple(bar)]) >= 2.0 * r_
+    tips = polys[0][np.abs(polys[0][:, 0]) > 0.99]
+    assert np.allclose(np.hypot(tips[:, 0], tips[:, 1]), 1.0, atol=0.05 * r_)
+    # a joint excuses only its own stretch: a curve that leaves the end
+    # it shares with a straight rod and crosses that rod again further on
+    # is still pushed clear there
+    xs = np.linspace(0.0, 1.8, 91)
+    wave = np.stack([xs, 0.3 * np.sin(math.pi * xs / 1.5), np.zeros_like(xs)], axis=1)
+    rod = np.array([(0.0, 0.0, 0.0), (2.0, 0.0, 0.0)])
+    polys, inf = separate_rods([wave, rod], r_)
+    assert inf['joints'] == 1 and inf['contacts'] == 1 and inf['remaining'] == 0, inf
+    Pw, Pr = polys
+    _s, _t, dd = _pairwise_closest(Pw[:-1], np.diff(Pw, axis=0), Pr[:-1], np.diff(Pr, axis=0))
+    qa = Pw[:-1][:, None, :] + _s[..., None] * np.diff(Pw, axis=0)[:, None, :]
+    away = np.linalg.norm(qa, axis=-1) > 0.5
+    assert float(dd[away].min()) >= 2.0 * r_, float(dd[away].min()) / r_
+    print("rulings: curved rods separate too -- an arc keeps its curve, and "
+          "a crossing beyond a shared joint is still cleared OK")
     print("RESULT: OK")
