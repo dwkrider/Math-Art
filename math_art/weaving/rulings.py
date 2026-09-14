@@ -216,7 +216,7 @@ def family_gap(fam):
 _FREE = 0.15
 
 
-def plan_weave(fam_a, fam_b, width=0.7, thickness=0.15, run=1):
+def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
     """Everything needed to sweep the woven ribbons, before any mesh.
 
     `width` is a FRACTION of the widest ribbon that weaves cleanly on
@@ -414,7 +414,7 @@ def sweep_woven_ribbons(plan, steps=6):
     return verts, faces, face_strand
 
 
-def weave_rulings(fam_a, fam_b, width=0.7, thickness=0.15, run=1,
+def weave_rulings(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
                   steps=6):
     """Woven ribbons for two ruling families: (verts, faces, plan)."""
     plan = plan_weave(fam_a, fam_b, width, thickness, run)

@@ -1735,7 +1735,7 @@ if _IN_BLENDER:
                                         "bare-curves or woven-ribbons "
                                         "output (per family)")
         ribbon_width: FloatProperty(
-            name="Ribbon Width", default=0.7, min=0.05, max=1.0,
+            name="Ribbon Width", default=0.9, min=0.05, max=1.0,
             description="Width of each woven ribbon, as a fraction of "
                         "the widest that still weaves cleanly: 1 leaves "
                         "just enough room between crossings for a ribbon "
@@ -1840,6 +1840,13 @@ if _IN_BLENDER:
             if me.polygons:
                 me.polygons.foreach_set(
                     'use_smooth', [self.smooth] * len(me.polygons))
+            if (self.smooth and out == 'RIBBONS'
+                    and hasattr(me, 'set_sharp_from_angle')):
+                # a ribbon is a four-sided box: smoothing across its
+                # square corners turns the flat straps into pillowy
+                # tubes, so keep the corners sharp and only the gentle
+                # bends along each ribbon (and the rail tubes) smooth
+                me.set_sharp_from_angle(angle=math.radians(60.0))
             me.update()
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
