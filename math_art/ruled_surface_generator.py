@@ -172,11 +172,11 @@ except ImportError:
 
 try:                                  # inside the math_art package
     from .weaving.rulings import (weave_rulings, crossing_clearance,
-                                  extend_families, segment_contacts,
+                                  extend_families, polyline_keep,
                                   segment_distance, separate_rods)
 except ImportError:                   # flat import (test runner)
     from weaving.rulings import (weave_rulings, crossing_clearance,
-                                 extend_families, segment_contacts,
+                                 extend_families, polyline_keep,
                                  segment_distance, separate_rods)
 
 _TWO_PI = 2.0 * math.pi
@@ -374,33 +374,14 @@ def _tubes(loops, radius=0.02, sides=8):
 
 
 def _simplify_polyline(P, tol):
-    """Drop the points of polyline P that lie within `tol` of the chord
-    between the points kept either side of them, keeping both ends
-    (U. Ramer 1972; D. Douglas and T. Peucker 1973).  A curved ruling
-    sampled densely enough to be smooth needs far fewer points to be
-    swept as a tube, and one that came out straight becomes a stick."""
+    """The points of polyline P needed to stay within `tol` of it
+    (`polyline_keep`, Ramer-Douglas-Peucker).  A curved ruling sampled
+    densely enough to be smooth needs far fewer points to be swept as a
+    tube, and one that came out straight becomes a stick."""
     P = np.asarray(P, dtype=float)
     if len(P) <= 2:
         return P
-    keep = np.zeros(len(P), dtype=bool)
-    keep[0] = keep[-1] = True
-    stack = [(0, len(P) - 1)]
-    while stack:
-        i, j = stack.pop()
-        if j <= i + 1:
-            continue
-        a, d = P[i], P[j] - P[i]
-        dd = float(d @ d)
-        mid = P[i + 1:j]
-        tt = (np.clip(((mid - a) @ d) / dd, 0.0, 1.0) if dd > 0.0
-              else np.zeros(len(mid)))
-        dist = np.linalg.norm(mid - (a + tt[:, None] * d), axis=1)
-        k = int(np.argmax(dist))
-        if dist[k] > tol:
-            keep[i + 1 + k] = True
-            stack.append((i, i + 1 + k))
-            stack.append((i + 1 + k, j))
-    return P[keep]
+    return P[polyline_keep(P, tol)]
 
 
 # --------------------------------------------------------------------

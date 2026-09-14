@@ -627,6 +627,33 @@ def family_gap(fam):
     return best
 
 
+def polyline_keep(P, tol):
+    """Mask of the points of polyline P that must stay for it to keep
+    within `tol` of the original -- every other point lies within `tol`
+    of the chord between the kept points either side -- with both ends
+    kept (U. Ramer 1972; D. Douglas and T. Peucker 1973)."""
+    P = np.asarray(P, dtype=float).reshape(-1, 3)
+    keep = np.zeros(len(P), dtype=bool)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(P) - 1)]
+    while stack:
+        i, j = stack.pop()
+        if j <= i + 1:
+            continue
+        a, d = P[i], P[j] - P[i]
+        dd = float(d @ d)
+        mid = P[i + 1:j]
+        tt = (np.clip(((mid - a) @ d) / dd, 0.0, 1.0) if dd > 0.0
+              else np.zeros(len(mid)))
+        dist = np.linalg.norm(mid - (a + tt[:, None] * d), axis=1)
+        k = int(np.argmax(dist))
+        if dist[k] > tol:
+            keep[i + 1 + k] = True
+            stack.append((i, i + 1 + k))
+            stack.append((i + 1 + k, j))
+    return keep
+
+
 def _strand(P):
     """A strand as the weaver keeps it: its points, the arc-length
     fraction reached at each, and its length.  Two points make a straight
@@ -772,6 +799,17 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
             sel = sel[np.argsort(X[key_t][sel])]
             tk = X[key_t][sel]
             sg = np.where(a_over[sel], sign, -sign)
+            # A crossing's normal and which ribbon is over are one choice
+            # up to sign: (N, over) and (-N, under) put the ribbons in the
+            # same place.  Strand by strand, take the sign that keeps
+            # consecutive normals agreeing, so where the surface folds
+            # over, a ribbon turns with it rather than being flipped half
+            # a turn between two crossings.
+            Ns = X['normal'][sel].copy()
+            for k in range(1, len(sel)):
+                if float(Ns[k] @ Ns[k - 1]) < 0.0:
+                    Ns[k] = -Ns[k]
+                    sg[k] = -sg[k]
             hk = foot[sel] / L
             lo = tk[:-1] + hk[:-1]
             hi = tk[1:] - hk[1:]
@@ -791,7 +829,7 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
                 if np.linalg.norm(Nf) < 1e-9:
                     Nf = np.cross(T, [0.0, 1.0, 0.0])
             st = dict(P=P, s=s, L=L, t=tk, sign=sg, half=hk, lo=lo, hi=hi,
-                      N=X['normal'][sel], fallback=Nf / np.linalg.norm(Nf),
+                      N=Ns, fallback=Nf / np.linalg.norm(Nf),
                       crossings=sel)
             st['Tk'] = (_strand_at(st, tk)[1] if len(tk)
                         else np.zeros((0, 3)))
@@ -841,11 +879,11 @@ def strand_section(plan, st, t):
 def _sample_ts(plan, st, steps):
     """Sample parameters: every knot, footprint edge and transition end,
     with the level-changing spans subdivided `steps` times -- and, on a
-    curved strand, every point of its polyline, so the ribbon follows
-    the curve."""
+    curved strand, the points of its polyline it needs to follow the
+    curve to a tenth of the ribbon's width."""
     br = [0.0, 1.0]
     if len(st['P']) > 2:
-        br.extend(st['s'])
+        br.extend(st['s'][polyline_keep(st['P'], 0.1 * plan['width'])])
     br.extend(st['t'])
     br.extend(st['t'] - st['half'])
     br.extend(st['t'] + st['half'])
@@ -939,8 +977,13 @@ def crossing_clearance(plan, samples=13, across=7):
     for c, pair in by_cross.items():
         if len(pair) != 2:
             continue
-        ups = [p for p in pair if p[0]['sign'][p[1]] > 0]
-        downs = [p for p in pair if p[0]['sign'][p[1]] < 0]
+        # over is the side of the crossing's own normal each strand is
+        # lifted to; a strand may carry that normal the other way round
+        Nc = X['normal'][c]
+        lifts = [(pr, float(pr[0]['sign'][pr[1]]
+                            * (pr[0]['N'][pr[1]] @ Nc))) for pr in pair]
+        ups = [pr for pr, up in lifts if up > 0.0]
+        downs = [pr for pr, up in lifts if up < 0.0]
         if len(ups) != 1 or len(downs) != 1:
             continue                       # both over: a solver conflict
         (so, ko), (su, ku) = ups[0], downs[0]
