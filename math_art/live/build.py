@@ -199,8 +199,13 @@ if _IN_BLENDER:
         # A geometry-nodes modifier keeps its input values as ID
         # properties rather than RNA ones, so the loop above leaves every
         # input at its group default; copy those too (the node group,
-        # set above, has already created the keys).
-        for key in src.keys():
+        # set above, has already created the keys).  Most modifier types
+        # cannot hold ID properties at all, and say so by raising.
+        try:
+            keys = src.keys()
+        except TypeError:
+            keys = ()
+        for key in keys:
             try:
                 mod[key] = src[key]
             except (KeyError, TypeError, ValueError):
