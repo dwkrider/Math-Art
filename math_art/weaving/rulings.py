@@ -822,8 +822,12 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
         for i, (P, s, L) in enumerate(fam):
             if L < 1e-12:
                 continue
-            T = (P[-1] - P[0]) / max(float(np.linalg.norm(P[-1] - P[0])),
-                                     1e-300)
+            chord = P[-1] - P[0]
+            if float(np.linalg.norm(chord)) < 1e-9 * L:
+                # a closed strand ends where it starts: take its general
+                # direction from the point halfway round instead
+                chord = P[len(P) // 2] - P[0]
+            T = chord / max(float(np.linalg.norm(chord)), 1e-300)
             sel = np.nonzero(X[key_i] == i)[0]
             sel = sel[np.argsort(X[key_t][sel])]
             tk = X[key_t][sel]
@@ -854,9 +858,9 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
                     lo[j], hi[j] = mid - 0.075 * span, mid + 0.075 * span
             Nf = fallback - float(fallback @ T) * T
             if np.linalg.norm(Nf) < 1e-9:
-                Nf = np.cross(T, [1.0, 0.0, 0.0])
-                if np.linalg.norm(Nf) < 1e-9:
-                    Nf = np.cross(T, [0.0, 1.0, 0.0])
+                # the crossings' normals cancel out, as they do round a
+                # closed surface: any direction square to the strand will do
+                Nf = np.cross(T, np.eye(3)[int(np.argmin(np.abs(T)))])
             st = dict(P=P, s=s, L=L, t=tk, sign=sg, half=hk, lo=lo, hi=hi,
                       N=Ns, fallback=Nf / np.linalg.norm(Nf),
                       crossings=sel, w=w_c[sel], th=th_c[sel])
