@@ -40,6 +40,18 @@
 #   lattice of crossings of two strand families.
 # - G. W. Hart, "Curved, yet Straight: Stick Hyperboloids," Bridges
 #   2023 Conference Proceedings, pp. 251-258.
+# - C. Ericson, "Real-Time Collision Detection" (Morgan Kaufmann, 2005),
+#   sec. 5.1.9 -- closest points of two segments, used to find rods
+#   that pass through each other.
+# - M. Muller, B. Heidelberger, M. Hennix and J. Ratcliff, "Position
+#   Based Dynamics," Journal of Visual Communication and Image
+#   Representation 18 (2007), 109-118 -- the constraint projection that
+#   bends touching rods apart.
+#
+# The same module also separates solid rods: where two straight rods of
+# a given radius would pass through each other, both are bent aside just
+# enough to clear, with their ends left on their rails (see
+# `separate_rods`).
 
 import math
 
@@ -234,6 +246,283 @@ def segment_distance(p0, p1, q0, q1):
             elif t > 1.0:
                 s, t = min(1.0, max(0.0, (b - c) / a)), 1.0
     return float(np.linalg.norm(p0 + s * d1 - (q0 + t * d2)))
+
+
+def _pairwise_closest(P0a, Da, P0b, Db):
+    """Clamped closest points between every segment of one set (starts
+    P0a, spans Da) and every segment of another: arrays s, t and dist,
+    each shaped (len(a), len(b)).  C. Ericson, "Real-Time Collision
+    Detection" (2005), sec. 5.1.9, vectorized."""
+    r = P0a[:, None, :] - P0b[None, :, :]
+    a = np.einsum('ij,ij->i', Da, Da)[:, None]
+    e = np.einsum('ij,ij->i', Db, Db)[None, :]
+    b = Da @ Db.T
+    c = np.einsum('ik,ijk->ij', Da, r)
+    f = np.einsum('jk,ijk->ij', Db, r)
+    den = a * e - b * b
+    ok = den > 1e-12 * a * e
+    a_safe = np.where(a > 0, a, 1.0)
+    s = np.where(ok, np.clip((b * f - c * e) / np.where(ok, den, 1.0),
+                             0.0, 1.0), 0.0)
+    t = (b * s + f) / np.where(e > 0, e, 1.0)
+    s = np.where(t < 0.0, np.clip(-c / a_safe, 0.0, 1.0), s)
+    s = np.where(t > 1.0, np.clip((b - c) / a_safe, 0.0, 1.0), s)
+    t = np.clip(t, 0.0, 1.0)
+    gap = r + s[..., None] * Da[:, None, :] - t[..., None] * Db[None, :, :]
+    return s, t, np.linalg.norm(gap, axis=-1)
+
+
+def segment_contacts(segs, reach, chunk=256):
+    """Every pair of segments i < j whose closest approach is under
+    `reach`, found for all pairs at once (in row chunks, to bound
+    memory).
+
+    Closest points are clamped to the segments (C. Ericson, "Real-Time
+    Collision Detection", 2005, sec. 5.1.9), so a pair that only nears
+    at an end reports that end: s or t of exactly 0 or 1.
+
+    Returns a dict of arrays: i, j, s, t, dist, pa, pb.
+    """
+    S = np.asarray(segs, dtype=float).reshape(-1, 2, 3)
+    m = len(S)
+    P0, D = S[:, 0], S[:, 1] - S[:, 0]
+    acc = {k: [] for k in ('i', 'j', 's', 't', 'dist')}
+    for lo in range(0, m, chunk):
+        ii = np.arange(lo, min(m, lo + chunk))
+        s, t, dist = _pairwise_closest(P0[ii], D[ii], P0, D)
+        hit = (dist < reach) & (np.arange(m)[None, :] > ii[:, None])
+        pi, pj = np.nonzero(hit)
+        acc['i'].append(ii[pi])
+        acc['j'].append(pj)
+        acc['s'].append(s[pi, pj])
+        acc['t'].append(t[pi, pj])
+        acc['dist'].append(dist[pi, pj])
+    out = {k: (np.concatenate(v) if v else np.zeros(0))
+           for k, v in acc.items()}
+    out['i'] = out['i'].astype(int)
+    out['j'] = out['j'].astype(int)
+    out['pa'] = P0[out['i']] + out['s'][:, None] * D[out['i']]
+    out['pb'] = P0[out['j']] + out['t'][:, None] * D[out['j']]
+    return out
+
+
+# --------------------------------------------------------------------
+# separating rods that pass through each other
+# --------------------------------------------------------------------
+
+#: in rod radii: the clear gap left between two rods, and the spacing of
+#: the points a bent rod is carried through
+_ROD_GAP = 0.25
+_ROD_SPACING = 2.0
+
+
+def _closest_between(Pa, Pb, reach):
+    """Closest approach of two polylines, comparing only the pieces of
+    each that come within `reach` of the other's end-to-end chord.
+    Returns (piece_a, s, piece_b, t, dist, point_a, point_b) or None."""
+    def near(P, Q):
+        _s, _t, dd = _pairwise_closest(P[:-1], np.diff(P, axis=0),
+                                       Q[:1], (Q[-1] - Q[0])[None, :])
+        return np.nonzero(dd[:, 0] < reach)[0]
+    ka, kb = near(Pa, Pb), near(Pb, Pa)
+    if len(ka) == 0 or len(kb) == 0:
+        return None
+    Da = Pa[ka + 1] - Pa[ka]
+    Db = Pb[kb + 1] - Pb[kb]
+    s, t, dist = _pairwise_closest(Pa[ka], Da, Pb[kb], Db)
+    ia, ib = np.unravel_index(int(np.argmin(dist)), dist.shape)
+    return (int(ka[ia]), float(s[ia, ib]), int(kb[ib]), float(t[ia, ib]),
+            float(dist[ia, ib]), Pa[ka[ia]] + s[ia, ib] * Da[ia],
+            Pb[kb[ib]] + t[ia, ib] * Db[ib])
+
+
+def _segment_pairs_closest(A0, A1, B0, B1):
+    """Clamped closest points of segment pairs taken element by element
+    -- piece A0[i]A1[i] against piece B0[i]B1[i] -- returning s, t, the
+    two closest points and their distance (Ericson, as above)."""
+    d1, d2, r = A1 - A0, B1 - B0, A0 - B0
+    a = np.einsum('ij,ij->i', d1, d1)
+    e = np.einsum('ij,ij->i', d2, d2)
+    b = np.einsum('ij,ij->i', d1, d2)
+    c = np.einsum('ij,ij->i', d1, r)
+    f = np.einsum('ij,ij->i', d2, r)
+    den = a * e - b * b
+    ok = den > 1e-12 * a * e
+    s = np.where(ok, np.clip((b * f - c * e) / np.where(ok, den, 1.0),
+                             0.0, 1.0), 0.0)
+    t = (b * s + f) / np.maximum(e, 1e-300)
+    s = np.where(t < 0.0, np.clip(-c / np.maximum(a, 1e-300), 0.0, 1.0), s)
+    s = np.where(t > 1.0, np.clip((b - c) / np.maximum(a, 1e-300), 0.0,
+                                  1.0), s)
+    t = np.clip(t, 0.0, 1.0)
+    qa = A0 + s[:, None] * d1
+    qb = B0 + t[:, None] * d2
+    return s, t, qa, qb, np.linalg.norm(qa - qb, axis=1)
+
+
+def separate_rods(segs, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
+                  iterations=150, settle=40, smoothing=0.5,
+                  straighten=0.02, reach=3.0):
+    """Bend straight rods of `radius` aside wherever two would pass
+    through each other, leaving a clear gap of `gap` radii and every rod
+    end where it was.
+
+    Position-based dynamics (Muller et al. 2007) on the rods that
+    matter.  Each rod within `reach` clearances of another becomes a
+    chain of points `spacing` radii apart with its two end points fixed,
+    and every iteration
+
+      * pushes apart each nearby pair of pieces (one from each rod) that
+        sit closer than the clearance, at their closest points and along
+        the line between them -- the common normal, where two pieces
+        truly cross -- sharing the correction among the four piece ends
+        by where along each piece the closest point falls, so a fixed
+        rod end passes all of it to the other rod;
+      * relaxes every chain toward the average of its neighbours, so a
+        push spreads into a smooth bend rather than a kink; and
+      * draws every point a little back toward its straight rod, so no
+        bend is longer or deeper than the pushes require.
+
+    A last few passes apply the pushes alone, to settle the gap.
+
+    Pushing pieces rather than whole contacts matters on these surfaces.
+    Along a fold, rods of one family graze their neighbours one after
+    another and several at once; an earlier solve that gave each contact
+    one push of a fixed bump shape stacked those pushes into offsets ten
+    rod radii deep.  Pushed piece by piece, such a bundle settles into
+    layers about a clearance deep on its own -- and the crossing lattice
+    of a hyperboloid settles into its two families, one over the other.
+
+    Pairs of rods that share an end (within a clearance) meet at a joint
+    on a rail and are meant to touch; they are left out.
+
+    Returns (polylines, info).  polylines[i] is an (k, 3) array: the two
+    ends of a rod that did not move, otherwise its bent points with the
+    unmoved straight stretches dropped.  info counts the rod pairs that
+    were closer than (2 + gap/2) radii (`contacts`) and the joints
+    skipped among them, the pairs still closer than a rod diameter
+    afterwards (`remaining`), and gives the largest offset and the
+    smallest gap left between any two rods that are not joined.
+    """
+    S = np.asarray(segs, dtype=float).reshape(-1, 2, 3)
+    m = len(S)
+    info = dict(contacts=0, joints=0, remaining=0, max_offset=0.0,
+                min_gap=math.inf)
+    polys = [S[k].copy() for k in range(m)]
+    if m < 2 or radius <= 0.0:
+        return polys, info
+    P0, Dv = S[:, 0], S[:, 1] - S[:, 0]
+    L = np.linalg.norm(Dv, axis=1)
+    want = (2.0 + gap) * radius
+    detect = (2.0 + 0.5 * gap) * radius
+    near = segment_contacts(S, want * reach)
+    pairs = []
+    for a, b, dist in zip(near['i'], near['j'], near['dist']):
+        a, b = int(a), int(b)
+        if L[a] < 1e-12 or L[b] < 1e-12:
+            continue
+        ends = np.linalg.norm(S[a][:, None, :] - S[b][None, :, :], axis=-1)
+        if ends.min() < want:
+            info['joints'] += int(dist < detect)
+            continue
+        pairs.append((a, b))
+        info['contacts'] += int(dist < detect)
+    if info['contacts'] == 0:
+        return polys, info
+
+    # every rod near another becomes a chain of points, its ends pinned
+    rods = sorted({k for pair in pairs for k in pair})
+    first, count, chains, pinned = {}, {}, [], []
+    total = 0
+    for k in rods:
+        n = max(8, int(math.ceil(L[k] / (spacing * radius))))
+        first[k], count[k] = total, n
+        total += n + 1
+        chains.append(P0[k] + np.linspace(0.0, 1.0, n + 1)[:, None] * Dv[k])
+        pin = np.zeros(n + 1, dtype=bool)
+        pin[0] = pin[-1] = True
+        pinned.append(pin)
+    X = np.concatenate(chains)
+    base = X.copy()
+    free = (~np.concatenate(pinned)).astype(float)
+    inner = np.concatenate([first[k] + np.arange(1, count[k]) for k in rods])
+
+    # the pieces of each pair that can meet, found once on the straight
+    # rods: the bends stay far smaller than the search reach
+    from_a, from_b = [], []
+    for a, b in pairs:
+        fa, na, fb, nb = first[a], count[a], first[b], count[b]
+        mids = 0.5 * (base[fa:fa + na] + base[fa + 1:fa + na + 1])
+        t = np.clip(((mids - P0[b]) @ Dv[b]) / (L[b] * L[b]), 0.0, 1.0)
+        away = np.linalg.norm(mids - (P0[b] + t[:, None] * Dv[b]), axis=1)
+        sel = np.nonzero(away < want * reach)[0]
+        j = np.clip(np.floor(t[sel] * nb).astype(int), 0, nb - 1)
+        for dj in (-1, 0, 1):
+            jj = j + dj
+            ok = (jj >= 0) & (jj < nb)
+            from_a.append(fa + sel[ok])
+            from_b.append(fb + jj[ok])
+    SA, SB = np.concatenate(from_a), np.concatenate(from_b)
+
+    def push():
+        A0, A1, B0, B1 = X[SA], X[SA + 1], X[SB], X[SB + 1]
+        s, t, qa, qb, dist = _segment_pairs_closest(A0, A1, B0, B1)
+        hit = np.nonzero(dist < want)[0]
+        if len(hit) == 0:
+            return False
+        s, t, dist = s[hit], t[hit], dist[hit]
+        nrm = (qa[hit] - qb[hit]) / np.maximum(dist, 1e-300)[:, None]
+        crossing = dist < 1e-9 * want
+        if np.any(crossing):
+            cn = np.cross(A1[hit][crossing] - A0[hit][crossing],
+                          B1[hit][crossing] - B0[hit][crossing])
+            nrm[crossing] = cn / np.maximum(np.linalg.norm(cn, axis=1),
+                                            1e-300)[:, None]
+        a0, a1, b0, b1 = SA[hit], SA[hit] + 1, SB[hit], SB[hit] + 1
+        wa = (1.0 - s) ** 2 * free[a0] + s ** 2 * free[a1]
+        wb = (1.0 - t) ** 2 * free[b0] + t ** 2 * free[b1]
+        lam = (want - dist) / np.maximum(wa + wb, 1e-300)
+        move = np.zeros_like(X)
+        votes = np.zeros(len(X))
+        for idx, coef in ((a0, lam * (1.0 - s) * free[a0]),
+                          (a1, lam * s * free[a1]),
+                          (b0, -lam * (1.0 - t) * free[b0]),
+                          (b1, -lam * t * free[b1])):
+            np.add.at(move, idx, coef[:, None] * nrm)
+            np.add.at(votes, idx, 1.0)
+        X[:] += move / np.maximum(votes, 1.0)[:, None]
+        return True
+
+    for _ in range(iterations):
+        push()
+        X[inner] += smoothing * (0.5 * (X[inner - 1] + X[inner + 1])
+                                 - X[inner])
+        X[inner] += straighten * (base[inner] - X[inner])
+    for _ in range(settle):
+        if not push():
+            break
+
+    tol = 0.01 * radius
+    for k in rods:
+        P = X[first[k]:first[k] + count[k] + 1]
+        off = np.linalg.norm(P - base[first[k]:first[k] + count[k] + 1],
+                             axis=1)
+        if off.max() <= tol:
+            continue
+        moved = off > tol
+        keep = moved.copy()
+        keep[1:] |= moved[:-1]
+        keep[:-1] |= moved[1:]
+        keep[0] = keep[-1] = True
+        polys[k] = P[keep].copy()
+        info['max_offset'] = max(info['max_offset'], float(off.max()))
+    for a, b in pairs:
+        hit = _closest_between(polys[a], polys[b], want * reach)
+        if hit is None:
+            continue
+        info['min_gap'] = min(info['min_gap'], hit[4])
+        info['remaining'] += int(hit[4] < 2.0 * radius)
+    return polys, info
 
 
 def family_gap(fam):
@@ -652,4 +941,81 @@ def _selftest():
     full = plan_weave(fa, fb, width=1.0)
     assert full['tight'] == 0 and crossing_clearance(full) > 0.5
     print("rulings: saddle z = xy crossing normals exact, woven clean OK")
+
+    # ---- separating rods ----------------------------------------------
+    # Judge the result on the bent geometry itself, by brute force over
+    # every piece of every rod -- not through the solver's own contact
+    # search, which is what is being tested.
+    r_ = 0.05
+
+    def worst_gap(polys, segs_):
+        worst = math.inf
+        S_ = np.asarray(segs_, dtype=float)
+        for a in range(len(polys)):
+            for b in range(a + 1, len(polys)):
+                ends = np.linalg.norm(S_[a][:, None] - S_[b][None, :],
+                                      axis=-1)
+                if ends.min() < (2.0 + _ROD_GAP) * r_:
+                    continue                   # a joint: meant to touch
+                Pa, Pb = polys[a], polys[b]
+                _s, _t, dd = _pairwise_closest(Pa[:-1], np.diff(Pa, axis=0),
+                                               Pb[:-1], np.diff(Pb, axis=0))
+                worst = min(worst, float(dd.min()))
+        return worst
+
+    def check(label, segs_, contacts):
+        polys, inf = separate_rods(segs_, r_)
+        assert inf['contacts'] == contacts, (label, inf)
+        assert inf['remaining'] == 0, (label, inf)
+        for P, s_ in zip(polys, segs_):         # ends never move
+            assert np.allclose(P[0], s_[0]) and np.allclose(P[-1], s_[1])
+        g = worst_gap(polys, segs_)
+        # clear of each other, and no closer than the solver claims
+        assert g >= 2.0 * r_ and g >= inf['min_gap'] - 1e-9, \
+            (label, g / r_, inf['min_gap'] / r_)
+        return polys, inf, g
+
+    # an exact X: both rods give way equally, along the common normal
+    ang = math.radians(60.0)
+    x_rods = [((-1.0, 0.0, 0.0), (1.0, 0.0, 0.0)),
+              ((-math.cos(ang), -math.sin(ang), 0.0),
+               (math.cos(ang), math.sin(ang), 0.0))]
+    polys, inf, g = check("X", x_rods, 1)
+    lift = [float(np.max(np.abs(P[:, 2]))) for P in polys]
+    # equal up to sampling: the two rods are cut into pieces at
+    # different angles to each other, so the lifts differ in the 4th
+    # significant figure -- a lopsided solve would differ by a factor
+    assert abs(lift[0] - lift[1]) < 0.01 * max(lift), lift
+    assert min(lift) > 0.4 * (2.0 + _ROD_GAP) * r_, lift
+    print(f"rulings: an X of rods parts symmetrically along the normal, "
+          f"gap {g / r_:.3f} radii OK")
+    # nearly parallel, skew by less than a radius: a long overlap
+    a5 = math.radians(5.0)
+    skew = [((-2.0, 0.0, 0.0), (2.0, 0.0, 0.0)),
+            ((-2.0 * math.cos(a5), -2.0 * math.sin(a5), 0.03),
+             (2.0 * math.cos(a5), 2.0 * math.sin(a5), 0.03))]
+    _p, _i, g = check("skew", skew, 1)
+    # a V sharing an end is a joint: left alone
+    vee = [((0.0, 0.0, 0.0), (1.0, 0.2, 0.0)),
+           ((0.0, 0.0, 0.0), (1.0, -0.2, 0.0))]
+    polys, inf = separate_rods(vee, r_)
+    assert inf['contacts'] == 0 and inf['joints'] == 1
+    assert all(len(P) == 2 for P in polys)
+    # a T: the stem's end sits on the bar's middle, so the bar gives way
+    tee = [((-1.0, 0.0, 0.0), (1.0, 0.0, 0.0)),
+           ((0.0, 0.0, 0.07), (0.0, 0.0, 1.0))]
+    polys, inf, g = check("T", tee, 1)
+    assert float(np.min(polys[0][:, 2])) < -0.02, "the bar did not move"
+    # four rods through one point: the pushes must stack them in layers
+    star = [((-math.cos(k * math.pi / 4), -math.sin(k * math.pi / 4), 0.0),
+             (math.cos(k * math.pi / 4), math.sin(k * math.pi / 4), 0.0))
+            for k in range(4)]
+    _p, inf, g = check("star", star, 6)
+    # and rods that never come near are left exactly as they were
+    far = [((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)),
+           ((0.0, 1.0, 1.0), (1.0, 1.0, 1.0))]
+    polys, inf = separate_rods(far, r_)
+    assert inf['contacts'] == 0 and all(len(P) == 2 for P in polys)
+    print("rulings: skew, T and a four-rod star separate with every end "
+          "fixed; a V joint and distant rods stay straight OK")
     print("RESULT: OK")

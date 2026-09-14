@@ -27,6 +27,11 @@
 # surface when extended, so the lengthened ribbons keep crossing and the
 # weave itself carries on beyond the rails.
 #
+# Rods output can also be made solid: Separate Touching Rods bends any
+# two rods that would pass through each other just far enough apart to
+# clear, keeping every rod end on its rail (`separate_rods`, in the same
+# engine module).
+#
 # Modes
 #   HYPERBOLOID   -- hyperboloid of one sheet from straight rulings
 #     strung between two coaxial circles, the top circle rotated by a
@@ -164,11 +169,13 @@ except ImportError:
 try:                                  # inside the math_art package
     from .weaving.rulings import (weave_rulings, crossing_clearance,
                                   extend_families, segment_crossings,
-                                  segment_distance)
+                                  segment_distance, segment_contacts,
+                                  separate_rods)
 except ImportError:                   # flat import (test runner)
     from weaving.rulings import (weave_rulings, crossing_clearance,
                                  extend_families, segment_crossings,
-                                 segment_distance)
+                                 segment_distance, segment_contacts,
+                                 separate_rods)
 
 _TWO_PI = 2.0 * math.pi
 
@@ -1827,6 +1834,14 @@ if _IN_BLENDER:
                                   min=0.002, max=0.3,
                                   description="Radius of each rod in rods "
                                               "output")
+        separate_rods: BoolProperty(
+            name="Separate Touching Rods", default=False,
+            description="Where two rods would pass through each other, "
+                        "bend both aside just far enough to leave a gap "
+                        "of a quarter of the rod radius, so the rods make "
+                        "a solid model with no intersections.  Rod ends "
+                        "stay put, so rods that meet at a boundary curve "
+                        "stay joined there")
         show_boundaries: BoolProperty(
             name="Include Boundary Curves", default=True,
             description="Add the directrix / rail curves the rulings "
@@ -1885,7 +1900,28 @@ if _IN_BLENDER:
                 loops = (_boundary_loops(self)
                          if self.show_boundaries else [])
                 if out == 'RODS':
-                    verts, faces = _rods(segs, self.rod_radius, 8)
+                    if self.separate_rods and self.mode != 'HELICAL_CONE':
+                        # bent rods are swept as tubes; rods that did
+                        # not need to move stay straight sticks
+                        polys, sep = separate_rods(segs, self.rod_radius)
+                        verts, faces = _rods(
+                            [s for s, p in zip(segs, polys) if len(p) == 2],
+                            self.rod_radius, 8)
+                        bv, bf = _tubes([(p, False) for p in polys
+                                         if len(p) > 2], self.rod_radius, 8)
+                        o = len(verts)
+                        verts = list(verts) + bv
+                        faces = list(faces) + [[i + o for i in q]
+                                               for q in bf]
+                        info += f" separated {sep['contacts']} contacts"
+                        if sep['remaining']:
+                            self.report(
+                                {'WARNING'},
+                                f"{sep['remaining']} pairs of rods still "
+                                f"pass through each other: try a smaller "
+                                f"rod radius or fewer rods")
+                    else:
+                        verts, faces = _rods(segs, self.rod_radius, 8)
                     # the rails are continuous curves, so they are swept
                     # as one tube each instead of a capped cylinder per
                     # chord, which would lump at every joint
@@ -2022,6 +2058,8 @@ if _IN_BLENDER:
                              else 'n_rods')
                     if out == 'RODS':
                         lay.prop(self, 'rod_radius')
+                        if m != 'HELICAL_CONE':
+                            lay.prop(self, 'separate_rods')
                     lay.prop(self, 'show_boundaries')
                 elif out == 'RIBBONS':
                     # always both families: shown, but not editable
@@ -2308,6 +2346,45 @@ def _selftest():
           "families intersect only at shared ends but cross the lattice "
           "as near misses (closest %.4f, median %.3f on a %.2f rod); "
           "rails stay single OK" % (miss.min(), np.median(miss), rod_len))
+
+    # Separate Touching Rods, at the knot span's defaults (both families,
+    # 128 rods each, 30 degree twist, rod radius 0.02).  Judged by brute
+    # force on the bent rods: every piece of every rod against every
+    # piece of every other, with only rail joints (rods sharing an end)
+    # excused -- so the solver's own windowed search is not marking its
+    # own homework.  Ends must not move, and there must have been real
+    # contacts to separate in the first place.
+    r_kn = 0.02
+    k_segs = (rulings_knot_span(n=128, family='RIGHT', shift=tw30)
+              + rulings_knot_span(n=128, family='LEFT', shift=tw30))
+    k_polys, k_info = separate_rods(k_segs, r_kn)
+    assert k_info['contacts'] > 100 and k_info['remaining'] == 0, k_info
+    for P, s_ in zip(k_polys, k_segs):
+        assert np.allclose(P[0], s_[0]) and np.allclose(P[-1], s_[1])
+    soup, owner = [], []
+    for k, P in enumerate(k_polys):
+        soup.extend(zip(P[:-1], P[1:]))
+        owner.extend([k] * (len(P) - 1))
+    owner = np.asarray(owner)
+    KS = np.asarray(k_segs, dtype=float)
+    C = segment_contacts(soup, 2.0 * r_kn * 1.05)
+    ra, rb = owner[C['i']], owner[C['j']]
+    real = []
+    for a, b, dd in zip(ra, rb, C['dist']):
+        if a == b:
+            continue
+        ends = np.linalg.norm(KS[a][:, None] - KS[b][None, :], axis=-1)
+        if ends.min() < 2.25 * r_kn:
+            continue
+        real.append(dd)
+    assert not real, (len(real), min(real) / r_kn)
+    n_bent = sum(1 for P in k_polys if len(P) > 2)
+    print("knot span rods: %d contacts separated, %d of %d rods bent by "
+          "at most %.2f radii, smallest gap %.2f radii; brute-force check "
+          "finds no two rods within 2.1 radii except at rail joints, and "
+          "no end moved OK" % (k_info['contacts'], n_bent, len(k_segs),
+                               k_info['max_offset'] / r_kn,
+                               k_info['min_gap'] / r_kn))
 
     # boundary curves: a closed loop of k points -> k segments, an open
     # one -> k-1; both knots feed through _edges like the rulings do
