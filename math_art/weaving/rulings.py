@@ -418,8 +418,8 @@ def _segment_pairs_closest(A0, A1, B0, B1):
 
 
 def separate_rods(rods, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
-                  iterations=150, settle=40, smoothing=0.5,
-                  straighten=0.02, reach=3.0):
+                  iterations=150, settle=100, smoothing=0.5,
+                  straighten=0.02, reach=2.0):
     """Bend rods of `radius` aside wherever two would pass through each
     other, leaving a clear gap of `gap` radii and every rod end where it
     was.  A rod is a polyline: two points for a straight rod, more for a
@@ -613,14 +613,50 @@ def separate_rods(rods, radius, gap=_ROD_GAP, spacing=_ROD_SPACING,
 def family_gap(fam):
     """Narrowest distance between neighbouring strands of one family
     (consecutive in list order, the last wrapping to the first).  A ribbon
-    wider than this would overlap its neighbour edge to edge."""
-    S = np.asarray(fam, dtype=float).reshape(-1, 2, 3)
+    wider than this would overlap its neighbour edge to edge.  Strands
+    may be segments or polylines."""
+    S = [np.asarray(f, dtype=float).reshape(-1, 3) for f in fam]
     if len(S) < 2:
         return math.inf
-    return min(segment_distance(S[i, 0], S[i, 1],
-                                 S[(i + 1) % len(S), 0],
-                                 S[(i + 1) % len(S), 1])
-               for i in range(len(S)))
+    best = math.inf
+    for i, A in enumerate(S):
+        B = S[(i + 1) % len(S)]
+        _s, _t, dist = _pairwise_closest(A[:-1], np.diff(A, axis=0),
+                                         B[:-1], np.diff(B, axis=0))
+        best = min(best, float(dist.min()))
+    return best
+
+
+def _strand(P):
+    """A strand as the weaver keeps it: its points, the arc-length
+    fraction reached at each, and its length.  Two points make a straight
+    strand, more a curved one."""
+    P = np.asarray(P, dtype=float).reshape(-1, 3)
+    seg = np.linalg.norm(np.diff(P, axis=0), axis=1)
+    cum = np.concatenate(([0.0], np.cumsum(seg)))
+    L = float(cum[-1])
+    return P, (cum / L if L > 0.0 else cum), L
+
+
+def _strand_at(st, t):
+    """Points on a strand, and its unit tangents there, at arc-length
+    fractions t.  A curved strand's tangent is taken across half a piece
+    either side, so a ribbon turns smoothly through the polyline's
+    corners instead of snapping at each one."""
+    t = np.clip(np.atleast_1d(np.asarray(t, dtype=float)), 0.0, 1.0)
+    P, s = st['P'], st['s']
+
+    def at(x):
+        return np.stack([np.interp(x, s, P[:, k]) for k in range(3)], axis=1)
+
+    base = at(t)
+    if len(P) == 2:
+        T = np.repeat(((P[1] - P[0]) / st['L'])[None, :], len(t), axis=0)
+    else:
+        h = 0.5 / (len(P) - 1)
+        T = at(np.clip(t + h, 0.0, 1.0)) - at(np.clip(t - h, 0.0, 1.0))
+        T /= np.maximum(np.linalg.norm(T, axis=1, keepdims=True), 1e-300)
+    return base, T
 
 
 #: fraction of the span between two crossings that is kept clear of
@@ -628,15 +664,31 @@ def family_gap(fam):
 _FREE = 0.15
 
 
-def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
+def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
+               crossings=None, gap=None, limit_quantile=None):
     """Everything needed to sweep the woven ribbons, before any mesh.
 
     `width` is a FRACTION of the widest ribbon that weaves cleanly on
     these two families (see below), so any value up to 1 weaves without
     the ribbons touching, whatever the surface or strand count.
-    `thickness` is a fraction of the ribbon width.  At each crossing the upper ribbon is lifted one thickness
-    along the surface normal and the lower one sunk by the same, leaving
-    a clear gap of one thickness between them.
+    `thickness` is a fraction of the ribbon width.  At each crossing the
+    upper ribbon is lifted one thickness along the surface normal and the
+    lower one sunk by the same, leaving a clear gap of one thickness
+    between them.
+
+    Strands may be straight segments or polylines.  For straight
+    families the crossings are found here (`segment_crossings`).  For a
+    curved family the caller passes `crossings` in the same form -- ta
+    and tb as fractions of arc length -- because where two sampled curves
+    meet is better computed from the surface they lie on than recovered
+    from their samples; curved strands without them are refused.  `gap`
+    overrides the neighbour spacing that caps the width (`family_gap`),
+    for a surface whose tightest neighbours sit at a fold rather than in
+    the lattice being woven.  `limit_quantile`, if given, sizes the
+    ribbons to that quantile of the per-span width limits below instead
+    of the tightest one, for a surface where a few crossings crowd too
+    close for any visible ribbon to part between them: the spans tighter
+    than that are squeezed, and counted in `tight`.
 
     Around each crossing the lift is held flat over the whole footprint
     of the other ribbon -- measured along this strand, a ribbon of width
@@ -647,9 +699,15 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
     crossings for that change.  Past it (width > 1) the ribbons are too
     wide to weave cleanly; the offending spans are counted in `tight`.
     """
-    fam_a = [tuple(map(tuple, s)) for s in fam_a]
-    fam_b = [tuple(map(tuple, s)) for s in fam_b]
-    X = segment_crossings(fam_a, fam_b)
+    strands_a = [_strand(s) for s in fam_a]
+    strands_b = [_strand(s) for s in fam_b]
+    if crossings is None:
+        if any(len(P) != 2 for P, _s, _L in strands_a + strands_b):
+            raise ValueError("curved strands need their crossings supplied")
+        X = segment_crossings([P for P, _s, _L in strands_a],
+                              [P for P, _s, _L in strands_b])
+    else:
+        X = crossings
     run = max(1, int(run))
     level, conflicts = weave_levels(X['ia'], X['ta'], X['ib'], X['tb'], run)
     a_over = (level // run) % 2 == 0
@@ -668,10 +726,11 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
     # footprint is 1.1 widths long, so a saddle whose lattice shears
     # toward its edges needs far narrower ribbons than its spacing alone
     # suggests.
-    lengths = [np.linalg.norm(np.diff(np.asarray(f, dtype=float)
-                                      .reshape(-1, 2, 3), axis=1)[:, 0],
-                              axis=1) for f in (fam_a, fam_b)]
-    limit = min(family_gap(fam_a), family_gap(fam_b))
+    lengths = [np.array([L for _P, _s, L in fam])
+               for fam in (strands_a, strands_b)]
+    limit = (gap if gap is not None
+             else min(family_gap(fam_a), family_gap(fam_b)))
+    span_limits = []
     for (key_i, key_t), lens in zip((('ia', 'ta'), ('ib', 'tb')), lengths):
         idx, par = X[key_i], X[key_t]
         if len(idx) < 2:
@@ -681,9 +740,14 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
         p, q = order[:-1][same], order[1:][same]
         span = (par[q] - par[p]) * lens[idx[p]]
         ok = span > 1e-12
-        if np.any(ok):
-            limit = min(limit, float(np.min(
-                (1.0 - _FREE) * span[ok] / (per_w[p][ok] + per_w[q][ok]))))
+        span_limits.append((1.0 - _FREE) * span[ok]
+                           / (per_w[p][ok] + per_w[q][ok]))
+    span_limits = (np.concatenate(span_limits) if span_limits
+                   else np.zeros(0))
+    if len(span_limits):
+        limit = min(limit, float(
+            np.quantile(span_limits, limit_quantile) if limit_quantile
+            else span_limits.min()))
     longest = max((float(np.max(ln)) for ln in lengths if len(ln)),
                   default=1.0)
     if not math.isfinite(limit) or limit <= 0.0:
@@ -697,15 +761,13 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
                 else np.array([0.0, 0.0, 1.0]))
     strands = []
     tight = 0
-    for fam, key_i, key_t, sign in ((fam_a, 'ia', 'ta', 1.0),
-                                    (fam_b, 'ib', 'tb', -1.0)):
-        for i, (p0, p1) in enumerate(fam):
-            p0 = np.asarray(p0, dtype=float)
-            p1 = np.asarray(p1, dtype=float)
-            L = float(np.linalg.norm(p1 - p0))
+    for fam, key_i, key_t, sign in ((strands_a, 'ia', 'ta', 1.0),
+                                    (strands_b, 'ib', 'tb', -1.0)):
+        for i, (P, s, L) in enumerate(fam):
             if L < 1e-12:
                 continue
-            T = (p1 - p0) / L
+            T = (P[-1] - P[0]) / max(float(np.linalg.norm(P[-1] - P[0])),
+                                     1e-300)
             sel = np.nonzero(X[key_i] == i)[0]
             sel = sel[np.argsort(X[key_t][sel])]
             tk = X[key_t][sel]
@@ -728,11 +790,12 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
                 Nf = np.cross(T, [1.0, 0.0, 0.0])
                 if np.linalg.norm(Nf) < 1e-9:
                     Nf = np.cross(T, [0.0, 1.0, 0.0])
-            strands.append(dict(p0=p0, p1=p1, T=T, L=L, t=tk, sign=sg,
-                                half=hk, lo=lo, hi=hi,
-                                N=X['normal'][sel],
-                                fallback=Nf / np.linalg.norm(Nf),
-                                crossings=sel))
+            st = dict(P=P, s=s, L=L, t=tk, sign=sg, half=hk, lo=lo, hi=hi,
+                      N=X['normal'][sel], fallback=Nf / np.linalg.norm(Nf),
+                      crossings=sel)
+            st['Tk'] = (_strand_at(st, tk)[1] if len(tk)
+                        else np.zeros((0, 3)))
+            strands.append(st)
     return dict(strands=strands, width=w, thickness=th, amp=amp,
                 crossings=X, level=level, a_over=a_over,
                 conflicts=conflicts, tight=tight, run=run, limit=limit)
@@ -740,12 +803,12 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1):
 
 def strand_section(plan, st, t):
     """Ribbon centre, side and normal vectors along one strand at
-    parameters `t`: the base ruling, lifted along the surface normal by
-    the woven over/under profile."""
+    arc-length fractions `t`: the strand, lifted along the surface normal
+    by the woven over/under profile."""
     t = np.atleast_1d(np.asarray(t, dtype=float))
     tk, sg = st['t'], st['sign']
     n = len(tk)
-    base = st['p0'][None, :] + t[:, None] * (st['p1'] - st['p0'])[None, :]
+    base, T = _strand_at(st, t)
     if n == 0:
         N = np.repeat(st['fallback'][None, :], len(t), axis=0)
         d = np.zeros(len(t))
@@ -766,16 +829,23 @@ def strand_section(plan, st, t):
         span = np.where(jn > jc, tk[jn] - tk[jc], 1.0)
         u = np.where(jn > jc, np.clip((t - tk[jc]) / span, 0.0, 1.0), 0.0)
         N = (1.0 - u)[:, None] * st['N'][jc] + u[:, None] * st['N'][jn]
-        N /= np.linalg.norm(N, axis=1, keepdims=True)
+    # square the normal up to the local tangent: a straight strand's
+    # normals already are, a curved strand's turn between crossings
+    N = N - np.einsum('ij,ij->i', N, T)[:, None] * T
+    N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-300)
     C = base + (plan['amp'] * d)[:, None] * N
-    S = np.cross(N, st['T'][None, :])
+    S = np.cross(N, T)
     return C, S, N
 
 
 def _sample_ts(plan, st, steps):
     """Sample parameters: every knot, footprint edge and transition end,
-    with the level-changing spans subdivided `steps` times."""
+    with the level-changing spans subdivided `steps` times -- and, on a
+    curved strand, every point of its polyline, so the ribbon follows
+    the curve."""
     br = [0.0, 1.0]
+    if len(st['P']) > 2:
+        br.extend(st['s'])
     br.extend(st['t'])
     br.extend(st['t'] - st['half'])
     br.extend(st['t'] + st['half'])
@@ -787,7 +857,7 @@ def _sample_ts(plan, st, steps):
         return np.array([0.0, 1.0])
     mids = 0.5 * (br[:-1] + br[1:])
     C, _S, N = strand_section(plan, st, mids)
-    base = st['p0'][None, :] + mids[:, None] * (st['p1'] - st['p0'])
+    base, _T = _strand_at(st, mids)
     lift = np.abs(np.einsum('ij,ij->i', C - base, N)) / max(plan['amp'],
                                                              1e-300)
     out = [br[0]]
@@ -827,9 +897,11 @@ def sweep_woven_ribbons(plan, steps=6):
 
 
 def weave_rulings(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
-                  steps=6):
-    """Woven ribbons for two ruling families: (verts, faces, plan)."""
-    plan = plan_weave(fam_a, fam_b, width, thickness, run)
+                  steps=6, crossings=None, gap=None, limit_quantile=None):
+    """Woven ribbons for two ruling families: (verts, faces, plan).
+    `crossings`, `gap` and `limit_quantile` are passed to `plan_weave`."""
+    plan = plan_weave(fam_a, fam_b, width, thickness, run, crossings, gap,
+                      limit_quantile)
     verts, faces, _fs = sweep_woven_ribbons(plan, steps)
     return verts, faces, plan
 
@@ -878,10 +950,12 @@ def crossing_clearance(plan, samples=13, across=7):
         C, S, N = strand_section(plan, so, ts)
         Q = (C[:, None, :] + betas[None, :, None] * S[:, None, :]
              - ht * N[:, None, :]).reshape(-1, 3)
-        # position of each underside sample in the lower ribbon's frame
-        side_u = np.cross(Nc, su['T'])
+        # position of each underside sample in the lower ribbon's frame,
+        # along its tangent at the crossing and across it
+        Tu = su['Tk'][ku]
+        side_u = np.cross(Nc, Tu)
         d = Q - P
-        tu = su['t'][ku] + (d @ su['T']) / su['L']
+        tu = su['t'][ku] + (d @ Tu) / su['L']
         bu = d @ side_u
         keep = (tu >= 0.0) & (tu <= 1.0) & (np.abs(bu) <= hw)
         if not np.any(keep):
@@ -1026,6 +1100,70 @@ def _selftest():
     full = plan_weave(fa, fb, width=1.0)
     assert full['tight'] == 0 and crossing_clearance(full) > 0.5
     print("rulings: saddle z = xy crossing normals exact, woven clean OK")
+
+    # the same saddle families given as polylines -- each straight rod cut
+    # into five pieces -- with their crossings supplied, must plan the
+    # same weave as the straight strands do
+    fa_poly = [np.linspace(np.asarray(p0), np.asarray(p1), 6) for p0, p1 in fa]
+    fb_poly = [np.linspace(np.asarray(p0), np.asarray(p1), 6) for p0, p1 in fb]
+    pp = plan_weave(fa_poly, fb_poly, width=0.7,
+                    crossings=segment_crossings(fa, fb))
+    assert abs(pp['width'] - sp['width']) < 1e-12, (pp['width'], sp['width'])
+    assert pp['conflicts'] == 0 and pp['tight'] == 0
+    assert abs(crossing_clearance(pp) - crossing_clearance(sp)) < 1e-6
+
+    # Truly curved strands: meridians and parallels of the unit sphere,
+    # crossing at right angles with the outward radius as the normal.  A
+    # curved family carries its crossings in, as arc-length fractions,
+    # and must weave as cleanly as a straight one -- closed outward
+    # ribbons of the right volume, lying on the sphere.
+    th0, th1, ph0, ph1 = math.pi / 4.0, 3.0 * math.pi / 4.0, 0.0, 1.3
+    phis = np.linspace(0.1, 1.2, 8)
+    thetas = np.linspace(th0 + 0.1, th1 - 0.1, 7)
+    tt = np.linspace(0.0, 1.0, 65)
+    th_, ph_ = th0 + (th1 - th0) * tt, ph0 + (ph1 - ph0) * tt
+    meridians = [np.stack([np.sin(th_) * math.cos(ph), np.sin(th_)
+                           * math.sin(ph), np.cos(th_)], axis=1)
+                 for ph in phis]
+    parallels = [np.stack([math.sin(th) * np.cos(ph_), math.sin(th)
+                           * np.sin(ph_), np.full_like(ph_, math.cos(th))],
+                          axis=1) for th in thetas]
+    rows = [(i, k, (th - th0) / (th1 - th0), (ph - ph0) / (ph1 - ph0),
+             (math.sin(th) * math.cos(ph), math.sin(th) * math.sin(ph),
+              math.cos(th)))
+            for i, ph in enumerate(phis) for k, th in enumerate(thetas)]
+    SX = dict(ia=np.array([r[0] for r in rows]),
+              ib=np.array([r[1] for r in rows]),
+              ta=np.array([r[2] for r in rows]),
+              tb=np.array([r[3] for r in rows]),
+              point=np.array([r[4] for r in rows]),
+              normal=np.array([r[4] for r in rows]),
+              sin=np.ones(len(rows)))
+    sph = plan_weave(meridians, parallels, crossings=SX)
+    assert sph['conflicts'] == 0 and sph['tight'] == 0, (sph['conflicts'],
+                                                        sph['tight'])
+    sph_clear = crossing_clearance(sph)
+    assert sph_clear > 0.5, sph_clear
+    verts, faces, fs = sweep_woven_ribbons(sph)
+    fs = np.asarray(fs)
+    for si, st in enumerate(sph['strands']):
+        F = [faces[k] for k in np.nonzero(fs == si)[0]]
+        vol = _signed_volume(verts, F)
+        want = sph['width'] * sph['thickness'] * st['L']
+        assert vol > 0 and abs(vol - want) < 0.05 * want, (si, vol, want)
+    radii = np.linalg.norm(np.asarray(verts), axis=1)
+    assert np.max(np.abs(radii - 1.0)) < (sph['amp'] + sph['thickness']
+                                          + sph['width'] ** 2)
+    try:
+        plan_weave(meridians, parallels)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("curved strands were woven without crossings")
+    print("rulings: polyline strands plan as their straight originals; a "
+          "sphere's meridians and parallels weave cleanly (clearance %.2f), "
+          "closed and on the sphere; curved strands without crossings are "
+          "refused OK" % sph_clear)
 
     # ---- separating rods ----------------------------------------------
     # Judge the result on the bent geometry itself, by brute force over

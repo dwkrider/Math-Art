@@ -16,13 +16,14 @@
 # string art).
 #
 # The two doubly-ruled modes, the hyperboloid and the hyperbolic
-# paraboloid, carry a second family of rulings crossing the first, and
-# can also be rendered as WOVEN RIBBONS: every ruling of both families a
-# flat ribbon lying in the surface, passing alternately over and under
-# the ribbons of the other family (a plain weave, or a twill).  The
-# weaving itself knows nothing about the surface and lives in
-# `weaving/rulings.py`; a mode joins it by supplying its two ruling
-# families (see `_ruling_families`).  The ribbons can also run on past
+# paraboloid, carry a second family of rulings crossing the first -- and
+# so does the concentric toroidal knots, whose second family is laid on
+# its surface as curves (see KNOT_SPAN below).  All three can also be
+# rendered as WOVEN RIBBONS: every strand of both families a flat ribbon
+# lying in the surface, passing alternately over and under the ribbons of
+# the other family (a plain weave, or a twill).  The weaving itself knows
+# nothing about the surface and lives in `weaving/rulings.py`; a mode
+# joins it by supplying its two families (see `_weave_input`).  The ribbons can also run on past
 # the edge (Overhang): a ruling of these surfaces still lies on the
 # surface when extended, so the lengthened ribbons keep crossing and the
 # weave itself carries on beyond the rails.
@@ -172,11 +173,11 @@ except ImportError:
 try:                                  # inside the math_art package
     from .weaving.rulings import (weave_rulings, crossing_clearance,
                                   extend_families, segment_contacts,
-                                  separate_rods)
+                                  segment_distance, separate_rods)
 except ImportError:                   # flat import (test runner)
     from weaving.rulings import (weave_rulings, crossing_clearance,
                                  extend_families, segment_contacts,
-                                 separate_rods)
+                                 segment_distance, separate_rods)
 
 _TWO_PI = 2.0 * math.pi
 
@@ -561,6 +562,31 @@ def rulings_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
     return [(tuple(inner[i]), tuple(outer[i])) for i in range(n)]
 
 
+def _knot_span_left(kw, n, shift):
+    """What every left strand of the knot span shares: the strand starts
+    u_j, each right ruling's twist Phi_j about the axis (the short way
+    round), and the two radii of the turning profile -- the mean radius
+    of the strands' starts on the inner knot and of their ends on the
+    outer."""
+    p = kw['p']
+    po = kw['outer_p'] or p
+    uj = _TWO_PI * np.arange(n) / n
+    phi = po * (uj + shift) - p * uj - kw['inner_rotation']
+    phi = (phi + math.pi) % _TWO_PI - math.pi
+    u_end = uj - 2.0 * phi / p + shift
+    a, _o = _knot_span_at(uj, uj, **kw)
+    _i, b = _knot_span_at(u_end, u_end, **kw)
+    return (uj, phi, float(np.hypot(a[:, 0], a[:, 1]).mean()),
+            float(np.hypot(b[:, 0], b[:, 1]).mean()))
+
+
+def _left_theta(v, phi, r1, r2):
+    """How far a ruling of twist phi between radii r1 and r2 has turned
+    about the axis a fraction v of the way along it."""
+    return np.arctan2(v * r2 * np.sin(phi),
+                      (1.0 - v) * r1 + v * r2 * np.cos(phi))
+
+
 def left_rulings_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
                            inner_height=1.0, inner_lift=0.0,
                            inner_rotation=0.0, outer_p=0, outer_q=5,
@@ -584,20 +610,28 @@ def left_rulings_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
         p u + rho + theta = p u_j + rho - theta,  so u = u_j - 2 theta / p.
 
     That is the construction here: left strand j is
-        v -> S(u_j - 2 theta_j(v) / p, v),
-    with theta_j taken from the radii at the strand's own two ends.  On
-    two coaxial circles it reproduces the hyperboloid's straight left
-    rulings exactly.  On knotted rails no surface but a quadric carries
+        v -> S(u_j - 2 theta(v) / p, v),
+    with one turning profile theta for every strand, taken from the mean
+    radii of the strands' two ends (`_knot_span_left`).  On two coaxial
+    circles the radii are constant, so it reproduces the hyperboloid's
+    straight left rulings exactly.  On knotted rails no surface but a quadric carries
     two straight families, so the strands bend -- but they lie on the
     same surface as the right rulings, fill it in with them as n grows,
     and cross them on it, exactly, wherever u_j - 2 theta_j / p passes
     some u_i.  Each strand ends at outer(u_j - shift + 2 rho / p), rho
     being the inner rotation: the right ruling's twist, mirrored.
 
-    Taking the radii at each point along the strand instead, rather than
-    at its ends, makes the rule implicit -- u appears on both sides --
-    and on folded knots that equation has no continuous solution: the
-    strand would jump across the surface.
+    Two nearby rules fail, and say why this one is shaped as it is.
+    Taking the radii at each point along the strand makes the rule
+    implicit -- u appears on both sides -- and on folded knots that
+    equation has no continuous solution: the strand jumps across the
+    surface.  Taking each strand's OWN end radii keeps it explicit, but
+    where the knot's radius changes quickly neighbouring strands turn at
+    different rates, overtake one another, and meet a right ruling out of
+    order; a weave can then no longer alternate there.  With one shared
+    profile the strands are translates of each other in u, so they never
+    cross one another and the two families form the same regular lattice
+    as a hyperboloid's.
     """
     kw = dict(p=p, q=q, knot_scale=knot_scale, tube=tube,
               inner_height=inner_height, inner_lift=inner_lift,
@@ -605,23 +639,120 @@ def left_rulings_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
               outer_q=outer_q, outer_scale=outer_scale,
               outer_tube=outer_tube, outer_height=outer_height,
               circle_radius=circle_radius)
-    uj = _TWO_PI * np.arange(n) / n
-    po = outer_p or p
-    # the twist of each right ruling about the axis, the short way round
-    phi = po * (uj + shift) - p * uj - inner_rotation
-    phi = (phi + math.pi) % _TWO_PI - math.pi
-    u_end = uj - 2.0 * phi / p
-    a, _o = _knot_span_at(uj, uj, **kw)
-    _i, b = _knot_span_at(u_end + shift, u_end + shift, **kw)
-    r1 = np.hypot(a[:, 0], a[:, 1])
-    r2 = np.hypot(b[:, 0], b[:, 1])
+    uj, phi, r1, r2 = _knot_span_left(kw, n, shift)
     v = np.linspace(0.0, 1.0, samples + 1)[:, None]
-    theta = np.arctan2(v * r2 * np.sin(phi),
-                       (1.0 - v) * r1 + v * r2 * np.cos(phi))
-    U = uj[None, :] - 2.0 * theta / p
+    U = uj[None, :] - 2.0 * _left_theta(v, phi, r1, r2) / p
     inner, outer = _knot_span_at(U, U + shift, **kw)
     pts = (1.0 - v)[..., None] * inner + v[..., None] * outer
     return [pts[:, j].copy() for j in range(n)]
+
+
+def knot_span_weave(p=2, q=3, knot_scale=1.0, tube=1.0, inner_height=1.0,
+                    inner_lift=0.0, inner_rotation=0.0, outer_p=0,
+                    outer_q=5, outer_scale=2.0, outer_tube=1.0,
+                    outer_height=1.0, circle_radius=4.5, n=48, shift=0.0,
+                    overhang=0.0, samples=256):
+    """Both families of the knot span ready to weave: (right strands,
+    left strands, crossings, neighbour gap) for `weave_rulings`.
+
+    The right strands are the straight rulings, the left strands the
+    curves of `left_rulings_knot_span`.  An overhang carries both on past
+    the knots along the surface itself -- a right ruling straight on, a
+    left strand by running its v beyond [0, 1] -- by one distance,
+    `overhang` times the longest strand, so the weave carries on as well.
+
+    The crossings are exact rather than searched for.  Right ruling i
+    lies at u = u_i and left strand j at u = u_j - 2 theta_j(v) / p, so
+    they meet where theta_j(v) = p (u_j - u_i) / 2, with u_i taken round
+    the knot as many times as the strand's sweep allows; and
+        tan theta = v r2 sin Phi / ((1 - v) r1 + v r2 cos Phi)
+    gives that v in closed form,
+        v = r1 sin theta / (r2 sin(Phi - theta) + r1 sin theta),
+    r1 and r2 being the shared profile radii (`_knot_span_left`).
+    The crossing point is S(u_i, v), on both strands, and the normal
+    there is the cross product of the two strands' tangents.
+
+    The gap handed on is the 10th percentile of the spacing between
+    neighbouring right rulings, not the smallest: where the surface
+    folds, neighbours of one family come within a hair of each other, and
+    sizing every ribbon to that one place would leave them all too thin
+    to see.
+    """
+    kw = dict(p=p, q=q, knot_scale=knot_scale, tube=tube,
+              inner_height=inner_height, inner_lift=inner_lift,
+              inner_rotation=inner_rotation, outer_p=outer_p,
+              outer_q=outer_q, outer_scale=outer_scale,
+              outer_tube=outer_tube, outer_height=outer_height,
+              circle_radius=circle_radius)
+    uj, phi, r1, r2 = _knot_span_left(kw, n, shift)
+
+    def left_u(v, j=slice(None)):
+        return uj[j] - 2.0 * _left_theta(v, phi[j], r1, r2) / p
+
+    def left_point(v, j=slice(None)):
+        U = left_u(v, j)
+        inner, outer = _knot_span_at(U, U + shift, **kw)
+        return (1.0 - v)[..., None] * inner + v[..., None] * outer
+
+    # lengths before any overhang, to turn one distance into v on each
+    A0, A1 = _knot_span_at(uj, uj + shift, **kw)
+    LA = np.linalg.norm(A1 - A0, axis=1)
+    grid = np.linspace(0.0, 1.0, samples + 1)[:, None]
+    LB = np.linalg.norm(np.diff(left_point(grid * np.ones(n)), axis=0),
+                        axis=-1).sum(axis=0)
+    amount = overhang * float(max(LA.max(), LB.max()))
+    hA, hB = amount / LA, amount / LB
+
+    right = [np.stack([A0[i] - hA[i] * (A1[i] - A0[i]),
+                       A1[i] + hA[i] * (A1[i] - A0[i])]) for i in range(n)]
+    V = -hB[None, :] + (1.0 + 2.0 * hB)[None, :] * grid          # (K+1, n)
+    LP = left_point(V)
+    cum = np.concatenate([np.zeros((1, n)), np.cumsum(
+        np.linalg.norm(np.diff(LP, axis=0), axis=-1), axis=0)], axis=0)
+    frac = cum / cum[-1][None, :]
+    left = [LP[:, j].copy() for j in range(n)]
+
+    ia, ib, vv = [], [], []
+    eps = 1e-12
+    for j in range(n):
+        v_lo, v_hi = -hB[j], 1.0 + hB[j]
+        ua, ub = left_u(np.array(v_lo), j), left_u(np.array(v_hi), j)
+        umin, umax = min(ua, ub), max(ua, ub)
+        m_lo = np.ceil((umin - eps - uj) / _TWO_PI).astype(int)
+        m_hi = np.floor((umax + eps - uj) / _TWO_PI).astype(int)
+        for m in range(int(m_lo.min()), int(m_hi.max()) + 1):
+            ii = np.nonzero((m_lo <= m) & (m <= m_hi))[0]
+            theta = p * (uj[j] - (uj[ii] + _TWO_PI * m)) / 2.0
+            den = r2 * np.sin(phi[j] - theta) + r1 * np.sin(theta)
+            ok = np.abs(den) > 1e-12
+            v = np.where(ok, r1 * np.sin(theta) / np.where(ok, den, 1.0),
+                         np.nan)
+            ok &= ((v >= v_lo - 1e-9) & (v <= v_hi + 1e-9)
+                   & (v >= -hA[ii] - 1e-9) & (v <= 1.0 + hA[ii] + 1e-9))
+            ia.extend(ii[ok])
+            ib.extend([j] * int(ok.sum()))
+            vv.extend(v[ok])
+    ia, ib, vv = np.asarray(ia, dtype=int), np.asarray(ib, dtype=int), \
+        np.asarray(vv, dtype=float)
+    point = (1.0 - vv)[:, None] * A0[ia] + vv[:, None] * A1[ia]
+    ta = (vv + hA[ia]) / (1.0 + 2.0 * hA[ia])
+    tb = np.array([np.interp(v, V[:, j], frac[:, j])
+                   for v, j in zip(vv, ib)])
+    TA = (A1[ia] - A0[ia]) / LA[ia, None]
+    dv = 1e-6
+    TB = np.stack([left_point(np.array([v + dv]), j)[0]
+                   - left_point(np.array([v - dv]), j)[0]
+                   for v, j in zip(vv, ib)]) if len(vv) else np.zeros((0, 3))
+    TB /= np.maximum(np.linalg.norm(TB, axis=1, keepdims=True), 1e-300)
+    normal = np.cross(TA, TB)
+    sin = np.linalg.norm(normal, axis=1)
+    normal /= np.maximum(sin, 1e-300)[:, None]
+    crossings = dict(ia=ia, ta=ta, ib=ib, tb=tb, point=point,
+                     normal=normal, sin=sin)
+    spacing = [segment_distance(right[i][0], right[i][1],
+                                right[(i + 1) % n][0], right[(i + 1) % n][1])
+               for i in range(n)]
+    return right, left, crossings, float(np.percentile(spacing, 10))
 
 
 # --------------------------------------------------------------------
@@ -1307,15 +1438,14 @@ _MODES = [
 #: and is a deliberate choice rather than the obvious first look.
 _SURFACE_FIRST = {'HELICAL_CONE'}
 
-#: doubly-ruled modes: two crossing ruling families, so the woven-ribbon
-#: output.  A mode joins by adding a branch to `_ruling_families`.
-_WOVEN = {'HYPERBOLOID', 'HYPAR'}
+#: modes with two ruling families that cross on one surface, and so the
+#: woven-ribbon output: the two doubly-ruled quadrics, and the knot span,
+#: whose left family is laid on its surface as curves
+#: (`left_rulings_knot_span`).  A mode joins by answering `_weave_input`.
+_WOVEN = {'HYPERBOLOID', 'HYPAR', 'KNOT_SPAN'}
 
-#: modes with a Ruling Family choice.  The knot span's left family lies
-#: on the same surface as its straight right rulings and crosses them
-#: there, but is curved on knotted rails (`left_rulings_knot_span`), so
-#: it comes from `_build_curves` rather than `_ruling_families`.
-_TWO_FAMILY = _WOVEN | {'KNOT_SPAN'}
+#: modes with a Ruling Family choice
+_TWO_FAMILY = set(_WOVEN)
 
 
 def effective_output(op):
@@ -1515,10 +1645,13 @@ def _build_curves(op, n=None):
 
 
 def _ruling_families(op, n=None):
-    """The two ruling families of a doubly-ruled mode, as a pair of
-    segment lists, each family oriented consistently; None for a mode
-    with only one family.  This is the whole interface to the woven
-    output: a mode that can answer here can be woven."""
+    """The two ruling families of a mode that has two, as a pair of
+    strand lists -- segments, or polylines for the knot span's curved
+    left family -- each family oriented consistently; None for a mode
+    with only one family."""
+    if op.mode == 'KNOT_SPAN':
+        right, left, _x, _g = _knot_span_weave(op, n)
+        return right, left
     if n is None:
         n = op.n_rods
     if op.mode == 'HYPERBOLOID':
@@ -1534,6 +1667,37 @@ def _ruling_families(op, n=None):
                                    op.v_extent, corners, n, fam)
                      for fam in ('RIGHT', 'LEFT'))
     return None
+
+
+def _knot_span_weave(op, n=None, overhang=0.0):
+    return knot_span_weave(
+        op.knot_p, op.knot_q, op.knot_scale, op.knot_tube,
+        op.knot_inner_height, op.knot_inner_lift, op.knot_rotation,
+        op.knot_outer_p, op.knot_outer_q, op.knot_outer_scale,
+        op.knot_outer_tube, op.knot_outer_height, op.knot_circle_radius,
+        op.knot_rods if n is None else n, op.knot_twist, overhang)
+
+
+#: the knot span sizes its ribbons to this quantile of the spans between
+#: crossings rather than the tightest: where its strands crowd together a
+#: few crossings sit too close for any visible ribbon to part between
+#: them, and those spans are squeezed instead
+_KNOT_WEAVE_QUANTILE = 0.05
+
+
+def _weave_input(op):
+    """What the woven output weaves: (family a, family b, options) for
+    `weave_rulings`.  Straight families go in with their overhang and the
+    weaver finds their crossings; the knot span, whose left family is
+    curved, supplies its exact crossings and neighbour spacing
+    (`knot_span_weave`) and a quantile width limit."""
+    if op.mode == 'KNOT_SPAN':
+        fa, fb, crossings, gap = _knot_span_weave(
+            op, overhang=op.ribbon_overhang)
+        return fa, fb, dict(crossings=crossings, gap=gap,
+                            limit_quantile=_KNOT_WEAVE_QUANTILE)
+    fa, fb = extend_families(*_ruling_families(op), op.ribbon_overhang)
+    return fa, fb, {}
 
 
 def _hypar_boundary(op, N):
@@ -1916,9 +2080,9 @@ if _IN_BLENDER:
                    ('RIBBONS', "Woven Ribbons",
                     "Both ruling families as flat ribbons lying in the "
                     "surface, passing over and under each other where "
-                    "they cross.  Doubly-ruled surfaces only (the "
-                    "hyperboloid and the hyperbolic paraboloid); others "
-                    "fall back to rods")],
+                    "they cross.  On the hyperboloid, the hyperbolic "
+                    "paraboloid and the concentric toroidal knots; other "
+                    "surfaces fall back to rods")],
             default='AUTO')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
                             max=400,
@@ -1985,20 +2149,19 @@ if _IN_BLENDER:
             out = effective_output(self)
             want_rulings = out in ('RODS', 'CURVES')
             if self.output == 'RIBBONS' and out != 'RIBBONS':
-                info = " [woven ribbons need a doubly-ruled surface]"
+                info = " [woven ribbons need two crossing ruling families]"
             if out == 'RIBBONS':
                 # a weave is BOTH ruling families crossing into a mesh;
                 # pin the family to match, so the panel says so and
                 # switching back to rods shows that same mesh
                 if self.family != 'BOTH':
                     self.family = 'BOTH'
-                # an overhang only lengthens the segments; the weave
-                # finds the extra crossings past the edge on its own
-                fa, fb = extend_families(*_ruling_families(self),
-                                         self.ribbon_overhang)
+                # an overhang only lengthens the strands; the weave
+                # carries on through the extra crossings past the edge
+                fa, fb, weave_opts = _weave_input(self)
                 verts, faces, plan = weave_rulings(
                     fa, fb, self.ribbon_width, self.ribbon_thickness,
-                    self.weave_float)
+                    self.weave_float, **weave_opts)
                 loops = (_boundary_loops(self)
                          if self.show_boundaries else [])
                 tv, tf = _tubes(loops, self.rod_radius, 8)
@@ -2007,13 +2170,18 @@ if _IN_BLENDER:
                 faces = list(faces) + [[i + o for i in q] for q in tf]
                 name += " (Woven Ribbons)"
                 info += f" crossings={len(plan['crossings']['ia'])}"
-                if plan['conflicts'] or plan['tight']:
+                squeezed = (plan['tight']
+                            if weave_opts.get('limit_quantile') else 0)
+                if plan['conflicts'] or plan['tight'] > squeezed:
                     self.report(
                         {'WARNING'},
                         f"{plan['conflicts']} crossings could not "
                         f"alternate, {plan['tight']} spans too tight for "
                         f"the ribbons to part: narrow the ribbons or use "
                         f"fewer rulings")
+                elif squeezed:
+                    info += (f" [{squeezed} spans squeezed where the "
+                             f"strands crowd together]")
             elif want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
                 curves = _build_curves(self)
@@ -2175,8 +2343,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'output')
                 out = effective_output(self)
                 if self.output == 'RIBBONS' and out != 'RIBBONS':
-                    lay.label(text="Woven ribbons need a doubly-ruled "
-                                   "surface", icon='INFO')
+                    lay.label(text="Woven ribbons need two crossing "
+                                   "ruling families", icon='INFO')
                 if out in ('RODS', 'CURVES'):
                     if m in _TWO_FAMILY:
                         lay.prop(self, 'family')
@@ -2192,9 +2360,10 @@ if _IN_BLENDER:
                     row = lay.row()
                     row.enabled = False
                     row.prop(self, 'family')
-                    for k in ('n_rods', 'ribbon_width',
-                              'ribbon_thickness', 'weave_float',
-                              'ribbon_overhang', 'show_boundaries'):
+                    for k in ('knot_rods' if m == 'KNOT_SPAN' else 'n_rods',
+                              'ribbon_width', 'ribbon_thickness',
+                              'weave_float', 'ribbon_overhang',
+                              'show_boundaries'):
                         lay.prop(self, k)
                     if self.show_boundaries:
                         lay.prop(self, 'rod_radius')
@@ -2453,9 +2622,11 @@ def _selftest():
     # p = 2 and no rotation here), and there the rod passes through the
     # strand to within the strand's sampling error.
     try:
-        from .weaving.rulings import _segment_pairs_closest
+        from .weaving.rulings import (_segment_pairs_closest,
+                                      _pairwise_closest, segment_crossings)
     except ImportError:
-        from weaving.rulings import _segment_pairs_closest
+        from weaving.rulings import (_segment_pairs_closest,
+                                     _pairwise_closest, segment_crossings)
     n48, tw30 = 48, math.radians(30.0)
     kr = rulings_knot_span(n=n48, family='RIGHT', shift=tw30)
     kl = left_rulings_knot_span(n=n48, shift=tw30, samples=1024)
@@ -2516,34 +2687,41 @@ def _selftest():
     assert k_info['contacts'] > 0 and k_info['remaining'] == 0, k_info
     for P, src_ in zip(k_polys, k_rods):
         assert np.allclose(P[0], src_[0]) and np.allclose(P[-1], src_[-1])
-    soup, owner = [], []
-    for k, P in enumerate(k_polys):
-        soup.extend(zip(P[:-1], P[1:]))
-        owner.extend([k] * (len(P) - 1))
-    owner = np.asarray(owner)
-    C = segment_contacts(soup, 2.0 * r_kn * 1.05)
+    # every pair of rods whose padded boxes overlap, piece against piece
+    reach_kn = 2.0 * r_kn * 1.05
+    box_lo = np.array([P.min(axis=0) for P in k_polys]) - reach_kn
+    box_hi = np.array([P.max(axis=0) for P in k_polys]) + reach_kn
+    boxes = np.all((box_lo[:, None, :] <= box_hi[None, :, :])
+                   & (box_lo[None, :, :] <= box_hi[:, None, :]), axis=-1)
     real = []
-    for i, j, dd, qa, qb in zip(C['i'], C['j'], C['dist'], C['pa'], C['pb']):
-        a, b = owner[i], owner[j]
-        if a == b:
+    for a, b in zip(*np.nonzero(np.triu(boxes, 1))):
+        Pa, Pb = k_polys[a], k_polys[b]
+        s_, t_, dd = _pairwise_closest(Pa[:-1], np.diff(Pa, axis=0),
+                                       Pb[:-1], np.diff(Pb, axis=0))
+        close = dd < reach_kn
+        if not np.any(close):
             continue
         Ra, Rb = k_rods[a], k_rods[b]
         ends = np.linalg.norm(Ra[[0, -1]][:, None] - Rb[[0, -1]][None, :],
                               axis=-1)
-        ia, ib = np.unravel_index(int(np.argmin(ends)), ends.shape)
-        if ends[ia, ib] < want_kn:
-            ta_ = Ra[1] - Ra[0] if ia == 0 else Ra[-2] - Ra[-1]
-            tb_ = Rb[1] - Rb[0] if ib == 0 else Rb[-2] - Rb[-1]
+        ea, eb = np.unravel_index(int(np.argmin(ends)), ends.shape)
+        if ends[ea, eb] < want_kn:
+            ta_ = Ra[1] - Ra[0] if ea == 0 else Ra[-2] - Ra[-1]
+            tb_ = Rb[1] - Rb[0] if eb == 0 else Rb[-2] - Rb[-1]
             cos_ = abs(float(ta_ @ tb_)) / float(np.linalg.norm(ta_)
                                                  * np.linalg.norm(tb_))
             sin_ = max(math.sqrt(max(0.0, 1.0 - cos_ * cos_)),
                        math.sin(math.radians(3.0)))
-            joint = Ra[0] if ia == 0 else Ra[-1]
+            joint = Ra[0] if ea == 0 else Ra[-1]
             reach_ = want_kn / sin_ + want_kn
-            if (np.linalg.norm(qa - joint) < reach_
-                    and np.linalg.norm(qb - joint) < reach_):
-                continue
-        real.append(dd)
+            qa = (Pa[:-1][:, None, :]
+                  + s_[..., None] * np.diff(Pa, axis=0)[:, None, :])
+            qb = (Pb[:-1][None, :, :]
+                  + t_[..., None] * np.diff(Pb, axis=0)[None, :, :])
+            close &= ~((np.linalg.norm(qa - joint, axis=-1) < reach_)
+                       & (np.linalg.norm(qb - joint, axis=-1) < reach_))
+        if np.any(close):
+            real.append(float(dd[close].min()))
     assert not real, (len(real), min(real) / r_kn)
     n_bent = sum(1 for P, src_ in zip(k_polys, k_rods)
                  if len(P) != len(src_) or not np.allclose(P, src_))
@@ -2776,6 +2954,87 @@ def _selftest():
               "clearance %.2f OK"
               % ("equation" if corners_ is None else "corners",
                  counts[0], counts[1], clear))
+
+    # ---- woven ribbons: the concentric toroidal knots --------------------
+    # Its left family is curved, so the crossings come from the closed
+    # form in `knot_span_weave` rather than from intersecting segments.
+    # On two coaxial circles (p = 1, so each circle is traced once) the
+    # strands are straight and plain segment intersection is an
+    # independent answer: it must find the same pairs at the same points,
+    # arc fractions and normals -- with and without inner rotation and an
+    # overhang.
+    for rho_, oh_ in ((0.0, 0.0), (0.5, 0.0), (0.0, 0.3), (0.5, 0.3)):
+        kw_ = dict(p=1, q=0, outer_q=0, inner_lift=2.0, inner_rotation=rho_)
+        kright, kleft, KX, _g = knot_span_weave(n=24, shift=tw40,
+                                                overhang=oh_, samples=64,
+                                                **kw_)
+        KY = segment_crossings(kright,
+                               [np.stack([c[0], c[-1]]) for c in kleft])
+        assert (sorted(zip(KX['ia'], KX['ib']))
+                == sorted(zip(KY['ia'], KY['ib']))), (rho_, oh_)
+        ox = np.lexsort((KX['ib'], KX['ia']))
+        oy = np.lexsort((KY['ib'], KY['ia']))
+        for key in ('point', 'ta', 'tb'):
+            assert np.max(np.abs(KX[key][ox] - KY[key][oy])) < 1e-9, \
+                (rho_, oh_, key)
+        assert np.max(np.abs(np.abs(np.einsum(
+            'ij,ij->i', KX['normal'][ox], KY['normal'][oy])) - 1.0)) < 1e-9
+    # On the default knots: every strand meets its crossings in lattice
+    # order -- the shared turning profile guarantees it -- so a plain
+    # weave and a 2/2 twill both alternate without a conflict; every
+    # crossing lies on its right rod exactly and on its curved left strand
+    # to within the strand's sampling; and with the ribbons sized from a
+    # quantile of the spans, only the few spans where the strands crowd
+    # together are squeezed.
+    n64 = 64
+    kright, kleft, KX, kgap = knot_span_weave(n=n64, shift=tw30)
+    for i in range(n64):
+        sel = np.nonzero(KX['ia'] == i)[0]
+        assert np.all(np.diff(KX['ib'][sel[np.argsort(KX['ta'][sel])]])
+                      % n64 == 1), ("right", i)
+        sel = np.nonzero(KX['ib'] == i)[0]
+        assert np.all(np.diff(KX['ia'][sel[np.argsort(KX['tb'][sel])]])
+                      % n64 == n64 - 1), ("left", i)
+    A_ = np.asarray(kright)
+    rod_dir = A_[KX['ia'], 1] - A_[KX['ia'], 0]
+    off_right = (np.linalg.norm(np.cross(KX['point'] - A_[KX['ia'], 0],
+                                         rod_dir), axis=1)
+                 / np.linalg.norm(rod_dir, axis=1))
+    assert off_right.max() < 1e-9, off_right.max()
+    off_left = 0.0
+    for c in range(len(KX['ia'])):
+        P = kleft[KX['ib'][c]]
+        a_, d_ = P[:-1], np.diff(P, axis=0)
+        tt = np.clip(np.einsum('ij,ij->i', KX['point'][c] - a_, d_)
+                     / np.einsum('ij,ij->i', d_, d_), 0.0, 1.0)
+        off_left = max(off_left, float(np.linalg.norm(
+            KX['point'][c] - (a_ + tt[:, None] * d_), axis=1).min()))
+    assert off_left < 2e-3, off_left
+    kv_, kf_, kplan = weave_rulings(kright, kleft, crossings=KX, gap=kgap,
+                                    limit_quantile=_KNOT_WEAVE_QUANTILE)
+    assert kplan['conflicts'] == 0
+    assert weave_rulings(kright, kleft, run=2, crossings=KX, gap=kgap,
+                         limit_quantile=_KNOT_WEAVE_QUANTILE
+                         )[2]['conflicts'] == 0
+    spans = 2 * len(KX['ia']) - 2 * n64
+    assert kplan['tight'] < 0.1 * spans, (kplan['tight'], spans)
+    assert kplan['width'] > 0.3 * kgap, (kplan['width'], kgap)
+    assert np.all(np.isfinite(np.asarray(kv_)))
+    assert max(max(f) for f in kf_) < len(kv_)
+    # and the operator's input for it carries the crossings, gap and
+    # quantile through
+    kop.family, kop.output = 'BOTH', 'RIBBONS'
+    kop.ribbon_overhang, kop.knot_rods = 0.0, 12
+    kfa, kfb, kopts = _weave_input(kop)
+    assert len(kfa) == len(kfb) == 12
+    assert set(kopts) == {'crossings', 'gap', 'limit_quantile'}
+    assert effective_output(kop) == 'RIBBONS'
+    print("woven knot span: on two circles the closed-form crossings "
+          "match plain intersection exactly (with rotation and overhang); "
+          "on the knots every strand meets its crossings in lattice order, "
+          "plain weave and twill conflict-free, crossings on both strands "
+          "(left within %.1e), %d of %d spans squeezed where the strands "
+          "crowd OK" % (off_left, kplan['tight'], spans))
 
     # the output falls back to rods on a singly-ruled mode, and only the
     # doubly-ruled modes answer for their two families
