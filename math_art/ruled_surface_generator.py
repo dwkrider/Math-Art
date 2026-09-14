@@ -17,8 +17,9 @@
 #
 # The two doubly-ruled modes, the hyperboloid and the hyperbolic
 # paraboloid, carry a second family of rulings crossing the first -- and
-# so does the concentric toroidal knots, whose second family is laid on
-# its surface as curves (see KNOT_SPAN below).  All three can also be
+# so do the spiral ruled surface and the concentric toroidal knots, whose
+# second families are laid on their surfaces as curves (see SPIRAL and
+# KNOT_SPAN below).  All four can also be
 # rendered as WOVEN RIBBONS: every strand of both families a flat ribbon
 # lying in the surface, passing alternately over and under the ribbons of
 # the other family (a plain weave, or a twill).  The weaving itself knows
@@ -64,6 +65,11 @@
 #   SPIRAL        -- Farris' spiral ruled surfaces: the hyperboloid's
 #     generating circle replaced by a logarithmic spiral (or an
 #     n-fold-symmetric rosette), swept with a tangent+vertical ruling.
+#     A log spiral is carried onto itself by turning and scaling, so its
+#     left family is laid on the surface the way the knot span's is:
+#     each strand winds back through the angle its right partner winds
+#     forward (`left_rulings_spiral`), which on a circle is exactly the
+#     hyperboloid's straight left ruling.
 #   CONOID        -- right conoids S=(v cos u, v sin u, h(u)):
 #     Plucker's conoid / cylindroid (h = c sin 2u), the n-fold
 #     generalization, the Wallis conical edge, Zindler's conoid
@@ -188,7 +194,8 @@ import numpy as np
 try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
-                           BoolProperty, FloatVectorProperty)
+                           BoolProperty, FloatVectorProperty,
+                           StringProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -858,27 +865,183 @@ def build_spiral_ruled(tightness=0.15, slope=1.0, turns=2.0,
     return _mesh_grid(P)
 
 
-def rulings_spiral(tightness=0.15, slope=1.0, turns=2.0, petals=1,
-                   petal_amp=0.0, v_extent=1.0, n=64):
+def _spiral_frame(u, tightness, petals, petal_amp):
+    """Base point b(u) and horizontal ruling direction b'(u) of the
+    spiral ruled surface, as (bx, by, dbx, dby) arrays shaped like u."""
     k = tightness
-    u = np.linspace(0.0, _TWO_PI * turns, n)
+    u = np.asarray(u, dtype=float)
     e = np.exp(k * u)
     p, A = float(petals), petal_amp
     fx = np.cos(u) + A * np.cos(p * u)
     fy = np.sin(u) + A * np.sin(p * u)
     fpx = -np.sin(u) - A * p * np.sin(p * u)
     fpy = np.cos(u) + A * p * np.cos(p * u)
-    bx, by = e * fx, e * fy
-    dbx = e * (k * fx + fpx)
-    dby = e * (k * fy + fpy)
-    segs = []
-    for i in range(n):
-        p0 = (bx[i] - v_extent * dbx[i], by[i] - v_extent * dby[i],
-              -slope * v_extent)
-        p1 = (bx[i] + v_extent * dbx[i], by[i] + v_extent * dby[i],
-              slope * v_extent)
-        segs.append((p0, p1))
-    return segs
+    return e * fx, e * fy, e * (k * fx + fpx), e * (k * fy + fpy)
+
+
+def _spiral_point(u, v, tightness, slope, petals, petal_amp):
+    """S(u, v) = (b(u) + v b'(u), slope v), broadcast over u and v."""
+    bx, by, dbx, dby = _spiral_frame(u, tightness, petals, petal_amp)
+    v = np.asarray(v, dtype=float)
+    return np.stack(np.broadcast_arrays(bx + v * dbx, by + v * dby,
+                                        slope * v), axis=-1)
+
+
+def rulings_spiral(tightness=0.15, slope=1.0, turns=2.0, petals=1,
+                   petal_amp=0.0, v_extent=1.0, n=64, family='RIGHT'):
+    """The spiral surface's own straight rulings, spread evenly over the
+    turns and running v = -v_extent .. v_extent.  They are its right
+    family, so RIGHT or BOTH gives them and LEFT none: the left family
+    lies on the surface as curves (`left_rulings_spiral`)."""
+    if family not in ('RIGHT', 'BOTH'):
+        return []
+    u = np.linspace(0.0, _TWO_PI * turns, n)
+    lo = _spiral_point(u, -v_extent, tightness, slope, petals, petal_amp)
+    hi = _spiral_point(u, v_extent, tightness, slope, petals, petal_amp)
+    return [(tuple(lo[i]), tuple(hi[i])) for i in range(n)]
+
+
+def _spiral_theta(v, tightness):
+    """How far a right ruling of the log spiral has turned about the axis
+    a distance v along it, from its base point:
+        theta(v) = arg(1 + v (k + i)),
+    because b + v b' = b (1 + v (k + i)) for b = e^{(k + i) u}.  It rises
+    with v for every k (d theta / dv = 1 / |1 + v (k + i)|^2)."""
+    return np.arctan2(v, 1.0 + tightness * np.asarray(v, dtype=float))
+
+
+def _spiral_theta_inverse(delta, tightness, v_lo, v_hi):
+    """The v in [v_lo, v_hi] where theta(v) = delta, held at an end where
+    theta does not reach delta.  theta(v) = delta means (v, 1 + k v) =
+    lam (sin delta, cos delta) for some lam > 0, so
+        v = sin delta / (cos delta - k sin delta)."""
+    delta = np.asarray(delta, dtype=float)
+    t_lo = _spiral_theta(v_lo, tightness)
+    t_hi = _spiral_theta(v_hi, tightness)
+    den = np.cos(delta) - tightness * np.sin(delta)
+    inside = (delta > t_lo) & (delta < t_hi) & (den > 0.0)
+    v = np.where(inside, np.sin(delta) / np.where(inside, den, 1.0), 0.0)
+    return np.where(delta <= t_lo, v_lo, np.where(delta >= t_hi, v_hi, v))
+
+
+def _spiral_left(tightness, turns, n, v_lo, v_hi):
+    """The spiral's left strands: their starts u_j, spaced like the n
+    right rulings and reaching past both ends of the turns far enough to
+    fill the surface, and the v-interval [a_j, b_j] of each that stays on
+    it (0 <= u_j - 2 theta(v) <= 2 pi turns)."""
+    U = _TWO_PI * turns
+    du = U / max(1, n - 1)
+    th_lo = float(_spiral_theta(v_lo, tightness))
+    th_hi = float(_spiral_theta(v_hi, tightness))
+    # u(v) = u_j - 2 theta(v) falls from u_j - 2 th_lo to u_j - 2 th_hi
+    j0 = int(math.ceil(2.0 * th_lo / du - 1e-9))
+    j1 = int(math.floor((U + 2.0 * th_hi) / du + 1e-9))
+    uj = du * np.arange(j0, j1 + 1)
+    a = _spiral_theta_inverse((uj - U) / 2.0, tightness, v_lo, v_hi)
+    b = _spiral_theta_inverse(uj / 2.0, tightness, v_lo, v_hi)
+    keep = b - a > 1e-9 * max(1.0, v_hi - v_lo)
+    return uj[keep], a[keep], b[keep]
+
+
+def left_rulings_spiral(tightness=0.15, slope=1.0, turns=2.0, petals=1,
+                        petal_amp=0.0, v_extent=1.0, n=64, samples=128):
+    """The spiral ruled surface's left family, as polylines lying on it.
+
+    A log spiral b(u) = e^{(k + i) u} is carried onto itself by turning
+    and scaling, and b + v b' = b (1 + v (k + i)): the right ruling from
+    b(u_j) has turned about the axis, a distance v along, through
+    theta(v) = arg(1 + v (k + i)) (`_spiral_theta`) -- the same for every
+    ruling.  The left strand mirrors it, turning BACK through theta(v),
+    and the surface point it reaches is the one whose own right ruling
+    turned forward to get there:
+        u + theta(v) = u_j - theta(v),   so u(v) = u_j - 2 theta(v),
+    and left strand j is v -> S(u_j - 2 theta(v), v).  With no tightness
+    and no rosette the surface is a hyperboloid and each strand is its
+    straight left ruling b(u_j) (1 - i v); otherwise the strands bend, but
+    they lie on the same surface, each crosses every right ruling it
+    reaches exactly once, and all are one curve shifted in u, so the two
+    families form a regular lattice.  A rosette base curve is not
+    self-similar, so there the strands still lie on the surface and keep
+    the lattice but no longer mirror their partners exactly.
+
+    The strands are spaced like the right rulings, reach past both ends
+    of the turns far enough to fill the surface, and are clipped to it.
+    """
+    uj, a, b = _spiral_left(tightness, turns, n, -v_extent, v_extent)
+    t = np.linspace(0.0, 1.0, samples + 1)[:, None]
+    v = a[None, :] + (b - a)[None, :] * t
+    pts = _spiral_point(uj[None, :] - 2.0 * _spiral_theta(v, tightness), v,
+                        tightness, slope, petals, petal_amp)
+    return [pts[:, j].copy() for j in range(len(uj))]
+
+
+def spiral_weave(tightness=0.15, slope=1.0, turns=2.0, petals=1,
+                 petal_amp=0.0, v_extent=1.0, n=64, overhang=0.0,
+                 samples=128):
+    """Both families of the spiral ruled surface ready to weave: (right
+    strands, left strands, crossings, neighbour gap) for `weave_rulings`,
+    as `knot_span_weave` gives them for the knots.
+
+    An overhang runs every strand on past both rails in v, by `overhang`
+    times the length of its ruling, so every end stays level with the
+    new rails v = +-v_extent (1 + 2 overhang) -- on a surface that grows
+    as it winds, one distance for all would leave the inner turns'
+    ribbons sticking far out and the outer ones barely clear.
+
+    The crossings are exact.  Right ruling i lies at u = u_i and left
+    strand j at u = u_j - 2 theta(v), so they meet where
+        theta(v) = (u_j - u_i) / 2,
+    which `_spiral_theta_inverse` solves in closed form; the crossing is
+    the surface point S(u_i, v), on both strands.  The gap handed on is
+    the 10th percentile of the spacing between neighbouring right
+    rulings.
+    """
+    U = _TWO_PI * turns
+    V = v_extent * (1.0 + 2.0 * overhang)
+    ui = np.linspace(0.0, U, n)
+    lo = _spiral_point(ui, -V, tightness, slope, petals, petal_amp)
+    hi = _spiral_point(ui, V, tightness, slope, petals, petal_amp)
+    right = [np.stack([lo[i], hi[i]]) for i in range(n)]
+    uj, a, b = _spiral_left(tightness, turns, n, -V, V)
+    m = len(uj)
+
+    def left_point(v, j):
+        return _spiral_point(uj[j] - 2.0 * _spiral_theta(v, tightness), v,
+                             tightness, slope, petals, petal_amp)
+
+    t = np.linspace(0.0, 1.0, samples + 1)[:, None]
+    Vs = a[None, :] + (b - a)[None, :] * t                     # (K+1, m)
+    LP = left_point(Vs, np.arange(m)[None, :])
+    cum = np.concatenate([np.zeros((1, m)), np.cumsum(
+        np.linalg.norm(np.diff(LP, axis=0), axis=-1), axis=0)], axis=0)
+    frac = cum / np.maximum(cum[-1][None, :], 1e-300)
+    left = [LP[:, j].copy() for j in range(m)]
+
+    # right ruling i meets strand j where theta = (u_j - u_i) / 2, if
+    # that happens on the part of the strand kept on the surface
+    delta = (uj[None, :] - ui[:, None]) / 2.0                  # (n, m)
+    ok = ((delta >= _spiral_theta(a, tightness)[None, :] - 1e-12)
+          & (delta <= _spiral_theta(b, tightness)[None, :] + 1e-12))
+    ia, ib = np.nonzero(ok)
+    vv = _spiral_theta_inverse(delta[ia, ib], tightness, a[ib], b[ib])
+    point = _spiral_point(ui[ia], vv, tightness, slope, petals, petal_amp)
+    ta = (vv + V) / (2.0 * V)
+    tb = np.array([np.interp(v, Vs[:, j], frac[:, j])
+                   for v, j in zip(vv, ib)])
+    TA = hi[ia] - lo[ia]
+    TA /= np.maximum(np.linalg.norm(TA, axis=1, keepdims=True), 1e-300)
+    dv = 1e-6
+    TB = left_point(vv + dv, ib) - left_point(vv - dv, ib)
+    TB /= np.maximum(np.linalg.norm(TB, axis=1, keepdims=True), 1e-300)
+    normal = np.cross(TA, TB)
+    sin = np.linalg.norm(normal, axis=1)
+    normal /= np.maximum(sin, 1e-300)[:, None]
+    crossings = dict(ia=ia, ta=ta, ib=ib, tb=tb, point=point,
+                     normal=normal, sin=sin)
+    spacing = [segment_distance(right[i][0], right[i][1],
+                                right[i + 1][0], right[i + 1][1])
+               for i in range(n - 1)] or [1.0]
+    return right, left, crossings, float(np.percentile(spacing, 10))
 
 
 # --------------------------------------------------------------------
@@ -1436,36 +1599,44 @@ _MODES = [
      "at a fixed angle, so every tangent plane leans the same way"),
 ]
 
-#: modes whose natural default output is the filled SURFACE rather than
-#: the rulings.  The compound helical cone is the one such: it is not
-#: straight-ruled, so its rod output draws arrises rather than rulings
-#: and is a deliberate choice rather than the obvious first look.
-_SURFACE_FIRST = {'HELICAL_CONE'}
+#: the Output a mode starts from when it is not rods.  The compound
+#: helical cone is the one: it is not straight-ruled, so its rods draw
+#: arrises rather than rulings, and it reads as a column only when filled.
+_DEFAULT_OUTPUT = {'HELICAL_CONE': 'SURFACE'}
 
 #: modes with two ruling families that cross on one surface, and so the
-#: woven-ribbon output: the two doubly-ruled quadrics, and the knot span,
-#: whose left family is laid on its surface as curves
-#: (`left_rulings_knot_span`).  A mode joins by answering `_weave_input`.
-_WOVEN = {'HYPERBOLOID', 'HYPAR', 'KNOT_SPAN'}
+#: woven-ribbon output: the two doubly-ruled quadrics, and the spiral and
+#: the knot span, whose left families are laid on their surfaces as
+#: curves (`left_rulings_spiral`, `left_rulings_knot_span`).  A mode joins
+#: by answering `_weave_input`.
+_WOVEN = {'HYPERBOLOID', 'HYPAR', 'KNOT_SPAN', 'SPIRAL'}
 
 #: modes with a Ruling Family choice
 _TWO_FAMILY = set(_WOVEN)
 
 
-def effective_output(op):
-    """Resolve the AUTO output against the mode.
+def default_output(mode):
+    """The Output a mode starts from: rods, unless `_DEFAULT_OUTPUT`
+    says otherwise."""
+    return _DEFAULT_OUTPUT.get(mode, 'RODS')
 
-    Blender gives an enum one default, but the right first look differs
-    by surface: a ruled surface is best shown BY its rulings, while the
-    helical cone has none and reads as a column only when filled.  AUTO
-    is the sentinel that lets one property mean both.  Woven ribbons
-    need two ruling families, so a singly-ruled mode falls back to rods.
-    """
-    if op.output == 'RIBBONS':
-        return 'RIBBONS' if op.mode in _WOVEN else 'RODS'
-    if op.output != 'AUTO':
-        return op.output
-    return 'SURFACE' if op.mode in _SURFACE_FIRST else 'RODS'
+
+def output_after_mode_change(output, old_mode, new_mode):
+    """The Output to show once the surface changes from `old_mode` to
+    `new_mode`.  An Output still at the old surface's default moves to the
+    new one's; one chosen by hand is kept, so switching surfaces never
+    throws a deliberate choice away."""
+    if old_mode != new_mode and output == default_output(old_mode):
+        return default_output(new_mode)
+    return output
+
+
+def effective_output(op):
+    """The output actually built.  Woven ribbons need two crossing ruling
+    families, so on a mode with one they fall back to rods."""
+    if op.output == 'RIBBONS' and op.mode not in _WOVEN:
+        return 'RODS'
+    return op.output
 
 
 #: the five surfaces above, which share one builder
@@ -1523,11 +1694,107 @@ _RULED = ({'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV', 'HELICOID',
           | set(_NAMED_MODES))
 
 
+def _twist_deg(op):
+    """The hyperboloid's twist in degrees, as its builders take it."""
+    return math.degrees(op.twist_angle)
+
+
+def _shape_controls(op):
+    """The shape controls the panel lists for the current surface, in
+    order, as (property, label or None for its own, editable).
+
+    Every surface lists the same way: what sets its size, then its
+    shape, then how far its rulings reach.  The concentric toroidal knots
+    list each knot as p, q, scale, tube, height -- the outer knot's p
+    greyed out while its q is 0, when it is a circle wound the inner p
+    times -- and the twist that pairs them last, as the hyperboloid does.
+    The named surfaces share a few properties whose meaning differs from
+    one to the next, so those are shown under what they do there."""
+    m = op.mode
+    out = []
+
+    def add(key, text=None, on=True):
+        out.append((key, text, on))
+
+    if m == 'HYPERBOLOID':
+        for k in ('radius', 'height', 'twist_angle'):
+            add(k)
+    elif m == 'HELICAL_CONE':
+        for k in ('radius', 'cone_height', 'flutes', 'flute_depth',
+                  'cone_twist', 'taper', 'orbit_amp', 'orbit_turns'):
+            add(k)
+    elif m == 'SPIRAL':
+        for k in ('tightness', 'petals', 'petal_amp', 'turns', 'slope',
+                  'v_extent'):
+            add(k)
+    elif m == 'CONOID':
+        add('conoid_kind')
+        add('amp')
+        if op.conoid_kind in ('NFOLD', 'ZINDLER', 'SINUSOIDAL_CONE'):
+            add('folds')
+        elif op.conoid_kind == 'WALLIS':
+            add('wallis_a')
+            add('wallis_b')
+        elif op.conoid_kind == 'HELICOIDAL_CONE':
+            add('turns')
+        add('v_extent')
+    elif m == 'TANGENT_DEV':
+        for k in ('radius', 'pitch', 'turns', 'v_min', 'v_extent'):
+            add(k)
+    elif m == 'HELICOID':
+        for k in ('radius', 'inner', 'pitch', 'turns', 'slope'):
+            add(k)
+    elif m == 'TWIST_STRIP':
+        for k in ('radius', 'width', 'half_twists'):
+            add(k)
+    elif m == 'KNOT_SPAN':
+        for k in ('knot_p', 'knot_q', 'knot_scale', 'knot_tube',
+                  'knot_inner_height', 'knot_inner_lift', 'knot_rotation'):
+            add(k)
+        knotted = op.knot_outer_q > 0
+        add('knot_outer_p', None, knotted)
+        add('knot_outer_q')
+        if knotted:
+            for k in ('knot_outer_scale', 'knot_outer_tube',
+                      'knot_outer_height'):
+                add(k)
+        else:
+            add('knot_circle_radius')
+        add('knot_twist')
+    elif m == 'GAUDI':
+        add('amp')
+        add('wallis_a', "Length")
+        add('v_extent', "Half Width")
+    elif m == 'GUIMARD':
+        add('wallis_a', "Line Swing")
+        add('v_extent', "Circle Radius")
+        add('amp', "Wave Height")
+    elif m == 'MILK_CARTON':
+        add('amp', "Width")
+        add('v_extent', "Half Height")
+    elif m == 'RULED_CUBIC':
+        add('v_extent', "Height")
+    elif m == 'CONSTANT_SLOPE':
+        add('folds', "Lobes")
+        add('wallis_b', "Lobe Depth")
+        add('wallis_a', "Steepness")
+        add('v_extent', "Rise")
+    else:  # HYPAR
+        add('use_corners')
+        if op.use_corners:
+            for k in ('p00', 'p10', 'p01', 'p11'):
+                add(k)
+        else:
+            for k in ('hy_a', 'hy_b', 'hy_c', 'v_extent'):
+                add(k)
+    return out
+
+
 def _build_surface(op):
     """(verts, faces, name) for the operator's current mode."""
     m = op.mode
     if m == 'HYPERBOLOID':
-        vf = build_hyperboloid(op.radius, op.height, op.twist,
+        vf = build_hyperboloid(op.radius, op.height, _twist_deg(op),
                                op.res_u, op.res_v)
         return (*vf, "Hyperboloid")
     if m == 'HELICAL_CONE':
@@ -1579,7 +1846,7 @@ def _build_surface(op):
     if op.use_corners:
         corners = (op.p00, op.p10, op.p01, op.p11)
     vf = build_hypar(op.hy_a, op.hy_b, op.hy_c, op.v_extent,
-                     op.res_v * 3, corners)
+                     op.res_u, corners)
     return (*vf, "Hyperbolic Paraboloid")
 
 
@@ -1589,7 +1856,7 @@ def _build_rulings(op, n=None):
     if n is None:
         n = op.knot_rods if m == 'KNOT_SPAN' else op.n_rods
     if m == 'HYPERBOLOID':
-        return rulings_hyperboloid(op.radius, op.height, op.twist,
+        return rulings_hyperboloid(op.radius, op.height, _twist_deg(op),
                                    op.family, n)
     if m == 'HELICAL_CONE':
         return arrises_helical_cone(
@@ -1598,7 +1865,8 @@ def _build_rulings(op, n=None):
             max(8, n // max(1, int(op.flutes))))
     if m == 'SPIRAL':
         return rulings_spiral(op.tightness, op.slope, op.turns,
-                              op.petals, op.petal_amp, op.v_extent, n)
+                              op.petals, op.petal_amp, op.v_extent, n,
+                              op.family)
     if m == 'CONOID':
         return rulings_conoid(op.conoid_kind, op.amp, op.folds,
                               op.wallis_a, op.wallis_b, op.v_extent, n,
@@ -1634,11 +1902,17 @@ def _build_rulings(op, n=None):
 
 
 def _build_curves(op, n=None):
-    """Curved rulings for the current mode, as polylines.  Only the knot
-    span has any: its left family lies on the surface but bends there
-    (`left_rulings_knot_span`).  Every other ruling is straight and comes
-    from `_build_rulings`."""
-    if op.mode != 'KNOT_SPAN' or op.family not in ('LEFT', 'BOTH'):
+    """Curved rulings for the current mode, as polylines.  Only the spiral
+    and the knot span have any: their left families lie on the surface
+    but bend there (`left_rulings_spiral`, `left_rulings_knot_span`).
+    Every other ruling is straight and comes from `_build_rulings`."""
+    if op.family not in ('LEFT', 'BOTH'):
+        return []
+    if op.mode == 'SPIRAL':
+        return left_rulings_spiral(op.tightness, op.slope, op.turns,
+                                   op.petals, op.petal_amp, op.v_extent,
+                                   op.n_rods if n is None else n)
+    if op.mode != 'KNOT_SPAN':
         return []
     return left_rulings_knot_span(
         op.knot_p, op.knot_q, op.knot_scale, op.knot_tube,
@@ -1656,13 +1930,16 @@ def _ruling_families(op, n=None):
     if op.mode == 'KNOT_SPAN':
         right, left, _x, _g = _knot_span_weave(op, n)
         return right, left
+    if op.mode == 'SPIRAL':
+        right, left, _x, _g = _spiral_weave(op, n)
+        return right, left
     if n is None:
         n = op.n_rods
     if op.mode == 'HYPERBOLOID':
         # both families run bottom circle -> top circle
-        return (rulings_hyperboloid(op.radius, op.height, op.twist,
+        return (rulings_hyperboloid(op.radius, op.height, _twist_deg(op),
                                     'RIGHT', n),
-                rulings_hyperboloid(op.radius, op.height, op.twist,
+                rulings_hyperboloid(op.radius, op.height, _twist_deg(op),
                                     'LEFT', n))
     if op.mode == 'HYPAR':
         corners = (op.p00, op.p10, op.p01, op.p11) \
@@ -1682,17 +1959,26 @@ def _knot_span_weave(op, n=None, overhang=0.0):
         op.knot_rods if n is None else n, op.knot_twist, overhang)
 
 
+def _spiral_weave(op, n=None, overhang=0.0):
+    return spiral_weave(op.tightness, op.slope, op.turns, op.petals,
+                        op.petal_amp, op.v_extent,
+                        op.n_rods if n is None else n, overhang)
+
+
 def _weave_input(op):
     """What the woven output weaves: (family a, family b, options) for
     `weave_rulings`.  Straight families go in with their overhang and the
-    weaver finds their crossings.  The knot span, whose left family is
-    curved, supplies its exact crossings and neighbour spacing
-    (`knot_span_weave`), and sizes its ribbons cell by cell: its lattice
-    is open in the outer flares and crowded by the inner knot, so one
-    width for every ribbon would leave the open cells nearly empty."""
-    if op.mode == 'KNOT_SPAN':
-        fa, fb, crossings, gap = _knot_span_weave(
-            op, overhang=op.ribbon_overhang)
+    weaver finds their crossings.  The spiral and the knot span, whose
+    left families are curved, supply their exact crossings and neighbour
+    spacing (`spiral_weave`, `knot_span_weave`), and size their ribbons
+    cell by cell: the knot span's lattice is open in the outer flares and
+    crowded by the inner knot, and the spiral's widens as it winds out,
+    so one width for every ribbon would leave the open cells nearly
+    empty."""
+    if op.mode in ('KNOT_SPAN', 'SPIRAL'):
+        weave = _knot_span_weave if op.mode == 'KNOT_SPAN' \
+            else _spiral_weave
+        fa, fb, crossings, gap = weave(op, overhang=op.ribbon_overhang)
         return fa, fb, dict(crossings=crossings, gap=gap,
                             local_width=True)
     fa, fb = extend_families(*_ruling_families(op), op.ribbon_overhang)
@@ -1745,7 +2031,7 @@ def _boundary_loops(op):
         return [([s[0] for s in segs[::2]], True)]
     if m == 'HYPERBOLOID':
         # a single ruling family gives clean bottom/top rails
-        segs = rulings_hyperboloid(op.radius, op.height, op.twist,
+        segs = rulings_hyperboloid(op.radius, op.height, _twist_deg(op),
                                    'RIGHT', N)
     elif m == 'KNOT_SPAN':
         # likewise: with BOTH the two families' ends would interleave
@@ -1758,6 +2044,10 @@ def _boundary_loops(op):
                                  op.knot_outer_height,
                                  op.knot_circle_radius, N, 'RIGHT',
                                  op.knot_twist)
+    elif m == 'SPIRAL':
+        # the right family alone: its ends are the two rails
+        segs = rulings_spiral(op.tightness, op.slope, op.turns, op.petals,
+                              op.petal_amp, op.v_extent, N)
     else:
         segs = _build_rulings(op, N)
     if not segs:
@@ -1965,20 +2255,36 @@ if _IN_BLENDER:
             mod[ids[name]] = value
         return mod
 
+    def _mode_changed(self, context):
+        """Carry Output to the new surface's own default -- rods, or the
+        filled surface for the compound helical cone -- unless it was set
+        by hand (`output_after_mode_change`)."""
+        new = output_after_mode_change(self.output, self.mode_seen,
+                                       self.mode)
+        if new != self.output:
+            self.output = new
+        if self.mode_seen != self.mode:
+            self.mode_seen = self.mode
+
     class MESH_OT_ruled_surface_add(bpy.types.Operator):
         """Add a ruled surface: a hyperboloid, compound helical
         cone, spiral ruled surface, conoid, tangent developable,
         helicoid, twisted strip or doubly-ruled hyperbolic paraboloid.
         Straight-ruled modes can be rendered as their rulings (rods),
-        and the doubly-ruled ones as woven ribbons"""
+        and those with two crossing ruling families as woven ribbons"""
         bl_idname = "mesh.ruled_surface_add"
         bl_label = "Ruled Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
         mode: EnumProperty(name="Surface", items=_MODES,
-                           default='HYPERBOLOID',
+                           default='HYPERBOLOID', update=_mode_changed,
                            description="Which ruled-surface family to "
                                        "build")
+        mode_seen: StringProperty(
+            name="Output Default For", default='HYPERBOLOID',
+            options={'HIDDEN'},
+            description="Internal: the surface whose default Output was "
+                        "last carried over when the surface changed")
         conoid_kind: EnumProperty(name="Conoid", items=_CONOID_KINDS,
                                   default='PLUCKER',
                                   description="Which right conoid to "
@@ -1993,11 +2299,13 @@ if _IN_BLENDER:
                               min=0.05, max=20.0,
                               description="Half the axial height "
                                           "(rings sit at +-this)")
-        twist: FloatProperty(name="Twist", default=120.0, min=0.0,
-                             max=179.0,
-                             description="Rotation of the top ring "
-                                         "in degrees; waist radius "
-                                         "= R cos(twist/2)")
+        twist_angle: FloatProperty(
+            name="Twist", default=math.radians(120.0), min=0.0,
+            max=math.radians(179.0), subtype='ANGLE',
+            description="Rotation of the top ring against the bottom "
+                        "one.  The waist radius is R cos(twist/2): no "
+                        "twist is a cylinder, and it narrows toward a "
+                        "double cone as the twist nears 180 degrees")
         family: EnumProperty(
             name="Ruling Family",
             items=[('BOTH', "Both",
@@ -2025,7 +2333,7 @@ if _IN_BLENDER:
                                    description="Depth of the flutes at "
                                                "the base, fading to "
                                                "arrises at the apex")
-        cone_twist: FloatProperty(name="Spiral Twist", default=2.0,
+        cone_twist: FloatProperty(name="Flute Turns", default=2.0,
                                   min=-12.0, max=12.0,
                                   description="Turns the flutes wind "
                                               "over the full height")
@@ -2073,16 +2381,21 @@ if _IN_BLENDER:
         folds: IntProperty(name="Folds", default=3, min=1, max=16,
                            description="Number of lobes for the n-fold "
                                        "and Zindler conoids")
-        wallis_a: FloatProperty(name="Wallis a", default=1.0,
-                                min=0.05, max=4.0,
-                                description="Wallis conical edge "
-                                            "parameter a, in "
-                                            "sqrt(a^2 - b^2 cos^2 u)")
-        wallis_b: FloatProperty(name="Wallis b", default=0.6,
-                                min=0.0, max=4.0,
-                                description="Wallis conical edge "
-                                            "parameter b, in "
-                                            "sqrt(a^2 - b^2 cos^2 u)")
+        wallis_a: FloatProperty(
+            name="Crest", default=1.0, min=0.05, max=4.0,
+            description="The Wallis conical edge's a in "
+                        "h = amp sqrt(a^2 - b^2 cos^2 u): its height where "
+                        "the edge is tallest.  Gaudi's surface uses it "
+                        "for its length, Guimard's for the swing of its "
+                        "moving line, and the surface of constant slope "
+                        "for its steepness")
+        wallis_b: FloatProperty(
+            name="Dip", default=0.6, min=0.0, max=4.0,
+            description="The Wallis conical edge's b in "
+                        "h = amp sqrt(a^2 - b^2 cos^2 u): how far the edge "
+                        "dips below its crest.  The surface of constant "
+                        "slope uses it for the depth of its base curve's "
+                        "lobes")
         # helix-based
         pitch: FloatProperty(name="Pitch", default=0.4, min=-4.0,
                              max=4.0,
@@ -2107,41 +2420,41 @@ if _IN_BLENDER:
                                              "gives a one-sided Mobius "
                                              "band")
         # hypar
-        hy_a: FloatProperty(name="a", default=1.0, min=0.05, max=6.0,
+        hy_a: FloatProperty(name="Width", default=1.0, min=0.05, max=6.0,
                             description="Width scale a in "
                                         "z = c((x/a)^2 - (y/b)^2)")
-        hy_b: FloatProperty(name="b", default=1.0, min=0.05, max=6.0,
+        hy_b: FloatProperty(name="Depth", default=1.0, min=0.05, max=6.0,
                             description="Width scale b in "
                                         "z = c((x/a)^2 - (y/b)^2)")
         hy_c: FloatProperty(name="Saddle Height", default=1.0,
                             min=0.05, max=6.0,
                             description="Vertical scale c of the saddle")
-        use_corners: BoolProperty(name="From 4 Corner Points",
+        use_corners: BoolProperty(name="Corner Points",
                                   default=False,
                                   description="Build the hypar as a "
                                               "bilinear patch spanning "
                                               "four skew corner points")
-        p00: FloatVectorProperty(name="P00", size=3,
+        p00: FloatVectorProperty(name="Corner 1", size=3,
                                  default=(-1.0, -1.0, -1.0),
                                  description="Corner point of the "
                                              "bilinear patch (s=0, t=0)")
-        p10: FloatVectorProperty(name="P10", size=3,
+        p10: FloatVectorProperty(name="Corner 2", size=3,
                                  default=(1.0, -1.0, 1.0),
                                  description="Corner point of the "
                                              "bilinear patch (s=1, t=0)")
-        p01: FloatVectorProperty(name="P01", size=3,
+        p01: FloatVectorProperty(name="Corner 3", size=3,
                                  default=(-1.0, 1.0, 1.0),
                                  description="Corner point of the "
                                              "bilinear patch (s=0, t=1)")
-        p11: FloatVectorProperty(name="P11", size=3,
+        p11: FloatVectorProperty(name="Corner 4", size=3,
                                  default=(1.0, 1.0, -1.0),
                                  description="Corner point of the "
                                              "bilinear patch (s=1, t=1)")
         # concentric torus-knot span
-        knot_p: IntProperty(name="Knot p", default=2, min=1, max=8,
+        knot_p: IntProperty(name="Inner p", default=2, min=1, max=8,
                             description="Times the knots wind around "
                                         "the main axis")
-        knot_q: IntProperty(name="Knot q", default=3, min=0, max=9,
+        knot_q: IntProperty(name="Inner q", default=3, min=0, max=9,
                             description="Times the inner knot winds "
                                         "around the tube; 0 makes it a "
                                         "flat circle wound p times")
@@ -2217,27 +2530,27 @@ if _IN_BLENDER:
                                 min=0.05, max=8.0,
                                 description="Half-length of the "
                                             "rulings / patch extent")
-        res_u: IntProperty(name="Resolution U", default=120, min=6,
-                           max=800,
-                           description="Samples around the surface, along "
-                                       "the base curve")
-        res_v: IntProperty(name="Resolution V", default=20, min=1,
-                           max=200,
-                           description="Samples across the rulings")
+        res_u: IntProperty(
+            name="Base Curve Samples", default=120, min=6, max=800,
+            description="Samples along the base curve, around the "
+                        "surface; on the hyperbolic paraboloid, the samples "
+                        "along each side of its square grid")
+        res_v: IntProperty(
+            name="Ruling Samples", default=20, min=1, max=200,
+            description="Samples along each ruling, across the surface "
+                        "(the hyperbolic paraboloid's square grid takes "
+                        "Base Curve Samples both ways)")
         output: EnumProperty(
             name="Output",
             description="Build the filled surface, its straight "
                         "rulings as solid rods or bare curves, or -- on "
-                        "a doubly-ruled surface -- both ruling families "
-                        "woven together as ribbons.  The compound "
-                        "helical cone is not straight-ruled, so for that "
-                        "one rods and curves draw its arrises -- the "
-                        "helical ridges of its flutes",
-            items=[('AUTO', "Automatic",
-                    "Rulings as rods for the straight-ruled surfaces, "
-                    "and the filled surface for the compound helical "
-                    "cone, which has none"),
-                   ('SURFACE', "Surface",
+                        "a surface with two crossing ruling families -- "
+                        "both families woven together as ribbons.  Every "
+                        "surface starts as rods except the compound "
+                        "helical cone, which is not straight-ruled and "
+                        "starts as its surface; its rods and curves draw "
+                        "its arrises, the helical ridges of its flutes",
+            items=[('SURFACE', "Surface",
                     "The filled ruled surface"),
                    ('RODS', "Rulings as Rods",
                     "The straight rulings as solid rods (string / "
@@ -2248,10 +2561,11 @@ if _IN_BLENDER:
                    ('RIBBONS', "Woven Ribbons",
                     "Both ruling families as flat ribbons lying in the "
                     "surface, passing over and under each other where "
-                    "they cross.  On the hyperboloid, the hyperbolic "
-                    "paraboloid and the concentric toroidal knots; other "
-                    "surfaces fall back to rods")],
-            default='AUTO')
+                    "they cross.  On the hyperboloid, the spiral ruled "
+                    "surface, the hyperbolic paraboloid and the "
+                    "concentric toroidal knots; other surfaces fall back "
+                    "to rods")],
+            default='RODS')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
                             max=400,
                             description="Number of rulings drawn in rods, "
@@ -2333,6 +2647,10 @@ if _IN_BLENDER:
                                          "2 m cube")
 
         def execute(self, context):
+            if self.mode_seen != self.mode:
+                # built straight from a script or a preset: this is the
+                # surface a later change of surface carries Output from
+                self.mode_seen = self.mode
             verts, faces, name = _build_surface(self)
             edges = []
             info = ""
@@ -2421,8 +2739,7 @@ if _IN_BLENDER:
             elif want_rulings:
                 info = " [rulings N/A for this mode]"
             if self.mode == 'HYPERBOLOID':
-                a = self.radius * math.cos(
-                    math.radians(self.twist) / 2.0)
+                a = self.radius * math.cos(self.twist_angle / 2.0)
                 info += f" waist a={a:.3f}"
             if not verts:
                 self.report({'ERROR'}, "empty mesh")
@@ -2482,102 +2799,68 @@ if _IN_BLENDER:
             return {'FINISHED'}
 
         def draw(self, context):
+            # One layout for every surface: the surface and its shape,
+            # then resolution, then the output and only the options that
+            # output uses, then the overall scale.
             lay = self.layout
             lay.use_property_split = True
-            lay.prop(self, 'mode')
             m = self.mode
-            if m == 'HYPERBOLOID':
-                keys = ('radius', 'height', 'twist')
-            elif m == 'HELICAL_CONE':
-                keys = ('radius', 'cone_height', 'flutes',
-                        'flute_depth', 'cone_twist', 'taper',
-                        'orbit_amp', 'orbit_turns')
-            elif m == 'SPIRAL':
-                keys = ('tightness', 'slope', 'turns', 'petals',
-                        'petal_amp', 'v_extent')
-            elif m in _NAMED_MODES:
-                nk = m
-                if nk == 'GAUDI':
-                    keys = ('amp', 'wallis_a', 'v_extent')
-                elif nk == 'GUIMARD':
-                    keys = ('amp', 'wallis_a', 'v_extent')
-                elif nk == 'MILK_CARTON':
-                    keys = ('amp', 'v_extent')
-                elif nk == 'RULED_CUBIC':
-                    keys = ('v_extent',)
-                else:
-                    keys = ('folds', 'wallis_a', 'wallis_b', 'v_extent')
-            elif m == 'CONOID':
-                lay.prop(self, 'conoid_kind')
-                keys = ('amp',)
-                if self.conoid_kind in ('NFOLD', 'ZINDLER',
-                                        'SINUSOIDAL_CONE'):
-                    keys += ('folds',)
-                elif self.conoid_kind == 'WALLIS':
-                    keys += ('wallis_a', 'wallis_b')
-                elif self.conoid_kind == 'HELICOIDAL_CONE':
-                    keys += ('turns',)
-                keys += ('v_extent',)
-            elif m == 'TANGENT_DEV':
-                keys = ('radius', 'pitch', 'turns', 'v_extent',
-                        'v_min')
-            elif m == 'HELICOID':
-                keys = ('radius', 'inner', 'pitch', 'turns', 'slope')
-            elif m == 'TWIST_STRIP':
-                keys = ('radius', 'width', 'half_twists')
-            elif m == 'KNOT_SPAN':
-                keys = ('knot_p', 'knot_q', 'knot_scale', 'knot_tube',
-                        'knot_inner_height', 'knot_inner_lift',
-                        'knot_rotation', 'knot_twist', 'knot_outer_q')
-                if self.knot_outer_q > 0:
-                    keys += ('knot_outer_p', 'knot_outer_scale',
-                             'knot_outer_tube', 'knot_outer_height')
-                else:
-                    keys += ('knot_circle_radius',)
-            else:  # HYPAR
-                lay.prop(self, 'use_corners')
-                if self.use_corners:
-                    keys = ('p00', 'p10', 'p01', 'p11')
-                else:
-                    keys = ('hy_a', 'hy_b', 'hy_c', 'v_extent')
-            for k in keys:
-                lay.prop(self, k)
-            lay.separator()
-            lay.prop(self, 'res_u')
-            lay.prop(self, 'res_v')
-            if m in _RULED:
-                lay.prop(self, 'output')
-                out = effective_output(self)
-                if self.output == 'RIBBONS' and out != 'RIBBONS':
-                    lay.label(text="Woven ribbons need two crossing "
-                                   "ruling families", icon='INFO')
-                if out in ('RODS', 'CURVES'):
-                    if m in _TWO_FAMILY:
-                        lay.prop(self, 'family')
-                    lay.prop(self, 'knot_rods' if m == 'KNOT_SPAN'
-                             else 'n_rods')
-                    if out == 'RODS':
-                        lay.prop(self, 'rod_radius')
-                        if m != 'HELICAL_CONE':
-                            lay.prop(self, 'separate_rods')
-                    lay.prop(self, 'show_boundaries')
-                elif out == 'RIBBONS':
-                    # always both families: shown, but not editable
+            out = effective_output(self)
+            lay.prop(self, 'mode')
+            for key, text, editable in _shape_controls(self):
+                row = lay
+                if not editable:
                     row = lay.row()
                     row.enabled = False
-                    row.prop(self, 'family')
-                    lay.prop(self, 'knot_rods' if m == 'KNOT_SPAN'
-                             else 'n_rods', text="Ribbon Count")
-                    for k in ('ribbon_width', 'ribbon_thickness',
-                              'weave_float', 'ribbon_overhang',
-                              'show_boundaries'):
-                        lay.prop(self, k)
-                    if self.show_boundaries:
-                        lay.prop(self, 'rod_radius')
-            lay.prop(self, 'smooth')
-            lay.prop(self, 'thickness')
-            if self.thickness > 0 and effective_output(self) == 'SURFACE':
-                lay.prop(self, 'thickness_method')
+                if text is None:
+                    row.prop(self, key)
+                else:
+                    row.prop(self, key, text=text)
+
+            lay.separator()
+            if m == 'HYPAR':
+                lay.prop(self, 'res_u', text="Grid Samples")
+            else:
+                lay.prop(self, 'res_u')
+                lay.prop(self, 'res_v')
+
+            lay.separator()
+            lay.prop(self, 'output')
+            if self.output == 'RIBBONS' and out != 'RIBBONS':
+                lay.label(text="Woven ribbons need two crossing "
+                               "ruling families", icon='INFO')
+            count = 'knot_rods' if m == 'KNOT_SPAN' else 'n_rods'
+            if out == 'SURFACE':
+                lay.prop(self, 'smooth')
+                lay.prop(self, 'thickness')
+                if self.thickness > 0:
+                    lay.prop(self, 'thickness_method')
+            elif out in ('RODS', 'CURVES'):
+                if m in _TWO_FAMILY:
+                    lay.prop(self, 'family')
+                lay.prop(self, count)
+                if out == 'RODS':
+                    lay.prop(self, 'rod_radius')
+                    if m != 'HELICAL_CONE':
+                        lay.prop(self, 'separate_rods')
+                lay.prop(self, 'show_boundaries')
+                if out == 'RODS':
+                    lay.prop(self, 'smooth')
+            else:  # RIBBONS
+                # always both families: shown, but not editable
+                row = lay.row()
+                row.enabled = False
+                row.prop(self, 'family')
+                lay.prop(self, count, text="Ribbon Count")
+                for k in ('ribbon_width', 'ribbon_thickness',
+                          'weave_float', 'ribbon_overhang',
+                          'show_boundaries'):
+                    lay.prop(self, k)
+                if self.show_boundaries:
+                    lay.prop(self, 'rod_radius', text="Boundary Radius")
+                lay.prop(self, 'smooth')
+
+            lay.separator()
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
@@ -3252,16 +3535,110 @@ def _selftest():
     # the output falls back to rods on a singly-ruled mode, and only the
     # doubly-ruled modes answer for their two families
     from types import SimpleNamespace
-    for md in ('HYPERBOLOID', 'HYPAR', 'SPIRAL', 'HELICAL_CONE'):
+    for md in ('HYPERBOLOID', 'HYPAR', 'SPIRAL', 'HELICAL_CONE',
+               'HELICOID'):
         op_ = SimpleNamespace(
-            mode=md, output='RIBBONS', radius=1.0, height=1.0, twist=120.0,
-            n_rods=12, hy_a=1.0, hy_b=1.0, hy_c=1.0, v_extent=1.0,
-            use_corners=False, p00=None, p10=None, p01=None, p11=None)
+            mode=md, output='RIBBONS', radius=1.0, height=1.0,
+            twist_angle=math.radians(120.0), n_rods=12, hy_a=1.0,
+            hy_b=1.0, hy_c=1.0, v_extent=1.0, use_corners=False,
+            p00=None, p10=None, p01=None, p11=None, tightness=0.15,
+            slope=1.0, turns=2.0, petals=1, petal_amp=0.0)
         woven = md in _WOVEN
         assert effective_output(op_) == ('RIBBONS' if woven else 'RODS')
         assert (_ruling_families(op_) is not None) == woven, md
-    print("woven output: offered on the doubly-ruled modes, rods "
+    print("woven output: offered where two ruling families cross, rods "
           "elsewhere OK")
+
+    # the Output each surface starts from, and how it follows a change of
+    # surface without discarding one chosen by hand
+    assert default_output('HELICAL_CONE') == 'SURFACE'
+    assert all(default_output(md) == 'RODS'
+               for md, _l, _d in _MODES if md != 'HELICAL_CONE')
+    for old, new, before, after in (
+            ('HYPERBOLOID', 'HELICAL_CONE', 'RODS', 'SURFACE'),
+            ('HELICAL_CONE', 'SPIRAL', 'SURFACE', 'RODS'),
+            ('HELICAL_CONE', 'SPIRAL', 'RODS', 'RODS'),
+            ('HYPERBOLOID', 'HELICAL_CONE', 'SURFACE', 'SURFACE'),
+            ('HYPERBOLOID', 'HELICAL_CONE', 'RIBBONS', 'RIBBONS'),
+            ('SPIRAL', 'SPIRAL', 'RODS', 'RODS')):
+        got = output_after_mode_change(before, old, new)
+        assert got == after, (old, new, before, got)
+    # the panel lists every surface's shape controls; the knots list each
+    # knot p before q, the twist last, and grey out the outer p while the
+    # outer knot is a circle
+    for md, _l, _d in _MODES:
+        shown = _shape_controls(SimpleNamespace(
+            mode=md, conoid_kind='WALLIS', use_corners=False,
+            knot_outer_q=5))
+        assert shown and all(len(c) == 3 for c in shown), md
+    kn = SimpleNamespace(mode='KNOT_SPAN', knot_outer_q=5)
+    order = [c[0] for c in _shape_controls(kn)]
+    assert (order.index('knot_p') < order.index('knot_q')
+            < order.index('knot_outer_p') < order.index('knot_outer_q')
+            < order.index('knot_outer_scale')), order
+    assert order[-1] == 'knot_twist', order
+    kn.knot_outer_q = 0
+    shown = {c[0]: c[2] for c in _shape_controls(kn)}
+    assert shown['knot_outer_p'] is False and 'knot_circle_radius' in shown
+    assert 'knot_outer_scale' not in shown
+    print("output defaults: rods, the helical cone a surface, a hand-set "
+          "output kept across a change of surface; panel order OK")
+
+    # the spiral ruled surface's left family: on a circle it is the
+    # hyperboloid's own straight left rulings, on the hyperboloid
+    # x^2 + y^2 - (z / slope)^2 = 1
+    circ = left_rulings_spiral(0.0, 1.3, 1.0, 1, 0.0, 0.8, n=24,
+                               samples=40)
+    bend = 0.0
+    for P in circ:
+        d = P[-1] - P[0]
+        L = float(np.linalg.norm(d))
+        if L > 1e-9:
+            bend = max(bend, float(np.linalg.norm(
+                np.cross(P - P[0], d / L), axis=1).max()))
+    allp = np.concatenate(circ)
+    quad = allp[:, 0] ** 2 + allp[:, 1] ** 2 - (allp[:, 2] / 1.3) ** 2
+    assert bend < 1e-9 and np.abs(quad - 1.0).max() < 1e-9, (bend, quad)
+    assert rulings_spiral(n=8, family='LEFT') == []
+    assert rulings_spiral(n=8, family='BOTH') == rulings_spiral(n=8)
+    # on a spiral, a rosette and both at once the crossings are the same
+    # surface point on both strands, and the weave alternates everywhere
+    worst_off = 0.0
+    for k_, pet_, amp_ in ((0.15, 1, 0.0), (0.0, 5, 0.4), (0.12, 4, 0.3)):
+        R_, L_, X_, g_ = spiral_weave(k_, 1.0, 2.0, pet_, amp_, 1.0, n=40,
+                                      overhang=0.1)
+        assert len(X_['ia']) > 40, len(X_['ia'])
+        pa = np.array([R_[i][0] + t * (R_[i][1] - R_[i][0])
+                       for i, t in zip(X_['ia'], X_['ta'])])
+        assert np.abs(pa - X_['point']).max() < 1e-9
+        size = float(np.abs(np.concatenate(L_)).max())
+        pb = []
+        for j, t in zip(X_['ib'], X_['tb']):
+            P = L_[j]
+            s = np.concatenate([[0.0], np.cumsum(
+                np.linalg.norm(np.diff(P, axis=0), axis=1))])
+            pb.append([np.interp(t * s[-1], s, P[:, c]) for c in range(3)])
+        off = float(np.linalg.norm(np.asarray(pb) - X_['point'],
+                                   axis=1).max()) / size
+        worst_off = max(worst_off, off)
+        assert off < 5e-3, (k_, pet_, amp_, off)
+        _v, _f, plan_ = weave_rulings(R_, L_, 0.9, 0.15, 1, crossings=X_,
+                                      gap=g_, local_width=True)
+        assert plan_['conflicts'] == 0, (k_, pet_, amp_,
+                                         plan_['conflicts'])
+    sop = SimpleNamespace(mode='SPIRAL', tightness=0.15, slope=1.0,
+                          turns=2.0, petals=1, petal_amp=0.0, v_extent=1.0,
+                          n_rods=12, ribbon_overhang=0.2, family='BOTH',
+                          output='RIBBONS')
+    sfa, sfb, sopts = _weave_input(sop)
+    assert len(sfa) == 12 and len(sfb) >= 12
+    assert set(sopts) == {'crossings', 'gap', 'local_width'}
+    assert effective_output(sop) == 'RIBBONS'
+    assert len(_build_curves(sop)) == len(sfb)
+    print("spiral weave: on a circle the left strands are the "
+          "hyperboloid's straight rulings; crossings on both strands "
+          "(left within %.1e of the size), plain weave conflict-free on a "
+          "spiral, a rosette and both OK" % worst_off)
 
     # the crossing count: pairs sharing a corner are neighbours, not
     # crossings, and a pair listed both ways counts once
