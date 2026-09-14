@@ -29,6 +29,18 @@
 # surface when extended, so the lengthened ribbons keep crossing and the
 # weave itself carries on beyond the rails.
 #
+# Every other straight-ruled mode weaves too, the way a basket does: its
+# rulings are the stakes, and the weavers are the curves running along
+# the surface a fixed way along the rulings -- copies of the base curve
+# (`weft_weave`).  They cross every ruling exactly, and close into loops
+# on a closed surface; a Mobius band's weavers go round twice before they
+# meet themselves, since one lap brings each out on the opposite side of
+# the band.  Where rulings run together -- a cone's apex, a conoid's
+# axis, the seams where Guimard's surface and the milk carton pinch
+# shut -- the ribbons stop short (Weave Gap): no weave can pass many
+# strands over and under one another at a single point.  Only the
+# compound helical cone, which has no rulings, has nothing to weave.
+#
 # Rods output can also be made solid: Separate Touching Rods bends any
 # two rods that would pass through each other just far enough apart to
 # clear, keeping every rod end on its rail (`separate_rods`, in the same
@@ -203,11 +215,13 @@ except ImportError:
 try:                                  # inside the math_art package
     from .weaving.rulings import (weave_rulings, crossing_clearance,
                                   extend_families, polyline_keep,
-                                  segment_distance, separate_rods)
+                                  segment_distance, separate_rods,
+                                  plan_weave)
 except ImportError:                   # flat import (test runner)
     from weaving.rulings import (weave_rulings, crossing_clearance,
                                  extend_families, polyline_keep,
-                                 segment_distance, separate_rods)
+                                 segment_distance, separate_rods,
+                                 plan_weave)
 
 _TWO_PI = 2.0 * math.pi
 
@@ -1045,6 +1059,160 @@ def spiral_weave(tightness=0.15, slope=1.0, turns=2.0, petals=1,
 
 
 # --------------------------------------------------------------------
+# basket weave: rulings as stakes, the curves along the surface as
+# weavers -- woven ribbons on a surface with one ruling family
+# --------------------------------------------------------------------
+
+def _weft_chart(S, n, span, closure, v, fixed=(False, False)):
+    """One piece of surface for `weft_weave`.
+
+    S(u, v) is the surface, straight in v, so its rulings are the lines
+    u = const; `span` is its u range and `v` = (v0, v1) the stretch of
+    each ruling woven.  `closure` says how the piece closes round in u:
+    None (open), 'loop' (S(u + P, v) = S(u, v), P the span) or 'mobius'
+    (S(u + P, v) = S(u, -v), with v0 = -v1: a half-twisted band).
+    `fixed` marks the v ends where rulings run together, which an
+    overhang must not push further into.
+
+    The n rulings are spread evenly (n made even on a loop, where a plain
+    weave needs an even count to close round), and the weavers sit at
+    heights spaced like the rulings, so the cells come out roughly
+    square.  On a Mobius band each weaver meets its mirror image after
+    one lap, so the plain weave closes only when the weaver count and
+    the ruling count differ in parity; the weaver count takes it."""
+    u0, u1 = span
+    n = max(2, int(n))
+    if closure == 'loop' and n % 2:
+        n += 1
+    if closure:
+        u = u0 + (u1 - u0) * np.arange(n) / n
+    else:
+        u = np.linspace(u0, u1, n)
+    v0, v1 = v
+    ends = [S(u, np.full(n, vv)) for vv in (v0, 0.5 * (v0 + v1), v1)]
+    step = np.linalg.norm(np.diff(ends[1], axis=0), axis=1)
+    length = np.linalg.norm(ends[2] - ends[0], axis=1)
+    pitch = float(np.median(step)) if len(step) else 1.0
+    m = int(np.clip(round(float(np.median(length)) / max(pitch, 1e-12)),
+                    2, 400))
+    if closure == 'mobius' and (m - n) % 2 == 0:
+        m += 1
+    weft = v0 + (np.arange(m) + 0.5) * (v1 - v0) / m
+    return dict(S=S, u=u, span=(u0, u1), closure=closure, v=(v0, v1),
+                weft=weft, fixed=tuple(fixed))
+
+
+def _surface_du(S, u, v, h=1e-6):
+    """dS/du by central difference."""
+    return (S(u + h, v) - S(u - h, v)) / (2.0 * h)
+
+
+def weft_weave(charts, overhang=0.0, sub=6):
+    """Woven ribbons for a surface with one family of rulings: (rulings,
+    weavers, crossings, neighbour gap) for `weave_rulings`, from the
+    pieces of surface `_weft_chart` describes.
+
+    A ruling is the line u = u_i; a weaver is the curve v = v_k running
+    along the surface, a copy of the base curve.  Every weaver crosses
+    every ruling of its piece exactly once per lap, at the surface point
+    S(u_i, v_k), so the crossings are exact and form a lattice.  On a
+    loop the weaver closes on itself; on a Mobius band it runs two laps,
+    the second at -v_k, before it does.
+
+    An overhang runs the rulings on past their free ends -- straight,
+    along the surface -- by `overhang` times the longest ruling, and the
+    open weavers past the first and last rulings by the same distance.
+    Open weavers always reach half a ruling spacing past the end rulings,
+    so they do not stop dead on a crossing.  The gap handed on is the
+    10th percentile of the spacing between neighbouring rulings.
+    """
+    right, left = [], []
+    parts = {k: [] for k in ('ia', 'ta', 'ib', 'tb', 'point', 'TA', 'TB')}
+    spacing = []
+    longest = 0.0
+    for ch in charts:
+        n = len(ch['u'])
+        a = ch['S'](ch['u'], np.full(n, ch['v'][0]))
+        b = ch['S'](ch['u'], np.full(n, ch['v'][1]))
+        longest = max(longest, float(np.linalg.norm(b - a, axis=1).max()))
+    amount = overhang * longest
+    for ch in charts:
+        S, u, closure = ch['S'], ch['u'], ch['closure']
+        n = len(u)
+        v0, v1 = ch['v']
+        fix0, fix1 = ch['fixed']
+        a = S(u, np.full(n, v0))
+        b = S(u, np.full(n, v1))
+        L = np.maximum(np.linalg.norm(b - a, axis=1), 1e-300)
+        per = (v1 - v0) / L                          # v per unit length
+        lo = v0 - (0.0 if fix0 else amount) * per
+        hi = v1 + (0.0 if fix1 else amount) * per
+        r0 = len(right)
+        A_, B_ = S(u, lo), S(u, hi)
+        right.extend(np.stack([A_[i], B_[i]]) for i in range(n))
+        TA = (b - a) / L[:, None]
+        for i in range(n if closure else n - 1):
+            k = (i + 1) % n
+            spacing.append(segment_distance(a[i], b[i], a[k], b[k]))
+
+        u0, u1 = ch['span']
+        period = u1 - u0
+        du_step = period / n if closure else (u[-1] - u[0]) / max(1, n - 1)
+        for vk in ch['weft']:
+            if closure == 'mobius' and vk < -1e-12:
+                continue              # the weaver at -vk is this one's lap 2
+            laps = 2 if closure == 'mobius' and vk > 1e-12 else 1
+            if closure:
+                cu = np.concatenate([u + lap * period for lap in range(laps)])
+                idx = np.tile(np.arange(n), laps)
+                vr = np.concatenate([
+                    np.full(n, vk * (-1.0 if closure == 'mobius' and lap
+                                     else 1.0)) for lap in range(laps)])
+                start, end = u0, u0 + laps * period
+            else:
+                cu, idx, vr = u.copy(), np.arange(n), np.full(n, vk)
+                reach = [amount / max(float(np.linalg.norm(
+                    _surface_du(S, np.array(uu), np.array(vk)))), 1e-300)
+                    for uu in (u[0], u[-1])]
+                start = u[0] - 0.5 * du_step - reach[0]
+                end = u[-1] + 0.5 * du_step + reach[1]
+            grid = np.union1d(np.linspace(start, end,
+                                          laps * max(n, 2) * sub + 1), cu)
+            pts = S(grid, np.full(len(grid), vk))
+            if closure:
+                pts[-1] = pts[0]
+            cum = np.concatenate([[0.0], np.cumsum(
+                np.linalg.norm(np.diff(pts, axis=0), axis=1))])
+            if cum[-1] < 1e-12:
+                continue
+            j = len(left)
+            left.append(pts)
+            parts['ia'].append(r0 + idx)
+            parts['ta'].append((vr - lo[idx]) / (hi[idx] - lo[idx]))
+            parts['ib'].append(np.full(len(cu), j))
+            parts['tb'].append(np.interp(cu, grid, cum) / cum[-1])
+            parts['point'].append(S(u[idx], vr))
+            parts['TA'].append(TA[idx])
+            parts['TB'].append(_surface_du(S, cu, np.full(len(cu), vk)))
+    if parts['ia']:
+        cat = {k: np.concatenate(v) for k, v in parts.items()}
+    else:
+        cat = dict(ia=np.zeros(0, int), ta=np.zeros(0), ib=np.zeros(0, int),
+                   tb=np.zeros(0), point=np.zeros((0, 3)),
+                   TA=np.zeros((0, 3)), TB=np.zeros((0, 3)))
+    TB = cat['TB'] / np.maximum(np.linalg.norm(cat['TB'], axis=1,
+                                               keepdims=True), 1e-300)
+    normal = np.cross(cat['TA'], TB)
+    sin = np.linalg.norm(normal, axis=1)
+    normal /= np.maximum(sin, 1e-300)[:, None]
+    crossings = dict(ia=cat['ia'].astype(int), ta=cat['ta'],
+                     ib=cat['ib'].astype(int), tb=cat['tb'],
+                     point=cat['point'], normal=normal, sin=sin)
+    gap = float(np.percentile(spacing, 10)) if spacing else 1.0
+    return right, left, crossings, gap
+
+
+# --------------------------------------------------------------------
 # 4. conoids  (right conoid S = (v cos u, v sin u, h(u)))
 # --------------------------------------------------------------------
 
@@ -1310,11 +1478,13 @@ def rulings_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
                              (extent * cu, extent * su, hgt)))
         return segs
     if kind == 'WHITNEY':
+        # S = (u v, u, v^2) is straight along u at each fixed v: the
+        # ruling through (0, 0, v^2) in the direction (v, 1, 0)
         segs = []
         for i in range(n + 1):
-            s = -extent + 2.0 * extent * i / n
-            segs.append(((s * -extent, s, extent ** 2),
-                         (s * extent, s, extent ** 2)))
+            w = -extent + 2.0 * extent * i / n
+            segs.append(((-extent * w, -extent, w * w),
+                         (extent * w, extent, w * w)))
         return segs
     segs = []
     for i in range(n):
@@ -1604,15 +1774,20 @@ _MODES = [
 #: arrises rather than rulings, and it reads as a column only when filled.
 _DEFAULT_OUTPUT = {'HELICAL_CONE': 'SURFACE'}
 
-#: modes with two ruling families that cross on one surface, and so the
-#: woven-ribbon output: the two doubly-ruled quadrics, and the spiral and
+#: modes with two ruling families that cross on one surface, and so a
+#: Ruling Family choice: the two doubly-ruled quadrics, and the spiral and
 #: the knot span, whose left families are laid on their surfaces as
-#: curves (`left_rulings_spiral`, `left_rulings_knot_span`).  A mode joins
-#: by answering `_weave_input`.
-_WOVEN = {'HYPERBOLOID', 'HYPAR', 'KNOT_SPAN', 'SPIRAL'}
+#: curves (`left_rulings_spiral`, `left_rulings_knot_span`)
+_TWO_FAMILY = {'HYPERBOLOID', 'HYPAR', 'KNOT_SPAN', 'SPIRAL'}
 
-#: modes with a Ruling Family choice
-_TWO_FAMILY = set(_WOVEN)
+#: every other straight-ruled mode, woven as a basket: its rulings with
+#: the curves running along the surface (`weft_weave`, `_weft_charts`)
+_WEFT = {'CONOID', 'TANGENT_DEV', 'HELICOID', 'TWIST_STRIP', 'GAUDI',
+         'GUIMARD', 'MILK_CARTON', 'RULED_CUBIC', 'CONSTANT_SLOPE'}
+
+#: modes with the woven-ribbon output: every one but the compound helical
+#: cone, which has no rulings.  A mode joins by answering `_weave_input`.
+_WOVEN = _TWO_FAMILY | _WEFT
 
 
 def default_output(mode):
@@ -1933,6 +2108,9 @@ def _ruling_families(op, n=None):
     if op.mode == 'SPIRAL':
         right, left, _x, _g = _spiral_weave(op, n)
         return right, left
+    if op.mode in _WEFT:
+        right, left, _x, _g = weft_weave(_weft_charts(op, n))
+        return right, left
     if n is None:
         n = op.n_rods
     if op.mode == 'HYPERBOLOID':
@@ -1981,8 +2159,150 @@ def _weave_input(op):
         fa, fb, crossings, gap = weave(op, overhang=op.ribbon_overhang)
         return fa, fb, dict(crossings=crossings, gap=gap,
                             local_width=True)
+    if op.mode in _WEFT:
+        fa, fb, crossings, gap = weft_weave(_weft_charts(op),
+                                            op.ribbon_overhang)
+        return fa, fb, dict(crossings=crossings, gap=gap,
+                            local_width=True)
     fa, fb = extend_families(*_ruling_families(op), op.ribbon_overhang)
     return fa, fb, {}
+
+
+def _weave_gap_used(op):
+    """Whether the current surface's rulings run together somewhere, so
+    that woven ribbons stop short of it by Weave Gap."""
+    m = op.mode
+    if m == 'CONOID':
+        return op.conoid_kind != 'PARABOLIC_CONOID'
+    if m == 'HELICOID':
+        return abs(op.pitch) < 1e-9
+    return m in ('TANGENT_DEV', 'GUIMARD', 'MILK_CARTON')
+
+
+def _grid_surface(fn):
+    """S(u, v) from fn(u, v) on equal-shaped float arrays."""
+    def S(u, v):
+        u, v = np.broadcast_arrays(np.asarray(u, dtype=float),
+                                   np.asarray(v, dtype=float))
+        return fn(u, v)
+    return S
+
+
+def _weft_charts(op, n=None):
+    """The pieces of surface `weft_weave` weaves for a mode in `_WEFT`,
+    in coordinates where each ruling is a line u = const.
+
+    Most modes are one piece.  A conoid through its axis is woven as
+    half-rulings from a gap by the axis outward: Plucker's, the Wallis
+    edge and the even n-fold conoids cover each ruling twice (u and
+    u + pi give the same line), so one ring of half-rulings is the whole
+    surface; an odd n-fold conoid needs the ring on each side.  Zindler's
+    conoid is one piece per branch, the Whitney umbrella one per side of
+    its handle.  Cones stop short of the apex, the tangent developable
+    short of its fold, Guimard's surface short of the segment its
+    rulings pair off at, the milk carton short of both its seams."""
+    n = op.n_rods if n is None else n
+    m, e, g = op.mode, op.v_extent, op.weave_gap
+    loop = (0.0, _TWO_PI)
+    if m == 'CONOID':
+        kind, amp = op.conoid_kind, op.amp
+        f = max(1, int(op.folds))
+        if kind == 'PARABOLIC_CONOID':
+            S = _grid_surface(lambda u, v: np.stack(
+                [v, u, amp * v * (1.0 - u * u)], -1))
+            return [_weft_chart(S, n, (-1.3, 1.3), None, (0.0, e))]
+        if kind == 'SINUSOIDAL_CONE':
+            S = _grid_surface(lambda u, v: np.stack(
+                [v * np.cos(u), v * np.sin(u), v * amp * np.cos(f * u)], -1))
+            return [_weft_chart(S, n, loop, 'loop', (g * e, e),
+                                (True, False))]
+        if kind == 'HELICOIDAL_CONE':
+            S = _grid_surface(lambda u, v: np.stack(
+                [v * np.cos(u), v * np.sin(u), v * amp * u], -1))
+            return [_weft_chart(S, n, (0.0, _TWO_PI * max(0.25, op.turns)),
+                                None, (g * e, e), (True, False))]
+        if kind == 'WHITNEY':
+            S = _grid_surface(lambda w, t: np.stack([t * w, t, w * w], -1))
+            return [_weft_chart(S, n, (-e, e), None, (g * e, e),
+                                (True, False)),
+                    _weft_chart(S, n, (-e, e), None, (-e, -g * e),
+                                (False, True))]
+        if kind == 'ZINDLER':
+            cap, a = 2.0 * e, max(1e-6, abs(amp))
+            charts = []
+            for k in range(2 * f):
+                def branch(h, v, k=k):
+                    ang = (np.arctan(h / a) + k * math.pi) / f
+                    return np.stack([v * np.cos(ang), v * np.sin(ang), h],
+                                    -1)
+                charts.append(_weft_chart(_grid_surface(branch), n,
+                                          (-cap, cap), None, (g * e, e),
+                                          (True, False)))
+            return charts
+        if kind == 'PLUCKER':
+            def h(u):
+                return amp * np.sin(2.0 * u)
+        elif kind == 'NFOLD':
+            def h(u):
+                return amp * np.sin(f * u)
+        else:  # WALLIS
+            def h(u):
+                return amp * np.sqrt(np.maximum(
+                    op.wallis_a ** 2 - op.wallis_b ** 2 * np.cos(u) ** 2,
+                    0.0))
+        S = _grid_surface(lambda u, v: np.stack(
+            [v * np.cos(u), v * np.sin(u), h(u)], -1))
+        charts = [_weft_chart(S, n, loop, 'loop', (g * e, e), (True, False))]
+        if kind == 'NFOLD' and f % 2:
+            charts.append(_weft_chart(S, n, loop, 'loop', (-e, -g * e),
+                                      (False, True)))
+        return charts
+    if m == 'TANGENT_DEV':
+        R, p = op.radius, op.pitch
+        S = _grid_surface(lambda u, v: np.stack(
+            [R * np.cos(u) - v * R * np.sin(u),
+             R * np.sin(u) + v * R * np.cos(u), p * (u + v)], -1))
+        v0 = op.v_min + g * (e - op.v_min)
+        return [_weft_chart(S, n, (0.0, _TWO_PI * op.turns), None, (v0, e),
+                            (True, False))]
+    if m == 'HELICOID':
+        R, p, s = op.radius, op.pitch, op.slope
+        S = _grid_surface(lambda u, v: np.stack(
+            [v * np.cos(u), v * np.sin(u), p * u + s * v], -1))
+        flat = abs(p) < 1e-9
+        v0 = max(op.inner, g * R) if flat else op.inner
+        return [_weft_chart(S, n, (0.0, _TWO_PI * op.turns), None, (v0, R),
+                            (flat, False))]
+    if m == 'TWIST_STRIP':
+        R, w, hn = op.radius, op.width, int(op.half_twists)
+
+        def band(u, v):
+            rr = R + v * np.cos(hn * u / 2.0)
+            return np.stack([rr * np.cos(u), rr * np.sin(u),
+                             v * np.sin(hn * u / 2.0)], -1)
+        return [_weft_chart(_grid_surface(band), n, loop,
+                            'mobius' if hn % 2 else 'loop', (-w, w))]
+
+    # the named surfaces: the lines joining their two curves
+    def joined(u, v):
+        A, B = named_ruled_curves(m, u.ravel(), op.amp, e, op.folds,
+                                  op.wallis_a, op.wallis_b)
+        P = A + v.ravel()[:, None] * (B - A)
+        return P.reshape(u.shape + (3,))
+    S = _grid_surface(joined)
+    if m == 'GAUDI':
+        a = op.wallis_a
+        return [_weft_chart(S, n, (-math.pi * a, math.pi * a), None,
+                            (0.0, 1.0))]
+    if m == 'RULED_CUBIC':
+        return [_weft_chart(S, n, (-1.45, 1.45), None, (0.0, 1.0))]
+    if m == 'GUIMARD':
+        return [_weft_chart(S, n, loop, 'loop', (g, 1.0), (True, False))]
+    if m == 'MILK_CARTON':
+        gg = min(g, 0.45)
+        return [_weft_chart(S, n, loop, 'loop', (gg, 1.0 - gg),
+                            (True, True))]
+    return [_weft_chart(S, n, loop, 'loop', (0.0, 1.0))]    # CONSTANT_SLOPE
 
 
 def _hypar_boundary(op, N):
@@ -2561,10 +2881,11 @@ if _IN_BLENDER:
                    ('RIBBONS', "Woven Ribbons",
                     "Both ruling families as flat ribbons lying in the "
                     "surface, passing over and under each other where "
-                    "they cross.  On the hyperboloid, the spiral ruled "
-                    "surface, the hyperbolic paraboloid and the "
-                    "concentric toroidal knots; other surfaces fall back "
-                    "to rods")],
+                    "they cross.  A surface with only one family of "
+                    "rulings weaves them with the curves running along "
+                    "it, as a basket's stakes are woven with its "
+                    "weavers.  The compound helical cone, which has no "
+                    "rulings, falls back to rods")],
             default='RODS')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
                             max=400,
@@ -2599,6 +2920,16 @@ if _IN_BLENDER:
                         "surface, so the weave carries on past the "
                         "boundary curves.  Negative trims the ribbons "
                         "back from the edge instead")
+        weave_gap: FloatProperty(
+            name="Weave Gap", default=0.2, min=0.02, max=0.45,
+            description="How far the woven ribbons stop short of where "
+                        "the rulings run together -- a cone's apex, a "
+                        "conoid's axis, the edge a tangent developable "
+                        "folds along, the seams where Guimard's surface "
+                        "and the milk carton pinch shut -- as a fraction "
+                        "of the rulings' length.  Many strands meet at "
+                        "one point there, and no weave can pass them all "
+                        "over and under one another")
         rod_radius: FloatProperty(name="Rod Radius", default=0.02,
                                   min=0.002, max=0.3,
                                   description="Radius of each rod in rods "
@@ -2847,15 +3178,18 @@ if _IN_BLENDER:
                 if out == 'RODS':
                     lay.prop(self, 'smooth')
             else:  # RIBBONS
-                # always both families: shown, but not editable
-                row = lay.row()
-                row.enabled = False
-                row.prop(self, 'family')
+                if m in _TWO_FAMILY:
+                    # always both families: shown, but not editable
+                    row = lay.row()
+                    row.enabled = False
+                    row.prop(self, 'family')
                 lay.prop(self, count, text="Ribbon Count")
                 for k in ('ribbon_width', 'ribbon_thickness',
-                          'weave_float', 'ribbon_overhang',
-                          'show_boundaries'):
+                          'weave_float', 'ribbon_overhang'):
                     lay.prop(self, k)
+                if _weave_gap_used(self):
+                    lay.prop(self, 'weave_gap')
+                lay.prop(self, 'show_boundaries')
                 if self.show_boundaries:
                     lay.prop(self, 'rod_radius', text="Boundary Radius")
                 lay.prop(self, 'smooth')
@@ -3535,8 +3869,7 @@ def _selftest():
     # the output falls back to rods on a singly-ruled mode, and only the
     # doubly-ruled modes answer for their two families
     from types import SimpleNamespace
-    for md in ('HYPERBOLOID', 'HYPAR', 'SPIRAL', 'HELICAL_CONE',
-               'HELICOID'):
+    for md in ('HYPERBOLOID', 'HYPAR', 'SPIRAL', 'HELICAL_CONE'):
         op_ = SimpleNamespace(
             mode=md, output='RIBBONS', radius=1.0, height=1.0,
             twist_angle=math.radians(120.0), n_rods=12, hy_a=1.0,
@@ -3639,6 +3972,87 @@ def _selftest():
           "hyperboloid's straight rulings; crossings on both strands "
           "(left within %.1e of the size), plain weave conflict-free on a "
           "spiral, a rosette and both OK" % worst_off)
+
+    # the basket weave (`weft_weave`): on a cylinder, a Mobius band with an
+    # even and an odd ruling count, and a cone cut short of its apex, the
+    # crossings sit exactly on both strands and the plain weave
+    # alternates along every strand -- round the seam of every closed
+    # weaver too, which the weaver never sees as an edge of its own
+    def _flat(fn):
+        return _grid_surface(fn)
+    cyl = _flat(lambda u, v: np.stack([np.cos(u), np.sin(u), v], -1))
+    mob = _flat(lambda u, v: np.stack([
+        (1.0 + v * np.cos(u / 2)) * np.cos(u),
+        (1.0 + v * np.cos(u / 2)) * np.sin(u), v * np.sin(u / 2)], -1))
+    con = _flat(lambda u, v: np.stack([v * np.cos(u), v * np.sin(u),
+                                       0.6 * v], -1))
+    basket = (
+        ("cylinder", _weft_chart(cyl, 11, (0.0, _TWO_PI), 'loop',
+                                 (-1.0, 1.0))),
+        ("mobius even", _weft_chart(mob, 12, (0.0, _TWO_PI), 'mobius',
+                                    (-0.4, 0.4))),
+        ("mobius odd", _weft_chart(mob, 11, (0.0, _TWO_PI), 'mobius',
+                                   (-0.4, 0.4))),
+        ("cone", _weft_chart(con, 16, (0.0, _TWO_PI), 'loop', (0.25, 1.0),
+                             (True, False))))
+    for label_, ch_ in basket:
+        fa_, fb_, X_, g_ = weft_weave([ch_], overhang=0.1)
+        if ch_['closure'] == 'loop':
+            assert len(fa_) % 2 == 0, label_
+        pa = np.array([fa_[i][0] + t * (fa_[i][1] - fa_[i][0])
+                       for i, t in zip(X_['ia'], X_['ta'])])
+        assert np.abs(pa - X_['point']).max() < 1e-9, label_
+        pb = []
+        for j, t in zip(X_['ib'], X_['tb']):
+            P = fb_[j]
+            s = np.concatenate([[0.0], np.cumsum(
+                np.linalg.norm(np.diff(P, axis=0), axis=1))])
+            pb.append([np.interp(t * s[-1], s, P[:, c]) for c in range(3)])
+        assert np.abs(np.asarray(pb) - X_['point']).max() < 1e-9, label_
+        plan_ = plan_weave(fa_, fb_, crossings=X_, gap=g_, local_width=True)
+        assert plan_['conflicts'] == 0, (label_, plan_['conflicts'])
+        closed = [j for j, P in enumerate(fb_) if np.allclose(P[0], P[-1])]
+        assert closed, label_
+        for j in closed:
+            sel = np.nonzero(X_['ib'] == j)[0]
+            sel = sel[np.argsort(X_['tb'][sel])]
+            assert (plan_['level'][sel[0]] - plan_['level'][sel[-1]]) % 2, \
+                (label_, j)
+    # the Whitney umbrella's rods are its rulings, on the surface
+    for p0, p1 in rulings_conoid('WHITNEY', extent=1.0, n=8):
+        q = np.asarray(p0) + (np.asarray(p1) - np.asarray(p0)) / 3.0
+        w = math.sqrt(max(float(q[2]), 0.0))
+        assert min(abs(q[0] - q[1] * w), abs(q[0] + q[1] * w)) < 1e-12
+    # and every surface with rulings weaves at its defaults, conflict-free
+    base = dict(
+        radius=1.0, height=1.0, twist_angle=math.radians(120.0),
+        tightness=0.15, slope=1.0, turns=2.0, petals=1, petal_amp=0.0,
+        amp=0.5, folds=3, wallis_a=1.0, wallis_b=0.6, pitch=0.4, v_min=0.04,
+        inner=0.0, width=0.4, half_twists=1, hy_a=1.0, hy_b=1.0, hy_c=1.0,
+        use_corners=False, p00=(-1.0, -1.0, -1.0), p10=(1.0, -1.0, 1.0),
+        p01=(-1.0, 1.0, 1.0), p11=(1.0, 1.0, -1.0), knot_p=2, knot_q=3,
+        knot_scale=1.0, knot_tube=1.0, knot_inner_height=1.0,
+        knot_inner_lift=0.0, knot_rotation=0.0, knot_outer_p=0,
+        knot_outer_q=5, knot_outer_scale=2.0, knot_outer_tube=1.0,
+        knot_outer_height=1.0, knot_circle_radius=4.5,
+        knot_twist=math.radians(30.0), knot_rods=24, v_extent=1.0,
+        n_rods=24, family='BOTH', output='RIBBONS', ribbon_overhang=0.1,
+        weave_gap=0.2, conoid_kind='PLUCKER')
+    combos = ([(md, 'PLUCKER') for md, _l, _d in _MODES
+               if md in _WOVEN and md != 'CONOID']
+              + [('CONOID', k) for k, _l, _d in _CONOID_KINDS])
+    for md, kind in combos:
+        op_ = SimpleNamespace(**dict(base, mode=md, conoid_kind=kind))
+        fa_, fb_, opts_ = _weave_input(op_)
+        plan_ = plan_weave(fa_, fb_, 0.9, 0.15, 1, **opts_)
+        assert len(plan_['crossings']['ia']), (md, kind)
+        assert plan_['conflicts'] == 0, (md, kind, plan_['conflicts'])
+    assert 'HELICAL_CONE' not in _WOVEN
+    print("basket weave: crossings exact on both strands, plain weave "
+          "alternating round every closed weaver on a cylinder, Mobius "
+          "bands of both parities and a cone; Whitney rods on the "
+          "surface; all %d surfaces with rulings weave conflict-free OK"
+          % len(combos))
 
     # the crossing count: pairs sharing a corner are neighbours, not
     # crossings, and a pair listed both ways counts once
