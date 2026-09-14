@@ -22,7 +22,10 @@
 # the ribbons of the other family (a plain weave, or a twill).  The
 # weaving itself knows nothing about the surface and lives in
 # `weaving/rulings.py`; a mode joins it by supplying its two ruling
-# families (see `_ruling_families`).
+# families (see `_ruling_families`).  The ribbons can also run on past
+# the edge (Overhang): a ruling of these surfaces still lies on the
+# surface when extended, so the lengthened ribbons keep crossing and the
+# weave itself carries on beyond the rails.
 #
 # Modes
 #   HYPERBOLOID   -- hyperboloid of one sheet from straight rulings
@@ -154,9 +157,11 @@ except ImportError:
     _IN_BLENDER = False
 
 try:                                  # inside the math_art package
-    from .weaving.rulings import (weave_rulings, crossing_clearance)
+    from .weaving.rulings import (weave_rulings, crossing_clearance,
+                                  extend_families)
 except ImportError:                   # flat import (test runner)
-    from weaving.rulings import (weave_rulings, crossing_clearance)
+    from weaving.rulings import (weave_rulings, crossing_clearance,
+                                 extend_families)
 
 _TWO_PI = 2.0 * math.pi
 
@@ -1750,6 +1755,14 @@ if _IN_BLENDER:
             description="Crossings a ribbon passes over before it goes "
                         "under: 1 is a plain weave, 2 a 2/2 twill, 3 a "
                         "3/3 twill")
+        ribbon_overhang: FloatProperty(
+            name="Overhang", default=0.0, min=-0.45, max=1.0,
+            description="Extend every ribbon straight past the edge at "
+                        "both ends, by this fraction of the longest "
+                        "ruling.  The extended rulings stay on the "
+                        "surface, so the weave carries on past the "
+                        "boundary curves.  Negative trims the ribbons "
+                        "back from the edge instead")
         rod_radius: FloatProperty(name="Rod Radius", default=0.02,
                                   min=0.002, max=0.3,
                                   description="Radius of each rod in rods "
@@ -1780,7 +1793,15 @@ if _IN_BLENDER:
             if self.output == 'RIBBONS' and out != 'RIBBONS':
                 info = " [woven ribbons need two ruling families]"
             if out == 'RIBBONS':
-                fa, fb = _ruling_families(self)
+                # a weave is BOTH ruling families crossing into a mesh;
+                # pin the family to match, so the panel says so and
+                # switching back to rods shows that same mesh
+                if self.family != 'BOTH':
+                    self.family = 'BOTH'
+                # an overhang only lengthens the segments; the weave
+                # finds the extra crossings past the edge on its own
+                fa, fb = extend_families(*_ruling_families(self),
+                                         self.ribbon_overhang)
                 verts, faces, plan = weave_rulings(
                     fa, fb, self.ribbon_width, self.ribbon_thickness,
                     self.weave_float)
@@ -1942,9 +1963,13 @@ if _IN_BLENDER:
                         lay.prop(self, 'rod_radius')
                     lay.prop(self, 'show_boundaries')
                 elif out == 'RIBBONS':
+                    # always both families: shown, but not editable
+                    row = lay.row()
+                    row.enabled = False
+                    row.prop(self, 'family')
                     for k in ('n_rods', 'ribbon_width',
                               'ribbon_thickness', 'weave_float',
-                              'show_boundaries'):
+                              'ribbon_overhang', 'show_boundaries'):
                         lay.prop(self, k)
                     if self.show_boundaries:
                         lay.prop(self, 'rod_radius')
@@ -2275,68 +2300,102 @@ def _selftest():
     # Right ruling i leaves the bottom circle at angle 2 pi i / n and left
     # ruling j at 2 pi j / n.  Written in polar form, a ruling of twist d
     # from angle a sits at angle a + d/2 + atan(s tan(d/2)) at height
-    # z = H s, so the two meet exactly when k = (j - i) mod n satisfies
-    # 2 pi k / n <= 2 twist, and they meet at
-    #     s = tan((2 pi k / n - twist) / 2) / tan(twist / 2).
+    # z = H s (s = -1 .. 1 between the rails), so the two meet where
+    #     2 atan(s tan(tw/2)) = theta,   theta = (2 pi k / n - tw) wrapped
+    #                                    into (-pi, pi], k = (j - i) mod n
+    # i.e. at s = tan(theta/2) / tan(tw/2), and a crossing exists exactly
+    # when that s lies on both segments.  Between the rails that is
+    # |theta| <= tw; with an overhang of h longest-rulings every ruling
+    # (all equally long here) runs on to |s| = 1 + 2h, past the rails,
+    # and the extended rulings still meet on the same quadric.
     # Gate on that count and those heights -- and on every crossing
     # lying on the quadric, radius^2 = R^2 (cos^2(tw/2) + s^2 sin^2(tw/2))
     # -- rather than on "the weave meshed".  Along either strand k rises
     # by one per crossing, so the level IS k up to a constant and the
     # plain weave can never conflict.
-    for n_, tw_ in ((48, 120.0), (24, 120.0), (36, 75.0), (30, 150.0)):
+    for n_, tw_, oh_ in ((48, 120.0, 0.0), (24, 120.0, 0.0),
+                         (36, 75.0, 0.0), (30, 150.0, 0.0),
+                         (24, 120.0, 0.3), (36, 75.0, 0.5)):
         twr = math.radians(tw_)
-        fa = rulings_hyperboloid(1.0, 1.0, tw_, 'RIGHT', n_)
-        fb = rulings_hyperboloid(1.0, 1.0, tw_, 'LEFT', n_)
+        T_ = math.tan(twr / 2.0)
+        fa, fb = extend_families(
+            rulings_hyperboloid(1.0, 1.0, tw_, 'RIGHT', n_),
+            rulings_hyperboloid(1.0, 1.0, tw_, 'LEFT', n_), oh_)
         wv, wf, plan = weave_rulings(fa, fb)
         X = plan['crossings']
-        per = sum(1 for k in range(n_)
-                  if _TWO_PI * k / n_ <= 2.0 * twr + 1e-9)
-        assert len(X['ia']) == n_ * per, (n_, tw_, len(X['ia']), n_ * per)
-        k_ = (X['ib'] - X['ia']) % n_
-        s_ = np.tan((_TWO_PI * k_ / n_ - twr) / 2.0) / math.tan(twr / 2.0)
-        assert np.max(np.abs(X['point'][:, 2] - s_)) < 1e-9, (n_, tw_)
+        theta = ((_TWO_PI * np.arange(n_) / n_ - twr + math.pi)
+                 % _TWO_PI) - math.pi
+        s_all = np.tan(theta / 2.0) / T_
+        per = int(np.sum(np.abs(s_all) <= (1.0 + 2.0 * oh_) * (1 + 1e-9)))
+        assert len(X['ia']) == n_ * per, (n_, tw_, oh_, len(X['ia']),
+                                          n_ * per)
+        s_ = s_all[(X['ib'] - X['ia']) % n_]
+        assert np.max(np.abs(X['point'][:, 2] - s_)) < 1e-9, (n_, tw_, oh_)
         rho2 = X['point'][:, 0] ** 2 + X['point'][:, 1] ** 2
         want = math.cos(twr / 2.0) ** 2 + (s_ * math.sin(twr / 2.0)) ** 2
-        assert np.max(np.abs(rho2 - want)) < 1e-9, (n_, tw_)
-        assert plan['conflicts'] == 0, (n_, tw_, plan['conflicts'])
+        assert np.max(np.abs(rho2 - want)) < 1e-9, (n_, tw_, oh_)
+        if oh_ > 0.0:                      # the weave went on past the rails
+            assert np.max(np.abs(s_)) > 1.0 + 1e-6, (n_, tw_, oh_)
+        assert plan['conflicts'] == 0, (n_, tw_, oh_, plan['conflicts'])
         for st in plan['strands']:
             assert np.all(st['sign'][1:] != st['sign'][:-1]), (n_, tw_)
         assert weave_rulings(fa, fb, run=2)[2]['conflicts'] == 0
         assert np.all(np.isfinite(np.asarray(wv)))
         assert all(0 <= i < len(wv) for f in wf for i in f)
-        if (n_, tw_) == (48, 120.0):       # the operator's defaults
-            clear = crossing_clearance(plan)
-            assert plan['tight'] == 0 and clear > 0.5, (plan['tight'],
-                                                        clear)
+        if (n_, tw_) == (48, 120.0) or oh_ > 0.0:
+            cl_ = crossing_clearance(plan)
+            assert plan['tight'] == 0 and cl_ > 0.5, (n_, tw_, oh_,
+                                                      plan['tight'], cl_)
+            if (n_, tw_) == (48, 120.0):   # the operator's defaults
+                clear = cl_
     print("woven hyperboloid: crossing count, heights and radii match "
-          "the closed form; plain weave and 2/2 twill conflict-free; "
-          "ribbons clear at the defaults (%.2f thickness) OK" % clear)
+          "the closed form, between the rails and past them with an "
+          "overhang; plain weave and 2/2 twill conflict-free; ribbons "
+          "clear at the defaults (%.2f thickness) OK" % clear)
 
     # ---- woven ribbons: the hyperbolic paraboloid -----------------------
     # The Ruling Family split must partition the BOTH rods exactly, the
-    # crossings of the z = c((x/a)^2 - (y/b)^2) saddle must lie on it,
-    # and both saddle forms must weave cleanly at the defaults.
+    # crossings must lie on the saddle, and both saddle forms must weave
+    # cleanly at the defaults and with an overhang.  The corner patch
+    # spanning these four points is the saddle z = -xy (expand the
+    # bilinear form with x = 2s - 1, y = 2t - 1), and both saddles are
+    # doubly ruled everywhere, so crossings of the EXTENDED rulings must
+    # satisfy the same equation.  How many there are differs, and says
+    # something: the patch's rulings run corner edge to corner edge, so
+    # every line of one family already meets every line of the other
+    # inside it -- (n+1)^2 crossings -- and two lines meet only once, so
+    # extending them can add none.  The equation form clips its rulings
+    # to a square the lattice is diagonal to, so extended rulings DO meet
+    # new partners outside the square.
     corner_pts = ((-1, -1, -1), (1, -1, 1), (-1, 1, 1), (1, 1, -1))
-    for corners_ in (None, corner_pts):
+    for corners_, height in ((None, lambda x, y: x * x - y * y),
+                             (corner_pts, lambda x, y: -x * y)):
         both = rulings_hypar(1.0, 1.0, 1.0, 1.0, corners_, 48)
         fa = rulings_hypar(1.0, 1.0, 1.0, 1.0, corners_, 48, 'RIGHT')
         fb = rulings_hypar(1.0, 1.0, 1.0, 1.0, corners_, 48, 'LEFT')
         assert len(fa) + len(fb) == len(both) and fa and fb
         assert set(fa) | set(fb) == set(both), "families do not partition"
-        _wv, _wf, plan = weave_rulings(fa, fb)
-        X = plan['crossings']
-        if corners_ is None:
+        counts = []
+        for oh_ in (0.0, 0.25):
+            _wv, _wf, plan = weave_rulings(*extend_families(fa, fb, oh_))
+            X = plan['crossings']
             P = X['point']
-            assert np.max(np.abs(P[:, 2] - (P[:, 0] ** 2 - P[:, 1] ** 2))) \
-                < 1e-9
-        clear = crossing_clearance(plan)
-        assert plan['conflicts'] == 0 and plan['tight'] == 0, \
-            (corners_ is None, plan['conflicts'], plan['tight'])
-        assert clear > 0.5, (corners_ is None, clear)
-        print("woven hypar (%s): %d crossings on the saddle, families "
-              "partition the rods, conflict-free, clearance %.2f OK"
+            counts.append(len(P))
+            assert np.max(np.abs(P[:, 2] - height(P[:, 0], P[:, 1]))) \
+                < 1e-9, (corners_ is None, oh_)
+            clear = crossing_clearance(plan)
+            assert plan['conflicts'] == 0 and plan['tight'] == 0, \
+                (corners_ is None, oh_, plan['conflicts'], plan['tight'])
+            assert clear > 0.5, (corners_ is None, oh_, clear)
+        if corners_ is None:
+            assert counts[1] > counts[0], counts
+        else:
+            assert counts[0] == counts[1] == 49 * 49, counts
+        print("woven hypar (%s): %d crossings on the saddle (%d with an "
+              "overhang), families partition the rods, conflict-free, "
+              "clearance %.2f OK"
               % ("equation" if corners_ is None else "corners",
-                 len(X['ia']), clear))
+                 counts[0], counts[1], clear))
 
     # the output falls back to rods on a singly-ruled mode, and only the
     # doubly-ruled modes answer for their two families

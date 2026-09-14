@@ -107,6 +107,44 @@ def segment_crossings(fam_a, fam_b, rel_tol=1e-7):
                 normal=n / sn[:, None], sin=sn)
 
 
+def extend_segments(segs, amount):
+    """Lengthen every segment by `amount` past BOTH of its ends, along
+    its own direction; a negative amount trims it back instead, and a
+    segment trimmed to nothing is dropped."""
+    out = []
+    for p0, p1 in segs:
+        p0 = np.asarray(p0, dtype=float)
+        p1 = np.asarray(p1, dtype=float)
+        L = float(np.linalg.norm(p1 - p0))
+        if L < 1e-12 or L + 2.0 * amount <= 1e-9 * L:
+            continue
+        d = (p1 - p0) / L
+        out.append((tuple(float(c) for c in p0 - amount * d),
+                    tuple(float(c) for c in p1 + amount * d)))
+    return out
+
+
+def extend_families(fam_a, fam_b, overhang):
+    """Both families run on past their ends by `overhang` times the
+    longest segment of either -- one absolute distance for every strand,
+    so ends that sat on a common edge stay level with each other.
+
+    On a doubly-ruled surface the extended lines still lie on the
+    surface, so they go on crossing: weaving the extended families
+    carries the weave out past the edge rather than just poking the
+    ribbon ends through it.
+    """
+    if not overhang:
+        return list(fam_a), list(fam_b)
+    segs = np.asarray(list(fam_a) + list(fam_b),
+                      dtype=float).reshape(-1, 2, 3)
+    if len(segs) == 0:
+        return [], []
+    longest = float(np.max(np.linalg.norm(segs[:, 1] - segs[:, 0], axis=1)))
+    amount = overhang * longest
+    return extend_segments(fam_a, amount), extend_segments(fam_b, amount)
+
+
 # --------------------------------------------------------------------
 # over / under
 # --------------------------------------------------------------------
@@ -579,6 +617,21 @@ def _selftest():
     assert crossing_clearance(wide) < crossing_clearance(plan)
     print(f"rulings: width limit exact -- clean at 1, {wide['tight']} "
           f"tight spans at 1.02 OK")
+
+    # overhang: one absolute distance for every strand.  Parallel
+    # families gain no crossings by growing; trimming a quarter of the
+    # longest (1.5 of 6) off each end leaves the rows and columns 1..4,
+    # whose 16 crossings include the exact endpoint ones.
+    er, ec = extend_families(rows, cols, 0.25)
+    assert all(abs(math.dist(p, q) - 9.0) < 1e-12 for p, q in er + ec)
+    assert len(segment_crossings(er, ec)['ia']) == n * n
+    tr, tc = extend_families(rows, cols, -0.25)
+    assert len(tr) == len(tc) == n
+    assert len(segment_crossings(tr, tc)['ia']) == 16
+    assert extend_families(rows, cols, -0.5) == ([], [])
+    assert plan_weave([], [])['strands'] == []
+    print("rulings: overhang lengthens and trims every strand by one "
+          "distance; trimmed-away strands drop OK")
 
     # a genuinely curved case: the saddle z = xy is doubly ruled by the
     # lines x = const and y = const; the crossing normal must match the

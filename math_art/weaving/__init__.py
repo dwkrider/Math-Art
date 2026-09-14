@@ -25,7 +25,8 @@ subjects stop answering to one name.
 from .links import (PHI, build_polylinks)
 from .polyhedral import (Pattern, build_flags, build_weave, build_weave_tubes, flag_cross, flag_point, flag_step, geodesic, parse_pattern, relax_strands, seed_poly, sweep_ribbons, sweep_tubes, weave_circuits)
 from .rotegrity import (build_rotegrity)
-from .rulings import (crossing_clearance, plan_weave, weave_rulings)
+from .rulings import (crossing_clearance, extend_families, plan_weave,
+                      weave_rulings)
 from .shells import (SOLID_ITEMS, bez, build_cells, build_double_shell, edge_pairing, find_crossings, relax_double_shell, shell_lines, solid_np, strand_cycles, strand_paths)
 from .stellated import (BEND_INNER_EXT, BEND_MITER_EXT, DODECA_FACES, DODECA_VERTICES, FACE_STAR_RATIO, INV_PHI, build_arms, indexed_ssd_faces)
 from .sticks import (PACKINGS, build_polystix)
@@ -52,6 +53,7 @@ __all__ = [
     "plan_weave",
     "weave_rulings",
     "crossing_clearance",
+    "extend_families",
     "solid_np",
     "edge_pairing",
     "strand_cycles",
