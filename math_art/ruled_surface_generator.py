@@ -1659,24 +1659,19 @@ def _knot_span_weave(op, n=None, overhang=0.0):
         op.knot_rods if n is None else n, op.knot_twist, overhang)
 
 
-#: the knot span sizes its ribbons to this quantile of the spans between
-#: crossings rather than the tightest: where its strands crowd together a
-#: few crossings sit too close for any visible ribbon to part between
-#: them, and those spans are squeezed instead
-_KNOT_WEAVE_QUANTILE = 0.05
-
-
 def _weave_input(op):
     """What the woven output weaves: (family a, family b, options) for
     `weave_rulings`.  Straight families go in with their overhang and the
-    weaver finds their crossings; the knot span, whose left family is
+    weaver finds their crossings.  The knot span, whose left family is
     curved, supplies its exact crossings and neighbour spacing
-    (`knot_span_weave`) and a quantile width limit."""
+    (`knot_span_weave`), and sizes its ribbons cell by cell: its lattice
+    is open in the outer flares and crowded by the inner knot, so one
+    width for every ribbon would leave the open cells nearly empty."""
     if op.mode == 'KNOT_SPAN':
         fa, fb, crossings, gap = _knot_span_weave(
             op, overhang=op.ribbon_overhang)
         return fa, fb, dict(crossings=crossings, gap=gap,
-                            limit_quantile=_KNOT_WEAVE_QUANTILE)
+                            local_width=True)
     fa, fb = extend_families(*_ruling_families(op), op.ribbon_overhang)
     return fa, fb, {}
 
@@ -2071,11 +2066,15 @@ if _IN_BLENDER:
                                         "bare-curves or woven-ribbons "
                                         "output (per family)")
         ribbon_width: FloatProperty(
-            name="Ribbon Width", default=0.9, min=0.05, max=1.0,
+            name="Ribbon Width", default=0.9, min=0.05, max=2.0,
             description="Width of each woven ribbon, as a fraction of "
                         "the widest that still weaves cleanly: 1 leaves "
                         "just enough room between crossings for a ribbon "
-                        "to pass from over to under without touching")
+                        "to pass from over to under without touching.  On "
+                        "the concentric toroidal knots it is measured cell "
+                        "by cell, so ribbons widen where the lattice opens "
+                        "out.  Above 1 the ribbons are wider than weaves "
+                        "cleanly, and may touch where they cross")
         ribbon_thickness: FloatProperty(
             name="Ribbon Thickness", default=0.15, min=0.01, max=1.0,
             description="Thickness of each ribbon as a fraction of its "
@@ -2152,7 +2151,7 @@ if _IN_BLENDER:
                 name += " (Woven Ribbons)"
                 info += f" crossings={len(plan['crossings']['ia'])}"
                 squeezed = (plan['tight']
-                            if weave_opts.get('limit_quantile') else 0)
+                            if weave_opts.get('local_width') else 0)
                 if plan['conflicts'] or plan['tight'] > squeezed:
                     self.report(
                         {'WARNING'},
@@ -2341,8 +2340,9 @@ if _IN_BLENDER:
                     row = lay.row()
                     row.enabled = False
                     row.prop(self, 'family')
-                    for k in ('knot_rods' if m == 'KNOT_SPAN' else 'n_rods',
-                              'ribbon_width', 'ribbon_thickness',
+                    lay.prop(self, 'knot_rods' if m == 'KNOT_SPAN'
+                             else 'n_rods', text="Ribbon Count")
+                    for k in ('ribbon_width', 'ribbon_thickness',
                               'weave_float', 'ribbon_overhang',
                               'show_boundaries'):
                         lay.prop(self, k)
@@ -2992,14 +2992,17 @@ def _selftest():
             KX['point'][c] - (a_ + tt[:, None] * d_), axis=1).min()))
     assert off_left < 2e-3, off_left
     kv_, kf_, kplan = weave_rulings(kright, kleft, crossings=KX, gap=kgap,
-                                    limit_quantile=_KNOT_WEAVE_QUANTILE)
+                                    local_width=True)
     assert kplan['conflicts'] == 0
     assert weave_rulings(kright, kleft, run=2, crossings=KX, gap=kgap,
-                         limit_quantile=_KNOT_WEAVE_QUANTILE
+                         local_width=True
                          )[2]['conflicts'] == 0
     spans = 2 * len(KX['ia']) - 2 * n64
     assert kplan['tight'] < 0.1 * spans, (kplan['tight'], spans)
-    assert kplan['width'] > 0.3 * kgap, (kplan['width'], kgap)
+    # sized cell by cell, the ribbons in the open flares are several
+    # times wider than those crowded by the inner knot
+    assert (np.percentile(kplan['widths'], 90)
+            > 3.0 * np.percentile(kplan['widths'], 10)), kplan['widths']
     assert np.all(np.isfinite(np.asarray(kv_)))
     assert max(max(f) for f in kf_) < len(kv_)
     # and the operator's input for it carries the crossings, gap and
@@ -3008,7 +3011,7 @@ def _selftest():
     kop.ribbon_overhang, kop.knot_rods = 0.0, 12
     kfa, kfb, kopts = _weave_input(kop)
     assert len(kfa) == len(kfb) == 12
-    assert set(kopts) == {'crossings', 'gap', 'limit_quantile'}
+    assert set(kopts) == {'crossings', 'gap', 'local_width'}
     assert effective_output(kop) == 'RIBBONS'
     print("woven knot span: on two circles the closed-form crossings "
           "match plain intersection exactly (with rotation and overhang); "

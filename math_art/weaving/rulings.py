@@ -692,7 +692,8 @@ _FREE = 0.15
 
 
 def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
-               crossings=None, gap=None, limit_quantile=None):
+               crossings=None, gap=None, limit_quantile=None,
+               local_width=False):
     """Everything needed to sweep the woven ribbons, before any mesh.
 
     `width` is a FRACTION of the widest ribbon that weaves cleanly on
@@ -716,6 +717,17 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
     of the tightest one, for a surface where a few crossings crowd too
     close for any visible ribbon to part between them: the spans tighter
     than that are squeezed, and counted in `tight`.
+
+    `local_width` sizes the ribbons crossing by crossing instead: each
+    crossing takes the tightest of the limits of the spans either side of
+    it, along both its strands, and a ribbon's width eases from one
+    crossing's to the next.  On an even lattice that is the uniform width
+    again; on an uneven one -- open cells in one place, crowded ones in
+    another -- the ribbons fill every cell to the same fraction, widening
+    where the lattice opens out and narrowing where it crowds, instead of
+    all being sized to the tightest cell anywhere.  Their thickness, and
+    so the lift at every crossing, stays one value sized to the typical
+    ribbon.
 
     Around each crossing the lift is held flat over the whole footprint
     of the other ribbon -- measured along this strand, a ribbon of width
@@ -757,6 +769,7 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
                for fam in (strands_a, strands_b)]
     limit = (gap if gap is not None
              else min(family_gap(fam_a), family_gap(fam_b)))
+    local = np.full(len(X['ia']), np.inf)
     span_limits = []
     for (key_i, key_t), lens in zip((('ia', 'ta'), ('ib', 'tb')), lengths):
         idx, par = X[key_i], X[key_t]
@@ -767,8 +780,10 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
         p, q = order[:-1][same], order[1:][same]
         span = (par[q] - par[p]) * lens[idx[p]]
         ok = span > 1e-12
-        span_limits.append((1.0 - _FREE) * span[ok]
-                           / (per_w[p][ok] + per_w[q][ok]))
+        lim = (1.0 - _FREE) * span[ok] / (per_w[p][ok] + per_w[q][ok])
+        span_limits.append(lim)
+        np.minimum.at(local, p[ok], lim)
+        np.minimum.at(local, q[ok], lim)
     span_limits = (np.concatenate(span_limits) if span_limits
                    else np.zeros(0))
     if len(span_limits):
@@ -779,10 +794,24 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
                   default=1.0)
     if not math.isfinite(limit) or limit <= 0.0:
         limit = 0.05 * longest
-    w = width * limit
+    if local_width and np.any(np.isfinite(local)):
+        # each crossing's own limit -- floored, so crossings that all but
+        # coincide still get a ribbon rather than none
+        typical = float(np.median(local[np.isfinite(local)]))
+        local = np.where(np.isfinite(local), local, typical)
+        w_c = width * np.maximum(local, 0.02 * typical)
+    else:
+        w_c = np.full(len(X['ia']), width * limit)
+    if local_width and len(w_c):
+        # one thickness across the weave, sized to the typical ribbon, so
+        # the wide ribbons of open cells stay ribbons rather than slabs
+        th_c = np.full(len(w_c), thickness * float(np.median(w_c)))
+    else:
+        th_c = thickness * w_c
+    foot = w_c * per_w
+    w = float(np.median(w_c)) if len(w_c) else width * limit
     th = thickness * w
     amp = th
-    foot = w * per_w
 
     fallback = (np.mean(X['normal'], axis=0) if len(X['ia'])
                 else np.array([0.0, 0.0, 1.0]))
@@ -830,13 +859,25 @@ def plan_weave(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
                     Nf = np.cross(T, [0.0, 1.0, 0.0])
             st = dict(P=P, s=s, L=L, t=tk, sign=sg, half=hk, lo=lo, hi=hi,
                       N=Ns, fallback=Nf / np.linalg.norm(Nf),
-                      crossings=sel)
+                      crossings=sel, w=w_c[sel], th=th_c[sel])
             st['Tk'] = (_strand_at(st, tk)[1] if len(tk)
                         else np.zeros((0, 3)))
             strands.append(st)
     return dict(strands=strands, width=w, thickness=th, amp=amp,
+                widths=w_c, thicknesses=th_c,
                 crossings=X, level=level, a_over=a_over,
                 conflicts=conflicts, tight=tight, run=run, limit=limit)
+
+
+def _strand_widths(plan, st, t):
+    """Ribbon width and thickness along a strand at arc-length fractions
+    t: each crossing's own, eased linearly from one crossing to the next
+    and held beyond the first and last."""
+    t = np.atleast_1d(np.asarray(t, dtype=float))
+    if len(st['t']) == 0:
+        return (np.full(len(t), plan['width']),
+                np.full(len(t), plan['thickness']))
+    return np.interp(t, st['t'], st['w']), np.interp(t, st['t'], st['th'])
 
 
 def strand_section(plan, st, t):
@@ -871,7 +912,9 @@ def strand_section(plan, st, t):
     # normals already are, a curved strand's turn between crossings
     N = N - np.einsum('ij,ij->i', N, T)[:, None] * T
     N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-300)
-    C = base + (plan['amp'] * d)[:, None] * N
+    # the lift at a crossing is one ribbon thickness
+    _w, lift = _strand_widths(plan, st, t)
+    C = base + (lift * d)[:, None] * N
     S = np.cross(N, T)
     return C, S, N
 
@@ -880,10 +923,11 @@ def _sample_ts(plan, st, steps):
     """Sample parameters: every knot, footprint edge and transition end,
     with the level-changing spans subdivided `steps` times -- and, on a
     curved strand, the points of its polyline it needs to follow the
-    curve to a tenth of the ribbon's width."""
+    curve to a tenth of the ribbon's narrowest width."""
     br = [0.0, 1.0]
     if len(st['P']) > 2:
-        br.extend(st['s'][polyline_keep(st['P'], 0.1 * plan['width'])])
+        narrowest = float(st['w'].min()) if len(st['w']) else plan['width']
+        br.extend(st['s'][polyline_keep(st['P'], 0.1 * narrowest)])
     br.extend(st['t'])
     br.extend(st['t'] - st['half'])
     br.extend(st['t'] + st['half'])
@@ -896,8 +940,9 @@ def _sample_ts(plan, st, steps):
     mids = 0.5 * (br[:-1] + br[1:])
     C, _S, N = strand_section(plan, st, mids)
     base, _T = _strand_at(st, mids)
-    lift = np.abs(np.einsum('ij,ij->i', C - base, N)) / max(plan['amp'],
-                                                             1e-300)
+    _w, amp = _strand_widths(plan, st, mids)
+    lift = (np.abs(np.einsum('ij,ij->i', C - base, N))
+            / np.maximum(amp, 1e-300))
     out = [br[0]]
     for k in range(len(br) - 1):
         m = steps if lift[k] < 1.0 - 1e-9 else 1
@@ -910,12 +955,13 @@ def sweep_woven_ribbons(plan, steps=6):
 
     Returns (verts, faces, face_strand).  Faces wind outward.
     """
-    hw, ht = 0.5 * plan['width'], 0.5 * plan['thickness']
     corners = ((1, 1), (-1, 1), (-1, -1), (1, -1))
     verts, faces, face_strand = [], [], []
     for si, st in enumerate(plan['strands']):
         ts = _sample_ts(plan, st, steps)
         C, S, N = strand_section(plan, st, ts)
+        w_t, th_t = _strand_widths(plan, st, ts)
+        hw, ht = 0.5 * w_t[:, None], 0.5 * th_t[:, None]
         m = len(ts)
         ring = np.stack([C + sw * hw * S + sr * ht * N
                          for sw, sr in corners], axis=1)   # (m, 4, 3)
@@ -935,11 +981,13 @@ def sweep_woven_ribbons(plan, steps=6):
 
 
 def weave_rulings(fam_a, fam_b, width=0.9, thickness=0.15, run=1,
-                  steps=6, crossings=None, gap=None, limit_quantile=None):
+                  steps=6, crossings=None, gap=None, limit_quantile=None,
+                  local_width=False):
     """Woven ribbons for two ruling families: (verts, faces, plan).
-    `crossings`, `gap` and `limit_quantile` are passed to `plan_weave`."""
+    `crossings`, `gap`, `limit_quantile` and `local_width` are passed to
+    `plan_weave`."""
     plan = plan_weave(fam_a, fam_b, width, thickness, run, crossings, gap,
-                      limit_quantile)
+                      limit_quantile, local_width)
     verts, faces, _fs = sweep_woven_ribbons(plan, steps)
     return verts, faces, plan
 
@@ -971,8 +1019,7 @@ def crossing_clearance(plan, samples=13, across=7):
     for st in plan['strands']:
         for k, c in enumerate(st['crossings']):
             by_cross.setdefault(int(c), []).append((st, k))
-    hw, ht = 0.5 * plan['width'], 0.5 * plan['thickness']
-    betas = np.linspace(-hw, hw, across)
+    across_frac = np.linspace(-1.0, 1.0, across)
     worst = math.inf
     for c, pair in by_cross.items():
         if len(pair) != 2:
@@ -991,8 +1038,11 @@ def crossing_clearance(plan, samples=13, across=7):
         tc, h = so['t'][ko], so['half'][ko]
         ts = np.clip(np.linspace(tc - h, tc + h, samples), 0.0, 1.0)
         C, S, N = strand_section(plan, so, ts)
-        Q = (C[:, None, :] + betas[None, :, None] * S[:, None, :]
-             - ht * N[:, None, :]).reshape(-1, 3)
+        wo, tho = _strand_widths(plan, so, ts)
+        Q = (C[:, None, :]
+             + (across_frac[None, :] * 0.5 * wo[:, None])[..., None]
+             * S[:, None, :]
+             - (0.5 * tho)[:, None, None] * N[:, None, :]).reshape(-1, 3)
         # position of each underside sample in the lower ribbon's frame,
         # along its tangent at the crossing and across it
         Tu = su['Tk'][ku]
@@ -1000,12 +1050,15 @@ def crossing_clearance(plan, samples=13, across=7):
         d = Q - P
         tu = su['t'][ku] + (d @ Tu) / su['L']
         bu = d @ side_u
-        keep = (tu >= 0.0) & (tu <= 1.0) & (np.abs(bu) <= hw)
+        wu, _thu = _strand_widths(plan, su, tu)
+        keep = (tu >= 0.0) & (tu <= 1.0) & (np.abs(bu) <= 0.5 * wu)
         if not np.any(keep):
             continue
         Cu, Su, Nu = strand_section(plan, su, tu[keep])
-        top = Cu + bu[keep, None] * Su + ht * Nu
-        gap = float(np.min((Q[keep] - top) @ Nc)) / plan['thickness']
+        _wk, thk = _strand_widths(plan, su, tu[keep])
+        top = Cu + bu[keep, None] * Su + (0.5 * thk)[:, None] * Nu
+        gap = (float(np.min((Q[keep] - top) @ Nc))
+               / float(plan['thicknesses'][c]))
         worst = min(worst, gap)
     return worst
 
@@ -1171,17 +1224,17 @@ def _selftest():
     parallels = [np.stack([math.sin(th) * np.cos(ph_), math.sin(th)
                            * np.sin(ph_), np.full_like(ph_, math.cos(th))],
                           axis=1) for th in thetas]
-    rows = [(i, k, (th - th0) / (th1 - th0), (ph - ph0) / (ph1 - ph0),
-             (math.sin(th) * math.cos(ph), math.sin(th) * math.sin(ph),
-              math.cos(th)))
-            for i, ph in enumerate(phis) for k, th in enumerate(thetas)]
-    SX = dict(ia=np.array([r[0] for r in rows]),
-              ib=np.array([r[1] for r in rows]),
-              ta=np.array([r[2] for r in rows]),
-              tb=np.array([r[3] for r in rows]),
-              point=np.array([r[4] for r in rows]),
-              normal=np.array([r[4] for r in rows]),
-              sin=np.ones(len(rows)))
+    grid_x = [(i, k, (th - th0) / (th1 - th0), (ph - ph0) / (ph1 - ph0),
+               (math.sin(th) * math.cos(ph), math.sin(th) * math.sin(ph),
+                math.cos(th)))
+              for i, ph in enumerate(phis) for k, th in enumerate(thetas)]
+    SX = dict(ia=np.array([r[0] for r in grid_x]),
+              ib=np.array([r[1] for r in grid_x]),
+              ta=np.array([r[2] for r in grid_x]),
+              tb=np.array([r[3] for r in grid_x]),
+              point=np.array([r[4] for r in grid_x]),
+              normal=np.array([r[4] for r in grid_x]),
+              sin=np.ones(len(grid_x)))
     sph = plan_weave(meridians, parallels, crossings=SX)
     assert sph['conflicts'] == 0 and sph['tight'] == 0, (sph['conflicts'],
                                                         sph['tight'])
@@ -1207,6 +1260,38 @@ def _selftest():
           "sphere's meridians and parallels weave cleanly (clearance %.2f), "
           "closed and on the sphere; curved strands without crossings are "
           "refused OK" % sph_clear)
+
+    # local width: rows spaced unevenly (gaps of 1, 0.5, 2 and 0.5)
+    # across evenly spaced columns.  Sized crossing by crossing, the
+    # ribbons must be wider where the cells are wide than where they are
+    # narrow -- on an even grid they would all be equal -- while the weave
+    # stays conflict-free, untight and clear, and every ribbon a closed,
+    # outward box.
+    ys = [0.0, 1.0, 1.5, 3.5, 4.0]
+    urows = [((-0.5, y, 0.0), (5.5, y, 0.0)) for y in ys]
+    ucols = [((float(i), -0.5, 0.0), (float(i), 4.5, 0.0)) for i in range(6)]
+    lp = plan_weave(urows, ucols, width=0.9, local_width=True)
+    assert lp['conflicts'] == 0 and lp['tight'] == 0, (lp['conflicts'],
+                                                      lp['tight'])
+    assert crossing_clearance(lp) > 0.5, crossing_clearance(lp)
+    # square crossings, so each limit is (1 - _FREE) times the tighter of
+    # the spans beside it: the bottom row sits between gaps of 1 (row and
+    # column spacing alike), every other row beside a gap of 0.5
+    row_y = lp['crossings']['point'][:, 1]
+    want_w = np.where(np.isclose(row_y, 0.0), 1.0, 0.5) * 0.9 * (1.0 - _FREE)
+    assert np.allclose(lp['widths'], want_w), (lp['widths'], want_w)
+    even = plan_weave(rows, cols, width=0.9, local_width=True)
+    assert np.allclose(even['widths'], plan_weave(rows, cols,
+                                                  width=0.9)['width'])
+    verts, faces, fs = sweep_woven_ribbons(lp)
+    fs = np.asarray(fs)
+    for si in range(len(lp['strands'])):
+        F = [faces[k] for k in np.nonzero(fs == si)[0]]
+        assert _signed_volume(verts, F) > 0.0, si
+    print("rulings: local width widens ribbons where cells open out "
+          "(%.2f to %.2f), and on an even grid equals the uniform width; "
+          "conflict-free and clear OK"
+          % (lp['widths'].min(), lp['widths'].max()))
 
     # ---- separating rods ----------------------------------------------
     # Judge the result on the bent geometry itself, by brute force over
