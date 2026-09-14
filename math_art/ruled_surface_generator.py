@@ -72,8 +72,10 @@
 #     + outer(u + twist) v between an inner and an outer toroidal knot
 #     sampled on a shared parameter.  Like the hyperboloid, the rods can
 #     be drawn as a right family (+twist), a left family (-twist) or
-#     both; the two families do not meet, so they form a mesh of string
-#     but are not woven.  The outer curve degenerates to a plain circle
+#     both.  The two families cross in the hyperboloid's lattice, but
+#     each crossing is a near miss rather than a true intersection --
+#     typically a tenth of a rod's length apart, occasionally closer than
+#     a rod is thick -- so the mesh is drawn as rods and not woven.  The outer curve degenerates to a plain circle
 #     (wound p times) when its q = 0.  A straight-ruled cousin of the
 #     soap-film "knot to knot" span in the minimal-surface toolkit.
 #
@@ -161,10 +163,12 @@ except ImportError:
 
 try:                                  # inside the math_art package
     from .weaving.rulings import (weave_rulings, crossing_clearance,
-                                  extend_families, segment_crossings)
+                                  extend_families, segment_crossings,
+                                  segment_distance)
 except ImportError:                   # flat import (test runner)
     from weaving.rulings import (weave_rulings, crossing_clearance,
-                                 extend_families, segment_crossings)
+                                 extend_families, segment_crossings,
+                                 segment_distance)
 
 _TWO_PI = 2.0 * math.pi
 
@@ -487,10 +491,15 @@ def rulings_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
     outer(u - shift), BOTH draws the two families together -- the stick
     hyperboloid's construction (bottom point to the top circle turned
     +twist or -twist) carried over to a pair of knots, with both rails
-    left where they are.  Unlike the hyperboloid's, these two families
-    do not in general meet: a chord between two knots is not a ruling of
-    one doubly-ruled surface, so BOTH reads as a mesh of string rather
-    than as crossings that could be woven."""
+    left where they are.  Right rod i and left rod j swap order between
+    the two knots exactly when 0 < (j - i) mod n < 2 shift n / 2pi --
+    the hyperboloid's crossing rule -- so BOTH forms the same lattice of
+    crossings.  But a chord between two knots is not a ruling of one
+    doubly-ruled surface: the two families lie on two different ruled
+    surfaces that share the knots as edges and part in between, so at a
+    crossing the centre lines only come NEAR each other.  The misses are
+    typically a tenth of a rod's length, and a few pass closer than a
+    rod is thick, where solid rods run through one another."""
     args = (p, q, knot_scale, tube, inner_height, inner_lift,
             inner_rotation, outer_p, outer_q, outer_scale, outer_tube,
             outer_height, circle_radius, n)
@@ -1192,8 +1201,9 @@ _SURFACE_FIRST = {'HELICAL_CONE'}
 _WOVEN = {'HYPERBOLOID', 'HYPAR'}
 
 #: modes with a Ruling Family choice.  The knot span's two families
-#: (twisted forward and back along the outer knot) never meet, so it
-#: can draw both as a mesh of rods but has nothing to weave.
+#: (twisted forward and back along the outer knot) cross in the same
+#: lattice as the hyperboloid's, but as near misses rather than true
+#: intersections, so it draws both as rods and is not offered the weave.
 _TWO_FAMILY = _WOVEN | {'KNOT_SPAN'}
 
 
@@ -1841,8 +1851,7 @@ if _IN_BLENDER:
             out = effective_output(self)
             want_rulings = out in ('RODS', 'CURVES')
             if self.output == 'RIBBONS' and out != 'RIBBONS':
-                info = " [woven ribbons need two ruling families " \
-                       "that cross]"
+                info = " [woven ribbons need a doubly-ruled surface]"
             if out == 'RIBBONS':
                 # a weave is BOTH ruling families crossing into a mesh;
                 # pin the family to match, so the panel says so and
@@ -2004,8 +2013,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'output')
                 out = effective_output(self)
                 if self.output == 'RIBBONS' and out != 'RIBBONS':
-                    lay.label(text="Woven ribbons need two ruling "
-                                   "families that cross", icon='INFO')
+                    lay.label(text="Woven ribbons need a doubly-ruled "
+                                   "surface", icon='INFO')
                 if out in ('RODS', 'CURVES'):
                     if m in _TWO_FAMILY:
                         lay.prop(self, 'family')
@@ -2250,17 +2259,33 @@ def _selftest():
     kv, _kf = build_knot_span(res_u=n_, res_v=4, shift=sh_)
     far = np.asarray(kv).reshape(n_, 5, 3)[:, -1]
     assert np.allclose(far, [s[1] for s in rt], atol=1e-9)
-    # the two families do not weave: at a 30 degree twist every place
-    # they touch is a shared END -- each right rod leaves the inner knot
-    # where its left partner does, and the far ends coincide when twice
-    # the twist is a whole number of samples -- never mid-rod
-    kr = rulings_knot_span(n=48, family='RIGHT', shift=math.radians(30.0))
-    kl = rulings_knot_span(n=48, family='LEFT', shift=math.radians(30.0))
+    # How the two families meet, stated exactly because it is easy to get
+    # wrong in both directions.  Their centre lines truly INTERSECT only
+    # at shared ends: each right rod leaves the inner knot where its left
+    # partner does, and the far ends coincide when twice the twist is a
+    # whole number of samples.  Yet they do cross, in the hyperboloid's
+    # lattice -- rod i and rod i + k swap order between the knots for
+    # 0 < 2 pi k / n < 2 twist -- as near misses: some pass within 1% of
+    # a rod's length (solid rods collide there), most far wider.  That
+    # spread is why the mode draws rods and is not woven.
+    n48, tw30 = 48, math.radians(30.0)
+    kr = rulings_knot_span(n=n48, family='RIGHT', shift=tw30)
+    kl = rulings_knot_span(n=n48, family='LEFT', shift=tw30)
     KX = segment_crossings(kr, kl)
     at_end = ((np.minimum(KX['ta'], 1.0 - KX['ta']) < 1e-9)
               & (np.minimum(KX['tb'], 1.0 - KX['tb']) < 1e-9))
-    assert len(KX['ia']) == 2 * 48 and np.all(at_end), \
+    assert len(KX['ia']) == 2 * n48 and np.all(at_end), \
         (len(KX['ia']), int(np.sum(~at_end)))
+    KR, KL = np.asarray(kr), np.asarray(kl)
+    rod_len = float(np.median(np.linalg.norm(KR[:, 1] - KR[:, 0], axis=1)))
+    lattice = [k for k in range(1, n48)
+               if _TWO_PI * k / n48 < 2.0 * tw30 - 1e-9]
+    miss = np.array([segment_distance(KR[i, 0], KR[i, 1],
+                                      KL[(i + k) % n48, 0],
+                                      KL[(i + k) % n48, 1])
+                     for i in range(n48) for k in lattice])
+    assert miss.min() < 0.01 * rod_len, (miss.min(), rod_len)
+    assert np.median(miss) > 0.05 * rod_len, (np.median(miss), rod_len)
     # with both families drawn, the rails still come from ONE family (two
     # clean loops, not a zigzag between interleaved ends), and the rod
     # count is per family
@@ -2280,7 +2305,9 @@ def _selftest():
     assert len(_build_rulings(kop)) == 80
     print("knot span twist: an exact slide along the outer knot, right "
           "forward and left back; surface matches the right family; the "
-          "families touch only at shared ends; rails stay single OK")
+          "families intersect only at shared ends but cross the lattice "
+          "as near misses (closest %.4f, median %.3f on a %.2f rod); "
+          "rails stay single OK" % (miss.min(), np.median(miss), rod_len))
 
     # boundary curves: a closed loop of k points -> k segments, an open
     # one -> k-1; both knots feed through _edges like the rulings do

@@ -210,7 +210,7 @@ def weave_levels(ia, ta, ib, tb, run=1):
 # ribbon plan
 # --------------------------------------------------------------------
 
-def _segment_distance(p0, p1, q0, q1):
+def segment_distance(p0, p1, q0, q1):
     """Shortest distance between two 3-D segments."""
     d1, d2, r = p1 - p0, q1 - q0, p0 - q0
     a, e, f = float(d1 @ d1), float(d2 @ d2), float(d2 @ r)
@@ -243,7 +243,7 @@ def family_gap(fam):
     S = np.asarray(fam, dtype=float).reshape(-1, 2, 3)
     if len(S) < 2:
         return math.inf
-    return min(_segment_distance(S[i, 0], S[i, 1],
+    return min(segment_distance(S[i, 0], S[i, 1],
                                  S[(i + 1) % len(S), 0],
                                  S[(i + 1) % len(S), 1])
                for i in range(len(S)))
