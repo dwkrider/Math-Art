@@ -700,6 +700,120 @@ def belt_self_distance(s, res_t=160, billow=False, length=4.0,
     return f * math.sqrt(best)
 
 
+def sphere_directions(n):
+    """n directions spread over the sphere, by the Fibonacci spiral.
+
+    The demonstrations send the belts out in all directions from the
+    ball, not around one equator, so this is the default spread."""
+    if n == 1:
+        return [(1.0, 0.0, 0.0)]
+    out = []
+    ga = math.pi * (3.0 - math.sqrt(5.0))
+    for k in range(n):
+        z = 1.0 - 2.0 * k / (n - 1) if n > 1 else 0.0
+        z *= (n - 1) / (n + 1.0)          # keep off the exact poles
+        r = math.sqrt(max(0.0, 1.0 - z * z))
+        a = ga * k
+        out.append((r * math.cos(a), r * math.sin(a), z))
+    return out
+
+
+def ring_directions(n):
+    """n directions evenly around the equator."""
+    return [(math.cos(TAU * k / n), math.sin(TAU * k / n), 0.0)
+            for k in range(n)]
+
+
+def _across(u):
+    """Two unit vectors spanning the plane across the direction u."""
+    seed = (0.0, 0.0, 1.0) if abs(u[2]) < 0.9 else (1.0, 0.0, 0.0)
+    a = (u[1] * seed[2] - u[2] * seed[1],
+         u[2] * seed[0] - u[0] * seed[2],
+         u[0] * seed[1] - u[1] * seed[0])
+    m = math.sqrt(sum(c * c for c in a))
+    a = tuple(c / m for c in a)
+    b = (u[1] * a[2] - u[2] * a[1],
+         u[2] * a[0] - u[0] * a[2],
+         u[0] * a[1] - u[1] * a[0])
+    return a, b
+
+
+def build_cage(radius=4.35, rings=6, seg=96, tube=0.012, sides=6):
+    """The wireframe globe the belts are pinned to.
+
+    In the films the outer ends are fastened to a sphere of great
+    circles, and that cage is most of what makes the picture readable:
+    it shows at a glance that the far ends are not going anywhere and
+    that only the ball in the middle is turning."""
+    verts, faces = [], []
+    for i in range(rings):
+        a = math.pi * i / rings
+        ca, sa = math.cos(a), math.sin(a)
+        path = [(radius * math.cos(TAU * j / seg) * ca,
+                 radius * math.cos(TAU * j / seg) * sa,
+                 radius * math.sin(TAU * j / seg)) for j in range(seg)]
+        _merge(verts, faces, *_tube(path, tube, sides, closed=True))
+    for i in range(1, rings):
+        z = radius * math.cos(math.pi * i / rings)
+        r = math.sqrt(max(0.0, radius * radius - z * z))
+        path = [(r * math.cos(TAU * j / seg), r * math.sin(TAU * j / seg),
+                 z) for j in range(seg)]
+        _merge(verts, faces, *_tube(path, tube, sides, closed=True))
+    return verts, faces
+
+
+def build_twisted_rosette(hub_turn, belts=4, res_t=120, length=4.0,
+                          width=0.32, hub=0.35, dirs=None, strands=1,
+                          strand_gap=0.12):
+    """The hub spun through `hub_turn`, winding the twist INTO the belts.
+
+    This is the first half of the trick, and the half every animation
+    opens with: the outer ends are pinned to something that does not
+    move, the ball in the middle turns, and each belt takes up twist in
+    proportion to how far round the ball has gone.  Nothing translates
+    -- both ends of every belt stay exactly where they are, and only the
+    cross-section rotates -- so this is the phase where the ends really
+    are fixed.
+
+    The twist runs linearly from none at the pinned outer end to the
+    full hub angle at the ball, which is what an evenly-taken-up belt
+    does.  At 720 degrees each belt carries the double twist that the
+    untangling phase can then remove.
+
+    A caveat worth stating: one rigid rotation about a single axis would
+    twist only those belts lying ALONG that axis, and would wrap the
+    ones across it instead.  Showing every belt twisting equally is the
+    usual convention of the demonstrations rather than strict rigid-body
+    motion -- it is the picture of the trick, drawn n times."""
+    verts, faces = [], []
+    dirs = dirs or ring_directions(belts)
+    # Split the strap lengthwise into parallel ribbons.  The films do
+    # this, and it is what makes the twist legible: a plain strap seen
+    # edge-on is a line, whereas the stripes keep turning.
+    hw = 0.5 * width / max(1, strands)
+    for u3 in dirs:
+        e1, e2 = _across(u3)
+        for sidx in range(strands):
+            off = ((sidx - 0.5 * (strands - 1))
+                   * (1.0 + strand_gap) * 2.0 * hw) if strands > 1 else 0.0
+            base = len(verts)
+            for j in range(res_t):
+                t = j / (res_t - 1)          # 0 pinned end, 1 at the hub
+                r = hub + length * (1.0 - t)
+                th = hub_turn * t
+                c, sn = math.cos(th), math.sin(th)
+                w = tuple(c * e1[i] + sn * e2[i] for i in range(3))
+                centre = tuple(r * u3[i] + off * w[i] for i in range(3))
+                verts.append(tuple(centre[i] + hw * w[i]
+                                   for i in range(3)))
+                verts.append(tuple(centre[i] - hw * w[i]
+                                   for i in range(3)))
+            for j in range(res_t - 1):
+                q = base + 2 * j
+                faces.append([q, q + 1, q + 3, q + 2])
+    return verts, faces
+
+
 def belt_end_gap(s, res_t=240, billow=False, length=4.0):
     """Distance between the two ends of a belt at stage s.
 
@@ -873,6 +987,46 @@ if _IN_BLENDER:
         belt_width: FloatProperty(
             name="Belt Width", default=0.32, min=0.01, max=4.0,
             description="Width of each belt")
+        phase: EnumProperty(
+            name="Phase",
+            description="Which half of the trick to show",
+            items=[('TWIST', "Twisting Up",
+                    "The hub turns and winds twist into the belts, "
+                    "their far ends pinned to the cage.  Nothing moves "
+                    "but the turn itself"),
+                   ('UNTANGLE', "Untangling",
+                    "The hub is held still at its original orientation "
+                    "while the belts are worked around to shed a double "
+                    "twist.  This is the part that can only be done "
+                    "from 720 degrees")],
+            default='TWIST')
+        hub_turn: FloatProperty(
+            name="Hub Turn", default=TAU, min=0.0, max=FULL_TURN,
+            subtype='ANGLE',
+            description="How far the hub has been turned, winding twist "
+                        "into every belt.  720 degrees is the double "
+                        "twist the untangling phase can remove; 360 is "
+                        "the single twist that it cannot")
+        spread: EnumProperty(
+            name="Spread",
+            description="Which way the belts leave the hub",
+            items=[('SPHERE', "All Directions",
+                    "Spread over the sphere, as the demonstrations "
+                    "show them"),
+                   ('RING', "Ring",
+                    "Evenly around one equator")],
+            default='SPHERE')
+        strands: IntProperty(
+            name="Strands", default=3, min=1, max=12,
+            description="Split each belt lengthwise into this many "
+                        "parallel ribbons.  A plain strap seen edge-on "
+                        "is a line; the stripes keep the twist visible "
+                        "from any angle")
+        show_cage: BoolProperty(
+            name="Cage", default=True,
+            description="Add the sphere of great circles the far ends "
+                        "are pinned to.  It is what shows at a glance "
+                        "that only the hub is turning")
         belts: IntProperty(
             name="Belts", default=4, min=1, max=24,
             description="How many belts radiate from the hub.  Newman "
@@ -979,6 +1133,23 @@ if _IN_BLENDER:
                         stages_for(nb, turn_from_stage(st)), 48, billow,
                         self.belt_length, self.belt_width,
                         self.belt_gap)[0])
+            elif self.mode == 'ROSETTE' and self.phase == 'TWIST':
+                dirs = (sphere_directions(self.belts)
+                        if self.spread == 'SPHERE'
+                        else ring_directions(self.belts))
+                verts, faces = build_twisted_rosette(
+                    self.hub_turn, self.belts, self.res_t,
+                    self.belt_length, self.belt_width, self.hub_radius,
+                    dirs, self.strands)
+                rim = self.hub_radius + self.belt_length
+                box_centre = (0.0, 0.0, 0.0)
+                box_half = rim if self.show_cage else                     rim + 0.5 * self.belt_width
+                if self.show_cage:
+                    extras.append(build_cage(rim, 6, 96,
+                                             0.004 * rim))
+                if self.show_hub and self.hub_radius > 1e-6:
+                    hv, hf = _uv_sphere(self.hub_radius * 0.85, 32, 16)
+                    extras.append((hv, hf))
             elif self.mode == 'ROSETTE':
                 verts, faces = build_rosette(
                     stage_from_turn(self.belt_turn), self.belts,
@@ -1055,6 +1226,14 @@ if _IN_BLENDER:
                 # itself, which a real belt cannot do.
                 # Report the stage actually shown; for a sequence, the
                 # worst stage in it.
+                if self.mode == 'ROSETTE' and self.phase == 'TWIST':
+                    self.report(
+                        {'INFO'},
+                        "V=%d F=%d  hub turned %.0f deg  both ends of "
+                        "every belt fixed"
+                        % (len(me.vertices), len(me.polygons),
+                           math.degrees(self.hub_turn)))
+                    return {'FINISHED'}
                 shown = ([stage_from_turn(self.belt_turn)]
                          if self.mode == 'ROSETTE' else stages)
                 near = min(belt_self_distance(st, 160, billow,
@@ -1115,6 +1294,8 @@ if _IN_BLENDER:
             if self.mode == 'ROSETTE':
                 lay.prop(self, 'hub_radius')
                 lay.prop(self, 'show_hub')
+                if self.phase == 'TWIST':
+                    lay.prop(self, 'show_cage')
             if self.mode == 'LIFT':
                 lay.prop(self, 'view_turn')
             if self.mode == 'BALL':
