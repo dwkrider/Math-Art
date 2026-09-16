@@ -37,6 +37,15 @@ PARAMS = {
     # 1 of the icosahedral vertex set -- has big obvious pentagons and
     # says "this is a polyhedron through someone else's vertices".
     "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
+    # The belt filmstrip is the picture people recognise -- a row of
+    # belts untwisting -- where the ball and the lift need the theory
+    # explained first.  Seven stages puts the turn on round 120-degree
+    # steps and still leaves each belt wide enough to read at icon
+    # size.  Francis-Kauffman because the efficient homotopy is
+    # coplanar, so its belts bow far less.  These match the operator's
+    # own defaults -- pinned here so a later change to those does not
+    # silently re-frame the figure and the icon.
+    "mesh.spinor_add": dict(mode='BELTS', homotopy='FK', frames=7),
     # The compound of five tetrahedra is the operator's own default and
     # the clearest advertisement for it: five interpenetrating solids
     # whose separateness is obvious at icon size, where the stella
@@ -672,6 +681,9 @@ VARIANT_SELECTOR = {
     "mesh.oloid_add": "kind",
     "mesh.platonic_twist_add": "kind",
     "mesh.stereographic_add": "pattern",
+    # The three modes are three genuinely different objects -- a row of
+    # belts, a solid ball, a projected lift -- not restylings of one.
+    "mesh.spinor_add": "mode",
     "mesh.constant_width_add": "kind",
     "mesh.monostatic_body_add": "kind",
     "mesh.steinmetz_add": "kind",
