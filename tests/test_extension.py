@@ -3,6 +3,7 @@
 # operator from each module.
 # Run:  blender --background --factory-startup --python tests/test_extension.py
 import sys
+import math
 import os
 
 import bpy
@@ -1425,6 +1426,9 @@ OPS = [
      lambda: bpy.ops.mesh.modular_screen_add(
          preset='PINWHEEL', nx=6, ny=4, hole=0.0, curvature='CURVED',
          wrap_angle=140.0)),
+    ("belt trick",
+     lambda: bpy.ops.mesh.belt_trick_add(turn=math.radians(300.0),
+                                         resolution=80)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

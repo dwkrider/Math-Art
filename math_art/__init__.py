@@ -95,6 +95,7 @@ _MODULE_NAMES = [
     'stellated_weave_generator',
     'stereographic_projection_generator',
     'spinor_generator',
+    'belt_trick_generator',
     'hyperbolic_honeycomb_generator',
     'algebraic_surface_generator',
     'calabi_yau_generator',
