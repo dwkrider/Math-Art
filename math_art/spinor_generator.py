@@ -1147,11 +1147,11 @@ if _IN_BLENDER:
                     "their far ends pinned to the cage.  Nothing moves "
                     "but the turn itself"),
                    ('UNTANGLE', "Untangling",
-                    "The hub is held still at its original orientation "
-                    "while the belts are worked around to shed a double "
-                    "twist.  This is the part that can only be done "
-                    "from 720 degrees")],
-            default='TWIST')
+                    "The motion itself: with the hub held still, each "
+                    "belt carries a loop that travels around it and "
+                    "finally vanishes, shedding the double twist.  "
+                    "Run Belt Turn from 720 degrees down to 0")],
+            default='UNTANGLE')
         hub_turn: FloatProperty(
             name="Hub Turn", default=TAU, min=0.0, max=FULL_TURN,
             subtype='ANGLE',
@@ -1296,10 +1296,10 @@ if _IN_BLENDER:
                         if self.spread == 'SPHERE'
                         else ring_directions(self.belts))
                 rim = self.hub_radius + self.belt_length
-                verts, faces = build_spin_ribbons(
+                verts, faces = build_twisted_rosette(
                     self.hub_turn, self.belts, max(self.res_t, 120),
-                    self.hub_radius, rim, self.belt_width, dirs,
-                    self.coil)
+                    self.belt_length, self.belt_width,
+                    self.hub_radius, dirs, 1)
                 box_centre = (0.0, 0.0, 0.0)
                 box_half = rim + 0.5 * self.belt_width
                 if self.show_cage:
@@ -1307,6 +1307,8 @@ if _IN_BLENDER:
                 if self.show_hub and self.hub_radius > 1e-6:
                     extras.append(build_block(self.hub_radius * 0.72,
                                               self.hub_turn))
+                # a straight radial strap reaches the rim exactly
+                box_half = rim + 0.5 * self.belt_width
             elif self.mode == 'ROSETTE':
                 dirs = (sphere_directions(self.belts)
                         if self.spread == 'SPHERE'
@@ -1438,10 +1440,10 @@ if _IN_BLENDER:
                 lay.prop(self, 'spread')
                 if self.phase == 'TWIST':
                     lay.prop(self, 'hub_turn')
-                    lay.prop(self, 'coil')
+                    lay.prop(self, 'strands')
                 else:
                     lay.prop(self, 'belt_turn')
-                    lay.prop(self, 'strands')
+                    lay.prop(self, 'coil')
             elif self.mode == 'BELTS' or drawn:
                 lay.prop(self, 'frames')
                 sub = lay.row()
