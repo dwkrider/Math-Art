@@ -104,6 +104,19 @@
 # onto it (0.998 parallel at 450 degrees), and reconstructing from the
 # twist angle about a fixed axis jumps by a whole turn between stages.
 #
+# THE TURNING BLOCK.  The spin animations draw the winding-up phase a
+# particular way, and build_spin_ribbons follows it: a block at the
+# centre turns about a FIXED axis, each ribbon is rooted in one of its
+# faces so the near end goes round with it, and the far end stays put.
+# The ribbon takes up the difference as a coil gathered close to the
+# block, unwinding to straight further out --
+#
+#   p(r) = r . Raxis(turn . g(r)) . u,   g at the root 1, at the rim 0.
+#
+# The width is a fixed DISTANCE, not a fixed angle: an angle would make
+# the ribbon narrow in proportion to its radius and pinch away to
+# nothing at the block, which is not what a ribbon does.
+#
 # THE ROSETTE.  Dirac's original model is not one belt but several,
 # radiating from a turning hub -- scissors on strings, or a hand
 # holding cups.  Mode "Belt Rosette" places the same stage on each of
@@ -144,6 +157,12 @@
 #   curve framing", Indiana University Computer Science Technical
 #   Report TR-425 (1995).  The discrete parallel-transport frame used
 #   by the tube sweep, and the closed-curve spin correction.
+# - Andrew J. Hanson, "Visualizing Quaternions", Morgan Kaufmann
+#   (2006), chapter 12.  States the rule of the belt trick -- the
+#   holders may move their end anywhere but may never rotate it -- and
+#   gives an explicit deformation, credited to Hart, Francis and
+#   Kauffman, that is the same quaternion field used here up to a swap
+#   of the I and J axes.
 # - Mark Staley, "Understanding quaternions and the Dirac belt
 #   trick", European Journal of Physics 31 (2010), 467;
 #   arXiv:1001.1778.  The belt-as-parameter-path exposition, and the
@@ -739,6 +758,78 @@ def _across(u):
     return a, b
 
 
+def build_spin_ribbons(turn, count=4, res_t=200, r_in=0.5, r_out=6.0,
+                       width=0.6, dirs=None, falloff=2.0, axis=(0, 0, 1)):
+    """Ribbons rooted in a turning block, the way the spin animations
+    draw it.
+
+    The block at the centre turns through `turn` about a FIXED axis and
+    each ribbon is rooted in one of its faces, so the near end goes
+    round with it while the far end stays where it is.  A ribbon takes
+    up the difference as a coil gathered close to the block, unwinding
+    to straight further out:
+
+        p(r) = r . Raxis(turn . g(r)) . u,    g(r_in) = 1, g(r_out) = 0
+
+    so the whole of the turn is present at the root and none of it at
+    the rim.  `falloff` sets how tightly the coil is gathered -- larger
+    values pull it in towards the block.
+
+    The width is a fixed distance, not a fixed angle.  Taking an angle
+    would make the ribbon narrow in proportion to its radius and pinch
+    away to nothing at the block, which is not what a ribbon does."""
+    verts, faces = [], []
+    dirs = dirs or ring_directions(count)
+    ax = axis
+    m = math.sqrt(sum(c * c for c in ax))
+    ax = tuple(c / m for c in ax)
+    hw = 0.5 * width
+
+    def spin(ang, v):
+        return _qrot(_qaxis(ax, ang), v)
+
+    for u3 in dirs:
+        n0, _ = _across(u3)
+        pts, nrm = [], []
+        for j in range(res_t):
+            t = j / (res_t - 1)
+            r = r_in + (r_out - r_in) * t
+            g = (1.0 - t) ** falloff
+            a = turn * g
+            pts.append(tuple(r * c for c in spin(a, u3)))
+            nrm.append(spin(a, n0))
+        tang = _tangents(pts, False)
+        base = len(verts)
+        for j in range(res_t):
+            t3, n3 = tang[j], nrm[j]
+            d = sum(t3[k] * n3[k] for k in range(3))
+            w = tuple(n3[k] - d * t3[k] for k in range(3))
+            mw = math.sqrt(sum(c * c for c in w))
+            if mw < 1e-9:
+                w = _across(t3)[0]
+            else:
+                w = tuple(c / mw for c in w)
+            c3 = pts[j]
+            verts.append(tuple(c3[k] + hw * w[k] for k in range(3)))
+            verts.append(tuple(c3[k] - hw * w[k] for k in range(3)))
+        for j in range(res_t - 1):
+            k = base + 2 * j
+            faces.append([k, k + 1, k + 3, k + 2])
+    return verts, faces
+
+
+def build_block(half=0.5, turn=0.0, axis=(0, 0, 1)):
+    """The cube at the centre, turned with the ribbon roots."""
+    q = _qaxis(tuple(c / math.sqrt(sum(d * d for d in axis))
+                     for c in axis), turn)
+    corners = [(-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
+               (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)]
+    verts = [_qrot(q, tuple(half * c for c in v)) for v in corners]
+    faces = [[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4],
+             [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]
+    return verts, faces
+
+
 def build_cage(radius=4.35, rings=6, seg=96, tube=0.012, sides=6):
     """The wireframe globe the belts are pinned to.
 
@@ -1017,6 +1108,12 @@ if _IN_BLENDER:
                    ('RING', "Ring",
                     "Evenly around one equator")],
             default='SPHERE')
+        coil: FloatProperty(
+            name="Coil", default=2.0, min=0.2, max=8.0,
+            description="How tightly the turn is gathered in towards "
+                        "the block.  Larger values keep the ribbons "
+                        "straight further out and wind the coils "
+                        "closer to the middle")
         strands: IntProperty(
             name="Strands", default=3, min=1, max=12,
             description="Split each belt lengthwise into this many "
@@ -1138,19 +1235,18 @@ if _IN_BLENDER:
                 dirs = (sphere_directions(self.belts)
                         if self.spread == 'SPHERE'
                         else ring_directions(self.belts))
-                verts, faces = build_twisted_rosette(
-                    self.hub_turn, self.belts, self.res_t,
-                    self.belt_length, self.belt_width, self.hub_radius,
-                    dirs, self.strands)
                 rim = self.hub_radius + self.belt_length
+                verts, faces = build_spin_ribbons(
+                    self.hub_turn, self.belts, max(self.res_t, 120),
+                    self.hub_radius, rim, self.belt_width, dirs,
+                    self.coil)
                 box_centre = (0.0, 0.0, 0.0)
-                box_half = rim if self.show_cage else                     rim + 0.5 * self.belt_width
+                box_half = rim + 0.5 * self.belt_width
                 if self.show_cage:
-                    extras.append(build_cage(rim, 6, 96,
-                                             0.004 * rim))
+                    extras.append(build_cage(rim, 6, 96, 0.004 * rim))
                 if self.show_hub and self.hub_radius > 1e-6:
-                    hv, hf = _uv_sphere(self.hub_radius * 0.85, 32, 16)
-                    extras.append((hv, hf))
+                    extras.append(build_block(self.hub_radius * 0.72,
+                                              self.hub_turn))
             elif self.mode == 'ROSETTE':
                 verts, faces = build_rosette(
                     stage_from_turn(self.belt_turn), self.belts,
@@ -1280,12 +1376,13 @@ if _IN_BLENDER:
                 # with the hub, or working it back out again.
                 lay.prop(self, 'phase')
                 lay.prop(self, 'belts')
+                lay.prop(self, 'spread')
                 if self.phase == 'TWIST':
-                    lay.prop(self, 'spread')
                     lay.prop(self, 'hub_turn')
-                    lay.prop(self, 'strands')
+                    lay.prop(self, 'coil')
                 else:
                     lay.prop(self, 'belt_turn')
+                    lay.prop(self, 'strands')
             elif self.mode == 'BELTS' or drawn:
                 lay.prop(self, 'frames')
                 sub = lay.row()
