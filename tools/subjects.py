@@ -46,6 +46,11 @@ PARAMS = {
     # own defaults -- pinned here so a later change to those does not
     # silently re-frame the figure and the icon.
     "mesh.spinor_add": dict(mode='BELTS', homotopy='FK', frames=7),
+    # Three hundred degrees in: the four belts across the spin axis
+    # are half-coiled round the cube and the two along it are twisted,
+    # which is the moment the trick is recognisable.  Pinned so a
+    # change to the default turn does not silently move the figure.
+    "mesh.belt_trick_add": dict(turn=5.235987755982988),   # 300 degrees
     # The compound of five tetrahedra is the operator's own default and
     # the clearest advertisement for it: five interpenetrating solids
     # whose separateness is obvious at icon size, where the stella
