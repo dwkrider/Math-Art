@@ -104,6 +104,24 @@
 # onto it (0.998 parallel at 450 degrees), and reconstructing from the
 # twist angle about a fixed axis jumps by a whole turn between stages.
 #
+# THE STRINGS, AND WHY THEY ARE NOT DEVELOPED FROM THE TANGENT.
+# Hanson describes how the films draw this: an onion of nested glass
+# spheres, one per slice of the belt, each sphere carrying that slice's
+# frame, with the belts or strings threaded through the onion.  A point
+# of a string is therefore its own direction turned by the frame, at the
+# radius of its sphere,
+#
+#   p(t) = r(t) . R(s,t) . u,
+#
+# and since R(s,0) and R(s,2pi) are the identity at every stage, BOTH
+# ENDS OF EVERY STRING ARE PINNED however far the untangling has gone.
+# That is the rule of the game as Hanson states it -- the holders may
+# move their end anywhere they like but may never rotate it, and here
+# they need not even move it.  This is what the rosette uses.  Developing
+# a core from the frame's own length vector instead, as the sequence
+# mode does, is a different and much worse-behaved picture: its far end
+# wanders and the ribbon can pass through itself.
+#
 # THE ROSETTE.  Dirac's original model is not one belt but several,
 # radiating from a turning hub -- scissors on strings, or a hand
 # holding cups.  Mode "Belt Rosette" places the same stage on each of
@@ -602,7 +620,7 @@ def belt_frame(s, res_t=120, billow=False, anchor='START'):
 
 def build_belts(stages, res_t=120, billow=False, length=2.0,
                 width=0.32, gap=0.55):
-    """The filmstrip: one belt per stage, laid side by side along y.
+    """The filmstrip: one belt per stage, laid side by side.
 
     Belt 0 is the double twist -- a straight strip carrying 4 pi of
     twist -- and the last belt is straight and flat.  In between the
@@ -637,6 +655,10 @@ def build_rosette(s, belts=4, res_t=120, billow=False, length=4.0,
     """Dirac's own arrangement: `belts` belts radiating from a central
     hub, each carrying the same stage of the untangling, spaced evenly
     around the axis.
+
+    SUPERSEDED for the rosette by build_dirac_strings, which is the
+    construction the films use and which pins both ends; this one is
+    kept because the sequence mode still develops its cores this way.
 
     This is the arrangement of Newman's 1942 scissors-and-string model,
     but not yet its content: each belt here is twisted about its OWN
@@ -737,6 +759,57 @@ def _across(u):
          u[2] * a[0] - u[0] * a[2],
          u[0] * a[1] - u[1] * a[0])
     return a, b
+
+
+def build_dirac_strings(s, count=4, res_t=120, billow=False,
+                        r_in=0.35, r_out=4.35, width=0.32, dirs=None,
+                        strands=1, strand_gap=0.12):
+    """The construction the films actually use: nested spheres.
+
+    Hanson describes it as an onion of glass spheres, one per slice of
+    the belt, each sphere carrying that slice's frame; the belts, strings
+    or tubes are then threaded through the onion.  So a point of a
+    string is its own direction, turned by the frame, at the radius of
+    its sphere:
+
+        p(t) = r(t) . R(s,t) . u
+
+    Every problem with developing the core from the tangent falls away
+    here.  R(s,0) and R(s,2pi) are the identity at every stage, so a
+    string BEGINS at r_in.u and ENDS at r_out.u wherever the untangling
+    has got to -- both ends are pinned, which is the rule of the game:
+    Hanson states that the holders may move their end anywhere they
+    like but may never rotate it, and here they need not even move it.
+    The strings sweep instead of wandering, and the outermost sphere is
+    the cage they are pinned to.
+
+    A belt rather than a string is the ribbon swept as u runs along a
+    short arc, so both of its edges are pinned too."""
+    verts, faces = [], []
+    dirs = dirs or ring_directions(count)
+    half = 0.5 * width / max(1.0, r_out)      # angular half-width
+    hw = half / max(1, strands)
+    for u3 in dirs:
+        a1, _ = _across(u3)
+        for sidx in range(strands):
+            off = ((sidx - 0.5 * (strands - 1))
+                   * (1.0 + strand_gap) * 2.0 * hw) if strands > 1 else 0.0
+            base = len(verts)
+            for j in range(res_t):
+                t = j / (res_t - 1)
+                r = r_in + (r_out - r_in) * t
+                q = nullhomotopy(s, TAU * t, billow)
+                for sgn in (1.0, -1.0):
+                    ang = off + sgn * hw
+                    d = tuple(u3[i] + ang * a1[i] for i in range(3))
+                    m = math.sqrt(sum(c * c for c in d))
+                    d = tuple(c / m for c in d)
+                    v = _qrot(q, d)
+                    verts.append(tuple(r * v[i] for i in range(3)))
+            for j in range(res_t - 1):
+                k = base + 2 * j
+                faces.append([k, k + 1, k + 3, k + 2])
+    return verts, faces
 
 
 def build_cage(radius=4.35, rings=6, seg=96, tube=0.012, sides=6):
@@ -1152,19 +1225,18 @@ if _IN_BLENDER:
                     hv, hf = _uv_sphere(self.hub_radius * 0.85, 32, 16)
                     extras.append((hv, hf))
             elif self.mode == 'ROSETTE':
-                verts, faces = build_rosette(
+                dirs = (sphere_directions(self.belts)
+                        if self.spread == 'SPHERE'
+                        else ring_directions(self.belts))
+                rim = self.hub_radius + self.belt_length
+                verts, faces = build_dirac_strings(
                     stage_from_turn(self.belt_turn), self.belts,
-                    self.res_t, billow, self.belt_length,
-                    self.belt_width, self.hub_radius)
-                # The hub is the centre of a rosette, so put it on the
-                # origin rather than the family's bounding-box middle:
-                # the belts curl to one side, which would otherwise push
-                # the hub off centre and tilt the whole figure.
-                _, box_half = ribbon_box(
-                    lambda st: build_rosette(
-                        st, self.belts, 48, billow, self.belt_length,
-                        self.belt_width, self.hub_radius)[0])
+                    self.res_t, billow, self.hub_radius, rim,
+                    self.belt_width, dirs, self.strands)
                 box_centre = (0.0, 0.0, 0.0)
+                box_half = rim
+                if self.show_cage:
+                    extras.append(build_cage(rim, 6, 96, 0.004 * rim))
                 if self.show_hub and self.hub_radius > 1e-6:
                     hv, hf = _uv_sphere(self.hub_radius * 0.85, 32, 16)
                     extras.append((hv, hf))
@@ -1280,12 +1352,12 @@ if _IN_BLENDER:
                 # with the hub, or working it back out again.
                 lay.prop(self, 'phase')
                 lay.prop(self, 'belts')
+                lay.prop(self, 'spread')
                 if self.phase == 'TWIST':
-                    lay.prop(self, 'spread')
                     lay.prop(self, 'hub_turn')
-                    lay.prop(self, 'strands')
                 else:
                     lay.prop(self, 'belt_turn')
+                lay.prop(self, 'strands')
             elif self.mode == 'BELTS' or drawn:
                 lay.prop(self, 'frames')
                 sub = lay.row()
@@ -1303,8 +1375,7 @@ if _IN_BLENDER:
             if self.mode == 'ROSETTE':
                 lay.prop(self, 'hub_radius')
                 lay.prop(self, 'show_hub')
-                if self.phase == 'TWIST':
-                    lay.prop(self, 'show_cage')
+                lay.prop(self, 'show_cage')
             if self.mode == 'LIFT':
                 lay.prop(self, 'view_turn')
             if self.mode == 'BALL':
