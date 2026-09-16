@@ -150,6 +150,7 @@
 #   account of belt motions that turn a twist into a coil.
 
 import math
+import pathlib
 
 bl_info = {
     "name": "Spinor Belt Trick",
@@ -1273,10 +1274,18 @@ if _IN_BLENDER:
             drawn = (not ribbon and self.style == 'LOOPS')
 
             if self.mode == 'ROSETTE':
-                # the rosette is one configuration, so the turn always
-                # drives it -- no stage count to compete with
+                # A rosette is one configuration, so a turn drives it
+                # directly and there is no stage count to compete with.
+                # Which turn depends on the phase: winding the twist in
+                # with the hub, or working it back out again.
+                lay.prop(self, 'phase')
                 lay.prop(self, 'belts')
-                lay.prop(self, 'belt_turn')
+                if self.phase == 'TWIST':
+                    lay.prop(self, 'spread')
+                    lay.prop(self, 'hub_turn')
+                    lay.prop(self, 'strands')
+                else:
+                    lay.prop(self, 'belt_turn')
             elif self.mode == 'BELTS' or drawn:
                 lay.prop(self, 'frames')
                 sub = lay.row()
@@ -1665,6 +1674,27 @@ def _selftest():
     print("11. turn linear in stage %.3g, PR/FK agree %.3g, "
           "round trip %.3g" % (lin, wdiff, rt))
     ok = ok and lin < 1e-4 and wdiff == 0.0 and rt < 1e-12
+
+    # 12. Every operator property is reachable in the panel.
+    #     draw() is hand-written and the properties are declared far
+    #     away from it, so a new one is easy to add and then never
+    #     show.  That shipped once: the rosette's Phase, Spread, Hub
+    #     Turn and Strands were built and wired into execute() but left
+    #     out of draw(), so the panel offered a Belt Turn that drove
+    #     nothing.  Nothing else in the suite looks at the UI.
+    import re
+    src = pathlib.Path(__file__).read_text(encoding="utf-8")
+    declared = set(re.findall(
+        r"^        (\w+): (?:Int|Float|Enum|Bool)Property",
+        src, re.M))
+    body = src[src.index("        def draw(self, context):"):
+               src.index("    def _menu_func")]
+    shown = set(re.findall(r"prop\(self, '(\w+)'\)", body))
+    missing = sorted(declared - shown)
+    print("12. %d properties declared, %d reachable in the panel%s"
+          % (len(declared), len(declared & shown),
+             "" if not missing else "; MISSING: " + ", ".join(missing)))
+    ok = ok and not missing
 
     assert ok
     print("spinor standalone tests passed")
