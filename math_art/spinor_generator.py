@@ -83,6 +83,35 @@
 # is straight and flat; in between the core bows out, which is the
 # "waving" of the title.
 #
+# WHY THE ENDS OF A BELT MOVE, AND WHY IT CAN MEET ITSELF.  Pengelley
+# and Ramras are explicit that only the ROTATIONAL positioning of each
+# frame matters here, not the translational component: the untangling
+# is a homotopy of loops in SO(3) and says nothing about where the
+# belt lies.  Drawing one anyway forces a choice, and the honest
+# choice is the one above -- the belt's tangent IS the frame's own
+# length vector, which is what makes it a belt rather than a sheared
+# ribbon.  The price is that the far end sits at the integral of that
+# vector, so it moves as the stage changes: a full belt-length from
+# the near end at the double twist and at the flat belt, closing up in
+# between, and for the billowing variant meeting it exactly at 360
+# degrees.  Around 421 degrees the efficient variant passes through
+# itself.  A real belt does neither, so the operator REPORTS the gap
+# rather than pretending otherwise.  Staley describes the same thing
+# from the other side -- in his deformations one "moves the buckle
+# towards the left, and the twist becomes a coil" -- so the coiling is
+# authentic to the subject even where the drawn belt is not physical.  The alternatives were tried and
+# are worse: pinning the core straight makes the width vector fall
+# onto it (0.998 parallel at 450 degrees), and reconstructing from the
+# twist angle about a fixed axis jumps by a whole turn between stages.
+#
+# THE ROSETTE.  Dirac's original model is not one belt but several,
+# radiating from a turning hub -- scissors on strings, or a hand
+# holding cups.  Mode "Belt Rosette" places the same stage on each of
+# n belts spaced around the axis.  Newman (1942) proved this is where
+# the content is: with n >= 3 an odd number of turns can never be
+# undone, while an even number always can, and with n <= 2 even the
+# odd case comes free.
+#
 # THE LIFT.  Dhat itself is the lift of the homotopy to the double
 # cover S^3.  Mode "S3 Lift" stereographically projects it into R^3.
 # The pole -1 lies ON the image (at s = 0, t = pi), so the quaternion
@@ -117,7 +146,8 @@
 #   by the tube sweep, and the closed-curve spin correction.
 # - Mark Staley, "Understanding quaternions and the Dirac belt
 #   trick", European Journal of Physics 31 (2010), 467;
-#   arXiv:1001.1778.
+#   arXiv:1001.1778.  The belt-as-parameter-path exposition, and the
+#   account of belt motions that turn a twist into a coil.
 
 import math
 
@@ -555,6 +585,73 @@ def build_belts(stages, res_t=120, billow=False, length=2.0,
     return verts, faces
 
 
+def build_rosette(s, belts=4, res_t=120, billow=False, length=4.0,
+                  width=0.32, hub=0.35):
+    """Dirac's own arrangement: `belts` belts radiating from a central
+    hub, each carrying the same stage of the untangling, spaced evenly
+    around the axis.
+
+    This is the scissors-and-string model Newman analysed in 1942 --
+    he proved that with three or more strands an odd number of turns
+    can never be undone, while an even number can.  Turn the hub
+    through 720 degrees and every belt takes up a double twist; run
+    the stage down to zero and they all come flat again.
+
+    Each belt is built by the same frame construction as the sequence
+    mode, then laid along a radius: its own axis is mapped to the
+    outward direction and the copy is spun about the hub axis."""
+    core, wide, _ = belt_frame(s, res_t, billow)
+    f = length / TAU
+    hw = 0.5 * width
+    # Re-base the core on its FIRST point rather than its mean: the
+    # inner end of a belt is buckled to the hub and stays there, so
+    # that is the end to pin.  The initial frame is the identity, so
+    # the belt leaves the hub along its own K -- which the placement
+    # below sends radially outward.  The far end is the one free to
+    # move, as it must be (see belt_end_gap).
+    c0 = core[0]
+    core = [tuple(c[i] - c0[i] for i in range(3)) for c in core]
+
+    def place(v, ang):
+        # local (x,y,z) -> outward x, tangential y, axial z
+        x, y, z = v[2] + hub, v[1], -v[0]
+        ca, sa = math.cos(ang), math.sin(ang)
+        return (ca * x - sa * y, sa * x + ca * y, z)
+
+    verts, faces = [], []
+    for k in range(belts):
+        ang = TAU * k / belts
+        base = len(verts)
+        for c, e in zip(core, wide):
+            a = [f * c[i] + hw * e[i] for i in range(3)]
+            b = [f * c[i] - hw * e[i] for i in range(3)]
+            verts.append(place(a, ang))
+            verts.append(place(b, ang))
+        for j in range(len(core) - 1):
+            q = base + 2 * j
+            faces.append([q, q + 1, q + 3, q + 2])
+    return verts, faces
+
+
+def belt_end_gap(s, res_t=240, billow=False, length=4.0):
+    """Distance between the two ends of a belt at stage s.
+
+    The untangling is a homotopy of ROTATIONS -- Pengelley and Ramras
+    are explicit that only the rotational positioning of each frame
+    matters, not the translational component -- so a belt drawn with
+    its tangent equal to the frame's own length vector has its far end
+    at the integral of that vector, and nothing holds it still.  At the
+    double twist and at the flat belt the ends are a full belt-length
+    apart; in between they close up, and for the billowing variant they
+    meet exactly at 360 degrees.  This is reported, not corrected:
+    correcting it would mean drawing frames the homotopy does not have.
+    """
+    core, _, _ = belt_frame(s, res_t, billow)
+    f = length / TAU
+    return f * math.sqrt(sum((core[-1][k] - core[0][k]) ** 2
+                             for k in range(3)))
+
+
 # ---------------------------------------------------------------
 # mode: S3 Lift
 # ---------------------------------------------------------------
@@ -633,11 +730,17 @@ if _IN_BLENDER:
         mode: EnumProperty(
             name="Mode",
             description="What to build from the untangling",
-            items=[('BELTS', "Belt Filmstrip",
+            items=[('BELTS', "Untangling Sequence",
                     "One belt per stage of the untangling, side by "
                     "side: the first is twisted twice, the last is "
                     "flat, and the ones between bow out as the twist "
                     "is traded away"),
+                   ('ROSETTE', "Belt Rosette",
+                    "Dirac's own arrangement: several belts radiating "
+                    "from a central hub, all at the same stage.  Turn "
+                    "the hub through 720 degrees and each takes up a "
+                    "double twist; with three or more belts an odd "
+                    "number of turns can never be undone"),
                    ('BALL', "Dirac Ball",
                     "The untangling inside the solid-ball model of "
                     "SO(3), where the identity is the centre, a "
@@ -681,11 +784,12 @@ if _IN_BLENDER:
                         "the flat belt.  Set to 1 to build a single "
                         "stage, chosen by Belt Turn")
         belt_turn: FloatProperty(
-            name="Belt Turn", default=FULL_TURN,
+            name="Belt Turn", default=0.0,
             min=0.0, max=FULL_TURN, subtype='ANGLE',
-            description="How far the buckle turns over one cycle, for "
-                        "a single stage: 720 degrees is the stuck "
-                        "double twist, 0 degrees the untangled belt")
+            description="How far the buckle turns: 0 degrees is the "
+                        "untangled belt, 720 degrees the double twist "
+                        "that can be undone.  Used by the rosette, and "
+                        "by the sequence when Stages is 1")
 
         res_s: IntProperty(
             name="Sheet Rows", default=48, min=3, max=256,
@@ -701,6 +805,21 @@ if _IN_BLENDER:
         belt_width: FloatProperty(
             name="Belt Width", default=0.32, min=0.01, max=4.0,
             description="Width of each belt")
+        belts: IntProperty(
+            name="Belts", default=4, min=1, max=24,
+            description="How many belts radiate from the hub.  Newman "
+                        "proved the trick needs three or more to have "
+                        "any content: with two, an odd number of turns "
+                        "comes undone as well")
+        hub_radius: FloatProperty(
+            name="Hub Radius", default=0.35, min=0.0, max=4.0,
+            description="Clear space at the centre, where the belts "
+                        "are anchored to the turning hub")
+        show_hub: BoolProperty(
+            name="Hub", default=True,
+            description="Add a sphere for the object the belts are "
+                        "anchored to -- Dirac's scissors, or the "
+                        "dancer's hand")
         belt_gap: FloatProperty(
             name="Belt Spacing", default=0.8, min=0.05, max=8.0,
             description="Distance between neighbouring belts.  The "
@@ -784,6 +903,14 @@ if _IN_BLENDER:
                 verts, faces = build_belts(
                     stages, self.res_t, billow, self.belt_length,
                     self.belt_width, self.belt_gap)
+            elif self.mode == 'ROSETTE':
+                verts, faces = build_rosette(
+                    stage_from_turn(self.belt_turn), self.belts,
+                    self.res_t, billow, self.belt_length,
+                    self.belt_width, self.hub_radius)
+                if self.show_hub and self.hub_radius > 1e-6:
+                    hv, hf = _uv_sphere(self.hub_radius * 0.85, 32, 16)
+                    extras.append((hv, hf))
             else:
                 verts, faces = build_lift(
                     self.res_s, self.res_t, billow, self.view_turn,
@@ -822,6 +949,25 @@ if _IN_BLENDER:
 
             if note:
                 self.report({'WARNING'}, note)
+            elif self.mode in ('BELTS', 'ROSETTE'):
+                # The homotopy fixes rotations, not positions, so a
+                # belt's far end moves as it is untangled.  Report the
+                # gap rather than let it be a surprise: when it drops
+                # below a belt width the ribbon is passing through
+                # itself, which a real belt cannot do.
+                s0 = (stage_from_turn(self.belt_turn)
+                      if self.mode == 'ROSETTE' else stages[0])
+                gap = belt_end_gap(s0, 240, billow, self.belt_length)
+                msg = ("V=%d F=%d  turn %.0f deg  ends %.2f apart"
+                       % (len(me.vertices), len(me.polygons),
+                          math.degrees(turn_from_stage(s0)), gap))
+                if gap < self.belt_width:
+                    self.report({'WARNING'}, msg + " - the belt meets "
+                                "itself here; only its rotations are "
+                                "fixed by the untangling, not where it "
+                                "lies")
+                else:
+                    self.report({'INFO'}, msg)
             else:
                 turn = math.degrees(turn_from_stage(stages[0]))
                 self.report(
@@ -834,25 +980,35 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
+            ribbon = self.mode in ('BELTS', 'ROSETTE')
             lay.prop(self, 'mode')
             lay.prop(self, 'homotopy')
-            if self.mode != 'BELTS':
+            if not ribbon:
                 lay.prop(self, 'style')
+            drawn = (not ribbon and self.style == 'LOOPS')
 
-            drawn = (self.mode != 'BELTS' and self.style == 'LOOPS')
-            if self.mode == 'BELTS' or drawn:
+            if self.mode == 'ROSETTE':
+                # the rosette is one configuration, so the turn always
+                # drives it -- no stage count to compete with
+                lay.prop(self, 'belts')
+                lay.prop(self, 'belt_turn')
+            elif self.mode == 'BELTS' or drawn:
                 lay.prop(self, 'frames')
                 sub = lay.row()
                 sub.enabled = (self.frames <= 1)
                 sub.prop(self, 'belt_turn')
             lay.prop(self, 'res_t')
-            if self.mode != 'BELTS' and not drawn:
+            if not ribbon and not drawn:
                 lay.prop(self, 'res_s')
 
-            if self.mode == 'BELTS':
+            if ribbon:
                 lay.prop(self, 'belt_length')
                 lay.prop(self, 'belt_width')
+            if self.mode == 'BELTS':
                 lay.prop(self, 'belt_gap')
+            if self.mode == 'ROSETTE':
+                lay.prop(self, 'hub_radius')
+                lay.prop(self, 'show_hub')
             if self.mode == 'LIFT':
                 lay.prop(self, 'view_turn')
             if self.mode == 'BALL':
@@ -1065,6 +1221,29 @@ def _selftest():
         ok = (ok and chord[2] < chord[1] < chord[0]
               and chord[2] < 0.5 * chord[0])
 
+    # 7b. The rosette's belts are congruent copies spaced evenly about
+    #     the axis, and the reported end gap matches the belt.
+    for billow in (False, True):
+        v, f = build_rosette(stage_from_turn(FULL_TURN), 5, 60, billow)
+        per = len(v) // 5
+        rad = []
+        for k in range(5):
+            block = v[k * per:(k + 1) * per]
+            rad.append(sorted(round(math.hypot(q[0], q[1]), 9)
+                              for q in block))
+        same = all(rad[k] == rad[0] for k in range(5))
+        # every belt must START on the hub -- its inner end is buckled
+        # to the turning object, so that is the end that stays put
+        starts = max(abs(math.hypot(v[k * per][0], v[k * per][1]) - 0.35)
+                     for k in range(5))
+        gap0 = belt_end_gap(stage_from_turn(FULL_TURN), 240, billow)
+        gapm = belt_end_gap(stage_from_turn(0.6 * FULL_TURN), 240,
+                            billow)
+        print("7b. rosette %s: 5 congruent belts=%s, anchored on the "
+              "hub to %.1e, end gap %.2f at 720 deg vs %.2f mid-way"
+              % ("FK" if billow else "PR", same, starts, gap0, gapm))
+        ok = ok and same and starts < 1e-9 and gap0 > gapm
+
     # 8. Every mode builds a finite mesh inside the 2 m cube, with
     #    every face index in range -- one stage and several, both
     #    styles.
@@ -1081,6 +1260,10 @@ def _selftest():
                                          billow)),
             ("belt-one-" + tag, build_belts(
                 stages_for(1, 0.6 * FULL_TURN), 40, billow)),
+            ("rosette-" + tag, build_rosette(
+                stage_from_turn(FULL_TURN), 4, 40, billow)),
+            ("rosette1-" + tag, build_rosette(
+                stage_from_turn(0.0), 1, 40, billow)),
             ("lift-surf-" + tag, build_lift(16, 32, billow, 1.7, False)),
             ("lift-loops-" + tag, build_lift(16, 32, billow, 1.7, True,
                                              stages_for(5, FULL_TURN)))]
