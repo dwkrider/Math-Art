@@ -156,7 +156,7 @@ bl_info = {
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Spinor Belt Trick",
+    "location": "View3D > Add > Math Art > Odds & Ends",
     "description": "Nullhomotopy of the double twist in SO(3): the "
                    "Dirac belt trick as static geometry",
     "category": "Add Mesh",
@@ -327,6 +327,42 @@ def _fit_unit_cube(verts, scale=1.0):
         return [(0.0, 0.0, 0.0) for _ in verts]
     f = scale / ext
     return [tuple((v[i] - mid[i]) * f for i in range(3)) for v in verts]
+
+
+def _fit_box(verts, centre, half, scale=1.0):
+    """Scale about a GIVEN centre and half-extent, not the vertices' own
+    bounding box.
+
+    The ribbon modes must not be fitted to what they happen to span at
+    one stage: doing that rescales and re-centres the whole object every
+    time the stage changes, so the clamped end drifts and the hub
+    breathes even though the geometry is anchored.  Callers pass a box
+    computed once over the whole family (see ribbon_box) and every stage
+    then sits in the same frame."""
+    if not verts or half <= 1e-12:
+        return list(verts)
+    f = scale / half
+    return [tuple((v[i] - centre[i]) * f for i in range(3))
+            for v in verts]
+
+
+def ribbon_box(build, samples=17):
+    """Centre and half-extent covering every stage of a ribbon family.
+
+    `build` takes a stage and returns its vertices.  Sampling the whole
+    family once gives a frame that is the same at every stage, which is
+    what keeps the picture still while the stage is scrubbed."""
+    lo = [1e30] * 3
+    hi = [-1e30] * 3
+    for i in range(samples):
+        for v in build(HALF_PI * i / (samples - 1)):
+            for k in range(3):
+                lo[k] = min(lo[k], v[k])
+                hi[k] = max(hi[k], v[k])
+    centre = tuple(0.5 * (lo[k] + hi[k]) for k in range(3))
+    half = max(max(hi[k] - centre[k], centre[k] - lo[k])
+               for k in range(3))
+    return centre, half
 
 
 def _grid_faces(ns, nt, base=0):
@@ -532,7 +568,7 @@ def build_ball(res_s=48, res_t=96, billow=False, loops=False,
 # ---------------------------------------------------------------
 
 
-def belt_frame(s, res_t=120, billow=False):
+def belt_frame(s, res_t=120, billow=False, anchor='START'):
     """Core and width vector of the belt at stage s.
 
     The core is the running integral of R(s,t) applied to K and the
@@ -551,8 +587,15 @@ def belt_frame(s, res_t=120, billow=False):
         for k in range(3):
             acc[k] += 0.5 * dt * (dirs[j - 1][k] + dirs[j][k])
         core.append(tuple(acc))
-    mean = [sum(p[k] for p in core) / len(core) for k in range(3)]
-    core = [tuple(p[k] - mean[k] for k in range(3)) for p in core]
+    # Anchor on the FIRST point by default: one end of a belt is
+    # clamped and stays put, which is how every depiction of the trick
+    # is set up.  Centring on the mean instead lets both ends swing as
+    # the stage changes, which reads as the whole belt moving.
+    if anchor == 'MEAN':
+        base = [sum(p[k] for p in core) / len(core) for k in range(3)]
+    else:
+        base = core[0]
+    core = [tuple(p[k] - base[k] for k in range(3)) for p in core]
     return core, [_qrot(q, (1.0, 0.0, 0.0)) for q in qs], dirs
 
 
@@ -569,15 +612,18 @@ def build_belts(stages, res_t=120, billow=False, length=2.0,
     n = len(stages)
     for k, s in enumerate(stages):
         core, wide, _ = belt_frame(s, res_t, billow)
-        y0 = (k - 0.5 * (n - 1)) * gap
+        # Space the row along x.  Stacking along y would pile the
+        # belts face to face -- y is the surface normal at the clamped
+        # end -- so head on they would all superimpose.
+        x0 = (k - 0.5 * (n - 1)) * gap
         base = len(verts)
         for j in range(len(core)):
             c, e = core[j], wide[j]
-            verts.append((f * c[0] + hw * e[0],
-                          y0 + f * c[1] + hw * e[1],
+            verts.append((x0 + f * c[0] + hw * e[0],
+                          f * c[1] + hw * e[1],
                           f * c[2] + hw * e[2]))
-            verts.append((f * c[0] - hw * e[0],
-                          y0 + f * c[1] - hw * e[1],
+            verts.append((x0 + f * c[0] - hw * e[0],
+                          f * c[1] - hw * e[1],
                           f * c[2] - hw * e[2]))
         for j in range(len(core) - 1):
             a = base + 2 * j
@@ -591,11 +637,13 @@ def build_rosette(s, belts=4, res_t=120, billow=False, length=4.0,
     hub, each carrying the same stage of the untangling, spaced evenly
     around the axis.
 
-    This is the scissors-and-string model Newman analysed in 1942 --
-    he proved that with three or more strands an odd number of turns
-    can never be undone, while an even number can.  Turn the hub
-    through 720 degrees and every belt takes up a double twist; run
-    the stage down to zero and they all come flat again.
+    This is the arrangement of Newman's 1942 scissors-and-string model,
+    but not yet its content: each belt here is twisted about its OWN
+    radius and the belts never interact, so what is drawn is one
+    untangling repeated n times around the axis.  A hub turning about a
+    single axis would instead wrap the belts around each other into
+    Newman's braid, which is what makes three or more strands
+    insoluble for an odd number of turns.  See BACKLOG.
 
     Each belt is built by the same frame construction as the sequence
     mode, then laid along a radius: its own axis is mapped to the
@@ -603,14 +651,6 @@ def build_rosette(s, belts=4, res_t=120, billow=False, length=4.0,
     core, wide, _ = belt_frame(s, res_t, billow)
     f = length / TAU
     hw = 0.5 * width
-    # Re-base the core on its FIRST point rather than its mean: the
-    # inner end of a belt is buckled to the hub and stays there, so
-    # that is the end to pin.  The initial frame is the identity, so
-    # the belt leaves the hub along its own K -- which the placement
-    # below sends radially outward.  The far end is the one free to
-    # move, as it must be (see belt_end_gap).
-    c0 = core[0]
-    core = [tuple(c[i] - c0[i] for i in range(3)) for c in core]
 
     def place(v, ang):
         # local (x,y,z) -> outward x, tangential y, axial z
@@ -631,6 +671,33 @@ def build_rosette(s, belts=4, res_t=120, billow=False, length=4.0,
             q = base + 2 * j
             faces.append([q, q + 1, q + 3, q + 2])
     return verts, faces
+
+
+def belt_self_distance(s, res_t=160, billow=False, length=4.0,
+                       width=0.32):
+    """Closest approach between non-adjacent points of the belt's core.
+
+    This, not the end-to-end gap, is what says whether the ribbon passes
+    through itself: the two ends can meet without the belt crossing, and
+    the belt can cross while its ends are far apart (the efficient
+    variant does exactly that near 421 degrees)."""
+    core, _, _ = belt_frame(s, res_t, billow)
+    f = length / TAU
+    n = len(core)
+    # Skip a window of about two belt widths of arc.  Neighbouring
+    # samples are always close, so the window has to exclude them --
+    # but sizing it as a fixed fraction of the belt would make the
+    # answer scale with belt length and say nothing about the width it
+    # has to clear.
+    step = length / max(1, n - 1)
+    skip = max(2, min(n // 3, int(2.0 * width / step) + 1))
+    best = 1e30
+    for i in range(0, n, 2):
+        for j in range(i + skip, n, 2):
+            d = sum((core[i][k] - core[j][k]) ** 2 for k in range(3))
+            if d < best:
+                best = d
+    return f * math.sqrt(best)
 
 
 def belt_end_gap(s, res_t=240, billow=False, length=4.0):
@@ -736,11 +803,12 @@ if _IN_BLENDER:
                     "flat, and the ones between bow out as the twist "
                     "is traded away"),
                    ('ROSETTE', "Belt Rosette",
-                    "Dirac's own arrangement: several belts radiating "
-                    "from a central hub, all at the same stage.  Turn "
-                    "the hub through 720 degrees and each takes up a "
-                    "double twist; with three or more belts an odd "
-                    "number of turns can never be undone"),
+                    "The same stage of the untangling on several belts "
+                    "radiating from a central hub, in the arrangement "
+                    "Dirac used.  Each belt is twisted about its own "
+                    "radius, so this shows one untangling repeated "
+                    "around the axis rather than the belts braiding "
+                    "with each other"),
                    ('BALL', "Dirac Ball",
                     "The untangling inside the solid-ball model of "
                     "SO(3), where the identity is the centre, a "
@@ -821,11 +889,12 @@ if _IN_BLENDER:
                         "anchored to -- Dirac's scissors, or the "
                         "dancer's hand")
         belt_gap: FloatProperty(
-            name="Belt Spacing", default=0.8, min=0.05, max=8.0,
-            description="Distance between neighbouring belts.  The "
-                        "middle stages curl up and need roughly two "
-                        "thirds of the belt length to themselves; "
-                        "less than that and neighbours interleave")
+            name="Belt Spacing", default=1.7, min=0.05, max=8.0,
+            description="Distance between neighbouring belts.  With "
+                        "each belt clamped at the same end, the middle "
+                        "stages swing out about two fifths of a belt "
+                        "length to each side, so less than that and "
+                        "neighbours interleave")
 
         view_turn: FloatProperty(
             name="View Turn", default=1.7, min=0.5, max=5.7,
@@ -864,13 +933,14 @@ if _IN_BLENDER:
             description="Half-extent of the result; 1.0 fits the 2 m "
                         "cube")
 
-        def _mesh_from(self, verts, faces, name):
+        def _mesh_from(self, verts, faces, name, weld=True):
             me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
             bm = bmesh.new()
             bm.from_mesh(me)
-            bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
+            if weld:
+                bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
             bm.to_mesh(me)
             bm.free()
@@ -903,11 +973,26 @@ if _IN_BLENDER:
                 verts, faces = build_belts(
                     stages, self.res_t, billow, self.belt_length,
                     self.belt_width, self.belt_gap)
+                nb = len(stages)
+                box_centre, box_half = ribbon_box(
+                    lambda st, nb=nb: build_belts(
+                        stages_for(nb, turn_from_stage(st)), 48, billow,
+                        self.belt_length, self.belt_width,
+                        self.belt_gap)[0])
             elif self.mode == 'ROSETTE':
                 verts, faces = build_rosette(
                     stage_from_turn(self.belt_turn), self.belts,
                     self.res_t, billow, self.belt_length,
                     self.belt_width, self.hub_radius)
+                # The hub is the centre of a rosette, so put it on the
+                # origin rather than the family's bounding-box middle:
+                # the belts curl to one side, which would otherwise push
+                # the hub off centre and tilt the whole figure.
+                _, box_half = ribbon_box(
+                    lambda st: build_rosette(
+                        st, self.belts, 48, billow, self.belt_length,
+                        self.belt_width, self.hub_radius)[0])
+                box_centre = (0.0, 0.0, 0.0)
                 if self.show_hub and self.hub_radius > 1e-6:
                     hv, hf = _uv_sphere(self.hub_radius * 0.85, 32, 16)
                     extras.append((hv, hf))
@@ -927,10 +1012,23 @@ if _IN_BLENDER:
             for ev, ef in extras:
                 spans.append((len(allv), len(ev), ef))
                 allv.extend(ev)
-            allv = _fit_unit_cube(allv, self.scale)
+            if self.mode in ('BELTS', 'ROSETTE'):
+                # One frame for the whole family, so scrubbing the stage
+                # moves the belt and nothing else.  Fitting each stage to
+                # its own bounding box instead would rescale and
+                # re-centre the object every time, which makes the
+                # clamped end and the hub appear to drift.
+                allv = _fit_box(allv, box_centre, box_half, self.scale)
+            else:
+                allv = _fit_unit_cube(allv, self.scale)
             verts = allv[:len(verts)]
 
-            me = self._mesh_from(verts, faces, "Spinor")
+            # A ribbon has no duplicate vertices to merge, and welding
+            # would fuse its two ends into a closed band at the stage
+            # where they happen to touch.
+            me = self._mesh_from(verts, faces, "Spinor",
+                                 weld=self.mode not in ('BELTS',
+                                                        'ROSETTE'))
             obj = bpy.data.objects.new(
                 "Spinor %s" % self.mode.title(), me)
             context.collection.objects.link(obj)
@@ -955,16 +1053,24 @@ if _IN_BLENDER:
                 # gap rather than let it be a surprise: when it drops
                 # below a belt width the ribbon is passing through
                 # itself, which a real belt cannot do.
-                s0 = (stage_from_turn(self.belt_turn)
-                      if self.mode == 'ROSETTE' else stages[0])
+                # Report the stage actually shown; for a sequence, the
+                # worst stage in it.
+                shown = ([stage_from_turn(self.belt_turn)]
+                         if self.mode == 'ROSETTE' else stages)
+                near = min(belt_self_distance(st, 160, billow,
+                                              self.belt_length,
+                                              self.belt_width)
+                           for st in shown)
+                s0 = shown[0]
                 gap = belt_end_gap(s0, 240, billow, self.belt_length)
-                msg = ("V=%d F=%d  turn %.0f deg  ends %.2f apart"
+                msg = ("V=%d F=%d  turn %.0f deg  ends %.2f apart, "
+                       "belt clears itself by %.2f"
                        % (len(me.vertices), len(me.polygons),
-                          math.degrees(turn_from_stage(s0)), gap))
-                if gap < self.belt_width:
-                    self.report({'WARNING'}, msg + " - the belt meets "
-                                "itself here; only its rotations are "
-                                "fixed by the untangling, not where it "
+                          math.degrees(turn_from_stage(s0)), gap, near))
+                if near < 0.5 * self.belt_width:
+                    self.report({'WARNING'}, msg + " - the ribbon passes "
+                                "through itself here; the untangling "
+                                "fixes the frames, not where the belt "
                                 "lies")
                 else:
                     self.report({'INFO'}, msg)
@@ -1186,8 +1292,20 @@ def _selftest():
                  lengths[1]))
         ok = ok and spans == 0 and lengths[1] < 0.75 * lengths[0]
 
-    # 7. The belt's width stays perpendicular to its core, and the
-    #    twist runs from 4 pi at the double twist to 0 at the end.
+    # 7. The belt's twist runs from 4 pi at the double twist to 0 at
+    #    the end, and the ribbon's arc length is the same at every
+    #    stage -- the core is built from a unit vector, so an error in
+    #    the quadrature would show up here.
+    #
+    #    NOTE what is NOT asserted: that the width is perpendicular to
+    #    the tangent.  Both come from the same rotation applied to K and
+    #    to I, so their being perpendicular tests only that _qrot is a
+    #    rotation.  The quantity that matters is printed instead -- how
+    #    much the frame turns about the ribbon's own NORMAL.  A real
+    #    belt can twist, and can bend about its width, but cannot bend
+    #    in its own plane; this ribbon does, which is why it reads as a
+    #    curved strip rather than a strap.  It is the honest limit of
+    #    developing a rotation-only homotopy into a surface.
     for billow in (False, True):
         worst_perp, tw0, tw1 = 0.0, 0.0, 0.0
         for k in range(9):
@@ -1197,12 +1315,40 @@ def _selftest():
                 tw0 = tw
             if k == 8:
                 tw1 = tw
-        print("7. belt %s: twist %.4f -> %.4f (4pi = %.4f), "
-              "perpendicularity %.3g"
-              % ("FK" if billow else "PR", tw0, tw1, FULL_TURN,
-                 worst_perp))
-        ok = (ok and worst_perp < 1e-12
-              and abs(tw0 - FULL_TURN) < 1e-6 and tw1 < 1e-9)
+        print("7. belt %s: twist %.4f -> %.4f (4pi = %.4f)"
+              % ("FK" if billow else "PR", tw0, tw1, FULL_TURN))
+        ok = ok and abs(tw0 - FULL_TURN) < 1e-6 and tw1 < 1e-9
+
+        # How far the frame turns about the ribbon's own normal, and
+        # about its width, per stage.  Reported, not asserted: a belt
+        # would have the normal term at zero.
+        wj = wi = 0.0
+        for k in range(1, 9):
+            st = HALF_PI * k / 8.0
+            prev = None
+            for j in range(401):
+                q = nullhomotopy(st, TAU * j / 400.0, billow)
+                if prev is not None:
+                    d = _qmul((prev[0], -prev[1], -prev[2], -prev[3]), q)
+                    wi += abs(d[1])
+                    wj += abs(d[2])
+                prev = q
+        print("7. belt %s: frame turns %.2f about the width, %.2f about "
+              "the normal (a strap would have 0 about the normal)"
+              % ("FK" if billow else "PR", 2.0 * wi, 2.0 * wj))
+
+        # Arc length is stage-independent: the core integrates a unit
+        # vector, so every stage must come out the same length.
+        lens = []
+        for k in range(5):
+            core, _, _ = belt_frame(HALF_PI * k / 4.0, 600, billow)
+            lens.append(sum(math.sqrt(sum((core[j + 1][m] - core[j][m])
+                                          ** 2 for m in range(3)))
+                            for j in range(len(core) - 1)))
+        print("7. belt %s: arc length %.4f..%.4f over the stages "
+              "(2pi = %.4f)"
+              % ("FK" if billow else "PR", min(lens), max(lens), TAU))
+        ok = ok and max(lens) - min(lens) < 1e-3 and abs(lens[0] - TAU) < 1e-3
 
         # The polyline's chords are not the true tangent, and the gap
         # is the quadrature's truncation error rather than a defect --
@@ -1275,6 +1421,25 @@ def _selftest():
         print("8. %-14s verts=%5d faces=%5d finite=%s extent=%.4f"
               % (name, len(v), len(f), fin, ext))
         ok = ok and fin and ext <= 1.0 + 1e-9 and nmax < len(v)
+
+    # 8b. The ribbon frame does not depend on the stage.  This is the
+    #     check for the bug the user actually saw: fitting each stage to
+    #     its own bounding box rescaled and re-centred the whole object
+    #     every time the stage moved, so the clamped end drifted.
+    for billow in (False, True):
+        c, h = ribbon_box(lambda st: build_rosette(
+            st, 4, 48, billow, 4.0, 0.32, 0.35)[0])
+        anchors = []
+        for k in range(9):
+            v = build_rosette(HALF_PI * k / 8.0, 4, 48, billow,
+                              4.0, 0.32, 0.35)[0]
+            anchors.append(_fit_box(v, c, h, 1.0)[0])
+        drift = max(math.sqrt(sum((a[m] - anchors[0][m]) ** 2
+                                  for m in range(3)))
+                    for a in anchors)
+        print("8b. rosette %s: anchor drifts %.2e across the stages "
+              "after fitting" % ("FK" if billow else "PR", drift))
+        ok = ok and drift < 1e-12
 
     # 9. Parallel transport is a rotation, so the tube cannot stretch
     #    its cross-section.
