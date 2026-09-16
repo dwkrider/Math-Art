@@ -818,6 +818,66 @@ def build_spin_ribbons(turn, count=4, res_t=200, r_in=0.5, r_out=6.0,
     return verts, faces
 
 
+def build_dirac_strings(s, count=4, res_t=200, billow=False,
+                        r_in=0.5, r_out=6.0, width=0.6, dirs=None,
+                        reach=0.45):
+    """The untangling drawn on nested spheres, the way the films do it.
+
+    Hanson describes the construction as an onion of glass spheres, one
+    per slice of the belt, each carrying that slice's frame, with the
+    ribbons threaded through the onion.  So the centre line of a ribbon
+    is its own direction turned by the frame, at the radius of its
+    sphere:
+
+        p(t) = r(t) . R(s,t) . u
+
+    R(s,0) and R(s,2pi) are the identity at every stage, so a ribbon
+    BEGINS at r_in.u and ENDS at r_out.u wherever the untangling has
+    got to -- both ends pinned, which is the rule of the game.  As the
+    stage runs the loop each ribbon carries migrates around the block
+    and finally disappears, which is the untangling motion itself.
+
+    `reach` says how far out the loop is spent.  The films gather it in
+    close to the block and let the ribbon run straight the rest of the
+    way, so the frame completes its whole circuit by
+    r_in + reach.(r_out - r_in) and is the identity from there to the
+    rim.  Spreading the circuit over the entire length instead leaves
+    the ribbon coiling all the way out, which is not what they show.
+
+    The width is a fixed DISTANCE.  Taking a fixed angle instead makes
+    the ribbon narrow in proportion to its radius and pinch away to
+    nothing at the block."""
+    verts, faces = [], []
+    dirs = dirs or ring_directions(count)
+    hw = 0.5 * width
+    for u3 in dirs:
+        n0, _ = _across(u3)
+        pts, nrm = [], []
+        for j in range(res_t):
+            t = j / (res_t - 1)
+            r = r_in + (r_out - r_in) * t
+            # the circuit is spent within `reach`; beyond it the frame
+            # is the identity and the ribbon runs straight to the rim
+            q = nullhomotopy(s, TAU * min(1.0, t / max(1e-6, reach)),
+                             billow)
+            pts.append(tuple(r * c for c in _qrot(q, u3)))
+            nrm.append(_qrot(q, n0))
+        tang = _tangents(pts, False)
+        base = len(verts)
+        for j in range(res_t):
+            t3, n3, c3 = tang[j], nrm[j], pts[j]
+            d = sum(t3[k] * n3[k] for k in range(3))
+            w = tuple(n3[k] - d * t3[k] for k in range(3))
+            m = math.sqrt(sum(c * c for c in w))
+            w = _across(t3)[0] if m < 1e-9 else tuple(c / m for c in w)
+            verts.append(tuple(c3[k] + hw * w[k] for k in range(3)))
+            verts.append(tuple(c3[k] - hw * w[k] for k in range(3)))
+        for j in range(res_t - 1):
+            k = base + 2 * j
+            faces.append([k, k + 1, k + 3, k + 2])
+    return verts, faces
+
+
 def build_block(half=0.5, turn=0.0, axis=(0, 0, 1)):
     """The cube at the centre, turned with the ribbon roots."""
     q = _qaxis(tuple(c / math.sqrt(sum(d * d for d in axis))
@@ -1248,22 +1308,21 @@ if _IN_BLENDER:
                     extras.append(build_block(self.hub_radius * 0.72,
                                               self.hub_turn))
             elif self.mode == 'ROSETTE':
-                verts, faces = build_rosette(
+                dirs = (sphere_directions(self.belts)
+                        if self.spread == 'SPHERE'
+                        else ring_directions(self.belts))
+                rim = self.hub_radius + self.belt_length
+                verts, faces = build_dirac_strings(
                     stage_from_turn(self.belt_turn), self.belts,
-                    self.res_t, billow, self.belt_length,
-                    self.belt_width, self.hub_radius)
-                # The hub is the centre of a rosette, so put it on the
-                # origin rather than the family's bounding-box middle:
-                # the belts curl to one side, which would otherwise push
-                # the hub off centre and tilt the whole figure.
-                _, box_half = ribbon_box(
-                    lambda st: build_rosette(
-                        st, self.belts, 48, billow, self.belt_length,
-                        self.belt_width, self.hub_radius)[0])
+                    max(self.res_t, 160), billow, self.hub_radius, rim,
+                    self.belt_width, dirs, 1.0 / max(1.0, self.coil))
                 box_centre = (0.0, 0.0, 0.0)
+                box_half = rim + 0.5 * self.belt_width
+                if self.show_cage:
+                    extras.append(build_cage(rim, 6, 96, 0.004 * rim))
                 if self.show_hub and self.hub_radius > 1e-6:
-                    hv, hf = _uv_sphere(self.hub_radius * 0.85, 32, 16)
-                    extras.append((hv, hf))
+                    extras.append(build_block(self.hub_radius * 0.72,
+                                              0.0))
             else:
                 verts, faces = build_lift(
                     self.res_s, self.res_t, billow, self.view_turn,
