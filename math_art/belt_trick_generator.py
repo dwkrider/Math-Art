@@ -893,9 +893,14 @@ if _IN_BLENDER:
                         "this from 0 to 720 for one cycle")
         size: FloatProperty(
             name="Size", default=0.16, min=0.02, max=1.2,
-            description="Diameter of the solid's inscribed sphere: the "
-                        "distance between opposite faces, which for the "
-                        "cube is its edge")
+            description="How big the solid is, measured across its "
+                        "CIRCUMSPHERE so that every solid sits the same "
+                        "way inside the cage.  Measuring across the "
+                        "faces instead would leave the tetrahedron half "
+                        "again too big and the dodecahedron a third too "
+                        "small, since the two radii are in a very "
+                        "different ratio for each.  For the cube this "
+                        "is its edge")
         belt_width: FloatProperty(
             name="Belt Width", default=0.0, min=0.0, max=1.0,
             description="Width of each belt, built exactly as set.  Leave at 0 for the widest belt that still clears its neighbours at the solid, which is the only setting safe for every solid: the limit runs from 0.30 for two belts down to 0.03 for the icosahedron's twenty.  Any positive value is used as given, with a warning if the belts would meet.  Original: Width of each belt.  Belts must clear one "
@@ -976,6 +981,19 @@ if _IN_BLENDER:
             half = 0.5 * self.size
             n, m = AXES[self.spin_axis]
             sverts, sfaces, belts = solid(self.solid, half, n, m)
+            # Normalise on the CIRCUMSPHERE, not the inscribed sphere,
+            # so that every solid sits the same way inside the cage.
+            # The ratio of the two differs sharply between them: at an
+            # equal face-to-face size the tetrahedron's circumradius is
+            # three times its inradius where the cube's is only 1.73,
+            # so the tetrahedron looked half again too big and the
+            # dodecahedron and icosahedron nearly a third too small.
+            # Scaling to the cube's circumradius leaves the cube, the
+            # two-belt cube and the octahedron exactly as they were.
+            cr = circumradius(sverts)
+            if cr > 1e-9:
+                half *= half * math.sqrt(3.0) / cr
+                sverts, sfaces, belts = solid(self.solid, half, n, m)
             # The width is the user's to set.  Past `limit` the belts
             # cannot all clear one another where they crowd together at
             # the solid, so a wider belt will pass through its
