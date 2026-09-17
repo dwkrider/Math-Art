@@ -1432,6 +1432,10 @@ OPS = [
     ("belt trick icosahedron",
      lambda: bpy.ops.mesh.belt_trick_add(solid='ICOSA', turn=math.radians(90.0),
                                          resolution=60, across=5)),
+    ("belt trick two belts about x",
+     lambda: bpy.ops.mesh.belt_trick_add(solid='TWO', spin_axis='X',
+                                         turn=math.radians(400.0),
+                                         resolution=80)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

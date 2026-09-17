@@ -62,17 +62,11 @@
 # ramps at both ends, because the twist a belt carries at 360 degrees
 # is a full turn spread over the untangling zone, and its peak rate is
 # the peak of g': a steeper profile makes a tighter helicoid, whose
-# facets crease.  ALL SIX belts use the SAME field F, and that is the whole
-# reason they never collide: at each s the six belt slices are the six
-# arcs at the axis directions of ONE sphere, rigidly rotated, so they
-# stay 90 degrees apart on that sphere, and slices at different s lie
-# on different spheres.  The ribbon's width is drawn as an arc of that
-# same sphere -- a chord of exactly the belt width -- so the argument
-# applies to the whole strip, not just its centre line, and a slice
-# whose chord subtends 2 lambda leaves the neighbouring arcs a gap of
-# 90 - 2 lambda degrees.  The operator reports that gap at the cube,
-# where it is smallest.  Holroyd remarks that "arbitrarily many belts
-# in arbitrary directions are possible": this is why.
+# facets crease.  (Designing the profile from the coil's tangent tilt
+# instead was tried and is worse: a belt coiled once round the solid
+# within the cage runs at about 80 degrees from radial over most of
+# the zone whatever the profile, so shaping the tilt as a bump only
+# steepens its middle.)
 #
 # ANY PLATONIC SOLID.  Nothing above used the cube except its face
 # normals, so the centre can be any of the five solids (or just two
@@ -189,7 +183,7 @@ FULL_TURN = 2.0 * TAU
 # is the fraction of the belt over which that deviation is eased back
 # to zero before the straight run into the face.
 KAPPA = 0.25
-SMOOTH = 0.35
+SMOOTH = 0.5
 TAPER = 0.04
 
 _Z = (0.0, 0.0, 1.0)
@@ -245,34 +239,35 @@ _SIDES = {'TETRA': 3, 'CUBE': 4, 'OCTA': 3, 'DODECA': 5, 'ICOSA': 3}
 SOLID_NAMES = ['TWO', 'TETRA', 'CUBE', 'OCTA', 'DODECA', 'ICOSA']
 
 
-def solid(kind, half=0.15):
+def solid(kind, half=0.15, n=_Z, m=_M):
     """The solid at the centre with inradius `half`: (verts, faces,
     belts), belts a list of (face normal u, width direction w, face
-    inradius).  'TWO' is the cube with belts on its z faces only."""
+    inradius), for spin axis n and loop axis m.  'TWO' is the cube with
+    belts on its z faces only."""
     verts0, normals = _SOLID_DATA['CUBE' if kind == 'TWO' else kind]
     normals = [_unit(tuple(float(c) for c in n)) for n in normals]
     inr = max(_dot(n, v) for n in normals for v in verts0)
     verts = [tuple(half * c / inr for c in v) for v in verts0]
     faces, belts = [], []
-    for n in normals:
-        top = max(_dot(n, v) for v in verts)
+    for nf in normals:
+        top = max(_dot(nf, v) for v in verts)
         idx = [i for i, v in enumerate(verts)
-               if _dot(n, v) > top - 1e-9 * half]
+               if _dot(nf, v) > top - 1e-9 * half]
         assert len(idx) == _SIDES['CUBE' if kind == 'TWO' else kind],             "face normal does not match the vertex set"
         c = tuple(sum(verts[i][k] for i in idx) / len(idx) for k in range(3))
         e1 = _unit(tuple(verts[idx[0]][k] - c[k] for k in range(3)))
-        e2 = _cross(n, e1)
+        e2 = _cross(nf, e1)
         idx.sort(key=lambda i: math.atan2(
             _dot(tuple(verts[i][k] - c[k] for k in range(3)), e2),
             _dot(tuple(verts[i][k] - c[k] for k in range(3)), e1)))
         faces.append(idx)
-        if kind == 'TWO' and abs(n[2]) < 0.5:
+        if kind == 'TWO' and abs(nf[2]) < 0.5:
             continue
         # width: the bending axis m projected into the face; a face
         # normal along m only twists there, so take the spin axis instead
-        wm = tuple(_M[k] - _dot(_M, n) * n[k] for k in range(3))
+        wm = tuple(m[k] - _dot(m, nf) * nf[k] for k in range(3))
         if _norm(wm) < 1e-6:
-            wm = tuple(_Z[k] - _dot(_Z, n) * n[k] for k in range(3))
+            wm = tuple(n[k] - _dot(n, nf) * nf[k] for k in range(3))
         w = _unit(wm)
         # face inradius: distance from the centre to the nearest edge
         rf = min(_norm(_cross(
@@ -280,7 +275,7 @@ def solid(kind, half=0.15):
             _unit(tuple(verts[idx[(j + 1) % len(idx)]][k] - verts[idx[j]][k]
                         for k in range(3)))))
             for j in range(len(idx)))
-        belts.append((n, w, rf))
+        belts.append((nf, w, rf))
     return verts, faces, belts
 
 
@@ -347,7 +342,7 @@ def profile(x, ramp=None):
     and the ramp length how sharply the bending sets in at the zone's
     outer end; both crease the mesh if pushed (smootherstep's peak of
     1.875 did), and both ease with a longer zone, which is why Reach
-    defaults to 0.7."""
+    defaults to 0.85."""
     if ramp is None:
         ramp = RAMP
     x = 0.0 if x < 0.0 else (1.0 if x > 1.0 else x)
@@ -362,29 +357,44 @@ def profile(x, ramp=None):
     return y / (1.0 - ramp)
 
 
-def field(g, psi):
+def field(g, psi, n=_Z, m=_M):
     """Unit quaternion of the belt frame at stage g (0 at the cage, 1 at
-    the cube) and half-turn psi: R_z(psi) q_T(pi g / 2, psi) R_z(-psi),
-    in closed form.  The vector part of q_T is B m + C n with m = y,
-    n = z; conjugating by R_z(psi) turns m to (-sin psi, cos psi, 0)."""
+    the solid) and half-turn psi: R_n(psi) q_T(pi g / 2, psi) R_n(-psi),
+    in closed form, for spin axis n and loop axis m perpendicular to
+    it.  The vector part of q_T is B m + C n; conjugating by R_n(psi)
+    turns m to cos psi m + sin psi (n x m)."""
     rho = 0.5 * math.pi * g
     c, s = math.cos(rho), math.sin(rho)
     cp, sp = math.cos(psi), math.sin(psi)
     A = c * c + s * s * cp
     B = c * s * (1.0 - cp)
     C = s * sp
-    return (A, -B * sp, B * cp, C)
+    l = _cross(n, m)
+    return (A,
+            B * (cp * m[0] + sp * l[0]) + C * n[0],
+            B * (cp * m[1] + sp * l[1]) + C * n[1],
+            B * (cp * m[2] + sp * l[2]) + C * n[2])
 
 
-def _field_by_conjugation(g, psi):
+def _field_by_conjugation(g, psi, n=_Z, m=_M):
     """The same field assembled the long way, for the self-test."""
     rho = 0.5 * math.pi * g
     c, s = math.cos(rho), math.sin(rho)
-    qt = (c * c + s * s * math.cos(psi), 0.0,
-          c * s * (1.0 - math.cos(psi)), s * math.sin(psi))
-    r = _qaxis(_Z, psi)
+    B, C = c * s * (1.0 - math.cos(psi)), s * math.sin(psi)
+    qt = (c * c + s * s * math.cos(psi),
+          B * m[0] + C * n[0], B * m[1] + C * n[1], B * m[2] + C * n[2])
+    r = _qaxis(n, psi)
     rb = (r[0], -r[1], -r[2], -r[3])
     return _qmul(_qmul(r, qt), rb)
+
+
+# Spin axis -> (n, m): the loop axis m is perpendicular to the spin axis
+# and, for the two-belt case whose belts lie along z, perpendicular to
+# the belts as well, so that spinning about x or y bends and wraps them
+# rather than merely twisting them.
+AXES = {'X': ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0)),
+        'Y': ((0.0, 1.0, 0.0), (1.0, 0.0, 0.0)),
+        'Z': ((0.0, 0.0, 1.0), (0.0, 1.0, 0.0))}
 
 
 # ---------------------------------------------------------------
@@ -400,7 +410,7 @@ def attach_radius(half, width):
 
 def belt_rows(psi, u, w, r_out=1.0, half=0.15, width=0.16, reach=0.5,
               ns=160, nlam=11, nstub=1, kappa=KAPPA, smooth=SMOOTH,
-              taper=TAPER, r_min=None, flat=False):
+              taper=TAPER, r_min=None, flat=False, n=_Z, m=_M):
     """Cross-section rows of one belt, cage end first, solid end last.
 
     The belt is straight and rigid with the solid for r <= r_min
@@ -424,7 +434,7 @@ def belt_rows(psi, u, w, r_out=1.0, half=0.15, width=0.16, reach=0.5,
     U, W = [], []
     for s in sigma:
         g = profile((s - sig_a) / (sig1 - sig_a))
-        q = field(g, psi)
+        q = field(g, psi, n, m)
         U.append(_qrot(q, u))
         W.append(_qrot(q, w))
     # tangential heading r dU/ds (central differences; zero at the ends,
@@ -532,7 +542,7 @@ def belt_rows(psi, u, w, r_out=1.0, half=0.15, width=0.16, reach=0.5,
         # the stub: flat, in the solid's frame, from the arc to the face,
         # ordered across like the last arc (whose width may have come
         # out as minus the face's: same strip, opposite sign)
-        rc = _qaxis(_Z, 2.0 * psi)
+        rc = _qaxis(n, 2.0 * psi)
         sgn = 1.0 if _dot(wv[-1], W[-1]) >= 0.0 else -1.0
         for kk in range(1, nstub + 1):
             t = kk / nstub
@@ -551,12 +561,14 @@ def belt_rows(psi, u, w, r_out=1.0, half=0.15, width=0.16, reach=0.5,
 
 
 def build_belts(psi, belts, r_out=1.0, half=0.15, width=0.16, reach=0.5,
-                ns=160, nlam=11, nstub=1, r_min=None, flat=False):
+                ns=160, nlam=11, nstub=1, r_min=None, flat=False,
+                n=_Z, m=_M):
     """All the belts as one mesh: (verts, faces, face_belt_index)."""
     verts, faces, mats = [], [], []
     for bi, (u, w, _) in enumerate(belts):
         rows, _ = belt_rows(psi, u, w, r_out, half, width, reach,
-                            ns, nlam, nstub, r_min=r_min, flat=flat)
+                            ns, nlam, nstub, r_min=r_min, flat=flat,
+                            n=n, m=m)
         base = len(verts)
         for row in rows:
             verts.extend(row)
@@ -635,10 +647,20 @@ if _IN_BLENDER:
                    ('DODECA', "Dodecahedron", "Twelve belts"),
                    ('ICOSA', "Icosahedron", "Twenty belts")],
             default='TWO')
+        spin_axis: EnumProperty(
+            name="Spin Axis",
+            description="The axis the solid turns about.  The two belts "
+                        "lie along z, so spinning about z twists them "
+                        "about their own length while x or y bends and "
+                        "wraps them round the cube",
+            items=[('X', "X", "Spin about the x axis"),
+                   ('Y', "Y", "Spin about the y axis"),
+                   ('Z', "Z", "Spin about the z axis")],
+            default='Z')
         turn: FloatProperty(
             name="Turn", default=math.radians(300.0), min=0.0,
             max=FULL_TURN, subtype='ANGLE',
-            description="How far the solid has turned about the vertical "
+            description="How far the solid has turned about the spin "
                         "axis.  The belts return to their starting "
                         "state at 720 degrees, and not at 360; keyframe "
                         "this from 0 to 720 for one cycle")
@@ -648,13 +670,13 @@ if _IN_BLENDER:
                         "distance between opposite faces, which for the "
                         "cube is its edge")
         belt_width: FloatProperty(
-            name="Belt Width", default=0.2, min=0.01, max=1.0,
+            name="Belt Width", default=0.16, min=0.01, max=1.0,
             description="Width of each belt.  Belts must clear one "
                         "another where they meet the solid, so each "
                         "solid has a widest belt for its size; a wider "
                         "request is clamped to it and reported")
         reach: FloatProperty(
-            name="Reach", default=0.7, min=0.1, max=0.95,
+            name="Reach", default=0.85, min=0.1, max=0.95,
             description="Fraction of each belt, measured in from the "
                         "cage to just past the solid's corners, that "
                         "takes part in the untangling; the rest lies "
@@ -708,7 +730,8 @@ if _IN_BLENDER:
         def execute(self, context):
             psi = 0.5 * self.turn
             half = 0.5 * self.size
-            sverts, sfaces, belts = solid(self.solid, half)
+            n, m = AXES[self.spin_axis]
+            sverts, sfaces, belts = solid(self.solid, half, n, m)
             limit, _ = width_limit(belts, half, self.thickness)
             width = min(self.belt_width, limit)
             # the cage tube and the belt thickness both stick out past the
@@ -718,7 +741,8 @@ if _IN_BLENDER:
             verts, faces, mats = build_belts(
                 psi, belts, 1.0, half, width, self.reach,
                 self.resolution, self.across,
-                r_min=CLEAR * circumradius(sverts), flat=(self.solid == 'TWO'))
+                r_min=CLEAR * circumradius(sverts), flat=(self.solid == 'TWO'),
+                n=n, m=m)
             verts = [(v[0] * fit, v[1] * fit, v[2] * fit) for v in verts]
             me = self._mesh_from(verts, faces, "Belt Trick")
             for i in range(len(belts)):
@@ -741,7 +765,7 @@ if _IN_BLENDER:
 
             parts = []
             if self.show_solid:
-                rc = _qaxis(_Z, 2.0 * psi)
+                rc = _qaxis(n, 2.0 * psi)
                 sv = [tuple(fit * c for c in _qrot(rc, v)) for v in sverts]
                 parts.append(("Belt Trick Solid", (sv, sfaces)))
             if self.show_cage:
@@ -772,6 +796,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'solid')
+            lay.prop(self, 'spin_axis')
             lay.prop(self, 'turn')
             lay.prop(self, 'size')
             lay.prop(self, 'belt_width')
@@ -810,27 +835,30 @@ def _selftest():
     psis = [TAU * k / 24.0 for k in range(25)]
     gs = [k / 16.0 for k in range(17)]
 
-    # 1. the field: unit, boundaries, the closed form equals the
-    #    conjugation, period 2 pi in psi (4 pi in turn), NOT pi
-    for psi in psis:
-        for g in gs:
-            q = field(g, psi)
-            assert abs(_norm(q[1:]) ** 2 + q[0] ** 2 - 1.0) < tol
-            qc = _field_by_conjugation(g, psi)
-            assert max(abs(q[k] - qc[k]) for k in range(4)) < 1e-12
-            q2 = field(g, psi + TAU)
-            assert max(abs(q[k] - q2[k]) for k in range(4)) < 1e-12, \
-                "field not 4 pi periodic"
-        assert max(abs(c) for c in field(0.0, psi)[1:]) < tol
-        assert abs(field(0.0, psi)[0] - 1.0) < tol
-        qc = _qaxis(_Z, 2.0 * psi)
-        q = field(1.0, psi)
-        assert max(abs(q[k] - qc[k]) for k in range(4)) < tol, \
-            "cube end is not the cube's rotation"
-    worst = max(max(abs(field(g, psi)[k] - field(g, psi + math.pi)[k])
-                    for k in range(4))
-                for g in gs for psi in psis)
-    assert worst > 1.9, "field returns after a single turn"
+    # 1. the field, for every spin axis: unit, boundaries, the closed
+    #    form equals the conjugation, period 2 pi in psi (4 pi in turn),
+    #    NOT pi
+    for n, m in AXES.values():
+        for psi in psis:
+            for g in gs:
+                q = field(g, psi, n, m)
+                assert abs(_norm(q[1:]) ** 2 + q[0] ** 2 - 1.0) < tol
+                qc = _field_by_conjugation(g, psi, n, m)
+                assert max(abs(q[k] - qc[k]) for k in range(4)) < 1e-12
+                q2 = field(g, psi + TAU, n, m)
+                assert max(abs(q[k] - q2[k]) for k in range(4)) < 1e-12, \
+                    "field not 4 pi periodic"
+            assert max(abs(c) for c in field(0.0, psi, n, m)[1:]) < tol
+            assert abs(field(0.0, psi, n, m)[0] - 1.0) < tol
+            qc = _qaxis(n, 2.0 * psi)
+            q = field(1.0, psi, n, m)
+            assert max(abs(q[k] - qc[k]) for k in range(4)) < tol, \
+                "solid end is not the solid's rotation"
+        worst = max(max(abs(field(g, psi, n, m)[k]
+                            - field(g, psi + math.pi, n, m)[k])
+                        for k in range(4))
+                    for g in gs for psi in psis)
+        assert worst > 1.9, "field returns after a single turn"
     # the stage profile: 0 and 1 at the ends, flat there, monotone
     assert profile(0.0) == 0.0 and abs(profile(1.0) - 1.0) < tol
     assert profile(1e-6) < 1e-9 and 1.0 - profile(1.0 - 1e-6) < 1e-9
@@ -868,8 +896,10 @@ def _selftest():
     # 3. the geometry, per solid: period, non-return, ends,
     #    orthogonality, width
     ns, nlam = 81, 5
-    for kind in SOLID_NAMES:
-        sverts, _, belts = solid(kind, half)
+    cases = [(kind, 'Z') for kind in SOLID_NAMES] + [('TWO', 'X'), ('TWO', 'Y')]
+    for kind, axis in cases:
+        n, m = AXES[axis]
+        sverts, _, belts = solid(kind, half, n, m)
         w_use = min(width, limits[kind])
         flat = (kind == 'TWO')
         rmin = CLEAR * circumradius(sverts)
@@ -877,11 +907,11 @@ def _selftest():
             d360_all = 0.0
             for bi, (u, w, _) in enumerate(belts):
                 args = (1.0, half, w_use, 0.5, ns, nlam)
-                kw = dict(r_min=rmin, flat=flat)
+                kw = dict(r_min=rmin, flat=flat, n=n, m=m)
                 rows, info = belt_rows(psi, u, w, *args, **kw)
                 rows2, _ = belt_rows(psi + TAU, u, w, *args, **kw)
                 rows3, _ = belt_rows(psi + math.pi, u, w, *args, **kw)
-                rc = _qaxis(_Z, 2.0 * psi)
+                rc = _qaxis(n, 2.0 * psi)
                 nu, nw = _qrot(rc, u), _qrot(rc, w)
                 d720 = max(_norm(tuple(a[k] - b[k] for k in range(3)))
                            for ra, rb in zip(rows, rows2)
@@ -926,7 +956,7 @@ def _selftest():
                     t = _unit(info['T'][i])
                     sh = math.degrees(math.asin(min(1.0, abs(_dot(t, info['wv'][i])))))
                     assert sh < 50.0, "shear %.1f deg" % sh
-            assert d360_all > 0.3, "%s back after 360 degrees" % kind
+            assert d360_all > 0.3, "%s %s back after 360 degrees" % (kind, axis)
 
     # 4. non-intersection: on every sphere the arcs stay apart by the
     #    packing gap, for the cube and the icosahedron
