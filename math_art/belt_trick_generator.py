@@ -58,15 +58,21 @@
 #   p_i(s,t) = r(s) F(s,t) u_i,
 #
 # u_i the face normal, r(s) decreasing from the cage radius to the
-# cube.  The stage profile g(s) climbs at a capped slope with smooth
-# ramps at both ends, because the twist a belt carries at 360 degrees
-# is a full turn spread over the untangling zone, and its peak rate is
-# the peak of g': a steeper profile makes a tighter helicoid, whose
-# facets crease.  (Designing the profile from the coil's tangent tilt
-# instead was tried and is worse: a belt coiled once round the solid
-# within the cage runs at about 80 degrees from radial over most of
-# the zone whatever the profile, so shaping the tilt as a bump only
-# steepens its middle.)
+# cube.  The stage profile g(s) rises as two smoothstep ramps meeting in
+# the middle of the zone, and that shape is the outcome of measuring
+# the tightest bend any belt makes over the whole cycle.  In a 2 m box
+# a belt across the loop axis coils once round the solid within half a
+# metre of radius, so its tangent runs near 85 degrees from radial and
+# the ELBOW where it turns from the straight run into that coil is the
+# sharpest thing in the cycle: about 0.05 m of radius for the cube at
+# 360 degrees, whatever the profile.  Concentrating the frame's turning
+# anywhere -- a plateau, ramps shaped in the tilt, constant-curvature
+# elbows -- buys a rounder elbow at 360 and pays with sharper S-bends
+# at 60 or 630 degrees, where a belt's curvature follows the RATE OF
+# CHANGE of the turning; the long smooth ramps are the balance.  The
+# consequence for the belt's width is stated in the operator: a belt
+# wider than that radius creases at the elbow, so the default width
+# is set at the radius.
 #
 # ANY PLATONIC SOLID.  Nothing above used the cube except its face
 # normals, so the centre can be any of the five solids (or just two
@@ -331,18 +337,22 @@ def width_limit(belts, half, thickness, margin=0.02):
 # ---------------------------------------------------------------
 
 
-RAMP = 0.35
+RAMP = 0.5
 
 
 def profile(x, ramp=None):
     """Stage profile: 0 below 0, 1 above 1, C2, slope 0 at both ends and
     a plateau of slope 1/(1 - ramp) between two ramps of width `ramp`
-    whose slope rises as a smoothstep.  Its peak slope (1.54 for the
-    default ramp) sets how tightly a belt is twisted at 360 degrees,
-    and the ramp length how sharply the bending sets in at the zone's
-    outer end; both crease the mesh if pushed (smootherstep's peak of
-    1.875 did), and both ease with a longer zone, which is why Reach
-    defaults to 0.85."""
+    whose slope rises as a smoothstep.  The ramp length sets the
+    radius of the elbow where a belt turns from radial into its coil
+    at 360 degrees (an arctangent of the rate, so most of the turn
+    happens early in the ramp), and the peak slope how tightly a belt
+    along the loop axis is twisted and how sharp the S-bends elsewhere
+    in the cycle are.  Measured over the whole cycle, the tightest
+    centre-line radius is largest with no plateau at all (ramp 0.5,
+    0.054 m for the cube in a 2 m cage at Reach 0.95); ramps shaped in
+    the tilt, constant-curvature elbows and a tilt bump were all tried
+    and are all worse somewhere else in the cycle."""
     if ramp is None:
         ramp = RAMP
     x = 0.0 if x < 0.0 else (1.0 if x > 1.0 else x)
@@ -588,6 +598,32 @@ def circumradius(verts):
 CLEAR = 1.03   # the straight run reaches this factor past the circumradius
 
 
+def min_bend_radius(belts, half, width, reach, r_min, flat, n=_Z, m=_M,
+                    ns=240):
+    """Smallest radius of curvature of a belt's centre line, sampled at
+    the turns where it is smallest (360 degrees, the elbow into the
+    coil; 120 and 255, the S-bends) for the first belt and the belt
+    least aligned with it."""
+    picks = [belts[0]]
+    if len(belts) > 2:
+        picks.append(min(belts[1:], key=lambda b: abs(_dot(b[0], belts[0][0]))))
+    best = 1e30
+    for (u, w, _) in picks:
+      for psi in (math.pi, math.pi / 3.0, math.radians(127.5)):
+        rows, _ = belt_rows(psi, u, w, 1.0, half, width, reach, ns, 3,
+                            r_min=r_min, flat=flat, n=n, m=m)
+        pts = [row[1] for row in rows[:ns]]
+        for i in range(1, ns - 1):
+            a, b, c = pts[i - 1], pts[i], pts[i + 1]
+            ab = tuple(b[k] - a[k] for k in range(3))
+            bc = tuple(c[k] - b[k] for k in range(3))
+            ac = tuple(c[k] - a[k] for k in range(3))
+            cr = _norm(_cross(ab, bc))
+            if cr > 1e-30:
+                best = min(best, _norm(ab) * _norm(bc) * _norm(ac) / (2.0 * cr))
+    return best
+
+
 def cube_gap(half, width, belts=None):
     """Angular gap (radians) between neighbouring belt arcs on the
     innermost sphere, and the same as a distance."""
@@ -670,13 +706,17 @@ if _IN_BLENDER:
                         "distance between opposite faces, which for the "
                         "cube is its edge")
         belt_width: FloatProperty(
-            name="Belt Width", default=0.16, min=0.01, max=1.0,
+            name="Belt Width", default=0.05, min=0.01, max=1.0,
             description="Width of each belt.  Belts must clear one "
                         "another where they meet the solid, so each "
                         "solid has a widest belt for its size; a wider "
-                        "request is clamped to it and reported")
+                        "request is clamped to it and reported.  The "
+                        "tightest bend a belt makes over the cycle has "
+                        "a radius of about 0.05 m in a 2 m cage whatever "
+                        "the settings, so a belt wider than that creases "
+                        "there; the operator reports the ratio")
         reach: FloatProperty(
-            name="Reach", default=0.85, min=0.1, max=0.95,
+            name="Reach", default=0.95, min=0.1, max=0.95,
             description="Fraction of each belt, measured in from the "
                         "cage to just past the solid's corners, that "
                         "takes part in the untangling; the rest lies "
@@ -779,15 +819,24 @@ if _IN_BLENDER:
                 so.parent = obj
 
             gap, dist = cube_gap(half, width, belts)
+            bend = min_bend_radius(belts, half, width, self.reach,
+                                   CLEAR * circumradius(sverts),
+                                   self.solid == 'TWO', n, m) * fit
             msg = ("V=%d F=%d  turn %.0f deg  %d belts %.3f wide, "
-                   "neighbours %.0f deg (%.3f) apart at the solid"
+                   "neighbours %.0f deg (%.3f) apart at the solid, "
+                   "tightest bend radius %.3f = %.1f widths"
                    % (len(me.vertices), len(me.polygons),
                       math.degrees(self.turn), len(belts), width * fit,
-                      math.degrees(gap), dist * fit))
+                      math.degrees(gap), dist * fit, bend,
+                      bend / (width * fit)))
             if width < self.belt_width:
                 self.report({'WARNING'}, msg + " - belt width clamped "
                             "from %.3f: wider belts would meet at the "
                             "solid" % (self.belt_width * fit))
+            elif bend < width * fit:
+                self.report({'WARNING'}, msg + " - the belt is wider "
+                            "than its tightest bend and will crease "
+                            "there; narrow it or raise Reach")
             else:
                 self.report({'INFO'}, msg)
             return {'FINISHED'}
