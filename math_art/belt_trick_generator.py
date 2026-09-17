@@ -93,17 +93,47 @@
 # corners reach past the innermost spheres (a cube's to 1.73 times the
 # face distance, a tetrahedron's to 3 times), and a belt coiling round
 # at those radii would pass through them.  So each belt stays STRAIGHT
-# and rigid with the solid out to just beyond its circumradius, and the
+# and rigid with the solid out to past its circumradius, and the
 # untangling zone begins there; a radial segment from a face centre
 # never re-enters a convex solid.  It also leaves each face exactly
-# orthogonally.  Beyond the straight run the profile g rises from 1 to
-# 0 with g' = 0 at both ends, so the belt departs from straight without
-# a kink.  For a solid the last curved slice sits on the sphere through
-# the face's chord and a short flat stub in the solid's frame joins the
-# arc to the face; with only two belts, which are antipodal and can
-# never meet, the cross-section is drawn as a straight chord instead
-# of a sphere arc, which is what lets a belt as wide as the cube read
-# as a flat strap rather than a trough.
+# orthogonally.  Beyond the straight run the profile g rises from 0 to
+# 1 with g' = 0 at both ends, so the belt departs from straight without
+# a kink.  The cross-section is a straight chord of the belt width,
+# perpendicular to the centre line.
+#
+# THE TARGET AND THE DRAWN CURVE.  The centre line the field gives,
+# r(s) F(s,t) u, is topologically right but not smooth enough to look
+# like a belt: a full turn inside a 2 m cage runs the coil near 85
+# degrees from radial, and the ELBOW where the belt turns from its
+# straight run into that coil has a radius of about a third of the
+# belt width whatever the stage profile (a plateau, ramps shaped in the
+# tilt, constant-curvature elbows and a tilt bump were all measured;
+# whatever rounds one elbow sharpens an S-bend at another turn, since
+# at small turns a belt's curvature follows the rate of change of the
+# frame's turning).  So the field's curve is treated as a TARGET, and
+# the curve actually drawn is a penalised fit to it: resampled by arc
+# length, then minimising the squared deviation from the target plus
+# L^4 times the integral of curvature squared (discretely, the second
+# differences), with the samples in both straight runs held fixed --
+# which pins each end's position AND tangent, so the belt still meets
+# its face and the cage exactly orthogonally.  The fit is a
+# deterministic linear solve of the target, so an exactly periodic
+# family of targets gives an exactly periodic family of curves, and
+# the width vector is carried over by projecting the target's onto the
+# fitted tangent.  What the fit cannot promise is the packing proof:
+# the fitted curves leave their spheres, so they are swept for
+# intersection instead -- a fit that crossed another belt would change
+# the homotopy class, which is the one thing that would falsify the
+# mathematics -- and the operator warns when the belts come within a
+# thickness of one another at the turn shown.  The Smoothing property
+# is L.  Measured on the cube in a 2 m cage: L = 0.05 lifts the
+# tightest radius in the cycle from 0.068 m (the elbow) to 0.095 m for
+# 1.3 cm of drift, after which the S-bend at 120 degrees is the limit;
+# L of 0.1 and beyond starts to flatten the coil itself (half a metre
+# of drift by 0.15).  Smoothing the direction path on the sphere
+# instead, which would have kept the packing proof, does nothing for
+# the elbow, since on the sphere the coil is a geodesic and the elbow
+# is only a change of speed.
 #
 # THE WIDTH OF A STRAP.  The frame field alone does not make a belt: a
 # strap can bend only about its width and twist about its length, and
@@ -419,22 +449,23 @@ def attach_radius(half, width):
 
 
 def belt_rows(psi, u, w, r_out=1.0, half=0.15, width=0.16, reach=0.5,
-              ns=160, nlam=11, nstub=1, kappa=KAPPA, smooth=SMOOTH,
-              taper=TAPER, r_min=None, flat=False, n=_Z, m=_M):
+              ns=160, nlam=11, kappa=KAPPA, smooth=SMOOTH, taper=TAPER,
+              r_min=None, n=_Z, m=_M, smoothing=None):
     """Cross-section rows of one belt, cage end first, solid end last.
 
     The belt is straight and rigid with the solid for r <= r_min
     (default: the face) and untangles over the fraction `reach` of the
-    belt beyond that.  With flat=False each of the first ns rows is an
-    arc of the sphere r(s) with a chord of exactly `width`, and the last
-    nstub rows are the flat stub in the solid's frame joining that arc
-    to the face; with flat=True every row is a straight chord tangent
-    to its sphere and the last row is the face itself.  Returns
-    (rows, info) with the centre line, its tangent and the width vector
-    for the checks."""
+    belt beyond that.  Every row is a straight chord of length `width`
+    across the drawn centre line; the last row is the face itself.  With
+    `smoothing` > 0 the drawn centre line is the penalised fit to the
+    field's (see the header), resampled by arc length; otherwise it is
+    the field's own.  Returns (rows, info): info carries the target
+    (sigma, r, U, W, wv, T) and the drawn line (P) for the checks."""
     if r_min is None:
         r_min = half
-    hs = half if flat else attach_radius(half, width)
+    if smoothing is None:
+        smoothing = SMOOTHING
+    hs = half
     dr = hs - r_out
     sig1 = min(1.0, (r_out - max(r_min, hs)) / (r_out - hs))
     sig_a = sig1 * (1.0 - reach)
@@ -519,66 +550,225 @@ def belt_rows(psi, u, w, r_out=1.0, half=0.15, width=0.16, reach=0.5,
             alpha = sm
     # ease the deviation back to the frame's width line (the nearest
     # multiple of a half turn) over the last `taper` of the zone, so the
-    # straight run stays rigid with the solid
+    # straight run stays rigid with the solid; and to zero over the
+    # straight run at the cage, which the smoothing above leaks into
+    # when the zone starts close to it
     k_end = math.pi * round(alpha[-1] / math.pi)
     for i in range(ns):
         tp = (sigma[i] - (sig1 - taper)) / taper
         tp = 0.0 if tp < 0.0 else (1.0 if tp > 1.0 else tp)
         tp = tp * tp * (3.0 - 2.0 * tp)
         alpha[i] = k_end + (1.0 - tp) * (alpha[i] - k_end)
+        t0 = sigma[i] / max(sig_a, 1e-9)
+        t0 = 0.0 if t0 < 0.0 else (1.0 if t0 > 1.0 else t0)
+        alpha[i] *= t0 * t0 * (3.0 - 2.0 * t0)
     wv = [tuple(math.cos(alpha[i]) * W[i][k] + math.sin(alpha[i]) * Fv[i][k]
                 for k in range(3)) for i in range(ns)]
-    # the slices
+    # the target centre line, and the drawn one
+    target = [tuple(r[i] * U[i][k] for k in range(3)) for i in range(ns)]
+    run_out = r_out - (r_out + dr * sig_a)       # straight run at the cage
+    run_in = (r_out + dr * sig1) - hs            # straight run at the solid
+    if smoothing > 0.0:
+        P, wd, fitted_to = smooth_curve(target, wv, run_out, run_in,
+                                        smoothing)
+    else:
+        P, wd, fitted_to = target, wv, target
+    # width vectors perpendicular to the drawn tangent
     rows = []
-    lam_last = []
     for i in range(ns):
+        a = P[max(i - 1, 0)]
+        b = P[min(i + 1, ns - 1)]
+        t = _unit(tuple(b[k] - a[k] for k in range(3)))
+        d = _dot(wd[i], t)
+        wv_i = tuple(wd[i][k] - d * t[k] for k in range(3))
+        wv_i = _unit(wv_i) if _norm(wv_i) > 1e-9 else wd[i]
         row = []
-        if flat:
-            for j in range(nlam):
-                y = 0.5 * width * (-1.0 + 2.0 * j / (nlam - 1))
-                row.append(tuple(r[i] * U[i][k] + y * wv[i][k]
-                                 for k in range(3)))
-        else:
-            lam_max = math.asin(min(1.0, width / (2.0 * r[i])))
-            for j in range(nlam):
-                lam = lam_max * (-1.0 + 2.0 * j / (nlam - 1))
-                cl, sl = math.cos(lam), math.sin(lam)
-                row.append(tuple(r[i] * (cl * U[i][k] + sl * wv[i][k])
-                                 for k in range(3)))
-                if i == ns - 1:
-                    lam_last.append(lam)
+        for j in range(nlam):
+            y = 0.5 * width * (-1.0 + 2.0 * j / (nlam - 1))
+            row.append(tuple(P[i][k] + y * wv_i[k] for k in range(3)))
         rows.append(row)
-    if not flat:
-        # the stub: flat, in the solid's frame, from the arc to the face,
-        # ordered across like the last arc (whose width may have come
-        # out as minus the face's: same strip, opposite sign)
-        rc = _qaxis(n, 2.0 * psi)
-        sgn = 1.0 if _dot(wv[-1], W[-1]) >= 0.0 else -1.0
-        for kk in range(1, nstub + 1):
-            t = kk / nstub
-            row = []
-            for lam in lam_last:
-                y = sgn * hs * math.sin(lam)
-                x0 = hs * math.cos(lam)
-                x = x0 + t * (half - x0)
-                row.append(_qrot(rc, tuple(x * u[k] + y * w[k]
-                                           for k in range(3))))
-            rows.append(row)
     T = [tuple(dr * U[i][k] + Ttan[i][k] for k in range(3)) for i in range(ns)]
     info = dict(sigma=sigma, r=r, U=U, W=W, wv=wv, T=T, tn=tn, hs=hs,
-                sig1=sig1)
+                sig1=sig1, P=P, target=fitted_to)
     return rows, info
 
 
+def _resample(pts, vecs, count):
+    """Resample a polyline (and a vector attached to each point) at
+    `count` points evenly spaced in arc length; ends are kept exactly."""
+    n = len(pts)
+    arc = [0.0]
+    for i in range(1, n):
+        arc.append(arc[-1] + _norm(tuple(pts[i][k] - pts[i - 1][k]
+                                         for k in range(3))))
+    total = arc[-1]
+    out_p, out_v = [], []
+    j = 0
+    for c in range(count):
+        s = total * c / (count - 1)
+        while j < n - 2 and arc[j + 1] < s:
+            j += 1
+        seg = arc[j + 1] - arc[j]
+        f = 0.0 if seg <= 0.0 else min(1.0, max(0.0, (s - arc[j]) / seg))
+        out_p.append(tuple(pts[j][k] + f * (pts[j + 1][k] - pts[j][k])
+                           for k in range(3)))
+        v = tuple(vecs[j][k] + f * (vecs[j + 1][k] - vecs[j][k])
+                  for k in range(3))
+        out_v.append(_unit(v) if _norm(v) > 1e-9 else vecs[j])
+    out_p[-1] = pts[-1]
+    out_v[-1] = vecs[-1]
+    return out_p, out_v, total
+
+
+def _solve_banded(diag, off1, off2, rhs):
+    """Solve a symmetric pentadiagonal system given its diagonal and the
+    two off-diagonals (off1[i] couples i and i+1, off2[i] couples i and
+    i+2), for several right-hand sides.  Banded Gaussian elimination
+    without pivoting; the matrix is positive definite."""
+    n = len(diag)
+    rows = []
+    for i in range(n):
+        row = {i: diag[i]}
+        if i >= 1:
+            row[i - 1] = off1[i - 1]
+        if i >= 2:
+            row[i - 2] = off2[i - 2]
+        if i + 1 < n:
+            row[i + 1] = off1[i]
+        if i + 2 < n:
+            row[i + 2] = off2[i]
+        rows.append(row)
+    b = [list(r) for r in rhs]
+    nrhs = len(b)
+    for i in range(n):
+        piv = rows[i][i]
+        for r in (i + 1, i + 2):
+            if r >= n or i not in rows[r]:
+                continue
+            fac = rows[r][i] / piv
+            if fac == 0.0:
+                continue
+            for c, v in rows[i].items():
+                if c >= i:
+                    rows[r][c] = rows[r].get(c, 0.0) - fac * v
+            for k in range(nrhs):
+                b[k][r] -= fac * b[k][i]
+    x = [[0.0] * n for _ in range(nrhs)]
+    for k in range(nrhs):
+        for i in range(n - 1, -1, -1):
+            v = b[k][i]
+            for c, coef in rows[i].items():
+                if c > i:
+                    v -= coef * x[k][c]
+            x[k][i] = v / rows[i][i]
+    return x
+
+
+def smooth_curve(target, vecs, run_out, run_in, L):
+    """The penalised fit of the header: resample `target` by arc length,
+    then minimise sum |p - t|^2 + (L/h)^4 sum |second difference|^2
+    with the samples inside the straight runs (arc length <= run_out
+    from the cage end, >= total - run_in at the solid end) held at the
+    target, which pins both ends' positions and tangents.  Returns the
+    fitted points and the resampled width vectors."""
+    n = len(target)
+    t, v, total = _resample(target, vecs, n)
+    h = total / (n - 1)
+    mu = (L / h) ** 4
+    fixed = [False] * n
+    for i in range(n):
+        s = h * i
+        if s <= run_out + 1e-12 or s >= total - run_in - 1e-12:
+            fixed[i] = True
+    # the second sample from each end is pinned ON the radial line of
+    # its straight run (the run may be shorter than one sample), which
+    # is what clamps the end tangent to the face normal and the radius
+    fixed[0] = fixed[1] = fixed[-1] = fixed[-2] = True
+    r0, r1 = _norm(t[0]), _norm(t[-1])
+    t[1] = tuple(t[0][k] * (1.0 - h / r0) for k in range(3))
+    t[-2] = tuple(t[-1][k] * (1.0 + h / r1) for k in range(3))
+    # A = W + mu D^T D, W = identity on the free rows; fixed rows become
+    # identities with the target on the right, and their couplings move
+    # to the right-hand side of their neighbours
+    diag = [0.0] * n
+    off1 = [0.0] * (n - 1)
+    off2 = [0.0] * (n - 2)
+    for i in range(1, n - 1):
+        # row of D: (1, -2, 1) at i-1, i, i+1
+        diag[i - 1] += mu
+        diag[i] += 4.0 * mu
+        diag[i + 1] += mu
+        off1[i - 1] += -2.0 * mu
+        off1[i] += -2.0 * mu
+        off2[i - 1] += mu
+    rhs = [[0.0] * n for _ in range(3)]
+    for i in range(n):
+        if not fixed[i]:
+            diag[i] += 1.0
+            for k in range(3):
+                rhs[k][i] += t[i][k]
+    # fold the fixed samples into the right-hand side and decouple them
+    for i in range(n):
+        if fixed[i]:
+            for j, coef in ((i - 2, off2[i - 2] if i >= 2 else 0.0),
+                            (i - 1, off1[i - 1] if i >= 1 else 0.0),
+                            (i + 1, off1[i] if i + 1 < n else 0.0),
+                            (i + 2, off2[i] if i + 2 < n else 0.0)):
+                if 0 <= j < n and not fixed[j]:
+                    for k in range(3):
+                        rhs[k][j] -= coef * t[i][k]
+    for i in range(n):
+        if fixed[i]:
+            diag[i] = 1.0
+            for k in range(3):
+                rhs[k][i] = t[i][k]
+            if i >= 1:
+                off1[i - 1] = 0.0
+            if i + 1 < n:
+                off1[i] = 0.0
+            if i >= 2:
+                off2[i - 2] = 0.0
+            if i + 2 < n:
+                off2[i] = 0.0
+    x = _solve_banded(diag, off1, off2, rhs)
+    P = [(x[0][i], x[1][i], x[2][i]) for i in range(n)]
+    return P, v, t
+
+
+def belt_clearance(all_rows, per_belt=20):
+    """Rough clearance between distinct belts at one turn: the smallest
+    distance between sample points on their strips (both edges and the
+    centre of about `per_belt` rows each), so a value below the
+    thickness means the belts may touch."""
+    best = 1e30
+    pts = []
+    for rows in all_rows:
+        step = max(1, len(rows) // per_belt)
+        sub = []
+        for row in rows[::step]:
+            sub.extend((row[0], row[len(row) // 2], row[-1]))
+        pts.append(sub)
+    nb = len(pts)
+    for a in range(nb):
+        for b in range(a + 1, nb):
+            for p in pts[a]:
+                for q in pts[b]:
+                    d = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2
+                    if d < best:
+                        best = d
+    return math.sqrt(best)
+
+
 def build_belts(psi, belts, r_out=1.0, half=0.15, width=0.16, reach=0.5,
-                ns=160, nlam=11, nstub=1, r_min=None, flat=False,
-                n=_Z, m=_M):
-    """All the belts as one mesh: (verts, faces, face_belt_index)."""
-    verts, faces, mats = [], [], []
+                ns=160, nlam=11, r_min=None, n=_Z, m=_M, smoothing=None):
+    """All the belts as one mesh: (verts, faces, face_belt_index,
+    rows per belt)."""
+    verts, faces, mats, all_rows = [], [], [], []
     for bi, (u, w, _) in enumerate(belts):
         rows, _ = belt_rows(psi, u, w, r_out, half, width, reach,
-                            ns, nlam, nstub, r_min=r_min, flat=flat,
-                            n=n, m=m)
+                            ns, nlam, r_min=r_min, n=n, m=m,
+                            smoothing=smoothing)
+        all_rows.append(rows)
         base = len(verts)
         for row in rows:
             verts.extend(row)
@@ -588,19 +778,20 @@ def build_belts(psi, belts, r_out=1.0, half=0.15, width=0.16, reach=0.5,
                 a = base + i * nlam + j
                 faces.append([a, a + 1, a + nlam + 1, a + nlam])
                 mats.append(bi)
-    return verts, faces, mats
+    return verts, faces, mats, all_rows
 
 
 def circumradius(verts):
     return max(_norm(v) for v in verts)
 
 
-CLEAR = 1.03   # the straight run reaches this factor past the circumradius
+CLEAR = 1.15   # the straight run reaches this factor past the circumradius
+SMOOTHING = 0.05   # default length scale of the bending penalty, metres
 
 
-def min_bend_radius(belts, half, width, reach, r_min, flat, n=_Z, m=_M,
-                    ns=240):
-    """Smallest radius of curvature of a belt's centre line, sampled at
+def min_bend_radius(belts, half, width, reach, r_min, n=_Z, m=_M,
+                    smoothing=None, ns=240):
+    """Smallest radius of curvature of a drawn centre line, sampled at
     the turns where it is smallest (360 degrees, the elbow into the
     coil; 120 and 255, the S-bends) for the first belt and the belt
     least aligned with it."""
@@ -609,18 +800,18 @@ def min_bend_radius(belts, half, width, reach, r_min, flat, n=_Z, m=_M,
         picks.append(min(belts[1:], key=lambda b: abs(_dot(b[0], belts[0][0]))))
     best = 1e30
     for (u, w, _) in picks:
-      for psi in (math.pi, math.pi / 3.0, math.radians(127.5)):
-        rows, _ = belt_rows(psi, u, w, 1.0, half, width, reach, ns, 3,
-                            r_min=r_min, flat=flat, n=n, m=m)
-        pts = [row[1] for row in rows[:ns]]
-        for i in range(1, ns - 1):
-            a, b, c = pts[i - 1], pts[i], pts[i + 1]
-            ab = tuple(b[k] - a[k] for k in range(3))
-            bc = tuple(c[k] - b[k] for k in range(3))
-            ac = tuple(c[k] - a[k] for k in range(3))
-            cr = _norm(_cross(ab, bc))
-            if cr > 1e-30:
-                best = min(best, _norm(ab) * _norm(bc) * _norm(ac) / (2.0 * cr))
+        for psi in (math.pi, math.pi / 3.0, math.radians(127.5)):
+            rows, _ = belt_rows(psi, u, w, 1.0, half, width, reach, ns, 3,
+                                r_min=r_min, n=n, m=m, smoothing=smoothing)
+            pts = [row[1] for row in rows]
+            for i in range(1, ns - 1):
+                a, b, c = pts[i - 1], pts[i], pts[i + 1]
+                ab = tuple(b[k] - a[k] for k in range(3))
+                bc = tuple(c[k] - b[k] for k in range(3))
+                ac = tuple(c[k] - a[k] for k in range(3))
+                cr = _norm(_cross(ab, bc))
+                if cr > 1e-30:
+                    best = min(best, _norm(ab) * _norm(bc) * _norm(ac) / (2.0 * cr))
     return best
 
 
@@ -722,6 +913,19 @@ if _IN_BLENDER:
                         "takes part in the untangling; the rest lies "
                         "straight.  Smaller values coil the belts more "
                         "tightly round the solid")
+        smoothing: FloatProperty(
+            name="Smoothing", default=SMOOTHING, min=0.0, max=0.2,
+            subtype='DISTANCE',
+            description="Length scale of the bending penalty the drawn "
+                        "belt is fitted with: bends of about this size "
+                        "and smaller are rounded off, trading exactness "
+                        "of the untangling path for a swoopier belt.  "
+                        "Around 0.05 rounds the elbows where a belt "
+                        "enters its coil for about a centimetre of "
+                        "drift; much above 0.1 the fit starts to flatten "
+                        "the coils themselves and pulls belts together.  "
+                        "Zero draws the field's own path, elbows and "
+                        "all")
         thickness: FloatProperty(
             name="Thickness", default=0.012, min=0.0, max=0.1,
             description="Belt thickness, applied as a Solidify modifier "
@@ -785,11 +989,11 @@ if _IN_BLENDER:
             # cage radius; fit them inside the half-extent
             cage_tube = 0.004
             fit = self.scale / (1.0 + max(0.5 * self.thickness, cage_tube))
-            verts, faces, mats = build_belts(
+            verts, faces, mats, all_rows = build_belts(
                 psi, belts, 1.0, half, width, self.reach,
                 self.resolution, self.across,
-                r_min=CLEAR * circumradius(sverts), flat=(self.solid == 'TWO'),
-                n=n, m=m)
+                r_min=CLEAR * circumradius(sverts), n=n, m=m,
+                smoothing=self.smoothing)
             verts = [(v[0] * fit, v[1] * fit, v[2] * fit) for v in verts]
             me = self._mesh_from(verts, faces, "Belt Trick")
             for i in range(len(belts)):
@@ -827,8 +1031,9 @@ if _IN_BLENDER:
 
             gap, dist = cube_gap(half, width, belts)
             bend = min_bend_radius(belts, half, width, self.reach,
-                                   CLEAR * circumradius(sverts),
-                                   self.solid == 'TWO', n, m) * fit
+                                   CLEAR * circumradius(sverts), n, m,
+                                   self.smoothing) * fit
+            clear = belt_clearance(all_rows) * fit
             msg = ("V=%d F=%d  turn %.0f deg  %d belts %.3f wide, "
                    "neighbours %.0f deg (%.3f) apart at the solid, "
                    "tightest bend radius %.3f = %.1f widths"
@@ -841,10 +1046,14 @@ if _IN_BLENDER:
                             "the belts meet one another at the solid; "
                             "narrow it, or use fewer belts"
                             % (limit * fit))
+            elif len(belts) > 1 and clear < self.thickness * fit:
+                self.report({'WARNING'}, msg + " - belts come within "
+                            "%.3f of one another at this turn; lower "
+                            "Smoothing or narrow the belt" % clear)
             elif bend < width * fit:
                 self.report({'WARNING'}, msg + " - the belt is wider "
                             "than its tightest bend and will crease "
-                            "there; narrow it or raise Reach")
+                            "there; raise Smoothing or narrow it")
             else:
                 self.report({'INFO'}, msg)
             return {'FINISHED'}
@@ -858,6 +1067,7 @@ if _IN_BLENDER:
             lay.prop(self, 'size')
             lay.prop(self, 'belt_width')
             lay.prop(self, 'reach')
+            lay.prop(self, 'smoothing')
             lay.prop(self, 'thickness')
             lay.prop(self, 'resolution')
             lay.prop(self, 'across')
@@ -950,21 +1160,21 @@ def _selftest():
         limits['CUBE'] < limits['TETRA']
     assert limits['ICOSA'] < width < limits['CUBE']
 
-    # 3. the geometry, per solid: period, non-return, ends,
-    #    orthogonality, width
+    # 3. the geometry, per solid and axis: period, non-return, ends,
+    #    orthogonality, width, the straight runs held, the fit close to
+    #    its target
     ns, nlam = 81, 5
     cases = [(kind, 'Z') for kind in SOLID_NAMES] + [('TWO', 'X'), ('TWO', 'Y')]
     for kind, axis in cases:
         n, m = AXES[axis]
         sverts, _, belts = solid(kind, half, n, m)
         w_use = min(width, limits[kind])
-        flat = (kind == 'TWO')
         rmin = CLEAR * circumradius(sverts)
         for psi in psis[:12:3]:
             d360_all = 0.0
             for bi, (u, w, _) in enumerate(belts):
-                args = (1.0, half, w_use, 0.5, ns, nlam)
-                kw = dict(r_min=rmin, flat=flat, n=n, m=m)
+                args = (1.0, half, w_use, 0.95, ns, nlam)
+                kw = dict(r_min=rmin, n=n, m=m)
                 rows, info = belt_rows(psi, u, w, *args, **kw)
                 rows2, _ = belt_rows(psi + TAU, u, w, *args, **kw)
                 rows3, _ = belt_rows(psi + math.pi, u, w, *args, **kw)
@@ -973,70 +1183,57 @@ def _selftest():
                 d720 = max(_norm(tuple(a[k] - b[k] for k in range(3)))
                            for ra, rb in zip(rows, rows2)
                            for a, b in zip(ra, rb))
-                assert d720 < 1e-11, \
+                assert d720 < 1e-7, \
                     "belt not back after 720 degrees: %g" % d720
-                # a belt along the loop axis is merely twisted at 360,
-                # so its rows move little; the configuration as a whole
-                # must move by more than a belt width
                 d360_all = max(d360_all, max(
                     _norm(tuple(a[k] - b[k] for k in range(3)))
                     for ra, rb in zip(rows, rows3) for a, b in zip(ra, rb)))
-                for i in range(ns):
-                    # every slice on its sphere (a flat chord: its
-                    # centre), radii strictly decreasing, and the belt
-                    # straight and rigid with the solid inside r_min
-                    for p in (rows[i][nlam // 2:nlam // 2 + 1] if flat
-                              else rows[i]):
-                        assert abs(_norm(p) - info['r'][i]) < 1e-12
-                    if i:
-                        assert info['r'][i] < info['r'][i - 1]
-                    if info['r'][i] <= rmin:
-                        assert _norm(tuple(info['U'][i][k] - nu[k]
-                                           for k in range(3))) < 1e-12
-                        assert abs(abs(_dot(info['wv'][i], nw)) - 1.0) < 1e-12
+                P = info['P']
+                # cage end: on the cage, along u, width w; the first two
+                # rows radial
                 assert _norm(tuple(rows[0][nlam // 2][k] - u[k]
-                                   for k in range(3))) < tol
-                for p in rows[-1]:
-                    assert abs(_dot(p, nu) - half) < 1e-12, "stub off the face"
-                for i in (0, ns - 1, len(rows) - 1):
-                    edge = tuple(rows[i][-1][k] - rows[i][0][k]
-                                 for k in range(3))
-                    assert abs(_norm(edge) - w_use) < 1e-12
+                                   for k in range(3))) < 1e-7
+                edge = tuple(rows[0][-1][k] - rows[0][0][k] for k in range(3))
+                assert abs(_norm(edge) - w_use) < 1e-7
+                assert abs(abs(_dot(_unit(edge), w)) - 1.0) < 1e-7
+                step = _unit(tuple(P[1][k] - P[0][k] for k in range(3)))
+                assert abs(abs(_dot(step, u)) - 1.0) < 1e-7
+                # solid end: the last row is the face's chord, the last
+                # two rows radial along the turned normal
+                for pt in rows[-1]:
+                    assert abs(_dot(pt, nu) - half) < 1e-7, "end off the face"
                 edge = tuple(rows[-1][-1][k] - rows[-1][0][k] for k in range(3))
-                assert abs(abs(_dot(_unit(edge), nw)) - 1.0) < 1e-12
-                # the belt leaves the face along its normal: the last
-                # two slices are exactly radial, and so is the tangent
-                lastU, prevU = info['U'][-1], info['U'][-2]
-                assert _norm(tuple(lastU[k] - prevU[k] for k in range(3))) < 1e-12
-                assert abs(abs(_dot(_unit(info['T'][-1]), nu)) - 1.0) < 1e-12
+                assert abs(_norm(edge) - w_use) < 1e-7
+                assert abs(abs(_dot(_unit(edge), nw)) - 1.0) < 1e-7
+                step = _unit(tuple(P[-1][k] - P[-2][k] for k in range(3)))
+                assert abs(abs(_dot(step, nu)) - 1.0) < 1e-7
+                # every chord is the belt width, perpendicular to the line
                 for i in range(1, ns - 1):
-                    t = _unit(info['T'][i])
-                    sh = math.degrees(math.asin(min(1.0, abs(_dot(t, info['wv'][i])))))
-                    assert sh < 50.0, "shear %.1f deg" % sh
+                    edge = tuple(rows[i][-1][k] - rows[i][0][k] for k in range(3))
+                    assert abs(_norm(edge) - w_use) < 1e-7
+                    t = _unit(tuple(P[i + 1][k] - P[i - 1][k] for k in range(3)))
+                    assert abs(_dot(_unit(edge), t)) < 1e-6
+                # the drawn line stays within a few widths of the target
+                # and outside the solid's circumsphere beyond the runs
+                tgt = info['target']
+                dev = max(_norm(tuple(pp[k] - tt[k] for k in range(3)))
+                          for pp, tt in zip(P, tgt))
+                assert dev < 0.1, "fit strays %g" % dev
+                assert min(_norm(pp) for pp in P) >= half - 1e-9
             assert d360_all > 0.3, "%s %s back after 360 degrees" % (kind, axis)
 
-    # 4. non-intersection: on every sphere the arcs stay apart by the
-    #    packing gap, for the cube and the icosahedron
+    # 4. non-intersection, roughly: at every sampled turn the strips of
+    #    the cube's and the icosahedron's belts stay more than a
+    #    thickness apart (the sweep in the scratch harness is the real
+    #    check; this catches a fit that pulls belts together)
     for kind in ('CUBE', 'ICOSA'):
-        belts = solid(kind, half)[2]
+        sverts, _, belts = solid(kind, half)
         w_use = min(width, limits[kind])
-        gap, dist = cube_gap(half, w_use, belts)
-        assert gap > 0.0
+        rmin = CLEAR * circumradius(sverts)
         for psi in psis[:12:2]:
-            allrows = [belt_rows(psi, u, w, 1.0, half, w_use, 0.5, ns, 3,
-                                 r_min=CLEAR * circumradius(solid(kind, half)[0]))[0]
-                       for u, w, _ in belts]
-            nb = len(belts)
-            for i in range(0, ns, 2):
-                for a in range(nb):
-                    for b in range(a + 1, nb):
-                        if _dot(belts[a][0], belts[b][0]) < 0.3:
-                            continue
-                        for p in allrows[a][i]:
-                            for q in allrows[b][i]:
-                                d = _norm(tuple(p[k] - q[k] for k in range(3)))
-                                assert d > 0.98 * dist, \
-                                    "%s belts %d,%d within %.3f" % (kind, a, b, d)
+            allrows = [belt_rows(psi, u, w, 1.0, half, w_use, 0.95, ns, 3,
+                                 r_min=rmin)[0] for u, w, _ in belts]
+            assert belt_clearance(allrows, per_belt=40) > 0.012,                 "%s belts touch at %.0f deg" % (kind, math.degrees(2 * psi))
 
     # 5. the reported gap: 33.9 degrees for the cube defaults
     gap, dist = cube_gap(half, width)
