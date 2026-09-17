@@ -223,7 +223,6 @@ try:
 except ImportError:
     _IN_BLENDER = False
 
-from .spinor_generator import _qmul, _qrot, _qaxis, build_cage
 
 TAU = 2.0 * math.pi
 FULL_TURN = 2.0 * TAU
@@ -244,6 +243,161 @@ _Z = (0.0, 0.0, 1.0)
 _M = (0.0, 1.0, 0.0)      # the body axis every belt bends about at its face
 _PHI = 0.5 * (1.0 + math.sqrt(5.0))
 
+
+
+# ---------------------------------------------------------------
+# Quaternion helpers and the wireframe cage.  These were shared
+# with the earlier spinor module; they live here now that it is
+# gone, since this is the only thing that used them.
+# ---------------------------------------------------------------
+
+
+def _qmul(a, b):
+    aw, ax, ay, az = a
+    bw, bx, by, bz = b
+    return (aw * bw - ax * bx - ay * by - az * bz,
+            aw * bx + ax * bw + ay * bz - az * by,
+            aw * by + ay * bw + az * bx - ax * bz,
+            aw * bz + az * bw + ax * by - ay * bx)
+
+
+def _qrot(q, v):
+    """Rotate the 3-vector v by the unit quaternion q (v -> q v qbar)."""
+    w, x, y, z = q
+    vx, vy, vz = v
+    tx = 2.0 * (y * vz - z * vy)
+    ty = 2.0 * (z * vx - x * vz)
+    tz = 2.0 * (x * vy - y * vx)
+    return (vx + w * tx + (y * tz - z * ty),
+            vy + w * ty + (z * tx - x * tz),
+            vz + w * tz + (x * ty - y * tx))
+
+
+def _qaxis(axis, angle):
+    """Unit quaternion for a rotation of `angle` about a unit axis."""
+    h = 0.5 * angle
+    sh = math.sin(h)
+    return (math.cos(h), sh * axis[0], sh * axis[1], sh * axis[2])
+
+
+def _tangents(path, closed):
+    n = len(path)
+    out = []
+    for i in range(n):
+        if closed:
+            a, b = path[(i - 1) % n], path[(i + 1) % n]
+        else:
+            a, b = path[max(i - 1, 0)], path[min(i + 1, n - 1)]
+        d = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+        m = math.sqrt(sum(c * c for c in d))
+        out.append((0.0, 0.0, 1.0) if m < 1e-12
+                   else (d[0] / m, d[1] / m, d[2] / m))
+    return out
+
+
+def _tube(path, radius, sides=10, closed=False, cap=True):
+    """Sweep a circular cross-section along a polyline using a
+    parallel-transported frame (Hanson & Ma, TR-425): at each step
+    rotate the reference normal by the turn angle about the common
+    perpendicular of consecutive tangents, so the tube never spins
+    where the path merely straightens.  A closed path gets TR-425's
+    spin correction, distributing the holonomy the transport picks up
+    around the loop so the last ring meets the first."""
+    n = len(path)
+    if n < 2:
+        return [], []
+    tang = _tangents(path, closed)
+
+    t0 = tang[0]
+    seed = (0.0, 0.0, 1.0) if abs(t0[2]) < 0.9 else (1.0, 0.0, 0.0)
+    nx = (t0[1] * seed[2] - t0[2] * seed[1],
+          t0[2] * seed[0] - t0[0] * seed[2],
+          t0[0] * seed[1] - t0[1] * seed[0])
+    m = math.sqrt(sum(c * c for c in nx))
+    start = (1.0, 0.0, 0.0) if m < 1e-12 else tuple(c / m for c in nx)
+
+    normals = [start]
+    normal = start
+    for i in range(1, n):
+        a, b = tang[i - 1], tang[i]
+        bx = (a[1] * b[2] - a[2] * b[1],
+              a[2] * b[0] - a[0] * b[2],
+              a[0] * b[1] - a[1] * b[0])
+        bm = math.sqrt(sum(c * c for c in bx))
+        if bm > 1e-12:
+            axis = tuple(c / bm for c in bx)
+            dot = max(-1.0, min(1.0, sum(a[k] * b[k] for k in range(3))))
+            normal = _qrot(_qaxis(axis, math.acos(dot)), normal)
+        normals.append(normal)
+
+    if closed:
+        # TR-425 spin correction: measure the angle the transported
+        # normal has drifted after one circuit and unwind it linearly,
+        # so the last ring lines up with the first.
+        ref = normals[0]
+        t_end = tang[0]
+        cross = (t_end[1] * ref[2] - t_end[2] * ref[1],
+                 t_end[2] * ref[0] - t_end[0] * ref[2],
+                 t_end[0] * ref[1] - t_end[1] * ref[0])
+        last = normals[-1]
+        alpha = math.atan2(sum(last[k] * cross[k] for k in range(3)),
+                           sum(last[k] * ref[k] for k in range(3)))
+        normals = [_qrot(_qaxis(tang[i], -alpha * i / n), normals[i])
+                   for i in range(n)]
+
+    verts, faces = [], []
+    for i in range(n):
+        t, nrm, c = tang[i], normals[i], path[i]
+        bi = (t[1] * nrm[2] - t[2] * nrm[1],
+              t[2] * nrm[0] - t[0] * nrm[2],
+              t[0] * nrm[1] - t[1] * nrm[0])
+        for k in range(sides):
+            a = TAU * k / sides
+            ca, sa = math.cos(a), math.sin(a)
+            verts.append((c[0] + radius * (ca * nrm[0] + sa * bi[0]),
+                          c[1] + radius * (ca * nrm[1] + sa * bi[1]),
+                          c[2] + radius * (ca * nrm[2] + sa * bi[2])))
+    span = n if closed else n - 1
+    for i in range(span):
+        nxt = ((i + 1) % n) * sides
+        for k in range(sides):
+            a = i * sides + k
+            b = i * sides + (k + 1) % sides
+            faces.append([a, b, nxt + (k + 1) % sides, nxt + k])
+    if cap and not closed:
+        faces.append(list(range(sides - 1, -1, -1)))
+        faces.append([(n - 1) * sides + k for k in range(sides)])
+    return verts, faces
+
+
+def _merge(target_v, target_f, verts, faces):
+    base = len(target_v)
+    target_v.extend(verts)
+    target_f.extend([[i + base for i in f] for f in faces])
+
+
+def build_cage(radius=4.35, rings=6, seg=96, tube=0.012, sides=6):
+    """The wireframe globe the belts are pinned to.
+
+    In the films the outer ends are fastened to a sphere of great
+    circles, and that cage is most of what makes the picture readable:
+    it shows at a glance that the far ends are not going anywhere and
+    that only the ball in the middle is turning."""
+    verts, faces = [], []
+    for i in range(rings):
+        a = math.pi * i / rings
+        ca, sa = math.cos(a), math.sin(a)
+        path = [(radius * math.cos(TAU * j / seg) * ca,
+                 radius * math.cos(TAU * j / seg) * sa,
+                 radius * math.sin(TAU * j / seg)) for j in range(seg)]
+        _merge(verts, faces, *_tube(path, tube, sides, closed=True))
+    for i in range(1, rings):
+        z = radius * math.cos(math.pi * i / rings)
+        r = math.sqrt(max(0.0, radius * radius - z * z))
+        path = [(r * math.cos(TAU * j / seg), r * math.sin(TAU * j / seg),
+                 z) for j in range(seg)]
+        _merge(verts, faces, *_tube(path, tube, sides, closed=True))
+    return verts, faces
 
 def _dot(a, b):
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]

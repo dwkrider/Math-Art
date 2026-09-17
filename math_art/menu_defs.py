@@ -307,7 +307,6 @@ ODDS = Menu(
         _e("mesh.platonic_twist_add", 'MOD_SCREW'),
         _e("mesh.twisted_torus_add", 'MESH_TORUS'),
         _e("mesh.stereographic_add", 'LIGHT_POINT'),
-        _e("mesh.spinor_add", 'FORCE_MAGNETIC'),
         _e("mesh.belt_trick_add", 'FORCE_VORTEX'),
         _e("mesh.orbifold_sphere_add", 'MOD_MIRROR'),
         _e("mesh.bubble_cluster_add", 'SPHERE'),
