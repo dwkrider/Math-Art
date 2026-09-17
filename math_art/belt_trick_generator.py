@@ -74,6 +74,23 @@
 # wider than that radius creases at the elbow, so the default width
 # is set at the radius.
 #
+# THE SNUB CUBE AND THE GEODESIC SPHERE.  Both are built from explicit
+# faces (the snub cube's found as the supporting planes of its 24
+# vertices, the geodesic's by subdividing the icosahedron), and each
+# belt then takes its own face's distance, since these faces are not
+# all equidistant.  The belt count is what limits them: the packing
+# bound falls as the normals crowd, and at the default size and
+# thickness the 38 belts of the snub cube come out 28 mm wide (a bend
+# ratio of 3.4), the 80 of the frequency-2 geodesic sphere 11 mm --
+# thinner than they are thick -- and the 180 of frequency 3 cannot fit
+# at all, so the frequency is capped at 2 and the operator warns when
+# the belts come out thinner than about two thicknesses; a larger
+# solid or a thinner belt gives the geodesic sphere room (at size 0.24
+# and thickness 0.006 its belts are 41 mm).  The snub cube is chiral:
+# the default enantiomorph is the one with the even permutations of
+# (1, 1/t, t) carrying an even number of minus signs, and Mirror gives
+# the other.
+#
 # ANY PLATONIC SOLID.  Nothing above used the cube except its face
 # normals, so the centre can be any of the five solids (or just two
 # opposite faces of the cube, the classic single belt held at both
@@ -272,24 +289,22 @@ _SOLID_DATA = {
               _signs(1, 1, 1) + _cyclic(_signs(0, 1.0 / _PHI, _PHI))),
 }
 _SIDES = {'TETRA': 3, 'CUBE': 4, 'OCTA': 3, 'DODECA': 5, 'ICOSA': 3}
-SOLID_NAMES = ['TWO', 'TETRA', 'CUBE', 'OCTA', 'DODECA', 'ICOSA']
+SOLID_NAMES = ['TWO', 'TETRA', 'CUBE', 'OCTA', 'DODECA', 'ICOSA', 'SNUB', 'GEO']
+_TRIBONACCI = 1.839286755214161   # t^3 = t^2 + t + 1
 
 
-def solid(kind, half=0.15, n=_Z, m=_M):
-    """The solid at the centre with inradius `half`: (verts, faces,
-    belts), belts a list of (face normal u, width direction w, face
-    inradius), for spin axis n and loop axis m.  'TWO' is the cube with
-    belts on its z faces only."""
+def _platonic(kind):
+    """(verts, faces) of a Platonic solid, faces as index lists ordered
+    anticlockwise seen from outside."""
     verts0, normals = _SOLID_DATA['CUBE' if kind == 'TWO' else kind]
     normals = [_unit(tuple(float(c) for c in n)) for n in normals]
-    inr = max(_dot(n, v) for n in normals for v in verts0)
-    verts = [tuple(half * c / inr for c in v) for v in verts0]
-    faces, belts = [], []
+    verts = [tuple(float(c) for c in v) for v in verts0]
+    faces = []
     for nf in normals:
         top = max(_dot(nf, v) for v in verts)
-        idx = [i for i, v in enumerate(verts)
-               if _dot(nf, v) > top - 1e-9 * half]
-        assert len(idx) == _SIDES['CUBE' if kind == 'TWO' else kind],             "face normal does not match the vertex set"
+        idx = [i for i, v in enumerate(verts) if _dot(nf, v) > top - 1e-9]
+        assert len(idx) == _SIDES['CUBE' if kind == 'TWO' else kind], \
+            "face normal does not match the vertex set"
         c = tuple(sum(verts[i][k] for i in idx) / len(idx) for k in range(3))
         e1 = _unit(tuple(verts[idx[0]][k] - c[k] for k in range(3)))
         e2 = _cross(nf, e1)
@@ -297,8 +312,147 @@ def solid(kind, half=0.15, n=_Z, m=_M):
             _dot(tuple(verts[i][k] - c[k] for k in range(3)), e2),
             _dot(tuple(verts[i][k] - c[k] for k in range(3)), e1)))
         faces.append(idx)
+    return verts, faces
+
+
+def _hull_faces(verts):
+    """Faces of a convex vertex set, found as the supporting planes of
+    vertex triples: every plane through three vertices with all the
+    others on one side is a face, and coplanar triples are merged.
+    Fine for a few dozen vertices."""
+    n = len(verts)
+    faces = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                a, b, c = verts[i], verts[j], verts[k]
+                nf = _cross(tuple(b[t] - a[t] for t in range(3)),
+                            tuple(c[t] - a[t] for t in range(3)))
+                ln = _norm(nf)
+                if ln < 1e-12:
+                    continue
+                nf = tuple(x / ln for x in nf)
+                d = _dot(nf, a)
+                if d < 0.0:
+                    nf = tuple(-x for x in nf)
+                    d = -d
+                if any(_dot(nf, v) > d + 1e-9 for v in verts):
+                    continue
+                key = tuple(round(x, 6) for x in nf)
+                faces.setdefault(key, set()).update((i, j, k))
+    out = []
+    for key, idx in faces.items():
+        nf = _unit(key)
+        idx = list(idx)
+        c = tuple(sum(verts[i][t] for i in idx) / len(idx) for t in range(3))
+        e1 = _unit(tuple(verts[idx[0]][t] - c[t] for t in range(3)))
+        e2 = _cross(nf, e1)
+        idx.sort(key=lambda i: math.atan2(
+            _dot(tuple(verts[i][t] - c[t] for t in range(3)), e2),
+            _dot(tuple(verts[i][t] - c[t] for t in range(3)), e1)))
+        out.append(idx)
+    return out
+
+
+def _snub_cube(mirror=False):
+    """The snub cube (38 faces: 6 squares, 32 triangles), vertices the
+    even permutations of (+-1, +-1/t, +-t) with an even number of minus
+    signs and the odd permutations with an odd number, t the tribonacci
+    constant; `mirror` gives the other enantiomorph (x -> -x)."""
+    t = _TRIBONACCI
+    base = (1.0, 1.0 / t, t)
+    perms = [((0, 1, 2), 0), ((1, 2, 0), 0), ((2, 0, 1), 0),
+             ((0, 2, 1), 1), ((2, 1, 0), 1), ((1, 0, 2), 1)]
+    verts = []
+    for perm, parity in perms:
+        for sx in (1, -1):
+            for sy in (1, -1):
+                for sz in (1, -1):
+                    minus = (sx < 0) + (sy < 0) + (sz < 0)
+                    if minus % 2 != parity:
+                        continue
+                    v = (sx * base[perm[0]], sy * base[perm[1]],
+                         sz * base[perm[2]])
+                    if mirror:
+                        v = (-v[0], v[1], v[2])
+                    verts.append(v)
+    faces = _hull_faces(verts)
+    if mirror:
+        faces = [list(reversed(f)) for f in faces]
+    return verts, faces
+
+
+def _geodesic(freq):
+    """Class I geodesic sphere of the icosahedron at frequency `freq`:
+    each face split into freq^2 triangles, vertices pushed to the
+    sphere.  Frequency 1 is the icosahedron itself."""
+    iv, ifaces = _platonic('ICOSA')
+    verts, index = [], {}
+
+    def vid(pt):
+        key = tuple(round(c, 9) for c in pt)
+        if key not in index:
+            index[key] = len(verts)
+            verts.append(pt)
+        return index[key]
+
+    faces = []
+    for fa in ifaces:
+        A, B, C = (iv[fa[0]], iv[fa[1]], iv[fa[2]])
+        grid = {}
+        for i in range(freq + 1):
+            for j in range(freq + 1 - i):
+                k = freq - i - j
+                pt = tuple((i * A[t] + j * B[t] + k * C[t]) / freq
+                           for t in range(3))
+                grid[(i, j)] = vid(_unit(pt))
+        for i in range(freq):
+            for j in range(freq - i):
+                faces.append([grid[(i, j)], grid[(i + 1, j)], grid[(i, j + 1)]])
+                if j < freq - i - 1:
+                    faces.append([grid[(i + 1, j)], grid[(i + 1, j + 1)],
+                                  grid[(i, j + 1)]])
+    # orient every face outward
+    out = []
+    for f in faces:
+        a, b, c = verts[f[0]], verts[f[1]], verts[f[2]]
+        nf = _cross(tuple(b[t] - a[t] for t in range(3)),
+                    tuple(c[t] - a[t] for t in range(3)))
+        out.append(f if _dot(nf, a) > 0.0 else list(reversed(f)))
+    return verts, out
+
+
+def solid(kind, half=0.15, n=_Z, m=_M, mirror=False, freq=2):
+    """The solid at the centre with its nearest face at distance `half`:
+    (verts, faces, belts), belts a list of (face normal u, width
+    direction w, face inradius, face distance), for spin axis n and
+    loop axis m.  'TWO' is the cube with belts on its z faces only;
+    'SNUB' the snub cube (`mirror` picks the enantiomorph) and 'GEO'
+    the geodesic sphere at frequency `freq`."""
+    if kind == 'SNUB':
+        verts, faces = _snub_cube(mirror)
+    elif kind == 'GEO':
+        verts, faces = _geodesic(freq)
+    else:
+        verts, faces = _platonic(kind)
+    # scale so the nearest face plane is at `half`
+    dist = []
+    for f in faces:
+        a, b, c = verts[f[0]], verts[f[1]], verts[f[2]]
+        nf = _unit(_cross(tuple(b[t] - a[t] for t in range(3)),
+                          tuple(c[t] - a[t] for t in range(3))))
+        dist.append(_dot(nf, a))
+    sc = half / min(dist)
+    verts = [tuple(sc * c for c in v) for v in verts]
+    belts = []
+    for f in faces:
+        a, b, c = verts[f[0]], verts[f[1]], verts[f[2]]
+        nf = _unit(_cross(tuple(b[t] - a[t] for t in range(3)),
+                          tuple(c[t] - a[t] for t in range(3))))
         if kind == 'TWO' and abs(nf[2]) < 0.5:
             continue
+        cen = tuple(sum(verts[i][t] for i in f) / len(f) for t in range(3))
+        hf = _dot(nf, cen)
         # width: the bending axis m projected into the face; a face
         # normal along m only twists there, so take the spin axis instead
         wm = tuple(m[k] - _dot(m, nf) * nf[k] for k in range(3))
@@ -307,11 +461,11 @@ def solid(kind, half=0.15, n=_Z, m=_M):
         w = _unit(wm)
         # face inradius: distance from the centre to the nearest edge
         rf = min(_norm(_cross(
-            tuple(verts[idx[j]][k] - c[k] for k in range(3)),
-            _unit(tuple(verts[idx[(j + 1) % len(idx)]][k] - verts[idx[j]][k]
+            tuple(verts[f[j]][k] - cen[k] for k in range(3)),
+            _unit(tuple(verts[f[(j + 1) % len(f)]][k] - verts[f[j]][k]
                         for k in range(3)))))
-            for j in range(len(idx)))
-        belts.append((nf, w, rf))
+            for j in range(len(f)))
+        belts.append((nf, w, rf, hf))
     return verts, faces, belts
 
 
@@ -320,7 +474,7 @@ def arc_gap(belts, lam, samples=13):
     two belts on one sphere, each arc of half angle lam along its own
     width direction."""
     pts = []
-    for u, w, _ in belts:
+    for u, w, _, _ in belts:
         arc = []
         for j in range(samples):
             a = lam * (-1.0 + 2.0 * j / (samples - 1))
@@ -347,7 +501,7 @@ def width_limit(belts, half, thickness, margin=0.02):
     by max(margin, 2.5 thickness), and which fits its face.  Found by
     bisection on the width; returns (width, gap in radians at it)."""
     need = max(margin, 2.5 * thickness)
-    face = 2.0 * min(rf for _, _, rf in belts)
+    face = 2.0 * min(rf for _, _, rf, _ in belts)
     lo, hi = 0.0, face
     for _ in range(40):
         mid = 0.5 * (lo + hi)
@@ -764,8 +918,8 @@ def build_belts(psi, belts, r_out=1.0, half=0.15, width=0.16, reach=0.5,
     """All the belts as one mesh: (verts, faces, face_belt_index,
     rows per belt)."""
     verts, faces, mats, all_rows = [], [], [], []
-    for bi, (u, w, _) in enumerate(belts):
-        rows, _ = belt_rows(psi, u, w, r_out, half, width, reach,
+    for bi, (u, w, _, hf) in enumerate(belts):
+        rows, _ = belt_rows(psi, u, w, r_out, hf, width, reach,
                             ns, nlam, r_min=r_min, n=n, m=m,
                             smoothing=smoothing)
         all_rows.append(rows)
@@ -790,18 +944,15 @@ SMOOTHING = 0.05   # default length scale of the bending penalty, metres
 
 
 def min_bend_radius(belts, half, width, reach, r_min, n=_Z, m=_M,
-                    smoothing=None, ns=240):
-    """Smallest radius of curvature of a drawn centre line, sampled at
-    the turns where it is smallest (360 degrees, the elbow into the
-    coil; 120 and 255, the S-bends) for the first belt and the belt
-    least aligned with it."""
-    picks = [belts[0]]
-    if len(belts) > 2:
-        picks.append(min(belts[1:], key=lambda b: abs(_dot(b[0], belts[0][0]))))
+                    smoothing=None, ns=120):
+    """Smallest radius of curvature of a drawn centre line over every
+    belt, sampled at the turns where it is smallest (360 degrees, the
+    elbow into the coil; 120 and 525, the S-bends) -- an estimate,
+    within a few per cent of the full sweep."""
     best = 1e30
-    for (u, w, _) in picks:
-        for psi in (math.pi, math.pi / 3.0, math.radians(127.5)):
-            rows, _ = belt_rows(psi, u, w, 1.0, half, width, reach, ns, 3,
+    for (u, w, _, hf) in belts:
+        for psi in (math.pi, math.pi / 3.0, math.radians(262.5)):
+            rows, _ = belt_rows(psi, u, w, 1.0, hf, width, reach, ns, 3,
                                 r_min=r_min, n=n, m=m, smoothing=smoothing)
             pts = [row[1] for row in rows]
             for i in range(1, ns - 1):
@@ -872,8 +1023,26 @@ if _IN_BLENDER:
                    ('CUBE', "Cube", "Six belts, one per face"),
                    ('OCTA', "Octahedron", "Eight belts"),
                    ('DODECA', "Dodecahedron", "Twelve belts"),
-                   ('ICOSA', "Icosahedron", "Twenty belts")],
+                   ('ICOSA', "Icosahedron", "Twenty belts"),
+                   ('SNUB', "Snub Cube",
+                    "Thirty-eight belts, six on squares and thirty-two "
+                    "on triangles; chiral, see Mirror"),
+                   ('GEO', "Geodesic Sphere",
+                    "The icosahedron subdivided: twenty belts at "
+                    "frequency 1, eighty at frequency 2.  Eighty belts "
+                    "crowd the solid, so give them room with a larger "
+                    "Size or a thinner belt")],
             default='TWO')
+        frequency: IntProperty(
+            name="Frequency", default=2, min=1, max=2,
+            description="Subdivision frequency of the geodesic sphere: "
+                        "1 is the icosahedron, 2 has eighty faces.  "
+                        "Frequency 3 would need 180 belts, which cannot "
+                        "clear one another at any width, so it is not "
+                        "offered")
+        mirror: BoolProperty(
+            name="Mirror", default=False,
+            description="The other enantiomorph of the snub cube")
         spin_axis: EnumProperty(
             name="Spin Axis",
             description="The axis the solid turns about.  The two belts "
@@ -980,7 +1149,8 @@ if _IN_BLENDER:
             psi = 0.5 * self.turn
             half = 0.5 * self.size
             n, m = AXES[self.spin_axis]
-            sverts, sfaces, belts = solid(self.solid, half, n, m)
+            extra = dict(mirror=self.mirror, freq=self.frequency)
+            sverts, sfaces, belts = solid(self.solid, half, n, m, **extra)
             # Normalise on the CIRCUMSPHERE, not the inscribed sphere,
             # so that every solid sits the same way inside the cage.
             # The ratio of the two differs sharply between them: at an
@@ -993,7 +1163,7 @@ if _IN_BLENDER:
             cr = circumradius(sverts)
             if cr > 1e-9:
                 half *= half * math.sqrt(3.0) / cr
-                sverts, sfaces, belts = solid(self.solid, half, n, m)
+                sverts, sfaces, belts = solid(self.solid, half, n, m, **extra)
             # The width is the user's to set.  Past `limit` the belts
             # cannot all clear one another where they crowd together at
             # the solid, so a wider belt will pass through its
@@ -1095,6 +1265,11 @@ if _IN_BLENDER:
                 self.report({'WARNING'}, msg + " - the belt is wider "
                             "than its tightest bend and will crease "
                             "there; raise Smoothing or narrow it")
+            elif width < 2.0 * self.thickness:
+                self.report({'WARNING'}, msg + " - the belts are thinner "
+                            "than about two thicknesses, cords rather "
+                            "than belts; enlarge the solid, thin the "
+                            "belt, or use fewer faces")
             else:
                 self.report({'INFO'}, msg)
             return {'FINISHED'}
@@ -1103,6 +1278,10 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'solid')
+            if self.solid == 'GEO':
+                lay.prop(self, 'frequency')
+            if self.solid == 'SNUB':
+                lay.prop(self, 'mirror')
             lay.prop(self, 'spin_axis')
             lay.prop(self, 'turn')
             lay.prop(self, 'size')
@@ -1180,25 +1359,44 @@ def _selftest():
     #    face and along the bending axis's projection
     half, width = 0.15, 0.16
     counts = {'TWO': (8, 6, 2), 'TETRA': (4, 4, 4), 'CUBE': (8, 6, 6),
-              'OCTA': (6, 8, 8), 'DODECA': (20, 12, 12), 'ICOSA': (12, 20, 20)}
+              'OCTA': (6, 8, 8), 'DODECA': (20, 12, 12), 'ICOSA': (12, 20, 20),
+              'SNUB': (24, 38, 38), 'GEO': (42, 80, 80)}
     limits = {}
     for kind in SOLID_NAMES:
         verts, faces, belts = solid(kind, half)
         assert (len(verts), len(faces), len(belts)) == counts[kind], kind
-        for u, w, rf in belts:
+        for u, w, rf, hf in belts:
             assert abs(_norm(u) - 1.0) < tol and abs(_norm(w) - 1.0) < tol
             assert abs(_dot(u, w)) < tol
             mperp = tuple(_M[k] - _dot(_M, u) * u[k] for k in range(3))
             if _norm(mperp) > 1e-6:
                 assert abs(abs(_dot(_unit(mperp), w)) - 1.0) < 1e-9
             assert rf > 0.0
-        for n in [b[0] for b in belts]:
-            top = max(_dot(n, v) for v in verts)
-            assert abs(top - half) < 1e-12, "face not at the inradius"
+        for _, _, _, hf in belts:
+            assert hf > half - 1e-9, "a face nearer than the inradius"
+        assert min(hf for _, _, _, hf in belts) < half + 1e-9
+        # every face is a supporting plane and the surface is closed
+        edges = {}
+        for f in faces:
+            for j in range(len(f)):
+                e = tuple(sorted((f[j], f[(j + 1) % len(f)])))
+                edges[e] = edges.get(e, 0) + 1
+        assert all(c == 2 for c in edges.values()), kind + " not closed"
+        for nf, _, _, hf in belts:
+            assert max(_dot(nf, v) for v in verts) < hf + 1e-9, \
+                kind + " face not a supporting plane"
         limits[kind] = width_limit(belts, half, 0.012)[0]
     assert abs(limits['TWO'] - 2.0 * half) < 1e-6      # face-bound only
-    assert limits['ICOSA'] < limits['DODECA'] < limits['OCTA'] < \
-        limits['CUBE'] < limits['TETRA']
+    assert limits['GEO'] < limits['SNUB'] < limits['ICOSA'] < \
+        limits['DODECA'] < limits['OCTA'] < limits['CUBE'] < limits['TETRA']
+    # the snub cube's mirror image packs the same and is its mirror
+    sv_l, _, _ = solid('SNUB', half)
+    sv_r, _, _ = solid('SNUB', half, mirror=True)
+    for v in sv_l:
+        mv = (-v[0], v[1], v[2])
+        assert min(_norm(tuple(mv[k] - q[k] for k in range(3)))
+                   for q in sv_r) < 1e-9, "snub cube mirror is not the mirror"
+    assert (len(solid('GEO', half, freq=1)[2]), len(solid('GEO', half, freq=3)[2])) == (20, 180)
     assert limits['ICOSA'] < width < limits['CUBE']
 
     # 3. the geometry, per solid and axis: period, non-return, ends,
@@ -1213,7 +1411,7 @@ def _selftest():
         rmin = CLEAR * circumradius(sverts)
         for psi in psis[:12:3]:
             d360_all = 0.0
-            for bi, (u, w, _) in enumerate(belts):
+            for bi, (u, w, _, hf) in enumerate(belts):
                 args = (1.0, half, w_use, 0.95, ns, nlam)
                 kw = dict(r_min=rmin, n=n, m=m)
                 rows, info = belt_rows(psi, u, w, *args, **kw)
@@ -1273,7 +1471,7 @@ def _selftest():
         rmin = CLEAR * circumradius(sverts)
         for psi in psis[:12:2]:
             allrows = [belt_rows(psi, u, w, 1.0, half, w_use, 0.95, ns, 3,
-                                 r_min=rmin)[0] for u, w, _ in belts]
+                                 r_min=rmin)[0] for u, w, _, _ in belts]
             assert belt_clearance(allrows, per_belt=40) > 0.012,                 "%s belts touch at %.0f deg" % (kind, math.degrees(2 * psi))
 
     # 5. the reported gap: 33.9 degrees for the cube defaults

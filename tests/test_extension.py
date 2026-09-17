@@ -1436,6 +1436,15 @@ OPS = [
      lambda: bpy.ops.mesh.belt_trick_add(solid='TWO', spin_axis='X',
                                          turn=math.radians(400.0),
                                          resolution=80)),
+    ("belt trick snub cube",
+     lambda: bpy.ops.mesh.belt_trick_add(solid='SNUB', mirror=True,
+                                         turn=math.radians(200.0),
+                                         resolution=60, across=5)),
+    ("belt trick geodesic sphere",
+     lambda: bpy.ops.mesh.belt_trick_add(solid='GEO', frequency=2,
+                                         size=0.24, thickness=0.006,
+                                         turn=math.radians(300.0),
+                                         resolution=60, across=5)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
