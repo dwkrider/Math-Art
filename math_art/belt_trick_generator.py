@@ -701,12 +701,12 @@ if _IN_BLENDER:
                         "state at 720 degrees, and not at 360; keyframe "
                         "this from 0 to 720 for one cycle")
         size: FloatProperty(
-            name="Size", default=0.3, min=0.02, max=1.2,
+            name="Size", default=0.16, min=0.02, max=1.2,
             description="Diameter of the solid's inscribed sphere: the "
                         "distance between opposite faces, which for the "
                         "cube is its edge")
         belt_width: FloatProperty(
-            name="Belt Width", default=0.05, min=0.01, max=1.0,
+            name="Belt Width", default=0.07, min=0.01, max=1.0,
             description="Width of each belt.  Belts must clear one "
                         "another where they meet the solid, so each "
                         "solid has a widest belt for its size; a wider "
@@ -772,8 +772,15 @@ if _IN_BLENDER:
             half = 0.5 * self.size
             n, m = AXES[self.spin_axis]
             sverts, sfaces, belts = solid(self.solid, half, n, m)
+            # The width is the user's to set.  Past `limit` the belts
+            # cannot all clear one another where they crowd together at
+            # the solid, so a wider belt will pass through its
+            # neighbours -- but that is a look to be reported, not a
+            # value to be overridden behind the user's back.  Clamping
+            # it silently meant the number in the panel was not the
+            # number that got built.
             limit, _ = width_limit(belts, half, self.thickness)
-            width = min(self.belt_width, limit)
+            width = self.belt_width
             # the cage tube and the belt thickness both stick out past the
             # cage radius; fit them inside the half-extent
             cage_tube = 0.004
@@ -829,10 +836,11 @@ if _IN_BLENDER:
                       math.degrees(self.turn), len(belts), width * fit,
                       math.degrees(gap), dist * fit, bend,
                       bend / (width * fit)))
-            if width < self.belt_width:
-                self.report({'WARNING'}, msg + " - belt width clamped "
-                            "from %.3f: wider belts would meet at the "
-                            "solid" % (self.belt_width * fit))
+            if width > limit:
+                self.report({'WARNING'}, msg + " - wider than %.3f, so "
+                            "the belts meet one another at the solid; "
+                            "narrow it, or use fewer belts"
+                            % (limit * fit))
             elif bend < width * fit:
                 self.report({'WARNING'}, msg + " - the belt is wider "
                             "than its tightest bend and will crease "
