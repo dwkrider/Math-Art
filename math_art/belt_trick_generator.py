@@ -897,8 +897,8 @@ if _IN_BLENDER:
                         "distance between opposite faces, which for the "
                         "cube is its edge")
         belt_width: FloatProperty(
-            name="Belt Width", default=0.07, min=0.01, max=1.0,
-            description="Width of each belt.  Belts must clear one "
+            name="Belt Width", default=0.0, min=0.0, max=1.0,
+            description="Width of each belt, built exactly as set.  Leave at 0 for the widest belt that still clears its neighbours at the solid, which is the only setting safe for every solid: the limit runs from 0.30 for two belts down to 0.03 for the icosahedron's twenty.  Any positive value is used as given, with a warning if the belts would meet.  Original: Width of each belt.  Belts must clear one "
                         "another where they meet the solid, so each "
                         "solid has a widest belt for its size; a wider "
                         "request is clamped to it and reported.  The "
@@ -983,8 +983,31 @@ if _IN_BLENDER:
             # value to be overridden behind the user's back.  Clamping
             # it silently meant the number in the panel was not the
             # number that got built.
+            # Width is the user's to set, and is built exactly as asked.
+            # Zero asks for the widest belt that still clears its
+            # neighbours where they crowd together at the solid, which
+            # is the only value that is safe for EVERY solid -- the
+            # limit falls from 0.30 for two belts to 0.03 for the
+            # icosahedron's twenty, so no single fixed default can be
+            # both strap-like and non-overlapping across the enum.
             limit, _ = width_limit(belts, half, self.thickness)
-            width = self.belt_width
+            if self.belt_width > 1e-6:
+                width = self.belt_width
+            else:
+                # Auto: the widest belt that satisfies BOTH constraints
+                # -- it must clear its neighbours where they crowd at
+                # the solid, and it must not be wider than its own
+                # tightest bend, or it creases there.  Taking only the
+                # packing limit gives a belt that fits but folds; only
+                # the bend radius gives one that is smooth but may
+                # overlap.  No fixed number can serve every solid: the
+                # packing limit alone runs from 0.30 for two belts to
+                # 0.03 for the icosahedron's twenty.
+                width = min(limit,
+                            min_bend_radius(belts, half, limit,
+                                            self.reach,
+                                            CLEAR * circumradius(sverts),
+                                            n, m, self.smoothing))
             # the cage tube and the belt thickness both stick out past the
             # cage radius; fit them inside the half-extent
             cage_tube = 0.004
