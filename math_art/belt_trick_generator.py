@@ -1214,9 +1214,19 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new("Belt Trick", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            if self.thickness > 0.0:
+            # A belt cannot be thicker than it is wide and still be a
+            # belt.  The crowded solids drive the automatic width down
+            # hard -- the geodesic sphere's eighty faces leave only
+            # 10.7 mm against a default thickness of 12 -- and the
+            # result is a bundle of square bars, which also lets the
+            # solidified strip meet itself where it curls.  Thin it to
+            # keep the strip at least twice as wide as it is thick.
+            # Roomier solids are unaffected: the cube's belts are ten
+            # times this.
+            solid_thick = min(self.thickness, 0.5 * width)
+            if solid_thick > 0.0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
-                mod.thickness = self.thickness * fit
+                mod.thickness = solid_thick * fit
                 mod.offset = 0.0
                 mod.use_even_offset = True
             for o in context.selected_objects:
@@ -1264,11 +1274,13 @@ if _IN_BLENDER:
                 self.report({'WARNING'}, msg + " - the belt is wider "
                             "than its tightest bend and will crease "
                             "there; raise Smoothing or narrow it")
-            elif width < 2.0 * self.thickness:
-                self.report({'WARNING'}, msg + " - the belts are thinner "
-                            "than about two thicknesses, cords rather "
-                            "than belts; enlarge the solid, thin the "
-                            "belt, or use fewer faces")
+            elif solid_thick < self.thickness:
+                self.report({'WARNING'}, msg + " - so many faces that "
+                            "the belts came out narrow; thinned to %.3f "
+                            "to keep them twice as wide as they are "
+                            "thick.  For proper belts enlarge the solid, "
+                            "thin the belt, or use fewer faces"
+                            % (solid_thick * fit))
             else:
                 self.report({'INFO'}, msg)
             return {'FINISHED'}
