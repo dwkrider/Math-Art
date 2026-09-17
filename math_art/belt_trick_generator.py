@@ -684,7 +684,7 @@ if _IN_BLENDER:
             description="Half-extent of the result, cage and belt "
                         "thickness included; 1.0 fits the 2 m cube")
 
-        def _mesh_from(self, verts, faces, name):
+        def _mesh_from(self, verts, faces, name, smooth=True):
             me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -697,7 +697,11 @@ if _IN_BLENDER:
             bm.to_mesh(me)
             bm.free()
             for p in me.polygons:
-                p.use_smooth = True
+                # The belts and the cage are sampled curved surfaces and
+                # want smooth normals; the solid is a polyhedron whose
+                # faces ARE flat, and smoothing them rounds off the very
+                # edges that say which solid it is.
+                p.use_smooth = smooth
             me.update()
             return me
 
@@ -744,7 +748,8 @@ if _IN_BLENDER:
                 parts.append(("Belt Trick Cage",
                               build_cage(fit, 6, 96, cage_tube * fit)))
             for name, (pv, pf) in parts:
-                sub = self._mesh_from(pv, pf, name)
+                sub = self._mesh_from(pv, pf, name,
+                                      smooth="Solid" not in name)
                 so = bpy.data.objects.new(name, sub)
                 context.collection.objects.link(so)
                 so.parent = obj
