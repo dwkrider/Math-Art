@@ -1137,13 +1137,19 @@ def cube_gap(half, width, belts=None):
 if _IN_BLENDER:
 
     def _colour(i, n):
-        """Evenly spaced hues, alternating light and dark so neighbours
-        on the solid stay distinct."""
+        """Evenly spaced hues, strongly saturated, with only a slight
+        alternation of value so that neighbours on the solid stay
+        distinct without half of them going dull.  The golden-ratio
+        step keeps successive hues far apart however many belts there
+        are, which matters at twenty and at eighty."""
         h = (i * 0.618033988749895) % 1.0
-        v = 0.85 if i % 2 == 0 else 0.6
+        sat = 0.82
+        v = 0.98 if i % 2 == 0 else 0.86
         k = int(h * 6.0)
         f = h * 6.0 - k
-        p, q, t = v * 0.35, v * (1.0 - 0.65 * f), v * (1.0 - 0.65 * (1.0 - f))
+        p = v * (1.0 - sat)
+        q = v * (1.0 - sat * f)
+        t = v * (1.0 - sat * (1.0 - f))
         return [(v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v),
                 (v, p, q)][k % 6]
 
@@ -1268,6 +1274,12 @@ if _IN_BLENDER:
         show_solid: BoolProperty(
             name="Solid", default=True,
             description="Add the solid, turned with the belt roots")
+        vary_colour: BoolProperty(
+            name="Vary Colours", default=True,
+            description="Give each belt its own material, so a single "
+                        "belt can be followed through its coil.  Turn "
+                        "off for one material across the whole thing, "
+                        "which suits a single-colour render or a print")
         show_cage: BoolProperty(
             name="Cage", default=True,
             description="Add the sphere of great circles the far ends "
@@ -1360,11 +1372,18 @@ if _IN_BLENDER:
                 smoothing=self.smoothing)
             verts = [(v[0] * fit, v[1] * fit, v[2] * fit) for v in verts]
             me = self._mesh_from(verts, faces, "Belt Trick")
-            for i in range(len(belts)):
-                me.materials.append(_material("Belt %d" % (i + 1),
-                                              _colour(i, len(belts))))
-            for p, mi in zip(me.polygons, mats):
-                p.material_index = mi
+            if self.vary_colour:
+                for i in range(len(belts)):
+                    me.materials.append(_material("Belt %d" % (i + 1),
+                                                  _colour(i, len(belts))))
+                for p, mi in zip(me.polygons, mats):
+                    p.material_index = mi
+            else:
+                # One slot for the lot.  Distinct colours make an
+                # individual belt followable through its coil, which is
+                # what a viewer needs; a single material is what a
+                # render or a print usually wants instead.
+                me.materials.append(_material("Belt", _colour(0, 1)))
             obj = bpy.data.objects.new("Belt Trick", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
