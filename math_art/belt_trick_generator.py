@@ -376,10 +376,9 @@ def _snub_cube(mirror=False):
                     if mirror:
                         v = (-v[0], v[1], v[2])
                     verts.append(v)
-    faces = _hull_faces(verts)
-    if mirror:
-        faces = [list(reversed(f)) for f in faces]
-    return verts, faces
+    # _hull_faces orders every face outward for whichever vertex set it
+    # is given, so the mirrored set needs no reversal
+    return verts, _hull_faces(verts)
 
 
 def _geodesic(freq):
