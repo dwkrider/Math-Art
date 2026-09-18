@@ -917,6 +917,24 @@ def patch_site_pages(n_surf, n_solid):
             "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
         }, depth=1))
 
+    patch_head(os.path.join(WEB, "modules", "belt-trick.html"), head_block(
+        canonical=url("modules/belt-trick.html"),
+        title="The Belt Trick - %s" % SITE,
+        desc=("Dirac's belt trick, computed live in the browser: a solid "
+              "turning inside a cage of belts that tangle after one full "
+              "turn and come free after two."),
+        image=url("thumbs/modules/belt-trick.png"),
+        image_alt="A cube inside a cage of six coiled belts",
+        ld={
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "The Belt Trick",
+            "url": url("modules/belt-trick.html"),
+            "description": "An interactive demonstration of Dirac's belt "
+                           "trick.",
+            "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
+        }, depth=1))
+
     patch_head(os.path.join(WEB, "modules", "polyhedra.html"), head_block(
         canonical=url("modules/polyhedra.html"),
         title="Polyhedra - %s" % SITE,
@@ -987,6 +1005,7 @@ def main():
             (url("modules/polyhedra.html"), 0.9),
             (url("modules/surfaces.html"), 0.9),
             (url("modules/periodic.html"), 0.9),
+            (url("modules/belt-trick.html"), 0.9),
             (url("catalog/polyhedra/index.html"), 0.7),
             (url("catalog/surfaces/index.html"), 0.7)]
     urls += [(url("catalog/surfaces/%s.html" % e["slug"]), 0.5)
@@ -1003,7 +1022,8 @@ def main():
     print("sitemap.xml       : %d URLs" % len(urls))
     print("robots.txt        : written")
     print("head blocks       : index.html, modules/surfaces.html, "
-          "modules/polyhedra.html, modules/periodic.html")
+          "modules/polyhedra.html, modules/periodic.html, "
+          "modules/belt-trick.html")
     return 0
 
 

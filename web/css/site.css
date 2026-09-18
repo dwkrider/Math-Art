@@ -1179,3 +1179,125 @@ figcaption {
   max-width: 52rem;
   flex: 1 1 20rem;
 }
+
+/* ------------------------------------------------------------------
+ * The belt trick.
+ *
+ * One stage and a transport beneath it. The stage is the point of the
+ * page, so it gets the width and most of the height; the controls are a
+ * single band under it rather than a side panel that would narrow it.
+ * ------------------------------------------------------------------ */
+
+.belt-page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.belt-stage { position: relative; }
+.belt-stage #stage {
+  width: 100%;
+  height: min(68vh, 44rem);
+  display: block;
+}
+
+/* The landmark sentence, over the bottom of the stage while it applies. */
+.belt-lesson {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.9rem;
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--ink);
+  background: rgba(8, 10, 12, 0.82);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.belt-controls {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.belt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+
+.belt-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+.belt-field select { min-width: 13rem; }
+.belt-speed select { min-width: 4.5rem; }
+
+.belt-turn { display: grid; gap: 0.25rem; }
+.belt-turn-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+.belt-turn-head output {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+.belt-turn input[type=range] { width: 100%; accent-color: var(--accent); }
+
+/* The two landmarks under the slider. Positioned by percentage of the
+ * track so they sit under the values they name. */
+.turn-marks {
+  position: relative;
+  height: 1.1rem;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+.turn-marks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.turn-marks span:first-child { transform: none; }
+.turn-marks span:last-child { transform: translateX(-100%); }
+.turn-marks .mark-one { color: var(--ink-dim); }
+.turn-marks .mark-two { color: var(--accent); }
+
+.belt-transport .stage-action { margin-left: 0; }
+.belt-snaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
+.belt-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+.belt-hint kbd {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
