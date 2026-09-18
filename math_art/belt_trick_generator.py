@@ -1131,6 +1131,120 @@ def cube_gap(half, width, belts=None):
 
 
 # ---------------------------------------------------------------
+# What the operator decides before it builds anything
+# ---------------------------------------------------------------
+#
+# Kept out of the operator so that it is usable without Blender, and so
+# that anything else drawing this construction makes the SAME decisions
+# rather than re-deriving them: the renormalisation of the size on the
+# circumsphere, the automatic width (which depends on the thickness, not
+# only on the solid), where the straight run ends, and the fit into the
+# half-extent.  Every number downstream depends on these, and a second
+# copy of them would drift.
+
+CAGE_TUBE = 0.004   # radius of the cage's tubes, before `fit`
+
+
+def prepare(kind='TWO', size=0.16, belt_width=0.0, reach=0.95,
+            smoothing=SMOOTHING, thickness=0.012, spin_axis='Z',
+            mirror=False, freq=2, scale=1.0):
+    """Everything the operator settles before it makes a mesh, as a dict:
+    the solid (verts, faces), its belts, the spin and loop axes (n, m),
+    the face distance `half` after normalising on the circumsphere, the
+    packing `limit` and the `width` actually built, `r_min` where the
+    straight run ends, `fit` the scale into the half-extent, and the
+    `solid_thick` the strip is given."""
+    half = 0.5 * size
+    n, m = AXES[spin_axis]
+    extra = dict(mirror=mirror, freq=freq)
+    sverts, sfaces, belts = solid(kind, half, n, m, **extra)
+    # Normalise on the CIRCUMSPHERE, not the inscribed sphere, so that
+    # every solid sits the same way inside the cage.  The ratio of the
+    # two differs sharply between them: at an equal face-to-face size
+    # the tetrahedron's circumradius is three times its inradius where
+    # the cube's is only 1.73, so the tetrahedron looked half again too
+    # big and the dodecahedron and icosahedron nearly a third too small.
+    # Scaling to the cube's circumradius leaves the cube, the two-belt
+    # cube and the octahedron exactly as they were.
+    cr = circumradius(sverts)
+    if cr > 1e-9:
+        half *= half * math.sqrt(3.0) / cr
+        sverts, sfaces, belts = solid(kind, half, n, m, **extra)
+    r_min = CLEAR * circumradius(sverts)
+    # Width is the user's to set, and is built exactly as asked.  Past
+    # `limit` the belts cannot all clear one another where they crowd
+    # together at the solid, so a wider belt will pass through its
+    # neighbours -- but that is a look to be reported, not a value to be
+    # overridden behind the user's back.
+    limit, _ = width_limit(belts, half, thickness)
+    if belt_width > 1e-6:
+        width = belt_width
+    else:
+        # Auto: the widest belt that satisfies BOTH constraints -- it
+        # must clear its neighbours where they crowd at the solid, and
+        # it must not be wider than its own tightest bend, or it creases
+        # there.  Taking only the packing limit gives a belt that fits
+        # but folds; only the bend radius gives one that is smooth but
+        # may overlap.  No fixed number can serve every solid: the
+        # packing limit alone runs from 0.30 for two belts to 0.03 for
+        # the icosahedron's twenty.
+        width = min(limit, min_bend_radius(belts, half, limit, reach, r_min,
+                                           n, m, smoothing))
+    # the cage tube and the belt thickness both stick out past the cage
+    # radius; fit them inside the half-extent
+    fit = scale / (1.0 + max(0.5 * thickness, CAGE_TUBE))
+    # A belt cannot be thicker than it is wide and still be a belt.  The
+    # crowded solids drive the automatic width down hard -- the geodesic
+    # sphere's eighty faces leave only 10.7 mm against a default
+    # thickness of 12 -- and the result is a bundle of square bars, which
+    # also lets the solidified strip meet itself where it curls.  Thin it
+    # to keep the strip at least twice as wide as it is thick.  Roomier
+    # solids are unaffected: the cube's belts are ten times this.
+    solid_thick = min(thickness, 0.5 * width)
+    return dict(kind=kind, n=n, m=m, half=half, verts=sverts, faces=sfaces,
+                belts=belts, r_min=r_min, limit=limit, width=width, fit=fit,
+                solid_thick=solid_thick, thickness=thickness, reach=reach,
+                smoothing=smoothing)
+
+
+def diagnose(prep, all_rows):
+    """The operator's report on a built set of belts: the measurements,
+    and the ONE warning that applies, in priority order -- belts wider
+    than the packing limit; belts closer than a thickness at this turn;
+    belts wider than their tightest bend; belts thinned to stay twice as
+    wide as thick.  Returns (level, measurements, warning text or None);
+    lengths are already scaled by `fit`."""
+    fit, width = prep['fit'], prep['width']
+    belts, half = prep['belts'], prep['half']
+    gap, dist = cube_gap(half, width, belts)
+    bend = min_bend_radius(belts, half, width, prep['reach'], prep['r_min'],
+                           prep['n'], prep['m'], prep['smoothing']) * fit
+    clear = belt_clearance(all_rows) * fit
+    meas = dict(belts=len(belts), width=width * fit, gap=gap,
+                dist=dist * fit, bend=bend, clear=clear,
+                limit=prep['limit'] * fit)
+    if width > prep['limit']:
+        return 'WARNING', meas, (
+            "wider than %.3f, so the belts meet one another at the solid; "
+            "narrow it, or use fewer belts" % (prep['limit'] * fit))
+    if len(belts) > 1 and clear < prep['thickness'] * fit:
+        return 'WARNING', meas, (
+            "belts come within %.3f of one another at this turn; lower "
+            "Smoothing or narrow the belt" % clear)
+    if bend < width * fit:
+        return 'WARNING', meas, (
+            "the belt is wider than its tightest bend and will crease "
+            "there; raise Smoothing or narrow it")
+    if prep['solid_thick'] < prep['thickness']:
+        return 'WARNING', meas, (
+            "so many faces that the belts came out narrow; thinned to "
+            "%.3f to keep them twice as wide as they are thick.  For "
+            "proper belts enlarge the solid, thin the belt, or use fewer "
+            "faces" % (prep['solid_thick'] * fit))
+    return 'INFO', meas, None
+
+
+# ---------------------------------------------------------------
 # Blender operator
 # ---------------------------------------------------------------
 
@@ -1312,64 +1426,16 @@ if _IN_BLENDER:
 
         def execute(self, context):
             psi = 0.5 * self.turn
-            half = 0.5 * self.size
-            n, m = AXES[self.spin_axis]
-            extra = dict(mirror=self.mirror, freq=self.frequency)
-            sverts, sfaces, belts = solid(self.solid, half, n, m, **extra)
-            # Normalise on the CIRCUMSPHERE, not the inscribed sphere,
-            # so that every solid sits the same way inside the cage.
-            # The ratio of the two differs sharply between them: at an
-            # equal face-to-face size the tetrahedron's circumradius is
-            # three times its inradius where the cube's is only 1.73,
-            # so the tetrahedron looked half again too big and the
-            # dodecahedron and icosahedron nearly a third too small.
-            # Scaling to the cube's circumradius leaves the cube, the
-            # two-belt cube and the octahedron exactly as they were.
-            cr = circumradius(sverts)
-            if cr > 1e-9:
-                half *= half * math.sqrt(3.0) / cr
-                sverts, sfaces, belts = solid(self.solid, half, n, m, **extra)
-            # The width is the user's to set.  Past `limit` the belts
-            # cannot all clear one another where they crowd together at
-            # the solid, so a wider belt will pass through its
-            # neighbours -- but that is a look to be reported, not a
-            # value to be overridden behind the user's back.  Clamping
-            # it silently meant the number in the panel was not the
-            # number that got built.
-            # Width is the user's to set, and is built exactly as asked.
-            # Zero asks for the widest belt that still clears its
-            # neighbours where they crowd together at the solid, which
-            # is the only value that is safe for EVERY solid -- the
-            # limit falls from 0.30 for two belts to 0.03 for the
-            # icosahedron's twenty, so no single fixed default can be
-            # both strap-like and non-overlapping across the enum.
-            limit, _ = width_limit(belts, half, self.thickness)
-            if self.belt_width > 1e-6:
-                width = self.belt_width
-            else:
-                # Auto: the widest belt that satisfies BOTH constraints
-                # -- it must clear its neighbours where they crowd at
-                # the solid, and it must not be wider than its own
-                # tightest bend, or it creases there.  Taking only the
-                # packing limit gives a belt that fits but folds; only
-                # the bend radius gives one that is smooth but may
-                # overlap.  No fixed number can serve every solid: the
-                # packing limit alone runs from 0.30 for two belts to
-                # 0.03 for the icosahedron's twenty.
-                width = min(limit,
-                            min_bend_radius(belts, half, limit,
-                                            self.reach,
-                                            CLEAR * circumradius(sverts),
-                                            n, m, self.smoothing))
-            # the cage tube and the belt thickness both stick out past the
-            # cage radius; fit them inside the half-extent
-            cage_tube = 0.004
-            fit = self.scale / (1.0 + max(0.5 * self.thickness, cage_tube))
+            prep = prepare(self.solid, self.size, self.belt_width,
+                           self.reach, self.smoothing, self.thickness,
+                           self.spin_axis, self.mirror, self.frequency,
+                           self.scale)
+            n, belts = prep['n'], prep['belts']
+            half, width, fit = prep['half'], prep['width'], prep['fit']
             verts, faces, mats, all_rows = build_belts(
                 psi, belts, 1.0, half, width, self.reach,
-                self.resolution, self.across,
-                r_min=CLEAR * circumradius(sverts), n=n, m=m,
-                smoothing=self.smoothing)
+                self.resolution, self.across, r_min=prep['r_min'],
+                n=n, m=prep['m'], smoothing=self.smoothing)
             verts = [(v[0] * fit, v[1] * fit, v[2] * fit) for v in verts]
             me = self._mesh_from(verts, faces, "Belt Trick")
             if self.vary_colour:
@@ -1387,16 +1453,7 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new("Belt Trick", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            # A belt cannot be thicker than it is wide and still be a
-            # belt.  The crowded solids drive the automatic width down
-            # hard -- the geodesic sphere's eighty faces leave only
-            # 10.7 mm against a default thickness of 12 -- and the
-            # result is a bundle of square bars, which also lets the
-            # solidified strip meet itself where it curls.  Thin it to
-            # keep the strip at least twice as wide as it is thick.
-            # Roomier solids are unaffected: the cube's belts are ten
-            # times this.
-            solid_thick = min(self.thickness, 0.5 * width)
+            solid_thick = prep['solid_thick']
             if solid_thick > 0.0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = solid_thick * fit
@@ -1410,11 +1467,12 @@ if _IN_BLENDER:
             parts = []
             if self.show_solid:
                 rc = _qaxis(n, 2.0 * psi)
-                sv = [tuple(fit * c for c in _qrot(rc, v)) for v in sverts]
-                parts.append(("Belt Trick Solid", (sv, sfaces)))
+                sv = [tuple(fit * c for c in _qrot(rc, v))
+                      for v in prep['verts']]
+                parts.append(("Belt Trick Solid", (sv, prep['faces'])))
             if self.show_cage:
                 parts.append(("Belt Trick Cage",
-                              build_cage(fit, 6, 96, cage_tube * fit)))
+                              build_cage(fit, 6, 96, CAGE_TUBE * fit)))
             for name, (pv, pf) in parts:
                 sub = self._mesh_from(pv, pf, name,
                                       smooth="Solid" not in name)
@@ -1422,40 +1480,15 @@ if _IN_BLENDER:
                 context.collection.objects.link(so)
                 so.parent = obj
 
-            gap, dist = cube_gap(half, width, belts)
-            bend = min_bend_radius(belts, half, width, self.reach,
-                                   CLEAR * circumradius(sverts), n, m,
-                                   self.smoothing) * fit
-            clear = belt_clearance(all_rows) * fit
+            level, meas, warning = diagnose(prep, all_rows)
             msg = ("V=%d F=%d  turn %.0f deg  %d belts %.3f wide, "
                    "neighbours %.0f deg (%.3f) apart at the solid, "
                    "tightest bend radius %.3f = %.1f widths"
                    % (len(me.vertices), len(me.polygons),
-                      math.degrees(self.turn), len(belts), width * fit,
-                      math.degrees(gap), dist * fit, bend,
-                      bend / (width * fit)))
-            if width > limit:
-                self.report({'WARNING'}, msg + " - wider than %.3f, so "
-                            "the belts meet one another at the solid; "
-                            "narrow it, or use fewer belts"
-                            % (limit * fit))
-            elif len(belts) > 1 and clear < self.thickness * fit:
-                self.report({'WARNING'}, msg + " - belts come within "
-                            "%.3f of one another at this turn; lower "
-                            "Smoothing or narrow the belt" % clear)
-            elif bend < width * fit:
-                self.report({'WARNING'}, msg + " - the belt is wider "
-                            "than its tightest bend and will crease "
-                            "there; raise Smoothing or narrow it")
-            elif solid_thick < self.thickness:
-                self.report({'WARNING'}, msg + " - so many faces that "
-                            "the belts came out narrow; thinned to %.3f "
-                            "to keep them twice as wide as they are "
-                            "thick.  For proper belts enlarge the solid, "
-                            "thin the belt, or use fewer faces"
-                            % (solid_thick * fit))
-            else:
-                self.report({'INFO'}, msg)
+                      math.degrees(self.turn), meas['belts'], meas['width'],
+                      math.degrees(meas['gap']), meas['dist'], meas['bend'],
+                      meas['bend'] / meas['width']))
+            self.report({level}, msg + (" - " + warning if warning else ""))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -1661,4 +1694,25 @@ def _selftest():
     # 5. the reported gap: 33.9 degrees for the cube defaults
     gap, dist = cube_gap(half, width)
     assert abs(math.degrees(gap) - 33.9) < 0.3
+
+    # 6. prepare() and diagnose(): the operator's decisions, without
+    #    Blender.  The width is never wider than the packing limit when
+    #    automatic, the fit is the one the operator uses, the strip is
+    #    thinned to half the width when the belts are crowded, and a
+    #    width set deliberately too wide produces that warning first.
+    p = prepare('CUBE')
+    assert len(p['belts']) == 6
+    assert 0.0 < p['width'] <= p['limit'] + 1e-12
+    assert abs(p['fit'] - 1.0 / 1.006) < 1e-12
+    assert p['solid_thick'] == min(p['thickness'], 0.5 * p['width'])
+    rows = build_belts(math.pi / 3.0, p['belts'], 1.0, p['half'],
+                       p['width'], p['reach'], 60, 3, r_min=p['r_min'],
+                       n=p['n'], m=p['m'], smoothing=p['smoothing'])[3]
+    level, meas, warning = diagnose(p, rows)
+    assert level == 'INFO' and warning is None, warning
+    wide = prepare('CUBE', belt_width=p['limit'] * 1.5)
+    level, _, warning = diagnose(wide, rows)
+    assert level == 'WARNING' and warning.startswith("wider than")
+    geo = prepare('GEO')
+    assert geo['solid_thick'] < geo['thickness'], "geodesic not thinned"
     print("belt_trick_generator: self-test OK")
