@@ -23,10 +23,11 @@ import { knnGraph, SpringLayout } from './cluster.js';
 const TILE_PX = 64;          // decode size; drawn smaller than this
 const SETTLE_ITERS = 900;    // measured: overlap still resolving until ~900
 
-// The sprite sheet, fetched once for the page rather than once per view.
-// Held at module scope because there is only ever one sheet, and because
-// the fetch has to be startable before any ClusterView exists.
-let atlasPromise = null;
+// The sprite sheets, fetched once each per page rather than once per
+// view. Held at module scope because the fetch has to be startable before
+// any ClusterView exists, and keyed by name because there are two
+// catalogues -- surfaces and polyhedra -- with a sheet apiece.
+const atlasPromises = new Map();
 
 /**
  * Start loading the tile sheet.
@@ -41,18 +42,20 @@ let atlasPromise = null;
  * Idempotent, and never rejects: a missing sheet resolves to null and
  * the view falls back to the individual PNGs.
  */
-export function preloadAtlas() {
-  if (atlasPromise) return atlasPromise;
-  atlasPromise = fetch(new URL('../thumbs/surfaces-atlas.json', import.meta.url))
+export function preloadAtlas(name = 'surfaces') {
+  const cached = atlasPromises.get(name);
+  if (cached) return cached;
+  const p = fetch(new URL(`../thumbs/${name}-atlas.json`, import.meta.url))
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error('no atlas'))))
     .then((meta) => new Promise((res, rej) => {
       const img = new Image();
       img.onload = () => res({ img, ...meta });
       img.onerror = rej;
-      img.src = new URL('../thumbs/surfaces-atlas.png', import.meta.url).href;
+      img.src = new URL(`../thumbs/${name}-atlas.png`, import.meta.url).href;
     }))
     .catch(() => null);
-  return atlasPromise;
+  atlasPromises.set(name, p);
+  return p;
 }
 
 export class ClusterView {
@@ -61,6 +64,10 @@ export class ClusterView {
     this.ctx = canvas.getContext('2d');
     this.all = entries;
     this.thumbUrl = opts.thumbUrl;
+    // Which catalogue this is: picks the sprite sheet, and the vector
+    // that decides what "similar" means. The layout itself does not care.
+    this.atlasName = opts.atlas || 'surfaces';
+    this.vector = opts.vector;
     this.onSelect = opts.onSelect || (() => {});
     this.hasMesh = opts.hasMesh || (() => true);
     this.bitmaps = new Map();
@@ -151,7 +158,7 @@ export class ClusterView {
       return;
     }
 
-    this.edges = n > 1 ? knnGraph(entries) : [];
+    this.edges = n > 1 ? knnGraph(entries, undefined, this.vector) : [];
     this.layout = new SpringLayout(n, this.edges, {
       width: r.width || 900,
       height: r.height || 600,
@@ -197,7 +204,7 @@ export class ClusterView {
    * slower rather than broken.
    */
   _loadTiles() {
-    return preloadAtlas().then((atlas) => {
+    return preloadAtlas(this.atlasName).then((atlas) => {
       if (atlas) {
         this.atlas = atlas;
         this.dirty = true;

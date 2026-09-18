@@ -39,24 +39,32 @@ except ImportError:                                          # pragma: no cover
     raise SystemExit(1)
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TILES = os.path.join(PROJ, "web", "thumbs", "surfaces")
-DB = os.path.join(PROJ, "data", "surfaces")
-OUT_PNG = os.path.join(PROJ, "web", "thumbs", "surfaces-atlas.png")
-OUT_JSON = os.path.join(PROJ, "web", "thumbs", "surfaces-atlas.json")
+THUMBS = os.path.join(PROJ, "web", "thumbs")
+
+# Both catalogues, packed by the same rule: the index says which slugs
+# exist, the tiles directory says which of them have been rendered.
+CATALOGUES = {
+    "surfaces": os.path.join(PROJ, "data", "surfaces", "index.json"),
+    "polyhedra": os.path.join(PROJ, "data", "polyhedra", "index.json"),
+}
 
 CELL = 128
 
 
-def main():
-    with open(os.path.join(DB, "index.json"), encoding="utf-8") as fh:
+def pack(name, index_path):
+    tiles = os.path.join(THUMBS, name)
+    out_png = os.path.join(THUMBS, name + "-atlas.png")
+    out_json = os.path.join(THUMBS, name + "-atlas.json")
+
+    with open(index_path, encoding="utf-8") as fh:
         entries = json.load(fh)["entries"]
 
     slugs = []
     for e in entries:
-        if os.path.exists(os.path.join(TILES, e["slug"] + ".png")):
+        if os.path.exists(os.path.join(tiles, e["slug"] + ".png")):
             slugs.append(e["slug"])
     if not slugs:
-        sys.stderr.write("no tiles in %s\n" % TILES)
+        sys.stderr.write("no tiles in %s\n" % tiles)
         return 1
 
     # Square-ish sheet: fewer very long rows keeps the PNG's own filtering
@@ -67,7 +75,7 @@ def main():
 
     index = {}
     for i, slug in enumerate(slugs):
-        im = Image.open(os.path.join(TILES, slug + ".png")).convert("RGBA")
+        im = Image.open(os.path.join(tiles, slug + ".png")).convert("RGBA")
         if im.size != (CELL, CELL):
             im = im.resize((CELL, CELL), Image.LANCZOS)
         cx, cy = (i % cols) * CELL, (i // cols) * CELL
@@ -75,20 +83,34 @@ def main():
         index[slug] = [cx, cy]
         im.close()
 
-    sheet.save(OUT_PNG, optimize=True)
-    with open(OUT_JSON, "w", encoding="utf-8") as fh:
+    sheet.save(out_png, optimize=True)
+    with open(out_json, "w", encoding="utf-8") as fh:
         json.dump({"cell": CELL, "cols": cols, "rows": rows,
                    "tiles": index}, fh, separators=(",", ":"))
 
-    png = os.path.getsize(OUT_PNG)
-    loose = sum(os.path.getsize(os.path.join(TILES, s + ".png"))
+    png = os.path.getsize(out_png)
+    loose = sum(os.path.getsize(os.path.join(tiles, s + ".png"))
                 for s in slugs)
-    print("atlas: %d tiles, %dx%d cells of %dpx -> %s"
-          % (len(slugs), cols, rows, CELL,
-             os.path.relpath(OUT_PNG, PROJ)))
-    print("  %.1f MB in one request, against %.1f MB in %d"
-          % (png / 1e6, loose / 1e6, len(slugs)))
+    print("%-11s %d tiles, %dx%d cells of %dpx -> %s"
+          % (name + ":", len(slugs), cols, rows, CELL,
+             os.path.relpath(out_png, PROJ)))
+    print("%-11s %.1f MB in one request, against %.1f MB in %d"
+          % ("", png / 1e6, loose / 1e6, len(slugs)))
     return 0
+
+
+def main():
+    want = [a for a in sys.argv[1:] if not a.startswith("-")]
+    if not want:
+        want = list(CATALOGUES)
+    bad = 0
+    for name in want:
+        if name not in CATALOGUES:
+            sys.stderr.write("unknown catalogue: " + repr(name))
+            bad = 1
+            continue
+        bad |= pack(name, CATALOGUES[name])
+    return bad
 
 
 if __name__ == "__main__":

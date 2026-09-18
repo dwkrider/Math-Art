@@ -494,7 +494,9 @@ def check_cluster_cache(fail, quiet):
     """
     node = shutil.which("node")
     tests = [os.path.join(PROJ, "tests", "web", n) for n in
-             ("test_cluster_cache.mjs", "test_stl_export.mjs")]
+             ("test_cluster_cache.mjs", "test_stl_export.mjs",
+              "test_polyhedra_cluster.mjs", "test_periodic_table.mjs",
+              "test_belt_math.mjs")]
     for t in tests:
         if not os.path.exists(t):
             fail("%s is missing" % os.path.relpath(t, PROJ))
@@ -506,7 +508,8 @@ def check_cluster_cache(fail, quiet):
         return True
     good = True
     for t in tests:
-        r = subprocess.run([node, t], capture_output=True, text=True)
+        env = dict(os.environ, PYTHON=sys.executable)
+        r = subprocess.run([node, t], capture_output=True, text=True, env=env)
         if r.returncode != 0:
             good = False
             name = os.path.basename(t)
@@ -557,7 +560,8 @@ def main(argv):
               % n_lfs)
         print("layout     : %d viewer track(s) bounded" % n_tracks)
         if cache_ok:
-            print("browser js : cluster cache, tile gate and STL export OK")
+            print("browser js : cluster cache, tile gate, STL export, "
+                  "clusters, periodic table, belt-trick parity OK")
 
     if failures:
         print("\n%d FAILURE(S):" % len(failures))

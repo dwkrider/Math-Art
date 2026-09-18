@@ -243,6 +243,26 @@ def main():
     render_docs.setup_studio()
     subject_cfg.capture_rig()
 
+    # TRANSPARENT BACKGROUND, unlike the documentation figures.
+    #
+    # The studio shoots against a black velvet dome, which is right for a
+    # figure on a page and wrong for a tile. In the clustered view the
+    # tiles sit centimetres apart, and an opaque black square clips its
+    # neighbours and anything drawn behind it; in the periodic table the
+    # cells are small and a black block reads as a hole in the grid.
+    #
+    # The dome is KEPT -- it is a light source as much as a backdrop, and
+    # removing it would change the shading and make these tiles stop
+    # matching the documentation renders. It is only hidden from camera
+    # rays, so it still bounces light while the film records alpha where
+    # nothing was hit. The lighting is unchanged; only the background
+    # goes away. Same treatment as tools/surfdb_export.py.
+    scene = bpy.context.scene
+    scene.render.film_transparent = True
+    dome = bpy.data.objects.get("Backdrop Dome")
+    if dome is not None:
+        dome.visible_camera = False
+
     done = failed = skipped = 0
     for i, e in enumerate(entries, 1):
         path = os.path.join(OUT, e["slug"] + ".png")
