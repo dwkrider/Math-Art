@@ -919,16 +919,17 @@ def patch_site_pages(n_surf, n_solid):
 
     patch_head(os.path.join(WEB, "modules", "belt-trick.html"), head_block(
         canonical=url("modules/belt-trick.html"),
-        title="The Belt Trick - %s" % SITE,
+        title="Dirac's Belt Trick - %s" % SITE,
         desc=("Dirac's belt trick, computed live in the browser: a solid "
-              "turning inside a cage of belts that tangle after one full "
-              "turn and come free after two."),
+              "tied to a cage by belts that tangle after one full turn and "
+              "come free after two -- the geometry behind spin one-half, "
+              "confirmed in neutron experiments in 1975."),
         image=url("thumbs/modules/belt-trick.png"),
         image_alt="A cube inside a cage of six coiled belts",
         ld={
             "@context": "https://schema.org",
             "@type": "WebPage",
-            "name": "The Belt Trick",
+            "name": "Dirac's Belt Trick",
             "url": url("modules/belt-trick.html"),
             "description": "An interactive demonstration of Dirac's belt "
                            "trick.",

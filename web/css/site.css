@@ -1301,3 +1301,36 @@ figcaption {
   border: 1px solid var(--line);
   border-radius: 4px;
 }
+
+/* The explanation under the controls: a reading column, set like the
+ * intro, so the page reads as one piece from the title down. */
+.belt-intro p + p { margin-top: 0.7rem; }
+
+.belt-notes {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.5rem 1.25rem 2.5rem;
+}
+.belt-notes > * { max-width: 46rem; }
+.belt-notes h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.35rem;
+  margin: 2rem 0 0.6rem;
+  color: var(--ink);
+}
+.belt-notes h2:first-child { margin-top: 0.5rem; }
+.belt-notes p {
+  margin: 0 0 0.8rem;
+  color: var(--ink-dim);
+  line-height: 1.65;
+}
+.belt-notes p em, .belt-notes p var { color: var(--ink); }
+.belt-sources {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  line-height: 1.55;
+}
+.belt-sources li { margin-bottom: 0.35rem; }
