@@ -3905,11 +3905,15 @@
  "ruled_surface": [
   [
    "HYPERBOLOID",
-   "Stick Hyperboloid"
+   "Hyperboloid"
   ],
   [
    "HYPERBOLOID_RODS",
-   "Stick Hyperboloid (Rulings)"
+   "Hyperboloid (Rulings)"
+  ],
+  [
+   "HYPERBOLOID_RIBBONS",
+   "Hyperboloid (Woven Ribbons)"
   ],
   [
    "HELICAL_CONE",
@@ -3918,6 +3922,10 @@
   [
    "SPIRAL",
    "Spiral Ruled"
+  ],
+  [
+   "SPIRAL_RIBBONS",
+   "Spiral Ruled (Woven Ribbons)"
   ],
   [
    "SPIRAL_ROSETTE",
@@ -3962,6 +3970,10 @@
   [
    "HYPAR",
    "Hyperbolic Paraboloid"
+  ],
+  [
+   "HYPAR_RIBBONS",
+   "Hyperbolic Paraboloid (Woven Ribbons)"
   ]
  ],
  "ifs": [

@@ -25,11 +25,24 @@ dicts); the rig helpers at the bottom appear only when bpy is present.
 # should show what you get when you click the entry -- so only the ones
 # whose defaults under-sell them are listed.
 PARAMS = {
+    # The hero is a relief panel (built by SETUP) cut into stacked
+    # contour layers along Z -- the topographic model.  Dowels off so no
+    # holes clutter the layers, assembled (explode 0) so it reads as the
+    # panel, not a scatter of parts.  The flat cut-sheets it also emits
+    # are hidden by HIDE_AFTER, leaving just the sliced part.
+    "object.fabrication_slice": dict(technique='STACKED', axis='Z',
+                                     use_dowels=False, explode=0.0),
     # A bare noble faceting is a self-intersecting wireframe-ish solid
     # and reads as mush when shaded; the great dodecahedron -- faceting
     # 1 of the icosahedral vertex set -- has big obvious pentagons and
     # says "this is a polyhedron through someone else's vertices".
     "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
+    # The two-belt cube, three hundred degrees in: one belt has swung
+    # into its loop and the other is twisted, which is the moment the
+    # trick is recognisable, and two belts read at icon size where six
+    # plus the cage are a tangle.  Pinned so a change to the defaults
+    # does not silently move the figure.
+    "mesh.belt_trick_add": dict(solid='TWO', turn=5.235987755982988),
     # The compound of five tetrahedra is the operator's own default and
     # the clearest advertisement for it: five interpenetrating solids
     # whose separateness is obvious at icon size, where the stella
@@ -444,6 +457,10 @@ PLAN_VIEW = {
 HIDE_AFTER = {
     "object.symmetric_sculpture_add": ("SymSculpt Motif",
                                        "SymSculpt Guides"),
+    # The slicer emits both an assembled 3-D preview (the "Plates") and
+    # a flat nested cut-sheet layout (the "Sheets"); the hero wants only
+    # the sliced part, so hide the sheet layout and its group empty.
+    "object.fabrication_slice": ("ReliefSlice Sheets", "ReliefSlice sheet"),
 }
 
 
@@ -897,13 +914,17 @@ VARIANT_EXTRA = {
         # output must be named explicitly: PARAMS pins RODS for the
         # hero, and params_for merges it in, so without this the plain
         # hyperboloid rendered identically to the rulings entry below.
-        ("HYPERBOLOID", "Stick Hyperboloid",
+        ("HYPERBOLOID", "Hyperboloid",
          dict(mode='HYPERBOLOID', output='SURFACE')),
-        ("HYPERBOLOID_RODS", "Stick Hyperboloid (Rulings)",
+        ("HYPERBOLOID_RODS", "Hyperboloid (Rulings)",
          dict(mode='HYPERBOLOID', output='RODS', family='BOTH')),
+        ("HYPERBOLOID_RIBBONS", "Hyperboloid (Woven Ribbons)",
+         dict(mode='HYPERBOLOID', output='RIBBONS', n_rods=32)),
         ("HELICAL_CONE", "Compound Helical Cone",
-         dict(mode='HELICAL_CONE')),
+         dict(mode='HELICAL_CONE', output='SURFACE')),
         ("SPIRAL", "Spiral Ruled", dict(mode='SPIRAL')),
+        ("SPIRAL_RIBBONS", "Spiral Ruled (Woven Ribbons)",
+         dict(mode='SPIRAL', output='RIBBONS')),
         ("SPIRAL_ROSETTE", "Spiral Ruled (Rosette)",
          dict(mode='SPIRAL', tightness=0.0, petals=5, petal_amp=0.4)),
         ("PLUCKER", "Plucker Cylindroid",
@@ -923,6 +944,8 @@ VARIANT_EXTRA = {
         ("TWIST_STRIP", "Twisted Strip (Mobius)",
          dict(mode='TWIST_STRIP', half_twists=1)),
         ("HYPAR", "Hyperbolic Paraboloid", dict(mode='HYPAR')),
+        ("HYPAR_RIBBONS", "Hyperbolic Paraboloid (Woven Ribbons)",
+         dict(mode='HYPAR', output='RIBBONS', n_rods=24)),
     ],
     # The atomic half is indexed by the quantum numbers (n, l, m), not
     # by an enum, so there is nothing to introspect; the molecular half
@@ -1386,8 +1409,30 @@ if _IN_BLENDER:
         bpy.context.view_layer.objects.active = made[0]
         return made
 
+    def _setup_fabrication_slice():
+        """A relief panel for the slicer to cut into stacked layers.
+
+        `object.fabrication_slice` slices whatever is active into flat
+        parts; with nothing there it has nothing to show.  A relief
+        panel is the telling subject -- sliced along Z it becomes a
+        stack of contour layers, the classic topographic model, which
+        is exactly what the operator is for.  The panel is renamed to a
+        fixed string so the Sheets layout it also emits can be hidden by
+        name (see HIDE_AFTER); the panel itself is dropped once the
+        operator has consumed it.
+        """
+        bpy.ops.mesh.relief_panel_add(preset='DUNES')
+        panel = bpy.context.active_object
+        panel.name = "ReliefSlice"
+        for ob in bpy.context.selected_objects:
+            ob.select_set(False)
+        panel.select_set(True)
+        bpy.context.view_layer.objects.active = panel
+        return [panel]
+
     SETUP = {
         "object.minimal_span": _setup_minimal_span,
+        "object.fabrication_slice": _setup_fabrication_slice,
     }
 
     # ----------------------------------------------------------------

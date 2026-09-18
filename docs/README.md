@@ -111,7 +111,8 @@ shown with a consistent studio render (regenerate them with
 |:--:|:--:|:--:|
 | [<img src="images/gem.png" width="240">](generators/gem.md)<br>**[Faceted Gemstone](generators/gem.md)** | [<img src="images/gem_cabochon.png" width="240">](generators/gem_cabochon.md)<br>**[Cabochon Gemstone](generators/gem_cabochon.md)** | [<img src="images/koman.png" width="240">](generators/koman.md)<br>**[Koman Developable](generators/koman.md)** |
 | [<img src="images/platonic_twist.png" width="240">](generators/platonic_twist.md)<br>**[Platonic Twist](generators/platonic_twist.md)** | [<img src="images/twisted_torus.png" width="240">](generators/twisted_torus.md)<br>**[Twisted Torus](generators/twisted_torus.md)** | [<img src="images/stereographic.png" width="240">](generators/stereographic.md)<br>**[Stereographic Projection Sphere](generators/stereographic.md)** |
-| [<img src="images/orbifold_sphere.png" width="240">](generators/orbifold_sphere.md)<br>**[Orbifold Symmetry Sphere](generators/orbifold_sphere.md)** | [<img src="images/bubble_cluster.png" width="240">](generators/bubble_cluster.md)<br>**[Bubble Cluster](generators/bubble_cluster.md)** | [<img src="images/relaxed_bubble.png" width="240">](generators/relaxed_bubble.md)<br>**[Optimized Bubble](generators/relaxed_bubble.md)** |
+| [<img src="images/belt_trick.png" width="240">](generators/belt_trick.md)<br>**[Dirac Belt Trick](generators/belt_trick.md)** | [<img src="images/orbifold_sphere.png" width="240">](generators/orbifold_sphere.md)<br>**[Orbifold Symmetry Sphere](generators/orbifold_sphere.md)** | [<img src="images/bubble_cluster.png" width="240">](generators/bubble_cluster.md)<br>**[Bubble Cluster](generators/bubble_cluster.md)** |
+| [<img src="images/relaxed_bubble.png" width="240">](generators/relaxed_bubble.md)<br>**[Optimized Bubble](generators/relaxed_bubble.md)** |  |  |
 
 ## Styles
 

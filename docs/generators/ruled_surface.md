@@ -125,29 +125,34 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/ruled_surface__HYPERBOLOID.png" width="200"><br><sub>Stick Hyperboloid</sub></td>
-<td align="center"><img src="../images/variants/ruled_surface__HYPERBOLOID_RODS.png" width="200"><br><sub>Stick Hyperboloid (Rulings)</sub></td>
-<td align="center"><img src="../images/variants/ruled_surface__HELICAL_CONE.png" width="200"><br><sub>Compound Helical Cone</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__HYPERBOLOID.png" width="200"><br><sub>Hyperboloid</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__HYPERBOLOID_RODS.png" width="200"><br><sub>Hyperboloid (Rulings)</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__HYPERBOLOID_RIBBONS.png" width="200"><br><sub>Hyperboloid (Woven Ribbons)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/ruled_surface__HELICAL_CONE.png" width="200"><br><sub>Compound Helical Cone</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__SPIRAL.png" width="200"><br><sub>Spiral Ruled</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__SPIRAL_RIBBONS.png" width="200"><br><sub>Spiral Ruled (Woven Ribbons)</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/ruled_surface__SPIRAL_ROSETTE.png" width="200"><br><sub>Spiral Ruled (Rosette)</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__PLUCKER.png" width="200"><br><sub>Plucker Cylindroid</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__WALLIS.png" width="200"><br><sub>Wallis Conical Edge</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/ruled_surface__WALLIS.png" width="200"><br><sub>Wallis Conical Edge</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__WHITNEY.png" width="200"><br><sub>Whitney Umbrella</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__PARABOLIC_CONOID.png" width="200"><br><sub>Parabolic Conoid</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__SINUSOIDAL_CONE.png" width="200"><br><sub>Sinusoidal Cone</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/ruled_surface__SINUSOIDAL_CONE.png" width="200"><br><sub>Sinusoidal Cone</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__HELICOIDAL_CONE.png" width="200"><br><sub>Helicoidal Cone</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__TANGENT_DEV.png" width="200"><br><sub>Tangent Developable</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__HELICOID.png" width="200"><br><sub>Helicoid</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/ruled_surface__HELICOID.png" width="200"><br><sub>Helicoid</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__TWIST_STRIP.png" width="200"><br><sub>Twisted Strip (Mobius)</sub></td>
 <td align="center"><img src="../images/variants/ruled_surface__HYPAR.png" width="200"><br><sub>Hyperbolic Paraboloid</sub></td>
+<td align="center"><img src="../images/variants/ruled_surface__HYPAR_RIBBONS.png" width="200"><br><sub>Hyperbolic Paraboloid (Woven Ribbons)</sub></td>
 </tr>
 </table>
 
