@@ -69,7 +69,15 @@
 # THE ARROW MARKING.  Goodman-Strauss re-draws the same rule as one
 # flat arrow per panel in three colours -- blue meets blue, green
 # meets red -- which is far easier to read than 192 pyramids
-# 1/10000 of a cell tall.  That re-drawing is reproduced here, and it
+# 1/10000 of a cell tall.  Blue is drawn as a WHOLE arrow and green
+# and red as the two HALVES of one, split down its long axis, and
+# that is the rule rather than decoration: a whole arrow is
+# mirror-symmetric, so it looks the same from either side of its
+# panel and matches itself, while a half is chiral, so the same
+# marking seen from the far side of the panel is its mirror.  Green
+# and red are therefore one marking viewed from its two sides, which
+# is why one may only ever meet the other.  That re-drawing is
+# reproduced here, and it
 # is checked rather than assumed: `_selftest` derives the colour
 # classes' behaviour from ATLAS44 and then shows that the arrow rule,
 # applied to the same 2,388 candidate poses the paper enumerates,
@@ -293,12 +301,32 @@ _A_TAIL, _A_TIP = -0.50, 0.62     # along the diagonal, from the centre
 _A_HEAD, _A_BARB = 0.34, 0.20     # head length, barb setback from tip
 _A_HALF, _A_SHAFT = 0.17, 0.072   # head half-width, shaft half-width
 _A_SINK, _A_RISE = -0.005, 0.014  # below / above the panel surface
+# A half sits entirely on one side of the axis, so at the whole
+# arrow's own width it reads much lighter than the whole one next to
+# it.  Goodman-Strauss draws his halves heavier for the same reason;
+# this widens them across (never along), so they still read as one
+# arrow cut down its length.
+_A_HALF_GAIN = 1.4
 
 
-def arrow_polygon(su, sv):
+def arrow_polygon(su, sv, half=0):
     """The arrow outline in panel (u, v), pointing at (su, sv)/2.
 
-    Returned counterclockwise, as seven points.
+    `half` picks the marking's chirality, which is what sorts the
+    three colours:
+
+      0   the whole arrow, barbed on both sides -- blue.  It is
+          mirror-symmetric about its own axis, so it looks the same
+          from either side of the panel, and that is exactly why blue
+          matches blue.
+      +1  the half on the +across side, -1 the half on the -across
+          side: the whole arrow split down its long axis.  A half is
+          chiral, so the same marking seen from the far side of the
+          panel is its mirror -- which is how green and red are one
+          marking seen from its two sides, and why a green may only
+          meet a red.
+
+    Returned counterclockwise.
     """
     r = 0.7071067811865476
     du, dv = su * r, sv * r          # unit vector along the diagonal
@@ -307,22 +335,51 @@ def arrow_polygon(su, sv):
     def at(along, across):
         return (du * along + nu * across, dv * along + nv * across)
 
-    pts = [at(_A_TAIL, _A_SHAFT),
-           at(_A_TIP - _A_BARB, _A_SHAFT),
-           at(_A_TIP - _A_HEAD, _A_HALF),
-           at(_A_TIP, 0.0),
-           at(_A_TIP - _A_HEAD, -_A_HALF),
-           at(_A_TIP - _A_BARB, -_A_SHAFT),
-           at(_A_TAIL, -_A_SHAFT)]
-    area = sum(pts[i][0] * pts[(i + 1) % 7][1]
-               - pts[(i + 1) % 7][0] * pts[i][1] for i in range(7)) / 2
+    if half == 0:
+        pts = [at(_A_TAIL, _A_SHAFT),
+               at(_A_TIP - _A_BARB, _A_SHAFT),
+               at(_A_TIP - _A_HEAD, _A_HALF),
+               at(_A_TIP, 0.0),
+               at(_A_TIP - _A_HEAD, -_A_HALF),
+               at(_A_TIP - _A_BARB, -_A_SHAFT),
+               at(_A_TAIL, -_A_SHAFT)]
+    else:
+        k = (1.0 if half > 0 else -1.0) * _A_HALF_GAIN
+        pts = [at(_A_TAIL, k * _A_SHAFT),
+               at(_A_TIP - _A_BARB, k * _A_SHAFT),
+               at(_A_TIP - _A_HEAD, k * _A_HALF),
+               at(_A_TIP, 0.0),
+               at(_A_TAIL, 0.0)]
+    n = len(pts)
+    area = sum(pts[i][0] * pts[(i + 1) % n][1]
+               - pts[(i + 1) % n][0] * pts[i][1] for i in range(n)) / 2
     return pts[::-1] if area < 0 else pts
 
 
-# The outline is concave at the two barb junctions, so it is cut into
-# convex pieces by hand rather than fanned: the shaft quad, the tip,
-# and the two barbs.  Indices are into arrow_polygon's seven points.
-_ARROW_PIECES = ((0, 1, 5, 6), (2, 3, 4), (1, 2, 4), (1, 4, 5))
+# Both outlines are concave at their barb junctions, so each is cut
+# into convex pieces by hand rather than fanned.  Indices are into
+# arrow_polygon's points, before any reversal.
+_ARROW_PIECES_FULL = ((0, 1, 5, 6), (2, 3, 4), (1, 2, 4), (1, 4, 5))
+_ARROW_PIECES_HALF = ((0, 1, 4), (1, 2, 3), (1, 3, 4))
+
+
+def arrow_half(pid, flip):
+    """Which half of the arrow panel `pid` carries, as a sign in the
+    panel's own (u, v) frame.
+
+    Goodman-Strauss's net draws every green barb on the RIGHT of
+    travel and every red barb on the LEFT, both seen from outside the
+    tile.  Seen from outside, +90 degrees in (u, v) reads as the left
+    of travel when the frame (u, v, outward normal) is right-handed
+    and as the right when it is not -- which is the same condition as
+    the winding flip.  So the sign has to be taken back through the
+    flip to stay true to the drawing.
+    """
+    colour = PANEL_COLOR[pid]
+    if colour == 0:                   # blue: the whole arrow
+        return 0
+    seen_left = 1 if colour == 2 else -1      # red left, green right
+    return seen_left if not flip else -seen_left
 
 
 # ------------------------------------------------------------------
@@ -513,7 +570,10 @@ def arrow_tile_mesh():
         o0, o1, orient = _panel_axes(ax)
         flip = (orient != sg)
         _home, (du, dv) = panel_home(key)
-        poly = arrow_polygon(1 if du > 0 else -1, 1 if dv > 0 else -1)
+        half = arrow_half(pid, flip)
+        poly = arrow_polygon(1 if du > 0 else -1, 1 if dv > 0 else -1,
+                             half)
+        pieces = _ARROW_PIECES_FULL if half == 0 else _ARROW_PIECES_HALF
 
         def pt(uv, lift):
             q = [None, None, None]
@@ -525,7 +585,7 @@ def arrow_tile_mesh():
         lo = [pt(q, _A_SINK) for q in poly]
         hi = [pt(q, _A_RISE) for q in poly]
         col = PANEL_COLOR[pid]
-        for piece in _ARROW_PIECES:
+        for piece in pieces:
             top = [hi[i] for i in piece]
             bot = [lo[i] for i in piece][::-1]
             faces.append(tuple(top[::-1] if flip else top))
@@ -541,9 +601,9 @@ def arrow_tile_mesh():
     return verts, faces, colors
 
 
-def arrow_area():
-    """Plan area of one arrow marking (both diagonals give the same)."""
-    pts = arrow_polygon(1, 1)
+def arrow_area(half=0):
+    """Plan area of one arrow marking."""
+    pts = arrow_polygon(1, 1, half)
     n = len(pts)
     return abs(sum(pts[i][0] * pts[(i + 1) % n][1]
                    - pts[(i + 1) % n][0] * pts[i][1]
@@ -1013,23 +1073,67 @@ def _selftest():
                    f"arrow rule admits {len(admitted)} poses, the {len(proper)} "
                    "proper ones exactly the 44-contact atlas")
 
-    # 13. the arrow tile closes, with the volume its slabs imply
+    # 13. the two halves are one marking seen from its two sides.
+    #     For every mated pair the markings must occupy the SAME
+    #     region of the shared square -- same axis (checked above)
+    #     and, for the chiral ones, the same side of it.  A green half
+    #     and a red half landing on opposite sides would be two
+    #     different decorations of one face, not one.
+    def barb_direction(G, t, key):
+        """Which way a posed panel's half sticks out, in world axes."""
+        ax, sg, plane, u0, v0 = key
+        pid, _co = PANELS[key]
+        o0, o1, orient = _panel_axes(ax)
+        h = arrow_half(pid, orient != sg)
+        if h == 0:
+            return None
+        _home, (du, dv) = panel_home(key)
+        su = 1 if du > 0 else -1
+        sv = 1 if dv > 0 else -1
+        across = [0, 0, 0]
+        across[o0] = -sv * h
+        across[o1] = su * h
+        return mat_apply(G, tuple(across))
+
+    key_of = {PANELS[k][0]: k for k in PANELS}
+    chiral = same_side = 0
+    for pp, ss, off in ATLAS44:
+        G = frame(pp, ss)
+        for wc, wn, pid, wh in posed_panels(G, off):
+            hit = site.get((wc, tuple(-x for x in wn)))
+            if hit is None:
+                continue
+            rid, _rh = hit
+            a = barb_direction(ident, (0, 0, 0), key_of[rid])
+            b = barb_direction(G, off, key_of[pid])
+            if a is None or b is None:
+                continue
+            chiral += 1
+            same_side += (a == b)
+    good &= _check(chiral and same_side == chiral,
+                   f"{same_side}/{chiral} green-red contacts put their "
+                   "two halves on the same side: one marking, two views")
+
+    # 14. the arrow tile closes, with the volume its slabs imply
     av, af, acol = arrow_tile_mesh()
     aedges = {}
     for f in af:
         for i in range(len(f)):
             k = tuple(sorted((f[i], f[(i + 1) % len(f)])))
             aedges[k] = aedges.get(k, 0) + 1
-    want_vol = 7 + 24 * arrow_area() * (_A_RISE - _A_SINK)
+    n_full = sum(1 for pid in PANEL_COLOR.values() if pid == 0)
+    want_vol = 7 + (n_full * arrow_area(0)
+                    + (24 - n_full) * arrow_area(1)) * (_A_RISE - _A_SINK)
     got_vol = float(mesh_volume(av, af))
-    good &= _check(len(af) == 384
-                   and sum(1 for c in acol if c is not None) == 360
+    good &= _check(abs(arrow_area(1) * 2 / _A_HALF_GAIN
+                       - arrow_area(0)) < 1e-12
+                   and n_full == 8
                    and all(n == 2 for n in aedges.values())
                    and abs(got_vol - want_vol) < 1e-9,
-                   f"arrow tile: {len(af)} faces, closed, volume "
-                   f"{got_vol:.6f} = 7 + 24 slabs")
+                   f"arrow tile: {len(af)} faces, closed, 8 whole and 16 "
+                   f"half arrows, volume {got_vol:.6f}")
 
-    # 14. the exaggerated preset stays clear of the gap it is drawn in
+    # 15. the exaggerated preset stays clear of the gap it is drawn in
     good &= _check(MIN_CONTACT_SPAN == 1,
                    f"tightest legal contact spans {MIN_CONTACT_SPAN} "
                    "(a notch panel against an outer one)")

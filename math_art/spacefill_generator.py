@@ -104,12 +104,12 @@ import numpy as np
 try:
     from .ifs.spacefill import (_face_key, _mesh_volume, _spiral_data,
                                 block_volume, build_mesh, spiral_n)
-    from .ifs.spacefill import CHAIR_COLOR_SLOTS
+    from .ifs.spacefill import CHAIR_COLOR_SLOTS, build_cell_meshes
     from .ifs.chair44 import max_relief
 except ImportError:  # flat import outside the package
     from ifs.spacefill import (_face_key, _mesh_volume, _spiral_data,
                                block_volume, build_mesh, spiral_n)
-    from ifs.spacefill import CHAIR_COLOR_SLOTS
+    from ifs.spacefill import CHAIR_COLOR_SLOTS, build_cell_meshes
     from ifs.chair44 import max_relief
 
 
@@ -158,6 +158,24 @@ if _IN_BLENDER:
         import colorsys
         return [colorsys.hsv_to_rgb((i * 0.618033988749895) % 1.0,
                                     sat, val) for i in range(n)]
+
+    def _chair44_materials(color_mode, arrows):
+        """Body slots first, then the three arrow colours, so the
+        indices line up with CHAIR_COLOR_SLOTS whichever way the
+        block is built."""
+        out = []
+        if color_mode == 'NONE':
+            out.append(_material("Chair44 Body", (0.88, 0.88, 0.86)))
+        else:
+            what = "Supertile" if color_mode == 'PARENT' else "Rotation"
+            for i, rgb in enumerate(_wheel(CHAIR_COLOR_SLOTS[color_mode])):
+                out.append(_material(f"Chair44 {what} {i}", rgb))
+        if arrows:
+            for name, rgb in (("Blue", (0.11, 0.21, 0.52)),
+                              ("Green", (0.52, 0.78, 0.24)),
+                              ("Red", (0.85, 0.15, 0.14))):
+                out.append(_material(f"Chair44 Arrow {name}", rgb))
+        return out
 
     def _material(name, rgb):
         mat = bpy.data.materials.get(name)
@@ -314,6 +332,12 @@ if _IN_BLENDER:
                         "features; clamped so that neighbouring "
                         "pyramids stay clear of each other at the "
                         "current Gap Factor")
+        chair_separate: BoolProperty(
+            name="Separate Chairs", default=False,
+            description="One mesh object per chair, parented to an "
+                        "empty, instead of a single merged mesh -- so "
+                        "individual tiles can be moved, hidden or "
+                        "exported on their own")
         chair_color: EnumProperty(
             name="Color By",
             items=[('PARENT', "Supertile",
@@ -323,7 +347,7 @@ if _IN_BLENDER:
                     "One color per cubic rotation the chair sits in, "
                     "up to 24; shows how many poses one solid takes"),
                    ('NONE', "Single", "One material for every chair")],
-            default='PARENT',
+            default='FRAME',
             description="How to color the chairs of a Chair44 patch")
 
         def execute(self, context):
@@ -340,6 +364,8 @@ if _IN_BLENDER:
                 cap = max_relief(self.gap)
                 if relief > cap:
                     relief, clamped = cap, True
+            if self.kind == 'CHAIR44' and self.chair_separate:
+                return self._separate(context, relief, clamped)
             try:
                 verts, faces, tags = build_mesh(
                     self.kind, self.nx, self.ny, self.nz,
@@ -362,24 +388,10 @@ if _IN_BLENDER:
             me.validate(clean_customdata=True)
             if (self.kind == 'CHAIR44'
                     and len(me.polygons) == len(tags)):
-                # body slots first, then the three arrow colours, so
-                # the indices line up with CHAIR_COLOR_SLOTS
-                if self.chair_color == 'NONE':
-                    me.materials.append(_material(
-                        "Chair44 Body", (0.88, 0.88, 0.86)))
-                else:
-                    what = ("Supertile" if self.chair_color == 'PARENT'
-                            else "Rotation")
-                    n = CHAIR_COLOR_SLOTS[self.chair_color]
-                    for i, rgb in enumerate(_wheel(n)):
-                        me.materials.append(_material(
-                            f"Chair44 {what} {i}", rgb))
-                if self.chair_features == 'ARROWS':
-                    for name, rgb in (("Blue", (0.11, 0.21, 0.52)),
-                                      ("Green", (0.52, 0.78, 0.24)),
-                                      ("Red", (0.85, 0.15, 0.14))):
-                        me.materials.append(_material(
-                            f"Chair44 Arrow {name}", rgb))
+                for mat in _chair44_materials(
+                        self.chair_color,
+                        self.chair_features == 'ARROWS'):
+                    me.materials.append(mat)
                 me.polygons.foreach_set('material_index', tags)
             elif (self.kind == 'OBTET'
                     and len(me.polygons) == len(tags)):
@@ -411,7 +423,9 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            if self.style == 'LEONARDO':
+            if self.kind == 'CHAIR44':
+                pass                      # Style does not apply here
+            elif self.style == 'LEONARDO':
                 try:
                     from . import leonardo_style
                 except ImportError:
@@ -437,6 +451,65 @@ if _IN_BLENDER:
                         f"F={len(me.polygons)}")
             return {'FINISHED'}
 
+        def _separate(self, context, relief, clamped):
+            """One object per chair, parented to an empty.
+
+            Uses the same fit as the merged block -- one bounding box
+            over every cell, not one per cell -- so the two forms land
+            in the same place at the same size.
+            """
+            try:
+                cells = build_cell_meshes(
+                    self.kind, self.nx, self.ny, self.nz, self.gap, 1.0,
+                    self.spiral_segments, self.spiral_pitch,
+                    self.chair_depth, self.chair_features, relief,
+                    self.chair_color)
+            except ValueError as e:
+                self.report({'ERROR'}, str(e))
+                return {'CANCELLED'}
+            allv = np.asarray([q for cv, _f, _t in cells for q in cv],
+                              float)
+            lo = allv.min(axis=0)
+            hi = allv.max(axis=0)
+            span = float(np.max(hi - lo)) or 1.0
+            mid = (lo + hi) / 2.0
+            k = 2.0 * self.scale / span
+            mats = _chair44_materials(self.chair_color,
+                                      self.chair_features == 'ARROWS')
+            for o in context.selected_objects:
+                o.select_set(False)
+            root = bpy.data.objects.new("Chair44 Patch", None)
+            root.empty_display_size = max(self.scale, 0.01)
+            context.collection.objects.link(root)
+            root.location = context.scene.cursor.location
+            nv = nf = 0
+            for i, (cv, cf, ct) in enumerate(cells):
+                P = (np.asarray(cv, float) - mid) * k
+                me = bpy.data.meshes.new(f"Chair44 {i:03d}")
+                me.from_pydata([tuple(q) for q in P], [],
+                               [list(f) for f in cf])
+                me.validate(clean_customdata=True)
+                for mat in mats:
+                    me.materials.append(mat)
+                if len(me.polygons) == len(ct):
+                    me.polygons.foreach_set('material_index', ct)
+                me.update()
+                ob = bpy.data.objects.new(f"Chair44 {i:03d}", me)
+                context.collection.objects.link(ob)
+                ob.parent = root
+                ob.select_set(True)
+                nv += len(me.vertices)
+                nf += len(me.polygons)
+            root.select_set(True)
+            context.view_layer.objects.active = root
+            note = f"{len(cells)} chairs, separate objects, "
+            if clamped:
+                note += (f"relief clamped to {relief:.1f} for "
+                         f"gap {self.gap:.2f}, ")
+            self.report({'INFO'},
+                        f"{_LABEL[self.kind]}: {note}V={nv} F={nf}")
+            return {'FINISHED'}
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
@@ -452,6 +525,7 @@ if _IN_BLENDER:
             for k in ('gap', 'scale'):
                 lay.prop(self, k)
             if chair:
+                lay.prop(self, 'chair_separate')
                 lay.prop(self, 'chair_features')
                 if self.chair_features == 'EXAGGERATED':
                     row = lay.row()
@@ -464,13 +538,20 @@ if _IN_BLENDER:
                 lay.prop(self, 'spiral_pitch')
             if self.kind in ('OCTET', 'SPIRAL3', 'SPIRAL4'):
                 lay.prop(self, 'two_materials')
-            lay.prop(self, 'style')
-            if self.style == 'LEONARDO':
-                lay.prop(self, 'border')
-                lay.prop(self, 'thickness')
-            elif self.style == 'BALLSTICK':
-                lay.prop(self, 'strut_radius')
-                lay.prop(self, 'node_radius')
+            # Style is for the convex honeycomb cells: Leonardo
+            # panels want flat faces to frame and ball-and-stick wants
+            # a strut per edge, and a Chair44 tile carrying 192
+            # features or 24 arrow slabs has neither in any useful
+            # sense -- it would make hundreds of thousands of struts
+            # out of the markings.  So it is not offered here.
+            if not chair:
+                lay.prop(self, 'style')
+                if self.style == 'LEONARDO':
+                    lay.prop(self, 'border')
+                    lay.prop(self, 'thickness')
+                elif self.style == 'BALLSTICK':
+                    lay.prop(self, 'strut_radius')
+                    lay.prop(self, 'node_radius')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.spacefill_add",

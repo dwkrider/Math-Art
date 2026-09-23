@@ -509,6 +509,37 @@ def build_mesh(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92, size=1.0,
     return verts, faces, tags
 
 
+def build_cell_meshes(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92,
+                     size=1.0, spiral_segments=12, spiral_pitch=55.0,
+                     chair_depth=2, chair_features='EXAGGERATED',
+                     chair_relief=30.0, chair_color='PARENT'):
+    """The same block as `build_mesh`, but kept one cell per entry.
+
+    Returns [(verts, faces, face_tags)], every cell already placed in
+    the same frame `build_mesh` would put it in, so a caller that
+    makes one object per cell gets a block that lines up with the
+    merged one.
+    """
+    cells, pitch = build_block(kind, nx, ny, nz, spiral_segments,
+                               spiral_pitch, chair_depth,
+                               chair_features, chair_relief,
+                               chair_color)
+    s = size / pitch
+    lo = np.full(3, np.inf)
+    hi = -lo
+    for c, V, F, t in cells:
+        lo = np.minimum(lo, c + V.min(axis=0))
+        hi = np.maximum(hi, c + V.max(axis=0))
+    mid = (lo + hi) / 2.0
+    out = []
+    for c, V, F, t in cells:
+        verts = [tuple(q) for q in (c - mid + gap * V) * s]
+        faces = [tuple(f) for f in F]
+        tags = list(t) if isinstance(t, list) else [t] * len(F)
+        out.append((verts, faces, tags))
+    return out
+
+
 _CELL_VOL = {'CUBIC': {0: 1.0},               # per canonical cell
              'OCTET': {0: 4.0 / 3.0, 1: 1.0 / 3.0},
              'TRUNCOCT': {0: 32.0},
