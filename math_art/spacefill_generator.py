@@ -19,6 +19,20 @@
 #               translation alone -- are here.
 #   SPIRAL3     3-armed rhombic spirallohedra S(12, 4) (Towle)
 #   SPIRAL4     4-armed rhombic spirallohedra S(12, 3)
+#   CHAIR44     Chair44 (R44), the seven-cube chair carrying 192 tiny
+#               square-pyramid features (Tsiokos 2026).  The odd one
+#               out: every other block here is a cell repeated on a
+#               lattice, but Chair44 has no lattice.  Its blocks are
+#               grown by the chair's own eight-child substitution --
+#               eight rotated copies form a doubled chair, and each
+#               refinement multiplies the patch by eight -- so the
+#               Cells X/Y/Z counts do not apply and Substitution Depth
+#               drives it instead.  The features are the point: two
+#               pyramids mate only as a bump into a dent of the same
+#               magnitude, and that is claimed to force every tiling
+#               of space by this one solid to be non-periodic.  See
+#               `ifs/chair44.py` for the panel recipe, the
+#               substitution, and what is and is not proved.
 #
 # The spirallohedra tile space by pure translations: every rhombic
 # face of the cell maps onto an opposite face of the same cell
@@ -43,6 +57,18 @@
 # - The alternated cubic (octet) and bitruncated cubic honeycombs and
 #   the Voronoi cells of the cubic, BCC and FCC lattices: H. S. M.
 #   Coxeter, "Regular Polytopes", 3rd ed., Dover, 1973.
+# - Ioannis Tsiokos, "A Strongly Aperiodic Monotile in Three
+#   Dimensions", arXiv:2609.19214 (2026) -- the Chair44 (R44) solid,
+#   its 24-panel / 192-feature recipe and the eight-child chair
+#   substitution.  Presented as a proof submission; the aperiodicity
+#   theorem is not yet refereed.
+# - Joshua E. S. Socolar and Joan M. Taylor, "Forcing nonperiodicity
+#   with a single tile", Math. Intelligencer 34(1):18-28 (2012) -- the
+#   question Chair44 answers, and the Schmitt-Conway-Danzer biprism.
+# - David Smith, Joseph Samuel Myers, Craig S. Kaplan and Chaim
+#   Goodman-Strauss, "An aperiodic monotile", Comb. Theory 4(1):6
+#   (2024) -- the planar einstein whose unique-hierarchy argument the
+#   Chair44 construction follows.
 # - The obtetrahedrille (Conway's oblate tetrahedrille / tetragonal
 #   disphenoid honeycomb, each rhombic dodecahedron split into 24
 #   disphenoids): J. H. Conway, H. Burgiel, C. Goodman-Strauss, "The
@@ -69,9 +95,11 @@ import numpy as np
 try:
     from .ifs.spacefill import (_face_key, _mesh_volume, _spiral_data,
                                 block_volume, build_mesh, spiral_n)
+    from .ifs.chair44 import max_relief
 except ImportError:  # flat import outside the package
     from ifs.spacefill import (_face_key, _mesh_volume, _spiral_data,
                                block_volume, build_mesh, spiral_n)
+    from ifs.chair44 import max_relief
 
 
 # ------------------------------------------------------------------
@@ -105,12 +133,20 @@ if _IN_BLENDER:
               'ELONGDODEC': "Elongated Dodecahedra",
               'OBTET': "Obtetrahedrille",
               'SPIRAL3': "Spirallohedra (3-Armed)",
-              'SPIRAL4': "Spirallohedra (4-Armed)"}
+              'SPIRAL4': "Spirallohedra (4-Armed)",
+              'CHAIR44': "Chair44 Monotile"}
 
     # six-colour palette for the obtetrahedrille disphenoid orientations
     _OBTET_RGB = {0: (0.86, 0.28, 0.24), 1: (0.30, 0.55, 0.82),
                   2: (0.32, 0.70, 0.42), 3: (0.95, 0.76, 0.28),
                   4: (0.60, 0.40, 0.75), 5: (0.28, 0.72, 0.70)}
+
+    def _wheel(n, sat=0.70, val=0.86):
+        """n well-separated hues, for the supertile and frame
+        colorings; the golden-angle step keeps 24 of them distinct."""
+        import colorsys
+        return [colorsys.hsv_to_rgb((i * 0.618033988749895) % 1.0,
+                                    sat, val) for i in range(n)]
 
     def _material(name, rgb):
         mat = bpy.data.materials.get(name)
@@ -164,7 +200,13 @@ if _IN_BLENDER:
                    ('SPIRAL4', "Rhombic Spirallohedra (4-Armed)",
                     "Four-armed rhombic spirallohedra S(12,3) "
                     "after Russell Towle, interlocking on their "
-                    "translation lattice")],
+                    "translation lattice"),
+                   ('CHAIR44', "Chair44 Monotile",
+                    "The seven-cube chair carrying 192 square-pyramid "
+                    "features (Tsiokos 2026), grown by its eight-child "
+                    "substitution rather than on a lattice: one solid "
+                    "claimed to tile space only non-periodically. Use "
+                    "Substitution Depth, not the cell counts")],
             default='OCTET',
             description="Which space-filling honeycomb to build, one "
                         "solid per lattice cell")
@@ -225,13 +267,68 @@ if _IN_BLENDER:
             description="Polar star pitch angle from the axis "
                         "(degrees); higher is squatter, wider "
                         "spiral cells")
+        chair_depth: IntProperty(
+            name="Substitution Depth", default=2, min=0, max=3,
+            description="Refinement steps for the Chair44 patch; each "
+                        "step replaces every chair by eight, giving 1, "
+                        "8, 64 or 512 solids. Depth 3 with features on "
+                        "is over a million vertices -- switch features "
+                        "off to go that deep comfortably")
+        chair_features: EnumProperty(
+            name="Features",
+            items=[('EXAGGERATED', "Enlarged",
+                    "Bases five times over and heights scaled by "
+                    "Relief, so the pyramids can be seen -- the "
+                    "convention the paper's own figures use"),
+                   ('TRUE', "True Size",
+                    "The exact solid: base side 1/50 of a cell and "
+                    "heights 1/10000 to 12/10000. Correct, and far too "
+                    "small to see at any ordinary render scale"),
+                   ('NONE', "None",
+                    "The bare seven-cube carrier, 24 flat panels. "
+                    "Cheap enough for the deepest patches, but the "
+                    "chair alone tiles space periodically")],
+            default='EXAGGERATED',
+            description="How large to draw the square-pyramid features "
+                        "that decide which chairs may meet")
+        chair_relief: FloatProperty(
+            name="Relief", default=30.0, min=1.0, max=200.0,
+            description="Height exaggeration for the enlarged "
+                        "features; clamped so that neighbouring "
+                        "pyramids stay clear of each other at the "
+                        "current Gap Factor")
+        chair_color: EnumProperty(
+            name="Color By",
+            items=[('PARENT', "Supertile",
+                    "One color per top-level supertile, the eight "
+                    "groups the substitution makes"),
+                   ('FRAME', "Rotation",
+                    "One color per cubic rotation the chair sits in, "
+                    "up to 24; shows how many poses one solid takes"),
+                   ('NONE', "Single", "One material for every chair")],
+            default='PARENT',
+            description="How to color the chairs of a Chair44 patch")
 
         def execute(self, context):
+            # Every chair shrinks about its OWN centroid, so a bump and
+            # the dent it mates with slide apart and each bump ends up
+            # facing flat panel.  Past a certain relief it faces another
+            # bump instead, so clamp the exaggeration to what the gap
+            # can hold.  The chairs themselves never intersect -- the
+            # carrier is star-shaped about its centroid -- this is
+            # purely about the pyramids.
+            relief = self.chair_relief
+            clamped = False
+            if self.kind == 'CHAIR44' and self.chair_features == 'EXAGGERATED':
+                cap = max_relief(self.gap)
+                if relief > cap:
+                    relief, clamped = cap, True
             try:
                 verts, faces, tags = build_mesh(
                     self.kind, self.nx, self.ny, self.nz,
                     self.gap, 1.0, self.spiral_segments,
-                    self.spiral_pitch)
+                    self.spiral_pitch, self.chair_depth,
+                    self.chair_features, relief, self.chair_color)
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -246,7 +343,17 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new("Spacefill")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
-            if (self.kind == 'OBTET'
+            if (self.kind == 'CHAIR44'
+                    and self.chair_color != 'NONE'
+                    and len(me.polygons) == len(tags)):
+                n = max(tags) + 1
+                what = ("Supertile" if self.chair_color == 'PARENT'
+                        else "Rotation")
+                for i, rgb in enumerate(_wheel(n)):
+                    me.materials.append(_material(
+                        f"Chair44 {what} {i}", rgb))
+                me.polygons.foreach_set('material_index', tags)
+            elif (self.kind == 'OBTET'
                     and len(me.polygons) == len(tags)):
                 # six materials, one per disphenoid orientation
                 for t in range(6):
@@ -290,8 +397,14 @@ if _IN_BLENDER:
                     from styles import ball_and_stick
                 ball_and_stick.rebuild(obj, self.strut_radius,
                                        self.node_radius)
+            note = ""
+            if self.kind == 'CHAIR44':
+                note = f"{8 ** self.chair_depth} chairs, "
+                if clamped:
+                    note += (f"relief clamped to {relief:.1f} for "
+                             f"gap {self.gap:.2f}, ")
             self.report({'INFO'},
-                        f"{_LABEL[self.kind]}: "
+                        f"{_LABEL[self.kind]}: {note}"
                         f"V={len(me.vertices)} "
                         f"F={len(me.polygons)}")
             return {'FINISHED'}
@@ -299,8 +412,25 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('kind', 'nx', 'ny', 'nz', 'gap', 'scale'):
+            chair = (self.kind == 'CHAIR44')
+            lay.prop(self, 'kind')
+            # Chair44 is not laid on a lattice, so the cell counts
+            # would do nothing; Substitution Depth stands in for them.
+            if chair:
+                lay.prop(self, 'chair_depth')
+            else:
+                for k in ('nx', 'ny', 'nz'):
+                    lay.prop(self, k)
+            for k in ('gap', 'scale'):
                 lay.prop(self, k)
+            if chair:
+                lay.prop(self, 'chair_features')
+                if self.chair_features == 'EXAGGERATED':
+                    row = lay.row()
+                    row.prop(self, 'chair_relief')
+                    cap = max_relief(self.gap)
+                    row.alert = self.chair_relief > cap
+                lay.prop(self, 'chair_color')
             if self.kind in ('SPIRAL3', 'SPIRAL4'):
                 lay.prop(self, 'spiral_segments')
                 lay.prop(self, 'spiral_pitch')
@@ -336,10 +466,15 @@ def _selftest():
     # analytic total cell volume for every honeycomb
     for kind in ('CUBIC', 'OCTET', 'TRUNCOCT', 'RHOMBDODEC',
                  'HEXPRISM', 'ELONGDODEC',
-                 'OBTET', 'SPIRAL3', 'SPIRAL4'):
-        v, f, t = build_mesh(kind, 3, 3, 2, gap=1.0)
+                 'OBTET', 'SPIRAL3', 'SPIRAL4', 'CHAIR44'):
+        # Chair44 at depth 1 is eight chairs: enough to exercise the
+        # substitution and the volume identity, cheap enough to run
+        # with the rest.  Volume 7 per chair is exact -- the bump and
+        # dent volumes cancel -- so this is a real check, not a
+        # tolerance.
+        v, f, t = build_mesh(kind, 3, 3, 2, gap=1.0, chair_depth=1)
         num = _mesh_volume(v, f)
-        ana = block_volume(kind, 3, 3, 2)
+        ana = block_volume(kind, 3, 3, 2, chair_depth=1)
         ok = abs(num - ana) < 1e-9 * max(1.0, ana)
         print(f"{kind}: vol={num:.6f} ({ana:.6f}) "
               f"{'OK' if ok else 'BAD'}")
