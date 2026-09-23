@@ -917,6 +917,25 @@ def patch_site_pages(n_surf, n_solid):
             "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
         }, depth=1))
 
+    patch_head(os.path.join(WEB, "modules", "chair44.html"), head_block(
+        canonical=url("modules/chair44.html"),
+        title="Chair44, the 3-D Monotile - %s" % SITE,
+        desc=("Chair44, a single solid claimed to tile three-dimensional "
+              "space only without repeating: the seven-cube chair, its 192 "
+              "square-pyramid features, and patches grown live in the "
+              "browser by its eight-child substitution."),
+        image=url("thumbs/modules/chair44.png"),
+        image_alt="A patch of 64 Chair44 tiles, each face carrying an arrow",
+        ld={
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Chair44, the 3-D Monotile",
+            "url": url("modules/chair44.html"),
+            "description": "An interactive model of the Chair44 aperiodic "
+                           "monotile and its substitution patches.",
+            "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
+        }, depth=1))
+
     patch_head(os.path.join(WEB, "modules", "belt-trick.html"), head_block(
         canonical=url("modules/belt-trick.html"),
         title="Dirac's Belt Trick - %s" % SITE,
@@ -1007,6 +1026,7 @@ def main():
             (url("modules/surfaces.html"), 0.9),
             (url("modules/periodic.html"), 0.9),
             (url("modules/belt-trick.html"), 0.9),
+            (url("modules/chair44.html"), 0.9),
             (url("catalog/polyhedra/index.html"), 0.7),
             (url("catalog/surfaces/index.html"), 0.7)]
     urls += [(url("catalog/surfaces/%s.html" % e["slug"]), 0.5)
@@ -1024,7 +1044,7 @@ def main():
     print("robots.txt        : written")
     print("head blocks       : index.html, modules/surfaces.html, "
           "modules/polyhedra.html, modules/periodic.html, "
-          "modules/belt-trick.html")
+          "modules/belt-trick.html, modules/chair44.html")
     return 0
 
 

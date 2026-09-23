@@ -1334,3 +1334,17 @@ figcaption {
   line-height: 1.55;
 }
 .belt-sources li { margin-bottom: 0.35rem; }
+
+/* Chair44 reuses the belt page's frame; these are the two controls it
+ * adds -- a labelled slider that sits in a row, and a readout line. */
+.belt-slider {
+  min-width: 13rem;
+  flex: 1 1 13rem;
+}
+.belt-slider input[type="range"] { width: 100%; }
+.belt-slider output {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  margin-left: 0.35rem;
+}
