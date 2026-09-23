@@ -11,6 +11,11 @@
 # its defining half-space planes rather than from a vertex table, so the
 # faces come out planar by construction.
 #
+# One cell here is not periodic and not convex: CHAIR44, the seven-cube
+# chair with 192 square-pyramid features, whose blocks are grown by the
+# substitution in the sibling module `chair44` rather than laid on a
+# lattice.  Its `nx, ny, nz` are ignored; `chair_depth` drives it.
+#
 # References:
 # - Lord Kelvin (W. Thomson), "On the division of space with minimum
 #   partitional area", Philosophical Magazine 24, 1887, pp. 503-514.
@@ -20,8 +25,14 @@
 
 import itertools
 import math
+from fractions import Fraction
 
 import numpy as np
+
+try:
+    from . import chair44
+except ImportError:  # flat import outside the package
+    import chair44
 
 
 def _plane_faces(verts, planes):
@@ -323,8 +334,52 @@ def _spiral_data(kind, segments=12, pitch=55.0):
     return out
 
 
+# How many material slots the chair bodies take before the arrow
+# colours start.  The operator builds its material list to match.
+CHAIR_COLOR_SLOTS = {'NONE': 1, 'PARENT': 8, 'FRAME': 24}
+
+_CHAIR_CACHE = {}
+
+
+def chair_tile(features='EXAGGERATED', relief=30.0):
+    """One copy of Chair44, as (verts about its centroid, faces,
+    arrow colours).
+
+    The last is None except in ARROWS mode, where it is parallel to
+    `faces` and holds None for a body panel or an index into
+    `chair44.ARROW_COLORS` for an arrow face.
+
+    Cached: a depth-3 patch is 512 chairs and they are all the same
+    solid, so the tile is built once and only the pose transform is
+    repeated.
+    """
+    key = (features, round(float(relief), 6))
+    hit = _CHAIR_CACHE.get(key)
+    if hit is not None:
+        return hit
+    arrows = None
+    if features == 'NONE':
+        verts, faces = chair44.bare_tile_mesh()
+    elif features == 'ARROWS':
+        verts, faces, arrows = chair44.arrow_tile_mesh()
+    elif features == 'TRUE':
+        verts, faces = chair44.tile_mesh(chair44.ETA_TRUE,
+                                         chair44.HEIGHT_TRUE)
+    else:
+        height = (Fraction(float(relief)).limit_denominator(10 ** 6)
+                  * chair44.HEIGHT_TRUE)
+        verts, faces = chair44.tile_mesh(chair44.ETA_SHOWN, height)
+    centre = np.array([float(x) for x in chair44.CENTROID])
+    V = np.array([[float(x) for x in p] for p in verts]) - centre
+    out = (V, [tuple(f) for f in faces], arrows)
+    _CHAIR_CACHE[key] = out
+    return out
+
+
 def build_block(kind, nx, ny, nz, spiral_segments=12,
-                spiral_pitch=55.0):
+                spiral_pitch=55.0, chair_depth=2,
+                chair_features='EXAGGERATED', chair_relief=30.0,
+                chair_color='PARENT'):
     """Cells of the block in canonical lattice coordinates.
 
     Returns (cells, pitch): cells is a list of tuples
@@ -385,6 +440,34 @@ def build_block(kind, nx, ny, nz, spiral_segments=12,
             cells.append((i * B[0] + j * B[1] + k * B[2],
                           V, F, (i + j + k) % 2))
         return cells, pitch
+    if kind == 'CHAIR44':
+        # Not a lattice: the patch is grown by the eight-child chair
+        # substitution, so nx, ny, nz play no part.  Each chair is the
+        # same solid in one of the 24 proper cubic frames at an integer
+        # translation, and the tag records which top-level supertile it
+        # descends from.
+        V0, tile_faces, arrows = chair_tile(chair_features,
+                                            chair_relief)
+        c0 = np.array([float(x) for x in chair44.CENTROID])
+        slots = CHAIR_COLOR_SLOTS[chair_color]
+        posed = {}
+        for G, t, group in chair44.patch(chair_depth):
+            R = posed.get(G)
+            if R is None:
+                R = posed[G] = V0 @ np.array(G, float).T
+            centre = np.array(G, float) @ c0 + np.asarray(t, float)
+            if chair_color == 'FRAME':
+                tag = chair44.frame_index(G)
+            elif chair_color == 'NONE':
+                tag = 0
+            else:
+                tag = group
+            if arrows is not None:
+                # one tag per face: the chair's own slot for the body
+                # panels, and the three arrow colours after them
+                tag = [tag if a is None else slots + a for a in arrows]
+            cells.append((centre, R, tile_faces, tag))
+        return cells, 1.0
     if kind in _SPIRAL_ARMS:
         # translates over the derived tiling lattice; tag by
         # lattice parity for the optional two-tone coloring
@@ -398,12 +481,16 @@ def build_block(kind, nx, ny, nz, spiral_segments=12,
 
 
 def build_mesh(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92, size=1.0,
-               spiral_segments=12, spiral_pitch=55.0):
+               spiral_segments=12, spiral_pitch=55.0, chair_depth=2,
+               chair_features='EXAGGERATED', chair_relief=30.0,
+               chair_color='PARENT'):
     """Whole block as (verts, faces, face_tags), centred at the
     origin; gap scales every cell about its own centroid and size
     scales one lattice step to that length."""
     cells, pitch = build_block(kind, nx, ny, nz, spiral_segments,
-                               spiral_pitch)
+                               spiral_pitch, chair_depth,
+                               chair_features, chair_relief,
+                               chair_color)
     s = size / pitch
     lo = np.full(3, np.inf)
     hi = -lo
@@ -416,8 +503,41 @@ def build_mesh(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92, size=1.0,
         base = len(verts)
         verts.extend(map(tuple, (c - mid + gap * V) * s))
         faces.extend([base + i for i in f] for f in F)
-        tags.extend([t] * len(F))
+        # a cell's tag is normally one value for the whole cell; the
+        # arrow-marked chair supplies one per face instead
+        tags.extend(t if isinstance(t, list) else [t] * len(F))
     return verts, faces, tags
+
+
+def build_cell_meshes(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92,
+                     size=1.0, spiral_segments=12, spiral_pitch=55.0,
+                     chair_depth=2, chair_features='EXAGGERATED',
+                     chair_relief=30.0, chair_color='PARENT'):
+    """The same block as `build_mesh`, but kept one cell per entry.
+
+    Returns [(verts, faces, face_tags)], every cell already placed in
+    the same frame `build_mesh` would put it in, so a caller that
+    makes one object per cell gets a block that lines up with the
+    merged one.
+    """
+    cells, pitch = build_block(kind, nx, ny, nz, spiral_segments,
+                               spiral_pitch, chair_depth,
+                               chair_features, chair_relief,
+                               chair_color)
+    s = size / pitch
+    lo = np.full(3, np.inf)
+    hi = -lo
+    for c, V, F, t in cells:
+        lo = np.minimum(lo, c + V.min(axis=0))
+        hi = np.maximum(hi, c + V.max(axis=0))
+    mid = (lo + hi) / 2.0
+    out = []
+    for c, V, F, t in cells:
+        verts = [tuple(q) for q in (c - mid + gap * V) * s]
+        faces = [tuple(f) for f in F]
+        tags = list(t) if isinstance(t, list) else [t] * len(F)
+        out.append((verts, faces, tags))
+    return out
 
 
 _CELL_VOL = {'CUBIC': {0: 1.0},               # per canonical cell
@@ -428,11 +548,22 @@ _CELL_VOL = {'CUBIC': {0: 1.0},               # per canonical cell
 
 
 def block_volume(kind, nx, ny, nz, size=1.0, spiral_segments=12,
-                 spiral_pitch=55.0):
+                 spiral_pitch=55.0, chair_depth=2,
+                 chair_features='EXAGGERATED', chair_relief=30.0,
+                 chair_color='PARENT'):
     """Analytic total volume of all cells at gap = 1."""
     cells, pitch = build_block(kind, nx, ny, nz, spiral_segments,
-                               spiral_pitch)
+                               spiral_pitch, chair_depth,
+                               chair_features, chair_relief,
+                               chair_color)
     s3 = (size / pitch) ** 3
+    if kind == 'CHAIR44':
+        # Volume 7 per chair, exactly: the twelve feature magnitudes
+        # each carry eight bumps and eight dents, so the relief
+        # cancels.  Kept out of _CELL_VOL deliberately -- that table is
+        # indexed by the face tag, and this kind's tag is a supertile
+        # or frame index, not a cell type.
+        return 7.0 * len(cells) * s3
     if kind in ('HEXPRISM', 'ELONGDODEC'):
         V, F, _B, _p = _parallelohedron_data(kind)
         return len(cells) * _mesh_volume(V, F) * s3
