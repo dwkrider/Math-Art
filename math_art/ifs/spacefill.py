@@ -334,11 +334,20 @@ def _spiral_data(kind, segments=12, pitch=55.0):
     return out
 
 
+# How many material slots the chair bodies take before the arrow
+# colours start.  The operator builds its material list to match.
+CHAIR_COLOR_SLOTS = {'NONE': 1, 'PARENT': 8, 'FRAME': 24}
+
 _CHAIR_CACHE = {}
 
 
 def chair_tile(features='EXAGGERATED', relief=30.0):
-    """One copy of Chair44, as (verts about its centroid, faces).
+    """One copy of Chair44, as (verts about its centroid, faces,
+    arrow colours).
+
+    The last is None except in ARROWS mode, where it is parallel to
+    `faces` and holds None for a body panel or an index into
+    `chair44.ARROW_COLORS` for an arrow face.
 
     Cached: a depth-3 patch is 512 chairs and they are all the same
     solid, so the tile is built once and only the pose transform is
@@ -348,8 +357,11 @@ def chair_tile(features='EXAGGERATED', relief=30.0):
     hit = _CHAIR_CACHE.get(key)
     if hit is not None:
         return hit
+    arrows = None
     if features == 'NONE':
         verts, faces = chair44.bare_tile_mesh()
+    elif features == 'ARROWS':
+        verts, faces, arrows = chair44.arrow_tile_mesh()
     elif features == 'TRUE':
         verts, faces = chair44.tile_mesh(chair44.ETA_TRUE,
                                          chair44.HEIGHT_TRUE)
@@ -359,7 +371,7 @@ def chair_tile(features='EXAGGERATED', relief=30.0):
         verts, faces = chair44.tile_mesh(chair44.ETA_SHOWN, height)
     centre = np.array([float(x) for x in chair44.CENTROID])
     V = np.array([[float(x) for x in p] for p in verts]) - centre
-    out = (V, [tuple(f) for f in faces])
+    out = (V, [tuple(f) for f in faces], arrows)
     _CHAIR_CACHE[key] = out
     return out
 
@@ -434,8 +446,10 @@ def build_block(kind, nx, ny, nz, spiral_segments=12,
         # same solid in one of the 24 proper cubic frames at an integer
         # translation, and the tag records which top-level supertile it
         # descends from.
-        V0, tile_faces = chair_tile(chair_features, chair_relief)
+        V0, tile_faces, arrows = chair_tile(chair_features,
+                                            chair_relief)
         c0 = np.array([float(x) for x in chair44.CENTROID])
+        slots = CHAIR_COLOR_SLOTS[chair_color]
         posed = {}
         for G, t, group in chair44.patch(chair_depth):
             R = posed.get(G)
@@ -448,6 +462,10 @@ def build_block(kind, nx, ny, nz, spiral_segments=12,
                 tag = 0
             else:
                 tag = group
+            if arrows is not None:
+                # one tag per face: the chair's own slot for the body
+                # panels, and the three arrow colours after them
+                tag = [tag if a is None else slots + a for a in arrows]
             cells.append((centre, R, tile_faces, tag))
         return cells, 1.0
     if kind in _SPIRAL_ARMS:
@@ -485,7 +503,9 @@ def build_mesh(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92, size=1.0,
         base = len(verts)
         verts.extend(map(tuple, (c - mid + gap * V) * s))
         faces.extend([base + i for i in f] for f in F)
-        tags.extend([t] * len(F))
+        # a cell's tag is normally one value for the whole cell; the
+        # arrow-marked chair supplies one per face instead
+        tags.extend(t if isinstance(t, list) else [t] * len(F))
     return verts, faces, tags
 
 

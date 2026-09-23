@@ -30,8 +30,13 @@
 #               drives it instead.  The features are the point: two
 #               pyramids mate only as a bump into a dent of the same
 #               magnitude, and that is claimed to force every tiling
-#               of space by this one solid to be non-periodic.  See
-#               `ifs/chair44.py` for the panel recipe, the
+#               of space by this one solid to be non-periodic.  The
+#               relief is 1/10000 of a cell, so it is drawn enlarged;
+#               the Arrows option drops it entirely and draws
+#               Goodman-Strauss's marking instead -- one flat arrow
+#               per panel, blue meeting blue and green meeting red,
+#               which is the same rule in a form a reader can check.
+#               See `ifs/chair44.py` for the panel recipe, the
 #               substitution, and what is and is not proved.
 #
 # The spirallohedra tile space by pure translations: every rhombic
@@ -62,6 +67,10 @@
 #   its 24-panel / 192-feature recipe and the eight-child chair
 #   substitution.  Presented as a proof submission; the aperiodicity
 #   theorem is not yet refereed.
+# - Chaim Goodman-Strauss, "Notes on a strongly aperiodic monotile in
+#   E^3", arXiv:2609.24779 (2026) -- the arrow marking drawn here: one
+#   flat arrow per panel in three colours, blue meeting blue and green
+#   meeting red.
 # - Joshua E. S. Socolar and Joan M. Taylor, "Forcing nonperiodicity
 #   with a single tile", Math. Intelligencer 34(1):18-28 (2012) -- the
 #   question Chair44 answers, and the Schmitt-Conway-Danzer biprism.
@@ -95,10 +104,12 @@ import numpy as np
 try:
     from .ifs.spacefill import (_face_key, _mesh_volume, _spiral_data,
                                 block_volume, build_mesh, spiral_n)
+    from .ifs.spacefill import CHAIR_COLOR_SLOTS
     from .ifs.chair44 import max_relief
 except ImportError:  # flat import outside the package
     from ifs.spacefill import (_face_key, _mesh_volume, _spiral_data,
                                block_volume, build_mesh, spiral_n)
+    from ifs.spacefill import CHAIR_COLOR_SLOTS
     from ifs.chair44 import max_relief
 
 
@@ -276,7 +287,13 @@ if _IN_BLENDER:
                         "off to go that deep comfortably")
         chair_features: EnumProperty(
             name="Features",
-            items=[('EXAGGERATED', "Enlarged",
+            items=[('ARROWS', "Arrows",
+                    "No relief at all: each panel carries one flat "
+                    "arrow instead, after Goodman-Strauss. Blue meets "
+                    "blue and green meets red, and every arrow points "
+                    "at its own panel's corner -- the same rule the "
+                    "pyramids enforce, in a form you can read"),
+                   ('EXAGGERATED', "Enlarged",
                     "Bases five times over and heights scaled by "
                     "Relief, so the pyramids can be seen -- the "
                     "convention the paper's own figures use"),
@@ -344,14 +361,25 @@ if _IN_BLENDER:
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
             if (self.kind == 'CHAIR44'
-                    and self.chair_color != 'NONE'
                     and len(me.polygons) == len(tags)):
-                n = max(tags) + 1
-                what = ("Supertile" if self.chair_color == 'PARENT'
-                        else "Rotation")
-                for i, rgb in enumerate(_wheel(n)):
+                # body slots first, then the three arrow colours, so
+                # the indices line up with CHAIR_COLOR_SLOTS
+                if self.chair_color == 'NONE':
                     me.materials.append(_material(
-                        f"Chair44 {what} {i}", rgb))
+                        "Chair44 Body", (0.88, 0.88, 0.86)))
+                else:
+                    what = ("Supertile" if self.chair_color == 'PARENT'
+                            else "Rotation")
+                    n = CHAIR_COLOR_SLOTS[self.chair_color]
+                    for i, rgb in enumerate(_wheel(n)):
+                        me.materials.append(_material(
+                            f"Chair44 {what} {i}", rgb))
+                if self.chair_features == 'ARROWS':
+                    for name, rgb in (("Blue", (0.11, 0.21, 0.52)),
+                                      ("Green", (0.52, 0.78, 0.24)),
+                                      ("Red", (0.85, 0.15, 0.14))):
+                        me.materials.append(_material(
+                            f"Chair44 Arrow {name}", rgb))
                 me.polygons.foreach_set('material_index', tags)
             elif (self.kind == 'OBTET'
                     and len(me.polygons) == len(tags)):

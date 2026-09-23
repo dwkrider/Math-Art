@@ -66,12 +66,29 @@
 # to lie in ATLAS44, and the tile mesh is shown to close with the
 # published V = 2138, E = 6408, F = 4272 and volume 7.
 #
+# THE ARROW MARKING.  Goodman-Strauss re-draws the same rule as one
+# flat arrow per panel in three colours -- blue meets blue, green
+# meets red -- which is far easier to read than 192 pyramids
+# 1/10000 of a cell tall.  That re-drawing is reproduced here, and it
+# is checked rather than assumed: `_selftest` derives the colour
+# classes' behaviour from ATLAS44 and then shows that the arrow rule,
+# applied to the same 2,388 candidate poses the paper enumerates,
+# admits exactly the 44-contact atlas once reflected copies are set
+# aside.  (Allowing reflections it admits 60; the extra 16 are all
+# improper, and a physical solid cannot be reflected.)  So the arrows
+# are not an illustration of the rule -- for unreflected tiles they
+# are the rule.
+#
 # References:
 # - Ioannis Tsiokos, "A Strongly Aperiodic Monotile in Three
 #   Dimensions", arXiv:2609.19214 (2026) -- the Chair44 (R44) solid,
 #   its 24-panel / 192-feature recipe, the eight-child chair
 #   substitution and the 44-contact atlas.  Presented as a proof
 #   submission; the aperiodicity theorem is not yet refereed.
+# - Chaim Goodman-Strauss, "Notes on a strongly aperiodic monotile in
+#   E^3", arXiv:2609.24779 (2026) -- the three-colour arrow marking
+#   drawn here, the reading of Chair44 as a marked three-dimensional
+#   L-tile, and a short Berger-style proof of its aperiodicity.
 # - Joshua E. S. Socolar and Joan M. Taylor, "Forcing nonperiodicity
 #   with a single tile", Math. Intelligencer 34(1):18-28 (2012) -- the
 #   question this solid answers, and the Schmitt-Conway-Danzer biprism
@@ -208,6 +225,104 @@ ETA_SHOWN = F(5, 100)       # the paper's own figure convention, bases x5
 
 # the carrier's volume centroid: 4 cells at 1/2 and 3 at 3/2 per axis
 CENTROID = (F(13, 14), F(13, 14), F(13, 14))
+
+
+# ------------------------------------------------------------------
+# The arrow markings (Goodman-Strauss).
+#
+# The 192 pyramids are the physical rule, but they are a poor picture
+# of it.  Goodman-Strauss re-draws the same rule as ONE flat arrow per
+# panel, in three colours: blue meets blue, green meets red.  The
+# structure behind it is that each panel owns exactly one "special"
+# vertex -- one of the seven corners of the 2x2x2 cube that survive on
+# the chair, or the concave socket at the cube's centre -- and the
+# three panels meeting at each of those eight vertices carry one
+# marking of each colour.  The arrow lies along the panel's diagonal
+# and points at that vertex, so two panels match when their arrows
+# coincide and their colours are compatible.
+#
+# This is not a decoration: `_selftest` checks that the arrow rule,
+# restricted to unreflected copies, admits exactly the 44-contact
+# atlas -- the same 44 out of the same 2,388 candidates.  (Allowing
+# reflections it admits 60, the extra 16 all improper; physical tiles
+# cannot be reflected, which is the case Goodman-Strauss makes.)
+# ------------------------------------------------------------------
+
+ARROW_COLORS = ("BLUE", "GREEN", "RED")
+
+# panel id -> arrow colour index.  Blue is forced (it is the
+# self-matching class); which of the other two is called green and
+# which red is a free relabelling, since the rule is symmetric in
+# them.
+PANEL_COLOR = {
+    0: 2, 1: 1, 2: 2, 3: 0, 4: 1, 5: 0, 6: 1, 7: 2,
+    8: 1, 9: 2, 10: 0, 11: 2, 12: 1, 13: 0, 14: 2, 15: 1,
+    16: 0, 17: 0, 18: 1, 19: 1, 20: 2, 21: 2, 22: 0, 23: 0,
+}
+
+# the eight special vertices: the seven surviving corners of the
+# 2-cube, plus the concave socket at its centre
+SPECIAL_VERTICES = tuple(
+    [v for v in itertools.product((0, 2), repeat=3) if v != (2, 2, 2)]
+    + [(1, 1, 1)])
+
+
+def panel_home(key):
+    """The one special vertex among a panel's four corners."""
+    ax, _sg, plane, u0, v0 = key
+    o0, o1 = (i for i in range(3) if i != ax)
+    found = []
+    for du in (F(-1, 2), F(1, 2)):
+        for dv in (F(-1, 2), F(1, 2)):
+            p = [None, None, None]
+            p[ax] = F(plane)
+            p[o0] = u0 + du
+            p[o1] = v0 + dv
+            t = tuple(int(x) for x in p)
+            if t in SPECIAL_VERTICES:
+                found.append((t, (du, dv)))
+    if len(found) != 1:
+        raise AssertionError(f"panel {key} owns {len(found)} vertices")
+    return found[0]
+
+
+# arrow shape in panel coordinates, along the diagonal toward the home
+# vertex: a shaft with a barbed head, sized to sit inside the unit
+# panel with room to spare.
+_A_TAIL, _A_TIP = -0.50, 0.62     # along the diagonal, from the centre
+_A_HEAD, _A_BARB = 0.34, 0.20     # head length, barb setback from tip
+_A_HALF, _A_SHAFT = 0.17, 0.072   # head half-width, shaft half-width
+_A_SINK, _A_RISE = -0.005, 0.014  # below / above the panel surface
+
+
+def arrow_polygon(su, sv):
+    """The arrow outline in panel (u, v), pointing at (su, sv)/2.
+
+    Returned counterclockwise, as seven points.
+    """
+    r = 0.7071067811865476
+    du, dv = su * r, sv * r          # unit vector along the diagonal
+    nu, nv = -dv, du                 # and its perpendicular
+
+    def at(along, across):
+        return (du * along + nu * across, dv * along + nv * across)
+
+    pts = [at(_A_TAIL, _A_SHAFT),
+           at(_A_TIP - _A_BARB, _A_SHAFT),
+           at(_A_TIP - _A_HEAD, _A_HALF),
+           at(_A_TIP, 0.0),
+           at(_A_TIP - _A_HEAD, -_A_HALF),
+           at(_A_TIP - _A_BARB, -_A_SHAFT),
+           at(_A_TAIL, -_A_SHAFT)]
+    area = sum(pts[i][0] * pts[(i + 1) % 7][1]
+               - pts[(i + 1) % 7][0] * pts[i][1] for i in range(7)) / 2
+    return pts[::-1] if area < 0 else pts
+
+
+# The outline is concave at the two barb junctions, so it is cut into
+# convex pieces by hand rather than fanned: the shaft quad, the tip,
+# and the two barbs.  Indices are into arrow_polygon's seven points.
+_ARROW_PIECES = ((0, 1, 5, 6), (2, 3, 4), (1, 2, 4), (1, 4, 5))
 
 
 # ------------------------------------------------------------------
@@ -359,6 +474,80 @@ def bare_tile_mesh():
             quad.reverse()
         faces.append(tuple(quad))
     return verts, faces
+
+
+def arrow_tile_mesh():
+    """The bare carrier, plus Goodman-Strauss's arrow marking per panel.
+
+    The body is exactly `bare_tile_mesh` -- 24 flat panels, volume 7.
+    Each panel then carries one arrow as a thin closed slab lying along
+    the panel diagonal and pointing at the panel's special vertex,
+    sunk slightly into the surface so its underside never z-fights
+    with the panel.
+
+    Returns (verts, faces, colors) with `colors` parallel to `faces`:
+    None for a body panel, else an index into ARROW_COLORS.
+    """
+    index = {}
+    verts = []
+    faces = []
+    colors = []
+
+    def vid(pt):
+        pt = tuple(float(x) for x in pt)
+        i = index.get(pt)
+        if i is None:
+            i = index[pt] = len(verts)
+            verts.append(pt)
+        return i
+
+    body_v, body_f = bare_tile_mesh()
+    remap = [vid(q) for q in body_v]
+    for f in body_f:
+        faces.append(tuple(remap[i] for i in f))
+        colors.append(None)
+
+    for key in sorted(PANELS, key=lambda k: PANELS[k][0]):
+        ax, sg, plane, u0, v0 = key
+        pid, _coeffs = PANELS[key]
+        o0, o1, orient = _panel_axes(ax)
+        flip = (orient != sg)
+        _home, (du, dv) = panel_home(key)
+        poly = arrow_polygon(1 if du > 0 else -1, 1 if dv > 0 else -1)
+
+        def pt(uv, lift):
+            q = [None, None, None]
+            q[ax] = float(plane) + sg * lift
+            q[o0] = float(u0) + uv[0]
+            q[o1] = float(v0) + uv[1]
+            return vid(tuple(q))
+
+        lo = [pt(q, _A_SINK) for q in poly]
+        hi = [pt(q, _A_RISE) for q in poly]
+        col = PANEL_COLOR[pid]
+        for piece in _ARROW_PIECES:
+            top = [hi[i] for i in piece]
+            bot = [lo[i] for i in piece][::-1]
+            faces.append(tuple(top[::-1] if flip else top))
+            colors.append(col)
+            faces.append(tuple(bot[::-1] if flip else bot))
+            colors.append(col)
+        n = len(poly)
+        for i in range(n):
+            j = (i + 1) % n
+            side = [lo[i], lo[j], hi[j], hi[i]]
+            faces.append(tuple(side[::-1] if flip else side))
+            colors.append(col)
+    return verts, faces, colors
+
+
+def arrow_area():
+    """Plan area of one arrow marking (both diagonals give the same)."""
+    pts = arrow_polygon(1, 1)
+    n = len(pts)
+    return abs(sum(pts[i][0] * pts[(i + 1) % n][1]
+                   - pts[(i + 1) % n][0] * pts[i][1]
+                   for i in range(n))) / 2
 
 
 def tile_mesh(eta=ETA_TRUE, height=HEIGHT_TRUE):
@@ -722,7 +911,125 @@ def _selftest():
                    f"all {len(seen)} distinct contacts of the patch lie "
                    f"in the 44-contact atlas")
 
-    # 10. the exaggerated preset stays clear of the gap it is drawn in
+    # 10. the arrow markings: one special vertex per panel, one arrow
+    #     of each colour at each of the eight special vertices
+    owners = {}
+    for key in PANELS:
+        pid, _co = PANELS[key]
+        v, _duv = panel_home(key)
+        owners.setdefault(v, []).append(PANEL_COLOR[pid])
+    good &= _check(len(owners) == 8
+                   and all(sorted(v) == [0, 1, 2] for v in owners.values()),
+                   "each of the 8 special vertices carries one blue, "
+                   "one green and one red arrow")
+
+    # 11. over the atlas, mated panels point their arrows at the same
+    #     vertex of the shared square and carry compatible colours
+    def posed_panels(G, t):
+        out = []
+        for key in PANELS:
+            ax, sg, plane, u0, v0 = key
+            pid, _co = PANELS[key]
+            o0, o1 = (i for i in range(3) if i != ax)
+            ctr = [None, None, None]
+            ctr[ax] = F(plane)
+            ctr[o0] = u0
+            ctr[o1] = v0
+            n = [0, 0, 0]
+            n[ax] = sg
+            home, _duv = panel_home(key)
+            out.append((
+                tuple(mat_apply(G, tuple(ctr))[i] + t[i] for i in range(3)),
+                mat_apply(G, tuple(n)),
+                pid,
+                tuple(mat_apply(G, home)[i] + t[i] for i in range(3))))
+        return out
+
+    ident = frame((0, 1, 2), (1, 1, 1))
+    site = {(wc, wn): (pid, wh)
+            for wc, wn, pid, wh in posed_panels(ident, (0, 0, 0))}
+    # blue meets blue; green meets red
+    legal_pair = {(0, 0), (1, 2), (2, 1)}
+
+    def arrows_agree(G, t):
+        """True when every panel this pose mates carries a matching
+        arrow.  Returns (ok, how many panels were mated)."""
+        met = 0
+        for wc, wn, pid, wh in posed_panels(G, t):
+            hit = site.get((wc, tuple(-x for x in wn)))
+            if hit is None:
+                continue
+            met += 1
+            rid, rh = hit
+            if rh != wh or (PANEL_COLOR[rid], PANEL_COLOR[pid]) not in legal_pair:
+                return False, met
+        return True, met
+
+    mated = agree = 0
+    for pp, ss, off in ATLAS44:
+        ok, met = arrows_agree(frame(pp, ss), off)
+        mated += met
+        agree += met if ok else 0
+    good &= _check(mated == 135 and agree == 135,
+                   f"{agree}/{mated} mated panels across the atlas agree "
+                   "on arrow vertex and colour")
+
+    # 12. the arrow rule is not merely necessary: over the same 2,388
+    #     candidate poses the paper enumerates, it admits exactly the
+    #     44-contact atlas once reflected copies are excluded.  (With
+    #     reflections it admits 60; the extra 16 are all improper, and
+    #     a physical tile cannot be reflected.)
+    root_cells = set(pose_cells(ident, (0, 0, 0)))
+    shell = set()
+    for a in root_cells:
+        for ax in range(3):
+            for sg in (-1, 1):
+                b = list(a)
+                b[ax] += sg
+                if tuple(b) not in root_cells:
+                    shell.add(tuple(b))
+    candidates = set()
+    all_frames = [frame(pp, ss) for pp in itertools.permutations(range(3))
+                  for ss in itertools.product((1, -1), repeat=3)]
+    for M in all_frames:
+        own = pose_cells(M, (0, 0, 0))
+        for cell in shell:
+            for o in own:
+                t = tuple(cell[i] - o[i] for i in range(3))
+                cells = set(pose_cells(M, t))
+                if cells & root_cells:
+                    continue
+                if any(sum(abs(x[i] - y[i]) for i in range(3)) == 1
+                       for x in cells for y in root_cells):
+                    candidates.add((M, t))
+    good &= _check(len(candidates) == 2388,
+                   f"{len(candidates)} candidate touching poses in the 48 "
+                   "signed frames (the paper's 2,388)")
+    admitted = {(M, t) for M, t in candidates if arrows_agree(M, t)[0]}
+    proper = {(M, t) for M, t in admitted if det(M) == 1}
+    atlas = {(frame(pp, ss), off) for pp, ss, off in ATLAS44}
+    good &= _check(proper == atlas and len(admitted) == 60
+                   and all(det(M) == -1 for M, t in admitted - atlas),
+                   f"arrow rule admits {len(admitted)} poses, the {len(proper)} "
+                   "proper ones exactly the 44-contact atlas")
+
+    # 13. the arrow tile closes, with the volume its slabs imply
+    av, af, acol = arrow_tile_mesh()
+    aedges = {}
+    for f in af:
+        for i in range(len(f)):
+            k = tuple(sorted((f[i], f[(i + 1) % len(f)])))
+            aedges[k] = aedges.get(k, 0) + 1
+    want_vol = 7 + 24 * arrow_area() * (_A_RISE - _A_SINK)
+    got_vol = float(mesh_volume(av, af))
+    good &= _check(len(af) == 384
+                   and sum(1 for c in acol if c is not None) == 360
+                   and all(n == 2 for n in aedges.values())
+                   and abs(got_vol - want_vol) < 1e-9,
+                   f"arrow tile: {len(af)} faces, closed, volume "
+                   f"{got_vol:.6f} = 7 + 24 slabs")
+
+    # 14. the exaggerated preset stays clear of the gap it is drawn in
     good &= _check(MIN_CONTACT_SPAN == 1,
                    f"tightest legal contact spans {MIN_CONTACT_SPAN} "
                    "(a notch panel against an outer one)")
