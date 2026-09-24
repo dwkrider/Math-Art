@@ -16,8 +16,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import {
-  bareTileMesh, arrowTileMesh, tileMesh, triangulate, patch, contacts,
-  inAtlas, frameIndex, matApply, CENTROID, ETA_SHOWN, ETA_TRUE,
+  bareTileMesh, arrowTileMesh, tileMesh, triangulate, patch, walkPatch,
+  contacts, inAtlas, frameIndex, matApply, CENTROID, ETA_SHOWN, ETA_TRUE,
   HEIGHT_TRUE,
 } from './chair44-math.js';
 
@@ -57,9 +57,64 @@ function toLinear(c) {
   return c.map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
 }
 
+// WHAT LIMITS A PATCH. Not memory: the tile is shared, so a chair
+// costs one 4x4 matrix and a colour, 76 bytes, and even the deepest
+// patch on offer is a few tens of megabytes. What limits it is the
+// triangles the GPU redraws every frame while you orbit. Twenty
+// million is about the most that stays fluid on ordinary hardware, so
+// that is the budget, and every depth the page offers meets it by
+// giving way on how finely the rule is drawn. (A depth-7 patch --
+// 2,097,152 chairs, 100 million triangles as bare chairs -- was
+// offered briefly and was too slow to turn, which is what set this
+// ceiling where it is.)
+export const MAX_TRIANGLES = 20e6;
+
+const TILE_CACHE = new Map();
+
+// Cheapest first: the order to fall back along when a patch is too big.
+export const FEATURE_ORDER = ['NONE', 'ARROWS', 'TRUE', 'EXAGGERATED'];
+
+/** Triangles in one tile, by feature mode -- built once and cached, so
+ *  the cost of a patch is known without building it. */
+export function tileTriangles(featureMode) {
+  return chairTile(featureMode, 30).tris.length;
+}
+
+/** How to draw the rule at this depth: the most detailed mode that
+ *  fits the triangle budget, starting from the one asked for, and
+ *  whether even that overruns it. */
+export function planFor(depth, wanted) {
+  const chairs = 8 ** depth;
+  let best = null;
+  for (const mode of FEATURE_ORDER) {
+    if (chairs * tileTriangles(mode) <= MAX_TRIANGLES) best = mode;
+    if (mode === wanted) break;
+  }
+  // `best` is never null for the depths the page offers: the bare
+  // chair at the deepest of them is 12.6 million triangles, inside the
+  // budget. The fallback to it is kept for the day a deeper button is
+  // added.
+  const mode = best === null ? 'NONE' : best;
+  return { mode, fellBack: mode !== wanted,
+           triangles: chairs * tileTriangles(mode) };
+}
+
 /** The tile for a feature mode, as {verts, tris, colors} where colors
  *  is null (take the chair's own colour) or one RGB per vertex. */
 export function chairTile(featureMode, relief) {
+  // The featured tile is the expensive one to build (2,138 vertices
+  // welded out of a 9x9 grid on each of 24 panels), and the page
+  // rebuilds on every slider nudge, so keep the last few.
+  const key = `${featureMode}:${featureMode === 'EXAGGERATED' ? relief : 0}`;
+  const hit = TILE_CACHE.get(key);
+  if (hit) return hit;
+  const built = buildChairTile(featureMode, relief);
+  if (TILE_CACHE.size > 8) TILE_CACHE.clear();
+  TILE_CACHE.set(key, built);
+  return built;
+}
+
+function buildChairTile(featureMode, relief) {
   if (featureMode === 'NONE') {
     const { verts, faces } = bareTileMesh();
     return { verts, tris: triangulate(faces), arrowOf: null };
@@ -79,6 +134,59 @@ export function chairTile(featureMode, relief) {
     ? tileMesh(ETA_TRUE, HEIGHT_TRUE)
     : tileMesh(ETA_SHOWN, relief * HEIGHT_TRUE);
   return { verts, tris: triangulate(faces), arrowOf: null };
+}
+
+
+/** One geometry from the faces the filter keeps, welded to just the
+ *  vertices they use, centroid-relative. `colorOf` bakes the arrow
+ *  colours in as vertex colours. */
+function geometryFor(tile, keepVertex, colorOf) {
+  const remap = new Int32Array(tile.verts.length).fill(-1);
+  const pos = [];
+  const col = [];
+  const idx = [];
+  for (const tri of tile.tris) {
+    if (!tri.every((v) => keepVertex(v))) continue;
+    for (const v of tri) {
+      if (remap[v] < 0) {
+        remap[v] = pos.length / 3;
+        pos.push(tile.verts[v][0] - CENTROID[0],
+                 tile.verts[v][1] - CENTROID[1],
+                 tile.verts[v][2] - CENTROID[2]);
+        if (colorOf) {
+          const rgb = toLinear(ARROW_RGB[colorOf[v]]);
+          col.push(rgb[0], rgb[1], rgb[2]);
+        }
+      }
+      idx.push(remap[v]);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  if (colorOf) geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** The eight corners of the tile's bounding box, centroid-relative. */
+function tileBounds(verts) {
+  const lo = [Infinity, Infinity, Infinity];
+  const hi = [-Infinity, -Infinity, -Infinity];
+  for (const p of verts) {
+    for (let a = 0; a < 3; a++) {
+      const v = p[a] - CENTROID[a];
+      if (v < lo[a]) lo[a] = v;
+      if (v > hi[a]) hi[a] = v;
+    }
+  }
+  const out = [];
+  for (const x of [lo[0], hi[0]]) {
+    for (const y of [lo[1], hi[1]]) {
+      for (const z of [lo[2], hi[2]]) out.push([x, y, z]);
+    }
+  }
+  return out;
 }
 
 export class ChairView {
@@ -113,7 +221,12 @@ export class ChairView {
 
     this.root = new THREE.Group();
     this.scene.add(this.root);
-    this.mesh = null;
+    // `fit` carries the centring and scaling of the whole patch; `root`
+    // carries the spin, so one does not undo the other.
+    this.fit = new THREE.Group();
+    this.root.add(this.fit);
+    this.meshes = [];
+    this.chairCount = 0;
     this.spin = 0;
 
     this._onResize = () => this.resize();
@@ -144,92 +257,112 @@ export class ChairView {
   build({ depth, features, relief, gap, colorBy }) {
     const t0 = performance.now();
     const tile = chairTile(features, relief);
-    const poses = patch(depth);
-    const n = poses.length;
-    const nv = tile.verts.length;
+    const n = 8 ** depth;
     const nt = tile.tris.length;
-
-    const pos = new Float32Array(n * nv * 3);
-    const col = new Float32Array(n * nv * 3);
-    const idx = (n * nv > 65535 ? new Uint32Array(n * nt * 3)
-                                : new Uint16Array(n * nt * 3));
 
     const slots = colorBy === 'FRAME' ? 24 : colorBy === 'PARENT' ? 8 : 1;
     const palette = (colorBy === 'NONE' ? [PLAIN_RGB] : wheel(slots)).map(toLinear);
-    const arrowRGB = ARROW_RGB.map(toLinear);
 
-    // rotate the tile once per distinct frame, not once per chair
-    const rotated = new Map();
+    // The tile is shared: every chair is the same solid, so it goes to
+    // the GPU once and each chair is a 4x4 matrix. Bodies and arrows
+    // are two meshes over the SAME instance matrices, because a body
+    // takes its colour per chair and an arrow takes it per vertex, and
+    // three.js multiplies the two when a mesh carries both.
+    const body = geometryFor(tile, (i) => tile.arrowOf === null || tile.arrowOf[i] < 0);
+    const arrows = tile.arrowOf === null ? null
+      : geometryFor(tile, (i) => tile.arrowOf[i] >= 0, tile.arrowOf);
+
+    // The meshes come first so the walk can write straight into their
+    // instance buffers: at two million chairs a staging copy of the
+    // matrices would be another 134 MB for nothing.
+    this._drop();
+    const mat = new THREE.MeshStandardMaterial({
+      flatShading: true, roughness: 0.5, metalness: 0.0, side: THREE.DoubleSide,
+    });
+    const bodyMesh = new THREE.InstancedMesh(body, mat, n);
+    bodyMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 3), 3);
+    bodyMesh.frustumCulled = false;
+    const mats = bodyMesh.instanceMatrix.array;
+    const cols = bodyMesh.instanceColor.array;
+
+    // The tile's own bounding box, centroid-relative: a signed
+    // permutation maps a box to a box, so transforming these eight
+    // corners gives each chair's exact extent without touching its
+    // vertices.
+    const bb = tileBounds(tile.verts);
     let lo = [Infinity, Infinity, Infinity];
     let hi = [-Infinity, -Infinity, -Infinity];
 
-    poses.forEach((pose, ci) => {
-      const kf = pose.G.flat().join(',');
-      let R = rotated.get(kf);
-      if (R === undefined) {
-        R = tile.verts.map((p) => matApply(pose.G, [p[0] - CENTROID[0],
-                                                    p[1] - CENTROID[1],
-                                                    p[2] - CENTROID[2]]));
-        rotated.set(kf, R);
-      }
-      const c = matApply(pose.G, CENTROID);
-      const cx = c[0] + pose.t[0], cy = c[1] + pose.t[1], cz = c[2] + pose.t[2];
-      const tag = colorBy === 'FRAME' ? frameIndex(pose.G)
-        : colorBy === 'PARENT' ? pose.group : 0;
-      const base = palette[tag % palette.length];
-      const o = ci * nv;
-      for (let i = 0; i < nv; i++) {
-        // gap shrinks each chair about its OWN centroid, so the pack
-        // reads as separate solids (the add-on's Gap Factor)
-        const x = cx + R[i][0] * gap, y = cy + R[i][1] * gap, z = cz + R[i][2] * gap;
-        const k = (o + i) * 3;
-        pos[k] = x; pos[k + 1] = y; pos[k + 2] = z;
-        const rgb = tile.arrowOf && tile.arrowOf[i] >= 0
-          ? arrowRGB[tile.arrowOf[i]] : base;
-        col[k] = rgb[0]; col[k + 1] = rgb[1]; col[k + 2] = rgb[2];
-        if (x < lo[0]) lo[0] = x; if (x > hi[0]) hi[0] = x;
-        if (y < lo[1]) lo[1] = y; if (y > hi[1]) hi[1] = y;
-        if (z < lo[2]) lo[2] = z; if (z > hi[2]) hi[2] = z;
-      }
-      const io = ci * nt * 3;
-      for (let f = 0; f < nt; f++) {
-        idx[io + f * 3] = o + tile.tris[f][0];
-        idx[io + f * 3 + 1] = o + tile.tris[f][1];
-        idx[io + f * 3 + 2] = o + tile.tris[f][2];
+    walkPatch(depth, (G, t, group, ci) => {
+      const c = matApply(G, CENTROID);
+      const cx = c[0] + t[0], cy = c[1] + t[1], cz = c[2] + t[2];
+      // column-major, as three.js stores Matrix4: the rotation scaled
+      // by the gap, then the chair's centre. `gap` shrinks each chair
+      // about its OWN centroid, which is the add-on's Gap Factor.
+      const m = ci * 16;
+      mats[m] = G[0][0] * gap; mats[m + 1] = G[1][0] * gap; mats[m + 2] = G[2][0] * gap;
+      mats[m + 4] = G[0][1] * gap; mats[m + 5] = G[1][1] * gap; mats[m + 6] = G[2][1] * gap;
+      mats[m + 8] = G[0][2] * gap; mats[m + 9] = G[1][2] * gap; mats[m + 10] = G[2][2] * gap;
+      mats[m + 12] = cx; mats[m + 13] = cy; mats[m + 14] = cz;
+      mats[m + 15] = 1;
+
+      const tag = colorBy === 'FRAME' ? frameIndex(G) : colorBy === 'PARENT' ? group : 0;
+      const rgb = palette[tag % palette.length];
+      cols[ci * 3] = rgb[0]; cols[ci * 3 + 1] = rgb[1]; cols[ci * 3 + 2] = rgb[2];
+
+      for (let k = 0; k < 8; k++) {
+        const q = matApply(G, bb[k]);
+        for (let a = 0; a < 3; a++) {
+          const v = [cx, cy, cz][a] + q[a] * gap;
+          if (v < lo[a]) lo[a] = v;
+          if (v > hi[a]) hi[a] = v;
+        }
       }
     });
 
-    // one fit over the whole patch, centred and scaled into a 2 m cube
+    bodyMesh.instanceMatrix.needsUpdate = true;
+    bodyMesh.instanceColor.needsUpdate = true;
+    this.meshes = [bodyMesh];
+
+    if (arrows) {
+      const arrowMat = new THREE.MeshStandardMaterial({
+        vertexColors: true, flatShading: true, roughness: 0.5, metalness: 0.0,
+        side: THREE.DoubleSide,
+      });
+      const arrowMesh = new THREE.InstancedMesh(arrows, arrowMat, n);
+      // the same poses, shared rather than copied
+      arrowMesh.instanceMatrix = bodyMesh.instanceMatrix;
+      arrowMesh.frustumCulled = false;
+      this.meshes.push(arrowMesh);
+    }
+
+    // one fit over the whole patch, on the group rather than baked into
+    // vertices -- with instancing there are no per-patch vertices left
+    // to bake it into
     const mid = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
     const span = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) || 1;
     const k = 2 / span;
-    for (let i = 0; i < pos.length; i += 3) {
-      pos[i] = (pos[i] - mid[0]) * k;
-      pos[i + 1] = (pos[i + 1] - mid[1]) * k;
-      pos[i + 2] = (pos[i + 2] - mid[2]) * k;
-    }
+    this.fit.scale.setScalar(k);
+    this.fit.position.set(-mid[0] * k, -mid[1] * k, -mid[2] * k);
+    for (const m of this.meshes) this.fit.add(m);
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    geo.setIndex(new THREE.BufferAttribute(idx, 1));
-    geo.computeVertexNormals();
-
-    const mat = new THREE.MeshStandardMaterial({
-      vertexColors: true, flatShading: true, roughness: 0.5, metalness: 0.0,
-      side: THREE.DoubleSide,
-    });
-
-    this._drop();
-    this.mesh = new THREE.Mesh(geo, mat);
-    this.root.add(this.mesh);
+    this.chairCount = n;
+    this.setShown(n);
 
     return {
       chairs: n,
-      vertices: n * nv,
+      vertices: n * tile.verts.length,
       triangles: n * nt,
       buildMs: performance.now() - t0,
     };
+  }
+
+  /** Draw only the first `k` chairs of the patch. Instances are in the
+   *  order the substitution made them, so this is the build order. */
+  setShown(k) {
+    const n = Math.max(0, Math.min(this.chairCount, Math.round(k)));
+    for (const m of this.meshes) m.count = n;
+    this.shown = n;
   }
 
   /** The contact report: how many face contacts the patch has, and
@@ -242,11 +375,13 @@ export class ChairView {
   }
 
   _drop() {
-    if (!this.mesh) return;
-    this.root.remove(this.mesh);
-    this.mesh.geometry.dispose();
-    this.mesh.material.dispose();
-    this.mesh = null;
+    for (const m of this.meshes) {
+      this.fit.remove(m);
+      m.geometry.dispose();
+      m.material.dispose();
+      m.dispose();
+    }
+    this.meshes = [];
   }
 
   resetView() {

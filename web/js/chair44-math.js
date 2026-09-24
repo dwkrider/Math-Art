@@ -522,6 +522,45 @@ export function patch(depth) {
   return tagged;
 }
 
+/** The same sequence as `patch`, handed out one pose at a time.
+ *
+ *  A deep patch is a quarter of a million chairs, and holding that
+ *  many pose objects at once costs far more than the buffers they are
+ *  headed for: the caller only ever wants to write each one down and
+ *  move on.
+ *  This walks the substitution tree depth first -- the same order
+ *  `patch` returns, which the parity test pins to the Python engine --
+ *  keeping only the path from the root, so the memory is O(depth).
+ */
+export function walkPatch(depth, visit) {
+  if (depth < 0) throw new Error('depth must be >= 0');
+  const identity = frame([0, 1, 2], [1, 1, 1]);
+  if (depth === 0) {
+    visit(identity, [0, 0, 0], 0, 0);
+    return 1;
+  }
+  let n = 0;
+  const top = refine(identity, [0, 0, 0]);
+  top.forEach(([G, t], group) => {
+    // an explicit stack, not recursion: depth 7 is only seven levels,
+    // but the leaf count is in the millions and this keeps the hot
+    // loop flat
+    const stack = [[G, t, 1]];
+    while (stack.length) {
+      const [H, u, level] = stack.pop();
+      if (level === depth) {
+        visit(H, u, group, n++);
+        continue;
+      }
+      const kids = refine(H, u);
+      for (let i = kids.length - 1; i >= 0; i--) {
+        stack.push([kids[i][0], kids[i][1], level + 1]);
+      }
+    }
+  });
+  return n;
+}
+
 /** The seven unit cells a posed chair occupies. */
 export function poseCells(G, t) {
   const out = [];
