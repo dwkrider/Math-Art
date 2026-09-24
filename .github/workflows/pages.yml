@@ -66,6 +66,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      # The site gate shells out to reference scripts (e.g.
+      # tools/chair44_reference.py) that compute geometry with numpy, so
+      # it must be present or those checks report a spurious failure.
+      - name: Install Python dependencies
+        run: python -m pip install numpy
+
       # The catalog pages, sitemap and head metadata are derived from the
       # two databases. Regenerating before the gate means a database
       # change that reached master without a re-run still deploys a
