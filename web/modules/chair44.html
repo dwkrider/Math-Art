@@ -83,6 +83,8 @@
           <button type="button" class="seg" data-depth="3">512</button>
           <button type="button" class="seg" data-depth="4">4,096</button>
           <button type="button" class="seg" data-depth="5">32,768</button>
+          <button type="button" class="seg" data-depth="6">262,144</button>
+          <button type="button" class="seg" data-depth="7">2,097,152</button>
         </div>
       </div>
       <label class="belt-field">
@@ -171,8 +173,14 @@
     turned in the right ways, assemble into a chair twice as large. So
     a patch is grown by <em>substitution</em> — start with one chair,
     replace it by its eight children, replace each of those by eight,
-    and so on. The buttons give 1, 8, 64, 512, 4,096 and 32,768 chairs,
-    filling a chair 1, 2, 4, 8, 16 and 32 cells across.
+    and so on. The buttons give 1, 8, 64, 512, 4,096, 32,768, 262,144
+    and 2,097,152 chairs, filling a chair 1, 2, 4, 8, 16, 32, 64 and 128
+    cells across. Every chair is the same solid, so the deep patches
+    cost almost nothing to hold — one matrix and a colour each — and
+    what runs out first is the triangles your graphics card can redraw
+    while you turn the patch around. Past that point the page keeps the
+    depth you asked for and draws the rule more plainly, from pyramids
+    to arrows to the bare chair, and says so underneath.
   </p>
   <p>
     The <em>Built</em> slider takes the patch apart and puts it back in

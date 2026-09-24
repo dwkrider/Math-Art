@@ -168,6 +168,29 @@ for (const [d, want] of Object.entries(ref.patches)) {
   else console.log(`  ok   patch depth ${d}: ${want.length} chairs, same poses in the same order`);
 }
 
+// ---- the streaming walker must agree with patch(), which is what the
+// comparison above pinned to the engine. The view builds deep patches
+// with walkPatch and never materialises a pose list, so if the two
+// disagreed the picture would silently stop being the patch the test
+// checked.
+for (const d of [0, 1, 2, 3]) {
+  const want = C.patch(d);
+  const got = [];
+  const n = C.walkPatch(d, (G, t, group, i) => got.push({ G, t, group, i }));
+  if (n !== want.length || got.length !== want.length) {
+    note(`walkPatch ${d}: ${n} chairs vs ${want.length}`);
+    continue;
+  }
+  let bad = 0;
+  for (let i = 0; i < want.length; i++) {
+    if (got[i].i !== i || got[i].group !== want[i].group
+        || got[i].G.flat().join(',') !== want[i].G.flat().join(',')
+        || !sameInts(got[i].t, want[i].t)) bad++;
+  }
+  if (bad) note(`walkPatch ${d}: ${bad} of ${want.length} chairs out of order`);
+}
+console.log('  ok   walkPatch yields patch() exactly, depths 0-3');
+
 // ---- contacts, and the atlas
 for (const [d, want] of Object.entries(ref.contacts)) {
   const got = C.contacts(C.patch(Number(d)));

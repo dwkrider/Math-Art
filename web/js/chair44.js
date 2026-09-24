@@ -7,7 +7,7 @@
 // of the finished buffer is drawn.
 
 import { maxRelief } from './chair44-math.js';
-import { ChairView, heaviestThatFits, tileVertices, MAX_VERTICES } from './chair44-view.js';
+import { ChairView, planFor, tileTriangles, MAX_TRIANGLES } from './chair44-view.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -85,9 +85,8 @@ function main() {
     // Too big to draw? Fall back along the feature modes rather than
     // refusing, and say so. The depth is what the reader asked for;
     // how finely the rule is drawn is the part that can give way.
-    const fits = heaviestThatFits(state.depth, state.features);
-    const fellBack = fits !== null && fits !== state.features;
-    const features = fits || 'NONE';
+    const plan = planFor(state.depth, state.features);
+    const features = plan.mode;
 
     // The pyramids are drawn taller than life; past a point the tallest
     // bump on one chair would poke into the one facing it across the
@@ -111,12 +110,18 @@ function main() {
     describeShown();
 
     const fixed = [];
-    if (fellBack) {
-      const want = 8 ** state.depth * tileVertices(state.features);
-      fixed.push(`${FEATURE_LABELS[state.features]} would need `
-                 + `${(want / 1e6).toFixed(1)} million vertices at this size, `
-                 + `past this page's limit of ${(MAX_VERTICES / 1e6).toFixed(0)} `
-                 + `million — showing ${FEATURE_LABELS[features].toLowerCase()} instead.`);
+    if (plan.fellBack) {
+      const want = 8 ** state.depth * tileTriangles(state.features);
+      fixed.push(`${FEATURE_LABELS[state.features]} would be `
+                 + `${(want / 1e6).toFixed(0)} million triangles at this size, `
+                 + `past the ${(MAX_TRIANGLES / 1e6).toFixed(0)} million this page `
+                 + `redraws comfortably — showing `
+                 + `${FEATURE_LABELS[features].toLowerCase()} instead.`);
+    }
+    if (plan.heavy) {
+      fixed.push(`This is ${(plan.triangles / 1e6).toFixed(0)} million triangles `
+                 + 'even as bare chairs, well past what most machines orbit '
+                 + 'smoothly. Wind Built back if it drags.');
     }
     if (clamped) {
       fixed.push(`Relief clamped to ${relief.toFixed(0)}× so the pyramids stay `
