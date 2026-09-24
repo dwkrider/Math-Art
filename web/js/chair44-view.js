@@ -57,9 +57,53 @@ function toLinear(c) {
   return c.map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
 }
 
+// A patch is one buffer, so its size is the whole cost: positions and
+// colours are 24 bytes a vertex and the index 12 bytes a triangle. Four
+// million vertices is about 200 MB of buffers and a second of building,
+// which is as far as this page will go before it stops being a toy you
+// can drag around. The depth buttons stay enabled past it; it is the
+// heavier ways of drawing the rule that give way (see `heaviestThatFits`).
+export const MAX_VERTICES = 4e6;
+
+const TILE_CACHE = new Map();
+
+// Cheapest first: the order to fall back along when a patch is too big.
+export const FEATURE_ORDER = ['NONE', 'ARROWS', 'TRUE', 'EXAGGERATED'];
+
+/** Vertices in one tile, by feature mode -- built once and cached, so
+ *  the cost of a patch is known without building it. */
+export function tileVertices(featureMode) {
+  return chairTile(featureMode, 30).verts.length;
+}
+
+/** The most detailed way of drawing the rule that fits at this depth,
+ *  starting from the one asked for. */
+export function heaviestThatFits(depth, wanted) {
+  const chairs = 8 ** depth;
+  let best = null;
+  for (const mode of FEATURE_ORDER) {
+    if (chairs * tileVertices(mode) <= MAX_VERTICES) best = mode;
+    if (mode === wanted) break;
+  }
+  return best;            // null when even the bare chair is too much
+}
+
 /** The tile for a feature mode, as {verts, tris, colors} where colors
  *  is null (take the chair's own colour) or one RGB per vertex. */
 export function chairTile(featureMode, relief) {
+  // The featured tile is the expensive one to build (2,138 vertices
+  // welded out of a 9x9 grid on each of 24 panels), and the page
+  // rebuilds on every slider nudge, so keep the last few.
+  const key = `${featureMode}:${featureMode === 'EXAGGERATED' ? relief : 0}`;
+  const hit = TILE_CACHE.get(key);
+  if (hit) return hit;
+  const built = buildChairTile(featureMode, relief);
+  if (TILE_CACHE.size > 8) TILE_CACHE.clear();
+  TILE_CACHE.set(key, built);
+  return built;
+}
+
+function buildChairTile(featureMode, relief) {
   if (featureMode === 'NONE') {
     const { verts, faces } = bareTileMesh();
     return { verts, tris: triangulate(faces), arrowOf: null };
@@ -224,12 +268,28 @@ export class ChairView {
     this.mesh = new THREE.Mesh(geo, mat);
     this.root.add(this.mesh);
 
+    // Chairs occupy contiguous runs of the index buffer, in the order
+    // the substitution made them, so "show the first k chairs" is a
+    // draw range rather than a rebuild -- which is what lets the build
+    // slider run at frame rate over 32,768 of them.
+    this.trisPerChair = nt;
+    this.chairCount = n;
+    this.setShown(n);
+
     return {
       chairs: n,
       vertices: n * nv,
       triangles: n * nt,
       buildMs: performance.now() - t0,
     };
+  }
+
+  /** Draw only the first `k` chairs of the patch. */
+  setShown(k) {
+    if (!this.mesh) return;
+    const n = Math.max(0, Math.min(this.chairCount, Math.round(k)));
+    this.mesh.geometry.setDrawRange(0, n * this.trisPerChair * 3);
+    this.shown = n;
   }
 
   /** The contact report: how many face contacts the patch has, and
