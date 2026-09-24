@@ -59,6 +59,9 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/spacefill_solids__SPIRAL3.png" width="200"><br><sub>Rhombic Spirallohedra (3-Armed)</sub></td>
 <td align="center"><img src="../images/variants/spacefill_solids__SPIRAL4.png" width="200"><br><sub>Rhombic Spirallohedra (4-Armed)</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/spacefill_solids__CHAIR44.png" width="200"><br><sub>Chair44 Monotile</sub></td>
+</tr>
 </table>
 
 ## How it works
