@@ -57,14 +57,16 @@ function toLinear(c) {
   return c.map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
 }
 
-// WHAT LIMITS A PATCH. Not memory any more: the tile is shared, so a
-// chair costs one 4x4 matrix and a colour, 76 bytes, and even two
-// million of them is a few hundred megabytes. What limits it is the
+// WHAT LIMITS A PATCH. Not memory: the tile is shared, so a chair
+// costs one 4x4 matrix and a colour, 76 bytes, and even the deepest
+// patch on offer is a few tens of megabytes. What limits it is the
 // triangles the GPU redraws every frame while you orbit. Twenty
 // million is about the most that stays fluid on ordinary hardware, so
-// that is the budget the fallback aims at -- and the deepest patch of
-// all overruns it knowingly, with a warning, because at that size the
-// Built slider is also the throttle.
+// that is the budget, and every depth the page offers meets it by
+// giving way on how finely the rule is drawn. (A depth-7 patch --
+// 2,097,152 chairs, 100 million triangles as bare chairs -- was
+// offered briefly and was too slow to turn, which is what set this
+// ceiling where it is.)
 export const MAX_TRIANGLES = 20e6;
 
 const TILE_CACHE = new Map();
@@ -88,13 +90,13 @@ export function planFor(depth, wanted) {
     if (chairs * tileTriangles(mode) <= MAX_TRIANGLES) best = mode;
     if (mode === wanted) break;
   }
-  if (best !== null) {
-    return { mode: best, fellBack: best !== wanted, heavy: false,
-             triangles: chairs * tileTriangles(best) };
-  }
-  // Nothing fits: draw the bare chair anyway and say what it costs.
-  return { mode: 'NONE', fellBack: wanted !== 'NONE', heavy: true,
-           triangles: chairs * tileTriangles('NONE') };
+  // `best` is never null for the depths the page offers: the bare
+  // chair at the deepest of them is 12.6 million triangles, inside the
+  // budget. The fallback to it is kept for the day a deeper button is
+  // added.
+  const mode = best === null ? 'NONE' : best;
+  return { mode, fellBack: mode !== wanted,
+           triangles: chairs * tileTriangles(mode) };
 }
 
 /** The tile for a feature mode, as {verts, tris, colors} where colors

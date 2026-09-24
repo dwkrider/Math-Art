@@ -524,9 +524,10 @@ export function patch(depth) {
 
 /** The same sequence as `patch`, handed out one pose at a time.
  *
- *  A depth-7 patch is 2,097,152 chairs, and holding that many pose
- *  objects at once costs hundreds of megabytes for no reason: the
- *  caller only ever wants to write each one into a buffer and move on.
+ *  A deep patch is a quarter of a million chairs, and holding that
+ *  many pose objects at once costs far more than the buffers they are
+ *  headed for: the caller only ever wants to write each one down and
+ *  move on.
  *  This walks the substitution tree depth first -- the same order
  *  `patch` returns, which the parity test pins to the Python engine --
  *  keeping only the path from the root, so the memory is O(depth).

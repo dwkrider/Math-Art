@@ -118,11 +118,6 @@ function main() {
                  + `redraws comfortably — showing `
                  + `${FEATURE_LABELS[features].toLowerCase()} instead.`);
     }
-    if (plan.heavy) {
-      fixed.push(`This is ${(plan.triangles / 1e6).toFixed(0)} million triangles `
-                 + 'even as bare chairs, well past what most machines orbit '
-                 + 'smoothly. Wind Built back if it drags.');
-    }
     if (clamped) {
       fixed.push(`Relief clamped to ${relief.toFixed(0)}× so the pyramids stay `
                  + `clear at a gap of ${state.gap.toFixed(2)}.`);
