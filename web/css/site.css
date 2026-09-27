@@ -48,9 +48,10 @@ a { color: var(--accent); }
 /* ---------------------------------------------------------- home */
 
 .hero {
-  max-width: 62rem;
-  margin: 0 auto;
-  padding: 5rem 1.5rem 2.5rem;
+  /* Left edge shared with the card grid below, which now runs the full
+   * width: a centred hero over flush-left cards reads as a mistake. The
+   * lede keeps its own measure so the prose stays readable. */
+  padding: 4rem 1.5rem 2rem;
 }
 
 .hero h1 {
@@ -69,15 +70,16 @@ a { color: var(--accent); }
 }
 
 .modules {
-  max-width: 62rem;
+  /* The grid runs the full width of the window and the cards share it
+   * out: as modules are added the rows fill up rather than the column
+   * growing taller beside empty space. `auto-fill` with a 1fr maximum
+   * is what lets a row of three on a laptop become a row of six on a
+   * wide screen without any breakpoints. */
   margin: 0 auto;
   padding: 1rem 1.5rem 4rem;
   display: grid;
-  /* Cards do not stretch to fill the row: the page lists only the modules
-   * that exist, so with one module a full-width card would read as a
-   * banner rather than as one of a set. */
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 22rem));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
   align-items: start;
 }
 
@@ -105,18 +107,18 @@ a { color: var(--accent); }
   background: #000;
 }
 
-.module-card-body { padding: 1.1rem 1.2rem 1.3rem; }
+.module-card-body { padding: 0.85rem 0.95rem 1rem; }
 
 .module-card h2 {
   font-family: var(--serif);
   font-weight: 500;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   margin: 0 0 0.15rem;
 }
 
 .module-count {
-  margin: 0 0 0.6rem;
-  font-size: 0.78rem;
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--ink-faint);
@@ -124,7 +126,8 @@ a { color: var(--accent); }
 
 .module-card p:last-child {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 0.83rem;
+  line-height: 1.5;
   color: var(--ink-dim);
 }
 

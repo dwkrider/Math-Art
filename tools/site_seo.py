@@ -905,8 +905,8 @@ def patch_site_pages(n_surf, n_solid):
               "Platonic, Archimedean, Catalan, Johnson and Kepler-Poinsot "
               "-- arranged by how many kinds of face they have, ending in "
               "the nine fully regular solids."),
-        image=url("thumbs/polyhedra/truncated-icosahedron.png"),
-        image_alt="The truncated icosahedron",
+        image=url("thumbs/polyhedra/great-stellated-dodecahedron.png"),
+        image_alt="The great stellated dodecahedron",
         ld={
             "@context": "https://schema.org",
             "@type": "CollectionPage",
