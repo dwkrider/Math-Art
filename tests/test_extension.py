@@ -584,6 +584,11 @@ OPS = [
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='CSASZAR')),
     ("toroid szilassi",
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='SZILASSI')),
+    ("toroid mizhaev genus 3",
+     lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='MIZHAEV')),
+    ("toroid rost-vigh genus 3, map colours + doubled edges",
+     lambda: bpy.ops.mesh.toroidal_polyhedron_add(
+         solid='ROST_VIGH', map_colours=True, mark_doubled=True)),
     ("toroid regular-faced",
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='REGULAR')),
     ("toroid knotted dodecahedron",

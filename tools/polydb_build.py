@@ -1017,6 +1017,18 @@ TOROID_META = {
                  "The dual of the Csaszar polyhedron: each of its 7 faces "
                  "shares an edge with every other, so colouring it needs 7 "
                  "colours."),
+    "MIZHAEV": ("Mizhaev Polyhedron", None,
+                "R. Mizhaev, 'Integer realization of an equivelar octahedron "
+                "of genus 3', arXiv:2609.17700 (2026).",
+                "Genus 3. Each of its 8 nonagonal faces shares an edge with "
+                "every other; 8 of the 28 pairs share two collinear edges."),
+    "ROST_VIGH": ("Rost-Vigh Polyhedron", None,
+                  "G. Rost and V. Vigh, 'A second eight-faced polyhedron in "
+                  "which every two faces share an edge', arXiv:2609.32998 "
+                  "(2026).",
+                  "Genus 3. Each of its 8 nonagonal faces shares an edge "
+                  "with every other; 8 of the 28 pairs share two collinear "
+                  "edges. Not combinatorially equivalent to Mizhaev's."),
     "REGULAR": ("Regular Toroid", "RegularToroid", None, None),
     "KNOTTED": ("Knotted Toroid", "KnottedToroid", None, None),
     "BORROMEAN": ("Borromean Toroid", "BorromeanToroid", None, None),
@@ -1026,8 +1038,9 @@ TOROID_META = {
 
 
 def stage_toroid(limit=None):
-    """Toroidal polyhedra: genus 1, so chi = 0. They are the reason the schema
-    carries genus at all -- every other family here is genus 0."""
+    """Toroidal polyhedra: genus 1 (chi = 0) apart from the two genus-3
+    face-neighbourly solids. They are the reason the schema carries genus at
+    all -- every other family here is genus 0."""
     import toroidal_polyhedron_generator as TP
 
     out = []
@@ -1052,7 +1065,9 @@ def stage_toroid(limit=None):
             continue
         meta = {
             "slug": slugify(name), "name": name,
-            "families": ["toroid", "genus-1"],
+            "families": ["toroid",
+                         "genus-%d" % max(1, TP.toroid_topology(F)[2]
+                                          // TP.toroid_topology(F)[1])],
             "ids": {"uniform": None, "wenninger": None, "coxeter_clm": None,
                     "mccooey": stem, "johnson": None, "netlib": None,
                     "bowers": None, "wikipedia": None, "wolfram": None},
