@@ -218,50 +218,86 @@ def _drop_repeats(ring, eps):
 
 def ear_clip(ring):
     """Triangulate a simple polygon (any winding) into index triples of
-    a CCW copy of it; returns (ccw_ring, triangles)."""
+    a CCW copy of it; returns (ccw_ring, triangles).
+
+    Of the valid ears, the most compact (shortest longest side) is cut
+    first.  A finger outline is a comb, and plain ear clipping fans its
+    teeth into long slivers reaching across the plate; compact ears keep
+    each finger's triangles local, which is what lets bounding boxes
+    prune the prism-overlap tests."""
     P = pc.as_ccw(list(ring))
     n = len(P)
     idx = list(range(n))
     tris = []
 
-    def convex(i0, i1, i2):
+    def area2(i0, i1, i2):
         a, b, c = P[i0], P[i1], P[i2]
-        return _cross2((b[0] - a[0], b[1] - a[1]),
-                       (c[0] - a[0], c[1] - a[1])) > 1e-14
+        return _cross2((b[0] - a[0], b[1] - a[1]), (c[0] - a[0], c[1] - a[1]))
 
     def inside(p, a, b, c):
-        d1 = _cross2((b[0] - a[0], b[1] - a[1]), (p[0] - a[0], p[1] - a[1]))
-        d2 = _cross2((c[0] - b[0], c[1] - b[1]), (p[0] - b[0], p[1] - b[1]))
-        d3 = _cross2((a[0] - c[0], a[1] - c[1]), (p[0] - c[0], p[1] - c[1]))
-        return d1 >= 0.0 and d2 >= 0.0 and d3 >= 0.0
+        return (_cross2((b[0] - a[0], b[1] - a[1]),
+                        (p[0] - a[0], p[1] - a[1])) >= 0.0 and
+                _cross2((c[0] - b[0], c[1] - b[1]),
+                        (p[0] - b[0], p[1] - b[1])) >= 0.0 and
+                _cross2((a[0] - c[0], a[1] - c[1]),
+                        (p[0] - c[0], p[1] - c[1])) >= 0.0)
 
-    guard = 0
-    while len(idx) > 3 and guard < 10 * n * n + 100:
-        guard += 1
-        m = len(idx)
-        cut = False
-        for k in range(m):
-            i0, i1, i2 = idx[k - 1], idx[k], idx[(k + 1) % m]
-            if not convex(i0, i1, i2):
+    def d2(i, j):
+        return (P[i][0] - P[j][0]) ** 2 + (P[i][1] - P[j][1]) ** 2
+
+    # doubly linked ring; ear status is recomputed only for the two
+    # neighbours of each vertex cut, so the whole run is ~O(n * reflex)
+    nxt = {idx[k]: idx[(k + 1) % n] for k in range(n)}
+    prv = {idx[k]: idx[k - 1] for k in range(n)}
+    alive = set(idx)
+
+    def is_reflex(i):
+        return area2(prv[i], i, nxt[i]) <= 1e-14
+
+    reflex = {i for i in alive if is_reflex(i)}
+
+    def ear_size(i):
+        i0, i2 = prv[i], nxt[i]
+        if i in reflex:
+            return None
+        a, b, c = P[i0], P[i], P[i2]
+        for j in reflex:
+            if j in (i0, i, i2) or P[j] == a or P[j] == b or P[j] == c:
                 continue
-            a, b, c = P[i0], P[i1], P[i2]
-            if any(inside(P[j], a, b, c) for j in idx
-                   if j not in (i0, i1, i2)
-                   and P[j] != a and P[j] != b and P[j] != c):
-                continue
-            tris.append((i0, i1, i2))
-            idx.pop(k)
-            cut = True
-            break
-        if not cut:
+            if inside(P[j], a, b, c):
+                return None
+        return max(d2(i0, i), d2(i, i2), d2(i0, i2))
+
+    size = {i: ear_size(i) for i in alive}
+    while len(alive) > 3:
+        cand = [(sz, i) for i, sz in size.items() if sz is not None]
+        if not cand:
+            # a vertex that stopped being reflex can unblock ears that
+            # were never re-checked: refresh everything before giving up
+            size = {i: ear_size(i) for i in alive}
+            cand = [(sz, i) for i, sz in size.items() if sz is not None]
+        if not cand:
             # numerically flat leftovers: drop the flattest vertex
-            best = min(range(m), key=lambda k: abs(_cross2(
-                (P[idx[k]][0] - P[idx[k - 1]][0],
-                 P[idx[k]][1] - P[idx[k - 1]][1]),
-                (P[idx[(k + 1) % m]][0] - P[idx[k - 1]][0],
-                 P[idx[(k + 1) % m]][1] - P[idx[k - 1]][1]))))
-            idx.pop(best)
-    if len(idx) == 3 and convex(*idx):
+            i = min(alive, key=lambda i: abs(area2(prv[i], i, nxt[i])))
+        else:
+            i = min(cand)[1]
+            tris.append((prv[i], i, nxt[i]))
+        a0, a2 = prv[i], nxt[i]
+        nxt[a0], prv[a2] = a2, a0
+        alive.discard(i)
+        reflex.discard(i)
+        del size[i]
+        for j in (a0, a2):
+            if is_reflex(j):
+                reflex.add(j)
+            else:
+                reflex.discard(j)
+        for j in (a0, a2):
+            size[j] = ear_size(j)
+    if len(alive) == 3:
+        i = next(iter(alive))
+        idx = [prv[i], i, nxt[i]]
+    if len(idx) == 3 and area2(*idx) > 1e-14:
         tris.append(tuple(idx))
     return P, tris
 
@@ -460,7 +496,7 @@ def _prism(frame, tri2, t):
         faces.append([a, bot[k], bot[(k + 1) % 3], b])
         sn = _unit(_cross(_sub(b, a), n))
         planes.append((sn, _dot(sn, a)))
-    return faces, planes
+    return faces, planes, top + bot
 
 
 def _clip_poly3(faces, plane, eps):
@@ -512,11 +548,27 @@ def _volume(faces):
     return vol
 
 
+def _separated(A, B, eps):
+    """True when a face plane of either prism has the other entirely
+    on its outside: a cheap, exact rejection before any clipping."""
+    for (P, Q) in ((A, B), (B, A)):
+        for (nrm, d) in P[1]:
+            if all(_dot(nrm, q) > d + eps for q in Q[2]):
+                return True
+    return False
+
+
 def prism_overlap(A, B, eps):
     """Intersection of two convex prisms (from `_prism`): (volume,
     vertices)."""
+    if _separated(A, B, eps):
+        return 0.0, []
     faces = A[0]
     for pl in B[1]:
+        # a plane with all of A already inside it clips nothing
+        nrm, d = pl
+        if all(_dot(nrm, q) <= d + eps for f in faces for q in f):
+            continue
         faces = _clip_poly3(faces, pl, eps)
         if not faces:
             return 0.0, []
@@ -535,10 +587,45 @@ def _bbox_hit(a, b, pad):
                 a[5] + pad < b[2] or b[5] + pad < a[2])
 
 
+def bridge_holes(outer, holes):
+    """One weakly simple ring equivalent to `outer` minus `holes`: each
+    hole is spliced in along a bridge from its rightmost vertex to an
+    outline vertex it can see (holes taken right to left, so a later
+    bridge never has to cross an earlier one)."""
+    ring = pc.as_ccw(list(outer))
+    for h in sorted((pc.as_cw(list(h)) for h in holes),
+                    key=lambda h: -max(p[0] for p in h)):
+        m = max(range(len(h)), key=lambda k: (h[k][0], h[k][1]))
+        M = h[m]
+        others = [g for g in holes]
+
+        def visible(V):
+            for R in [ring] + others:
+                n = len(R)
+                for k in range(n):
+                    a, b = R[k], R[(k + 1) % n]
+                    if a == V or b == V or a == M or b == M:
+                        continue
+                    if _segments_cross(M, V, a, b, 1e-12):
+                        return False
+            return True
+
+        cands = sorted(range(len(ring)),
+                       key=lambda k: (ring[k][0] - M[0]) ** 2
+                       + (ring[k][1] - M[1]) ** 2)
+        v = next((k for k in cands if visible(ring[k])), cands[0])
+        hole_seq = h[m:] + h[:m] + [M]
+        ring = ring[:v + 1] + hole_seq + ring[v:]
+    return ring
+
+
 def plate_pieces(plate, t, ring=None):
     """Convex prism pieces of a plate (or of one ring given in its
     frame), with their bounding boxes."""
-    ring = plate['outer'] if ring is None else ring
+    if ring is None:
+        ring = plate['outer']
+        if plate.get('holes'):
+            ring = bridge_holes(ring, plate['holes'])
     P, tris = ear_clip(ring)
     out = []
     for (i, j, k) in tris:
@@ -821,7 +908,6 @@ def build_plates(V, F, **kw):
                                         t, S['size'], eps)
 
     # --- assembly order ----------------------------------------------
-    order = _assembly_order(plates, joints)
 
     # --- labels and edge numbers --------------------------------------
     for P in plates:
@@ -846,8 +932,11 @@ def build_plates(V, F, **kw):
                            if J['convex'] and J['c'] < -1e-9] or [0.0]),
         'thickness': t, 'fit': S['fit'],
     }
-    return {'plates': plates, 'joints': joints, 'scale': scale,
-            'order': order, 'report': report, 'settings': S}
+    result = {'plates': plates, 'joints': joints, 'scale': scale,
+              'order': None, 'report': report, 'settings': S}
+    result['order'] = assembly_order(result)
+    report['order_known'] = result['order'] is not None
+    return result
 
 
 # ---------------------------------------------------------------- #
@@ -1079,45 +1168,64 @@ def _vertex_cleanup(plates, rank, at_vertex, joints, Vm, t, size, eps):
 #  assembly order                                                   #
 # ---------------------------------------------------------------- #
 
-def _assembly_order(plates, joints):
-    """A plate can be pressed in from outside when every neighbour
-    already in place meets it across a convex edge (or every one across
-    a reflex edge).  Greedy: place the plate with the most placed
-    neighbours that is still insertable.  None if it gets stuck."""
-    nbrs = {P['index']: [] for P in plates}
-    for J in joints.values():
-        A, B = J['plates']
-        nbrs[A].append((B, J['convex']))
-        nbrs[B].append((A, J['convex']))
-    if all(J['convex'] for J in joints.values()):
-        # convex shell: any order works; build outward from plate 0
-        order, seen = [], set()
-        queue = [0]
+ORDER_SEARCH_LIMIT = 120
+
+
+def assembly_order(result):
+    """An order in which the plates can be pressed in one at a time,
+    each along its own normal from outside -- or None if none was found
+    (or the kit is too big to search).
+
+    A convex shell with Flush joints needs no search: every plate clears
+    its neighbours along its normal, whatever is already in place, so
+    any order works (the self-test checks exactly that).  Otherwise the
+    order is found by taking the model apart: repeatedly lift out a
+    plate that clears every plate still present, then reverse.  The
+    last plate in must go in from outside; the others may also come
+    from inside, while the shell is still open."""
+    plates = result['plates']
+    joints = result['joints']
+    n = len(plates)
+    if result['settings']['fit'] == 'FLUSH' and \
+            all(J['convex'] for J in joints.values()):
+        nbrs = {P['index']: set() for P in plates}
+        for J in joints.values():
+            A, B = J['plates']
+            nbrs[A].add(B)
+            nbrs[B].add(A)
+        order, seen, queue = [], set(), [0]
         while queue:
             p = queue.pop(0)
             if p in seen:
                 continue
             seen.add(p)
             order.append(p)
-            queue.extend(q for q, _c in sorted(nbrs[p]) if q not in seen)
+            queue.extend(sorted(nbrs[p] - seen))
         return order
-    placed, order = set(), []
-    while len(order) < len(plates):
-        best = None
-        for p in range(len(plates)):
-            if p in placed:
-                continue
-            kinds = {c for q, c in nbrs[p] if q in placed}
-            if len(kinds) > 1:
-                continue
-            score = sum(1 for q, _c in nbrs[p] if q in placed)
-            if best is None or score > best[0]:
-                best = (score, p)
-        if best is None:
+    if n > ORDER_SEARCH_LIMIT:
+        return None
+    t = result['settings']['thickness']
+    reach = max([abs(J['c']) + J['s'] for J in joints.values()] + [t])
+    lift = 2.0 * reach + 2.0 * t
+    present = set(range(n))
+    removed = []
+    while present:
+        for p in sorted(present):
+            # out through the outside; or, while the shell is still
+            # open, out through the inside -- the only way a plate on a
+            # reflex edge can go, since its tab sits behind the partner
+            ways = [(lift, lift + t)]
+            if removed:
+                ways.append((0.0, t + lift))
+            if any(overlap_volume(result, lift=a, depth=d, only={p},
+                                  present=present) == 0.0
+                   for a, d in ways):
+                present.discard(p)
+                removed.append(p)
+                break
+        else:
             return None
-        placed.add(best[1])
-        order.append(best[1])
-    return order
+    return list(reversed(removed))
 
 
 # ---------------------------------------------------------------- #
@@ -1238,3 +1346,305 @@ def cut_layout(result, sheet_width=600.0, sheet_height=400.0, kerf=0.15,
     parts = plate_parts(result)
     return _layout.nest(parts, sheet_width, sheet_height, margin=margin,
                         kerf=kerf, label_height=0.0, name=name)
+
+
+# ---------------------------------------------------------------- #
+#  independent checks (used by the self-test and the report)        #
+# ---------------------------------------------------------------- #
+
+def overlap_volume(result, lift=0.0, depth=None, only=None, present=None):
+    """Total volume (mm^3) shared by any two plates, computed exactly
+    from convex prism pieces over the WHOLE plates -- no vertex windows,
+    so it is independent of the clean-up it checks.
+
+    With `depth`, the plate(s) in `only` are swept instead: their prisms
+    start `lift` above the outer face and reach `depth` down, which is
+    the region a plate passes through when it is pressed in along its
+    normal from outside."""
+    t = result['settings']['thickness']
+    eps = 1e-9 * result['settings']['size']
+    tol = 1e-7 * t ** 3
+    plates = result['plates']
+    pieces = []
+    for P in plates:
+        if only is not None and P['index'] in only and depth is not None:
+            o, u, w, n = P['frame']
+            fr = (_add(o, _mul(n, lift)), u, w, n)
+            pieces.append(plate_pieces(dict(P, frame=fr), depth))
+        else:
+            pieces.append(_pieces(P, t))
+    boxes = []
+    for pl in pieces:
+        pts = [(b[0], b[1], b[2]) for (_pr, b) in pl] + \
+              [(b[3], b[4], b[5]) for (_pr, b) in pl]
+        boxes.append(_bbox3(pts))
+    total = 0.0
+    for i in range(len(plates)):
+        for j in range(i + 1, len(plates)):
+            if only is not None and i not in only and j not in only:
+                continue
+            if present is not None and (i not in present
+                                        or j not in present):
+                continue
+            if not _bbox_hit(boxes[i], boxes[j], eps):
+                continue
+            for (pa, ba) in pieces[i]:
+                if not _bbox_hit(ba, boxes[j], eps):
+                    continue
+                for (qa, bb) in pieces[j]:
+                    if not _bbox_hit(ba, bb, eps):
+                        continue
+                    vol, _pts = prism_overlap(pa, qa, eps)
+                    if vol > tol:
+                        total += vol
+    return total
+
+
+def insertion_blocked(result):
+    """Plates that cannot be pressed in along their own normal as the
+    LAST plate, with every other plate already in place."""
+    t = result['settings']['thickness']
+    bad = []
+    for P in result['plates']:
+        if overlap_volume(result, lift=2.0 * t, depth=3.0 * t,
+                          only={P['index']}) > 0.0:
+            bad.append(P['index'])
+    return bad
+
+
+# ---------------------------------------------------------------- #
+
+def _selftest():
+    try:
+        from .. import regular_solids_generator as rs
+    except ImportError:
+        import regular_solids_generator as rs
+    fails = []
+
+    def bad(msg):
+        print("   BAD:", msg)
+        fails.append(msg)
+
+    t = 3.0
+
+    # --- 1. the cross-section against its closed forms --------------
+    for deg in (20, 45, 60, 70.53, 90, 109.47, 116.57, 120, 138.19, 150,
+                170, 200, 240, 270, 300):
+        phi = math.radians(deg)
+        sp, cp = sin(phi), cos(phi)
+        for fit in ('FLUSH', 'FILLED'):
+            c, s = edge_joint(phi, t, fit)
+            if phi < pi / 2:
+                want_s = t / math.tan(phi / 2)
+                want_step = want_s if fit == 'FILLED' else t / sp
+            elif phi < pi:
+                want_s = t * sp if fit == 'FLUSH' else t / sp
+                want_step = t * sp if fit == 'FLUSH' else \
+                    t * math.tan(phi / 2)
+            else:
+                want_s = None
+                want_step = t * (1 + abs(cp)) / abs(sp)
+            if want_s is not None and abs(s - want_s) > 1e-9:
+                bad(f"root at {deg} {fit}: {s} != {want_s}")
+            if abs((s - c) - want_step) > 1e-9:
+                bad(f"step at {deg} {fit}: {s - c} != {want_step}")
+            # the tab and the partner's material must not overlap
+            a, nA, b, nB = section_frames(phi)
+            big = abs(c) + 1000.0 * t
+            X = [(c, 0.0), (big, 0.0), (big, t), (c, t)]
+            for f in (lambda p: p[0] * nB[0] + p[1] * nB[1],
+                      lambda p: t - (p[0] * nB[0] + p[1] * nB[1]),
+                      lambda p: p[0] * b[0] + p[1] * b[1] - s):
+                X = _clip_halfplane(X, f)
+            if len(X) > 2 and pc.area(X) > 1e-9:
+                bad(f"tab overlaps partner at {deg} {fit}")
+            if fit == 'FILLED' and c > min(joint_corners(phi, t)) + 1e-12:
+                bad(f"Filled tab leaves J uncovered at {deg}")
+
+    # --- test solids --------------------------------------------------
+    def solid(fam, sid):
+        return rs.build_solid(fam, sid)[:2]
+
+    def l_prism():
+        L = [(0, 0), (2, 0), (2, 1), (1, 1), (1, 2), (0, 2)]
+        V = [(x, y, 0.0) for x, y in L] + [(x, y, 1.0) for x, y in L]
+        F = [list(reversed(range(6))), list(range(6, 12))]
+        for k in range(6):
+            j = (k + 1) % 6
+            F.append([k, j, j + 6, k + 6])
+        return V, F
+
+    def picture_frame():
+        # a square ring: the top and bottom are each four coplanar
+        # trapezoids that must merge into one plate with a hole
+        o = [(-2, -2), (2, -2), (2, 2), (-2, 2)]
+        i = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+        V = [(x, y, 0.0) for x, y in o + i] + \
+            [(x, y, 1.0) for x, y in o + i]
+        F = []
+        for k in range(4):
+            j = (k + 1) % 4
+            F.append([k + 8, j + 8, j + 12, k + 12])      # top
+            F.append([k, k + 4, j + 4, j])                # bottom
+            F.append([k, j, j + 8, k + 8])                # outer wall
+            F.append([k + 4, k + 12, j + 12, j + 4])      # inner wall
+        return V, F
+
+    def split_cube():
+        V, F = solid('PLATONIC', 'CUBE')
+        F2 = []
+        for f in F:
+            F2.append([f[0], f[1], f[2]])
+            F2.append([f[0], f[2], f[3]])
+        return V, F2
+
+    # --- 2. the cube is the ordinary box joint ---------------------
+    V, F = solid('PLATONIC', 'CUBE')
+    r1 = build_plates(V, F, fit='FLUSH')
+    r2 = build_plates(V, F, fit='FILLED')
+    if r1['report']['plates'] != 6 or r1['report']['edges'] != 12:
+        bad(f"cube: {r1['report']['plates']} plates, "
+            f"{r1['report']['edges']} edges")
+    for J in r1['joints'].values():
+        if abs(J['c']) > 1e-9 or abs(J['s'] - t) > 1e-9:
+            bad(f"cube joint not a box joint: c={J['c']} s={J['s']}")
+    for P, Q in zip(r1['plates'], r2['plates']):
+        if len(P['outer']) != len(Q['outer']) or any(
+                abs(p[0] - q[0]) > 1e-9 or abs(p[1] - q[1]) > 1e-9
+                for p, q in zip(P['outer'], Q['outer'])):
+            bad("cube: Flush and Filled differ")
+            break
+    # edge numbers: every number on exactly the two plates of its edge
+    seen = {}
+    for P in r1['plates']:
+        for mk in P['marks']:
+            seen.setdefault(mk['text'], []).append(P['index'])
+    for J in r1['joints'].values():
+        if sorted(seen.get(str(J['number']), [])) != sorted(J['plates']):
+            bad(f"edge number {J['number']} not on its two plates")
+    if len(seen) != len(r1['joints']):
+        bad("edge numbers do not pair up")
+
+    # --- 3/4. exact non-interpenetration, and insertion ---------------
+    cases = [('cube', solid('PLATONIC', 'CUBE'), True),
+             ('tetra', solid('PLATONIC', 'TETRA'), True),
+             ('octa', solid('PLATONIC', 'OCTA'), True),
+             ('icosa', solid('PLATONIC', 'ICOSA'), True),
+             ('dodeca', solid('PLATONIC', 'DODECA'), True),
+             ('cubocta', solid('ARCHIMEDEAN', 'CO'), True),
+             ('L-prism', l_prism(), False)]
+    for name, (V, F), convex in cases:
+        for fit in ('FLUSH', 'FILLED'):
+            try:
+                r = build_plates(V, F, fit=fit)
+            except ValueError as e:
+                bad(f"{name} {fit}: {e}")
+                continue
+            errs = [P['error'] for P in r['plates'] if P['error']]
+            if errs:
+                bad(f"{name} {fit}: plate errors {errs[:2]}")
+            ov = overlap_volume(r)
+            if ov > 0.0:
+                bad(f"{name} {fit}: plates overlap by {ov:.4f} mm^3")
+            if r['report']['residual'] > 0.0:
+                bad(f"{name} {fit}: clean-up left "
+                    f"{r['report']['residual']:.4f} mm^3")
+            if convex and fit == 'FLUSH':
+                # the claim that lets the builder skip the search
+                blocked = insertion_blocked(r)
+                if blocked:
+                    bad(f"{name} {fit}: plates {blocked} cannot go in "
+                        f"last along their normal")
+            if r['order'] is None or \
+                    sorted(r['order']) != list(range(len(r['plates']))):
+                bad(f"{name} {fit}: no assembly order")
+    # the L-prism has one reflex edge and a non-convex face
+    r = build_plates(*l_prism())
+    if r['report']['reflex'] != 1:
+        bad(f"L-prism: {r['report']['reflex']} reflex edges, want 1")
+
+    # the prism pieces tile each plate exactly
+    for name, (V, F), _cv in cases:
+        r = build_plates(V, F)
+        for P in r['plates']:
+            Q, tris = ear_clip(P['outer'])
+            tot = sum(abs(_cross2((Q[j][0] - Q[i][0], Q[j][1] - Q[i][1]),
+                                  (Q[k][0] - Q[i][0], Q[k][1] - Q[i][1])))
+                      for (i, j, k) in tris) / 2.0
+            if abs(tot - pc.area(P['outer'])) > 1e-6 * pc.area(P['outer']):
+                bad(f"{name}: triangulation covers {tot:.3f} of "
+                    f"{pc.area(P['outer']):.3f} mm^2")
+                break
+
+    # --- 5. coplanar merge ---------------------------------------------
+    r = build_plates(*split_cube())
+    if r['report']['plates'] != 6:
+        bad(f"split cube made {r['report']['plates']} plates, want 6")
+
+    V, F = picture_frame()
+    r = build_plates(V, F)
+    holed = sum(1 for P in r['plates'] if P['holes'])
+    if r['report']['plates'] != 10 or holed != 2:
+        bad(f"picture frame: {r['report']['plates']} plates, {holed} with "
+            f"a hole; want 10 and 2")
+    ov = overlap_volume(r)
+    if ov > 0.0:
+        bad(f"picture frame: plates overlap by {ov:.4f} mm^3")
+    for P in r['plates']:
+        if P['holes']:
+            Q, tris = ear_clip(bridge_holes(P['outer'], P['holes']))
+            tot = sum(abs(_cross2((Q[j][0] - Q[i][0], Q[j][1] - Q[i][1]),
+                                  (Q[k][0] - Q[i][0], Q[k][1] - Q[i][1])))
+                      for (i, j, k) in tris) / 2.0
+            want = pc.area(P['outer']) - sum(pc.area(h) for h in P['holes'])
+            if abs(tot - want) > 1e-6 * want:
+                bad(f"holed plate triangulates to {tot:.2f}, want {want:.2f}")
+
+    # --- 6. guards ------------------------------------------------------
+    try:
+        build_plates(*solid('ARCHIMEDEAN', 'SD'), fit='FILLED')
+        bad("snub dodecahedron Filled should be refused")
+    except ValueError as e:
+        if 'Flush' not in str(e):
+            bad(f"refusal should suggest Flush: {e}")
+    V, F = solid('PLATONIC', 'CUBE')
+    V = [tuple(c * (1.05 if i == 0 else 1.0) for c in v)
+         for i, v in enumerate(V)]
+    try:
+        build_plates(V, F)
+        bad("a warped cube should be refused")
+    except ValueError:
+        pass
+    try:
+        build_plates(*solid('PLATONIC', 'ICOSA'), limit=10)
+        bad("the plate limit should refuse 20 plates")
+    except ValueError:
+        pass
+    r = build_plates(*solid('PLATONIC', 'ICOSA'))
+    if r['report']['shallow'] != 30:
+        bad(f"icosahedron Flush: {r['report']['shallow']} shallow edges, "
+            f"want 30 (step 0.67 t)")
+
+    # --- 7. the cut layout ---------------------------------------------
+    r = build_plates(*solid('PLATONIC', 'DODECA'))
+    d, rep = cut_layout(r, 600.0, 400.0, kerf=0.15)
+    if rep['placed'] != 12 or rep['errors']:
+        bad(f"layout: {rep}")
+    layers = {e.layer for s in d.sheets for e in s.entities}
+    if not {'CUT', 'ENGRAVE'} <= layers:
+        bad(f"layout layers {layers}")
+    for P, part in zip(r['plates'], plate_parts(r)):
+        if abs(pc.area(part.outer) - pc.area(P['outer'])) > 1e-6:
+            bad("mirroring changed a plate's area")
+            break
+    cut = [e.points for s in d.sheets for e in s.entities
+           if e.layer == 'CUT']
+    if any(not ring_is_simple(ring, 1e-9) for ring in cut):
+        bad("a kerf-compensated outline crosses itself")
+    if not sum(pc.area(g) for g in cut) > \
+            sum(pc.area(P['outer']) for P in r['plates']):
+        bad("kerf compensation should grow the outlines")
+
+    if fails:
+        raise AssertionError(f"{len(fails)} failure(s): {fails[0]}")
+    print("   plate_style: all checks passed")
