@@ -162,7 +162,7 @@ PARAMS = {
     # Grey, the eight-nonagon solids read as a crumpled scrap; as a map
     # (one colour per face, since every two faces meet) with the
     # twice-shared edges marked, the point of them is visible.
-    "mesh.neighbourly_polyhedron_add": dict(solid='ROST_VIGH',
+    "mesh.neighbourly_polyhedron_add": dict(solid='MIZHAEV',
                                             map_colours=True,
                                             mark_doubled=True),
     # The K = +1 family defaults to the sphere, which at icon size is
