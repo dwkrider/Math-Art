@@ -25,7 +25,7 @@ class Part:
     """One cuttable piece: an outline, its holes, and its paperwork."""
 
     __slots__ = ('outer', 'holes', 'family', 'slice_index', 'index',
-                 'label', 'errors', 'slots', 'offset', 'order')
+                 'label', 'errors', 'slots', 'offset', 'order', 'engrave')
 
     def __init__(self, outer, holes=None, family='', slice_index=0,
                  index=0, offset=0.0):
@@ -39,6 +39,9 @@ class Part:
         self.order = 0
         self.errors = []
         self.slots = []
+        # extra single-stroke engraving (open polylines, part coords),
+        # e.g. the matching edge numbers of a finger-jointed plate
+        self.engrave = []
 
     # -- geometry ---------------------------------------------------
 
@@ -63,6 +66,8 @@ class Part:
         out.label = self.label
         out.errors = list(self.errors)
         out.slots = [[(x + dx, y + dy) for x, y in s] for s in self.slots]
+        out.engrave = [[(x + dx, y + dy) for x, y in s]
+                       for s in self.engrave]
         return out
 
     def fail(self, kind, detail=''):

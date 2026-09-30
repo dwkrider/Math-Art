@@ -1856,8 +1856,10 @@ try:
                            BoolProperty)
     try:
         from .styles import net_style as _net_style
+        from .styles import plate_style as _plate_style
     except ImportError:
         from styles import net_style as _net_style
+        from styles import plate_style as _plate_style
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -1934,7 +1936,8 @@ if _IN_BLENDER:
             self.solid = ids[0]
 
     class MESH_OT_regular_solid_add(bpy.types.Operator,
-                                    _net_style.NetStyleProps):
+                                    _net_style.NetStyleProps,
+                                    _plate_style.PlateStyleProps):
         """Add a regular / semiregular / star / Johnson solid,
         organised by family, with stellation, styles and coloring"""
         bl_idname = "mesh.regular_solid_add"
@@ -1993,7 +1996,8 @@ if _IN_BLENDER:
                    ('FACETS', "Face Segments",
                     "Split the shell into one thick plate per face, "
                     "padded apart and optionally exploded outward"),
-                   _net_style.net_enum_item()],
+                   _net_style.net_enum_item(),
+                   _plate_style.plate_enum_item()],
             default='SOLID',
             description="How the solid is rendered as geometry")
         facet_depth: FloatProperty(
@@ -2128,6 +2132,11 @@ if _IN_BLENDER:
                         and (self.family, sid) in CHIRAL):
                     V, F = mirror_solid(V, F)
                 return self._emit_net(context, V, F, label)
+            if self.style == 'PLATES':
+                if (self.handedness == 'LEFT'
+                        and (self.family, sid) in CHIRAL):
+                    V, F = mirror_solid(V, F)
+                return self._emit_plates(context, V, F, label)
             if self.pieces > 1:
                 assign, valid = split_congruent(V, F, self.pieces)
                 if assign is None:
@@ -2244,6 +2253,19 @@ if _IN_BLENDER:
                    else ""))
             return {'FINISHED'}
 
+        def _emit_plates(self, context, V, F, label):
+            hint = None
+            if self.family == 'KEPLER':
+                hint = ("the star faces cross one another instead of "
+                        "meeting edge to edge")
+            elif self.family in _CANON_FAMS and not self.canonicalize:
+                hint = "turn on Canonicalize to flatten the faces"
+            return _plate_style.emit_plates_from_operator(
+                self, context, V, F, label,
+                material_fn=(self._material_for
+                             if self.coloring == 'SIDES' else None),
+                hint=hint)
+
         def _emit_net(self, context, V, F, label):
             hint = None
             if self.family == 'KEPLER':
@@ -2292,11 +2314,13 @@ if _IN_BLENDER:
                 lay.prop(self, 'padding')
                 lay.prop(self, 'explode')
                 lay.prop(self, 'separate_facets')
+            if self.style == 'PLATES':
+                _plate_style.draw_plate_props(lay, self)
             if self.style == 'NET':
                 _net_style.draw_net_props(lay, self)
                 lay.prop(self, 'explode', text="Piece Spacing")
             lay.prop(self, 'coloring')
-            if self.style not in ('FACETS', 'NET'):
+            if self.style not in ('FACETS', 'NET', 'PLATES'):
                 lay.prop(self, 'pieces')
                 if self.pieces > 1:
                     lay.prop(self, 'explode')
