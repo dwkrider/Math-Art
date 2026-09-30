@@ -1029,6 +1029,18 @@ TOROID_META = {
                   "Genus 3. Each of its 8 nonagonal faces shares an edge "
                   "with every other; 8 of the 28 pairs share two collinear "
                   "edges. Not combinatorially equivalent to Mizhaev's."),
+    "MINIMAL_G2": ("Ten-Vertex Genus-2 Polyhedron", None,
+                   "S. Hougardy, F. H. Lutz and M. Zelke, 'Polyhedra of "
+                   "genus 2 with 10 vertices and minimal coordinates', "
+                   "Electronic Geometry Models No. 2005.08.001 (2007).",
+                   "Genus 2 on the fewest possible vertices; surface No. "
+                   "11909, integer coordinates in the 4x4x4 cube."),
+    "MINIMAL_G3": ("Ten-Vertex Genus-3 Polyhedron", None,
+                   "S. Hougardy, F. H. Lutz and M. Zelke, 'Polyhedra of "
+                   "genus 3 with 10 vertices and minimal coordinates', "
+                   "Electronic Geometry Models No. 2006.02.001 (2007).",
+                   "Genus 3 on the fewest possible vertices; surface No. "
+                   "14542, integer coordinates in the 5x5x5 cube."),
     "REGULAR": ("Regular Toroid", "RegularToroid", None, None),
     "KNOTTED": ("Knotted Toroid", "KnottedToroid", None, None),
     "BORROMEAN": ("Borromean Toroid", "BorromeanToroid", None, None),
@@ -1038,9 +1050,9 @@ TOROID_META = {
 
 
 def stage_toroid(limit=None):
-    """Toroidal polyhedra: genus 1 (chi = 0) apart from the two genus-3
-    face-neighbourly solids. They are the reason the schema carries genus at
-    all -- every other family here is genus 0."""
+    """Toroidal polyhedra: genus 1 (chi = 0) apart from the face-neighbourly
+    and vertex-minimal solids of genus 2 and 3. They are the reason the
+    schema carries genus at all -- every other family here is genus 0."""
     import toroidal_polyhedron_generator as TP
 
     out = []
