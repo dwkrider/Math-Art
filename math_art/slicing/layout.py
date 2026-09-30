@@ -146,6 +146,8 @@ def nest(parts, sheet_width, sheet_height, margin=3.0, kerf=0.0,
             for stroke in _label_strokes(placed, label_height):
                 sheet.add('ENGRAVE', stroke, False, placed.label)
                 report['labels'] += 1
+        for stroke in placed.engrave:
+            sheet.add('ENGRAVE', stroke, False, placed.label)
         for hole in placed.holes:
             sheet.add('HOLE', hole, True, placed.label)
         layer = 'CUT' if not placed.errors else 'ERROR'
