@@ -58,11 +58,14 @@ if _IN_BLENDER:
 
     try:
         from .styles import net_style as _net_style
+        from .styles import plate_style as _plate_style
     except ImportError:
         from styles import net_style as _net_style
+        from styles import plate_style as _plate_style
 
     class MESH_OT_waterman_add(bpy.types.Operator,
-                               _net_style.NetStyleProps):
+                               _net_style.NetStyleProps,
+                               _plate_style.PlateStyleProps):
         """Add a Waterman polyhedron (hull of FCC points within
         radius sqrt(2*root))"""
         bl_idname = "mesh.waterman_add"
@@ -89,7 +92,8 @@ if _IN_BLENDER:
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face"),
-            _net_style.net_enum_item()],
+            _net_style.net_enum_item(),
+            _plate_style.plate_enum_item()],
             default='SOLID',
             description="Finish for the polyhedron: solid, Leonardo "
                         "panels, struts, ball-and-stick, wireframe, or "
@@ -148,12 +152,15 @@ if _IN_BLENDER:
             bm.to_mesh(me)
             bm.free()
             me.update()
-            if self.style in ('FACETS', 'NET'):
+            if self.style in ('FACETS', 'NET', 'PLATES'):
                 Vf = [tuple(v.co) for v in me.vertices]
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
                 if self.style == 'NET':
                     return _net_style.emit_net_from_operator(
+                        self, context, Vf, Ff, f"Waterman W{self.root}")
+                if self.style == 'PLATES':
+                    return _plate_style.emit_plates_from_operator(
                         self, context, Vf, Ff, f"Waterman W{self.root}")
                 try:
                     from .styles import facet_style
@@ -211,6 +218,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'node_radius')
             if self.style == 'NET':
                 _net_style.draw_net_props(lay, self)
+            if self.style == 'PLATES':
+                _plate_style.draw_plate_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

@@ -604,11 +604,14 @@ if _IN_BLENDER:
 
     try:
         from .styles import net_style as _net_style
+        from .styles import plate_style as _plate_style
     except ImportError:
         from styles import net_style as _net_style
+        from styles import plate_style as _plate_style
 
     class MESH_OT_toroidal_polyhedron_add(bpy.types.Operator,
-                                          _net_style.NetStyleProps):
+                                          _net_style.NetStyleProps,
+                                          _plate_style.PlateStyleProps):
         """Add a toroidal (genus-1) polyhedron: the Csaszar polyhedron
         (no diagonals) or its dual the Szilassi polyhedron"""
         bl_idname = "mesh.toroidal_polyhedron_add"
@@ -621,7 +624,8 @@ if _IN_BLENDER:
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "Plain closed polyhedron"),
-                   _net_style.net_enum_item()],
+                   _net_style.net_enum_item(),
+                   _plate_style.plate_enum_item()],
             default='SOLID',
             description="How the polyhedron is rendered as geometry")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
@@ -635,6 +639,8 @@ if _IN_BLENDER:
             lay.prop(self, 'style')
             if self.style == 'NET':
                 _net_style.draw_net_props(lay, self)
+            if self.style == 'PLATES':
+                _plate_style.draw_plate_props(lay, self)
             lay.prop(self, 'scale')
 
         def execute(self, context):
@@ -646,6 +652,15 @@ if _IN_BLENDER:
                     [list(f) for f in F], TOROIDS[self.solid]["name"],
                     hint=("the Borromean Rings are three separate "
                           "rings, not one surface; unfold a single "
+                          "ring instead"
+                          if self.solid == 'BORROMEAN' else None))
+            if self.style == 'PLATES':
+                return _plate_style.emit_plates_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], TOROIDS[self.solid]["name"],
+                    hint=("the Borromean Rings are three separate "
+                          "rings, not one surface; build a single "
                           "ring instead"
                           if self.solid == 'BORROMEAN' else None))
             me = bpy.data.meshes.new(TOROIDS[self.solid]["name"])
@@ -678,7 +693,8 @@ if _IN_BLENDER:
                           if it[0] not in _TORUS_TILING_EXCLUDE]
 
     class MESH_OT_polyhedral_torus_add(bpy.types.Operator,
-                                       _net_style.NetStyleProps):
+                                       _net_style.NetStyleProps,
+                                       _plate_style.PlateStyleProps):
         """Add a regular polyhedral torus: a ring of congruent polygon
         cross-sections (prism / antiprism ring), or a uniform tiling
         (triangles, hexagons, and the other Archimedean/Laves patterns
@@ -751,7 +767,8 @@ if _IN_BLENDER:
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face"),
-            _net_style.net_enum_item()],
+            _net_style.net_enum_item(),
+            _plate_style.plate_enum_item()],
             default='SOLID')
         border: FloatProperty(
             name="Border", default=0.06, min=0.005, max=1.0,
@@ -812,12 +829,15 @@ if _IN_BLENDER:
             except Exception:
                 pass
             me.update()
-            if self.style in ('FACETS', 'NET'):
+            if self.style in ('FACETS', 'NET', 'PLATES'):
                 Vf = [tuple(v.co) for v in me.vertices]
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
                 if self.style == 'NET':
                     return _net_style.emit_net_from_operator(
+                        self, context, Vf, Ff, name)
+                if self.style == 'PLATES':
+                    return _plate_style.emit_plates_from_operator(
                         self, context, Vf, Ff, name)
                 try:
                     from .styles import facet_style
@@ -915,6 +935,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'node_radius')
             if self.style == 'NET':
                 _net_style.draw_net_props(lay, self)
+            if self.style == 'PLATES':
+                _plate_style.draw_plate_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

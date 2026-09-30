@@ -173,11 +173,14 @@ if _IN_BLENDER:
 
     try:
         from .styles import net_style as _net_style
+        from .styles import plate_style as _plate_style
     except ImportError:
         from styles import net_style as _net_style
+        from styles import plate_style as _plate_style
 
     class MESH_OT_conway_add(bpy.types.Operator,
-                             _net_style.NetStyleProps):
+                             _net_style.NetStyleProps,
+                             _plate_style.PlateStyleProps):
         """Build a polyhedron from Conway notation (e.g. dkC, taD, k3sT).
         Seeds: T C O D I, Pn, An, Yn; ops: d a k g c r t j e o b m s n z"""
         bl_idname = "mesh.conway_add"
@@ -247,7 +250,8 @@ if _IN_BLENDER:
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face"),
-            _net_style.net_enum_item()],
+            _net_style.net_enum_item(),
+            _plate_style.plate_enum_item()],
             default='SOLID',
             description="How the polyhedron is built and displayed")
         border: FloatProperty(
@@ -333,6 +337,15 @@ if _IN_BLENDER:
                     [list(f) for f in F], f"Conway {self.notation}",
                     material_fn=self._material_for
                     if self.coloring == 'SIDES' else None)
+            if self.style == 'PLATES':
+                return _plate_style.emit_plates_from_operator(
+                    self, context,
+                    [tuple(c * self.scale for c in v) for v in V],
+                    [list(f) for f in F], f"Conway {self.notation}",
+                    material_fn=self._material_for
+                    if self.coloring == 'SIDES' else None,
+                    hint=("set Geometry to Canonical to flatten the faces"
+                          if self.post != 'CANON' else None))
             if self.style == 'FACETS':
                 try:
                     from .styles import facet_style
@@ -446,6 +459,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'node_radius')
             if self.style == 'NET':
                 _net_style.draw_net_props(lay, self)
+            if self.style == 'PLATES':
+                _plate_style.draw_plate_props(lay, self)
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')

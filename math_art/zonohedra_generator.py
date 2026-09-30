@@ -344,10 +344,12 @@ if _IN_BLENDER:
 
     try:
         from .styles import net_style as _net_style
+        from .styles import plate_style as _plate_style
         from .styles import shell as _shell
         from .styles import face_colors as _fc
     except ImportError:
         from styles import net_style as _net_style
+        from styles import plate_style as _plate_style
         from styles import shell as _shell
         from styles import face_colors as _fc
 
@@ -505,7 +507,8 @@ if _IN_BLENDER:
         return Vo, Fo
 
     class MESH_OT_zonohedron_add(bpy.types.Operator,
-                                 _net_style.NetStyleProps):
+                                 _net_style.NetStyleProps,
+                                 _plate_style.PlateStyleProps):
         """Add a zonohedron: the polar family, spirallohedra, translation
         surfaces, dissections, helices or flat templates"""
         bl_idname = "mesh.zonohedron_add"
@@ -714,7 +717,8 @@ if _IN_BLENDER:
 
         style: EnumProperty(
             name="Style",
-            items=_shell.STYLE_ITEMS + [_net_style.net_enum_item()],
+            items=_shell.STYLE_ITEMS + [_net_style.net_enum_item(),
+                                        _plate_style.plate_enum_item()],
             default='SOLID',
             description="Finish for the shell: solid, Leonardo panels, "
                         "struts, ball-and-stick, wireframe, face "
@@ -941,6 +945,14 @@ if _IN_BLENDER:
                 return _net_style.emit_net_from_operator(
                     self, context, [tuple(v) for v in V],
                     [list(f) for f in F], name, hint=hint)
+            if self.style == 'PLATES':
+                hint = None
+                if self.kind == 'ROSETTE' or self._output() == 'TEMPLATES':
+                    hint = ("this output is already a flat sheet; pick a "
+                            "three-dimensional star")
+                return _plate_style.emit_plates_from_operator(
+                    self, context, [tuple(v) for v in V],
+                    [list(f) for f in F], name, hint=hint)
 
             mats, midx = self._colors(V, F, keys)
             obj = _shell.apply(self, context, V, F, name,
@@ -1098,6 +1110,10 @@ if _IN_BLENDER:
                     # sub-properties are delegated.
                     lay.prop(self, 'style')
                     _net_style.draw_net_props(lay, self)
+                elif self.style == 'PLATES':
+                    # the same holds for the plate style
+                    lay.prop(self, 'style')
+                    _plate_style.draw_plate_props(lay, self)
                 else:
                     _shell.draw_style(self, lay)
             lay.prop(self, 'color')

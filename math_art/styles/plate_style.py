@@ -26,28 +26,35 @@
 #            projection onto the partner's axis.  A four-line clip.
 #
 # Closed forms (the self-test's oracles): the finger step s - c_tab is
-# t cot(phi/2) on acute edges, t tan(phi/2) (Filled) or t sin(phi)
-# (Flush) on obtuse ones, and t(1+|cos phi|)/|sin phi| on reflex ones.
+# t cot(phi/2) (Filled) or t / sin(phi) (Flush) on acute edges,
+# t tan(phi/2) (Filled) or t sin(phi) (Flush) on obtuse ones, and
+# t(1+|cos phi|)/|sin phi| on reflex ones.
 #
 # VERTICES.  Each edge END is owned by one of its plates: at every
 # vertex a total order is put on the plates that meet there, and the
 # higher plate owns the end.  A total order has no cycles, so the top
 # plate's fingers run right into the corner and the vertex closes --
 # the pinwheel assignment would leave a hole.  Equal owners at both
-# ends make the finger count odd, different owners make it even.  What
-# a square-cut corner cannot resolve analytically is resolved by one
-# rule: wherever two plates' prisms still overlap near a vertex, the
-# lower-ranked plate gives up the whole column of material above the
-# overlap (a perpendicular cut removes columns), found by clipping
-# convex prism pieces and subtracted as a 2D polygon.
+# ends make the finger count odd, different owners make it even, and
+# the end fingers are stretched until the outline's turn at the corner
+# lands inside them.  What a square-cut corner cannot resolve
+# analytically -- at a vertex of degree four or more, two plates that
+# share no edge can both reach into it -- is resolved by one rule:
+# wherever two plates' prisms still overlap, found exactly by clipping
+# convex prism pieces, the lower-ranked plate cuts the finger run
+# under the overlap back until it clears (a perpendicular cut removes
+# a whole column).  The outline stays a finger profile throughout, so
+# no general polygon booleans are needed.
 #
 # ASSEMBLY.  Finger side-walls in both plates are planes normal to the
 # edge, so they mate at any angle.  A plate jointed on two or more
 # non-parallel edges can then move only along its own normal, and on a
-# convex shell every plate -- the last one included -- presses in
-# along it.  A non-convex shell needs an order: a plate goes in from
-# outside only if every neighbour already placed meets it across a
-# convex edge.  One is searched for greedily and reported.
+# convex shell with Flush joints every plate -- the last one included
+# -- presses in along it.  Otherwise (Filled corner tabs can catch; a
+# reflex edge hides its tab behind the partner) an order is found by
+# taking the kit apart: repeatedly lift out a plate that clears every
+# plate still present -- through the outside, or through the inside
+# while the shell is open -- and reverse.
 #
 # References:
 # - D. Beyer, S. Gurevich, S. Mueller, H.-T. Chen and P. Baudisch,
@@ -143,27 +150,6 @@ def _clip_halfplane(poly, f):
             s = fp / (fp - fq)
             out.append((p[0] + s * (q[0] - p[0]), p[1] + s * (q[1] - p[1])))
     return out
-
-
-def _hull2(pts):
-    """Convex hull, CCW, of 2D points (Andrew's monotone chain)."""
-    P = sorted(set((round(p[0], 12), round(p[1], 12)) for p in pts))
-    if len(P) < 3:
-        return P
-    lo, hi = [], []
-    for p in P:
-        while len(lo) >= 2 and _cross2(
-                (lo[-1][0] - lo[-2][0], lo[-1][1] - lo[-2][1]),
-                (p[0] - lo[-2][0], p[1] - lo[-2][1])) <= 0.0:
-            lo.pop()
-        lo.append(p)
-    for p in reversed(P):
-        while len(hi) >= 2 and _cross2(
-                (hi[-1][0] - hi[-2][0], hi[-1][1] - hi[-2][1]),
-                (p[0] - hi[-2][0], p[1] - hi[-2][1])) <= 0.0:
-            hi.pop()
-        hi.append(p)
-    return lo[:-1] + hi[:-1]
 
 
 def _segments_cross(a, b, c, d, eps):
@@ -1105,9 +1091,15 @@ def _deepen(P, pts3, grow):
             # outright -- cut back to the partner's root, as if it had
             # never owned that end -- rather than being shaved a sliver
             # at a time (which converges, but only geometrically)
-            if k in (0, len(sd['runs']) - 1) and run[2] < sd['s']:
-                d = max(d, sd['s'])
-            run[2] = d
+            if k in (0, len(sd['runs']) - 1) and run[2] < sd['s'] - 1e-12:
+                run[2] = max(d, sd['s'])
+            else:
+                # overshoot: an overlap that wraps round a corner only
+                # shows the part inside the current outline, and cutting
+                # exactly to it converges geometrically; twice the
+                # intrusion clears it in a pass or two for a few tenths
+                # of a millimetre
+                run[2] = run[2] + 2.0 * (d - run[2])
             changed = True
     return changed
 
@@ -1128,11 +1120,16 @@ def _vertex_cleanup(plates, rank, at_vertex, joints, Vm, t, size, eps):
             reach[v] = max(reach.get(v, 0.0), r)
     removed = 0
 
-    def sweep(fix):
+    verts_of = {}
+    for v, ps_ in at_vertex.items():
+        for q in ps_:
+            verts_of.setdefault(q, set()).add(v)
+
+    def sweep(fix, which):
         nonlocal removed
         total = 0.0
-        touched = 0
-        for v in sorted(at_vertex):
+        touched = set()
+        for v in sorted(which):
             ps = sorted(at_vertex[v])
             r = reach[v] + 2.0 * t
             p = Vm[v]
@@ -1149,20 +1146,23 @@ def _vertex_cleanup(plates, rank, at_vertex, joints, Vm, t, size, eps):
                     total += sum(h[0] for h in hits)
                     if not fix:
                         continue
-                    loser = A if rank[v][A['index']] < rank[v][B['index']] \
-                        else B
+                    loser = A if rank[v][A['index']] < rank[v][B['index']]                         else B
                     pts = [q for h in hits for q in h[1]]
                     if _deepen(loser, pts, grow):
                         removed += 1
-                        touched += 1
+                        touched.add(loser['index'])
                         _trace(loser, eps)
         return total, touched
 
-    for _pass in range(8):
-        _total, touched = sweep(True)
+    # the first pass looks everywhere; after that only round the plates
+    # that were just cut, since nothing else has moved
+    which = set(at_vertex)
+    for _pass in range(40):
+        _total, touched = sweep(True, which)
         if not touched:
             break
-    residual, _ = sweep(False)
+        which = set().union(*(verts_of.get(q, ()) for q in touched))
+    residual, _ = sweep(False, set(at_vertex))
     return removed, residual
 
 
@@ -1839,6 +1839,13 @@ def _selftest():
             if r['order'] is None or \
                     sorted(r['order']) != list(range(len(r['plates']))):
                 bad(f"{name} {fit}: no assembly order")
+    # near-flat degree-5 vertices, where plates that share no edge
+    # overlap widely: the case that needed the clean-up to iterate
+    r = build_plates(*solid('ARCHIMEDEAN', 'SD'))
+    ov = overlap_volume(r)
+    if ov > 0.0 or r['report']['errors']:
+        bad(f"snub dodecahedron: overlap {ov:.4f} mm^3, "
+            f"{r['report']['errors']} plate error(s)")
     # the L-prism has one reflex edge and a non-convex face
     r = build_plates(*l_prism())
     if r['report']['reflex'] != 1:

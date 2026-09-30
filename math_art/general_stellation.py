@@ -2134,11 +2134,14 @@ if _IN_BLENDER:
 
     try:
         from .styles import net_style as _net_style
+        from .styles import plate_style as _plate_style
     except ImportError:
         from styles import net_style as _net_style
+        from styles import plate_style as _plate_style
 
     class MESH_OT_icosahedron_stellation_add(bpy.types.Operator,
-                                             _net_style.NetStyleProps):
+                                             _net_style.NetStyleProps,
+                                             _plate_style.PlateStyleProps):
         """Add a stellation of a seed polyhedron -- the solid whose faces lie
         in the seed's own face planes.  Any of the 59 icosahedra (Coxeter/
         Du Val/Flather/Petrie) by Crennell index, a named stellation of
@@ -2235,7 +2238,8 @@ if _IN_BLENDER:
                     "as small spheres (ball-and-stick model)"),
                    ('WIREFRAME', "Wireframe",
                     "Mesh edges only, displayed as a wireframe"),
-                   _net_style.net_enum_item()],
+                   _net_style.net_enum_item(),
+                   _plate_style.plate_enum_item()],
             default='SOLID')
         border: FloatProperty(name="Border", default=0.06, min=0.005, max=1.0,
                               description="Leonardo face frame width")
@@ -2336,6 +2340,9 @@ if _IN_BLENDER:
             if self.style == 'NET':
                 return _net_style.emit_net_from_operator(
                     self, context, Vs, Fl, title)
+            if self.style == 'PLATES':
+                return _plate_style.emit_plates_from_operator(
+                    self, context, Vs, Fl, title)
             me = bpy.data.meshes.new(title)
             me.from_pydata(Vs, [], Fl)
             me.validate(clean_customdata=True)
@@ -2413,6 +2420,8 @@ if _IN_BLENDER:
 
             if self.style == 'NET':
                 _net_style.draw_net_props(lay, self)
+            if self.style == 'PLATES':
+                _plate_style.draw_plate_props(lay, self)
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')

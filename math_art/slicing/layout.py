@@ -256,4 +256,16 @@ def _selftest():
     assert d5.counts().get('CUT', 0) == 0, "a broken part must not be cut"
     assert d5.counts().get('ERROR', 0) == 1, d5.counts()
 
+    # --- extra engraving travels with its part --------------------
+    p6 = square(20.0, 'E-01')
+    p6.engrave = [[(2.0, 2.0), (6.0, 2.0)]]
+    d6, _rep6 = nest([p6], 100.0, 100.0, margin=5.0)
+    eng = [e for s in d6.sheets for e in s.entities if e.layer == 'ENGRAVE']
+    assert len(eng) == 1 and not eng[0].closed, "one open engrave stroke"
+    cut = [e for s in d6.sheets for e in s.entities if e.layer == 'CUT'][0]
+    x0, y0, _x1, _y1 = pc.bounds(cut.points)
+    assert abs(eng[0].points[0][0] - (x0 + 2.0)) < 1e-9 and \
+        abs(eng[0].points[0][1] - (y0 + 2.0)) < 1e-9, \
+        "the stroke moves with the part it belongs to"
+
     return True
