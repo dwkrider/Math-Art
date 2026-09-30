@@ -128,6 +128,9 @@ DEFAULTS = dict(
 
 PLATE_LIMIT = DEFAULTS['limit']
 
+# deepest finger a Flush joint cuts on a reflex edge, in thicknesses
+REFLEX_STEP = 1.5
+
 
 # ---------------------------------------------------------------- #
 #  small 2D helpers                                                 #
@@ -318,12 +321,34 @@ def joint_corners(phi, t):
     return xs
 
 
-def tab_end(phi, t, fit):
-    """Signed set-back of the owner's tab end, along its own plate."""
+def tab_end(phi, t, fit, reflex_step=REFLEX_STEP):
+    """Signed set-back of the owner's tab end, along its own plate.
+
+    On a reflex edge J lies behind both faces, inside the solid, so the
+    fingers interlock only behind the edge line and a Flush joint need
+    not fill all of J: the tab is cut short where the finger step
+    reaches `reflex_step` thicknesses.  What it leaves unfilled is a
+    void inside the model.  Above 270 degrees nothing of it shows at
+    all; below, the partner's notch on the surface shrinks with the
+    tab.  Filled keeps covering J, however deep that takes it."""
     xs = joint_corners(phi, t)
     filled = min(xs)
     if fit == 'FLUSH' and phi < pi:
         return max(0.0, t * cos(phi) / sin(phi))
+    if fit == 'FLUSH' and reflex_step is not None:
+        cap = reflex_step * t
+        if slot_root(phi, t, filled) - filled <= cap:
+            return filled
+        # the step falls monotonically as the tab is shortened towards
+        # the edge line (where it is zero), so bisect for the cap
+        lo, hi = filled, 0.0
+        for _ in range(60):
+            mid = 0.5 * (lo + hi)
+            if slot_root(phi, t, mid) - mid > cap:
+                lo = mid
+            else:
+                hi = mid
+        return hi
     return filled
 
 
@@ -341,10 +366,10 @@ def slot_root(phi, t, c_tab):
     return max(p[0] * b[0] + p[1] * b[1] for p in X)
 
 
-def edge_joint(phi, t, fit):
+def edge_joint(phi, t, fit, reflex_step=REFLEX_STEP):
     """(c_tab, s) for an edge: tab end and partner root.  The joint is
     symmetric under swapping the plates, so one pair serves both."""
-    c = tab_end(phi, t, fit)
+    c = tab_end(phi, t, fit, reflex_step)
     return c, slot_root(phi, t, c)
 
 
@@ -671,6 +696,17 @@ def build_plates(V, F, **kw):
     if bad:
         raise ValueError(bad)
     F = _net.orient_consistently(V, F)
+    # the Net's majority vote on "outward" can tie (a torus with a
+    # diamond cross-section faces the hole as often as away from it),
+    # and inside-out plates would swap every convex edge for a reflex
+    # one; the signed volume of the closed shell cannot tie
+    vol = 0.0
+    for f in F:
+        a = V[f[0]]
+        for k in range(1, len(f) - 1):
+            vol += _dot(a, _cross(V[f[k]], V[f[k + 1]]))
+    if vol < 0.0:
+        F = [list(reversed(f)) for f in F]
 
     lo = [min(v[k] for v in V) for k in range(3)]
     hi = [max(v[k] for v in V) for k in range(3)]
@@ -921,9 +957,10 @@ def build_plates(V, F, **kw):
         'thickness': t, 'fit': S['fit'],
     }
     result = {'plates': plates, 'joints': joints, 'scale': scale,
-              'order': None, 'report': report, 'settings': S}
+              'order': None, 'forced': [], 'report': report, 'settings': S}
     result['order'] = assembly_order(result)
     report['order_known'] = result['order'] is not None
+    report['forced'] = len(result['forced'])
     return result
 
 
@@ -972,43 +1009,83 @@ def _profile(P, joints, Vm, clr):
     P['prof'] = prof
 
 
+def _corner(pv, sd):
+    """Where the outline turns at the corner between side `pv` and the
+    side `sd` after it: (runs dropped at the end of pv, runs dropped at
+    the start of sd, the point), or None if nothing fits.
+
+    Normally the last run of one side meets the first run of the next.
+    But a run cut deep near a corner (the vertex clean-up does this) can
+    swallow whole fingers of the other side, and then the outline has to
+    turn where the runs that survive actually meet: the pair whose
+    meeting point lies within both of them, dropping fewest runs."""
+    pA2, pe2, pn2, pruns = pv['A2'], pv['e2'], pv['n2'], pv['runs']
+    A2, e2, n2, runs = sd['A2'], sd['e2'], sd['n2'], sd['runs']
+    den = _cross2(pe2, e2)
+    if abs(den) < 1e-9:
+        return None
+    best = None
+    for k in range(len(pruns) + len(runs) - 1):
+        for dp in range(0, k + 1):
+            dh = k - dp
+            if dp >= len(pruns) or dh >= len(runs):
+                continue
+            rp, rh = pruns[-1 - dp], runs[dh]
+            p0 = (pA2[0] + pn2[0] * rp[2], pA2[1] + pn2[1] * rp[2])
+            q0 = (A2[0] + n2[0] * rh[2], A2[1] + n2[1] * rh[2])
+            lam = _cross2((q0[0] - p0[0], q0[1] - p0[1]), e2) / den
+            pt = (p0[0] + pe2[0] * lam, p0[1] + pe2[1] * lam)
+            u = (pt[0] - A2[0]) * e2[0] + (pt[1] - A2[1]) * e2[1]
+            # the end run may run past its side's end, the first run
+            # start before its side's start; inner runs must contain it
+            ok_p = lam >= rp[0] - 1e-9 and (dp == 0 or lam <= rp[1] + 1e-9)
+            ok_h = u <= rh[1] + 1e-9 and (dh == 0 or u >= rh[0] - 1e-9)
+            if ok_p and ok_h:
+                best = (dp, dh, pt)
+                break
+        if best is not None:
+            break
+    return best
+
+
 def _trace(P, eps):
     """Walk the profile into outline rings; set P's outer, holes and
     error."""
     rings2 = []
     corner_bad = False
     for prof in P['prof']:
-        ring = []
         m = len(prof)
+        corners = []
         for i in range(m):
             sd, pv = prof[i], prof[i - 1]
-            A2, e2, n2, runs = sd['A2'], sd['e2'], sd['n2'], sd['runs']
-            pA2, pe2, pn2, pL, pruns = (pv['A2'], pv['e2'], pv['n2'],
-                                        pv['L'], pv['runs'])
-            # the corner at this side's start: the previous side's last
-            # run line meets this side's first run line
-            d_prev = pruns[-1][2]
-            d_here = runs[0][2]
-            p0 = (pA2[0] + pn2[0] * d_prev, pA2[1] + pn2[1] * d_prev)
-            q0 = (A2[0] + n2[0] * d_here, A2[1] + n2[1] * d_here)
-            den = _cross2(pe2, e2)
-            if abs(den) < 1e-9:
-                # straight-through corner: a jog, not an intersection
-                ring.append((pA2[0] + pe2[0] * pL + pn2[0] * d_prev,
-                             pA2[1] + pe2[1] * pL + pn2[1] * d_prev))
-                ring.append(q0)
-            else:
-                dq = (q0[0] - p0[0], q0[1] - p0[1])
-                lam = _cross2(dq, e2) / den
-                corner = (p0[0] + pe2[0] * lam, p0[1] + pe2[1] * lam)
-                # the corner must land inside both end runs, or the
-                # outline folds back over a finger
-                u_here = ((corner[0] - A2[0]) * e2[0]
-                          + (corner[1] - A2[1]) * e2[1])
-                if lam < pruns[-1][0] - 1e-9 or u_here > runs[0][1] + 1e-9:
+            c = _corner(pv, sd)
+            if c is None:
+                pA2, pe2, pn2, pL = pv['A2'], pv['e2'], pv['n2'], pv['L']
+                A2, n2 = sd['A2'], sd['n2']
+                dp, dh = pv['runs'][-1][2], sd['runs'][0][2]
+                if abs(_cross2(pe2, sd['e2'])) < 1e-9:
+                    # straight-through corner: a jog, not an intersection
+                    c = (0, 0, [(pA2[0] + pe2[0] * pL + pn2[0] * dp,
+                                 pA2[1] + pe2[1] * pL + pn2[1] * dp),
+                                (A2[0] + n2[0] * dh, A2[1] + n2[1] * dh)])
+                else:
                     corner_bad = True
-                ring.append(corner)
-            for j in range(len(runs) - 1):
+                    c = (0, 0, [(A2[0] + n2[0] * dh, A2[1] + n2[1] * dh)])
+            else:
+                c = (c[0], c[1], [c[2]])
+            corners.append(c)
+        ring = []
+        for i in range(m):
+            sd = prof[i]
+            A2, e2, n2, runs = sd['A2'], sd['e2'], sd['n2'], sd['runs']
+            ring.extend(corners[i][2])
+            first = corners[i][1]
+            last = len(runs) - 1 - corners[(i + 1) % m][0]
+            if first > last:
+                # both corners swallowed this whole side
+                corner_bad = True
+                continue
+            for j in range(first, last):
                 u = runs[j][1]
                 u_next = runs[j + 1][0]
                 ring.append((A2[0] + e2[0] * u + n2[0] * runs[j][2],
@@ -1022,10 +1099,11 @@ def _trace(P, eps):
     P['holes'] = [pc.as_cw(r) for r in rings2[1:]]
     P['error'] = None
     if corner_bad:
-        P['error'] = ("fingers too wide for this corner; reduce the finger "
-                      "width")
+        P['error'] = ("a corner too tight for this stock: make the model "
+                      "bigger or the stock thinner")
     elif not ring_is_simple(P['outer'], eps):
-        P['error'] = "outline crosses itself"
+        P['error'] = ("fingers cross at a corner too tight for this "
+                      "stock: make the model bigger or the stock thinner")
     P.pop('_pieces', None)
 
 
@@ -1125,6 +1203,8 @@ def _vertex_cleanup(plates, rank, at_vertex, joints, Vm, t, size, eps):
         for q in ps_:
             verts_of.setdefault(q, set()).add(v)
 
+    tries = {}
+
     def sweep(fix, which):
         nonlocal removed
         total = 0.0
@@ -1146,12 +1226,36 @@ def _vertex_cleanup(plates, rank, at_vertex, joints, Vm, t, size, eps):
                     total += sum(h[0] for h in hits)
                     if not fix:
                         continue
+                    # a pair that keeps overlapping however it is cut is
+                    # not a corner problem (faces closer together than
+                    # the stock is thick, say): stop grinding at it and
+                    # let the report say so
+                    pair = (A['index'], B['index'])
+                    tries[pair] = tries.get(pair, 0) + 1
+                    if tries[pair] > 25:
+                        continue
                     loser = A if rank[v][A['index']] < rank[v][B['index']]                         else B
+                    winner = B if loser is A else A
                     pts = [q for h in hits for q in h[1]]
-                    if _deepen(loser, pts, grow):
-                        removed += 1
-                        touched.add(loser['index'])
-                        _trace(loser, eps)
+                    # a cut that would break the plate is undone, and the
+                    # other plate gives way instead; if neither can, the
+                    # overlap is left for the report
+                    for who in (loser, winner):
+                        saved = [[list(r) for r in sd['runs']]
+                                 for ring in who['prof'] for sd in ring]
+                        if not _deepen(who, pts, grow):
+                            break
+                        _trace(who, eps)
+                        if not who['error']:
+                            removed += 1
+                            touched.add(who['index'])
+                            break
+                        k = 0
+                        for ring in who['prof']:
+                            for sd in ring:
+                                sd['runs'] = saved[k]
+                                k += 1
+                        _trace(who, eps)
         return total, touched
 
     # the first pass looks everywhere; after that only round the plates
@@ -1209,24 +1313,34 @@ def assembly_order(result):
     t = result['settings']['thickness']
     reach = max([abs(J['c']) + J['s'] for J in joints.values()] + [t])
     lift = 2.0 * reach + 2.0 * t
+    # overlap is additive plate by plate, so which plates block each
+    # plate's way out -- through the outside, or through the inside
+    # while the shell is open -- is worked out once, and the take-apart
+    # below is pure bookkeeping
+    out_by, in_by = {}, {}
+    for p in range(n):
+        out_by[p] = set(overlap_volume(result, lift=lift, depth=lift + t,
+                                       only={p}, per_plate=True))
+        in_by[p] = set(overlap_volume(result, lift=0.0, depth=t + lift,
+                                      only={p}, per_plate=True))
     present = set(range(n))
-    removed = []
+    removed, forced = [], []
     while present:
+        pick = None
         for p in sorted(present):
-            # out through the outside; or, while the shell is still
-            # open, out through the inside -- the only way a plate on a
-            # reflex edge can go, since its tab sits behind the partner
-            ways = [(lift, lift + t)]
-            if removed:
-                ways.append((0.0, t + lift))
-            if any(overlap_volume(result, lift=a, depth=d, only={p},
-                                  present=present) == 0.0
-                   for a, d in ways):
-                present.discard(p)
-                removed.append(p)
+            if not (out_by[p] & present) or                     (removed and not (in_by[p] & present)):
+                pick = p
                 break
-        else:
-            return None
+        if pick is None:
+            # a closed loop of plates that lock one another (the inner
+            # ring of a torus): no rigid press-in exists, so one plate
+            # has to be sprung or glued in -- the one fewest block
+            pick = min(sorted(present), key=lambda p: min(
+                len(out_by[p] & present), len(in_by[p] & present)))
+            forced.append(pick)
+        present.discard(pick)
+        removed.append(pick)
+    result['forced'] = forced
     return list(reversed(removed))
 
 
@@ -1424,10 +1538,20 @@ def assembly_guide(result, layout_report=None):
                      f"them.")
     order = result['order']
     if order is None:
-        lines.append("No press-in order was found; glue the last plates.")
+        lines.append("Too many plates to work out an assembly order; "
+                     "expect to glue the last few.")
     elif R['reflex'] or S['fit'] == 'FILLED':
         lines.append("Assembly order: " + " ".join(
             result['plates'][p]['label'] for p in order))
+        forced = result['forced']
+        if forced and len(forced) <= 10:
+            lines.append("These close a ring of plates that lock one "
+                         "another, so flex or glue them in: " + " ".join(
+                             result['plates'][p]['label'] for p in forced))
+        elif forced:
+            lines.append(f"{len(forced)} plates close rings that lock one "
+                         f"another (inside corners hook both ways): glue "
+                         f"this model rather than press-fitting it.")
     else:
         lines.append("Any assembly order works; press each plate in "
                      "along its face.")
@@ -1597,9 +1721,9 @@ if _IN_BLENDER:
                   f"{R['step_min']:.1f}-{R['step_max']:.1f} mm deep")
         if R['errors'] or lay_rep['errors']:
             op.report({'WARNING'},
-                      f"{R['errors']} plate(s) could not be jointed "
-                      f"cleanly and are on the ERROR layer; try a smaller "
-                      f"finger width")
+                      f"{R['errors']} plate(s) have corners too tight for "
+                      f"this stock and are on the ERROR layer; make the "
+                      f"model bigger or the stock thinner")
         if R['residual'] > 0.0:
             op.report({'WARNING'},
                       f"plates still overlap by {R['residual']:.2f} mm^3 "
@@ -1618,8 +1742,12 @@ if _IN_BLENDER:
                       f"{R['lip_height']:.1f} mm proud to sand flush")
         if res['order'] is None:
             op.report({'WARNING'},
-                      "no press-in assembly order found; some plates "
-                      "will need gluing")
+                      "too many plates to work out an assembly order")
+        elif res['forced']:
+            op.report({'INFO'},
+                      f"{len(res['forced'])} plate(s) close a locked ring "
+                      f"and must be flexed or glued in (see the build "
+                      f"notes)")
         return {'FINISHED'}
 
     def register():
@@ -1633,7 +1761,8 @@ if _IN_BLENDER:
 #  independent checks (used by the self-test and the report)        #
 # ---------------------------------------------------------------- #
 
-def overlap_volume(result, lift=0.0, depth=None, only=None, present=None):
+def overlap_volume(result, lift=0.0, depth=None, only=None, present=None,
+                   per_plate=False):
     """Total volume (mm^3) shared by any two plates, computed exactly
     from convex prism pieces over the WHOLE plates -- no vertex windows,
     so it is independent of the clean-up it checks.
@@ -1660,6 +1789,7 @@ def overlap_volume(result, lift=0.0, depth=None, only=None, present=None):
               [(b[3], b[4], b[5]) for (_pr, b) in pl]
         boxes.append(_bbox3(pts))
     total = 0.0
+    by = {}
     for i in range(len(plates)):
         for j in range(i + 1, len(plates)):
             if only is not None and i not in only and j not in only:
@@ -1678,7 +1808,9 @@ def overlap_volume(result, lift=0.0, depth=None, only=None, present=None):
                     vol, _pts = prism_overlap(pa, qa, eps)
                     if vol > tol:
                         total += vol
-    return total
+                        other = j if i in (only or ()) else i
+                        by[other] = by.get(other, 0.0) + vol
+    return by if per_plate else total
 
 
 def insertion_blocked(result):
@@ -1725,9 +1857,13 @@ def _selftest():
             else:
                 want_s = None
                 want_step = t * (1 + abs(cp)) / abs(sp)
+                if fit == 'FLUSH':
+                    # Flush caps a reflex finger; the rest of J is a
+                    # hidden void
+                    want_step = min(want_step, REFLEX_STEP * t)
             if want_s is not None and abs(s - want_s) > 1e-9:
                 bad(f"root at {deg} {fit}: {s} != {want_s}")
-            if abs((s - c) - want_step) > 1e-9:
+            if abs((s - c) - want_step) > 1e-7:
                 bad(f"step at {deg} {fit}: {s - c} != {want_step}")
             # the tab and the partner's material must not overlap
             a, nA, b, nB = section_frames(phi)
@@ -1863,6 +1999,33 @@ def _selftest():
                 bad(f"{name}: triangulation covers {tot:.3f} of "
                     f"{pc.area(P['outer']):.3f} mm^2")
                 break
+
+    # a ring torus: reflex edges round the hole, and an inner ring of
+    # plates that lock one another, so it can only close with some
+    # plates flexed or glued in -- which the order must say
+    try:
+        from .. import toroidal_polyhedron_generator as tg
+    except ImportError:
+        import toroidal_polyhedron_generator as tg
+    V, F = tg.build_polyhedral_torus(12, 4, 1.0, 0.4, 0.0)
+    r = build_plates(V, F)
+    R = r['report']
+    if R['reflex'] != 24 or R['errors']:
+        bad(f"torus: {R['reflex']} reflex edges, {R['errors']} errors")
+    ov = overlap_volume(r)
+    if ov > 0.0:
+        bad(f"torus: plates overlap by {ov:.4f} mm^3")
+    if r['order'] is None or             sorted(r['order']) != list(range(R['plates'])):
+        bad("torus: no assembly order")
+    elif not 0 < len(r['forced']) <= 12:
+        bad(f"torus: {len(r['forced'])} plates forced, want the inner "
+            f"ring at most")
+    # Filled still refuses reflex edges this flat
+    try:
+        build_plates(V, F, fit='FILLED')
+        bad("torus Filled (201-degree edges) should be refused")
+    except ValueError:
+        pass
 
     # --- 5. coplanar merge ---------------------------------------------
     r = build_plates(*split_cube())
