@@ -25,24 +25,11 @@
 # wrapped seamlessly onto a torus: the tiling's two lattice vectors map to
 # the major and minor circles, giving a genus-1 polyhedron (V-E+F=0).
 #
-# The Szilassi polyhedron has two successors of higher genus, both found
-# recently: polyhedra of genus 3 with eight non-convex nonagonal faces in
-# which, again, every two faces share an edge -- eight of the 28 pairs along
-# two collinear edges, the rest along one.  Mizhaev's has integer vertices
-# and a fourfold rotoreflection; the Rost-Vigh polyhedron has rational
-# vertices, three half-turn axes and is chiral, and the two are not
-# combinatorially equivalent.  Their exact data and its verification live in
-# polyhedra/neighbourly.py.  Painting any of these solids as a map -- faces
-# sharing an edge get different colours -- shows the property directly: the
-# Szilassi polyhedron needs seven colours and the two genus-3 solids eight.
-# Mizhaev's earlier variant of the same size, kept for contrast, is not
-# face-neighbourly (four pairs of its faces never meet) and needs only four.
-#
-# The Csaszar polyhedron has higher-genus successors too, on the vertex
-# side: polyhedra with the fewest vertices their genus allows.  Genus 2 and
-# genus 3 both need ten, and the two stored here are realisations with the
-# smallest integer coordinates known, found by exhaustive search (see
-# polyhedra/vertex_minimal.py).
+# Painted as a map -- faces that share an edge get different colours -- the
+# Szilassi polyhedron needs seven colours, one per face, which is Heawood's
+# bound for the torus attained; its dual needs only two.  Their higher-genus
+# successors (every two faces sharing an edge, or the fewest vertices a
+# genus allows) are in neighbourly_polyhedron_generator.py.
 #
 # References:
 # - Akos Csaszar, "A polyhedron without diagonals", Acta Sci. Math.
@@ -51,22 +38,8 @@
 #   69-80; and "On three classes of regular toroids".
 # - B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the
 #   toroidal-polyhedron tradition.
-# - Gergely Rost and Viktor Vigh, "A second eight-faced polyhedron in which
-#   every two faces share an edge", arXiv:2609.32998 (2026) -- the genus-3
-#   polyhedron with D2 symmetry.
-# - Ruslan Mizhaev, "Integer realization of an equivelar octahedron of
-#   genus 3", arXiv:2609.17700 (2026), after his "Equivelar octahedron of
-#   genus 3 in 3-space", OSF Preprints (2020), doi:10.31219/osf.io/hvtey --
-#   the first eight-faced polyhedron in which every two faces share an edge.
 # - Percy J. Heawood, "Map-colour theorem", Quarterly Journal of Pure and
-#   Applied Mathematics 24 (1890), 332-338 -- the colouring bound the
-#   neighbourly solids illustrate (seven colours on the torus), and the
-#   matching lower bound on the vertices of a triangulated surface.
-# - Stefan Hougardy, Frank H. Lutz and Mariano Zelke, "Polyhedra of genus 2
-#   with 10 vertices and minimal coordinates" and "Polyhedra of genus 3 with
-#   10 vertices and minimal coordinates", Electronic Geometry Models
-#   No. 2005.08.001 and No. 2006.02.001 (2007), arXiv:math/0507592 and
-#   arXiv:math/0604017 -- the two ten-vertex polyhedra.
+#   Applied Mathematics 24 (1890), 332-338 -- seven colours on the torus.
 # - Ulrich Brehm (1978), the flat polyhedral torus / diplotorus; the model
 #   was transmitted by Guy Valette.  No paper is named by the source, so the
 #   attribution is reproduced as given rather than assigned a citation.
@@ -84,10 +57,9 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Polyhedra",
-    "description": "Toroidal polyhedra: Csaszar & Szilassi, the genus-3 "
-                   "Mizhaev and Rost-Vigh polyhedra, ten-vertex polyhedra "
-                   "of genus 2 and 3, polygon-ring toroids, and uniform "
-                   "tilings wrapped onto a torus",
+    "description": "Toroidal (genus-1) polyhedra: Csaszar & Szilassi, "
+                   "polygon-ring toroids, and uniform tilings wrapped "
+                   "onto a torus",
     "category": "Add Mesh",
 }
 
@@ -95,10 +67,8 @@ import math
 
 try:
     from .polyhedra import neighbourly as _nb
-    from .polyhedra import vertex_minimal as _vm
 except ImportError:
     from polyhedra import neighbourly as _nb
-    from polyhedra import vertex_minimal as _vm
 
 # Original published coordinates (Szilassi's tables); not unit-scaled.
 TOROIDS = {
@@ -232,37 +202,10 @@ TOROIDS = {
     },
 }
 
-# The two genus-3 face-neighbourly solids, from their exact data.
-for _kind, _meta in _nb.NEIGHBOURLY.items():
-    _V, _F = _nb.build(_kind)
-    TOROIDS[_kind] = {"name": _meta["name"], "V": _V, "F": _F}
-# The ten-vertex polyhedra of genus 2 and 3.
-for _kind, _meta in _vm.VERTEX_MINIMAL.items():
-    _V, _F = _vm.build(_kind)
-    TOROIDS[_kind] = {"name": _meta["name"], "V": _V, "F": _F,
-                      "note": "the fewest vertices a polyhedron of genus "
-                              "%d can have" % _meta["genus"]}
-
 TOROID_ITEMS = [("CSASZAR", "Csaszar Polyhedron", "7 vertices, 14 "
                  "triangles, K7 (no diagonals)"),
                 ("SZILASSI", "Szilassi Polyhedron", "7 hexagons, every "
                  "pair sharing an edge (dual of Csaszar)"),
-                ("MIZHAEV", "Mizhaev Polyhedron", "genus 3: 8 nonagons, "
-                 "every pair sharing an edge (8 pairs sharing two); integer "
-                 "vertices, fourfold rotoreflection"),
-                ("ROST_VIGH", "Rost-Vigh Polyhedron", "genus 3: 8 nonagons, "
-                 "every pair sharing an edge (8 pairs sharing two); three "
-                 "half-turn axes, chiral, four long spikes"),
-                ("MIZHAEV_V1", "Mizhaev Polyhedron V1", "genus 3: 8 "
-                 "nonagons like the two above, but 4 pairs of faces never "
-                 "meet (12 pairs share two edges); Mizhaev's first 2020 "
-                 "variant"),
-                ("MINIMAL_G2", "Ten-Vertex Genus-2 Polyhedron", "genus 2 "
-                 "on the fewest possible vertices: 10 vertices, 24 "
-                 "triangles, integer coordinates in a 4x4x4 cube"),
-                ("MINIMAL_G3", "Ten-Vertex Genus-3 Polyhedron", "genus 3 "
-                 "on the fewest possible vertices: 10 vertices, 28 "
-                 "triangles, integer coordinates in a 5x5x5 cube"),
                 ("REGULAR", "Regular-Faced Toroid", "genus-1 toroid with "
                  "all regular faces (6 triangles + 9 squares + 9 hexagons)"),
                 ("KNOTTED", "Knotted Dodecahedron", "genus-1 toroid whose 12 "
@@ -286,58 +229,16 @@ def build_toroid(kind):
     return V, [list(f) for f in S["F"]]
 
 
-def toroid_topology(F):
-    """(edges, components, genus) of a closed orientable face list; the
-    genus is the total over all components."""
-    E = set()
-    parent = {}
-
-    def find(v):
-        while parent.setdefault(v, v) != v:
-            parent[v] = parent[parent[v]]
-            v = parent[v]
-        return v
-
-    for f in F:
-        for i in range(len(f)):
-            a, b = f[i], f[(i + 1) % len(f)]
-            E.add((min(a, b), max(a, b)))
-            parent[find(a)] = find(b)
-    verts = {v for f in F for v in f}
-    comps = len({find(v) for v in verts})
-    chi = len(verts) - len(E) + len(F)
-    return len(E), comps, comps - chi // 2
-
-
 def toroid_summary(kind):
     """One line for the operator's report: counts, genus, and whether every
-    two faces share an edge."""
+    two faces share an edge / every two vertices are joined."""
     S = TOROIDS[kind]
-    F = S["F"]
-    nE, comps, genus = toroid_topology(F)
-    text = "%s: V=%d E=%d F=%d" % (S["name"], len(S["V"]), nE, len(F))
-    if comps == 1:
-        text += " (genus %d)" % genus
-    else:
-        text += " (%d separate surfaces of genus %d)" % (comps,
-                                                          genus // comps)
-    if _nb.is_face_neighbourly(F):
-        twice = sum(1 for es in _nb.shared_edges(F).values() if len(es) > 1)
-        text += "; every two faces share an edge"
-        if twice:
-            text += " (%d pairs share two)" % twice
-    nV = len(S["V"])
-    if comps == 1 and nE == nV * (nV - 1) // 2:
-        text += "; every two vertices are joined by an edge"
-    if S.get("note"):
-        text += "; " + S["note"]
-    return text
+    return _nb.summary_text(S["name"], S["V"], S["F"])
 
 
 def map_colouring(F):
     """(colour per face, colours used): faces that share an edge get
-    different colours, with as few colours as the search finds.  On a solid
-    in which every two faces share an edge that is one colour per face."""
+    different colours, with as few colours as the search finds."""
     try:
         from .styles import face_colors
     except ImportError:
@@ -709,43 +610,18 @@ def _self_test():
                                           for i in range(3))))
         print(f"{kind:9s} V={len(V):2d} E={len(E):2d} F={len(F):2d} "
               f"chi={chi} edge-in-2={e2} planar={maxpl:.1e}")
-        assert e2 and maxpl < 1e-6, (kind, e2, maxpl)
-        nE, comps, genus = toroid_topology(F)
-        want = {"MIZHAEV": (1, 3), "ROST_VIGH": (1, 3),
-                "MIZHAEV_V1": (1, 3),
-                "MINIMAL_G2": (1, 2), "MINIMAL_G3": (1, 3),
-                "BORROMEAN": (3, 3)}.get(kind, (1, 1))
-        assert (comps, genus) == want, (kind, comps, genus)
-        assert max(abs(c) for v in V for c in v) <= 1.0 + 1e-12, kind
-
-    # The face-neighbourly solids, read as maps: one colour per face, so
-    # seven on the Szilassi torus (Heawood's bound for genus 1) and eight on
-    # the two genus-3 solids.  The summary line says the same in words.
-    for kind, ncol in (("SZILASSI", 7), ("MIZHAEV", 8), ("ROST_VIGH", 8)):
-        F = TOROIDS[kind]["F"]
-        col, k = map_colouring(F)
-        assert k == ncol == len(set(col)), (kind, k)
-        assert "every two faces share an edge" in toroid_summary(kind)
-    assert "share" not in toroid_summary("CSASZAR")
-    assert "share" not in toroid_summary("MIZHAEV_V1")
-    assert "(genus 3)" in toroid_summary("MIZHAEV_V1")
-    col, k = map_colouring(TOROIDS["MIZHAEV_V1"]["F"])
-    assert k == 4, k        # the four pairs that never meet share colours
-    assert len(_nb.doubled_edges(TOROIDS["MIZHAEV_V1"]["F"])) == 24
-    assert "every two vertices are joined" in toroid_summary("CSASZAR")
-    assert "joined" not in toroid_summary("SZILASSI")
-    assert "(genus 2); the fewest vertices" in toroid_summary("MINIMAL_G2")
-    assert "(genus 3); the fewest vertices" in toroid_summary("MINIMAL_G3")
-    assert "(genus 3)" in toroid_summary("ROST_VIGH")
-    assert "8 pairs share two" in toroid_summary("MIZHAEV")
-    assert "3 separate surfaces of genus 1" in toroid_summary("BORROMEAN")
-    assert len(_nb.doubled_edges(TOROIDS["ROST_VIGH"]["F"])) == 16
-    assert not _nb.doubled_edges(TOROIDS["SZILASSI"]["F"])
+        comps = 3 if kind == "BORROMEAN" else 1
+        assert _nb.surface_topology(F)[1:] == (comps, comps), kind
+    # read as maps: Szilassi one colour per face, its dual two
+    col, k = map_colouring(TOROIDS["SZILASSI"]["F"])
+    assert k == 7 == len(set(col)), k
     col, k = map_colouring(TOROIDS["CSASZAR"]["F"])
-    adj = _nb.face_adjacency(TOROIDS["CSASZAR"]["F"])
-    assert all(col[f] != col[g] for f in adj for g in adj[f])
-    print(f"map colouring: Szilassi 7, Mizhaev 8, Rost-Vigh 8 colours "
-          f"(one per face), Mizhaev V1 4; Csaszar {k}")
+    assert k == 2, k
+    assert "every two faces share an edge" in toroid_summary("SZILASSI")
+    assert "every two vertices are joined" in toroid_summary("CSASZAR")
+    assert "(genus 1)" in toroid_summary("KNOTTED")
+    assert "3 separate surfaces of genus 1" in toroid_summary("BORROMEAN")
+    print("map colouring: Szilassi 7 colours (one per face), Csaszar 2")
     for name in ('TRI', 'HEX', 'TRIHEX', 'CAIRO'):
         V, F = build_tiled_torus(name, 12, 6, 1.0, 0.4)
         E = {}
@@ -780,18 +656,15 @@ if _IN_BLENDER:
     class MESH_OT_toroidal_polyhedron_add(bpy.types.Operator,
                                           _net_style.NetStyleProps,
                                           _plate_style.PlateStyleProps):
-        """Add a toroidal polyhedron: the Csaszar polyhedron (no
-        diagonals), its dual the Szilassi polyhedron, their higher-genus
-        successors (every two faces sharing an edge, or the fewest
-        vertices possible), and other notable toroids"""
+        """Add a toroidal (genus-1) polyhedron: the Csaszar polyhedron
+        (no diagonals) or its dual the Szilassi polyhedron"""
         bl_idname = "mesh.toroidal_polyhedron_add"
         bl_label = "Toroidal Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
         solid: EnumProperty(name="Solid", items=TOROID_ITEMS,
-                            description="Which toroidal polyhedron to "
-                                        "build (genus 1 unless the entry "
-                                        "says otherwise)")
+                            description="Which toroidal (genus-1) "
+                                        "polyhedron to build")
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "Plain closed polyhedron"),
@@ -802,17 +675,8 @@ if _IN_BLENDER:
         map_colours: BoolProperty(
             name="Map Colours", default=False,
             description="Colour the faces as a map, so that faces sharing "
-                        "an edge differ. Where every two faces share an "
-                        "edge each face needs its own colour: seven on the "
-                        "Szilassi polyhedron, eight on the genus-3 solids")
-        mark_doubled: BoolProperty(
-            name="Mark Doubled Edges", default=False,
-            description="On the genus-3 eight-nonagon solids, draw the "
-                        "edges along which a pair of faces meets twice as "
-                        "red rods (16 on Mizhaev and Rost-Vigh, 24 on V1)")
-        rod_radius: FloatProperty(
-            name="Rod Radius", default=0.012, min=0.001, max=0.2,
-            description="Radius of the rods marking the doubled edges")
+                        "an edge differ: seven on the Szilassi polyhedron, "
+                        "where every two faces share an edge")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
                              description="Overall size (1.0 fits a 2 m "
                                          "cube)")
@@ -828,36 +692,7 @@ if _IN_BLENDER:
                 _plate_style.draw_plate_props(lay, self)
             if self.style == 'SOLID':
                 lay.prop(self, 'map_colours')
-                if self.solid in _nb.NEIGHBOURLY:
-                    lay.prop(self, 'mark_doubled')
-                    if self.mark_doubled:
-                        lay.prop(self, 'rod_radius')
             lay.prop(self, 'scale')
-
-        def _add_doubled_rods(self, context, obj, V, F):
-            """The doubled edges as a bevelled curve parented to the
-            solid."""
-            cu = bpy.data.curves.new(obj.name + " Doubled Edges", 'CURVE')
-            cu.dimensions = '3D'
-            cu.bevel_depth = self.rod_radius * self.scale
-            cu.bevel_resolution = 3
-            cu.use_fill_caps = True
-            for a, b in _nb.doubled_edges(F):
-                sp = cu.splines.new('POLY')
-                sp.points.add(1)
-                for pt, v in zip(sp.points, (V[a], V[b])):
-                    pt.co = (v[0] * self.scale, v[1] * self.scale,
-                             v[2] * self.scale, 1.0)
-            try:
-                from .styles import face_colors
-            except ImportError:
-                from styles import face_colors
-            cu.materials.append(face_colors.material(
-                "Doubled Edge", (0.85, 0.05, 0.10, 1.0)))
-            rods = bpy.data.objects.new(cu.name, cu)
-            context.collection.objects.link(rods)
-            rods.parent = obj
-            return rods
 
         def execute(self, context):
             V, F = build_toroid(self.solid)
@@ -899,8 +734,6 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new(TOROIDS[self.solid]["name"], me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
-            if self.mark_doubled and self.solid in _nb.NEIGHBOURLY:
-                self._add_doubled_rods(context, obj, V, F)
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
@@ -908,7 +741,7 @@ if _IN_BLENDER:
             self.report({'INFO'}, summary)
             return {'FINISHED'}
 
-    from bpy.props import IntProperty
+    from bpy.props import IntProperty, BoolProperty
 
     # Tilings that wrap cleanly onto a torus (all 19 uniform tilings except
     # Rhombille, whose Laves-dual patch does not fold to a single period).

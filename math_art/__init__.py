@@ -80,6 +80,7 @@ _MODULE_NAMES = [
     'uniform_polyhedra_generator',
     'compound_generator',
     'toroidal_polyhedron_generator',
+    'neighbourly_polyhedron_generator',
     'biscribed_solids_generator',
     # NB no 'stellation_engine': it registers nothing since the merge (its
     # operator moved into general_stellation, which owns both seeds and the

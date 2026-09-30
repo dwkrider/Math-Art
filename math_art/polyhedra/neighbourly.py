@@ -257,6 +257,51 @@ def doubled_edges(F):
                   for e in es)
 
 
+def surface_topology(F):
+    """(edges, components, genus) of a closed orientable face list; the
+    genus is the total over all components."""
+    E = set()
+    parent = {}
+
+    def find(v):
+        while parent.setdefault(v, v) != v:
+            parent[v] = parent[parent[v]]
+            v = parent[v]
+        return v
+
+    for f in F:
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            E.add((min(a, b), max(a, b)))
+            parent[find(a)] = find(b)
+    verts = {v for f in F for v in f}
+    comps = len({find(v) for v in verts})
+    chi = len(verts) - len(E) + len(F)
+    return len(E), comps, comps - chi // 2
+
+
+def summary_text(name, V, F, note=None):
+    """A report line: counts, genus, and the two neighbourliness
+    properties when they hold."""
+    nE, comps, genus = surface_topology(F)
+    text = "%s: V=%d E=%d F=%d" % (name, len(V), nE, len(F))
+    if comps == 1:
+        text += " (genus %d)" % genus
+    else:
+        text += " (%d separate surfaces of genus %d)" % (comps,
+                                                          genus // comps)
+    if is_face_neighbourly(F):
+        twice = sum(1 for es in shared_edges(F).values() if len(es) > 1)
+        text += "; every two faces share an edge"
+        if twice:
+            text += " (%d pairs share two)" % twice
+    if comps == 1 and nE == len(V) * (len(V) - 1) // 2:
+        text += "; every two vertices are joined by an edge"
+    if note:
+        text += "; " + note
+    return text
+
+
 def face_adjacency(F):
     """{face: [neighbouring faces]} across shared edges."""
     adj = {f: [] for f in range(len(F))}

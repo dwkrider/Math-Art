@@ -159,6 +159,12 @@ PARAMS = {
     # ring polyhedron says "toroidal" instantly -- three rectangular
     # rings interlocked, with the holes plainly visible.
     "mesh.toroidal_polyhedron_add": dict(solid='BORROMEAN'),
+    # Grey, the eight-nonagon solids read as a crumpled scrap; as a map
+    # (one colour per face, since every two faces meet) with the
+    # twice-shared edges marked, the point of them is visible.
+    "mesh.neighbourly_polyhedron_add": dict(solid='ROST_VIGH',
+                                            map_colours=True,
+                                            mark_doubled=True),
     # The K = +1 family defaults to the sphere, which at icon size is
     # a plain ball and says nothing the UV-sphere primitive does not.
     # The spindle -- a lemon with a conical tip at each pole -- is the
@@ -578,6 +584,7 @@ VARIANT_SELECTOR = {
     "mesh.conway_add": "example",
     "mesh.polytwister_add": "shape",
     "mesh.toroidal_polyhedron_add": "solid",
+    "mesh.neighbourly_polyhedron_add": "solid",
     "mesh.saddle_polyhedron_add": "solid",
     "mesh.notable_polyhedron_add": "solid",
     "mesh.biscribed_solid_add": "solid",

@@ -1017,11 +1017,27 @@ TOROID_META = {
                  "The dual of the Csaszar polyhedron: each of its 7 faces "
                  "shares an edge with every other, so colouring it needs 7 "
                  "colours."),
-    "MIZHAEV": ("Mizhaev Polyhedron", None,
-                "R. Mizhaev, 'Integer realization of an equivelar octahedron "
-                "of genus 3', arXiv:2609.17700 (2026).",
-                "Genus 3. Each of its 8 nonagonal faces shares an edge with "
-                "every other; 8 of the 28 pairs share two collinear edges."),
+    "REGULAR": ("Regular Toroid", "RegularToroid", None, None),
+    "KNOTTED": ("Knotted Toroid", "KnottedToroid", None, None),
+    "BORROMEAN": ("Borromean Toroid", "BorromeanToroid", None, None),
+    "IRIS7": ("Iris Toroid 7", "IrisToroid7", None, None),
+    "IRIS8": ("Iris Toroid 8", "IrisToroid8", None, None),
+}
+
+
+def stage_toroid(limit=None):
+    """Toroidal polyhedra: genus 1, so chi = 0. They are the reason the schema
+    carries genus at all -- every other family here is genus 0."""
+    import toroidal_polyhedron_generator as TP
+
+    return _surface_records(
+        [(k, lambda k=k: TP.build_toroid(k)) for k in list(TP.TOROIDS)[:limit]],
+        TOROID_META, lambda F: ["toroid", "genus-1"],
+        "toroidal_polyhedron_generator", "mesh.toroidal_polyhedron_add",
+        "B. M. Stewart, 'Adventures Among the Toroids', 2nd ed. (1980).")
+
+
+NEIGHBOURLY_META = {
     "ROST_VIGH": ("Rost-Vigh Polyhedron", None,
                   "G. Rost and V. Vigh, 'A second eight-faced polyhedron in "
                   "which every two faces share an edge', arXiv:2609.32998 "
@@ -1029,6 +1045,11 @@ TOROID_META = {
                   "Genus 3. Each of its 8 nonagonal faces shares an edge "
                   "with every other; 8 of the 28 pairs share two collinear "
                   "edges. Not combinatorially equivalent to Mizhaev's."),
+    "MIZHAEV": ("Mizhaev Polyhedron", None,
+                "R. Mizhaev, 'Integer realization of an equivelar octahedron "
+                "of genus 3', arXiv:2609.17700 (2026).",
+                "Genus 3. Each of its 8 nonagonal faces shares an edge with "
+                "every other; 8 of the 28 pairs share two collinear edges."),
     "MIZHAEV_V1": ("Mizhaev Polyhedron V1", None,
                    "R. Mizhaev, 'Equivelar octahedron of genus 3 in 3-space', "
                    "OSF Preprints (2020), doi:10.31219/osf.io/hvtey.",
@@ -1046,26 +1067,34 @@ TOROID_META = {
                    "Electronic Geometry Models No. 2006.02.001 (2007).",
                    "Genus 3 on the fewest possible vertices; surface No. "
                    "14542, integer coordinates in the 5x5x5 cube."),
-    "REGULAR": ("Regular Toroid", "RegularToroid", None, None),
-    "KNOTTED": ("Knotted Toroid", "KnottedToroid", None, None),
-    "BORROMEAN": ("Borromean Toroid", "BorromeanToroid", None, None),
-    "IRIS7": ("Iris Toroid 7", "IrisToroid7", None, None),
-    "IRIS8": ("Iris Toroid 8", "IrisToroid8", None, None),
 }
 
 
-def stage_toroid(limit=None):
-    """Toroidal polyhedra: genus 1 (chi = 0) apart from the face-neighbourly
-    and vertex-minimal solids of genus 2 and 3. They are the reason the
-    schema carries genus at all -- every other family here is genus 0."""
-    import toroidal_polyhedron_generator as TP
+def stage_neighbourly(limit=None):
+    """Higher-genus successors of the Szilassi and Csaszar polyhedra: genus-3
+    solids whose faces all meet, and genus 2 and 3 on ten vertices."""
+    import neighbourly_polyhedron_generator as NP
+    from polyhedra import neighbourly as NB_
 
+    return _surface_records(
+        [(k, lambda k=k: NP.build_neighbourly(k))
+         for k in list(NP.SOLIDS)[:limit]],
+        NEIGHBOURLY_META,
+        lambda F: ["neighbourly", "genus-%d" % NB_.surface_topology(F)[2]],
+        "neighbourly_polyhedron_generator", "mesh.neighbourly_polyhedron_add",
+        None)
+
+
+def _surface_records(builders, meta_table, families, module, operator_id,
+                     fallback_source):
+    """Records for a generator's fixed list of closed surfaces of positive
+    genus: `builders` is [(kind, () -> (V, F))]."""
     out = []
-    for kind in list(TP.TOROIDS)[:limit]:
-        name, stem, src, note = TOROID_META.get(
+    for kind, make in builders:
+        name, stem, src, note = meta_table.get(
             kind, (kind.title(), camel(kind), None, None))
         try:
-            res = TP.build_toroid(kind)
+            res = make()
             V, F = res[0], res[1]
         except Exception as exc:                            # noqa: BLE001
             print("  FAIL %-30s %r" % (name[:30], exc))
@@ -1082,9 +1111,7 @@ def stage_toroid(limit=None):
             continue
         meta = {
             "slug": slugify(name), "name": name,
-            "families": ["toroid",
-                         "genus-%d" % max(1, TP.toroid_topology(F)[2]
-                                          // TP.toroid_topology(F)[1])],
+            "families": families(F),
             "ids": {"uniform": None, "wenninger": None, "coxeter_clm": None,
                     "mccooey": stem, "johnson": None, "netlib": None,
                     "bowers": None, "wikipedia": None, "wolfram": None},
@@ -1093,12 +1120,12 @@ def stage_toroid(limit=None):
                          "vertex_configuration": [], "face_configuration": None},
             "orientable": True, "density": None, "convex": False, "dual": None,
             "orientation": "as produced by the construction, centred at the centroid",
-            "construction": {"generator": "math_art.toroidal_polyhedron_generator",
-                             "operator_id": "mesh.toroidal_polyhedron_add",
+            "construction": {"generator": "math_art." + module,
+                             "operator_id": operator_id,
                              "conway_from": None, "wythoff_from": None},
-            "coordinates": "derived: via math_art.toroidal_polyhedron_generator",
-            "sources": [src] if src else [
-                "B. M. Stewart, 'Adventures Among the Toroids', 2nd ed. (1980)."],
+            "coordinates": "derived: via math_art." + module,
+            "sources": [src] if src else (
+                [fallback_source] if fallback_source else []),
         }
         try:
             rec = assemble(V, F, meta)
@@ -1746,6 +1773,7 @@ STAGES["prism"] = stage_prism
 STAGES["starprism"] = stage_star_prism
 STAGES["biscribed"] = stage_biscribed
 STAGES["toroid"] = stage_toroid
+STAGES["neighbourly"] = stage_neighbourly
 STAGES["zonohedron"] = stage_zonohedron
 STAGES["geodesic"] = stage_geodesic
 STAGES["notable"] = stage_notable
@@ -1757,7 +1785,7 @@ STAGES["link"] = stage_link
 # -- emit -------------------------------------------------------------------
 
 FAMILY_DIR = {"compound": "compound", "geodesic": "geodesic",
-              "toroid": "toroid",
+              "toroid": "toroid", "neighbourly": "neighbourly",
               "zonohedron": "zonohedron",
               "biscribed": "biscribed", "prism-family": "prism-family",
               "catalan": "catalan", "uniform-dual": "uniform-dual",
@@ -1849,7 +1877,8 @@ def main(argv):
         args.append(argv[i])
         i += 1
     names = args or ["uniform", "dual", "johnson", "prism",
-                     "starprism", "biscribed", "toroid", "zonohedron",
+                     "starprism", "biscribed", "toroid", "neighbourly",
+                     "zonohedron",
                      "geodesic", "compound", "notable", "link"]
     total = 0
     for n in names:
