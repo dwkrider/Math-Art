@@ -733,7 +733,9 @@ def build_plates(V, F, **kw):
                        'rings_v': [_ring_sides(r) for r in rings],
                        'sides': len(set(
                            e[2] for r in rings for e in r)),
-                       'error': None, 'label': f"P{pi_ + 1}"})
+                       'error': None, 'label': f"P{pi_ + 1}",
+                       'ngon': (len(F[g[0]]) if len(g) == 1
+                                else len(rings[0]))})
 
     # --- joints: one record per shared side ------------------------
     joints = {}
@@ -1349,6 +1351,285 @@ def cut_layout(result, sheet_width=600.0, sheet_height=400.0, kerf=0.15,
 
 
 # ---------------------------------------------------------------- #
+#  preview geometry and the assembly guide (headless)               #
+# ---------------------------------------------------------------- #
+
+def preview_geometry(result, explode=0.0):
+    """The assembled kit as mesh data in the MODEL's own units (so it
+    sits exactly over the solid it came from): each plate a closed
+    prism of its outline, pushed out along its normal by `explode`
+    (0..1, as a fraction of the model's half-size).  Returns (verts,
+    faces, plate_of_face)."""
+    s = result['scale']
+    t = result['settings']['thickness']
+    push = explode * 0.5 * result['settings']['size']
+    verts, faces, owner = [], [], []
+    for P in result['plates']:
+        o, u, w, n = P['frame']
+        o = _add(o, _mul(n, push))
+        index = {}
+
+        def vid(p2, level):
+            key = (round(p2[0], 9), round(p2[1], 9), level)
+            k = index.get(key)
+            if k is None:
+                q = _add(o, _add(_mul(u, p2[0]), _mul(w, p2[1])))
+                if level:
+                    q = _sub(q, _mul(n, t))
+                k = len(verts)
+                verts.append((q[0] / s, q[1] / s, q[2] / s))
+                index[key] = k
+            return k
+
+        rings = [P['outer']] + list(P['holes'])
+        Q, tris = ear_clip(bridge_holes(P['outer'], P['holes'])
+                           if P['holes'] else P['outer'])
+        for (i, j, k) in tris:
+            faces.append([vid(Q[i], 0), vid(Q[j], 0), vid(Q[k], 0)])
+            faces.append([vid(Q[k], 1), vid(Q[j], 1), vid(Q[i], 1)])
+            owner.extend((P['index'], P['index']))
+        for ring in rings:
+            m = len(ring)
+            for a in range(m):
+                p, q = ring[a], ring[(a + 1) % m]
+                faces.append([vid(p, 0), vid(p, 1), vid(q, 1), vid(q, 0)])
+                owner.append(P['index'])
+    return verts, faces, owner
+
+
+def assembly_guide(result, layout_report=None):
+    """Plain-text build notes, stored with the kit."""
+    R = result['report']
+    S = result['settings']
+    t = S['thickness']
+    lines = [f"{R['plates']} plates, {R['edges']} jointed edges, "
+             f"{t:g} mm stock, model {S['size']:g} mm across."]
+    if layout_report:
+        lines.append(f"Cut on {layout_report['sheets']} sheet(s).")
+    if S['labels'] == 'INSIDE':
+        lines.append("Cut with the engraved side up; the engraved face "
+                     "goes on the inside.")
+    elif S['labels'] == 'OUTSIDE':
+        lines.append("Cut with the engraved side up; the engraved face "
+                     "shows on the outside.")
+    lines.append("Matching numbers mark the two edges that join.")
+    lines.append(f"Dihedral angles {R['phi_min']:.1f} to "
+                 f"{R['phi_max']:.1f} degrees; fingers "
+                 f"{R['step_min']:.1f} to {R['step_max']:.1f} mm deep.")
+    if R['lips']:
+        lines.append(f"{R['lips']} edge(s) have lips standing up to "
+                     f"{R['lip_height']:.1f} mm proud: sand them flush.")
+    if R['shallow']:
+        lines.append(f"{R['shallow']} edge(s) have shallow fingers; glue "
+                     f"them.")
+    order = result['order']
+    if order is None:
+        lines.append("No press-in order was found; glue the last plates.")
+    elif R['reflex'] or S['fit'] == 'FILLED':
+        lines.append("Assembly order: " + " ".join(
+            result['plates'][p]['label'] for p in order))
+    else:
+        lines.append("Any assembly order works; press each plate in "
+                     "along its face.")
+    lines.append("Measure your stock: the joints are cut for exactly the "
+                 "thickness given.")
+    return "\n".join(lines)
+
+
+try:
+    import bpy
+    _IN_BLENDER = True
+except ImportError:
+    _IN_BLENDER = False
+
+
+if _IN_BLENDER:
+
+    from bpy.props import EnumProperty, FloatProperty
+
+    # the custom property holding the build notes, beside the layout
+    GUIDE_KEY = 'math_art_plate_guide'
+
+    def plate_enum_item():
+        """The ('PLATES', ...) entry for a generator's style enum."""
+        return ('PLATES', "Finger-Jointed Plates",
+                "Build the shell from flat plates of real material "
+                "thickness, joined by finger joints cut for each edge's "
+                "true angle, with a cut layout to export for a laser "
+                "cutter")
+
+    class PlateStyleProps:
+        """Property mixin for operators offering the Finger-Jointed
+        Plates style.  Inherit it alongside `bpy.types.Operator`, the
+        way `net_style.NetStyleProps` is used; never register it
+        itself."""
+        plate_thickness: FloatProperty(
+            name="Material Thickness", default=3.0, min=0.5, max=30.0,
+            description="Thickness of the sheet stock, in millimetres. "
+                        "Measure your stock: the joints are cut for "
+                        "exactly this thickness")
+        plate_size: FloatProperty(
+            name="Model Size", default=150.0, min=20.0, max=3000.0,
+            description="Longest dimension of the finished model, in "
+                        "millimetres")
+        finger_width: FloatProperty(
+            name="Finger Width", default=8.0, min=2.0, max=100.0,
+            description="Target width of each finger along an edge, in "
+                        "millimetres; every edge rounds it to a whole "
+                        "number of fingers")
+        joint_fit: EnumProperty(
+            name="Joint Edges",
+            items=[('FLUSH', "Flush",
+                    "Nothing stands proud of the surface; edges that are "
+                    "not square show a small groove"),
+                   ('FILLED', "Filled",
+                    "The fingers fill each joint completely; edges that "
+                    "are not square leave a small lip to sand flush")],
+            default='FLUSH',
+            description="How each joint handles the surface error of a "
+                        "square-cut plate meeting another at an angle")
+        joint_clearance: FloatProperty(
+            name="Joint Clearance", default=0.05, min=0.0, max=1.0,
+            description="Gap left between neighbouring fingers, in "
+                        "millimetres. 0 is a press fit; more makes "
+                        "assembly easier and suits glued joints")
+        plate_labels: EnumProperty(
+            name="Labels",
+            items=[('INSIDE', "Inside",
+                    "Engrave part and edge numbers on the inside face"),
+                   ('OUTSIDE', "Outside",
+                    "Engrave part and edge numbers on the outside face"),
+                   ('NONE', "None", "No engraving")],
+            default='INSIDE',
+            description="Where the part numbers and matching edge "
+                        "numbers are engraved")
+        plate_explode: FloatProperty(
+            name="Explode", default=0.0, min=0.0, max=1.0,
+            subtype='FACTOR',
+            description="Pull the plates apart along their faces to show "
+                        "how they fit together")
+        cut_sheet_width: FloatProperty(
+            name="Sheet Width", default=600.0, min=10.0, max=5000.0,
+            description="Width of the stock sheet, in millimetres")
+        cut_sheet_height: FloatProperty(
+            name="Sheet Height", default=400.0, min=10.0, max=5000.0,
+            description="Height of the stock sheet, in millimetres")
+        cut_kerf: FloatProperty(
+            name="Kerf", default=0.15, min=0.0, max=1.0,
+            description="Width of material the beam burns away, in "
+                        "millimetres. The outlines are offset by half "
+                        "of it so the plates come out to size")
+
+    def draw_plate_props(lay, op):
+        """The Finger-Jointed Plates block of an operator's `draw()`."""
+        lay.prop(op, 'plate_thickness')
+        lay.prop(op, 'plate_size')
+        lay.prop(op, 'joint_fit')
+        lay.prop(op, 'finger_width')
+        lay.prop(op, 'joint_clearance')
+        lay.prop(op, 'plate_labels')
+        lay.prop(op, 'plate_explode')
+        box = lay.box()
+        box.label(text="Fabrication")
+        box.prop(op, 'cut_sheet_width')
+        box.prop(op, 'cut_sheet_height')
+        box.prop(op, 'cut_kerf')
+        box.operator("object.fabrication_slice_export",
+                     text="Export SVG / DXF", icon='EXPORT')
+
+    def emit_plates_from_operator(op, context, V, F, label,
+                                  material_fn=None, hint=None):
+        """The whole PLATES branch of an operator's `execute()`: guard,
+        build, preview, cut layout, report.  Returns {'FINISHED'} or
+        {'CANCELLED'}."""
+        try:
+            from .. import fabrication_slicer as _fs
+        except ImportError:
+            import fabrication_slicer as _fs
+        try:
+            res = build_plates(
+                V, F, thickness=op.plate_thickness, size=op.plate_size,
+                finger=op.finger_width, fit=op.joint_fit,
+                clearance=op.joint_clearance, labels=op.plate_labels)
+            drawing, lay_rep = cut_layout(
+                res, op.cut_sheet_width, op.cut_sheet_height, op.cut_kerf,
+                name=f"{label} plates")
+        except ValueError as e:
+            msg = f"{label} cannot be made from plates: {e}"
+            if hint:
+                msg += " -- " + hint
+            op.report({'ERROR'}, msg)
+            return {'CANCELLED'}
+
+        verts, faces, owner = preview_geometry(res, op.plate_explode)
+        me = bpy.data.meshes.new("Plates")
+        me.from_pydata(verts, [], faces)
+        me.validate(clean_customdata=True)
+        if len(me.polygons) == len(faces):
+            att = me.attributes.new("plate_id", 'INT', 'FACE')
+            att.data.foreach_set('value', owner)
+            if material_fn is not None:
+                lut, slot = {}, []
+                for pid in owner:
+                    nn = res['plates'][pid]['ngon']
+                    if nn not in lut:
+                        lut[nn] = len(me.materials)
+                        me.materials.append(material_fn(nn))
+                    slot.append(lut[nn])
+                me.polygons.foreach_set('material_index', slot)
+        me.polygons.foreach_set('use_smooth', [False] * len(me.polygons))
+        me.update()
+        obj = bpy.data.objects.new(f"{label} plates", me)
+        context.collection.objects.link(obj)
+        obj.location = context.scene.cursor.location
+        for o in context.selected_objects:
+            o.select_set(False)
+        obj.select_set(True)
+        context.view_layer.objects.active = obj
+        # kept on the OBJECT, which is where the exporter looks
+        obj[_fs.DRAWING_KEY] = _fs.drawing_to_json(drawing)
+        obj[GUIDE_KEY] = assembly_guide(res, lay_rep)
+
+        R = res['report']
+        op.report({'INFO'},
+                  f"{label}: {R['plates']} plates on {lay_rep['sheets']} "
+                  f"sheet(s), {R['edges']} jointed edges, fingers "
+                  f"{R['step_min']:.1f}-{R['step_max']:.1f} mm deep")
+        if R['errors'] or lay_rep['errors']:
+            op.report({'WARNING'},
+                      f"{R['errors']} plate(s) could not be jointed "
+                      f"cleanly and are on the ERROR layer; try a smaller "
+                      f"finger width")
+        if R['residual'] > 0.0:
+            op.report({'WARNING'},
+                      f"plates still overlap by {R['residual']:.2f} mm^3 "
+                      f"at some corners")
+        if lay_rep['oversize']:
+            op.report({'WARNING'},
+                      f"{lay_rep['oversize']} plate(s) do not fit the "
+                      f"sheet")
+        if R['shallow']:
+            op.report({'WARNING'},
+                      f"{R['shallow']} edge(s) have fingers shallower "
+                      f"than the stock is thick; glue recommended")
+        if R['lips']:
+            op.report({'INFO'},
+                      f"{R['lips']} edge(s) leave lips up to "
+                      f"{R['lip_height']:.1f} mm proud to sand flush")
+        if res['order'] is None:
+            op.report({'WARNING'},
+                      "no press-in assembly order found; some plates "
+                      "will need gluing")
+        return {'FINISHED'}
+
+    def register():
+        pass
+
+    def unregister():
+        pass
+
+
+# ---------------------------------------------------------------- #
 #  independent checks (used by the self-test and the report)        #
 # ---------------------------------------------------------------- #
 
@@ -1644,6 +1925,25 @@ def _selftest():
     if not sum(pc.area(g) for g in cut) > \
             sum(pc.area(P['outer']) for P in r['plates']):
         bad("kerf compensation should grow the outlines")
+
+    # --- 8. the preview mesh ---------------------------------------------
+    V, F = solid('PLATONIC', 'CUBE')
+    r = build_plates(V, F)
+    verts, faces, owner = preview_geometry(r)
+    ext = max(max(v[k] for v in V) - min(v[k] for v in V) for k in range(3))
+    got = max(max(v[k] for v in verts) - min(v[k] for v in verts)
+              for k in range(3))
+    if abs(got - ext) > 1e-6 * ext:
+        bad(f"preview is {got} across, the solid {ext}")
+    edges = {}
+    for f in faces:
+        for k in range(len(f)):
+            e = (min(f[k], f[(k + 1) % len(f)]), max(f[k], f[(k + 1) % len(f)]))
+            edges[e] = edges.get(e, 0) + 1
+    if any(c != 2 for c in edges.values()):
+        bad("preview plates are not closed solids")
+    if len(set(owner)) != 6:
+        bad("preview faces not tagged with their plates")
 
     if fails:
         raise AssertionError(f"{len(fails)} failure(s): {fails[0]}")
