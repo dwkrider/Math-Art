@@ -1029,6 +1029,11 @@ TOROID_META = {
                   "Genus 3. Each of its 8 nonagonal faces shares an edge "
                   "with every other; 8 of the 28 pairs share two collinear "
                   "edges. Not combinatorially equivalent to Mizhaev's."),
+    "MIZHAEV_V1": ("Mizhaev Polyhedron V1", None,
+                   "R. Mizhaev, 'Equivelar octahedron of genus 3 in 3-space', "
+                   "OSF Preprints (2020), doi:10.31219/osf.io/hvtey.",
+                   "Genus 3, 8 nonagonal faces, but not face-neighbourly: 4 "
+                   "pairs of faces never meet and 12 share two edges."),
     "MINIMAL_G2": ("Ten-Vertex Genus-2 Polyhedron", None,
                    "S. Hougardy, F. H. Lutz and M. Zelke, 'Polyhedra of "
                    "genus 2 with 10 vertices and minimal coordinates', "

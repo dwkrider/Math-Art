@@ -589,6 +589,9 @@ OPS = [
     ("toroid rost-vigh genus 3, map colours + doubled edges",
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(
          solid='ROST_VIGH', map_colours=True, mark_doubled=True)),
+    ("toroid mizhaev v1 (not face-neighbourly)",
+     lambda: bpy.ops.mesh.toroidal_polyhedron_add(
+         solid='MIZHAEV_V1', map_colours=True, mark_doubled=True)),
     ("toroid ten-vertex genus 2",
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='MINIMAL_G2')),
     ("toroid ten-vertex genus 3, map colours",

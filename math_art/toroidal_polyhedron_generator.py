@@ -35,6 +35,8 @@
 # polyhedra/neighbourly.py.  Painting any of these solids as a map -- faces
 # sharing an edge get different colours -- shows the property directly: the
 # Szilassi polyhedron needs seven colours and the two genus-3 solids eight.
+# Mizhaev's earlier variant of the same size, kept for contrast, is not
+# face-neighbourly (four pairs of its faces never meet) and needs only four.
 #
 # The Csaszar polyhedron has higher-genus successors too, on the vertex
 # side: polyhedra with the fewest vertices their genus allows.  Genus 2 and
@@ -251,6 +253,10 @@ TOROID_ITEMS = [("CSASZAR", "Csaszar Polyhedron", "7 vertices, 14 "
                 ("ROST_VIGH", "Rost-Vigh Polyhedron", "genus 3: 8 nonagons, "
                  "every pair sharing an edge (8 pairs sharing two); three "
                  "half-turn axes, chiral, four long spikes"),
+                ("MIZHAEV_V1", "Mizhaev Polyhedron V1", "genus 3: 8 "
+                 "nonagons like the two above, but 4 pairs of faces never "
+                 "meet (12 pairs share two edges); Mizhaev's first 2020 "
+                 "variant"),
                 ("MINIMAL_G2", "Ten-Vertex Genus-2 Polyhedron", "genus 2 "
                  "on the fewest possible vertices: 10 vertices, 24 "
                  "triangles, integer coordinates in a 4x4x4 cube"),
@@ -706,6 +712,7 @@ def _self_test():
         assert e2 and maxpl < 1e-6, (kind, e2, maxpl)
         nE, comps, genus = toroid_topology(F)
         want = {"MIZHAEV": (1, 3), "ROST_VIGH": (1, 3),
+                "MIZHAEV_V1": (1, 3),
                 "MINIMAL_G2": (1, 2), "MINIMAL_G3": (1, 3),
                 "BORROMEAN": (3, 3)}.get(kind, (1, 1))
         assert (comps, genus) == want, (kind, comps, genus)
@@ -720,6 +727,11 @@ def _self_test():
         assert k == ncol == len(set(col)), (kind, k)
         assert "every two faces share an edge" in toroid_summary(kind)
     assert "share" not in toroid_summary("CSASZAR")
+    assert "share" not in toroid_summary("MIZHAEV_V1")
+    assert "(genus 3)" in toroid_summary("MIZHAEV_V1")
+    col, k = map_colouring(TOROIDS["MIZHAEV_V1"]["F"])
+    assert k == 4, k        # the four pairs that never meet share colours
+    assert len(_nb.doubled_edges(TOROIDS["MIZHAEV_V1"]["F"])) == 24
     assert "every two vertices are joined" in toroid_summary("CSASZAR")
     assert "joined" not in toroid_summary("SZILASSI")
     assert "(genus 2); the fewest vertices" in toroid_summary("MINIMAL_G2")
@@ -733,7 +745,7 @@ def _self_test():
     adj = _nb.face_adjacency(TOROIDS["CSASZAR"]["F"])
     assert all(col[f] != col[g] for f in adj for g in adj[f])
     print(f"map colouring: Szilassi 7, Mizhaev 8, Rost-Vigh 8 colours "
-          f"(one per face); Csaszar {k}")
+          f"(one per face), Mizhaev V1 4; Csaszar {k}")
     for name in ('TRI', 'HEX', 'TRIHEX', 'CAIRO'):
         V, F = build_tiled_torus(name, 12, 6, 1.0, 0.4)
         E = {}
@@ -795,9 +807,9 @@ if _IN_BLENDER:
                         "Szilassi polyhedron, eight on the genus-3 solids")
         mark_doubled: BoolProperty(
             name="Mark Doubled Edges", default=False,
-            description="On the genus-3 solids, draw the sixteen edges "
-                        "along which a pair of faces meets twice as red "
-                        "rods")
+            description="On the genus-3 eight-nonagon solids, draw the "
+                        "edges along which a pair of faces meets twice as "
+                        "red rods (16 on Mizhaev and Rost-Vigh, 24 on V1)")
         rod_radius: FloatProperty(
             name="Rod Radius", default=0.012, min=0.001, max=0.2,
             description="Radius of the rods marking the doubled edges")

@@ -22,6 +22,18 @@
 #     realisation.  Its eight doubled pairs form two 4-cycles, which is what
 #     proves the two solids combinatorially different.
 #
+# For contrast the module also keeps Mizhaev's OTHER eight-nonagon polyhedron
+# of genus 3, the first variant (V1) of his 2020 preprint, of which M is the
+# second.  It has the same counts and the same rotoreflection symmetry, but
+# it is not face-neighbourly: four pairs of faces never meet, twelve share two
+# edges and twelve share one.  So its faces can be coloured as a map with
+# only four colours -- the four pairs that never meet each share one --
+# against eight for M and P.  The preprint prints each face as a SET of
+# vertices in increasing order; the boundary cycles below are the ones the
+# geometry forces (two faces meeting at a vertex of this three-valent surface
+# share an edge there, so the vertices two faces have in common, sorted along
+# the line where their planes meet, pair off into the shared edges).
+#
 # Everything here is stored and checked EXACTLY (integers / fractions).  The
 # vertices of P are not typed in at all: each is derived as the intersection
 # of the planes of the three faces that meet there, and the published table
@@ -39,7 +51,9 @@
 #   genus 3", arXiv:2609.17700 (2026) -- the polyhedron M: integer vertex
 #   coordinates, face walks and plane equations.
 # - Ruslan Mizhaev, "Equivelar octahedron of genus 3 in 3-space", OSF
-#   Preprints (2020), doi:10.31219/osf.io/hvtey -- the original construction.
+#   Preprints (2020), doi:10.31219/osf.io/hvtey -- the original construction,
+#   with the two variants V1 (kept here as MIZHAEV_V1) and V2 (the
+#   combinatorial type of M).
 # - Lajos Szilassi, "Regular toroids", Structural Topology 13 (1986),
 #   69-80 -- the seven-faced face-neighbourly torus these two follow.
 
@@ -100,6 +114,47 @@ _M_WALKS = [
 # ... and the ones that must be reversed to face outwards (0-based).
 _M_REVERSED = (0, 1, 6, 7)
 
+# --- Mizhaev's 2020 variant V1 ----------------------------------------------
+# Planes (the faces of two tetrahedra), in the preprint's order; which face
+# lies on which is found by incidence.
+_V1_PLANES = [
+    (0, 1, 1, -100), (1, 0, -1, -100), (0, 1, -1, 100), (1, 0, 1, 100),
+    (1, -7, -4, 384), (7, 1, -4, -384), (1, -7, 4, -384), (7, 1, 4, 384),
+]
+# Table 2 of the preprint: (numerator, denominator) per coordinate.
+_V1_VERTS = [
+    ((-308, 1), (-108, 1), (-208, 1)), ((308, 1), (108, 1), (-208, 1)),
+    ((16, 1), (0, 1), (-100, 1)), ((-16, 1), (0, 1), (-100, 1)),
+    ((28, 1), (4, 1), (-96, 1)), ((-28, 1), (-4, 1), (-96, 1)),
+    ((-4272, 41), (-448, 41), (-3652, 41)),
+    ((4272, 41), (448, 41), (-3652, 41)),
+    ((-182, 1), (-18, 1), (-82, 1)), ((182, 1), (18, 1), (-82, 1)),
+    ((-1216, 13), (-336, 13), (-964, 13)),
+    ((1216, 13), (336, 13), (-964, 13)),
+    ((336, 13), (-1216, 13), (964, 13)),
+    ((-336, 13), (1216, 13), (964, 13)),
+    ((18, 1), (-182, 1), (82, 1)), ((-18, 1), (182, 1), (82, 1)),
+    ((448, 41), (-4272, 41), (3652, 41)),
+    ((-448, 41), (4272, 41), (3652, 41)),
+    ((-4, 1), (28, 1), (96, 1)), ((4, 1), (-28, 1), (96, 1)),
+    ((0, 1), (-16, 1), (100, 1)), ((0, 1), (16, 1), (100, 1)),
+    ((-108, 1), (308, 1), (208, 1)), ((108, 1), (-308, 1), (208, 1)),
+]
+# Table 3 of the preprint, as printed: each face's vertex SET.
+_V1_FACE_SETS = [
+    [1, 3, 5, 6, 7, 9, 12, 14, 18], [2, 10, 13, 15, 17, 20, 21, 22, 23],
+    [8, 12, 13, 16, 18, 19, 20, 21, 23], [2, 4, 5, 6, 8, 10, 11, 13, 17],
+    [1, 4, 3, 5, 8, 10, 12, 16, 23], [1, 9, 14, 16, 18, 19, 22, 21, 24],
+    [7, 11, 14, 15, 17, 19, 20, 22, 24], [2, 3, 4, 6, 7, 9, 11, 15, 24],
+]
+# The boundary cycles those sets force, counter-clockwise from outside.
+_V1_CYCLES = [
+    [3, 6, 5, 12, 18, 14, 7, 9, 1], [10, 23, 21, 22, 20, 13, 17, 15, 2],
+    [8, 13, 20, 19, 21, 23, 16, 18, 12], [4, 5, 6, 11, 17, 13, 8, 10, 2],
+    [1, 16, 23, 10, 8, 12, 5, 4, 3], [9, 24, 22, 21, 19, 14, 18, 16, 1],
+    [14, 19, 20, 22, 24, 15, 17, 11, 7], [2, 15, 24, 9, 7, 11, 6, 3, 4],
+]
+
 NEIGHBOURLY = {
     "ROST_VIGH": {
         "name": "Rost-Vigh Polyhedron",
@@ -108,6 +163,11 @@ NEIGHBOURLY = {
     "MIZHAEV": {
         "name": "Mizhaev Polyhedron",
         "labels": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"],
+    },
+    # not face-neighbourly: kept for contrast (see the header)
+    "MIZHAEV_V1": {
+        "name": "Mizhaev Polyhedron V1",
+        "labels": ["1", "2", "3", "4", "5", "6", "7", "8"],
     },
 }
 
@@ -149,6 +209,16 @@ def exact(kind):
              for f, w in enumerate(_M_WALKS)]
         V = [tuple(Fraction(c) for c in p) for p in _M_VERTS]
         return V, F, list(_M_PLANES)
+    if kind == "MIZHAEV_V1":
+        F = [[v - 1 for v in cyc] for cyc in _V1_CYCLES]
+        V = [tuple(Fraction(n, d) for n, d in p) for p in _V1_VERTS]
+        planes = []
+        for cyc in F:
+            on = [p for p in _V1_PLANES
+                  if all(_dot(p[:3], V[v]) == p[3] for v in cyc)]
+            assert len(on) == 1, "a V1 face is not on exactly one plane"
+            planes.append(on[0])
+        return V, F, planes
     raise KeyError(kind)
 
 
@@ -362,6 +432,50 @@ def _automorphisms(F, mirror):
     return count
 
 
+def _isomorphic(F1, F2, mirror):
+    """Is there a map isomorphism from F1 onto F2 (orientation-reversing
+    when mirror=True)?  Like _automorphisms: one dart's image fixes it."""
+    def darts(F):
+        nxt, prv = {}, {}
+        for cyc in F:
+            k = len(cyc)
+            for i in range(k):
+                d = (cyc[i], cyc[(i + 1) % k])
+                nxt[d] = (cyc[(i + 1) % k], cyc[(i + 2) % k])
+                prv[d] = (cyc[i - 1], cyc[i])
+        return nxt, prv
+
+    n1, _p1 = darts(F1)
+    n2, p2 = darts(F2)
+    if len(n1) != len(n2):
+        return False
+
+    def flip(d):
+        return (d[1], d[0])
+
+    def step(d):
+        return flip(p2[flip(d)]) if mirror else n2[d]
+
+    d0 = next(iter(n1))
+    for target in n2:
+        h = {d0: target}
+        stack = [d0]
+        ok = True
+        while stack and ok:
+            d = stack.pop()
+            for nd, nt in ((n1[d], step(h[d])), (flip(d), flip(h[d]))):
+                if nd in h:
+                    if h[nd] != nt:
+                        ok = False
+                        break
+                else:
+                    h[nd] = nt
+                    stack.append(nd)
+        if ok and len(h) == len(n1) and len(set(h.values())) == len(n1):
+            return True
+    return False
+
+
 def _doubled_cycles(F):
     """Sizes of the connected pieces of the graph joining two faces when
     they share two edges; each piece must be a plain cycle."""
@@ -387,7 +501,7 @@ def _doubled_cycles(F):
     return sorted(sizes)
 
 
-def _check(kind):
+def _check(kind, singles=20, doubles=8):
     V, F, planes = exact(kind)
     nV, nF = len(V), len(F)
 
@@ -419,19 +533,19 @@ def _check(kind):
     chi = nV - nE + nF
     assert (nV, nE, nF, chi) == (24, 36, 8, -4), (nV, nE, nF, chi)
 
-    # face-neighbourly, 20 pairs once and 8 pairs twice, doubled edges
-    # collinear
+    # which pairs meet once and twice (all 28, for the face-neighbourly
+    # ones), and every doubled pair's two edges on one line
     sh = shared_edges(F)
-    assert is_face_neighbourly(F)
+    assert is_face_neighbourly(F) == (singles + doubles == 28)
     mult = sorted(len(es) for es in sh.values())
-    assert mult == [1] * 20 + [2] * 8, mult
+    assert mult == [1] * singles + [2] * doubles, mult
     for es in sh.values():
         if len(es) == 2:
             (a, b), (c, d) = es
             u = _sub(V[b], V[a])
             assert _cross(u, _sub(V[c], V[a])) == (0, 0, 0)
             assert _cross(u, _sub(V[d], V[a])) == (0, 0, 0)
-    assert len(doubled_edges(F)) == 16
+    assert len(doubled_edges(F)) == 2 * doubles
 
     # outward orientation, simple non-convex nonagons, embedded
     vol = _signed_volume(V, F)
@@ -492,6 +606,39 @@ def _selftest():
     print("Mizhaev M    V=24 E=36 F=8 genus 3; 20 pairs share one edge, 8 "
           "share two (one 8-cycle); volume 4455360; embedded; C4 "
           "rotoreflection; 4 map automorphisms, two orientation-reversing")
+
+    # --- Mizhaev's 2020 variant V1: the same counts, not face-neighbourly ---
+    V, F, planes, vol, reflex = _check("MIZHAEV_V1", singles=12, doubles=12)
+    # the cycles are the ones the printed vertex sets force
+    assert [sorted(v + 1 for v in c) for c in F] == \
+        [sorted(s) for s in _V1_FACE_SETS]
+    sh = shared_edges(F)
+    apart = [(f + 1, g + 1) for f, g in combinations(range(8), 2)
+             if (f, g) not in sh]
+    assert apart == [(1, 2), (3, 8), (4, 6), (5, 7)], apart
+    twice = {f: 0 for f in range(8)}
+    for (f, g), es in sh.items():
+        if len(es) == 2:
+            twice[f] += 1
+            twice[g] += 1
+    assert set(twice.values()) == {3}       # three doubled partners each
+    assert sorted(reflex) == [2, 2, 2, 2, 3, 3, 3, 3]
+    # the same rotoreflection T as M
+    index = {p: i for i, p in enumerate(V)}
+    perm = [index[(p[1], -p[0], -p[2])] for p in V]
+    cycles = {frozenset(_rotations(c)) for c in F}
+    for c in F:
+        assert frozenset(_rotations([perm[v] for v in c][::-1])) in cycles
+    assert (_automorphisms(F, False), _automorphisms(F, True)) == (4, 4)
+    # and a different map from both face-neighbourly solids
+    for other in ("MIZHAEV", "ROST_VIGH"):
+        Fo = exact(other)[1]
+        assert not _isomorphic(F, Fo, False) and \
+            not _isomorphic(F, Fo, True), other
+    assert _isomorphic(exact("MIZHAEV")[1], exact("MIZHAEV")[1], True)
+    print("Mizhaev V1   V=24 E=36 F=8 genus 3; 12 pairs share one edge, 12 "
+          "share two, 4 pairs never meet; embedded; C4 rotoreflection; "
+          "not isomorphic to M or P")
 
     # the float build matches the exact data
     for kind in NEIGHBOURLY:
