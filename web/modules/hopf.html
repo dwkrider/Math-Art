@@ -50,16 +50,19 @@
 <div class="module-intro belt-intro">
   <h1>The Hopf Fibration</h1>
   <p>
-    Pick a point on a sphere. The Hopf map turns it into a circle in
-    space. Pick another point and you get another circle — and the two
-    are linked, like two rings of a chain, no matter which points you
-    chose. Pick every point and the circles fill the whole of space,
-    one through each place, never crossing.
+    The Hopf map takes a point on an ordinary sphere and hands you back
+    a circle in space. Take a second point and you get a second circle,
+    and the two of them are always linked, the way two links of a chain
+    are, whichever points you happened to choose. If you could take
+    every point at once, the circles would fill the whole of space,
+    exactly one passing through each place, and none of them would ever
+    cross another.
   </p>
   <p>
-    Click the small sphere below to choose points; drag across it to
-    draw a curve of them. What appears beside it is what those choices
-    look like out in space.
+    The small sphere below is the one you pick points on. Click it to
+    add a point, or drag across it to lay down a whole curve of them,
+    and the larger view shows you what those choices turn into out in
+    space.
   </p>
 </div>
 
@@ -75,9 +78,9 @@
         <button type="button" id="paint" class="stage-action" aria-pressed="false">Paint</button>
         <button type="button" id="sphere-home" class="stage-action">Home</button>
       </span>
-      Click to add a fibre, drag to turn the sphere. North is the white
-      cone, the bright ring is the equator and the orange meridian is
-      where the colours start.
+      Click to add a fibre; drag to turn the sphere round. The white
+      cone marks north, the bright ring is the equator, and the orange
+      meridian is where the colouring begins.
     </figcaption>
   </figure>
 
@@ -158,10 +161,12 @@
 <section class="belt-notes" aria-labelledby="notes-bundle">
   <h2 id="notes-bundle">First, what a fibre bundle is</h2>
   <p>
-    A fibre bundle is a space built by hanging one small space — the
-    <em>fibre</em> — over every point of another — the <em>base</em>.
-    Two of them you already know, and one shows why they are worth a
-    name at all.
+    A fibre bundle is what you get when you hang a copy of one small
+    space, called the <em>fibre</em>, over every point of another one,
+    the <em>base</em>. The three below are about the simplest examples
+    there are. You have met the first two already, even if not under
+    that name, and the third is the one that explains why anybody
+    bothered to give the idea a name.
   </p>
 
   <figure class="stage-wrap bundle-stage">
@@ -175,79 +180,94 @@
   <p id="bundle-note" class="bundle-note"></p>
 
   <p>
-    The first two are <em>trivial</em>: the total space is nothing more
-    than the base and the fibre side by side, and you lose nothing by
-    forgetting the fibres. The Möbius strip is not. Its fibres are glued
-    with a half turn, and no relabelling makes that twist go away —
-    which is what makes a bundle worth studying rather than just a
-    product. The Hopf fibration is the famous one: circles over a
-    sphere, twisted so thoroughly that no two of them can be pulled
+    The cylinder and the torus are what mathematicians call
+    <em>trivial</em> bundles, which is a description rather than an
+    insult: the whole thing is nothing more than the base and the fibre
+    set side by side, and if you forgot about the fibres you would have
+    lost nothing. The Möbius strip is different. Its fibres have been
+    glued together with a half turn in them, and however you try to
+    relabel the pieces the twist refuses to go away. That stubbornness
+    is the interesting part, and it is the reason bundles get studied as
+    something other than products. The Hopf fibration is the celebrated
+    case. It hangs a circle over every point of a sphere, and the
+    twisting is so thorough that you cannot pull any two of the circles
     apart.
   </p>
 
   <h2>What you are looking at</h2>
   <p>
     The base is an ordinary sphere. Over each point of it sits a circle,
-    living not in our space but on the three-sphere — the set of points
-    at distance one from the origin in four dimensions. To draw that on
-    a screen it is projected down by stereographic projection: stand at
-    the north pole of the three-sphere and cast every point onto the
-    flat space below it. Circles stay circles, so each fibre arrives as
-    a perfect ring, and the whole picture is the shadow of something one
-    dimension up. If you have seen a rotating tesseract, it is the same
-    projection.
+    but the circle does not live in our space; it lives on the
+    three-sphere, which is the set of all points at distance one from
+    the origin in four dimensions. To get that onto a screen the page
+    uses stereographic projection, the old map-maker's trick: stand at
+    the north pole of the three-sphere and cast every point down onto
+    the flat space beneath. This particular projection happens to send
+    circles to circles, so each fibre arrives as a perfect ring, and the
+    whole picture is really the shadow of something one dimension up. If
+    you have ever watched a tesseract turning on a screen, it was the
+    same projection doing the work.
   </p>
   <p>
-    One fibre is special. The point at the very bottom of the base
-    sphere sends its circle through the projection pole, and a circle
-    through the pole opens out into a straight line: that is the axis
-    running through the middle of the picture. It is not a different
-    kind of fibre — it is a circle whose far side has been sent to
-    infinity. Turn <em>Axis fibre</em> off and it disappears with the
-    other fibres the projection throws too far out.
+    One fibre needs a word of explanation. The point at the very bottom
+    of the base sphere has a circle that passes through the pole we are
+    projecting from, and a circle through the pole comes out of the
+    projection as a straight line. That is the axis you can see running
+    up through the middle of the picture. It is not a special kind of
+    fibre, only a circle whose far side has been sent off to infinity.
+    If you untick <em>Axis fibre</em> it goes away, along with the other
+    fibres that the projection flings too far out to be worth drawing.
   </p>
   <p>
-    Every fibre is drawn in the colour of the point it comes from — hue
-    around the sphere, lightness from pole to pole — which is how the
-    two views stay tied together. Choose <em>Nested tori</em> and you
-    see the classic picture: each circle of latitude on the base lifts
-    to a torus, the tori nest inside one another without touching, and
-    together they fill space. The circles lying on each torus are its
-    Villarceau circles, and the <em>Ruling</em> control switches between
-    the two families they come in — the second being the mirror
-    fibration, which is a different map with the same picture.
+    Each fibre is drawn in the colour of the base point it belongs to,
+    with the hue going round the sphere and the lightness running from
+    one pole to the other, so that you can always match a ring in one
+    view with a point in the other. The <em>Nested tori</em> preset
+    gives you the classic picture. Each circle of latitude on the base
+    lifts to a torus; the tori sit one inside the next without touching,
+    and between them they account for all of space. The circles lying on
+    any one torus are its Villarceau circles, and these come in two
+    families, which is what the <em>Ruling</em> control switches
+    between. The second family belongs to the mirror-image fibration, a
+    genuinely different map that happens to produce the same picture.
   </p>
 
-  <h2>Things worth trying</h2>
+  <h2>Some things to try</h2>
   <p>
     <strong>Two points.</strong> Choose <em>Two fibres</em>. The page
-    computes the linking number of the two rings from the curves
-    themselves and reports it under the view. It is 1, for any two
-    points you pick — that number is the reason the family cannot be
-    combed flat, and it is what Hopf proved in 1931: a map from the
-    three-sphere to the two-sphere that cannot be deformed to a
-    constant.
+    works out the linking number of the two rings from the curves
+    themselves, actually computing it rather than looking it up, and
+    reports the answer under the view. It comes out as 1 whichever two
+    points you pick. That number is the reason the family can never be
+    combed flat, and it is essentially what Hopf proved in 1931: that
+    here is a map from the three-sphere to the two-sphere which cannot
+    be deformed down to a constant.
   </p>
   <p>
-    <strong>The latitude slider.</strong> Put one ring of points on the
-    base and slide it from pole to pole. The torus its fibres make
-    starts as a thin sleeve round the axis, swells until at the equator
-    it is perfectly balanced, then closes down onto the unit circle.
-    Every one of those tori is flat in the geometry of the three-sphere,
-    however bent it looks here.
+    <strong>The latitude slider.</strong> Put a single ring of points on
+    the base and slide it slowly from one pole to the other. The torus
+    its fibres make begins as a thin sleeve wrapped round the axis,
+    swells as the ring moves down, is perfectly balanced when the ring
+    reaches the equator, and then closes back down onto the unit circle.
+    It is worth knowing, while you watch this, that every one of those
+    tori is flat in the geometry of the three-sphere, however bent it
+    looks once it has been projected.
   </p>
   <p>
-    <strong>The flow.</strong> Press <em>Play flow</em>. This rotates
-    the three-sphere before projecting, which slides every fibre along
-    the family while keeping the whole picture identical to itself —
-    the fibres move through one another without ever colliding. It is
-    the clearest evidence that these circles genuinely fill space.
+    <strong>The flow.</strong> Press <em>Play flow</em>. What this does
+    is rotate the three-sphere before the projection happens, which
+    carries every fibre along onto the next one in the family while
+    leaving the picture as a whole unchanged. The rings slide through
+    one another and never collide. Of everything on the page this is the
+    thing that persuades me the circles really do fill space, rather
+    than merely looking as if they might.
   </p>
   <p>
-    <strong>Winding.</strong> Raise <em>p</em> or <em>q</em> and the
-    fibre stops being the Hopf circle and becomes a torus knot drawn on
-    the same surface. With p and q coprime you get a single knotted
-    loop; sharing a factor breaks it into a link of several.
+    <strong>Winding.</strong> Turn <em>p</em> or <em>q</em> up and the
+    fibre stops being a Hopf circle and becomes a torus knot drawn on
+    the same surface. When p and q have no common factor you get one
+    knotted loop; when they share a factor it comes apart into a link of
+    several.
   </p>
 
   <h2>Sources</h2>

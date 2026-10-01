@@ -50,20 +50,23 @@
 <div class="module-intro belt-intro">
   <h1>Dirac's Belt Trick</h1>
   <p>
-    A solid hangs at the centre of a cage, tied to it by a belt from every
-    face. Turn it once, a full 360°, and it is back exactly where it
-    started - but its belts are wound round it, and no amount of
-    sliding them about will straighten them unless you turn the solid
-    back, cut a belt, or pass one through another. Keep turning the same
-    way, though, and during the second turn the belts slip free: after
-    720° everything is as it began.
+    A solid sits in the middle of a cage, with a belt running from each
+    of its faces out to the bars. Turn it through one full revolution,
+    360°, and the solid is back exactly where it started, but the belts
+    are now wound round it, and you can slide them about as much as you
+    like without ever getting them straight. The only ways out are to
+    turn the solid back, cut a belt, or pass one belt through another.
+    If instead you keep turning in the same direction, something odd
+    happens during the second revolution: the belts work themselves
+    loose, and by 720° everything is exactly as it was.
   </p>
   <p>
-    One turn and no turn look the same; the belts can tell them apart.
-    That is a fact about the geometry of rotation itself, and it is the
-    same fact that lets an electron's quantum state change sign when the
-    electron is turned through 360° - something measured, in
-    neutrons, in 1975.
+    So one turn and no turn look the same to the solid, and the belts
+    can tell the difference. That is a fact about the geometry of
+    rotation itself, nothing to do with belts in particular, and it is
+    the same fact that allows the quantum state of an electron to come
+    back as its own negative after it has been turned once round. That
+    sign was picked up in neutron interference experiments in 1975.
   </p>
 </div>
 
@@ -119,9 +122,9 @@
       </span>
     </div>
     <p class="belt-hint">
-      Drag to turn the view. Space plays and pauses, the arrow keys step,
-      and <kbd>[</kbd> <kbd>]</kbd> change the speed. At 1× one full cycle
-      — two turns — takes twelve seconds.
+      Drag to turn the view round. Space plays and pauses, the arrow keys
+      step through, and <kbd>[</kbd> <kbd>]</kbd> change the speed. At
+      1× a full cycle of two turns takes twelve seconds.
     </p>
   </div>
 </main>
@@ -129,89 +132,102 @@
 <section class="belt-notes" aria-labelledby="notes-counting">
   <h2 id="notes-counting">What the belts are counting</h2>
   <p>
-    Looking at the solid alone a turn of 360° cannot be distinguished from no
-    turn at all: every face is back in its place. The belts remember how
-    it got there - not how many times it has turned, only whether
-    that number is <em>odd or even</em>. Roger Penrose describes this
-    very set-up, a book tied to a pile of books by a belt: the belt
-    &ldquo;keeps track of the parity of the number of 2&pi; rotations
-    &hellip; rather than totting up the entire number.&rdquo;
+    If you only look at the solid, a turn of 360° and no turn at all are
+    indistinguishable; every face is back where it was. The belts
+    remember how it got there, though not in full. They do not count the
+    turns, they only record whether the count is <em>odd or even</em>.
+    Roger Penrose describes exactly this arrangement, a book tied to a
+    pile of books by a belt, and says the belt &ldquo;keeps track of the
+    parity of the number of 2&pi; rotations &hellip; rather than totting
+    up the entire number.&rdquo;
   </p>
   <p>
-    A mathematical way to say it: follow the solid from its starting
-    position, through its turning, back to where it began, and you have
-    traced a <em>loop</em> of rotations. A loop that turns once cannot be
-    shrunk, by any gradual change, to the loop that does nothing. A loop
-    that turns twice can - and the belts are that shrinking, laid
-    out in space. Watch a single belt through the whole cycle: its end at
-    the solid makes the full double turn, its end at the cage does
-    nothing, and every point between makes a loop part-way from one to
-    the other. The mathematical way to write this is
-    &pi;<sub>1</sub>(SO(3)) = &#8484;/2: rotations carry a hidden
-    two-valued label, every orientation of the solid exists in two
-    versions, and the belts show which one you are in. A rotation matrix
-    forgets the label. The unit quaternions, which cover each rotation
-    twice, as <var>q</var> and &minus;<var>q</var>, keep it.
-  </p>
-
-  <h2>Why is this important?</h2>
-  <p>
-    In quantum mechanics an electron, proton, or neutron, any
-    particle of spin &frac12; is described by a wave that turns
-    into its own negative when the particle is rotated through 360°, and
-    comes back to itself only after 720°. Such an object is called a
-    <em>spinor</em>. It sounds impossible, because a full turn ought to
-    change nothing, and for anything you could draw with arrows it does
-    change nothing. The belt trick is the way out: the geometry of
-    rotation has room for exactly one bit of memory, even or odd, and a
-    spinor is something that carries it.
-  </p>
-  <p>
-    The sign of a single wave cannot be seen; the flip shows only when a
-    turned wave is compared with one that was not turned. In 1975 two
-    groups did exactly that. Samuel Werner's group in the United States and Helmut
-    Rauch's in Vienna split a beam of neutrons in a silicon-crystal
-    interferometer, passed one half through a magnetic field that made
-    the neutrons' spins precess, and let the halves meet again. As the
-    field was raised the interference swung back and forth, and it
-    repeated not when the spins had turned through 360° but through
-    720° - two full turns, just as the belts need.
-  </p>
-  <p>
-    The idea reaches further. Richard Feynman, in his 1986 lecture in
-    Dirac's memory and following David Finkelstein, pointed out that if
-    two particles are joined by a ribbon, swapping them puts a full turn
-    into the ribbon. So exchanging two spin-&frac12; particles should flip
-    the sign too - the root of Pauli's exclusion principle, that no
-    two electrons can share a state. Feynman offered it as an insight
-    rather than a proof, but the principle it points to is why atoms have
-    shells and solid matter does not collapse.
+    There is a tidy mathematical way to put this. Follow the solid from
+    its starting position, through its turning, and back to where it
+    began, and what you have traced out is a <em>loop</em> in the space
+    of rotations. A loop that turns once cannot be shrunk, by any
+    sequence of small changes, down to the loop that does nothing at
+    all. A loop that turns twice can be, and the belts are that
+    shrinking made visible. Watch any one belt through the whole cycle
+    and you will see its end at the solid make the full double turn, its
+    end at the cage stay put, and every point in between trace a loop
+    somewhere part-way between the two. Written out, the fact is
+    &pi;<sub>1</sub>(SO(3)) = &#8484;/2. Rotations carry a hidden
+    two-valued label, so every orientation of the solid exists in two
+    versions, and the belts tell you which one you are in. A rotation
+    matrix throws that label away. The unit quaternions keep it, because
+    they cover each rotation twice, once as <var>q</var> and once as
+    &minus;<var>q</var>.
   </p>
 
-  <h2>What the trick does not say</h2>
+  <h2>Why it matters</h2>
   <p>
-    The belts are not a picture of an electron. Nothing is tied to one,
-    and Penrose calls the belt an &ldquo;imaginary flexible
-    attachment.&rdquo; What the trick shows is that a spin-&frac12;
-    particle is <em>possible</em>: that 360° is not quite the same as
-    doing nothing, while 720° is. That electrons, protons and neutrons
-    really are such particles is a fact about nature, and it is the
-    neutron experiments, not the belts, that establish it.
+    In quantum mechanics every particle of spin &frac12;, which includes
+    the electron, the proton and the neutron, is described by a wave
+    that turns into its own negative when the particle is rotated
+    through 360° and only comes back to itself after 720°. An object
+    that behaves like this is called a <em>spinor</em>. On first hearing
+    it sounds absurd, since a full turn ought to change nothing, and for
+    anything you could draw as an arrow it does change nothing. The belt
+    trick is the loophole. The geometry of rotation has room for exactly
+    one bit of memory, even or odd, and a spinor is simply something
+    that carries that bit.
+  </p>
+  <p>
+    You cannot see the sign of a single wave. The flip only shows itself
+    when a wave that has been turned is compared with one that has not,
+    and in 1975 two groups managed exactly that comparison. Samuel
+    Werner's group in the United States and Helmut Rauch's in Vienna
+    each split a beam of neutrons in a silicon-crystal interferometer,
+    sent one half through a magnetic field so that the neutrons' spins
+    precessed, and brought the halves back together. As the field was
+    turned up the interference pattern swung back and forth, and it
+    repeated itself not when the spins had been turned through 360° but
+    when they had been turned through 720°. Two full turns, which is
+    just what the belts ask for.
+  </p>
+  <p>
+    The idea goes further than single particles. Richard Feynman, in his
+    1986 lecture in Dirac's memory, picked up an argument from David
+    Finkelstein: join two particles by a ribbon and swap them over, and
+    you will find a full turn has gone into the ribbon. So exchanging
+    two spin-&frac12; particles ought to flip the sign as well, and that
+    is the root of Pauli's exclusion principle, the rule that no two
+    electrons can occupy the same state. Feynman was careful to offer
+    this as a way of seeing it rather than as a proof, but the principle
+    it points at is why atoms have shells and why solid matter holds
+    itself up instead of collapsing.
+  </p>
+
+  <h2>What the trick does not show</h2>
+  <p>
+    The belts are not a picture of an electron. There is nothing tied to
+    an electron, and Penrose is careful to call the belt an
+    &ldquo;imaginary flexible attachment.&rdquo; What the trick does
+    show is that a spin-&frac12; particle is <em>possible</em>, because
+    turning through 360° is not quite the same as doing nothing while
+    turning through 720° is. Whether electrons, protons and neutrons
+    really are particles of that kind is a question about nature rather
+    than geometry, and it is the neutron experiments, not the belts,
+    that answer it.
   </p>
 
   <h2>Where it comes from</h2>
   <p>
-    Paul Dirac used the trick for years in his lectures, to make the
-    predicted behaviour of spin &frac12; seem less implausible. His own
-    model was not a belt but a pair of scissors, with strings threaded
-    through the handles and tied to a chair; Max Newman published the
-    proof in 1942 that an odd number of turns leaves a tangle and an even
-    number does not. The same trick turns up as a plate or a cup balanced
-    on the palm - turn it once and your arm is twisted, twice and it
-    is straight again - which Feynman performed in that 1986
-    lecture, and in Indonesian and Filipino candle and plate dances.
-    Engineers use it too: a cable can feed a platform that spins for ever
-    without ever winding up.
+    Paul Dirac used the trick in his lectures for years, to make the
+    predicted behaviour of spin &frac12; feel a little less outrageous.
+    His own version had no belt in it at all. He used a pair of scissors
+    with string threaded through the handles and tied off to a chair,
+    and it was Max Newman who published the proof, in 1942, that an odd
+    number of turns leaves a tangle and an even number does not. The
+    same thing turns up as the plate trick, or the cup trick: balance a
+    cup on your palm, turn it once and your arm is twisted up, turn it
+    once more the same way and your arm is straight again. Feynman did
+    it with a cup in that 1986 lecture, and dancers in Indonesia and the
+    Philippines have been doing it with candles and plates for a great
+    deal longer. Engineers make use of it too. It is how a cable can be
+    run to a platform that spins for ever without the cable ever winding
+    itself up.
   </p>
 
   <h2>Sources</h2>
