@@ -333,6 +333,41 @@ export function basePoints(preset, nLat, nFiber, latMin, latMax, extra = {}) {
   }
 }
 
+/** A ring of `n` base points at angular radius `radius` (radians)
+ *  around `p`, which is the page's own way of choosing base points
+ *  rather than anything the generator has.
+ *
+ *  A point on the base sphere gives one circle in space. A small ring
+ *  of points around it gives a sheaf of circles that stay close to
+ *  that one all the way round, which is what makes the braiding
+ *  visible: a single fibre has nothing to be linked with. At radius 0
+ *  the ring collapses back to the point it came from.
+ */
+export function haloAround(p, radius, n) {
+  if (!(radius > 0) || n < 1) return [p];
+  // any unit vector perpendicular to p, chosen the same way every
+  // time so the ring does not spin as p moves
+  const away = Math.abs(p[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+  const u = normalize3(cross3(p, away));
+  const v = cross3(p, u);                 // already unit: p and u are
+  const c = Math.cos(radius), sr = Math.sin(radius);
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    const a = TAU * k / n;
+    const ca = Math.cos(a) * sr, sa = Math.sin(a) * sr;
+    out.push(normalize3([c * p[0] + ca * u[0] + sa * v[0],
+                         c * p[1] + ca * u[1] + sa * v[1],
+                         c * p[2] + ca * u[2] + sa * v[2]]));
+  }
+  return out;
+}
+
+function cross3(a, b) {
+  return [a[1] * b[2] - a[2] * b[1],
+          a[2] * b[0] - a[0] * b[2],
+          a[0] * b[1] - a[1] * b[0]];
+}
+
 // ------------------------------------------------------------ assembly
 
 /** Indices of the longest contiguous true run in a cyclic mask. */

@@ -123,6 +123,11 @@
         <input type="range" id="rings" min="1" max="16" step="1" value="5"
                aria-label="How many circles of latitude">
       </label>
+      <label class="belt-field belt-slider" id="spread-field">
+        <span>Spread <output id="spread-out" for="spread"></output></span>
+        <input type="range" id="spread" min="10" max="85" step="1" value="50"
+               aria-label="How far the rings of latitude reach from the equator">
+      </label>
       <label class="belt-field belt-slider" id="ring-field">
         <span>Latitude <output id="ring-out" for="ring"></output></span>
         <input type="range" id="ring" min="6" max="174" step="1" value="60"
@@ -131,6 +136,16 @@
     </div>
 
     <div class="belt-row">
+      <label class="belt-field belt-slider">
+        <span>Halo <output id="halo-out" for="halo"></output></span>
+        <input type="range" id="halo" min="0" max="60" step="1" value="0"
+               aria-label="Angular radius of a ring of points around each base point">
+      </label>
+      <label class="belt-field belt-slider">
+        <span>Halo points <output id="halo-n-out" for="halo-n"></output></span>
+        <input type="range" id="halo-n" min="2" max="24" step="1" value="8"
+               aria-label="How many points in each halo ring">
+      </label>
       <label class="belt-field belt-slider">
         <span>Flow <output id="flow-out" for="flow"></output></span>
         <input type="range" id="flow" min="0" max="359" step="1" value="0"
@@ -146,8 +161,27 @@
         <input type="range" id="wind-q" min="1" max="5" step="1" value="1"
                aria-label="Second winding number">
       </label>
+      <label class="belt-field">
+        <span>Animate</span>
+        <select id="anim" class="sort" aria-label="What to animate">
+          <option value="LATITUDE">Latitude, pole to pole</option>
+          <option value="SPIN">Tumble the base points</option>
+          <option value="FLOW">Flow of the 3-sphere</option>
+          <option value="LATFLOW">Latitude and flow together</option>
+        </select>
+      </label>
+      <label class="belt-field">
+        <span>Speed</span>
+        <select id="speed" class="sort" aria-label="Animation speed">
+          <option value="0.25">¼×</option>
+          <option value="0.5">½×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+      </label>
       <span class="belt-snaps">
-        <button type="button" id="play" class="stage-action">Play flow</button>
+        <button type="button" id="play" class="stage-action">Play</button>
         <button type="button" id="reset-view" class="stage-action">Reset view</button>
         <label class="belt-check"><input type="checkbox" id="axis" checked> Axis fibre</label>
       </span>
@@ -274,7 +308,36 @@
     anything living on it.
   </p>
   <p>
-    <strong>The flow.</strong> Press <em>Play flow</em>. This turns the
+    <strong>Spread.</strong> With <em>Nested tori</em> chosen, this sets
+    how far the rings of latitude reach from the equator, and it
+    matters more than it sounds. A ring at colatitude <var>b</var>
+    projects to a torus whose outer size is
+    1/cos(<var>b</var>/2) + tan(<var>b</var>/2), and that runs away as
+    the ring nears a pole: spread all the way out, the largest torus is
+    ten times the smallest, the inner ones shrink to a knot in the
+    middle and the nest stops looking like a nest. Wind it back and
+    they come into proportion.
+  </p>
+  <p>
+    <strong>Halo.</strong> One point gives one circle, and a single
+    circle has nothing to be linked with. Turn the halo up and every
+    chosen point is replaced by a small ring of points around it, so
+    each fibre becomes a sheaf of fibres that stay alongside each other
+    all the way round. Choose <em>Two fibres</em>, set a halo of twenty
+    degrees, and the Hopf link becomes two ropes instead of two
+    threads. At zero the ring collapses back to the point it came from.
+  </p>
+  <p>
+    <strong>Animate.</strong> Pick something for <em>Play</em> to move.
+    <em>Latitude</em> walks a single ring from one pole to the other
+    and back, so you watch the torus swell out of the axis, balance at
+    the equator and close down again. <em>Tumble</em> turns the base
+    points themselves, which is the motion the films show on their
+    small grey sphere: the dots travel and the fibres follow.
+    <em>Flow</em> is below, and the last choice runs both at once.
+  </p>
+  <p>
+    <strong>The flow.</strong> Choose it under <em>Animate</em>. This turns the
     three-sphere before the projection happens, and the turn is chosen
     to commute with the circles themselves, so it carries each fibre
     bodily onto another fibre rather than stirring the points around

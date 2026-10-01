@@ -123,16 +123,21 @@ class Stage {
     this.camera.lookAt(0, 0, 0);
     this.camera.updateMatrixWorld(true);
     this.controls.update();
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const key = new THREE.DirectionalLight(0xffffff, 2.0);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 1.15));
+    const key = new THREE.DirectionalLight(0xffffff, 1.5);
     key.position.set(1.8, -1.9, 1.6);
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(0xffffff, 0.5);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.9);
     fill.position.set(-2.4, -0.8, 0.5);
     this.scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.8);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.9);
     rim.position.set(-1.2, 1.9, 1.1);
     this.scene.add(rim);
+    // a weave of tubes hides most of itself from any one direction,
+    // so light it from underneath as well
+    const under = new THREE.DirectionalLight(0xffffff, 0.7);
+    under.position.set(0.3, 0.6, -1.8);
+    this.scene.add(under);
     this.root = new THREE.Group();
     this.scene.add(this.root);
     this.onFrame = null;
@@ -175,9 +180,20 @@ export class HopfView extends Stage {
     const t0 = performance.now();
     const { palette = 'RAINBOW', radius = 0.02, sides = 8, ...rest } = opts;
     const built = buildFibers(rest);
-    this.canvas.dataset.dbg = `s3Rot=${rest.s3Rot} keys=${Object.keys(rest).join(',')}`
-      + ` p0=${built.fibers[0] ? built.fibers[0][0].toFixed(4) : 'none'}`;
-
+    // The generator's fit normalises the 95th-percentile radius to 1,
+    // which is right for Blender, where the object is framed by hand
+    // afterwards. The last 5% can reach twice as far, so the page
+    // measures the real extent and uses it twice: to pull the camera
+    // back far enough, and to thicken the tubes in proportion. Without
+    // the second part a wide preset is drawn in threads.
+    let extent = 0;
+    for (const f of built.fibers) {
+      for (let i = 0; i < f.length; i += 3) {
+        const r = Math.hypot(f[i], f[i + 1], f[i + 2]);
+        if (r > extent) extent = r;
+      }
+    }
+    const tube = radius * Math.max(1, extent);
     // size everything first, then fill: see writeTube
     let verts = 0, tris = 0;
     built.fibers.forEach((f, i) => {
@@ -205,7 +221,7 @@ export class HopfView extends Stage {
     }
     const cur = { v: 0, i: 0, cos, sin, tangents: new Float64Array(0) };
     built.fibers.forEach((f, i) => {
-      writeTube(f, built.closed[i], radius, sides,
+      writeTube(f, built.closed[i], tube, sides,
                 toLinear(paletteRgb(built.bases[i], palette)), buf, cur);
     });
 
@@ -226,6 +242,7 @@ export class HopfView extends Stage {
       fibers: built.fibers.length,
       dropped: built.dropped,
       vertices: verts,
+      extent,
       buildMs: performance.now() - t0,
     };
   }
@@ -236,6 +253,18 @@ export class HopfView extends Stage {
     this.mesh.geometry.dispose();
     this.mesh.material.dispose();
     this.mesh = null;
+  }
+
+  /** Stand far enough back to see all of it. This moves the camera
+   *  rather than scaling the scene: scaling would thin the tubes by
+   *  the same factor, and a wide preset would be drawn in threads. */
+  frame(extent, margin = 1.35) {
+    const half = Math.tan(this.camera.fov * Math.PI / 360);
+    const d = Math.max(1.4, Math.min(20, extent * margin / half));
+    this.camera.position.normalize().multiplyScalar(d);
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
+    this.framedAt = extent;
   }
 
   resetView() {
