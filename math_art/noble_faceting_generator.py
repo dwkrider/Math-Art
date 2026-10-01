@@ -539,8 +539,8 @@ if _IN_BLENDER:
         index: IntProperty(
             name="Faceting", default=0, min=0, max=63,
             description="Which of the noble facetings of that vertex "
-                        "set to build; they are found in plane order and "
-                        "the count differs per seed, so this wraps")
+                        "set to build, in plane order; the count differs "
+                        "per seed, and this stops at the last one")
         orbits: IntProperty(
             name="Face Orbits", default=1, min=1, max=2,
             description="How many orbits of faces a faceting may use. "
@@ -557,7 +557,14 @@ if _IN_BLENDER:
             __annotations__.update(_shell.style_properties())
 
         def execute(self, context):
+            # Bounded, not wrapped: an IntProperty cannot take a maximum
+            # that depends on the seed, so a value past the end is pulled
+            # back to the last faceting (the redo panel then shows it).
+            # Wrapping made the slider repeat the same few solids.
             try:
+                _v, found = facetings_of(self.seed, self.orbits)
+                if found and self.index >= len(found):
+                    self.index = len(found) - 1
                 V, F = build(self.seed, self.index, self.orbits)
                 nfaces, nsides = len(F), len(F[0])
             except Exception as e:          # noqa: BLE001
@@ -572,7 +579,7 @@ if _IN_BLENDER:
             _v, found = facetings_of(self.seed, self.orbits)
             name = "%s %d/%d" % (
                 "Noble Faceting" if self.orbits <= 1 else "Faceting",
-                self.index % len(found) + 1, len(found))
+                self.index + 1, len(found))
             if _shell is not None:
                 obj = _shell.apply(self, context, V, F, name)
             else:
