@@ -39,6 +39,7 @@ const RING_LIKE = new Set(['FLOWER', 'LATITUDES', 'CAP', 'LOXODROME', 'CURL']);
 
 function main() {
   const view = new HopfView($('#stage'));
+  let picks = 0;
   const state = {
     preset: 'FLOWER',
     nFiber: 24,
@@ -59,6 +60,10 @@ function main() {
 
   const sphere = new BaseSphere($('#base-sphere'), {
     onPick: (b, how) => {
+      // counted for the tests: picking is the page's whole point, and
+      // a silent regression in it would not show up in any screenshot
+      picks++;
+      document.body.dataset.picks = String(picks);
       if (state.preset !== 'CUSTOM') {
         state.preset = 'CUSTOM';
         state.custom = [];
@@ -216,6 +221,18 @@ function main() {
     rebuild();
   });
   $('#reset-view').addEventListener('click', () => view.resetView());
+
+  // The base sphere turns on a drag and drops a fibre on a click;
+  // Paint makes a drag a stroke of fibres instead, and Home puts the
+  // sphere back where it started.
+  const paintBtn = $('#paint');
+  paintBtn.addEventListener('click', () => {
+    sphere.paintMode = !sphere.paintMode;
+    paintBtn.classList.toggle('on', sphere.paintMode);
+    paintBtn.setAttribute('aria-pressed', sphere.paintMode ? 'true' : 'false');
+    $('#base-sphere').style.cursor = sphere.paintMode ? 'crosshair' : 'grab';
+  });
+  $('#sphere-home').addEventListener('click', () => sphere.home());
 
   const playBtn = $('#play');
   playBtn.addEventListener('click', () => {

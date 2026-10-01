@@ -69,8 +69,16 @@
   </figure>
 
   <figure class="stage-wrap hopf-base">
-    <canvas id="base-sphere" aria-label="The base sphere: click to add a fibre"></canvas>
-    <figcaption>The base sphere — click or drag to add fibres.</figcaption>
+    <canvas id="base-sphere" aria-label="The base sphere: click to add a fibre, drag to turn"></canvas>
+    <figcaption>
+      <span class="sphere-tools">
+        <button type="button" id="paint" class="stage-action" aria-pressed="false">Paint</button>
+        <button type="button" id="sphere-home" class="stage-action">Home</button>
+      </span>
+      Click to add a fibre, drag to turn the sphere. North is the white
+      cone, the bright ring is the equator and the orange meridian is
+      where the colours start.
+    </figcaption>
   </figure>
 
   <div class="belt-controls hopf-controls">
