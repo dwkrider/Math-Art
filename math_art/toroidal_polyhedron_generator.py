@@ -25,6 +25,12 @@
 # wrapped seamlessly onto a torus: the tiling's two lattice vectors map to
 # the major and minor circles, giving a genus-1 polyhedron (V-E+F=0).
 #
+# Painted as a map -- faces that share an edge get different colours -- the
+# Szilassi polyhedron needs seven colours, one per face, which is Heawood's
+# bound for the torus attained; its dual needs only two.  Their higher-genus
+# successors (every two faces sharing an edge, or the fewest vertices a
+# genus allows) are in neighbourly_polyhedron_generator.py.
+#
 # References:
 # - Akos Csaszar, "A polyhedron without diagonals", Acta Sci. Math.
 #   Szeged 13 (1949-50), 140-142.
@@ -32,6 +38,8 @@
 #   69-80; and "On three classes of regular toroids".
 # - B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the
 #   toroidal-polyhedron tradition.
+# - Percy J. Heawood, "Map-colour theorem", Quarterly Journal of Pure and
+#   Applied Mathematics 24 (1890), 332-338 -- seven colours on the torus.
 # - Ulrich Brehm (1978), the flat polyhedral torus / diplotorus; the model
 #   was transmitted by Guy Valette.  No paper is named by the source, so the
 #   attribution is reproduced as given rather than assigned a citation.
@@ -56,6 +64,11 @@ bl_info = {
 }
 
 import math
+
+try:
+    from .polyhedra import neighbourly as _nb
+except ImportError:
+    from polyhedra import neighbourly as _nb
 
 # Original published coordinates (Szilassi's tables); not unit-scaled.
 TOROIDS = {
@@ -214,6 +227,25 @@ def build_toroid(kind):
     mx = max(abs(x) for v in V for x in v) or 1.0
     V = [tuple(x / mx for x in v) for v in V]
     return V, [list(f) for f in S["F"]]
+
+
+def toroid_summary(kind):
+    """One line for the operator's report: counts, genus, and whether every
+    two faces share an edge / every two vertices are joined."""
+    S = TOROIDS[kind]
+    return _nb.summary_text(S["name"], S["V"], S["F"])
+
+
+def map_colouring(F):
+    """(colour per face, colours used): faces that share an edge get
+    different colours, with as few colours as the search finds."""
+    try:
+        from .styles import face_colors
+    except ImportError:
+        from styles import face_colors
+    col, k = face_colors.proper_coloring(len(F), _nb.face_adjacency(F),
+                                         kmin=1)
+    return [col[f] for f in range(len(F))], k
 
 
 def build_polyhedral_torus(m, k, R, r, twist):
@@ -578,6 +610,18 @@ def _self_test():
                                           for i in range(3))))
         print(f"{kind:9s} V={len(V):2d} E={len(E):2d} F={len(F):2d} "
               f"chi={chi} edge-in-2={e2} planar={maxpl:.1e}")
+        comps = 3 if kind == "BORROMEAN" else 1
+        assert _nb.surface_topology(F)[1:] == (comps, comps), kind
+    # read as maps: Szilassi one colour per face, its dual two
+    col, k = map_colouring(TOROIDS["SZILASSI"]["F"])
+    assert k == 7 == len(set(col)), k
+    col, k = map_colouring(TOROIDS["CSASZAR"]["F"])
+    assert k == 2, k
+    assert "every two faces share an edge" in toroid_summary("SZILASSI")
+    assert "every two vertices are joined" in toroid_summary("CSASZAR")
+    assert "(genus 1)" in toroid_summary("KNOTTED")
+    assert "3 separate surfaces of genus 1" in toroid_summary("BORROMEAN")
+    print("map colouring: Szilassi 7 colours (one per face), Csaszar 2")
     for name in ('TRI', 'HEX', 'TRIHEX', 'CAIRO'):
         V, F = build_tiled_torus(name, 12, 6, 1.0, 0.4)
         E = {}
@@ -594,7 +638,7 @@ def _self_test():
 
 try:
     import bpy
-    from bpy.props import EnumProperty, FloatProperty
+    from bpy.props import BoolProperty, EnumProperty, FloatProperty
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -628,6 +672,11 @@ if _IN_BLENDER:
                    _plate_style.plate_enum_item()],
             default='SOLID',
             description="How the polyhedron is rendered as geometry")
+        map_colours: BoolProperty(
+            name="Map Colours", default=False,
+            description="Colour the faces as a map, so that faces sharing "
+                        "an edge differ: seven on the Szilassi polyhedron, "
+                        "where every two faces share an edge")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
                              description="Overall size (1.0 fits a 2 m "
                                          "cube)")
@@ -641,6 +690,8 @@ if _IN_BLENDER:
                 _net_style.draw_net_props(lay, self)
             if self.style == 'PLATES':
                 _plate_style.draw_plate_props(lay, self)
+            if self.style == 'SOLID':
+                lay.prop(self, 'map_colours')
             lay.prop(self, 'scale')
 
         def execute(self, context):
@@ -667,6 +718,18 @@ if _IN_BLENDER:
             me.from_pydata([tuple(c * self.scale for c in v) for v in V],
                            [], [tuple(f) for f in F])
             me.validate(clean_customdata=True)
+            summary = toroid_summary(self.solid)
+            if self.map_colours and len(me.polygons) == len(F):
+                try:
+                    from .styles import face_colors
+                except ImportError:
+                    from styles import face_colors
+                col, k = map_colouring(F)
+                mats, idx = face_colors.materials_for(col, "Map Colour")
+                for m in mats:
+                    me.materials.append(m)
+                me.polygons.foreach_set('material_index', idx)
+                summary += "; map coloured with %d colours" % k
             me.update()
             obj = bpy.data.objects.new(TOROIDS[self.solid]["name"], me)
             context.collection.objects.link(obj)
@@ -675,9 +738,7 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            self.report({'INFO'},
-                        f"{TOROIDS[self.solid]['name']}: "
-                        f"V={len(V)} F={len(F)} (genus 1)")
+            self.report({'INFO'}, summary)
             return {'FINISHED'}
 
     from bpy.props import IntProperty, BoolProperty

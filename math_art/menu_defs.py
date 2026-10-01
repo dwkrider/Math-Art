@@ -126,6 +126,9 @@ POLYHEDRA = Menu(
         _e("mesh.biscribed_solid_add", 'MESH_ICOSPHERE'),
         _e("mesh.polyhedron_compound_add", 'MESH_ICOSPHERE'),
         _e("mesh.toroidal_polyhedron_add", 'MESH_TORUS'),
+        # The higher-genus successors of Szilassi and Csaszar: genus-3
+        # solids whose faces all meet, and genus 2/3 on ten vertices.
+        _e("mesh.neighbourly_polyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.polyhedral_torus_add", 'MESH_TORUS'),
         _e("mesh.notable_polyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.canonical_polyhedron_add", 'MESH_ICOSPHERE'),
