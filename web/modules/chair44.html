@@ -62,10 +62,13 @@
   <p>
     The claim made for it is a big one. Copies of this single solid
     still fill space, but the bumps and dents are supposed to rule out
-    every arrangement that repeats. A single tile that can only tile
-    without repeating is called an aperiodic monotile; the first one in
-    the plane was found in 2023, and Chair44 is put forward as an answer
-    to the same question in three dimensions.
+    every arrangement that repeats. Squares cover a kitchen floor, and
+    so do hexagons, and both will do it in a pattern that repeats; a
+    tile whose copies can cover everything but can never be made to
+    repeat, however you arrange them, is called <em>aperiodic</em>, and
+    a single such tile is an aperiodic monotile. The first one in the
+    plane was found in 2023. Chair44 is put forward as an answer to the
+    same question in three dimensions.
   </p>
 </div>
 
@@ -152,62 +155,66 @@
     built from rotations alone. Colour by <em>Rotation</em> to see which
     pose each chair is in, or by <em>Supertile</em> to see the eight
     groups the patch was grown in. The chairs are drawn a little shrunk
-    so that you can tell them apart; push the gap up to 1 and they close
+    so that you can tell them apart. Push the gap up to 1 and they close
     up into a solid block with no space left between them.
   </p>
   <p>
     There are three ways of drawing the matching rule. <em>True
     size</em> is the honest one, and it looks like nothing at all,
-    because the pyramids are a ten-thousandth of a cell tall and far too
+    because the pyramids are a ten-thousandth of a cell tall, far too
     small to see. <em>Enlarged pyramids</em> follows the convention of
     the paper's own figures, with the bases five times over and the
     heights exaggerated, so that the bumps and dents actually show.
     <em>Arrows</em> is Chaim Goodman-Strauss's redrawing of the same
     rule as a single flat arrow on each face, in three colours: blue
-    meets blue, and green meets red. The colours deserve a sentence. A
-    whole arrow has a mirror symmetry, so it looks the same from either
-    side of its face and can match a copy of itself. A half arrow does
-    not, so green and red are really one marking seen from its two
-    sides, which is why each may only ever meet the other.
+    meets blue, and green meets red. The colours deserve a sentence.
+    Draw an arrow on a sheet of paper and hold it up to the light from
+    behind: it looks exactly the same, because an arrow has a mirror
+    line down its middle. A whole arrow therefore looks the same from
+    either side of its face and can match a copy of itself. A half
+    arrow, one side of that line, is reversed when seen from behind, so
+    green and red are really one marking seen from its two sides, which
+    is why each may only ever meet the other.
   </p>
 
   <h2>How the patches are grown</h2>
   <p>
     The patches are not built by stacking chairs on a lattice. The chair
-    is a rep-tile, meaning that eight of them, each turned the right
-    way, fit together into a chair twice the size, so a patch can be
-    grown by <em>substitution</em>: start with one chair, replace it
-    with its eight children, replace each of those with eight more, and
-    carry on. The buttons give you 1, 8, 64, 512, 4,096, 32,768 and
-    262,144 chairs, which fill a chair 1, 2, 4, 8, 16, 32 and 64 cells
-    across. Because every chair is the same solid, even the deep patches
-    cost almost nothing to hold in memory, one matrix and a colour
-    apiece. What gives out first is the number of triangles your
-    graphics card can redraw while you turn the thing round. Past that
-    point the page keeps the depth you asked for but draws the rule more
-    simply, dropping from pyramids to arrows to the bare chair, and
-    tells you so underneath.
+    is a <em>rep-tile</em>, a shape that can be assembled from smaller
+    copies of itself: eight chairs, each turned the right way, fit
+    together into a chair twice the size. So a patch can be grown by
+    <em>substitution</em>. Start with one chair. Replace it with its
+    eight children, replace each of those with eight more, and carry on.
+    The buttons give you 1, 8, 64, 512, 4,096, 32,768 and 262,144
+    chairs, which fill a chair 1, 2, 4, 8, 16, 32 and 64 cells across.
+    Because every chair is the same solid, even the deep patches cost
+    almost nothing to hold in memory, one matrix and a colour apiece.
+    What gives out first is the number of triangles your graphics card
+    can redraw while you turn the thing round. Past that point the page
+    keeps the depth you asked for but draws the rule more simply,
+    dropping from pyramids to arrows to the bare chair, and tells you so
+    underneath.
   </p>
   <p>
-    The <em>Built</em> slider takes the patch apart and reassembles it
-    one chair at a time, in the order the substitution produced them,
-    and it rewards being wound slowly. What you see is not a wall going
-    up sideways. It is a chair filling in, then a bigger chair
-    assembling itself out of chairs like it, then a bigger one again.
-    Colour by supertile and you can watch each block of eight arrive as
-    a chair of the same shape as the one it is sitting inside. That
-    nesting is the whole of the argument for aperiodicity, and it is a
-    good deal easier to watch than to read about.
+    Now wind the <em>Built</em> slider, slowly. It takes the patch apart
+    and reassembles it one chair at a time, in the order the
+    substitution produced them, and what you see is not a wall going up
+    sideways. It is a chair filling in, then a bigger chair assembling
+    itself out of chairs like it, then a bigger one again. Colour by
+    supertile and you can watch each block of eight arrive as a chair of
+    the same shape as the one it is sitting inside. That nesting is the
+    heart of the argument for aperiodicity, and it is a good deal easier
+    to watch than to read about.
   </p>
   <p>
     It is also where the aperiodicity is supposed to come from, by the
-    same argument that works for the hat in the plane. If every tiling
-    has to be built this way, then any patch you care to point at sits
-    inside a larger chair, which sits inside a larger one still, and so
-    on without end. A repeating pattern is one with a shift that carries
-    it exactly onto itself, and a hierarchy like this leaves no room for
-    such a shift: it would have to respect every level of the nesting at
-    once, and no shift other than zero can manage that.
+    same argument that works for the hat in the plane. Suppose every
+    tiling has to be built this way. Then any patch you care to point at
+    sits inside a larger chair, which sits inside a larger one still,
+    and so on without end. A repeating pattern is one with a shift that
+    carries it exactly onto itself, and a hierarchy like this leaves no
+    room for such a shift: it would have to respect every level of the
+    nesting at once, and no shift other than zero can manage that.
   </p>
   <p>
     The page also checks the patch against the paper's atlas of
@@ -230,8 +237,9 @@
     dent has to be. That gives 372 equations, and they split the 192
     marks into exactly twelve balanced groups; numbering the groups 1 to
     12 gives you the table. Each depth is carried by eight bumps and
-    eight dents, so the two cancel and the solid still has volume
-    exactly 7, which this page checks on the tile it draws.
+    eight dents, so what one adds the other takes away, and the solid
+    still has volume exactly 7, which this page checks on the tile it
+    draws.
   </p>
 
   <h2>How settled is this?</h2>
@@ -241,9 +249,10 @@
     Craig Kaplan and Chaim Goodman-Strauss found the &ldquo;hat&rdquo;
     in 2023. In three dimensions the Schmitt–Conway–Danzer biprism has
     been known for a long time to tile space only non-periodically, but
-    some of its tilings have a screw symmetry of infinite order, which
-    stops it being aperiodic in the strong sense. Chair44 is presented
-    as a solid that closes that gap.
+    some of its tilings have a screw symmetry of infinite order, a twist
+    combined with a push along the axis that carries the tiling onto
+    itself, which stops it being aperiodic in the strong sense. Chair44
+    is presented as a solid that closes that gap.
   </p>
   <p>
     The claim itself is <strong>a preprint, not a refereed result</strong>.
