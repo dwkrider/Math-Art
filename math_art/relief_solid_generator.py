@@ -691,6 +691,7 @@ if _IN_BLENDER:
 
         def draw(self, context):
             lay = self.layout
+            lay.use_property_split = True
             lay.prop(self, 'preset')
 
             box = lay.box()

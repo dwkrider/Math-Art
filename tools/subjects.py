@@ -37,6 +37,14 @@ PARAMS = {
     # 1 of the icosahedral vertex set -- has big obvious pentagons and
     # says "this is a polyhedron through someone else's vertices".
     "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
+    # The bare default of the noble catalogue is Hill's first entry, the
+    # tetrahedron -- true, but it says nothing.  tO-1.1 is the lone
+    # noble polyhedron on a truncated-octahedron-type orbit, sits at a
+    # root of a^3 - a^2 - 2a - 1, and reads clearly at icon size.
+    "mesh.noble_polyhedron_add": dict(orbit_filter='tO', polyhedron='tO-1.1'),
+    # The explorer snapped to a snub-dodecahedral critical orbit: the
+    # chiral sD type is where most of the new nobles live.
+    "mesh.noble_orbit_add": dict(orbit_type='sD', critical=5),
     # The two-belt cube, three hundred degrees in: one belt has swung
     # into its loop and the other is twisted, which is the moment the
     # trick is recognisable, and two belts read at icon size where six
@@ -596,6 +604,12 @@ VARIANT_SELECTOR = {
     # when that operator was merged into this one.)
     "mesh.icosahedron_stellation_add": "solid",
     "mesh.noble_faceting_add": "seed",
+    # One figure per vertex-orbit type (its first entry), and for the
+    # explorer every one of Hill's 23 types -- the seven that carry no
+    # noble polyhedron show their convex hull, which is the point.
+    "mesh.noble_polyhedron_add": "orbit_filter",
+    "mesh.noble_orbit_add": "orbit_type",
+    "mesh.noble_prismatic_add": "family",
     "mesh.star_prism_add": "form",
     "mesh.polyhedral_torus_add": "tiling",
     "mesh.interlocking_add": "family",
@@ -763,6 +777,9 @@ VARIANT_SKIP = {
     # default generation count cannot build it (see VARIANT_EXTRA,
     # which renders it at two generations instead).
     "mesh.fractal_polyhedron_add": {"DODECA"},
+    # "All" with the default index is T-1, the tetrahedron -- the same
+    # figure the T entry beside it already shows.
+    "mesh.noble_polyhedron_add": {"ALL"},
     # UVMESH reads its lattice off the selected mesh, which in a
     # headless render is nothing -- same class as ACTIVE below.
     "mesh.knot_carpet_add": {"UVMESH"},

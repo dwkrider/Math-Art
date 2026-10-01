@@ -90,6 +90,7 @@ _MODULE_NAMES = [
     'general_stellation',
     'other_polyhedra_generator',
     'noble_faceting_generator',
+    'noble_polyhedra_generator',
     'canonical_polyhedra_generator',
     'attractor_generator',
     'dual_helix_generator',

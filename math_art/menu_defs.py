@@ -121,25 +121,33 @@ SURFACES = Menu(
 
 POLYHEDRA = Menu(
     "VIEW3D_MT_math_art_polyhedra", "Polyhedra", 'MESH_ICOSPHERE', [
+        # Grouped by kind, groups and their entries ordered from the
+        # familiar to the specialised.
+        # -- the core solids --
         _e("mesh.regular_solid_add", 'MESH_ICOSPHERE'),
         _e("mesh.uniform_polyhedron_add", 'MESH_ICOSPHERE'),
-        _e("mesh.biscribed_solid_add", 'MESH_ICOSPHERE'),
+        _e("mesh.geodesic_add", 'MESH_UVSPHERE'),
+        _e("mesh.conway_add", 'MESH_ICOSPHERE'),
+        _e("mesh.star_prism_add", 'MESH_CYLINDER'),
         _e("mesh.polyhedron_compound_add", 'MESH_ICOSPHERE'),
-        _e("mesh.toroidal_polyhedron_add", 'MESH_TORUS'),
-        # The higher-genus successors of Szilassi and Csaszar: genus-3
-        # solids whose faces all meet, and genus 2/3 on ten vertices.
-        _e("mesh.neighbourly_polyhedron_add", 'MESH_ICOSPHERE'),
-        _e("mesh.polyhedral_torus_add", 'MESH_TORUS'),
         _e("mesh.notable_polyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.canonical_polyhedron_add", 'MESH_ICOSPHERE'),
+        SEP,
+        # -- stars: stellation, faceting and the noble polyhedra --
         # One entry: the icosahedron's fifty-nine and the other seeds'
         # stellations are one construction with a seed selector, so they
         # are one operator.  (mesh.general_stellation_add still exists as
         # a deprecated shim, deliberately absent from the menu.)
         _e("mesh.icosahedron_stellation_add", 'MESH_ICOSPHERE'),
         _e("mesh.noble_faceting_add", 'MESH_ICOSPHERE'),
-        _e("mesh.star_prism_add", 'MESH_CYLINDER'),
-        _e("mesh.conway_add", 'MESH_ICOSPHERE'),
+        # Hill's complete enumeration: the 146 noble polyhedra, the two
+        # prismatic families, and the orbit search that finds them.
+        _e("mesh.noble_polyhedron_add", 'MESH_ICOSPHERE'),
+        _e("mesh.noble_prismatic_add", 'MESH_CYLINDER'),
+        _e("mesh.noble_orbit_add", 'MESH_ICOSPHERE'),
+        _e("mesh.spiked_polyhedron_add", 'LIGHT_SUN'),
+        SEP,
+        # -- zonohedra --
         _e("mesh.zonohedron_add", 'MESH_UVSPHERE'),
         # Zonohedrification, zonish polyhedra and the rhombohedral
         # dissections are one seed-plus-star construction, so one entry.
@@ -147,20 +155,32 @@ POLYHEDRA = Menu(
         # One polar zonohedron per face of a seed, packed round its
         # centre, and the solid that facets them.
         _e("mesh.zonohedra_cluster_add", 'MESH_ICOSPHERE'),
-        _e("mesh.transpolyhedron_add", 'MESH_ICOSPHERE'),
+        SEP,
+        # -- special families --
         _e("mesh.twelve_faced_add", 'MESH_ICOSPHERE'),
-        _e("mesh.slide_together_add", 'MOD_BOOLEAN'),
-        _e("mesh.waterman_add", 'MESH_ICOSPHERE'),
+        _e("mesh.biscribed_solid_add", 'MESH_ICOSPHERE'),
+        _e("mesh.transpolyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.symmetrohedron_add", 'MESH_ICOSPHERE'),
-        _e("mesh.polytope4d_add", 'MESH_CUBE'),
-        _e("mesh.polytwister_add", 'MESH_TORUS'),
-        _e("mesh.hyperbolic_honeycomb_add", 'META_BALL'),
-        _e("mesh.spacefill_add", 'SNAP_VOLUME'),
-        _e("mesh.spidron_ball_add", 'MESH_ICOSPHERE'),
+        _e("mesh.waterman_add", 'MESH_ICOSPHERE'),
         _e("mesh.saddle_polyhedron_add", 'MOD_MESHDEFORM'),
+        _e("mesh.spidron_ball_add", 'MESH_ICOSPHERE'),
+        SEP,
+        # -- tori --
+        _e("mesh.toroidal_polyhedron_add", 'MESH_TORUS'),
+        # The higher-genus successors of Szilassi and Csaszar: genus-3
+        # solids whose faces all meet, and genus 2/3 on ten vertices.
+        _e("mesh.neighbourly_polyhedron_add", 'MESH_ICOSPHERE'),
+        _e("mesh.polyhedral_torus_add", 'MESH_TORUS'),
+        SEP,
+        # -- packing and assembly --
+        _e("mesh.spacefill_add", 'SNAP_VOLUME'),
+        _e("mesh.slide_together_add", 'MOD_BOOLEAN'),
         _e("mesh.interlocking_add", 'MOD_BUILD'),
-        _e("mesh.geodesic_add", 'MESH_UVSPHERE'),
-        _e("mesh.spiked_polyhedron_add", 'LIGHT_SUN'),
+        SEP,
+        # -- beyond three dimensions --
+        _e("mesh.polytope4d_add", 'MESH_CUBE'),
+        _e("mesh.hyperbolic_honeycomb_add", 'META_BALL'),
+        _e("mesh.polytwister_add", 'MESH_TORUS'),
     ])
 
 FRACTALS = Menu(

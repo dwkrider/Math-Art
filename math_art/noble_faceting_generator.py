@@ -75,9 +75,11 @@ import itertools as _it
 try:
     from .polyhedra import compounds as _cmp
     from .polyhedra import faceting as _fac
+    from .polyhedra import noble as _nb
 except ImportError:                        # flat import (test runner)
     from polyhedra import compounds as _cmp
     from polyhedra import faceting as _fac
+    from polyhedra import noble as _nb
 
 try:
     from .styles import shell as _shell
@@ -171,6 +173,22 @@ def seed_vertices(kind):
     tetra, cube, octa = _cmp._seeds()
     return [tuple(float(c) for c in v)
             for v in (cube[0] if kind == 'CUBE' else octa[0])]
+
+
+def display_mesh(V, F, style='SOLID'):
+    """What goes to Blender: faces wound outward, and for the solid
+    style each face cut into the regions it covers.
+
+    A faceting's faces are mostly star or crossed polygons, and the
+    group that sweeps them round includes mirrors, so as built half of
+    them face inward and every self-intersecting n-gon is triangulated
+    into overlapping coplanar triangles that z-fight.  The frame and
+    strut styles keep the true faces, whose edges are the polyhedron's.
+    """
+    if style == 'SOLID':
+        V2, F2 = _nb.visible_regions(V, F)
+        return [tuple(v) for v in V2], F2
+    return V, _nb.oriented(V, F)
 
 
 _CACHE = {}
@@ -466,6 +484,27 @@ def _selftest():
             assert max(abs(c) for v in V for c in v) <= 1.0 + 1e-9, \
                 (kind, i, 'not fitted to the 2 m cube')
 
+    # the display mesh: every solid-style cell non-degenerate and wound
+    # outward, wherever its face plane misses the centre (hemi faces of
+    # some two-orbit facetings pass through it and have no outward side)
+    import numpy as _np
+    for kind, _lbl, _d in SEEDS:
+        for orb in (1, 2):
+            _v, found = facetings_of(kind, orb)
+            for i in range(len(found)):
+                V, F = build(kind, i, orb)
+                V2, F2 = display_mesh(V, F)
+                V2 = _np.asarray(V2)
+                for f in F2:
+                    P = V2[f]
+                    nv = sum(_np.cross(P[k], P[(k + 1) % len(P)])
+                             for k in range(len(P)))
+                    assert _np.linalg.norm(nv) > 1e-12, (kind, i, 'sliver')
+                    c = P.mean(axis=0)
+                    if abs(nv @ c) > 1e-9 * _np.linalg.norm(nv):
+                        assert nv @ c > 0, (kind, orb, i, 'inward cell')
+    print('display: every cell wound outward')
+
     j, stats = _verify_smith_fig2()
     print('SMITH   Fig. 2 solid = Truncated Tetrahedron faceting %d at two '
           'orbits, V=%d E=%d F=%d chi=%d' % (j, *stats))
@@ -500,8 +539,8 @@ if _IN_BLENDER:
         index: IntProperty(
             name="Faceting", default=0, min=0, max=63,
             description="Which of the noble facetings of that vertex "
-                        "set to build; they are found in plane order and "
-                        "the count differs per seed, so this wraps")
+                        "set to build, in plane order; the count differs "
+                        "per seed, and this stops at the last one")
         orbits: IntProperty(
             name="Face Orbits", default=1, min=1, max=2,
             description="How many orbits of faces a faceting may use. "
@@ -518,11 +557,20 @@ if _IN_BLENDER:
             __annotations__.update(_shell.style_properties())
 
         def execute(self, context):
+            # Bounded, not wrapped: an IntProperty cannot take a maximum
+            # that depends on the seed, so a value past the end is pulled
+            # back to the last faceting (the redo panel then shows it).
+            # Wrapping made the slider repeat the same few solids.
             try:
+                _v, found = facetings_of(self.seed, self.orbits)
+                if found and self.index >= len(found):
+                    self.index = len(found) - 1
                 V, F = build(self.seed, self.index, self.orbits)
+                nfaces, nsides = len(F), len(F[0])
             except Exception as e:          # noqa: BLE001
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
+            V, F = display_mesh(V, F, getattr(self, 'style', 'SOLID'))
             V = [tuple(c * self.scale for c in v) for v in V]
             # count from the SAME list the mesh was built from -- asking
             # for the one-orbit list here labelled a two-orbit faceting
@@ -531,7 +579,7 @@ if _IN_BLENDER:
             _v, found = facetings_of(self.seed, self.orbits)
             name = "%s %d/%d" % (
                 "Noble Faceting" if self.orbits <= 1 else "Faceting",
-                self.index % len(found) + 1, len(found))
+                self.index + 1, len(found))
             if _shell is not None:
                 obj = _shell.apply(self, context, V, F, name)
             else:
@@ -547,13 +595,15 @@ if _IN_BLENDER:
                 context.view_layer.objects.active = obj
             self.report({'INFO'},
                         "%s: %d faces of %d sides"
-                        % (name, len(F), len(F[0])))
+                        % (name, nfaces, nsides))
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
+            lay.use_property_split = True
             lay.prop(self, 'seed')
             lay.prop(self, 'index')
+            lay.prop(self, 'orbits')
             if _shell is not None:
                 _shell.draw_style(self, lay)
             lay.prop(self, 'scale')
