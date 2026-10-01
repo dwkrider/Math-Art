@@ -604,10 +604,9 @@ VARIANT_SELECTOR = {
     # when that operator was merged into this one.)
     "mesh.icosahedron_stellation_add": "solid",
     "mesh.noble_faceting_add": "seed",
-    # One figure per vertex-orbit type (its first entry), and for the
-    # explorer every one of Hill's 23 types -- the seven that carry no
-    # noble polyhedron show their convex hull, which is the point.
-    "mesh.noble_polyhedron_add": "orbit_filter",
+    # For the explorer, every one of Hill's 23 orbit types -- the seven
+    # that carry no noble polyhedron show their convex hull, which is the
+    # point.  (The catalogue is a two-level gallery; see VARIANT_GROUP.)
     "mesh.noble_orbit_add": "orbit_type",
     "mesh.noble_prismatic_add": "family",
     "mesh.star_prism_add": "form",
@@ -722,6 +721,11 @@ VARIANT_GROUP = {
     "mesh.regular_solid_add": ("family", "solid"),
     "mesh.uniform_polyhedron_add": ("family", "solid"),
     "mesh.canonical_polyhedron_add": ("family", "solid"),
+    # The 146 noble polyhedra grouped by vertex-orbit type: `polyhedron`
+    # is a DYNAMIC enum filtered by `orbit_filter`, so each variant needs
+    # BOTH set (a flat selector on orbit_filter alone carries the hero's
+    # polyhedron into every group and fails).
+    "mesh.noble_polyhedron_add": ("orbit_filter", "polyhedron"),
     "mesh.parametric_minimal_add": ("family", "surface"),
     "mesh.periodic_minimal_add": ("periodicity", "surface"),
     "mesh.algebraic_surface_add": ("family", "preset"),
@@ -840,6 +844,9 @@ GENERIC_SKIP_IDS = {"CUSTOM", "NONE", "ACTIVE"}
 # operator where the complete set genuinely is the point of the page.
 VARIANT_MAX_DEFAULT = 48
 VARIANT_MAX = {
+    # Hill's complete catalogue of the 146 noble polyhedra, grouped by
+    # vertex-orbit type -- the whole set is the point of the page.
+    "mesh.noble_polyhedron_add": 160,
     # The 59 stellations of the icosahedron are a named, closed,
     # historically complete list (Coxeter et al.); a partial gallery
     # would misrepresent it.
@@ -1656,6 +1663,10 @@ if _IN_BLENDER:
         "mesh.periodic_minimal_add": _groups_periodic,
         "mesh.algebraic_surface_add": _groups_algebraic,
         "mesh.polyhedron_compound_add": _groups_compound,
+        "mesh.noble_polyhedron_add": lambda: {
+            f: _pairs(_mod("noble_polyhedra_generator").polyhedron_items(f))
+            for f, *_ in _mod("noble_polyhedra_generator").ORBIT_FILTER
+            if f != 'ALL'},
     }
 
     # Flat (single-level) galleries whose selector is a DYNAMIC enum, so

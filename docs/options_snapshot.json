@@ -589,6 +589,16 @@
  "mesh.biscribed_solid_add": {
   "label": "Biscribed Solid",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -687,6 +697,16 @@
  "mesh.canonical_polyhedron_add": {
   "label": "Canonical Polyhedron",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -800,6 +820,16 @@
  "mesh.conway_add": {
   "label": "Conway Polyhedron",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -1278,6 +1308,16 @@
  "mesh.icosahedron_stellation_add": {
   "label": "Stellation",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -1714,6 +1754,33 @@
    "Scale"
   ]
  },
+ "mesh.neighbourly_polyhedron_add": {
+  "label": "Neighbourly Polyhedron",
+  "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
+   "Fold",
+   "Unfolding",
+   "Net Seed",
+   "Glue Tabs",
+   "Tab Size",
+   "Edge Numbers",
+   "Solid",
+   "Style",
+   "Map Colours",
+   "Mark Doubled Edges",
+   "Rod Radius",
+   "Scale"
+  ]
+ },
  "mesh.noble_faceting_add": {
   "label": "Noble Faceting",
   "options": [
@@ -1732,9 +1799,80 @@
    "Separate Meshes"
   ]
  },
+ "mesh.noble_orbit_add": {
+  "label": "Noble Orbit Explorer",
+  "options": [
+   "Orbit Type",
+   "Critical Orbit",
+   "Position A",
+   "Position B",
+   "Faceting",
+   "Scale",
+   "Style",
+   "Border",
+   "Thickness",
+   "Strut Radius",
+   "Node Radius",
+   "Depth",
+   "Bevel Gap",
+   "Explode",
+   "Separate Meshes"
+  ]
+ },
+ "mesh.noble_polyhedron_add": {
+  "label": "Noble Polyhedron",
+  "options": [
+   "Vertex Orbit",
+   "Polyhedron",
+   "Dual",
+   "Scale",
+   "Style",
+   "Border",
+   "Thickness",
+   "Strut Radius",
+   "Node Radius",
+   "Depth",
+   "Bevel Gap",
+   "Explode",
+   "Separate Meshes"
+  ]
+ },
+ "mesh.noble_prismatic_add": {
+  "label": "Crown Polyhedron",
+  "options": [
+   "Family",
+   "Sides",
+   "Step P",
+   "Step Q",
+   "Height",
+   "Width",
+   "Depth",
+   "Box Height",
+   "Scale",
+   "Style",
+   "Border",
+   "Thickness",
+   "Strut Radius",
+   "Node Radius",
+   "Depth",
+   "Bevel Gap",
+   "Explode",
+   "Separate Meshes"
+  ]
+ },
  "mesh.notable_polyhedron_add": {
   "label": "Notable Polyhedron",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -1981,6 +2119,16 @@
  "mesh.polyhedral_torus_add": {
   "label": "Polyhedral Torus",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -2143,6 +2291,16 @@
  "mesh.regular_solid_add": {
   "label": "Regular Solid",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -2627,7 +2785,12 @@
    "Node Radius",
    "Two Materials",
    "Spiral Segments",
-   "Spiral Pitch"
+   "Spiral Pitch",
+   "Substitution Depth",
+   "Features",
+   "Relief",
+   "Separate Chairs",
+   "Color By"
   ]
  },
  "mesh.spherical_harmonic_add": {
@@ -2905,6 +3068,16 @@
  "mesh.symmetrohedron_add": {
   "label": "Symmetrohedron",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -3007,6 +3180,16 @@
  "mesh.toroidal_polyhedron_add": {
   "label": "Toroidal Polyhedron",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -3015,6 +3198,7 @@
    "Edge Numbers",
    "Solid",
    "Style",
+   "Map Colours",
    "Scale"
   ]
  },
@@ -3160,6 +3344,16 @@
  "mesh.waterman_add": {
   "label": "Waterman Polyhedron",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",
@@ -3302,6 +3496,16 @@
  "mesh.zonohedron_add": {
   "label": "Zonohedron",
   "options": [
+   "Material Thickness",
+   "Model Size",
+   "Finger Width",
+   "Joint Edges",
+   "Joint Clearance",
+   "Labels",
+   "Explode",
+   "Sheet Width",
+   "Sheet Height",
+   "Kerf",
    "Fold",
    "Unfolding",
    "Net Seed",

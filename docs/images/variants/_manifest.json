@@ -5763,6 +5763,10 @@
    "Trefoil-like"
   ],
   [
+   "BIANCHI_PINKALL",
+   "Bianchi-Pinkall Flat Torus"
+  ],
+  [
    "ELASTICA",
    "Elastica (Willmore)"
   ],
@@ -8971,6 +8975,868 @@
   [
    "PD",
    "PD Cell"
+  ]
+ ],
+ "neighbourly_polyhedron": [
+  [
+   "ROST_VIGH",
+   "Rost-Vigh Polyhedron"
+  ],
+  [
+   "MIZHAEV",
+   "Mizhaev Polyhedron"
+  ],
+  [
+   "MIZHAEV_V1",
+   "Mizhaev Polyhedron V1"
+  ],
+  [
+   "MINIMAL_G2",
+   "Ten-Vertex Genus-2 Polyhedron"
+  ],
+  [
+   "MINIMAL_G3",
+   "Ten-Vertex Genus-3 Polyhedron"
+  ]
+ ],
+ "noble_orbit": [
+  [
+   "T",
+   "T -- 4 vertices, fixed"
+  ],
+  [
+   "O",
+   "O -- 6 vertices, fixed"
+  ],
+  [
+   "CO",
+   "CO -- 12 vertices, fixed"
+  ],
+  [
+   "C",
+   "C -- 8 vertices, fixed"
+  ],
+  [
+   "I",
+   "I -- 12 vertices, fixed"
+  ],
+  [
+   "ID",
+   "ID -- 30 vertices, fixed"
+  ],
+  [
+   "D",
+   "D -- 20 vertices, fixed"
+  ],
+  [
+   "tT",
+   "tT -- 12 vertices, one parameter"
+  ],
+  [
+   "rT",
+   "rT -- 12 vertices, one parameter"
+  ],
+  [
+   "rP",
+   "rP -- 12 vertices, one parameter"
+  ],
+  [
+   "tO",
+   "tO -- 24 vertices, one parameter"
+  ],
+  [
+   "tC",
+   "tC -- 24 vertices, one parameter"
+  ],
+  [
+   "rC",
+   "rC -- 24 vertices, one parameter"
+  ],
+  [
+   "tI",
+   "tI -- 60 vertices, one parameter"
+  ],
+  [
+   "tD",
+   "tD -- 60 vertices, one parameter"
+  ],
+  [
+   "rD",
+   "rD -- 60 vertices, one parameter"
+  ],
+  [
+   "sT",
+   "sT -- 12 vertices, two parameters"
+  ],
+  [
+   "gT",
+   "gT -- 24 vertices, two parameters"
+  ],
+  [
+   "gP",
+   "gP -- 24 vertices, two parameters"
+  ],
+  [
+   "sC",
+   "sC -- 24 vertices, two parameters"
+  ],
+  [
+   "gC",
+   "gC -- 48 vertices, two parameters"
+  ],
+  [
+   "sD",
+   "sD -- 60 vertices, two parameters"
+  ],
+  [
+   "gD",
+   "gD -- 120 vertices, two parameters"
+  ]
+ ],
+ "noble_polyhedron": [
+  [
+   "T-1",
+   "T-1 Tetrahedron  {3, 3}",
+   "T -- 4 vertices (1)"
+  ],
+  [
+   "O-1",
+   "O-1 Octahedron  {3, 4}",
+   "O -- 6 vertices (1)"
+  ],
+  [
+   "C-1",
+   "C-1 Cube  {4, 3}",
+   "C -- 8 vertices (1)"
+  ],
+  [
+   "I-1",
+   "I-1 Icosahedron  {3, 5}",
+   "I -- 12 vertices (4)"
+  ],
+  [
+   "I-2",
+   "I-2 Small Stellated Dodecahedron  {5, 5}",
+   "I -- 12 vertices (4)"
+  ],
+  [
+   "I-3",
+   "I-3 Great Dodecahedron  {5, 5}",
+   "I -- 12 vertices (4)"
+  ],
+  [
+   "I-4",
+   "I-4 Great Icosahedron  {3, 5}",
+   "I -- 12 vertices (4)"
+  ],
+  [
+   "ID-1",
+   "ID-1  {4, 8}",
+   "ID -- 30 vertices (6)"
+  ],
+  [
+   "ID-2",
+   "ID-2  {3, 12}",
+   "ID -- 30 vertices (6)"
+  ],
+  [
+   "ID-3",
+   "ID-3  {4, 8}",
+   "ID -- 30 vertices (6)"
+  ],
+  [
+   "ID-4",
+   "ID-4  {3, 12}",
+   "ID -- 30 vertices (6)"
+  ],
+  [
+   "ID-5",
+   "ID-5  {4, 8}",
+   "ID -- 30 vertices (6)"
+  ],
+  [
+   "ID-6",
+   "ID-6  {3, 12}",
+   "ID -- 30 vertices (6)"
+  ],
+  [
+   "D-1",
+   "D-1 Dodecahedron  {5, 3}",
+   "D -- 20 vertices (7)"
+  ],
+  [
+   "D-2",
+   "D-2  {3, 9}",
+   "D -- 20 vertices (7)"
+  ],
+  [
+   "D-3",
+   "D-3  {6, 6}",
+   "D -- 20 vertices (7)"
+  ],
+  [
+   "D-4",
+   "D-4  {4, 12}",
+   "D -- 20 vertices (7)"
+  ],
+  [
+   "D-5",
+   "D-5  {3, 9}",
+   "D -- 20 vertices (7)"
+  ],
+  [
+   "D-6",
+   "D-6 Great Stellated Dodecahedron  {5, 3}",
+   "D -- 20 vertices (7)"
+  ],
+  [
+   "D-7",
+   "D-7  {3, 9}",
+   "D -- 20 vertices (7)"
+  ],
+  [
+   "tO-1.1",
+   "tO-1.1  {4, 8}",
+   "tO -- 24 vertices (1)"
+  ],
+  [
+   "tC-1.1",
+   "tC-1.1  {5, 5}",
+   "tC -- 24 vertices (1)"
+  ],
+  [
+   "rC-1.1",
+   "rC-1.1  {5, 5}",
+   "rC -- 24 vertices (1)"
+  ],
+  [
+   "tI-1.1",
+   "tI-1.1  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-1.2",
+   "tI-1.2  {5, 5}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-2.1",
+   "tI-2.1  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-2.2",
+   "tI-2.2  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-3.1",
+   "tI-3.1  {8, 4}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-3.2",
+   "tI-3.2  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-4.1",
+   "tI-4.1  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-4.2",
+   "tI-4.2  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-5.1",
+   "tI-5.1  {8, 4}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-5.2",
+   "tI-5.2  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-5.3",
+   "tI-5.3  {5, 5}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-5.4",
+   "tI-5.4  {5, 5}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-5.5",
+   "tI-5.5  {5, 5}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-5.6",
+   "tI-5.6  {6, 6}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-5.7",
+   "tI-5.7  {9, 3}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-6.1",
+   "tI-6.1  {5, 5}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tI-7.1",
+   "tI-7.1  {5, 5}",
+   "tI -- 60 vertices (17)"
+  ],
+  [
+   "tD-1.1",
+   "tD-1.1  {6, 6}",
+   "tD -- 60 vertices (6)"
+  ],
+  [
+   "tD-1.2",
+   "tD-1.2  {6, 6}",
+   "tD -- 60 vertices (6)"
+  ],
+  [
+   "tD-2.1",
+   "tD-2.1  {6, 6}",
+   "tD -- 60 vertices (6)"
+  ],
+  [
+   "tD-3.1",
+   "tD-3.1  {6, 6}",
+   "tD -- 60 vertices (6)"
+  ],
+  [
+   "tD-3.2",
+   "tD-3.2  {6, 6}",
+   "tD -- 60 vertices (6)"
+  ],
+  [
+   "tD-4.1",
+   "tD-4.1  {5, 5}",
+   "tD -- 60 vertices (6)"
+  ],
+  [
+   "rD-1.1",
+   "rD-1.1  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-1.2",
+   "rD-1.2  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-2.1",
+   "rD-2.1  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-3.1",
+   "rD-3.1  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-3.2",
+   "rD-3.2  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-4.1",
+   "rD-4.1  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-4.2",
+   "rD-4.2  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-5.1",
+   "rD-5.1  {9, 3}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-5.2",
+   "rD-5.2  {8, 4}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-5.3",
+   "rD-5.3  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-5.4",
+   "rD-5.4  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-5.5",
+   "rD-5.5  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-5.6",
+   "rD-5.6  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-5.7",
+   "rD-5.7  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-6.1",
+   "rD-6.1  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-7.1",
+   "rD-7.1  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-7.2",
+   "rD-7.2  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-8.1",
+   "rD-8.1  {6, 6}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "rD-8.2",
+   "rD-8.2  {5, 5}",
+   "rD -- 60 vertices (19)"
+  ],
+  [
+   "sC-1.1",
+   "sC-1.1  {5, 5}",
+   "sC -- 24 vertices (7)"
+  ],
+  [
+   "sC-2.1",
+   "sC-2.1  {5, 5}",
+   "sC -- 24 vertices (7)"
+  ],
+  [
+   "sC-3.1",
+   "sC-3.1  {5, 5}",
+   "sC -- 24 vertices (7)"
+  ],
+  [
+   "sC-4.1",
+   "sC-4.1  {5, 5}",
+   "sC -- 24 vertices (7)"
+  ],
+  [
+   "sC-5.1",
+   "sC-5.1  {5, 5}",
+   "sC -- 24 vertices (7)"
+  ],
+  [
+   "sC-6.1",
+   "sC-6.1  {5, 5}",
+   "sC -- 24 vertices (7)"
+  ],
+  [
+   "sC-6.2",
+   "sC-6.2  {5, 5}",
+   "sC -- 24 vertices (7)"
+  ],
+  [
+   "gC-1.1",
+   "gC-1.1  {5, 5}",
+   "gC -- 48 vertices (3)"
+  ],
+  [
+   "gC-2.1",
+   "gC-2.1  {5, 5}",
+   "gC -- 48 vertices (3)"
+  ],
+  [
+   "gC-3.1",
+   "gC-3.1  {8, 4}",
+   "gC -- 48 vertices (3)"
+  ],
+  [
+   "sD-1.1",
+   "sD-1.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-2.1",
+   "sD-2.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-3.1",
+   "sD-3.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-4.1",
+   "sD-4.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-5.1",
+   "sD-5.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-5.2",
+   "sD-5.2  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-5.3",
+   "sD-5.3  {6, 6}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-6.1",
+   "sD-6.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-7.1",
+   "sD-7.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-8.1",
+   "sD-8.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-9.1",
+   "sD-9.1  {6, 6}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-10.1",
+   "sD-10.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-11.1",
+   "sD-11.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-12.1",
+   "sD-12.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-13.1",
+   "sD-13.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-14.1",
+   "sD-14.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-15.1",
+   "sD-15.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-16.1",
+   "sD-16.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-17.1",
+   "sD-17.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-18.1",
+   "sD-18.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-19.1",
+   "sD-19.1  {6, 6}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-20.1",
+   "sD-20.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-21.1",
+   "sD-21.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-22.1",
+   "sD-22.1  {6, 6}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-23.1",
+   "sD-23.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-24.1",
+   "sD-24.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-25.1",
+   "sD-25.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-25.2",
+   "sD-25.2  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-25.3",
+   "sD-25.3  {6, 6}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-26.1",
+   "sD-26.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-27.1",
+   "sD-27.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-28.1",
+   "sD-28.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "sD-29.1",
+   "sD-29.1  {5, 5}",
+   "sD -- 60 vertices (33)"
+  ],
+  [
+   "gD-1.1",
+   "gD-1.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-2.1",
+   "gD-2.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-3.1",
+   "gD-3.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-4.1",
+   "gD-4.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-5.1",
+   "gD-5.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-6.1",
+   "gD-6.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-7.1",
+   "gD-7.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-8.1",
+   "gD-8.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-9.1",
+   "gD-9.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-10.1",
+   "gD-10.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-11.1",
+   "gD-11.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-12.1",
+   "gD-12.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-13.1",
+   "gD-13.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-14.1",
+   "gD-14.1  {6, 6}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-15.1",
+   "gD-15.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-16.1",
+   "gD-16.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-17.1",
+   "gD-17.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-18.1",
+   "gD-18.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-19.1",
+   "gD-19.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-20.1",
+   "gD-20.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-21.1",
+   "gD-21.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-22.1",
+   "gD-22.1  {12, 3}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-23.1",
+   "gD-23.1  {12, 3}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-24.1",
+   "gD-24.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-25.1",
+   "gD-25.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-26.1",
+   "gD-26.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-27.1",
+   "gD-27.1  {12, 3}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-28.1",
+   "gD-28.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-29.1",
+   "gD-29.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-30.1",
+   "gD-30.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-31.1",
+   "gD-31.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-32.1",
+   "gD-32.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-33.1",
+   "gD-33.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-34.1",
+   "gD-34.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-35.1",
+   "gD-35.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-36.1",
+   "gD-36.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-37.1",
+   "gD-37.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ],
+  [
+   "gD-38.1",
+   "gD-38.1  {5, 5}",
+   "gD -- 120 vertices (38)"
+  ]
+ ],
+ "noble_prismatic": [
+  [
+   "PRISMATIC",
+   "Prismatic Crown"
+  ],
+  [
+   "ANTIPRISMATIC",
+   "Antiprismatic Crown"
+  ],
+  [
+   "DISPHENOID",
+   "Disphenoid"
   ]
  ]
 }
