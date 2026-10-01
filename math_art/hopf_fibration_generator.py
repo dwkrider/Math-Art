@@ -27,6 +27,27 @@
 # base point on S^2 -- hue from the longitude, value from the
 # latitude -- so nearby fibres share a colour.
 #
+# WHICH OF THE TWO FIBRATIONS THIS IS.  There are two Hopf maps, mirror
+# images of each other, and the literature is split over which to write
+# down -- so the convention here is worth stating rather than leaving
+# to be rediscovered.  Identify the quaternion as q = z0 + z1 j, i.e.
+# (x1, x2, x3, x4) = a + b i + c j + d k.  Then
+#
+#   * the fibre is the orbit of LEFT multiplication by e^{i t}, which
+#     is what `fiber_s3` traces, and the complex form above,
+#     h = (2 z0 conj(z1), |z0|^2 - |z1|^2), is invariant under it;
+#   * RIGHT multiplication is therefore the motion that carries whole
+#     fibres onto other fibres -- the flow, `_s3_flow`.
+#
+# Lyons (2003) and O'Sullivan (arXiv:1601.02569) write the other one:
+# their Hopf map is r -> r i conj(r), whose fibres are the RIGHT cosets
+# {r e^{i t}}, and they project from the quaternion 1 rather than from
+# k.  Both are correct; they are the two chiralities, and `chirality`
+# below selects between them -- 'LEFT' here reproduces their family,
+# checked against their published code to 1e-15.  Lyons notes that the
+# point projected from "is an arbitrary choice"; the choice of k here
+# is what turns the fibre over the south pole into the central axis.
+#
 # WHAT THIS GENERATOR IS NOT.  `mesh.willmore_add` also says
 # "Willmore", and the two do opposite things.  That one DESCENDS the
 # bending energy and lands on its MINIMISER -- the Clifford torus at

@@ -17,6 +17,16 @@
 // projection from the north pole, (x1,x2,x3,x4) -> (x1,x2,x3)/(1-x4).
 // Every fibre becomes a circle; any two are linked exactly once.
 //
+// WHICH OF THE TWO FIBRATIONS. There are two Hopf maps, mirror images
+// of each other. With q = z0 + z1 j, the fibre here is the orbit of
+// LEFT multiplication by e^{it}, and the map h = (2 z0 conj(z1),
+// |z0|^2 - |z1|^2) is invariant under it; right multiplication is
+// therefore the flow, which moves whole fibres. Lyons (2003) and
+// O'Sullivan (arXiv:1601.02569) write the mirror convention, with
+// fibres {r e^{it}} and the projection taken from the quaternion 1
+// instead of from k. `chirality: 'LEFT'` reproduces their family, and
+// agrees with their published code to 1e-15.
+//
 // WHAT IS LEFT OUT. The generator's RANDOM preset draws its base
 // points from numpy's Generator, whose stream cannot be reproduced
 // here, so the page does not offer it -- everything the page does
