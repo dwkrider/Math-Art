@@ -138,9 +138,15 @@ function main() {
     const bases = view.built.bases;
     sphere.show(bases, state.palette);
 
+    // A fibre over a base point near the south pole projects to a
+    // circle too big for the picture, and is kept as the arc that
+    // fits. Saying how many are in that state answers the obvious
+    // question about the curves that sail off and never come back.
+    const arcs = view.built.closed.filter((c) => !c).length;
     const n = (x) => x.toLocaleString();
     readout.textContent =
       `${n(stats.fibers)} fibre${stats.fibers === 1 ? '' : 's'}`
+      + (arcs ? ` · ${arcs} too large to fit, drawn as arcs` : '')
       + (stats.dropped ? ` · ${stats.dropped} off the edge of the projection` : '')
       + ` · ${n(stats.vertices)} vertices · drawn in ${stats.buildMs.toFixed(0)} ms`;
 
