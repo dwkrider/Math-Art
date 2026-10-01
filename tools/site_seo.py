@@ -905,8 +905,8 @@ def patch_site_pages(n_surf, n_solid):
               "Platonic, Archimedean, Catalan, Johnson and Kepler-Poinsot "
               "-- arranged by how many kinds of face they have, ending in "
               "the nine fully regular solids."),
-        image=url("thumbs/polyhedra/truncated-icosahedron.png"),
-        image_alt="The truncated icosahedron",
+        image=url("thumbs/polyhedra/great-stellated-dodecahedron.png"),
+        image_alt="The great stellated dodecahedron",
         ld={
             "@context": "https://schema.org",
             "@type": "CollectionPage",
@@ -914,6 +914,24 @@ def patch_site_pages(n_surf, n_solid):
             "url": url("modules/periodic.html"),
             "description": "A complete arrangement of the 127 polyhedra "
                            "belonging to closed classifications.",
+            "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
+        }, depth=1))
+
+    patch_head(os.path.join(WEB, "modules", "hopf.html"), head_block(
+        canonical=url("modules/hopf.html"),
+        title="The Hopf Fibration - %s" % SITE,
+        desc=("The Hopf fibration, computed live in the browser: click a "
+              "point on a sphere and get a circle in space. Any two are "
+              "linked, and together they fill space without crossing."),
+        image=url("thumbs/modules/hopf.png"),
+        image_alt="Nested tori of linked circles, the fibres of the Hopf map",
+        ld={
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "The Hopf Fibration",
+            "url": url("modules/hopf.html"),
+            "description": "An interactive model of the Hopf fibration and "
+                           "its linked circle fibres.",
             "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
         }, depth=1))
 
@@ -1027,6 +1045,7 @@ def main():
             (url("modules/periodic.html"), 0.9),
             (url("modules/belt-trick.html"), 0.9),
             (url("modules/chair44.html"), 0.9),
+            (url("modules/hopf.html"), 0.9),
             (url("catalog/polyhedra/index.html"), 0.7),
             (url("catalog/surfaces/index.html"), 0.7)]
     urls += [(url("catalog/surfaces/%s.html" % e["slug"]), 0.5)
@@ -1044,7 +1063,8 @@ def main():
     print("robots.txt        : written")
     print("head blocks       : index.html, modules/surfaces.html, "
           "modules/polyhedra.html, modules/periodic.html, "
-          "modules/belt-trick.html, modules/chair44.html")
+          "modules/belt-trick.html, modules/chair44.html, "
+          "modules/hopf.html")
     return 0
 
 
