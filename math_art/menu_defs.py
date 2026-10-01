@@ -135,6 +135,11 @@ POLYHEDRA = Menu(
         # a deprecated shim, deliberately absent from the menu.)
         _e("mesh.icosahedron_stellation_add", 'MESH_ICOSPHERE'),
         _e("mesh.noble_faceting_add", 'MESH_ICOSPHERE'),
+        # Hill's complete enumeration: the 146 noble polyhedra, the orbit
+        # search that finds them, and the two prismatic families.
+        _e("mesh.noble_polyhedron_add", 'MESH_ICOSPHERE'),
+        _e("mesh.noble_orbit_add", 'MESH_ICOSPHERE'),
+        _e("mesh.noble_prismatic_add", 'MESH_CYLINDER'),
         _e("mesh.star_prism_add", 'MESH_CYLINDER'),
         _e("mesh.conway_add", 'MESH_ICOSPHERE'),
         _e("mesh.zonohedron_add", 'MESH_UVSPHERE'),
