@@ -189,6 +189,27 @@ def valid_pq(n, kind):
             if _nb.stephanoid_ok(n, p, q, kind)]
 
 
+def polyhedron_items(orbit_filter='ALL'):
+    """Dropdown items for one orbit filter: Hill's symbol, the classical
+    name where there is one, and the Schlafli type.  Cached, because
+    Blender keeps only references to the strings a dynamic enum returns.
+    """
+    if orbit_filter not in _ITEMS:
+        _ITEMS[orbit_filter] = [
+            (e['symbol'],
+             "%s%s  {%d, %d}" % (e['symbol'],
+                                 " " + e['name'] if e['name'] else "",
+                                 e['p'], e['q']),
+             "%s: V=%d E=%d F=%d, symmetry %s, dual %s"
+             % (e['symbol'], e['V'], e['E'], e['F'], e['group'], e['dual']),
+             k)
+            for k, e in enumerate(catalogue_entries(orbit_filter))]
+    return _ITEMS[orbit_filter]
+
+
+_ITEMS = {}
+
+
 def _selftest():
     import numpy as np
     assert len(CATALOGUE) == 146, len(CATALOGUE)
@@ -371,18 +392,28 @@ if _IN_BLENDER:
         bl_label = "Noble Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
+        def _reset_polyhedron(self, context):
+            # a new orbit: start at its first polyhedron rather than leave
+            # a choice that is not in the new list
+            self.polyhedron = polyhedron_items(self.orbit_filter)[0][0]
+
+        def _polyhedron_items(self, context):
+            return polyhedron_items(self.orbit_filter)
+
         orbit_filter: EnumProperty(
             name="Vertex Orbit", items=ORBIT_FILTER, default='ALL',
+            update=_reset_polyhedron,
             description="Show only the noble polyhedra whose vertices form "
                         "one kind of orbit. The symbol is Hill's: T, O, C, "
                         "I, ID, D are the fixed vertex sets of the regular "
                         "and quasiregular solids; t, r, s and g types have "
                         "vertices that slide with one or two parameters")
-        index: IntProperty(
-            name="Polyhedron", default=0, min=0, max=145,
-            description="Which noble polyhedron of the chosen orbit, in "
-                        "Hill's order (by orbit location, then by "
-                        "inradius, largest first); wraps around")
+        polyhedron: EnumProperty(
+            name="Polyhedron", items=_polyhedron_items,
+            description="Which noble polyhedron of the chosen orbit, by "
+                        "Hill's symbol: T-x.y is the y-th faceting (largest "
+                        "inradius first) of the x-th critical orbit of type "
+                        "T")
         dual: BoolProperty(
             name="Dual", default=False,
             description="Build the polar dual instead -- another noble "
@@ -397,7 +428,9 @@ if _IN_BLENDER:
 
         def execute(self, context):
             ents = catalogue_entries(self.orbit_filter)
-            e = ents[self.index % len(ents)]
+            e = next((x for x in ents if x['symbol'] == self.polyhedron),
+                     ents[0])
+            pos = ents.index(e)
             V, F = build_entry(e, self.dual)
             name = "Noble %s%s" % (e['symbol'], " dual" if self.dual else "")
             if e['name'] and not self.dual:
@@ -409,7 +442,7 @@ if _IN_BLENDER:
             self.report({'INFO'},
                         "%s (%d/%d): {%d, %d}, V=%d E=%d F=%d, symmetry "
                         "%s, dual %s%s%s"
-                        % (e['symbol'], self.index % len(ents) + 1,
+                        % (e['symbol'], pos + 1,
                            len(ents), e['p'], e['q'], e['V'], e['E'],
                            e['F'], e['group'], e['dual'], loc,
                            " -- dual shown" if self.dual else ""))
@@ -418,7 +451,7 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.prop(self, 'orbit_filter')
-            lay.prop(self, 'index')
+            lay.prop(self, 'polyhedron')
             lay.prop(self, 'dual')
             if _shell is not None:
                 _shell.draw_style(self, lay)
@@ -441,7 +474,8 @@ if _IN_BLENDER:
             name="Critical Orbit", default=1, min=0, max=64,
             description="0 uses the Position sliders freely; 1, 2, ... "
                         "snap to the critical orbits of this type that "
-                        "carry noble polyhedra, in Hill's order (wraps)")
+                        "carry noble polyhedra, in Hill's order; stops at "
+                        "the last one")
         a: FloatProperty(
             name="Position A", default=0.5, min=0.001, max=10.0,
             precision=6,
@@ -453,7 +487,8 @@ if _IN_BLENDER:
             description="Second free parameter, for two-parameter types")
         faceting: IntProperty(
             name="Faceting", default=0, min=0, max=64,
-            description="Which noble faceting found on this orbit (wraps)")
+            description="Which noble faceting found on this orbit; stops "
+                        "at the last one")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0,
                              description="Overall size of the result")
@@ -470,14 +505,18 @@ if _IN_BLENDER:
                 a, b = 1.0, 1.0
                 label = t if crit else None
             elif self.critical > 0 and crit:
-                label, a, b = crit[(self.critical - 1) % len(crit)]
+                if self.critical > len(crit):
+                    self.critical = len(crit)       # bounded, not wrapped
+                label, a, b = crit[self.critical - 1]
             else:
                 a, b = self.a, (self.b if k == 2 else 1.0)
             V, found, note = explore(t, a, b)
             where = t if k == 0 else "%s(a=%.6f%s)" % (
                 t, a, ", b=%.6f" % b if k == 2 else "")
             if found:
-                g, face = found[self.faceting % len(found)]
+                if self.faceting >= len(found):
+                    self.faceting = len(found) - 1
+                g, face = found[self.faceting]
                 F = _nb.build_faces(V, g, face)
                 d = _nb.describe(V, F)
                 sym = self._symbol(label, V, F)
@@ -486,7 +525,7 @@ if _IN_BLENDER:
                 self.report({'INFO'},
                             "%s: faceting %d/%d, {%d, %d}, V=%d E=%d F=%d, "
                             "symmetry %s%s"
-                            % (where, self.faceting % len(found) + 1,
+                            % (where, self.faceting + 1,
                                len(found), d['p'], d['q'], d['V'], d['E'],
                                d['F'], g, " = " + sym if sym else ""))
             else:

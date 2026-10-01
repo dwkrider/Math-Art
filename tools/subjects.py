@@ -41,7 +41,7 @@ PARAMS = {
     # tetrahedron -- true, but it says nothing.  tO-1.1 is the lone
     # noble polyhedron on a truncated-octahedron-type orbit, sits at a
     # root of a^3 - a^2 - 2a - 1, and reads clearly at icon size.
-    "mesh.noble_polyhedron_add": dict(orbit_filter='tO', index=0),
+    "mesh.noble_polyhedron_add": dict(orbit_filter='tO', polyhedron='tO-1.1'),
     # The explorer snapped to a snub-dodecahedral critical orbit: the
     # chiral sD type is where most of the new nobles live.
     "mesh.noble_orbit_add": dict(orbit_type='sD', critical=5),
