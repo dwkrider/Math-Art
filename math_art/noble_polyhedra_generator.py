@@ -450,6 +450,7 @@ if _IN_BLENDER:
 
         def draw(self, context):
             lay = self.layout
+            lay.use_property_split = True
             lay.prop(self, 'orbit_filter')
             lay.prop(self, 'polyhedron')
             lay.prop(self, 'dual')
@@ -556,6 +557,7 @@ if _IN_BLENDER:
 
         def draw(self, context):
             lay = self.layout
+            lay.use_property_split = True
             lay.prop(self, 'orbit_type')
             k = _nb.dof(self.orbit_type)
             if k:
@@ -639,6 +641,7 @@ if _IN_BLENDER:
 
         def draw(self, context):
             lay = self.layout
+            lay.use_property_split = True
             lay.prop(self, 'family')
             if self.family == 'DISPHENOID':
                 lay.prop(self, 'width')

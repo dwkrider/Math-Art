@@ -600,8 +600,10 @@ if _IN_BLENDER:
 
         def draw(self, context):
             lay = self.layout
+            lay.use_property_split = True
             lay.prop(self, 'seed')
             lay.prop(self, 'index')
+            lay.prop(self, 'orbits')
             if _shell is not None:
                 _shell.draw_style(self, lay)
             lay.prop(self, 'scale')
