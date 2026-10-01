@@ -95,9 +95,24 @@ export function quatLeft(phi) {
   return [Math.cos(phi), Math.sin(phi), 0, 0];
 }
 
-/** Left quaternion-multiply every S^3 point by q. A left Clifford
- *  rotation commutes with the Hopf action, so it descends to a rotation
- *  of the base sphere: the whole family flows through itself. */
+/** Unit quaternion (cos phi, 0, sin phi, 0), for `s3Flow`. The
+ *  imaginary part is j rather than i on purpose: right multiplication
+ *  in the i direction turns the base sphere about its polar axis,
+ *  which maps circles of latitude onto themselves and leaves the
+ *  nested-tori pictures looking untouched. The j direction turns it
+ *  about an equatorial axis, and everything moves. */
+export function quatFlow(phi) {
+  return [Math.cos(phi), 0, Math.sin(phi), 0];
+}
+
+/** Left quaternion-multiply every S^3 point by q.
+ *
+ *  NOT a motion of the fibration. Going once round a fibre is itself
+ *  left multiplication by (cos t, sin t, 0, 0) in this
+ *  parametrisation, so this slides each point along its own fibre and
+ *  leaves every fibre exactly where it was. Kept because it is the
+ *  fibre action, worth having by name; `s3Flow` is the one that
+ *  moves the family. */
 export function s3Rotate(X, q) {
   const [w, i, j, k] = q;
   const out = new Float64Array(X.length);
@@ -107,6 +122,26 @@ export function s3Rotate(X, q) {
     out[n + 1] = w * b + i * a + j * d - k * c;
     out[n + 2] = w * c - i * d + j * a + k * b;
     out[n + 3] = w * d + i * c - j * b + k * a;
+  }
+  return out;
+}
+
+/** Right quaternion-multiply every S^3 point by q.
+ *
+ *  This is the one that flows. Right multiplication commutes with the
+ *  fibre action, so it carries whole fibres onto whole fibres and
+ *  descends to a genuine rotation of the base sphere, by twice the
+ *  angle of q. Sweeping it slides every circle through its
+ *  neighbours, and no two ever meet. */
+export function s3Flow(X, q) {
+  const [w, i, j, k] = q;
+  const out = new Float64Array(X.length);
+  for (let n = 0; n < X.length; n += 4) {
+    const a = X[n], b = X[n + 1], c = X[n + 2], d = X[n + 3];
+    out[n] = a * w - b * i - c * j - d * k;
+    out[n + 1] = a * i + b * w + c * k - d * j;
+    out[n + 2] = a * j - b * k + c * w + d * i;
+    out[n + 3] = a * k + b * j - c * i + d * w;
   }
   return out;
 }
@@ -346,7 +381,7 @@ export function buildFibers({
   const based = points
     ? points.map((b) => [b[0], b[1], b[2]])
     : basePoints(preset, nLat, nFiber, latMin, latMax, extra).map((b) => apply3(R, b));
-  const q = s3Rot ? quatLeft(s3Rot * Math.PI / 180) : null;
+  const q = s3Rot ? quatFlow(s3Rot * Math.PI / 180) : null;
   const chis = chirality === 'BOTH' ? ['RIGHT', 'LEFT'] : [chirality];
 
   const fibers = [], bases = [], closed = [];
@@ -354,7 +389,7 @@ export function buildFibers({
   for (const b of based) {
     for (const chi of chis) {
       let X = fiberS3(b, samples, P, Q, chi);
-      if (q) X = s3Rotate(X, q);
+      if (q) X = s3Flow(X, q);
       const p = stereographic(X);
       let finite = true;
       for (let i = 0; i < p.length && finite; i++) finite = Number.isFinite(p[i]);

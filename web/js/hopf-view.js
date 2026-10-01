@@ -175,6 +175,8 @@ export class HopfView extends Stage {
     const t0 = performance.now();
     const { palette = 'RAINBOW', radius = 0.02, sides = 8, ...rest } = opts;
     const built = buildFibers(rest);
+    this.canvas.dataset.dbg = `s3Rot=${rest.s3Rot} keys=${Object.keys(rest).join(',')}`
+      + ` p0=${built.fibers[0] ? built.fibers[0][0].toFixed(4) : 'none'}`;
 
     // size everything first, then fill: see writeTube
     let verts = 0, tris = 0;

@@ -14,6 +14,7 @@ Generator, whose stream a browser cannot reproduce, so the web module
 does not offer it either.
 """
 import json
+import math
 import os
 import sys
 
@@ -101,6 +102,26 @@ def main():
         out["quat_rotations"].append({
             "q": list(q), "base": list(b),
             "s3": fl(H._s3_rotate(X, q)),
+        })
+
+    # The flow has to MOVE the family. Record where one fibre's base
+    # point goes, so the port cannot quietly go back to multiplying on
+    # the wrong side -- which looks like nothing at all on screen.
+    def hopf(x):
+        a, b, c, d = x
+        return (2.0 * (a * c + b * d), 2.0 * (b * c - a * d),
+                a * a + b * b - c * c - d * d)
+
+    b0 = tuple(float(x) for x in H._normalize((0.3, -0.6, 0.74162)))
+    out["flow"] = []
+    for deg in (0.0, 25.0, 90.0):
+        X = H.fiber_s3(b0, 24, 1, 1, "RIGHT")
+        if deg:
+            X = H._s3_flow(X, H._quat_flow(math.radians(deg)))
+        out["flow"].append({
+            "deg": deg, "base": list(b0),
+            "moved_base": [float(v) for v in hopf(X[0])],
+            "s3": fl(X),
         })
 
     for label, kw in CASES:

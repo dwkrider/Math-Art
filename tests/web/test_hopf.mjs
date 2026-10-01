@@ -113,6 +113,32 @@ for (const c of ref.quat_rotations) {
 }
 console.log(`  ok   ${okQuat} of ${ref.quat_rotations.length} general quaternion rotations match`);
 
+// ---- the flow must MOVE the family, not slide points along their own
+// fibres. Multiplying on the wrong side leaves every circle exactly
+// where it was, so the control looks broken while every other check
+// still passes; that is what happened, and this is the guard.
+{
+  const hopf = (x) => [2 * (x[0] * x[2] + x[1] * x[3]),
+                       2 * (x[1] * x[2] - x[0] * x[3]),
+                       x[0] ** 2 + x[1] ** 2 - x[2] ** 2 - x[3] ** 2];
+  let ok = 0;
+  for (const c of ref.flow) {
+    let X = H.fiberS3(c.base, 24, 1, 1, 'RIGHT');
+    if (c.deg) X = H.s3Flow(X, H.quatFlow(c.deg * Math.PI / 180));
+    if (!cmpRows(`flow ${c.deg}deg`, X, c.s3, 4)) continue;
+    const got = hopf(Array.from(X.slice(0, 4)));
+    const e = Math.max(...got.map((v, i) => Math.abs(v - c.moved_base[i])));
+    if (e > TOL) { note(`flow ${c.deg}deg: base lands at ${got} vs ${c.moved_base}`); continue; }
+    const moved = Math.hypot(...got.map((v, i) => v - c.base[i]));
+    if (c.deg && moved < 0.1) {
+      note(`flow ${c.deg}deg does not move the base point (moved ${moved.toExponential(1)})`);
+      continue;
+    }
+    ok++;
+  }
+  console.log(`  ok   ${ok} of ${ref.flow.length} flow steps match, and they move the family`);
+}
+
 // ---- whole builds, including the fit
 for (const c of ref.cases) {
   const kw = c.kwargs;
@@ -188,6 +214,84 @@ console.log(`  ok   ${okColors} of ${ref.colors.length} colours match`);
   }
   if (off > 1e-12) note(`fibre leaves the 3-sphere by ${off.toExponential(2)}`);
   else console.log('  ok   every lifted point is on the unit 3-sphere');
+}
+
+// ---- INDEPENDENT checks.
+//
+// Everything above compares the port with the generator, which cannot
+// catch a mistake both of them share -- and there has been one: the
+// flow multiplied on the wrong side in both, so the control did
+// nothing and every parity check still passed. These test the
+// geometry against definitions and closed forms from outside this
+// project.
+{
+  const hopf = (x) => [2 * (x[0] * x[2] + x[1] * x[3]),
+                       2 * (x[1] * x[2] - x[0] * x[3]),
+                       x[0] ** 2 + x[1] ** 2 - x[2] ** 2 - x[3] ** 2];
+  const dist = (a, b) => Math.hypot(...a.map((v, i) => v - b[i]));
+
+  // (a) The definition: h(z0, z1) = (2 z0 conj(z1), |z0|^2 - |z1|^2)
+  // must send every point of a fibre to the one base point it was
+  // asked for.
+  let spread = 0, offBase = 0;
+  for (const b of [[0, 0, 1], [1, 0, 0], [0.3, -0.6, 0.74162], [-0.5, 0.5, -0.70711]]) {
+    const base = H.normalize3(b);
+    const X = H.fiberS3(base, 64);
+    const imgs = [];
+    for (let i = 0; i < X.length; i += 4) imgs.push(hopf([X[i], X[i+1], X[i+2], X[i+3]]));
+    for (const p of imgs) {
+      spread = Math.max(spread, dist(p, imgs[0]));
+      offBase = Math.max(offBase, dist(p, base));
+    }
+  }
+  if (spread > 1e-12 || offBase > 1e-12) {
+    note(`Hopf map: fibre spread ${spread.toExponential(1)}, base error ${offBase.toExponential(1)}`);
+  } else {
+    console.log('  ok   the standard Hopf map sends each fibre to its own base point');
+  }
+
+  // (b) Each fibre is a great circle of the 3-sphere: unit radius, and
+  // its Gram matrix has rank two.
+  let radius = 0, rank2 = 0;
+  for (const b of [[0.3, -0.6, 0.74162], [0.1, 0.2, 0.97417]]) {
+    const X = H.fiberS3(H.normalize3(b), 128);
+    const P = [];
+    for (let i = 0; i < X.length; i += 4) P.push([X[i], X[i+1], X[i+2], X[i+3]]);
+    for (const q of P) radius = Math.max(radius, Math.abs(Math.hypot(...q) - 1));
+    const G = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    for (const q of P) for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) G[i][j] += q[i]*q[j];
+    const tr = G[0][0] + G[1][1] + G[2][2] + G[3][3];
+    let fro = 0;
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) fro += G[i][j] * G[i][j];
+    rank2 = Math.max(rank2, Math.abs(fro - tr * tr / 2) / (tr * tr));
+  }
+  if (radius > 1e-12 || rank2 > 1e-12) {
+    note(`great circle: |r-1| ${radius.toExponential(1)}, rank-2 residual ${rank2.toExponential(1)}`);
+  } else {
+    console.log('  ok   every fibre is a great circle of the 3-sphere');
+  }
+
+  // (c) Villarceau: projected, the fibres over a circle of latitude
+  // beta lie on the torus of revolution with R = 1/cos(beta/2) and
+  // r = tan(beta/2). That closed form follows from the projection and
+  // owes nothing to our code.
+  let offTorus = 0;
+  for (const deg of [40, 70, 110]) {
+    const beta = deg * Math.PI / 180;
+    const R = 1 / Math.cos(beta / 2), r = Math.abs(Math.tan(beta / 2));
+    for (let k = 0; k < 12; k++) {
+      const lam = 2 * Math.PI * k / 12;
+      const P = H.projectFiber([Math.sin(beta) * Math.cos(lam),
+                                Math.sin(beta) * Math.sin(lam),
+                                Math.cos(beta)], 200);
+      for (let i = 0; i < P.length; i += 3) {
+        const rho = Math.hypot(P[i], P[i + 1]);
+        offTorus = Math.max(offTorus, Math.abs(Math.hypot(rho - R, P[i + 2]) - r));
+      }
+    }
+  }
+  if (offTorus > 1e-12) note(`Villarceau: points lie ${offTorus.toExponential(1)} off the torus`);
+  else console.log('  ok   a ring of fibres lies on the torus R=1/cos(b/2), r=tan(b/2)');
 }
 
 console.log(`  worst difference: ${worst.toExponential(2)} (tolerance ${TOL})`);

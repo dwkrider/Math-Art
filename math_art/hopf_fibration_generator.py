@@ -143,11 +143,31 @@ def _quat_left(phi):
     return (math.cos(phi), math.sin(phi), 0.0, 0.0)
 
 
+def _quat_flow(phi):
+    """Unit quaternion (cos phi, 0, sin phi, 0), for `_s3_flow`.
+
+    The imaginary part is j, not i, and that is the point: multiplying
+    on the right by a quaternion in the i direction turns the base
+    sphere about its own polar axis, which maps every circle of
+    latitude onto itself and so leaves the nested-tori pictures looking
+    exactly as they were.  The j direction turns the base about an
+    equatorial axis, which moves every fibre in sight.
+    """
+    return (math.cos(phi), 0.0, math.sin(phi), 0.0)
+
+
 def _s3_rotate(X, q):
-    """Left quaternion-multiply every S^3 point (row of X) by q.  A left
-    Clifford rotation commutes with the Hopf action, so it descends to a
-    rotation of the base S^2 -- spinning the whole fibre family through
-    each other (the 'flow' / cyclide-morph motion)."""
+    """Left quaternion-multiply every S^3 point (row of X) by q.
+
+    NOT a motion of the fibration.  With the parametrisation used here
+    -- z0 and z1 both carrying the factor e^{i t} -- going once round a
+    fibre IS left multiplication by (cos t, sin t, 0, 0), so left
+    multiplication by any such quaternion slides each point along its
+    own fibre and leaves every fibre exactly where it was.  The base
+    point does not move.  Use `_s3_flow` to move the family; this is
+    kept because it is the fibre action itself, which is worth having
+    under its own name.
+    """
     import numpy as np
     w, i, j, k = q
     a, b, c, d = X[:, 0], X[:, 1], X[:, 2], X[:, 3]
@@ -155,6 +175,25 @@ def _s3_rotate(X, q):
                      w * b + i * a + j * d - k * c,
                      w * c - i * d + j * a + k * b,
                      w * d + i * c - j * b + k * a], axis=1)
+
+
+def _s3_flow(X, q):
+    """Right quaternion-multiply every S^3 point (row of X) by q.
+
+    This is the one that flows.  Right multiplication commutes with the
+    fibre action (which is multiplication on the left), so it carries
+    whole fibres onto whole fibres and descends to a genuine rotation
+    of the base S^2 -- by twice the angle of q.  Sweeping it slides
+    every circle along the family, through its neighbours, without any
+    two ever meeting.
+    """
+    import numpy as np
+    w, i, j, k = q
+    a, b, c, d = X[:, 0], X[:, 1], X[:, 2], X[:, 3]
+    return np.stack([a * w - b * i - c * j - d * k,
+                     a * i + b * w + c * k - d * j,
+                     a * j - b * k + c * w + d * i,
+                     a * k + b * j - c * i + d * w], axis=1)
 
 
 def _so4(a1, a2, a3):
@@ -458,7 +497,7 @@ def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
     R = _rot_matrix(*(sphere_euler if sphere_euler is not None else _TILT))
     raw = base_points(preset, n_lat, n_fiber, lat_min, lat_max, extra)
     based = [tuple(R @ np.asarray(b)) for b in raw]
-    q = _quat_left(math.radians(s3_rot)) if s3_rot else None
+    q = _quat_flow(math.radians(s3_rot)) if s3_rot else None
     chis = ('RIGHT', 'LEFT') if chirality == 'BOTH' else (chirality,)
 
     fibers, bases, closed, dropped = [], [], [], 0
@@ -466,7 +505,7 @@ def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
         for chi in chis:
             X = fiber_s3(b, samples, P, Q, chi)
             if q is not None:
-                X = _s3_rotate(X, q)
+                X = _s3_flow(X, q)
             p = stereographic(X)
             if not np.isfinite(p).all():
                 dropped += 1
@@ -736,7 +775,7 @@ def build_fiber_surface(rings, samples, P=1, Q=1, sphere_euler=None,
     they share a frame."""
     import numpy as np
     R = _rot_matrix(*(sphere_euler if sphere_euler is not None else _TILT))
-    q = _quat_left(math.radians(s3_rot)) if s3_rot else None
+    q = _quat_flow(math.radians(s3_rot)) if s3_rot else None
     chi = 'RIGHT' if chirality == 'BOTH' else chirality
 
     built = []                                   # (bb_list, pts_list, maxr)
@@ -746,7 +785,7 @@ def build_fiber_surface(rings, samples, P=1, Q=1, sphere_euler=None,
             bb = tuple(R @ np.asarray(b))
             X = fiber_s3(bb, samples, P, Q, chi)
             if q is not None:
-                X = _s3_rotate(X, q)
+                X = _s3_flow(X, q)
             p = stereographic(X)
             bb_list.append(bb)
             pts_list.append(p)
@@ -1386,8 +1425,10 @@ if _IN_BLENDER:
                         "arrow-click steps are about 5 degrees")
         s3_rot: FloatProperty(
             name="S3 Flow", default=0.0, min=-360.0, max=360.0, step=500,
-            description="Left Clifford rotation of S^3 before projecting "
-                        "(deg) -- keyframe it to spin the whole family")
+            description="Right Clifford rotation of S^3 before projecting "
+                        "(deg) -- turns the base sphere by twice this, "
+                        "sliding every fibre through the family; keyframe "
+                        "it to spin the whole picture")
         include_axis: BoolProperty(
             name="Keep Axis Fibres", default=False,
             description="Keep near-pole fibres as clipped open lines "
@@ -2360,6 +2401,31 @@ def _selftest():
 
     Xr = _s3_rotate(XR, _quat_left(0.7))
     rot_ok = abs(np.linalg.norm(Xr, axis=1) - 1.0).max() < 1e-12
+
+    # The two sides do different jobs and the picture depends on which
+    # is which: left multiplication is the fibre action and must leave
+    # the base point alone, right multiplication is the flow and must
+    # carry the fibre somewhere else.  This shipped the wrong way round
+    # once, and nothing failed -- the slider simply did nothing.
+    def _hopf(x):
+        a, b, c, d = x
+        return (2.0 * (a * c + b * d), 2.0 * (b * c - a * d),
+                a * a + b * b - c * c - d * d)
+
+    base0 = _hopf(XR[0])
+    left_base = _hopf(_s3_rotate(XR, _quat_left(0.7))[0])
+    flow_base = _hopf(_s3_flow(XR, _quat_flow(0.7))[0])
+    flowX = _s3_flow(XR, _quat_flow(0.7))
+    one_fibre = max(
+        math.dist(_hopf(flowX[i]), _hopf(flowX[0]))
+        for i in range(len(flowX)))
+    sides_ok = (math.dist(left_base, base0) < 1e-12          # fibre action
+                and math.dist(flow_base, base0) > 0.1        # really moves
+                and one_fibre < 1e-9                         # still a fibre
+                and abs(np.linalg.norm(flowX, axis=1) - 1.0).max() < 1e-12)
+    ok_all = ok_all and sides_ok
+    print(f"left mult fixes the base, right mult flows the family "
+          f"{'OK' if sides_ok else 'BAD'}")
     R4 = _so4(0.5, -0.9, 0.3)
     so4_ok = np.allclose(R4 @ R4.T, np.eye(4), atol=1e-12)
     ok_all = ok_all and rot_ok and so4_ok
