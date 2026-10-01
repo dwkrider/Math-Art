@@ -243,6 +243,8 @@ export class HopfView extends Stage {
       dropped: built.dropped,
       vertices: verts,
       extent,
+      centre: built.centre,
+      scale: built.scale,
       buildMs: performance.now() - t0,
     };
   }

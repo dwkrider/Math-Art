@@ -44,6 +44,15 @@ function main() {
   // when the shape changes, not when a parameter is merely
   // animating, which would otherwise make the scene breathe
   let lastFrameKey = null;
+  // The fit held still for the duration of an animation. Letting
+  // buildFibers work it out per frame makes the whole picture lurch:
+  // as a swept torus grows, the centre and the scale travel with it,
+  // measured at 0.3 of a radius between two-degree steps. So it is
+  // computed once, over the extremes the animation will reach, and
+  // handed back in on every frame.
+  let heldFit = null;
+  let lastFitKey = null;
+  const RING_MIN = 8, RING_MAX = 172;
   const state = {
     preset: 'FLOWER',
     nFiber: 36,
@@ -177,7 +186,66 @@ function main() {
             apply3(R, normalize3([-0.45, 0.5, -0.25]))];
   }
 
+  /** The fit that covers every frame of the current animation: build
+   *  the extremes, take the box that contains them all, and scale to
+   *  that. Costs a handful of builds, once, when something structural
+   *  changes. */
+  function computeHeldFit() {
+    const probes = [];
+    const save = { ring: state.ring, flow: state.flow, spin: state.spin };
+    const a = state.anim;
+    if (a === 'LATITUDE' || a === 'LATFLOW') {
+      for (const r of [RING_MIN, 90, RING_MAX]) probes.push({ ring: r });
+    }
+    if (a === 'FLOW' || a === 'LATFLOW') {
+      for (const f of [0, 90, 180, 270]) probes.push({ flow: f });
+    }
+    if (a === 'SPIN') {
+      for (const sp of [0, 90, 180, 270]) probes.push({ spin: sp });
+    }
+    if (!probes.length) return null;
+
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    let worst = 0;
+    for (const probe of probes) {
+      Object.assign(state, save, probe);
+      const args = buildArgs();
+      if (args._custom) { args.points = args._custom; delete args._custom; }
+      // raw, with no fit of its own, so the boxes can be compared
+      const b = buildFibers({ ...args, samples: 96,
+                              fitCentre: [0, 0, 0], fitScale: 1 });
+      for (const f of b.fibers) {
+        for (let i = 0; i < f.length; i += 3) {
+          for (let k = 0; k < 3; k++) {
+            if (f[i + k] < lo[k]) lo[k] = f[i + k];
+            if (f[i + k] > hi[k]) hi[k] = f[i + k];
+          }
+        }
+      }
+    }
+    Object.assign(state, save);
+    if (!Number.isFinite(lo[0])) return null;
+    const centre = [0.5 * (lo[0] + hi[0]), 0.5 * (lo[1] + hi[1]),
+                    0.5 * (lo[2] + hi[2])];
+    for (let k = 0; k < 3; k++) worst = Math.max(worst, hi[k] - lo[k]);
+    // the same convention as the generator's own fit: a radius of one
+    const scale = worst > 1e-9 ? 2 / worst : 1;
+    return { centre, scale };
+  }
+
   function rebuild() {
+    // A new shape, or a different thing being animated, needs a new
+    // fit held across it. The ring is deliberately not part of this
+    // key: a latitude sweep must keep the fit it started with.
+    const fitKey = [state.preset, state.nFiber, state.nLat, state.spread,
+                    state.P, state.Q, state.chirality, state.includeAxis,
+                    state.halo, state.haloN, state.custom.length,
+                    state.anim].join('|');
+    if (fitKey !== lastFitKey) {
+      lastFitKey = fitKey;
+      heldFit = computeHeldFit();
+    }
     const args = buildArgs();
     if (args._custom) {
       args.points = args._custom;
@@ -191,6 +259,10 @@ function main() {
     // is drawn a little coarser: fewer samples along each fibre and a
     // thinner-walled tube. Still exact -- the samples are points of
     // the real curve -- just fewer of them, and only while moving.
+    if (heldFit) {
+      args.fitCentre = heldFit.centre;
+      args.fitScale = heldFit.scale;
+    }
     const stats = view.build({
       ...args,
       samples: state.playing ? 120 : (args.samples ?? 200),
@@ -202,12 +274,18 @@ function main() {
     // Reframe when the shape of the picture changes, but not while a
     // parameter is merely animating: rescaling every frame would make
     // the whole scene breathe.
-    const key = [state.preset, state.nFiber, state.nLat, state.ring, state.spread,
+    const key = [state.preset, state.nFiber, state.nLat, state.spread,
                  state.P, state.Q, state.chirality, state.includeAxis,
-                 state.halo, state.haloN, state.custom.length].join('|');
+                 state.halo, state.haloN, state.custom.length,
+                 state.anim].join('|');
     if (key !== lastFrameKey) {
       lastFrameKey = key;
-      view.frame(stats.extent);
+      // With a held fit the picture is scaled so that the LARGEST
+      // frame of the animation spans two units, so the camera frames
+      // for that rather than for whatever happens to be on screen
+      // now -- otherwise a sweep that starts small would grow out of
+      // the view.
+      view.frame(heldFit ? 1.0 : stats.extent);
     }
     sphere.show(bases, state.palette);
 
@@ -351,8 +429,6 @@ function main() {
     playBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
   playBtn.addEventListener('click', () => setPlaying(!state.playing));
-
-  const RING_MIN = 8, RING_MAX = 172;
 
   view.onFrame = (dt) => {
     if (!state.playing) return;

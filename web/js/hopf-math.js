@@ -99,6 +99,73 @@ export function fiberS3(base, samples, P = 1, Q = 1, chirality = 'RIGHT') {
   return out;
 }
 
+/** The fibre over `base`, sampled at the given parameter values.
+ *  `fiberS3` is this with an even spacing of [0, 2pi). */
+export function fiberS3At(base, ts, P = 1, Q = 1, chirality = 'RIGHT') {
+  const [a, b, c] = base;
+  const beta = Math.acos(Math.max(-1, Math.min(1, c)));
+  const lam = Math.atan2(b, a);
+  const ch = Math.cos(beta / 2), sh = Math.sin(beta / 2);
+  const sgn = chirality === 'LEFT' ? -1 : 1;
+  const out = new Float64Array(ts.length * 4);
+  for (let i = 0; i < ts.length; i++) {
+    const p0 = P * ts[i] + lam, p1 = Q * ts[i];
+    out[i * 4] = ch * Math.cos(p0);
+    out[i * 4 + 1] = ch * Math.sin(p0);
+    out[i * 4 + 2] = sh * Math.cos(p1);
+    out[i * 4 + 3] = sgn * sh * Math.sin(p1);
+  }
+  return out;
+}
+
+/** How many points to probe a fibre with before placing its samples. */
+export function probeCount(samples) {
+  return Math.min(4096, Math.max(512, 8 * samples));
+}
+
+/** Parameters whose PROJECTED points are evenly spaced.
+ *
+ *  A fibre sampled evenly in its own angle does not project evenly:
+ *  the stretch of it that passes near the projection pole is thrown
+ *  far out and its samples arrive metres apart, which is why the big
+ *  outer loops look like polygons. Measured on a fibre well to the
+ *  south, the longest chord was 104 times the shortest. This walks a
+ *  dense probe, measures arc length along the projected curve, and
+ *  spends the same budget of samples evenly along it. */
+export function adaptiveParams(base, samples, P, Q, chirality, q) {
+  const m = probeCount(samples);
+  const tp = new Float64Array(m);
+  for (let i = 0; i < m; i++) tp[i] = TAU * i / m;
+  let X = fiberS3At(base, tp, P, Q, chirality);
+  if (q) X = s3Flow(X, q);
+  const p = stereographic(X);
+  // cumulative chord length, closing the loop
+  const cum = new Float64Array(m + 1);
+  for (let i = 0; i < m; i++) {
+    const j = (i + 1) % m;
+    cum[i + 1] = cum[i] + Math.hypot(p[j * 3] - p[i * 3],
+                                     p[j * 3 + 1] - p[i * 3 + 1],
+                                     p[j * 3 + 2] - p[i * 3 + 2]);
+  }
+  const total = cum[m];
+  const out = new Float64Array(samples);
+  if (!Number.isFinite(total) || total <= 1e-12) {
+    for (let i = 0; i < samples; i++) out[i] = TAU * i / samples;
+    return out;
+  }
+  // the probe parameters, with 2pi closing the list, as np.interp sees
+  const tt = (i) => (i === m ? TAU : tp[i]);
+  let k = 0;
+  for (let i = 0; i < samples; i++) {
+    const want = total * i / samples;
+    while (k < m && cum[k + 1] < want) k++;
+    const lo = cum[k], hi = cum[k + 1];
+    const f = hi > lo ? (want - lo) / (hi - lo) : 0;
+    out[i] = tt(k) + (tt(k + 1) - tt(k)) * f;
+  }
+  return out;
+}
+
 /** Unit quaternion (cos phi, sin phi, 0, 0): one plane of a left
  *  Clifford rotation of S^3. */
 export function quatLeft(phi) {
@@ -415,6 +482,7 @@ export function buildFibers({
   P = 1, Q = 1, latMin = 20, latMax = 160, fitRadius = 1,
   maxRadius = 12, sphereEuler = null, s3Rot = 0, chirality = 'RIGHT',
   includeAxis = false, extra = {}, points = null,
+  fitCentre = null, fitScale = null, adaptive = true,
 } = {}) {
   // `points` is the page's own entry, for base points the reader has
   // clicked: they are already where they will be drawn, so they skip
@@ -433,7 +501,9 @@ export function buildFibers({
   let dropped = 0;
   for (const b of based) {
     for (const chi of chis) {
-      let X = fiberS3(b, samples, P, Q, chi);
+      let X = adaptive
+        ? fiberS3At(b, adaptiveParams(b, samples, P, Q, chi, q), P, Q, chi)
+        : fiberS3(b, samples, P, Q, chi);
       if (q) X = s3Flow(X, q);
       const p = stereographic(X);
       let finite = true;
@@ -466,7 +536,10 @@ export function buildFibers({
       }
     }
   }
-  if (!fibers.length) return { fibers: [], bases: [], closed: [], dropped };
+  if (!fibers.length) {
+    return { fibers: [], bases: [], closed: [], dropped,
+             centre: fitCentre || [0, 0, 0], scale: fitScale || 1 };
+  }
 
   // centre on the bounding box, scale by the 95th percentile radius --
   // the generator's fit, so the site and the add-on frame alike
@@ -482,17 +555,28 @@ export function buildFibers({
       }
     }
   }
-  const centre = [0.5 * (lo[0] + hi[0]), 0.5 * (lo[1] + hi[1]), 0.5 * (lo[2] + hi[2])];
-  const rad = new Float64Array(total);
-  let w = 0;
-  for (const f of fibers) {
-    for (let i = 0; i < f.length; i += 3) {
-      rad[w++] = Math.hypot(f[i] - centre[0], f[i + 1] - centre[1], f[i + 2] - centre[2]);
+  // The fit is normally worked out from the fibres in hand. An
+  // animation must not do that: as the picture grows and shrinks the
+  // centre and the scale move with it, and everything on screen
+  // lurches from frame to frame -- measured at 0.3 of a radius per
+  // two degrees of a latitude sweep. Passing `fitCentre` and
+  // `fitScale` holds the transform still across a sequence; both are
+  // returned so a caller can work them out once and hand them back.
+  const centre = fitCentre || [0.5 * (lo[0] + hi[0]), 0.5 * (lo[1] + hi[1]),
+                               0.5 * (lo[2] + hi[2])];
+  let scale = fitScale;
+  if (!scale) {
+    const rad = new Float64Array(total);
+    let w = 0;
+    for (const f of fibers) {
+      for (let i = 0; i < f.length; i += 3) {
+        rad[w++] = Math.hypot(f[i] - centre[0], f[i + 1] - centre[1], f[i + 2] - centre[2]);
+      }
     }
+    const sorted = Array.from(rad).sort((a, b) => a - b);
+    const ref = percentile(sorted, 95);
+    scale = ref > 1e-9 ? fitRadius / ref : 1;
   }
-  const sorted = Array.from(rad).sort((a, b) => a - b);
-  const ref = percentile(sorted, 95);
-  const scale = ref > 1e-9 ? fitRadius / ref : 1;
   for (const f of fibers) {
     for (let i = 0; i < f.length; i += 3) {
       f[i] = (f[i] - centre[0]) * scale;
@@ -500,7 +584,7 @@ export function buildFibers({
       f[i + 2] = (f[i + 2] - centre[2]) * scale;
     }
   }
-  return { fibers, bases, closed, dropped };
+  return { fibers, bases, closed, dropped, centre, scale };
 }
 
 // ------------------------------------------------------------- colour

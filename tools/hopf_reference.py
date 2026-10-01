@@ -48,6 +48,14 @@ CASES = [
     ("icosa-pq", dict(preset="ICOSA", samples=96, P=2, Q=3)),
     ("dodeca-left", dict(preset="DODECA", samples=48, chirality="LEFT")),
     ("tetra", dict(preset="TETRA", samples=48)),
+    # the even-angle sampling the generator used before, still
+    # reachable, and a fit handed in from outside -- what an animation
+    # does to stop the picture lurching between frames
+    ("flower-even", dict(preset="FLOWER", n_fiber=16, samples=64,
+                         adaptive=False)),
+    ("latitudes-held-fit", dict(preset="LATITUDES", n_lat=4, n_fiber=8,
+                                samples=64, fit_centre=[0.1, -0.05, 0.2],
+                                fit_scale=0.37)),
     ("octa", dict(preset="OCTA", samples=48)),
     ("cube", dict(preset="CUBE", samples=48)),
 ]
@@ -129,6 +137,8 @@ def main():
             return_stats=True, **kw)
         out["cases"].append({
             "label": label, "kwargs": kw,
+            "centre": [float(x) for x in stats["centre"]],
+            "scale": float(stats["scale"]),
             "fibers": [fl(f) for f in fibers],
             "bases": [[float(x) for x in b] for b in bases],
             "closed": [bool(c) for c in closed],

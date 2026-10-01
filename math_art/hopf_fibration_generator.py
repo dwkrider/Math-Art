@@ -158,6 +158,65 @@ def fiber_s3(base, samples, P=1, Q=1, chirality='RIGHT'):
                      sh * np.cos(p1), sgn * sh * np.sin(p1)], axis=1)
 
 
+def fiber_s3_at(base, ts, P=1, Q=1, chirality='RIGHT'):
+    """The fibre over `base`, sampled at the given parameter values.
+
+    `fiber_s3` is this with `ts` an even spacing of [0, 2pi).
+    """
+    import numpy as np
+    a, b, c = base
+    beta = math.acos(max(-1.0, min(1.0, c)))
+    lam = math.atan2(b, a)
+    ch, sh = math.cos(beta / 2.0), math.sin(beta / 2.0)
+    t = np.asarray(ts, float)
+    p0 = P * t + lam
+    p1 = Q * t
+    sgn = -1.0 if chirality == 'LEFT' else 1.0
+    return np.stack([ch * np.cos(p0), ch * np.sin(p0),
+                     sh * np.cos(p1), sgn * sh * np.sin(p1)], axis=1)
+
+
+# How many points to probe a fibre with before deciding where to put
+# its samples.  Eight times the budget, within reason.
+def _probe_count(samples):
+    return int(min(4096, max(512, 8 * samples)))
+
+
+def _adaptive_params(base, samples, P, Q, chirality, q):
+    """Parameter values whose PROJECTED points are evenly spaced.
+
+    A fibre is sampled evenly in its own angle, but stereographic
+    projection does not preserve that: the part of a circle that
+    passes near the projection pole is thrown far out and arrives with
+    its samples stretched metres apart, which is what makes the big
+    outer loops look like polygons.  This walks a dense probe of the
+    projected curve, measures its arc length, and returns `samples`
+    parameters at equal arc length along it -- the same budget of
+    points, spent where the curve actually goes.
+    """
+    import numpy as np
+    m = _probe_count(samples)
+    tp = np.linspace(0.0, 2.0 * pi, m, endpoint=False)
+    X = fiber_s3_at(base, tp, P, Q, chirality)
+    if q is not None:
+        X = _s3_rotate_or_flow(X, q)
+    p = stereographic(X)
+    d = np.linalg.norm(np.diff(np.vstack([p, p[:1]]), axis=0), axis=1)
+    cum = np.concatenate([[0.0], np.cumsum(d)])      # length m+1
+    total = cum[-1]
+    if not np.isfinite(total) or total <= 1e-12:
+        return np.linspace(0.0, 2.0 * pi, samples, endpoint=False)
+    want = np.linspace(0.0, total, samples, endpoint=False)
+    tt = np.concatenate([tp, [2.0 * pi]])
+    return np.interp(want, cum, tt)
+
+
+def _s3_rotate_or_flow(X, q):
+    """The probe has to be transformed exactly as the real samples
+    are, and the flow is what `build_fibers` applies."""
+    return _s3_flow(X, q)
+
+
 def _quat_left(phi):
     """Unit quaternion (cos phi, sin phi, 0, 0) -- one plane of a
     left-isoclinic (Clifford) rotation of S^3."""
@@ -498,11 +557,17 @@ def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
                  P=1, Q=1, lat_min=20.0, lat_max=160.0,
                  fit_radius=1.0, max_radius=12.0,
                  sphere_euler=None, s3_rot=0.0, chirality='RIGHT',
-                 include_axis=False, extra=None, return_stats=False):
+                 include_axis=False, extra=None, return_stats=False,
+                 fit_centre=None, fit_scale=None, adaptive=True):
     """Return (fibers, bases): `fibers` is a list of (n, 3) projected
     polylines and `bases` the matching (rotated) base points for
     colouring.  Centred at the origin and uniformly scaled so the
     95th-percentile point radius is `fit_radius`.
+
+    With `adaptive` (the default) the samples along each fibre are
+    placed at equal arc length of the PROJECTED curve rather than at
+    equal steps of the fibre's own angle, which is what keeps the far
+    loops smooth; the count is unchanged.
 
     `sphere_euler` orients S^2 (defaults to the built-in tilt); `s3_rot`
     (degrees) applies a left Clifford rotation of S^3 before projecting
@@ -524,7 +589,11 @@ def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
     fibers, bases, closed, dropped = [], [], [], 0
     for b in based:
         for chi in chis:
-            X = fiber_s3(b, samples, P, Q, chi)
+            if adaptive:
+                ts = _adaptive_params(b, samples, P, Q, chi, q)
+                X = fiber_s3_at(b, ts, P, Q, chi)
+            else:
+                X = fiber_s3(b, samples, P, Q, chi)
             if q is not None:
                 X = _s3_flow(X, q)
             p = stereographic(X)
@@ -551,13 +620,25 @@ def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
         return ([], [], [], {'dropped': dropped}) if return_stats else ([], [])
 
     allpts = np.concatenate(fibers, axis=0)
-    center = 0.5 * (allpts.max(0) + allpts.min(0))
-    rad = np.linalg.norm(allpts - center, axis=1)
-    ref = np.percentile(rad, 95.0)
-    scale = (fit_radius / ref) if ref > 1e-9 else 1.0
+    # Normally the fit is read off the fibres in hand.  An ANIMATION
+    # must not do that: as the picture grows the centre and the scale
+    # travel with it and every frame lurches.  Pass `fit_centre` and
+    # `fit_scale` to hold the transform still across a sequence -- a
+    # keyframed `s3_rot` or a swept latitude wants this -- and read
+    # the computed pair back out of `stats`.
+    center = (np.asarray(fit_centre, float) if fit_centre is not None
+              else 0.5 * (allpts.max(0) + allpts.min(0)))
+    if fit_scale is not None:
+        scale = float(fit_scale)
+    else:
+        rad = np.linalg.norm(allpts - center, axis=1)
+        ref = np.percentile(rad, 95.0)
+        scale = (fit_radius / ref) if ref > 1e-9 else 1.0
     fibers = [(p - center) * scale for p in fibers]
     if return_stats:
-        return fibers, bases, closed, {'dropped': dropped}
+        return fibers, bases, closed, {'dropped': dropped,
+                                       'centre': [float(c) for c in center],
+                                       'scale': float(scale)}
     return fibers, bases
 
 

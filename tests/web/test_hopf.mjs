@@ -148,7 +148,15 @@ for (const c of ref.cases) {
     latMin: kw.lat_min ?? 20.0, latMax: kw.lat_max ?? 160.0,
     s3Rot: kw.s3_rot ?? 0, chirality: kw.chirality ?? 'RIGHT',
     includeAxis: kw.include_axis ?? false, extra: kw.extra ?? {},
+    adaptive: kw.adaptive ?? true,
+    fitCentre: kw.fit_centre ?? null, fitScale: kw.fit_scale ?? null,
   });
+  // the fit itself, which an animation holds still between frames
+  if (c.centre !== undefined) {
+    const e = Math.max(...got.centre.map((v, i) => Math.abs(v - c.centre[i])),
+                       Math.abs(got.scale - c.scale));
+    if (e > TOL) note(`${c.label}: fit centre/scale differs by ${e.toExponential(2)}`);
+  }
   if (got.fibers.length !== c.fibers.length) {
     note(`${c.label}: ${got.fibers.length} fibres vs ${c.fibers.length}`);
     continue;
