@@ -275,6 +275,50 @@ def _selftest():
                 Vs, Fs = _nb.stephanoid(n, p, q, kind)
                 assert _nb._planar(Vs, Fs), (kind, n, p, q)
                 assert _nb.is_polyhedron(Fs, len(Vs)), (kind, n, p, q)
+    # The display mesh: every face and every solid-display cell wound
+    # OUTWARD, cells flat in their face's plane, non-degenerate, and not
+    # overlapping (their areas sum to the face's covered area, checked by
+    # sampling on a few faces).
+    def newell(P):
+        n = np.zeros(3)
+        for i in range(len(P)):
+            n += np.cross(P[i], P[(i + 1) % len(P)])
+        return 0.5 * n
+    for e in CATALOGUE:
+        V, F = build_entry(e)
+        for f in _nb.oriented(V, F):
+            P = np.asarray(V)[f]
+            assert newell(P) @ P.mean(axis=0) >= -1e-12, (e['symbol'], f)
+        V2, F2 = display_mesh(V, F)
+        V2 = np.asarray(V2)
+        for f in F2:
+            P = V2[f]
+            nv = newell(P)
+            assert np.linalg.norm(nv) > 1e-12, (e['symbol'], 'sliver')
+            assert nv @ P.mean(axis=0) > 0, (e['symbol'], 'inward cell')
+    # the pentagram: 5 points + the central pentagon, total area equal to
+    # the region of non-zero winding
+    e = by_symbol('D-6')
+    V, F = build_entry(e)
+    V2, F2 = display_mesh(V, F)
+    assert len(F2) == 72 and sorted({len(f) for f in F2}) == [3, 5], len(F2)
+    rng = np.random.default_rng(1)
+    for s in ('D-6', 'gC-3.1', 'sD-5.2'):
+        V, F = build_entry(by_symbol(s))
+        V = np.asarray(V)
+        f = F[0]
+        c, e1, e2, n = _nb._face_frame(V, f)
+        B = np.array([e1, e2])
+        Q = (V[f] - c) @ B.T
+        cells = _nb._face_cells(Q, 1e-9)
+        a_cells = sum(_nb._signed_area(P) for P in cells)
+        lo, hi = Q.min(axis=0), Q.max(axis=0)
+        pts = lo + (hi - lo) * rng.random((40000, 2))
+        hit = sum(1 for x, y in pts if _nb._winding(Q, x, y) != 0)
+        a_mc = hit / len(pts) * float(np.prod(hi - lo))
+        assert abs(a_cells - a_mc) < 0.02 * a_mc, (s, a_cells, a_mc)
+    print('display: faces and cells wound outward; cell areas match the '
+          'covered region')
     print('RESULT: OK')
 
 
@@ -287,7 +331,22 @@ except ImportError:
     _IN_BLENDER = False
 
 
+def display_mesh(V, F, style='SOLID'):
+    """What actually goes to Blender.
+
+    Every face wound outward.  For the solid style each face is further
+    cut into the regions it covers, so star and crossed faces shade as
+    one clean surface instead of overlapping triangles; the frame,
+    strut and segment styles keep the true faces, whose edges are the
+    polyhedron's edges.
+    """
+    if style == 'SOLID':
+        return _nb.visible_regions(V, F)
+    return V, _nb.oriented(V, F)
+
+
 def _emit(op, context, V, F, name):
+    V, F = display_mesh(V, F, getattr(op, 'style', 'SOLID'))
     V = [tuple(float(c) * op.scale for c in v) for v in V]
     F = [list(f) for f in F]
     if _shell is not None:

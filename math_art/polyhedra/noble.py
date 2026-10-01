@@ -646,6 +646,180 @@ def convex_hull(V, tol=1e-7):
 
 
 # --------------------------------------------------------------------
+# Making the faces displayable
+# --------------------------------------------------------------------
+# A noble polyhedron's faces are mostly star or crossed polygons, and the
+# group that sweeps one face round includes mirrors, which reverse it.
+# Handed to Blender as-is, half the faces point inward and every
+# self-intersecting n-gon is triangulated into coplanar triangles that
+# overlap and z-fight.  So each face is oriented OUTWARD (every face
+# plane misses the centre: the inradius is positive), and for a solid
+# display it is cut, in its own plane, into the regions it actually
+# covers -- the cells of its edge arrangement with non-zero winding
+# number, which is the density convention for star faces.
+
+def _face_frame(V, f):
+    """(centroid, e1, e2, n) for a face, n the OUTWARD unit normal and
+    (e1, e2, n) right-handed."""
+    P = V[list(f)]
+    c = P.mean(axis=0)
+    _u, _s, vt = np.linalg.svd(P - c)
+    n = vt[-1]
+    if float(n @ c) < 0:
+        n = -n
+    e1 = vt[0]
+    e2 = np.cross(n, e1)
+    return c, e1, e2, n
+
+
+def _signed_area(Q):
+    x, y = Q[:, 0], Q[:, 1]
+    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
+
+
+def oriented(V, F):
+    """The faces re-wound so each one's signed area faces outward.
+
+    A crossed face whose signed area is (near) zero keeps its winding --
+    it has no preferred side -- which is why the solid display uses
+    `visible_regions` instead.
+    """
+    V = np.asarray(V, float)
+    out = []
+    for f in F:
+        c, e1, e2, _n = _face_frame(V, f)
+        Q = (V[list(f)] - c) @ np.array([e1, e2]).T
+        out.append(list(f) if _signed_area(Q) >= 0 else list(f)[::-1])
+    return out
+
+
+def _winding(Q, x, y):
+    """Winding number of the closed polygon Q about (x, y)."""
+    w = 0
+    n = len(Q)
+    for i in range(n):
+        (x0, y0), (x1, y1) = Q[i], Q[(i + 1) % n]
+        if y0 <= y < y1 or y1 <= y < y0:
+            t = (y - y0) / (y1 - y0)
+            if x0 + t * (x1 - x0) > x:
+                w += 1 if y1 > y0 else -1
+    return w
+
+
+def _face_cells(Q, tol):
+    """Cells of the arrangement of a closed 2D polygon's edges that have
+    non-zero winding number, each a CCW list of 2D points."""
+    n = len(Q)
+    segs = [(Q[i], Q[(i + 1) % n]) for i in range(n)]
+    # split every edge at every crossing (and at vertices lying on it)
+    cuts = [[0.0, 1.0] for _ in range(n)]
+    for i in range(n):
+        a, b = segs[i]
+        d = b - a
+        for j in range(n):
+            if j == i:
+                continue
+            c, e = segs[j]
+            g = e - c
+            den = d[0] * g[1] - d[1] * g[0]
+            if abs(den) < 1e-14:
+                # parallel: only collinear endpoints matter
+                for p in (c, e):
+                    t = float((p - a) @ d) / float(d @ d)
+                    if tol < t < 1 - tol and                             abs(d[0] * (p - a)[1] - d[1] * (p - a)[0])                             < tol * float(d @ d):
+                        cuts[i].append(t)
+                continue
+            w = c - a
+            t = (w[0] * g[1] - w[1] * g[0]) / den
+            u = (w[0] * d[1] - w[1] * d[0]) / den
+            if -tol <= u <= 1 + tol and tol < t < 1 - tol:
+                cuts[i].append(float(t))
+    nodes, key = [], {}
+
+    def node(p):
+        k = (round(p[0] / tol), round(p[1] / tol))
+        for dk in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1),
+                   (1, 1), (-1, -1), (1, -1), (-1, 1)):
+            kk = (k[0] + dk[0], k[1] + dk[1])
+            if kk in key and np.linalg.norm(nodes[key[kk]] - p) < 2 * tol:
+                return key[kk]
+        key[k] = len(nodes)
+        nodes.append(np.array(p, float))
+        return key[k]
+
+    edges = set()
+    for i, (a, b) in enumerate(segs):
+        ts = sorted(set(cuts[i]))
+        ids = [node(a + t * (b - a)) for t in ts]
+        for u, v in zip(ids, ids[1:]):
+            if u != v:
+                edges.add((min(u, v), max(u, v)))
+    out_of = {}
+    for u, v in edges:
+        out_of.setdefault(u, []).append(v)
+        out_of.setdefault(v, []).append(u)
+    ang = {}
+    for u, vs in out_of.items():
+        for v in vs:
+            dv = nodes[v] - nodes[u]
+            ang[(u, v)] = math.atan2(dv[1], dv[0])
+    for u in out_of:
+        out_of[u].sort(key=lambda v: ang[(u, v)])
+    used, cells = set(), []
+    for u0, v0 in [(u, v) for u, vs in out_of.items() for v in vs]:
+        if (u0, v0) in used:
+            continue
+        cyc, (u, v) = [], (u0, v0)
+        while (u, v) not in used:
+            used.add((u, v))
+            cyc.append(u)
+            # arriving at v from u: take the next edge clockwise from the
+            # way back, which walks each face with the face on the left
+            nb = out_of[v]
+            k = nb.index(u)
+            u, v = v, nb[k - 1]
+        P = np.array([nodes[i] for i in cyc])
+        if len(cyc) < 3 or _signed_area(P) <= tol * tol:
+            continue                      # the unbounded face, or a sliver
+        # a point just inside the cell, off the middle of its first edge
+        a, b = P[0], P[1]
+        m = (a + b) / 2
+        t = (b - a) / np.linalg.norm(b - a)
+        h = 1e-4 * math.sqrt(_signed_area(P))
+        x, y = m + h * np.array([-t[1], t[0]])
+        if _winding(Q, x, y) != 0:
+            cells.append(P)
+    return cells
+
+
+def visible_regions(V, F):
+    """(V', F') for a SOLID display: each face cut into the regions it
+    covers, every region a simple polygon wound outward.  The original
+    vertices keep their indices; crossing points are appended."""
+    V = np.asarray(V, float)
+    scale = float(np.max(np.linalg.norm(V, axis=1))) or 1.0
+    tol = 1e-9 * scale
+    VV = [tuple(v) for v in V]
+    idx = {_vkey(v, scale, 7): i for i, v in enumerate(V)}
+    out = []
+    for f in F:
+        c, e1, e2, _n = _face_frame(V, f)
+        B = np.array([e1, e2])
+        Q = (V[list(f)] - c) @ B.T
+        for cell in _face_cells(Q, tol):
+            ids = []
+            for q in cell:
+                p = c + q[0] * e1 + q[1] * e2
+                k = _vkey(p, scale, 7)
+                if k not in idx:
+                    idx[k] = len(VV)
+                    VV.append(tuple(p))
+                ids.append(idx[k])
+            out.append(ids)
+    return np.array(VV), out
+
+
+# --------------------------------------------------------------------
 # Critical orbits of a one-parameter type (Hill Section 3.3)
 # --------------------------------------------------------------------
 def coplanarity_cubics(otype):
