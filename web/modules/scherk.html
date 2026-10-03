@@ -100,6 +100,11 @@
                aria-label="Storey height">
       </label>
       <label class="belt-field belt-slider">
+        <span>Thickness <output id="thickness-out" for="thickness"></output></span>
+        <input type="range" id="thickness" min="0" max="0.5" step="0.005" value="0.07"
+               aria-label="How thick the surface is">
+      </label>
+      <label class="belt-field belt-slider">
         <span>Flange width <output id="flange-out" for="flange"></output></span>
         <input type="range" id="flange" min="0.7" max="3" step="0.02" value="1.1"
                aria-label="Flange width">
@@ -136,6 +141,7 @@
 
     <p class="belt-hint" id="readout"></p>
     <p class="belt-hint" id="close-line"></p>
+    <p class="belt-hint" id="sides-line" hidden></p>
 
     <div class="belt-row scherk-export">
       <label class="belt-field belt-slider">
@@ -144,9 +150,9 @@
                aria-label="Longest side of the printed object, in millimetres">
       </label>
       <label class="belt-field belt-slider">
-        <span>Wall <output id="wall-out" for="wall"></output></span>
+        <span>Wall if flat <output id="wall-out" for="wall"></output></span>
         <input type="range" id="wall" min="0.4" max="6" step="0.2" value="2"
-               aria-label="Wall thickness in millimetres">
+               aria-label="Wall thickness in millimetres, used only when the surface has no thickness of its own">
       </label>
       <span class="belt-snaps">
         <button type="button" id="export" class="stage-action">Download STL</button>
@@ -207,12 +213,22 @@
 
   <h2>Printing one</h2>
   <p>
-    The surface here has no thickness — it is a mathematical sheet, and
-    a slicer would make nothing of it. <em>Download STL</em> therefore
-    gives it a wall, offsetting the sheet to either side by half the
-    thickness you ask for and closing the rim, then scales the result so
-    its longest side is the size you ask for. The file is binary STL in
-    millimetres.
+    What you see is what you get. With <em>Thickness</em> above zero the
+    sculpture on screen is already a solid — the mid-surface offset to
+    either side and closed along its rim — and the STL is that same
+    solid, scaled so its longest side is the size you ask for. Set the
+    thickness to zero and the sculpture becomes the bare mathematical
+    sheet, which a slicer can do nothing with; the export then falls
+    back to <em>Wall if flat</em> and gives it one. The file is binary
+    STL in millimetres.
+  </p>
+  <p>
+    Some of these rings have only one side. Twist the tower far enough
+    and the surface comes back onto itself reversed, so there is no
+    consistent inside and outside to give it — the Minimal Trefoil and
+    the Heptoroid are both like this. The page says so under the
+    sculpture when it happens. Such a shape still prints, but a slicer
+    has to guess at the faces where the two sides meet.
   </p>
   <p>
     Two honest warnings. A thin wall on a wide sculpture is fragile in

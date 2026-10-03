@@ -30,7 +30,23 @@ function main() {
     const n = (x) => x.toLocaleString();
     readout.textContent =
       `${n(stats.patches)} patches · ${n(stats.vertices)} vertices · `
-      + `${n(stats.triangles)} triangles · built in ${stats.buildMs.toFixed(0)} ms`;
+      + `${n(stats.triangles)} triangles · `
+      + (stats.solid ? 'a solid' : 'a sheet with no thickness')
+      + ` · built in ${stats.buildMs.toFixed(0)} ms`;
+    // A solid whose faces cannot all agree which way is out is worth
+    // saying out loud: it is a fact about the sculpture, and it is
+    // also what a slicer will complain about.
+    const sides = $('#sides-line');
+    if (stats.solid && !stats.orientable) {
+      sides.textContent =
+        `This one has no consistent inside and outside: following the `
+        + `surface round brings you back on the other side, and `
+        + `${stats.misWound.toLocaleString()} edges are left where the two `
+        + `faces disagree. It will still slice, but not as a clean solid.`;
+      sides.hidden = false;
+    } else {
+      sides.hidden = true;
+    }
     closeLine.textContent = stats.closes
       ? 'The ring closes: the two ends of the tower meet with their '
         + 'saddles aligned, so this is a single closed band.'
@@ -65,6 +81,7 @@ function main() {
     ['#branches', 'branches', (v) => String(v)],
     ['#storeys', 'storeys', (v) => String(v)],
     ['#height', 'height', (v) => v.toFixed(2)],
+    ['#thickness', 'thickness', (v) => (v > 0 ? v.toFixed(3) : 'none')],
     ['#flange', 'flange', (v) => v.toFixed(2)],
     ['#twist', 'twist', (v) => `${v}°`],
     ['#azimuth', 'azimuth', (v) => `${v}°`],
@@ -129,7 +146,9 @@ function main() {
     // let the button repaint before the work starts
     setTimeout(() => {
       try {
-        const mesh = surfaceMesh(state);
+        // the geometry the view just built, thickness and all, so the
+        // file cannot describe a different sculpture from the picture
+        const mesh = view.lastGeometry || surfaceMesh(state);
         const built = buildBinarySTLFromMesh(mesh.positions, mesh.indices, {
           sizeMM: Number(sizeEl.value),
           thicknessMM: Number(wallEl.value),
@@ -145,8 +164,9 @@ function main() {
         const mm = built.mm.map((v) => v.toFixed(0)).join(' × ');
         exportNote.textContent =
           `${built.triangles.toLocaleString()} triangles, ${mm} mm`
-          + (built.thickened ? `, walled at ${Number(wallEl.value).toFixed(1)} mm`
-                             : ', already closed — no wall added')
+          + (built.thickened
+            ? `, walled at ${Number(wallEl.value).toFixed(1)} mm`
+            : ', solid already — no wall needed')
           + (built.audit && built.audit.nonManifold
             ? `. ${built.audit.nonManifold} non-manifold edges: a slicer may complain.`
             : '.');

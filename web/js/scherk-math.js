@@ -240,6 +240,13 @@ export function grids(pIn) {
  * with the thickening it does next -- but every vertex is a point of
  * the grids above, so the surface is the generator's surface.
  */
+export function wallThickness(p) {
+  // The generator's own conversion: thickness is in its units, and
+  // the sheet is scaled by XY_SCALE and the overall scale before the
+  // fit to the 2 m cube is applied on top.
+  return p.thickness * XY_SCALE * p.globalScale;
+}
+
 export function surfaceMesh(pIn) {
   const p = params(pIn);
   const g = grids(p);
@@ -277,6 +284,9 @@ export function surfaceMesh(pIn) {
   return {
     positions: new Float32Array(positions),
     indices: new Uint32Array(indices),
+    // what the fit did, so a caller can convert a thickness in the
+    // generator's units into one in these
+    factor,
     closes: g.closes,
     rows: R + 1,
     across: m,

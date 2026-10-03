@@ -9,7 +9,8 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
-import { surfaceMesh } from './scherk-math.js';
+import { surfaceMesh, wallThickness } from './scherk-math.js';
+import { weld, orient, solidify } from './stl.js';
 
 const VIEW_DIR = [1.4, -2.3, 1.0];
 
@@ -80,34 +81,71 @@ export class ScherkView {
     this.camera.updateProjectionMatrix();
   }
 
-  /** Build the sculpture for a parameter set. */
+  /** Build the sculpture for a parameter set.
+   *
+   *  With a thickness the sheet is given a wall, by the same
+   *  solidifier the STL export uses -- so what is on screen is what
+   *  comes out of the file, rather than two different approximations
+   *  of the same sculpture. Welding first matters: each saddle patch
+   *  is built separately and meets its neighbours along shared edges,
+   *  and offsetting without welding would open a crack down every
+   *  one of them. */
   build(p, { wireframe = false } = {}) {
     const t0 = performance.now();
     const mesh = surfaceMesh(p);
+    const wall = wallThickness(p) * mesh.factor;
+    let positions = mesh.positions;
+    let indices = mesh.indices;
+    let solid = false;
+    let orientable = true;
+    let misWound = 0;
+    if (wall > 1e-6) {
+      const merged = weld(positions, indices);
+      // The saddle patches are wound every which way until they are
+      // welded together and oriented; without this the offset faces
+      // one way here and the other way there, and the surface goes
+      // dark in patches.
+      const facing = orient(merged.positions, merged.indices);
+      orientable = facing.orientable;
+      misWound = facing.flipped;
+      const built = solidify(merged.positions, facing.indices, wall);
+      positions = built.positions;
+      indices = built.indices;
+      solid = true;
+    }
     this._drop();
 
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
-    geo.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setIndex(new THREE.BufferAttribute(
+      indices.BYTES_PER_ELEMENT === 4 ? indices : new Uint32Array(indices), 1));
     geo.computeVertexNormals();
 
     const mat = new THREE.MeshStandardMaterial({
       color: FRONT, roughness: 0.62, metalness: 0.0,
-      side: THREE.DoubleSide, wireframe,
-      // the far side of the sheet is darker, so the eye can follow a
-      // saddle round its own fold
-      emissive: new THREE.Color(BACK).multiplyScalar(0.12),
+      // A closed solid only needs its outside drawn. A bare sheet has
+      // to be lit from both, or half of every saddle vanishes -- and
+      // so does a solid with no consistent outside, where culling
+      // would punch holes wherever the winding disagrees.
+      side: solid && orientable ? THREE.FrontSide : THREE.DoubleSide,
+      wireframe,
+      emissive: new THREE.Color(BACK).multiplyScalar(solid ? 0.04 : 0.12),
     });
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.frustumCulled = false;
     this.root.add(this.mesh);
     this.last = mesh;
 
+    this.lastGeometry = { positions, indices };
     return {
-      vertices: mesh.positions.length / 3,
-      triangles: mesh.indices.length / 3,
+      vertices: positions.length / 3,
+      triangles: indices.length / 3,
       patches: mesh.patches,
       closes: mesh.closes,
+      solid,
+      wall,
+      orientable,
+      misWound,
       buildMs: performance.now() - t0,
     };
   }

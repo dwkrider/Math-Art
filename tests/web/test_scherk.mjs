@@ -182,7 +182,38 @@ for (const c of ref.cases) {
 // export has to wall it; a file that came out unthickened would be
 // one no slicer could print, and the page would be lying about it.
 {
-  const { buildBinarySTLFromMesh } = await import(new URL('web/js/stl.js', ROOT).href);
+  const { buildBinarySTLFromMesh, weld, orient, solidify, auditMesh } =
+    await import(new URL('web/js/stl.js', ROOT).href);
+
+  // Orienting: the saddle patches are wound every which way, and a
+  // solid whose faces disagree about which way is out shades wrongly
+  // and slices badly. Some of these rings genuinely have no
+  // consistent winding -- they come back onto themselves reversed --
+  // so the pass must fix the ones that can be fixed and never make
+  // any of them worse.
+  for (const [name, wantClean] of [['HEX', true], ['TOWER', true],
+                                   ['DEMO6', true], ['TREFOIL', false]]) {
+    const q = S.preset(name);
+    q.detail = 3;
+    const sheet = S.surfaceMesh(q);
+    const m = weld(sheet.positions, sheet.indices);
+    const was = auditMesh(m.indices).flipped;
+    const o = orient(m.positions, m.indices);
+    if (o.flipped > was) {
+      note(`orient ${name}: made it worse, ${was} -> ${o.flipped}`);
+      continue;
+    }
+    const sa = auditMesh(solidify(m.positions, o.indices, 0.03).indices);
+    if (wantClean && (o.flipped !== 0 || !sa.watertight || sa.nonManifold)) {
+      note(`orient ${name}: expected a clean solid, got flipped=${o.flipped} `
+           + `watertight=${sa.watertight} nonManifold=${sa.nonManifold}`);
+    } else if (!wantClean && o.orientable) {
+      note(`orient ${name}: expected no consistent winding, but found one`);
+    } else {
+      console.log(`  ok   orient ${name}: ${was} -> ${o.flipped} mis-wound`
+                  + (wantClean ? `, watertight solid` : `, one-sided as expected`));
+    }
+  }
   for (const name of ['HEX', 'TOWER']) {
     const p = S.preset(name);
     p.detail = 3;
