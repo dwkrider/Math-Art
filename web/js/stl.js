@@ -140,6 +140,142 @@ export function boundaryEdges(indices) {
  * resolve self-intersection by winding number, but it is not a clean
  * solid and this module does not pretend otherwise.
  */
+/**
+ * Make the winding agree across the whole mesh.
+ *
+ * A surface built patch by patch can be perfectly welded and still
+ * have neighbouring patches wound in opposite directions: the
+ * Scherk-Collins saddles alternate, and 504 of the hexagon's edges
+ * disagreed. Nothing is wrong with the geometry, but every consumer
+ * reads the winding as the side the surface faces, so the shading
+ * breaks along those edges and a slicer sees a solid turned
+ * inside-out in patches.
+ *
+ * This walks the faces, crossing shared edges, and flips any face
+ * that disagrees with the one it was reached from -- the standard
+ * flood fill -- but ONLY across edges where exactly two faces meet.
+ *
+ * That restriction is the whole difficulty. A saddle tower is not a
+ * manifold: at every vane the sheets meet along the central axis,
+ * three or four of them at once, and "the same way round" has no
+ * meaning at such an edge. Walking through those junctions does not
+ * merely fail, it actively spreads the disagreement -- the trefoil
+ * went from 72 badly wound edges to 124 before this rule was added.
+ * Stopping at them orients each manifold piece as well as it can be
+ * oriented and leaves the junctions as the surface's own geometry
+ * made them.
+ *
+ * A piece with no boundary of its own is then turned outward, which
+ * is what a printer expects; an open sheet is left as it is, since
+ * its signed volume means nothing.
+ *
+ * SOME SURFACES CANNOT BE ORIENTED AT ALL. A one-sided surface -- a
+ * Mobius band, and several of the Scherk-Collins rings, whose twist
+ * brings the sheet back onto itself reversed -- has no consistent
+ * winding to find, and the fill ends up carrying the contradiction
+ * to wherever it closes the loop. The walk notices that (it meets a
+ * face it has already placed, disagreeing), reports it, and keeps
+ * whichever of the two windings has fewer disagreements, so the pass
+ * can never make a mesh worse than it found it.
+ *
+ * Returns { indices, flipped, orientable }.
+ */
+export function orient(positions, indices) {
+  const nf = indices.length / 3;
+  if (!nf) return indices;
+  // edge -> the faces using it
+  const byEdge = new Map();
+  for (let f = 0; f < nf; f++) {
+    for (let k = 0; k < 3; k++) {
+      const a = indices[f * 3 + k], b = indices[f * 3 + (k + 1) % 3];
+      const key = a < b ? `${a},${b}` : `${b},${a}`;
+      const hit = byEdge.get(key);
+      if (hit) hit.push(f); else byEdge.set(key, [f]);
+    }
+  }
+  const out = Int32Array.from(indices);
+  const seen = new Uint8Array(nf);
+  const uses = (f, a, b) => {            // does face f use edge a->b this way?
+    for (let k = 0; k < 3; k++) {
+      if (out[f * 3 + k] === a && out[f * 3 + (k + 1) % 3] === b) return true;
+    }
+    return false;
+  };
+  const flip = (f) => {
+    const t = out[f * 3 + 1];
+    out[f * 3 + 1] = out[f * 3 + 2];
+    out[f * 3 + 2] = t;
+  };
+  const pieces = [];
+  let orientable = true;
+  for (let start = 0; start < nf; start++) {
+    if (seen[start]) continue;
+    seen[start] = 1;
+    const piece = [start];
+    const stack = [start];
+    while (stack.length) {
+      const f = stack.pop();
+      for (let k = 0; k < 3; k++) {
+        const a = out[f * 3 + k], b = out[f * 3 + (k + 1) % 3];
+        const key = a < b ? `${a},${b}` : `${b},${a}`;
+        const faces = byEdge.get(key) || [];
+        if (faces.length !== 2) continue;          // a junction, or a rim
+        for (const g of faces) {
+          if (g === f) continue;
+          if (seen[g]) {
+            // already placed: if it agrees we are fine, and if not
+            // this piece admits no consistent winding at all
+            if (uses(g, a, b)) orientable = false;
+            continue;
+          }
+          // neighbours agree when they traverse the shared edge the
+          // opposite way round; if g uses a->b as well, it is mirrored
+          if (uses(g, a, b)) flip(g);
+          seen[g] = 1;
+          piece.push(g);
+          stack.push(g);
+        }
+      }
+    }
+    pieces.push(piece);
+  }
+  // a closed piece should face outwards: the signed volume says which
+  for (const piece of pieces) {
+    // only if the piece really is closed -- every one of its edges
+    // shared with another face of the same piece
+    const inPiece = new Set(piece);
+    let open = false;
+    for (const f of piece) {
+      for (let k = 0; k < 3 && !open; k++) {
+        const a = out[f * 3 + k], b = out[f * 3 + (k + 1) % 3];
+        const key = a < b ? `${a},${b}` : `${b},${a}`;
+        const shared = (byEdge.get(key) || []).filter((g) => inPiece.has(g));
+        if (shared.length < 2) open = true;
+      }
+      if (open) break;
+    }
+    if (open) continue;
+    let vol = 0;
+    for (const f of piece) {
+      const i = out[f * 3] * 3, j = out[f * 3 + 1] * 3, k = out[f * 3 + 2] * 3;
+      vol += (positions[i] * (positions[j + 1] * positions[k + 2] - positions[j + 2] * positions[k + 1])
+            - positions[i + 1] * (positions[j] * positions[k + 2] - positions[j + 2] * positions[k])
+            + positions[i + 2] * (positions[j] * positions[k + 1] - positions[j + 1] * positions[k])) / 6;
+    }
+    if (vol < 0) for (const f of piece) flip(f);
+  }
+  // Never hand back something worse than what came in: on a surface
+  // with no consistent winding the fill can concentrate the
+  // disagreement along a longer seam than it started with.
+  const made = indices instanceof Uint16Array ? Uint16Array.from(out)
+                                              : Uint32Array.from(out);
+  const was = auditMesh(indices).flipped;
+  const now = auditMesh(made).flipped;
+  return now <= was
+    ? { indices: made, flipped: now, orientable }
+    : { indices, flipped: was, orientable: false };
+}
+
 export function solidify(positions, indices, thickness) {
   const normals = computeNormals(positions, indices);
   const vn = positions.length / 3;
@@ -259,11 +395,25 @@ function expand(positions, indices, instances) {
  * @returns {{blob: Blob, triangles: number, scale: number, mm: number[]}}
  */
 export function buildBinarySTL(packed, opts = {}) {
-  const sizeMM = opts.sizeMM || 200;
-  const thickness = Math.max(0, opts.thicknessMM || 0);
   const decoded = decodeMesh(packed);
   const { positions, indices } = expand(
     decoded.positions, decoded.indices, decoded.instances);
+  return buildBinarySTLFromMesh(positions, indices, opts);
+}
+
+/**
+ * The same export, from raw geometry rather than a baked surface.
+ *
+ * The surfaces module arrives with a packed mesh to decode; a module
+ * that generates its geometry in the browser -- the Scherk-Collins
+ * sculptures -- already has positions and indices in hand. Everything
+ * that matters here (welding, the decision to thicken, scaling to
+ * millimetres, the byte layout) is the same for both, so it lives in
+ * one place.
+ */
+export function buildBinarySTLFromMesh(positions, indices, opts = {}) {
+  const sizeMM = opts.sizeMM || 200;
+  const thickness = Math.max(0, opts.thicknessMM || 0);
 
   const tris = Math.floor(indices.length / 3);
   if (!tris) return null;

@@ -917,6 +917,24 @@ def patch_site_pages(n_surf, n_solid):
             "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
         }, depth=1))
 
+    patch_head(os.path.join(WEB, "modules", "scherk.html"), head_block(
+        canonical=url("modules/scherk.html"),
+        title="Scherk-Collins Sculptures - %s" % SITE,
+        desc=("Brent Collins' saddle sculptures, built live from Scherk's "
+              "1835 minimal surface: stack saddles into a tower, twist it, "
+              "bend it into a ring, and export an STL to print."),
+        image=url("thumbs/modules/scherk.png"),
+        image_alt="The Hyperbolic Hexagon, a Scherk-Collins saddle ring",
+        ld={
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Scherk-Collins Sculptures",
+            "url": url("modules/scherk.html"),
+            "description": "An interactive generator for Scherk-Collins "
+                           "saddle-ring sculptures, with STL export.",
+            "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
+        }, depth=1))
+
     patch_head(os.path.join(WEB, "modules", "hopf.html"), head_block(
         canonical=url("modules/hopf.html"),
         title="The Hopf Fibration - %s" % SITE,
@@ -1046,6 +1064,7 @@ def main():
             (url("modules/belt-trick.html"), 0.9),
             (url("modules/chair44.html"), 0.9),
             (url("modules/hopf.html"), 0.9),
+            (url("modules/scherk.html"), 0.9),
             (url("catalog/polyhedra/index.html"), 0.7),
             (url("catalog/surfaces/index.html"), 0.7)]
     urls += [(url("catalog/surfaces/%s.html" % e["slug"]), 0.5)
@@ -1064,7 +1083,7 @@ def main():
     print("head blocks       : index.html, modules/surfaces.html, "
           "modules/polyhedra.html, modules/periodic.html, "
           "modules/belt-trick.html, modules/chair44.html, "
-          "modules/hopf.html")
+          "modules/hopf.html, modules/scherk.html")
     return 0
 
 
