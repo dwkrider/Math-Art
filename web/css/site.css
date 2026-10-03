@@ -1423,3 +1423,27 @@ figcaption {
   .hopf-page { grid-template-columns: minmax(0, 1fr); }
   .hopf-base #base-sphere { height: 15rem; }
 }
+
+/* ------------------------------------- the Scherk-Collins module */
+
+.scherk-page {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.scherk-stage #stage {
+  width: 100%;
+  height: min(64vh, 40rem);
+  display: block;
+}
+/* The export row is a thing you do rather than a thing you set, so it
+ * sits apart from the shape controls above it. */
+.scherk-export {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+.scherk-export .belt-hint { flex-basis: 100%; margin: 0; }

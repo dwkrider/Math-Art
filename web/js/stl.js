@@ -259,11 +259,25 @@ function expand(positions, indices, instances) {
  * @returns {{blob: Blob, triangles: number, scale: number, mm: number[]}}
  */
 export function buildBinarySTL(packed, opts = {}) {
-  const sizeMM = opts.sizeMM || 200;
-  const thickness = Math.max(0, opts.thicknessMM || 0);
   const decoded = decodeMesh(packed);
   const { positions, indices } = expand(
     decoded.positions, decoded.indices, decoded.instances);
+  return buildBinarySTLFromMesh(positions, indices, opts);
+}
+
+/**
+ * The same export, from raw geometry rather than a baked surface.
+ *
+ * The surfaces module arrives with a packed mesh to decode; a module
+ * that generates its geometry in the browser -- the Scherk-Collins
+ * sculptures -- already has positions and indices in hand. Everything
+ * that matters here (welding, the decision to thicken, scaling to
+ * millimetres, the byte layout) is the same for both, so it lives in
+ * one place.
+ */
+export function buildBinarySTLFromMesh(positions, indices, opts = {}) {
+  const sizeMM = opts.sizeMM || 200;
+  const thickness = Math.max(0, opts.thicknessMM || 0);
 
   const tris = Math.floor(indices.length / 3);
   if (!tris) return null;
