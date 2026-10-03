@@ -1424,21 +1424,58 @@ figcaption {
   .hopf-base #base-sphere { height: 15rem; }
 }
 
+
 /* ------------------------------------- the Scherk-Collins module */
 
+/* Controls on the left, sculpture on the right: there are a dozen of
+ * them and they are the point of the page, so they get a column of
+ * their own rather than a band under the view. The viewer takes
+ * whatever is left, which on a wide screen is most of it. */
 .scherk-page {
-  max-width: 76rem;
+  max-width: 82rem;
   margin: 0 auto;
   padding: 0 1.25rem 3rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 21rem minmax(0, 1fr);
   gap: 1rem;
+  align-items: start;
 }
+.scherk-page .scherk-controls { grid-column: 1; grid-row: 1; }
+.scherk-page .scherk-stage { grid-column: 2; grid-row: 1; }
+
 .scherk-stage #stage {
   width: 100%;
-  height: min(64vh, 40rem);
+  height: min(74vh, 46rem);
   display: block;
 }
+
+/* In one narrow column the rows stack, and each control gets the full
+ * width -- a slider squeezed beside its own label is unusable. */
+.scherk-controls .belt-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+}
+.scherk-controls .belt-field { width: 100%; }
+/* In a column, `flex: 1 1 13rem` would make every slider 13rem TALL --
+ * the basis applies along the main axis, which is now vertical. */
+.scherk-controls .belt-field,
+.scherk-controls .belt-slider {
+  flex: 0 0 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+.scherk-controls .belt-field > span { justify-content: space-between; }
+.scherk-controls .belt-snaps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.scherk-controls .sort { width: 100%; }
 /* The export row is a thing you do rather than a thing you set, so it
  * sits apart from the shape controls above it. */
 .scherk-export {
@@ -1447,3 +1484,19 @@ figcaption {
   margin-top: 0.25rem;
 }
 .scherk-export .belt-hint { flex-basis: 100%; margin: 0; }
+
+/* Narrow: the sculpture goes first and the controls follow it, which
+ * is the order they are wanted in on a phone. */
+@media (max-width: 62rem) {
+  .scherk-page { grid-template-columns: minmax(0, 1fr); }
+  .scherk-page .scherk-stage { grid-column: 1; grid-row: 1; }
+  .scherk-page .scherk-controls { grid-column: 1; grid-row: 2; }
+  .scherk-controls .belt-row { flex-direction: row; flex-wrap: wrap; }
+  .scherk-controls .belt-field,
+  .scherk-controls .belt-slider {
+    width: auto;
+    flex: 1 1 13rem;
+  }
+  .scherk-controls .sort { width: auto; }
+  .scherk-stage #stage { height: min(60vh, 34rem); }
+}
