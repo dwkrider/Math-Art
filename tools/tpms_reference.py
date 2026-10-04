@@ -29,7 +29,10 @@ PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(PROJ, "math_art"))
 
 import numpy as np                                            # noqa: E402
-from minsurf.tpms import TPMS, build_tpms, marching_tets      # noqa: E402
+from minsurf.tpms import (TPMS, build_tpms, clip_to_sphere,     # noqa: E402
+                          marching_tets)
+sys.path.insert(0, os.path.join(PROJ, "math_art"))
+from rim_curve import boundary_index_loops, boundary_loops     # noqa: E402
 
 # Field values are compared on a grid that avoids the lattice points,
 # where several of these fields sit exactly on zero.
@@ -127,6 +130,35 @@ def main():
             "ntris": int(len(tris)),
             "area": area(verts, tris),
             "canonical": canonical(verts, tris),
+        })
+
+    # Clipping to a ball, and the rim it opens: the cut edge has to
+    # lie ON the sphere, and the rim walk has to find the same chains.
+    out["clips"] = []
+    for kind, cells, res, frac in [("G", 1, 10, 0.75), ("G", 2, 8, 0.8),
+                                   ("P", 1, 10, 0.6), ("IWP", 1, 8, 0.9)]:
+        verts, tris = build_tpms(kind, cells, res, 2.0)
+        V = np.asarray(verts, float)
+        half = 0.5 * float(np.max(V.max(0) - V.min(0)))
+        r = frac * half
+        cv, cf = clip_to_sphere(V, [tuple(int(i) for i in t) for t in tris], r)
+        CV = np.asarray(cv, float)
+        loops = boundary_loops(CV, cf)
+        out["clips"].append({
+            "kind": kind, "cells": cells, "res": res, "frac": frac,
+            "radius": float(r),
+            "nverts": int(len(CV)),
+            "nfaces": int(len(cf)),
+            "sizes": {str(k): int(v) for k, v in
+                      zip(*np.unique([len(f) for f in cf],
+                                     return_counts=True))},
+            "maxr": float(np.max(np.linalg.norm(CV, axis=1))) if len(CV) else 0.0,
+            "loops": [{"n": int(len(pts)), "closed": bool(cl),
+                       "first": [float(x) for x in pts[0]],
+                       "length": float(np.linalg.norm(
+                           np.diff(np.vstack([pts, pts[:1]]) if cl else pts,
+                                   axis=0), axis=1).sum())}
+                      for pts, cl in loops],
         })
 
     text = json.dumps(out)

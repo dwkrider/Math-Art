@@ -454,3 +454,263 @@ export function prettyLabel(kind) {
   const [label] = TPMS[kind];
   return label.replace(/\+-/g, '±');
 }
+
+// ------------------------------------------------- clipping to a ball
+
+/**
+ * Clip a mesh to the ball of radius `radius` about the origin.
+ *
+ * Sutherland-Hodgman against the sphere, one face at a time: corners
+ * inside are kept, and where an edge crosses, the crossing is SOLVED
+ * for rather than approximated -- |a + t(b - a)| = r is a quadratic in
+ * t. So the cut edge lies on the sphere and comes out smooth, instead
+ * of following the face boundaries in a staircase the way dropping
+ * whole faces would.
+ *
+ * Clipping opens an edge where a periodic surface had none, which is
+ * what the rim tube is for.
+ *
+ * Faces go in and come out as arrays of indices: the clip turns some
+ * triangles into quadrilaterals and pentagons.
+ */
+export function clipToSphere(positions, faces, radius) {
+  const r = Number(radius);
+  const nv = positions.length / 3;
+  if (!(r > 0) || !nv) return { positions, faces };
+  const d = new Float64Array(nv);
+  for (let i = 0; i < nv; i++) {
+    d[i] = Math.hypot(positions[i * 3], positions[i * 3 + 1],
+                      positions[i * 3 + 2]) - r;
+  }
+  const outV = [];
+  for (let i = 0; i < nv * 3; i++) outV.push(positions[i]);
+  const cache = new Map();
+
+  const crossing = (i, j) => {
+    const lo = Math.min(i, j), hi = Math.max(i, j);
+    const k = lo + ',' + hi;
+    const hit = cache.get(k);
+    if (hit !== undefined) return hit;
+    const a = [positions[lo * 3], positions[lo * 3 + 1], positions[lo * 3 + 2]];
+    const b = [positions[hi * 3], positions[hi * 3 + 1], positions[hi * 3 + 2]];
+    const e = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const qa = e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
+    const qb = 2 * (a[0] * e[0] + a[1] * e[1] + a[2] * e[2]);
+    const qc = a[0] * a[0] + a[1] * a[1] + a[2] * a[2] - r * r;
+    let t = 0.5;
+    if (Math.abs(qa) > 1e-30) {
+      const disc = qb * qb - 4 * qa * qc;
+      if (disc >= 0) {
+        const sq = Math.sqrt(disc);
+        for (const cand of [(-qb - sq) / (2 * qa), (-qb + sq) / (2 * qa)]) {
+          if (cand >= -1e-9 && cand <= 1 + 1e-9) {
+            t = Math.min(1, Math.max(0, cand));
+            break;
+          }
+        }
+      }
+    }
+    outV.push(a[0] + t * e[0], a[1] + t * e[1], a[2] + t * e[2]);
+    const idx = outV.length / 3 - 1;
+    cache.set(k, idx);
+    return idx;
+  };
+
+  const outF = [];
+  for (const f of faces) {
+    const n = f.length;
+    if (n < 3) continue;
+    let allIn = true, allOut = true;
+    for (const k of f) { if (d[k] <= 0) allOut = false; else allIn = false; }
+    if (allIn) { outF.push(f.slice()); continue; }
+    if (allOut) continue;
+    const poly = [];
+    for (let k = 0; k < n; k++) {
+      const a = f[k], b = f[(k + 1) % n];
+      const ain = d[a] <= 0, bin = d[b] <= 0;
+      if (ain) poly.push(a);
+      if (ain !== bin) poly.push(crossing(a, b));
+    }
+    // a corner sitting exactly on the sphere can be produced twice
+    const clean = [];
+    for (const k of poly) {
+      if (!clean.length || k !== clean[clean.length - 1]) clean.push(k);
+    }
+    if (clean.length > 1 && clean[0] === clean[clean.length - 1]) clean.pop();
+    if (clean.length >= 3) outF.push(clean);
+  }
+
+  const used = [...new Set(outF.flat())].sort((a, b) => a - b);
+  const remap = new Map(used.map((k, i) => [k, i]));
+  const pos = new Float32Array(used.length * 3);
+  used.forEach((k, i) => {
+    pos[i * 3] = outV[k * 3];
+    pos[i * 3 + 1] = outV[k * 3 + 1];
+    pos[i * 3 + 2] = outV[k * 3 + 2];
+  });
+  return { positions: pos, faces: outF.map((f) => f.map((k) => remap.get(k))) };
+}
+
+/** Fan-split polygons into triangles. */
+export function triangulate(faces) {
+  const out = [];
+  for (const f of faces) {
+    for (let k = 1; k < f.length - 1; k++) out.push(f[0], f[k], f[k + 1]);
+  }
+  return Uint32Array.from(out);
+}
+
+/** Triangles as an array of index triples, which is what the clipper
+ *  and the rim walker take. */
+export function facesOf(indices) {
+  const out = [];
+  for (let i = 0; i < indices.length; i += 3) {
+    out.push([indices[i], indices[i + 1], indices[i + 2]]);
+  }
+  return out;
+}
+
+// ------------------------------------------------------ the rim curve
+
+/** The open edge of a mesh, as chains of vertex indices.
+ *
+ *  Edges used by exactly one face are the boundary. The walk assumes
+ *  nothing about manifoldness -- a rim vertex can carry four boundary
+ *  edges rather than two -- and takes whatever chains it finds, open
+ *  or closed. */
+export function boundaryIndexLoops(faces) {
+  const count = new Map();
+  for (const f of faces) {
+    for (let i = 0; i < f.length; i++) {
+      const a = f[i], b = f[(i + 1) % f.length];
+      count.set(a < b ? a + ',' + b : b + ',' + a,
+                (count.get(a < b ? a + ',' + b : b + ',' + a) || 0) + 1);
+    }
+  }
+  const rim = [];
+  for (const [k, c] of count) {
+    if (c !== 1) continue;
+    const parts = k.split(',');
+    rim.push([Number(parts[0]), Number(parts[1])]);
+  }
+  if (!rim.length) return [];
+
+  const adj = new Map();
+  for (const pair of rim) {
+    const a = pair[0], b = pair[1];
+    if (!adj.has(a)) adj.set(a, []);
+    if (!adj.has(b)) adj.set(b, []);
+    adj.get(a).push(b);
+    adj.get(b).push(a);
+  }
+  const used = new Set();
+  const take = (p, q) => {
+    const k = p < q ? p + ',' + q : q + ',' + p;
+    if (used.has(k)) return false;
+    used.add(k);
+    return true;
+  };
+  const chains = [];
+  for (const pair of rim) {
+    const a0 = pair[0], b0 = pair[1];
+    if (!take(a0, b0)) continue;
+    const chain = [a0, b0];
+    for (;;) {
+      const cur = chain[chain.length - 1];
+      let nxt = null;
+      for (const cand of adj.get(cur) || []) {
+        if (take(cur, cand)) { nxt = cand; break; }
+      }
+      if (nxt === null) break;
+      chain.push(nxt);
+      if (nxt === chain[0]) break;
+    }
+    if (chain.length < 4) continue;
+    const closed = chain[chain.length - 1] === chain[0];
+    if (closed) chain.pop();
+    chains.push({ idx: chain, closed });
+  }
+  return chains;
+}
+
+const TAUBIN_LAMBDA = 0.5;
+const TAUBIN_MU = -0.53;
+export const RIM_SMOOTH_DEFAULT = 3;
+
+/** Smooth a polyline WITHOUT shrinking it.
+ *
+ *  A plain Laplacian pass is a curve-shortening flow, and on a rim that
+ *  wraps a curved surface it walks the curve off the edge it is meant
+ *  to trace. Taubin's fix alternates a positive step with a slightly
+ *  larger negative one, which cancels the shrinkage to first order
+ *  while still attenuating the grid staircase. No point may then travel
+ *  more than a quarter of the median spacing, which is what holds a
+ *  coarse rim onto its corners. */
+export function taubin(pts, closed, passes) {
+  const n = pts.length;
+  if (passes <= 0 || n < 3) return pts;
+  const orig = pts.map((p) => p.slice());
+  let cur = pts.map((p) => p.slice());
+  const step = (p, w) => {
+    const q = p.map((v) => v.slice());
+    if (closed) {
+      for (let i = 0; i < n; i++) {
+        const a = p[(i - 1 + n) % n], b = p[(i + 1) % n];
+        for (let k = 0; k < 3; k++) {
+          q[i][k] = p[i][k] + w * (0.5 * (a[k] + b[k]) - p[i][k]);
+        }
+      }
+    } else {
+      for (let i = 1; i < n - 1; i++) {
+        for (let k = 0; k < 3; k++) {
+          q[i][k] = p[i][k] + w * (0.5 * (p[i - 1][k] + p[i + 1][k]) - p[i][k]);
+        }
+      }
+    }
+    return q;
+  };
+  for (let s = 0; s < passes; s++) {
+    cur = step(cur, TAUBIN_LAMBDA);
+    cur = step(cur, TAUBIN_MU);
+  }
+  const seg = [];
+  const last = closed ? n : n - 1;
+  for (let i = 0; i < last; i++) {
+    const a = orig[i], b = orig[(i + 1) % n];
+    seg.push(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+  }
+  const sorted = seg.slice().sort((a, b) => a - b);
+  // the median as numpy computes it: on an even count it is the mean
+  // of the two middle values, not either of them. Taking one instead
+  // moved the cap enough to shift a smoothed rim in the fourth
+  // decimal, which the parity test duly caught.
+  const mid = sorted.length
+    ? (sorted.length % 2
+      ? sorted[(sorted.length - 1) / 2]
+      : 0.5 * (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]))
+    : 0;
+  const cap = 0.25 * mid;
+  if (cap > 0) {
+    for (let i = 0; i < n; i++) {
+      const dx = cur[i][0] - orig[i][0];
+      const dy = cur[i][1] - orig[i][1];
+      const dz = cur[i][2] - orig[i][2];
+      const dist = Math.hypot(dx, dy, dz);
+      if (dist > cap) {
+        const s = cap / dist;
+        cur[i] = [orig[i][0] + dx * s, orig[i][1] + dy * s, orig[i][2] + dz * s];
+      }
+    }
+  }
+  return cur;
+}
+
+/** The rim as smoothed polylines: {points, closed}. */
+export function boundaryLoops(positions, faces, smooth = RIM_SMOOTH_DEFAULT) {
+  return boundaryIndexLoops(faces).map((chain) => ({
+    points: taubin(chain.idx.map((i) => [positions[i * 3], positions[i * 3 + 1],
+                                         positions[i * 3 + 2]]),
+                   chain.closed, smooth),
+    closed: chain.closed,
+  }));
+}

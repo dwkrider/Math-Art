@@ -202,6 +202,75 @@ for (const c of ref.offsets) {
           c.area, c.nused);
 }
 
+// ---- clipping to a ball, and the rim it opens
+for (const c of ref.clips) {
+  const m = T.block(c.kind, c.cells, c.res, 2.0);
+  // the radius is a fraction of the block's own half-extent, so it
+  // keeps its meaning when the cell count changes
+  let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < m.positions.length; i += 3) {
+    for (let k = 0; k < 3; k++) {
+      if (m.positions[i + k] < lo[k]) lo[k] = m.positions[i + k];
+      if (m.positions[i + k] > hi[k]) hi[k] = m.positions[i + k];
+    }
+  }
+  const half = 0.5 * Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]);
+  const r = c.frac * half;
+  if (Math.abs(r - c.radius) > 1e-9) {
+    note(`clip ${c.kind}: radius ${r} vs ${c.radius}`);
+    continue;
+  }
+  const clipped = T.clipToSphere(m.positions, T.facesOf(m.indices), r);
+  const label = `clip ${c.kind} ${c.cells} cell(s) at ${c.frac}`;
+  if (clipped.faces.length !== c.nfaces) {
+    note(`${label}: ${clipped.faces.length} faces vs ${c.nfaces}`);
+    continue;
+  }
+  const sizes = {};
+  for (const f of clipped.faces) sizes[f.length] = (sizes[f.length] || 0) + 1;
+  for (const [k, v] of Object.entries(c.sizes)) {
+    if (sizes[k] !== v) note(`${label}: ${v} faces of ${k} corners, got ${sizes[k] || 0}`);
+  }
+  // the cut has to lie ON the sphere, which is the whole point of
+  // solving the crossing rather than approximating it
+  let maxr = 0;
+  for (let i = 0; i < clipped.positions.length; i += 3) {
+    maxr = Math.max(maxr, Math.hypot(clipped.positions[i], clipped.positions[i + 1],
+                                     clipped.positions[i + 2]));
+  }
+  if (Math.abs(maxr - c.maxr) > 1e-5) {
+    note(`${label}: furthest point ${maxr} vs ${c.maxr}`);
+    continue;
+  }
+  const loops = T.boundaryLoops(clipped.positions, clipped.faces);
+  if (loops.length !== c.loops.length) {
+    note(`${label}: ${loops.length} rim loops vs ${c.loops.length}`);
+    continue;
+  }
+  // loop ORDER is the walk's own, so compare them as a multiset of
+  // (length, closed, perimeter)
+  const key = (n, closed, len) => `${n}|${closed}|${len.toFixed(4)}`;
+  const want = c.loops.map((l) => key(l.n, l.closed, l.length)).sort();
+  const got = loops.map((l) => {
+    let len = 0;
+    const n = l.points.length;
+    const last = l.closed ? n : n - 1;
+    for (let i = 0; i < last; i++) {
+      const a = l.points[i], b = l.points[(i + 1) % n];
+      len += Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    }
+    return key(n, l.closed, len);
+  }).sort();
+  if (want.join(' ') !== got.join(' ')) {
+    note(`${label}: rim loops differ
+      want ${want.join(', ')}
+      got  ${got.join(', ')}`);
+    continue;
+  }
+  console.log(`  ok   ${label}: ${c.nfaces} faces, cut on the sphere, `
+              + `${loops.length} rim loop${loops.length === 1 ? '' : 's'}`);
+}
+
 // ---- every surface the page offers has to build, and the export has
 // to come out walled: a nodal surface is a sheet, and a slicer can do
 // nothing with a sheet.

@@ -100,6 +100,24 @@
       </label>
     </div>
 
+    <div class="belt-row">
+      <label class="belt-field belt-slider">
+        <span>Thickness <output id="thickness-out" for="thickness"></output></span>
+        <input type="range" id="thickness" min="0" max="0.2" step="0.005" value="0"
+               aria-label="Wall thickness of the surface, in model units">
+      </label>
+      <label class="belt-field belt-slider">
+        <span>Clip to a ball <output id="clip-out" for="clip"></output></span>
+        <input type="range" id="clip" min="0" max="1" step="0.02" value="0"
+               aria-label="Clip the block to a sphere, as a fraction of its half-width">
+      </label>
+      <label class="belt-field belt-slider">
+        <span>Rim tube <output id="rim-out" for="rim"></output></span>
+        <input type="range" id="rim" min="0" max="0.1" step="0.002" value="0"
+               aria-label="Radius of the tube swept along the cut edge">
+      </label>
+    </div>
+
     <p class="belt-hint" id="readout"></p>
     <p class="belt-hint" id="surface-note"></p>
 
@@ -184,15 +202,43 @@
     volume.
   </p>
 
+  <h2>Thickness, a ball, and a wire round the cut</h2>
+  <p>
+    <strong>Thickness</strong> turns the sheet into a solid, offsetting
+    it to either side and closing the edge. It is the setting that
+    matters for printing: a surface of no thickness is not an object,
+    and a slicer will make nothing of it. The sculpture on screen is
+    the solid, so what you see is what the file contains.
+  </p>
+  <p>
+    <strong>Clip to a ball</strong> cuts the block to a sphere about its
+    centre, as a fraction of its own half-width, so it keeps its meaning
+    when you change the cell count. The cut is solved for rather than
+    approximated — where an edge of the mesh crosses the sphere, that
+    crossing is found exactly — so the cut edge lies <em>on</em> the
+    sphere and comes out smooth, instead of following the triangles in a
+    staircase.
+  </p>
+  <p>
+    <strong>Rim tube</strong> sweeps a wire along the edge the clip
+    opened. A periodic surface has no edge until you cut it, and a cut
+    edge of a triangle mesh is a zigzag; the rim is smoothed first, by a
+    method that attenuates the staircase without shrinking the curve off
+    the surface it is meant to trace, and no point may move more than a
+    quarter of the spacing, which holds it onto its corners. The wire is
+    part of the exported object, not decoration on the picture.
+  </p>
+
   <h2>Printing one</h2>
   <p>
     These are the lattices people actually print: a gyroid at a few
     cells across is strong in every direction at once and has no flat
-    faces to peel. The surface here is a sheet with no thickness, so
-    <em>Download STL</em> walls it to the thickness you choose and
-    scales it to the size you ask for. A wall of a millimetre or two on
-    a 150&nbsp;mm block is the usual range; thinner than that needs
-    resin.
+    faces to peel. Give it a thickness, and <em>Download STL</em> scales
+    the solid so its longest side is the size you ask for. If you leave
+    the thickness at zero the export walls the sheet on the way out
+    instead, by the millimetre figure beside it. A wall of a millimetre
+    or two on a 150&nbsp;mm block is the usual range; thinner than that
+    needs resin.
   </p>
 
   <h2>Sources</h2>

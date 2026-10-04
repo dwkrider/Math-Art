@@ -14,7 +14,8 @@ const $ = (sel) => document.querySelector(sel);
 
 function main() {
   const view = new TpmsView($('#stage'));
-  const state = { kind: 'G', cells: 2, res: 24, offset: 0, wireframe: false };
+  const state = { kind: 'G', cells: 2, res: 24, offset: 0, wireframe: false,
+                  thickness: 0, clip: 0, rim: 0 };
   let lastFrameKey = null;
 
   const readout = $('#readout');
@@ -43,13 +44,21 @@ function main() {
     }
     // reframe when the block changes size, not on every rebuild, so
     // the reader's own zoom survives a change of surface
-    const key = `${state.cells}`;
+    const key = `${state.cells}|${state.clip}`;
     if (key !== lastFrameKey) { lastFrameKey = key; view.frame(stats.extent); }
     const n = (x) => x.toLocaleString();
     readout.textContent =
       `${state.cells}×${state.cells}×${state.cells} cells · `
       + `${n(stats.vertices)} vertices · ${n(stats.triangles)} triangles · `
-      + `built in ${stats.buildMs.toFixed(0)} ms`;
+      + (stats.solid ? 'a solid' : 'a sheet with no thickness')
+      + (stats.rimLoops
+        ? ` · ${stats.rimLoops} rim loop${stats.rimLoops === 1 ? '' : 's'}`
+        : '')
+      + ` · built in ${stats.buildMs.toFixed(0)} ms`;
+    if (stats.clippedAway) {
+      readout.textContent = 'The ball is too small to touch the surface — '
+        + 'raise Clip to a ball, or switch it off.';
+    }
     const label = prettyLabel(state.kind);
     note.textContent = label.includes('nodal approximation')
       ? `${label.replace(' (nodal approximation)', '')}: drawn from its `
@@ -67,6 +76,9 @@ function main() {
     ['#cells', 'cells', (v) => `${v}×${v}×${v}`],
     ['#res', 'res', (v) => String(v)],
     ['#offset', 'offset', (v) => (v ? v.toFixed(2) : '0 (canonical)')],
+    ['#thickness', 'thickness', (v) => (v ? v.toFixed(3) : 'none (a sheet)')],
+    ['#clip', 'clip', (v) => (v ? v.toFixed(2) : 'off')],
+    ['#rim', 'rim', (v) => (v ? v.toFixed(3) : 'off')],
   ]) {
     const el = $(sel);
     const out = $(`${sel}-out`);
