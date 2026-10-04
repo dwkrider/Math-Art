@@ -33,7 +33,7 @@ from minsurf.tpms import (TPMS, build_tpms, clip_to_sphere,     # noqa: E402
                           marching_tets)
 sys.path.insert(0, os.path.join(PROJ, "math_art"))
 from rim_curve import (boundary_index_loops, boundary_loops,   # noqa: E402
-                       neighbour_means, outward_field)
+                       neighbour_means, outward_field, resample)
 
 # Field values are compared on a grid that avoids the lattice points,
 # where several of these fields sit exactly on zero.
@@ -56,6 +56,10 @@ COUNTS = [(k, 1, 8) for k in
            "FK_CPMY", "FK_CY", "CG", "GPRIME", "DPRIME", "KSURF", "CI2Y",
            "FRD2", "OCTO")]
 CASES = FULL + COUNTS
+
+#: The tube radius the rim thinning is pinned at -- the page's slider
+#: reaches 0.1, and half of that is a typical setting.
+RIM_TUBE = 0.05
 
 # Level offsets sweep each field's companion family, so they are worth
 # pinning on their own.
@@ -169,6 +173,62 @@ def main():
                            np.diff(np.vstack([pts, pts[:1]]) if cl else pts,
                                    axis=0), axis=1).sum())}
                       for (pts, cl), o in zip(loops, outs)],
+        })
+
+    # The thinning that goes before the sweep, pinned on polylines
+    # given to both sides POINT FOR POINT. Comparing the thinning of
+    # each side's own rim walk would compare nothing: the walks start
+    # at different vertices and the thinning is greedy from its first
+    # point, so the surviving subsets differ for a reason that has
+    # nothing to do with the code under test.
+    out["resamples"] = []
+    for kind, cells, res, frac, mult in [("G", 1, 10, 0.75, 1.6),
+                                         ("IWP", 1, 8, 0.9, 1.6),
+                                         ("IWP", 1, 8, 0.9, 0.4),
+                                         ("G", 1, 10, 0.75, 12.0)]:
+        verts, tris = build_tpms(kind, cells, res, 2.0)
+        V = np.asarray(verts, float)
+        r = frac * 0.5 * float(np.max(V.max(0) - V.min(0)))
+        cv, cf = clip_to_sphere(V, [tuple(int(i) for i in t) for t in tris], r)
+        spacing = mult * RIM_TUBE
+        for pts, cl in boundary_loops(np.asarray(cv, float), cf)[:3]:
+            out["resamples"].append({
+                "label": "%s %d @%.2f x%.1f" % (kind, cells, frac, mult),
+                "closed": bool(cl),
+                "spacing": float(spacing),
+                "points": [[float(x) for x in p] for p in pts],
+                "keep": [int(i) for i in resample(pts, cl, spacing)],
+            })
+    # A polyline that doubles back on itself, where arc length advances
+    # while the point barely moves -- the case the gap is measured to
+    # the last KEPT point for. And a circle already coarser than the
+    # tube, where the right answer is to drop nothing at all.
+    t = np.linspace(0.0, 1.0, 40)
+    fold = np.stack([np.concatenate([t, t[::-1]]) * 0.6,
+                     np.concatenate([np.zeros_like(t),
+                                     np.full_like(t, 0.004)]),
+                     np.zeros(2 * len(t))], axis=1)
+    a = np.linspace(0.0, 2.0 * np.pi, 13)[:-1]
+    ring = np.stack([np.cos(a), np.sin(a), np.zeros_like(a)], axis=1)
+    #
+    # Two more that no rim produces but the comparison needs. The
+    # first is spaced at EXACTLY the spacing, on powers of two so both
+    # languages agree to the bit: it is the only thing that can tell
+    # `>=` from `>`, and on a real rim no gap ever lands exactly on
+    # the threshold. The second asks for a spacing nothing can satisfy,
+    # which is what the fall-back to the whole polyline is for -- four
+    # surviving points are not a curve.
+    exact = np.stack([np.arange(12) * 0.0625, np.zeros(12), np.zeros(12)],
+                     axis=1)
+    cases = [("fold", fold, False, RIM_TUBE),
+             ("coarse ring", ring, True, RIM_TUBE),
+             ("exactly at the spacing", exact, False, 0.0625),
+             ("nothing can satisfy", ring, True, 100.0)]
+    for label, pts, cl, sp in cases:
+        out["resamples"].append({
+            "label": label, "closed": bool(cl), "spacing": float(sp),
+            "points": [[float(x) for x in p] for p in pts],
+            "keep": [int(i) for i in resample(pts, cl, sp)],
         })
 
     text = json.dumps(out)

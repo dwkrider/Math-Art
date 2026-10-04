@@ -233,8 +233,24 @@
     rim point's neighbours back out to the point itself, drop whatever
     runs along the rim, and what is left points across the edge and out
     of the sheet. Lift the tube along that by its own radius and it
-    touches the edge and nothing else. The wire is part of the exported
-    object, not decoration on the picture.
+    touches the edge and nothing else.
+  </p>
+  <p>
+    One more thing has to happen before the wire is swept: the rim is
+    <em>thinned</em>. A rim traced off the sample grid has its points
+    spaced by that grid, not by the tube, and where a curve turns
+    inside its own radius a swept tube folds over itself — on a rim ten
+    times finer than the tube, every step of the staircase becomes a
+    crease, and the result looks like a caterpillar rather than a pipe.
+    The cure is to drop points that sit closer together than about one
+    and a half tube radii, never to move them: re-spacing the curve at
+    equal steps would slide every point along its chords, off the
+    corners it was traced from, and would do it even where the rim was
+    already spaced comfortably wider than the tube. Choosing a subset
+    cannot introduce that error — a point survives exactly where it
+    was, or goes — and on a coarse rim nothing is dropped at all. The
+    wire is part of the exported object, not decoration on the
+    picture.
   </p>
 
   <h2>Printing one</h2>

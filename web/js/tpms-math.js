@@ -783,6 +783,46 @@ export function outwardField(positions, faces, idx, means) {
   });
 }
 
+
+/** Thin a polyline so no two points sit closer than `spacing`, by
+ *  DROPPING points -- never by moving them.
+ *
+ *  A swept tube folds over itself wherever the curve turns inside its
+ *  own radius, and a rim traced off a mesh has points spaced by the
+ *  sample grid, not by the tube. On a rim whose points sit a tenth of
+ *  the tube radius apart, every small wiggle of the staircase becomes
+ *  a crease, and the tube comes out looking like a caterpillar rather
+ *  than a pipe.
+ *
+ *  Re-interpolating at equal steps of arc length is the wrong tool: it
+ *  slides every point along its chords, off the corners the rim was
+ *  traced from, and it does that even where the rim was already spaced
+ *  comfortably wider than the tube. Choosing a subset cannot introduce
+ *  that error -- a point either survives exactly where it was, or goes
+ *  -- and on a rim already coarser than the tube nothing is dropped
+ *  and this is the identity.
+ *
+ *  The gap is measured to the last KEPT point rather than the previous
+ *  one, which is what handles a rim doubling back on itself, where arc
+ *  length advances while the point barely moves.
+ *
+ *  Returns the surviving INDICES, so the caller can carry per-point
+ *  data -- here the outward conormal -- through the thinning. */
+export function resample(pts, closed, spacing) {
+  const n = pts.length;
+  if (!(spacing > 0) || n < 3) return pts.map((_, i) => i);
+  const gap = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const out = [0];
+  for (let i = 1; i < n; i++) {
+    if (gap(pts[i], pts[out[out.length - 1]]) >= spacing) out.push(i);
+  }
+  if (closed && out.length > 2
+      && gap(pts[out[out.length - 1]], pts[out[0]]) < spacing) {
+    out.pop();
+  }
+  return out.length >= 4 ? out : pts.map((_, i) => i);
+}
+
 /** The rim as smoothed polylines: {points, closed, outward}.
  *
  *  `outward` is the conormal at each point, taken from the RAW rim

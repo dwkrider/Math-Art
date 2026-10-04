@@ -320,6 +320,27 @@ for (const c of ref.clips) {
               + `${loops.length} rim loop${loops.length === 1 ? '' : 's'}`);
 }
 
+// ---- the thinning that goes before the sweep. Given the same
+// polyline point for point, both sides have to drop the same points:
+// a rim traced off the sample grid is far finer than the tube, and
+// every step of its staircase would otherwise crease the sweep.
+{
+  let bad = 0;
+  for (const r of ref.resamples) {
+    const got = T.resample(r.points, r.closed, r.spacing);
+    if (got.join(',') !== r.keep.join(',')) {
+      note(`resample ${r.label}: kept ${got.length} of ${r.points.length} `
+           + `points, engine kept ${r.keep.length}`);
+      bad++;
+    }
+  }
+  if (!bad) {
+    const ident = ref.resamples.filter((r) => r.keep.length === r.points.length);
+    console.log(`  ok   rim thinning: ${ref.resamples.length} polylines, `
+                + `${ident.length} already coarser than the tube and left alone`);
+  }
+}
+
 // ---- every surface the page offers has to build, and the export has
 // to come out walled: a nodal surface is a sheet, and a slicer can do
 // nothing with a sheet.

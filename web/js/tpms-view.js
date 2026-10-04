@@ -9,11 +9,17 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { block, clipToSphere, facesOf, triangulate, boundaryLoops,
-         RIM_SMOOTH_DEFAULT } from './tpms-math.js';
+         resample, RIM_SMOOTH_DEFAULT } from './tpms-math.js';
 import { weld, orient, solidify } from './stl.js';
 
 const VIEW_DIR = [1.5, -2.2, 1.1];
-const RIM_SIDES = 8;
+// 16 sides put the flats within 2% of the radius; 8 left the tube
+// visibly octagonal at the sizes this rim is used at.
+const RIM_SIDES = 16;
+// No two control points closer than this multiple of the tube radius:
+// a rim traced off the sample grid is far finer than the tube, and
+// every step of its staircase would otherwise crease the sweep.
+const RIM_SPACING = 1.6;
 
 /** A tube swept along a polyline, with a rotation-minimising frame.
  *  The rim of a clipped TPMS curves in every direction, and a Frenet
@@ -223,7 +229,20 @@ export class TpmsView {
     if (rim > 0 && loops.length) {
       const out = { pos: [], nor: [], idx: [] };
       for (const l of loops) {
-        tubeAlong(l.points, l.closed, rim, RIM_SIDES, out, l.outward);
+        // A closed rim shorter than the tube's own circumference is
+        // not an edge worth drawing -- it reads as a bead sitting on
+        // the surface. The engine drops these too.
+        let len = 0;
+        const n = l.points.length;
+        const last = l.closed ? n : n - 1;
+        for (let i = 0; i < last; i++) {
+          const a = l.points[i], b = l.points[(i + 1) % n];
+          len += Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        }
+        if (l.closed && len < 2 * Math.PI * rim) continue;
+        const keep = resample(l.points, l.closed, RIM_SPACING * rim);
+        tubeAlong(keep.map((i) => l.points[i]), l.closed, rim, RIM_SIDES, out,
+                  keep.map((i) => l.outward[i]));
       }
       const rgeo = new THREE.BufferGeometry();
       rgeo.setAttribute('position', new THREE.Float32BufferAttribute(out.pos, 3));
