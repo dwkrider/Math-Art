@@ -23,6 +23,8 @@
 // al. (2001) and the Fisher et al. (2023) compilation.
 
 const { sin, cos, sinh, cos: _c } = Math;
+import { weld, orient, solidify } from './stl.js';
+
 export const TAU = 2 * Math.PI;
 
 const C = Math.cos, S = Math.sin;
@@ -840,4 +842,213 @@ export function boundaryLoops(positions, faces, smooth = RIM_SMOOTH_DEFAULT) {
     closed: chain.closed,
     outward: outwardField(positions, faces, chain.idx, means),
   }));
+}
+
+// ------------------------------------------------- the whole object
+
+// 16 sides put the flats within 2% of the radius; 8 left the tube
+// visibly octagonal at the sizes this rim is used at.
+const RIM_SIDES = 16;
+// No two control points closer than this multiple of the tube radius:
+// a rim traced off the sample grid is far finer than the tube, and
+// every step of its staircase would otherwise crease the sweep.
+const RIM_SPACING = 1.6;
+
+/** A tube swept along a polyline, with a rotation-minimising frame.
+ *  The rim of a clipped TPMS curves in every direction, and a Frenet
+ *  frame would spin the tube around it wherever the curve has an
+ *  inflection. */
+function tubeAlong(points, closed, radius, sides, out, outward = null) {
+  const n = points.length;
+  if (n < 2) return;
+  // Lift the tube off the cut along the outward conormal, so it RESTS
+  // against the edge instead of being threaded onto it. Centred on the
+  // rim, half of a round tube is buried in the sheet and the sheet
+  // pokes through it; lifted by its own radius, the tube touches the
+  // edge and nothing else.
+  if (outward) {
+    points = points.map((p, i) => [p[0] + radius * outward[i][0],
+                                   p[1] + radius * outward[i][1],
+                                   p[2] + radius * outward[i][2]]);
+  }
+  const base = out.pos.length / 3;
+  const T = [];
+  for (let i = 0; i < n; i++) {
+    const a = closed ? points[(i - 1 + n) % n] : points[Math.max(0, i - 1)];
+    const b = closed ? points[(i + 1) % n] : points[Math.min(n - 1, i + 1)];
+    const t = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const m = Math.hypot(t[0], t[1], t[2]) || 1;
+    T.push([t[0] / m, t[1] / m, t[2] / m]);
+  }
+  let nx, ny, nz;
+  {
+    const t = T[0];
+    const up = Math.abs(t[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+    nx = up[1] * t[2] - up[2] * t[1];
+    ny = up[2] * t[0] - up[0] * t[2];
+    nz = up[0] * t[1] - up[1] * t[0];
+    const m = Math.hypot(nx, ny, nz) || 1;
+    nx /= m; ny /= m; nz /= m;
+  }
+  for (let i = 0; i < n; i++) {
+    const [tx, ty, tz] = T[i];
+    const d = nx * tx + ny * ty + nz * tz;
+    nx -= d * tx; ny -= d * ty; nz -= d * tz;
+    const m = Math.hypot(nx, ny, nz) || 1;
+    nx /= m; ny /= m; nz /= m;
+    const bx = ty * nz - tz * ny;
+    const by = tz * nx - tx * nz;
+    const bz = tx * ny - ty * nx;
+    for (let s = 0; s < sides; s++) {
+      const a = 2 * Math.PI * s / sides;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const ux = nx * ca + bx * sa, uy = ny * ca + by * sa, uz = nz * ca + bz * sa;
+      out.pos.push(points[i][0] + radius * ux,
+                   points[i][1] + radius * uy,
+                   points[i][2] + radius * uz);
+      out.nor.push(ux, uy, uz);
+    }
+  }
+  const rings = closed ? n : n - 1;
+  for (let i = 0; i < rings; i++) {
+    const i0 = base + i * sides;
+    const i1 = base + ((i + 1) % n) * sides;
+    for (let s = 0; s < sides; s++) {
+      const s1 = (s + 1) % sides;
+      out.idx.push(i0 + s, i1 + s, i1 + s1, i0 + s, i1 + s1, i0 + s1);
+    }
+  }
+}
+
+/** Build the object the page draws and the exporter writes.
+ *
+ *  Order matters: march the field, clip the block to a ball if asked,
+ *  take the rim the clip opened, and only then give the sheet a
+ *  thickness. Thickening first would wall the rim shut and leave the
+ *  tube with nothing to sit on.
+ *
+ *  Returns the surface and the rim tube separately, because the page
+ *  colours them differently, and `exported` with the two merged,
+ *  because a printed TPMS with a wire round its cut edge needs the
+ *  wire in the file.
+ */
+export function buildScene({ kind, cells, res, offset = 0, scale = 2,
+                             clip = 0, thickness = 0, rim = 0,
+                             rimSmooth = RIM_SMOOTH_DEFAULT }) {
+  const mesh = block(kind, cells, res, scale, offset);
+  let positions = mesh.positions;
+  let indices = mesh.indices;
+  let faces = null;
+  let loops = [];
+  let clippedAway = false;
+
+  // 1 is a real radius, not "off": the ball then has the block's own
+  // half-width and still bites its corners away. Only 0 is off.
+  if (clip > 0) {
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < positions.length; i += 3) {
+      for (let k = 0; k < 3; k++) {
+        if (positions[i + k] < lo[k]) lo[k] = positions[i + k];
+        if (positions[i + k] > hi[k]) hi[k] = positions[i + k];
+      }
+    }
+    // a FRACTION of the block's own half-extent, so it keeps its
+    // meaning when the cell count changes
+    const half = 0.5 * Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]);
+    const out = clipToSphere(positions, facesOf(indices), clip * half);
+    if (out.faces.length) {
+      positions = out.positions;
+      faces = out.faces;
+      indices = triangulate(out.faces);
+    } else {
+      clippedAway = true;                   // the ball missed the surface
+    }
+  }
+
+  if (rim > 0) {
+    loops = boundaryLoops(positions, faces || facesOf(indices), rimSmooth);
+  }
+
+  let solid = false;
+  if (thickness > 0) {
+    const merged = weld(positions, indices);
+    const facing = orient(merged.positions, merged.indices);
+    const built = solidify(merged.positions, facing.indices, thickness);
+    positions = built.positions;
+    indices = built.indices;
+    solid = true;
+  }
+  positions = positions instanceof Float32Array
+    ? positions : Float32Array.from(positions);
+  indices = indices instanceof Uint32Array
+    ? indices : Uint32Array.from(indices);
+
+  let tube = null;
+  if (rim > 0 && loops.length) {
+    const out = { pos: [], nor: [], idx: [] };
+    for (const l of loops) {
+      // A closed rim shorter than the tube's own circumference is not
+      // an edge worth drawing -- it reads as a bead sitting on the
+      // surface. The engine drops these too.
+      let len = 0;
+      const n = l.points.length;
+      const last = l.closed ? n : n - 1;
+      for (let i = 0; i < last; i++) {
+        const a = l.points[i], b = l.points[(i + 1) % n];
+        len += Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+      }
+      if (l.closed && len < 2 * Math.PI * rim) continue;
+      const keep = resample(l.points, l.closed, RIM_SPACING * rim);
+      tubeAlong(keep.map((i) => l.points[i]), l.closed, rim, RIM_SIDES, out,
+                keep.map((i) => l.outward[i]));
+    }
+    if (out.idx.length) {
+      tube = {
+        positions: Float32Array.from(out.pos),
+        normals: Float32Array.from(out.nor),
+        indices: Uint32Array.from(out.idx),
+      };
+    }
+  }
+
+  let exported = { positions, indices };
+  if (tube) {
+    const nv = positions.length / 3;
+    const pos = new Float32Array(positions.length + tube.positions.length);
+    pos.set(positions, 0);
+    pos.set(tube.positions, positions.length);
+    const idx = new Uint32Array(indices.length + tube.indices.length);
+    idx.set(indices, 0);
+    for (let i = 0; i < tube.indices.length; i++) {
+      idx[indices.length + i] = tube.indices[i] + nv;
+    }
+    exported = { positions: pos, indices: idx };
+  }
+
+  // How far the object reaches, so a camera can be stood back far
+  // enough: one period is `scale` units wide, so a four-cell block is
+  // four times the size of a one-cell block.
+  let extent = 0;
+  for (let i = 0; i < positions.length; i += 3) {
+    const r = Math.hypot(positions[i], positions[i + 1], positions[i + 2]);
+    if (r > extent) extent = r;
+  }
+
+  return {
+    surface: { positions, indices },
+    rim: tube,
+    exported,
+    stats: {
+      extent,
+      vertices: positions.length / 3,
+      triangles: indices.length / 3,
+      cells: mesh.cells,
+      solid,
+      clippedAway,
+      rimLoops: loops.length,
+      rimPoints: loops.reduce((a, l) => a + l.points.length, 0),
+      rimTriangles: tube ? tube.indices.length / 3 : 0,
+    },
+  };
 }
