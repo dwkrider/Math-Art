@@ -11,7 +11,7 @@
 //
 // Settings are at the top and are meant to be edited.
 
-import { writeFileSync, mkdirSync, existsSync, statSync,
+import { writeFileSync, readFileSync, mkdirSync, existsSync, statSync,
          openSync, readSync, closeSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -39,6 +39,25 @@ const THICKNESS = flag('thickness', 0.02);  // model units, before scaling
 const CLIP = flag('clip', 1);             // ball of the block's half-width
 const RIM = flag('rim', 0.025);           // tube radius along the cut
 const SIZE_MM = flag('size', 75);         // longest side when printed
+// ONE SCALE FOR THE WHOLE SET.
+//
+// Scaling each surface so its own bounding box is SIZE_MM does not
+// give a set of the same size -- it gives a set of the same BOX. The
+// clip is a ball, and a surface only touches the ball's extreme
+// points if it happens to pass near them. Schwarz P reaches 91.9% of
+// the ball's diameter and Fischer-Koch S reaches 102.3% (the rim tube
+// and the wall push it past), so scaling each to its own box blows
+// Schwarz P up by 11.3% relative to Fischer-Koch S: its unit cell
+// comes out 40.8 mm against 36.6 mm, and its wall 0.408 mm against
+// 0.366 mm, from identical settings.
+//
+// With --uniform (the default) every surface is scaled by the same
+// factor, chosen so the largest object in the set is exactly SIZE_MM.
+// Unit cell and wall thickness are then identical across the set and
+// the surfaces are honestly comparable; the smaller ones simply come
+// out smaller, which is the truth about them. --no-uniform restores
+// per-file scaling.
+const UNIFORM = !process.argv.includes('--no-uniform');
 
 const OUT = flag('out',
   'C:/Users/dkrid/Projects/2026_07_21_Math_Art/dev/tpms-stl');
@@ -126,6 +145,7 @@ for (const kind of kinds) {
 
   rows.push({
     kind, name, file,
+    span: Math.max(...built.mm) / mmPerUnit,   // in model units
     tris: built.triangles,
     mm: built.mm.map((v) => +v.toFixed(1)),
     wallMM: +(THICKNESS * mmPerUnit).toFixed(3),
@@ -140,6 +160,42 @@ for (const kind of kinds) {
     + `${r.mm.join('x').padEnd(18)} wall ${r.wallMM} mm  wire ${r.wireMM} mm  `
     + `${r.rimLoops} loops  ${r.openEdges ? r.openEdges + ' OPEN EDGES' : 'closed'}  `
     + `${r.mb} MB  ${r.secs}s`);
+}
+
+// The common scale is applied afterwards, by rescaling the files in
+// place: a binary STL is a flat array of floats, so this is a pass of
+// arithmetic over bytes rather than a second meshing run, which at
+// these resolutions would be another twenty-five minutes.
+if (UNIFORM && rows.length) {
+  const spans = rows.map((r) => r.span).filter((v) => v > 0);
+  if (spans.length !== rows.length) {
+    console.log('\nnot rescaling: some rows came from --resume and carry '
+      + 'no span. Re-run without --resume for one scale across the set.');
+  } else {
+    const biggest = Math.max(...spans);
+    console.log(`\none scale for the set: the largest span is ${biggest.toFixed(4)} `
+      + `model units, so every surface is scaled by ${(SIZE_MM / biggest).toFixed(6)} `
+      + 'mm per unit');
+    for (const r of rows) {
+      const f = r.span / biggest;           // each file is already at SIZE_MM
+      if (Math.abs(f - 1) < 1e-9) continue;
+      const buf = Buffer.from(readFileSync(r.file));
+      const n = buf.readUInt32LE(80);
+      for (let t = 0; t < n; t++) {
+        const off = 84 + t * 50 + 12;       // past the normal
+        for (let k = 0; k < 9; k++) {
+          buf.writeFloatLE(buf.readFloatLE(off + k * 4) * f, off + k * 4);
+        }
+      }
+      writeFileSync(r.file, buf);
+      r.mm = r.mm.map((v) => +(v * f).toFixed(2));
+      r.wallMM = +(r.wallMM * f).toFixed(4);
+      r.wireMM = +(r.wireMM * f).toFixed(3);
+    }
+    const w = rows.map((r) => r.wallMM);
+    console.log(`  wall ${Math.min(...w).toFixed(4)} mm on every surface; `
+      + `largest object ${Math.max(...rows.map((r) => Math.max(...r.mm))).toFixed(2)} mm`);
+  }
 }
 
 writeFileSync(join(OUT, 'index.json'), JSON.stringify(rows, null, 2));
