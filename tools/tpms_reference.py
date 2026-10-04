@@ -32,7 +32,8 @@ import numpy as np                                            # noqa: E402
 from minsurf.tpms import (TPMS, build_tpms, clip_to_sphere,     # noqa: E402
                           marching_tets)
 sys.path.insert(0, os.path.join(PROJ, "math_art"))
-from rim_curve import boundary_index_loops, boundary_loops     # noqa: E402
+from rim_curve import (boundary_index_loops, boundary_loops,   # noqa: E402
+                       neighbour_means, outward_field)
 
 # Field values are compared on a grid that avoids the lattice points,
 # where several of these fields sit exactly on zero.
@@ -144,6 +145,13 @@ def main():
         cv, cf = clip_to_sphere(V, [tuple(int(i) for i in t) for t in tris], r)
         CV = np.asarray(cv, float)
         loops = boundary_loops(CV, cf)
+        # Which way is OUT of the cut, which is the direction the page
+        # lifts its rim tube along so it rests on the edge instead of
+        # straddling it. Summed over the loop, so a flipped sign or a
+        # missing tangent projection cannot hide.
+        means = neighbour_means(CV, cf)
+        outs = [outward_field(CV, cf, idx, means)
+                for idx, _cl in boundary_index_loops(cf)]
         out["clips"].append({
             "kind": kind, "cells": cells, "res": res, "frac": frac,
             "radius": float(r),
@@ -155,10 +163,12 @@ def main():
             "maxr": float(np.max(np.linalg.norm(CV, axis=1))) if len(CV) else 0.0,
             "loops": [{"n": int(len(pts)), "closed": bool(cl),
                        "first": [float(x) for x in pts[0]],
+                       "out0": [float(x) for x in o[0]],
+                       "outsum": [float(x) for x in o.sum(axis=0)],
                        "length": float(np.linalg.norm(
                            np.diff(np.vstack([pts, pts[:1]]) if cl else pts,
                                    axis=0), axis=1).sum())}
-                      for pts, cl in loops],
+                      for (pts, cl), o in zip(loops, outs)],
         })
 
     text = json.dumps(out)

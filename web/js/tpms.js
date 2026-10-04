@@ -14,7 +14,7 @@ const $ = (sel) => document.querySelector(sel);
 
 function main() {
   const view = new TpmsView($('#stage'));
-  const state = { kind: 'G', cells: 2, res: 24, offset: 0, wireframe: false,
+  const state = { kind: 'G', cells: 2, res: 64, offset: 0, wireframe: false,
                   thickness: 0, clip: 0, rim: 0 };
   let lastFrameKey = null;
 

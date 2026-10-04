@@ -19,9 +19,19 @@ const RIM_SIDES = 8;
  *  The rim of a clipped TPMS curves in every direction, and a Frenet
  *  frame would spin the tube around it wherever the curve has an
  *  inflection. */
-function tubeAlong(points, closed, radius, sides, out) {
+function tubeAlong(points, closed, radius, sides, out, outward = null) {
   const n = points.length;
   if (n < 2) return;
+  // Lift the tube off the cut along the outward conormal, so it RESTS
+  // against the edge instead of being threaded onto it. Centred on the
+  // rim, half of a round tube is buried in the sheet and the sheet
+  // pokes through it; lifted by its own radius, the tube touches the
+  // edge and nothing else.
+  if (outward) {
+    points = points.map((p, i) => [p[0] + radius * outward[i][0],
+                                   p[1] + radius * outward[i][1],
+                                   p[2] + radius * outward[i][2]]);
+  }
   const base = out.pos.length / 3;
   const T = [];
   for (let i = 0; i < n; i++) {
@@ -150,7 +160,9 @@ export class TpmsView {
     let loops = [];
     let clippedAway = false;
 
-    if (clip > 0 && clip < 1) {
+    // 1 is a real radius, not "off": the ball then has the block's own
+    // half-width and still bites its corners away. Only 0 is off.
+    if (clip > 0) {
       let lo = [Infinity, Infinity, Infinity];
       let hi = [-Infinity, -Infinity, -Infinity];
       for (let i = 0; i < positions.length; i += 3) {
@@ -210,7 +222,9 @@ export class TpmsView {
     let rimGeom = null;
     if (rim > 0 && loops.length) {
       const out = { pos: [], nor: [], idx: [] };
-      for (const l of loops) tubeAlong(l.points, l.closed, rim, RIM_SIDES, out);
+      for (const l of loops) {
+        tubeAlong(l.points, l.closed, rim, RIM_SIDES, out, l.outward);
+      }
       const rgeo = new THREE.BufferGeometry();
       rgeo.setAttribute('position', new THREE.Float32BufferAttribute(out.pos, 3));
       rgeo.setAttribute('normal', new THREE.Float32BufferAttribute(out.nor, 3));

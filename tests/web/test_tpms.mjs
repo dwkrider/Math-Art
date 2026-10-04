@@ -267,6 +267,55 @@ for (const c of ref.clips) {
       got  ${got.join(', ')}`);
     continue;
   }
+  // The conormal -- which way is OUT of the cut. The tube is lifted
+  // along it, so a sign flip would bury the tube in the sheet instead
+  // of resting it on the edge, and nothing above would notice.
+  //
+  // Compared as the MEAN over the loop, not the sum: the port carries
+  // its clipped positions in float32, so each unit vector can differ
+  // in the seventh decimal, and summing a few hundred of them collects
+  // that into the sixth. A mean is the same quantity without the
+  // accumulation, and 1e-4 on a unit vector still catches a flipped
+  // sign or a dropped tangent projection by a factor of thousands.
+  const omean = (o) => o
+    .reduce((a, v) => [a[0] + v[0], a[1] + v[1], a[2] + v[2]], [0, 0, 0])
+    .map((x) => x / Math.max(o.length, 1));
+  const near = (a, b) => Math.abs(a[0] - b[0]) < 1e-4 && Math.abs(a[1] - b[1]) < 1e-4
+                      && Math.abs(a[2] - b[2]) < 1e-4;
+  const wantOut = c.loops.map((l) => l.outsum.map((x) => x / Math.max(l.n, 1)));
+  const gotOut = loops.map((l) => omean(l.outward));
+  const taken = new Set();
+  let unmatched = 0;
+  for (const g of gotOut) {
+    const k = wantOut.findIndex((w, i) => !taken.has(i) && near(w, g));
+    if (k < 0) unmatched++; else taken.add(k);
+  }
+  if (unmatched) {
+    note(`${label}: ${unmatched} rim loop(s) with a different outward field`);
+    continue;
+  }
+  // Independent of the engine: the rim of a ball-clipped block lies ON
+  // the sphere with the surface continuing INWARD, so the conormal --
+  // which points across the edge, out of the sheet -- has to agree
+  // with the radial direction nearly everywhere.
+  {
+    let n = 0, agree = 0;
+    for (const l of loops) {
+      for (let i = 0; i < l.outward.length; i++) {
+        const p = l.points[i];
+        const m = Math.hypot(p[0], p[1], p[2]) || 1;
+        const d = (p[0] * l.outward[i][0] + p[1] * l.outward[i][1]
+                   + p[2] * l.outward[i][2]) / m;
+        n++;
+        if (d > 0) agree++;
+      }
+    }
+    if (n && agree / n < 0.9) {
+      note(`${label}: conormal points outward at only `
+           + `${(100 * agree / n).toFixed(0)}% of rim samples`);
+      continue;
+    }
+  }
   console.log(`  ok   ${label}: ${c.nfaces} faces, cut on the sphere, `
               + `${loops.length} rim loop${loops.length === 1 ? '' : 's'}`);
 }
