@@ -35,7 +35,7 @@ const flag = (name, dflt) => {
 const CELLS = flag('cells', 2);           // 2x2x2 unit cells
 const RES = flag('res', 64);              // samples per cell
 const OFFSET = flag('offset', 0);         // 0 is the canonical surface
-const THICKNESS = flag('thickness', 0.02);  // model units, before scaling
+const THICKNESS = flag('thickness', 0.02);  // model units; see --wall
 const CLIP = flag('clip', 1);             // ball of the block's half-width
 const RIM = flag('rim', 0.025);           // tube radius along the cut
 const SIZE_MM = flag('size', 75);         // longest side when printed
@@ -58,9 +58,58 @@ const SIZE_MM = flag('size', 75);         // longest side when printed
 // out smaller, which is the truth about them. --no-uniform restores
 // per-file scaling.
 const UNIFORM = !process.argv.includes('--no-uniform');
+// --wall asks for a wall in MILLIMETRES and works backwards to the
+// thickness in model units that produces it. That is not a division:
+// thickening pushes the surface out, so it changes the very span the
+// scale is derived from, and the answer depends on itself. The
+// dependence is near enough linear to solve by iterating a two-point
+// fit, which `calibrate` below does at a coarse resolution -- the
+// span moves by 0.06% between 16 samples and 64, far less than the
+// wall tolerance of any printer.
+//
+// With --wall the scale is fixed by the WALL rather than by the size:
+// the requested wall comes out exact and the largest object lands
+// within a fraction of a percent of --size. That is the right way
+// round when the wall is what has to clear a nozzle.
+const WALL_MM = flag('wall', 0);
+const CAL_RES = flag('calres', 16);
 
 const OUT = flag('out',
   'C:/Users/dkrid/Projects/2026_07_21_Math_Art/dev/tpms-stl');
+
+/** The widest span in the set, in model units, at a given thickness. */
+function widestSpan(kinds, thickness, res) {
+  let widest = 0;
+  for (const kind of kinds) {
+    const out = buildSceneFor(kind, thickness, res);
+    const p = out.exported.positions;
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < p.length; i += 3) {
+      for (let k = 0; k < 3; k++) {
+        if (p[i + k] < lo[k]) lo[k] = p[i + k];
+        if (p[i + k] > hi[k]) hi[k] = p[i + k];
+      }
+    }
+    widest = Math.max(widest, hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]);
+  }
+  return widest;
+}
+
+/** The model-unit thickness whose printed wall is `wallMM`, with the
+ *  largest object landing on `SIZE_MM`. */
+function calibrate(kinds, wallMM) {
+  const probes = [0.02, 0.04];
+  const spans = probes.map((t) => widestSpan(kinds, t, CAL_RES));
+  const b = (spans[1] - spans[0]) / (probes[1] - probes[0]);
+  const a = spans[0] - b * probes[0];
+  // t * SIZE / span(t) = wall, with span(t) = a + b t
+  const t = wallMM * a / (SIZE_MM - wallMM * b);
+  console.log(`calibration at ${CAL_RES} samples: span = ${a.toFixed(4)} `
+    + `+ ${b.toFixed(4)} x thickness; for a ${wallMM} mm wall, `
+    + `thickness ${t.toFixed(6)}`);
+  return t;
+}
 // --resume picks up where an interrupted run stopped. At 128 samples
 // a surface takes a minute and half a gigabyte, so a run that dies
 // three from the end should not start again from the beginning.
@@ -97,8 +146,18 @@ const uniqueSlug = (name, kind) => {
 };
 
 const kinds = Object.keys(T.TPMS).filter((k) => T.TPMS[k][2]);
+
+function buildSceneFor(kind, thickness, res) {
+  return T.buildScene({
+    kind, cells: CELLS, res, offset: OFFSET,
+    thickness, clip: CLIP, rim: RIM,
+  });
+}
+
+const THICK = WALL_MM > 0 ? calibrate(kinds, WALL_MM) : THICKNESS;
+
 console.log(`${kinds.length} surfaces · ${CELLS}x${CELLS}x${CELLS} cells · `
-  + `${RES} samples/cell · thickness ${THICKNESS} · clip ${CLIP} · `
+  + `${RES} samples/cell · thickness ${THICK.toFixed(6)} · clip ${CLIP} · `
   + `rim ${RIM} · ${SIZE_MM} mm\n`);
 
 const rows = [];
@@ -114,10 +173,7 @@ for (const kind of kinds) {
       + `${r.mb} MB  (already on disk, kept)`);
     continue;
   }
-  const out = T.buildScene({
-    kind, cells: CELLS, res: RES, offset: OFFSET,
-    thickness: THICKNESS, clip: CLIP, rim: RIM,
-  });
+  const out = buildSceneFor(kind, THICK, RES);
   // thicknessMM 0: the sheet already has a thickness, so there is
   // nothing for the exporter to wall -- it would only double it
   const built = buildBinarySTLFromMesh(out.exported.positions,
@@ -148,7 +204,7 @@ for (const kind of kinds) {
     span: Math.max(...built.mm) / mmPerUnit,   // in model units
     tris: built.triangles,
     mm: built.mm.map((v) => +v.toFixed(1)),
-    wallMM: +(THICKNESS * mmPerUnit).toFixed(3),
+    wallMM: +(THICK * mmPerUnit).toFixed(4),
     wireMM: +(2 * RIM * mmPerUnit).toFixed(2),
     rimLoops: out.stats.rimLoops,
     openEdges,
@@ -157,7 +213,9 @@ for (const kind of kinds) {
   });
   const r = rows[rows.length - 1];
   console.log(`${name.padEnd(28)} ${String(r.tris).padStart(9)} tris  `
-    + `${r.mm.join('x').padEnd(18)} wall ${r.wallMM} mm  wire ${r.wireMM} mm  `
+    + (UNIFORM ? ''
+               : `${r.mm.join('x').padEnd(18)} wall ${r.wallMM} mm  `
+                 + `wire ${r.wireMM} mm  `)
     + `${r.rimLoops} loops  ${r.openEdges ? r.openEdges + ' OPEN EDGES' : 'closed'}  `
     + `${r.mb} MB  ${r.secs}s`);
 }
@@ -173,11 +231,13 @@ if (UNIFORM && rows.length) {
       + 'no span. Re-run without --resume for one scale across the set.');
   } else {
     const biggest = Math.max(...spans);
-    console.log(`\none scale for the set: the largest span is ${biggest.toFixed(4)} `
-      + `model units, so every surface is scaled by ${(SIZE_MM / biggest).toFixed(6)} `
-      + 'mm per unit');
+    // mm per model unit, from the wall when one was asked for
+    const S = WALL_MM > 0 ? WALL_MM / THICK : SIZE_MM / biggest;
+    console.log(`\none scale for the set: ${S.toFixed(6)} mm per model unit`
+      + ` (widest span ${biggest.toFixed(4)}, so the largest object is `
+      + `${(biggest * S).toFixed(2)} mm)`);
     for (const r of rows) {
-      const f = r.span / biggest;           // each file is already at SIZE_MM
+      const f = S * r.span / SIZE_MM;       // each file is at SIZE_MM/span
       if (Math.abs(f - 1) < 1e-9) continue;
       const buf = Buffer.from(readFileSync(r.file));
       const n = buf.readUInt32LE(80);
