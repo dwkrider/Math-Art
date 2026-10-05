@@ -72,16 +72,21 @@ const UNIFORM = !process.argv.includes('--no-uniform');
 // within a fraction of a percent of --size. That is the right way
 // round when the wall is what has to clear a nozzle.
 const WALL_MM = flag('wall', 0);
+// --wire is the DIAMETER of the tube round the cut, in millimetres --
+// the figure you would measure on the printed part, not the radius
+// the generator takes.
+const WIRE_MM = flag('wire', 0);
 const CAL_RES = flag('calres', 16);
 
 const OUT = flag('out',
   'C:/Users/dkrid/Projects/2026_07_21_Math_Art/dev/tpms-stl');
 
-/** The widest span in the set, in model units, at a given thickness. */
-function widestSpan(kinds, thickness, res) {
+/** The widest span in the set, in model units, at a given wall and
+ *  tube radius. */
+function widestSpan(kinds, thickness, rim, res) {
   let widest = 0;
   for (const kind of kinds) {
-    const out = buildSceneFor(kind, thickness, res);
+    const out = buildSceneFor(kind, thickness, rim, res);
     const p = out.exported.positions;
     const lo = [Infinity, Infinity, Infinity];
     const hi = [-Infinity, -Infinity, -Infinity];
@@ -96,19 +101,37 @@ function widestSpan(kinds, thickness, res) {
   return widest;
 }
 
-/** The model-unit thickness whose printed wall is `wallMM`, with the
- *  largest object landing on `SIZE_MM`. */
-function calibrate(kinds, wallMM) {
-  const probes = [0.02, 0.04];
-  const spans = probes.map((t) => widestSpan(kinds, t, CAL_RES));
-  const b = (spans[1] - spans[0]) / (probes[1] - probes[0]);
-  const a = spans[0] - b * probes[0];
-  // t * SIZE / span(t) = wall, with span(t) = a + b t
-  const t = wallMM * a / (SIZE_MM - wallMM * b);
-  console.log(`calibration at ${CAL_RES} samples: span = ${a.toFixed(4)} `
-    + `+ ${b.toFixed(4)} x thickness; for a ${wallMM} mm wall, `
-    + `thickness ${t.toFixed(6)}`);
-  return t;
+/** The model-unit wall and tube radius whose printed sizes are
+ *  `wallMM` and `wireMM` (a diameter), with the largest object in the
+ *  set landing on SIZE_MM.
+ *
+ *  A fixed point, not a division. Both dimensions scale with the
+ *  object, so they are set by the scale; but the scale comes from the
+ *  widest object in the set, and the tube -- which stands its own
+ *  radius off the cut and is a radius wide on top of that -- is what
+ *  makes that object as wide as it is. Thicken the wall or fatten the
+ *  wire and the span moves, which moves the scale, which changes the
+ *  wall and the wire. Iterating settles it in a few passes, and no
+ *  assumption about the shape of the dependence is needed. */
+function calibrate(kinds, wallMM, wireMM) {
+  let scale = SIZE_MM / 4.09;              // a first guess, from the block
+  let t = 0, r = 0;
+  for (let i = 0; i < 8; i++) {
+    t = wallMM > 0 ? wallMM / scale : THICKNESS;
+    r = wireMM > 0 ? wireMM / (2 * scale) : RIM;
+    const span = widestSpan(kinds, t, r, CAL_RES);
+    const next = SIZE_MM / span;
+    const settled = Math.abs(next - scale) < 1e-9 * scale;
+    scale = next;
+    console.log(`  pass ${i + 1}: wall ${t.toFixed(6)}, tube radius `
+      + `${r.toFixed(6)}, widest span ${span.toFixed(4)} -> `
+      + `${scale.toFixed(6)} mm per unit${settled ? '  (settled)' : ''}`);
+    if (settled) break;
+  }
+  console.log(`calibration at ${CAL_RES} samples: a ${wallMM} mm wall and a `
+    + `${wireMM} mm wire need thickness ${t.toFixed(6)} and tube radius `
+    + `${r.toFixed(6)}`);
+  return { thickness: t, rim: r, scale };
 }
 // --resume picks up where an interrupted run stopped. At 128 samples
 // a surface takes a minute and half a gigabyte, so a run that dies
@@ -147,18 +170,22 @@ const uniqueSlug = (name, kind) => {
 
 const kinds = Object.keys(T.TPMS).filter((k) => T.TPMS[k][2]);
 
-function buildSceneFor(kind, thickness, res) {
+function buildSceneFor(kind, thickness, rim, res) {
   return T.buildScene({
     kind, cells: CELLS, res, offset: OFFSET,
-    thickness, clip: CLIP, rim: RIM,
+    thickness, clip: CLIP, rim,
   });
 }
 
-const THICK = WALL_MM > 0 ? calibrate(kinds, WALL_MM) : THICKNESS;
+const CAL = (WALL_MM > 0 || WIRE_MM > 0)
+  ? calibrate(kinds, WALL_MM, WIRE_MM)
+  : { thickness: THICKNESS, rim: RIM, scale: 0 };
+const THICK = CAL.thickness;
+const TUBE = CAL.rim;
 
 console.log(`${kinds.length} surfaces · ${CELLS}x${CELLS}x${CELLS} cells · `
   + `${RES} samples/cell · thickness ${THICK.toFixed(6)} · clip ${CLIP} · `
-  + `rim ${RIM} · ${SIZE_MM} mm\n`);
+  + `rim ${TUBE.toFixed(6)} · ${SIZE_MM} mm\n`);
 
 const rows = [];
 for (const kind of kinds) {
@@ -173,7 +200,7 @@ for (const kind of kinds) {
       + `${r.mb} MB  (already on disk, kept)`);
     continue;
   }
-  const out = buildSceneFor(kind, THICK, RES);
+  const out = buildSceneFor(kind, THICK, TUBE, RES);
   // thicknessMM 0: the sheet already has a thickness, so there is
   // nothing for the exporter to wall -- it would only double it
   const built = buildBinarySTLFromMesh(out.exported.positions,
@@ -205,7 +232,7 @@ for (const kind of kinds) {
     tris: built.triangles,
     mm: built.mm.map((v) => +v.toFixed(1)),
     wallMM: +(THICK * mmPerUnit).toFixed(4),
-    wireMM: +(2 * RIM * mmPerUnit).toFixed(2),
+    wireMM: +(2 * TUBE * mmPerUnit).toFixed(4),
     rimLoops: out.stats.rimLoops,
     openEdges,
     mb: +(buf.length / 1e6).toFixed(1),
@@ -232,7 +259,9 @@ if (UNIFORM && rows.length) {
   } else {
     const biggest = Math.max(...spans);
     // mm per model unit, from the wall when one was asked for
-    const S = WALL_MM > 0 ? WALL_MM / THICK : SIZE_MM / biggest;
+    const S = WALL_MM > 0 ? WALL_MM / THICK
+      : WIRE_MM > 0 ? WIRE_MM / (2 * TUBE)
+      : SIZE_MM / biggest;
     console.log(`\none scale for the set: ${S.toFixed(6)} mm per model unit`
       + ` (widest span ${biggest.toFixed(4)}, so the largest object is `
       + `${(biggest * S).toFixed(2)} mm)`);
@@ -253,8 +282,10 @@ if (UNIFORM && rows.length) {
       r.wireMM = +(r.wireMM * f).toFixed(3);
     }
     const w = rows.map((r) => r.wallMM);
-    console.log(`  wall ${Math.min(...w).toFixed(4)} mm on every surface; `
-      + `largest object ${Math.max(...rows.map((r) => Math.max(...r.mm))).toFixed(2)} mm`);
+    const q = rows.map((r) => r.wireMM);
+    console.log(`  wall ${Math.min(...w).toFixed(4)} mm and wire `
+      + `${Math.min(...q).toFixed(4)} mm on every surface; largest object `
+      + `${Math.max(...rows.map((r) => Math.max(...r.mm))).toFixed(2)} mm`);
   }
 }
 
