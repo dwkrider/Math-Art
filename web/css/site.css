@@ -657,7 +657,10 @@ figcaption {
 /* Inline code in prose -- braid words, mostly. Without this it falls
    back to the browser default, which is a generic monospace at about
    0.85em and reads as shrunken small capitals mid-sentence. Scoped
-   rather than global, so the other modules' pages are untouched. */
+   rather than global, so the other modules' pages are untouched -- a
+   hedge, not the end state: the library migration is to promote this
+   and .math-inline into a shared typographic layer and drop the
+   scoping, so every module reads the same. See BACKLOG.md. */
 .seifert-prose code {
   font-family: var(--mono);
   font-size: 0.93em;
