@@ -645,6 +645,26 @@ figcaption {
   font-size: 0.86rem;
 }
 
+/* Maths inside a sentence. `.formula` above is a two-column GRID for
+   a labelled display formula, so using it inline breaks the expression
+   across rows -- which is what it did here first. This is the inline
+   companion: it stays on one line and never breaks mid-expression. */
+.math-inline {
+  font-family: var(--serif);
+  white-space: nowrap;
+}
+
+/* Inline code in prose -- braid words, mostly. Without this it falls
+   back to the browser default, which is a generic monospace at about
+   0.85em and reads as shrunken small capitals mid-sentence. Scoped
+   rather than global, so the other modules' pages are untouched. */
+.seifert-prose code {
+  font-family: var(--mono);
+  font-size: 0.93em;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
 .formula-label {
   color: var(--ink-faint);
   font-style: italic;
