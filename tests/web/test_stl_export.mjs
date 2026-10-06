@@ -100,5 +100,60 @@ console.log('5. the seam weld does not fuse touching sheets');
      `welding did not manufacture non-manifold edges (${before.nonManifold} -> ${after.nonManifold})`);
 }
 
+console.log('6. the audit counts what a Map-based count would');
+{
+  // auditMesh used to key two Maps on strings like "17:42", which V8
+  // caps at 2^24 entries: a mesh past about 5.6 million triangles
+  // threw instead of being audited, and those are precisely the
+  // meshes nobody can check by eye. It now packs each edge into one
+  // number and sorts. The obvious implementation is kept HERE, as the
+  // thing to agree with -- a different algorithm, not a copy.
+  const byMap = (indices) => {
+    const und = new Map(), dir = new Map();
+    for (let t = 0; t < indices.length; t += 3) {
+      const tri = [indices[t], indices[t + 1], indices[t + 2]];
+      for (let e = 0; e < 3; e++) {
+        const a = tri[e], b = tri[(e + 1) % 3];
+        const k = a < b ? a + ':' + b : b + ':' + a;
+        und.set(k, (und.get(k) || 0) + 1);
+        const d = a + '>' + b;
+        dir.set(d, (dir.get(d) || 0) + 1);
+      }
+    }
+    let holes = 0, nonManifold = 0, flipped = 0;
+    for (const c of und.values()) {
+      if (c === 1) holes++; else if (c > 2) nonManifold++;
+    }
+    for (const c of dir.values()) if (c > 1) flipped++;
+    return { holes, nonManifold, flipped,
+             watertight: holes === 0 && nonManifold === 0 && flipped === 0 };
+  };
+  const cases = [
+    ['nothing at all', []],
+    ['one open sheet', [0, 1, 2, 1, 3, 2]],
+    ['two faces wound the same way along a shared edge', [0, 1, 2, 0, 1, 3]],
+    ['four faces on one edge', [0, 1, 2, 0, 1, 3, 1, 0, 4, 1, 0, 5]],
+  ];
+  // random soups, which hit holes, non-manifold edges and reversed
+  // windings all at once and in quantity
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (const [n, verts] of [[60, 12], [400, 40], [4000, 500]]) {
+    const idx = [];
+    for (let i = 0; i < n * 3; i++) idx.push(Math.floor(rnd() * verts));
+    cases.push([n + ' random triangles over ' + verts + ' vertices', idx]);
+  }
+  let agree = 0;
+  for (const [name, list] of cases) {
+    const idx = Uint32Array.from(list);
+    const got = JSON.stringify(STL.auditMesh(idx));
+    const want = JSON.stringify(byMap(idx));
+    if (got === want) agree++;
+    else ok(false, name + ': audit says ' + got + ', a Map count says ' + want);
+  }
+  ok(agree === cases.length,
+     'the audit agrees with a Map count on all ' + cases.length + ' meshes');
+}
+
 console.log(fail ? `\nRESULT: ${fail} FAILURE(S)` : '\nRESULT: OK');
 process.exit(fail ? 1 : 0);

@@ -36,3 +36,6 @@ web/data/
 
 # generated locally by tools/corrugation_report.py
 corrugation_report.html
+
+# Bambu Studio CLI drops this wherever it is run
+result.json

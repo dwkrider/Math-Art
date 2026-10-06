@@ -917,6 +917,43 @@ def patch_site_pages(n_surf, n_solid):
             "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
         }, depth=1))
 
+    patch_head(os.path.join(WEB, "modules", "tpms.html"), head_block(
+        canonical=url("modules/tpms.html"),
+        title="Triply-Periodic Minimal Surfaces - %s" % SITE,
+        desc=("The gyroid, Schwarz P and D and twenty more: surfaces that "
+              "repeat forever in all three directions, built live in the "
+              "browser from their nodal formulas, with STL export."),
+        image=url("thumbs/modules/tpms.png"),
+        image_alt="A two-by-two-by-two block of the gyroid",
+        ld={
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Triply-Periodic Minimal Surfaces",
+            "url": url("modules/tpms.html"),
+            "description": "An interactive generator for triply-periodic "
+                           "minimal surfaces from their nodal formulas.",
+            "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
+        }, depth=1))
+
+    patch_head(os.path.join(WEB, "modules", "seifert.html"), head_block(
+        canonical=url("modules/seifert.html"),
+        title="Seifert Surfaces - %s" % SITE,
+        desc=("Every knot bounds a surface. Type a braid word and watch "
+              "Seifert's 1934 algorithm build one out of disks and twisted "
+              "bands, with its genus read straight off the construction."),
+        image=url("thumbs/modules/seifert.png"),
+        image_alt="The Seifert surface of a trefoil knot",
+        ld={
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Seifert Surfaces",
+            "url": url("modules/seifert.html"),
+            "description": "An interactive generator for Seifert surfaces "
+                           "and the other spanning surfaces of a braid "
+                           "closure.",
+            "isPartOf": {"@type": "WebSite", "name": SITE, "url": BASE},
+        }, depth=1))
+
     patch_head(os.path.join(WEB, "modules", "scherk.html"), head_block(
         canonical=url("modules/scherk.html"),
         title="Scherk-Collins Sculptures - %s" % SITE,
@@ -1065,6 +1102,8 @@ def main():
             (url("modules/chair44.html"), 0.9),
             (url("modules/hopf.html"), 0.9),
             (url("modules/scherk.html"), 0.9),
+            (url("modules/tpms.html"), 0.9),
+            (url("modules/seifert.html"), 0.9),
             (url("catalog/polyhedra/index.html"), 0.7),
             (url("catalog/surfaces/index.html"), 0.7)]
     urls += [(url("catalog/surfaces/%s.html" % e["slug"]), 0.5)
@@ -1083,7 +1122,8 @@ def main():
     print("head blocks       : index.html, modules/surfaces.html, "
           "modules/polyhedra.html, modules/periodic.html, "
           "modules/belt-trick.html, modules/chair44.html, "
-          "modules/hopf.html, modules/scherk.html")
+          "modules/hopf.html, modules/scherk.html, "
+          "modules/tpms.html, modules/seifert.html")
     return 0
 
 

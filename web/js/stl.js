@@ -332,23 +332,67 @@ export function solidify(positions, indices, thickness) {
  * Klein bottle have no consistent side to offset toward at all.
  */
 export function auditMesh(indices) {
-  const und = new Map(), dir = new Map();
+  const nTris = Math.floor(indices.length / 3);
+  if (!nTris) {
+    return { holes: 0, nonManifold: 0, flipped: 0, watertight: true };
+  }
+  // COUNTED BY SORTING, NOT BY A MAP.
+  //
+  // This used to key two Maps on strings like "17:42". That works up
+  // to a point and then stops dead: V8 caps a Map at 2^24 entries, so
+  // a mesh past about 5.6 million triangles threw `Map maximum size
+  // exceeded` instead of being audited -- and those are exactly the
+  // meshes worth auditing, because they are the ones nobody can check
+  // by eye. Packing each edge into one number and sorting has no such
+  // ceiling, allocates two flat arrays instead of millions of strings,
+  // and is faster besides.
+  let maxV = 0;
+  for (let i = 0; i < indices.length; i++) {
+    if (indices[i] > maxV) maxV = indices[i];
+  }
+  const N = maxV + 1;
+  // a*N + b has to stay exactly representable, or two different edges
+  // could pack to the same number and the audit would quietly lie
+  if (N * N > Number.MAX_SAFE_INTEGER) {
+    throw new Error(`auditMesh: ${N} vertices is past exact edge packing`);
+  }
+  const keys = new Float64Array(nTris * 3);
+
+  const runs = (count) => {
+    keys.sort();
+    let a = 0, b = 0;                 // edges seen once, and more than twice
+    for (let i = 0; i < keys.length;) {
+      let j = i + 1;
+      while (j < keys.length && keys[j] === keys[i]) j++;
+      count(j - i, (n) => { a += n; }, (n) => { b += n; });
+      i = j;
+    }
+    return [a, b];
+  };
+
+  // Undirected: an edge used once is a hole, an edge used more than
+  // twice is non-manifold.
+  let n = 0;
   for (let t = 0; t < indices.length; t += 3) {
-    const tri = [indices[t], indices[t + 1], indices[t + 2]];
     for (let e = 0; e < 3; e++) {
-      const a = tri[e], b = tri[(e + 1) % 3];
-      const k = a < b ? a + ':' + b : b + ':' + a;
-      und.set(k, (und.get(k) || 0) + 1);
-      const d = a + '>' + b;
-      dir.set(d, (dir.get(d) || 0) + 1);
+      const a = indices[t + e], b = indices[t + (e + 1) % 3];
+      keys[n++] = (a < b ? a : b) * N + (a < b ? b : a);
     }
   }
-  let holes = 0, nonManifold = 0, flipped = 0;
-  for (const c of und.values()) {
-    if (c === 1) holes++;
-    else if (c > 2) nonManifold++;
+  const [holes, nonManifold] = runs((c, one, many) => {
+    if (c === 1) one(1); else if (c > 2) many(1);
+  });
+
+  // Directed: the same edge traversed the same way by two faces means
+  // their windings disagree.
+  n = 0;
+  for (let t = 0; t < indices.length; t += 3) {
+    for (let e = 0; e < 3; e++) {
+      keys[n++] = indices[t + e] * N + indices[t + (e + 1) % 3];
+    }
   }
-  for (const c of dir.values()) if (c > 1) flipped++;
+  const [flipped] = runs((c, one) => { if (c > 1) one(1); });
+
   return { holes, nonManifold, flipped,
            watertight: holes === 0 && nonManifold === 0 && flipped === 0 };
 }
