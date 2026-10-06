@@ -8,9 +8,10 @@
 // the thin seam that composes them, and it is deliberately short: if it
 // starts growing geometry, that geometry belongs in the layer below.
 
-import { buildSurface, tubeAlong, torusKnot } from './seifert-math.js';
+import { buildSurface, tubeAlong } from './seifert-math.js';
+import { finish } from './seifert-relax.js';
 import { Stage } from './lib/stage.js';
-import { mountControls } from './lib/controls.js';
+import { mountControls, debounce } from './lib/controls.js';
 import { buildBinarySTLFromMesh, downloadSTL } from './stl.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -84,6 +85,14 @@ function main() {
       { id: 'levels', type: 'range', label: 'Smoothing', min: 0, max: 3,
         step: 1, value: 1, title: 'Catmull-Clark subdivision levels',
         format: (v) => (v ? `${v} level${v === 1 ? '' : 's'}` : 'none (raw bands)') },
+      { id: 'relaxSteps', type: 'range', label: 'Relax', min: 0, max: 300,
+        step: 10, value: 60,
+        title: 'Particle-model relaxation steps before refining',
+        format: (v) => (v ? `${v} steps` : 'off') },
+      { id: 'fairSteps', type: 'range', label: 'Fair', min: 0, max: 30,
+        step: 1, value: 8,
+        title: 'Mean-curvature fairing passes with the rim pinned',
+        format: (v) => (v ? `${v} pass${v === 1 ? '' : 'es'}` : 'off') },
       { id: 'tube', type: 'range', label: 'Knot tube', min: 0, max: 0.06,
         step: 0.002, value: 0.018, title: 'Radius of the tube along the boundary',
         format: (v) => (v ? v.toFixed(3) : 'off') },
@@ -107,8 +116,13 @@ function main() {
       if (chosen !== 'custom') panel.set('word', chosen);
     }
     if (id === 'word') panel.set('preset', 'custom');
-    rebuild();
+    queueRebuild();
   });
+
+  // Relaxing and fairing cost a second or two, and a slider fires an
+  // event per step of a drag; without this, dragging queues one build
+  // per step and the page stops responding.
+  const queueRebuild = debounce(() => rebuild(), 140);
 
   $('#controls').append(readout, note);
 
@@ -119,8 +133,17 @@ function main() {
       out = buildSurface({
         word: v.word.trim(),
         surface: v.surface,
-        levels: v.levels,
         params: { bandWidth: v.bands },
+        // Relax on the COARSE mesh and fair on the refined one, which
+        // is the engine's order and the cheap one: the relaxation's
+        // repulsion is quadratic in the number of rim vertices, and
+        // subdividing first would multiply those by four per level.
+        finish: (mesh) => finish(mesh, {
+          relaxSteps: v.relaxSteps,
+          levels: v.levels,
+          fairSteps: v.fairSteps,
+          fairStrength: 2.0,
+        }),
       });
     } catch (err) {
       readout.textContent = `Could not build: ${err.message}`;
@@ -145,7 +168,7 @@ function main() {
 
     // reframe when the object changes size, not on every rebuild, so a
     // reader's own zoom survives a change of smoothing
-    const key = `${v.word}|${v.surface}`;
+    const key = `${v.word}|${v.surface}|${v.relaxSteps}`;
     if (key !== lastFrameKey) { lastFrameKey = key; stage.frame(out.extent); }
 
     const s = out.summary;

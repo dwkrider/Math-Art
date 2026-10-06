@@ -42,6 +42,9 @@ from seifert.build import (BAND_HALF_TURNS, SurfaceParams,        # noqa: E402
 from seifert.states import (minimal_crosscap_state, seifert_state,  # noqa: E402
                             state_data, turnback_state)
 from seifert.subdivide import catmull_clark                       # noqa: E402
+from seifert.relax import RelaxParams, relax                      # noqa: E402
+from seifert.fair import (cotangent_laplacian, minimal_surface,   # noqa: E402
+                          smooth_boundary)
 
 WORDS = ["AAA", "AbAb", "A5", "AABacBc", "aBaBa", "ABABAB", "A3", "AAAAA",
          "AbCb", "ABaB", "ABABABAB", "AA"]
@@ -196,6 +199,59 @@ def main():
                       if len(V) <= 4000 else None),
             "loop_lengths": sorted(len(l) for l in mesh.boundary_loops()),
         })
+
+    # The finishing stages. minimal_surface is asked for the DAMPED
+    # JACOBI path (mollify=False) -- the default mollified path solves
+    # the raw-cotangent system with a preconditioned CG from
+    # math_art.solver, which the browser has no reason to carry. The
+    # Jacobi path is the one the port implements, so it is the one
+    # pinned here.
+    out["finish"] = []
+    for word, which, relax_steps, rim_steps, levels, fair_steps, strength in [
+            ("AAA", "seifert", 20, 0, 0, 0, 2.0),
+            ("AAA", "seifert", 0, 0, 0, 4, 2.0),
+            ("AAA", "seifert", 0, 8, 0, 0, 2.0),
+            ("AAA", "seifert", 10, 4, 1, 3, 2.0),
+            ("AbAb", "seifert", 15, 0, 0, 3, 2.0),
+            ("AAA", "turnback", 12, 0, 0, 3, 2.0),
+            ("AbCb", "seifert", 10, 0, 0, 2, 5.0)]:
+        mesh, order = build(word, which, 0)
+        if relax_steps:
+            mesh = relax(mesh, RelaxParams(), iterations=relax_steps)
+        if rim_steps:
+            mesh = smooth_boundary(mesh, iterations=rim_steps)
+        if levels:
+            mesh = catmull_clark(mesh, levels)
+        if fair_steps:
+            mesh = minimal_surface(mesh, strength=strength,
+                                   iterations=fair_steps, mollify=False)
+        V = np.asarray(mesh.vertices, dtype=float)
+        info = mesh.info()
+        out["finish"].append({
+            "word": word, "which": which, "order": [int(i) for i in order],
+            "relax_steps": relax_steps, "rim_steps": rim_steps,
+            "levels": levels, "fair_steps": fair_steps, "strength": strength,
+            "n_vertices": int(len(V)),
+            "area": float(mesh.area()),
+            "chi": info.euler_characteristic,
+            "boundaries": info.n_boundaries,
+            "orientable": bool(info.orientable),
+            "centroid": [float(x) for x in V.mean(axis=0)],
+            "vertices": [[round(float(x), 9) for x in v] for v in V],
+        })
+
+    # The Laplacian itself, on the raw mesh: a weight that disagrees
+    # would move every faired vertex a little, which an area check
+    # would not localise.
+    mesh, _order = build("AAA", "seifert", 0)
+    lap = cotangent_laplacian(mesh)
+    out["laplacian"] = {
+        "word": "AAA", "n": int(lap.n),
+        "n_edges": int(len(lap.src)),
+        "weight_sum": float(lap.weight.sum()),
+        "degree_sum": float(lap.degree.sum()),
+        "degree_head": [float(x) for x in lap.degree[:24]],
+    }
 
     for p, q in ((2, 3), (2, 5), (3, 4), (2, 4), (3, 5), (4, 3)):
         b = torus_knot(p, q)

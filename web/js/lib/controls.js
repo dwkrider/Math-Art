@@ -151,6 +151,19 @@ export function mountControls(root, declaration, onChange) {
   };
 }
 
+/** Call `fn` no more often than `ms`, on the trailing edge.
+ *
+ *  A slider fires an event per step of a drag, and a build that takes a
+ *  second would then queue a second per step. UI concern, so it lives
+ *  here rather than in anyone's maths. */
+export function debounce(fn, ms = 120) {
+  let timer = null;
+  return (...args) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => { timer = null; fn(...args); }, ms);
+  };
+}
+
 /** A line of text under the controls, for whatever the build reports. */
 export function readout(node) {
   return {

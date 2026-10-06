@@ -25,6 +25,7 @@ const PROJ = path.resolve(path.dirname(new URL(import.meta.url).pathname
   .replace(/^\/([A-Za-z]:)/, '$1')), '..', '..');
 const ROOT = pathToFileURL(PROJ + path.sep).href;
 const S = await import(new URL('web/js/seifert-math.js', ROOT).href);
+const R = await import(new URL('web/js/seifert-relax.js', ROOT).href);
 
 let fail = 0;
 const note = (m) => { fail++; console.log('  FAIL ' + m); };
@@ -179,6 +180,121 @@ for (const g of ref.geometry) {
     ? `two-sided genus ${want.genus}` : `one-sided k=${want.euler_genus}`;
   console.log(`  ok   ${tag}: ${g.n_vertices} verts, ${g.n_faces} faces, `
     + `chi=${want.chi} b=${want.boundaries} ${sided}`);
+}
+
+// ---- the cotangent Laplacian the fairing is built on
+{
+  const L = ref.laplacian;
+  const b = S.parseBraid(L.word);
+  const data = S.stateData(b, S.seifertState(b));
+  const params = {
+    samplesPerSector: ref.params.samples_per_sector,
+    bandSamples: ref.params.band_samples,
+    radialRings: ref.params.radial_rings,
+  };
+  const g = ref.geometry.find((x) => x.word === L.word && x.which === 'seifert'
+                                  && x.levels === 0);
+  const mesh = S.stateSurface(b, data, params, g.order);
+  const lap = R.cotangentLaplacian(mesh);
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  if (lap.n !== L.n) note(`laplacian: ${lap.n} vertices vs ${L.n}`);
+  if (lap.src.length !== L.n_edges) {
+    note(`laplacian: ${lap.src.length} directed edges vs ${L.n_edges}`);
+  }
+  const ws = sum([...lap.weight]);
+  if (Math.abs(ws - L.weight_sum) > 1e-7 * Math.abs(L.weight_sum)) {
+    note(`laplacian: weight sum ${ws} vs ${L.weight_sum}`);
+  }
+  const ds = sum([...lap.degree]);
+  if (Math.abs(ds - L.degree_sum) > 1e-7 * Math.abs(L.degree_sum)) {
+    note(`laplacian: degree sum ${ds} vs ${L.degree_sum}`);
+  }
+  let worst = 0;
+  L.degree_head.forEach((d, i) => {
+    worst = Math.max(worst, Math.abs(lap.degree[i] - d));
+  });
+  if (worst > 1e-9) note(`laplacian: degrees differ by ${worst.toExponential(2)}`);
+  else console.log(`  ok   cotangent Laplacian: ${L.n} vertices, `
+    + `${L.n_edges} directed edges, weights to ${worst.toExponential(1)}`);
+}
+
+// ---- relaxation and fairing, vertex by vertex
+//
+// An area or a bounding box would pass while every vertex sat in the
+// wrong place, and both stages move every vertex: the relaxation
+// integrates a force model for hundreds of steps, so a sign or an
+// exponent out of place diverges slowly rather than obviously, and the
+// fairing solves a linear system whose answer depends on every weight.
+for (const f of ref.finish) {
+  const tag = `${f.word}/${f.which} relax=${f.relax_steps} rim=${f.rim_steps} `
+    + `L${f.levels} fair=${f.fair_steps}@${f.strength}`;
+  const b = S.parseBraid(f.word);
+  const data = S.stateData(b, f.which === 'seifert'
+    ? S.seifertState(b) : S.turnbackState(b));
+  const params = {
+    samplesPerSector: ref.params.samples_per_sector,
+    bandSamples: ref.params.band_samples,
+    radialRings: ref.params.radial_rings,
+  };
+  let mesh = S.stateSurface(b, data, params, f.order);
+  if (f.relax_steps) mesh = R.relax(mesh, {}, f.relax_steps);
+  if (f.rim_steps) mesh = R.smoothBoundary(mesh, f.rim_steps);
+  if (f.levels) mesh = S.catmullClark(mesh, f.levels);
+  if (f.fair_steps) mesh = R.minimalSurface(mesh, f.strength, f.fair_steps);
+
+  if (mesh.vertices.length !== f.n_vertices) {
+    note(`${tag}: ${mesh.vertices.length} vertices vs ${f.n_vertices}`); continue;
+  }
+  const info = mesh.info();
+  if (info.eulerCharacteristic !== f.chi || info.nBoundaries !== f.boundaries
+      || info.orientable !== f.orientable) {
+    note(`${tag}: topology changed -- every stage must preserve it`); continue;
+  }
+  let worst = 0;
+  for (let v = 0; v < f.vertices.length; v++) {
+    for (let k = 0; k < 3; k++) {
+      worst = Math.max(worst, Math.abs(mesh.vertices[v][k] - f.vertices[v][k]));
+    }
+  }
+  if (worst > 1e-7) {
+    note(`${tag}: vertices differ by ${worst.toExponential(2)}`); continue;
+  }
+  console.log(`  ok   ${tag}: ${f.n_vertices} verts, area `
+    + `${f.area.toFixed(4)}, vertices to ${worst.toExponential(1)}`);
+}
+
+// ---- independent of the engine: fairing with the rim pinned must
+// SHRINK the area and leave the boundary where it was. That is what a
+// minimal surface means, and neither fact is read from the reference.
+{
+  const b = S.parseBraid('AAA');
+  const data = S.stateData(b, S.seifertState(b));
+  const g = ref.geometry.find((x) => x.word === 'AAA' && x.which === 'seifert'
+                                  && x.levels === 0);
+  const raw = S.stateSurface(b, data, {
+    samplesPerSector: ref.params.samples_per_sector,
+    bandSamples: ref.params.band_samples,
+    radialRings: ref.params.radial_rings,
+  }, g.order);
+  const before = raw.area();
+  const rim = new Set(raw.boundaryLoops().flat());
+  const faired = R.minimalSurface(raw, 2.0, 6);
+  const after = faired.area();
+  if (!(after < before)) {
+    note(`fairing raised the area, ${before.toFixed(4)} -> ${after.toFixed(4)}`);
+  }
+  let moved = 0;
+  for (const v of rim) {
+    for (let k = 0; k < 3; k++) {
+      moved = Math.max(moved, Math.abs(faired.vertices[v][k] - raw.vertices[v][k]));
+    }
+  }
+  if (moved > 1e-12) note(`fairing moved the pinned rim by ${moved.toExponential(2)}`);
+  else {
+    console.log(`  ok   fairing cuts the area ${before.toFixed(4)} -> `
+      + `${after.toFixed(4)} (${(100 * (1 - after / before)).toFixed(1)}%) `
+      + 'and leaves the rim exactly where it was');
+  }
 }
 
 // ---- torus knots, which the page offers as presets

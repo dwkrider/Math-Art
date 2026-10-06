@@ -1206,7 +1206,7 @@ export function tubeAlong(loops, radius, sides = 12) {
  *  sight. */
 export function buildSurface({
   word = 'AAA', surface = 'SEIFERT', levels = 1, params = null,
-  fitSize = 2,
+  fitSize = 2, finish = null,
 } = {}) {
   const braid = parseBraid(word);
   let data;
@@ -1215,7 +1215,10 @@ export function buildSurface({
   else data = stateData(braid, seifertState(braid));
 
   let mesh = stateSurface(braid, data, params);
-  if (levels > 0) mesh = catmullClark(mesh, levels);
+  // `finish` is the relax / refine / fair pipeline, handed in rather
+  // than imported: seifert-relax.js imports this module, so importing
+  // it back would be circular.
+  mesh = finish ? finish(mesh) : (levels > 0 ? catmullClark(mesh, levels) : mesh);
   mesh = fit(mesh.oriented(), fitSize);
   const info = mesh.info();
   let extent = 0;
