@@ -1660,8 +1660,8 @@ if _IN_BLENDER:
     class CURVE_OT_hopf_fibration_add(bpy.types.Operator):
         """Add fibres of the Hopf fibration of S^3, stereographically
         projected to R^3 -- as tubes, a nested-tori surface, beads or
-        woven ribbons --
-        coloured by base point, with a control sphere and S^3 motion"""
+        woven ribbons -- coloured by base point, with a control sphere
+        and S^3 motion"""
         bl_idname = "curve.hopf_fibration_add"
         bl_label = "Hopf Fibration"
         bl_options = {'REGISTER', 'UNDO'}
