@@ -840,11 +840,15 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
          if keep_gaps else 0.0)
 
     ribbons = []
-    for kind, C, X1, X2, f, sgn, _sp, base in raw:
+    for kind, C, X1, X2, f, sgn, sp, base in raw:
         if kind == 'CONST':
-            off = (sgn * weave_depth * W * f)[:, None] * X2
-            G = np.stack([C - 0.5 * W * X1 + off, C + off,
-                          C + 0.5 * W * X1 + off], axis=1)
+            # never wider than the same share of the LOCAL gap, or
+            # parallel ribbons overlap where the projection squeezes
+            # the torus (the throat of a near-pole view)
+            Wl = np.minimum(W, width * sp)[:, None]
+            off = (sgn * weave_depth * f)[:, None] * Wl * X2
+            G = np.stack([C - 0.5 * Wl * X1 + off, C + off,
+                          C + 0.5 * Wl * X1 + off], axis=1)
         else:
             G = X1
         ok = np.isfinite(G).all(axis=(1, 2))
@@ -1655,7 +1659,8 @@ if _IN_BLENDER:
 
     class CURVE_OT_hopf_fibration_add(bpy.types.Operator):
         """Add fibres of the Hopf fibration of S^3, stereographically
-        projected to R^3 -- as tubes, a nested-tori surface, or beads --
+        projected to R^3 -- as tubes, a nested-tori surface, beads or
+        woven ribbons --
         coloured by base point, with a control sphere and S^3 motion"""
         bl_idname = "curve.hopf_fibration_add"
         bl_label = "Hopf Fibration"
