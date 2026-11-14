@@ -188,6 +188,48 @@ for (const c of ref.cases) {
   }
 }
 
+// ---- woven ribbons, built over the same kernel
+for (const c of ref.ribbons || []) {
+  const kw = c.kwargs;
+  const got = H.buildRibbons({
+    preset: kw.preset ?? 'LATITUDES', nLat: kw.n_lat ?? 1,
+    nFiber: kw.n_fiber ?? 24, samples: kw.samples ?? 160,
+    P: kw.P ?? 1, Q: kw.Q ?? 1,
+    latMin: kw.lat_min ?? 90, latMax: kw.lat_max ?? 90,
+    sphereEuler: kw.sphere_euler ?? null, s3Rot: kw.s3_rot ?? 0,
+    chirality: kw.chirality ?? 'BOTH', width: kw.width ?? 0.6,
+    widthMode: kw.width_mode ?? 'CONSTANT', weaveDepth: kw.weave_depth ?? 0.15,
+    trimRadius: kw.trim_radius ?? 4.0,
+    fitCentre: kw.fit_centre ?? null, fitScale: kw.fit_scale ?? null,
+  });
+  const head = Math.max(Math.abs(got.width - c.width),
+                        Math.abs(got.scale - c.scale),
+                        ...got.centre.map((v, i) => Math.abs(v - c.centre[i])));
+  if (head > worst) worst = head;
+  if (head > TOL || got.rows !== c.rows || got.trimmed !== c.trimmed
+      || got.lost !== c.lost || got.ribbons.length !== c.ribbons.length) {
+    note(`ribbons ${c.label}: width/fit/rows/trim differ `
+         + `(${got.ribbons.length} vs ${c.ribbons.length} ribbons, `
+         + `trimmed ${got.trimmed} vs ${c.trimmed}, head ${head.toExponential(2)})`);
+    continue;
+  }
+  let bad = 0;
+  for (let i = 0; i < c.ribbons.length && !bad; i++) {
+    const w = c.ribbons[i], g = got.ribbons[i];
+    if (g.closed !== w.closed || g.family !== w.family
+        || w.base.some((v, k) => Math.abs(v - g.base[k]) > TOL)) {
+      note(`ribbons ${c.label} ${i}: closed/family/base differ`);
+      bad++;
+    } else if (!cmpRows(`ribbons ${c.label} ${i}`, g.grid, w.grid, 3)) {
+      bad++;
+    }
+  }
+  if (!bad) {
+    console.log(`  ok   ribbons ${c.label}: ${c.ribbons.length} ribbons, `
+                + `${c.rows} rows${c.trimmed ? `, ${c.trimmed} trimmed` : ''}`);
+  }
+}
+
 // ---- colour, which ties a dot on the base sphere to its fibre
 let okColors = 0;
 for (const c of ref.colors) {

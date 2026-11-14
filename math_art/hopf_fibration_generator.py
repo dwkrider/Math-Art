@@ -723,7 +723,8 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
                   P=1, Q=1, lat_min=90.0, lat_max=90.0,
                   sphere_euler=None, s3_rot=0.0, chirality='BOTH',
                   width=0.6, width_mode='CONSTANT', weave_depth=0.15,
-                  trim_radius=4.0, fit_radius=1.0):
+                  trim_radius=4.0, fit_radius=1.0, fit_centre=None,
+                  fit_scale=None):
     """Woven ribbons along the fibres over circles of latitude.
 
     Each ribbon follows one fibre and lies in that fibre's torus.
@@ -742,7 +743,8 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
     Returns (ribbons, stats): `ribbons` is a list of dicts with 'grid'
     (rows x cols x 3, fitted), 'closed', 'base' (rotated base point)
     and 'family' (+1 right / -1 left); `stats` reports the fit and how
-    many ribbons were trimmed or lost.
+    many ribbons were trimmed or lost.  `fit_centre` / `fit_scale` hold
+    the fit still across an animation, as in `build_fibers`.
     """
     import numpy as np
     if preset not in ('LATITUDES', 'FLOWER'):
@@ -869,10 +871,14 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
     if not ribbons:
         return ribbons, stats
     allpts = np.concatenate([rb['grid'].reshape(-1, 3) for rb in ribbons])
-    centre = 0.5 * (allpts.max(0) + allpts.min(0))
-    rad = np.linalg.norm(allpts - centre, axis=1)
-    ref = np.percentile(rad, 95.0)
-    scale = (fit_radius / ref) if ref > 1e-9 else 1.0
+    centre = (np.asarray(fit_centre, float) if fit_centre is not None
+              else 0.5 * (allpts.max(0) + allpts.min(0)))
+    if fit_scale is not None:
+        scale = float(fit_scale)
+    else:
+        rad = np.linalg.norm(allpts - centre, axis=1)
+        ref = np.percentile(rad, 95.0)
+        scale = (fit_radius / ref) if ref > 1e-9 else 1.0
     for rb in ribbons:
         rb['grid'] = (rb['grid'] - centre) * scale
     stats.update(centre=[float(x) for x in centre], scale=float(scale))

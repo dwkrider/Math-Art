@@ -10,7 +10,7 @@
 // the link. The presets are the generator's own, so anything seen here
 // can be rebuilt in Blender.
 
-import { buildFibers, basePoints, linkingNumber, projectFiber, normalize3,
+import { buildFibers, buildRibbons, basePoints, linkingNumber, projectFiber, normalize3,
          apply3, rotMatrix, haloAround, TILT } from './hopf-math.js';
 import { HopfView, BaseSphere } from './hopf-view.js';
 import { BundleView, BUNDLES } from './bundle-view.js';
@@ -82,7 +82,22 @@ function main() {
     playing: false,
     sweepUp: true,     // which way the latitude is travelling
     custom: [],        // hand-picked base points, already tilted
+    drawAs: 'TUBE',    // or 'RIBBON': woven strips over rings of latitude
+    ribbonWidth: 0.6,
+    ribbonMode: 'CONSTANT',
+    weaveDepth: 0.15,
+    trim: 4,
   };
+
+  // Ribbons are strips of a torus, so they need base points on rings of
+  // latitude -- the generator's own restriction. Anything else is drawn
+  // as tubes and the readout says why.
+  const ribbonable = () => state.drawAs === 'RIBBON' && !state.halo
+    && (state.preset === 'FLOWER' || state.preset === 'LATITUDES');
+  const ribbonOpts = () => ({
+    width: state.ribbonWidth, widthMode: state.ribbonMode,
+    weaveDepth: state.weaveDepth, trimRadius: state.trim,
+  });
 
   const sphere = new BaseSphere($('#base-sphere'), {
     onPick: (b, how) => {
@@ -213,8 +228,11 @@ function main() {
       const args = buildArgs();
       if (args._custom) { args.points = args._custom; delete args._custom; }
       // raw, with no fit of its own, so the boxes can be compared
-      const b = buildFibers({ ...args, samples: 96,
-                              fitCentre: [0, 0, 0], fitScale: 1 });
+      const b = ribbonable()
+        ? { fibers: buildRibbons({ ...args, ...ribbonOpts(), samples: 96,
+                                   fitCentre: [0, 0, 0], fitScale: 1 })
+            .ribbons.map((r) => r.grid) }
+        : buildFibers({ ...args, samples: 96, fitCentre: [0, 0, 0], fitScale: 1 });
       for (const f of b.fibers) {
         for (let i = 0; i < f.length; i += 3) {
           for (let k = 0; k < 3; k++) {
@@ -241,7 +259,8 @@ function main() {
     const fitKey = [state.preset, state.nFiber, state.nLat, state.spread,
                     state.P, state.Q, state.chirality, state.includeAxis,
                     state.halo, state.haloN, state.custom.length,
-                    state.anim].join('|');
+                    state.anim, ribbonable(), state.ribbonMode,
+                    state.trim].join('|');
     if (fitKey !== lastFitKey) {
       lastFitKey = fitKey;
       heldFit = computeHeldFit();
@@ -269,6 +288,8 @@ function main() {
       sides: state.playing ? 6 : 8,
       palette: state.palette,
       radius: state.radius,
+      drawAs: ribbonable() ? 'RIBBON' : 'TUBE',
+      ribbon: ribbonOpts(),
     });
     const bases = view.built.bases;
     // Reframe when the shape of the picture changes, but not while a
@@ -277,7 +298,8 @@ function main() {
     const key = [state.preset, state.nFiber, state.nLat, state.spread,
                  state.P, state.Q, state.chirality, state.includeAxis,
                  state.halo, state.haloN, state.custom.length,
-                 state.anim].join('|');
+                 state.anim, ribbonable(), state.ribbonMode,
+                    state.trim].join('|');
     if (key !== lastFrameKey) {
       lastFrameKey = key;
       // With a held fit the picture is scaled so that the LARGEST
@@ -295,11 +317,19 @@ function main() {
     // question about the curves that sail off and never come back.
     const arcs = view.built.closed.filter((c) => !c).length;
     const n = (x) => x.toLocaleString();
-    readout.textContent =
-      `${n(stats.fibers)} fibre${stats.fibers === 1 ? '' : 's'}`
+    const ribbonNote = state.drawAs === 'RIBBON' && !stats.ribbons
+      ? ' · ribbons need Nested tori or One ring of latitude, and no halo, so these are tubes'
+      : '';
+    readout.textContent = stats.ribbons
+      ? `${n(stats.fibers)} woven ribbon${stats.fibers === 1 ? '' : 's'}`
+        + (stats.trimmed ? ` · ${stats.trimmed} cut at the trim radius` : '')
+        + (stats.dropped ? ` · ${stats.dropped} wholly outside it` : '')
+        + ` · ${n(stats.vertices)} vertices · drawn in ${stats.buildMs.toFixed(0)} ms`
+      : `${n(stats.fibers)} fibre${stats.fibers === 1 ? '' : 's'}`
       + (arcs ? ` · ${arcs} too large to fit, drawn as arcs` : '')
       + (stats.dropped ? ` · ${stats.dropped} off the edge of the projection` : '')
-      + ` · ${n(stats.vertices)} vertices · drawn in ${stats.buildMs.toFixed(0)} ms`;
+      + ` · ${n(stats.vertices)} vertices · drawn in ${stats.buildMs.toFixed(0)} ms`
+      + ribbonNote;
 
     // The claim the picture makes, checked on the picture: any two
     // distinct fibres are linked exactly once.
@@ -367,9 +397,37 @@ function main() {
   slider('#wind-p', 'P', (v) => String(v));
   slider('#wind-q', 'Q', (v) => String(v));
   const flowEl = slider('#flow', 'flow', (v) => `${v}°`);
+  slider('#rib-width', 'ribbonWidth', (v) => `${Math.round(v * 100)}%`);
+  slider('#rib-depth', 'weaveDepth', (v) => (v ? `${Math.round(v * 100)}%` : 'flat'));
+  slider('#rib-trim', 'trim', (v) => v.toFixed(1));
+  const tiltEl = slider('#tilt', 'spin', (v) => `${Math.round(v)}°`);
+
+  // Choosing ribbons turns on both rulings -- one ruling alone has
+  // nothing to weave with -- and, if the points are not rings of
+  // latitude, picks the single ring the weave is drawn on.
+  $('#draw-as').addEventListener('change', (e) => {
+    state.drawAs = e.target.value;
+    if (state.drawAs === 'RIBBON') {
+      if (state.chirality !== 'BOTH') {
+        state.chirality = 'BOTH';
+        chiralSel.value = 'BOTH';
+      }
+      if (state.preset !== 'FLOWER' && state.preset !== 'LATITUDES') {
+        state.preset = 'FLOWER';
+        presetSel.value = 'FLOWER';
+      }
+    }
+    syncFields();
+    rebuild();
+  });
+  $('#rib-mode').addEventListener('change', (e) => {
+    state.ribbonMode = e.target.value;
+    rebuild();
+  });
 
   chiralSel.addEventListener('change', () => {
     state.chirality = chiralSel.value;
+    syncFields();
     rebuild();
   });
   paletteSel.addEventListener('change', () => {
@@ -441,6 +499,11 @@ function main() {
     }
     if (a === 'SPIN') {
       state.spin = (state.spin + 22 * k) % 360;
+      // the tilt slider covers half a turn; the readout gives the
+      // whole angle
+      const shown = state.spin <= 180 ? state.spin : 360 - state.spin;
+      tiltEl.value = String(Math.round(shown));
+      $('#tilt-out').textContent = `${Math.round(state.spin)}°`;
     }
     if (a === 'LATITUDE' || a === 'LATFLOW') {
       // A ring cannot pass through a pole -- at the pole the fibre is
@@ -467,6 +530,8 @@ function main() {
     $('#ring-field').hidden = !RING_LIKE.has(p) || p === 'LATITUDES';
     $('#spread-field').hidden = !(p === 'LATITUDES' || p === 'CAP' || p === 'LOXODROME');
     $('#pick-tools').hidden = !custom;
+    $('#ribbon-fields').hidden = state.drawAs !== 'RIBBON';
+    $('#rib-depth-field').hidden = state.chirality !== 'BOTH';
   }
   syncFields();
 
