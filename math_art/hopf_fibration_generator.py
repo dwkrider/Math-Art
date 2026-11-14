@@ -793,6 +793,17 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
                                       [0.0], P, Q, sgn)).reshape(-1, 3)
                 dd = np.linalg.norm(np.diff(np.vstack([Cp, Cp[:1]]),
                                             axis=0), axis=1)
+                # Measure only what is inside the trim: a fibre that
+                # passes near the projection pole is an enormous circle,
+                # and spacing its rows along all of it leaves a handful
+                # for the part that is drawn -- the ribbon goes coarse
+                # and blinks out as the view sweeps through the pole.
+                # The floor keeps the arc length strictly increasing.
+                rr = np.linalg.norm(Cp, axis=1)
+                seen = (rr < trim_radius) & (np.roll(rr, -1) < trim_radius)
+                dd = np.where(seen, dd, 0.0)
+                dd = dd + 1e-9 * dd.sum() / len(dd)
+                whole = bool(seen.all())
                 cum = np.concatenate([[0.0], np.cumsum(dd)])
                 if np.isfinite(cum[-1]) and cum[-1] > 1e-12:
                     ts = np.interp(np.linspace(0.0, cum[-1], rows,
@@ -829,9 +840,9 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
                     N -= np.einsum('ij,ij->i', N, T)[:, None] * T
                     N -= np.einsum('ij,ij->i', N, D)[:, None] * D
                     N /= np.maximum(np.linalg.norm(N, axis=1), 1e-300)[:, None]
-                    raw.append(('CONST', C, D, N, f, sgn, spacing, base))
+                    raw.append(('CONST', C, D, N, f, sgn, spacing, base, whole))
                     continue
-                raw.append(('CONF', C, G, None, f, sgn, None, base))
+                raw.append(('CONF', C, G, None, f, sgn, None, base, whole))
 
     # constant width: one width for every ribbon, read off the median gap
     # of the part that survives the trim
@@ -842,7 +853,7 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
          if keep_gaps else 0.0)
 
     ribbons = []
-    for kind, C, X1, X2, f, sgn, sp, base in raw:
+    for kind, C, X1, X2, f, sgn, sp, base, whole in raw:
         if kind == 'CONST':
             # never wider than the same share of the LOCAL gap, or
             # parallel ribbons overlap where the projection squeezes
@@ -855,11 +866,18 @@ def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
             G = X1
         ok = np.isfinite(G).all(axis=(1, 2))
         inside = ok & (np.linalg.norm(C, axis=1) < trim_radius)
-        if inside.all():
+        if inside.all() and whole:
             ribbons.append(dict(grid=G, closed=True, base=base,
                                 family=sgn))
             continue
-        run = _longest_run(inside)
+        if inside.all():
+            # every row is inside but the curve is not: the rows were
+            # spent on the drawn part only, so the cut is the one long
+            # step between consecutive rows -- open the strip there
+            step = np.linalg.norm(np.roll(C, -1, axis=0) - C, axis=1)
+            run = np.roll(np.arange(rows), -(int(np.argmax(step)) + 1))
+        else:
+            run = _longest_run(inside)
         if len(run) < 2:
             lost += 1
             continue

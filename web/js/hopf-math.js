@@ -706,13 +706,30 @@ export function buildRibbons({
       for (const sgn of fams) {
         // equal arc length along the projected centre line
         const Cp = toR3(ribbonS3(new Float64Array(m).fill(e0), lam, tp, [0], P, Q, sgn));
-        const cum = new Float64Array(m + 1);
+        // arc length counted only inside the trim, so a near-pole fibre
+        // (an enormous circle) still spends its rows where it is drawn;
+        // the floor keeps the length strictly increasing
+        const dd = new Float64Array(m);
+        let seenSum = 0;
         for (let i = 0; i < m; i++) {
           const j = (i + 1) % m;
-          cum[i + 1] = cum[i] + Math.hypot(Cp[j * 3] - Cp[i * 3],
-                                           Cp[j * 3 + 1] - Cp[i * 3 + 1],
-                                           Cp[j * 3 + 2] - Cp[i * 3 + 2]);
+          const ri = Math.hypot(Cp[i * 3], Cp[i * 3 + 1], Cp[i * 3 + 2]);
+          const rj = Math.hypot(Cp[j * 3], Cp[j * 3 + 1], Cp[j * 3 + 2]);
+          if (ri < trimRadius && rj < trimRadius) {
+            dd[i] = Math.hypot(Cp[j * 3] - Cp[i * 3], Cp[j * 3 + 1] - Cp[i * 3 + 1],
+                               Cp[j * 3 + 2] - Cp[i * 3 + 2]);
+            seenSum += dd[i];
+          }
         }
+        const floor = 1e-9 * seenSum / m;
+        let whole = true;
+        for (let i = 0; i < m && whole; i++) {
+          const j = (i + 1) % m;
+          whole = Math.hypot(Cp[i * 3], Cp[i * 3 + 1], Cp[i * 3 + 2]) < trimRadius
+            && Math.hypot(Cp[j * 3], Cp[j * 3 + 1], Cp[j * 3 + 2]) < trimRadius;
+        }
+        const cum = new Float64Array(m + 1);
+        for (let i = 0; i < m; i++) cum[i + 1] = cum[i] + dd[i] + floor;
         const total = cum[m];
         const ts = new Float64Array(rows);
         if (Number.isFinite(total) && total > 1e-12) {
@@ -738,7 +755,7 @@ export function buildRibbons({
           for (let i = 0; i < rows; i++) {
             for (let a = 0; a < 3; a++) C[i * 3 + a] = G[(i * 3 + 1) * 3 + a];
           }
-          raw.push({ kind: 'CONF', C, G, f, sgn, base });
+          raw.push({ kind: 'CONF', C, G, f, sgn, base, whole });
           continue;
         }
         const e0s = new Float64Array(rows).fill(e0);
@@ -772,7 +789,7 @@ export function buildRibbons({
             N[i * 3 + a] = v[a] / vl;
           }
         }
-        raw.push({ kind: 'CONST', C, D, N, f, sgn, spacing, base });
+        raw.push({ kind: 'CONST', C, D, N, f, sgn, spacing, base, whole });
       }
     }
   }
@@ -824,11 +841,26 @@ export function buildRibbons({
       inside[i] = ok && Math.hypot(c[i * 3], c[i * 3 + 1], c[i * 3 + 2]) < trimRadius;
       all = all && inside[i];
     }
-    if (all) {
+    if (all && rb.whole) {
       ribbons.push({ grid: G, rows, cols: 3, closed: true, base: rb.base, family: rb.sgn });
       continue;
     }
-    const run = longestRun(inside);
+    let run;
+    if (all) {
+      // every row inside but not the whole curve: open the strip at
+      // the one long step between consecutive rows
+      let best = -1, at = 0;
+      const c = rb.C;
+      for (let i = 0; i < rows; i++) {
+        const j = (i + 1) % rows;
+        const d = Math.hypot(c[j * 3] - c[i * 3], c[j * 3 + 1] - c[i * 3 + 1],
+                             c[j * 3 + 2] - c[i * 3 + 2]);
+        if (d > best) { best = d; at = i; }
+      }
+      run = Array.from({ length: rows }, (_, i) => (i + at + 1) % rows);
+    } else {
+      run = longestRun(inside);
+    }
     if (run.length < 2) { lost++; continue; }
     trimmed++;
     const g = new Float64Array(run.length * 9);
