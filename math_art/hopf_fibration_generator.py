@@ -642,6 +642,286 @@ def build_fibers(preset='LATITUDES', n_lat=6, n_fiber=24, samples=160,
     return fibers, bases
 
 
+# --------------------------------------------------------------------------
+# Woven ribbons: flat strips lying in each fibre's torus
+# --------------------------------------------------------------------------
+#
+# A ribbon is the Hopf preimage of a short arc of the base ring rather
+# than of a single point: over a circle of latitude (colatitude b) the
+# arc of longitudes [l - u, l + u] lifts to the strip
+#     z0 = cos(e) e^{i(t + l + s)},  z1 = sin(e) e^{+-i t},  |s| <= u,
+# with e = b/2, which lies exactly in the torus |z0| = cos(b/2).  At
+# full width the strips tile that torus edge to edge.
+#
+# The two rulings of one torus cross in a regular lattice.  Write
+# a = arg z0 - l0 and c = arg z1 (l0 the ring's first longitude).  A
+# right fibre is a line a - c = 2 pi j/n, a left one a + c = 2 pi k/n,
+# so they meet where a = pi (j+k)/n, c = pi (k-j)/n.  There
+#     f(a, c) = (cos(n a) + cos(n c)) / 2
+# equals (-1)^(j+k): +1 and -1 alternately along every fibre, of
+# either family, and it is one smooth function on the torus.  Pushing
+# the right ribbons off the torus by +f and the left ones by -f
+# therefore separates them at every crossing and alternates which one
+# is on top -- a plain over/under weave.  "Off the torus" is a change
+# of e: X -> (cos(e') e^{ia}, sin(e') e^{ic}) moves X along the
+# torus normal of S^3 by exactly e - e', since the nested tori of
+# fixed |z0| are parallel.
+#
+# Sphere Rotation is applied as a rigid motion of S^3 (right
+# multiplication by the unit quaternion that turns the base sphere by
+# that rotation), so the woven torus is moved whole.  For the right
+# ruling this is the same picture `build_fibers` draws; for the left
+# ruling it keeps the two families on one torus, where rotating the
+# base points of each family separately would not.
+
+def _base_rotation_quat(R):
+    """Unit quaternion r = (w, i, j, k) whose RIGHT multiplication on
+    S^3 turns the base S^2 by the 3x3 rotation `R`: hopf(X r) =
+    R hopf(X).  Right multiplication by (cos p, sin p * v) turns the
+    base by 2p about the axis whose (x, y, z) components are
+    (v_k, v_j, v_i) -- checked one axis at a time in `_selftest` -- so
+    an axis-angle (u, th) of R lifts to (cos th/2, sin th/2 *
+    (u_z, u_y, u_x))."""
+    import numpy as np
+    R = np.asarray(R, float)
+    cos_th = max(-1.0, min(1.0, 0.5 * (np.trace(R) - 1.0)))
+    th = math.acos(cos_th)
+    if th < 1e-12:
+        return (1.0, 0.0, 0.0, 0.0)
+    if pi - th < 1e-6:
+        # half turn: the axis is the column direction of R + I
+        M = R + np.eye(3)
+        u = M[:, int(np.argmax(np.linalg.norm(M, axis=0)))]
+    else:
+        u = np.array([R[2, 1] - R[1, 2], R[0, 2] - R[2, 0],
+                      R[1, 0] - R[0, 1]])
+    u = u / np.linalg.norm(u)
+    s = math.sin(0.5 * th)
+    return (math.cos(0.5 * th), s * u[2], s * u[1], s * u[0])
+
+
+def _weave_f(a, c, n):
+    """The over/under sign field on a torus carrying n fibres per
+    ruling: +-1 at every crossing, alternating along each fibre."""
+    import numpy as np
+    return 0.5 * (np.cos(n * a) + np.cos(n * c))
+
+
+def _ribbon_s3(e, lam, ts, s, P, Q, sgn):
+    """S^3 points of the strip: rows over `ts`, columns over the
+    longitude offsets `s`; `e` is the half-colatitude per row."""
+    import numpy as np
+    e = np.asarray(e, float)[:, None]
+    p0 = P * np.asarray(ts, float)[:, None] + lam + np.asarray(s)[None, :]
+    p1 = (Q * np.asarray(ts, float))[:, None] + 0.0 * p0
+    ce, se = np.cos(e) + 0.0 * p0, np.sin(e) + 0.0 * p0
+    return np.stack([ce * np.cos(p0), ce * np.sin(p0),
+                     se * np.cos(p1), sgn * se * np.sin(p1)], axis=-1)
+
+
+def build_ribbons(preset='LATITUDES', n_lat=1, n_fiber=24, samples=160,
+                  P=1, Q=1, lat_min=90.0, lat_max=90.0,
+                  sphere_euler=None, s3_rot=0.0, chirality='BOTH',
+                  width=0.6, width_mode='CONSTANT', weave_depth=0.15,
+                  trim_radius=4.0, fit_radius=1.0, fit_centre=None,
+                  fit_scale=None):
+    """Woven ribbons along the fibres over circles of latitude.
+
+    Each ribbon follows one fibre and lies in that fibre's torus.
+    `width` is the fraction of the gap between neighbouring fibres the
+    ribbon covers (1 = edge to edge).  `width_mode` 'CONFORMAL' makes
+    each ribbon the exact Hopf preimage of a base arc, so it widens
+    with the projection; 'CONSTANT' keeps one width in R^3, like a cut
+    paper strip.  `weave_depth` is how far (as a fraction of ribbon
+    width) each family is pushed off the torus to pass over/under the
+    other; it only acts with chirality 'BOTH'.  Ribbons are cut where
+    their centre line leaves the ball of radius `trim_radius` about
+    the projection origin (the image of the equatorial S^2 is the unit
+    sphere there), which is what turns a torus through the projection
+    pole into a finite piece.
+
+    Returns (ribbons, stats): `ribbons` is a list of dicts with 'grid'
+    (rows x cols x 3, fitted), 'closed', 'base' (rotated base point)
+    and 'family' (+1 right / -1 left); `stats` reports the fit and how
+    many ribbons were trimmed or lost.  `fit_centre` / `fit_scale` hold
+    the fit still across an animation, as in `build_fibers`.
+    """
+    import numpy as np
+    if preset not in ('LATITUDES', 'FLOWER'):
+        raise ValueError("ribbons need latitude rings")
+    if preset == 'FLOWER':
+        n_lat, lat_min = 1, 0.5 * (lat_min + lat_max)
+        lat_max = lat_min
+    Rb = _rot_matrix(*(sphere_euler if sphere_euler is not None else _TILT))
+    r = _base_rotation_quat(Rb)
+    q = _quat_flow(math.radians(s3_rot)) if s3_rot else None
+    fams = {'RIGHT': (1,), 'LEFT': (-1,), 'BOTH': (1, -1)}[chirality]
+    weave = len(fams) == 2 and weave_depth > 0.0
+    n = max(1, int(n_fiber))
+    # the weave oscillates n times a turn: give each period enough rows
+    rows = int(max(samples, 16 * n * max(P, Q)))
+    gap = 2.0 * pi / n
+    half = 0.5 * max(0.0, min(1.0, width)) * gap
+
+    def to_r3(X):
+        X = _s3_flow(X.reshape(-1, 4), r)
+        if q is not None:
+            X = _s3_flow(X, q)
+        return stereographic(X)
+
+    if n_lat == 1:
+        betas = [0.5 * (lat_min + lat_max) * pi / 180.0]
+    else:
+        betas = list(np.linspace(lat_min, lat_max, n_lat) * pi / 180.0)
+
+    raw, trimmed, lost = [], 0, 0
+    for beta in betas:
+        e0 = 0.5 * beta
+        sinb = math.sin(beta)
+        # S^3 width of a full-gap strip, and the weave offset in S^3
+        w_s3 = width * gap * 0.5 * sinb
+        for k in range(n):
+            lam = gap * k
+            base = tuple(Rb @ np.array([sinb * math.cos(lam),
+                                        sinb * math.sin(lam),
+                                        math.cos(beta)]))
+            for sgn in fams:
+                # equal arc length along the projected centre line
+                tp = np.linspace(0.0, 2.0 * pi, max(512, 8 * rows),
+                                 endpoint=False)
+                Cp = to_r3(_ribbon_s3(np.full(len(tp), e0), lam, tp,
+                                      [0.0], P, Q, sgn)).reshape(-1, 3)
+                dd = np.linalg.norm(np.diff(np.vstack([Cp, Cp[:1]]),
+                                            axis=0), axis=1)
+                # Measure only what is inside the trim: a fibre that
+                # passes near the projection pole is an enormous circle,
+                # and spacing its rows along all of it leaves a handful
+                # for the part that is drawn -- the ribbon goes coarse
+                # and blinks out as the view sweeps through the pole.
+                # The floor keeps the arc length strictly increasing.
+                rr = np.linalg.norm(Cp, axis=1)
+                seen = (rr < trim_radius) & (np.roll(rr, -1) < trim_radius)
+                dd = np.where(seen, dd, 0.0)
+                dd = dd + 1e-9 * dd.sum() / len(dd)
+                whole = bool(seen.all())
+                cum = np.concatenate([[0.0], np.cumsum(dd)])
+                if np.isfinite(cum[-1]) and cum[-1] > 1e-12:
+                    ts = np.interp(np.linspace(0.0, cum[-1], rows,
+                                               endpoint=False),
+                                   cum, np.concatenate([tp, [2 * pi]]))
+                else:
+                    ts = np.linspace(0.0, 2.0 * pi, rows, endpoint=False)
+                a = P * ts
+                c = sgn * Q * ts
+                f = _weave_f(a, c, n) if weave else np.zeros(rows)
+                if width_mode == 'CONFORMAL':
+                    e = e0 - sgn * weave_depth * w_s3 * f
+                    G = to_r3(_ribbon_s3(e, lam, ts, [-half, 0.0, half],
+                                         P, Q, sgn)).reshape(rows, 3, 3)
+                    C = G[:, 1]
+                else:
+                    C = to_r3(_ribbon_s3(np.full(rows, e0), lam, ts, [0.0],
+                                         P, Q, sgn)).reshape(rows, 3)
+                    h = 1e-4
+                    Ls = to_r3(_ribbon_s3(np.full(rows, e0), lam, ts,
+                                          [-h, h], P, Q,
+                                          sgn)).reshape(rows, 2, 3)
+                    En = to_r3(_ribbon_s3(np.full(rows, e0 - h), lam, ts,
+                                          [0.0], P, Q,
+                                          sgn)).reshape(rows, 3)
+                    T = np.roll(C, -1, axis=0) - np.roll(C, 1, axis=0)
+                    T /= np.maximum(np.linalg.norm(T, axis=1), 1e-300)[:, None]
+                    D = Ls[:, 1] - Ls[:, 0]
+                    D -= np.einsum('ij,ij->i', D, T)[:, None] * T
+                    # local fibre gap in R^3 (the horizontal part only)
+                    spacing = np.linalg.norm(D, axis=1) / (2 * h) * gap
+                    D /= np.maximum(np.linalg.norm(D, axis=1), 1e-300)[:, None]
+                    N = En - C
+                    N -= np.einsum('ij,ij->i', N, T)[:, None] * T
+                    N -= np.einsum('ij,ij->i', N, D)[:, None] * D
+                    N /= np.maximum(np.linalg.norm(N, axis=1), 1e-300)[:, None]
+                    raw.append(('CONST', C, D, N, f, sgn, spacing, base, whole))
+                    continue
+                raw.append(('CONF', C, G, None, f, sgn, None, base, whole))
+
+    # constant width: one width for every ribbon, read off the median gap
+    # of the part that survives the trim
+    keep_gaps = [rb[6][np.linalg.norm(rb[1], axis=1) < trim_radius]
+                 for rb in raw if rb[0] == 'CONST']
+    keep_gaps = [g for g in keep_gaps if len(g)]
+    W = (width * float(np.median(np.concatenate(keep_gaps)))
+         if keep_gaps else 0.0)
+
+    ribbons = []
+    for kind, C, X1, X2, f, sgn, sp, base, whole in raw:
+        if kind == 'CONST':
+            # never wider than the same share of the LOCAL gap, or
+            # parallel ribbons overlap where the projection squeezes
+            # the torus (the throat of a near-pole view)
+            Wl = np.minimum(W, width * sp)[:, None]
+            off = (sgn * weave_depth * f)[:, None] * Wl * X2
+            G = np.stack([C - 0.5 * Wl * X1 + off, C + off,
+                          C + 0.5 * Wl * X1 + off], axis=1)
+        else:
+            G = X1
+        ok = np.isfinite(G).all(axis=(1, 2))
+        inside = ok & (np.linalg.norm(C, axis=1) < trim_radius)
+        if inside.all() and whole:
+            ribbons.append(dict(grid=G, closed=True, base=base,
+                                family=sgn))
+            continue
+        if inside.all():
+            # every row is inside but the curve is not: the rows were
+            # spent on the drawn part only, so the cut is the one long
+            # step between consecutive rows -- open the strip there
+            step = np.linalg.norm(np.roll(C, -1, axis=0) - C, axis=1)
+            run = np.roll(np.arange(rows), -(int(np.argmax(step)) + 1))
+        else:
+            run = _longest_run(inside)
+        if len(run) < 2:
+            lost += 1
+            continue
+        trimmed += 1
+        ribbons.append(dict(grid=G[run], closed=False, base=base,
+                            family=sgn))
+
+    stats = {'trimmed': trimmed, 'lost': lost, 'width': W, 'rows': rows}
+    if not ribbons:
+        return ribbons, stats
+    allpts = np.concatenate([rb['grid'].reshape(-1, 3) for rb in ribbons])
+    centre = (np.asarray(fit_centre, float) if fit_centre is not None
+              else 0.5 * (allpts.max(0) + allpts.min(0)))
+    if fit_scale is not None:
+        scale = float(fit_scale)
+    else:
+        rad = np.linalg.norm(allpts - centre, axis=1)
+        ref = np.percentile(rad, 95.0)
+        scale = (fit_radius / ref) if ref > 1e-9 else 1.0
+    for rb in ribbons:
+        rb['grid'] = (rb['grid'] - centre) * scale
+    stats.update(centre=[float(x) for x in centre], scale=float(scale))
+    return ribbons, stats
+
+
+def ribbon_mesh(ribbons):
+    """Quad mesh of the ribbon grids: (verts, faces, owner) where
+    owner[v] is the index of the ribbon vertex v belongs to."""
+    verts, faces, owner = [], [], []
+    for idx, rb in enumerate(ribbons):
+        G = rb['grid']
+        m, c = G.shape[0], G.shape[1]
+        off = len(verts)
+        verts.extend(tuple(p) for p in G.reshape(-1, 3))
+        owner.extend([idx] * (m * c))
+        last = m if rb['closed'] else m - 1
+        for i in range(last):
+            i1 = (i + 1) % m
+            for j in range(c - 1):
+                faces.append([off + i * c + j, off + i * c + j + 1,
+                              off + i1 * c + j + 1, off + i1 * c + j])
+    return verts, faces, owner
+
+
 def _fiber_color(base):
     """Standard sphere colouring of a base point: hue from longitude,
     value from latitude (north pole light, south pole dark)."""
@@ -1403,8 +1683,9 @@ if _IN_BLENDER:
 
     class CURVE_OT_hopf_fibration_add(bpy.types.Operator):
         """Add fibres of the Hopf fibration of S^3, stereographically
-        projected to R^3 -- as tubes, a nested-tori surface, or beads --
-        coloured by base point, with a control sphere and S^3 motion"""
+        projected to R^3 -- as tubes, a nested-tori surface, beads or
+        woven ribbons -- coloured by base point, with a control sphere
+        and S^3 motion"""
         bl_idname = "curve.hopf_fibration_add"
         bl_label = "Hopf Fibration"
         bl_options = {'REGISTER', 'UNDO'}
@@ -1468,7 +1749,10 @@ if _IN_BLENDER:
                     "continuous base ring into the nested torus "
                     "surface(s)"),
                    ('BEADS', "Beads", "a string of spheres along each "
-                    "fibre (the ball-and-stick look)")],
+                    "fibre (the ball-and-stick look)"),
+                   ('RIBBON', "Woven Ribbons", "flat strips lying in "
+                    "each fibre's torus; with Both chirality the two "
+                    "rulings weave over and under (Latitudes / Flower)")],
             description="How the fibres are realised",
             default='BEZIER')
         radius: FloatProperty(
@@ -1487,6 +1771,36 @@ if _IN_BLENDER:
             description="Opacity of the nested tori (Surface output); "
                         "below 1 the tori read through each other "
                         "(shows in Material Preview / Rendered)")
+        ribbon_width: FloatProperty(
+            name="Ribbon Width", default=0.6, min=0.05, max=1.0,
+            description="Share of the gap between neighbouring fibres "
+                        "each ribbon covers (1 = edge to edge)")
+        ribbon_width_mode: EnumProperty(
+            name="Width",
+            items=[('CONSTANT', "Constant (Paper)", "one width "
+                    "everywhere in 3D, like a cut paper strip; the gaps "
+                    "open up where the projection stretches"),
+                   ('CONFORMAL', "Conformal", "each ribbon is the exact "
+                    "preimage of an arc of the base ring, so it widens "
+                    "and narrows with the projection")],
+            description="How the ribbon width behaves under projection",
+            default='CONSTANT')
+        weave_depth: FloatProperty(
+            name="Weave Depth", default=0.15, min=0.0, max=1.0,
+            description="How far each ruling is pushed off the torus to "
+                        "pass over and under the other, as a share of "
+                        "the ribbon width (Both chirality)")
+        ribbon_thickness: FloatProperty(
+            name="Thickness", default=0.0, min=0.0, max=0.1,
+            step=0.1, precision=4,
+            description="Ribbon thickness via a Solidify modifier "
+                        "(0 = a single sheet)")
+        trim_radius: FloatProperty(
+            name="Trim Radius", default=4.0, min=1.05, max=50.0,
+            description="Cut the ribbons where they leave this ball "
+                        "(the unit sphere is the image of the equatorial "
+                        "S^2); finishes a torus that runs through the "
+                        "projection pole as a finite piece")
         bead_count: IntProperty(
             name="Beads / Fibre", default=48, min=4, max=400,
             description="Spheres placed along each fibre (Beads output)")
@@ -1737,6 +2051,16 @@ if _IN_BLENDER:
                            if sdrop else ""))
                     return {'FINISHED'}
 
+            # -------- RIBBON: woven strips over latitude rings ---------
+            if self.output == 'RIBBON':
+                if self.preset not in ('LATITUDES', 'FLOWER'):
+                    self.report({'WARNING'},
+                                "Woven Ribbons need Latitudes or Flower "
+                                "base points; drawing tubes")
+                    self.output = 'MESH'
+                else:
+                    return self._execute_ribbons(context, se, name)
+
             # -------- fibre bundle (tubes / beads / curves) -------------
             fibers, bases, closed, stats = build_fibers(
                 self.preset, self.n_lat, self.n_fiber, self.samples,
@@ -1825,6 +2149,66 @@ if _IN_BLENDER:
                    if self.chirality != 'RIGHT' else ""))
             return {'FINISHED'}
 
+        def _execute_ribbons(self, context, se, name):
+            import numpy as np
+            ribbons, st = build_ribbons(
+                self.preset, self.n_lat, self.n_fiber, self.samples,
+                self.wind_p, self.wind_q, self.lat_min, self.lat_max,
+                sphere_euler=se, s3_rot=self.s3_rot,
+                chirality=self.chirality, width=self.ribbon_width,
+                width_mode=self.ribbon_width_mode,
+                weave_depth=self.weave_depth,
+                trim_radius=self.trim_radius)
+            if not ribbons:
+                self.report({'ERROR'}, "No ribbons inside the trim radius")
+                return {'CANCELLED'}
+            verts, faces, _owner = ribbon_mesh(ribbons)
+            verts = [(x * self.scale, y * self.scale, z * self.scale)
+                     for x, y, z in verts]
+            vcol = []
+            if self.color_fibers:
+                for rb in ribbons:
+                    m, c = rb['grid'].shape[:2]
+                    if self.color_style == 'PARAMETER':
+                        vcol.extend(
+                            (*_param_rgb(i / max(1, m), 'RAINBOW',
+                                         tuple(self.mono_color)), 1.0)
+                            for i in range(m) for _ in range(c))
+                    else:
+                        vcol.extend([(*self._rgb(rb['base']), 1.0)] * (m * c))
+            me = bpy.data.meshes.new(name)
+            me.from_pydata(verts, [], faces)
+            me.validate(clean_customdata=True)
+            me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
+            if self.color_fibers:
+                self._write_colors(me, vcol)
+            me.update()
+            obj = bpy.data.objects.new(name, me)
+            if self.color_fibers:
+                obj.data.materials.append(_color_material(name))
+            if self.ribbon_thickness > 0.0:
+                mod = obj.modifiers.new("Thickness", 'SOLIDIFY')
+                mod.thickness = self.ribbon_thickness
+                mod.offset = 0.0
+            _finish(context, obj)
+            self._select(context, obj)
+            if self.show_base_sphere:
+                extent = float(np.abs(np.asarray(verts)).max())
+                self._control_sphere(context,
+                                     [rb['base'] for rb in ribbons],
+                                     obj, extent)
+            right = sum(1 for rb in ribbons if rb['family'] > 0)
+            self.report(
+                {'INFO'},
+                f"{name}: {len(ribbons)} ribbons ({right} right, "
+                f"{len(ribbons) - right} left), {st['rows']} rows each"
+                + (f", {st['trimmed']} trimmed" if st['trimmed'] else "")
+                + (f", {st['lost']} outside the trim" if st['lost'] else "")
+                + ("" if (self.wind_p, self.wind_q) == (1, 1)
+                   or self.chirality != 'BOTH'
+                   else "; the weave is exact only for winding (1,1)"))
+            return {'FINISHED'}
+
         def _select(self, context, obj):
             for o in context.selected_objects:
                 o.select_set(False)
@@ -1870,7 +2254,14 @@ if _IN_BLENDER:
                 lay.prop(self, 'bead_radius')
             elif self.output == 'SURFACE':
                 lay.prop(self, 'surface_alpha')
-            if self.output != 'SURFACE':
+            elif self.output == 'RIBBON':
+                lay.prop(self, 'ribbon_width')
+                lay.prop(self, 'ribbon_width_mode')
+                if self.chirality == 'BOTH':
+                    lay.prop(self, 'weave_depth')
+                lay.prop(self, 'ribbon_thickness')
+                lay.prop(self, 'trim_radius')
+            if self.output not in ('SURFACE', 'RIBBON'):
                 lay.prop(self, 'markers')
                 if self.markers > 0:
                     lay.prop(self, 'marker_size')
@@ -1889,7 +2280,7 @@ if _IN_BLENDER:
             col.prop(self, 'sphere_euler', index=1, text="Y")
             col.prop(self, 'sphere_euler', index=2, text="Z")
             lay.prop(self, 's3_rot')
-            if self.output != 'SURFACE':
+            if self.output not in ('SURFACE', 'RIBBON'):
                 lay.prop(self, 'include_axis')
             lay.prop(self, 'show_base_sphere')
             if self.show_base_sphere:
@@ -2651,6 +3042,59 @@ def _selftest():
     print(f"bianchi-pinkall projection: raw radius {raw_max:.2f}, "
           f"aspect {aspect:.3f}; hostile colat max {colat_max:.1f} deg "
           f"raw radius {raw2_max:.1f} {'OK' if ok else 'BAD'}")
+
+    # Woven ribbons.  (a) The base rotation lifts to S^3 exactly:
+    # hopf(X r) = R hopf(X) for generic rotations, half turns included.
+    rng = np.random.default_rng(7)
+    Xr = rng.normal(size=(64, 4))
+    Xr /= np.linalg.norm(Xr, axis=1)[:, None]
+    lift_err = 0.0
+    for eul in ((0.3, 0.2, 0.1), (1.2, -0.7, 2.9), (pi, 0.0, 0.0),
+                (0.0, pi, 0.0), (pi / 2, 0.0, 0.0)):
+        Rq = _rot_matrix(*eul)
+        lift_err = max(lift_err, float(np.abs(
+            hopf(_s3_flow(Xr, _base_rotation_quat(Rq)))
+            - hopf(Xr) @ Rq.T).max()))
+    # (b) the weave sign is (-1)^(j+k) at every crossing of right
+    # fibre j with left fibre k
+    nw = 7
+    sign_ok = all(
+        abs(_weave_f(pi * (j + k) / nw, pi * (k - j) / nw, nw)
+            - (-1.0) ** (j + k)) < 1e-12
+        for j in range(nw) for k in range(nw))
+    # (c) unwoven conformal ribbons lie in the torus: every vertex has
+    # |z0| = cos(b/2), checked by lifting back through the projection
+    rbs, _st = build_ribbons(n_fiber=10, sphere_euler=(0.0, 0.0, 0.0),
+                             width_mode='CONFORMAL', weave_depth=0.0,
+                             fit_radius=1.0)
+    Y = np.concatenate([rb['grid'].reshape(-1, 3) for rb in rbs])
+    Y = Y / _st['scale'] + np.asarray(_st['centre'])
+    y2 = np.sum(Y * Y, axis=1)
+    x4 = (y2 - 1.0) / (y2 + 1.0)
+    Xs = np.concatenate([Y * (1.0 - x4)[:, None], x4[:, None]], axis=1)
+    on_torus = float(np.abs(np.hypot(Xs[:, 0], Xs[:, 1])
+                            - math.cos(pi / 4)).max())
+    # (d) the weave actually separates the rulings where they cross
+    def _gap(depth):
+        rr, _ = build_ribbons(n_fiber=10, sphere_euler=(0.0, 0.0, 0.0),
+                              weave_depth=depth)
+        A = np.concatenate([r_['grid'][:, 1] for r_ in rr
+                            if r_['family'] > 0])
+        B = np.concatenate([r_['grid'][:, 1] for r_ in rr
+                            if r_['family'] < 0])
+        return float(np.sqrt(((A[:, None] - B[None]) ** 2).sum(-1)).min())
+    gap0, gap1 = _gap(0.0), _gap(0.2)
+    # (e) a torus through the projection pole trims to finite pieces
+    rp, sp = build_ribbons(n_fiber=16, sphere_euler=(pi / 2, 0.0, 0.0),
+                           trim_radius=3.0)
+    finite = all(np.isfinite(r_['grid']).all() for r_ in rp)
+    ok = (lift_err < 1e-12 and sign_ok and on_torus < 1e-9
+          and gap0 < 1e-9 and gap1 > 1e-3 and finite and sp['trimmed'] > 0)
+    ok_all = ok_all and ok
+    print(f"woven ribbons: quat lift {lift_err:.1e}, weave signs "
+          f"{'alternate' if sign_ok else 'WRONG'}, on-torus {on_torus:.1e}, "
+          f"crossing gap {gap0:.1e} -> {gap1:.3f}, pole trim "
+          f"{sp['trimmed']} cut {'OK' if ok else 'BAD'}")
 
     assert ok_all
     print("hopf fibration standalone tests passed")

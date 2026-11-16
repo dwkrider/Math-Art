@@ -110,6 +110,43 @@
           <option value="BOTH">Both</option>
         </select>
       </label>
+      <label class="belt-field">
+        <span>Draw as</span>
+        <select id="draw-as" class="sort" aria-label="How the fibres are drawn">
+          <option value="TUBE">Tubes</option>
+          <option value="RIBBON">Woven ribbons</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="belt-row" id="ribbon-fields" hidden>
+      <label class="belt-field belt-slider">
+        <span>Ribbon width <output id="rib-width-out" for="rib-width"></output></span>
+        <input type="range" id="rib-width" min="0.1" max="1" step="0.05" value="0.6"
+               aria-label="Share of the gap between neighbouring fibres each ribbon covers">
+      </label>
+      <label class="belt-field">
+        <span>Width</span>
+        <select id="rib-mode" class="sort" aria-label="How the ribbon width behaves under projection">
+          <option value="CONSTANT">Constant, like paper</option>
+          <option value="CONFORMAL">Conformal</option>
+        </select>
+      </label>
+      <label class="belt-field belt-slider" id="rib-depth-field">
+        <span>Weave depth <output id="rib-depth-out" for="rib-depth"></output></span>
+        <input type="range" id="rib-depth" min="0" max="0.5" step="0.01" value="0.15"
+               aria-label="How far the two rulings part where they cross">
+      </label>
+      <label class="belt-field belt-slider">
+        <span>Trim <output id="rib-trim-out" for="rib-trim"></output></span>
+        <input type="range" id="rib-trim" min="1.5" max="10" step="0.1" value="4"
+               aria-label="Cut the ribbons where they leave a ball of this radius">
+      </label>
+      <label class="belt-field belt-slider">
+        <span>Tilt <output id="tilt-out" for="tilt"></output></span>
+        <input type="range" id="tilt" min="0" max="180" step="1" value="0"
+               aria-label="Turn the base sphere; near 90 degrees the torus runs through the projection pole">
+      </label>
     </div>
 
     <div class="belt-row">

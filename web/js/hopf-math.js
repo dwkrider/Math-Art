@@ -587,6 +587,330 @@ export function buildFibers({
   return { fibers, bases, closed, dropped, centre, scale };
 }
 
+// ------------------------------------------------------ woven ribbons
+//
+// A port of build_ribbons. A ribbon is the Hopf preimage of a short
+// arc of the base ring instead of a single point, so it lies exactly
+// in the fibre's torus; with both rulings drawn, each family is
+// pushed off the torus by the field f = (cos n a + cos n c)/2, which
+// is +-1 at every crossing and alternates along every fibre, so the
+// two weave over and under. The Python module's notes above
+// build_ribbons have the derivation.
+
+/** Unit quaternion whose RIGHT multiplication turns the base sphere by
+ *  the rotation matrix R: right-multiplying by (cos p, sin p v) turns
+ *  the base by 2p about the axis (v_k, v_j, v_i). */
+export function baseRotationQuat(R) {
+  const tr = R[0][0] + R[1][1] + R[2][2];
+  const th = Math.acos(Math.max(-1, Math.min(1, 0.5 * (tr - 1))));
+  if (th < 1e-12) return [1, 0, 0, 0];
+  let u;
+  if (Math.PI - th < 1e-6) {
+    // a half turn: the axis is the longest column of R + I
+    let best = -1;
+    for (let c = 0; c < 3; c++) {
+      const col = [R[0][c] + (c === 0), R[1][c] + (c === 1), R[2][c] + (c === 2)];
+      const m = Math.hypot(...col);
+      if (m > best) { best = m; u = col; }
+    }
+  } else {
+    u = [R[2][1] - R[1][2], R[0][2] - R[2][0], R[1][0] - R[0][1]];
+  }
+  const m = Math.hypot(...u);
+  const s = Math.sin(0.5 * th);
+  return [Math.cos(0.5 * th), s * u[2] / m, s * u[1] / m, s * u[0] / m];
+}
+
+/** The over/under sign field on a torus carrying n fibres a ruling. */
+export function weaveF(a, c, n) {
+  return 0.5 * (Math.cos(n * a) + Math.cos(n * c));
+}
+
+/** S^3 points of a strip: rows over `ts`, columns over longitude
+ *  offsets `s`, half-colatitude `e[row]`. Flat, row-major, 4 a point. */
+function ribbonS3(e, lam, ts, s, P, Q, sgn) {
+  const rows = ts.length, cols = s.length;
+  const X = new Float64Array(rows * cols * 4);
+  for (let i = 0; i < rows; i++) {
+    const ce = Math.cos(e[i]), se = Math.sin(e[i]);
+    const p1 = Q * ts[i];
+    const c1 = Math.cos(p1), s1 = Math.sin(p1);
+    for (let j = 0; j < cols; j++) {
+      const p0 = P * ts[i] + lam + s[j];
+      const o = (i * cols + j) * 4;
+      X[o] = ce * Math.cos(p0);
+      X[o + 1] = ce * Math.sin(p0);
+      X[o + 2] = se * c1;
+      X[o + 3] = sgn * se * s1;
+    }
+  }
+  return X;
+}
+
+/** Woven ribbons along the fibres over circles of latitude.
+ *
+ *  Returns {ribbons, trimmed, lost, width, rows, centre, scale}: each
+ *  ribbon is {grid, rows, cols, closed, base, family}, `grid` a flat
+ *  Float64Array of rows x cols xyz points, already fitted. `width` is
+ *  the share of the gap between neighbouring fibres a ribbon covers;
+ *  `widthMode` 'CONSTANT' keeps one width in space, like a paper
+ *  strip, and 'CONFORMAL' makes each ribbon the exact preimage of a
+ *  base arc; `weaveDepth` (a share of the width) is how far the
+ *  rulings part at a crossing; ribbons are cut where their centre line
+ *  leaves the ball of radius `trimRadius`. */
+export function buildRibbons({
+  preset = 'LATITUDES', nLat = 1, nFiber = 24, samples = 160, P = 1, Q = 1,
+  latMin = 90, latMax = 90, sphereEuler = null, s3Rot = 0,
+  chirality = 'BOTH', width = 0.6, widthMode = 'CONSTANT',
+  weaveDepth = 0.15, trimRadius = 4.0, fitRadius = 1.0,
+  fitCentre = null, fitScale = null,
+} = {}) {
+  if (preset !== 'LATITUDES' && preset !== 'FLOWER') {
+    throw new Error('ribbons need latitude rings');
+  }
+  if (preset === 'FLOWER') {
+    nLat = 1;
+    latMin = 0.5 * (latMin + latMax);
+    latMax = latMin;
+  }
+  const Rb = rotMatrix(...(sphereEuler || TILT));
+  const r = baseRotationQuat(Rb);
+  const q = s3Rot ? quatFlow(s3Rot * Math.PI / 180) : null;
+  const fams = { RIGHT: [1], LEFT: [-1], BOTH: [1, -1] }[chirality];
+  const weave = fams.length === 2 && weaveDepth > 0;
+  const n = Math.max(1, Math.trunc(nFiber));
+  const rows = Math.trunc(Math.max(samples, 16 * n * Math.max(P, Q)));
+  const gap = TAU / n;
+  const half = 0.5 * Math.max(0, Math.min(1, width)) * gap;
+  const toR3 = (X) => {
+    let Y = s3Flow(X, r);
+    if (q) Y = s3Flow(Y, q);
+    return stereographic(Y);
+  };
+  const betas = nLat === 1
+    ? [0.5 * (latMin + latMax) * Math.PI / 180]
+    : Array.from({ length: nLat },
+                 (_, i) => (latMin + (latMax - latMin) * i / (nLat - 1)) * Math.PI / 180);
+
+  const raw = [];
+  const m = Math.max(512, 8 * rows);
+  const tp = new Float64Array(m);
+  for (let i = 0; i < m; i++) tp[i] = TAU * i / m;
+  for (const beta of betas) {
+    const e0 = 0.5 * beta;
+    const sinb = Math.sin(beta);
+    const wS3 = width * gap * 0.5 * sinb;
+    for (let k = 0; k < n; k++) {
+      const lam = gap * k;
+      const base = apply3(Rb, [sinb * Math.cos(lam), sinb * Math.sin(lam), Math.cos(beta)]);
+      for (const sgn of fams) {
+        // equal arc length along the projected centre line
+        const Cp = toR3(ribbonS3(new Float64Array(m).fill(e0), lam, tp, [0], P, Q, sgn));
+        // arc length counted only inside the trim, so a near-pole fibre
+        // (an enormous circle) still spends its rows where it is drawn;
+        // the floor keeps the length strictly increasing
+        const dd = new Float64Array(m);
+        let seenSum = 0;
+        for (let i = 0; i < m; i++) {
+          const j = (i + 1) % m;
+          const ri = Math.hypot(Cp[i * 3], Cp[i * 3 + 1], Cp[i * 3 + 2]);
+          const rj = Math.hypot(Cp[j * 3], Cp[j * 3 + 1], Cp[j * 3 + 2]);
+          if (ri < trimRadius && rj < trimRadius) {
+            dd[i] = Math.hypot(Cp[j * 3] - Cp[i * 3], Cp[j * 3 + 1] - Cp[i * 3 + 1],
+                               Cp[j * 3 + 2] - Cp[i * 3 + 2]);
+            seenSum += dd[i];
+          }
+        }
+        const floor = 1e-9 * seenSum / m;
+        let whole = true;
+        for (let i = 0; i < m && whole; i++) {
+          const j = (i + 1) % m;
+          whole = Math.hypot(Cp[i * 3], Cp[i * 3 + 1], Cp[i * 3 + 2]) < trimRadius
+            && Math.hypot(Cp[j * 3], Cp[j * 3 + 1], Cp[j * 3 + 2]) < trimRadius;
+        }
+        const cum = new Float64Array(m + 1);
+        for (let i = 0; i < m; i++) cum[i + 1] = cum[i] + dd[i] + floor;
+        const total = cum[m];
+        const ts = new Float64Array(rows);
+        if (Number.isFinite(total) && total > 1e-12) {
+          const tt = (i) => (i === m ? TAU : tp[i]);
+          let kk = 0;
+          for (let i = 0; i < rows; i++) {
+            const want = total * i / rows;
+            while (kk < m && cum[kk + 1] < want) kk++;
+            const lo = cum[kk], hi = cum[kk + 1];
+            const f = hi > lo ? (want - lo) / (hi - lo) : 0;
+            ts[i] = tt(kk) + (tt(kk + 1) - tt(kk)) * f;
+          }
+        } else {
+          for (let i = 0; i < rows; i++) ts[i] = TAU * i / rows;
+        }
+        const f = new Float64Array(rows);
+        if (weave) for (let i = 0; i < rows; i++) f[i] = weaveF(P * ts[i], sgn * Q * ts[i], n);
+        if (widthMode === 'CONFORMAL') {
+          const e = new Float64Array(rows);
+          for (let i = 0; i < rows; i++) e[i] = e0 - sgn * weaveDepth * wS3 * f[i];
+          const G = toR3(ribbonS3(e, lam, ts, [-half, 0, half], P, Q, sgn));
+          const C = new Float64Array(rows * 3);
+          for (let i = 0; i < rows; i++) {
+            for (let a = 0; a < 3; a++) C[i * 3 + a] = G[(i * 3 + 1) * 3 + a];
+          }
+          raw.push({ kind: 'CONF', C, G, f, sgn, base, whole });
+          continue;
+        }
+        const e0s = new Float64Array(rows).fill(e0);
+        const h = 1e-4;
+        const C = toR3(ribbonS3(e0s, lam, ts, [0], P, Q, sgn));
+        const Ls = toR3(ribbonS3(e0s, lam, ts, [-h, h], P, Q, sgn));
+        const En = toR3(ribbonS3(new Float64Array(rows).fill(e0 - h), lam, ts, [0], P, Q, sgn));
+        const D = new Float64Array(rows * 3), N = new Float64Array(rows * 3);
+        const spacing = new Float64Array(rows);
+        for (let i = 0; i < rows; i++) {
+          const ip = (i + 1) % rows, im = (i - 1 + rows) % rows;
+          const T = [C[ip * 3] - C[im * 3], C[ip * 3 + 1] - C[im * 3 + 1],
+                     C[ip * 3 + 2] - C[im * 3 + 2]];
+          const tl = Math.max(Math.hypot(...T), 1e-300);
+          for (let a = 0; a < 3; a++) T[a] /= tl;
+          const d = [0, 1, 2].map((a) => Ls[(i * 2 + 1) * 3 + a] - Ls[i * 2 * 3 + a]);
+          const dt = d[0] * T[0] + d[1] * T[1] + d[2] * T[2];
+          for (let a = 0; a < 3; a++) d[a] -= dt * T[a];
+          const dl = Math.hypot(...d);
+          spacing[i] = dl / (2 * h) * gap;
+          const dn = Math.max(dl, 1e-300);
+          for (let a = 0; a < 3; a++) d[a] /= dn;
+          const v = [0, 1, 2].map((a) => En[i * 3 + a] - C[i * 3 + a]);
+          const vt = v[0] * T[0] + v[1] * T[1] + v[2] * T[2];
+          for (let a = 0; a < 3; a++) v[a] -= vt * T[a];
+          const vd = v[0] * d[0] + v[1] * d[1] + v[2] * d[2];
+          for (let a = 0; a < 3; a++) v[a] -= vd * d[a];
+          const vl = Math.max(Math.hypot(...v), 1e-300);
+          for (let a = 0; a < 3; a++) {
+            D[i * 3 + a] = d[a];
+            N[i * 3 + a] = v[a] / vl;
+          }
+        }
+        raw.push({ kind: 'CONST', C, D, N, f, sgn, spacing, base, whole });
+      }
+    }
+  }
+
+  // constant width: one width for all, from the median gap of the part
+  // that survives the trim
+  const kept = [];
+  for (const rb of raw) {
+    if (rb.kind !== 'CONST') continue;
+    for (let i = 0; i < rows; i++) {
+      const c = rb.C;
+      if (Math.hypot(c[i * 3], c[i * 3 + 1], c[i * 3 + 2]) < trimRadius) kept.push(rb.spacing[i]);
+    }
+  }
+  let W = 0;
+  if (kept.length) {
+    kept.sort((a, b) => a - b);
+    const mid = kept.length >> 1;
+    W = width * (kept.length % 2 ? kept[mid] : 0.5 * (kept[mid - 1] + kept[mid]));
+  }
+
+  const ribbons = [];
+  let trimmed = 0, lost = 0;
+  for (const rb of raw) {
+    let G;
+    if (rb.kind === 'CONST') {
+      G = new Float64Array(rows * 9);
+      for (let i = 0; i < rows; i++) {
+        // never wider than the same share of the LOCAL gap
+        const Wl = Math.min(W, width * rb.spacing[i]);
+        const off = rb.sgn * weaveDepth * rb.f[i] * Wl;
+        for (let a = 0; a < 3; a++) {
+          const c = rb.C[i * 3 + a] + off * rb.N[i * 3 + a];
+          const d = 0.5 * Wl * rb.D[i * 3 + a];
+          G[i * 9 + a] = c - d;
+          G[i * 9 + 3 + a] = c;
+          G[i * 9 + 6 + a] = c + d;
+        }
+      }
+    } else {
+      G = rb.G;
+    }
+    const inside = new Array(rows);
+    let all = true;
+    for (let i = 0; i < rows; i++) {
+      let ok = true;
+      for (let a = 0; a < 9 && ok; a++) ok = Number.isFinite(G[i * 9 + a]);
+      const c = rb.C;
+      inside[i] = ok && Math.hypot(c[i * 3], c[i * 3 + 1], c[i * 3 + 2]) < trimRadius;
+      all = all && inside[i];
+    }
+    if (all && rb.whole) {
+      ribbons.push({ grid: G, rows, cols: 3, closed: true, base: rb.base, family: rb.sgn });
+      continue;
+    }
+    let run;
+    if (all) {
+      // every row inside but not the whole curve: open the strip at
+      // the one long step between consecutive rows
+      let best = -1, at = 0;
+      const c = rb.C;
+      for (let i = 0; i < rows; i++) {
+        const j = (i + 1) % rows;
+        const d = Math.hypot(c[j * 3] - c[i * 3], c[j * 3 + 1] - c[i * 3 + 1],
+                             c[j * 3 + 2] - c[i * 3 + 2]);
+        if (d > best) { best = d; at = i; }
+      }
+      run = Array.from({ length: rows }, (_, i) => (i + at + 1) % rows);
+    } else {
+      run = longestRun(inside);
+    }
+    if (run.length < 2) { lost++; continue; }
+    trimmed++;
+    const g = new Float64Array(run.length * 9);
+    run.forEach((idx, i) => g.set(G.subarray(idx * 9, idx * 9 + 9), i * 9));
+    ribbons.push({ grid: g, rows: run.length, cols: 3, closed: false,
+                   base: rb.base, family: rb.sgn });
+  }
+
+  const out = { ribbons, trimmed, lost, width: W, rows,
+                centre: fitCentre || [0, 0, 0], scale: fitScale || 1 };
+  if (!ribbons.length) return out;
+  const lo = [Infinity, Infinity, Infinity];
+  const hi = [-Infinity, -Infinity, -Infinity];
+  let total = 0;
+  for (const rb of ribbons) {
+    const g = rb.grid;
+    total += g.length / 3;
+    for (let i = 0; i < g.length; i += 3) {
+      for (let a = 0; a < 3; a++) {
+        if (g[i + a] < lo[a]) lo[a] = g[i + a];
+        if (g[i + a] > hi[a]) hi[a] = g[i + a];
+      }
+    }
+  }
+  const centre = fitCentre || [0.5 * (lo[0] + hi[0]), 0.5 * (lo[1] + hi[1]),
+                               0.5 * (lo[2] + hi[2])];
+  let scale = fitScale;
+  if (!scale) {
+    const rad = new Float64Array(total);
+    let w = 0;
+    for (const rb of ribbons) {
+      const g = rb.grid;
+      for (let i = 0; i < g.length; i += 3) {
+        rad[w++] = Math.hypot(g[i] - centre[0], g[i + 1] - centre[1], g[i + 2] - centre[2]);
+      }
+    }
+    const ref = percentile(Array.from(rad).sort((a, b) => a - b), 95);
+    scale = ref > 1e-9 ? fitRadius / ref : 1;
+  }
+  for (const rb of ribbons) {
+    const g = rb.grid;
+    for (let i = 0; i < g.length; i += 3) {
+      g[i] = (g[i] - centre[0]) * scale;
+      g[i + 1] = (g[i + 1] - centre[1]) * scale;
+      g[i + 2] = (g[i + 2] - centre[2]) * scale;
+    }
+  }
+  return { ...out, centre, scale };
+}
+
 // ------------------------------------------------------------- colour
 
 function hsvToRgb(h, s, v) {

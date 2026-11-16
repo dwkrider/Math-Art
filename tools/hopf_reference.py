@@ -60,6 +60,24 @@ CASES = [
     ("cube", dict(preset="CUBE", samples=48)),
 ]
 
+# Woven ribbons (build_ribbons): both width modes, the near-pole view
+# that has to be trimmed, several rings, one ruling alone, a winding,
+# and a fit handed in from outside.
+RIBBON_CASES = [
+    ("clifford-paper", dict(n_fiber=8, sphere_euler=(0.0, 0.0, 0.0))),
+    ("clifford-conformal", dict(n_fiber=8, sphere_euler=(0.0, 0.0, 0.0),
+                                width_mode="CONFORMAL", weave_depth=0.2)),
+    ("near-pole-trim", dict(n_fiber=10, trim_radius=3.0,
+                            sphere_euler=(math.radians(80.0), 0.0, 0.0))),
+    ("rings-right", dict(n_lat=3, n_fiber=6, lat_min=60.0, lat_max=120.0,
+                         chirality="RIGHT", s3_rot=20.0)),
+    ("flower-tilt", dict(preset="FLOWER", n_fiber=7, lat_min=70.0,
+                         lat_max=70.0, width=0.9)),
+    ("winding", dict(n_fiber=5, P=2, Q=1, samples=64)),
+    ("held-fit", dict(n_fiber=6, fit_centre=[0.1, -0.2, 0.05],
+                      fit_scale=0.4)),
+]
+
 
 def fl(a):
     return [[float(x) for x in row] for row in a]
@@ -143,6 +161,24 @@ def main():
             "bases": [[float(x) for x in b] for b in bases],
             "closed": [bool(c) for c in closed],
             "dropped": int(stats["dropped"]),
+        })
+
+    out["ribbons"] = []
+    for label, kw in RIBBON_CASES:
+        ribbons, stats = H.build_ribbons(**kw)
+        out["ribbons"].append({
+            "label": label,
+            "kwargs": {k: (list(v) if isinstance(v, tuple) else v)
+                       for k, v in kw.items()},
+            "centre": [float(x) for x in stats.get("centre", [0, 0, 0])],
+            "scale": float(stats.get("scale", 1.0)),
+            "width": float(stats["width"]), "rows": int(stats["rows"]),
+            "trimmed": int(stats["trimmed"]), "lost": int(stats["lost"]),
+            "ribbons": [{"grid": fl(rb["grid"].reshape(-1, 3)),
+                         "closed": bool(rb["closed"]),
+                         "family": int(rb["family"]),
+                         "base": [float(x) for x in rb["base"]]}
+                        for rb in ribbons],
         })
 
     for style in ("RAINBOW", "PASTEL", "MONO"):

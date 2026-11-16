@@ -15,7 +15,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
-import { buildFibers, paletteRgb, normalize3, apply3, rotMatrix, TILT } from './hopf-math.js';
+import { buildFibers, buildRibbons, paletteRgb, normalize3, apply3, rotMatrix, TILT } from './hopf-math.js';
 
 const VIEW_DIR = [1.4, -2.2, 1.0];
 
@@ -175,10 +175,14 @@ export class HopfView extends Stage {
   }
 
   /** Draw a set of fibres. `opts` goes straight to buildFibers, plus
-   *  `palette`, `radius` and `sides` for how they are drawn. */
+   *  `palette`, `radius` and `sides` for how they are drawn. With
+   *  `drawAs: 'RIBBON'` it goes to buildRibbons instead, and `ribbon`
+   *  carries that builder's own options. */
   build(opts) {
     const t0 = performance.now();
-    const { palette = 'RAINBOW', radius = 0.02, sides = 8, ...rest } = opts;
+    const { palette = 'RAINBOW', radius = 0.02, sides = 8,
+            drawAs = 'TUBE', ribbon = {}, ...rest } = opts;
+    if (drawAs === 'RIBBON') return this._buildRibbons({ ...rest, ...ribbon }, palette, t0);
     const built = buildFibers(rest);
     // The generator's fit normalises the 95th-percentile radius to 1,
     // which is right for Blender, where the object is framed by hand
@@ -247,6 +251,68 @@ export class HopfView extends Stage {
       scale: built.scale,
       buildMs: performance.now() - t0,
     };
+  }
+
+  /** Woven ribbons: each one a strip three points wide, all of them in
+   *  one buffer, drawn two-sided because a strip has no inside. */
+  _buildRibbons(args, palette, t0) {
+    const rb = buildRibbons(args);
+    let verts = 0, tris = 0, extent = 0;
+    for (const r of rb.ribbons) {
+      verts += r.rows * r.cols;
+      tris += (r.closed ? r.rows : r.rows - 1) * (r.cols - 1) * 2;
+      const g = r.grid;
+      for (let i = 0; i < g.length; i += 3) {
+        const d = Math.hypot(g[i], g[i + 1], g[i + 2]);
+        if (d > extent) extent = d;
+      }
+    }
+    this._drop();
+    this.built = {
+      bases: rb.ribbons.map((r) => r.base),
+      closed: rb.ribbons.map((r) => r.closed),
+      ribbons: rb.ribbons,
+      dropped: rb.lost,
+      centre: rb.centre,
+      scale: rb.scale,
+    };
+    const stats = { fibers: rb.ribbons.length, dropped: rb.lost,
+                    trimmed: rb.trimmed, vertices: verts, extent,
+                    centre: rb.centre, scale: rb.scale, ribbons: true };
+    if (!verts) return { ...stats, buildMs: performance.now() - t0 };
+    const pos = new Float32Array(verts * 3);
+    const col = new Float32Array(verts * 3);
+    const idx = verts > 65535 ? new Uint32Array(tris * 3) : new Uint16Array(tris * 3);
+    let v = 0, k = 0;
+    for (const r of rb.ribbons) {
+      const rgb = toLinear(paletteRgb(r.base, palette));
+      const first = v;
+      pos.set(r.grid, v * 3);
+      for (let i = 0; i < r.rows * r.cols; i++) col.set(rgb, (v + i) * 3);
+      v += r.rows * r.cols;
+      const last = r.closed ? r.rows : r.rows - 1;
+      for (let i = 0; i < last; i++) {
+        const a = first + i * r.cols;
+        const b = first + ((i + 1) % r.rows) * r.cols;
+        for (let j = 0; j < r.cols - 1; j++) {
+          idx[k++] = a + j; idx[k++] = a + j + 1; idx[k++] = b + j + 1;
+          idx[k++] = a + j; idx[k++] = b + j + 1; idx[k++] = b + j;
+        }
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    geo.setIndex(new THREE.BufferAttribute(idx, 1));
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({
+      vertexColors: true, roughness: 0.6, metalness: 0.0,
+      side: THREE.DoubleSide,
+    });
+    this.mesh = new THREE.Mesh(geo, mat);
+    this.mesh.frustumCulled = false;
+    this.root.add(this.mesh);
+    return { ...stats, buildMs: performance.now() - t0 };
   }
 
   _drop() {
