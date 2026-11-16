@@ -2419,6 +2419,11 @@ try:
 except ImportError:
     _IN_BLENDER = False
 
+try:                                  # inside the math_art package
+    from . import gn_inputs
+except ImportError:                   # flat import (test runner)
+    import gn_inputs
+
 
 if _IN_BLENDER:
 
@@ -2716,8 +2721,8 @@ if _IN_BLENDER:
         var.name = "lift"
         var.type = 'SINGLE_PROP'
         var.targets[0].id = sculpt
-        var.targets[0].data_path = (f'modifiers["{mod_name}"]'
-                                    f'["{socket}"]')
+        var.targets[0].data_path = gn_inputs.input_data_path(
+            sculpt.modifiers[mod_name], socket)
         drv.expression = "lift"
         return fc
 
@@ -3860,20 +3865,24 @@ if _IN_BLENDER:
                 if item.in_out != 'INPUT':
                     continue
                 if item.name == 'Motif':
-                    mod[item.identifier] = motif
+                    gn_inputs.set_input(mod, item.identifier, motif)
                 elif item.name == 'Shell':
-                    mod[item.identifier] = self.shell
+                    gn_inputs.set_input(mod, item.identifier, self.shell)
                 elif item.name == 'Lift':
                     # sized from the sculpture the motif actually
                     # makes, not from d alone; still a live modifier
                     # input afterwards
-                    mod[item.identifier] = lift_z if self.lift else 0.0
+                    gn_inputs.set_input(mod, item.identifier,
+                                        lift_z if self.lift else 0.0)
                 elif item.name == 'Translucent':
-                    mod[item.identifier] = self.translucent
+                    gn_inputs.set_input(mod, item.identifier,
+                                        self.translucent)
                 elif item.name == 'Plane Rotation':
-                    mod[item.identifier] = list(plane_rot)
+                    gn_inputs.set_input(mod, item.identifier,
+                                        list(plane_rot))
                 elif item.name == 'Plane Offset':
-                    mod[item.identifier] = list(plane_off)
+                    gn_inputs.set_input(mod, item.identifier,
+                                        list(plane_off))
 
             motif.parent = obj
             motif.matrix_parent_inverse = Matrix.Identity(4)

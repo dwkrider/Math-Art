@@ -10,6 +10,7 @@ import bpy
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(PROJ, 'math_art'))
 import symmetric_sculpture_generator as ss  # noqa: E402
+import gn_inputs  # noqa: E402
 
 ss.register()
 fails = []
@@ -31,7 +32,7 @@ def set_input(obj, name, val):
     mod = obj.modifiers[0]
     for it in mod.node_group.interface.items_tree:
         if it.name == name and it.in_out == 'INPUT':
-            mod[it.identifier] = val
+            gn_inputs.set_input(mod, it.identifier, val)
     obj.update_tag()
     bpy.context.view_layer.update()
 
@@ -41,7 +42,7 @@ def get_input(obj, name):
     mod = obj.modifiers[0]
     for it in mod.node_group.interface.items_tree:
         if it.name == name and it.in_out == 'INPUT':
-            return mod[it.identifier]
+            return gn_inputs.get_input(mod, it.identifier)
     return None
 
 

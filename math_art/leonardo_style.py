@@ -49,6 +49,11 @@ try:
 except ImportError:
     _IN_BLENDER = False
 
+try:                                  # inside the math_art package
+    from . import gn_inputs
+except ImportError:                   # flat import (test runner)
+    import gn_inputs
+
 
 if _IN_BLENDER:
 
@@ -177,9 +182,9 @@ if _IN_BLENDER:
             if item.in_out != 'INPUT':
                 continue
             if item.name == 'Border' and border is not None:
-                mod[item.identifier] = border
+                gn_inputs.set_input(mod, item.identifier, border)
             elif item.name == 'Thickness' and thickness is not None:
-                mod[item.identifier] = thickness
+                gn_inputs.set_input(mod, item.identifier, thickness)
         return mod
 
     class OBJECT_OT_leonardo_add(bpy.types.Operator):
