@@ -213,6 +213,11 @@ except ImportError:
     _IN_BLENDER = False
 
 try:                                  # inside the math_art package
+    from . import gn_inputs
+except ImportError:                   # flat import (test runner)
+    import gn_inputs
+
+try:                                  # inside the math_art package
     from .weaving.rulings import (weave_rulings, crossing_clearance,
                                   extend_families, polyline_keep,
                                   segment_distance, separate_rods,
@@ -2608,7 +2613,7 @@ if _IN_BLENDER:
                             ("Radius", radius), ("Voxel Size", voxel),
                             ("Smoothing", _FUSED_SMOOTHING),
                             ("Smooth Shading", bool(smooth))):
-            mod[ids[name]] = value
+            gn_inputs.set_input(mod, ids[name], value)
         return mod
 
     def _mode_changed(self, context):

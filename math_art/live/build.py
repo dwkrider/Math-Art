@@ -40,9 +40,11 @@ except ImportError:
 try:
     from . import clone
     from .registry import info_for_object, settings_for_object
+    from .. import gn_inputs
 except ImportError:                     # flat import outside the package
     import clone
     from registry import info_for_object, settings_for_object
+    import gn_inputs
 
 
 class LiveError(Exception):
@@ -196,20 +198,13 @@ if _IN_BLENDER:
                 setattr(mod, name, getattr(src, name))
             except (AttributeError, TypeError, ValueError):
                 pass
-        # A geometry-nodes modifier keeps its input values as ID
-        # properties rather than RNA ones, so the loop above leaves every
-        # input at its group default; copy those too (the node group,
-        # set above, has already created the keys).  Most modifier types
-        # cannot hold ID properties at all, and say so by raising.
-        try:
-            keys = src.keys()
-        except TypeError:
-            keys = ()
-        for key in keys:
-            try:
-                mod[key] = src[key]
-            except (KeyError, TypeError, ValueError):
-                pass
+        # A geometry-nodes modifier's input values are not reached by the
+        # loop above (ID properties before Blender 5.2, a nested
+        # `properties.inputs` struct after), so every input would be
+        # left at its group default; copy those too.  The node group,
+        # set above, has already created the inputs.
+        if src.type == 'NODES':
+            gn_inputs.copy_inputs(src, mod)
         return mod
 
     def _transplant(obj, src, settings):

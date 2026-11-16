@@ -159,7 +159,11 @@ def apply(obj, cell_size=0.12, strut_thickness=0.03, smoothing=1,
         # set at creation time: changing a geometry-nodes input after
         # the modifier is evaluated needs an explicit depsgraph tag,
         # and without one the stack silently keeps the old value
-        mod[keep_ident] = bool(keep_boundaries)
+        try:
+            from .. import gn_inputs
+        except ImportError:             # flat import (test runner)
+            import gn_inputs
+        gn_inputs.set_input(mod, keep_ident, bool(keep_boundaries))
 
     mod = obj.modifiers.new(prefix + "Struts", 'WIREFRAME')
     mod.thickness = strut_thickness * max(scale, 1e-6)
