@@ -37,6 +37,8 @@
 // - W. Wang, B. Juttler, D. Zheng, Y. Liu, "Computation of Rotation
 //   Minimizing Frames", ACM TOG 27(1), 2008 -- the band frames.
 
+import { neighbourMeans, outwardField } from './lib/mesh.js';
+
 export const TAU = 2 * Math.PI;
 
 // ------------------------------------------------------- braid words
@@ -1145,10 +1147,27 @@ export function fit(mesh, size = 2) {
 }
 
 /** The boundary as closed polylines -- this IS the knot, which is the
- *  whole point: the surface was built to span it. */
+ *  whole point: the surface was built to span it.
+ *
+ *  Each loop carries the outward conormal at every point: the
+ *  direction lying IN the surface, across its edge, pointing out of the
+ *  sheet. A tube drawn along the boundary has to be lifted along it, or
+ *  half the tube sits inside the surface and the surface pokes through
+ *  the wire. A closed loop in space cannot say which way is out -- the
+ *  surface can, and the shared library works it out the same way for
+ *  the TPMS rim. */
 export function boundaryPolylines(mesh) {
-  return mesh.boundaryLoops().map((loop) => ({
+  const loops = mesh.boundaryLoops();
+  if (!loops.length) return [];
+  const tri = mesh.triangulated();
+  const flat = new Float64Array(tri.vertices.length * 3);
+  tri.vertices.forEach((v, i) => {
+    flat[i * 3] = v[0]; flat[i * 3 + 1] = v[1]; flat[i * 3 + 2] = v[2];
+  });
+  const means = neighbourMeans(flat, tri.faces);
+  return loops.map((loop) => ({
     points: loop.map((i) => mesh.vertices[i].slice()),
+    outward: outwardField(flat, tri.faces, loop, means),
     closed: true,
   }));
 }
@@ -1157,7 +1176,15 @@ export function boundaryPolylines(mesh) {
  *  plain buffers. Used to draw the link itself over the surface. */
 export function tubeAlong(loops, radius, sides = 12) {
   const pos = [], nor = [], idx = [];
-  for (const { points, closed } of loops) {
+  for (const loopData of loops) {
+    const { closed, outward } = loopData;
+    // Lift the wire off the surface along the outward conormal, so it
+    // RESTS against the edge instead of being threaded onto it.
+    const points = outward
+      ? loopData.points.map((q, i) => [q[0] + radius * outward[i][0],
+                                       q[1] + radius * outward[i][1],
+                                       q[2] + radius * outward[i][2]])
+      : loopData.points;
     const n = points.length;
     if (n < 3) continue;
     const base = pos.length / 3;
